@@ -1,0 +1,21 @@
+<Graph name="Barrett F/T Sensor" >
+<!-- mass FT Sensor 0.133278 kg -->
+
+<Body name="FTSensor" transform="0 0 0.012 0 0 0" mass="0.133278" cogVector="0.002 0.0 -0.0048" physics="fixed" 
+      inertia="7.551e-5 -119.9e-9 -70.02e-9   -119.9e-9 7.508e-5 -53.7e-9   -70.02e-9 -53.7e-9 1.462e-4" >
+    <Shape type="CYLINDER" length="0.008" radius="0.0445" transform="0 0 0.001 0 0 0"
+           color="BRASS" graphics="true" physics="true" />
+    <Shape type="CYLINDER" length="0.0015" radius="0.0375" transform="0 0 -0.00375 0 0 0"
+           color="BRASS" graphics="true" physics="true" />
+    <Shape type="CYLINDER" length="0.0075" radius="0.043" transform="0 0 -0.00825 0 0 0"
+           color="BRASS" graphics="true" physics="true" />
+
+    <!-- <Shape type="FRAME" scale="0.15" /> -->
+    <Sensor type="LOADCELL" name="WristLoadCell" transform="0.0 0 -0.0052 0 0 0" />
+  </Body>
+
+<Body name="FTSensorFrame" prev="FTSensor" transform="0.0 0 -0.0052 0 0 0">
+<!--     <Shape type="FRAME" scale="0.2" /> -->
+</Body>
+
+</Graph>

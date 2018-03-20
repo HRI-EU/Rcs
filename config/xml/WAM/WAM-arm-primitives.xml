@@ -1,0 +1,107 @@
+<Graph name="WAM" >
+
+  <Body name="BaseCorner" mass="9.971" cogVector="-0.020 -0.266 -0.141" physics="kinematic" color="POLISHED_SILVER"
+	inertia="0.10916849 0.00640270 0.02557874   0.00640270 0.18294303 0.00161433   0.02557874 0.00161433 0.11760385" >
+    <Shape type="BOX" extents="0.22 0.28 0.16" transform="0.11 0.14 0.08 0 0 0" distance="false" graphics="true" physics="true" />
+    <Shape type="CYLINDER" length="0.16" radius="0.14"  transform="0.22 0.14 0.08 0 0 0" distance="false" graphics="true" physics="true" />
+  </Body>
+
+  <Body name="Base" prev="BaseCorner" transform="0.36 0.14 0  0 0 0" >
+  </Body>
+
+<!-- Link 1 -->
+  <Body name="Link1" prev="BaseCorner" mass="10.7677" cogVector="-0.004 0.122 0.001" physics="dynamic" color="COPPER"
+        inertia="0.13488033 -0.00213041 -0.00012485   -0.00213041 0.11328369 0.00068555   -0.00012485 0.00068555 0.09046330"
+	transform="0 0 0 -90 0 0" >
+    <Joint name="ArmJoint1" type="RotZ" transform="0.22 0.14 0.346 0 0 0" range="-150 15 150" torqueLimit="80" weightJL="1.5" speedLimit="90" ctrlType="Torque" />
+    <Shape type="CYLINDER" length="0.05" radius="0.14"  transform="0 0.161 0 90 0 0" distance="false" graphics="true" physics="true" />
+    <Shape type="CYLINDER" length="0.04" radius="0.09"  transform="0 0 -0.08 0 0 0" distance="false" graphics="true" physics="true" />
+    <Shape type="BOX" extents="0.18 0.04 0.16" transform="0 0.08 -0.08 90 0 0" distance="false" graphics="true" physics="true" />
+    <Shape type="CYLINDER" length="0.08" radius="0.08"  transform="0 0 -0.14 0 0 0" distance="false" graphics="true" physics="true" />
+    <Shape type="BOX" extents="0.16 0.08 0.18" transform="0 0.09 0.14 90 0 0" distance="false" graphics="true" physics="true" />
+    <Shape type="CYLINDER" length="0.04" radius="0.09"  transform="0 0 0.08 0 0 0" distance="false" graphics="true" physics="true" />
+    <Shape type="BOX" extents="0.18 0.04 0.16" transform="0 0.08 0.08 90 0 0" distance="false" graphics="true" physics="true" />
+    <Shape type="CYLINDER" length="0.08" radius="0.08"  transform="0 0 0.14 0 0 0" distance="false" graphics="true" physics="true" />
+    <Shape type="BOX" extents="0.16 0.08 0.18" transform="0 0.09 -0.14 90 0 0" distance="false" graphics="true" physics="true" />
+  </Body>
+
+<!-- Link 2 -->
+  <Body name="Link2" prev="Link1" mass="3.8749" cogVector="-0.00236983 0.03105614 0.01542114" physics="dynamic" color="PEARL_S"
+  	inertia="0.002140958 0.00027172 0.00002461   0.00027172 0.01377875 -0.00181920   0.00002461 -0.00181920 0.01558906"
+	transform="0 0 0 90 0 0" >
+    <Joint name="ArmJoint2" type="RotZ" range="-113 10 113" transform="0 0 0 0 0 0" torqueLimit="120" weightJL="1.5" speedLimit="90" ctrlType="Torque" />
+    <Shape type="CYLINDER" length="0.12" radius="0.06"  transform="0 0 0 90 0 0" graphics="true" distance="false" physics="true" />
+    <Shape type="CYLINDER" length="0.12" radius="0.06" transform="0 0 0.06 0 0 0" graphics="true" distance="false" physics="true" />
+  </Body>
+
+<!-- Link 3 -->
+  <Body name="Link3" prev="Link2" mass="1.80228141" cogVector="-0.03825858 0.20750770 0.00003309" physics="dynamic" color="BRASS"
+  	inertia="0.05911077 -0.00249612 0.00000738   -0.00249612 0.00324550 -0.00001767   0.00000738 -0.00001767 0.05927043"
+	 transform="0.045 0 0.55 -90 0 0" >
+    <Joint name="ArmJoint3" type="RotZ" range="-157 0 157" torqueLimit="100" ctrlType="Torque" speedLimit="90" weightJL="1.0" />
+    <Shape type="SSL" length="0.4" radius="0.044" graphics="true" transform="-0.045 0.1 0 -90 0 0" physics="true" />
+    <Shape type="CYLINDER" length="0.018" radius="0.042" transform="0 0 0.04 0 0 0" graphics="true" distance="false" physics="true" />
+    <Shape type="CYLINDER" length="0.018" radius="0.042" transform="-0.045 0.04 0.04 0 0 0" graphics="true" distance="false" physics="true" />
+    <Shape type="CYLINDER" length="0.018" radius="0.042" transform="0 0 -0.04 0 0 0" graphics="true" distance="false" physics="true" />
+    <Shape type="CYLINDER" length="0.018" radius="0.042" transform="-0.045 0.04 -0.04 0 0 0" graphics="true" distance="false" physics="true" />
+    <Shape type="CYLINDER" length="0.02" radius="0.051"  transform="-0.045 0.08 0 90 0 0" graphics="true" distance="false" physics="true" />
+  </Body>
+
+<!-- Link 4 -->
+  <Body name="Link4" prev="Link3" mass="2.40016804" cogVector="0.00498512 -0.00022942 0.13271662" physics="dynamic" color="BRONZE"
+  	inertia="0.01491672 0.00001741 -0.00150604   0.00001741 0.01482922 -0.00002109   -0.00150604 -0.00002109 0.00294463"
+	transform="-0.045 0 0 90 0 0" >
+    <Joint name="ArmJoint4" type="RotZ" range="-50 90 180" torqueLimit="100" ctrlType="Torque" speedLimit="90" weightJL="1.0" />
+    <Shape type="CYLINDER" length="0.026" radius="0.054" transform="0.045 -0.022 0 90 0 0" graphics="true" distance="false" physics="true" />
+    <Shape type="CYLINDER" length="0.026" radius="0.054" transform="0.045 0.022 0 90 0 0" graphics="true" distance="false" physics="true" />
+    <Shape type="CYLINDER" length="0.03" radius="0.048" transform="0 0 0.062  0 0 0" graphics="true" distance="false" physics="true" />
+    <Shape type="CYLINDER" length="0.2" radius="0.045" transform="0 0 0.177 0 0 0" graphics="true" physics="true" />
+    <Shape type="CYLINDER" length="0.047" radius="0.03" transform="0 0.028 0.124 0 0 0" graphics="true" physics="true" />
+    <Shape type="CYLINDER" length="0.047" radius="0.03" transform="0 -0.028 0.124 0 0 0" graphics="true" physics="true" />
+  </Body>
+
+<!-- Link 5 -->
+  <Body name="Link5" prev="Link4" mass="0.12376019" cogVector="0.00008921 0.00511217 0.00435824" physics="dynamic" color="PEWTER"
+  	inertia="0.00005029 0.00000020 -0.00000005   0.00000020 0.00007582 -0.00000359   -0.00000005 -0.00000359 0.00006270"
+	transform="0 0 0.3 -90 0 0" >
+    <Joint name="ArmJoint5" type="RotZ" range="-273 -180 71"
+           torqueLimit="80" ctrlType="Torque" speedLimit="90" weightJL="1.0" />
+    <Shape type="BOX" extents="0.076 0.04 0.012" transform="0 0.015 0 90 0 0" graphics="true" distance="false" />
+    <Shape type="CYLINDER" length="0.026" radius="0.022" transform="0 -0.012 0.0 90 0 0" graphics="true" distance="false" />
+    <Shape type="CYLINDER" length="0.04" radius="0.026" transform="0 0 0.0 0 0 0" graphics="true" distance="false" />
+  </Body>
+
+<!-- Link 6 -->
+  <Body name="Link6" prev="Link5" mass="0.41797364" cogVector="-0.00012262 -0.01703194 0.02468336" physics="dynamic" color="COPPER"
+  transform="0 0 0 90 0 0"
+  	inertia="0.00055516 0.00000061 -0.00000074   0.00000061 0.00024367 -0.00004590   -0.00000074 -0.00004590 0.00045358" >
+    <Joint name="ArmJoint6" type="RotZ" range="-90 0 90" torqueLimit="80" ctrlType="Torque" speedLimit="90" weightJL="1.0"/>
+    <Shape type="CYLINDER" length="0.028" radius="0.025" transform="0 0.03 0 90 0 0" graphics="true" distance="false" physics="true" />
+    <Shape type="CYLINDER" length="0.018" radius="0.045" transform="0 0 0.039 0 0 0" graphics="true" distance="false" physics="true" />
+    <Shape type="CYLINDER" length="0.06" radius="0.022" transform="0 -0.037 0.018 0 0 0" graphics="true" distance="false" physics="true" />
+  </Body>
+
+<!-- Link 7 -->
+  <Body name="Link7" prev="Link6" mass="0.07548270" cogVector="0.00014836 0.00007252 -0.00335185"
+  	physics="dynamic"  transform="0 0 0.06 0 0 0" color="GRAY"
+  	inertia="0.00003911  0.00000019  0.00000000    0.00000019  0.00003877  0.00000000    0.00000000  0.00000000  0.00007614" >
+    <Joint name="ArmJoint7"  type="RotZ" range="-172 90 172"
+           torqueLimit="80" ctrlType="Torque" speedLimit="90" weightJL="1.0" />
+    <Shape type="CYLINDER" length="0.016" radius="0.045" transform="0 0 -0.003 0 0 0" graphics="true" distance="false" physics="true" />
+  </Body>
+
+  <Body name="PowerGrip" prev="Link7" transform="0 0 0.1035 90 0 90" Xtransform="0 0 0.12 90 0 90" >
+    <Shape type="FRAME" scale="0.1" />
+  </Body>
+
+  <Body name="Palm" prev="Link7" transform="0 0 0.0755 0 0 0" Xtransform="0 0 0.092 0 0 0" >
+    <Shape type="FRAME" scale="0.1" />
+  </Body>
+
+  <Body name="BallTip" prev="Link7" transform="0 0 0.138 0 0 0" >
+    <Shape type="FRAME" scale="0.1" />
+  </Body>
+
+
+
+</Graph>

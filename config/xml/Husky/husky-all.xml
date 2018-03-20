@@ -1,0 +1,367 @@
+<Graph>
+
+  <Body name="base_link" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="dual_arm_husky_description/meshes/base_link.stl" color="# 0 0 0ff" />
+    <Shape type="BOX" extents="0.9874 0.5709 0.12375" distance="true" physics="false" graphics="false" transform="0 0 0.061875 0 0 0" />
+    <Shape type="BOX" extents="0.78992 0.5709 0.12375" distance="true" physics="false" graphics="false" transform="0 0 0.185625 0 0 0" />
+  </Body>
+
+  <Body name="base_footprint" prev="base_link" transform="0 0 -0.14493 0 0 0" >
+  </Body>
+
+  <Body name="inertial_link" prev="base_link" mass="33.455" cogVector="-0.08748 -0.00085 0.09947" inertia="0.6022 -0.02364 -0.1197 0.02364 1.7386 -0.001544 0.1197 0.001544 2.0296" >
+  </Body>
+
+  <Body name="imu_link" prev="base_link" transform="0.19 0 0.149 -116.565051 90 -63.434949" >
+  </Body>
+
+  <Body name="front_left_wheel_link" prev="base_link" mass="2.637" inertia="0.02467 0 0 0 0.02467 0 0 0 0.04411" >
+    <Joint name="front_left_wheel" range="-57.29578 0 57.29578" constraint="true" type="RotY" transform="0.256 0.2854 0.03282 0 0 0" torqueLimit="0" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="dual_arm_husky_description/meshes/wheel.stl" color="#2c2c2cff" />
+    <Shape type="CYLINDER" length="0.1143" radius="0.17775" distance="true" physics="false" graphics="false" transform="0 0 0 90 0 0" />
+  </Body>
+
+  <Body name="front_right_wheel_link" prev="base_link" mass="2.637" inertia="0.02467 0 0 0 0.02467 0 0 0 0.04411" >
+    <Joint name="front_right_wheel" range="-57.29578 0 57.29578" constraint="true" type="RotY" transform="0.256 -0.2854 0.03282 0 0 0" torqueLimit="0" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="dual_arm_husky_description/meshes/wheel.stl" color="#2c2c2cff" />
+    <Shape type="CYLINDER" length="0.1143" radius="0.17775" distance="true" physics="false" graphics="false" transform="0 0 0 90 0 0" />
+  </Body>
+
+  <Body name="rear_left_wheel_link" prev="base_link" mass="2.637" inertia="0.02467 0 0 0 0.02467 0 0 0 0.04411" >
+    <Joint name="rear_left_wheel" range="-57.29578 0 57.29578" constraint="true" type="RotY" transform="-0.256 0.2854 0.03282 0 0 0" torqueLimit="0" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="dual_arm_husky_description/meshes/wheel.stl" color="#2c2c2cff" />
+    <Shape type="CYLINDER" length="0.1143" radius="0.17775" distance="true" physics="false" graphics="false" transform="0 0 0 90 0 0" />
+  </Body>
+
+  <Body name="rear_right_wheel_link" prev="base_link" mass="2.637" inertia="0.02467 0 0 0 0.02467 0 0 0 0.04411" >
+    <Joint name="rear_right_wheel" range="-57.29578 0 57.29578" constraint="true" type="RotY" transform="-0.256 -0.2854 0.03282 0 0 0" torqueLimit="0" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="dual_arm_husky_description/meshes/wheel.stl" color="#2c2c2cff" />
+    <Shape type="CYLINDER" length="0.1143" radius="0.17775" distance="true" physics="false" graphics="false" transform="0 0 0 90 0 0" />
+  </Body>
+
+  <Body name="top_chassis_link" prev="base_link" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="dual_arm_husky_description/meshes/top_chassis.stl" color="#b2b2 0ff" />
+  </Body>
+
+  <Body name="front_bumper_link" prev="base_link" transform="0.48 0 0.091 0 0 0" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="dual_arm_husky_description/meshes/bumper.stl" color="# 0 0 0ff" />
+  </Body>
+
+  <Body name="rear_bumper_link" prev="base_link" transform="-0.48 0 0.091 0 0 180" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="dual_arm_husky_description/meshes/bumper.stl" color="# 0 0 0ff" />
+  </Body>
+
+  <Body name="dual_arm_bulkhead_link" prev="base_link" transform="0 0 0.225 0 0 0" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="dual_arm_husky_description/meshes/dual_arm_bulkhead.stl" color="#2c2c2cff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" meshFile="dual_arm_husky_description/meshes/dual_arm_bulkhead_simple_mesh.stl" />
+  </Body>
+
+  <Body name="husky_ptu_base_link" prev="dual_arm_bulkhead_link" transform="0.365 0 0.19876 0 0 0" >
+  </Body>
+
+  <Body name="husky_ptu_pan_link" prev="husky_ptu_base_link" transform="0 -0.011 0.022 0 0 0" mass="0.65" inertia="0.0001 0 0 0 0.0001 0 0 0 0.0001" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="-0.0295 0.011 0 180 0 0" meshFile="dual_arm_husky_description/meshes/flir-ptu-simple.stl" color="#4c4c4cff" />
+    <Shape type="BOX" extents="0.045 0.065 0.044" distance="true" physics="false" graphics="false" transform="0 0.011 0 0 0 0" />
+    <Shape type="BOX" extents="0.046 0.044 0.044" distance="true" physics="false" graphics="false" transform="-0.045 0.0215 0 0 0 0" />
+    <Shape type="CYLINDER" length="0.015" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.074 0.021 0 0 90 0" />
+  </Body>
+
+  <Body name="husky_ptu_tilt_link" prev="husky_ptu_pan_link" transform="0 0 0 -90 90 0" mass="0.65" inertia="0.0001 0 0 0 0.0001 0 0 0 0.0001" >
+    <Joint name="husky_ptu_pan" range="-159 0 159" type="RotZ" transform="0 0 0.066 0 0 90" torqueLimit="30" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="-0.0295 0.011 0 180 0 0" meshFile="dual_arm_husky_description/meshes/flir-ptu-simple.stl" color="#4c4c4cff" />
+    <Shape type="BOX" extents="0.045 0.065 0.044" distance="true" physics="false" graphics="false" transform="0 0.011 0 0 0 0" />
+    <Shape type="BOX" extents="0.046 0.044 0.044" distance="true" physics="false" graphics="false" transform="-0.045 0.0215 0 0 0 0" />
+    <Shape type="CYLINDER" length="0.015" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.074 0.021 0 0 90 0" />
+  </Body>
+
+  <Body name="husky_ptu_tilted_link" prev="husky_ptu_tilt_link" >
+    <Joint name="husky_ptu_tilt" range="-46.982539 -8.594367 29.793805" type="RotY" transform="0 0 0 -90 0 0" torqueLimit="30" speedLimit="57.29578" />
+  </Body>
+
+  <Body name="husky_ptu_mount_link" prev="husky_ptu_tilted_link" transform="0 0 -0.03912 -180 0 0" mass="0.000002" >
+  </Body>
+
+  <Body name="bumblebee2" prev="husky_ptu_mount_link" mass="0.342" inertia="0.00010097 0 0 0 0.00076653 0 0 0 0.00073943" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0 0 -45 90 -45" meshFile="dual_arm_husky_description/meshes/pointgrey_bumblebee2.stl" />
+    <Shape type="BOX" extents="0.0474 0.157 0.036" distance="true" physics="false" graphics="false" />
+  </Body>
+
+  <Body name="bumblebee2_optical" prev="bumblebee2" transform="0 0 0 -90 90 0" mass="0.00001" >
+  </Body>
+
+  <Body name="base_laser" prev="dual_arm_bulkhead_link" transform="0.465 0 -0.085 180 0 0" mass="1.1" inertia="0.00307157 0 0 0 0.00312849 0 0 0 0.00196432" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="dual_arm_husky_description/meshes/sick-lms1xx.stl" color="#4c4c4cff" />
+    <Shape type="BOX" extents="0.105 0.1 0.1" distance="true" physics="false" graphics="false" transform="0 0 -0.05 0 0 0" />
+  </Body>
+
+  <Body name="r_ur5_arm_base_link" prev="dual_arm_bulkhead_link" transform="0.125 -0.15 0.135 45 0.03225 -90" mass="4" inertia="0.00443333 0 0 0 0.00443333 0 0 0 0.0072" >
+    <Shape type="MESH" distance="true" physics="false" graphics="true" meshFile="ur_description/meshes/ur5/collision/base.stl" color="#b2b2b2ff" />
+  </Body>
+
+  <Body name="r_ur5_arm_shoulder_link" prev="r_ur5_arm_base_link" mass="3.7" inertia="0.0102675 0 0 0 0.0102675 0 0 0 0.00666" >
+    <Joint name="r_ur5_arm_shoulder_pan_joint" range="-180 0 180" type="RotZ" transform="0 0 0.089159 0 0 0" torqueLimit="150" speedLimit="180" />
+    <Shape type="MESH" distance="true" physics="false" graphics="true" meshFile="ur_description/meshes/ur5/collision/shoulder.stl" color="#2c2c2cff" />
+  </Body>
+
+  <Body name="r_ur5_arm_upper_arm_link" prev="r_ur5_arm_shoulder_link" mass="8.393" inertia="0.22689068 0 0 0 0.22689068 0 0 0 0.0151074" >
+    <Joint name="r_ur5_arm_shoulder_lift_joint" range="-180 -90 180" type="RotY" transform="0 0.13585 0 0 90 0" torqueLimit="150" speedLimit="180" />
+    <Shape type="MESH" distance="true" physics="false" graphics="true" meshFile="ur_description/meshes/ur5/collision/upperarm.stl" color="#b2b2b2ff" />
+  </Body>
+
+  <Body name="r_ur5_arm_forearm_link" prev="r_ur5_arm_upper_arm_link" mass="2.275" inertia="0.04944331 0 0 0 0.04944331 0 0 0 0.004095" >
+    <Joint name="r_ur5_arm_elbow_joint" range="-180 -45.836624 180" type="RotY" transform="0 -0.1197 0.425 0 0 0" torqueLimit="150" speedLimit="180" />
+    <Shape type="MESH" distance="true" physics="false" graphics="true" meshFile="ur_description/meshes/ur5/collision/forearm.stl" color="#b2b2b2ff" />
+  </Body>
+
+  <Body name="r_ur5_arm_wrist_1_link" prev="r_ur5_arm_forearm_link" mass="1.219" inertia="0.11117276 0 0 0 0.11117276 0 0 0 0.21942" >
+    <Joint name="r_ur5_arm_wrist_1_joint" range="-180 0 180" type="RotY" transform="0 0 0.39225 0 90 0" torqueLimit="28" speedLimit="183.346494" />
+    <Shape type="MESH" distance="true" physics="false" graphics="true" meshFile="ur_description/meshes/ur5/collision/wrist1.stl" color="#2c2c2cff" />
+  </Body>
+
+  <Body name="r_ur5_arm_wrist_2_link" prev="r_ur5_arm_wrist_1_link" mass="1.219" inertia="0.11117276 0 0 0 0.11117276 0 0 0 0.21942" >
+    <Joint name="r_ur5_arm_wrist_2_joint" range="-180 0 180" type="RotZ" transform="0 0.093 0 0 0 0" torqueLimit="28" speedLimit="183.346494" />
+    <Shape type="MESH" distance="true" physics="false" graphics="true" meshFile="ur_description/meshes/ur5/collision/wrist2.stl" color="#2c2c2cff" />
+  </Body>
+
+  <Body name="r_ur5_arm_wrist_3_link" prev="r_ur5_arm_wrist_2_link" mass="0.1879" inertia="0.01713647 0 0 0 0.01713647 0 0 0 0.033822" >
+    <Joint name="r_ur5_arm_wrist_3_joint" range="-180 0 180" type="RotY" transform="0 0 0.09465 0 0 0" torqueLimit="28" speedLimit="183.346494" />
+    <Shape type="MESH" distance="true" physics="false" graphics="true" meshFile="ur_description/meshes/ur5/collision/wrist3.stl" color="# 0 0 0ff" />
+  </Body>
+  
+  <Body name="r_ur5_arm_ee_link" prev="r_ur5_arm_wrist_3_link" transform="0 0.0823 0 0 0 90" >
+    <Shape type="BOX" extents="0.01 0.01 0.01" distance="true" physics="false" graphics="false" transform="-0.01 0 0 0 0 0" />
+  </Body>
+
+  <Body name="r_robotiq_fts300_fts_robotside" prev="r_ur5_arm_ee_link" transform="0 0 0 0 90 0" mass="0.65" inertia="0.00066117 0 0 0 0.00066117 0 0 0 0.00117" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="dual_arm_husky_description/meshes/visual/robotiq_fts300.stl" color="# 0 0 0ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" meshFile="dual_arm_husky_description/meshes/collision/robotiq_fts300.stl" />
+  </Body>
+  
+  <Body name="r_robotiq_fts300_robotiq_force_torque_frame_id" prev="r_robotiq_fts300_fts_robotside" transform="0 0 0.01625 0 0 0" >
+  </Body>
+  
+  <Body name="r_robotiq_fts300_fts_toolside" prev="r_robotiq_fts300_fts_robotside" transform="0 0 0.0375 0 0 0" >
+  </Body>
+  
+  <Body name="r_palm" prev="r_robotiq_fts300_fts_toolside" transform="0 0 0.05398 -90 45 180" mass="1.3" inertia="0.0035 0 0 0 0.0035 0 0 0 0.0035" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/palm.STL" color="# 0 0 0ff" />
+    <Shape type="BOX" extents="0.1 0.1 0.1" distance="true" physics="false" graphics="false" color="# 0ffffff" />
+  </Body>
+
+  <Body name="r_finger_1_link_0" prev="r_palm" mass="0.1" inertia="0.000018 0 0 0 0.000025 0 0 0 0.000025" >
+    <Joint name="r_palm_finger_1_joint" range="-16.999658 0 16.999658" type="RotY" transform="-0.0455 0.0214 0.036 -180 0 -90" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_0.STL" color="# 0 0 0ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_0.STL" color="# 0ffffff" />
+  </Body>
+
+  <Body name="r_finger_1_link_1" prev="r_finger_1_link_0" mass="0.047" inertia="0.00000499 0.00000091 0 -0.00000091 0.00006435 0 0 0 0.00006062" >
+    <Joint name="r_finger_1_joint_1" range="0 35 70" type="RotZ" transform="0 0 0 0 0 -120" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0.05717 0 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_1.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" transform="0 0.05717 0 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_1.STL" color="# 0ffffff" />
+  </Body>
+
+  <Body name="r_finger_1_link_2" prev="r_finger_1_link_1" mass="0.03284" cogVector="0.00048 0.02167 0.00018" inertia="0.00000348 0.00000032 0.00000013 -0.00000032 0.00002248 0 -0.00000013 0 0.00001986" >
+    <Joint name="r_finger_1_joint_2" range="0 45 90" type="RotZ" transform="0 0.05715 0 0 0 0" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0.0381 0.0075 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_2.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" transform="0 0.0381 0.0075 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_2.STL" color="#ffff 0ff" />
+  </Body>
+
+  <Body name="r_finger_1_link_3" prev="r_finger_1_link_2" mass="0.03354" cogVector="0.01626 0.00049 0.0002" inertia="0.00000305 0.0000009 0 -0.0000009 0.00001428 -0.00000001 0 0.00000001 0.00001264" >
+    <Joint name="r_finger_1_joint_3" range="-37.998561 11 60" type="RotZ" transform="0 0.039 0 0 0 120" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_3.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_3.STL" color="#ffff 0ff" />
+  </Body>
+
+  <Body name="r_finger_2_link_0" prev="r_palm" mass="0.1" inertia="0.000018 0 0 0 0.000025 0 0 0 0.000025" >
+    <Joint name="r_palm_finger_2_joint" range="-16.999658 0 16.999658" type="RotY" transform="-0.0455 0.0214 -0.036 -180 0 -90" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_0.STL" color="# 0 0 0ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_0.STL" color="# 0ffffff" />
+  </Body>
+  
+  <Body name="r_finger_2_link_1" prev="r_finger_2_link_0" mass="0.047" inertia="0.00000499 0.00000091 0 -0.00000091 0.00006435 0 0 0 0.00006062" >
+    <Joint name="r_finger_2_joint_1" range="0 35 70" type="RotZ" transform="0 0 0 0 0 -120" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0.05717 0 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_1.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" transform="0 0.05717 0 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_1.STL" color="# 0ffffff" />
+  </Body>
+  
+  <Body name="r_finger_2_link_2" prev="r_finger_2_link_1" mass="0.03284" cogVector="0.00048 0.02167 0.00018" inertia="0.00000348 0.00000032 0.00000013 -0.00000032 0.00002248 0 -0.00000013 0 0.00001986" >
+    <Joint name="r_finger_2_joint_2" range="0 45.000105 90.00021" type="RotZ" transform="0 0.05715 0 0 0 0" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0.0381 0.0075 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_2.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" transform="0 0.0381 0.0075 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_2.STL" color="#ffff 0ff" />
+  </Body>
+
+  <Body name="r_finger_2_link_3" prev="r_finger_2_link_2" mass="0.03354" cogVector="0.01626 0.00049 0.0002" inertia="0.00000305 0.0000009 0 -0.0000009 0.00001428 -0.00000001 0 0.00000001 0.00001264" >
+    <Joint name="r_finger_2_joint_3" range="-38 11 60" type="RotZ" transform="0 0.039 0 0 0 120" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_3.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_3.STL" color="#ffff 0ff" />
+  </Body>
+  
+  <Body name="r_finger_middle_link_0" prev="r_palm" mass="0.1" inertia="0.000018 0 0 0 0.000025 0 0 0 0.000025" >
+    <Joint name="r_palm_finger_middle_joint" range="0 0 0" type="RotY" transform="0.0455 0.0214 0 0 0 90" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_0.STL" color="# 0 0 0ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_0.STL" color="# 0ffffff" />
+  </Body>
+  
+  <Body name="r_finger_middle_link_1" prev="r_finger_middle_link_0" mass="0.047" inertia="0.00000499 0.00000091 0 -0.00000091 0.00006435 0 0 0 0.00006062" >
+    <Joint name="r_finger_middle_joint_1" range="0 35 70" type="RotZ" transform="0 0 0 0 0 -120" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0.05717 0 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_1.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" transform="0 0.05717 0 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_1.STL" color="# 0ffffff" />
+  </Body>
+
+  <Body name="r_finger_middle_link_2" prev="r_finger_middle_link_1" mass="0.03284" cogVector="0.00048 0.02167 0.00018" inertia="0.00000348 0.00000032 0.00000013 -0.00000032 0.00002248 0 -0.00000013 0 0.00001986" >
+    <Joint name="r_finger_middle_joint_2" range="0 45.000105 90.00021" type="RotZ" transform="0 0.05715 0 0 0 0" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0.0381 0.0075 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_2.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" transform="0 0.0381 0.0075 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_2.STL" color="#ffff 0ff" />
+  </Body>
+
+  <Body name="r_finger_middle_link_3" prev="r_finger_middle_link_2" mass="0.03354" cogVector="0.01626 0.00049 0.0002" inertia="0.00000305 0.0000009 0 -0.0000009 0.00001428 -0.00000001 0 0.00000001 0.00001264" >
+    <Joint name="r_finger_middle_joint_3" range="-37.998561 10.997925 60" type="RotZ" transform="0 0.039 0 0 0 120" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_3.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_3.STL" color="#ffff 0ff" />
+  </Body>
+  
+  <Body name="right_palm" prev="r_palm" >
+  </Body>
+  
+  <Body name="r_ur5_arm_tool0" prev="r_ur5_arm_wrist_3_link" transform="0 0.0823 0 -90 0 0" >
+  </Body>
+  
+  <Body name="r_ur5_arm_base" prev="r_ur5_arm_base_link" transform="0 0 0 0 0 180" >
+  </Body>
+  
+  <Body name="l_ur5_arm_base_link" prev="dual_arm_bulkhead_link" transform="0.125 0.15 0.135 -45 0 -90" mass="4" inertia="0.00443333 0 0 0 0.00443333 0 0 0 0.0072" >
+    <Shape type="MESH" distance="true" physics="false" graphics="true" meshFile="ur_description/meshes/ur5/collision/base.stl" color="#b2b2b2ff" />
+  </Body>
+  
+  <Body name="l_ur5_arm_shoulder_link" prev="l_ur5_arm_base_link" mass="3.7" inertia="0.0102675 0 0 0 0.0102675 0 0 0 0.00666" >
+    <Joint name="l_ur5_arm_shoulder_pan_joint" range="-180 0 180" type="RotZ" transform="0 0 0.089159 0 0 0" torqueLimit="150" speedLimit="180" />
+    <Shape type="MESH" distance="true" physics="false" graphics="true" meshFile="ur_description/meshes/ur5/collision/shoulder.stl" color="#2c2c2cff" />
+  </Body>
+  
+  <Body name="l_ur5_arm_upper_arm_link" prev="l_ur5_arm_shoulder_link" mass="8.393" inertia="0.22689068 0 0 0 0.22689068 0 0 0 0.0151074" >
+    <Joint name="l_ur5_arm_shoulder_lift_joint" range="-180 -90 180" type="RotY" transform="0 0.13585 0 0 90 0" torqueLimit="150" speedLimit="180" />
+    <Shape type="MESH" distance="true" physics="false" graphics="true" meshFile="ur_description/meshes/ur5/collision/upperarm.stl" color="#b2b2b2ff" />
+  </Body>
+  
+  <Body name="l_ur5_arm_forearm_link" prev="l_ur5_arm_upper_arm_link" mass="2.275" inertia="0.04944331 0 0 0 0.04944331 0 0 0 0.004095" >
+    <Joint name="l_ur5_arm_elbow_joint" range="-180 45.836624 180" type="RotY" transform="0 -0.1197 0.425 0 0 0" torqueLimit="150" speedLimit="180" />
+    <Shape type="MESH" distance="true" physics="false" graphics="true" meshFile="ur_description/meshes/ur5/collision/forearm.stl" color="#b2b2b2ff" />
+  </Body>
+  
+  <Body name="l_ur5_arm_wrist_1_link" prev="l_ur5_arm_forearm_link" mass="1.219" inertia="0.11117276 0 0 0 0.11117276 0 0 0 0.21942" >
+    <Joint name="l_ur5_arm_wrist_1_joint" range="-180 0 180" type="RotY" transform="0 0 0.39225 0 90 0" torqueLimit="28" speedLimit="183.346494" />
+    <Shape type="MESH" distance="true" physics="false" graphics="true" meshFile="ur_description/meshes/ur5/collision/wrist1.stl" color="#2c2c2cff" />
+  </Body>
+  
+  <Body name="l_ur5_arm_wrist_2_link" prev="l_ur5_arm_wrist_1_link" mass="1.219" inertia="0.11117276 0 0 0 0.11117276 0 0 0 0.21942" >
+    <Joint name="l_ur5_arm_wrist_2_joint" range="-180 0 180" type="RotZ" transform="0 0.093 0 0 0 0" torqueLimit="28" speedLimit="183.346494" />
+    <Shape type="MESH" distance="true" physics="false" graphics="true" meshFile="ur_description/meshes/ur5/collision/wrist2.stl" color="#2c2c2cff" />
+  </Body>
+
+  <Body name="l_ur5_arm_wrist_3_link" prev="l_ur5_arm_wrist_2_link" mass="0.1879" inertia="0.01713647 0 0 0 0.01713647 0 0 0 0.033822" >
+    <Joint name="l_ur5_arm_wrist_3_joint" range="-180 0 180" type="RotY" transform="0 0 0.09465 0 0 0" torqueLimit="28" speedLimit="183.346494" />
+    <Shape type="MESH" distance="true" physics="false" graphics="true" meshFile="ur_description/meshes/ur5/collision/wrist3.stl" color="# 0 0 0ff" />
+  </Body>
+
+  <Body name="l_ur5_arm_ee_link" prev="l_ur5_arm_wrist_3_link" transform="0 0.0823 0 0 0 90" >
+    <Shape type="BOX" extents="0.01 0.01 0.01" distance="true" physics="false" graphics="false" transform="-0.01 0 0 0 0 0" />
+  </Body>
+
+  <Body name="l_robotiq_fts300_fts_robotside" prev="l_ur5_arm_ee_link" transform="0 0 0 0 90 0" mass="0.65" inertia="0.00066117 0 0 0 0.00066117 0 0 0 0.00117" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="dual_arm_husky_description/meshes/visual/robotiq_fts300.stl" color="# 0 0 0ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" meshFile="dual_arm_husky_description/meshes/collision/robotiq_fts300.stl" />
+  </Body>
+
+  <Body name="l_robotiq_fts300_robotiq_force_torque_frame_id" prev="l_robotiq_fts300_fts_robotside" transform="0 0 0.01625 0 0 0" >
+  </Body>
+
+  <Body name="l_robotiq_fts300_fts_toolside" prev="l_robotiq_fts300_fts_robotside" transform="0 0 0.0375 0 0 0" >
+  </Body>
+
+  <Body name="l_palm" prev="l_robotiq_fts300_fts_toolside" transform="0 0 0 90 57.295751 0.071058" mass="1.3" inertia="0.0035 0 0 0 0.0035 0 0 0 0.0035" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/palm.STL" color="# 0 0 0ff" />
+    <Shape type="BOX" extents="0.1 0.1 0.1" distance="true" physics="false" graphics="false" color="# 0ffffff" />
+  </Body>
+
+  <Body name="l_finger_1_link_0" prev="l_palm" mass="0.1" inertia="0.000018 0 0 0 0.000025 0 0 0 0.000025" >
+    <Joint name="l_palm_finger_1_joint" range="-17 0 17" type="RotY" transform="-0.0455 0.0214 0.036 -180 0 -90" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_0.STL" color="# 0 0 0ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_0.STL" color="# 0ffffff" />
+  </Body>
+
+  <Body name="l_finger_1_link_1" prev="l_finger_1_link_0" mass="0.047" inertia="0.00000499 0.00000091 0 -0.00000091 0.00006435 0 0 0 0.00006062" >
+    <Joint name="l_finger_1_joint_1" range="0 35 70" type="RotZ" transform="0 0 0 0 0 -120" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0.05717 0 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_1.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" transform="0 0.05717 0 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_1.STL" color="# 0ffffff" />
+  </Body>
+
+  <Body name="l_finger_1_link_2" prev="l_finger_1_link_1" mass="0.03284" cogVector="0.00048 0.02167 0.00018" inertia="0.00000348 0.00000032 0.00000013 -0.00000032 0.00002248 0 -0.00000013 0 0.00001986" >
+    <Joint name="l_finger_1_joint_2" range="0 45 90" type="RotZ" transform="0 0.05715 0 0 0 0" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0.0381 0.0075 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_2.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" transform="0 0.0381 0.0075 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_2.STL" color="#ffff 0ff" />
+  </Body>
+
+  <Body name="l_finger_1_link_3" prev="l_finger_1_link_2" mass="0.03354" cogVector="0.01626 0.00049 0.0002" inertia="0.00000305 0.0000009 0 -0.0000009 0.00001428 -0.00000001 0 0.00000001 0.00001264" >
+    <Joint name="l_finger_1_joint_3" range="-37.998561 11 60" type="RotZ" transform="0 0.039 0 0 0 120" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_3.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_3.STL" color="#ffff 0ff" />
+  </Body>
+
+  <Body name="l_finger_2_link_0" prev="l_palm" mass="0.1" inertia="0.000018 0 0 0 0.000025 0 0 0 0.000025" >
+    <Joint name="l_palm_finger_2_joint" range="-17 0 17" type="RotY" transform="-0.0455 0.0214 -0.036 -180 0 -90" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_0.STL" color="# 0 0 0ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_0.STL" color="# 0ffffff" />
+  </Body>
+  
+  <Body name="l_finger_2_link_1" prev="l_finger_2_link_0" mass="0.047" inertia="0.00000499 0.00000091 0 -0.00000091 0.00006435 0 0 0 0.00006062" >
+    <Joint name="l_finger_2_joint_1" range="0 35 70" type="RotZ" transform="0 0 0 0 0 -120" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0.05717 0 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_1.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" transform="0 0.05717 0 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_1.STL" color="# 0ffffff" />
+  </Body>
+
+  <Body name="l_finger_2_link_2" prev="l_finger_2_link_1" mass="0.03284" cogVector="0.00048 0.02167 0.00018" inertia="0.00000348 0.00000032 0.00000013 -0.00000032 0.00002248 0 -0.00000013 0 0.00001986" >
+    <Joint name="l_finger_2_joint_2" range="0 45 90" type="RotZ" transform="0 0.05715 0 0 0 0" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0.0381 0.0075 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_2.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" transform="0 0.0381 0.0075 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_2.STL" color="#ffff 0ff" />
+  </Body>
+
+  <Body name="l_finger_2_link_3" prev="l_finger_2_link_2" mass="0.03354" cogVector="0.01626 0.00049 0.0002" inertia="0.00000305 0.0000009 0 -0.0000009 0.00001428 -0.00000001 0 0.00000001 0.00001264" >
+    <Joint name="l_finger_2_joint_3" range="-38 11 60" type="RotZ" transform="0 0.039 0 0 0 120" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_3.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_3.STL" color="#ffff 0ff" />
+  </Body>
+
+  <Body name="l_finger_middle_link_0" prev="l_palm" mass="0.1" inertia="0.000018 0 0 0 0.000025 0 0 0 0.000025" >
+    <Joint name="l_palm_finger_middle_joint" range="0 0 0" type="RotY" transform="0.0455 0.0214 0 0 0 90" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_0.STL" color="# 0 0 0ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_0.STL" color="# 0ffffff" />
+  </Body>
+
+  <Body name="l_finger_middle_link_1" prev="l_finger_middle_link_0" mass="0.047" inertia="0.00000499 0.00000091 0 -0.00000091 0.00006435 0 0 0 0.00006062" >
+    <Joint name="l_finger_middle_joint_1" range="0 35 70" type="RotZ" transform="0 0 0 0 0 -120" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0.05717 0 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_1.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" transform="0 0.05717 0 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_1.STL" color="# 0ffffff" />
+  </Body>
+
+  <Body name="l_finger_middle_link_2" prev="l_finger_middle_link_1" mass="0.03284" cogVector="0.00048 0.02167 0.00018" inertia="0.00000348 0.00000032 0.00000013 -0.00000032 0.00002248 0 -0.00000013 0 0.00001986" >
+    <Joint name="l_finger_middle_joint_2" range="0 45 90" type="RotZ" transform="0 0.05715 0 0 0 0" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0.0381 0.0075 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_2.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" transform="0 0.0381 0.0075 0 0 90" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_2.STL" color="#ffff 0ff" />
+  </Body>
+
+  <Body name="l_finger_middle_link_3" prev="l_finger_middle_link_2" mass="0.03354" cogVector="0.01626 0.00049 0.0002" inertia="0.00000305 0.0000009 0 -0.0000009 0.00001428 -0.00000001 0 0.00000001 0.00001264" >
+    <Joint name="l_finger_middle_joint_3" range="-38 11 60" type="RotZ" transform="0 0.039 0 0 0 120" torqueLimit="60" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="robotiq_hand_description/meshes/s-model_articulated/visual/link_3.STL" color="#b2b2b2ff" />
+    <Shape type="MESH" distance="true" physics="false" graphics="false" meshFile="robotiq_hand_description/meshes/s-model_articulated/collision/link_3.STL" color="#ffff 0ff" />
+  </Body>
+
+  <Body name="left_palm" prev="l_palm" >
+  </Body>
+
+  <Body name="l_ur5_arm_tool0" prev="l_ur5_arm_wrist_3_link" transform="0 0.0823 0 -90 0 0" >
+  </Body>
+
+  <Body name="l_ur5_arm_base" prev="l_ur5_arm_base_link" transform="0 0 0 0 0 -180" >
+  </Body>
+
+</Graph>

@@ -1,0 +1,107 @@
+<Graph xmlns:xi="http://www.w3.org/2003/XInclude" name="DexterousCooperation" >
+
+
+  <Body name="Ground Plane" >
+    <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0"
+	   textureFile="textures/white-hardwood-floor.jpg"
+	   color="WHITE" graphics="true" />
+    <Shape type="FRAME" scale="1" />
+  </Body>
+
+  <Body name="Source" transform="1.3 0 0.38 0 90 -90">
+    <Shape type="FRAME" scale="0.25" />
+    <Shape type="BOX" extents="0.1 0.1 0.1" color="LIGHTGRAY_TRANS"
+           graphics="true" />
+  </Body>
+
+  <!-- tracker for human's head -->
+  <Body name="PolhemusMarker_1" prev="Source" rigid_body_joints="true">
+    <Shape type="FRAME" scale="0.05" />
+    <Shape type="BOX" extents="0.015 0.015 0.015" graphics="true"
+           transform="-0.0075 0 -0.0075 0 0 0" color="GREEN" />
+  </Body>
+
+  <!-- tracker for human's left hand -->
+  <Body name="PolhemusMarker_2" prev="Source" rigid_body_joints="true">
+    <Shape type="FRAME" scale="0.05" />
+    <Shape type="BOX" extents="0.015 0.015 0.015" graphics="true"
+           transform="-0.0075 0 -0.0075 0 0 0" color="GREEN" />
+  </Body>
+
+  <!-- tracker for human's right hand -->
+  <Body name="PolhemusMarker_3" prev="Source" rigid_body_joints="true">
+    <Shape type="FRAME" scale="0.05" />
+    <Shape type="BOX" extents="0.015 0.015 0.015" graphics="true"
+           transform="-0.0075 0 -0.0075 0 0 0" color="GREEN" />
+  </Body>
+
+  <Body name="ImetronPlatform" mass="100" cogVector="0 0 0.1" >
+    <Shape type="SSR" extents="0.85 1.25 0.28" graphics="falsee" physics="false" distance="true" transform="0 0 0.14 0 0 0"  color="DARKGRAY" />
+    <Shape type="BOX" extents="0.85 1.25 0.2" graphics="true" distance="false" physics="true" transform="0 0 0.1 0 0 0"  color="DARKGRAY" />
+    <Joint name="DofBaseX"   type="TransX" range="-4 0 4"     weightJL="0" weightMetric="0.01" constraint="false" />
+    <Joint name="DofBaseY"   type="TransY" range="-4 0 4"     weightJL="0" weightMetric="0.01" constraint="true" />
+    <Joint name="DofBaseThZ" type="RotZ"   range="-361 0 361" weightJL="0" weightMetric="0.1" constraint="true" />
+    <Shape type="FRAME" scale="0.7" />
+  </Body>
+
+  <Group prev="ImetronPlatform" transform="0 0 0.2 0 0 0" >
+    <xi:include href="TwoArmLBR.xml" />
+  </Group >
+
+  <Body name="BoxAnchor" physics="kinematic" >
+    <Joint name="DofX"   type="TransX" range="-4 1.3 4"   weightJL="0" weightMetric="0.001" constraint="false" />
+    <Joint name="DofY"   type="TransY" range="-4 0 4"     weightJL="0" weightMetric="0.01" constraint="false" />
+    <Joint name="DofZ"   type="TransZ" range="0 0.82 4"   weightJL="0" weightMetric="0.001" constraint="false" />
+    <Joint name="DofThX" type="RotX" range="-3600 0 3600" weightJL="0" weightMetric="0.1" />
+    <Joint name="DofThY" type="RotY" range="-360 0 360"   weightJL="0" weightMetric="0.1" />
+    <Joint name="DofThZ" type="RotZ" range="-360 0 360"   weightJL="0" weightMetric="0.1" />
+    <Shape type="BOX" color="GREEN" extents="0.1 0.1 0.1" graphics="false" />
+  </Body>
+
+  <Body name="Box" prev="BoxAnchor" physics="fixed" mass="1" >
+    <Shape type="BOX" color="DARKRED_TRANS" extents="0.95 0.63 0.36" material="high_friction" graphics="true" />
+    <Shape type="FRAME" scale="0.5" />
+  </Body>
+
+
+
+
+  <model_state model="DexterousCooperation" time_stamp="0">
+    <joint_state joint="lbr_joint_1_L" position="30" />
+    <joint_state joint="lbr_joint_2_L" position="50" />
+    <joint_state joint="lbr_joint_3_L" position="30" />
+    <joint_state joint="lbr_joint_4_L" position="70" />
+    <joint_state joint="lbr_joint_5_L" position="-20" />
+    <joint_state joint="lbr_joint_6_L" position="-30" />
+    <joint_state joint="lbr_joint_7_L" position="20" />
+
+    <joint_state joint="lbr_joint_1_R" position="-30" />
+    <joint_state joint="lbr_joint_2_R" position="-50" />
+    <joint_state joint="lbr_joint_3_R" position="-30" />
+    <joint_state joint="lbr_joint_4_R" position="-70" />
+    <joint_state joint="lbr_joint_5_R" position="20" />
+    <joint_state joint="lbr_joint_6_R" position="30" />
+    <joint_state joint="lbr_joint_7_R" position="20" />
+
+    <joint_state joint="knuck1-base_L" position="1" />
+    <joint_state joint="fing1-knuck1_L" position="0" />
+    <joint_state joint="tip1-fing1_L" position="0" />
+    <joint_state joint="fing2-knuck2_L" position="-90" />
+    <joint_state joint="tip2-fing2_L" position="0" />
+    <joint_state joint="fing3-knuck3_L" position="0" />
+    <joint_state joint="tip3-fing3_L" position="0" />
+
+    <joint_state joint="knuck1-base_R" position="1" />
+    <joint_state joint="fing1-knuck1_R" position="0" />
+    <joint_state joint="tip1-fing1_R" position="0" />
+    <joint_state joint="fing2-knuck2_R" position="-90" />
+    <joint_state joint="tip2-fing2_R" position="0" />
+    <joint_state joint="fing3-knuck3_R" position="0" />
+    <joint_state joint="tip3-fing3_R" position="0" />
+
+    <joint_state joint="DofChestZ" position="0.8" />
+  </model_state>
+
+
+
+</Graph>

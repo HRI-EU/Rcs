@@ -1,0 +1,76 @@
+<Controller graph="gRotateBox.xml" >
+
+  <Task name="PowerGrasp_L XYZ"   controlVariable="XYZ"   effector="PowerGrasp_L" refBdy="Box" active="true" />
+  <Task name="PowerGrasp_L ABC"   controlVariable="ABC"   effector="PowerGrasp_L" refBdy="Box" active="true" />
+
+  <Task name="PowerGrasp_R XYZ"   controlVariable="XYZ"   effector="PowerGrasp_R" refBdy="Box" active="true" />
+  <Task name="PowerGrasp_R ABC"   controlVariable="ABC"   effector="PowerGrasp_R" refBdy="Box" active="true" />
+
+  <!--<Task name="Box ABC"            controlVariable="ABC"   effector="Box"    active="true" />-->
+  <Task name="Box ABC"            controlVariable="Joints"   jnts="DofThX DofThY DofThZ"    active="true" />
+  <Task name="Box XYZ"            controlVariable="XYZ"   effector="Box"    active="true" />
+
+  <CollisionModel  DistanceThreshold="0.03" >
+    <CollisionPair body1="Base"         body2="lbr_link_2_L" />
+    <CollisionPair body1="Base"         body2="lbr_link_3_L" />
+    <CollisionPair body1="Base"         body2="lbr_link_4_L" />
+    <CollisionPair body1="Base"         body2="lbr_link_5_L" />
+    <CollisionPair body1="Base"         body2="lbr_link_6_L" />
+    <CollisionPair body1="Base"         body2="lbr_link_7_L" />
+    <CollisionPair body1="Base"         body2="sdh-base_L"   />
+    <CollisionPair body1="Base"         body2="lbr_link_2_R" />
+    <CollisionPair body1="Base"         body2="lbr_link_3_R" />
+    <CollisionPair body1="Base"         body2="lbr_link_4_R" />
+    <CollisionPair body1="Base"         body2="lbr_link_5_R" />
+    <CollisionPair body1="Base"         body2="lbr_link_6_R" />
+    <CollisionPair body1="Base"         body2="lbr_link_7_R" />
+    <CollisionPair body1="Base"         body2="sdh-base_R"   />
+
+    <CollisionPair body1="RailBase"     body2="lbr_link_2_L" />
+    <CollisionPair body1="RailBase"     body2="lbr_link_3_L" />
+    <CollisionPair body1="RailBase"     body2="lbr_link_4_L" />
+    <CollisionPair body1="RailBase"     body2="lbr_link_5_L" />
+    <CollisionPair body1="RailBase"     body2="lbr_link_6_L" />
+    <CollisionPair body1="RailBase"     body2="lbr_link_7_L" />
+    <CollisionPair body1="RailBase"     body2="sdh-base_L"   />
+    <CollisionPair body1="RailBase"     body2="lbr_link_2_R" />
+    <CollisionPair body1="RailBase"     body2="lbr_link_3_R" />
+    <CollisionPair body1="RailBase"     body2="lbr_link_4_R" />
+    <CollisionPair body1="RailBase"     body2="lbr_link_5_R" />
+    <CollisionPair body1="RailBase"     body2="lbr_link_6_R" />
+    <CollisionPair body1="RailBase"     body2="lbr_link_7_R" />
+    <CollisionPair body1="RailBase"     body2="sdh-base_R"   />
+
+    <CollisionPair body1="Screen"       body2="lbr_link_2_L" />
+    <CollisionPair body1="Screen"       body2="lbr_link_3_L" />
+    <CollisionPair body1="Screen"       body2="lbr_link_4_L" />
+    <CollisionPair body1="Screen"       body2="lbr_link_5_L" />
+    <CollisionPair body1="Screen"       body2="lbr_link_6_L" />
+    <CollisionPair body1="Screen"       body2="lbr_link_7_L" />
+    <CollisionPair body1="Screen"       body2="sdh-base_L"   />
+    <CollisionPair body1="Screen"       body2="lbr_link_2_R" />
+    <CollisionPair body1="Screen"       body2="lbr_link_3_R" />
+    <CollisionPair body1="Screen"       body2="lbr_link_4_R" />
+    <CollisionPair body1="Screen"       body2="lbr_link_5_R" />
+    <CollisionPair body1="Screen"       body2="lbr_link_6_R" />
+    <CollisionPair body1="Screen"       body2="lbr_link_7_R" />
+    <CollisionPair body1="Screen"       body2="sdh-base_R"   />
+
+    <CollisionPair body1="lbr_link_2_L" body2="lbr_link_6_L" />
+    <CollisionPair body1="lbr_link_2_L" body2="lbr_link_7_L" />
+    <CollisionPair body1="lbr_link_2_L" body2="sdh-base_L"   />
+    <CollisionPair body1="lbr_link_3_L" body2="lbr_link_7_L" />
+    <CollisionPair body1="lbr_link_2_R" body2="lbr_link_6_R" />
+    <CollisionPair body1="lbr_link_2_R" body2="lbr_link_7_R" />
+    <CollisionPair body1="lbr_link_2_R" body2="sdh-base_R"   />
+    <CollisionPair body1="lbr_link_3_R" body2="lbr_link_7_R" />
+
+    <CollisionPair body1="lbr_link_3_L" body2="lbr_link_3_R" />
+    <CollisionPair body1="lbr_link_4_L" body2="lbr_link_4_R" />
+    <CollisionPair body1="lbr_link_5_L" body2="lbr_link_5_R" />
+    <CollisionPair body1="lbr_link_6_L" body2="lbr_link_6_R" />
+    <CollisionPair body1="lbr_link_7_L" body2="lbr_link_7_R" />
+    <CollisionPair body1="sdh-base_L"   body2="sdh-base_R"   />
+  </CollisionModel>
+
+</Controller>

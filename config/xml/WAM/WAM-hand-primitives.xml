@@ -1,0 +1,147 @@
+<Graph name="WAM hand" >
+<!-- see http://wiki.barrett.com/wiki/Hand/280/MassProperties for details-->
+<!-- mass hand body: 0.36699 kg, finger seg 1: 0.14109 kg, seg 2: 0.062139 kg, seg 3: 0.04166 kg -->
+<!-- results in total mass of about 0.961 kg -->
+
+<!-- mass FT Sensor 0.136157 kg -->
+
+<!-- not so clear: range of last finger joint: 45 or 48 degrees? -->
+<!-- coupling ratio of 0.3214 fits for 45 degrees (140 * 0.3214 = 45) -->
+
+  <Body name="Hand" mass="0.36699" cogVector="-2.506e-005 0.034479 -.0072785" physics="fixed" 
+  inertia="0.00040811 0.00000082 0.00000048   0.00000082 0.00040009 -0.00002736   0.00000048 -0.00002736 0.00022400 "
+  transform="0 0 -0.0165 0 0 180" >
+    <Shape type="CYLINDER" length="0.006" radius="0.043" transform="0 0 0.0195 0 0 0"
+           color="DARKGRAY" graphics="true" physics="true" />
+    <Shape type="CYLINDER" length="0.019" radius="0.0456" transform="0 0 0.032 0 0 0"
+           color="BLUE" graphics="true" physics="true" />
+    <Shape type="BOX" extents="0.09 0.026 0.024" transform="0 0 0.0535 0 0 0" graphics="true" color="BLUE" physics="true" />
+    <Shape type="SSR" extents="0.04 0.076 0.014" transform="0 0 0.072 0 0 0" graphics="true" color="DARKGRAY" physics="true" />
+    <Shape type="BOX" extents="0.03 0.026 0.03" transform="0.05 0 0.0605 0 0 0" graphics="true" color="BLUE" physics="true" />
+    <Shape type="CYLINDER" length="0.026" radius="0.015" color="BLUE" transform="0.05 0 0.0755 90 0 0" graphics="true" physics="true" />
+<!--     <Sensor type="LOADCELL" name="WristLoadCell" transform="0.05 0 0 0 0 0" /> -->
+  </Body>
+
+<!-- =====  Finger 1  ===== -->
+  <Body name="Finger11" prev="Hand" mass="0.14109" cogVector="0.030616 -7.3219e-005 -0.011201" physics="dynamic"
+  inertia="2.0672e-005 2.6024e-007 6.3481e-006   2.6024e-007 7.4105e-005 1.7118e-008   6.3481e-006 1.7118e-008 6.8207e-005"
+  transform="0 0 0 180 0 0" >
+    <Joint name="Finger1Joint1"  type="RotZ" transform="0 0.025 0 180 0 180"
+           range="0 0 180" torqueLimit="6" ctrlParam="100.0 10.0 0.0" speedLimit="10000" />
+    <Shape type="CYLINDER" length="0.024" radius="0.013" color="RED" transform="0 0 0.0535 0 0 0" graphics="true" physics="true" />
+    <Shape type="BOX" extents="0.05 0.026 0.024" transform="0.025 0 0.0535 0 0 0" graphics="true" color="RED" physics="true" />
+    <Shape type="BOX" extents="0.03 0.026 0.03" transform="0.05 0 0.0605 0 0 0" graphics="true" color="RED" physics="true" />
+    <Shape type="CYLINDER" length="0.026" radius="0.015" color="RED" transform="0.05 0 0.0755 90 0 0" graphics="true" physics="true" />
+    <Sensor type="JOINTTORQUE" name="J11Torque" />
+  </Body>
+
+  <Body name="Finger12" prev="Finger11" mass="0.062139" cogVector="0.023133 0.00078642 0.00052792" physics="dynamic" 
+  inertia="4.8162e-006 5.7981e-007 -7.2483e-007   5.7981e-007 4.3317e-005 -2.6653e-009   -7.2483e-007 -2.6653e-009 4.4441e-005">
+    <Joint name="Finger1Joint2"  type="RotZ" transform="0.05 0 0.0755 90 0 0"
+           range="0 60 140" torqueLimit="5" ctrlParam="12.0 0.5 0.0" speedLimit="10000" />
+    <Shape type="SSR" extents="0.0135 0.056 0.008" transform="0.039 0.00 0.0003 0 0 90" graphics="true" color="RED" physics="true" />
+    <Shape type="BOX" extents="0.043 0.0185 0.021" transform="0.038 -0.001 0.0003 0 0 0" graphics="true" color="RED" physics="true" />
+    <Shape type="SSR" extents="0.032 0.011 0.01" transform="0.0388 0.0085 0.0003 90 -2.2 0" graphics="true" color="RED" physics="true" />
+    <Sensor type="JOINTTORQUE" name="J12Torque" />
+  </Body>
+
+  <Body name="Finger13" prev="Finger12" mass="0.04166" cogVector="0.02295 0.0010739 0.00041752 " physics="dynamic"
+  inertia="3.1199e-006 4.5115e-007 -2.9813e-007   4.5115e-007 1.6948e-005 -1.8635e-008   -2.9813e-007 -1.8635e-008 1.5809e-005">
+    <Joint name="Finger1Joint3" type="RotZ" transform="0.07 0 0 0 0 42"
+           range="0 19.284 45" torqueLimit="4" ctrlParam="12.0 0.5 0.0" speedLimit="10000"
+           coupledTo="Finger1Joint2" couplingFactor="0.3214" />
+    <Shape type="SSR" extents="0.056 0.016 0.008" transform="0.025 -0.005 0.0006 90 1.8 0" graphics="true" color="RED" physics="true" />
+    <Shape type="BOX" extents="0.056 0.004 0.024" transform="0.025 -0.003 0.0006 0 0 1.8" graphics="true" color="RED" physics="true" />
+    <Shape type="BOX" extents="0.036 0.006 0.024" transform="0.015 0.001 0.0006 0 0 1.8" graphics="true" color="RED" physics="true" />
+    <Shape type="SSR" extents="0.041 0.014 0.01" transform="0.02 0.0044 0.0006 90 -3.6 0" graphics="true" color="RED" physics="true" />
+    <Shape type="SSR" extents="0.01 0.014 0.01" transform="0.0462 0.0015 0.0006 90 -16 0" graphics="true" color="RED" physics="true" />
+    <Sensor type="JOINTTORQUE" name="J13Torque" />
+  </Body>
+
+  <Body name="FingerTip1" prev="Finger13" transform="0.04 0.01 0 -90 0 0" >
+    <Shape type="FRAME" scale="0.05" />
+  </Body>
+  
+  <Body name="FingerTipTip1" prev="Finger13" transform="0.0570 0 0 -90 0 0" >
+    <Shape type="FRAME" scale="0.05" />
+  </Body>
+
+
+<!-- =====  Finger 2  ===== -->
+  <Body name="Finger21" prev="Hand" mass="0.14109" cogVector="0.030616 -7.3219e-005 -0.011201" physics="dynamic"
+  inertia="2.0672e-005 2.6024e-007 6.3481e-006   2.6024e-007 7.4105e-005 1.7118e-008   6.3481e-006 1.7118e-008 6.8207e-005"
+  transform="0 0 0 0 0 180" >
+    <Joint name="Finger2Joint1"  type="RotZ" transform="0 -0.025 0 0 0 0"
+           range="0 0 180" torqueLimit="6" ctrlParam="100.0 10.0 0.0" speedLimit="10000"
+           coupledTo="Finger1Joint1" />
+    <Shape type="CYLINDER" length="0.024" radius="0.013" color="GREEN" transform="0 0 0.0535 0 0 0" graphics="true" physics="true" />
+    <Shape type="BOX" extents="0.05 0.026 0.024" transform="0.025 0 0.0535 0 0 0" graphics="true" color="GREEN" physics="true" />
+    <Shape type="BOX" extents="0.03 0.026 0.03" transform="0.05 0 0.0605 0 0 0" graphics="true" color="GREEN" physics="true" />
+    <Shape type="CYLINDER" length="0.026" radius="0.015" color="GREEN" transform="0.05 0 0.0755 90 0 0" graphics="true" physics="true" />
+    <Sensor type="JOINTTORQUE" name="J21Torque" />
+  </Body>
+
+  <Body name="Finger22" prev="Finger21" mass="0.062139" cogVector="0.023133 0.00078642 0.00052792" physics="dynamic" 
+  inertia="4.8162e-006 5.7981e-007 -7.2483e-007   5.7981e-007 4.3317e-005 -2.6653e-009   -7.2483e-007 -2.6653e-009 4.4441e-005">
+    <Joint name="Finger2Joint2"  type="RotZ" transform="0.05 0 0.0755 90 0 0"
+           range="0 60 140" torqueLimit="5" ctrlParam="12.0 0.5 0.0" speedLimit="10000" />
+    <Shape type="SSR" extents="0.0135 0.056 0.008" transform="0.039 0.00 0.0003 0 0 90" graphics="true" color="GREEN" physics="true" />
+    <Shape type="BOX" extents="0.043 0.0185 0.021" transform="0.038 -0.001 0.0003 0 0 0" graphics="true" color="GREEN" physics="true" />
+    <Shape type="SSR" extents="0.032 0.011 0.01" transform="0.0388 0.0085 0.0003 90 -2.2 0" graphics="true" color="GREEN" physics="true" />
+    <Sensor type="JOINTTORQUE" name="J22Torque" />
+  </Body>
+
+  <Body name="Finger23" prev="Finger22" mass="0.04166" cogVector="0.02295 0.0010739 0.00041752 " physics="dynamic"
+  inertia="3.1199e-006 4.5115e-007 -2.9813e-007   4.5115e-007 1.6948e-005 -1.8635e-008   -2.9813e-007 -1.8635e-008 1.5809e-005">
+    <Joint name="Finger2Joint3"  type="RotZ" transform="0.07 0 0 0 0 42"
+           range="0 19.284 45" torqueLimit="4" ctrlParam="12.0 0.5 0.0" speedLimit="10000"
+           coupledTo="Finger2Joint2" couplingFactor="0.3214" />
+    <Shape type="SSR" extents="0.056 0.016 0.008" transform="0.025 -0.005 0.0006 90 1.8 0" graphics="true" color="GREEN" physics="true" />
+    <Shape type="BOX" extents="0.056 0.004 0.024" transform="0.025 -0.003 0.0006 0 0 1.8" graphics="true" color="GREEN" physics="true" />
+    <Shape type="BOX" extents="0.036 0.006 0.024" transform="0.015 0.001 0.0006 0 0 1.8" graphics="true" color="GREEN" physics="true" />
+    <Shape type="SSR" extents="0.041 0.014 0.01" transform="0.02 0.0044 0.0006 90 -3.6 0" graphics="true" color="GREEN" physics="true" />
+    <Shape type="SSR" extents="0.01 0.014 0.01" transform="0.0462 0.0015 0.0006 90 -16 0" graphics="true" color="GREEN" physics="true" />
+    <Sensor type="JOINTTORQUE" name="J23Torque" />
+  </Body>
+
+  <Body name="FingerTip2" prev="Finger23" transform="0.04 0.01 0 -90 0 0" >
+    <Shape type="FRAME" scale="0.05" />
+  </Body>
+  
+  <Body name="FingerTipTip2" prev="Finger23" transform="0.0570 0 0 -90 0 0" >
+    <Shape type="FRAME" scale="0.05" />
+  </Body>
+
+<!-- =====  Finger 3  ===== -->
+  <Body name="Finger32" prev="Hand" mass="0.062139" cogVector="0.023133 0.00078642 0.00052792" physics="dynamic" 
+  inertia="4.8162e-006 5.7981e-007 -7.2483e-007   5.7981e-007 4.3317e-005 -2.6653e-009   -7.2483e-007 -2.6653e-009 4.4441e-005">
+    <Joint name="Finger3Joint2"  type="RotZ" transform="0.05 0 0.0755 90 0 0"
+           range="0 60 140" torqueLimit="5" ctrlParam="12.0 0.5 0.0" speedLimit="10000" />
+    <Shape type="SSR" extents="0.0135 0.056 0.008" transform="0.039 0.00 0.0003 0 0 90" graphics="true" color="BLUE" physics="true" />
+    <Shape type="BOX" extents="0.043 0.0185 0.021" transform="0.038 -0.001 0.0003 0 0 0" graphics="true" color="BLUE" physics="true" />
+    <Shape type="SSR" extents="0.032 0.011 0.01" transform="0.0388 0.0085 0.0003 90 -2.2 0" graphics="true" color="BLUE" physics="true" />
+    <Sensor type="JOINTTORQUE" name="J32Torque" />
+  </Body>
+
+  <Body name="Finger33" prev="Finger32" mass="0.04166" cogVector="0.02295 0.0010739 0.00041752 " physics="dynamic"
+  inertia="3.1199e-006 4.5115e-007 -2.9813e-007   4.5115e-007 1.6948e-005 -1.8635e-008   -2.9813e-007 -1.8635e-008 1.5809e-005">
+    <Joint name="Finger3Joint3" type="RotZ" transform="0.07 0 0 0 0 42"
+           range="0 19.284 45" torqueLimit="4" ctrlParam="12.0 0.5 0.0" speedLimit="10000"
+           coupledTo="Finger3Joint2" couplingFactor="0.3214" />
+    <Shape type="SSR" extents="0.056 0.016 0.008" transform="0.025 -0.005 0.0006 90 1.8 0" graphics="true" color="BLUE" physics="true" />
+    <Shape type="BOX" extents="0.056 0.004 0.024" transform="0.025 -0.003 0.0006 0 0 1.8" graphics="true" color="BLUE" physics="true" />
+    <Shape type="BOX" extents="0.036 0.006 0.024" transform="0.015 0.001 0.0006 0 0 1.8" graphics="true" color="BLUE" physics="true" />
+    <Shape type="SSR" extents="0.041 0.014 0.01" transform="0.02 0.0044 0.0006 90 -3.6 0" graphics="true" color="BLUE" physics="true" />
+    <Shape type="SSR" extents="0.01 0.014 0.01" transform="0.0462 0.0015 0.0006 90 -16 0" graphics="true" color="BLUE" physics="true" />
+    <Sensor type="JOINTTORQUE" name="J33Torque" />
+  </Body>
+
+  <Body name="FingerTip3" prev="Finger33" transform="0.04 0.01 0 -90 0 0" >
+    <Shape type="FRAME" scale="0.05" />
+  </Body>
+
+  <Body name="FingerTipTip3" prev="Finger33" transform="0.0570 0 0 -90 0 0" >
+    <Shape type="FRAME" scale="0.05" />
+  </Body>
+
+</Graph>

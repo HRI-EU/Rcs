@@ -1,0 +1,25 @@
+<Graph name="WAM" xmlns:xi="http://www.w3.org/2003/XInclude" >
+
+<Body name="GroundPlane" >
+  <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0"
+         textureFile="textures/floor/white-hardwood-floor.jpg" color="WHITE"
+         graphics="true" />
+</Body>
+
+<Group name="_Platform" >
+  <xi:include href="WAM-platform.xml" />
+</Group>
+
+<Group name="" prev="Arm_Platform" transform="-0.16 -0.14 0  0 0 0" >
+  <xi:include href="WAM-arm-primitives.xml" />
+</Group>
+
+ <Group name="" prev="Link7" >
+   <xi:include href="WAM-ft-sensor.xml" />
+ </Group>
+
+<Group name="" prev="FTSensor" xprev="Link7" >
+  <xi:include href="WAM-hand-primitives.xml" />
+</Group>
+
+</Graph>

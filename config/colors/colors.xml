@@ -1,0 +1,281 @@
+<!DOCTYPE MaterialDoc>
+<Materials>
+  <MaterialDefinition Name="BRASS" Shininess="27.8974">
+    <Ambient R="0.329412" G="0.223529" B="0.027451" A="1.0"/>
+    <Diffuse R="0.780392" G="0.568627" B="0.113725" A="1.0"/>
+    <Specular R="0.992157" G="0.941176" B="0.807843" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="BRONZE" Shininess="25.6">
+    <Ambient R="0.2125" G="0.1275" B="0.054" A="1.0"/>
+    <Diffuse R="0.714" G="0.4284" B="0.18144" A="1.0"/>
+    <Specular R="0.393548" G="0.271906" B="0.166721" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="POLISHED_BRONZE" Shininess="76.8">
+    <Ambient R="0.25" G="0.148" B="0.06475" A="1.0"/>
+    <Diffuse R="0.4" G="0.2368" B="0.1036" A="1.0"/>
+    <Specular R="0.774597" G="0.458561" B="0.200621" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="CHROME" Shininess="76.8">
+    <Ambient R="0.25" G="0.25" B="0.25" A="1.0"/>
+    <Diffuse R="0.4" G="0.4" B="0.4" A="1.0"/>
+    <Specular R="0.774597" G="0.774597" B="0.8774597" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="COPPER" Shininess="12.8">
+    <Ambient R="0.19125" G="0.0735" B="0.0225" A="1.0"/>
+    <Diffuse R="0.7038" G="0.27048" B="0.0828" A="1.0"/>
+    <Specular R="0.256777" G="0.137622" B="0.086014" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="POLISHED_COPPER" Shininess="51.2">
+    <Ambient R="0.2295" G="0.08825" B="0.0275" A="1.0"/>
+    <Diffuse R="0.5508" G="0.2118" B="0.066" A="1.0"/>
+    <Specular R="0.580594" G="0.223257" B="0.0695701" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="GOLD" Shininess="51.2">
+    <Ambient R="0.24725" G="0.1995" B="0.0745" A="1.0"/>
+    <Diffuse R="0.75164" G="0.60648" B="0.22648" A="1.0"/>
+    <Specular R="0.628281" G="0.555802" B="0.366065" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="POLISHED_GOLD" Shininess="83.2">
+    <Ambient R="0.24725" G="0.2245" B="0.0645" A="1.0"/>
+    <Diffuse R="0.34615" G="0.3143" B="0.0903" A="1.0"/>
+    <Specular R="0.797357" G="0.723991" B="0.208006" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="PEWTER" Shininess="9.84615">
+    <Ambient R="0.105882" G="0.058824" B="0.113725" A="1.0"/>
+    <Diffuse R="0.427451" G="0.470588" B="0.541176" A="1.0"/>
+    <Specular R="0.333333" G="0.333333" B="0.521569" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="COPPER" Shininess="51.2">
+    <Ambient R="0.19225" G="0.19225" B="0.19225" A="1.0"/>
+    <Diffuse R="0.50754" G="0.50754" B="0.50754" A="1.0"/>
+    <Specular R="0.508273" G="0.508273" B="0.508273" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="POLISHED_SILVER" Shininess="89.6">
+    <Ambient R="0.23125" G="0.23125" B="0.023125" A="1.0"/>
+    <Diffuse R="0.2775" G="0.2775" B="0.2775" A="1.0"/>
+    <Specular R="0.773911" G="0.773911" B="0.773911" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="EMERALD" Shininess="76.8">
+    <Ambient R="0.0215" G="0.1745" B="0.0215" A="0.55"/>
+    <Diffuse R="0.07568" G="0.61424" B="0.07568" A="0.55"/>
+    <Specular R="0.633" G="0.727811" B="0.633" A="0.55"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="EMERALD_S" Shininess="76.8">
+    <Ambient R="0.0215" G="0.1745" B="0.0215" A="1"/>
+    <Diffuse R="0.07568" G="0.61424" B="0.07568" A="1"/>
+    <Specular R="0.633" G="0.727811" B="0.633" A="1"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="JADE" Shininess="12.8">
+    <Ambient R="0.135" G="0.2225" B="0.1575" A="0.95"/>
+    <Diffuse R="0.54" G="0.89" B="0.63" A="0.95"/>
+    <Specular R="0.316228" G="0.316228" B="0.316228" A="0.95"/>
+  </MaterialDefinition>
+  
+  <MaterialDefinition Name="JADE_S" Shininess="12.8">
+    <Ambient R="0.135" G="0.2225" B="0.1575" A="1"/>
+    <Diffuse R="0.54" G="0.89" B="0.63" A="1"/>
+    <Specular R="0.316228" G="0.316228" B="0.316228" A="1"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="OBSIDIAN" Shininess="38.4">
+    <Ambient R="0.05375" G="0.05" B="0.06625" A="0.82"/>
+    <Diffuse R="0.18275" G="0.17" B="0.22525" A="0.82"/>
+    <Specular R="0.332741" G="0.328634" B="0.346435" A="0.82"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="PEARL" Shininess="11.264">
+    <Ambient R="0.25" G="0.20725" B="0.20725" A="0.922"/>
+    <Diffuse R="1.0" G="0.829" B="0.829" A="0.922"/>
+    <Specular R="0.296648" G="0.296648" B="0.296648" A="0.922"/>
+  </MaterialDefinition>
+  
+  <MaterialDefinition Name="PEARL_S" Shininess="11.264">
+    <Ambient R="0.25" G="0.20725" B="0.20725" A="1"/>
+    <Diffuse R="1.0" G="0.829" B="0.829" A="1"/>
+    <Specular R="0.296648" G="0.296648" B="0.296648" A="1"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="RUBY" Shininess="76.8">
+    <Ambient R="0.1745" G="0.01175" B="0.01175" A="0.55"/>
+    <Diffuse R="0.61424" G="0.04136" B="0.04136" A="0.55"/>
+    <Specular R="0.727811" G="0.626959" B="0.626959" A="0.55"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="RUBY_S" Shininess="76.8">
+    <Ambient R="0.1745" G="0.01175" B="0.01175" A="1"/>
+    <Diffuse R="0.61424" G="0.04136" B="0.04136" A="1"/>
+    <Specular R="0.727811" G="0.626959" B="0.626959" A="1"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="TURQUOISE" Shininess="12.8">
+    <Ambient R="0.1" G="0.18725" B="0.1745" A="0.8"/>
+    <Diffuse R="0.396" G="0.74151" B="0.69102" A="0.8"/>
+    <Specular R="0.297254" G="0.30829" B="0.306678" A="0.8"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="BLACK_PLASTIC" Shininess="32.0">
+    <Ambient R="0.0" G="0.0" B="0.0" A="1.0"/>
+    <Diffuse R="0.01" G="0.01" B="0.01" A="1.0"/>
+    <Specular R="0.5" G="0.5" B="0.5" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="BLACK_RUBBER" Shininess="10.0">
+    <Ambient R="0.02" G="0.02" B="0.02" A="1.0"/>
+    <Diffuse R="0.01" G="0.01" B="0.01" A="1.0"/>
+    <Specular R="0.4" G="0.4" B="0.4" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="WHITE" Shininess="10.0">
+    <Ambient R="0.25" G="0.25" B="0.25" A="1.0"/>
+    <Diffuse R="1.0" G="1.0" B="1.0" A="1.0"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="PUREWHITE" Shininess="10.0">
+    <Ambient R="1.0" G="1.0" B="1.0" A="1.0"/>
+    <Diffuse R="1.0" G="1.0" B="1.0" A="1.0"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="LIGHTGRAY" Shininess="10.0">
+    <Ambient R="0.25" G="0.25" B="0.25" A="1.0"/>
+    <Diffuse R="0.9" G="0.9" B="0.9" A="1.0"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="GRAY" Shininess="10.0">
+    <Ambient R="0.20" G="0.20" B="0.20" A="1.0"/>
+    <Diffuse R="0.7" G="0.7" B="0.7" A="1.0"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="DARKGRAY" Shininess="10.0">
+    <Ambient R="0.10" G="0.10" B="0.10" A="1.0"/>
+    <Diffuse R="0.5" G="0.5" B="0.5" A="1.0"/>
+    <Specular R="0.1" G="0.1" B="0.1" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="RED" Shininess="100.0">
+    <Ambient R="0.2" G="0.0" B="0.0" A="1.0"/>
+    <Diffuse R="1.0" G="0.0" B="0.0" A="1.0"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
+  </MaterialDefinition>
+  
+  <MaterialDefinition Name="DARKRED" Shininess="100.0">
+    <Ambient R="0.1" G="0.0" B="0.0" A="1.0"/>
+    <Diffuse R="0.8" G="0.0" B="0.0" A="1.0"/>
+    <Specular R="0.1" G="0.1" B="0.1" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="ORANGE" Shininess="100.0">
+    <Ambient R="0.2" G="0.1" B="0.1" A="1.0"/>
+    <Diffuse R="1.0" G="0.5" B="0.0" A="1.0"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="GREEN" Shininess="100.0">
+    <Ambient R="0.0" G="0.2" B="0.0" A="1.0"/>
+    <Diffuse R="0.0" G="1.0" B="0.0" A="1.0"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="BLUE" Shininess="100.0">
+    <Ambient R="0.0" G="0.0" B="0.2" A="1.0"/>
+    <Diffuse R="0.0" G="0.0" B="1.0" A="1.0"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="LIGHTBLUE" Shininess="100.0">
+    <Ambient R="0.91" G="0.99" B="0.99" A="1.0"/>
+    <Diffuse R="0.0" G="0.0" B="0.1" A="1.0"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="CYAN" Shininess="100.0">
+    <Ambient R="0.0" G="0.2" B="0.2" A="1.0"/>
+    <Diffuse R="0.0" G="1.0" B="1.0" A="1.0"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="MAGENTA" Shininess="100.0">
+    <Ambient R="0.2" G="0.0" B="0.2" A="1.0"/>
+    <Diffuse R="1.0" G="0.0" B="1.0" A="1.0"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="YELLOW" Shininess="100.0">
+    <Ambient R="0.2" G="0.2" B="0.0" A="1.0"/>
+    <Diffuse R="1.0" G="1.0" B="0.0" A="1.0"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
+  </MaterialDefinition>
+
+
+  <MaterialDefinition Name="LIGHTGRAY_TRANS" Shininess="10.0">
+    <Ambient R="0.25" G="0.25" B="0.25" A="0.3"/>
+    <Diffuse R="0.9" G="0.9" B="0.9" A="0.3"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="0.3"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="RUBY_TRANS" Shininess="76.8">
+    <Ambient R="0.1745" G="0.01175" B="0.01175" A="0.25"/>
+    <Diffuse R="0.61424" G="0.04136" B="0.04136" A="0.25"/>
+    <Specular R="0.727811" G="0.626959" B="0.626959" A="0.25"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="EMERALD_TRANS" Shininess="76.8">
+    <Ambient R="0.0215" G="0.1745" B="0.0215" A="0.25"/>
+    <Diffuse R="0.07568" G="0.61424" B="0.07568" A="0.25"/>
+    <Specular R="0.633" G="0.727811" B="0.633" A="0.25"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="RED_TRANS" Shininess="70.0">
+    <Ambient R="0.2" G="0.0" B="0.0" A="0.3"/>
+    <Diffuse R="0.8" G="0.0" B="0.0" A="0.3"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="0.3"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="GREEN_TRANS" Shininess="70.0">
+    <Ambient R="0.0" G="0.2" B="0.0" A="0.3"/>
+    <Diffuse R="0.0" G="0.8" B="0.0" A="0.3"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="0.3"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="BLUE_TRANS" Shininess="70.0">
+    <Ambient R="0.0" G="0.0" B="0.2" A="0.3"/>
+    <Diffuse R="0.0" G="0.0" B="0.8" A="0.3"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="0.3"/>
+  </MaterialDefinition>
+
+    <MaterialDefinition Name="YELLOW_TRANS" Shininess="100.0">
+    <Ambient R="0.2" G="0.2" B="0.0" A="0.3"/>
+    <Diffuse R="1.0" G="1.0" B="0.0" A="0.3"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="0.3"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="VERY_TRANS" Shininess="10.0">
+    <Ambient R="0.25" G="0.25" B="0.25" A="0.15"/>
+    <Diffuse R="0.9" G="0.9" B="0.9" A="0.15"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="0.15"/>
+  </MaterialDefinition>
+
+  <MaterialDefinition Name="DEFAULT" Shininess="10.0">
+    <Ambient R="0.20" G="0.20" B="0.20" A="1.0"/>
+    <Diffuse R="0.7" G="0.7" B="0.7" A="1.0"/>
+    <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
+  </MaterialDefinition>
+
+</Materials>
+
