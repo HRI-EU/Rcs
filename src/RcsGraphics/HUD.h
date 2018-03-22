@@ -99,7 +99,7 @@ public:
   /*! \brief Updates the color of the text used in the HUD.
    *
    *  \param[in] colorName Name of color to use. See Rcs_graphicsUtils.cpp for
-   *                       available colors, or use the format: #rrggbb
+   *                       available colors, or use the format: \#rrggbb
    */
   virtual void setColor(const char* colorName);
   void resize(int llx, int lly, int sizeX, int sizeY);
