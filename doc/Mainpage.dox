@@ -1,0 +1,142 @@
+/*! \mainpage Rcs API Reference
+  
+   Rcs is a set of libraries for robot control and simulation. It is written for
+   research purposes and for simulation and analysis in robotics. It contains 
+   algorithms for vector-matrix calculations, rigid body kinematics, dynamics,
+   control, physical simulation and more. There are many utilities such as 
+   OpenSceneGraph nodes and Qt Guis to support research and testing.
+  
+ \htmlonly
+<table border="0"; cellpadding="0"; cellspacing="2">
+ <tr>
+  <td align="center"><b>Prototype robots</b></td>
+  <td align="center"><b>Asimo v1.5</b></td>
+  <td align="center"><b>Barrett WAM</b></td>
+ </tr>
+ <tr>
+  <td><img src="../images/example_prioritizedIK.png"></td>
+  <td><img src="../images/asimo-sim-1.5.png"></td>
+  <td><img src="../images/WAM-bulb.png"></td>
+ </tr>
+</table>
+ \endhtmlonly
+ 
+   <h1> Libraries </h1>
+   \ref RcsCore
+ 
+   \ref RcsMath
+ 
+   \ref RcsGraph
+
+   \ref RcsPhysics
+ 
+   \ref RcsGraphics
+ 
+   \ref RcsGui
+ 
+   <h1> Misc </h1>
+   \ref ProgrammingNotes
+ 
+   \ref Conventions
+ 
+   Are you bored? Have a look at the \ref todo 
+ 
+   <center><em>This document is &copy; Honda Research Institute Europe 
+   GmbH</em></center>
+ */
+
+
+
+ 
+
+ /*! \page ProgrammingNotes Programming notes
+   
+     <h1> Programming notes </h1>
+   
+     - Memory leak checking: memcheck executable \<options\> 2>&1 | tee /tmp/valgrind.txt
+       (memcheck is aliased to valgrind --tool=memcheck --leak-check=full --show-reachable=yes) 
+     - For memory allocation of the basic types in Rcs, we assume that it 
+       always succeeds, and no checking of a returned NULL pointer is needed.
+       In case it doesn't work, we will get a stack trace very close to the
+       location where it failed.
+     - Never use printf etc., please use the logging macros instead. The
+       reason is that they output the precise location from where they get
+       called. In larger pieces of software, that's essential to track down
+       issues.
+     - Variable naming conventions: Please try to use camel case naming 
+       (http://en.wikipedia.org/wiki/CamelCase), so that the code is 
+       consistent. 
+       For instance: int myVar instead of int my_var.
+     - Please try to be explicit when comparing values: For instance use
+       <br>
+       if(myPtr == NULL) ...
+       <br> instead of <br>
+       if(myPtr) ...
+     - Inclusion of header files: If a header file from another project / 
+       subdirectory is included, please include it as <br>
+       \#include <myHeader.h> <br>
+       If it comes from the same project, please include it as
+       \#include "myHeader.h" <br>
+     - Inclusion order of header files: Please include header files from high 
+       level to low level. It means the project headers come first, then the
+       headers of depending projects, and at the end, the system headers. This
+       allows to more easily spot missing headers in your header files.
+     - When doing calculations with floating point values, please always add
+       a dot after the number, so that it can be distinguished as a floating
+       point number by the compiler. For example, don't write
+       double a = M_PI/3;
+       but rather write
+       double a = M_PI/3.0;
+     - If you feel that some code / documentation is unclear, please make a
+       note including your name abbrevation, and the date. Even better, please
+       try to talk to the person who wrote the function to tell him.
+     - When writing to a class member inside a class, please use the this
+       pointer to indicate it. Sometimes it doesn't make sense. For instance
+       when implementing equations, the readability suffers. In such cases,
+       use common sense
+     - For functions that do some time-consuming calculations, lets use the
+       prefix compute (e.g. computeMyVariable() ), for accessing already 
+       calculated results lets use the prefix get (e.g. getMyVariable() ).
+     - Please don't implement member function in the header (for non-templated
+       classes)
+   
+  */
+
+
+
+ 
+
+ /*! \page Conventions
+   
+     <h1> Conventions </h1>
+   
+     - Indices should consistently be used with this meaning:
+       - B: Body
+       - C: Collision shape
+       - J: Joint
+       - P: Previous
+       - S: Sensor
+     - Arrays are stored in row-major order (http://en.wikipedia.org/wiki/Row-major_order)
+     - A rotation matrix that rotates from frame 1 into frame 2 is denoted A_21
+     - Rotating a vector that is represented in frame 1 into frame 2 is 
+       performed as 2_r = A_21 * 1_r
+     - Rotation matrices are right-handed.
+     - The world coordinate frame has the x-axis pointing forward, the y-axis
+       pointing left, and the z-axis pointing upward.
+     - All values are represented in SI-units. For parsing xml-files, there 
+       might be values represented in human-readable units. This is then 
+       being documented.
+     - Transformations are a translation, followed by a rotation.
+     - Boolean variables and logical operations:
+       - false is 0, true is any other value than 0
+       - true  || false = TRUE
+       - true  || true  = TRUE
+       - false || false = FALSE
+       - true  && false = FALSE
+       - true  && true  = TRUE
+       - false && false = FALSE
+     - Asymptotic damping for a given spring stiffness:
+       - kd = 0.5*sqrt(4.0*kp)
+
+  */
+  

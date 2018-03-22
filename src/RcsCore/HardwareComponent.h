@@ -75,7 +75,7 @@ public:
    *  \param[in] q_dot_des  Vector of desired degrees of freedom velocities.
    *  \param[in] T_des      Vector of desired degrees of freedom torques.
    */
-  virtual void setCommand(const MatNd* q_des, const MatNd* qp_des,
+  virtual void setCommand(const MatNd* q_des, const MatNd* q_dot_des,
                           const MatNd* T_des) = 0;
 
   /*!  \brief Must return a pointer to a valid character array (terminated).

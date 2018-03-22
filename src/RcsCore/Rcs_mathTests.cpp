@@ -1087,6 +1087,15 @@ bool testBasicMath(int argc, char** argv)
   VecNd_printComment("Vector before reverting", vec_src, dim);
   VecNd_printComment("Vector after reverting", vec_dst, dim);
 
+  // Test cylinder coordinates conversion
+  double radialDist, azimuth, height, p[3], p2[3];
+  Vec3d_setRandom(p, -1.0, 1.0);
+
+  Math_Cart2Cyl(p, &radialDist, &azimuth, &height);
+  Math_Cyl2Cart(radialDist, azimuth, height, p2);
+  RLOG(0, "Cylinder coordinates conversion: %f %f   %f %f   err=%f",
+       p[0], p2[0], p[1], p2[1], VecNd_sqrDiff(p, p2, 2));
+
   // cleanup
   MatNd_destroy(B);
   MatNd_destroy(limit);

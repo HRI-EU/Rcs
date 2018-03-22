@@ -60,7 +60,7 @@ OPTION(USE_OCTOMAP "Use Octomap library" OFF)
 OPTION(ENABLE_DEBUG_MACROS "Enable debug macros also in release mode" ON)
 
 IF(UNIX)
-  OPTION(ENABLE_C++11 "Compile with C++11 support enabled" ON)
+  OPTION(ENABLE_C++11 "Compile with C++11 support enabled" OFF)
 ENDIF()
 
 SET(USE_VORTEX OFF CACHE STRING "Vortex version to use")
@@ -159,4 +159,4 @@ ELSE()
   MESSAGE("-- Not found: projects directory")
 ENDIF()
 
-#ADD_SUBDIRECTORY (doc)
+ADD_SUBDIRECTORY (doc)

@@ -38,6 +38,7 @@
 #include <Rcs_macros.h>
 #include <Rcs_cmdLine.h>
 #include <Rcs_math.h>
+#include <Rcs_geometry.h>
 #include <Rcs_gradientTests.h>
 #include <Rcs_resourcePath.h>
 #include <Rcs_timer.h>
@@ -2112,15 +2113,10 @@ int main(int argc, char** argv)
     // ==============================================================
     case 12:
     {
-      Rcs_addResourcePath("config");
-
-      char textLine[2056] = "";
-      pthread_mutex_t lock;
-      pthread_mutex_init(&lock, NULL);
-
       Rcs::CmdLineParser argP(argc, argv);
       int shapeType1 = RCSSHAPE_SSL;
       int shapeType2 = RCSSHAPE_SSL;
+      char textLine[2056] = "";
 
       argP.getArgument("-t1", &shapeType1, "Shape type for shape 1");
       argP.getArgument("-t2", &shapeType2, "Shape type for shape 2");
@@ -2149,69 +2145,76 @@ int main(int argc, char** argv)
       RCHECK(b2->shape[0]);
       b2->shape[1] = NULL;
 
-      // Graphics
-      Rcs::Viewer* viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
-
-      // HUD
-      Rcs::HUD* hud = new Rcs::HUD(0, 0, 700, 200);
-      viewer->add(hud);
-
-      // BodyNodes
-      Rcs::BodyNode* bNd1 = new Rcs::BodyNode(b1);
-      Rcs::BodyNode* bNd2 = new Rcs::BodyNode(b2);
-      bNd1->setGhostMode(true, "RED");
-      bNd2->setGhostMode(true, "GREEN");
-      viewer->add(bNd1);
-      viewer->add(bNd2);
-
-      // TargetSetters
-      Rcs::TargetSetter* ts1 =
-        new Rcs::TargetSetter(b1->A_BI->org, b1->A_BI->rot, 0.5);
-      viewer->add(ts1);
-      viewer->add(ts1->getHandler());
-      Rcs::TargetSetter* ts2 =
-        new Rcs::TargetSetter(b2->A_BI->org, b2->A_BI->rot, 0.5);
-      viewer->add(ts2);
-      viewer->add(ts2->getHandler());
-
-      // VertexArrayNode for distance
       double I_closestPts[6];
       VecNd_setZero(I_closestPts, 6);
-
-      Rcs::VertexArrayNode* cpLine = new Rcs::VertexArrayNode(I_closestPts, 2);
-      cpLine->setColor("GREEN");
-      cpLine->setPointSize(2.0);
-      viewer->add(cpLine);
-
       double* cp0 = &I_closestPts[0];
-      Rcs::CapsuleNode* sphereCP0 = new Rcs::CapsuleNode(cp0, NULL, 0.015, 0.0);
-      sphereCP0->makeDynamic(cp0);
-      sphereCP0->setMaterial("RED");
-      viewer->add(sphereCP0);
-
       double* cp1 = &I_closestPts[3];
-      Rcs::CapsuleNode* sphereCP1 = new Rcs::CapsuleNode(cp1, NULL, 0.015, 0.0);
-      sphereCP1->makeDynamic(cp1);
-      sphereCP1->setMaterial("RED");
-      viewer->add(sphereCP1);
-
-      // ArrowNode for normal vector
       double n01[3];
       Vec3d_setZero(n01);
-      Rcs::ArrowNode* normalArrow = new Rcs::ArrowNode(cp0, n01, 0.2);
-      viewer->add(normalArrow);
 
-      // KeyCatcher
-      Rcs::KeyCatcher* kc = new Rcs::KeyCatcher();
-      viewer->add(kc);
-      //viewer->displayWireframe();
-      viewer->runInThread(&lock);
+      // Graphics
+      Rcs::HUD* hud = NULL;
+      Rcs::Viewer* viewer = NULL;
+      Rcs::KeyCatcher* kc = NULL;
 
+      if (!valgrind)
+      {
+        viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
+
+        // HUD
+        hud = new Rcs::HUD();
+        viewer->add(hud);
+
+        // BodyNodes
+        Rcs::BodyNode* bNd1 = new Rcs::BodyNode(b1);
+        Rcs::BodyNode* bNd2 = new Rcs::BodyNode(b2);
+        bNd1->setGhostMode(true, "RED");
+        bNd2->setGhostMode(true, "GREEN");
+        viewer->add(bNd1);
+        viewer->add(bNd2);
+
+        // TargetSetters
+        bool sphTracker = b1->shape[0]->type==RCSSHAPE_POINT ? false : true;
+        Rcs::TargetSetter* ts1 =
+          new Rcs::TargetSetter(b1->A_BI->org, b1->A_BI->rot, 0.5, sphTracker);
+        viewer->add(ts1);
+        viewer->add(ts1->getHandler());
+        sphTracker = b2->shape[0]->type==RCSSHAPE_POINT ? false : true;
+        Rcs::TargetSetter* ts2 =
+          new Rcs::TargetSetter(b2->A_BI->org, b2->A_BI->rot, 0.5, sphTracker);
+        viewer->add(ts2);
+        viewer->add(ts2->getHandler());
+
+        // VertexArrayNode for distance
+        Rcs::VertexArrayNode* cpLine = new Rcs::VertexArrayNode(I_closestPts, 2);
+        cpLine->setColor("GREEN");
+        cpLine->setPointSize(2.0);
+        viewer->add(cpLine);
+
+        Rcs::CapsuleNode* sphereCP0 = new Rcs::CapsuleNode(cp0, NULL, 0.015, 0.0);
+        sphereCP0->makeDynamic(cp0);
+        sphereCP0->setMaterial("RED");
+        viewer->add(sphereCP0);
+
+        Rcs::CapsuleNode* sphereCP1 = new Rcs::CapsuleNode(cp1, NULL, 0.015, 0.0);
+        sphereCP1->makeDynamic(cp1);
+        sphereCP1->setMaterial("RED");
+        viewer->add(sphereCP1);
+
+        // ArrowNode for normal vector
+        Rcs::ArrowNode* normalArrow = new Rcs::ArrowNode(cp0, n01, 0.2);
+        viewer->add(normalArrow);
+
+        // KeyCatcher
+        kc = new Rcs::KeyCatcher();
+        viewer->add(kc);
+        viewer->runInThread(mtx);
+      }
 
 
       while (runLoop)
       {
-        pthread_mutex_lock(&lock);
+        pthread_mutex_lock(&graphLock);
         double dt = Timer_getTime();
         double dist;
 
@@ -2219,21 +2222,33 @@ int main(int argc, char** argv)
                                  b1->A_BI, b2->A_BI, cp0, cp1, n01);
 
         dt = Timer_getTime() - dt;
-        pthread_mutex_unlock(&lock);
+        pthread_mutex_unlock(&graphLock);
 
         std::stringstream hudText;
-        sprintf(textLine, "Distance: D = %.1f mm took %.2f usec\n",
+        sprintf(textLine, "Distance: D = % 3.1f mm took %3.2f usec\n",
                 dist*1000.0, dt*1.0e6);
         hudText << textLine;
-        hud->setText(hudText);
+        if (hud)
+        {
+          hud->setText(hudText);
+        }
+        else
+        {
+          std::cout << hudText;
+        }
 
-
-        if (kc->getAndResetKey('q'))
+        if (kc && kc->getAndResetKey('q'))
         {
           runLoop = false;
         }
 
         Timer_usleep(1000);
+        RPAUSE_DL(4);
+
+        if (valgrind)
+        {
+          runLoop = false;
+        }
 
       } // while runLoop
 
@@ -2242,7 +2257,10 @@ int main(int argc, char** argv)
       RcsBody_destroy(b1);
       RcsBody_destroy(b2);
 
-      delete viewer;
+      if (viewer)
+      {
+        delete viewer;
+      }
 
       break;
     }
@@ -2483,6 +2501,79 @@ int main(int argc, char** argv)
       {
         RMSG("Bit %d is %s", i, Math_isBitSet(mask, i) ? "SET" : "CLEAR");
       }
+      break;
+    }
+
+    // ==============================================================
+    // 2D convex polygon
+    // ==============================================================
+    case 17:
+    {
+      double radius = 0.25;
+      double height = 1.0;
+      argP.getArgument("-radius", &radius, "Radius (default is %g)", radius);
+      argP.getArgument("-height", &height, "Height (default is %g)", height);
+
+      double poly[4][2];
+      poly[0][0] = -radius;
+      poly[0][1] = -0.5*height;
+      poly[1][0] =  radius;
+      poly[1][1] = -0.5*height;
+      poly[2][0] =  radius;
+      poly[2][1] =  0.5*height;
+      poly[3][0] = -radius;
+      poly[3][1] =  0.5*height;
+      poly[4][0] = -radius;
+      poly[4][1] = -0.5*height;
+      MatNd polyArr = MatNd_fromPtr(5, 2, &poly[0][0]);
+
+      Rcs::VertexArrayNode* vn = new Rcs::VertexArrayNode(&polyArr, osg::PrimitiveSet::LINE_STRIP);
+
+      Rcs::Viewer* viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
+      viewer->add(vn);
+
+      double pt[3], ang[3], Id[3][3];
+      Mat3d_setIdentity(Id);
+      Vec3d_setZero(ang);
+      Vec3d_setZero(pt);
+      Rcs::TargetSetter* ts = new Rcs::TargetSetter(pt, ang, 0.5, false);
+      viewer->add(ts);
+
+      Rcs::CapsuleNode* pn = new Rcs::CapsuleNode(pt, Id, 0.025, 0.0);
+      pn->setMaterial("GREEN");
+      pn->makeDynamic(pt);
+      pn->setWireframe(false);
+      viewer->add(pn);
+
+      double cpPoly[3], nPoly[3];
+      Vec3d_setZero(cpPoly);
+      Vec3d_setZero(nPoly);
+      Rcs::CapsuleNode* cn = new Rcs::CapsuleNode(cpPoly, Id, 0.025, 0.0);
+      cn->makeDynamic(cpPoly);
+      cn->setMaterial("RED");
+      cn->setWireframe(false);
+      viewer->add(cn);
+
+      Rcs::ArrowNode* an = new Rcs::ArrowNode(cpPoly, nPoly, 0.2);
+      viewer->add(an);
+
+
+      char hudText[512] = "";
+      Rcs::HUD* hud = new Rcs::HUD();
+      viewer->add(hud);
+
+      viewer->runInThread(mtx);
+
+      while (runLoop)
+      {
+        pthread_mutex_lock(&graphLock);
+        double d = Math_distPointConvexPolygon2D(pt, poly, 4, cpPoly, nPoly);
+        sprintf(hudText, "d = %f", d);
+        hud->setText(hudText);
+        pthread_mutex_unlock(&graphLock);
+        Timer_waitDT(0.01);
+      }
+
       break;
     }
 

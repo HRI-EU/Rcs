@@ -265,6 +265,12 @@ void Math_finiteDifferenceDerivative(MatNd* dfdq,
                                      const MatNd* q,
                                      double eps);
 
+void Math_Cyl2Cart(const double radialDist, const double azimuth,
+                   const double height, double p[3]);
+
+void Math_Cart2Cyl(const double p[3], double* radialDist, double* azimuth,
+                   double* height);
+
 ///@}
 
 
@@ -389,9 +395,9 @@ void Math_srand48(long int seed);
 
 
 /**
- * @name CreationAndDestruction
+ * @name PolynomialRoots
  *
- * Creation and destruction
+ * Polynomial root finding
  */
 
 ///@{
@@ -433,184 +439,6 @@ int Math_findPolynomialRoots(double* roots, const double* c,
 double Math_computePolynomial(double x, const double* c, int degree);
 
 
-///@}
-
-
-
-
-
-/**
- * @name Distance
- *
- * Distance functions
- */
-
-///@{
-
-/*! \ingroup RcsBasicMathFunctions
- *  \brief This function returns the squared distance between a point and a
- *         line, and computes the closest points. Vector lineDir
- *         must be of unit length, otherwise the result is wrong. This
- *         is not cheked.
- *
- *  \param[in]  pt Point coordinates
- *  \param[in]  linePt Start point on line segment
- *  \param[in]  lineDir Normalized direction of the line segment.
- *  \param[out] cpLine Closest point on the line segment.
- *  \return Squared distance between point and line segment.
- */
-double Math_sqrDistPointLine(const double pt[3],
-                             const double linePt[3],
-                             const double lineDir[3],
-                             double cpLine[3]);
-
-/*! \ingroup RcsBasicMathFunctions
- *  \brief This function returns the squared distance between a point and a
- *         line segment, and computes the closest points. Vector lineDir
- *         must be of unit length, otherwise the result is wrong. This
- *         is not cheked.
- *
- *  \param[in]  pt Point coordinates
- *  \param[in]  segPt Start point on line segment
- *  \param[in]  segDir Normalized direction of the line segment.
- *  \param[in]  segLength Length of the line segment
- *  \param[out] cpSeg Closest point on the line segment.
- *  \return Squared distance between point and line segment.
- */
-double Math_sqrDistPointLineseg(const double pt[3],
-                                const double segPt[3],
-                                const double segDir[3],
-                                const double segLength,
-                                double cpSeg[3]);
-
-/*! \ingroup RcsBasicMathFunctions
- *  \brief This function returns the squared distance between a point and a
- *         line segment, and computes the closest points. Vector lineDir
- *         must be of unit length.
- *
- *  \param[in]  pt Point coordinates
- *  \param[in]  capsulePt Start point on line segment of the capsule
- *  \param[in]  capsuleDir Normalized direction of the capsule.
- *  \param[in]  capsuleLength Length of the capsule
- *  \param[in]  capsuleRadius Radius of the capsule
- *  \param[out] cpCapsule Closest point on the capsule. If it is NULL,
- *              it will be ignored.
- *  \param[out] nPtCapsule Unit length normal from the point to the capsule.
- *              If the point lies on the line segment, nPtLine will be set to
- *              zero. If it is NULL, it will be ignored.
- *  \return Signed distance between point and capsule.
- */
-double Math_distPointCapsule(const double pt[3],
-                             const double capsulePt[3],
-                             const double capsuleDir[3],
-                             const double capsuleLength,
-                             const double capsuleRadius,
-                             double cpCapsule[3],
-                             double nPtCapsule[3]);
-
-/*! \ingroup RcsBasicMathFunctions
- *  \brief Returns the distance and closest points between a point and a convex
- *         polygon in 2D.
- *  \param[in]  point      Query Point
- *  \param[in]  polygon    Polygon vertices in ordered counter-clockwise
- *  \param[in]  nVertices  Number of polygon vertices. Must be > 0, otherwise
- *                         the function exits with a fatal error.
- *  \param[out] cpPoly     Closest point on the polygon. If it is NULL, it will
- *                         be ignored.
- *  \param[out] nPoly      Normal vector that depenetrates the point from the
- *                         polygon. It is of unit length. If it is NULL, it will
- *                         be ignored.
- *  \return Distance is positive if point is outside the polygon and negative
- *          if inside.
- */
-double Math_distPointConvexPolygon2D(const double point[2],
-                                     const double polygon[][2],
-                                     unsigned int nVertices,
-                                     double cpPoly[2],
-                                     double nPoly[2]);
-
-/*! \ingroup RcsBasicMathFunctions
- *  \brief Returns the distance and closest points between a point and a convex
- *         polygon in 3D. The polygon is assumed to be in the x-y plane of the
- *         frame A_PI. Its z-direction is the polygon normal. The polygon
- *         is assumed to be "filled".
- *
- *  \param[in]  point       Query Point
- *  \param[in]  polygon     Polygon vertices in ordered counter-clockwise
- *  \param[in]  nVertices   Number of polygon vertices. Must be > 0, otherwise
- *                          the function exits with a fatal error.
- *  \param[out] I_cpPoly    Closest point on the polygon in world coordinates.
- *                          If it is NULL, it will be ignored.
- *  \param[out] I_nPoly     Normal vector that depenetrates the point from the
- *                          polygon, in world coordinates. It is of unit length.
- *                          If it is NULL, it will be ignored.
- *  \return Squared distance between point and polygon.
- */
-double Math_sqrDistPointConvexPolygon(const double I_pt[3],
-                                      const HTr* A_PI,
-                                      const double poly[][2],
-                                      unsigned int nVertices,
-                                      double I_cpPoly[3],
-                                      double I_nPoly[3]);
-
-/*! \ingroup RcsBasicMathFunctions
- *  \brief This function returns the squared distance between two line
- *         segments, and computes the closest points.
- *
- *  \param[in]  segPt0 Start point of the first line segment
- *  \param[in]  segDir0 Direction of the first line segment
- *  \param[in]  segLength0 Length of the second line segment
- *  \param[in]  segPt1 Start point of the second line segment
- *  \param[in]  segDir1 Direction of the second line segment
- *  \param[in]  segLength1 Length of the second line segment
- *  \param[out] cp0 Closest point on the line. If it is NULL, it will be
- *              ignored.
- *  \param[out] cp1 Closest point on the line segment. If it is NULL, it will
- *              be ignored.
- *  \return Squared distance of closest points.
- */
-double Math_sqrDistLinesegLineseg(const double segPt0[3],
-                                  const double segDir0[3],
-                                  const double segLength0,
-                                  const double segPt1[3],
-                                  const double segDir1[3],
-                                  const double segLength1,
-                                  double cp0[3],
-                                  double cp1[3]);
-
-/*! \ingroup RcsBasicMathFunctions
- *  \brief This function returns the distance between two capsules, and
- *         computes the closest points. The distance is negative when the
- *         capsules penetrate.
- *
- *  \param[in]  linePt0 Start point of the first capsule
- *  \param[in]  lineDir0 Normalized direction vector of the first capsule
- *  \param[in]  l0 Length of the first capsule (distance between ball ends)
- *  \param[in]  r0 Radius of the first capsule
- *  \param[in]  linePt1 Start point of the second capsule
- *  \param[in]  lineDir1 Normalized direction vector of the second capsule
- *  \param[in]  l1 Length of the second capsule (distance between ball ends)
- *  \param[in]  r1 Radius of the second capsule
- *  \param[out] cp0 Closest point on the first capsule. If it is NULL, it
- *              will be ignored.
- *  \param[out] cp1 Closest point on the second capsule. If it is NULL, it
- *              will be ignored.
- *  \param[out] n01  Unit length normal from the closest point of the first
- *              to the second capsule. If the closest points coincide, the
- *              vector n01 is set to zero. If it is NULL, it will be ignored.
- *  \return Signed distance between closest points.
- */
-double Math_distCapsuleCapsule(const double linePt0[3],
-                               const double lineDir0[3],
-                               const double l0,
-                               const double r0,
-                               const double linePt1[3],
-                               const double lineDir1[3],
-                               const double l1,
-                               const double r1,
-                               double cp0[3],
-                               double cp1[3],
-                               double n01[3]);
 ///@}
 
 
@@ -707,7 +535,7 @@ void Quat_toRotationMatrix(double A_BI[3][3], double q[4]);
  *         q [qw qx qy qz].
  *
  *  \param[out]  q      Quaternion in ordering [qw qx qy qz]
- *  \param[in]   A_BI   Rotation matrix in row-major form
+ *  \param[in]   rm     Rotation matrix in row-major form
  */
 void Quat_fromRotationMatrix(double q[4], double rm[3][3]);
 

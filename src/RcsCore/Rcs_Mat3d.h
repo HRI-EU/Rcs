@@ -619,7 +619,7 @@ void Mat3d_slerp(double A[3][3], double A_1I[3][3], double A_2I[3][3],
 void Mat3d_skew(double rSkew[3][3], const double a[3]);
 
 /*! \ingroup RcsMat3dFunctions
- *  \brief Computes the transpose tilde operator, see \ref Mat3d_tilde.
+ *  \brief Computes the transpose tilde operator, see \ref Mat3d_skew.
  *
  *         \f$
  *         \mathbf{\tilde{r}^T} =

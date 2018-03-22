@@ -41,6 +41,7 @@
 #include "Rcs_utils.h"
 #include "Rcs_math.h"
 #include "Rcs_mesh.h"
+#include "Rcs_geometry.h"
 
 #if defined (USE_OCTOMAP)
 #include "Rcs_octree.h"
@@ -1117,6 +1118,91 @@ static double RcsShape_closestSphereToSSL(const RcsShape* sphere,
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+static double RcsShape_closestPointToCone(const RcsShape* point,
+                                          const RcsShape* cone,
+                                          const HTr* A_point,
+                                          const HTr* A_cone,
+                                          double I_cp1[3],
+                                          double I_cp2[3],
+                                          double I_n[3])
+{
+  double dist = Math_distPointCone(A_point->org, A_cone, cone->extents[2],
+                                   cone->extents[0], I_cp2);
+  Vec3d_copy(I_cp1, A_point->org);
+  Vec3d_sub(I_n, I_cp2, I_cp1);
+  Vec3d_normalizeSelf(I_n);
+
+  return dist;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static double RcsShape_closestConeToPoint(const RcsShape* cone,
+                                          const RcsShape* point,
+                                          const HTr* A_cone,
+                                          const HTr* A_point,
+                                          double I_cp1[3],
+                                          double I_cp2[3],
+                                          double I_n[3])
+{
+  double dist = RcsShape_closestPointToCone(point, cone, A_point, A_cone,
+                                            I_cp2, I_cp1, I_n);
+
+  // Revert the normal, because we are calling the reverse method
+  Vec3d_constMulSelf(I_n, -1.0);
+
+  return dist;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static double RcsShape_closestPointToCylinder(const RcsShape* point,
+                                              const RcsShape* cyl,
+                                              const HTr* A_point,
+                                              const HTr* A_cyl,
+                                              double I_cp1[3],
+                                              double I_cp2[3],
+                                              double I_n[3])
+{
+  double dist = Math_distPointCylinder(A_point->org, A_cyl, cyl->extents[2],
+                                       cyl->extents[0], I_cp2);
+  Vec3d_copy(I_cp1, A_point->org);
+  Vec3d_sub(I_n, I_cp2, I_cp1);
+  Vec3d_normalizeSelf(I_n);
+
+  if (dist < 0.0)
+  {
+    Vec3d_constMulSelf(I_n, -1.0);
+  }
+
+  return dist;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static double RcsShape_closestCylinderToPoint(const RcsShape* cyl,
+                                              const RcsShape* point,
+                                              const HTr* A_cyl,
+                                              const HTr* A_point,
+                                              double I_cp1[3],
+                                              double I_cp2[3],
+                                              double I_n[3])
+{
+  double dist = RcsShape_closestPointToCylinder(point, cyl, A_point, A_cyl,
+                                                I_cp2, I_cp1, I_n);
+
+  // Revert the normal, because we are calling the reverse method
+  Vec3d_constMulSelf(I_n, -1.0);
+
+  return dist;
+}
+
+/*******************************************************************************
  * Look-up array for distance functions.
  ******************************************************************************/
 static RcsDistanceFunction
@@ -1208,7 +1294,7 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
     RcsShape_noDistance,                // RCSSHAPE_GPISF
     RcsShape_noDistance,                // RCSSHAPE_TORUS
     RcsShape_noDistance,                // RCSSHAPE_OCTREE
-    RcsShape_noDistance,                // RCSSHAPE_POINT
+    RcsShape_closestCylinderToPoint,    // RCSSHAPE_POINT
     RcsShape_noDistance                 // RCSSHAPE_MARKER
   },
 
@@ -1253,7 +1339,7 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
     RcsShape_noDistance,                // RCSSHAPE_GPISF
     RcsShape_noDistance,                // RCSSHAPE_TORUS
     RcsShape_noDistance,                // RCSSHAPE_OCTREE
-    RcsShape_noDistance,                // RCSSHAPE_POINT
+    RcsShape_closestConeToPoint,        // RCSSHAPE_POINT
     RcsShape_noDistance                 // RCSSHAPE_MARKER
   },
 
@@ -1309,10 +1395,10 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
     RcsShape_noDistance,                // RCSSHAPE_SSR
     RcsShape_noDistance,                // RCSSHAPE_MESH
     RcsShape_noDistance,                // RCSSHAPE_BOX
-    RcsShape_noDistance,                // RCSSHAPE_CYLINDER
+    RcsShape_closestPointToCylinder,    // RCSSHAPE_CYLINDER
     RcsShape_noDistance,                // RCSSHAPE_REFFRAME
     RcsShape_closestPointToSphere,      // RCSSHAPE_SPHERE
-    RcsShape_noDistance,                // RCSSHAPE_CONE
+    RcsShape_closestPointToCone,        // RCSSHAPE_CONE
     RcsShape_noDistance,                // RCSSHAPE_GPISF
     RcsShape_noDistance,                // RCSSHAPE_TORUS
     RcsShape_noDistance,                // RCSSHAPE_OCTREE
