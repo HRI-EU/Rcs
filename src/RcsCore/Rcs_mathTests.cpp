@@ -2371,15 +2371,19 @@ bool testFilters1D(int argc, char** argv)
   double x0 = 0.0;
   double x1 = 1.0;
   double vmax = 0.5;
+  unsigned int medianSamples = 100;
   Rcs::CmdLineParser argP(argc, argv);
-  argP.getArgument("-steps", &steps);
-  argP.getArgument("-dt", &dt);
-  argP.getArgument("-tmc", &tmc);
-  argP.getArgument("-x0", &x0);
-  argP.getArgument("-x1", &x1);
-  argP.getArgument("-vmax", &vmax);
+  argP.getArgument("-steps", &steps, "Number of samples (default: %d)", steps);
+  argP.getArgument("-dt", &dt, "Sampling time in secs (default: %f)", dt);
+  argP.getArgument("-tmc", &tmc, "Time constant (default: %f)", tmc);
+  argP.getArgument("-x0", &x0, "Initial value (default: %f)", x0);
+  argP.getArgument("-x1", &x1, "Target value (default: %f)", x1);
+  argP.getArgument("-vmax", &vmax, "Max. velocity for ramp filter (default: "
+                   "%f)", vmax);
+  argP.getArgument("-medianSamples", &medianSamples, "Horizon of median filter"
+                   " (default: %d)", medianSamples);
 
-  MatNd* plot = MatNd_create(steps+1, 4);
+  MatNd* plot = MatNd_create(steps+1, 5);
   MatNd_setElementsTo(plot, x0);
 
   Rcs::SecondOrderLPF1D sfilt(x0, tmc, dt);
@@ -2391,15 +2395,20 @@ bool testFilters1D(int argc, char** argv)
   Rcs::Ramp1D rmp(x0, 0.5*vmax, dt);
   rmp.setTarget(x1);
 
+  Rcs::MedianFilter1D mfilt(medianSamples, x0);
+
   for (int i=0; i<steps; i++)
   {
     sfilt.iterate();
     rfilt.iterate();
     rmp.iterate();
+    double median = mfilt.filt();
+    mfilt.addSample(x1);
     MatNd_set(plot, i+1, 0, sfilt.getPosition());
     MatNd_set(plot, i+1, 1, rfilt.getRamp());
     MatNd_set(plot, i+1, 2, rfilt.getPosition());
     MatNd_set(plot, i+1, 3, rmp.getPosition());
+    MatNd_set(plot, i+1, 4, median);
   }
 
   MatNd_toFile(plot, "/tmp/out.dat");
@@ -2407,7 +2416,9 @@ bool testFilters1D(int argc, char** argv)
   const char* gpCmd = "set grid\nplot \"/tmp/out.dat\" u 1 w l title"
                       " \"2nd order filter\", \"/tmp/out.dat\" u 2 w l"
                       " title \"ramp\", \"/tmp/out.dat\" u 3 w l"
-                      " title \"filtered ramp\", \"/tmp/out.dat\" u 4 w l title \"linear ramp\"\n";
+                      " title \"filtered ramp\", \"/tmp/out.dat\" u 4 w l "
+                      "title \"linear ramp\", \"/tmp/out.dat\" u 5 w l title "
+                      "\"median filter\"\n";
   FILE* outDat = fopen("/tmp/postpro.gnu", "w+");
   RCHECK(outDat);
   fprintf(outDat, gpCmd);
