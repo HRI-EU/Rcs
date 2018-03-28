@@ -1,0 +1,31 @@
+<Graph name="right leg" >
+
+  <Body name="Leg1ZR" prev="UpperBody" color="GREEN" mass="1" >
+    <Joint name="DofLeg1ZR" type="RotZ" range="-40 0 40" transform="0 -0.09 0 0 0 0" speedLimit="100" />
+ </Body>
+
+  <Body name="Leg1XR" prev="Leg1ZR" mass="1" >
+    <Joint name="DofLeg1XR" type="RotX" range="-100 0 100" speedLimit="100" />
+  </Body>
+
+  <Body name="ThighR" prev="Leg1XR" color="PEWTER" mass="2" cogVector="0 0 -0.1" >
+    <Joint name="DofLeg1YR" type="RotY" range="-100 -15 100" speedLimit="100" />
+    <Shape type="SSL" length="0.25" radius="0.06" transform="0 0 -0.25 0 0 0" graphics="true" />
+  </Body>
+
+  <Body name="ShankR" prev="ThighR" color="BRONZE" mass="2" cogVector="0 0 -0.1" >
+    <Joint name="DofKneeR" type="RotY" range="0 30 100" transform="0.0 0.0 -0.25 0 0 0" speedLimit="100" />
+    <Shape type="SSL" length="0.25" radius="0.055" transform="0 0 -0.25 0 0 0" graphics="true" />
+  </Body>
+
+  <Body name="AnkleR" prev="ShankR" mass="1" >
+    <Joint name="DofAnkleYR" type="RotY" range="-30 -15 30" transform="0 0 -0.25 0 0 0" speedLimit="100" />
+  </Body>
+
+  <Body name="FootR" prev="AnkleR" transform="0 0 -0.1 0 0 0" color="RED" mass="2" >
+    <Joint name="DofAnkleXR" type="RotX" range="-20 0 20" speedLimit="100" />
+    <Shape type="BOX" extents="0.2 0.14 0.04" transform="0.02 -0.01 0.02 0 0 0" graphics="true" />
+    <Shape type="FRAME" scale="0.25" />
+  </Body>
+
+</Graph>

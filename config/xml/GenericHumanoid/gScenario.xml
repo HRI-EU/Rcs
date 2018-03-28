@@ -1,0 +1,37 @@
+<Graph xmlns:xi="http://www.w3.org/2003/XInclude" >
+
+<!-- <Group > -->
+
+<Body name="Ground Plane" >
+  <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0" textureFile="textures/white-hardwood-floor.jpg" color="WHITE" graphics="true" />
+</Body>
+
+<!-- <Body name="Table" transform="0.6 0 0.625 0 0 0" color="ORANGE" > -->
+<!--   <Shape type="SSR" extents="0.5 1 0.04" graphics="true" /> -->
+<!-- </Body> -->
+
+<!-- <Body name="Obstacle" prev="Table" color="RED" > -->
+<!--   <Joint name="ObstacleX"      type="TransX" range="-1 -0.2 1"  constraint="true" /> -->
+<!--   <Joint name="ObstacleY"      type="TransY" range="-1 -0.2 1" constraint="true" /> -->
+<!--   <Joint name="ObstacleZ"      type="TransZ" range="-1 -0.05 1"  constraint="true" /> -->
+<!--   <Shape type="SSL" radius="0.1" length="0.1" graphics="true" /> -->
+<!-- </Body> -->
+
+<!-- <Body name="Can" prev="Table" > -->
+<!--   <Joint name="CanX"      type="TransX" range="-1 -0.2 1"  constraint="true" /> -->
+<!--   <Joint name="CanY"      type="TransY" range="-1 0 1" constraint="true" /> -->
+<!--   <Joint name="CanZ"      type="TransZ" range="-1 0.12 1"  constraint="true" /> -->
+<!--   <Joint name="CanThetaX" type="RotX"   range="-90 0 90"   constraint="true" /> -->
+<!--   <Joint name="CanThetaY" type="RotY"   range="-90 0 90"   constraint="true" /> -->
+<!--   <Joint name="CanThetaZ" type="RotZ"   range="-90 0 90"   constraint="true" /> -->
+<!--   <Shape type="SSL" radius="0.02" length="0" graphics="true" color="GREEN" /> -->
+<!--   <Shape type="FRAME" scale="0.2" graphics="true" /> -->
+<!-- </Body> -->
+
+<!-- </Group> -->
+
+<!-- <Group > -->
+<xi:include href="robot-full.xml" />
+<!-- </Group> -->
+
+</Graph>

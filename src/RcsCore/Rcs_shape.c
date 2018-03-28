@@ -906,20 +906,6 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
 }
 
 /*******************************************************************************
- * Intersection tests
- ******************************************************************************/
-#if !defined (USE_WM5)
-bool Rcs_intersectionLineShape(const double linePt[3],
-                               const double lineDir[3],
-                               const HTr* A_BI,
-                               const RcsShape* shape,
-                               double* closestLinePt)
-{
-  return false;
-}
-#endif
-
-/*******************************************************************************
  * Default distance function: infinity distance.
  ******************************************************************************/
 

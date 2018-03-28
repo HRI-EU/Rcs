@@ -77,6 +77,7 @@ bool testViaPointSequencePlotter(int argc, char** argv);
 bool testViaPointTrajectory1D(int argc, char** argv);
 bool testQuaternionConversion(int argc, char** argv);
 bool testViaPointGradient(int argc, char** argv);
+bool testFunctionsEigen3(int argc, char** argv);
 
 
 #ifdef __cplusplus

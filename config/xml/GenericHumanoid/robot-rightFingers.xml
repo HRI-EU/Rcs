@@ -1,0 +1,84 @@
+<Graph name="right fingers" >
+
+
+
+  <Body name="RightThumb0" prev="RightHand" physics="dynamic" color="RED" extents="0.02 0.01 0.005" cogVector="0.01 0 0" mass="0.01" >
+    <Joint name="DofThumb0R" constraint="true" type="RotY" range="0 0 90" transform="0.0570 0.0282 -0.0084 -140.3761 -28.0833 -0.3768" torqueLimit="2.0" />
+    <Shape type="SSL" length="0.016" radius="0.0075" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+  <Body name="RightThumb1" prev="RightThumb0" physics="dynamic" color="GREEN" extents="0.021 0.01 0.005" cogVector="0.01 0 0"  mass="0.01">
+    <Joint name="DofThumb1R" constraint="true" type="RotY" range="0 0 90" transform="0.021 0 0 0 0 0" torqueLimit="2.0" />
+    <Shape type="SSL" length="0.02" radius="0.0075" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+
+
+  <Body name="RightIndex0" prev="RightHand" physics="dynamic" color="RED" extents="0.0245 0.01 0.005" cogVector="0.01225 0 0" mass="0.01" >
+    <Joint name="DofIndex0R" constraint="true" type="RotY" range="0 0 90" transform="0.0874 0.0271 0.0273 -4.9168 -13.6835 2.5551" torqueLimit="1.0"  />
+    <Shape type="SSL" length="0.02" radius="0.0075" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+  <Body name="RightIndex1" prev="RightIndex0" physics="dynamic" color="GREEN" extents="0.019 0.01 0.005" cogVector="0.0095 0 0" mass="0.01" >
+    <Joint name="DofIndex1R" constraint="true" type="RotY" range="0 0 90" transform="0.0245 0 0 0 0 0" torqueLimit="0.8"  />
+    <Shape type="SSL" length="0.015" radius="0.0075" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+  <Body name="RightIndex2" prev="RightIndex1" physics="dynamic" color="YELLOW" extents="0.025 0.01 0.005" cogVector="0.0125 0 0" mass="0.01" >
+    <Joint name="DofIndex2R" constraint="true" type="RotY" range="0 0 90" transform="0.019 0 0 0 0 0" torqueLimit="0.3"  />
+    <Shape type="SSL" length="0.012" radius="0.0075" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+
+
+  <Body name="RightMiddle0" prev="RightHand" physics="dynamic" color="RED" extents="0.0295 0.01 0.005" cogVector="0.01475 0 0" mass="0.01" >
+    <Joint name="DofMiddle0R" constraint="true" type="RotY" range="0 0 90" transform="0.0867 0.0070 0.0293 0 -13.4218 0" torqueLimit="1.0" />
+    <Shape type="SSL" length="0.024" radius="0.0075" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+  <Body name="RightMiddle1" prev="RightMiddle0" physics="dynamic" color="GREEN" extents="0.019 0.01 0.005" cogVector="0.0095 0 0" mass="0.01">
+    <Joint name="DofMiddle1R" constraint="true" type="RotY" range="0 0 90" transform="0.0295 0 0 0 0 0" torqueLimit="0.8" />
+    <Shape type="SSL" length="0.015" radius="0.0075" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+  <Body name="RightMiddle2" prev="RightMiddle1" physics="dynamic" color="YELLOW" extents="0.025 0.01 0.005" cogVector="0.0125 0 0" mass="0.01" >
+    <Joint name="DofMiddle2R" constraint="true" type="RotY" range="0 0 90" transform="0.019 0 0 0 0 0" torqueLimit="0.3" />
+    <Shape type="SSL" length="0.012" radius="0.0075" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+
+
+  <Body name="RightRing0" prev="RightHand" physics="dynamic" color="RED" extents="0.0243 0.01 0.005" cogVector="0.01215 0 0" mass="0.01" >
+    <Joint name="DofRing0R" constraint="true" type="RotY" range="0 0 90" transform="0.0863 -0.0124 0.0278 5.3841 -13.7634 -3.0988" torqueLimit="1.0"/>
+    <Shape type="SSL" length="0.019" radius="0.0075" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+  <Body name="RightRing1" prev="RightRing0" physics="dynamic" color="GREEN" extents="0.019 0.01 0.005" cogVector="0.0095 0 0" mass="0.01" >
+    <Joint name="DofRing1R" constraint="true" type="RotY" range="0 0 90" transform="0.0243 0 0 0 0 0" torqueLimit="0.8" />
+    <Shape type="SSL" length="0.015" radius="0.0075" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+  <Body name="RightRing2" prev="RightRing1" physics="dynamic" color="YELLOW" extents="0.025 0.01 0.005" cogVector="0.0125 0 0" mass="0.01" >
+    <Joint name="DofRing2R" constraint="true" type="RotY" range="0 0 90" transform="0.019 0 0 0 0 0" torqueLimit="0.3" />
+    <Shape type="SSL" length="0.012" radius="0.0075" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+
+
+  <Body name="RightLittle0" prev="RightHand" physics="dynamic" color="RED" extents="0.0194 0.01 0.005" cogVector="0.0097 0 0" mass="0.01" >
+    <Joint name="DofLittle0R" constraint="true" type="RotY" range="0 0 90" transform="0.0837 -0.0312 0.0217 11.3889 -15.6152 -9.7825" torqueLimit="1.0" />
+    <Shape type="SSL" length="0.014" radius="0.0075" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+  <Body name="RightLittle1" prev="RightLittle0" physics="dynamic" color="GREEN" extents="0.019 0.01 0.005" cogVector="0.0095 0 0" mass="0.01" >
+    <Joint name="DofLittle1R" constraint="true" type="RotY" range="0 0 90" transform="0.0194 0 0 0 0 0" torqueLimit="0.8" />
+    <Shape type="SSL" length="0.015" radius="0.0075" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+  <Body name="RightLittle2" prev="RightLittle1" physics="dynamic" color="YELLOW" extents="0.025 0.01 0.005" cogVector="0.0125 0 0" mass="0.01" >
+    <Joint name="DofLittle2R" constraint="true" type="RotY" range="0 0 90" transform="0.019 0 0 0 0 0" torqueLimit="0.3" />
+    <Shape type="SSL" length="0.012" radius="0.0075" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+
+</Graph>

@@ -1,0 +1,45 @@
+<Graph name="right arm" >
+
+  <Body name="RightSh0" prev="UpperBody" mass="1" >
+    <Joint name="DofSh0R" type="RotY" transform="0.05 -0.18 0.36 -20 0 0" range="-120 100 180" speedLimit="100" />
+    <Shape type="SSL" length="0.075" radius="0.05" transform="0 0 -0.04 0 0 0" graphics="true" color="PEWTER" />
+  </Body>
+
+  <Body name="RightSh1" prev="RightSh0" mass="1" >
+    <Joint name="DofSh1R" type="RotZ"  range="-85 -25 10" gearRatio="200.0" speedLimit="5900" />
+  </Body>
+
+  <Body name="RightUpperArm" prev="RightSh1" mass="2" cogVector="0.1 0 0" >
+    <Joint name="DofSh2R" type="RotX" range="-85 -30 85" speedLimit="100" />
+    <Shape type="SSL" length="0.12" radius="0.05" transform="0.05 0 0 0 90 0" graphics="true" color="BRONZE" />
+  </Body>
+
+  <Body name="RightForeArm" prev="RightUpperArm" mass="2" cogVector="0.1 0 0" physics="kinematic" >
+    <Joint name="DofElbowR" type="RotY" transform="0.2 0 0 0 0 0" range="-120 -60 0" speedLimit="100" />
+    <Shape type="SSL" length="0.2" radius="0.045" transform="0 0 0 0 90 0" graphics="true" distance="true" color="EMERALD_S" />
+  </Body>
+
+  <Body name="RightWrist0" prev="RightForeArm" physics="dynamic" mass="0.1" >
+    <Joint name="DofWrist0R" type="RotX" transform="0.186 0 -0.02 90 0 0" range="-150 0 150" speedLimit="100" torqueLimit="50" />
+    <Shape type="SPHERE" radius="0.01" distance="false" graphics="false" />
+  </Body>
+
+  <Body name="RightWrist1" prev="RightWrist0" physics="dynamic" mass="0.1" >
+    <Joint name="DofWrist1R" type="RotY" range="-30 0 30" speedLimit="100" torqueLimit="50" />
+    <Shape type="SPHERE" radius="0.01" distance="false" graphics="false" />
+  </Body>
+
+  <Body name="RightWrist2" prev="RightWrist1" physics="dynamic" mass="0.1" >
+    <Joint name="DofWrist2R" type="RotZ" range="-30 0 30" speedLimit="100" torqueLimit="50" />
+    <Shape type="SPHERE" radius="0.01" distance="false" graphics="false" />
+  </Body>
+
+  <Body name="RightHand" prev="RightWrist2" physics="fixed" mass="0.1" transform="0.02 0.02 0 0 0 0" >
+    <Shape type="SSR" extents="0.05 0.05 0.02" transform="0.065 0 0.01 0 -50 0" color="BLUE" graphics="true" />
+  </Body>
+
+  <Body name="RightHandTip" prev="RightHand" transform="0.1 0 0 -90 0 0" >
+    <Shape type="FRAME" scale="0.25" />
+  </Body>
+
+</Graph>

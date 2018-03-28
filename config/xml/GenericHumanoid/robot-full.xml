@@ -1,0 +1,12 @@
+<Graph name="Generic humanoid robot" 
+       xmlns:xi="http://www.w3.org/2003/XInclude" >
+
+<xi:include href="robot-body.xml" />
+<xi:include href="robot-leftArm.xml" />
+<xi:include href="robot-rightArm.xml" />
+<xi:include href="robot-leftLeg.xml" />
+<xi:include href="robot-rightLeg.xml" />
+<xi:include href="robot-leftFingers.xml" />
+<xi:include href="robot-rightFingers.xml" />
+
+</Graph>

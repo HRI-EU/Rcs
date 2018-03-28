@@ -127,7 +127,7 @@ ENDIF()
 # Settings for GeometricTools 5.10
 #
 ################################################################################
-SET(WM5_DEFINITIONS -DUSE_WM5)
+SET(WM5_DEFINITIONS USE_WM5)
 SET(WM5_INCLUDE_DIR ${HGR}/External/GeometricTools/5.10/include)
 SET(WM5_LIBRARY_DIR ${HGR}/External/GeometricTools/5.10/lib/${MKPLT})
 
@@ -136,6 +136,7 @@ IF(WIN32)
     ${WM5_LIBRARY_DIR}/Wm5Mathematics${RCS_DEBUG_SUFFIX}.lib
     ${WM5_LIBRARY_DIR}/Wm5Core${RCS_DEBUG_SUFFIX}.lib)
 ELSE(WIN32)
+  SET(WM5_FLAGS "-isystem ${WM5_INCLUDE_DIR}")
   SET(WM5_LIBRARIES
     ${WM5_LIBRARY_DIR}/libWm5Mathematics.so
     ${WM5_LIBRARY_DIR}/libWm5Core.so)
@@ -204,3 +205,12 @@ ELSE(WIN32)
     ${OCTOMAP_LIBRARY_DIR}/liboctomap.so
     ${OCTOMAP_LIBRARY_DIR}/liboctomath.so)
 ENDIF(WIN32)
+
+################################################################################
+#
+# Eigen3 math library
+# 
+################################################################################
+IF(USE_EIGEN3)
+  FIND_PACKAGE (Eigen3 3.2.0 REQUIRED)
+ENDIF()

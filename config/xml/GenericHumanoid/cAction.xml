@@ -1,0 +1,30 @@
+<Controller graph="gScenario.xml" >
+
+  <Task name="Right Hand XYZ"   controlVariable="XYZ"   effector="RightHandTip" active="true" />
+  <Task name="Right Hand ABC"   controlVariable="ABC"   effector="RightHandTip" />
+  <Task name="Right Hand Polar" controlVariable="POLAR" effector="RightHandTip" axisDirection="Z" />
+
+  <Task name="Left Hand XYZ"    controlVariable="XYZ"   effector="LeftHandTip" active="true" />
+  <Task name="Left Hand ABC"    controlVariable="ABC"   effector="LeftHandTip" />
+  <Task name="Left Hand Polar"  controlVariable="POLAR" effector="LeftHandTip" axisDirection="Z" />
+
+  <Task name="COG X" controlVariable="COGX" effector="Heel" active="true" />
+  <Task name="COG Y" controlVariable="COGY" effector="Heel" active="true" />
+
+  <Task name="Left Foot Pose"  controlVariable="XYZABC" effector="FootL" refBdy="Heel" active="true" />
+  <Task name="Right Foot Pose" controlVariable="XYZABC" effector="FootR" refBdy="Heel" active="true" />
+
+  <Task name="Gaze"  controlVariable="POLAR" effector="Helmet" axisDirection="X" active="true" />
+
+
+  <CollisionModel  DistanceThreshold="0.025" >
+    <CollisionPair body1="RightForeArm"    body2="UpperBody"   />
+    <CollisionPair body1="RightHand"       body2="UpperBody"   />
+    <CollisionPair body1="LeftForeArm"     body2="UpperBody"   />
+    <CollisionPair body1="LeftHand"        body2="UpperBody"   />
+    <CollisionPair body1="RightForeArm"    body2="LeftForeArm" />
+    <CollisionPair body1="RightHand"       body2="ThighR"      />
+    <CollisionPair body1="LeftHand"        body2="ThighL"      />
+  </CollisionModel>
+
+</Controller>

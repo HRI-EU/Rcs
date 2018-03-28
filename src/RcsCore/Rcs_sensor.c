@@ -699,8 +699,8 @@ bool RcsSensor_computePPS(const RcsSensor* self, MatNd* ppsResult,
           const double* lineOrigin = MatNd_getRowPtr(lineOriginMat, id);
           double closestLinePt[3];
 
-          if (Rcs_intersectionLineShape(lineOrigin, lineDir, BODY->A_BI, SHAPE,
-                                        closestLinePt))
+          if (RcsShape_computeLineIntersection(lineOrigin, lineDir, BODY->A_BI, SHAPE,
+                                               closestLinePt))
           {
             Vec3d_subSelf(closestLinePt, lineOrigin);
 

@@ -34,7 +34,6 @@
 
 *******************************************************************************/
 
-#if defined (USE_WM5)
 #include "Rcs_intersectionWM5.h"
 #include "Rcs_typedef.h"
 #include "Rcs_macros.h"
@@ -43,6 +42,8 @@
 #include "Rcs_basicMath.h"
 #include "Rcs_mesh.h"
 #include "Rcs_geometry.h"
+
+#if defined (USE_WM5)
 
 #include <Wm5IntrPlane3Plane3.h>
 #include <Wm5IntrLine3Box3.h>
@@ -63,80 +64,6 @@
 typedef Wm5::Vector3d Vec3;
 
 
-
-/*******************************************************************************
- *
- ******************************************************************************/
-extern "C" {
-
-  RcsMeshData* RcsMesh_fromVertices(const double* vCoords,
-                                    unsigned int numVertices)
-  {
-    const double epsilon = 1.0e-8;
-    const bool owner = false;
-    Vec3* vertsWm5 = new Vec3[numVertices];
-
-#if 0
-    // Ignore duplicates
-    for (unsigned int i=0; i<numVertices; ++i)
-    {
-      vertsWm5[i] = Vec3(vCoords[i*3+0], vCoords[i*3+1], vCoords[i*3+2]);
-    }
-#else
-    // Remove duplicates
-    for (unsigned int i=0; i<numVertices; ++i)
-    {
-      Vec3 verts_i = Vec3(vCoords[i*3+0], vCoords[i*3+1], vCoords[i*3+2]);
-
-      for (unsigned int j=0; j<i; ++j)
-      {
-        if (pow(verts_i.X()-vertsWm5[j].X(), 2) +
-            pow(verts_i.Y()-vertsWm5[j].Y(), 2) +
-            pow(verts_i.Z()-vertsWm5[j].Z(), 2) < epsilon)
-        {
-          RLOG(1, "Found duplicate for index %d - skipping", i);
-        }
-      }
-
-      vertsWm5[i] = verts_i;
-    }
-#endif
-    Wm5::Delaunay3<double> d(numVertices, vertsWm5, epsilon, owner,
-                             Wm5::Query::QT_INTEGER);
-
-    NLOG(0, "Created Delaunay triangulation with %d vertices", numVertices);
-
-    RcsMeshData* mesh = RALLOC(RcsMeshData);
-
-    int numTriangles = 0;
-    int* indices = NULL;
-    bool success = d.GetHull(numTriangles, indices);
-
-    if (success == false)
-    {
-      RLOG(4, "Failed to create Delaunay reiangulation for mesh");
-      RFREE(mesh);
-      delete [] vertsWm5;
-      return NULL;
-    }
-
-    mesh->nFaces = numTriangles;
-    mesh->faces = RNALLOC(3*mesh->nFaces, unsigned int);
-
-    for (unsigned int i=0; i<3*mesh->nFaces; ++i)
-    {
-      mesh->faces[i] = indices[i];
-    }
-
-    mesh->nVertices = numVertices;
-    mesh->vertices = VecNd_clone(vCoords, 3*numVertices);
-
-    delete [] vertsWm5;
-
-    return mesh;
-  }
-
-}
 
 /*******************************************************************************
  *
@@ -523,13 +450,12 @@ bool Rcs_intersectionPlaneCylinder(const double planePt[3],
 /*******************************************************************************
  * Intersection tests
  ******************************************************************************/
-#if defined (USE_WM5)
 extern "C" {
-  bool Rcs_intersectionLineShape(const double linePt[3],
-                                 const double lineDir[3],
-                                 const HTr* A_BI,
-                                 const RcsShape* shape,
-                                 double* closestLinePt)
+  bool RcsShape_computeLineIntersection(const double linePt[3],
+                                        const double lineDir[3],
+                                        const HTr* A_BI,
+                                        const RcsShape* shape,
+                                        double closestLinePt[3])
   {
     HTr A_CI;
     HTr_transform(&A_CI, A_BI, &shape->A_CB);
@@ -611,6 +537,102 @@ extern "C" {
     }
   }
 } // extern "C"
-#endif
 
-#endif // USE_WM5
+/*******************************************************************************
+ *
+ ******************************************************************************/
+extern "C" {
+
+  RcsMeshData* RcsMesh_fromVertices(const double* vCoords,
+                                    unsigned int numVertices)
+  {
+    const double epsilon = 1.0e-8;
+    const bool owner = false;
+    Vec3* vertsWm5 = new Vec3[numVertices];
+
+#if 0
+    // Ignore duplicates
+    for (unsigned int i=0; i<numVertices; ++i)
+    {
+      vertsWm5[i] = Vec3(vCoords[i*3+0], vCoords[i*3+1], vCoords[i*3+2]);
+    }
+#else
+    // Remove duplicates
+    for (unsigned int i=0; i<numVertices; ++i)
+    {
+      Vec3 verts_i = Vec3(vCoords[i*3+0], vCoords[i*3+1], vCoords[i*3+2]);
+
+      for (unsigned int j=0; j<i; ++j)
+      {
+        if (pow(verts_i.X()-vertsWm5[j].X(), 2) +
+            pow(verts_i.Y()-vertsWm5[j].Y(), 2) +
+            pow(verts_i.Z()-vertsWm5[j].Z(), 2) < epsilon)
+        {
+          RLOG(1, "Found duplicate for index %d - skipping", i);
+        }
+      }
+
+      vertsWm5[i] = verts_i;
+    }
+#endif
+    Wm5::Delaunay3<double> d(numVertices, vertsWm5, epsilon, owner,
+                             Wm5::Query::QT_INTEGER);
+
+    NLOG(0, "Created Delaunay triangulation with %d vertices", numVertices);
+
+    RcsMeshData* mesh = RALLOC(RcsMeshData);
+
+    int numTriangles = 0;
+    int* indices = NULL;
+    bool success = d.GetHull(numTriangles, indices);
+
+    if (success == false)
+    {
+      RLOG(4, "Failed to create Delaunay reiangulation for mesh");
+      RFREE(mesh);
+      delete [] vertsWm5;
+      return NULL;
+    }
+
+    mesh->nFaces = numTriangles;
+    mesh->faces = RNALLOC(3*mesh->nFaces, unsigned int);
+
+    for (unsigned int i=0; i<3*mesh->nFaces; ++i)
+    {
+      mesh->faces[i] = indices[i];
+    }
+
+    mesh->nVertices = numVertices;
+    mesh->vertices = VecNd_clone(vCoords, 3*numVertices);
+
+    delete [] vertsWm5;
+
+    return mesh;
+  }
+
+} // extern "C"
+
+#else // USE_WM5
+
+extern "C" {
+
+  bool RcsShape_computeLineIntersection(const double linePt[3],
+                                        const double lineDir[3],
+                                        const HTr* A_BI,
+                                        const RcsShape* shape,
+                                        double closestLinePt[3])
+  {
+    return false;
+  }
+
+  RcsMeshData* RcsMesh_fromVertices(const double* vCoords,
+                                    unsigned int numVertices)
+  {
+    RLOG(4, "Delaunay triangulation requires GeometricTools library - "
+         "not available");
+    return NULL;
+  }
+
+} // extern "C"
+
+#endif

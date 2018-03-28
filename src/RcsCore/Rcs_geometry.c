@@ -430,6 +430,23 @@ double Math_sqrDistLinesegLineseg(const double segPt0[3],
     if (det == 0.0)
     {
       RLOG(1, "PARALLEL - implement special treatment: s0=%.1f s1=%.1f", s[0], s[1]);
+      double p01[3];
+      Vec3d_sub(p01, segPt1, segPt0);
+      double a = Vec3d_innerProduct(p01, segDir0);
+
+      if (a>=0.0)
+      {
+        if (a>=segLength0)   // End point seg0 - start point s1
+        {
+
+        }
+        else   // Positive overlap
+        {
+        }
+      }
+      else
+      {
+      }
     }
     else
     {

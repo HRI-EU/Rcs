@@ -132,9 +132,9 @@ void RcsShape_computeInertiaTensor(const RcsShape* self, const double density,
  *         and stores the closest intersection point in closestLinePt (if it
  *         is not NULL).
  */
-bool Rcs_intersectionLineShape(const double linePt[3],
-                               const double lineDir[3], const HTr* A_BI,
-                               const RcsShape* shape, double* closestLinePt);
+bool RcsShape_computeLineIntersection(const double linePt[3],
+                                      const double lineDir[3], const HTr* A_BI,
+                                      const RcsShape* shape, double closestLinePt[3]);
 
 /*! \ingroup RcsShapeFunctions
  *  \brief Computes the distance between a point and the bounding sphere of a

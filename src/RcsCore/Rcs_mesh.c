@@ -965,17 +965,3 @@ double RcsMesh_computeVolume(RcsMeshData* mesh)
 
   return fabs(volume);
 }
-
-/*******************************************************************************
- *
- ******************************************************************************/
-#if !defined (USE_WM5)
-RcsMeshData* RcsMesh_fromVertices(const double* vCoords,
-                                  unsigned int numVertices)
-{
-  RLOG(4, "Delaunay triangulation requires GeometricTools library - "
-       "not available");
-  return NULL;
-}
-
-#endif

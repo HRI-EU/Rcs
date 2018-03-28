@@ -1,0 +1,32 @@
+<Graph name="trunk" >
+
+  <Body name="Heel" >
+    <Joint name="DofHeelX"   type="TransX" range="-4 0 4"     constraint="true" speedLimit="1" />
+    <Joint name="DofHeelY"   type="TransY" range="-4 0 4"     constraint="true" speedLimit="1" />
+    <Joint name="DofHeelThZ" type="RotZ"   range="-400 0 400" constraint="true" speedLimit="100" />
+    <Shape type="FRAME" scale="0.25" />
+  </Body>
+
+  <Body name="UpperBody" prev="Heel" color="BRASS" mass="20" cogVector="0 0 0.2" >
+    <Joint name="DofWaistX"   type="TransX" range="-0.25 0.08 0.25" speedLimit="1" />
+    <Joint name="DofWaistY"   type="TransY" range="-0.25 0 0.25" speedLimit="1" />
+    <Joint name="DofWaistZ"   type="TransZ" range="0.2 0.58 0.65" speedLimit="1" />
+    <Joint name="DofWaistThX" type="RotX"   range="-10 0 10" speedLimit="100" />
+    <Joint name="DofWaistThY" type="RotY"   range="-10 0 12" speedLimit="100" />
+    <Joint name="DofWaistThZ" type="RotZ"   range="-12 0 12" speedLimit="100" />
+    <Shape type="SSL" length="0.08"  radius="0.12"  transform="0.02 0 0.1  0 10 0" graphics="true" />
+    <Shape type="SSL" length="0.08"  radius="0.15"  transform="0.02 0 0.2  0 10 0" graphics="true" />
+  </Body>
+
+  <Body name="HeadPan" prev="UpperBody" mass="1" >
+    <Joint name="DofPan" type="RotZ" transform="0.05 0 0.45 0 0 0" range="-90 0 90" speedLimit="100" />
+  </Body>
+
+  <Body name="Helmet" prev="HeadPan" color="RUBY_S" mass="2" >
+    <Joint name="DofTilt" type="RotY" transform="0 0 0.075 0 0 0" range="-30 0 30" speedLimit="100" />
+    <Shape type="SPHERE" radius="0.12" transform="0 0 0 0 0 0" graphics="true" />
+    <Shape type="BOX" extents="0.1 0.16 0.08" transform="0.04 0 0.05 0 0 0" graphics="true" />
+    <Shape type="FRAME" scale="0.25" />
+  </Body>
+
+</Graph>

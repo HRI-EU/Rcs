@@ -3479,3 +3479,270 @@ bool testViaPointGradient(int argc, char** argv)
 
   return success;
 }
+
+/*******************************************************************************
+ * Eigen3 linear algebra tests
+ ******************************************************************************/
+#if defined (USE_EIGEN3)
+
+#include "Rcs_eigen.h"
+
+bool testFunctionsEigen3(int argc, char** argv)
+{
+  bool success = true;
+  int dim = 5;
+
+  // Parse command line arguments
+  Rcs::CmdLineParser argP(argc, argv);
+  argP.getArgument("-dim", &dim, "Set default dimansionality");
+
+  // MatNd_SVD
+  {
+    RLOGS(1, "**************************************");
+    RLOGS(1, "Test for MatNd_SVD");
+    RLOGS(1, "**************************************");
+    int m = 3, n = 5;
+    double eps = 1.0e-8;
+
+    argP.getArgument("-rows", &m, "Rows for SVD test");
+    argP.getArgument("-cols", &n, "Columns for SVD test");
+    argP.getArgument("-eps", &eps, "Smallest singular value");
+
+    MatNd* J = MatNd_create(m, n);
+    MatNd_setRandom(J, -1.0, 1.0);
+
+    MatNd* U = MatNd_create(m, n);
+    MatNd* S = MatNd_create(n, 1);
+    MatNd* V = MatNd_create(n, n);
+
+    // Perform singular value decomposition
+    int rank = MatNd_SVD(U, S, V, J, eps);
+    V->n=rank;
+
+    // Reconstruct J
+    MatNd* UxS    = MatNd_create(U->m, S->m);
+    MatNd* diagS  = MatNd_create(S->m, S->m);
+    MatNd* VT     = MatNd_create(V->n, V->m);
+    MatNd* UxSxVT = MatNd_create(UxS->m, VT->n);
+
+    MatNd_setDiag(diagS, S);
+    MatNd_mul(UxS, U, diagS);
+    MatNd_transpose(VT, V);
+    MatNd_mul(UxSxVT, UxS, VT);
+
+    double rmsErr = MatNd_msqError(J, UxSxVT);
+    const double maxErr = 1.0e-12;
+
+    int rankTest = MatNd_rank(J, eps);
+    if (rankTest != rank)
+    {
+      RLOGS(1, "FAILURE for MatNd_rank(): Result doesn't match SVD: %d != %d",
+            rankTest, rank);
+      success = false;
+    }
+
+    if (rmsErr < maxErr)
+    {
+      RLOGS(1, "SUCCESS for SVD: RMS error is %g (<%g), rank of J is %d",
+            rmsErr, maxErr, rank);
+    }
+    else
+    {
+      success = false;
+      RMSGS("FAILURE for SVD: RMS error is %g (>=%g), rank of J is %d",
+            rmsErr, maxErr, rank);
+    }
+
+    if ((rmsErr>=maxErr) || (RcsLogLevel>1) || ((RcsLogLevel>0)&&(dim<10)))
+    {
+      MatNd_printCommentDigits("U", U, 4);
+      MatNd_printComment("S", S);
+      MatNd_printCommentDigits("V", V, 4);
+      MatNd_printCommentDigits("J", J, 4);
+      MatNd_printCommentDigits("Reconstruction (UxSxVT)", UxSxVT, 4);
+    }
+
+    MatNd_destroy(U);
+    MatNd_destroy(S);
+    MatNd_destroy(V);
+
+    MatNd_destroy(UxS);
+    MatNd_destroy(diagS);
+    MatNd_destroy(VT);
+    MatNd_destroy(UxSxVT);
+    MatNd_destroy(J);
+  }
+
+  // MatNd_svdSolve
+  {
+    RLOGS(1, "**************************************");
+    RLOGS(1, "Test for MatNd_svdSolve");
+    RLOGS(1, "**************************************");
+    // Create a square symmetric positiv definite matrix A with
+    // random values
+    int n = dim;
+    MatNd* A = MatNd_create(n, n);
+    MatNd_setRandom(A, -1.0, 1.0);
+
+    // Create a random vector b
+    MatNd* b = MatNd_create(n, 1);
+    MatNd_setRandom(b, -1.0, 1.0);
+
+    // Solve Ax = b for x
+    MatNd* x  = MatNd_create(n, 1);
+    double det = MatNd_SVDSolve(x, A, b);
+    RLOGS(1, "Determinant is %g", det);
+
+    // Test: Ax = b
+    MatNd* Ax  = MatNd_create(n, 1);
+    MatNd* err = MatNd_create(n, 1);
+    MatNd_mul(Ax, A, x);
+    MatNd_sub(err, Ax, b);
+
+    double errNorm = MatNd_getNorm(err);
+    const double maxErr = 1.0e-12;
+
+    if (errNorm < maxErr)
+    {
+      RLOGS(1, "SUCCESS for SVD solve: error norm is %g (<%g)",
+            errNorm, maxErr);
+    }
+    else
+    {
+      success = false;
+      RMSGS("FAILURE for SVD solve: Error norm is %g (>1e-12)", errNorm);
+    }
+
+
+    if (((errNorm>=maxErr) && (RcsLogLevel>2)) ||
+        ((RcsLogLevel>0)&&(dim<10)))
+    {
+      MatNd_printCommentDigits("Error", err, 8);
+      MatNd_printCommentDigits("Ax", Ax, 8);
+      MatNd_printCommentDigits("b", b, 8);
+    }
+
+    // Clean up
+    MatNd_destroy(A);
+    MatNd_destroy(x);
+    MatNd_destroy(b);
+    MatNd_destroy(Ax);
+    MatNd_destroy(err);
+  }
+
+  // MatNd_inverse: inv = V diag(S^-1) U^T
+  // Here's some test code based on inv(A)*A = E:
+  {
+    RLOGS(1, "**************************************");
+    RLOGS(1, "Test for MatNd_SVDInverse");
+    RLOGS(1, "**************************************");
+    int n = dim;
+    MatNd* A      = MatNd_create(n, n);
+    MatNd* A_inv  = MatNd_create(n, n);
+    MatNd* A_invA = MatNd_create(n, n);
+    MatNd_setRandom(A, -1.0, 1.0);
+
+    double t0 = Timer_getTime();
+    double det = MatNd_SVDInverse(A_inv, A);
+    double t1 = Timer_getTime();
+    MatNd_mul(A_invA, A_inv, A);
+
+    RLOGS(1, "det = %g, inversion took %g usec", det, 1.0e6 * (t1 - t0));
+
+    if (MatNd_isIdentity(A_invA, 1.0e-8))
+    {
+      RLOGS(1, "SUCCESS for SVD inverse: A*inv(A) = I");
+    }
+    else
+    {
+      success = false;
+      RMSGS("FAILURE for SVD inverse: A*inv(A) != I");
+      MatNd_printCommentDigits("A", A, 5);
+      MatNd_printCommentDigits("inv(A)", A_inv, 5);
+      MatNd_printCommentDigits("A*inv(A) = I", A_invA, 5);
+    }
+
+    if ((RcsLogLevel>1) || ((RcsLogLevel>0) && (dim<10)))
+    {
+      MatNd_printCommentDigits("A", A, 5);
+      MatNd_printCommentDigits("inv(A)", A_inv, 5);
+      MatNd_printCommentDigits("A*inv(A) = E", A_invA, 5);
+    }
+
+    MatNd_destroy(A);
+    MatNd_destroy(A_inv);
+    MatNd_destroy(A_invA);
+  }
+
+  // MatNd_QRDecomposition
+  {
+    RLOGS(1, "**************************************");
+    RLOGS(1, "Test for MatNd_QRDecomposition");
+    RLOGS(1, "**************************************");
+    int m = dim;
+    int n = 3*dim;
+    argP.getArgument("-rows", &m, "Number of rows");
+    argP.getArgument("-cols", &n, "Number of columns");
+    MatNd* J      = MatNd_create(m, n);
+    MatNd* Q      = MatNd_create(m, m);
+    MatNd* QtQ    = MatNd_create(m, m);
+    MatNd* R      = MatNd_create(m, n);
+    MatNd* J_test = MatNd_create(m, n);
+
+    MatNd_setRandom(J, -1.0, 1.0);
+
+    Timer_setZero();
+    MatNd_QRDecomposition(Q, R, J);
+    double dt = Timer_getTime();
+
+    // Test J = Q R
+    MatNd_mul(J_test, Q, R);
+
+    // Test Q^T Q = I
+    MatNd_sqrMulAtBA(QtQ, Q, NULL);
+    bool isQorthogonal = MatNd_isIdentity(QtQ, 1.0e-8);
+
+    double errNorm = MatNd_msqError(J, J_test);
+    const double maxErr = 1.0e-12;
+
+    if ((errNorm < maxErr) && (isQorthogonal==true))
+    {
+      RLOGS(1, "SUCCESS for QR decomposition after %.2f msec: error is "
+            "%g (<%g)", 1.0e3*dt, errNorm, maxErr);
+    }
+    else
+    {
+      success = false;
+      RMSGS("FAILURE for QR decompositionafter %.2f msec: error is %g"
+            " (>%g)", 1.0e3*dt, errNorm, maxErr);
+    }
+
+    if ((errNorm>=maxErr) || (isQorthogonal==false) || (RcsLogLevel>1) ||
+        ((RcsLogLevel>0)&&(dim<10)))
+    {
+      MatNd_printCommentDigits("J", J, 5);
+      MatNd_printCommentDigits("Q", Q, 5);
+      MatNd_printCommentDigits("R", R, 5);
+      MatNd_printCommentDigits("QtQ", QtQ, 5);
+      MatNd_printCommentDigits("Q*R", J_test, 5);
+    }
+
+    MatNd_destroy(J);
+    MatNd_destroy(Q);
+    MatNd_destroy(QtQ);
+    MatNd_destroy(R);
+    MatNd_destroy(J_test);
+  }
+
+
+  return success;
+}
+#else
+
+bool testFunctionsEigen3(int argc, char** argv)
+{
+  RMSG("Eigen3 not supported");
+  return false;
+}
+
+#endif
