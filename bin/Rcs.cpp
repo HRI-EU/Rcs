@@ -217,8 +217,6 @@ int main(int argc, char** argv)
       printf("\t\t7   Null space convergence test\n");
       printf("\t\t8   Resolved acceleration controller test\n");
       printf("\t\t9   MatNdWidget test\n");
-      printf("\t\t10  Marker2D test\n");
-      printf("\t\t11  MatNdPlot test\n");
       printf("\t\t12  Distance function test\n");
       printf("\t\t13  Depth first traversal test\n");
 
@@ -773,12 +771,13 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("S", "Print out joint torques");
       Rcs::KeyCatcherBase::registerKey("j", "Disable joint limits");
       Rcs::KeyCatcherBase::registerKey("J", "Enable joint limits");
+      Rcs::KeyCatcherBase::registerKey("g", "Toggle gravity compensation");
 
       double dt = 0.005, tmc = 0.01;
       double damping = 2.0;
       char hudText[2056] = "";
       char physicsEngine[32] = "Bullet";
-      strcpy(xmlFileName, "gPhysics.xml");
+      strcpy(xmlFileName, "gScenario.xml");
       strcpy(directory, "config/xml/DexBot");
       bool pause = argP.hasArgument("-pause", "Hit key for each iteration");
       bool posCntrl = argP.hasArgument("-posCntrl",
@@ -789,6 +788,8 @@ int main(int argc, char** argv)
                                                 "Disable collisions between"
                                                 " all rigid bodies");
       bool testCopy = argP.hasArgument("-copy", "Test physics copying");
+      bool gravComp = argP.hasArgument("-gravComp",
+                                       "Apply gravity compensation to torque joints");
       argP.getArgument("-physicsEngine", physicsEngine,
                        "Physics engine (default is \"%s\")", physicsEngine);
       argP.getArgument("-dt", &dt, "Simulation time step (default is %f)",
@@ -899,7 +900,7 @@ int main(int argc, char** argv)
         viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
         Rcs::PhysicsNode* simNode = new Rcs::PhysicsNode(sim);
         viewer->add(simNode);
-        hud = new Rcs::HUD(0,0,500,160);
+        hud = new Rcs::HUD();
         viewer->add(hud);
         kc = new Rcs::KeyCatcher();
         viewer->add(kc);
@@ -957,6 +958,11 @@ int main(int argc, char** argv)
           RMSGS("Enabling joint limits");
           sim->setJointLimits(true);
         }
+        else if (kc && kc->getAndResetKey('g'))
+        {
+          gravComp = !gravComp;
+          RMSGS("Gravity compensation is %s", gravComp ? "ON" : "OFF");
+        }
         else if (kc && kc->getAndResetKey(' '))
         {
           pause = !pause;
@@ -986,27 +992,37 @@ int main(int argc, char** argv)
         //////////////////////////////////////////////////////////////
         // Compute control input
         /////////////////////////////////////////////////////////////////
+        if (gravComp==true)
+        {
+          // Update state in case the graph changed due to Gui input
+          RcsGraph_setState(graph, NULL, NULL);
 
-        // Velocity damping
-        MatNd* M_damp = MatNd_clone(q_dot_curr);
-        MatNd* MM = MatNd_create(graph->nJ, graph->nJ);
-        RcsGraph_stateVectorToIKSelf(graph, M_damp);
-        MatNd_constMulSelf(M_damp, -damping);
-        RcsGraph_computeMassMatrix(graph, MM);
-        MatNd_preMulSelf(M_damp, MM);
+          // Velocity damping
+          MatNd* M_damp = MatNd_clone(q_dot_curr);
+          MatNd* MM = MatNd_create(graph->nJ, graph->nJ);
+          RcsGraph_stateVectorToIKSelf(graph, M_damp);
+          MatNd_constMulSelf(M_damp, -damping);
+          RcsGraph_computeMassMatrix(graph, MM);
+          MatNd_preMulSelf(M_damp, MM);
 
-        // Gravity compensation
-        RcsGraph_computeGravityTorque(graph, T_gravity);
-        MatNd_constMulSelf(T_gravity, -1.0);
-        MatNd_addSelf(T_gravity, M_damp);
+          // Gravity compensation
+          RcsGraph_computeGravityTorque(graph, T_gravity);
+          MatNd_constMulSelf(T_gravity, -1.0);
+          MatNd_addSelf(T_gravity, M_damp);
 
-        MatNd_destroy(M_damp);
-        MatNd_destroy(MM);
+          MatNd_destroy(M_damp);
+          MatNd_destroy(MM);
+        }
 
         // Dsired joint angles from Gui
         for (unsigned int i=0; i<graph->dof; i++)
         {
           q_des_f->ele[i] = (1.0-tmc)*q_des_f->ele[i] + tmc*q_des->ele[i];
+        }
+
+        if (gravComp==false)
+        {
+          MatNd_setZero(T_gravity);
         }
 
         sim->setControlInput(q_des_f, NULL, T_gravity);
@@ -1032,8 +1048,10 @@ int main(int argc, char** argv)
           RLOG(1, "Step");
         }
 
-        sprintf(hudText, "[%s]: Sim-step: %.1f ms\nViewer fps: %.1f Hz",
-                sim->getClassName(), dtSim*1000.0, 0.0/*viewer->fps*/);
+        sprintf(hudText, "[%s]: Sim-step: %.1f ms\nSim time: %.1f sec\n"
+                "Gravity compensation: %s",
+                sim->getClassName(), dtSim*1000.0, sim->time(),
+                gravComp ? "ON" : "OFF");
 
         if (hud != NULL)
         {
@@ -1890,7 +1908,7 @@ int main(int argc, char** argv)
         v       = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
         kc      = new Rcs::KeyCatcher();
         gn      = new Rcs::GraphNode(controller.getGraph());
-        hud     = new Rcs::HUD(0,0,500,160);
+        hud     = new Rcs::HUD();
         dragger = new Rcs::BodyPointDragger();
         v->add(gn);
         v->add(hud);

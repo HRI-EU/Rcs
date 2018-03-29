@@ -332,7 +332,6 @@ void JointWidget::displayAct(void)
 void JointWidget::setConstraint(void)
 {
   int i = 0;
-
   lock();
 
   // Assign values from constraint check boxes

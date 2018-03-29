@@ -123,6 +123,8 @@ void Rcs::BulletHingeJoint::setJointTorque(double torque, double dt)
 #if 1
   enableMotor(false);
 
+  torque = Math_clip(torque, -rcsJoint->maxTorque, rcsJoint->maxTorque);
+
   NLOGS(0, "Setting torque for joint \"%s\" to %g Nm",
         jnt ? jnt->name : "NULL", torque);
 
