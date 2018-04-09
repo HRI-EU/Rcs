@@ -201,8 +201,8 @@ void Rcs::HUD::init(int llx, int lly, int sizeX, int sizeY,
   // Set up background geometry
   this->bgGeometry = new osg::Geometry;
   bgGeometry->setVertexArray(backgroundVertices.get());
-  bgGeometry->setNormalArray(normals.get(), osg::Array::BIND_OVERALL);
-  bgGeometry->setColorArray(colors.get(), osg::Array::BIND_OVERALL);
+  bgGeometry->setNormalArray(normals.get());
+  bgGeometry->setColorArray(colors.get());
   bgGeometry->addPrimitiveSet(new osg::DrawArrays(GL_QUADS,0,4));
 
   // Create text instance that will show up in the HUD

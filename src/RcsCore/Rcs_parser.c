@@ -143,22 +143,13 @@ xmlNodePtr parseXMLMemory(const char* buffer, unsigned int size,
     return NULL;
   }
 
-  // int subs =
-  xmlXIncludeProcess(*doc) ;
-  NLOG(0, "%d xml inclusions done for file %s", subs, filename);
+  xmlXIncludeProcess(*doc);
 
   if (!(node = xmlDocGetRootElement(*doc)))
   {
     RLOG(1, "XML memory has no root element - ignoring");
     return NULL;
   }
-
-  // if(xmlStrcmp(node->name, (const xmlChar *) tag))
-  // {
-  //   RLOG(1, "Wrong file type (\"%s\"), root node is \"%s\" and not \"%s\"",
-  //        filename, node->name, tag);
-  //   return NULL;
-  // }
 
   return node;
 }
@@ -727,7 +718,7 @@ bool getXMLNodePropertyInt(xmlNodePtr node, const char* tag, int* x)
     if (x != NULL)
     {
       *x = atoi((const char*) txt);
-      RCHECK(isfinite(*x));
+      //RCHECK(isfinite(*x));
     }
 
     exists = true;
@@ -772,7 +763,7 @@ bool getXMLNodePropertyUnsignedInt(xmlNodePtr node, const char* tag,
     {
       *x = strtoul((const char*) txt, 0, 0);
       RCHECK(errno == 0);
-      RCHECK(isfinite(*x));
+      //RCHECK(isfinite(*x));
       RCHECK(*x<UINT_MAX);
     }
 

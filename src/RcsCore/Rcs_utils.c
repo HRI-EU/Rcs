@@ -752,15 +752,15 @@ bool Rcs_testGradient(void (*f)(double*, const double*, void*),
  ******************************************************************************/
 void Rcs_printComputerStats(FILE* out)
 {
-  char hostName[256];
-  int success;
   pthread_attr_t attr;
   size_t stackSize;
 
   fprintf(out, "[%s: %s(%d)]:\n", __FILE__, __FUNCTION__, __LINE__);
 
+#if !defined(_MSC_VER)
   // Get hostname
-  success = gethostname(hostName, 256);
+  char hostName[256];
+  int success = gethostname(hostName, 256);
 
   if (success == -1)
   {
@@ -770,6 +770,7 @@ void Rcs_printComputerStats(FILE* out)
   {
     fprintf(out, "Hostname is \"%s\"\n", hostName);
   }
+#endif
 
 #if !defined(_MSC_VER)
   fprintf(out, "Number of cores: %ld\n",  sysconf(_SC_NPROCESSORS_ONLN));

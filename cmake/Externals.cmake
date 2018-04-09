@@ -148,7 +148,8 @@ ENDIF(WIN32)
 #
 ################################################################################
 IF(WIN32)
-  SET(LIBXML2_LIBRARIES RcsLibXml2)
+  SET(LIBXML2_LIBRARIES ${HGR}/External/libxml2-win/libxml2-2.7.8.win32/lib/libxml2.lib)
+  SET(LIBXML2_INCLUDE_DIR ${HGR}/External/libxml2-win/libxml2-2.7.8.win32/include)
 ELSE(WIN32)
   FIND_PACKAGE(LibXml2 REQUIRED)
 ENDIF(WIN32)
@@ -159,7 +160,8 @@ ENDIF(WIN32)
 #
 ################################################################################
 IF(WIN32)
-  SET(PTHREAD_LIBRARIES RcsPthreadsVC2)
+  SET(PTHREAD_LIBRARIES ${HGR}/External/pthreads-win/pthreads-w32-2-9-1-release/Pre-built.2/lib/x86/pthreadVC2.lib)
+  SET(PTHREAD_INCLUDE_DIR ${HGR}/External/pthreads-win/pthreads-w32-2-9-1-release/Pre-built.2/include)
 ELSE(WIN32)
   SET(PTHREAD_LIBRARIES pthread)
 ENDIF()

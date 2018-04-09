@@ -63,6 +63,10 @@
 #define __FILENAME__ __FILE__
 #endif
 
+#if !defined (__FUNCTION__)
+#define __FUNCTION__ __func__
+#endif
+
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_YELLOW  "\x1b[33m"

@@ -2610,6 +2610,7 @@ int main(int argc, char** argv)
   {
     Rcs::KeyCatcherBase::printRegisteredKeys();
     argP.print();
+    Rcs_printResourcePath();
   }
 
   // Clean up global stuff. From the libxml2 documentation:
