@@ -485,7 +485,7 @@ void RcsGraph_makeJointsConsistent(RcsGraph* self);
  */
 void RcsGraph_setRandomState(RcsGraph* self);
 
-/*! \ingroup RcsJointFunctions
+/*! \ingroup RcsGraphFunctions
  *  \brief Appends a deep copy of the RcsGraph other to the body root of the
  *         graph self. The body root must not have any children, and the graph
  *         that will be appended must have an unique root body (without any next
