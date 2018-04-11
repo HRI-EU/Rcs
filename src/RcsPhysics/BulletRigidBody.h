@@ -39,10 +39,6 @@
 
 #include "BulletHingeJoint.h"
 
-#include <Rcs_mesh.h>
-
-#include <map>
-
 
 
 namespace Rcs

@@ -427,10 +427,7 @@ void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
 
   for (body_it it=bdyMap.begin(); it!=bdyMap.end(); ++it)
   {
-    const RcsBody* rb = it->first;
-    RCHECK(rb);
     Rcs::BulletRigidBody* btBdy = it->second;
-    RCHECK_MSG(btBdy, "%s", rb->name);
     btBdy->updateBodyTransformFromPhysics();
   }
 
@@ -439,7 +436,6 @@ void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
   for (hinge_it it = hingeMap.begin(); it != hingeMap.end(); ++it)
   {
     Rcs::BulletHingeJoint* hinge = it->second;
-    RCHECK(hinge);
     hinge->update(dt);
   }
 
@@ -495,6 +491,12 @@ void Rcs::BulletSimulation::reset()
 
   btBroadphaseInterface* bi = dynamicsWorld->getBroadphase();
   btOverlappingPairCache* opc = bi->getOverlappingPairCache();
+
+  for (hinge_it it = hingeMap.begin(); it != hingeMap.end(); ++it)
+  {
+    Rcs::BulletHingeJoint* hinge = it->second;
+    hinge->reset(this->q_des->ele[hinge->getJointIndex()]);
+  }
 
   for (body_it it=bdyMap.begin(); it!=bdyMap.end(); ++it)
   {

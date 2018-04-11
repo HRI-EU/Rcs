@@ -63,6 +63,7 @@ public:
   void setJointAngle(double angle, double dt);
   void setJointTorque(double torque, double dt);
   void setJointLimit(bool enable, double q_min, double q_max);
+  void reset(double hingeAngle);
 
 
 private:
@@ -77,7 +78,6 @@ private:
   double jointAcceleration;
   double flipAngle;
   double offset;
-
 };
 
 }   // namespace Rcs

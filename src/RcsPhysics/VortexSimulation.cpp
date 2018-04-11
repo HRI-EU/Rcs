@@ -137,12 +137,12 @@ void Rcs::VortexSimulation::initPhysics(const char* physicsConfigFile,
   // create the frame
   RLOG(5, "VxFrame::instance()");
   Vx::VxFrame* frame = Vx::VxFrame::instance();
-  //  frame->setMaxThreadCount(4);
+  frame->setMaxThreadCount(4);
 
   // create the universe
-  Vx::VxUniverse* universe = new Vx::VxUniverse(800, 8000);
+  Vx::VxUniverse* universe = new Vx::VxUniverse(100, 10000);
   RLOG(5, "Creating universe");
-  //  universe->setSolverThreadCount(2);
+  universe->setCollisionMultithreaded(true);
 
   // Creating stepper for particle systems
   // this->vxPsStepper = new VxPs::VxPsStepper;
@@ -150,7 +150,6 @@ void Rcs::VortexSimulation::initPhysics(const char* physicsConfigFile,
   // Add the universe to the VxFrame
   RLOG(5, "frame->addUniverse");
   frame->addUniverse(universe);
-  // frame->addPsStepper(this->vxPsStepper);
 
   Vx::VxFrameStepperOption& fo = frame->getStepperOption();
   fo.setStepperMode(Vx::VxFrameStepperOption::kModeSafe);
@@ -160,7 +159,6 @@ void Rcs::VortexSimulation::initPhysics(const char* physicsConfigFile,
   fo.setCheckAccelerationLinearThreshold(20.0);
   fo.setVerbose(true);
 
-  RLOG(5, "setGravity");
   universe->setGravity(0.0, 0.0, -RCS_GRAVITY);
   Vx::VxReal lin_speed, lin_accel, ang_speed, ang_accel;
   int step;
@@ -980,6 +978,10 @@ void Rcs::VortexSimulation::simulate(double dt,
     {
       MatNd_destroy(q_dot);
     }
+  }
+  REXEC(4)
+  {
+    getUniverse()->verifyDynamics("Rcs::VortexSimulation", 3);
   }
 }
 

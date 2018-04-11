@@ -291,3 +291,18 @@ double Rcs::BulletHingeJoint::getJointTorque() const
 
   return torque;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::BulletHingeJoint::reset(double hingeAngle)
+{
+  this->hingeAngleCurr = hingeAngle;
+  this->hingeAnglePrev = hingeAngle;
+  this->jointAngleCurr = hingeAngle;
+  this->jointAnglePrev = hingeAngle;
+  this->jointVelocity = 0.0;
+  this->jointVelocityPrev = 0.0;
+  this->jointAcceleration = 0.0;
+  this->flipAngle = 0.0;
+}

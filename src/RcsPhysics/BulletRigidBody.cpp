@@ -691,6 +691,9 @@ void Rcs::BulletRigidBody::updateBodyTransformFromPhysics()
  ******************************************************************************/
 void Rcs::BulletRigidBody::reset(const HTr* A_BI_)
 {
+  Vec3d_setZero(this->x_dot);
+  Vec3d_setZero(this->omega);
+
   setBodyTransform(A_BI_ ? A_BI_ : body->A_BI);
   clearForces();
   setLinearVelocity(btVector3(0.0, 0.0, 0.0));
