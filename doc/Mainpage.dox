@@ -28,6 +28,10 @@
  
    \ref RcsGraph
 
+   \ref RcsTask
+
+   \ref RcsController
+
    \ref RcsPhysics
  
    \ref RcsGraphics

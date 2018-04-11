@@ -4,7 +4,7 @@
   <Body name="Ground Plane" >
     <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0"
 	   textureFile="textures/white-hardwood-floor.jpg"
-	   color="WHITE" graphics="true" />
+	   color="PEWTER" graphics="true" />
     <Shape type="FRAME" scale="1" />
   </Body>
 

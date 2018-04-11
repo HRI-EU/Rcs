@@ -14,7 +14,7 @@
   <Task name="Left Foot Pose"  controlVariable="XYZABC" effector="FootL" refBdy="Heel" active="true" />
   <Task name="Right Foot Pose" controlVariable="XYZABC" effector="FootR" refBdy="Heel" active="true" />
 
-  <Task name="Gaze"  controlVariable="POLAR" effector="Helmet" axisDirection="X" active="true" />
+  <Task name="Gaze"  controlVariable="POLAR" effector="Helmet" axisDirection="X" />
 
 
   <CollisionModel  DistanceThreshold="0.025" >

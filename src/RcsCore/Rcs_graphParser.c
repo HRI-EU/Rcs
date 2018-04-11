@@ -755,7 +755,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
         RcsMeshData* mesh = RcsMesh_createFromFile(shape->meshFile);
         if (mesh==NULL)
         {
-          RLOG(4, "Failed to add mesh %s to shape", shape->meshFile);
+          RLOG(4, "Failed to add mesh \"%s\" to shape", shape->meshFile);
         }
         shape->userData = (void*) mesh;
       }

@@ -58,8 +58,9 @@ Rcs::SolverRAC::~SolverRAC()
 }
 
 /*******************************************************************************
- * compute torque inverse dynamics task space
  * Tracking accelerations: ax = xpp_des - kp (x - x_des) - kd (xp - xp_des)
+ * Null space: kp_nullSpace dH + kd_nullspace q_dot
+ * Result: qpp = J# (ax - Jdot qp) - N dH
  ******************************************************************************/
 void Rcs::SolverRAC::solve(MatNd* qpp_des,
                            const MatNd* a_des,
@@ -129,11 +130,6 @@ void Rcs::SolverRAC::solve(MatNd* qpp_des,
   // Compute the task-space weight matrix for blending
   Rcs::IkSolverRMR::computeBlendingMatrix(*controller, Wx, a_des, J, false);
 
-  // MatNd_printDims("wJpinv", wJpinv);
-  // MatNd_printDims("J", J);
-  // MatNd_printDims("Wx", Wx);
-  // MatNd_printDims("invWq", invWq);
-  //  double det = MatNd_rwPinv2(wJpinv, J, Wx, invWq);
   MatNd lambdaMat = MatNd_fromPtr(1, 1, &lambda);
   double det = MatNd_rwPinv(wJpinv, J, jointMetricInvA, &lambdaMat);
 
@@ -176,15 +172,9 @@ void Rcs::SolverRAC::solve(MatNd* qpp_des,
   // Joint speed damping: Kd(qp_des - qp) with qp_des = 0
   RcsGraph_stateVectorToIK(graph, graph->q_dot, q_dot_ik);
 
-  // Remove effect of joint metric for damping
-  // for(unsigned int i=0;i<controller->qp_temp->m;i++)
-  //   {
-  //     controller->qp_temp->ele[i] /= controller->jointMetric->ele[i];
-  //   }
-
   // Add damping term to null space
-  double kd_nullspace = 1.0;
-  MatNd_constMulAndAddSelf(dH, q_dot_ik, -kd_nullspace);
+  double kd_nullspace = 10.0;
+  MatNd_constMulAndAddSelf(dH, q_dot_ik, kd_nullspace);
 
   // Compress to coupled joint space
   if (invA != NULL)
@@ -195,7 +185,7 @@ void Rcs::SolverRAC::solve(MatNd* qpp_des,
   // Project gradients into the null space of the movement and add them to the
   // joint space accelerations
   MatNd_preMulSelf(dH, N);
-  MatNd_addSelf(aq, dH);
+  MatNd_subSelf(aq, dH);
   MatNd_eleMulSelf(aq, jointMetricInvA);
 
   // Here we inflate the joint space accelerations to the IK dimensions
@@ -227,3 +217,42 @@ void Rcs::SolverRAC::solve(MatNd* qpp_des,
 }
 
 
+
+double Rcs::SolverRAC::test(const MatNd* a_des) const
+{
+  RMSG("Resolved acceleration test");
+  Rcs::ControllerBase cb(*controller);
+  Rcs::SolverRAC sr(&cb);
+
+  MatNd_setRandom(cb.getGraph()->q, -1.0, 1.0);
+  MatNd_setRandom(cb.getGraph()->q_dot, -1.0, 1.0);
+  RcsGraph_setState(cb.getGraph(), NULL, NULL);
+
+  size_t nx = cb.getActiveTaskDim(a_des);
+  MatNd* ax_des = MatNd_create(nx, 1);
+  MatNd_setRandom(ax_des, -2.0, 2.0);
+  MatNd* qpp_des = MatNd_create(cb.getGraph()->dof, 1);
+  MatNd* dH = MatNd_create(1, cb.getGraph()->nJ);
+  MatNd_setRandom(dH, -10.0, 10.0);
+
+
+  sr.solve(qpp_des, a_des, ax_des, dH, 0.0);
+  MatNd_printCommentDigits("qpp_des", qpp_des, 6);
+
+  //ax = J*qpp + Jp*qp
+  MatNd* J_test = MatNd_create(ax_des->m, cb.getGraph()->nJ);
+  MatNd* Jpqp = MatNd_create(ax_des->m, 1);
+  MatNd* ax_test = MatNd_create(ax_des->m, 1);
+  cb.computeJ(J_test, a_des);
+  cb.computeJdotQdot(Jpqp, a_des);
+  RcsGraph_stateVectorToIKSelf(cb.getGraph(), qpp_des);
+  MatNd_mul(ax_test, J_test, qpp_des);
+  MatNd_addSelf(ax_test, Jpqp);
+  RcsGraph_stateVectorFromIKSelf(cb.getGraph(), qpp_des);
+  double err = MatNd_msqError(ax_des, ax_test);
+
+  MatNd_printTwoArraysDiff(ax_des, ax_test, 5);
+  RLOG(0, "msq err = %g", err);
+
+  return err;
+}

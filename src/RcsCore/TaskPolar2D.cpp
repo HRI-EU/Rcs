@@ -119,7 +119,7 @@ void Rcs::TaskPolar2D::computeX(double* polarAngles) const
 }
 
 /*******************************************************************************
- * Computes the Polar angle velocity
+ * Computes the Polar angle velocity: phi_dot = H*R_om
  ******************************************************************************/
 void Rcs::TaskPolar2D::computeXp(double* phip) const
 {
@@ -170,7 +170,11 @@ void Rcs::TaskPolar2D::computeDXp(double* dOmega,
   Vec3d_rotateSelf(E_om_des, A_ER);
 
   // The result is the difference of the first and second component (x and y)
-  RFATAL("TODO: Do we need to account for the direction vector here? Plase check.");
+  if (this->direction != 2)
+  {
+    RFATAL("TODO: Do we need to account for the direction vector here?");
+  }
+
   dOmega[0] = E_om_des[0] - E_om[0];
   dOmega[1] = E_om_des[1] - E_om[1];
 }
@@ -321,11 +325,13 @@ bool Rcs::TaskPolar2D::test(bool verbose)
 }
 
 /*******************************************************************************
- * Computes the feed forward acceleration given a desired acceleration. The
- * argument x_ddot_res is expected to be in Jacobi-coordinate. In this
- * implementation, it's just a copy operation. But in some derieved classes,
- * it needs to be overwritten to account for the different coordinates of the
- * position and velocity levels.
+ * Computes the acceleration in velocity / acceleration coordinates from the
+ * accelerations in task coordinates. The velocity / acceleration level is
+ * represented in body-fixed angular velocities (w_dot), the task level in Polar
+ * coordinates (phi_ddot). The conversion is done as follows:
+ *
+ * w = H^-1*phi_dot
+ * w_dot = d(H^-1)/dt phi_dot + (H^-1) phi_ddot
  ******************************************************************************/
 void Rcs::TaskPolar2D::computeFfXpp(double* x_ddot_res,
                                     const double* desired_acc) const
@@ -359,8 +365,8 @@ bool Rcs::TaskPolar2D::isValid(xmlNode* node, const RcsGraph* graph)
 
 
   // Check if axis direction is X, Y or Z
-  char text[256] = "Z";
-  getXMLNodePropertyStringN(node, "axisDirection", text, 256);
+  char text[16] = "Z";
+  getXMLNodePropertyStringN(node, "axisDirection", text, 16);
 
   if ((!STRCASEEQ(text, "X")) &&
       (!STRCASEEQ(text, "Y")) &&

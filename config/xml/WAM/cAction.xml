@@ -1,71 +1,30 @@
-<!--            kp_taskspace="200"
-            kd_taskspace="30"
-            kp_nullspace="1200"
-            kd_nullspace="30" -->
-<Controller name="Task Space Inverse Dynamics Controller, Barrett edition"
-            graph="gScenario.xml"
-            xxxgraph="WAM-arm-primitives.xml"
-            kp_taskspace="60"
-            kd_taskspace="24"
-            ki_taskspace="0"
-            ki_forcetorque=".01"
-            kp_nullspace="400"
-            kd_nullspace="16"
-            alpha_pos="0.2"
-            alpha_vel="0.1"
-            gain="1"
-            lambda="0.0001"
-            samplingTime="0.005"
-	    jointSpeedLimits="untrue"
-	    forceSensor="WristLoadCell"
-            >
+<Controller graph="gScenario.xml" >
 
- <Task name="Finger1" controlVariable="Joint"
-       jnt="Finger1Joint2" active="untrue" />
+ <Task name="Finger1" controlVariable="Joint" jnt="Finger1Joint2" />
+ <Task name="Finger2" controlVariable="Joint" jnt="Finger2Joint2" />
+ <Task name="Finger3" controlVariable="Joint" jnt="Finger3Joint2" />
+ <Task name="Spread" controlVariable="Joint" jnt="Finger1Joint1" />
 
- <Task name="Finger2" controlVariable="Joint"
-       jnt="Finger2Joint2" active="untrue" />
+  <Task name="Palm XYZ" effector="Hand" controlVariable="XYZ" />
 
- <Task name="Finger3" controlVariable="Joint"
-       jnt="Finger3Joint2" active="untrue" />
+ <Task name="Palm-Base XYZ" effector="Hand" refBdy="Base" controlVariable="XYZ" />
 
- <Task name="Spread" controlVariable="Joint"
-       jnt="Finger1Joint1" active="untrue" />
-
-  <Task name="Palm XYZ" effector="Hand" controlVariable="XYZ"
-        active="untrue" e_t="0.05" e_n="0.05"/>
-
- <Task name="Palm-Base XYZ" effector="Hand" refBdy="Base" controlVariable="XYZ"
-        active="untrue" e_t="0.05" e_n="0.05"/>
-
-  <Task name="Palm ABC" effector="Hand" controlVariable="ABC"
-        active="untrue" e_t="0.1" e_n="0.1"/>
+  <Task name="Palm ABC" effector="Hand" controlVariable="ABC" />
         
-  <Task name="Palm A" effector="Hand" controlVariable="A"
-        active="untrue" e_t="0.1" e_n="0.1"/>
+  <Task name="Palm A" effector="Hand" controlVariable="A" />
 
-  <Task name="Palm B" effector="Hand" controlVariable="B"
-        active="untrue" e_t="0.1" e_n="0.1"/>
+  <Task name="Palm B" effector="Hand" controlVariable="B" />
 
-  <Task name="Palm C" effector="Hand" controlVariable="C"
-        active="untrue" e_t="0.1" e_n="0.1"/>
+  <Task name="Palm C" effector="Hand" controlVariable="C" />
 
-  <Task name="PowerGrip ABC-Base" effector="PowerGrip" refBdy="Base" controlVariable="ABC"
-        active="untrue" e_t="0.1" e_n="0.1"/>
+  <Task name="PowerGrip ABC-Base" effector="PowerGrip" refBdy="Base" controlVariable="ABC" />
         
-  <Task name="PowerGrip A-Base" effector="PowerGrip" refBdy="Base" controlVariable="A"
-        active="untrue" e_t="0.1" e_n="0.1"/>
+  <Task name="PowerGrip A-Base" effector="PowerGrip" refBdy="Base" controlVariable="A" />
 
-  <Task name="PowerGrip B-Base" effector="PowerGrip" refBdy="Base" controlVariable="B"
-        active="untrue" e_t="0.1" e_n="0.1"/>
+  <Task name="PowerGrip B-Base" effector="PowerGrip" refBdy="Base" controlVariable="B" />
 
-  <Task name="PowerGrip C-Base" effector="PowerGrip" refBdy="Base" controlVariable="C"
-        active="untrue" e_t="0.1" e_n="0.1"/>
+  <Task name="PowerGrip C-Base" effector="PowerGrip" refBdy="Base" controlVariable="C"/>
 
-  <Task name="Palm Polar" effector="Hand" controlVariable="POLAR"
-        active="untrue" e_t="0.1" e_n="0.1"/>
-
-  <!-- <Task name="Palm POLAR" effector="Palm" controlVariable="POLAR"  -->
-  <!--       active="true" /> -->
+  <xTask name="Palm Polar" effector="Hand" controlVariable="POLAR"/>
 
 </Controller>

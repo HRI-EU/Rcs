@@ -104,7 +104,8 @@ static bool getModel(char* directory, char* xmlFileName)
 {
   Rcs::CmdLineParser argP;
 
-  if (!argP.hasArgument("-model", "Example models: Husky, DexBot"))
+  if (!argP.hasArgument("-model",
+                        "Example models: Husky, DexBot, WAM, Humanoid"))
   {
     return false;
   }
@@ -125,6 +126,11 @@ static bool getModel(char* directory, char* xmlFileName)
   else if (STREQ(model, "WAM"))
   {
     strcpy(directory, "config/xml/WAM");
+    strcpy(xmlFileName, "gScenario.xml");
+  }
+  else if (STREQ(model, "Humanoid"))
+  {
+    strcpy(directory, "config/xml/GenericHumanoid");
     strcpy(xmlFileName, "gScenario.xml");
   }
   else
@@ -771,7 +777,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("S", "Print out joint torques");
       Rcs::KeyCatcherBase::registerKey("j", "Disable joint limits");
       Rcs::KeyCatcherBase::registerKey("J", "Enable joint limits");
-      Rcs::KeyCatcherBase::registerKey("g", "Toggle gravity compensation");
+      Rcs::KeyCatcherBase::registerKey("G", "Toggle gravity compensation");
 
       double dt = 0.005, tmc = 0.01;
       double damping = 2.0;
@@ -958,7 +964,7 @@ int main(int argc, char** argv)
           RMSGS("Enabling joint limits");
           sim->setJointLimits(true);
         }
-        else if (kc && kc->getAndResetKey('g'))
+        else if (kc && kc->getAndResetKey('G'))
         {
           gravComp = !gravComp;
           RMSGS("Gravity compensation is %s", gravComp ? "ON" : "OFF");
@@ -1013,6 +1019,10 @@ int main(int argc, char** argv)
           MatNd_destroy(M_damp);
           MatNd_destroy(MM);
         }
+        else
+        {
+          MatNd_reshapeAndSetZero(T_gravity, graph->dof, 1);
+        }
 
         // Dsired joint angles from Gui
         for (unsigned int i=0; i<graph->dof; i++)
@@ -1020,10 +1030,6 @@ int main(int argc, char** argv)
           q_des_f->ele[i] = (1.0-tmc)*q_des_f->ele[i] + tmc*q_des->ele[i];
         }
 
-        if (gravComp==false)
-        {
-          MatNd_setZero(T_gravity);
-        }
 
         sim->setControlInput(q_des_f, NULL, T_gravity);
 
@@ -1829,9 +1835,9 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("n", "Reset");
       Rcs::KeyCatcherBase::registerKey("o", "Set random pose");
 
-      double lambda = 1.0e-8;
-      double jlCost = 0.0, dJlCost=0.0, tmc=1.0, dt=0.005, kp_nullspace=0.5;
-      double kp = 1.0;
+      double lambda = 0.0;
+      double jlCost = 0.0, dJlCost=0.0, tmc=0.1, dt=0.01, kp_nullspace=100.0;
+      double kp = 100.0;
       bool pause = false;
       strcpy(xmlFileName, "cAction.xml");
       strcpy(directory, "config/xml/DexBot");
@@ -1842,11 +1848,13 @@ int main(int argc, char** argv)
       argP.getArgument("-dir", directory);
       argP.getArgument("-tmc", &tmc, "Gui filter time constant ([0 ... 1], "
                        "small is smooth, default is %f)", tmc);
-      argP.getArgument("-dt", &dt);
-      argP.getArgument("-kp_nullspace", &kp_nullspace);
-      argP.getArgument("-kp", &kp);
+      argP.getArgument("-dt", &dt, "Sampling time constant (default: %f)", dt);
+      argP.getArgument("-kp_nullspace", &kp_nullspace, "Null space gain (default: %f)", kp_nullspace);
+      double kd_nullspace = 2.0*sqrt(kp_nullspace);
+      argP.getArgument("-kd_nullspace", &kd_nullspace, "Null space damping (default: %f)",kd_nullspace);
+      argP.getArgument("-kp", &kp, "Position gain (default: %f)", kp);
       double kd = 2.0*sqrt(kp);
-      argP.getArgument("-kd", &kd);
+      argP.getArgument("-kd", &kd, "Velocity gain (default: %f)", kd);
       bool ffwd = argP.hasArgument("-ffwd", "Feed forward only");
 
       Rcs_addResourcePath(directory);
@@ -1873,8 +1881,6 @@ int main(int argc, char** argv)
       MatNd* x_des   = MatNd_create(nx, 1);
       MatNd* x_des_f = MatNd_create(nx, 1);
       MatNd* xp_des  = MatNd_create(nx, 1);
-      MatNd* xp_des_ik  = MatNd_create(nx, 1);
-      MatNd* xpp_des_ik  = MatNd_create(nx, 1);
       MatNd* xpp_des = MatNd_create(nx, 1);
       MatNd* ax_des  = MatNd_create(nx, 1);
       MatNd* kpVec   = MatNd_create(nx, 1);
@@ -1888,6 +1894,8 @@ int main(int argc, char** argv)
       controller.computeX(x_curr);
       MatNd_copy(x_des, x_curr);
       MatNd_copy(x_des_f, x_curr);
+
+      Rcs::RampFilterND guiFilt(x_des->ele, tmc, 10.0, dt, x_des->m);
 
       // Create visualization
       Rcs::Viewer* v           = NULL;
@@ -1969,25 +1977,12 @@ int main(int argc, char** argv)
 
         if (ffwd==false)
         {
-          MatNd_constMul(xpp_des, xp_des, -1.0);
-          MatNd_constMul(xp_des, x_des_f, -1.0);
-
-          for (unsigned int i=0; i<nx; i++)
-          {
-            x_des_f->ele[i] = tmc*x_des->ele[i] +
-                              (1.0-tmc)*x_des_f->ele[i];
-          }
-
-          MatNd_addSelf(xp_des, x_des_f);
-          MatNd_constMulSelf(xp_des, 1.0/dt);
-          controller.computeDXp(xp_des_ik, xp_des);
-
-          MatNd_addSelf(xpp_des, xp_des);
-          MatNd_constMulSelf(xpp_des, 1.0/dt);
-          controller.computeFfXpp(xpp_des_ik, xpp_des);
-
+          guiFilt.setTarget(x_des->ele);
+          guiFilt.iterate(xpp_des->ele);
+          guiFilt.getPosition(x_des_f->ele);
+          guiFilt.getVelocity(xp_des->ele);
           controller.computeAx(ax_des, a_des, x_des_f,
-                               xp_des_ik, xpp_des_ik, kpVec, kdVec);
+                               xp_des, xpp_des, kpVec, kdVec);
         }
         else
         {
@@ -1998,10 +1993,18 @@ int main(int argc, char** argv)
         }
 
         controller.computeJointlimitGradient(dH);
-        MatNd_constMulSelf(dH, -kp_nullspace);
+        MatNd_constMulSelf(dH, kp_nullspace);
+
+        // Joint speed damping: Kd(qp_des - qp) with qp_des = 0
+        // MatNd* q_dot_ik = MatNd_create(1, controller.getGraph()->nJ);
+        // RcsGraph_stateVectorToIK(controller.getGraph(),
+        //                          controller.getGraph()->q_dot, q_dot_ik);
+        // MatNd_transposeSelf(q_dot_ik);
+        // MatNd_constMulAndAddSelf(dH, q_dot_ik, kd_nullspace);
+
 
         dragger->addJointTorque(dH, controller.getGraph());
-        solver.solve(qpp_des, a_des, ax_des, dH, 0.0);
+        solver.solve(qpp_des, a_des, ax_des, dH, lambda);
 
         MatNd_constMulAndAddSelf(qp_des, qpp_des, dt);
         MatNd_constMulAndAddSelf(q_des, qp_des, dt);
@@ -2065,13 +2068,16 @@ int main(int argc, char** argv)
           MatNd_setZero(xp_des);
           MatNd_setZero(xpp_des);
         }
+        else if (kc && kc->getAndResetKey('T'))
+        {
+          solver.test(a_des);
+        }
 
-        sprintf(hudText, "IK calculation: %.1f us\n"
+        sprintf(hudText, "IK calculation: %.2f ms\n"
                 "nx: %d\nJL-cost: %.6f dJL-cost: %.6f"
                 "\nlambda:%g alpha: %g tmc: %g",
-                1.0e6*dt_compute, (int) controller.getActiveTaskDim(a_des),
-                jlCost, dJlCost,
-                lambda, kp_nullspace, tmc);
+                1.0e3*dt_compute, (int) controller.getActiveTaskDim(a_des),
+                jlCost, dJlCost, lambda, kp_nullspace, tmc);
 
         if (hud != NULL)
         {
@@ -2093,7 +2099,7 @@ int main(int argc, char** argv)
         }
 
         loopCount++;
-        Timer_waitDT(0.01);
+        Timer_waitDT(dt);
       }
 
 
@@ -2114,8 +2120,6 @@ int main(int argc, char** argv)
       MatNd_destroy(x_des);
       MatNd_destroy(x_des_f);
       MatNd_destroy(xp_des);
-      MatNd_destroy(xp_des_ik);
-      MatNd_destroy(xpp_des_ik);
       MatNd_destroy(xpp_des);
       MatNd_destroy(ax_des);
       MatNd_destroy(dH);

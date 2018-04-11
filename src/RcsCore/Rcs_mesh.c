@@ -656,7 +656,8 @@ static double* RcsMesh_readObjFile(const char* fileName,
 
   if (verts == NULL)
   {
-    RLOG(4, "Failed to load obj file with %d vertices", *numVertices);
+    RLOG(4, "Failed to load obj file \"%s\" with %d vertices",
+         fileName, *numVertices);
     *numVertices = 0;
     fclose(fd);
     return NULL;
@@ -669,11 +670,13 @@ static double* RcsMesh_readObjFile(const char* fileName,
   {
     if (STRNEQ(lineStr, "v ", 2))
     {
-      int nItemsRead = fscanf(fd, "%31s %lf %lf %lf", buf,
+      int nItemsRead = sscanf(lineStr, "%31s %lf %lf %lf", buf,
                               &verts[count], &verts[count+1], &verts[count+2]);
+
       if (nItemsRead < 4)
       {
-        RLOG(4, "Failed to read 4 vertices (%d only)", nItemsRead);
+        RLOG(4, "[%s, vertex %d]: Failed to read 4 vertices (%d only: \"%s\")",
+             fileName, count/3, nItemsRead, lineStr);
         RFREE(verts);
         *numVertices = 0;
         fclose(fd);
