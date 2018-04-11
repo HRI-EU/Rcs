@@ -38,7 +38,7 @@
 #define RCSVIEWER_H
 
 /*!
- *  \defgroup RcsGraphics RcsGraphics
+ *  \defgroup RcsGraphics Graphics and visualization classes
  *
  * This group contains classes and methods related to the Rcs 3D visualization.
  */
@@ -66,14 +66,32 @@ static const int CastsShadowTraversalMask = 0x2;
 
 /*!
  * \ingroup RcsGraphics
- * \brief The Viewer main class
+ * \brief The Viewer main class. It is based on the osg::Viewer.
+ *
+ *        A number of keys are associatde with a function if pressed in the viewer windoe:
+ *        - Pressing keys 0 - 9 in the viewer window will set the Rcs log
+ *          level to the corresponding level
+ *        - Pressing F12 will print out to the console all keys that have been
+ *          registered with a function.
+ *        - Pressing key w will toggle between solid and wireframe display
+ *        - Pressing key s will toggle shadows
+ *        - Key F10 will toggle full screen mode
+ *        - Key F8 will take a screenshot
+ *        - Key F9 will start / stop taking screenshort in each frame
+ *        - Key R will toggle the cartoon mode
  */
 class Viewer
 {
   friend class KeyHandler;
 public:
 
-  Viewer();                       // Decide shadows etc. based on X11 forwarding
+  /*! \brief Default constructor with default window dimensions. Shadows and
+   *         anti-aliasing settings are selected by checking if the viewer
+   *         runs through X11 forwarding, or on a local machine. The constructor
+   *         does not launch a window. This needs to be done separately either
+   *         through calling \ref frame() or \ref runInThread().
+   */
+  Viewer();
   Viewer(bool fancy,              // Shadows and anti-aliasing on
          bool startupWithShadow); // Shadows on
   virtual ~Viewer();
@@ -164,7 +182,7 @@ protected:
 
   osg::ref_ptr<osgViewer::Viewer> viewer;
   osg::ref_ptr<osgShadow::ShadowedScene> shadowScene;
-  osg::ref_ptr<osg::LightSource> toplight;
+  osg::ref_ptr<osg::LightSource> cameraLight;
   osg::ref_ptr<osg::Group> rootnode;
   osg::ref_ptr<osg::ClearNode> clearNode;
   osg::ref_ptr<osg::Image> _colorImage;

@@ -194,11 +194,14 @@ public:
         _viewer->mouseX = ea.getX();
         _viewer->mouseY = ea.getY();
 
-        HTr A_CI;
-        _viewer->getCameraTransform(&A_CI);
-        osg::Vec4 lightpos;
-        lightpos.set(A_CI.org[0], A_CI.org[1], A_CI.org[2]+2.0, 0.0f);
-        _viewer->toplight->getLight()->setPosition(lightpos);
+        if (_viewer->cameraLight.valid())
+        {
+          HTr A_CI;
+          _viewer->getCameraTransform(&A_CI);
+          osg::Vec4 lightpos;
+          lightpos.set(A_CI.org[0], A_CI.org[1], A_CI.org[2]+0*2.0, 1.0f);
+          _viewer->cameraLight->getLight()->setPosition(lightpos);
+        }
         break;
       }
 
@@ -404,10 +407,34 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   this->clearNode->setClearColor(colorFromString("LIGHT_GRAYISH_GREEN"));
   this->rootnode->addChild(this->clearNode.get());
 
-  // Shadow map scene
+  // Light model: We switch off hte default viewer light, and configure two
+  // light sources. The sunlight shines down from 10m. Another light source
+  // moves with the camera, so that there are no dark spots whereever
+  // the mouse manipulator moves to.
+
+  // Disable default light
+  rootnode->getOrCreateStateSet()->setMode(GL_LIGHT0, osg::StateAttribute::OFF);
+
+  // Light source that moves with the camera
+  this->cameraLight = new osg::LightSource;
+  cameraLight->getLight()->setLightNum(1);
+  cameraLight->getLight()->setPosition(osg::Vec4(0.0, 0.0, 10.0, 1.0));
+  cameraLight->getLight()->setSpecular(osg::Vec4(1.0, 1.0, 1.0, 1.0));
+  rootnode->addChild(cameraLight.get());
+  rootnode->getOrCreateStateSet()->setMode(GL_LIGHT1, osg::StateAttribute::ON);
+
+  // Light source that shines down
+  osg::ref_ptr<osg::LightSource> sunlight = new osg::LightSource;
+  sunlight->getLight()->setLightNum(2);
+  sunlight->getLight()->setPosition(osg::Vec4(0.0, 0.0, 10.0, 1.0));
+  rootnode->addChild(sunlight.get());
+  rootnode->getOrCreateStateSet()->setMode(GL_LIGHT2, osg::StateAttribute::ON);
+
+  // Shadow map scene. We use the sunlight to case shadows.
   this->shadowScene = new osgShadow::ShadowedScene;
   osg::ref_ptr<osgShadow::ShadowMap> sm = new osgShadow::ShadowMap;
   sm->setTextureSize(osg::Vec2s(2048, 2048));
+  sm->setLight(sunlight->getLight());
   sm->setPolygonOffset(osg::Vec2(-0.7, 0.0));
   sm->setAmbientBias(osg::Vec2(0.7, 0.3));   // values need to sum up to 1.0
 
@@ -416,15 +443,6 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   shadowScene->setReceivesShadowTraversalMask(ReceivesShadowTraversalMask);
   shadowScene->setCastsShadowTraversalMask(CastsShadowTraversalMask);
 
-  // Default light
-  this->toplight = new osg::LightSource;
-  toplight->getLight()->setLightNum(1);
-  toplight->getLight()->setPosition(osg::Vec4(0.0, 0.0, 2.0, 0.0));
-  toplight->getLight()->setAmbient(osg::Vec4(0.2, 0.2, 0.2, 1.0));
-  toplight->getLight()->setDiffuse(osg::Vec4(0.7, 0.4, 0.6, 1.0));
-  toplight->getLight()->setSpecular(osg::Vec4(1.0, 1.0, 1.0, 1.0));
-  rootnode->addChild(this->toplight.get());
-  rootnode->getOrCreateStateSet()->setMode(GL_LIGHT0, osg::StateAttribute::ON);
 
   // Change the threading model. The default threading model is
   // osgViewer::Viewer::CullThreadPerCameraDrawThreadPerContext.
@@ -442,13 +460,13 @@ void Viewer::create(bool fancy, bool startupWithShadow)
     osg::ref_ptr<osg::DisplaySettings> ds = new osg::DisplaySettings;
     ds->setNumMultiSamples(4);
     viewer->setDisplaySettings(ds.get());
-
     viewer->setSceneData(startupWithShadow ? shadowScene.get() : rootnode.get());
   }
 
   // Disable small feature culling to avoid problems with drawing single points
   // as they have zero bounding box size
-  this->viewer->getCamera()->setCullingMode(this->viewer->getCamera()->getCullingMode() & ~osg::CullSettings::SMALL_FEATURE_CULLING);
+  viewer->getCamera()->setCullingMode(viewer->getCamera()->getCullingMode() &
+                                      ~osg::CullSettings::SMALL_FEATURE_CULLING);
 
   setCameraHomePosition(osg::Vec3d(4.0,  3.5, 3.0),
                         osg::Vec3d(0.0, -0.2, 0.8),
