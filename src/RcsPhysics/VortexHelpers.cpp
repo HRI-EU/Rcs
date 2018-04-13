@@ -831,22 +831,20 @@ Vx::VxConstraint* Rcs::createRevoluteJoint(Vx::VxPart* part0,
 
   // limit parameters (mechanical stop)
   // -----------------------------------------
-  Vx::VxReal limitStiff = 1.0e10, limitDamping = 1.0e9;
   joint->setLimitPositions(Vx::VxHinge::kAngularCoordinate,
                            jnt->q_min, jnt->q_max);
-  joint->setLimitStiffness(Vx::VxHinge::kAngularCoordinate,
-                           Vx::VxConstraint::kLimitLower,
-                           limitStiff);
-  joint->setLimitStiffness(Vx::VxHinge::kAngularCoordinate,
-                           Vx::VxConstraint::kLimitUpper,
-                           limitStiff);
-  joint->setLimitDamping(Vx::VxHinge::kAngularCoordinate,
-                         Vx::VxConstraint::kLimitLower,
-                         limitDamping);
-  joint->setLimitDamping(Vx::VxHinge::kAngularCoordinate,
-                         Vx::VxConstraint::kLimitUpper,
-                         limitDamping);
   joint->setLimitsActive(Vx::VxHinge::kAngularCoordinate, true);
+
+  joint->setLimitRestitution(Vx::VxHinge::kAngularCoordinate,
+                             Vx::VxConstraint::kLimitUpper, 0.0);
+  joint->setLimitRestitution(Vx::VxHinge::kAngularCoordinate,
+                             Vx::VxConstraint::kLimitLower, 0.0);
+
+  joint->setLimitMaximumForce(Vx::VxHinge::kAngularCoordinate,
+                              Vx::VxConstraint::kLimitLower, jnt->maxTorque);
+  joint->setLimitMaximumForce(Vx::VxHinge::kAngularCoordinate,
+                              Vx::VxConstraint::kLimitUpper, jnt->maxTorque);
+
 
   if (jnt->ctrlType == RCSJOINT_CTRL_POSITION)
   {
@@ -869,7 +867,6 @@ Vx::VxConstraint* Rcs::createRevoluteJoint(Vx::VxPart* part0,
   }
   else if (jnt->ctrlType == RCSJOINT_CTRL_TORQUE)
   {
-    joint->setLimitsActive(Vx::VxHinge::kAngularCoordinate, false);
     // If the max. force is set to 0, the motor gets deactivated
     joint->setMotorMaximumForce(Vx::VxHinge::kAngularCoordinate, 1.0e-8);
     joint->setMotorLoss(Vx::VxHinge::kAngularCoordinate, 0.0);

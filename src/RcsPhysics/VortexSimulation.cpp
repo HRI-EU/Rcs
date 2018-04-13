@@ -1527,29 +1527,17 @@ void Rcs::VortexSimulation::applyControl(double dt)
 
             c->setControl(coordinate, Vx::VxConstraint::kControlMotorized);
             c->setMotorLoss(coordinate, 0.0);
-            // c->setLimitsActive(coordinate, false);
 
             // If the max. force is set to 0, the motor gets deactivated
-            double pos = c->getCoordinateCurrentPosition(coordinate);
+            c->setMotorMaximumForce(coordinate, fabs(Ti) + 1.0e-8);
 
-            // Here we consider joint limits for torque-controlled joints
-            // \todo: What does factor 2.0 do?
-            if ((this->jointLimitsActive==true) && (pos>=jnt->q_max))
+            if (Ti==0.0)
             {
-              c->setMotorMaximumForce(coordinate, jnt->maxTorque * 2.0);
-              c->setMotorDesiredVelocity(coordinate, -0.01);
-            }
-            else if ((this->jointLimitsActive==true) && (pos<=jnt->q_min))
-            {
-              c->setMotorMaximumForce(coordinate, jnt->maxTorque * 2.0);
-              c->setMotorDesiredVelocity(coordinate, +0.01);
+              c->setMotorDesiredVelocity(coordinate, 0.0);
             }
             else
             {
-              // double vel = c->getCoordinateVelocity(coordinate);
-              // Ti -= Math_clip(1.5*vel, -0.5, 0.5);
-              c->setMotorMaximumForce(coordinate, fabs(Ti) + 1.0e-8);
-              c->setMotorDesiredVelocity(coordinate, Ti >= 0.0 ? 1.0e6 : -1.0e6);
+              c->setMotorDesiredVelocity(coordinate, Ti > 0.0 ? 1.0e6 : -1.0e6);
             }
           }
           else

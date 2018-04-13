@@ -2576,18 +2576,22 @@ void RcsGraph_makeJointsConsistent(RcsGraph* self)
         hasRange = true;
       }
 
+      REXEC(4)
+      {
       if ((hasRange==true) &&
           ((fabs(JNT->q_min-q_min)>1.0e-4) ||
            (fabs(JNT->q_max-q_max)>1.0e-4) ||
            (fabs(JNT->q0-q0)>1.0e-4) ||
            (fabs(JNT->q_init-q_init)>1.0e-4)))
       {
+          double s = RcsJoint_isRotation(JNT) ? 180.0/M_PI : 1.0;
         RLOG(4, "Overwriting range of coupled joint \"%s\" with "
              "values calculated from master range min, q0, max = "
              "[%f %f %f] init = %f (original: min, q0, max = "
              "[%f %f %f] init = %f)",
-             JNT->name, JNT->q_min, JNT->q0, JNT->q_max, JNT->q_init,
-             q_min, q0, q_max, q_init);
+               JNT->name, s*JNT->q_min, s*JNT->q0, s*JNT->q_max, s*JNT->q_init,
+               s*q_min, s*q0, s*q_max, s*q_init);
+        }
       }
 
       JNT->q_min  = q_min;
