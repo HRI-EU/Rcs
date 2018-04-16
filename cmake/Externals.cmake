@@ -71,6 +71,10 @@ IF (USE_BULLET STREQUAL 2.83_double)
       ${BT_LIB_DIR}/glut32.lib
       )
   ENDIF()
+  
+ELSEIF(USE_BULLET STREQUAL 2.83_float)
+
+  FIND_PACKAGE(Bullet REQUIRED)
 
 ENDIF()
 
