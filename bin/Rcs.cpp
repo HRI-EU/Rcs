@@ -2256,7 +2256,7 @@ int main(int argc, char** argv)
         }
         else
         {
-          std::cout << hudText;
+          std::cout << hudText.str();
         }
 
         if (kc && kc->getAndResetKey('q'))
