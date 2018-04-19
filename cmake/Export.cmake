@@ -25,6 +25,7 @@ EXPORT(TARGETS RcsCore RcsPhysics RcsGraphics RcsGui
 # TODO Maybe write to separate target files and use as components?
 
 # Write config file
+set(RCS_CONFIG_DIR "${CMAKE_CURRENT_BINARY_DIR}/config")
 CONFIGURE_PACKAGE_CONFIG_FILE(
   "cmake/RcsConfig.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake"
