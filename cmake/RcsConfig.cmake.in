@@ -1,0 +1,22 @@
+# CMake package config
+@PACKAGE_INIT@
+
+# Write across config vars which are important
+# This excludes WM5 and Octomap since they are not part of the interface
+SET(USE_BULLET @USE_BULLET@)
+SET(USE_EIGEN3 @USE_EIGEN3@)
+SET(USE_VORTEX @USE_VORTEX@)
+
+# Make FindQwt.cmake available
+LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+# Include dependencies
+INCLUDE("${CMAKE_CURRENT_LIST_DIR}/Externals.cmake")
+# For some reason, Qt is only required from the RcsGui CMakeLists.txt, instead of being referred in Externals.cmake
+FIND_PACKAGE(Qt4 REQUIRED)
+
+# Include targets definition
+INCLUDE("${CMAKE_CURRENT_LIST_DIR}/RcsTargets.cmake")
+CHECK_REQUIRED_COMPONENTS("@PACKAGE_NAME@")
+
+# Make Rcs config dir available to users
+SET(RCS_CONFIG_DIR "@RCS_CONFIG_DIR@")
