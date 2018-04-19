@@ -644,6 +644,10 @@ void RcsShape_fprint(FILE* out, const RcsShape* s)
   // Relative transformation
   fprintf(out, "\n\tRelative transformation:\n");
   HTr_fprint(out, &s->A_CB);
+  double ea[3];
+  Mat3d_toEulerAngles(ea, (double (*)[3])s->A_CB.rot);
+  fprintf(out, "\n\tEuler angles:%f %f %f [deg]\n",
+          RCS_RAD2DEG(ea[0]), RCS_RAD2DEG(ea[1]), RCS_RAD2DEG(ea[2]));
 
   // Extents
   fprintf(out, "\tExtents: %.3f %.3f %.3f\n",

@@ -1058,12 +1058,15 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
 
   // check if this is a rigid body that should be attached to the world
   // by six joints which can be set by sensor information or physics
+  int nJoints = 0;
   bool hasRBJTag = getXMLNodeProperty(bdyNode, "rigid_body_joints");
-  double q_rbj[6];
-  VecNd_setZero(q_rbj, 6);
+  double q_rbj[12];
+  VecNd_setZero(q_rbj, 12);
 
   if (hasRBJTag==true)
   {
+    b->rigid_body_joints = true;
+    nJoints = 6;
     unsigned int nStr = getXMLNodeNumStrings(bdyNode, "rigid_body_joints");
 
     switch (nStr)
@@ -1074,17 +1077,17 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
         break;
 
       case 6:
-        b->rigid_body_joints = true;
         getXMLNodePropertyVecN(bdyNode, "rigid_body_joints", q_rbj, 6);
-        NLOG(5, "Joint values: [%f %f %f %f %f %f]",
-             q_rbj[0], q_rbj[1], q_rbj[2], q_rbj[3], q_rbj[4], q_rbj[5]);
 
         // convert Euler angles from degrees to radians
-        for (unsigned int i=3; i<6; i++)
-        {
-          q_rbj[i] *= M_PI/180.0;
-        }
+        Vec3d_constMulSelf(&q_rbj[3], M_PI/180.0);
+        break;
 
+      case 12:
+        getXMLNodePropertyVecN(bdyNode, "rigid_body_joints", q_rbj, 12);
+
+        // convert Euler angles from degrees to radians
+        Vec3d_constMulSelf(&q_rbj[3], M_PI/180.0);
         break;
 
       default:
@@ -1096,14 +1099,22 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
          "%s", b->name, nStr, "rigid_body_joints",
          b->rigid_body_joints?"true":"false");
 
-  }
-
-  int nJoints = 0;
-
-  if (b->rigid_body_joints == true)
-  {
-    nJoints = 6;
     RcsJoint* rbj0 = RcsBody_createRBJ(self, b, q_rbj);
+
+    // Determine constraint dofs for physics simulation. If a dof is
+    // constrained will be interpreted by a "0" in the joint's weightMetric
+    // property.
+    if (nStr==12)
+    {
+      unsigned int checkRbjNum =0;
+      for (RcsJoint* JNT = rbj0  ; JNT ; JNT=JNT->next)
+      {
+        JNT->weightMetric = q_rbj[6+checkRbjNum];
+        checkRbjNum++;
+      }
+      RCHECK(checkRbjNum==6);
+    }
+
 
     // Rigid body joints don't have any relative transformations after
     // construction. If there is a transformation coming from a group, it needs

@@ -749,6 +749,10 @@ void RcsBody_fprint(FILE* out, const RcsBody* b)
   if (b->A_BP)
   {
     HTr_fprint(out, b->A_BP);
+    double ea[3];
+    Mat3d_toEulerAngles(ea, b->A_BP->rot);
+    fprintf(out, "\n\tEuler angles:%f %f %f [deg]\n",
+            RCS_RAD2DEG(ea[0]), RCS_RAD2DEG(ea[1]), RCS_RAD2DEG(ea[2]));
   }
   else
   {
@@ -1994,7 +1998,10 @@ bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName)
   {
     if (body->A_BP != NULL)
     {
+      double r_rel[3];
+      Vec3d_transform(r_rel, body->A_BP, SHAPE->A_CB.org);
       HTr_transformSelf(&SHAPE->A_CB, body->A_BP);
+      Vec3d_copy(SHAPE->A_CB.org, r_rel);
     }
   }
 

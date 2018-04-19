@@ -61,7 +61,7 @@
 #include <Vx/VxFrame.h>
 #include <Vx/VxRigidBodyResponseModel.h>
 
-#include <fstream>
+#include <iostream>
 #include <cmath>
 
 
@@ -840,10 +840,10 @@ Vx::VxConstraint* Rcs::createRevoluteJoint(Vx::VxPart* part0,
   joint->setLimitRestitution(Vx::VxHinge::kAngularCoordinate,
                              Vx::VxConstraint::kLimitLower, 0.0);
 
-  joint->setLimitMaximumForce(Vx::VxHinge::kAngularCoordinate,
-                              Vx::VxConstraint::kLimitLower, jnt->maxTorque);
-  joint->setLimitMaximumForce(Vx::VxHinge::kAngularCoordinate,
-                              Vx::VxConstraint::kLimitUpper, jnt->maxTorque);
+  // joint->setLimitMaximumForce(Vx::VxHinge::kAngularCoordinate,
+  //                             Vx::VxConstraint::kLimitLower, jnt->maxTorque);
+  // joint->setLimitMaximumForce(Vx::VxHinge::kAngularCoordinate,
+  //                             Vx::VxConstraint::kLimitUpper, jnt->maxTorque);
 
 
   if (jnt->ctrlType == RCSJOINT_CTRL_POSITION)
@@ -889,150 +889,149 @@ Vx::VxConstraint* Rcs::createRevoluteJoint(Vx::VxPart* part0,
 }
 
 /*******************************************************************************
- * Creates a revolute joint between a body and its parent.
+ * Print functions for materials / material table
  ******************************************************************************/
-#if 0
-bool createJoint2(Vx::VxConstraint** vortexJnt,
-                  const RcsGraph* graph,
-                  const RcsBody* body,
-                  const double jointLockStiffness,
-                  const double jointLockDamping,
-                  const double jointMotorLoss)
+static std::string frictionModelToStr(Vx::VxMaterialBase::FrictionModel frictionModel)
 {
-  *vortexJnt = NULL;
-  Vx::VxConstraint* vJnt = NULL;
+  std::string frictionMdlStr;
 
-  if (body == NULL)
+  switch (frictionModel)
   {
-    RLOG(1, "Body is NULL - not creating joint");
-    return false;
-  }
-
-  Vx::VxPart* part1 = getPartPtr(body);
-
-  if (part1 == NULL)
-  {
-    RLOG(1, "Creation of joint failed: \"%s\" has no dynamics!", body->name);
-    return false;
-  }
-
-  if (body->physicsSim == RCSBODY_PHYSICS_KINEMATIC)
-  {
-
-    if (part1 == NULL)
-    {
-      RLOG(1, "No VxPart for body \"%s\" - skipping kinematic joint",
-           body->name);
-      return false;
-    }
-    else
-    {
-      part1->setControl(Vx::VxEntity::kControlAnimated);
-    }
-
-    return true;
-  }
-
-
-  // To create dynamic joints between 2 consecutive bodies, we check for the
-  // following conditions:
-  // parent and child body exist
-  // parent and child bodies have a VxPart attached
-  if (body->parent == NULL)
-  {
-    RLOG(1, "Parent of body \"%s\"is NULL - not creating fixed joint",
-         body->name);
-    return false;
-  }
-
-  Vx::VxPart* part0 = getPartPtr(body->parent);
-
-  if (part0 == NULL)
-  {
-    RLOG(1, "Creation of joint between \"%s\" and \"%s\" failed: \"%s\" has "
-         "no dynamics!", body->parent->name, body->name, body->parent->name);
-    return false;
-  }
-
-
-  switch (body->physicsSim)
-  {
-
-    case RCSBODY_PHYSICS_FIXED:
-    {
-      if (RcsBody_numJoints(body) != 0)
-      {
-        RLOG(1, "Body \"%s\" has %d joints - should be 0 for fixed joints",
-             body->name, RcsBody_numJoints(body));
-        return false;
-      }
-
-      vJnt = createFixedJoint(part0, part1, graph);
+    case Vx::VxMaterial::kFrictionModelBox:
+      frictionMdlStr = "kFrictionModelBox";
       break;
-    }   // case RCSBODY_PHYSICS_FIXED
 
-
-
-    case RCSBODY_PHYSICS_DYNAMIC:
-    {
-      if (RcsBody_numJoints(body) != 1)
-      {
-        RLOG(1, "Body \"%s\" has %d joints - currently only one is supported",
-             body->name, RcsBody_numJoints(body));
-        return false;
-      }
-
-      switch (body->jnt->type)
-      {
-        case RCSJOINT_ROT_X:
-        case RCSJOINT_ROT_Y:
-        case RCSJOINT_ROT_Z:
-          vJnt = createRevoluteJoint(part0, part1,
-                                     jointLockStiffness,
-                                     jointLockDamping,
-                                     jointMotorLoss);
-          break;
-        case RCSJOINT_TRANS_X:
-        case RCSJOINT_TRANS_Y:
-        case RCSJOINT_TRANS_Z:
-          vJnt = createPrismaticJoint(part0, part1,
-                                      jointLockStiffness,
-                                      jointLockDamping);
-          break;
-
-        default:
-          RLOG(1, "Only revolute and prismatic joints are supported for "
-               "connecting dynamically simulated physical joints!");
-
-      }   // switch (body->jnt->type)
-
+    case Vx::VxMaterial::kFrictionModelScaledBox:
+      frictionMdlStr = "kFrictionModelScaledBox";
       break;
-    }   // case RCSBODY_PHYSICS_DYNAMIC
 
+    case Vx::VxMaterial::kFrictionModelBoxProportionalLow:
+      frictionMdlStr = "kFrictionModelBoxProportionalLow";
+      break;
 
+    case Vx::VxMaterial::kFrictionModelBoxProportionalHigh:
+      frictionMdlStr = "kFrictionModelBoxProportionalHigh";
+      break;
+
+    case Vx::VxMaterial::kFrictionModelScaledBoxFast:
+      frictionMdlStr = "kFrictionModelScaledBoxFast";
+      break;
+
+    case Vx::VxMaterial::kFrictionModelNeutral:
+      frictionMdlStr = "kFrictionModelNeutral";
+      break;
+
+    case Vx::VxMaterial::kFrictionModelNone:
+      frictionMdlStr = "kFrictionModelNone";
+      break;
 
     default:
-    {
-      RLOG(1, "Couldn't create joint for body \"%s\" with physicsSim = %d",
-           body->name, body->physicsSim);
-      return false;
-    }
-
-  }   // switch(body->physicsSim)
-
-
-  if (vJnt != NULL)
-  {
-    // jnt doesn't necessarily exist (for fixed joints) TODO
-    body->jnt->extraInfo = (void*)vJnt;
-    VortexJointInfo* jData = new VortexJointInfo;
-    jData->jnt = body->jnt;
-    vJnt->setUserData(jData);
-
-    this->universe->disablePairIntersect(part0, part1);
-    this->universe->addConstraint(vJnt);
+      frictionMdlStr = "undefined (this should never happen)";
   }
 
-  return true;
+  return frictionMdlStr;
 }
-#endif
+
+void Rcs::printMaterial(const Vx::VxMaterial* material, std::ostream& out)
+{
+  std::string intSlipDisp;
+  switch (material->getIntegratedSlipDisplacement())
+  {
+    case Vx::VxMaterial::kIntegratedSlipDisplacementNeutral:
+      intSlipDisp = "kIntegratedSlipDisplacementNeutral";
+      break;
+
+    case Vx::VxMaterial::kIntegratedSlipDisplacementDeactivated:
+      intSlipDisp = "kIntegratedSlipDisplacementDeactivated";
+      break;
+
+    case Vx::VxMaterial::kIntegratedSlipDisplacementActivated:
+      intSlipDisp = "kIntegratedSlipDisplacementActivated";
+      break;
+
+    case Vx::VxMaterial::kIntegratedSlipDisplacementNever:
+      intSlipDisp = "kIntegratedSlipDisplacementNever";
+      break;
+
+    default:
+      intSlipDisp = "undefined (this should never happen)";
+  }
+  out
+      <<"*** Material \"" << std::string(material->getName())
+      << "\" (Index " << material->getIndex() <<") :"
+      <<"\n -- IntegratedSlipDisplacement: " << intSlipDisp
+      <<"\n -- Adhesive force: " << material->getAdhesiveForce()
+      <<"\n -- Compliance: " << material->getCompliance()
+      <<"\n -- Damping: " << material->getDamping()
+      <<"\n -- Restitution: " << material->getRestitution()
+      <<"\n -- Restitution threshold: " << material->getRestitutionThreshold();
+
+  out
+      <<"\n -- Friction model:"
+      <<"\n      kFrictionAxisLinearPrimary: "
+      << frictionModelToStr(material->getFrictionModel(Vx::VxMaterialBase::kFrictionAxisLinearPrimary))
+      <<"\n      kFrictionAxisLinearSecondary: "
+      << frictionModelToStr(material->getFrictionModel(Vx::VxMaterialBase::kFrictionAxisLinearSecondary))
+      <<"\n      kFrictionAxisAngularNormal: "
+      << frictionModelToStr(material->getFrictionModel(Vx::VxMaterialBase::kFrictionAxisAngularNormal))
+      <<"\n      kFrictionAxisAngularPrimary: "
+      << frictionModelToStr(material->getFrictionModel(Vx::VxMaterialBase::kFrictionAxisAngularPrimary))
+      <<"\n      kFrictionAxisAngularSecondary: "
+      << frictionModelToStr(material->getFrictionModel(Vx::VxMaterialBase::kFrictionAxisAngularSecondary));
+
+  out
+      <<"\n -- Friction coefficient:"
+      <<"\n      kFrictionAxisLinearPrimary: "
+      << material->getFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisLinearPrimary)
+      <<"\n      kFrictionAxisLinearSecondary: "
+      << material->getFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisLinearSecondary)
+      <<"\n      kFrictionAxisAngularNormal: "
+      << material->getFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisAngularNormal)
+      <<"\n      kFrictionAxisAngularPrimary: "
+      << material->getFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisAngularPrimary)
+      <<"\n      kFrictionAxisAngularSecondary: "
+      << material->getFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisAngularSecondary);
+
+  out
+      <<"\n -- Slide:"
+      <<"\n      kFrictionAxisLinearPrimary: "
+      << material->getSlide(Vx::VxMaterialBase::kFrictionAxisLinearPrimary)
+      <<"\n      kFrictionAxisLinearSecondary: "
+      << material->getSlide(Vx::VxMaterialBase::kFrictionAxisLinearSecondary)
+      <<"\n      kFrictionAxisAngularNormal: "
+      << material->getSlide(Vx::VxMaterialBase::kFrictionAxisAngularNormal)
+      <<"\n      kFrictionAxisAngularPrimary: "
+      << material->getSlide(Vx::VxMaterialBase::kFrictionAxisAngularPrimary)
+      <<"\n      kFrictionAxisAngularSecondary: "
+      << material->getSlide(Vx::VxMaterialBase::kFrictionAxisAngularSecondary);
+
+  out
+      <<"\n -- Slip:"
+      <<"\n      kFrictionAxisLinearPrimary: "
+      << material->getSlip(Vx::VxMaterialBase::kFrictionAxisLinearPrimary)
+      <<"\n      kFrictionAxisLinearSecondary: "
+      << material->getSlip(Vx::VxMaterialBase::kFrictionAxisLinearSecondary)
+      <<"\n      kFrictionAxisAngularNormal: "
+      << material->getSlip(Vx::VxMaterialBase::kFrictionAxisAngularNormal)
+      <<"\n      kFrictionAxisAngularPrimary: "
+      << material->getSlip(Vx::VxMaterialBase::kFrictionAxisAngularPrimary)
+      <<"\n      kFrictionAxisAngularSecondary: "
+      << material->getSlip(Vx::VxMaterialBase::kFrictionAxisAngularSecondary);
+
+  out << std::endl;
+}
+
+void Rcs::printMaterialTable(std::ostream& out)
+{
+  Vx::VxMaterialTable* mt = getMaterialTable();
+
+  for (size_t i=0; i<mt->getMaterialCount(); ++i)
+  {
+    printMaterial(mt->getMaterial(i), out);
+  }
+}
+
+void Rcs::printMaterialTable()
+{
+  printMaterialTable(std::cout);
+}

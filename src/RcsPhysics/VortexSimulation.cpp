@@ -457,7 +457,7 @@ void Rcs::VortexSimulation::initMaterial(const char* material_file)
           }
           else
           {
-            RLOG(0, "unknown friction model \"%s\" in material definition "
+            RLOG(1, "unknown friction model \"%s\" in material definition "
                  "for %s", option, msg);
           }
         }
@@ -519,7 +519,8 @@ void Rcs::VortexSimulation::initMaterial(const char* material_file)
       }
       else
       {
-        RLOG(0, "file \"%s\" has a material entry without a name property, so it is ignored", material_file);
+        RLOG(1, "file \"%s\" has a material entry without a name property, so"
+             " it is ignored", material_file);
       }
     }
 
@@ -1477,47 +1478,40 @@ void Rcs::VortexSimulation::applyControl(double dt)
               q_cmd = MatNd_get(this->q_des, index, 0);
             }
 
-            // TODO: Should be better a lock velocity
-#if 0
-            c->setLockMaximumForce(coordinate, jnt->maxTorque);
-            c->setLockPosition(coordinate, q_cmd);
-            RLOG(0, "[%s]: q_cmd = %f deg", jnt->name, q_cmd*180.0/M_PI);
-#else
             double lockCurr = c->getLockPosition(coordinate);
             double deltaPos = q_cmd-lockCurr;
 
             if (coordinate==Vx::VxHinge::kAngularCoordinate)
             {
+
+              // deltaPos = Math_fmodAngle(deltaPos);
+
               while (deltaPos > M_PI)
               {
                 deltaPos -= M_PI;
+                // RLOG(0, "deltaPos > M_PI: now %f", deltaPos);
               }
 
               while (deltaPos < -M_PI)
               {
+                // RLOG(0, "deltaPos < -M_PI: now %f", deltaPos);
                 deltaPos += M_PI;
               }
             }
 
             double lockVel = deltaPos/dt;
-
-            //double lockVel = Math_clip(deltaPos/dt, -90.0*M_PI/180.0, 90.0*M_PI/180.0);
-
-            //RLOG(0, "%s: dt=%g   deltaPos=%g   q_cmd=%g   q_curr=%g", jnt->name, dt, deltaPos, q_cmd, lockCurr);
             c->setLockMaximumForce(coordinate, jnt->maxTorque);
-            //c->setLimitVelocity(coordinate,  Vx::VxConstraint::kLimitLower, -90.0*M_PI/180.0);
-            //c->setLimitVelocity(coordinate,  Vx::VxConstraint::kLimitUpper, +90.0*M_PI/180.0);
             c->setLockDamping(coordinate, 1.0);
             c->setLockVelocity(coordinate, lockVel);
-#endif
+            // c->setLockPosition(coordinate, q_cmd);
           }
           // this is used in case of motor control (velocity control)
           else if (jnt->ctrlType == RCSJOINT_CTRL_VELOCITY)
           {
             Vx::VxReal q_dot_cmd = MatNd_get(this->q_dot_des, jnt->jointIndex, 0);
             c->setMotorDesiredVelocity(coordinate, q_dot_cmd);
-            c->setControl(coordinate, Vx::VxConstraint::kControlMotorized);
-            c->setMotorMaximumForce(coordinate, jnt->maxTorque);
+            // c->setControl(coordinate, Vx::VxConstraint::kControlMotorized);
+            // c->setMotorMaximumForce(coordinate, jnt->maxTorque);
           }
           // Torque-controlled joints
           else if (jnt->ctrlType == RCSJOINT_CTRL_TORQUE)
@@ -1606,8 +1600,6 @@ void Rcs::VortexSimulation::setJointTorque(const MatNd* T_des)
     int index = (type == RcsStateIK) ? ji->jnt->jacobiIndex : ji->jnt->jointIndex;
     Vx::VxReal Ti = MatNd_get(T_des, index, 0);
     Ti = Math_clip(Ti, -ji->jnt->maxTorque, ji->jnt->maxTorque);
-
-    RLOG(0, "Setting joint torque of \"%s\" to %f", ji->jnt->name, Ti);
 
     c->setLimitsActive(0, false);
     c->setMotorMaximumForce(0, fabs(Ti) + 1.0e-8);

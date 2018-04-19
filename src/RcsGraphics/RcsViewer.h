@@ -68,7 +68,8 @@ static const int CastsShadowTraversalMask = 0x2;
  * \ingroup RcsGraphics
  * \brief The Viewer main class. It is based on the osg::Viewer.
  *
- *        A number of keys are associatde with a function if pressed in the viewer windoe:
+ *        A number of keys are associatde with a function if pressed in the
+ *        viewer window:
  *        - Pressing keys 0 - 9 in the viewer window will set the Rcs log
  *          level to the corresponding level
  *        - Pressing F12 will print out to the console all keys that have been

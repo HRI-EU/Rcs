@@ -34,7 +34,46 @@
 
 *******************************************************************************/
 
-#include <Rcs_URDFParser.h>
+
+
+/*!
+ * \page RcsExamples Example program
+ *
+ *  The Rcs.cpp example program implements a number of different modes that
+ *  show how to use the functionality of the libraries. The following command
+ *  line arguments are common to all example modes. Each argument has a default
+ *  value, that can be seen if running the program with the -h option. When
+ *  calling Rcs -m \<mode\> -h, additionally the command line arguments of
+ *  the specific mode will be printed to the console.
+ *  - -dl:
+ *     Sets the debug level of the overall library. As a convention, a
+ *     debug level of 0 is silent. Debug levels between 1 and 4 will display
+ *     warnings, the higher debug levels being more verbose. Debug levels above
+ *     4 will tell you a lot of things that you might or might not be interested
+ *     in. The example programs should not produce debug output on debug levels
+ *     equal to or less than 4.
+ *  - -m:
+ *     Mode to select the example. The default mode is 0, which displays some
+ *     information on usage.
+ *  - -dir: Configuration file search directory.
+ *  - -f: Configuration file
+ *  - -simpleGraphics:
+ *    Starts the graphics viewer with minimal settings (no anti-aliasing and
+ *    shadows etc.). This is beneficial if the application is strted on a
+ *    remote computer, or the computer has a slow graphics card.
+ *  - -nomutex:
+ *    Disables mutex locking for the graphics viewer. This may result in some
+ *    graphics artefacts, but does not compromise the calculation speed for
+ *    computers with slow graphics cards.
+ *  - -valgrind:
+ *    Runs the algorithm for a fixed number of steps without launching Guis and
+ *    graphics viewer. This allows to run memory checks without considering the
+ *    non-relevant parts.
+ *
+ */
+
+
+
 #include <Rcs_macros.h>
 #include <Rcs_cmdLine.h>
 #include <Rcs_math.h>
@@ -152,7 +191,6 @@ int main(int argc, char** argv)
   RMSG("Starting Rcs...");
   int mode = 0, simpleGraphics = 0;
   char xmlFileName[128] = "", directory[128] = "";
-  char physicsCfg[128] = "config/physics/vortex.xml";
 
   // Ctrl-C callback handler
   signal(SIGINT, quit);
@@ -166,9 +204,6 @@ int main(int argc, char** argv)
   argP.getArgument("-dl", &RcsLogLevel, "Debug level (default is 0)");
   argP.getArgument("-m", &mode, "Test mode");
   argP.getArgument("-f", xmlFileName, "Configuration file name");
-  argP.getArgument("-physics_config", physicsCfg,
-                   "Configuration file name for physics (default is %s)",
-                   physicsCfg);
   argP.getArgument("-dir", directory, "Configuration file directory");
   bool valgrind = argP.hasArgument("-valgrind",
                                    "Start without Guis and graphics");
@@ -344,7 +379,8 @@ int main(int argc, char** argv)
       argP.getArgument("-comRef", comRef, "Reference body for COM (default is "
                        "root)");
       bool testCopy = argP.hasArgument("-copy", "Test graph copying");
-      bool resizeable = argP.hasArgument("-resizeable", "Adjust visualization of shapes dynamically");
+      bool resizeable = argP.hasArgument("-resizeable", "Adjust visualization "
+                                         "of shapes dynamically");
       bool editMode = argP.hasArgument("-edit", "Start in xml edit mode "
                                        "(no Qt Gui)");
 
@@ -424,6 +460,8 @@ int main(int argc, char** argv)
         comNd = new Rcs::CapsuleNode(r_com, Id, 0.05, 0.0);
         comNd->makeDynamic(r_com);
         comNd->setMaterial("RED");
+        comNd->toggleWireframe();
+        comNd->hide();
         viewer->add(comNd);
 
         hud = new Rcs::HUD();
@@ -590,8 +628,14 @@ int main(int argc, char** argv)
             }
             else
             {
-              RMSG("Reloading GraphNode");
+              RMSG("Reloading GraphNode from %s", xmlFileName);
               pthread_mutex_lock(&graphLock);
+              bool collisionVisible = gn->collisionModelVisible();
+              bool graphicsVisible = gn->graphicsModelVisible();
+              bool physicsVisible = gn->physicsModelVisible();
+              bool framesVisible = gn->referenceFramesVisible();
+              bool ghostVisible = gn->getGhostMode();
+              bool wireframeVisible = gn->getWireframe();
               viewer->removeNode(gn);
               gn = NULL;
               RcsGraph_destroy(graph);
@@ -602,6 +646,12 @@ int main(int argc, char** argv)
               {
                 gn = new Rcs::GraphNode(graph);
                 gn->toggleReferenceFrames();
+                gn->displayGraphicsModel(graphicsVisible);
+                gn->displayPhysicsModel(physicsVisible);
+                gn->displayCollisionModel(collisionVisible);
+                gn->displayReferenceFrames(framesVisible);
+                gn->setGhostMode(ghostVisible);
+                gn->showWireframe(wireframeVisible);
                 pthread_mutex_unlock(&graphLock);
                 viewer->add(gn);
                 pthread_mutex_lock(&graphLock);
@@ -612,6 +662,7 @@ int main(int argc, char** argv)
                      "node");
               }
               pthread_mutex_unlock(&graphLock);
+              RMSG("... done");
             }
           }
           else if (kc->getAndResetKey('L'))
@@ -658,6 +709,13 @@ int main(int argc, char** argv)
             bool success = RcsBody_mergeWithParent(graph, bdyName.c_str());
             RMSG("%s merging body %s", success ? "SUCCEEDED" : "FAILED",
                  bdyName.c_str());
+            if (success==true)
+            {
+              FILE* fd = fopen("merged.xml", "w+");
+              RCHECK(fd);
+              RcsGraph_fprintXML(fd, graph);
+              fclose(fd);
+            }
             pthread_mutex_unlock(&graphLock);
             viewer->removeNode(gn);
             gn = NULL;
@@ -783,6 +841,7 @@ int main(int argc, char** argv)
       double damping = 2.0;
       char hudText[2056] = "";
       char physicsEngine[32] = "Bullet";
+      char physicsCfg[128] = "config/physics/vortex.xml";
       strcpy(xmlFileName, "gScenario.xml");
       strcpy(directory, "config/xml/DexBot");
       bool pause = argP.hasArgument("-pause", "Hit key for each iteration");
@@ -794,8 +853,10 @@ int main(int argc, char** argv)
                                                 "Disable collisions between"
                                                 " all rigid bodies");
       bool testCopy = argP.hasArgument("-copy", "Test physics copying");
-      bool gravComp = argP.hasArgument("-gravComp",
-                                       "Apply gravity compensation to torque joints");
+      bool gravComp = argP.hasArgument("-gravComp", "Apply gravity compensation"
+                                       " to torque joints");
+      argP.getArgument("-physics_config", physicsCfg, "Configuration file name"
+                       " for physics (default is %s)", physicsCfg);
       argP.getArgument("-physicsEngine", physicsEngine,
                        "Physics engine (default is \"%s\")", physicsEngine);
       argP.getArgument("-dt", &dt, "Simulation time step (default is %f)",
@@ -1132,7 +1193,8 @@ int main(int argc, char** argv)
       argP.getArgument("-dir", directory);
       argP.getArgument("-tmc", &tmc, "Filter time constant for sliders");
       argP.getArgument("-dt", &dt, "Sampling time interval");
-      argP.getArgument("-staticEffort", effortBdyName, "Body to map static effort");
+      argP.getArgument("-staticEffort", effortBdyName,
+                       "Body to map static effort");
       bool ffwd = argP.hasArgument("-ffwd", "Feed-forward dx only");
       bool pause = argP.hasArgument("-pause", "Pause after each iteration");
       bool launchJointWidget = argP.hasArgument("-jointWidget",
@@ -1392,7 +1454,8 @@ int main(int argc, char** argv)
         else if (kc && kc->getAndResetKey('D'))
         {
           bool success = MatNd_fromFile(controller.getGraph()->q, "q.dat");
-          RMSG("%s read q from file \"q.dat\"", success ? "Successfully" : "Failed to");
+          RMSG("%s read q from file \"q.dat\"",
+               success ? "Successfully" : "Failed to");
           RcsGraph_setState(controller.getGraph(), NULL, NULL);
         }
         else if (kc && kc->getAndResetKey('n'))
@@ -1849,9 +1912,11 @@ int main(int argc, char** argv)
       argP.getArgument("-tmc", &tmc, "Gui filter time constant ([0 ... 1], "
                        "small is smooth, default is %f)", tmc);
       argP.getArgument("-dt", &dt, "Sampling time constant (default: %f)", dt);
-      argP.getArgument("-kp_nullspace", &kp_nullspace, "Null space gain (default: %f)", kp_nullspace);
+      argP.getArgument("-kp_nullspace", &kp_nullspace, "Null space gain "
+                       "(default: %f)", kp_nullspace);
       double kd_nullspace = 2.0*sqrt(kp_nullspace);
-      argP.getArgument("-kd_nullspace", &kd_nullspace, "Null space damping (default: %f)",kd_nullspace);
+      argP.getArgument("-kd_nullspace", &kd_nullspace, "Null space damping "
+                       "(default: %f)", kd_nullspace);
       argP.getArgument("-kp", &kp, "Position gain (default: %f)", kp);
       double kd = 2.0*sqrt(kp);
       argP.getArgument("-kd", &kd, "Velocity gain (default: %f)", kd);
@@ -2208,17 +2273,20 @@ int main(int argc, char** argv)
         viewer->add(ts2->getHandler());
 
         // VertexArrayNode for distance
-        Rcs::VertexArrayNode* cpLine = new Rcs::VertexArrayNode(I_closestPts, 2);
+        Rcs::VertexArrayNode* cpLine =
+          new Rcs::VertexArrayNode(I_closestPts, 2);
         cpLine->setColor("GREEN");
         cpLine->setPointSize(2.0);
         viewer->add(cpLine);
 
-        Rcs::CapsuleNode* sphereCP0 = new Rcs::CapsuleNode(cp0, NULL, 0.015, 0.0);
+        Rcs::CapsuleNode* sphereCP0 =
+          new Rcs::CapsuleNode(cp0, NULL, 0.015, 0.0);
         sphereCP0->makeDynamic(cp0);
         sphereCP0->setMaterial("RED");
         viewer->add(sphereCP0);
 
-        Rcs::CapsuleNode* sphereCP1 = new Rcs::CapsuleNode(cp1, NULL, 0.015, 0.0);
+        Rcs::CapsuleNode* sphereCP1 =
+          new Rcs::CapsuleNode(cp1, NULL, 0.015, 0.0);
         sphereCP1->makeDynamic(cp1);
         sphereCP1->setMaterial("RED");
         viewer->add(sphereCP1);
@@ -2549,7 +2617,8 @@ int main(int argc, char** argv)
       poly[4][1] = -0.5*height;
       MatNd polyArr = MatNd_fromPtr(5, 2, &poly[0][0]);
 
-      Rcs::VertexArrayNode* vn = new Rcs::VertexArrayNode(&polyArr, osg::PrimitiveSet::LINE_STRIP);
+      Rcs::VertexArrayNode* vn =
+        new Rcs::VertexArrayNode(&polyArr, osg::PrimitiveSet::LINE_STRIP);
 
       Rcs::Viewer* viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
       viewer->add(vn);

@@ -48,6 +48,20 @@ namespace Rcs
 
 /*!
  * \ingroup RcsGraphics
+ * \brief Node to display an RcsGraph data structure.
+ *
+ *        A number of keys are associatde with a function if pressed in the
+ *        viewer window:
+ *        - Pressing key r will toggle the reference frames
+ *        - Pressing key c will toggle the collision model
+ *        - Pressing key g will toggle the graphics model
+ *        - Pressing key P will toggle the physics model
+ *        - Pressing key D will toggle debug information
+ *        - Pressing key G will toggle the ghost mode
+ *        - Pressing key i will print out the 3d coordinates under the mouse
+ *          to the console
+ *        - Pressing key I will print out the 3d coordinates and detailed
+ *          information about the RcsBody under the mouse to the console
  */
 class GraphNode: public osg::PositionAttitudeTransform
 {
@@ -55,16 +69,86 @@ class GraphNode: public osg::PositionAttitudeTransform
 
 public:
 
+  /*! \brief Constructs a GraphNode from a given RcsGraph data structure.
+   *
+   *  \param[in] graph            RcsGraph the node will be built from
+   *  \param[in] resizeable       If true, the nodes will reflect the changed
+   *                              of the RcsShapes dynamically. This will lead
+   *                              to a bit less efficiency, therefore the flag
+   *                              is set to false by default.
+   *  \param[in] addTargetSetters If true, all RcsBodies with rigid body degrees
+   *                              of freedom will get a dragger node. It can be
+   *                              visualized by pressing the TAB key.
+   */
   GraphNode(const RcsGraph* graph, bool resizeable=false,
-            bool automaticallyAddTargetSetters=true);
+            bool addTargetSetters=true);
   virtual ~GraphNode();
+
+  /*! \brief Toggles the visibility of the graphics model of all BodyNodes
+   */
   void toggleGraphicsModel();
+
+  /*! \brief Toggles the visibility of the collision model of all BodyNodes
+   */
   void toggleCollisionModel();
+
+  /*! \brief Toggles the visibility of the physics model of all BodyNodes
+   */
   void togglePhysicsModel();
+
+  /*! \brief Toggles the visibility of the reference frames of all BodyNodes
+   */
   void toggleReferenceFrames();
+
+  /*! \brief Toggles the visibility of the debug information of all BodyNodes
+   */
   void toggleDebugInformation();
+
+  /*! \brief Toggles the wireframe display of all BodyNodes
+   */
   void toggleWireframe();
+
+  /*! \brief Toggles the transparency (ghost mode) of all BodyNodes
+   */
   void toggleGhostMode();
+  void displayCollisionModel(bool visibility=true);
+  void displayGraphicsModel(bool visibility=true);
+  void displayPhysicsModel(bool visibility=true);
+  void displayReferenceFrames(bool visibility=true);
+
+  /*! \brief Returns true if the overall node is visible, false otherwise.
+   */
+  bool isVisible() const;
+
+  /*! \brief Returns true if the collision model is visible, false otherwise.
+   */
+  bool collisionModelVisible() const;
+
+  /*! \brief Returns true if the graphics model is visible, false otherwise.
+   */
+  bool graphicsModelVisible() const;
+
+  /*! \brief Returns true if the physics model is visible, false otherwise.
+   */
+  bool physicsModelVisible() const;
+
+  /*! \brief Returns true if the debug information is visible, false otherwise.
+   */
+  bool debugInformationVisible() const;
+
+  /*! \brief Returns true if the reference frames are visible, false otherwise.
+   */
+  bool referenceFramesVisible() const;
+
+  /*! \brief Returns true if the models are displayed as wireframes,
+   *         false otherwise.
+   */
+  bool getWireframe() const;
+
+  /*! \brief Returns true if the models are displayed in the transparent ghost
+   *         mode, false otherwise.
+   */
+  bool getGhostMode() const;
   void setGhostMode(bool enabled, const std::string& matname="");
   void showWireframe(bool enabled);
   void show();
@@ -124,6 +208,12 @@ public:
    */
   BodyNode* getBodyNode(const RcsBody* body);
 
+  /*! \brief Returns a vector with all BodyNodes that have been added.
+   *
+   *  \return Vector of pointers to all BodyNodes of the GraphNode.
+   */
+  std::vector<const BodyNode*> getBodyNodes() const;
+
   /*! \brief Attaches the BodyNode to the transformation A_BI. It must be a
    *         valid transformation. If the body has no BodyNode, the function
    *         does nothing.
@@ -142,11 +232,13 @@ protected:
 
   void addNode(osg::Node* child);
 
-  const RcsGraph* _graph;
-  bool _wireframe;
-  bool _ghost_mode;
-  osg::ref_ptr<osg::Switch> _switch;
+  osg::ref_ptr<osg::Switch> switchNode;
   osg::ref_ptr<osgGA::GUIEventHandler> frameHandler;
+
+private:
+  const RcsGraph* graph;
+  bool wireframe;
+  bool ghostMode;
 };
 
 }   // namespace Rcs

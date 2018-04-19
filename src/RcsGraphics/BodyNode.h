@@ -74,6 +74,11 @@ public:
   void togglePhysicsNode();
   void toggleReferenceNode();
   void toggleDebugInformation();
+  bool collisionNodeVisible() const;
+  bool graphicsNodeVisible() const;
+  bool physicsNodeVisible() const;
+  bool referenceFramesVisible() const;
+  bool debugInformationVisible() const;
   void setAlpha(float alpha);
   void setAlpha(float alpha, osg::Node* node);
   bool setTexture(std::string textureFile);

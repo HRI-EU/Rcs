@@ -102,7 +102,7 @@ static inline void MyNearCallbackEnabled(btBroadphasePair& collisionPair,
       if ((RcsBody_isChild(rb0->getBodyPtr(), rb1->getBodyPtr())) ||
           (RcsBody_isChild(rb1->getBodyPtr(), rb0->getBodyPtr())))
       {
-        return;
+        //return;
       }
 
     }
@@ -1318,14 +1318,12 @@ Rcs::BulletHingeJoint* Rcs::BulletSimulation::getHinge(const RcsJoint* jnt) cons
 
   it = hingeMap.find(jnt);
 
-  if (it==hingeMap.end())
-  {
-    return NULL;
-  }
-  else
+  if (it!=hingeMap.end())
   {
     return it->second;
   }
+
+  return NULL;
 }
 
 /*******************************************************************************

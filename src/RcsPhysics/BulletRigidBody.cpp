@@ -51,6 +51,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
 
 #define DEFAULT_COLLISION_MARGIN (0.001)   // 1mm
 #define MAX_VERTICES_WITHOUT_COMPRESSION (100)
@@ -407,6 +408,32 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy)
   Vec3d_copy(btBody->A_PB_.org, bdy->Inertia->org);
   Mat3d_copy(btBody->A_PB_.rot, A_PB);
 
+  // For rigid body joints, the joint's weightMetric propoerty is interpreted
+  // as flag if the corresponding dof os locked or free. This allows to constrain
+  // the rigid body movement in any of the 6 directions.
+  if (bdy->rigid_body_joints)
+  {
+    btVector3 linFac, angFac;
+    const RcsJoint* rbj = bdy->jnt;
+
+    linFac[0] = rbj->weightMetric;
+    rbj = rbj->next;
+    linFac[1] = rbj->weightMetric;
+    rbj = rbj->next;
+    linFac[2] = rbj->weightMetric;
+    rbj = rbj->next;
+
+    angFac[0] = rbj->weightMetric;
+    rbj = rbj->next;
+    angFac[1] = rbj->weightMetric;
+    rbj = rbj->next;
+    angFac[2] = rbj->weightMetric;
+    rbj = rbj->next;
+
+    btBody->setLinearFactor(linFac);
+    btBody->setAngularFactor(angFac);
+  }
+
   return btBody;
 }
 
@@ -558,6 +585,11 @@ btTypedConstraint* Rcs::BulletRigidBody::createJoint(const RcsGraph* graph)
   {
     RLOG(1, "Skipping joint: found 1 non-revolute joint in body %s",
          getBodyName());
+
+    // std::vector<bool> cMask = rbjMask(body);
+    // setLinearFactor(btVector3(cMask[0], cMask[1], cMask[2]));
+    // setAngularFactor(btVector3(cMask[3], cMask[4], cMask[5]));
+
     return NULL;
   }
 

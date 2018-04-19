@@ -1320,6 +1320,86 @@ void BodyNode::displayDebugInformation(bool visible)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+bool BodyNode::collisionNodeVisible() const
+{
+  osg::Switch::ValueList childVisible = _collisionNode->getValueList();
+  int vis = 0;
+
+  for (size_t i=0; i<childVisible.size(); ++i)
+  {
+    vis += (childVisible[i] == true) ? 1 : -1;
+  }
+
+  return (vis>0) ? true : false;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool BodyNode::graphicsNodeVisible() const
+{
+  osg::Switch::ValueList childVisible = _graphicsNode->getValueList();
+  int vis = 0;
+
+  for (size_t i=0; i<childVisible.size(); ++i)
+  {
+    vis += (childVisible[i] == true) ? 1 : -1;
+  }
+
+  return (vis>0) ? true : false;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool BodyNode::physicsNodeVisible() const
+{
+  osg::Switch::ValueList childVisible = _physicsNode->getValueList();
+  int vis = 0;
+
+  for (size_t i=0; i<childVisible.size(); ++i)
+  {
+    vis += (childVisible[i] == true) ? 1 : -1;
+  }
+
+  return (vis>0) ? true : false;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool BodyNode::referenceFramesVisible() const
+{
+  osg::Switch::ValueList childVisible = _refNode->getValueList();
+  int vis = 0;
+
+  for (size_t i=0; i<childVisible.size(); ++i)
+  {
+    vis += (childVisible[i] == true) ? 1 : -1;
+  }
+
+  return (vis>0) ? true : false;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool BodyNode::debugInformationVisible() const
+{
+  osg::Switch::ValueList childVisible = _debugNode->getValueList();
+  int vis = 0;
+
+  for (size_t i=0; i<childVisible.size(); ++i)
+  {
+    vis += (childVisible[i] == true) ? 1 : -1;
+  }
+
+  return (vis>0) ? true : false;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 const RcsBody* BodyNode::body() const
 {
   return this->bdy;

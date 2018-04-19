@@ -45,6 +45,8 @@
 #include <Vx/VxTriangleMeshBVTree.h>
 #include <Vx/VxMaterialTable.h>
 
+#include <fstream>
+
 namespace Rcs
 {
 
@@ -109,6 +111,10 @@ Vx::VxConstraint* createRevoluteJoint(Vx::VxPart* parent,
                                       const double jointLockDamping,
                                       const double jointMotorLoss,
                                       const double q0);
+
+void printMaterial(const Vx::VxMaterial* material, std::ostream& out);
+void printMaterialTable(std::ostream& out);
+void printMaterialTable();
 }
 
 #endif // RCS_VORTEXHELPERS_H

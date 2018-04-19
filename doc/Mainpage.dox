@@ -21,7 +21,9 @@
 </table>
  \endhtmlonly
  
-   <h1> Libraries </h1>
+   <h1> Rcs functionality </h1>
+   \ref RcsExamples
+
    \ref RcsCore
  
    \ref RcsMath

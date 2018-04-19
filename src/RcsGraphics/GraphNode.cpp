@@ -108,9 +108,9 @@ namespace Rcs
 GraphNode::GraphNode(const RcsGraph* g, bool resizeable,
                      bool automatically_add_target_setters) :
   osg::PositionAttitudeTransform(),
-  _graph(g),
-  _wireframe(false),
-  _ghost_mode(false)
+  graph(g),
+  wireframe(false),
+  ghostMode(false)
 {
   KeyCatcherBase::registerKey("r", "Toggle visualization of reference frames",
                               "GraphNode");
@@ -128,9 +128,9 @@ GraphNode::GraphNode(const RcsGraph* g, bool resizeable,
   KeyCatcherBase::registerKey("I", "Display information about RcsBody under the"
                               " mouse", "GraphNode");
 
-  RCHECK(_graph);
-  _switch = new osg::Switch;
-  addChild(_switch.get());
+  RCHECK(this->graph);
+  this->switchNode = new osg::Switch;
+  addChild(switchNode.get());
 
   RCSGRAPH_TRAVERSE_BODIES(g)
   {
@@ -140,13 +140,13 @@ GraphNode::GraphNode(const RcsGraph* g, bool resizeable,
     }
 
     osg::ref_ptr<Rcs::BodyNode> tn = new Rcs::BodyNode(BODY, 1.0, resizeable);
-    _switch->addChild(tn.get());
+    switchNode->addChild(tn.get());
   }
 
   if (automatically_add_target_setters)
   {
     // Add target setters
-    RCSGRAPH_TRAVERSE_BODIES(_graph)
+    RCSGRAPH_TRAVERSE_BODIES(this->graph)
     {
       RLOG(5, "Scanning body \"%s\" for rigid body joints", BODY->name);
 
@@ -156,8 +156,8 @@ GraphNode::GraphNode(const RcsGraph* g, bool resizeable,
         RLOG(5, "Adding TargetSetter for body %s", BODY->name);
 
         RCHECK(BODY->jnt);
-        double* x = &_graph->q->ele[BODY->jnt->jointIndex];
-        double* a = &_graph->q->ele[BODY->jnt->jointIndex+3];
+        double* x = &graph->q->ele[BODY->jnt->jointIndex];
+        double* a = &graph->q->ele[BODY->jnt->jointIndex+3];
         RLOG(5, "index is %d", BODY->jnt->jointIndex);
         osg::ref_ptr<Rcs::TargetSetter> ts = new Rcs::TargetSetter(x, a);
         if (BODY->parent)
@@ -268,6 +268,165 @@ void GraphNode::toggleDebugInformation()
     Rcs::BodyNode* nd = (*li).get();
     nd->toggleDebugInformation();
   }
+
+}
+
+/*******************************************************************************
+ * Show / hide the graphics model.
+ ******************************************************************************/
+void GraphNode::displayGraphicsModel(bool visibility)
+{
+  GraphNodeList::iterator li;
+  BodyNodeVisitor bnv;
+  this->accept(bnv);
+
+  for (li = bnv.nodes.begin(); li != bnv.nodes.end(); ++li)
+  {
+    Rcs::BodyNode* nd = (*li).get();
+    nd->displayGraphicsNode(visibility);
+  }
+
+}
+
+/*******************************************************************************
+ * Show / hide the physics model.
+ ******************************************************************************/
+void GraphNode::displayPhysicsModel(bool visibility)
+{
+  GraphNodeList::iterator li;
+  BodyNodeVisitor bnv;
+  this->accept(bnv);
+
+  for (li = bnv.nodes.begin(); li != bnv.nodes.end(); ++li)
+  {
+    Rcs::BodyNode* nd = (*li).get();
+    nd->displayPhysicsNode(visibility);
+  }
+
+}
+
+/*******************************************************************************
+ * Show / hide the collision model.
+ ******************************************************************************/
+void GraphNode::displayCollisionModel(bool visibility)
+{
+  GraphNodeList::iterator li;
+  BodyNodeVisitor bnv;
+  this->accept(bnv);
+
+  for (li = bnv.nodes.begin(); li != bnv.nodes.end(); ++li)
+  {
+    Rcs::BodyNode* nd = (*li).get();
+    nd->displayCollisionNode(visibility);
+  }
+
+}
+
+/*******************************************************************************
+ * Show / hide the reference frames.
+ ******************************************************************************/
+void GraphNode::displayReferenceFrames(bool visibility)
+{
+  GraphNodeList::iterator li;
+  BodyNodeVisitor bnv;
+  this->accept(bnv);
+
+  for (li = bnv.nodes.begin(); li != bnv.nodes.end(); ++li)
+  {
+    Rcs::BodyNode* nd = (*li).get();
+    nd->displayReferenceNode(visibility);
+  }
+
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool GraphNode::collisionModelVisible() const
+{
+  std::vector<const BodyNode*> bnVec = getBodyNodes();
+
+  for (unsigned int i=0; i< bnVec.size(); ++i)
+  {
+    if (bnVec[i]->collisionNodeVisible() == true)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool GraphNode::graphicsModelVisible() const
+{
+  std::vector<const BodyNode*> bnVec = getBodyNodes();
+
+  for (unsigned int i=0; i< bnVec.size(); ++i)
+  {
+    if (bnVec[i]->graphicsNodeVisible() == true)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool GraphNode::physicsModelVisible() const
+{
+  std::vector<const BodyNode*> bnVec = getBodyNodes();
+
+  for (unsigned int i=0; i< bnVec.size(); ++i)
+  {
+    if (bnVec[i]->physicsNodeVisible() == true)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool GraphNode::referenceFramesVisible() const
+{
+  std::vector<const BodyNode*> bnVec = getBodyNodes();
+
+  for (unsigned int i=0; i< bnVec.size(); ++i)
+  {
+    if (bnVec[i]->referenceFramesVisible() == true)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool GraphNode::debugInformationVisible() const
+{
+  std::vector<const BodyNode*> bnVec = getBodyNodes();
+
+  for (unsigned int i=0; i< bnVec.size(); ++i)
+  {
+    if (bnVec[i]->debugInformationVisible() == true)
+    {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /*******************************************************************************
@@ -275,10 +434,15 @@ void GraphNode::toggleDebugInformation()
  ******************************************************************************/
 void GraphNode::showWireframe(bool status)
 {
-  _wireframe = status;
+  if (this->wireframe == status)
+  {
+    return;
+  }
+
+  this->wireframe = status;
   osg::StateSet* pStateSet = getOrCreateStateSet();
 
-  if (_wireframe)
+  if (this->wireframe)
   {
     pStateSet->setAttribute(new osg::PolygonMode
                             (osg::PolygonMode::FRONT_AND_BACK,
@@ -298,7 +462,23 @@ void GraphNode::showWireframe(bool status)
  ******************************************************************************/
 void GraphNode::toggleWireframe()
 {
-  showWireframe(!_wireframe);
+  showWireframe(!this->wireframe);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool GraphNode::getWireframe() const
+{
+  return this->wireframe;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool GraphNode::getGhostMode() const
+{
+  return this->ghostMode;
 }
 
 /*******************************************************************************
@@ -306,7 +486,7 @@ void GraphNode::toggleWireframe()
  ******************************************************************************/
 void GraphNode::toggleGhostMode()
 {
-  setGhostMode(!_ghost_mode);
+  setGhostMode(!this->ghostMode);
 }
 
 /*******************************************************************************
@@ -314,10 +494,10 @@ void GraphNode::toggleGhostMode()
  ******************************************************************************/
 void GraphNode::setGhostMode(bool enabled, const std::string& matname)
 {
-  _ghost_mode = enabled;
+  this->ghostMode = enabled;
   osg::StateSet* pStateSet = getOrCreateStateSet();
 
-  if (_ghost_mode)
+  if (this->ghostMode)
   {
     osg::Material* material = new osg::Material();
     if (!matname.empty())
@@ -357,7 +537,7 @@ void GraphNode::setGhostMode(bool enabled, const std::string& matname)
  ******************************************************************************/
 void GraphNode::show()
 {
-  _switch->setAllChildrenOn();
+  switchNode->setAllChildrenOn();
 }
 
 /*******************************************************************************
@@ -365,7 +545,7 @@ void GraphNode::show()
  ******************************************************************************/
 void GraphNode::hide()
 {
-  _switch->setAllChildrenOff();
+  switchNode->setAllChildrenOff();
 }
 
 /*******************************************************************************
@@ -373,15 +553,23 @@ void GraphNode::hide()
  ******************************************************************************/
 void GraphNode::toggle()
 {
-  bool visible = _switch.get()->getValue(0);
-  if (visible)
+  if (isVisible())
   {
-    _switch->setAllChildrenOff();
+    switchNode->setAllChildrenOff();
   }
   else
   {
-    _switch->setAllChildrenOn();
+    switchNode->setAllChildrenOn();
   }
+}
+
+/*******************************************************************************
+ * Makes the node visible.
+ ******************************************************************************/
+bool GraphNode::isVisible() const
+{
+  bool visible = switchNode.get()->getValue(0);
+  return visible;
 }
 
 /*******************************************************************************
@@ -389,7 +577,7 @@ void GraphNode::toggle()
  ******************************************************************************/
 const RcsGraph* GraphNode::getGraphPtr() const
 {
-  return _graph;
+  return this->graph;
 }
 
 /*******************************************************************************
@@ -442,7 +630,7 @@ bool GraphNode::removeBodyNode(const char* body, pthread_mutex_t* mtx)
     return false;
   }
 
-  RcsBody* bdy = RcsGraph_getBodyByName(_graph, body);
+  RcsBody* bdy = RcsGraph_getBodyByName(this->graph, body);
   return removeBodyNode(bdy, mtx);
 }
 
@@ -479,7 +667,7 @@ bool GraphNode::hideBodyNode(const RcsBody* body)
  ******************************************************************************/
 bool GraphNode::hideBodyNode(const char* body)
 {
-  return hideBodyNode(RcsGraph_getBodyByName(_graph, body));
+  return hideBodyNode(RcsGraph_getBodyByName(this->graph, body));
 }
 
 /*******************************************************************************
@@ -487,7 +675,7 @@ bool GraphNode::hideBodyNode(const char* body)
  ******************************************************************************/
 bool GraphNode::hideSubGraph(const char* bodyName)
 {
-  return hideSubGraph(RcsGraph_getBodyByName(_graph, bodyName));
+  return hideSubGraph(RcsGraph_getBodyByName(this->graph, bodyName));
 }
 
 /*******************************************************************************
@@ -597,7 +785,7 @@ void GraphNode::setBodyTransformPtr(const RcsBody* body, const HTr* A_BI)
  *****************************************************************************/
 void Rcs::GraphNode::addNode(osg::Node* nd)
 {
-  _switch->addChild(nd);
+  switchNode->addChild(nd);
 }
 
 /******************************************************************************
@@ -692,6 +880,28 @@ bool Rcs::GraphNode::callback(const osgGA::GUIEventAdapter& ea,
   }
 
   return false;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+std::vector<const BodyNode*> GraphNode::getBodyNodes() const
+{
+  std::vector<const BodyNode*> bnVec;
+
+  for (unsigned int i=0; i< switchNode->getNumChildren(); ++i)
+  {
+    const osg::Node* n1 = switchNode->getChild(i);
+    osg::Node* n2 = const_cast<osg::Node*>(n1);
+    const BodyNode* n3 = dynamic_cast<BodyNode*>(n2);
+
+    if (n3 != NULL)
+    {
+      bnVec.push_back(n3);
+    }
+  }
+
+  return bnVec;
 }
 
 
