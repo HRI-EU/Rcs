@@ -54,6 +54,8 @@ typedef unsigned long Window;
 namespace Rcs
 {
 
+class KeyHandler;
+
 /*!
  * \ingroup RcsGraphics
  * @{
@@ -153,6 +155,7 @@ public:
   }
 
 
+  bool toggleVideoRecording();
   double getFieldOfView() const;
   void setFieldOfView(double fov);
 
@@ -192,6 +195,7 @@ protected:
 
 private:
   mutable pthread_mutex_t mtxInternal;
+  KeyHandler* keyHandler;
 };
 
 

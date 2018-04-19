@@ -172,15 +172,10 @@ public:
 
   ~KeyHandler()
   {
-#if !defined(_MSC_VER)
     if (_video_capture_process >= 0)
     {
-      // Stop video taking
-      kill(_video_capture_process, SIGINT);
-      waitpid(_video_capture_process, NULL, 0);
-      _video_capture_process = -1;
+      toggleVideoCapture();
     }
-#endif
   }
 
   virtual bool handle(const osgGA::GUIEventAdapter& ea,
@@ -254,50 +249,11 @@ public:
           _viewer->setCartoonEnabled(_cartoonEnabled);
           return false;
         }
-#if !defined(_MSC_VER)
         else if (ea.getKey() == 'M')
         {
-          if (_video_capture_process >= 0)
-          {
-            // Stop video taking
-            kill(_video_capture_process, SIGINT);
-            waitpid(_video_capture_process, NULL, 0);
-            _video_capture_process = -1;
-          }
-          else
-          {
-            // movie taken using avconv x11grab
-
-            // get the first window
-            osgViewer::ViewerBase::Windows windows;
-            _viewer->viewer->getWindows(windows, true);
-
-            if (!windows.empty())
-            {
-              int x = 0;
-              int y = 0;
-              int w = 0;
-              int h = 0;
-
-              windows[0]->getWindowRectangle(x, y, w, h);
-
-              static unsigned int movie_number = 1;
-
-              RMSG("Start capturing: (%d, %d) %dx%d", x, y, w, h);
-              std::stringstream cmd;
-              cmd << "avconv -y -f x11grab -r 25 -s "
-                  << w << "x" << h
-                  << " -i " << getenv("DISPLAY") << "+"
-                  << x << "," << y
-                  << " -crf 20 -r 25 -c:v libx264 -c:a n"
-                  << " /tmp/movie_" << movie_number++ << ".mp4";
-
-              _video_capture_process = forkProcess(cmd.str().c_str());
-            }
-          }
+          toggleVideoCapture();
           return false;
         }
-#endif
 
         break;
       }   // case(osgGA::GUIEventAdapter::KEYDOWN):
@@ -310,6 +266,54 @@ public:
     return false;
   }
 
+  bool toggleVideoCapture()
+  {
+    bool captureRunning = false;
+
+#if !defined(_MSC_VER)
+    if (_video_capture_process >= 0)
+    {
+      // Stop video taking
+      kill(_video_capture_process, SIGINT);
+      waitpid(_video_capture_process, NULL, 0);
+      _video_capture_process = -1;
+    }
+    else
+    {
+      // movie taken using avconv x11grab
+
+      // get the first window
+      osgViewer::ViewerBase::Windows windows;
+      _viewer->viewer->getWindows(windows, true);
+
+      if (!windows.empty())
+      {
+        int x = 0;
+        int y = 0;
+        int w = 0;
+        int h = 0;
+
+        windows[0]->getWindowRectangle(x, y, w, h);
+
+        static unsigned int movie_number = 1;
+
+        RMSG("Start capturing: (%d, %d) %dx%d", x, y, w, h);
+        std::stringstream cmd;
+        cmd << "avconv -y -f x11grab -r 25 -s "
+            << w << "x" << h
+            << " -i " << getenv("DISPLAY") << "+"
+            << x << "," << y
+            << " -crf 20 -r 25 -c:v libx264 -c:a n"
+            << " /tmp/movie_" << movie_number++ << ".mp4";
+
+        _video_capture_process = forkProcess(cmd.str().c_str());
+        captureRunning = true;
+      }
+    }
+#endif
+
+    return captureRunning;
+  }
 
 private:
 
@@ -395,7 +399,8 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   viewer->setCameraManipulator(trackball.get());
 
   // Handle some default keys (see handler above)
-  viewer->addEventHandler(new KeyHandler(this));
+  this->keyHandler = new KeyHandler(this);
+  viewer->addEventHandler(this->keyHandler);
 
   // Root node (instead of a Group we create an Cartoon node for optional
   // cell shading)
@@ -967,4 +972,12 @@ bool Viewer::unlock() const
   }
 
   return false;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Viewer::toggleVideoRecording()
+{
+  return keyHandler->toggleVideoCapture();
 }
