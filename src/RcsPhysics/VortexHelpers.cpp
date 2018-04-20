@@ -715,8 +715,6 @@ Vx::VxConstraint* Rcs::createFixedJoint(Vx::VxPart* vxParent,
   joint->setRelaxationParameters(4, stiffness, damping, loss, true);
   joint->setRelaxationParameters(5, stiffness, damping, loss, true);
 
-  joint->setUserDataPtr((void*) child);
-
   return joint;
 }
 

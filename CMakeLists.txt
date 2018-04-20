@@ -56,7 +56,7 @@ SITE_NAME(HOSTNAME)
 #
 ################################################################################
 OPTION(USE_WM5 "Use Wildmagic library" OFF)
-OPTION(USE_OCTOMAP "Use Octomap library" OFF)
+# OPTION(USE_OCTOMAP "Use Octomap library" OFF)
 OPTION(USE_EIGEN3 "Use Eigen3 library" OFF)
 OPTION(ENABLE_DEBUG_MACROS "Enable debug macros also in release mode" ON)
 

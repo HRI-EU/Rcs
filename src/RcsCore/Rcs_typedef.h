@@ -213,7 +213,6 @@ struct _RcsBody
 
   void* actor;
   void* extraInfo;
-  void* extraInfoVortex;
 };
 
 

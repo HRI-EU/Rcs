@@ -324,7 +324,7 @@ bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
       /////////////////////////////////////////////////////////////
       else if (ea.getKey() == 'T')
       {
-        setDisplayMode(this->displayMode++);
+        setDisplayMode(this->displayMode+1);
       }
 
       break;

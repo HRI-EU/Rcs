@@ -1333,14 +1333,10 @@ bool Rcs::VortexSimulation::createJoint(RcsBody* body)
 
       if (vJnt != NULL)
       {
-        //        vJnt->setUserData(body);
-        vJnt->setUserDataPtr(NULL); // TODO: Is this correct? MG 2012-11-12
-
         getUniverse()->disablePairIntersect(part0, part1);
         getUniverse()->addConstraint(vJnt);
         RLOG(5, "Created fixed joint (VxRPRO) between %s - %s",
              body->parent->name, body->name);
-        body->extraInfoVortex = (void*) vJnt;
       }
     }
     break;
@@ -1950,15 +1946,6 @@ bool Rcs::VortexSimulation::removeJoint(RcsBody* body)
   }
 
   Vx::VxConstraint* vJnt = NULL;
-
-  if (body->jnt == NULL && body->physicsSim == RCSBODY_PHYSICS_FIXED)
-  {
-    vJnt = (Vx::VxConstraint*) body->extraInfoVortex;
-    if (vJnt != NULL)
-    {
-      body->extraInfoVortex = NULL;
-    }
-  }
 
   if (body->jnt != NULL && body->physicsSim == RCSBODY_PHYSICS_DYNAMIC)
   {

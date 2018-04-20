@@ -2106,7 +2106,6 @@ RcsBody* RcsGraph_linkGenericBody(RcsGraph* self, int bdyNum,
   self->gBody[bdyNum].jnt               = b->jnt;
   self->gBody[bdyNum].actor             = b->actor;
   self->gBody[bdyNum].extraInfo         = b;
-  self->gBody[bdyNum].extraInfoVortex   = b->extraInfoVortex;
 
   return b;
 }
