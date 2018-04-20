@@ -913,7 +913,6 @@ void Rcs::BulletSimulation::getPhysicsTransform(HTr* A_BI,
   }
   else
   {
-    HTr_setIdentity(A_BI);
     RLOG(1, "Couldn't get physics transformation of body \"%s\"",
          body ? body->name : "NULL");
   }
