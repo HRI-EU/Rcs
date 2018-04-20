@@ -14,8 +14,21 @@ SET(MKPLT $ENV{MAKEFILE_PLATFORM})
 ################################################################################
 IF(USE_VORTEX STREQUAL ESSENTIALS)
 
-    SET(VORTEX_INCLUDE_DIR ${HGR}/External/Vortex/Essentials/${MKPLT}/include)
-    SET(VORTEX_LIBRARY_DIR ${HGR}/External/Vortex/Essentials/${MKPLT}/lib)
+    IF(DEFINED ENV{SIT})
+        # SIT available, use that version by default
+        SET(VORTEX_ESSENTIALS_DIR "${HGR}/External/Vortex/Essentials/${MKPLT}" CACHE PATH "Vortex install directory")
+    ELSE()
+        # SIT not available, path must be set
+        SET(VORTEX_ESSENTIALS_DIR "" CACHE PATH "Vortex install directory")
+    ENDIF()
+
+    # Validate vortex dir
+    IF(NOT EXISTS ${VORTEX_ESSENTIALS_DIR})
+        MESSAGE(FATAL_ERROR "Set to use Vortex, but VORTEX_ESSENTIALS_DIR is not set or does not exist")
+    ENDIF()
+
+    SET(VORTEX_INCLUDE_DIR ${VORTEX_ESSENTIALS_DIR}/include)
+    SET(VORTEX_LIBRARY_DIR ${VORTEX_ESSENTIALS_DIR}/lib)
     SET(VORTEX_LIBRARIES
       ${VORTEX_LIBRARY_DIR}/libVxCore.so
       ${VORTEX_LIBRARY_DIR}/libVxSimCore.so
