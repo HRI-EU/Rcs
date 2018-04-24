@@ -44,11 +44,11 @@
  ******************************************************************************/
 Rcs::PhysicsBase::PhysicsBase(const RcsGraph* graph_) :
   graph(graph_),
+  internalDesiredGraph(NULL),
   simTime(0.0),
   T_des(NULL),
   q_des(NULL),
   q_dot_des(NULL)
-
 {
   RCHECK(this->graph);
 
@@ -56,6 +56,8 @@ Rcs::PhysicsBase::PhysicsBase(const RcsGraph* graph_) :
   this->T_des = MatNd_create(this->graph->dof, 1);
   this->q_des = MatNd_clone(this->graph->q);
   this->q_dot_des = MatNd_create(this->graph->dof, 1);
+
+  this->internalDesiredGraph = RcsGraph_clone(this->graph);
 }
 
 /*******************************************************************************
@@ -63,16 +65,18 @@ Rcs::PhysicsBase::PhysicsBase(const RcsGraph* graph_) :
  ******************************************************************************/
 Rcs::PhysicsBase::PhysicsBase(const PhysicsBase& copyFromMe) :
   graph(copyFromMe.graph),
+  internalDesiredGraph(NULL),
   simTime(copyFromMe.simTime),
   T_des(NULL),
   q_des(NULL),
   q_dot_des(NULL)
-
 {
   // Create arrays for joint positions, velocities and torques
   this->T_des = MatNd_clone(copyFromMe.T_des);
   this->q_des = MatNd_clone(copyFromMe.q_des);
   this->q_dot_des = MatNd_clone(copyFromMe.q_dot_des);
+
+  this->internalDesiredGraph = RcsGraph_clone(this->graph);
 }
 
 /*******************************************************************************
@@ -81,24 +85,18 @@ Rcs::PhysicsBase::PhysicsBase(const PhysicsBase& copyFromMe) :
 Rcs::PhysicsBase::PhysicsBase(const PhysicsBase& copyFromMe,
                               const RcsGraph* newGraph) :
   graph(newGraph),
+  internalDesiredGraph(NULL),
   simTime(copyFromMe.simTime),
   T_des(NULL),
   q_des(NULL),
   q_dot_des(NULL)
-
 {
-  // If the simulation instance operates on another graph, we set it to
-  // exactly the same state as the one we are copying from. This also means
-  // that the state vector dimensions must match.
-  if (newGraph != NULL)
-  {
-    //RcsGraph_setState(this->graph, copyFromMe.graph->q, copyFromMe.graph->q_dot);
-  }
-
   // Create arrays for joint positions, velocities and torques
   this->T_des = MatNd_clone(copyFromMe.T_des);
   this->q_des = MatNd_clone(copyFromMe.q_des);
   this->q_dot_des = MatNd_clone(copyFromMe.q_dot_des);
+
+  this->internalDesiredGraph = RcsGraph_clone(this->graph);
 }
 
 /*******************************************************************************
@@ -109,6 +107,8 @@ Rcs::PhysicsBase::~PhysicsBase()
   MatNd_destroy(this->T_des);
   MatNd_destroy(this->q_des);
   MatNd_destroy(this->q_dot_des);
+
+  RcsGraph_destroy(this->internalDesiredGraph);
 }
 
 /*******************************************************************************
@@ -251,6 +251,10 @@ void Rcs::PhysicsBase::setControlInput(const MatNd* q_des_,
       RFATAL("Dimension mismatch: q_des_->m=%d, but dof=%d and nJ=%d",
              q_des_->m, this->graph->dof, this->graph->nJ);
     }
+
+    // Forward kinematics based on the desired state. This is needed in order
+    // to set the transformations of kinematically controlled bodies.
+    RcsGraph_setState(internalDesiredGraph, this->q_des, NULL);
   }
 
   // Desired joint velocities
@@ -300,4 +304,21 @@ void Rcs::PhysicsBase::setControlInput(const MatNd* q_des_,
 void Rcs::PhysicsBase::getLastPositionCommand(MatNd* q_des_) const
 {
   MatNd_reshapeCopy(q_des_, this->q_des);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void Rcs::PhysicsBase::print() const
+{
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool Rcs::PhysicsBase::setParameter(ParameterCategory category,
+                                    const char* name, const char* type, double value)
+{
+  RLOG(0, "Implement or overwrite me");
+  return false;
 }

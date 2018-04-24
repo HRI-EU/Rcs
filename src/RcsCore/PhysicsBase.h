@@ -79,6 +79,15 @@ public:
 
 public:
 
+  typedef enum
+  {
+    Simulation = 0,
+    Material,
+    Body,
+    Joint
+
+  } ParameterCategory;
+
   /*! \brief Computes a single simulation step with the given time interval
    *         in [secs]. The previously set control command is applied.
    *
@@ -325,6 +334,18 @@ public:
   virtual void getJointCompliance(MatNd* stiffness,
                                   MatNd* damping=NULL) const = 0;
 
+  /*! \brief Function for setting physics parameter. The concrete implementation
+   *         depends on the derieved physics class. This classes implementation
+   *         is empty.
+   *
+   *  \param[in] category   See enum ParameterCategory
+   *  \param[in] name       Parameter name, such as "SoftMaterial".
+   *  \param[in] type       Parameter type, such as "Restitution".
+   *  \param[in] value      Value the parameter should be assigned with
+   *  \return true for success, false otherwise
+   */
+  virtual bool setParameter(ParameterCategory category,
+                            const char* name, const char* type, double value);
 
 
   /*! \brief Base class constructor.
@@ -418,10 +439,16 @@ public:
    */
   virtual void resetTime();
 
+  /*! \brief Prints out simulation-class specific information to the console.
+   *         This classes implementation does nothing.
+   */
+  virtual void print() const;
+
 
 protected:
 
   const RcsGraph* graph;   ///< Points to the underlying RcsGraph
+  RcsGraph* internalDesiredGraph;   // For kinematic transforms based on q_des
   double simTime;    ///< Simulation time in [sec]
   MatNd* T_des;      ///< Desired joint torque [RcsGraph::dof x 1]
   MatNd* q_des;      ///< Desired joint angles [RcsGraph::dof x 1]

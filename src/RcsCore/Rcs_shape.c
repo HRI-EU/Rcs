@@ -638,7 +638,7 @@ void RcsShape_fprint(FILE* out, const RcsShape* s)
   }
 
   // Shape type
-  fprintf(out, "[RcsGraph_fprintShape():%d] \n\tShape of type \"%s\"\n",
+  fprintf(out, "[RcsShape_fprint():%d] \n\tShape of type \"%s\"\n",
           __LINE__, RcsShape_name(s->type));
 
   // Relative transformation

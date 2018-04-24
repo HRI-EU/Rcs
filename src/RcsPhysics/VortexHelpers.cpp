@@ -59,7 +59,7 @@
 #include <Vx/VxCompositeCollisionGeometry.h>
 #include <Vx/VxUniverse.h>
 #include <Vx/VxFrame.h>
-#include <Vx/VxRigidBodyResponseModel.h>
+#include <Vx/VxTriangleMeshBVTree.h>
 
 #include <iostream>
 #include <cmath>
@@ -83,18 +83,14 @@ Rcs::VortexBody::~VortexBody()
 /*******************************************************************************
  *
  ******************************************************************************/
-Vx::VxMaterialTable* Rcs::getMaterialTable()
-{
-  Vx::VxUniverse* universe = &Vx::VxFrame::instance()->getUniverse();
-  return universe->getRigidBodyResponseModel()->getMaterialTable();
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
 Rcs::VortexBody* Rcs::getPartPtr(const RcsBody* body)
 {
-  return body ? static_cast<Rcs::VortexBody*>(body->actor) : NULL;
+  if (body==NULL)
+  {
+    return NULL;
+  }
+
+  return static_cast<Rcs::VortexBody*>(body->actor);
 }
 
 /******************************************************************************
@@ -706,14 +702,16 @@ Vx::VxConstraint* Rcs::createFixedJoint(Vx::VxPart* vxParent,
   Vx::VxReal stiffness = 10000.0;
   Vx::VxReal halfLife = 5.0;
   Vx::VxUniverse* universe = &Vx::VxFrame::instance()->getUniverse();
-  Vx::VxReal damping = 1.0*universe->getCriticalDamping(stiffness, halfLife);
-  Vx::VxReal loss = .0;
+  Vx::VxReal damping = universe->getCriticalDamping(stiffness, halfLife);
+  Vx::VxReal loss = 0.0;
   joint->setRelaxationParameters(0, stiffness, damping, loss, true);
   joint->setRelaxationParameters(1, stiffness, damping, loss, true);
   joint->setRelaxationParameters(2, stiffness, damping, loss, true);
   joint->setRelaxationParameters(3, stiffness, damping, loss, true);
   joint->setRelaxationParameters(4, stiffness, damping, loss, true);
   joint->setRelaxationParameters(5, stiffness, damping, loss, true);
+
+  joint->setUserDataPtr(loadCell);
 
   return joint;
 }
@@ -1017,19 +1015,4 @@ void Rcs::printMaterial(const Vx::VxMaterial* material, std::ostream& out)
       << material->getSlip(Vx::VxMaterialBase::kFrictionAxisAngularSecondary);
 
   out << std::endl;
-}
-
-void Rcs::printMaterialTable(std::ostream& out)
-{
-  Vx::VxMaterialTable* mt = getMaterialTable();
-
-  for (size_t i=0; i<mt->getMaterialCount(); ++i)
-  {
-    printMaterial(mt->getMaterial(i), out);
-  }
-}
-
-void Rcs::printMaterialTable()
-{
-  printMaterialTable(std::cout);
 }

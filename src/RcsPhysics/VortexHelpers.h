@@ -42,8 +42,6 @@
 #include <Vx/VxPart.h>
 #include <Vx/VxTransform.h>
 #include <Vx/VxConstraint.h>
-#include <Vx/VxTriangleMeshBVTree.h>
-#include <Vx/VxMaterialTable.h>
 
 #include <fstream>
 
@@ -60,8 +58,6 @@ public:
 };
 
 Rcs::VortexBody* getPartPtr(const RcsBody* body);
-
-Vx::VxMaterialTable* getMaterialTable();
 
 Vx::VxTransform VxTransform_fromHTr(const HTr* A_KI);
 
@@ -113,8 +109,6 @@ Vx::VxConstraint* createRevoluteJoint(Vx::VxPart* parent,
                                       const double q0);
 
 void printMaterial(const Vx::VxMaterial* material, std::ostream& out);
-void printMaterialTable(std::ostream& out);
-void printMaterialTable();
 }
 
 #endif // RCS_VORTEXHELPERS_H

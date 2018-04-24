@@ -1047,21 +1047,18 @@ size_t Rcs::BulletSimulation::getNumberOfContacts() const
 /*******************************************************************************
  *
  ******************************************************************************/
-//! \todo Traverse jointmap instead of graph
 void Rcs::BulletSimulation::applyControl(double dt)
 {
   // Apply transformations to all kinematic bodies
   if (!bdyMap.empty())
   {
-    RcsGraph* graphCpy = RcsGraph_clone(this->graph);
-    RcsGraph_setState(graphCpy, this->q_des, NULL);
-
     std::map<const RcsBody*, Rcs::BulletRigidBody*>::const_iterator it;
 
     for (it = bdyMap.begin(); it!=bdyMap.end(); ++it)
     {
       const RcsBody* rb_ = it->first;
-      const RcsBody* rb = RcsGraph_getBodyByName(graphCpy, rb_->name);
+      const RcsBody* rb = RcsGraph_getBodyByName(internalDesiredGraph,
+                                                 rb_->name);
       RCHECK(rb);
       BulletRigidBody* btBdy = it->second;
       if (btBdy && btBdy->isStaticOrKinematicObject())
@@ -1070,103 +1067,54 @@ void Rcs::BulletSimulation::applyControl(double dt)
       }
     }
 
-    RcsGraph_destroy(graphCpy);
   }
 
 
 
   // Set desired joint controls
-  if (T_des->m==graph->dof)
+  for (hinge_it it = hingeMap.begin(); it != hingeMap.end(); ++it)
   {
-    RCSGRAPH_TRAVERSE_JOINTS(this->graph)
-    {
-      if (JNT->ctrlType==RCSJOINT_CTRL_TORQUE)
-      {
-        setJointTorque(JNT, MatNd_get(T_des, JNT->jointIndex, 0));
-      }
-      else if (JNT->ctrlType==RCSJOINT_CTRL_POSITION)
-      {
-        int index = JNT->jointIndex;
-        double q_cmd;
-        RcsJoint* j_master = JNT->coupledTo;
+    const RcsJoint* JNT = it->first;
+    Rcs::BulletHingeJoint* hinge = it->second;
 
-        if (j_master != NULL)
-        {
-          // If the joint is coupled, set the position command according
-          // to its coupling factor.
-          if (JNT->couplingFactors->size == 0)
-          {
-            q_cmd = MatNd_get(this->q_des, index, 0);
-          }
-          else
-          {
-            double q_master = MatNd_get(this->q_des, j_master->jointIndex, 0);
-            q_cmd = RcsJoint_computeSlaveJointAngle(JNT, q_master);
-          }
-        }
-        else
+    if (JNT->ctrlType==RCSJOINT_CTRL_TORQUE)
+    {
+      double torque = MatNd_get(T_des, JNT->jointIndex, 0);
+      hinge->setJointTorque(torque, dt);
+    }
+    else if (JNT->ctrlType==RCSJOINT_CTRL_POSITION)
+    {
+      double q_cmd;
+      RcsJoint* j_master = JNT->coupledTo;
+
+      if (j_master != NULL)
+      {
+        // If the joint is coupled, set the position command according
+        // to its coupling factor.
+        if (JNT->couplingFactors->size == 0)
         {
           q_cmd = MatNd_get(this->q_des, JNT->jointIndex, 0);
         }
-
-        setJointAngle(JNT, q_cmd, dt);
-      }
-      else   // RCSJOINT_CTRL_VELOCITY
-      {
-        BulletHingeJoint* hinge = getHinge(JNT);
-
-        if (hinge != NULL)
-        {
-          double q_curr_i = hinge->getJointAngle();
-          double q_dot_des_i = MatNd_get(this->q_dot_des, JNT->jointIndex, 0);
-          double q_des_i  = q_curr_i + q_dot_des_i*dt;
-          setJointAngle(JNT, q_des_i, dt);
-        }
         else
         {
-          RLOG(5, "No hinge joint found for joint \"%s\"", JNT->name);
+          double q_master = MatNd_get(this->q_des, j_master->jointIndex, 0);
+          q_cmd = RcsJoint_computeSlaveJointAngle(JNT, q_master);
         }
-      }
-    }
-  }
-  else if (T_des->m==graph->nJ)
-  {
-    RFATAL("CHECKME");
-    RCSGRAPH_TRAVERSE_JOINTS(this->graph)
-    {
-      if (JNT->jacobiIndex == -1)
-      {
-        continue;
-      }
-
-      if (JNT->ctrlType==RCSJOINT_CTRL_TORQUE)
-      {
-        //Rcs::BulletHingeJoint* hinge = getHinge(JNT);
-
-        //if (hinge == NULL)
-        //{
-        //  RLOGS(1, "Calling function setJointTorque() with NULL hinge (RcsJoint "
-        //    "\"%s\") - skipping", JNT ? JNT->name : "NULL");
-        //  return;
-        //}
-
-        //hinge->setJointTorque(MatNd_get(T_des, JNT->jacobiIndex, 0), dt);
-        setJointTorque(JNT, MatNd_get(T_des, JNT->jacobiIndex, 0));
-      }
-      else if (JNT->ctrlType==RCSJOINT_CTRL_POSITION)
-      {
-        setJointAngle(JNT, MatNd_get(q_des, JNT->jacobiIndex, 0), dt);
       }
       else
       {
-        RFATAL("NIY");
+        q_cmd = MatNd_get(this->q_des, JNT->jointIndex, 0);
       }
+
+      hinge->setJointAngle(q_cmd, dt);
     }
-  }
-  else
-  {
-    RFATAL("Wrong row size of T_des: %d, should be %d (dof) or %d (nJ)",
-           T_des->m, graph->dof, graph->nJ);
+    else   // RCSJOINT_CTRL_VELOCITY
+    {
+      double q_curr_i = hinge->getJointAngle();
+      double q_dot_des_i = MatNd_get(this->q_dot_des, JNT->jointIndex, 0);
+      double q_des_i  = q_curr_i + q_dot_des_i*dt;
+      hinge->setJointAngle(q_des_i, dt);
+    }
   }
 
 }
@@ -1180,7 +1128,7 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
 
   if (rb == NULL)
   {
-    RLOG(5, "No Rcs::BulletRigidBody found for RcsBody \"%s\"", fts->body->name);
+    RLOG(5, "No BulletRigidBody found for RcsBody \"%s\"", fts->body->name);
     return false;
   }
 
@@ -1244,13 +1192,10 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
   // Sensor's mass compensation (static forces only)
   double S_f_gravity[6];
   RcsSensor_computeStaticForceCompensation(fts, S_f_gravity);
-  Vec3d_subSelf(ftWrench, S_f_gravity);
+  VecNd_subSelf(ftWrench, S_f_gravity, 6);
 
-  // Simple filter
-  for (int i=0; i<6; ++i)
-  {
-    fts->rawData->ele[i] = 0.9*fts->rawData->ele[i] + 0.1*ftWrench[i];
-  }
+  // Copy into sensor's rawData array
+  MatNd_fromArray(fts->rawData, ftWrench, 6);
 
   return true;
 }
@@ -1371,51 +1316,8 @@ const char* Rcs::BulletSimulation::getClassName() const
 void Rcs::BulletSimulation::setDebugDrawer(BulletDebugDrawer* drawer)
 {
   lock();
-
   this->debugDrawer = drawer;
   dynamicsWorld->setDebugDrawer(this->debugDrawer);
-
-#if 0
-
-  if ((drawer!=NULL) && (this->debugDrawer==NULL))
-  {
-    this->debugDrawer = drawer;
-    this->debugDrawer->setEnabled(false);
-
-    if (dynamicsWorld->getDebugDrawer() == NULL)
-    {
-      dynamicsWorld->setDebugDrawer(this->debugDrawer);
-    }
-    return;
-  }
-
-  if ((drawer!=NULL) && (this->debugDrawer==NULL))
-  {
-    this->debugDrawer = drawer;
-    this->debugDrawer->setEnabled(false);
-
-    if (dynamicsWorld->getDebugDrawer() == NULL)
-    {
-      dynamicsWorld->setDebugDrawer(this->debugDrawer);
-    }
-  }
-
-#elif 0
-
-  if ((drawer==NULL) && (this->debugDrawer!=NULL))
-  {
-    this->debugDrawer->setEnabled(false);
-  }
-  else if ((drawer!=NULL) && (this->debugDrawer==NULL))
-  {
-    drawer->setEnabled(false);
-  }
-
-  this->debugDrawer = drawer;
-  dynamicsWorld->setDebugDrawer(this->debugDrawer);
-
-#endif
-
   unlock();
 }
 

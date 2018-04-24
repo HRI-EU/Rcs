@@ -59,7 +59,7 @@
  *  - -f: Configuration file
  *  - -simpleGraphics:
  *    Starts the graphics viewer with minimal settings (no anti-aliasing and
- *    shadows etc.). This is beneficial if the application is strted on a
+ *    shadows etc.). This is beneficial if the application is started on a
  *    remote computer, or the computer has a slow graphics card.
  *  - -nomutex:
  *    Disables mutex locking for the graphics viewer. This may result in some
@@ -836,6 +836,8 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("j", "Disable joint limits");
       Rcs::KeyCatcherBase::registerKey("J", "Enable joint limits");
       Rcs::KeyCatcherBase::registerKey("G", "Toggle gravity compensation");
+      Rcs::KeyCatcherBase::registerKey("W", "Create joint widget");
+      Rcs::KeyCatcherBase::registerKey("m", "Change physics parameters");
 
       double dt = 0.005, tmc = 0.01;
       double damping = 2.0;
@@ -934,6 +936,11 @@ int main(int argc, char** argv)
         sim->disableCollisions();
       }
 
+      REXEC(1)
+        {
+          sim->print();
+        }
+
       // remember initial state for resetting simulation
       MatNd* q0 = MatNd_clone(graph->q);
       MatNd* q_des = MatNd_clone(graph->q);
@@ -944,28 +951,17 @@ int main(int argc, char** argv)
       RcsGraph_computeGravityTorque(graph, T_gravity);
       MatNd_constMulSelf(T_gravity, -1.0);
 
-      std::vector<RcsSensor*> jointTorqueSensor;
-
-      RCSGRAPH_TRAVERSE_SENSORS(graph)
-      {
-        if (SENSOR->type == RCSSENSOR_JOINT_TORQUE)
-        {
-          jointTorqueSensor.push_back(SENSOR);
-        }
-      }
-
-      RLOGS(5, "Found %zu joint torque sensors", jointTorqueSensor.size());
-
       // Viewer and Gui
       Rcs::KeyCatcher* kc = NULL;
       Rcs::Viewer* viewer = NULL;
       Rcs::HUD* hud = NULL;
       Rcs::JointWidget* jw = NULL;
+      Rcs::PhysicsNode* simNode = NULL;
 
       if (valgrind==false)
       {
         viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
-        Rcs::PhysicsNode* simNode = new Rcs::PhysicsNode(sim);
+        simNode = new Rcs::PhysicsNode(sim);
         viewer->add(simNode);
         hud = new Rcs::HUD();
         viewer->add(hud);
@@ -978,9 +974,6 @@ int main(int argc, char** argv)
           jw = Rcs::JointWidget::create(graph, mtx, q_des, graph->q);
         }
       }
-
-
-
 
 
 
@@ -1003,6 +996,11 @@ int main(int argc, char** argv)
           RMSGS("Quitting run loop");
           runLoop = false;
         }
+        else if (kc && kc->getAndResetKey('W'))
+          {
+            RMSGS("Creating JointWidget");
+            jw = Rcs::JointWidget::create(graph, mtx, q_des, graph->q);
+          }
         else if (kc && kc->getAndResetKey('p'))
         {
           RMSGS("Resetting physics");
@@ -1030,21 +1028,95 @@ int main(int argc, char** argv)
           gravComp = !gravComp;
           RMSGS("Gravity compensation is %s", gravComp ? "ON" : "OFF");
         }
+        else if (kc && kc->getAndResetKey('m'))
+        {
+          RMSGS("Enter physics parameter:");
+          int category;
+          std::string type, name;
+          double value;
+          printf("Enter category: (0: Simulation 1: Material 2: Body)");
+          std::cin >> category;
+          printf("Enter type:");
+          std::cin >> type;
+          printf("Enter name:");
+          std::cin >> name;
+          printf("Enter value:");
+          std::cin >> value;
+          bool pSuccess = sim->setParameter((Rcs::PhysicsBase::ParameterCategory)category, name.c_str(), type.c_str(), value);
+          RMSGS("%s physics parameters",
+                pSuccess ? "Successfully applied" : "Failed to apply");
+        }
         else if (kc && kc->getAndResetKey(' '))
         {
           pause = !pause;
           RMSG("Pause modus is %s", pause ? "ON" : "OFF");
         }
-        else if (kc && kc->getAndResetKey('S'))
+          else if (kc && kc->getAndResetKey('l'))
         {
-          RMSGS("Printing out joint torques");
-          for (size_t i=0; i<jointTorqueSensor.size(); i++)
+            RMSG("Reloading GraphNode from %s", xmlFileName);
+            double t_reload = Timer_getSystemTime();
+            pthread_mutex_lock(&graphLock);
+            viewer->removeNode(simNode);
+            simNode = NULL;
+            double t_reload2 = Timer_getSystemTime();
+            RcsGraph_destroy(graph);
+            graph = RcsGraph_create(xmlFileName);
+            if (graph != NULL)
           {
-            double jntTorque = jointTorqueSensor[i]->rawData->ele[0];
-            RLOGS(0, "[%s]: Joint torque: %f",
-                  jointTorqueSensor[i]->name, jntTorque);
+                if (posCntrl == true)
+                  {
+                    RCSGRAPH_TRAVERSE_JOINTS(graph)
+                    {
+                      if ((JNT->ctrlType == RCSJOINT_CTRL_VELOCITY) ||
+                          (JNT->ctrlType == RCSJOINT_CTRL_TORQUE))
+                        {
+                          JNT->ctrlType = RCSJOINT_CTRL_POSITION;
+                        }
+                    }
+                    RcsGraph_setState(graph, NULL, NULL);
           }
 
+                delete sim;
+                sim = Rcs::PhysicsFactory::create(physicsEngine, graph,
+                                                  physicsCfg);
+                t_reload2 = Timer_getSystemTime() - t_reload2;
+
+                REXEC(1)
+                  {
+                    sim->print();
+                  }
+
+                MatNd_resizeCopy(&q0, graph->q);
+                MatNd_resizeCopy(&q_des, graph->q);
+                MatNd_resizeCopy(&q_des_f, graph->q);
+                MatNd_resizeCopy(&q_curr, graph->q);
+                MatNd_resizeCopy(&q_dot_curr, graph->q_dot);
+                T_gravity = MatNd_realloc(T_gravity, graph->dof, 1);
+                RcsGraph_computeGravityTorque(graph, T_gravity);
+                MatNd_constMulSelf(T_gravity, -1.0);
+                simNode = new Rcs::PhysicsNode(sim);
+                pthread_mutex_unlock(&graphLock);
+                viewer->add(simNode);
+                pthread_mutex_lock(&graphLock);
+              }
+            else
+              {
+                RLOG(1, "Couldn't create graph - skipping osg "
+                     "node and physics simulation");
+              }
+            pthread_mutex_unlock(&graphLock);
+            t_reload = Timer_getSystemTime() - t_reload;
+            RMSG("... took %.2f msec (%.2f msec simulation only)",
+                 1000.0*t_reload, 1000.0*t_reload2);
+          }
+          else if (kc && kc->getAndResetKey('S'))
+            {
+              RMSGS("Printing out sensors");
+
+              RCSGRAPH_TRAVERSE_SENSORS(graph)
+              {
+                RcsSensor_fprint(stdout, SENSOR);
+              }
         }   // if (kc && ...)
 
         if (valgrind)

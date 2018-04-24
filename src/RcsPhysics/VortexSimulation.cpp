@@ -61,9 +61,12 @@
 #include <Vx/VxCollisionGeometry.h>
 #include <Vx/VxSolverParameters.h>
 #include <Vx/VxCompositeCollisionGeometry.h>
+#include <Vx/VxRigidBodyResponseModel.h>
+#include <Vx/VxMaterialTable.h>
 #include <Vx/VxUniverse.h>
 
 #include <fstream>
+#include <iostream>
 
 
 #define RCSVORTEX_DEFAULT_INTEGRATOR_DT                 (0.005)
@@ -98,8 +101,11 @@ Rcs::VortexSimulation::VortexSimulation(const RcsGraph* g,
   jointMotorLoss(RCSVORTEX_DEFAULT_JOINT_MOTOR_LOSS),
   jointLimitsActive(true),
   b_ext(NULL),
-  groundPlane(NULL)
+  groundPlane(NULL),
+  universe(NULL),
+  materialFileName(NULL)
 {
+  this->materialFileName = String_clone(physicsConfigFile);
   initPhysics(physicsConfigFile, withGroundPlane);
 }
 
@@ -118,9 +124,13 @@ Rcs::VortexSimulation::VortexSimulation(const VortexSimulation& copyFromMe,
   jointMotorLoss(RCSVORTEX_DEFAULT_JOINT_MOTOR_LOSS),
   jointLimitsActive(true),
   b_ext(NULL),
-  groundPlane(NULL)
+  groundPlane(NULL),
+  universe(NULL),
+  materialFileName(NULL)
 {
-  initPhysics();
+  this->materialFileName = String_clone(copyFromMe.materialFileName);
+  bool withGroundPlane = copyFromMe.groundPlane ? true : false;
+  initPhysics(materialFileName, withGroundPlane);
 }
 
 /*******************************************************************************
@@ -134,18 +144,17 @@ void Rcs::VortexSimulation::initPhysics(const char* physicsConfigFile,
 
   pthread_mutex_init(&this->extForceLock, NULL);
 
-  // create the frame
+  // Create the frame
   RLOG(5, "VxFrame::instance()");
   Vx::VxFrame* frame = Vx::VxFrame::instance();
   frame->setMaxThreadCount(4);
 
-  // create the universe
-  Vx::VxUniverse* universe = new Vx::VxUniverse(100, 10000);
+  // Create the universe
   RLOG(5, "Creating universe");
+  this->universe = new Vx::VxUniverse(100, 10000);
   universe->setCollisionMultithreaded(true);
-
-  // Creating stepper for particle systems
-  // this->vxPsStepper = new VxPs::VxPsStepper;
+  universe->setGravity(0.0, 0.0, -RCS_GRAVITY);
+  universe->setAutoSleep(false);
 
   // Add the universe to the VxFrame
   RLOG(5, "frame->addUniverse");
@@ -159,16 +168,6 @@ void Rcs::VortexSimulation::initPhysics(const char* physicsConfigFile,
   fo.setCheckAccelerationLinearThreshold(20.0);
   fo.setVerbose(true);
 
-  universe->setGravity(0.0, 0.0, -RCS_GRAVITY);
-  Vx::VxReal lin_speed, lin_accel, ang_speed, ang_accel;
-  int step;
-  Vx::VxPart::getDefaultAutoSleepParameters(lin_speed, lin_accel, ang_speed,
-                                            ang_accel, step);
-  lin_speed *= 0.001;
-  lin_accel *= 0.001;
-  Vx::VxPart::setDefaultAutoSleepParameters(lin_speed, lin_accel, ang_speed,
-                                            ang_accel, step);
-  universe->setAutoSleep(false);
 
   // Now that the frame and universe are created, check for parameters in xml
   // file. Set default configuration parameters.
@@ -179,9 +178,9 @@ void Rcs::VortexSimulation::initPhysics(const char* physicsConfigFile,
 
   // Determine absolute file name of config file and copy the XML file name
   char absFileName[256] = "";
-  bool file_exists = Rcs_getAbsoluteFileName(physicsConfigFile, absFileName);
+  bool fileExists = Rcs_getAbsoluteFileName(physicsConfigFile, absFileName);
 
-  if (file_exists == false)
+  if (fileExists == false)
   {
     RLOG(1, "Rcs physics configuration file \"%s\" not found",
          physicsConfigFile);
@@ -198,7 +197,11 @@ void Rcs::VortexSimulation::initPhysics(const char* physicsConfigFile,
   // Ground plane
   if (withGroundPlane)
   {
-    createGroundPlane();
+    Vx::VxPart* groundPlane = new Vx::VxPart();
+    groundPlane->setName("GroundPlane");
+    Vx::VxCollisionGeometry* g = new Vx::VxCollisionGeometry(new Vx::VxPlane());
+    groundPlane->addCollisionGeometry(g);
+    universe->addPart(groundPlane);
     RLOG(5, "Created ground plane");
   }
 
@@ -220,7 +223,7 @@ void Rcs::VortexSimulation::initPhysics(const char* physicsConfigFile,
   RLOG(5, "Disabling mesh collisions");
   disableMeshCollisions();
 
-  // by MM disable collisions within all groups
+  // Disable collisions within all groups
   disableCollisionsWithinGroup(NULL);
 
   // Copy transforms
@@ -228,7 +231,7 @@ void Rcs::VortexSimulation::initPhysics(const char* physicsConfigFile,
   updateTransformations();
 
   // checking for possible problems of universe
-  getUniverse()->verifyUniverseContent();
+  universe->verifyUniverseContent();
 
   RLOG(5, "finished Vortex constructor");
 }
@@ -238,26 +241,21 @@ void Rcs::VortexSimulation::initPhysics(const char* physicsConfigFile,
  ******************************************************************************/
 Rcs::VortexSimulation::~VortexSimulation()
 {
-  const Vx::VxConstraintSet& constraints = getUniverse()->getConstraints();
+  Vx::VxFrame* frame = Vx::VxFrame::instance();
 
-  for (auto it2 = constraints.begin(); it2 != constraints.end(); ++it2)
+  frame->removeUniverse(this->universe);
+
+  if (frame->getUniverseCount()==0)
   {
-    Vx::VxConstraint* c = *it2;
-
-    VortexJointInfo* jnt_info = ((VortexJointInfo*) c->getUserDataPtr());
-    // in case of fixed joints, no VortexJointInfo is constructed, but the
-    // user date is set to NULL
-    if (jnt_info)
-    {
-      delete jnt_info;
-    }
+    frame->release();
   }
 
-
-  Vx::VxFrame* frame = Vx::VxFrame::instance();
-  frame->release();
-
   pthread_mutex_destroy(&this->extForceLock);
+
+  if (this->materialFileName != NULL)
+  {
+    RFREE(this->materialFileName);
+  }
 
   RLOG(5, "VortexSimulation destroyed");
 }
@@ -275,7 +273,6 @@ Rcs::VortexSimulation* Rcs::VortexSimulation::clone(RcsGraph* newGraph) const
  ******************************************************************************/
 void Rcs::VortexSimulation::setTransformUpdateMutex(pthread_mutex_t* mutex)
 {
-  RCHECK(mutex);
   trafoUpdateLock = mutex;
 }
 
@@ -284,7 +281,7 @@ void Rcs::VortexSimulation::setTransformUpdateMutex(pthread_mutex_t* mutex)
  ******************************************************************************/
 void Rcs::VortexSimulation::setGravity(const double gravity[3])
 {
-  getUniverse()->setGravity(gravity[0], gravity[1], gravity[2]);
+  universe->setGravity(gravity[0], gravity[1], gravity[2]);
 }
 
 /*******************************************************************************
@@ -292,12 +289,63 @@ void Rcs::VortexSimulation::setGravity(const double gravity[3])
  ******************************************************************************/
 void Rcs::VortexSimulation::updateSensors()
 {
+
+
+  const Vx::VxConstraintSet& constraints = universe->getConstraints();
+
+  for (auto it = constraints.begin(); it != constraints.end(); ++it)
+  {
+    Vx::VxRPRO* rpro = dynamic_cast<Vx::VxRPRO*>(*it);
+
+    if (rpro != NULL)
+    {
+      RcsSensor* fts = (RcsSensor*) rpro->getUserDataPtr();
+
+      if (fts != NULL)
+      {
+        // Update force and torque values
+        double ftWrench[9];
+        ftWrench[0] = rpro->getConstraintEquationForce(Vx::VxRPRO::kConstraintP0);
+        ftWrench[1] = rpro->getConstraintEquationForce(Vx::VxRPRO::kConstraintP1);
+        ftWrench[2] = rpro->getConstraintEquationForce(Vx::VxRPRO::kConstraintP2);
+        ftWrench[3] = rpro->getConstraintEquationForce(Vx::VxRPRO::kConstraintA0);
+        ftWrench[4] = rpro->getConstraintEquationForce(Vx::VxRPRO::kConstraintA1);
+        ftWrench[5] = rpro->getConstraintEquationForce(Vx::VxRPRO::kConstraintA2);
+        ftWrench[6] = 0.0;
+        ftWrench[7] = 0.0;
+        ftWrench[8] = 0.0;
+
+        // Sensor's mass compensation (static forces only)
+        double S_f_gravity[6];
+        RcsSensor_computeStaticForceCompensation(fts, S_f_gravity);
+        VecNd_subSelf(ftWrench, S_f_gravity, 6);
+
+        // Update accelerations and rotate into body frame
+        // \todo: Consider sensor offset transformation
+        RCHECK_MSG(rpro->getMaxPartCount()==2, "Sensor has %d parts - must be 2",
+                   rpro->getMaxPartCount());
+        VortexBody* vxBdy = dynamic_cast<VortexBody*>(rpro->getPart(1));
+        RCHECK(vxBdy);
+        Vx::VxVector3 accel = vxBdy->getLinearAcceleration();
+        ftWrench[6] = accel[0];
+        ftWrench[7] = accel[1];
+        ftWrench[8] = accel[2];
+        Vec3d_rotateSelf(&ftWrench[6], vxBdy->A_PI.rot);
+
+        // Copy into sensor's rawData array
+        MatNd_fromArray(fts->rawData, ftWrench, 9);
+      }
+    }
+  }
+
+
+
   RCSGRAPH_TRAVERSE_SENSORS(this->graph)
   {
     switch (SENSOR->type)
     {
       case RCSSENSOR_LOAD_CELL:
-        updateFTS(SENSOR);
+        //updateFTS(SENSOR);
         break;
       case RCSSENSOR_JOINT_TORQUE:
         updateJointTorqueSensor(SENSOR);
@@ -306,30 +354,13 @@ void Rcs::VortexSimulation::updateSensors()
         updateContactForceSensor(SENSOR);
         break;
       case RCSSENSOR_PPS:
-        updatePPSSensor(SENSOR);
+        //updatePPSSensor(SENSOR);
         break;
       default:
         RLOG(4, "No update function for sensor type %d", SENSOR->type);
     }
   }
 
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-Vx::VxUniverse* Rcs::VortexSimulation::getUniverse()
-{
-  return &Vx::VxFrame::instance()->getUniverse();
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-const Vx::VxUniverse* Rcs::VortexSimulation::getUniverse() const
-{
-  const Vx::VxUniverse* universe = &Vx::VxFrame::instance()->getUniverse();
-  return universe;
 }
 
 /*******************************************************************************
@@ -347,7 +378,7 @@ bool Rcs::VortexSimulation::initSettings(const char* configFile)
   }
 
   int grpIdx = 0, halflife = 5;
-  Vx::VxSolverParameters* sParam = getUniverse()->getSolverParameters(grpIdx);
+  Vx::VxSolverParameters* sParam = universe->getSolverParameters(grpIdx);
 
   // Read XML file
   xmlNodePtr node = xmlRootNode->children;
@@ -386,14 +417,14 @@ bool Rcs::VortexSimulation::initSettings(const char* configFile)
                                    &value))
       {
         sParam->setConstraintLinearCompliance(value);
-        getUniverse()->setCriticalConstraintParameters(grpIdx, halflife);
+        universe->setCriticalConstraintParameters(grpIdx, halflife);
       }
 
       if (getXMLNodePropertyDouble(node, "constraint_angular_compliance",
                                    &value))
       {
         sParam->setConstraintAngularCompliance(value);
-        getUniverse()->setCriticalConstraintParameters(grpIdx, halflife);
+        universe->setCriticalConstraintParameters(grpIdx, halflife);
       }
     }
 
@@ -416,15 +447,15 @@ bool Rcs::VortexSimulation::initSettings(const char* configFile)
 /*******************************************************************************
  * Define materials using XML file
  ******************************************************************************/
-void Rcs::VortexSimulation::initMaterial(const char* material_file)
+void Rcs::VortexSimulation::initMaterial(const char* materialFile)
 {
-  Vx::VxMaterialTable* materialTbl = getMaterialTable();
+  Vx::VxMaterialTable* materialTbl = universe->getRigidBodyResponseModel()->getMaterialTable();
 
   // Read XML file
   char msg[256];
   xmlDocPtr xmlDoc;
-  xmlNodePtr xmlRootNode = parseXMLFile(material_file, "content", &xmlDoc);
-  RCHECK_MSG(xmlRootNode, "Node \"content\" not found in file \"%s\"", material_file);
+  xmlNodePtr xmlRootNode = parseXMLFile(materialFile, "content", &xmlDoc);
+  RCHECK_MSG(xmlRootNode, "Node \"content\" not found in file \"%s\"", materialFile);
 
   xmlNodePtr node = xmlRootNode->children;
   while (node)
@@ -494,7 +525,7 @@ void Rcs::VortexSimulation::initMaterial(const char* material_file)
         {
           material->setCompliance(value);
           // as a default, set critical damping
-          //          material->setDamping(getUniverse()->getCriticalDamping(value));
+          // material->setDamping(universe->getCriticalDamping(value));
           // from the Vortex documentation:
           // Nearly optimal value of damping is given by:
           // damping = 5*time_step/compliance
@@ -520,7 +551,7 @@ void Rcs::VortexSimulation::initMaterial(const char* material_file)
       else
       {
         RLOG(1, "file \"%s\" has a material entry without a name property, so"
-             " it is ignored", material_file);
+             " it is ignored", materialFile);
       }
     }
 
@@ -530,11 +561,6 @@ void Rcs::VortexSimulation::initMaterial(const char* material_file)
 
   // Free the xml memory
   xmlFreeDoc(xmlDoc);
-
-  REXEC(5)
-  {
-    getMaterialTable()->dump(0);
-  }
 
   RLOG(5, "initMaterial finished");
 }
@@ -560,7 +586,7 @@ void Rcs::VortexSimulation::disableCollision(const RcsBody* b0,
     return;
   }
 
-  getUniverse()->disablePairIntersect(part0, part1);
+  universe->disablePairIntersect(part0, part1);
 }
 
 /*******************************************************************************
@@ -572,8 +598,8 @@ Rcs::VortexSimulation::Contacts Rcs::VortexSimulation::getContacts()
 
   // get iterators for first and last contact
   Vx::VxUniverse::DynamicsContactIterator it, ie;
-  it = getUniverse()->dynamicsContactBegin();
-  ie = getUniverse()->dynamicsContactEnd();
+  it = universe->dynamicsContactBegin();
+  ie = universe->dynamicsContactEnd();
 
   for (; it != ie; ++it)
   {
@@ -602,7 +628,7 @@ void Rcs::VortexSimulation::setJointLimits(bool enable)
   this->jointLimitsActive = enable;
 
   pthread_mutex_lock(&this->extForceLock);
-  const Vx::VxConstraintSet& constraints = getUniverse()->getConstraints();
+  const Vx::VxConstraintSet& constraints = universe->getConstraints();
 
   for (auto it = constraints.begin(); it != constraints.end(); ++it)
   {
@@ -613,29 +639,6 @@ void Rcs::VortexSimulation::setJointLimits(bool enable)
     }
   }
   pthread_mutex_unlock(&this->extForceLock);
-}
-
-/*******************************************************************************
- * Creates a ground plane at height 0, up vector is (0 0 1).
- ******************************************************************************/
-void Rcs::VortexSimulation::createGroundPlane()
-{
-  if (this->groundPlane)
-  {
-    RLOG(3, "Ground plane already exists - skipping");
-    return;
-  }
-
-  this->groundPlane = new Vx::VxPart();
-  this->groundPlane->setName("GroundPlane");
-
-  Vx::VxMaterial* mtl = getMaterialTable()->getDefaultMaterial();
-
-  Vx::VxCollisionGeometry* cg = new Vx::VxCollisionGeometry(new Vx::VxPlane(),
-                                                            mtl);
-  this->groundPlane->addCollisionGeometry(cg);
-  this->groundPlane->setPosition(0.0, 0.0, 0.0);
-  getUniverse()->addPart(this->groundPlane);
 }
 
 /*******************************************************************************
@@ -697,15 +700,15 @@ bool Rcs::VortexSimulation::createCompositeBody(RcsBody* body)
     RLOG(5, "Creating shape %s", RcsShape_name((*sPtr)->type));
 
     // Set proper material
-    Vx::VxMaterialTable* materialTbl = getMaterialTable();
-    char* material_name = (*sPtr)->material;
-    Vx::VxMaterial* material = materialTbl->registerMaterial(material_name);
+    Vx::VxMaterialTable* materialTbl = universe->getRigidBodyResponseModel()->getMaterialTable();
+    char* materialName = (*sPtr)->material;
+    Vx::VxMaterial* material = materialTbl->getMaterial(materialName);
 
     if (material == NULL)
     {
       RLOG(1, "%s shape of body \"%s\" has unknown material \"%s\", setting "
            "it to default material",
-           RcsShape_name((*sPtr)->type), body->name, material_name);
+           RcsShape_name((*sPtr)->type), body->name, materialName);
     }
 
     // create shape objects with the given material id
@@ -844,7 +847,7 @@ bool Rcs::VortexSimulation::createCompositeBody(RcsBody* body)
   p->setUserDataPtr(body);
 
   // Add to universe
-  getUniverse()->addPart(p);
+  universe->addPart(p);
 
   RLOG(5, "Created body \"%s\"", body->name);
 
@@ -861,16 +864,14 @@ void Rcs::VortexSimulation::updateTransformations()
     pthread_mutex_lock(trafoUpdateLock);
   }
 
-  const Vx::VxPartSet& parts = getUniverse()->getParts();
+  const Vx::VxPartSet& parts = universe->getParts();
 
   for (auto it = parts.begin(); it != parts.end(); ++it)
   {
-    Vx::VxPart* part = *it;
-
     VortexBody* vp = dynamic_cast<VortexBody*>(*it);
     if (vp != NULL)
     {
-      HTr_fromVxTransform(&vp->A_PI, part->getTransform());
+      HTr_fromVxTransform(&vp->A_PI, vp->getTransform());
     }
 
   }
@@ -980,9 +981,9 @@ void Rcs::VortexSimulation::simulate(double dt,
       MatNd_destroy(q_dot);
     }
   }
-  REXEC(4)
+  REXEC(5)
   {
-    getUniverse()->verifyDynamics("Rcs::VortexSimulation", 3);
+    universe->verifyDynamics("Rcs::VortexSimulation", 3);
   }
 }
 
@@ -995,20 +996,25 @@ void Rcs::VortexSimulation::reset()
   MatNd_setZero(this->q_dot_des);
   MatNd_setZero(this->T_des);
 
-  RCSGRAPH_TRAVERSE_BODIES(this->graph)
+
+
+
+  const Vx::VxPartSet& parts = universe->getParts();
+
+  for (auto it = parts.begin(); it != parts.end(); ++it)
   {
-    Vx::VxPart* vxBdy = getPartPtr(BODY);
+    VortexBody* vxBdy = dynamic_cast<VortexBody*>(*it);
 
     if (vxBdy != NULL)
     {
-      if (BODY->physicsSim == RCSBODY_PHYSICS_KINEMATIC)
+      if (vxBdy->body->physicsSim == RCSBODY_PHYSICS_KINEMATIC)
       {
-        vxBdy->setTransformKinematic(VxTransform_fromHTr(BODY->A_BI),
+        vxBdy->setTransformKinematic(VxTransform_fromHTr(vxBdy->body->A_BI),
                                      getIntegratorDt());
       }
       else
       {
-        vxBdy->setTransform(VxTransform_fromHTr(BODY->A_BI));
+        vxBdy->setTransform(VxTransform_fromHTr(vxBdy->body->A_BI));
       }
 
       vxBdy->setAngularVelocity(Vx::VxVector3(0.0, 0.0, 0.0));
@@ -1017,6 +1023,7 @@ void Rcs::VortexSimulation::reset()
     }
 
   }
+
 
   // RCSGRAPH_TRAVERSE_JOINTS(this->graph)
   //   {
@@ -1027,8 +1034,8 @@ void Rcs::VortexSimulation::reset()
   //       }
   //   }
 
-  getUniverse()->resetDynamics();
-  getUniverse()->resetContacts();
+  universe->resetDynamics();
+  universe->resetContacts();
 
   step(1.0e-8);
 }
@@ -1119,7 +1126,8 @@ void Rcs::VortexSimulation::applyTransform(const RcsBody* body, const HTr* A_BI)
 /*******************************************************************************
  * Set the linear velocity of a body
  ******************************************************************************/
-void Rcs::VortexSimulation::applyLinearVelocity(const RcsBody* body, const double v[3])
+void Rcs::VortexSimulation::applyLinearVelocity(const RcsBody* body,
+                                                const double v[3])
 {
   Vx::VxPart* vxBdy = getPartPtr(body);
 
@@ -1140,7 +1148,8 @@ void Rcs::VortexSimulation::applyLinearVelocity(const RcsBody* body, const doubl
 /*******************************************************************************
  * Get the linear velocity of a body
  ******************************************************************************/
-void Rcs::VortexSimulation::getLinearVelocity(const RcsBody* body, double v[3]) const
+void Rcs::VortexSimulation::getLinearVelocity(const RcsBody* body,
+                                              double v[3]) const
 {
   Vx::VxPart* vxBdy = getPartPtr(body);
 
@@ -1159,7 +1168,8 @@ void Rcs::VortexSimulation::getLinearVelocity(const RcsBody* body, double v[3]) 
 /*******************************************************************************
  * Set the angular velocity of a body
  ******************************************************************************/
-void Rcs::VortexSimulation::applyAngularVelocity(const RcsBody* body, const double v[3])
+void Rcs::VortexSimulation::applyAngularVelocity(const RcsBody* body,
+                                                 const double v[3])
 {
   Vx::VxPart* vxBdy = getPartPtr(body);
 
@@ -1244,7 +1254,9 @@ bool Rcs::VortexSimulation::createJoint(RcsBody* body)
       {
         if (body->rigid_body_joints == false)
         {
-          RLOG(1, "%s has no previous VxPart, therefore needs rigid body joints. Did you forget to add the rigid_body_joints flag?", body->name);
+          RLOG(1, "%s has no previous VxPart, therefore needs rigid body "
+               "joints. Did you forget to add the rigid_body_joints flag?",
+               body->name);
         }
         break;
       }
@@ -1257,7 +1269,8 @@ bool Rcs::VortexSimulation::createJoint(RcsBody* body)
         }
         else
         {
-          RFATAL("%s has %d joints - only one is currently supported", body->name, RcsBody_numJoints(body));
+          RFATAL("%s has %d joints - only one is currently supported",
+                 body->name, RcsBody_numJoints(body));
         }
       }
 
@@ -1271,13 +1284,13 @@ bool Rcs::VortexSimulation::createJoint(RcsBody* body)
           double qInit = MatNd_get(graph->q, body->jnt->jointIndex, 0);
           vJnt = createRevoluteJoint(part0, part1, this->jointLockStiffness,
                                      this->jointLockDamping,
-                                     //getUniverse()->getCriticalDamping(jointLockStiffness),
+                                     //universe->getCriticalDamping(jointLockStiffness),
                                      this->jointMotorLoss,
                                      qInit);
           if (vJnt != NULL)
           {
-            getUniverse()->disablePairIntersect(part0, part1);
-            getUniverse()->addConstraint(vJnt);
+            universe->disablePairIntersect(part0, part1);
+            universe->addConstraint(vJnt);
           }
 
           NLOG(0, "Created revolute joint for body \"%s\"", body->name);
@@ -1290,11 +1303,12 @@ bool Rcs::VortexSimulation::createJoint(RcsBody* body)
           // double qInit = *body->jnt->q;
           // RCHECK(qInit==MatNd_get(graph->q, body->jnt->jointIndex, 0));
           double qInit = MatNd_get(graph->q, body->jnt->jointIndex, 0);
-          vJnt = createPrismaticJoint(part0, part1, this->jointLockStiffness, this->jointLockDamping, qInit);
+          vJnt = createPrismaticJoint(part0, part1, this->jointLockStiffness,
+                                      this->jointLockDamping, qInit);
           if (vJnt != NULL)
           {
-            getUniverse()->disablePairIntersect(part0, part1);
-            getUniverse()->addConstraint(vJnt);
+            universe->disablePairIntersect(part0, part1);
+            universe->addConstraint(vJnt);
           }
           NLOG(0, "Created prismatic joint for body \"%s\"", body->name);
           break;
@@ -1306,9 +1320,7 @@ bool Rcs::VortexSimulation::createJoint(RcsBody* body)
       if (vJnt != NULL)
       {
         body->jnt->extraInfo = (void*) vJnt;
-        VortexJointInfo* jData = new VortexJointInfo;
-        jData->jnt = body->jnt;
-        vJnt->setUserDataPtr(jData);
+        vJnt->setUserDataPtr(body->jnt);
       }
     }
     break;
@@ -1333,9 +1345,9 @@ bool Rcs::VortexSimulation::createJoint(RcsBody* body)
 
       if (vJnt != NULL)
       {
-        getUniverse()->disablePairIntersect(part0, part1);
-        getUniverse()->addConstraint(vJnt);
-        RLOG(5, "Created fixed joint (VxRPRO) between %s - %s",
+        universe->disablePairIntersect(part0, part1);
+        universe->addConstraint(vJnt);
+        NLOG(0, "Created fixed joint (VxRPRO) between %s - %s",
              body->parent->name, body->name);
       }
     }
@@ -1351,18 +1363,15 @@ bool Rcs::VortexSimulation::createJoint(RcsBody* body)
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::VortexSimulation::applyControl(double dt)
+void Rcs::VortexSimulation::applyControl2(double dt)
 {
-  RcsGraph* graphCpy = RcsGraph_clone(this->graph);
-  RcsGraph_setState(graphCpy, this->q_des, NULL);
-
   RCSGRAPH_TRAVERSE_BODIES(this->graph)
   {
     switch (BODY->physicsSim)
     {
       case RCSBODY_PHYSICS_KINEMATIC:
       {
-        RcsBody* BODY2 = RcsGraph_getBodyByName(graphCpy, BODY->name);
+        RcsBody* BODY2 = RcsGraph_getBodyByName(internalDesiredGraph, BODY->name);
 
         if (BODY2 == NULL)
         {
@@ -1549,7 +1558,6 @@ void Rcs::VortexSimulation::applyControl(double dt)
 
   } // RCSGRAPH_TRAVERSE
 
-  RcsGraph_destroy(graphCpy);
 }
 
 /*******************************************************************************
@@ -1574,7 +1582,7 @@ void Rcs::VortexSimulation::setJointTorque(const MatNd* T_des)
   }
 
 
-  const Vx::VxConstraintSet& constraints = getUniverse()->getConstraints();
+  const Vx::VxConstraintSet& constraints = universe->getConstraints();
 
   for (auto it = constraints.begin(); it != constraints.end(); ++it)
   {
@@ -1592,17 +1600,16 @@ void Rcs::VortexSimulation::setJointTorque(const MatNd* T_des)
       continue;
     }
 
-    VortexJointInfo* ji = (VortexJointInfo*) c->getUserDataPtr();
-    int index = (type == RcsStateIK) ? ji->jnt->jacobiIndex : ji->jnt->jointIndex;
+    RcsJoint* jnt = (RcsJoint*) c->getUserDataPtr();
+    int index = (type == RcsStateIK) ? jnt->jacobiIndex : jnt->jointIndex;
     Vx::VxReal Ti = MatNd_get(T_des, index, 0);
-    Ti = Math_clip(Ti, -ji->jnt->maxTorque, ji->jnt->maxTorque);
+    Ti = Math_clip(Ti, -jnt->maxTorque, jnt->maxTorque);
 
     c->setLimitsActive(0, false);
     c->setMotorMaximumForce(0, fabs(Ti) + 1.0e-8);
     c->setMotorLoss(0, 0.0);
     c->setControl(0, Vx::VxConstraint::kControlMotorized);
     c->setMotorDesiredVelocity(0, 1.0e6 * Math_dsign(Ti));
-
   }
 }
 
@@ -1611,7 +1618,7 @@ void Rcs::VortexSimulation::setJointTorque(const MatNd* T_des)
  ******************************************************************************/
 void Rcs::VortexSimulation::getJointTorque(MatNd* T, RcsStateType sType) const
 {
-  const Vx::VxConstraintSet& constraints = getUniverse()->getConstraints();
+  const Vx::VxConstraintSet& constraints = universe->getConstraints();
 
   for (auto it = constraints.begin(); it != constraints.end(); ++it)
   {
@@ -1630,9 +1637,9 @@ void Rcs::VortexSimulation::getJointTorque(MatNd* T, RcsStateType sType) const
       continue;
     }
 
-    VortexJointInfo* ji = (VortexJointInfo*) c->getUserDataPtr();
+    const RcsJoint* jnt = (const RcsJoint*) c->getUserDataPtr();
     Vx::VxReal Ti = c->getCoordinateForce(0);
-    int index = (sType == RcsStateIK) ? ji->jnt->jacobiIndex : ji->jnt->jointIndex;
+    int index = (sType == RcsStateIK) ? jnt->jacobiIndex : jnt->jointIndex;
     MatNd_set(T, index, 0, Ti);
 
   }
@@ -1673,7 +1680,7 @@ void Rcs::VortexSimulation::getJointAngles(MatNd* q, RcsStateType sType) const
       RFATAL("Wrong state type: %d", sType);
   }
 
-  const Vx::VxConstraintSet& constraints = getUniverse()->getConstraints();
+  const Vx::VxConstraintSet& constraints = universe->getConstraints();
 
   for (auto it = constraints.begin(); it != constraints.end(); ++it)
   {
@@ -1691,13 +1698,13 @@ void Rcs::VortexSimulation::getJointAngles(MatNd* q, RcsStateType sType) const
       continue;
     }
 
-    VortexJointInfo* ji = (VortexJointInfo*) c->getUserDataPtr();
-    if ((sType == RcsStateIK) && (ji->jnt->constrained == true))
+    const RcsJoint* jnt = (const RcsJoint*) c->getUserDataPtr();
+    if ((sType == RcsStateIK) && (jnt->constrained == true))
     {
       continue;
     }
-    int index = (sType == RcsStateIK) ? ji->jnt->jacobiIndex : ji->jnt->jointIndex;
-    RCHECK_MSG(index >= 0, "joint: %s", ji->jnt->name);
+    int index = (sType == RcsStateIK) ? jnt->jacobiIndex : jnt->jointIndex;
+    RCHECK_MSG(index >= 0, "joint: %s", jnt->name);
     Vx::VxReal qi = c->getCoordinateCurrentPosition(0);
     MatNd_set(q, index, 0, qi);
   }
@@ -1708,31 +1715,67 @@ void Rcs::VortexSimulation::getJointAngles(MatNd* q, RcsStateType sType) const
   // constrained degrees of freedom.
   if (sType == RcsStateFull)
   {
-    RCSGRAPH_TRAVERSE_BODIES(this->graph)
+    const Vx::VxPartSet& parts = universe->getParts();
+
+    for (auto it = parts.begin(); it != parts.end(); ++it)
     {
+      VortexBody* vxBdy = dynamic_cast<VortexBody*>(*it);
 
-      if (BODY->rigid_body_joints)
+      if ((vxBdy!=NULL) && (vxBdy->body->rigid_body_joints==true))
       {
-        Vx::VxPart* vx_body = getPartPtr(BODY);
-
-        if (vx_body != NULL)
-        {
-          HTr pose;
-          HTr_fromVxTransform(&pose, vx_body->getTransform());
-          RcsJoint* jnt = BODY->jnt;
-          RCHECK(jnt);
-          RcsGraph_relativeRigidBodyDoFs(BODY, &pose, BODY->parent ? BODY->parent->A_BI : NULL, &q->ele[jnt->jointIndex]);
-        }
+        HTr pose;
+        HTr_fromVxTransform(&pose, vxBdy->getTransform());
+        RcsGraph_relativeRigidBodyDoFs(vxBdy->body, &pose, vxBdy->body->parent ? vxBdy->body->parent->A_BI : NULL, &q->ele[vxBdy->body->jnt->jointIndex]);
       }
+
     }
+
   }   // sType==RcsStateFull
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // if (sType == RcsStateFull)
+  // {
+  //   RCSGRAPH_TRAVERSE_BODIES(this->graph)
+  //   {
+
+  //     if (BODY->rigid_body_joints)
+  //     {
+  //       Vx::VxPart* vx_body = getPartPtr(BODY);
+
+  //       if (vx_body != NULL)
+  //       {
+  //         HTr pose;
+  //         HTr_fromVxTransform(&pose, vx_body->getTransform());
+  //         RcsJoint* jnt = BODY->jnt;
+  //         RCHECK(jnt);
+  //         RcsGraph_relativeRigidBodyDoFs(BODY, &pose, BODY->parent ? BODY->parent->A_BI : NULL, &q->ele[jnt->jointIndex]);
+  //       }
+  //     }
+  //   }
+  // }   // sType==RcsStateFull
 
 }
 
 /*******************************************************************************
  * If no physical joint is attached, so we set the velocity to 0.
  ******************************************************************************/
-void Rcs::VortexSimulation::getJointVelocities(MatNd* q_dot, RcsStateType sType) const
+void Rcs::VortexSimulation::getJointVelocities(MatNd* q_dot,
+                                               RcsStateType sType) const
 {
 
   switch (sType)
@@ -1746,7 +1789,7 @@ void Rcs::VortexSimulation::getJointVelocities(MatNd* q_dot, RcsStateType sType)
     default:
       RFATAL("Wrong state type: %d", sType);
   }
-  const Vx::VxConstraintSet& constraints = getUniverse()->getConstraints();
+  const Vx::VxConstraintSet& constraints = universe->getConstraints();
   Vx::VxConstraintSet::const_iterator it;
 
   for (it = constraints.begin(); it != constraints.end(); ++it)
@@ -1765,13 +1808,13 @@ void Rcs::VortexSimulation::getJointVelocities(MatNd* q_dot, RcsStateType sType)
       continue;
     }
 
-    VortexJointInfo* ji = (VortexJointInfo*) c->getUserDataPtr();
-    if ((sType == RcsStateIK) && (ji->jnt->constrained == true))
+    const RcsJoint* jnt = (const RcsJoint*) c->getUserDataPtr();
+    if ((sType == RcsStateIK) && (jnt->constrained == true))
     {
       continue;
     }
-    int index = (sType == RcsStateIK) ? ji->jnt->jacobiIndex : ji->jnt->jointIndex;
-    RCHECK_MSG(index >= 0, "joint: %s", ji->jnt->name);
+    int index = (sType == RcsStateIK) ? jnt->jacobiIndex : jnt->jointIndex;
+    RCHECK_MSG(index >= 0, "joint: %s", jnt->name);
     Vx::VxReal qi = c->getCoordinateVelocity(0);
     MatNd_set(q_dot, index, 0, qi);
 
@@ -1782,42 +1825,41 @@ void Rcs::VortexSimulation::getJointVelocities(MatNd* q_dot, RcsStateType sType)
   // for the full state vector.
   if (sType == RcsStateFull)
   {
-    RCSGRAPH_TRAVERSE_BODIES(this->graph)
+    const Vx::VxPartSet& parts = universe->getParts();
+
+    for (auto it = parts.begin(); it != parts.end(); ++it)
     {
-      if (BODY->rigid_body_joints==true)
+      VortexBody* vxBdy = dynamic_cast<VortexBody*>(*it);
+
+      if ((vxBdy!=NULL) && (vxBdy->body->rigid_body_joints==true))
       {
-        Vx::VxPart* vx_body = getPartPtr(BODY);
+        Vx::VxVector3 linearVelocity = vxBdy->getLinearVelocity();
+        Vx::VxVector3 angularVelocity = vxBdy->getAngularVelocity();
 
-        // refFrame
-        if (vx_body != NULL)
-        {
-          double linearVelocity[3];
-          getLinearVelocity(BODY, linearVelocity);
-          double angularVelocity[3];
-          getAngularVelocity(BODY, angularVelocity);
-
-          RcsJoint* jnt = BODY->jnt;
-          RCHECK(jnt);
-          MatNd_set(q_dot, jnt->jointIndex, 0, linearVelocity[0]);
-          jnt = jnt->next;
-          RCHECK(jnt);
-          MatNd_set(q_dot, jnt->jointIndex, 0, linearVelocity[1]);
-          jnt = jnt->next;
-          RCHECK(jnt);
-          MatNd_set(q_dot, jnt->jointIndex, 0, linearVelocity[2]);
-          jnt = jnt->next;
-          RCHECK(jnt);
-          MatNd_set(q_dot, jnt->jointIndex, 0, angularVelocity[0]);
-          jnt = jnt->next;
-          RCHECK(jnt);
-          MatNd_set(q_dot, jnt->jointIndex, 0, angularVelocity[1]);
-          jnt = jnt->next;
-          RCHECK(jnt);
-          MatNd_set(q_dot, jnt->jointIndex, 0, angularVelocity[2]);
-        }
+        RcsJoint* jnt = vxBdy->body->jnt;
+        RCHECK(jnt);
+        MatNd_set(q_dot, jnt->jointIndex, 0, linearVelocity[0]);
+        jnt = jnt->next;
+        RCHECK(jnt);
+        MatNd_set(q_dot, jnt->jointIndex, 0, linearVelocity[1]);
+        jnt = jnt->next;
+        RCHECK(jnt);
+        MatNd_set(q_dot, jnt->jointIndex, 0, linearVelocity[2]);
+        jnt = jnt->next;
+        RCHECK(jnt);
+        MatNd_set(q_dot, jnt->jointIndex, 0, angularVelocity[0]);
+        jnt = jnt->next;
+        RCHECK(jnt);
+        MatNd_set(q_dot, jnt->jointIndex, 0, angularVelocity[1]);
+        jnt = jnt->next;
+        RCHECK(jnt);
+        MatNd_set(q_dot, jnt->jointIndex, 0, angularVelocity[2]);
       }
+
     }
+
   }   // sType==RcsStateFull
+
 }
 
 /*******************************************************************************
@@ -1827,7 +1869,7 @@ void Rcs::VortexSimulation::setMassAndInertiaFromPhysics(RcsGraph* graph_)
 {
   bool isGraphFromPhysics = graph_ == this->graph;
 
-  const Vx::VxPartSet& parts = getUniverse()->getParts();
+  const Vx::VxPartSet& parts = universe->getParts();
 
   for (auto it = parts.begin(); it != parts.end(); ++it)
   {
@@ -1959,8 +2001,8 @@ bool Rcs::VortexSimulation::removeJoint(RcsBody* body)
 
   if (vJnt != NULL)
   {
-    getUniverse()->enablePairIntersect(part0, part1);
-    getUniverse()->removeConstraint(vJnt);
+    universe->enablePairIntersect(part0, part1);
+    universe->removeConstraint(vJnt);
     delete vJnt;
     NLOG(0, "Removed joint for body \"%s\"", body->name);
     return true;
@@ -2068,7 +2110,7 @@ bool Rcs::VortexSimulation::updateFTS(RcsSensor* fts)
   // Sensor's mass compensation (static forces only)
   double S_f_gravity[6];
   RcsSensor_computeStaticForceCompensation(fts, S_f_gravity);
-  Vec3d_subSelf(ftWrench, S_f_gravity);
+  VecNd_subSelf(ftWrench, S_f_gravity, 6);
 
   // Update accelerations and rotate into body frame
   Vx::VxVector3 accel = part->getLinearAcceleration();
@@ -2078,12 +2120,8 @@ bool Rcs::VortexSimulation::updateFTS(RcsSensor* fts)
 
   Vec3d_rotateSelf(&ftWrench[6], part->A_PI.rot);
 
-  // Simple filter
-  for (int i=0; i<6; ++i)
-  {
-    //fts->rawData->ele[i] = 0.9*fts->rawData->ele[i] + 0.1*ftWrench[i];
-    fts->rawData->ele[i] = ftWrench[i];
-  }
+  // Copy into sensor's rawData array
+  MatNd_fromArray(fts->rawData, ftWrench, 6);
 
   return true;
 }
@@ -2211,7 +2249,6 @@ bool Rcs::VortexSimulation::updatePPSSensor(RcsSensor* sensor)
     it++;
   }
 
-  return false;
   return RcsSensor_computePPS(sensor, sensor->rawData, contactForce);
 }
 
@@ -2221,23 +2258,22 @@ bool Rcs::VortexSimulation::updatePPSSensor(RcsSensor* sensor)
 void Rcs::VortexSimulation::setJointCompliance(const MatNd* stiffness,
                                                const MatNd* damping)
 {
-  const Vx::VxConstraintSet& constraints = getUniverse()->getConstraints();
+  const Vx::VxConstraintSet& constraints = universe->getConstraints();
 
   for (auto it = constraints.begin(); it != constraints.end(); ++it)
   {
     if ((*it)->isOfClassType(Vx::VxHinge::getStaticClassType()))
     {
       Vx::VxHinge* hinge = dynamic_cast<Vx::VxHinge*>(*it);
-      VortexJointInfo* jntInfo = ((VortexJointInfo*) hinge->getUserDataPtr());
-      RCHECK(jntInfo);
-      RCHECK(jntInfo->jnt);
+      RcsJoint* jnt = (RcsJoint*) hinge->getUserDataPtr();
+      RCHECK(jnt);
 
-      if (jntInfo->jnt->ctrlType == RCSJOINT_CTRL_POSITION)
+      if (jnt->ctrlType == RCSJOINT_CTRL_POSITION)
       {
         // Setting the stiffness to zero results in weird movements and joint
         // constraints not satisfied any more.
         const double eps = 1.0e-8;
-        int idx = jntInfo->jnt->jointIndex;
+        int idx = jnt->jointIndex;
         double stiffness_i = MatNd_get(stiffness, idx, 0);
 
         if ((stiffness_i>-eps) && (stiffness_i<0.0))
@@ -2276,20 +2312,19 @@ void Rcs::VortexSimulation::getJointCompliance(MatNd* stiffness,
     MatNd_reshapeAndSetZero(damping, graph->dof, 1);
   }
 
-  const Vx::VxConstraintSet& constraints = getUniverse()->getConstraints();
+  const Vx::VxConstraintSet& constraints = universe->getConstraints();
 
   for (auto it = constraints.begin(); it != constraints.end(); ++it)
   {
     if ((*it)->isOfClassType(Vx::VxHinge::getStaticClassType()))
     {
       Vx::VxHinge* hinge = dynamic_cast<Vx::VxHinge*>(*it);
-      VortexJointInfo* jntInfo = ((VortexJointInfo*) hinge->getUserDataPtr());
-      RCHECK(jntInfo);
-      RCHECK(jntInfo->jnt);
+      const RcsJoint* jnt = (const RcsJoint*) hinge->getUserDataPtr();
+      RCHECK(jnt);
 
-      if (jntInfo->jnt->ctrlType == RCSJOINT_CTRL_POSITION)
+      if (jnt->ctrlType == RCSJOINT_CTRL_POSITION)
       {
-        unsigned int idx = jntInfo->jnt->jointIndex;
+        unsigned int idx = jnt->jointIndex;
 
         stiffness->ele[idx] =
           hinge->getLockStiffness(Vx::VxHinge::kAngularCoordinate);
@@ -2303,4 +2338,355 @@ void Rcs::VortexSimulation::getJointCompliance(MatNd* stiffness,
 
     }
   }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::VortexSimulation::applyControl(double dt)
+{
+  // Set transformation of all kinematic parts. We are looking through all
+  // VortexRigidBodies that are kinematically moved in the physics. For each
+  // of these, we retrieve the corresponding body in the internalDesiredGraph
+  // (which is set to the state of the desired joint angles) and set its
+  // transformation accordingly.
+  const Vx::VxPartSet& parts = universe->getParts();
+
+  for (auto it = parts.begin(); it != parts.end(); ++it)
+  {
+    VortexBody* vxBdy = dynamic_cast<VortexBody*>(*it);
+
+    if ((vxBdy!=NULL) && (vxBdy->body->physicsSim==RCSBODY_PHYSICS_KINEMATIC))
+    {
+      RcsBody* transformBdy = RcsGraph_getBodyByName(internalDesiredGraph,
+                                                     vxBdy->body->name);
+
+      RCHECK_MSG(transformBdy, "This must never happen: body \"%s\" is not"
+                 " contained in internalDesiredGraph", vxBdy->body->name);
+
+      vxBdy->setTransformKinematic(VxTransform_fromHTr(transformBdy->A_BI), dt);
+    }
+
+  }
+
+
+
+
+
+
+
+  const Vx::VxConstraintSet& constraints = universe->getConstraints();
+
+  for (auto it = constraints.begin(); it != constraints.end(); ++it)
+  {
+    Vx::VxConstraint* c = *it;
+
+    if (c->getCoordinateCount() != 1)
+    {
+      RLOG(4, "Skipping constraint %s with %d dofs (only 1 is supported)",
+           c->getName(), c->getCoordinateCount());
+      continue;
+    }
+
+    RcsJoint* jnt = (RcsJoint*) c->getUserDataPtr();
+
+    if (jnt == NULL)
+    {
+      RLOG(4, "Skipping constraint %s - no userData found", c->getName());
+      continue;
+    }
+
+    // Velocity-controlled joints
+    if (jnt->ctrlType == RCSJOINT_CTRL_VELOCITY)
+    {
+      Vx::VxReal q_dot_cmd = MatNd_get(this->q_dot_des, jnt->jointIndex, 0);
+      c->setMotorDesiredVelocity(0, q_dot_cmd);
+      // c->setControl(coordinate, Vx::VxConstraint::kControlMotorized);
+      // c->setMotorMaximumForce(coordinate, jnt->maxTorque);
+    }
+    // Torque-controlled joints
+    else if (jnt->ctrlType == RCSJOINT_CTRL_TORQUE)
+    {
+      double Ti = MatNd_get(this->T_des, jnt->jointIndex, 0);
+      Ti = Math_clip(Ti, -jnt->maxTorque, jnt->maxTorque);
+
+      // If the max. force is set to 0, the motor gets deactivated. We
+      // therefore always set it to  tiny value.
+      c->setMotorMaximumForce(0, fabs(Ti) + 1.0e-8);
+      c->setControl(0, Vx::VxConstraint::kControlMotorized);
+      c->setMotorLoss(0, 0.0);
+
+      if (Ti==0.0)
+      {
+        c->setMotorDesiredVelocity(0, 0.0);
+      }
+      else
+      {
+        c->setMotorDesiredVelocity(0, Ti > 0.0 ? 1.0e6 : -1.0e6);
+      }
+    }
+    // Position-controlled joints
+    else if (jnt->ctrlType == RCSJOINT_CTRL_POSITION)
+    {
+      Vx::VxReal q_cmd = MatNd_get(this->q_des, jnt->jointIndex, 0);
+      RcsJoint* j_master = jnt->coupledTo;
+
+      if (j_master != NULL)
+      {
+        Vx::VxReal q_master = MatNd_get(this->q_des, j_master->jointIndex, 0);
+        q_cmd = RcsJoint_computeSlaveJointAngle(jnt, q_master);
+      }
+
+      double lockCurr = c->getLockPosition(0);
+      double deltaPos = q_cmd-lockCurr;
+
+      if (RcsJoint_isRotation(jnt))
+      {
+        while (deltaPos > M_PI)
+        {
+          deltaPos -= M_PI;
+        }
+
+        while (deltaPos < -M_PI)
+        {
+          deltaPos += M_PI;
+        }
+      }
+
+      double lockVel = deltaPos/dt;
+      c->setLockMaximumForce(0, jnt->maxTorque);
+      c->setLockDamping(0, 1.0);
+      c->setLockVelocity(0, lockVel);
+      // c->setLockPosition(0, q_cmd);
+    }
+    // Should never happen
+    else
+    {
+      RFATAL("Unknown cntrlType: %d", jnt->ctrlType);
+    }
+
+  }
+
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+Vx::VxPart* Rcs::VortexSimulation::getPart(const char* name)
+{
+  if (name==NULL)
+  {
+    return NULL;
+  }
+
+  const Vx::VxPartSet& parts = universe->getParts();
+
+  for (auto it = parts.begin(); it != parts.end(); ++it)
+  {
+    if (STREQ((*it)->getName(), name))
+    {
+      return *it;
+    }
+  }
+
+  return NULL;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::VortexSimulation::printMaterialTable(std::ostream& out) const
+{
+  Vx::VxMaterialTable* mt = universe->getRigidBodyResponseModel()->getMaterialTable();
+
+  for (size_t i=0; i<mt->getMaterialCount(); ++i)
+  {
+    printMaterial(mt->getMaterial(i), out);
+  }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::VortexSimulation::printMaterialTable() const
+{
+  printMaterialTable(std::cout);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void Rcs::VortexSimulation::print() const
+{
+  printMaterialTable();
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool Rcs::VortexSimulation::setParameter(ParameterCategory category,
+                                         const char* name,
+                                         const char* type,
+                                         double value)
+{
+  bool success = false;
+
+  if (name==NULL || type==NULL)
+  {
+    RLOG(1, "Parameter name or type is NULL");
+    return false;
+  }
+
+
+  switch (category)
+  {
+    case Material:
+    {
+      Vx::VxMaterial* material = universe->getRigidBodyResponseModel()->getMaterialTable()->getMaterial(name);
+
+      if (material==NULL)
+      {
+        RLOG(1, "Material \"%s\" not found", name);
+        break;
+      }
+
+      if (STRCASEEQ(type, "restitution"))
+      {
+        material->setRestitution(value);
+        success = true;
+      }
+      else if (STRCASEEQ(type, "compliance"))
+      {
+        material->setCompliance(value);
+        success = true;
+      }
+      else if (STRCASEEQ(type, "damping"))
+      {
+        material->setDamping(value);
+        success = true;
+      }
+      else if (STRCASEEQ(type, "adhesiveforce"))
+      {
+        material->setAdhesiveForce(value);
+        success = true;
+      }
+      else if (STRCASEEQ(type, "linearfriction"))
+      {
+        material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisLinearPrimary, value);
+        material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisLinearSecondary, value);
+        success = true;
+      }
+      else if (STRCASEEQ(type, "linearfrictionprimary"))
+      {
+        material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisLinearPrimary, value);
+        success = true;
+      }
+      else if (STRCASEEQ(type, "linearfrictionsecondary"))
+      {
+        material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisLinearSecondary, value);
+        success = true;
+      }
+      else if (STRCASEEQ(type, "angularfriction"))
+      {
+        material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisAngularPrimary, value);
+        material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisAngularSecondary, value);
+        material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisAngularNormal, value);
+        success = true;
+      }
+      else if (STRCASEEQ(type, "angularfrictionprimary"))
+      {
+        material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisAngularPrimary, value);
+        success = true;
+      }
+      else if (STRCASEEQ(type, "angularfrictionsecondary"))
+      {
+        material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisAngularSecondary, value);
+        success = true;
+      }
+      else if (STRCASEEQ(type, "angularfrictionnormal"))
+      {
+        material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisAngularNormal, value);
+        success = true;
+      }
+
+      break;
+    }
+
+    case Simulation:
+    {
+      if (STRCASEEQ(name, "gravity"))
+      {
+        Vx::VxReal3 gravity;
+        universe->getGravity(gravity);
+
+        if (STRCASEEQ(type, "x"))
+        {
+          gravity[0] = value;
+          universe->setGravity(gravity);
+          success = true;
+        }
+        else if (STRCASEEQ(type, "y"))
+        {
+          gravity[1] = value;
+          universe->setGravity(gravity);
+          success = true;
+        }
+        else if (STRCASEEQ(type, "z"))
+        {
+          gravity[2] = value;
+          universe->setGravity(gravity);
+          success = true;
+        }
+      }
+      break;
+    }
+
+    case Body:
+    {
+      Vx::VxPart* vxBdy = getPart(name);
+
+      if (vxBdy != NULL)
+      {
+        if (STRCASEEQ(type, "mass"))
+        {
+          vxBdy->setMass(value);
+          success = true;
+        }
+        if (STRCASEEQ(type, "com_x"))
+        {
+          const Vx::VxMassProperties& mp = vxBdy->getMassProperties();
+          Vx::VxReal3 com;
+          mp.getCOMPositionLocal(com);
+          com[0] = value;
+          vxBdy->setCOMOffset(com);
+          success = true;
+        }
+      }
+      else
+      {
+        RLOG(1, "Unknown body \"%s\"", name);
+      }
+      break;
+    }
+
+    case Joint:
+    {
+      break;
+    }
+
+    default:
+    {
+      RLOG(1, "Unknown parameter category: %d", category);
+      break;
+    }
+
+  }   // switch
+
+  if (success==false)
+  {
+    RLOG(1, "Failed to set parameter with name \"%s\" and type \"%s\" (value %g, "
+         "category %d)", name, type, value, category);
+  }
+
+  return success;
 }

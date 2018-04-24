@@ -46,6 +46,48 @@
 
 
 
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+const char* RcsSensor_name(int sensorType)
+{
+  static char sName[][32] = {"RCSSENSOR_CUSTOM",
+                             "RCSSENSOR_LOAD_CELL",
+                             "RCSSENSOR_JOINT_TORQUE",
+                             "RCSSENSOR_CONTACT_FORCE",
+                             "RCSSENSOR_PPS",
+                             "Unknown sensor type"
+                            };
+  const char* ptr = NULL;
+
+  switch (sensorType)
+  {
+    case RCSSENSOR_CUSTOM:
+      ptr = sName[0];
+      break;
+    case RCSSENSOR_LOAD_CELL:
+      ptr = sName[1];
+      break;
+    case RCSSENSOR_JOINT_TORQUE:
+      ptr = sName[2];
+      break;
+    case RCSSENSOR_CONTACT_FORCE:
+      ptr = sName[3];
+      break;
+    case RCSSENSOR_PPS:
+      ptr = sName[4];
+      break;
+    default:
+      ptr = sName[5];
+      break;
+  }
+
+  return ptr;
+}
+
+
+
 /******************************************************************************
 
   \brief Computes the sensor force compensation.
@@ -498,6 +540,49 @@ void RcsGraph_addSensor(RcsGraph* self, RcsSensor* newSensor)
     // last sensor
     lastSensor->next = newSensor;
   }
+}
+
+
+
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void RcsSensor_fprint(FILE* out, const RcsSensor* s)
+{
+  if (s == NULL)
+  {
+    RLOG(1, "Sensor doesn't exist");
+    return;
+  }
+
+  // Sensor name and type
+  fprintf(out, "[RcsSensor_fprint():%d] \n\tSensor \"%s\" of type \"%s\"\n",
+          __LINE__, s->name, RcsSensor_name(s->type));
+
+  fprintf(out, "\tAttached to body \"%s\"\n", s->body ? s->body->name : "NULL");
+
+  if (s->offset != NULL)
+  {
+    HTr_fprint(out, s->offset);
+  }
+  else
+  {
+    fprintf(out, "\tNo offset\n");
+  }
+
+  fprintf(out, "\tRaw sensor data:\n\t");
+
+  for (int i = 1; i <= s->rawData->size; i++)
+  {
+    fprintf(out, "%+.3f ", s->rawData->ele[i-1]);
+    if (i%10==0)
+    {
+      fprintf(out, "\n\t");
+    }
+  }
+
+  fprintf(out, "\n");
 }
 
 

@@ -1124,9 +1124,8 @@ void RcsGraph_fprint(FILE* out, const RcsGraph* self)
   int numSensors = 0;
   RCSGRAPH_TRAVERSE_SENSORS(self)
   {
-    fprintf(out, "Sensor %d: %s (attached to body \"%s\")\n",
-            numSensors++, SENSOR->name,
-            SENSOR->body ? SENSOR->body->name : "NULL");
+    fprintf(out, "Sensor %d:\n", numSensors++);
+    RcsSensor_fprint(out, SENSOR);
   }
 
 }
@@ -2577,17 +2576,17 @@ void RcsGraph_makeJointsConsistent(RcsGraph* self)
 
       REXEC(4)
       {
-      if ((hasRange==true) &&
-          ((fabs(JNT->q_min-q_min)>1.0e-4) ||
-           (fabs(JNT->q_max-q_max)>1.0e-4) ||
-           (fabs(JNT->q0-q0)>1.0e-4) ||
-           (fabs(JNT->q_init-q_init)>1.0e-4)))
-      {
+        if ((hasRange==true) &&
+            ((fabs(JNT->q_min-q_min)>1.0e-4) ||
+             (fabs(JNT->q_max-q_max)>1.0e-4) ||
+             (fabs(JNT->q0-q0)>1.0e-4) ||
+             (fabs(JNT->q_init-q_init)>1.0e-4)))
+        {
           double s = RcsJoint_isRotation(JNT) ? 180.0/M_PI : 1.0;
-        RLOG(4, "Overwriting range of coupled joint \"%s\" with "
-             "values calculated from master range min, q0, max = "
-             "[%f %f %f] init = %f (original: min, q0, max = "
-             "[%f %f %f] init = %f)",
+          RLOG(4, "Overwriting range of coupled joint \"%s\" with "
+               "values calculated from master range min, q0, max = "
+               "[%f %f %f] init = %f (original: min, q0, max = "
+               "[%f %f %f] init = %f)",
                JNT->name, s*JNT->q_min, s*JNT->q0, s*JNT->q_max, s*JNT->q_init,
                s*q_min, s*q0, s*q_max, s*q_init);
         }

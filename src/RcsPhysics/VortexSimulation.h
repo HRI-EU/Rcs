@@ -40,27 +40,22 @@
 #include <PhysicsBase.h>
 
 #include <pthread.h>
+#include <fstream>
 
-
-#define RCSPHYSICS_DEFAULT_TIMESTEP   (0.025)
 
 namespace Vx
 {
-class VxUniverse;
-class VxMaterial;
 class VxPart;
+class VxUniverse;
 }
 
 namespace Rcs
 {
 
-typedef struct
-{
-  const RcsJoint* jnt;
-} VortexJointInfo;
-
 /*! \ingroup RcsPhysics
- *  \brief Vortex physics simulation class
+ *  \brief Vortex physics simulation class.
+ *
+ *         Each instance of this class owns its own universe.
  */
 class VortexSimulation : public PhysicsBase
 {
@@ -79,7 +74,8 @@ public:
   VortexSimulation(const RcsGraph* graph,
                    const char* cfgFile="config/physics/vortex.xml",
                    bool groundPlane=true);
-  VortexSimulation(const VortexSimulation& copyFromMe, const RcsGraph* newGraph);
+  VortexSimulation(const VortexSimulation& copyFromMe,
+                   const RcsGraph* newGraph);
 
 
 
@@ -151,13 +147,12 @@ public:
   Contacts getContacts();
   void setJointCompliance(const MatNd* stiffness, const MatNd* damping=NULL);
   void getJointCompliance(MatNd* stiffness, MatNd* damping=NULL) const;
+  void printMaterialTable(std::ostream& out) const;
+  void printMaterialTable() const;
 
-
-
-  /*! \brief Returns the pointer to the VxUniverse.
+  /*! \brief Prints out the material table.
    */
-  Vx::VxUniverse* getUniverse();
-  const Vx::VxUniverse* getUniverse() const;
+  virtual void print() const;
 
 
 
@@ -213,18 +208,51 @@ public:
    */
   bool addBodyConstraints(RcsBody* body);
 
+  Vx::VxPart* getPart(const char* name);
 
+  /*! \brief Function for setting physics parameter. All strings are
+   *         interpreted case insensitive. The following parmeter types
+   *         are supported:
+   *         - category "Material":
+   *           - name: Material name within the material table
+   *           - type:
+   *             - restitution
+   *             - compliance
+   *             - damping
+   *             - adhesiveforce
+   *             - linearfriction
+   *             - linearfrictionprimary
+   *             - linearfrictionsecondary
+   *             - angularfriction
+   *             - angularfrictionprimary
+   *             - angularfrictionsecondary
+   *             - angularfrictionnormal
+   *         - category "Simulation":
+   *           - name: gravity
+   *           - type:
+   *             - x
+   *             - y
+   *             - z
+   *         - category "Body":
+   *           - name: Name of the body
+   *           - type: mass
+   *         For the category "Simulation", the argument "name" is not needed
+   *         and is ignored (you may use NULL).
+   *
+   *  \param[in] category   See enum ParameterCategory
+   *  \param[in] name   Parameter name, such as "SoftMaterial".
+   *  \param[in] type   Parameter type, such as "Restitution".
+   *  \param[in] value  Value the parameter should be assigned with
+   *  \return true for success, false otherwise
+   */
+  virtual bool setParameter(ParameterCategory category,
+                            const char* name, const char* type, double value);
 
 private:
 
   bool initSettings(const char* configFile);
 
   void initMaterial(const char* materialFile=NULL);
-
-  /*! \brief Creates a plane at ground level (z=0) with infinite size in
-   *         the horizontal directions.
-   */
-  void createGroundPlane();
 
   /*! \brief Creates a physical body and adds it to the simulation. All
    *         collision shapes are subsumed into one composite shape, which
@@ -239,20 +267,15 @@ private:
   bool createJoint(RcsBody* body);
 
   /*! \brief Removes a physical joint from the simulation and deletes it. The
-   *         function returns true if the joint removel succeeded, and false
+   *         function returns true if the joint removed succeeded, and false
    *         otherwise.
    */
   bool removeJoint(RcsBody* body);
 
-  /*! \brief This interface should copy the kinematic transformations and
-   *         the  transformations of the physics actors from A_KI to
-   *         A_KI_real.
-   */
   void updateTransformations();
   void applyControl(double dt);
-  void initPhysics(const char* physicsConfigFile="config/physics/fixed_Vortex6.xml",
-                   bool groundPlane=true);
-
+  void applyControl2(double dt);
+  void initPhysics(const char* physicsConfigFile, bool groundPlane);
   bool updateFTS(RcsSensor* sensor);
   bool updateJointTorqueSensor(RcsSensor* sensor);
   bool updateContactForceSensor(RcsSensor* sensor);
@@ -272,6 +295,8 @@ private:
   double r_ext[3];
   Vx::VxPart* b_ext;
   Vx::VxPart* groundPlane;
+  Vx::VxUniverse* universe;
+  char* materialFileName;
 
   mutable pthread_mutex_t extForceLock;
 

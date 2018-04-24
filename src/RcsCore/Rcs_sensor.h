@@ -169,6 +169,12 @@ double RcsSensor_computeFullForceCompensation(const RcsGraph* self,
                                               double S_f_full[6]);
 
 /*! \ingroup RcsSensorFunctions
+ *  \brief Prints out the sensor's information to out. The function accepts
+ *         if s is NULL.
+ */
+void RcsSensor_fprint(FILE* out, const RcsSensor* s);
+
+/*! \ingroup RcsSensorFunctions
  *  \brief Prints the sensor's xml representation to the given file
  *         descriptor. Both arguments are assumed to be not NULL. Otherwise,
  *         the function exits with a fatal error.
@@ -186,6 +192,14 @@ void RcsSensor_fprintXML(FILE* out, const RcsSensor* self);
  */
 bool RcsSensor_computePPS(const RcsSensor* self, MatNd* ppsResult,
                           const double contactForce[3]);
+
+/*! \ingroup RcsSensorFunctions
+ *  \brief Returns the name of the sensor (see enum RCSSENSOR_TYPE)
+ *         as char pointer for debugging purposes. If no corresponding
+ *         sensor type exists, "Unknown sensor type" is returned.
+ */
+const char* RcsSensor_name(int shapeType);
+
 
 
 #ifdef __cplusplus
