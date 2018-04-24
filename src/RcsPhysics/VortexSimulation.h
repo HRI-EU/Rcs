@@ -248,6 +248,9 @@ public:
   virtual bool setParameter(ParameterCategory category,
                             const char* name, const char* type, double value);
 
+  Vx::VxUniverse* getUniverse();
+  const Vx::VxUniverse* getUniverse() const;
+
 private:
 
   bool initSettings(const char* configFile);

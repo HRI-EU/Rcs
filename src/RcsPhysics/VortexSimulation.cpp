@@ -2690,3 +2690,19 @@ bool Rcs::VortexSimulation::setParameter(ParameterCategory category,
 
   return success;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+Vx::VxUniverse* Rcs::VortexSimulation::getUniverse()
+{
+  return this->universe;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+const Vx::VxUniverse* Rcs::VortexSimulation::getUniverse() const
+{
+  return this->universe;
+}
