@@ -2534,6 +2534,7 @@ bool Rcs::VortexSimulation::setParameter(ParameterCategory category,
     return false;
   }
 
+  pthread_mutex_lock(&this->extForceLock);
 
   switch (category)
   {
@@ -2697,6 +2698,8 @@ bool Rcs::VortexSimulation::setParameter(ParameterCategory category,
     }
 
   }   // switch
+
+  pthread_mutex_unlock(&this->extForceLock);
 
   if (success==false)
   {

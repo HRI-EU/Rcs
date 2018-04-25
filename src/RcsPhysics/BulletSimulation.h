@@ -117,9 +117,10 @@ public:
 
 
 
-  /*! \brief Function for setting physics parameter. All strings are
-   *         interpreted case insensitive. The following parmeter types
-   *         are supported:
+  /*! \brief Function for setting physics parameter. The function is thread-
+   *         safe. All strings are interpreted case insensitive. The following
+   *         parmeter types are supported:
+   *
    *         - category "Simulation":
    *           - name: gravity
    *           - type:

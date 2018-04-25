@@ -1363,6 +1363,7 @@ bool Rcs::BulletSimulation::setParameter(ParameterCategory category,
     return false;
   }
 
+  lock();
 
   switch (category)
   {
@@ -1461,6 +1462,8 @@ bool Rcs::BulletSimulation::setParameter(ParameterCategory category,
     }
 
   }   // switch
+
+  unlock();
 
   if (success==false)
   {

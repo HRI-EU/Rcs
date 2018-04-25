@@ -212,9 +212,10 @@ public:
 
   Vx::VxPart* getPart(const char* name);
 
-  /*! \brief Function for setting physics parameter. All strings are
-   *         interpreted case insensitive. The following parmeter types
-   *         are supported:
+  /*! \brief Function for setting physics parameter. The function is thread-
+   *         safe. All strings are interpreted case insensitive. The following
+   *         parmeter types are supported:
+   *
    *         - category "Material":
    *           - name: Material name within the material table
    *           - type:
