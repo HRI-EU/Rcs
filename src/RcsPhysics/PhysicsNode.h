@@ -57,6 +57,18 @@ public:
   bool setGhostMode(const std::string& bodyName, const std::string& matname="");
   void setDisplayMode(int mode);
 
+  /*! \brief Adds a wireframe box to show the considered bounding box for the
+   *         simulation. This is specific for Bullet and will do nothing if
+   *         the PhysicsBase is not a BullerSimulation.
+   */
+  void showWorldBoundingBox();
+
+  /*! \brief Adds a small sphere to the COM location of each simulated rigid
+   *         body. This is specific for Bullet and will do nothing if
+   *         the PhysicsBase is not a BullerSimulation.
+   */
+  void showBodyCOMs();
+
 protected:
 
   virtual bool eventCallback(const osgGA::GUIEventAdapter& ea,

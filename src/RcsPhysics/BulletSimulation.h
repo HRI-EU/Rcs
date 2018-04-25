@@ -51,6 +51,7 @@ struct btCollisionAlgorithmCreateFunc;
 class btDefaultCollisionConfiguration;
 class btDynamicsWorld;
 class btMLCPSolverInterface;
+class btVector3;
 
 
 namespace Rcs
@@ -116,6 +117,37 @@ public:
 
 
 
+  /*! \brief Function for setting physics parameter. All strings are
+   *         interpreted case insensitive. The following parmeter types
+   *         are supported:
+   *         - category "Simulation":
+   *           - name: gravity
+   *           - type:
+   *             - x
+   *             - y
+   *             - z
+   *         - category "Body":
+   *           - name: Name of the body
+   *           - type:
+   *             - mass
+   *             - restitution
+   *             - friction
+   *             - rolling_friction
+   *             - linear_damping
+   *             - angular_damping
+   *
+   *         For the category "Simulation", the argument "name" is not needed
+   *         and is ignored (you may use NULL).
+   *
+   *  \param[in] category   See enum ParameterCategory
+   *  \param[in] name   Parameter name, such as "SoftMaterial".
+   *  \param[in] type   Parameter type, such as "Restitution".
+   *  \param[in] value  Value the parameter should be assigned with
+   *  \return true for success, false otherwise
+   */
+  virtual bool setParameter(ParameterCategory category,
+                            const char* name, const char* type, double value);
+
   virtual size_t getNumberOfContacts() const;
   virtual void print() const;
   virtual void lock();
@@ -123,12 +155,14 @@ public:
   virtual void setDebugDrawer(BulletDebugDrawer* drawer);
   virtual BulletDebugDrawer* getDebugDrawer() const;
   virtual BulletRigidBody* getRigidBody(const RcsBody* bdy) const;
-  btDynamicsWorld* dynamicsWorld;
+  virtual void getWorldBoundingBox(btVector3& aabbMin,
+                                   btVector3& aabbMax) const;
 
 
 
 private:
 
+  btDynamicsWorld* dynamicsWorld;
   void initPhysics();
   void applyControl(double dt);
   void updateSensors();

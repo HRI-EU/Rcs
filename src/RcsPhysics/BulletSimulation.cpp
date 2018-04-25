@@ -280,7 +280,7 @@ void Rcs::BulletSimulation::initPhysics()
 
   dynamicsWorld->getDispatchInfo().m_useConvexConservativeDistanceUtil = true;
   dynamicsWorld->getDispatchInfo().m_convexConservativeDistanceThreshold = 0.01f;
-  dynamicsWorld->setGravity(btVector3(0.0, 0.0, -9.81));
+  dynamicsWorld->setGravity(btVector3(0.0, 0.0, -RCS_GRAVITY));
 
   btContactSolverInfo& si = dynamicsWorld->getSolverInfo();
   si.m_numIterations = 20;
@@ -1345,4 +1345,140 @@ void Rcs::BulletSimulation::getJointCompliance(MatNd* stiffness,
                                                MatNd* damping) const
 {
   RFATAL("Implement me");
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool Rcs::BulletSimulation::setParameter(ParameterCategory category,
+                                         const char* name,
+                                         const char* type,
+                                         double value)
+{
+  bool success = false;
+
+  if (name==NULL || type==NULL)
+  {
+    RLOG(1, "Parameter name or type is NULL");
+    return false;
+  }
+
+
+  switch (category)
+  {
+
+    case Simulation:
+    {
+      if (STRCASEEQ(name, "gravity"))
+      {
+        btVector3 gravity = dynamicsWorld->getGravity();
+
+        if (STRCASEEQ(type, "x"))
+        {
+          gravity[0] = value;
+          dynamicsWorld->setGravity(gravity);
+          success = true;
+        }
+        else if (STRCASEEQ(type, "y"))
+        {
+          gravity[1] = value;
+          dynamicsWorld->setGravity(gravity);
+          success = true;
+        }
+        else if (STRCASEEQ(type, "z"))
+        {
+          gravity[2] = value;
+          dynamicsWorld->setGravity(gravity);
+          success = true;
+        }
+      }
+      break;
+    }
+
+    case Body:
+    {
+      const RcsBody* bdy = RcsGraph_getBodyByName(this->graph, name);
+      BulletRigidBody* btBdy = getRigidBody(bdy);
+
+      if (btBdy != NULL)
+      {
+        if (STRCASEEQ(type, "mass"))
+        {
+          btScalar oldMass = 1.0/btBdy->getInvMass();
+          btScalar scaling = value/oldMass;
+
+          const btVector3& invI = btBdy->getInvInertiaDiagLocal();
+          btVector3 newInertia;
+          newInertia[0] = scaling/invI[0];
+          newInertia[1] = scaling/invI[1];
+          newInertia[2] = scaling/invI[2];
+          btBdy->setMassProps(value, newInertia);
+          btBdy->updateInertiaTensor();   // Updates inertia in world frame
+          success = true;
+        }
+        else if (STRCASEEQ(type, "friction"))
+        {
+          btBdy->setFriction(value);
+          success = true;
+        }
+        else if (STRCASEEQ(type, "rolling_friction"))
+        {
+          btBdy->setRollingFriction(value);
+          success = true;
+        }
+        else if (STRCASEEQ(type, "restitution"))
+        {
+          btBdy->setRestitution(value);
+          success = true;
+        }
+        else if (STRCASEEQ(type, "linear_damping"))
+        {
+          btBdy->setDamping(value, btBdy->getAngularDamping());
+          success = true;
+        }
+        else if (STRCASEEQ(type, "angular_damping"))
+        {
+          btBdy->setDamping(btBdy->getLinearDamping(), value);
+          success = true;
+        }
+      }
+      else
+      {
+        RLOG(1, "Unknown body \"%s\"", name);
+      }
+      break;
+    }
+
+    case Joint:
+    {
+      break;
+    }
+
+    default:
+    {
+      RLOG(1, "Unknown parameter category: %d", category);
+      break;
+    }
+
+  }   // switch
+
+  if (success==false)
+  {
+    RLOG(1, "Failed to set parameter with name \"%s\" and type \"%s\" (value"
+         " %g, category %d)", name, type, value, category);
+  }
+
+  return success;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::BulletSimulation::getWorldBoundingBox(btVector3& aabbMin,
+                                                btVector3& aabbMax) const
+{
+  dynamicsWorld->getBroadphase()->getBroadphaseAabb(aabbMin, aabbMax);
+  NLOG(5, "Broadphase is %.3f %.3f %.3f - %.3f %.3f %.3f",
+       aabbMin[0], aabbMin[1], aabbMin[2],
+       aabbMax[0], aabbMax[1], aabbMax[2]);
 }

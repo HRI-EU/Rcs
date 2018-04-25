@@ -47,6 +47,8 @@ namespace Vx
 {
 class VxPart;
 class VxUniverse;
+class VxMaterial;
+class VxMaterialTable;
 }
 
 namespace Rcs
@@ -236,6 +238,10 @@ public:
    *         - category "Body":
    *           - name: Name of the body
    *           - type: mass
+   *           - type: com_x
+   *           - type: com_y
+   *           - type: com_z
+   *
    *         For the category "Simulation", the argument "name" is not needed
    *         and is ignored (you may use NULL).
    *
@@ -248,6 +254,8 @@ public:
   virtual bool setParameter(ParameterCategory category,
                             const char* name, const char* type, double value);
 
+  Vx::VxMaterialTable* getMaterialTable() const;
+  Vx::VxMaterial* getMaterial(const char* name) const;
   Vx::VxUniverse* getUniverse();
   const Vx::VxUniverse* getUniverse() const;
 

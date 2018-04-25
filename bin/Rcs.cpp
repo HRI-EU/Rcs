@@ -937,9 +937,9 @@ int main(int argc, char** argv)
       }
 
       REXEC(1)
-        {
-          sim->print();
-        }
+      {
+        sim->print();
+      }
 
       // remember initial state for resetting simulation
       MatNd* q0 = MatNd_clone(graph->q);
@@ -997,10 +997,10 @@ int main(int argc, char** argv)
           runLoop = false;
         }
         else if (kc && kc->getAndResetKey('W'))
-          {
-            RMSGS("Creating JointWidget");
-            jw = Rcs::JointWidget::create(graph, mtx, q_des, graph->q);
-          }
+        {
+          RMSGS("Creating JointWidget");
+          jw = Rcs::JointWidget::create(graph, mtx, q_des, graph->q);
+        }
         else if (kc && kc->getAndResetKey('p'))
         {
           RMSGS("Resetting physics");
@@ -1051,72 +1051,72 @@ int main(int argc, char** argv)
           pause = !pause;
           RMSG("Pause modus is %s", pause ? "ON" : "OFF");
         }
-          else if (kc && kc->getAndResetKey('l'))
+        else if (kc && kc->getAndResetKey('l'))
         {
-            RMSG("Reloading GraphNode from %s", xmlFileName);
-            double t_reload = Timer_getSystemTime();
-            pthread_mutex_lock(&graphLock);
-            viewer->removeNode(simNode);
-            simNode = NULL;
-            double t_reload2 = Timer_getSystemTime();
-            RcsGraph_destroy(graph);
-            graph = RcsGraph_create(xmlFileName);
-            if (graph != NULL)
+          RMSG("Reloading GraphNode from %s", xmlFileName);
+          double t_reload = Timer_getSystemTime();
+          pthread_mutex_lock(&graphLock);
+          viewer->removeNode(simNode);
+          simNode = NULL;
+          double t_reload2 = Timer_getSystemTime();
+          RcsGraph_destroy(graph);
+          graph = RcsGraph_create(xmlFileName);
+          if (graph != NULL)
           {
-                if (posCntrl == true)
-                  {
-                    RCSGRAPH_TRAVERSE_JOINTS(graph)
-                    {
-                      if ((JNT->ctrlType == RCSJOINT_CTRL_VELOCITY) ||
-                          (JNT->ctrlType == RCSJOINT_CTRL_TORQUE))
-                        {
-                          JNT->ctrlType = RCSJOINT_CTRL_POSITION;
-                        }
-                    }
-                    RcsGraph_setState(graph, NULL, NULL);
-          }
-
-                delete sim;
-                sim = Rcs::PhysicsFactory::create(physicsEngine, graph,
-                                                  physicsCfg);
-                t_reload2 = Timer_getSystemTime() - t_reload2;
-
-                REXEC(1)
-                  {
-                    sim->print();
-                  }
-
-                MatNd_resizeCopy(&q0, graph->q);
-                MatNd_resizeCopy(&q_des, graph->q);
-                MatNd_resizeCopy(&q_des_f, graph->q);
-                MatNd_resizeCopy(&q_curr, graph->q);
-                MatNd_resizeCopy(&q_dot_curr, graph->q_dot);
-                T_gravity = MatNd_realloc(T_gravity, graph->dof, 1);
-                RcsGraph_computeGravityTorque(graph, T_gravity);
-                MatNd_constMulSelf(T_gravity, -1.0);
-                simNode = new Rcs::PhysicsNode(sim);
-                pthread_mutex_unlock(&graphLock);
-                viewer->add(simNode);
-                pthread_mutex_lock(&graphLock);
-              }
-            else
-              {
-                RLOG(1, "Couldn't create graph - skipping osg "
-                     "node and physics simulation");
-              }
-            pthread_mutex_unlock(&graphLock);
-            t_reload = Timer_getSystemTime() - t_reload;
-            RMSG("... took %.2f msec (%.2f msec simulation only)",
-                 1000.0*t_reload, 1000.0*t_reload2);
-          }
-          else if (kc && kc->getAndResetKey('S'))
+            if (posCntrl == true)
             {
-              RMSGS("Printing out sensors");
-
-              RCSGRAPH_TRAVERSE_SENSORS(graph)
+              RCSGRAPH_TRAVERSE_JOINTS(graph)
               {
-                RcsSensor_fprint(stdout, SENSOR);
+                if ((JNT->ctrlType == RCSJOINT_CTRL_VELOCITY) ||
+                    (JNT->ctrlType == RCSJOINT_CTRL_TORQUE))
+                {
+                  JNT->ctrlType = RCSJOINT_CTRL_POSITION;
+                }
               }
+              RcsGraph_setState(graph, NULL, NULL);
+            }
+
+            delete sim;
+            sim = Rcs::PhysicsFactory::create(physicsEngine, graph,
+                                              physicsCfg);
+            t_reload2 = Timer_getSystemTime() - t_reload2;
+
+            REXEC(1)
+            {
+              sim->print();
+            }
+
+            MatNd_resizeCopy(&q0, graph->q);
+            MatNd_resizeCopy(&q_des, graph->q);
+            MatNd_resizeCopy(&q_des_f, graph->q);
+            MatNd_resizeCopy(&q_curr, graph->q);
+            MatNd_resizeCopy(&q_dot_curr, graph->q_dot);
+            T_gravity = MatNd_realloc(T_gravity, graph->dof, 1);
+            RcsGraph_computeGravityTorque(graph, T_gravity);
+            MatNd_constMulSelf(T_gravity, -1.0);
+            simNode = new Rcs::PhysicsNode(sim);
+            pthread_mutex_unlock(&graphLock);
+            viewer->add(simNode);
+            pthread_mutex_lock(&graphLock);
+          }
+          else
+          {
+            RLOG(1, "Couldn't create graph - skipping osg "
+                 "node and physics simulation");
+          }
+          pthread_mutex_unlock(&graphLock);
+          t_reload = Timer_getSystemTime() - t_reload;
+          RMSG("... took %.2f msec (%.2f msec simulation only)",
+               1000.0*t_reload, 1000.0*t_reload2);
+        }
+        else if (kc && kc->getAndResetKey('S'))
+        {
+          RMSGS("Printing out sensors");
+
+          RCSGRAPH_TRAVERSE_SENSORS(graph)
+          {
+            RcsSensor_fprint(stdout, SENSOR);
+          }
         }   // if (kc && ...)
 
         if (valgrind)

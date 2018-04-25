@@ -449,8 +449,6 @@ bool Rcs::VortexSimulation::initSettings(const char* configFile)
  ******************************************************************************/
 void Rcs::VortexSimulation::initMaterial(const char* materialFile)
 {
-  Vx::VxMaterialTable* materialTbl = universe->getRigidBodyResponseModel()->getMaterialTable();
-
   // Read XML file
   char msg[256];
   xmlDocPtr xmlDoc;
@@ -464,7 +462,7 @@ void Rcs::VortexSimulation::initMaterial(const char* materialFile)
     {
       if (getXMLNodePropertyStringN(node, "name", msg, 256))
       {
-        Vx::VxMaterial* material = materialTbl->registerMaterial(msg);
+        Vx::VxMaterial* material = getMaterialTable()->registerMaterial(msg);
 
         double value;
         char option[64];
@@ -700,9 +698,8 @@ bool Rcs::VortexSimulation::createCompositeBody(RcsBody* body)
     RLOG(5, "Creating shape %s", RcsShape_name((*sPtr)->type));
 
     // Set proper material
-    Vx::VxMaterialTable* materialTbl = universe->getRigidBodyResponseModel()->getMaterialTable();
     char* materialName = (*sPtr)->material;
-    Vx::VxMaterial* material = materialTbl->getMaterial(materialName);
+    Vx::VxMaterial* material = getMaterial(materialName);
 
     if (material == NULL)
     {
@@ -2497,7 +2494,7 @@ Vx::VxPart* Rcs::VortexSimulation::getPart(const char* name)
  ******************************************************************************/
 void Rcs::VortexSimulation::printMaterialTable(std::ostream& out) const
 {
-  Vx::VxMaterialTable* mt = universe->getRigidBodyResponseModel()->getMaterialTable();
+  Vx::VxMaterialTable* mt = getMaterialTable();
 
   for (size_t i=0; i<mt->getMaterialCount(); ++i)
   {
@@ -2542,7 +2539,7 @@ bool Rcs::VortexSimulation::setParameter(ParameterCategory category,
   {
     case Material:
     {
-      Vx::VxMaterial* material = universe->getRigidBodyResponseModel()->getMaterialTable()->getMaterial(name);
+      Vx::VxMaterial* material = getMaterial(name);
 
       if (material==NULL)
       {
@@ -2649,15 +2646,34 @@ bool Rcs::VortexSimulation::setParameter(ParameterCategory category,
       {
         if (STRCASEEQ(type, "mass"))
         {
+          // Inertia tensor is automatically rescaled by Vortex
           vxBdy->setMass(value);
           success = true;
         }
-        if (STRCASEEQ(type, "com_x"))
+        else if (STRCASEEQ(type, "com_x"))
         {
           const Vx::VxMassProperties& mp = vxBdy->getMassProperties();
           Vx::VxReal3 com;
           mp.getCOMPositionLocal(com);
           com[0] = value;
+          vxBdy->setCOMOffset(com);
+          success = true;
+        }
+        else if (STRCASEEQ(type, "com_y"))
+        {
+          const Vx::VxMassProperties& mp = vxBdy->getMassProperties();
+          Vx::VxReal3 com;
+          mp.getCOMPositionLocal(com);
+          com[1] = value;
+          vxBdy->setCOMOffset(com);
+          success = true;
+        }
+        else if (STRCASEEQ(type, "com_z"))
+        {
+          const Vx::VxMassProperties& mp = vxBdy->getMassProperties();
+          Vx::VxReal3 com;
+          mp.getCOMPositionLocal(com);
+          com[2] = value;
           vxBdy->setCOMOffset(com);
           success = true;
         }
@@ -2705,4 +2721,25 @@ Vx::VxUniverse* Rcs::VortexSimulation::getUniverse()
 const Vx::VxUniverse* Rcs::VortexSimulation::getUniverse() const
 {
   return this->universe;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+Vx::VxMaterial* Rcs::VortexSimulation::getMaterial(const char* name) const
+{
+  if (name==NULL)
+  {
+    return NULL;
+  }
+
+  return getMaterialTable()->getMaterial(name);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+Vx::VxMaterialTable* Rcs::VortexSimulation::getMaterialTable() const
+{
+  return universe->getRigidBodyResponseModel()->getMaterialTable();
 }

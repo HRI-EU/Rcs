@@ -49,6 +49,7 @@
 #include <KeyCatcherBase.h>
 #include <FTSensorNode.h>
 #include <CapsuleNode.h>
+#include <BoxNode.h>
 
 
 
@@ -58,9 +59,6 @@
 Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_):
   NodeBase(), modelNd(NULL), physicsNd(NULL), sim(sim_), displayMode(0)
 {
-#if defined (USE_BULLET)
-  KeyCatcherBase::registerKey("d", "Toggle Bullet debug viewer", "PhysicsNode");
-#endif
   KeyCatcherBase::registerKey("C", "Toggle contacts node", "PhysicsNode");
   KeyCatcherBase::registerKey("f", "Scale drag force by 0.1", "PhysicsNode");
   KeyCatcherBase::registerKey("F", "Scale drag force by 10.0", "PhysicsNode");
@@ -117,32 +115,11 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_):
   Rcs::BulletSimulation* bSim = dynamic_cast<Rcs::BulletSimulation*>(sim_);
   if (bSim != NULL)
   {
+    KeyCatcherBase::registerKey("d", "Toggle debug viewer", "PhysicsNode");
     BulletDebugDrawer* gDebugDrawer = new BulletDebugDrawer();
     gDebugDrawer->setDebugMode(btIDebugDraw::DBG_DrawWireframe |
                                btIDebugDraw::DBG_DrawContactPoints);
     addChild(gDebugDrawer);
-
-    btBroadphaseInterface* axisSweep = bSim->dynamicsWorld->getBroadphase();
-    btVector3 aabbMin, aabbMax;
-    axisSweep->getBroadphaseAabb(aabbMin, aabbMax);
-    RLOG(5, "Broadphase is %.3f %.3f %.3f - %.3f %.3f %.3f",
-         aabbMin[0], aabbMin[1], aabbMin[2],
-         aabbMax[0], aabbMax[1], aabbMax[2]);
-
-    // This shows each Bullet bodie's COM
-    // RCSGRAPH_TRAVERSE_BODIES(sim_->getGraph())
-    // {
-    //   BulletRigidBody* rb = bSim->getRigidBody(BODY);
-    //   if (rb != NULL)
-    //   {
-    //     const double* pos = rb->getCOMTransformPtr()->org;
-    //     osg::ref_ptr<Rcs::CapsuleNode> cn = new Rcs::CapsuleNode(pos, NULL,
-    //                                                              0.025, 0.0);
-    //     cn->makeDynamic(pos);
-    //     addNode(cn.get());
-    //   }
-    // }
-
   }
 #endif
 
@@ -242,7 +219,7 @@ bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
 
         if (s == NULL)
         {
-          RLOG(0, "Can't toggle debug drawer for other simulations than Bullet");
+          RLOG(1, "Can't toggle debug drawer for other simulations than Bullet");
           break;
         }
 
@@ -432,4 +409,65 @@ void Rcs::PhysicsNode::setDisplayMode(int mode)
       RLOG(1, "Unhandled display mode %d", displayMode);
   }
 
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::PhysicsNode::showWorldBoundingBox()
+{
+#if defined (USE_BULLET)
+  Rcs::BulletSimulation* bSim = dynamic_cast<Rcs::BulletSimulation*>(sim);
+
+  if (bSim==NULL)
+  {
+    RLOG(4, "Can't show world bounding box for physics other than Bullet");
+    return;
+  }
+
+  btVector3 aabbMin, aabbMax, center;
+  bSim->getWorldBoundingBox(aabbMin, aabbMax);
+  center = aabbMin + 0.5*(aabbMax-aabbMin);
+  double c[3];
+  c[0] = center.x();
+  c[1] = center.y();
+  c[2] = center.z();
+
+  double lx = aabbMax[0] - aabbMin[0];
+  double ly = aabbMax[1] - aabbMin[1];
+  double lz = aabbMax[2] - aabbMin[2];
+
+  osg::ref_ptr<Rcs::BoxNode> bn = new Rcs::BoxNode(c, NULL, lx, ly, lz);
+  bn->setWireframe(true);
+  addChild(bn.get());
+#endif
+}
+
+/*******************************************************************************
+ * This shows each Bullet bodie's COM
+ ******************************************************************************/
+void Rcs::PhysicsNode::showBodyCOMs()
+{
+#if defined (USE_BULLET)
+  Rcs::BulletSimulation* bSim = dynamic_cast<Rcs::BulletSimulation*>(sim);
+
+  if (bSim==NULL)
+  {
+    RLOG(4, "Can't show body COMs for physics other than Bullet");
+    return;
+  }
+
+  RCSGRAPH_TRAVERSE_BODIES(sim->getGraph())
+  {
+    BulletRigidBody* rb = bSim->getRigidBody(BODY);
+    if (rb != NULL)
+    {
+      const double* pos = rb->getCOMTransformPtr()->org;
+      osg::ref_ptr<Rcs::CapsuleNode> cn = new Rcs::CapsuleNode(pos, NULL,
+                                                               0.025, 0.0);
+      cn->makeDynamic(pos);
+      addChild(cn.get());
+    }
+  }
+#endif
 }

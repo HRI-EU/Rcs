@@ -367,8 +367,8 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy)
   }
   else
   {
-    btRigidBody::btRigidBodyConstructionInfo rbInfo(bdy->m, ms, cSh, bdyInertia);
-    btBody = new BulletRigidBody(rbInfo, bdy);
+    btRigidBody::btRigidBodyConstructionInfo rbc(bdy->m, ms, cSh, bdyInertia);
+    btBody = new BulletRigidBody(rbc, bdy);
 
     REXEC(5)
     {
@@ -394,7 +394,8 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy)
   // Never sleep
   btBody->setSleepingThresholds(0.0, 0.0);
 
-  // Assign a bit higher damping for bodies that are not connected through joints
+  // Assign a bit higher damping for bodies that are not connected through
+  // joints
   if (bdy->rigid_body_joints)
   {
     //btBody->setDamping(0.05, 0.85);
@@ -409,8 +410,8 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy)
   Mat3d_copy(btBody->A_PB_.rot, A_PB);
 
   // For rigid body joints, the joint's weightMetric propoerty is interpreted
-  // as flag if the corresponding dof os locked or free. This allows to constrain
-  // the rigid body movement in any of the 6 directions.
+  // as flag if the corresponding dof os locked or free. This allows to
+  // constrain the rigid body movement in any of the 6 directions.
   if (bdy->rigid_body_joints)
   {
     btVector3 linFac, angFac;
