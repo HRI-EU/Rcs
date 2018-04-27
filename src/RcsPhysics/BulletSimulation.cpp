@@ -1403,6 +1403,10 @@ bool Rcs::BulletSimulation::setParameter(ParameterCategory category,
 
       if (btBdy != NULL)
       {
+        // Rigid bodies need to be removed from the simulation if their
+        // parameters are to be changed (at least for some parameters).
+        dynamicsWorld->removeRigidBody(btBdy);
+
         if (STRCASEEQ(type, "mass"))
         {
           btScalar oldMass = 1.0/btBdy->getInvMass();
@@ -1442,6 +1446,9 @@ bool Rcs::BulletSimulation::setParameter(ParameterCategory category,
           btBdy->setDamping(btBdy->getLinearDamping(), value);
           success = true;
         }
+
+        // Add body again
+        dynamicsWorld->addRigidBody(btBdy);
       }
       else
       {

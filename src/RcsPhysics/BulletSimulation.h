@@ -159,11 +159,10 @@ public:
   virtual void getWorldBoundingBox(btVector3& aabbMin,
                                    btVector3& aabbMax) const;
 
-
+  btDynamicsWorld* dynamicsWorld;
 
 private:
 
-  btDynamicsWorld* dynamicsWorld;
   void initPhysics();
   void applyControl(double dt);
   void updateSensors();
