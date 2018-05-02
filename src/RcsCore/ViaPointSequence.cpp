@@ -448,7 +448,12 @@ void ViaPointSequence::computeB(MatNd* B, const MatNd* vDescr)
       for (size_t j=1; j<i; j++)
       {
         double t_base = MatNd_get(vDescr, j, 0);
-        RCHECK(t_base < t);
+
+        if (t_base>=t)
+        {
+          MatNd_printCommentDigits("viaDesc", vDescr, 5);
+          RFATAL("Row %d, pivot %d: t_base: %f t: %f", i, j, t_base, t);
+        }
 
         if (pIdx[j-1] != -1)
         {
@@ -484,7 +489,12 @@ void ViaPointSequence::computeB(MatNd* B, const MatNd* vDescr)
       for (size_t j=1; j<i; j++)
       {
         double t_base = MatNd_get(vDescr, j, 0);
-        RCHECK(t_base < t);
+
+        if (t_base>=t)
+        {
+          MatNd_printCommentDigits("viaDesc", vDescr, 5);
+          RFATAL("Row %d, pivot %d: t_base: %f t: %f", i, j, t_base, t);
+        }
 
         if (vIdx[j-1] != -1)
         {
@@ -520,7 +530,12 @@ void ViaPointSequence::computeB(MatNd* B, const MatNd* vDescr)
       for (size_t j=1; j<i; j++)
       {
         double t_base = MatNd_get(vDescr, j, 0);
-        RCHECK(t_base < t);
+
+        if (t_base>=t)
+        {
+          MatNd_printCommentDigits("viaDesc", vDescr, 5);
+          RFATAL("Row %d, pivot %d: t_base: %f t: %f", i, j, t_base, t);
+        }
 
         if (aIdx[j-1] != -1)
         {

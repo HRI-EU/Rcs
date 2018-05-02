@@ -1589,3 +1589,85 @@ void* RcsShape_addOctree(RcsShape* self, const char* fileName)
 
   return self->userData;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void RcsShape_computeAABB(const RcsShape* shape,
+                          double xyzMin[3], double xyzMax[3])
+{
+
+  switch (shape->type)
+  {
+    case RCSSHAPE_NONE:
+    case RCSSHAPE_REFFRAME:
+    case RCSSHAPE_POINT:
+    case RCSSHAPE_MARKER:
+    {
+      Vec3d_setZero(xyzMin);
+      Vec3d_setZero(xyzMax);
+      break;
+    }
+    case RCSSHAPE_SSL:
+    {
+      // Radius: extents[0], height: extents[2]. The reference point is a
+      // ball point, the line direction is z.
+      const double* e = shape->extents;
+      Vec3d_set(xyzMin, -e[0], -e[0], -e[0]);
+      Vec3d_set(xyzMax, e[0], e[0], e[2] + e[0]);
+      break;
+    }
+    case RCSSHAPE_SSR:
+    {
+      const double* e = shape->extents;
+      Vec3d_set(xyzMin, -e[0] - e[2], -e[0] - e[2], -e[2]);
+      Vec3d_set(xyzMax, e[0] + e[2], e[0] + e[2], e[2]);
+      break;
+    }
+    case RCSSHAPE_MESH:
+    {
+      RcsMesh_computeAABB((RcsMeshData*)shape->userData, xyzMin, xyzMax);
+      break;
+    }
+    case RCSSHAPE_BOX:
+    {
+      Vec3d_constMul(xyzMin, shape->extents, -0.5);
+      Vec3d_constMul(xyzMax, shape->extents, 0.5);
+      break;
+    }
+    case RCSSHAPE_CYLINDER:
+    {
+      const double* e = shape->extents;
+      Vec3d_set(xyzMin, -e[0], -e[0], -0.5 * e[2]);
+      Vec3d_set(xyzMax, e[0], e[0], 0.5 * e[2]);
+      break;
+    }
+    case RCSSHAPE_SPHERE:
+    {
+      const double* e = shape->extents;
+      Vec3d_set(xyzMin, -e[0], -e[0], -e[0]);
+      Vec3d_set(xyzMax, e[0], e[0], e[0]);
+      break;
+    }
+    case RCSSHAPE_CONE:
+    {
+      // The cone's reference point is the base plane.
+      const double* e = shape->extents;
+      Vec3d_set(xyzMin, -e[0], -e[0], 0.0);
+      Vec3d_set(xyzMax, e[0], e[0], e[2]);
+      break;
+    }
+    case RCSSHAPE_TORUS:
+    {
+      const double* e = shape->extents;
+      Vec3d_set(xyzMin, -e[0], -e[0], -0.5 * e[2]);
+      Vec3d_set(xyzMax, e[0], e[0], 0.5 * e[2]);
+      break;
+    }
+
+    default:
+    {
+      RFATAL("Unsupported shape type \"%s\"", RcsShape_name(shape->type));
+    }
+  }
+}

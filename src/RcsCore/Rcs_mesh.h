@@ -122,7 +122,8 @@ double RcsMesh_computeVolume(RcsMeshData* mesh);
 /*! \ingroup RcsUtilsFunctions
  *  \brief Creates a mesh from a set of vertices. This function computes the
  *         Delaunay Triangulation of the vertex set. It only works if the
- *         GeometricTools library is enabled. Otherwise, always NULL is returned.
+ *         GeometricTools library is enabled. Otherwise, always NULL is
+ *         returned.
  *
  *  \param[in] vertices     Contiguous array of double values holding the vertex
  *                          coordinates
@@ -144,9 +145,9 @@ RcsMeshData* RcsMesh_fromVertices(const double* vertices,
 bool RcsMesh_toFile(const RcsMeshData* mesh, const char* fileName);
 
 /*! \ingroup RcsUtilsFunctions
- *  \brief This function removes the duplicates and adjusts the corresponding face
- *         index. A vertex is considered to be duplicate if its Euclidean distance
- *         to another vertex is less than eps.
+ *  \brief This function removes the duplicates and adjusts the corresponding
+ *         face index. A vertex is considered to be duplicate if its Euclidean
+ *         distance to another vertex is less than eps.
  *
  *  \param[in] mesh       Mesh data
  *  \param[in] eps        Distance threshold below which two vertices are
@@ -155,6 +156,18 @@ bool RcsMesh_toFile(const RcsMeshData* mesh, const char* fileName);
  *          on debug level 4.
  */
 bool RcsMesh_compressVertices(RcsMeshData* mesh, double eps);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief This function computes the axis-aligned bounding box of a mesh.
+ *
+ *  \param[in] mesh       Mesh data. If it is NULL, the AABB is set to zero,
+ * *                      size, and a debug message is issued on debul level 4.
+ *  \param[in] xyzMin     Minimum point of the box
+ *  \param[in] xyzMax     Maximum point of the box
+ */
+void RcsMesh_computeAABB(const RcsMeshData* mesh,
+                         double xyzMin[3], double xyzMax[3]);
+
 
 #ifdef __cplusplus
 }

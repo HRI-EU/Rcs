@@ -41,6 +41,7 @@
 
 #include <stdint.h>
 #include <limits.h>
+#include <float.h>
 
 
 
@@ -967,4 +968,43 @@ double RcsMesh_computeVolume(RcsMeshData* mesh)
   }
 
   return fabs(volume);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void RcsMesh_computeAABB(const RcsMeshData* mesh,
+                         double xyzMin[3], double xyzMax[3])
+{
+  if (mesh == NULL)
+  {
+    RLOG(4, "Mesh is NULL - AABB is set to zero");
+    Vec3d_setZero(xyzMin);
+    Vec3d_setZero(xyzMax);
+    return;
+  }
+
+  Vec3d_set(xyzMin, DBL_MAX, DBL_MAX, DBL_MAX);
+  Vec3d_set(xyzMax, -DBL_MAX, -DBL_MAX, -DBL_MAX);
+
+  for (unsigned int i = 0; i < mesh->nVertices; i=i+3)
+  {
+    double v[3];
+    v[0] = mesh->vertices[i];
+    v[1] = mesh->vertices[i+1];
+    v[2] = mesh->vertices[i+2];
+
+    for (int j = 0; j < 3; ++j)
+    {
+      if (v[j] < xyzMin[j])
+      {
+        xyzMin[j] = v[j];
+      }
+
+      if (v[j] > xyzMax[j])
+      {
+        xyzMax[j] = v[j];
+      }
+    }
+  }
 }

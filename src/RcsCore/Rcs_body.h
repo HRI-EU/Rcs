@@ -311,6 +311,17 @@ bool RcsBody_isFloatingBase(const RcsBody* b);
  */
 bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName);
 
+/*! \ingroup RcsBodyFunctions
+ *  \brief This function computes the axis-aligned bounding box of a shape.
+ *
+ *  \param[in] body       Body data. If it is NULL, or contains no shapes, the
+ *                        AABB is set to zero, and a debug message is issued
+ *                        on debul level 4.
+ *  \param[in] xyzMin     Minimum point of the box
+ *  \param[in] xyzMax     Maximum point of the box
+ */
+void RcsBody_computeAABB(const RcsBody* body,
+                         double xyzMin[3], double xyzMax[3]);
 
 #ifdef __cplusplus
 }

@@ -44,6 +44,8 @@
 #include "Rcs_macros.h"
 #include "Rcs_math.h"
 
+#include <float.h>
+
 
 
 // If this is defined, both cost and gradient will be superposed of
@@ -2106,4 +2108,49 @@ bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName)
   RcsBody_destroy(body);
 
   return true;
+}
+
+
+
+/******************************************************************************
+
+  \brief See header.
+
+******************************************************************************/
+
+void RcsBody_computeAABB(const RcsBody* self,
+                         double xyzMin[3], double xyzMax[3])
+{
+  if (self == NULL || RcsBody_numShapes(self)==0)
+  {
+    RLOG(4, "Body is NULL or has no shapes - AABB is set to zero");
+    Vec3d_setZero(xyzMin);
+    Vec3d_setZero(xyzMax);
+    return;
+  }
+
+  Vec3d_set(xyzMin, DBL_MAX, DBL_MAX, DBL_MAX);
+  Vec3d_set(xyzMax, -DBL_MAX, -DBL_MAX, -DBL_MAX);
+
+  RCSBODY_TRAVERSE_SHAPES(self)
+  {
+    double B_min[3], B_max[3], C_min[3], C_max[3];
+    RcsShape_computeAABB(SHAPE, C_min, C_max);
+    Vec3d_transform(B_min, &SHAPE->A_CB, C_min);
+    Vec3d_transform(B_max, &SHAPE->A_CB, C_max);
+
+    for (int j = 0; j < 3; ++j)
+    {
+      if (B_min[j] < xyzMin[j])
+      {
+        xyzMin[j] = B_min[j];
+      }
+
+      if (B_max[j] > xyzMax[j])
+      {
+        xyzMax[j] = B_max[j];
+      }
+    }
+  }
+
 }
