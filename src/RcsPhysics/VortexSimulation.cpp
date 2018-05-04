@@ -244,6 +244,8 @@ Rcs::VortexSimulation::~VortexSimulation()
   Vx::VxFrame* frame = Vx::VxFrame::instance();
 
   frame->removeUniverse(this->universe);
+  // removeUniverse doesn't delete it!
+  delete this->universe;
 
   if (frame->getUniverseCount()==0)
   {
