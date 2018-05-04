@@ -99,7 +99,7 @@ void* Rcs::PeriodicCallback::threadFuncPosix(void* param)
       // Warn for debug levels equal or higher than 3
       RLOG(3, "overrun at loop %lu in %s: duration=%.1f usec "
            "(should be < %.1f)\n", self->loopCount,
-           self->getClassName().c_str(), self->duration, dtUsec);
+           self->className.c_str(), self->duration, dtUsec);
 
       self->overruns++;
     }
