@@ -83,8 +83,9 @@ TaskVelocity1D.cpp
 TaskVelocity3D.cpp
 TaskVelocityJoint.cpp
 ViaPointSequence.cpp
-  ${RCS_THIRDPARTY_DIR}/Rcs_thirdPartyMath.c
-  ${RCS_THIRDPARTY_DIR}/EulerAngles.c)
+${RCS_THIRDPARTY_DIR}/Rcs_thirdPartyMath.c
+${RCS_THIRDPARTY_DIR}/EulerAngles.c
+)
 
 IF(USE_EIGEN3)
   SET(SRC_EIGEN3 Rcs_eigen.cpp)

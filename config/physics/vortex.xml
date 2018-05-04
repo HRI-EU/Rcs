@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<content>
+
+<vortex_parameters integrator_dt="0.005"
+                   constraint_linear_compliance="1.0e-9"
+                   constraint_angular_compliance="1.0e-9"
+                   body_linear_damping="0.0002"
+                   body_angular_damping="0.00004"
+                   joint_motor_loss="0.002"
+                   joint_lock_stiffness_new="500.0"
+                   joint_lock_stiffness="100000.0"
+                   joint_lock_damping="5000000.0"
+/>
+
+
+<!-- definition of available materials (in addition to "default") -->
+<!-- =============================================================-->
+<!-- possible friction models are "Box", "ScaledBox", and "ScaledBoxFast" -->
+
+<!-- here is what you can set: -->
+<!--<material name="default" -->
+<!--          friction_model="ScaledBox" -->
+<!--          friction_coefficient="0.8" -->
+<!--          static_friction_scale="1.5"-->
+<!--          slip="0.01" -->
+<!--          integrated_slip_displacement="true"  actually its set to neural -->
+<!--          compliance="0.0"-->
+<!--          damping="0.0"-->
+<!--          restitution_threshold="0.0"-->
+<!--          adhesive_force="0.0"-->
+<!--/>-->
+<material name="default"
+          friction_model="ScaledBoxFast"
+          friction_coefficient="0.8"
+          static_friction_scale="1.5"
+          slip="0.0001"
+          integrated_slip_displacement="true"
+          compliance="0.000001"
+/>
+<material name="wood"
+          friction_model="ScaledBoxFast"
+          friction_coefficient="0.8"
+          static_friction_scale="1.5"
+          slip="0.0001"
+          integrated_slip_displacement="true"
+          compliance="0.000001"
+/>
+<material name="low_friction_wood"
+          friction_model="ScaledBoxFast"
+          friction_coefficient="0.4"
+          static_friction_scale="1.1"
+          slip="0.0001"
+          integrated_slip_displacement="true"
+          compliance="0.0001"
+/>
+<material name="extremely_low_friction_wood"
+          friction_model="ScaledBoxFast"
+          friction_coefficient="0.1"
+          static_friction_scale="1"
+          slip="0.0001"
+          integrated_slip_displacement="true"
+          compliance="0.0001"
+/>
+<material name="robot_hand"
+          friction_model="ScaledBoxFast"
+          friction_coefficient="0.8"
+          static_friction_scale="1.5"
+          slip="0.0001"
+          integrated_slip_displacement="true"
+          xxcompliance="0.01"
+          xxdamping="1000"
+/>
+<material name="low_friction_robot_hand"
+          friction_model="ScaledBoxFast"
+          friction_coefficient="0.01"
+          static_friction_scale="1.1"
+          slip="0.0001"
+          integrated_slip_displacement="false"
+          compliance="0.0001"
+          damping="1000"
+/>
+<material name="object"
+          friction_model="ScaledBoxFast"
+          friction_coefficient="0.8"
+          static_friction_scale="1.1"
+          slip="0.0001"
+          integrated_slip_displacement="true"
+          compliance="0.001"
+          damping="1000"
+/>
+<material name="semisoft_object"
+          friction_model="ScaledBoxFast"
+          friction_coefficient="0.4"
+          static_friction_scale="1.1"
+          slip="0.005"
+          integrated_slip_displacement="false"
+          compliance="0.005"
+          damping="1000"
+/>
+<material name="soft_object"
+          friction_model="ScaledBoxFast"
+          friction_coefficient="10"
+          static_friction_scale="1.1"
+          xxslip="0.00"
+          slip="0.005"
+          integrated_slip_displacement="true"
+          compliance="0.001"
+          damping="1000"
+/>
+<!-- <material name="soft_object" -->
+<!--           friction_model="ScaledBoxFast" -->
+<!--           friction_coefficient="0.4" -->
+<!--           static_friction_scale="1.1" -->
+<!--           slip="0.005" -->
+<!--           integrated_slip_displacement="false" -->
+<!--           compliance="0.01" -->
+<!--           damping="1000" -->
+<!-- /> -->
+<material name="low_friction"
+          friction_model="ScaledBoxFast"
+          friction_coefficient="0.001"
+          static_friction_scale="0.2"
+          slip="0.01"
+          integrated_slip_displacement="true"
+          compliance="0.0001"
+/>
+<material name="high_friction"
+          friction_model="ScaledBoxFast"
+          friction_coefficient="10"
+          static_friction_scale="1.1"
+          slip="0.00"
+          integrated_slip_displacement="true"
+          compliance="0.001"
+          damping="100"
+/>
+
+
+
+</content>

@@ -151,8 +151,8 @@ public:
 
   virtual size_t getNumberOfContacts() const;
   virtual void print() const;
-  virtual void lock();
-  virtual void unlock();
+  virtual void lock() const;
+  virtual void unlock() const;
   virtual void setDebugDrawer(BulletDebugDrawer* drawer);
   virtual BulletDebugDrawer* getDebugDrawer() const;
   virtual BulletRigidBody* getRigidBody(const RcsBody* bdy) const;
@@ -163,7 +163,7 @@ public:
 
 private:
 
-  void initPhysics();
+  void initPhysics(const char* physicsConfigFile);
   void applyControl(double dt);
   void updateSensors();
   bool updateLoadcell(const RcsSensor* loadCell);
@@ -171,12 +171,12 @@ private:
   bool setJointAngle(const RcsJoint* jnt, double angle, double dt);
   BulletHingeJoint* getHinge(const RcsJoint* jnt) const;
 
-  btBroadphaseInterface* m_broadphase;
-  btCollisionDispatcher* m_dispatcher;
-  btConstraintSolver* m_solver;
+  btBroadphaseInterface* broadPhase;
+  btCollisionDispatcher* dispatcher;
+  btConstraintSolver* solver;
   btMLCPSolverInterface* mlcpSolver;
-  btDefaultCollisionConfiguration* m_collisionConfiguration;
-  pthread_mutex_t mtx;
+  btDefaultCollisionConfiguration* collisionConfiguration;
+  mutable pthread_mutex_t mtx;
   double lastDt;
   std::map<const RcsBody*, BulletRigidBody*> bdyMap;
   std::map<const RcsJoint*, BulletHingeJoint*> hingeMap;
@@ -186,6 +186,7 @@ private:
   double dragAnchor[3];
 
   BulletDebugDrawer* debugDrawer;
+  char* physicsConfigFile;
 
   /*! \brief Private assignment operator to avoid it from being used
    */

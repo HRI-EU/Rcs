@@ -85,7 +85,7 @@ struct _RcsJoint
   HTr A_JI;            ///< Absolute transformation
   double maxTorque;    ///< Max. torque for physics (default is 1.0)
   double speedLimit;   ///< Speed limit, considering gear ratio.
-  int ctrlType;        ///< Indicates what kind of low-level controller is used for this joint (RCSJOINT_CTRL_TYPE)
+  int ctrlType;        ///< See RCSJOINT_CTRL_TYPE
   char* coupledJointName;
   MatNd* couplingFactors;
 

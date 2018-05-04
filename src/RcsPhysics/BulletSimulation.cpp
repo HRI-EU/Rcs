@@ -46,6 +46,7 @@
 #include <Rcs_body.h>
 #include <Rcs_joint.h>
 #include <Rcs_sensor.h>
+#include <Rcs_utils.h>
 
 #include <BulletDynamics/MLCPSolvers/btDantzigSolver.h>
 #include <BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h>
@@ -131,10 +132,20 @@ static inline void MyNearCallbackEnabled(btBroadphasePair& collisionPair,
  ******************************************************************************/
 Rcs::BulletSimulation::BulletSimulation(const RcsGraph* graph_,
                                         const char* cfgFile) :
-  Rcs::PhysicsBase(graph_), lastDt(0.001), debugDrawer(NULL)
+  Rcs::PhysicsBase(graph_),
+  dynamicsWorld(NULL),
+  broadPhase(NULL),
+  dispatcher(NULL),
+  solver(NULL),
+  mlcpSolver(NULL),
+  collisionConfiguration(NULL),
+  lastDt(0.001),
+  dragBody(NULL),
+  debugDrawer(NULL),
+  physicsConfigFile(NULL)
 {
   pthread_mutex_init(&this->mtx, NULL);
-  initPhysics();
+  initPhysics(cfgFile);
 
   REXEC(5)
   {
@@ -148,10 +159,19 @@ Rcs::BulletSimulation::BulletSimulation(const RcsGraph* graph_,
  ******************************************************************************/
 Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe):
   PhysicsBase(copyFromMe, copyFromMe.graph),
-  lastDt(copyFromMe.lastDt)
+  dynamicsWorld(NULL),
+  broadPhase(NULL),
+  dispatcher(NULL),
+  solver(NULL),
+  mlcpSolver(NULL),
+  collisionConfiguration(NULL),
+  lastDt(copyFromMe.lastDt),
+  dragBody(NULL),
+  debugDrawer(NULL),
+  physicsConfigFile(NULL)
 {
   pthread_mutex_init(&this->mtx, NULL);
-  initPhysics();
+  initPhysics(copyFromMe.physicsConfigFile);
 }
 
 /*******************************************************************************
@@ -160,10 +180,19 @@ Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe):
 Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe,
                                         const RcsGraph* newGraph):
   PhysicsBase(copyFromMe, newGraph),
-  lastDt(copyFromMe.lastDt)
+  dynamicsWorld(NULL),
+  broadPhase(NULL),
+  dispatcher(NULL),
+  solver(NULL),
+  mlcpSolver(NULL),
+  collisionConfiguration(NULL),
+  lastDt(copyFromMe.lastDt),
+  dragBody(NULL),
+  debugDrawer(NULL),
+  physicsConfigFile(NULL)
 {
   pthread_mutex_init(&this->mtx, NULL);
-  initPhysics();
+  initPhysics(copyFromMe.physicsConfigFile);
 }
 
 /*******************************************************************************
@@ -196,10 +225,10 @@ Rcs::BulletSimulation::~BulletSimulation()
   }
 
   delete this->dynamicsWorld;
-  delete this->m_solver;
-  delete this->m_broadphase;
-  delete this->m_dispatcher;
-  delete this->m_collisionConfiguration;
+  delete this->solver;
+  delete this->broadPhase;
+  delete this->dispatcher;
+  delete this->collisionConfiguration;
 
   if (this->mlcpSolver != NULL)
   {
@@ -207,6 +236,11 @@ Rcs::BulletSimulation::~BulletSimulation()
   }
 
   pthread_mutex_destroy(&this->mtx);
+
+  if (this->physicsConfigFile != NULL)
+  {
+    RFREE(this->physicsConfigFile);
+  }
 }
 
 /*******************************************************************************
@@ -220,7 +254,7 @@ Rcs::BulletSimulation* Rcs::BulletSimulation::clone(RcsGraph* newGraph) const
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::BulletSimulation::lock()
+void Rcs::BulletSimulation::lock() const
 {
   pthread_mutex_lock(&this->mtx);
 }
@@ -228,7 +262,7 @@ void Rcs::BulletSimulation::lock()
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::BulletSimulation::unlock()
+void Rcs::BulletSimulation::unlock() const
 {
   pthread_mutex_unlock(&this->mtx);
 }
@@ -236,55 +270,48 @@ void Rcs::BulletSimulation::unlock()
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::BulletSimulation::initPhysics()
+void Rcs::BulletSimulation::initPhysics(const char* physicsConfigFile)
 {
-  m_collisionConfiguration = new btDefaultCollisionConfiguration();
-
-  m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
-  m_dispatcher->setNearCallback(MyNearCallbackEnabled);
+  this->physicsConfigFile = String_clone(physicsConfigFile);
+  this->collisionConfiguration = new btDefaultCollisionConfiguration();
+  this->dispatcher = new btCollisionDispatcher(collisionConfiguration);
+  dispatcher->setNearCallback(MyNearCallbackEnabled);
 
   btVector3 worldAabbMin(-10.0, -10.0, -10.0);
   btVector3 worldAabbMax(10.0, 10.0, 10.0);
-  m_broadphase = new btAxisSweep3(worldAabbMin, worldAabbMax);
+  broadPhase = new btAxisSweep3(worldAabbMin, worldAabbMax);
 
   bool useMCLPSolver = false;
 
 #if BT_BULLET_VERSION > 281
-  useMCLPSolver = true;
+  //useMCLPSolver = true;
   if (useMCLPSolver)
   {
     this->mlcpSolver = new btDantzigSolver();
     //this->mlcpSolver = new btSolveProjectedGaussSeidel;
-    m_solver = new btMLCPSolver(this->mlcpSolver);
+    solver = new btMLCPSolver(this->mlcpSolver);
   }
   else
 #endif
   {
-    m_solver = new btSequentialImpulseConstraintSolver;
+    solver = new btSequentialImpulseConstraintSolver;
   }
 
 
 
   this->dynamicsWorld =
-    new btDiscreteDynamicsWorld(m_dispatcher, m_broadphase, m_solver,
-                                m_collisionConfiguration);
-
-  if (useMCLPSolver)
-  {
-    this->dynamicsWorld ->getSolverInfo().m_minimumSolverBatchSize = 1;
-  }
-  else
-  {
-    this->dynamicsWorld ->getSolverInfo().m_minimumSolverBatchSize = 128;
-  }
-
-  dynamicsWorld->getDispatchInfo().m_useConvexConservativeDistanceUtil = true;
-  dynamicsWorld->getDispatchInfo().m_convexConservativeDistanceThreshold = 0.01f;
+    new btDiscreteDynamicsWorld(dispatcher, broadPhase, solver,
+                                collisionConfiguration);
   dynamicsWorld->setGravity(btVector3(0.0, 0.0, -RCS_GRAVITY));
 
+  btDispatcherInfo& di = dynamicsWorld->getDispatchInfo();
+  di.m_useConvexConservativeDistanceUtil = true;
+  di.m_convexConservativeDistanceThreshold = 0.01f;
+
   btContactSolverInfo& si = dynamicsWorld->getSolverInfo();
-  si.m_numIterations = 20;
-  si.m_erp = 0.2;   // 0: no joint error correction (Recommended: 0.1-0.8, default 0.2)
+  si.m_numIterations = 200;//20;
+  // ERP: 0: no joint error correction (Recommended: 0.1-0.8, default 0.2)
+  si.m_erp = 0.2;
   si.m_globalCfm = 1.0e-4; // 0: hard constraint (Default)
   si.m_restingContactRestitutionThreshold = INT_MAX;
   si.m_splitImpulse = 1;
@@ -292,6 +319,7 @@ void Rcs::BulletSimulation::initPhysics()
                     SOLVER_FRICTION_SEPARATE |
                     SOLVER_USE_2_FRICTION_DIRECTIONS |
                     SOLVER_USE_WARMSTARTING;
+  si.m_minimumSolverBatchSize = useMCLPSolver ? 1 : 128;
 
   // Create physics for RcsGraph
   RCSGRAPH_TRAVERSE_BODIES(graph)
@@ -923,7 +951,7 @@ void Rcs::BulletSimulation::getPhysicsTransform(HTr* A_BI,
  ******************************************************************************/
 void Rcs::BulletSimulation::disableCollisions()
 {
-  m_dispatcher->setNearCallback(MyNearCallbackDisabled);
+  dispatcher->setNearCallback(MyNearCallbackDisabled);
 }
 
 /*******************************************************************************
@@ -1431,6 +1459,11 @@ bool Rcs::BulletSimulation::setParameter(ParameterCategory category,
           btBdy->setRollingFriction(value);
           success = true;
         }
+        // else if (STRCASEEQ(type, "spinning_friction"))
+        // {
+        //   btBdy->setSpinningFriction(value);
+        //   success = true;
+        // }
         else if (STRCASEEQ(type, "restitution"))
         {
           btBdy->setRestitution(value);
