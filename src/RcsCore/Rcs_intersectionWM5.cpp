@@ -606,6 +606,7 @@ extern "C" {
     mesh->vertices = VecNd_clone(vCoords, 3*numVertices);
 
     delete [] vertsWm5;
+    delete [] indices;
 
     return mesh;
   }

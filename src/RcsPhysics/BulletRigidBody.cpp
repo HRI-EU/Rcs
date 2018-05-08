@@ -528,8 +528,7 @@ btTypedConstraint* Rcs::BulletRigidBody::createFixedJoint(const RcsGraph* graph)
     new btFixedConstraint(*this, *parent, frameInA, frameInB);
 
   // This allows us to query inter-body reaction forces and moments
-  btJointFeedback* jf = new btJointFeedback();
-  jnt->setJointFeedback(jf);
+  jnt->setJointFeedback(&this->jf);
   jnt->enableFeedback(true);
 
   // Increase the constraint error correction, since we set a tiny global
@@ -749,7 +748,7 @@ void Rcs::BulletRigidBody::setParentBody(BulletRigidBody* p)
  ******************************************************************************/
 Rcs::BulletRigidBody::BulletRigidBody(const btRigidBody::btRigidBodyConstructionInfo& rbInfo,
                                       const RcsBody* body_) :
-  btRigidBody(rbInfo), body(body_), parent(NULL)
+  btRigidBody(rbInfo), body(body_), parent(NULL), jf()
 {
   HTr_setIdentity(&this->A_PB_);
   HTr_setIdentity(&this->A_BI_);
@@ -763,16 +762,6 @@ Rcs::BulletRigidBody::BulletRigidBody(const btRigidBody::btRigidBodyConstruction
  ******************************************************************************/
 Rcs::BulletRigidBody::~BulletRigidBody()
 {
-  // btFixedConstraint* jnt = static_cast<btFixedConstraint*>(getUserPointer());
-  // if (jnt != NULL)
-  // {
-  //   btJointFeedback* jf = jnt->getJointFeedback();
-  //   if (jf != NULL)
-  //   {
-  //     delete jf;
-  //   }
-  // }
-
   btCollisionShape* sh = getCollisionShape();
 
   btCompoundShape* cSh = dynamic_cast<btCompoundShape*>(sh);

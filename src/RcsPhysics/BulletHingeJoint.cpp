@@ -59,7 +59,7 @@ Rcs::BulletHingeJoint::BulletHingeJoint(RcsJoint* jnt, double q0,
                     useReferenceFrameA),
   rcsJoint(jnt), hingeAngleCurr(0.0), hingeAnglePrev(0.0),
   jointAngleCurr(0.0), jointAnglePrev(0.0), jointVelocity(0.0),
-  jointVelocityPrev(0.0), jointAcceleration(0.0), flipAngle(0.0)
+  jointVelocityPrev(0.0), jointAcceleration(0.0), flipAngle(0.0), jf()
 {
   RCHECK(rcsJoint);
 
@@ -82,8 +82,7 @@ Rcs::BulletHingeJoint::BulletHingeJoint(RcsJoint* jnt, double q0,
   setParam(BT_CONSTRAINT_ERP, 0.8);
 
   // This allows us to query inter-body reaction forces and moments
-  btJointFeedback* jf = new btJointFeedback();
-  setJointFeedback(jf);
+  setJointFeedback(&this->jf);
   enableFeedback(true);
 }
 

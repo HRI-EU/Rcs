@@ -198,7 +198,7 @@ Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe,
 /*******************************************************************************
  * Cleanup in the reverse order of creation/initialization.
  ******************************************************************************/
-//! \todo Clean up ground shape
+//! \todo Check MSVC conditional
 Rcs::BulletSimulation::~BulletSimulation()
 {
   // Remove the constraints from the dynamics world and delete them
@@ -220,7 +220,17 @@ Rcs::BulletSimulation::~BulletSimulation()
     }
     dynamicsWorld->removeCollisionObject(obj);
 #if !defined (_MSC_VER)
-    delete obj;
+    if (dynamic_cast<BulletRigidBody*>(body))
+    {
+      // BulletRigidBody takes care of recursively deleting all shapes
+      delete obj;
+    }
+    else
+    {
+      // Other shapes such as ground plane need explicit destruction of shapes
+      delete obj->getCollisionShape();
+      delete obj;
+    }
 #endif
   }
 
@@ -373,9 +383,9 @@ void Rcs::BulletSimulation::initPhysics(const char* physicsConfigFile)
   }
 
   // Create ground plane
-  btCollisionShape* ground = new btStaticPlaneShape(btVector3(0, 0, 1), 0);
+  btCollisionShape* gnd = new btStaticPlaneShape(btVector3(0.0, 0.0, 1.0), 0.0);
   btDefaultMotionState* gms = new btDefaultMotionState();
-  btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0, gms, ground);
+  btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0, gms, gnd);
   btRigidBody* groundRigidBody = new btRigidBody(groundRigidBodyCI);
   dynamicsWorld->addRigidBody(groundRigidBody);
 

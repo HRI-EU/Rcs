@@ -81,6 +81,7 @@ private:
   HTr A_PI_;               // From world frame to COM frame
   double x_dot[3];
   double omega[3];
+  btJointFeedback jf;
 };
 
 }   // namespace Rcs

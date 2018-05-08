@@ -78,6 +78,7 @@ private:
   double jointAcceleration;
   double flipAngle;
   double offset;
+  btJointFeedback jf;
 };
 
 }   // namespace Rcs
