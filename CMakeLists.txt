@@ -55,6 +55,7 @@ SITE_NAME(HOSTNAME)
 # Default options
 #
 ################################################################################
+OPTION(HEADLESS_BUILD "Build without graphics and Guis" OFF)
 OPTION(USE_WM5 "Use Wildmagic library" OFF)
 # OPTION(USE_OCTOMAP "Use Octomap library" OFF)
 OPTION(USE_EIGEN3 "Use Eigen3 library" OFF)

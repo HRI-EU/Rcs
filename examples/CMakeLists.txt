@@ -1,11 +1,15 @@
-ADD_EXECUTABLE(ExampleHighGui ExampleHighGui.cpp)
-TARGET_LINK_LIBRARIES(ExampleHighGui RcsCore RcsGui)
-
-ADD_EXECUTABLE(ExamplePrioritizedIK ExamplePrioritizedIK.cpp)
-TARGET_LINK_LIBRARIES(ExamplePrioritizedIK RcsCore RcsGui RcsGraphics)
-
-ADD_EXECUTABLE(ExampleForwardKinematics ExampleForwardKinematics.cpp)
-TARGET_LINK_LIBRARIES(ExampleForwardKinematics RcsCore RcsGui RcsGraphics)
-
 ADD_EXECUTABLE(ExamplePeriodicCallback ExamplePeriodicCallback.cpp)
 TARGET_LINK_LIBRARIES(ExamplePeriodicCallback RcsCore)
+
+IF(NOT HEADLESS_BUILD)
+
+  ADD_EXECUTABLE(ExampleHighGui ExampleHighGui.cpp)
+  TARGET_LINK_LIBRARIES(ExampleHighGui RcsCore RcsGui)
+
+  ADD_EXECUTABLE(ExamplePrioritizedIK ExamplePrioritizedIK.cpp)
+  TARGET_LINK_LIBRARIES(ExamplePrioritizedIK RcsCore RcsGui RcsGraphics)
+
+  ADD_EXECUTABLE(ExampleForwardKinematics ExampleForwardKinematics.cpp)
+  TARGET_LINK_LIBRARIES(ExampleForwardKinematics RcsCore RcsGui RcsGraphics)
+
+ENDIF(NOT HEADLESS_BUILD)

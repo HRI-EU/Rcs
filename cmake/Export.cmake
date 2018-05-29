@@ -18,7 +18,12 @@ WRITE_BASIC_PACKAGE_VERSION_FILE(
 )
 
 # Write targets file
-EXPORT(TARGETS RcsCore RcsPhysics RcsGraphics RcsGui
+SET(LIBS_TO_EXPORT RcsCore RcsPhysics)
+IF(NOT HEADLESS_BUILD)
+  LIST(APPEND LIBS_TO_EXPORT RcsGraphics RcsGui)
+ENDIF()
+
+EXPORT(TARGETS ${LIBS_TO_EXPORT}
   FILE "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Targets.cmake"
 #  NAMESPACE Rcs:: # Not really needed, since the targets are prefixed with Rcs anyways
 )
