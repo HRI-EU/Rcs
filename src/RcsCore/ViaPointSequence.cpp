@@ -240,7 +240,7 @@ bool ViaPointSequence::init(const MatNd* viaDescr_, bool computeAllParams)
   if (computeAllParams==false)
   {
     // truncate trajectory to the first full constraint via
-    //    compressDescriptor(viaDescr);
+    compressDescriptor(viaDescr);
   }
 
   // Reset vectors to make sure the init function can be called several times.
@@ -579,9 +579,9 @@ bool ViaPointSequence::check() const
 
   // From here on, this->viaDescr exists. We first check for the proper number
   // of columns
-  if (this->viaDescr->n != 5)
+  if (this->viaDescr->n < 5)
   {
-    RLOGS(1, "this->viaDescr has wrong number of columns: %d (should be 5)",
+    RLOGS(1, "this->viaDescr has wrong number of columns: %d (should be >= 5)",
           this->viaDescr->n);
     return false;
   }
