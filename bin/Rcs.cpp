@@ -851,6 +851,8 @@ int main(int argc, char** argv)
                                        "Enforce position control");
       bool skipGui = argP.hasArgument("-skipGui",
                                       "No joint angle command Gui");
+      bool skipControl = argP.hasArgument("-skipControl",
+                                          "No commands considered in physics");
       bool disableCollisions = argP.hasArgument("-disableCollisions",
                                                 "Disable collisions between"
                                                 " all rigid bodies");
@@ -1056,6 +1058,7 @@ int main(int argc, char** argv)
           RMSG("Reloading GraphNode from %s", xmlFileName);
           double t_reload = Timer_getSystemTime();
           pthread_mutex_lock(&graphLock);
+          int displayMode = simNode->getDisplayMode();
           viewer->removeNode(simNode);
           simNode = NULL;
           double t_reload2 = Timer_getSystemTime();
@@ -1079,6 +1082,10 @@ int main(int argc, char** argv)
             delete sim;
             sim = Rcs::PhysicsFactory::create(physicsEngine, graph,
                                               physicsCfg);
+            if (disableCollisions==true)
+              {
+                sim->disableCollisions();
+              }
             t_reload2 = Timer_getSystemTime() - t_reload2;
 
             REXEC(1)
@@ -1095,6 +1102,7 @@ int main(int argc, char** argv)
             RcsGraph_computeGravityTorque(graph, T_gravity);
             MatNd_constMulSelf(T_gravity, -1.0);
             simNode = new Rcs::PhysicsNode(sim);
+            simNode->setDisplayMode(displayMode);
             pthread_mutex_unlock(&graphLock);
             viewer->add(simNode);
             pthread_mutex_lock(&graphLock);
@@ -1157,7 +1165,7 @@ int main(int argc, char** argv)
           MatNd_reshapeAndSetZero(T_gravity, graph->dof, 1);
         }
 
-        // Dsired joint angles from Gui
+        // Desired joint angles from Gui
         for (unsigned int i=0; i<graph->dof; i++)
         {
           q_des_f->ele[i] = (1.0-tmc)*q_des_f->ele[i] + tmc*q_des->ele[i];
@@ -1171,7 +1179,7 @@ int main(int argc, char** argv)
         //////////////////////////////////////////////////////////////
 
         double dtSim = Timer_getTime();
-        sim->simulate(dt, q_curr, q_dot_curr, NULL, NULL, true);
+        sim->simulate(dt, q_curr, q_dot_curr, NULL, NULL, !skipControl);
         dtSim = Timer_getTime() - dtSim;
 
 

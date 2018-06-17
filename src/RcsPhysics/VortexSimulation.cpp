@@ -171,6 +171,8 @@ void Rcs::VortexSimulation::initPhysics(const char* physicsConfigFile,
 
   // Now that the frame and universe are created, check for parameters in xml
   // file. Set default configuration parameters.
+  // The damping values could also be set to the critical damping with
+  // universe->getCriticalDamping(stiffness)
   this->integratorDt = RCSVORTEX_DEFAULT_INTEGRATOR_DT;
   this->jointLockStiffness = RCSVORTEX_DEFAULT_JOINT_LOCK_STIFFNESS;
   this->jointLockDamping = RCSVORTEX_DEFAULT_JOINT_LOCK_DAMPING;
@@ -1273,49 +1275,20 @@ bool Rcs::VortexSimulation::createJoint(RcsBody* body)
         }
       }
 
-      Vx::VxConstraint* vJnt = NULL;
-      switch (body->jnt->type)
+      double qInit = MatNd_get(graph->q, body->jnt->jointIndex, 0);
+      Vx::VxConstraint* vJnt = createJoint1D(part0, part1,
+                                             this->jointLockStiffness,
+                                             this->jointLockDamping,
+                                             this->jointMotorLoss,
+                                             qInit);
+      if (vJnt != NULL)
       {
-        case RCSJOINT_ROT_X:
-        case RCSJOINT_ROT_Y:
-        case RCSJOINT_ROT_Z:
-        {
-          double qInit = MatNd_get(graph->q, body->jnt->jointIndex, 0);
-          vJnt = createRevoluteJoint(part0, part1, this->jointLockStiffness,
-                                     this->jointLockDamping,
-                                     //universe->getCriticalDamping(jointLockStiffness),
-                                     this->jointMotorLoss,
-                                     qInit);
-          if (vJnt != NULL)
-          {
-            universe->disablePairIntersect(part0, part1);
-            universe->addConstraint(vJnt);
-          }
-
-          NLOG(0, "Created revolute joint for body \"%s\"", body->name);
-          break;
-        }
-        case RCSJOINT_TRANS_X:
-        case RCSJOINT_TRANS_Y:
-        case RCSJOINT_TRANS_Z:
-        {
-          // double qInit = *body->jnt->q;
-          // RCHECK(qInit==MatNd_get(graph->q, body->jnt->jointIndex, 0));
-          double qInit = MatNd_get(graph->q, body->jnt->jointIndex, 0);
-          vJnt = createPrismaticJoint(part0, part1, this->jointLockStiffness,
-                                      this->jointLockDamping, qInit);
-          if (vJnt != NULL)
-          {
-            universe->disablePairIntersect(part0, part1);
-            universe->addConstraint(vJnt);
-          }
-          NLOG(0, "Created prismatic joint for body \"%s\"", body->name);
-          break;
-        }
-        default:
-          RLOG(1, "Only revolute joints are supported for connecting "
-               "dynamically simulated physical joints!");
+        universe->disablePairIntersect(part0, part1);
+        universe->addConstraint(vJnt);
       }
+
+      NLOG(0, "Created revolute joint for body \"%s\"", body->name);
+
       if (vJnt != NULL)
       {
         body->jnt->extraInfo = (void*) vJnt;
@@ -2454,7 +2427,7 @@ void Rcs::VortexSimulation::applyControl(double dt)
 
       double lockVel = deltaPos/dt;
       c->setLockMaximumForce(0, jnt->maxTorque);
-      c->setLockDamping(0, 1.0);
+      // c->setLockDamping(0, 1.0);
       c->setLockVelocity(0, lockVel);
       // c->setLockPosition(0, q_cmd);
     }

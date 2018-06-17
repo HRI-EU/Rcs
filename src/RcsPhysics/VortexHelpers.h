@@ -95,18 +95,12 @@ Vx::VxConstraint* createFixedJoint(Vx::VxPart* parent,
                                    Vx::VxPart* child,
                                    const RcsGraph* graph=NULL);
 
-Vx::VxConstraint* createPrismaticJoint(Vx::VxPart* parent,
-                                       Vx::VxPart* child,
-                                       const double jointLockStiffness,
-                                       const double jointLockDamping,
-                                       const double q0);
-
-Vx::VxConstraint* createRevoluteJoint(Vx::VxPart* parent,
-                                      Vx::VxPart* child,
-                                      const double jointLockStiffness,
-                                      const double jointLockDamping,
-                                      const double jointMotorLoss,
-                                      const double q0);
+Vx::VxConstraint* createJoint1D(Vx::VxPart* parent,
+                                Vx::VxPart* child,
+                                const double jointLockStiffness,
+                                const double jointLockDamping,
+                                const double jointMotorLoss,
+                                const double q0);
 
 void printMaterial(const Vx::VxMaterial* material, std::ostream& out);
 }

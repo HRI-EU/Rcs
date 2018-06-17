@@ -717,86 +717,14 @@ Vx::VxConstraint* Rcs::createFixedJoint(Vx::VxPart* vxParent,
 }
 
 /*******************************************************************************
- * Creates a prismatic joint between parent and child bodies.
+ * Creates a revolute or prismatic joint between body b0 and b1.
  ******************************************************************************/
-Vx::VxConstraint* Rcs::createPrismaticJoint(Vx::VxPart* part0,
-                                            Vx::VxPart* part1,
-                                            const double jointLockStiffness,
-                                            const double jointLockDamping,
-                                            const double q0)
-{
-  RLOG(5, "Create prismatic joint!");
-
-  if (part0 == NULL || part1 == NULL)
-  {
-    RLOG(1, "Create prismatic joint between \"%s\" and \"%s\" failed",
-         part0 ? part0->getName() : "NULL", part1 ? part1->getName() : "NULL");
-    return NULL;
-  }
-
-  const RcsBody* child = (const RcsBody*) part1->getUserDataPtr();
-
-  if (child->jnt == NULL)
-  {
-    RLOG(1, "Creation of joint between \"%s\" and \"%s\" failed: "
-         "Bodies are not connected with joint!",
-         part0->getName(), part1->getName());
-    return NULL;
-  }
-
-  RcsJoint* jnt = child->jnt;
-  Vx::VxVector3 anchor(jnt->A_JI.org);
-  Vx::VxVector3 axis(jnt->A_JI.rot[jnt->dirIdx]);
-  axis *= -1.0;
-
-  Vx::VxPrismatic* joint = new Vx::VxPrismatic(part0, part1, anchor, axis);
-  joint->setName(jnt->name);
-
-  Vx::VxReal limitStiff = 1.0e10, limitDamping = 1.0e9;
-
-  joint->setCoordinateCurrentPosition(Vx::VxPrismatic::kLinearCoordinate, q0);
-
-  // Joint limits
-  joint->setLimitPositions(Vx::VxPrismatic::kLinearCoordinate,
-                           jnt->q_min, jnt->q_max);
-  joint->setLimitStiffness(Vx::VxPrismatic::kLinearCoordinate,
-                           Vx::VxConstraint::kLimitLower, limitStiff);
-  joint->setLimitStiffness(Vx::VxPrismatic::kLinearCoordinate,
-                           Vx::VxConstraint::kLimitUpper, limitStiff);
-  joint->setLimitDamping(Vx::VxPrismatic::kLinearCoordinate,
-                         Vx::VxConstraint::kLimitLower, limitDamping);
-  joint->setLimitDamping(Vx::VxPrismatic::kLinearCoordinate,
-                         Vx::VxConstraint::kLimitUpper, limitDamping);
-  joint->setLimitsActive(Vx::VxPrismatic::kLinearCoordinate, true);
-
-  // Joint lock for kinematic control
-  joint->setLockMaximumForce(Vx::VxPrismatic::kLinearCoordinate,
-                             jnt->maxTorque);
-
-  joint->setLockStiffnessAndDamping(Vx::VxPrismatic::kLinearCoordinate,
-                                    jointLockStiffness, jointLockDamping);
-
-  joint->setControl(Vx::VxPrismatic::kLinearCoordinate,
-                    Vx::VxConstraint::kControlLocked);
-  joint->setLockPosition(Vx::VxPrismatic::kLinearCoordinate, q0);
-
-  RLOG(5, "Created joint between %s - %s: q = %g %s",
-       part0->getName(), part1->getName(),
-       RcsJoint_isRotation(jnt) ? q0*(180.0/M_PI) : q0*1000.0,
-       RcsJoint_isRotation(jnt) ? "deg" : "mm");
-
-  return joint;
-}
-
-/*******************************************************************************
- * Creates a revolute joint between body b0 and b1.
- ******************************************************************************/
-Vx::VxConstraint* Rcs::createRevoluteJoint(Vx::VxPart* part0,
-                                           Vx::VxPart* part1,
-                                           const double jointLockStiffness,
-                                           const double jointLockDamping,
-                                           const double jointMotorLoss,
-                                           const double q0)
+Vx::VxConstraint* Rcs::createJoint1D(Vx::VxPart* part0,
+                                     Vx::VxPart* part1,
+                                     const double jointLockStiffness,
+                                     const double jointLockDamping,
+                                     const double jointMotorLoss,
+                                     const double q0)
 {
   if ((part0==NULL) || (part1==NULL))
   {
@@ -819,56 +747,56 @@ Vx::VxConstraint* Rcs::createRevoluteJoint(Vx::VxPart* part0,
   Vx::VxVector3 anchor(jnt->A_JI.org);
   Vx::VxVector3 axis(jnt->A_JI.rot[jnt->dirIdx]);
   axis *= -1.0;
-  Vx::VxHinge* joint = new Vx::VxHinge(part0, part1, anchor, axis);
+
+  Vx::VxConstraint* joint = NULL;
+  Vx::VxConstraint::CoordinateID coordId;
+
+  if (RcsJoint_isRotation(jnt)==true)
+  {
+    joint = new Vx::VxHinge(part0, part1, anchor, axis);
+    coordId = Vx::VxHinge::kAngularCoordinate;
+  }
+  else
+  {
+    joint = new Vx::VxPrismatic(part0, part1, anchor, axis);
+    coordId = Vx::VxPrismatic::kLinearCoordinate;
+  }
+
   joint->setName(jnt->name);
 
-  // transfer the initial joint position
+  // Set the initial joint position
   joint->setCoordinateCurrentPosition(Vx::VxHinge::kAngularCoordinate, q0);
 
-  // limit parameters (mechanical stop)
-  // -----------------------------------------
-  joint->setLimitPositions(Vx::VxHinge::kAngularCoordinate,
-                           jnt->q_min, jnt->q_max);
-  joint->setLimitsActive(Vx::VxHinge::kAngularCoordinate, true);
-
-  joint->setLimitRestitution(Vx::VxHinge::kAngularCoordinate,
-                             Vx::VxConstraint::kLimitUpper, 0.0);
-  joint->setLimitRestitution(Vx::VxHinge::kAngularCoordinate,
-                             Vx::VxConstraint::kLimitLower, 0.0);
-
-  // joint->setLimitMaximumForce(Vx::VxHinge::kAngularCoordinate,
-  //                             Vx::VxConstraint::kLimitLower, jnt->maxTorque);
-  // joint->setLimitMaximumForce(Vx::VxHinge::kAngularCoordinate,
-  //                             Vx::VxConstraint::kLimitUpper, jnt->maxTorque);
+  // Joint limit parameters (mechanical stop)
+  joint->setLimitsActive(coordId, true);
+  joint->setLimitPositions(coordId, jnt->q_min, jnt->q_max);
+  joint->setLimitRestitution(coordId, Vx::VxConstraint::kLimitUpper, 0.0);
+  joint->setLimitRestitution(coordId, Vx::VxConstraint::kLimitLower, 0.0);
 
 
   if (jnt->ctrlType == RCSJOINT_CTRL_POSITION)
   {
-    joint->setLockMaximumForce(Vx::VxHinge::kAngularCoordinate,
-                               jnt->maxTorque);
-    joint->setLockStiffnessAndDamping(Vx::VxHinge::kAngularCoordinate,
+    joint->setLockMinimumAndMaximumForce(coordId,
+                                         -jnt->maxTorque, jnt->maxTorque);
+    joint->setLockStiffnessAndDamping(coordId,
                                       jointLockStiffness, jointLockDamping);
-    joint->setLockPosition(Vx::VxHinge::kAngularCoordinate, q0);
-    joint->setControl(Vx::VxHinge::kAngularCoordinate,
-                      Vx::VxConstraint::kControlLocked);
+    joint->setLockPosition(coordId, q0);
+    joint->setControl(coordId, Vx::VxConstraint::kControlLocked);
   }
   else if (jnt->ctrlType == RCSJOINT_CTRL_VELOCITY)
   {
-    joint->setMotorMaximumForce(Vx::VxHinge::kAngularCoordinate,
-                                jnt->maxTorque);
-    joint->setMotorLoss(Vx::VxHinge::kAngularCoordinate, jointMotorLoss);
-    joint->setMotorDesiredVelocity(Vx::VxHinge::kAngularCoordinate, 0.0);
-    joint->setControl(Vx::VxHinge::kAngularCoordinate,
-                      Vx::VxConstraint::kControlMotorized);
+    joint->setMotorMaximumForce(coordId, jnt->maxTorque);
+    joint->setMotorLoss(coordId, jointMotorLoss);
+    joint->setMotorDesiredVelocity(coordId, 0.0);
+    joint->setControl(coordId, Vx::VxConstraint::kControlMotorized);
   }
   else if (jnt->ctrlType == RCSJOINT_CTRL_TORQUE)
   {
     // If the max. force is set to 0, the motor gets deactivated
-    joint->setMotorMaximumForce(Vx::VxHinge::kAngularCoordinate, 1.0e-8);
-    joint->setMotorLoss(Vx::VxHinge::kAngularCoordinate, 0.0);
-    joint->setMotorDesiredVelocity(Vx::VxHinge::kAngularCoordinate, 0.0);
-    joint->setControl(Vx::VxHinge::kAngularCoordinate,
-                      Vx::VxConstraint::kControlMotorized);
+    joint->setMotorMaximumForce(coordId, 1.0e-8);
+    joint->setMotorLoss(coordId, 0.0);
+    joint->setMotorDesiredVelocity(coordId, 0.0);
+    joint->setControl(coordId, Vx::VxConstraint::kControlMotorized);
   }
   else
   {
