@@ -1,0 +1,11 @@
+<Controller graph="gScenario.xml" >
+
+  <Task name="Eye C1" effector="LeftPupil" refBdy="Face" controlVariable="X" active="true" />
+  <Task name="Eye C2" effector="LeftPupil" refBdy="Face" controlVariable="POLAR" axisDirection="X" active="true" />
+  <Task name="GazeL"  effector="GazePoint" refBdy="GazePointL" controlVariable="XYZ" active="true" />
+
+  <Task name="Eye C1" effector="RightPupil" refBdy="Face" controlVariable="X" active="true" />
+  <Task name="Eye C2" effector="RightPupil" refBdy="Face" controlVariable="POLAR" axisDirection="X" active="true" />
+  <Task name="GazeR"  effector="GazePoint"  refBdy="GazePointR" controlVariable="XYZ" active="true" />
+
+</Controller>
