@@ -72,7 +72,7 @@ PPSGui::PPSGui(std::vector<Entry>* entries):
 
   for (std::vector<Entry>::iterator it = entries->begin(); it != entries->end(); ++it)
   {
-    RLOG(2, "Adding entry %s", it->name.c_str());
+    RLOG(5, "Adding entry %s", it->name.c_str());
     PPSWidget* widget = new PPSWidget(it->name, it->width, it->height, it->data, it->scaling, it->offset, it->palm);
     main_layout->addWidget(widget);
     //connect(timer, SIGNAL(timeout()), widget, SLOT(updateDisplay()));

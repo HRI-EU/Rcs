@@ -358,7 +358,10 @@ void Rcs::VortexSimulation::updateSensors()
         updateContactForceSensor(SENSOR);
         break;
       case RCSSENSOR_PPS:
-        //updatePPSSensor(SENSOR);
+        if (getEnablePPS()==true)
+        {
+          updatePPSSensor(SENSOR);
+        }
         break;
       default:
         RLOG(4, "No update function for sensor type %d", SENSOR->type);
@@ -2217,7 +2220,7 @@ bool Rcs::VortexSimulation::updatePPSSensor(RcsSensor* sensor)
     double f[3];
     (*it)->getPartPair(part, part + 1);
     (*it)->getForce((part[0] == vxPart ? 0 : 1), f);
-    Vec3d_constMulAndAddSelf(contactForce, f, -1.0);
+    Vec3d_constMulAndAddSelf(contactForce, f, 1.0);
     it++;
   }
 

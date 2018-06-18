@@ -1469,11 +1469,6 @@ bool Rcs::BulletSimulation::setParameter(ParameterCategory category,
           btBdy->setRollingFriction(value);
           success = true;
         }
-        // else if (STRCASEEQ(type, "spinning_friction"))
-        // {
-        //   btBdy->setSpinningFriction(value);
-        //   success = true;
-        // }
         else if (STRCASEEQ(type, "restitution"))
         {
           btBdy->setRestitution(value);

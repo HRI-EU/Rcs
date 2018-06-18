@@ -274,11 +274,19 @@ bool RcsGraph_setState(RcsGraph* self, const MatNd* q_, const MatNd* q_dot_)
                                         q_dot_ ? self->q_dot : NULL);
 
   // Forward kinematics
-  self->nJ = 0;
+  unsigned int nJ = 0;
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
-    RcsGraph_bodyKinematics(BODY, &self->nJ, self->q,
-                            q_dot_ ? self->q_dot : NULL);
+    RcsGraph_bodyKinematics(BODY, &nJ, self->q,q_dot_ ? self->q_dot : NULL);
+  }
+
+  // In most cases, nJ remains unchanged. We therefore only assign a new value
+  // if it is changes, which allows us to access it under many circumstances
+  // from other threads without a mutex
+
+  if (self->nJ != nJ)
+  {
+    self->nJ = nJ;
   }
 
   return qChanged;

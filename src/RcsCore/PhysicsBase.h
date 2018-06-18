@@ -444,6 +444,14 @@ public:
    */
   virtual void print() const;
 
+  /*! \brief Enables or disables the tactile sensor computation.
+   */
+  virtual void setEnablePPS(bool enable);
+
+  /*! \brief Returns true if tactile sensors are computed, false otherwise.
+   */
+  virtual bool getEnablePPS() const;
+
 
 protected:
 
@@ -453,6 +461,7 @@ protected:
   MatNd* T_des;      ///< Desired joint torque [RcsGraph::dof x 1]
   MatNd* q_des;      ///< Desired joint angles [RcsGraph::dof x 1]
   MatNd* q_dot_des;  ///< Desired joint velocities [RcsGraph::dof x 1]
+  bool enablePPS;    ///< Tactile sensor arrays flag
 };
 
 }   // namespace Rcs

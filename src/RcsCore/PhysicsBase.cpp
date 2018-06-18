@@ -48,7 +48,8 @@ Rcs::PhysicsBase::PhysicsBase(const RcsGraph* graph_) :
   simTime(0.0),
   T_des(NULL),
   q_des(NULL),
-  q_dot_des(NULL)
+  q_dot_des(NULL),
+  enablePPS(false)
 {
   RCHECK(this->graph);
 
@@ -69,7 +70,8 @@ Rcs::PhysicsBase::PhysicsBase(const PhysicsBase& copyFromMe) :
   simTime(copyFromMe.simTime),
   T_des(NULL),
   q_des(NULL),
-  q_dot_des(NULL)
+  q_dot_des(NULL),
+  enablePPS(false)
 {
   // Create arrays for joint positions, velocities and torques
   this->T_des = MatNd_clone(copyFromMe.T_des);
@@ -89,7 +91,8 @@ Rcs::PhysicsBase::PhysicsBase(const PhysicsBase& copyFromMe,
   simTime(copyFromMe.simTime),
   T_des(NULL),
   q_des(NULL),
-  q_dot_des(NULL)
+  q_dot_des(NULL),
+  enablePPS(false)
 {
   // Create arrays for joint positions, velocities and torques
   this->T_des = MatNd_clone(copyFromMe.T_des);
@@ -317,8 +320,25 @@ void Rcs::PhysicsBase::print() const
  * See header.
  ******************************************************************************/
 bool Rcs::PhysicsBase::setParameter(ParameterCategory category,
-                                    const char* name, const char* type, double value)
+                                    const char* name, const char* type,
+                                    double value)
 {
   RLOG(0, "Implement or overwrite me");
   return false;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::PhysicsBase::setEnablePPS(bool enable)
+{
+  this->enablePPS = enable;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::PhysicsBase::getEnablePPS() const
+{
+  return this->enablePPS;
 }

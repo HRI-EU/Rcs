@@ -374,6 +374,17 @@ RcsSensor* RcsSensor_createFromXML(xmlNode* node, RcsBody* parentBody)
   RcsSensor* sensor = RcsSensor_create(xml_type, name, parentBody, &offset, extraInfo);
   RFREE(extraInfo);  // It's Ok to call free() on NULL
 
+  if (sensor->type==RCSSENSOR_PPS)
+  {
+    int xy[2];
+    xy[0] = sensor->rawData->m;
+    xy[1] = sensor->rawData->n;
+
+    getXMLNodePropertyIntN(node, "dimensions", xy, 2);
+    MatNd_reshape(sensor->rawData, xy[0], xy[1]);
+  }
+
+
   return sensor;
 }
 
@@ -698,20 +709,24 @@ bool RcsSensor_computePPS(const RcsSensor* self, MatNd* ppsResult,
 
     if (fabs(Vec3d_getLength(lineDir)-1.0)>1.0e-5)
     {
-      MatNd_printCommentDigits("offsetNormal", offsetNormal, 4);
-      RFATAL("Length of lineDir[%d] = %f - should be 1", id,
-             Vec3d_getLength(lineDir));
+      //MatNd_printCommentDigits("offsetNormal", offsetNormal, 4);
+      /* RFATAL("Length of lineDir[%d] = %f - should be 1", id, */
+      /*        Vec3d_getLength(lineDir)); */
+      Vec3d_setZero(MatNd_getRowPtr(lineDirMat, id));
     }
+    else
+    {
+      maxDist = fmax(maxDist, Vec3d_getLength(offset));
 
-    maxDist = fmax(maxDist, Vec3d_getLength(offset));
-
-    Vec3d_transRotateSelf(lineDir, A_SI.rot);
-    Vec3d_transRotateSelf(offset, A_SI.rot);
-    Vec3d_add(MatNd_getRowPtr(lineOriginMat, id), offset, A_SI.org);
-    Vec3d_copy(MatNd_getRowPtr(lineDirMat, id), lineDir);
+      Vec3d_transRotateSelf(lineDir, A_SI.rot);
+      Vec3d_transRotateSelf(offset, A_SI.rot);
+      Vec3d_add(MatNd_getRowPtr(lineOriginMat, id), offset, A_SI.org);
+      Vec3d_copy(MatNd_getRowPtr(lineDirMat, id), lineDir);
+    }
   }
 
   maxDist += sensorDepth; //just a safety margin
+
 
 
   double* skinSensorData = RNALLOC(dimension, double);// MALLOC
@@ -784,8 +799,8 @@ bool RcsSensor_computePPS(const RcsSensor* self, MatNd* ppsResult,
           const double* lineOrigin = MatNd_getRowPtr(lineOriginMat, id);
           double closestLinePt[3];
 
-          if (RcsShape_computeLineIntersection(lineOrigin, lineDir, BODY->A_BI, SHAPE,
-                                               closestLinePt))
+          if (RcsShape_computeLineIntersection(lineOrigin, lineDir, BODY->A_BI,
+                                               SHAPE, closestLinePt))
           {
             Vec3d_subSelf(closestLinePt, lineOrigin);
 

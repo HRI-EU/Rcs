@@ -108,6 +108,7 @@
 #include <ControllerWidgetBase.h>
 #include <MatNdWidget.h>
 #include <TargetSetter.h>
+#include <PPSGui.h>
 #include <SegFaultHandler.h>
 
 #include <iostream>
@@ -857,6 +858,7 @@ int main(int argc, char** argv)
                                                 "Disable collisions between"
                                                 " all rigid bodies");
       bool testCopy = argP.hasArgument("-copy", "Test physics copying");
+      bool withPPS = argP.hasArgument("-pps", "Launch PPS widgets");
       bool gravComp = argP.hasArgument("-gravComp", "Apply gravity compensation"
                                        " to torque joints");
       argP.getArgument("-physics_config", physicsCfg, "Configuration file name"
@@ -938,7 +940,7 @@ int main(int argc, char** argv)
         sim->disableCollisions();
       }
 
-      REXEC(1)
+      REXEC(5)
       {
         sim->print();
       }
@@ -959,6 +961,7 @@ int main(int argc, char** argv)
       Rcs::HUD* hud = NULL;
       Rcs::JointWidget* jw = NULL;
       Rcs::PhysicsNode* simNode = NULL;
+      std::vector<Rcs::PPSGui::Entry> ppsEntries;
 
       if (valgrind==false)
       {
@@ -975,6 +978,28 @@ int main(int argc, char** argv)
         {
           jw = Rcs::JointWidget::create(graph, mtx, q_des, graph->q);
         }
+
+        if (withPPS==true)
+        {
+          sim->setEnablePPS(true);
+          double scaling = 1.0;
+
+          RCSGRAPH_TRAVERSE_SENSORS(graph)
+          {
+            if (SENSOR->type==RCSSENSOR_PPS)
+            {
+              ppsEntries.push_back(Rcs::PPSGui::Entry(SENSOR->name,
+                                                      SENSOR->rawData->m,
+                                                      SENSOR->rawData->n,
+                                                      SENSOR->rawData->ele,
+                                                      scaling));
+            }
+          }
+
+          RcsGuiFactory_requestGUI(Rcs::ppsGui, &ppsEntries);
+        }
+
+
       }
 
 
@@ -1083,9 +1108,9 @@ int main(int argc, char** argv)
             sim = Rcs::PhysicsFactory::create(physicsEngine, graph,
                                               physicsCfg);
             if (disableCollisions==true)
-              {
-                sim->disableCollisions();
-              }
+            {
+              sim->disableCollisions();
+            }
             t_reload2 = Timer_getSystemTime() - t_reload2;
 
             REXEC(1)

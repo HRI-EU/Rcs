@@ -76,7 +76,7 @@ class HardwareComponent
 public:
   typedef void (*CallbackType)(void*);
 
-  HardwareComponent(RcsGraph* graph);
+  HardwareComponent();
 
   virtual ~HardwareComponent();
 
@@ -84,7 +84,12 @@ public:
    *         This is called from the MotionControlLayer for each component.
    *         After that, the forward kinematics is computed.
    */
-  virtual void updateGraph() = 0;
+  virtual void updateGraph(RcsGraph* graph) = 0;
+
+  /*! \brief Function that is called directly after computing the forward
+   *         kinematics.
+   */
+  virtual void postUpdateGraph();
 
   /*! \brief Apply the given control inputs to the HardwareComponent. Each
    *         input array must be of size [RcsGraph::dof x 1]. The
@@ -133,10 +138,10 @@ public:
   virtual void registerCallback(CallbackType callback, void* param);
 
 protected:
+
   virtual void callControlLayerCallbackIfConnected();
   CallbackType callbackFunction;
   void* callbackParam;
-  RcsGraph* graph;
   bool isCallbackConnected;
 };
 

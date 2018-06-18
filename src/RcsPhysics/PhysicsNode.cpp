@@ -352,7 +352,7 @@ bool Rcs::PhysicsNode::setGhostMode(const std::string& bodyName,
 }
 
 /*******************************************************************************
- * 
+ *
  ******************************************************************************/
 int Rcs::PhysicsNode::getDisplayMode() const
 {

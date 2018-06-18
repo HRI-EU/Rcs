@@ -44,10 +44,9 @@
 /*******************************************************************************
  * Hardware component base class
  ******************************************************************************/
-Rcs::HardwareComponent::HardwareComponent(RcsGraph* graph_):
+Rcs::HardwareComponent::HardwareComponent():
   callbackFunction(NULL),
   callbackParam(NULL),
-  graph(graph_),
   isCallbackConnected(false)
 {
 }
@@ -117,4 +116,11 @@ bool Rcs::HardwareComponent::onEmergencyRecovery()
 bool Rcs::HardwareComponent::checkEmergencyCondition()
 {
   return false;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::HardwareComponent::postUpdateGraph()
+{
 }

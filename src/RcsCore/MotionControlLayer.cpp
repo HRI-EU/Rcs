@@ -25,9 +25,10 @@
  *
  ******************************************************************************/
 Rcs::MotionControlLayer::MotionControlLayer():
-  graph(NULL),
+  desiredGraph(NULL),
+  currentGraph(NULL),
   callbackTriggerComponent(NULL),
-  ownsGraph(false),
+  ownsDesiredGraph(false),
   stepMe(false),
   emergency(false),
   loopCount(0), overruns(0),
@@ -39,16 +40,19 @@ Rcs::MotionControlLayer::MotionControlLayer():
  *
  ******************************************************************************/
 Rcs::MotionControlLayer::MotionControlLayer(const char* xmlFile):
-  graph(NULL),
+  desiredGraph(NULL),
+  currentGraph(NULL),
   callbackTriggerComponent(NULL),
-  ownsGraph(true),
+  ownsDesiredGraph(true),
   stepMe(false),
   emergency(false),
   loopCount(0), overruns(0),
   dtMin(1.0), dtMax(0.0), dtDesired(0.0), sum(0.0)
 {
-  this->graph = RcsGraph_create(xmlFile);
-  RCHECK(this->graph);
+  this->desiredGraph = RcsGraph_create(xmlFile);
+  RCHECK(this->desiredGraph);
+  this->currentGraph = RcsGraph_clone(desiredGraph);
+  RCHECK(this->currentGraph);
 }
 
 /*******************************************************************************
@@ -78,16 +82,24 @@ Rcs::MotionControlLayer::~MotionControlLayer()
   }
 
   // Delete graph if it is owned by this class
-  if (ownsGraph == true)
+  if (this->ownsDesiredGraph == true)
   {
-    RcsGraph_destroy(this->graph);
+    RcsGraph_destroy(this->desiredGraph);
   }
+
+  RcsGraph_destroy(this->currentGraph);
 
   printf("[%s(%d)]: MotionControlLayer callback statistics:\n",
          __FUNCTION__, __LINE__);
 
-  double mean = (double) sum / getLoopCount();
-  if (trigger)
+  double mean = 0.0;
+
+  if (getLoopCount()>0)
+  {
+    mean = (double) sum / getLoopCount();
+  }
+
+  if (trigger != NULL)
   {
     printf("  trigger component: %s\n", trigger->getName());
   }
@@ -121,13 +133,16 @@ bool Rcs::MotionControlLayer::addHardwareComponent(HardwareComponent* component)
     {
       RLOG(1, "Component \"%s\" has already been added - skipping",
            component->getName());
+      return false;
     }
   }
 
   this->componentVec.push_back(component);
 
   // That's the earliest point in time where we can update the graph with the
-  // component's real sensor values.
+  // component's real sensor values. We also update the desired graph with the
+  // real sensor values so that it is consistent.
+  component->updateGraph(this->desiredGraph);
   MotionControlLayer::updateGraph();
 
   return true;
@@ -140,10 +155,16 @@ void Rcs::MotionControlLayer::updateGraph()
 {
   for (size_t i=0; i<componentVec.size(); ++i)
   {
-    componentVec[i]->updateGraph();
+    componentVec[i]->updateGraph(this->currentGraph);
   }
 
-  RcsGraph_setState(this->graph, NULL, NULL);
+  RcsGraph_setState(this->desiredGraph, NULL, NULL);
+  RcsGraph_setState(this->currentGraph, NULL, NULL);
+
+  for (size_t i=0; i<componentVec.size(); ++i)
+  {
+    componentVec[i]->postUpdateGraph();
+  }
 }
 
 /*******************************************************************************
@@ -159,7 +180,8 @@ bool Rcs::MotionControlLayer::checkEmergencyConditions()
       // that we need to stop.
       if (!this->emergency)
       {
-        RLOG(0, "\n\n\t EMERGENCY STOP triggered by: %s", componentVec[i]->getName());
+        RLOG(0, "\n\n\t EMERGENCY STOP triggered by: %s",
+             componentVec[i]->getName());
         notifyEmergencyStop(componentVec[i]);
       }
       this->emergency = true;
@@ -432,21 +454,35 @@ double Rcs::MotionControlLayer::getCallbackUpdatePeriod() const
  ******************************************************************************/
 RcsGraph* Rcs::MotionControlLayer::getGraph() const
 {
-  return this->graph;
+  return this->desiredGraph;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsGraph* Rcs::MotionControlLayer::getCurrentGraph() const
+{
+  return this->currentGraph;
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
 void Rcs::MotionControlLayer::setMotorCommand(const MatNd* q_des,
-                                              const MatNd* qp_des,
+                                              const MatNd* qDot_des,
                                               const MatNd* T_des)
 {
   for (size_t i=0; i<componentVec.size(); ++i)
   {
-    componentVec[i]->setCommand(q_des, qp_des, T_des);
+    componentVec[i]->setCommand(q_des, qDot_des, T_des);
   }
 
+  MatNd_copy(this->desiredGraph->q, q_des);
+
+  if (qDot_des != NULL)
+  {
+    MatNd_copy(this->desiredGraph->q_dot, qDot_des);
+  }
 }
 
 /*******************************************************************************

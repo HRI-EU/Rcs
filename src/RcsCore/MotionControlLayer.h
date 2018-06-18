@@ -137,6 +137,7 @@ public:
    *           exist (e.g. after calling the default constructor).
    */
   virtual RcsGraph* getGraph() const;
+  virtual RcsGraph* getCurrentGraph() const;
 
 
   virtual void setMotorCommand(const MatNd* q_des, const MatNd* qp_des,
@@ -157,13 +158,14 @@ protected:
   virtual bool notifyEmergencyRecovery();
   virtual void setEmergencyStop();
 
-  RcsGraph* graph;
+  RcsGraph* desiredGraph;
+  RcsGraph* currentGraph;
   std::vector<HardwareComponent*> componentVec;
 
 private:
   HardwareComponent* callbackTriggerComponent;
   static void staticCallback(void* param);
-  bool ownsGraph;
+  bool ownsDesiredGraph;
   bool stepMe;
   bool emergency;
   unsigned int loopCount, overruns;
