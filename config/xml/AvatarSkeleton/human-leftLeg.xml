@@ -1,0 +1,32 @@
+<Graph>
+  <Body name="ThighL" prev="UpperBody" color="PEWTER" physics="kinematic" mass="9.8" cogVector="0 0 -0.2205" >
+    <Joint name="DofLeg1XL" type="RotX" range="-45 0 90" transform="0 0.0875 -0.127 0 0 0" />
+    <Joint name="DofLeg1YL" type="RotY" range="-160 -10 70" />
+    <Joint name="DofLeg1ZL" type="RotZ" range="-90 0 90" />
+    <Shape type="BOX" extents="0.025 0.025 0.441"  transform="0 0 -0.2205 0 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 90 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 0 90 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" graphics="true" />
+  </Body>
+
+  <Body name="ShankL" prev="ThighL" color="BRONZE" physics="kinematic" mass="3.8" cogVector="0 0 -0.2525">
+    <Joint name="DofKneeL" type="RotY" range="0 20 120" transform="0.0 0.0 -0.441 0 0 0" />
+    <Shape type="BOX" extents="0.025 0.025 0.505"  transform="0 0 -0.2525 0 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 90 0 0" graphics="true" />
+  </Body>
+
+  <Body name="AnkleL" prev="ShankL" color="BRASS" physics="kinematic" mass="1.0" cogVector="0.03 0 0">
+    <Joint name="DofAnkleYL" type="RotY" range="-30 -10 30" transform="0 0 -0.505 0 0 0" />
+    <Joint name="DofAnkleXL" type="RotX" range="-20 0 20" />
+    <Shape type="BOX" extents="0.222 0.025 0.025"  transform="0.081 0 0 0 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 90 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+  <Body name="FootL" prev="AnkleL" color="BRASS" physics="kinematic" >
+    <Joint name="DofToesYL" type="RotY" range="-20 0 20" transform="0.192 0 0 0 0 0"/>
+    <Shape type="BOX" extents="0.05 0.025 0.025"  transform="0.025 0 0 0 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 90 0 0" graphics="true" />
+  </Body>
+
+</Graph>

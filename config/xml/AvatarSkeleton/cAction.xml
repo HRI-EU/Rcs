@@ -1,0 +1,78 @@
+  <Controller graph="gScenario.xml" >
+
+  <!-- Left hand tip in world coordinates -->
+  <Task name="Left Hand XYZ"   effector="LeftHandTip" controlVariable="XYZ" />
+  <Task name="Left Hand ABC"   effector="LeftHandTip" controlVariable="ABC" />
+  <Task name="Left Hand Polar" effector="LeftHandTip" controlVariable="POLAR" />
+
+  <!-- Right hand tip in world coordinates -->
+  <Task name="Right Hand XYZ"   effector="RightHandTip" controlVariable="XYZ"   />
+  <Task name="Right Hand ABC"   effector="RightHandTip" controlVariable="ABC"   />
+  <Task name="Right Hand Polar" effector="RightHandTip" controlVariable="POLAR" />
+
+  <!-- Left hand tip wrt right hand tip -->
+  <Task name="Hand Delta XYZ"   effector="LeftHandTip" refBdy="RightHandTip" refFrame="Heel" controlVariable="XYZ" />
+  <Task name="Hand Delta Polar" effector="LeftHandTip" refBdy="RightHandTip" controlVariable="POLAR" />
+  <Task name="Hand Delta ABC"   effector="LeftHandTip" refBdy="RightHandTip" controlVariable="ABC"   />
+
+  <!-- Overall center of gravity in world coordinates -->
+  <Task name="COG X" controlVariable="COGX" refBdy="Heel" active="true"/>
+  <Task name="COG Y" controlVariable="COGY" refBdy="Heel" active="true"/>
+  <Task name="COG Z" controlVariable="COGZ" />
+
+  <!-- Left foot wrt. floating base frame -->
+  <Task name="Left Foot Pose" effector="FootL" controlVariable="XYZABC" refBdy="Heel" active="true" />
+
+  <!-- Right foot wrt. floating base frame -->
+  <Task name="Right Foot Pose" effector="FootR" controlVariable="XYZABC" refBdy="Heel" active="true" />
+
+
+    <CollisionModel  DistanceThreshold="0.002" >
+
+      <!-- Only once -->
+      <CollisionPair body1="RightForeArm"    body2="LeftForeArm"   DistanceThreshold="0.01"   />
+
+      <!-- RightUpperArm -->
+      <CollisionPair body1="RightUpperArm"   body2="ThighL"        DistanceThreshold="0.01"   />
+      <CollisionPair body1="RightUpperArm"   body2="ShankL"        DistanceThreshold="0.01"   />
+      <CollisionPair body1="RightUpperArm"   body2="ThighR"        DistanceThreshold="0.01"   />
+      <CollisionPair body1="RightUpperArm"   body2="ShankR"        DistanceThreshold="0.01"   />
+
+      <!-- LeftUpperArm -->
+      <CollisionPair body1="LeftUpperArm"   body2="ThighL"         DistanceThreshold="0.01"   />
+      <CollisionPair body1="LeftUpperArm"   body2="ShankL"         DistanceThreshold="0.01"   />
+      <CollisionPair body1="LeftUpperArm"   body2="ThighR"         DistanceThreshold="0.01"   />
+      <CollisionPair body1="LeftUpperArm"   body2="ShankR"         DistanceThreshold="0.01"   />
+
+      <!-- RightForeArm -->
+      <CollisionPair body1="RightForeArm"   body2="UpperBody"      DistanceThreshold="0.01"   />
+      <CollisionPair body1="RightForeArm"   body2="Abdomen1"       DistanceThreshold="0.01"   />
+      <CollisionPair body1="RightForeArm"   body2="Abdomen2"       DistanceThreshold="0.01"   />
+      <CollisionPair body1="RightForeArm"   body2="Thorax1"        DistanceThreshold="0.01"   />
+      <CollisionPair body1="RightForeArm"   body2="Thorax2"        DistanceThreshold="0.01"   />
+      <CollisionPair body1="RightForeArm"   body2="Neck"           DistanceThreshold="0.01"   />
+      <CollisionPair body1="RightForeArm"   body2="Head"           DistanceThreshold="0.01"   />
+      <CollisionPair body1="RightForeArm"   body2="LeftSh"         DistanceThreshold="0.01"   />
+      <CollisionPair body1="RightForeArm"   body2="LeftUpperArm"   DistanceThreshold="0.01"   />
+      <CollisionPair body1="RightForeArm"   body2="ThighL"         DistanceThreshold="0.01"   />
+      <CollisionPair body1="RightForeArm"   body2="ShankL"         DistanceThreshold="0.01"   />
+      <CollisionPair body1="RightForeArm"   body2="ThighR"         DistanceThreshold="0.01"   />
+      <CollisionPair body1="RightForeArm"   body2="ShankR"         DistanceThreshold="0.01"   />
+
+      <!-- LeftForeArm -->
+      <CollisionPair body1="LeftForeArm"   body2="UpperBody"       DistanceThreshold="0.01"   />
+      <CollisionPair body1="LeftForeArm"   body2="Abdomen1"        DistanceThreshold="0.01"   />
+      <CollisionPair body1="LeftForeArm"   body2="Abdomen2"        DistanceThreshold="0.01"   />
+      <CollisionPair body1="LeftForeArm"   body2="Thorax1"         DistanceThreshold="0.01"   />
+      <CollisionPair body1="LeftForeArm"   body2="Thorax2"         DistanceThreshold="0.01"   />
+      <CollisionPair body1="LeftForeArm"   body2="Neck"            DistanceThreshold="0.01"   />
+      <CollisionPair body1="LeftForeArm"   body2="Head"            DistanceThreshold="0.01"   />
+      <CollisionPair body1="LeftForeArm"   body2="LeftSh"          DistanceThreshold="0.01"   />
+      <CollisionPair body1="LeftForeArm"   body2="RightUpperArm"   DistanceThreshold="0.01"   />
+      <CollisionPair body1="LeftForeArm"   body2="ThighL"          DistanceThreshold="0.01"   />
+      <CollisionPair body1="LeftForeArm"   body2="ShankL"          DistanceThreshold="0.01"   />
+      <CollisionPair body1="LeftForeArm"   body2="ThighR"          DistanceThreshold="0.01"   />
+      <CollisionPair body1="LeftForeArm"   body2="ShankR"          DistanceThreshold="0.01"   />
+
+    </CollisionModel>
+  </Controller>

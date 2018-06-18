@@ -1,0 +1,10 @@
+<Graph content="This file holds the kinematic data of a human"
+       xmlns:xi="http://www.w3.org/2003/XInclude" >
+
+<xi:include href="human-body.xml" />
+<xi:include href="human-leftArm.xml" />
+<xi:include href="human-rightArm.xml" />
+<xi:include href="human-leftLeg.xml" />
+<xi:include href="human-rightLeg.xml" />
+
+</Graph>

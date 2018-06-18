@@ -845,7 +845,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
         (getXMLNodeProperty(node, "from2Points")==false))
     {
       bool success = getXMLNodeProperty(node, "length");
-      RCHECK_MSG(success, "%s", body->name);
+      RCHECK_MSG(success, "%s has no \"length\" tag", body->name);
       success = getXMLNodeProperty(node, "radius");
       RCHECK_MSG(success, "%s has no \"radius\" tag", body->name);
       success = !getXMLNodeProperty(node, "extents");

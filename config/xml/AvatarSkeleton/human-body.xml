@@ -1,0 +1,79 @@
+<Graph>
+
+  <Body name="Heel" >
+    <Joint name="DofHeelX"    type="TransX" range="-2 0 2"     constraint="true" />
+    <Joint name="DofHeelY"    type="TransY" range="-2 0 2"     constraint="true" />
+    <Joint name="DofHeelRotZ" type="RotZ"   range="-180 0 180" constraint="true" />
+  </Body>
+
+  <Body name="UpperBody" prev="Heel" physics="kinematic" mass="11.8" cogVector="-0.02 0 -0.0635" >
+    <Joint name="DofPelvisX"   type="TransX" range="-0.25 0 0.25" />
+    <Joint name="DofPelvisY"   type="TransY" range="-0.25 0 0.25" />
+    <Joint name="DofPelvisZ"   type="TransZ" range="0.5 1.057 1.2"/>
+    <Joint name="DofPelvisThX" type="RotX"   range="-5 0 5"/>
+    <Joint name="DofPelvisThY" type="RotY"   range="-5 0 5"/>
+    <Joint name="DofPelvisThZ" type="RotZ"   range="-5 0 5"/>
+    <Shape type="BOX" extents="0.025 0.025 0.127"  transform="0 0 -0.0635 0 0 0" graphics="true" />
+    <Shape type="BOX" extents="0.025 0.175 0.025"  transform="0 0 -0.127 0 0 0" graphics="true" />
+  </Body>
+
+  <Body name="Abdomen1" prev="UpperBody" physics="kinematic" mass="1.2" cogVector="0 0 0.03875" color="RED" >
+    <Joint name="DofAbdomen1RotX"  type="RotX"   range="-3.75 0 3.75" />
+    <Joint name="DofAbdomen1RotY"  type="RotY"   range="-10 0 11.25" />
+    <Joint name="DofAbdomen1RotZ"  type="RotZ"   range="-7.5 0 7.5" />
+    <Shape type="BOX" extents="0.025 0.025 0.0775"  transform="0 0 0.03875 0 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 90 0 0"  graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 0 90 0"  graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" />
+  </Body>
+
+  <Body name="Abdomen2" prev="Abdomen1" physics="kinematic" mass="1.2" cogVector="0 0 0.036" color="RED" >
+    <Joint name="DofAbdomen2RotX"  type="RotX"   range="-3.75 0 3.75"  transform="0 0 0.0775 0 0 0"/>
+    <Joint name="DofAbdomen2RotY"  type="RotY"   range="-10 0 30" />
+    <Joint name="DofAbdomen2RotZ"  type="RotZ"   range="-7.5 0 7.5" />
+    <Shape type="BOX" extents="0.025 0.025 0.072"  transform="0 0 0.036 0 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 90 0 0"  graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 0 90 0"  graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" graphics="true" />
+  </Body>
+
+  <Body name="Thorax1" prev="Abdomen2" physics="kinematic" mass="3.06" cogVector="0 0 0.036" color="RED">
+    <Joint name="DofThorax1RotX"  type="RotX"   range="-3.75 0 3.75"  transform="0 0 0.072 0 0 0"/>
+    <Joint name="DofThorax1RotY"  type="RotY"   range="-10 0 30" />
+    <Joint name="DofThorax1RotZ"  type="RotZ"   range="-7.5 0 7.5" />
+    <Shape type="BOX" extents="0.025 0.025 0.072"  transform="0 0 0.036 0 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 90 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 0 90 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" graphics="true" />
+  </Body>
+
+  <Body name="Thorax2" prev="Thorax1" physics="kinematic" mass="10.04" cogVector="0 0 0.11825" color="RED">
+    <Joint name="DofThorax2RotX"  type="RotX"   range="-3.75 0 3.75"  transform="0 0 0.072 0 0 0"/>
+    <Joint name="DofThorax2RotY"  type="RotY"   range="-10 0 30" />
+    <Joint name="DofThorax2RotZ"  type="RotZ"   range="-7.5 0 7.5" />
+    <Shape type="BOX" extents="0.025 0.025 0.2365"  transform="0 0 0.11825 0 0 0" graphics="true" />
+    <Shape type="BOX" extents="0.025 0.0548 0.025"  transform="0 0 0.1675 0 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 90 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 0 90 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" graphics="true" />
+  </Body>
+
+  <Body name="Neck" prev="Thorax2" physics="kinematic" mass="1.1" cogVector="0 0 0.0405" color="YELLOW">
+    <Joint name="DofNeckRotX"  type="RotX"   range="-3.75 0 3.75"  transform="0 0 0.2365 0 0 0"/>
+    <Joint name="DofNeckRotY"  type="RotY"   range="-10 0 30" />
+    <Joint name="DofNeckRotZ"  type="RotZ"   range="-7.5 0 7.5" />
+    <Shape type="BOX" extents="0.025 0.025 0.081"  transform="0 0 0.0405 0 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 90 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 0 90 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" graphics="true" />
+  </Body>
+
+  <Body name="Head" prev="Neck" physics="kinematic" mass="4.2" cogVector="0 0 0.1" color="YELLOW">
+    <Joint name="DofHeadRotX"  type="RotX"   range="-3.75 0 3.75"  transform="0 0 0.081 0 0 0"/>
+    <Joint name="DofHeadRotY"  type="RotY"   range="-10 0 30" />
+    <Shape type="BOX" extents="0.2 0.15 0.172"  transform="0 0 0.086 0 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 90 0 0" graphics="true" />
+    <Shape type="CYLINDER" length="0.1" radius="0.0125" transform="0 0 0 0 90 0" graphics="true" />
+  </Body>
+
+</Graph>
