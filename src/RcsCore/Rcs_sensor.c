@@ -709,9 +709,6 @@ bool RcsSensor_computePPS(const RcsSensor* self, MatNd* ppsResult,
 
     if (fabs(Vec3d_getLength(lineDir)-1.0)>1.0e-5)
     {
-      //MatNd_printCommentDigits("offsetNormal", offsetNormal, 4);
-      /* RFATAL("Length of lineDir[%d] = %f - should be 1", id, */
-      /*        Vec3d_getLength(lineDir)); */
       Vec3d_setZero(MatNd_getRowPtr(lineDirMat, id));
     }
     else
@@ -729,7 +726,7 @@ bool RcsSensor_computePPS(const RcsSensor* self, MatNd* ppsResult,
 
 
 
-  double* skinSensorData = RNALLOC(dimension, double);// MALLOC
+  double* skinSensorData = RNALLOC(dimension, double);
   double f[3];
   Vec3d_constMul(f, contactForce, -1.0);
 

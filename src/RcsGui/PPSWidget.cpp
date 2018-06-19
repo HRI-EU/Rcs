@@ -35,9 +35,9 @@
 *******************************************************************************/
 
 #include "PPSWidget.h"
-
 #include "Rcs_guiFactory.h"
-#include "Rcs_macros.h"
+
+#include <Rcs_macros.h>
 
 #include <QtCore/QTimer>
 
@@ -54,11 +54,11 @@ typedef struct
 static void* ppsThreadFunc(void* arg)
 {
   VoidPointerList* p = (VoidPointerList*) arg;
-  RCHECK(arg);
-  size_t* width    = (size_t*) p->ptr[0];
-  size_t* height   = (size_t*) p->ptr[1];
-  double* data     = (double*) p->ptr[2];
-  const char* name = (const char*) p->ptr[3];
+  RCHECK(p);
+  size_t* width      = (size_t*) p->ptr[0];
+  size_t* height     = (size_t*) p->ptr[1];
+  const double* data = (double*) p->ptr[2];
+  const char* name   = (const char*) p->ptr[3];
 
   PPSWidget* w = new PPSWidget(name, *width, *height, data);
   w->show();
@@ -66,7 +66,7 @@ static void* ppsThreadFunc(void* arg)
   return w;
 }
 
-PPSWidget* PPSWidget::create(const size_t width, const size_t height, double* data, const char* name)
+PPSWidget* PPSWidget::create(const size_t width, const size_t height, const double* data, const char* name)
 {
   VoidPointerList* p = new VoidPointerList;
   p->ptr[0] = (void*) &width;
@@ -79,7 +79,7 @@ PPSWidget* PPSWidget::create(const size_t width, const size_t height, double* da
   return (PPSWidget*) RcsGuiFactory_getPointer(handle);
 }
 
-PPSWidget::PPSWidget(const std::string& name, const size_t width, const size_t height, double* data, double scaling, double offset, bool palm):
+PPSWidget::PPSWidget(const std::string& name, const size_t width, const size_t height, const double* data, double scaling, double offset, bool palm, pthread_mutex_t* mtx_):
   QWidget(),
   name(name),
   width(width),
@@ -88,7 +88,8 @@ PPSWidget::PPSWidget(const std::string& name, const size_t width, const size_t h
   scaling(scaling),
   offset(offset),
   palm(palm),
-  pixelSize(10)
+  pixelSize(10),
+  mtx(mtx_)
 {
   // main layout containing two lines
   this->main_layout = new QVBoxLayout(this);
@@ -149,7 +150,7 @@ void PPSWidget::updateDisplay()
 
       // the user is to specify offset and scaling such that the range is [0..1]
       // 3*255 is the number of levels supported by this color map
-      int r = (int)((this->data[counter++] + this->offset) * 3. * 255. * this->scaling);
+      int r = (int)((this->data[counter++] + this->offset) * 3.0 * 255.0 * this->scaling);
       int g = 0;
       int b = 0;
 
@@ -185,7 +186,25 @@ void PPSWidget::updateDisplay()
 
   this->painter.end();
 
+  lock();
   this->PPS->setPixmap(*this->pixmap);
+  unlock();
+}
+
+void PPSWidget::lock() const
+{
+  if (this->mtx != NULL)
+  {
+    pthread_mutex_lock(this->mtx);
+  }
+}
+
+void PPSWidget::unlock() const
+{
+  if (this->mtx != NULL)
+  {
+    pthread_mutex_unlock(this->mtx);
+  }
 }
 
 }

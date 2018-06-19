@@ -34,8 +34,8 @@
 
 *******************************************************************************/
 
-#ifndef PPSWIDGET_H_
-#define PPSWIDGET_H_
+#ifndef PPSWIDGET_H
+#define PPSWIDGET_H
 
 #include <QtGui/QWidget>
 #include <QtGui/QLabel>
@@ -44,6 +44,10 @@
 #include <QtGui/QPainter>
 #include <QtGui/QPixmap>
 
+#include <pthread.h>
+
+
+
 namespace Rcs
 {
 
@@ -51,18 +55,19 @@ class PPSWidget: public QWidget
 {
   Q_OBJECT
 public:
-  static PPSWidget* create(const size_t width, const size_t height, double* data, const char* name);
-  PPSWidget(const std::string& name, const size_t width, const size_t height, double* data, double scaling=1., double offset=0., bool palm=false);
+  static PPSWidget* create(const size_t width, const size_t height, const double* data, const char* name);
+  PPSWidget(const std::string& name, const size_t width, const size_t height, const double* data, double scaling=1.0, double offset=0.0, bool palm=false, pthread_mutex_t* mtx=NULL);
   virtual ~PPSWidget();
 
-public slots:
-  virtual void updateDisplay();
-
 protected:
+
+  void lock() const;
+  void unlock() const;
+
   std::string name;
   size_t width;
   size_t height;
-  double* data;
+  const double* data;
   double scaling;
   double offset;
   bool palm;
@@ -73,8 +78,12 @@ protected:
   QPainter painter;
 
   int pixelSize;
+  mutable pthread_mutex_t* mtx;
+
+private slots:
+  void updateDisplay();
 };
 
 }
 
-#endif /* PPSWIDGET_H_ */
+#endif // PPSWIDGET_H

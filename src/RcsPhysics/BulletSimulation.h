@@ -166,6 +166,7 @@ private:
   void initPhysics(const char* physicsConfigFile);
   void applyControl(double dt);
   void updateSensors();
+  bool updatePPSSensor(RcsSensor* sensor);
   bool updateLoadcell(const RcsSensor* loadCell);
   void setJointTorque(const RcsJoint* jnt, double torque);
   bool setJointAngle(const RcsJoint* jnt, double angle, double dt);

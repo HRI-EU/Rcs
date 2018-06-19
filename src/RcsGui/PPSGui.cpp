@@ -38,58 +38,72 @@
 #include "PPSWidget.h"
 
 #include <Rcs_macros.h>
+#include <Rcs_guiFactory.h>
 
 #include <QtGui/QHBoxLayout>
-#include <QtCore/QTimer>
 
+
+
+typedef struct
+{
+  void* ptr[10];
+} VoidPointerList;
 
 
 namespace Rcs
 {
 
+PPSGui* PPSGui::create(std::vector<Rcs::PPSGui::Entry> ppsEntries,
+                       pthread_mutex_t* mutex)
+{
+  VoidPointerList* p = new VoidPointerList;
+  p->ptr[0] = (void*) &ppsEntries;
+  p->ptr[1] = (void*) mutex;
+
+  int handle = RcsGuiFactory_requestGUI(ppsGui, p);
+
+  return (PPSGui*) RcsGuiFactory_getPointer(handle);
+}
+
 void* ppsGui(void* arg)
 {
-  RCHECK(arg);
-  PPSGui* gui = new PPSGui((std::vector<PPSGui::Entry>*)arg);
-  //    widget->move(600,0);
+  VoidPointerList* p = (VoidPointerList*) arg;
+  RCHECK(p);
+
+  std::vector<PPSGui::Entry>* entries = (std::vector<PPSGui::Entry>*)p->ptr[0];
+  pthread_mutex_t* mutex = (pthread_mutex_t*) p->ptr[1];
+  PPSGui* gui = new PPSGui(entries, mutex);
   gui->show();
   return gui;
 }
 
 
-PPSGui::PPSGui(std::vector<Entry>* entries):
-  QScrollArea()
+PPSGui::PPSGui(std::vector<Entry>* entries, pthread_mutex_t* mutex): QScrollArea()
 {
   QString window_title("RCS PPS Viewer GUI");
   setWindowTitle(window_title);
 
   // The layout for the overall widget
-  QHBoxLayout* main_layout = new QHBoxLayout();
-  main_layout->setMargin(3);
-  main_layout->setSpacing(1);
-  // this timer will trigger the gui updates
-  QTimer* timer = new QTimer(this);
+  QHBoxLayout* mainLayout = new QHBoxLayout();
+  mainLayout->setMargin(3);
+  mainLayout->setSpacing(1);
 
   for (std::vector<Entry>::iterator it = entries->begin(); it != entries->end(); ++it)
   {
     RLOG(5, "Adding entry %s", it->name.c_str());
-    PPSWidget* widget = new PPSWidget(it->name, it->width, it->height, it->data, it->scaling, it->offset, it->palm);
-    main_layout->addWidget(widget);
-    //connect(timer, SIGNAL(timeout()), widget, SLOT(updateDisplay()));
+    PPSWidget* widget = new PPSWidget(it->name, it->width, it->height, it->data, it->scaling, it->offset, it->palm, mutex);
+    mainLayout->addWidget(widget);
   }
 
-  main_layout->addStretch();
+  mainLayout->addStretch();
 
-  QWidget* scroll_widget = new QWidget(this);
-  scroll_widget->setLayout(main_layout);
-  this->setWidget(scroll_widget);
+  QWidget* scrollWidget = new QWidget(this);
+  scrollWidget->setLayout(mainLayout);
+  this->setWidget(scrollWidget);
   this->setWidgetResizable(true);
 
   //  this->resize(600, 200);
   this->resize(this->widget()->sizeHint() + QSize(10, 20));
-
-  //    connect(timer, SIGNAL(timeout()), SLOT(updateDisplay()) );
-  timer->start(100);
 
   RLOG(5, "PPSGui generated");
 }

@@ -961,7 +961,6 @@ int main(int argc, char** argv)
       Rcs::HUD* hud = NULL;
       Rcs::JointWidget* jw = NULL;
       Rcs::PhysicsNode* simNode = NULL;
-      std::vector<Rcs::PPSGui::Entry> ppsEntries;
 
       if (valgrind==false)
       {
@@ -982,6 +981,7 @@ int main(int argc, char** argv)
         if (withPPS==true)
         {
           sim->setEnablePPS(true);
+          std::vector<Rcs::PPSGui::Entry> ppsEntries;
           double scaling = 1.0;
 
           RCSGRAPH_TRAVERSE_SENSORS(graph)
@@ -996,7 +996,7 @@ int main(int argc, char** argv)
             }
           }
 
-          RcsGuiFactory_requestGUI(Rcs::ppsGui, &ppsEntries);
+          Rcs::PPSGui::create(ppsEntries, mtx);
         }
 
 

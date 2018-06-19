@@ -103,7 +103,7 @@ static inline void MyNearCallbackEnabled(btBroadphasePair& collisionPair,
       if ((RcsBody_isChild(rb0->getBodyPtr(), rb1->getBodyPtr())) ||
           (RcsBody_isChild(rb1->getBodyPtr(), rb0->getBodyPtr())))
       {
-        //return;
+        return;
       }
 
     }
@@ -1012,6 +1012,8 @@ Rcs::PhysicsBase::Contacts Rcs::BulletSimulation::getContacts()
     btPersistentManifold* contactManifold =
       this->dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
 
+    int numContacts = contactManifold->getNumContacts();
+
 #if 0
     const btCollisionObject* obA =
       static_cast<const btCollisionObject*>(contactManifold->getBody0());
@@ -1020,11 +1022,7 @@ Rcs::PhysicsBase::Contacts Rcs::BulletSimulation::getContacts()
 
     const Rcs::BulletRigidBody* rbA = dynamic_cast<const Rcs::BulletRigidBody*>(obA);
     const Rcs::BulletRigidBody* rbB = dynamic_cast<const Rcs::BulletRigidBody*>(obB);
-#endif
 
-    int numContacts = contactManifold->getNumContacts();
-
-#if 0
     if ((numContacts>0) && rbA && rbB)
     {
       RLOG(5, "%s - %s:", rbA->getBodyName(), rbB->getBodyName());
@@ -1252,7 +1250,10 @@ void Rcs::BulletSimulation::updateSensors()
         break;
 
       case RCSSENSOR_PPS:
-        //RcsSensor_computePPS(SENSOR, SENSOR->rawData);
+        if (getEnablePPS()==true)
+        {
+          updatePPSSensor(SENSOR);
+        }
         break;
 
       default:
@@ -1529,4 +1530,64 @@ void Rcs::BulletSimulation::getWorldBoundingBox(btVector3& aabbMin,
   NLOG(5, "Broadphase is %.3f %.3f %.3f - %.3f %.3f %.3f",
        aabbMin[0], aabbMin[1], aabbMin[2],
        aabbMax[0], aabbMax[1], aabbMax[2]);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::BulletSimulation::updatePPSSensor(RcsSensor* sensor)
+{
+  double contactForce[3];
+  Vec3d_setZero(contactForce);
+
+  int numManifolds = this->dynamicsWorld->getDispatcher()->getNumManifolds();
+
+  for (int i=0; i<numManifolds; i++)
+  {
+    btPersistentManifold* contactManifold =
+      this->dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
+
+    const Rcs::BulletRigidBody* rbA = dynamic_cast<const Rcs::BulletRigidBody*>(contactManifold->getBody0());
+    const Rcs::BulletRigidBody* rbB = dynamic_cast<const Rcs::BulletRigidBody*>(contactManifold->getBody1());
+
+    double signOfForce;
+
+    if (rbA && rbA->getBodyPtr()==sensor->body)
+    {
+      signOfForce = 1.0;
+    }
+    else if (rbB && rbB->getBodyPtr()==sensor->body)
+    {
+      signOfForce = -1.0;
+    }
+    else
+    {
+      continue;
+    }
+
+    for (int j=0; j<contactManifold->getNumContacts(); j++)
+    {
+      btManifoldPoint& pt = contactManifold->getContactPoint(j);
+
+      if (pt.getDistance()<0.0)
+      {
+        double force[3];
+
+        for (int i=0; i<3; ++i)
+        {
+          force[i] = (pt.m_normalWorldOnB[i]*pt.m_appliedImpulse +
+                      pt.m_lateralFrictionDir1[i]*pt.m_appliedImpulseLateral1 +
+                      pt.m_lateralFrictionDir2[i]*pt.m_appliedImpulseLateral2)/this->lastDt;
+        }
+
+        NLOG(1, "Adding f[%s,%d]=%f %f %f", sensor->body->name, j, force[0], force[1], force[2]);
+
+        Vec3d_constMulAndAddSelf(contactForce, force, signOfForce);
+      }
+
+    }   // for (int j=0; j<contactManifold->getNumContacts(); j++)
+
+  }   // for (int i=0; i<numManifolds; i++)
+
+  return RcsSensor_computePPS(sensor, sensor->rawData, contactForce);
 }

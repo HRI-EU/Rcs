@@ -65,19 +65,21 @@ Q_OBJECT
 public:
 struct Entry
 {
-  Entry(const std::string& _name, const size_t _width, const size_t _height, double* _data, double _scaling=1., double _offset=0., bool _palm=false):
+  Entry(const std::string& _name, const size_t _width, const size_t _height, const double* _data, double _scaling=1.0, double _offset=0.0, bool _palm=false):
     name(_name), width(_width), height(_height), data(_data), scaling(_scaling), offset(_offset), palm(_palm) {}
   std::string name;
   size_t width;
   size_t height;
-  double* data;
+  const double* data;
   double scaling;
   double offset;
   bool palm;
 };
 
 public:
-PPSGui(std::vector<Entry>* entries);
+static PPSGui* create(std::vector<Rcs::PPSGui::Entry> ppsEntries,
+                      pthread_mutex_t* mutex=NULL);
+PPSGui(std::vector<Entry>* entries, pthread_mutex_t* mutex);
 virtual ~PPSGui();
 
 };

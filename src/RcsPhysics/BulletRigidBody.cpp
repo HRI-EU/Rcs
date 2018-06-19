@@ -175,7 +175,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
       positions[3] = btVector3(-hx/2.0, -hy/2.0, 0.0);
 
       bShape = new btMultiSphereShape(positions, radi, 4);
-      bShape->setMargin(0.000);
+      bShape->setMargin(0.0);
       break;
     }
 
@@ -249,6 +249,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
       {
         bShape = meshToHull(mesh);
       }
+      bShape->setMargin(0.0);
 
       break;
     }
