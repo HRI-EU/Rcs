@@ -10,6 +10,10 @@ Rcs can be compiled with the cmake build system and has mainly been developed on
     cmake <source-directory>
     make 
 
+To build the doxygen documentation, just type:
+
+    make doc
+
 It is also possible to compile it on Microsoft Visual Studio, however with some additional efforts. The libxml2 and pthreads library as well as the below mentioned dependencies need to be installed. Further, a cmake version higher than 3.4 is required. They support automatic symbol generation for windows compilation. The formerly mandatory export declaratives are not needed (except for global variables). Here is how to call it:
 
     cd <build-directory>
