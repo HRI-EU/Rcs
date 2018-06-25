@@ -2,11 +2,14 @@
 @PACKAGE_INIT@
 
 # Write across config vars which are important
-# This excludes WM5 and Octomap since they are not part of the interface
+# This excludes Eigen and Octomap since they are not part of the interface
 SET(USE_BULLET @USE_BULLET@)
 SET(USE_EIGEN3 @USE_EIGEN3@)
 SET(USE_VORTEX @USE_VORTEX@)
+SET(HEADLESS_BUILD @HEADLESS_BUILD@)
 SET(VORTEX_ESSENTIALS_DIR @VORTEX_ESSENTIALS_DIR@ CACHE PATH "" FORCE)
+SET(BT_LIB_DIR @BT_LIB_DIR@ CACHE PATH "Bullet library directory")
+SET(BULLET_INCLUDE_DIRS @BULLET_INCLUDE_DIRS@ CACHE PATH "Bullet include directory")
 
 # Make FindQwt.cmake available
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
