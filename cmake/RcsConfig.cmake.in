@@ -18,7 +18,30 @@ INCLUDE("${CMAKE_CURRENT_LIST_DIR}/Externals.cmake")
 
 # Include targets definition
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/RcsTargets.cmake")
-CHECK_REQUIRED_COMPONENTS("@PACKAGE_NAME@")
+
+# Check which included targets are available
+# For simplicity, the component names are equal to the target names
+# Note that the list of supported components always includes the UI parts even in headless mode
+# They are still supported, just not available.
+SET(_supported_components RcsCore RcsPhysics RcsGraphics RcsGui)
+FOREACH(_comp ${Rcs_FIND_COMPONENTS})
+
+  IF (NOT ";${_supported_components};" MATCHES ";${_comp};")
+    SET(@PACKAGE_NAME@_FOUND FALSE)
+    SET(@PACKAGE_NAME@_NOTFOUND_MESSAGE "Unsupported component: ${_comp}")
+  ELSEIF(NOT TARGET ${_comp})
+    SET(@PACKAGE_NAME@_${_comp}_FOUND FALSE)
+  ELSE()
+    SET(@PACKAGE_NAME@_${_comp}_FOUND TRUE)
+  ENDIF()
+
+ENDFOREACH()
 
 # Make Rcs config dir available to users
 SET(RCS_CONFIG_DIR "@RCS_CONFIG_DIR@")
+
+# Handle REQUIRED and QUIET arguments, as well as required components
+# Note, REQUIRED_VARS only contains the config dir here since we use imported targets for the libraries
+FIND_PACKAGE_HANDLE_STANDARD_ARGS("@PACKAGE_NAME@"
+  REQUIRED_VARS RCS_CONFIG_DIR
+  HANDLE_COMPONENTS)
