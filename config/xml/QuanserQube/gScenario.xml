@@ -11,7 +11,7 @@
 
   <Body name="CableFlag" prev="Qube">
     <Shape type="CYLINDER" radius="0.001" length="0.06" transform="-0.028 0 0.138 0 0 0" graphics="true" physics="false" color="DARKGRAY"/>
-    <Shape type="BOX" extents="0.03 0.001 0.02" transform="-0.043 0 0.158 0 0 0" graphics="true" physics="false"  textureFile="textures/bavaria.png"/>
+    <Shape type="BOX" extents="0.03 0.001 0.02" transform="-0.043 0 0.158 0 0 0" graphics="true" physics="false"/>
   </Body>
 
   <Body name="Arm" prev="Qube" mass="0.095" physics="dynamic" color="LIGHTGRAY">
