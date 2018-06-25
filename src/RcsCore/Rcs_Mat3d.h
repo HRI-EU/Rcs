@@ -646,7 +646,9 @@ void Mat3d_printCommentDigits(const char* text, double mat[3][3],
 
 /*! \ingroup RcsMat3dFunctions
  *  \brief Prints the matrix with a comment and a given format string to
- *         stderr. If comment is NULL, it will be skipped.
+ *         stderr. The format string is considered for one number, e.g.
+ *         Mat3d_printFormatted("Rotation matrix", "%g ", rm);
+ *         If comment is NULL, it will be skipped.
  */
 void Mat3d_printFormatted(const char* text, const char* format,
                           double M[3][3]);
@@ -717,7 +719,7 @@ bool Mat3d_compareEigenbasis(double lambda1[3], double V1[3][3],
                              double eps);
 
 void Mat3d_fromQuaternion(double A_BI[3][3], double x[4]);
-void Mat3d_toQuaternion(double q[4], double rm[3][3]);
+bool Mat3d_toQuaternion(double q[4], double rm[3][3]);
 void Mat3d_toQuaternion2(double q[4], double m[3][3]);
 
 

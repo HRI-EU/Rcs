@@ -36,6 +36,7 @@
 
 #include "Rcs_mathTests.h"
 #include "Rcs_math.h"
+#include "Rcs_quaternion.h"
 #include "Rcs_filters.h"
 #include "ViaPointSequence.h"
 #include "Rcs_macros.h"
@@ -3407,26 +3408,76 @@ bool testViaPointTrajectory1D(int argc, char** argv)
  ******************************************************************************/
 bool testQuaternionConversion(int argc, char** argv)
 {
-  double q[4], A_BI[3][3], A_BI2[3][3], err[3][3];
+  bool success = true;
 
-  Mat3d_setRandomRotation(A_BI);
-  Quat_fromRotationMatrix(q, A_BI);
-  Quat_toRotationMatrix(A_BI2, q);
-  Mat3d_sub(err, A_BI2, A_BI);
-
-  double frobNorm = Mat3d_getFrobeniusnorm(err);
-
-  bool success = (frobNorm<1.0e-8) ? true : false;
-
-  REXEC(1)
   {
-    REXEC(2)
+    RLOGS(1, "**************************************");
+    RLOGS(1, "Test quaternion - rotation matrix");
+    RLOGS(1, "**************************************");
+
+    double q[4], A_BI[3][3], A_BI2[3][3], err[3][3];
+
+    Mat3d_setRandomRotation(A_BI);
+    Quat_fromRotationMatrix(q, A_BI);
+    Quat_toRotationMatrix(A_BI2, q);
+    Mat3d_sub(err, A_BI2, A_BI);
+
+    double frobNorm = Mat3d_getFrobeniusnorm(err);
+
+    if (frobNorm>1.0e-8)
+      {
+        success = false;
+
+        REXEC(1)
+          {
+            REXEC(2)
+              {
+                Mat3d_printCommentDigits("A_BI", A_BI, 6);
+                VecNd_printComment("q from rotation matrix", q, 4);
+                Mat3d_printCommentDigits("A_BI from quaternion", A_BI2, 6);
+              }
+            Mat3d_printCommentDigits("Error", err, 12);
+          }
+      }
+  }
+
+  {
+    RLOGS(1, "**************************************");
+    RLOGS(1, "Test quaternion - Euler angles");
+    RLOGS(1, "**************************************");
+
+    double q[4], q2[4], ea[3], rm[3][3], err[4];
+    Vec3d_setRandom(ea, -3.0*M_PI, 3.0*M_PI);
+
+    Quat_fromEulerAngles(q, ea);
+
+    Mat3d_fromEulerAngles(rm, ea);
+    Mat3d_toQuaternion(q2, rm);
+
+    if (q[0]<0.0)
     {
-      Mat3d_printCommentDigits("A_BI", A_BI, 6);
-      VecNd_printComment("q from rotation matrix", q, 4);
-      Mat3d_printCommentDigits("A_BI from quaternion", A_BI2, 6);
+      VecNd_constMulSelf(q, -1.0, 4);
     }
-    Mat3d_printCommentDigits("Error", err, 12);
+
+    if (q2[0]<0.0)
+    {
+      VecNd_constMulSelf(q2, -1.0, 4);
+    }
+
+    VecNd_sub(err, q, q2, 4);
+    double norm = VecNd_sqrLength(err, 4);
+
+
+    if (norm>1.0e-8)
+    {
+      success = false;
+
+      REXEC(1)
+      {
+        RMSG("norm: %g", norm);
+        VecNd_printTwoArraysDiff(q, q2, 4);
+      }
+    }
   }
 
   return success;

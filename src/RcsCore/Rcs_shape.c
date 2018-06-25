@@ -391,12 +391,12 @@ void RcsShape_computeInertiaTensor(const RcsShape* self, const double density,
  ******************************************************************************/
 //! \todo Cone needs update
 double RcsShape_boundingSphereDistance(const double Pt[3],
-                                       const HTr* A_SI,
+                                       const HTr* A_BI,
                                        const RcsShape* shape)
 {
   double com[3];
   RcsShape_computeLocalCOM(shape, com);
-  Vec3d_transformSelf(com, A_SI);
+  Vec3d_transformSelf(com, A_BI);
 
   switch (shape->type)
   {

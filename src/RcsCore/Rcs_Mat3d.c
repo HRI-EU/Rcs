@@ -2048,8 +2048,9 @@ void Mat3d_fromQuaternion(double A_BI[3][3], double x[4])
  *  qy = q[2]
  *  qz = q[3]
  ******************************************************************************/
-void Mat3d_toQuaternion(double q[4], double rm[3][3])
+bool Mat3d_toQuaternion(double q_[4], double rm[3][3])
 {
+  double q[4];
   double t = 0.0;
 
   if (rm[2][2] < 0.0)
@@ -2091,8 +2092,20 @@ void Mat3d_toQuaternion(double q[4], double rm[3][3])
     }
   }
 
-  RCHECK(t>0.0);
-  VecNd_constMulSelf(q, 0.5/sqrt(t), 4);
+  if (t<=0.0)
+  {
+    REXEC(4)
+    {
+      RMSG("Failed to convert Mat3d to quaternion: t = %g but should be >0", t);
+      Mat3d_printCommentDigits("rm", rm, 8);
+      RMSG("Mat3d is %s", Mat3d_isValid(rm) ? "VALID" : "INVALID");
+    }
+    return false;
+  }
+
+  VecNd_constMul(q_, q, 0.5/sqrt(t), 4);
+
+  return true;
 }
 
 void Mat3d_toQuaternion2(double q[4], double m[3][3])

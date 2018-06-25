@@ -709,16 +709,16 @@ bool RcsSensor_computePPS(const RcsSensor* self, MatNd* ppsResult,
 
     if (fabs(Vec3d_getLength(lineDir)-1.0)>1.0e-5)
     {
-      Vec3d_setZero(MatNd_getRowPtr(lineDirMat, id));
+    Vec3d_setZero(MatNd_getRowPtr(lineDirMat, id));
     }
     else
     {
-      maxDist = fmax(maxDist, Vec3d_getLength(offset));
+    maxDist = fmax(maxDist, Vec3d_getLength(offset));
 
-      Vec3d_transRotateSelf(lineDir, A_SI.rot);
-      Vec3d_transRotateSelf(offset, A_SI.rot);
-      Vec3d_add(MatNd_getRowPtr(lineOriginMat, id), offset, A_SI.org);
-      Vec3d_copy(MatNd_getRowPtr(lineDirMat, id), lineDir);
+    Vec3d_transRotateSelf(lineDir, A_SI.rot);
+    Vec3d_transRotateSelf(offset, A_SI.rot);
+    Vec3d_add(MatNd_getRowPtr(lineOriginMat, id), offset, A_SI.org);
+    Vec3d_copy(MatNd_getRowPtr(lineDirMat, id), lineDir);
     }
   }
 
@@ -776,11 +776,8 @@ bool RcsSensor_computePPS(const RcsSensor* self, MatNd* ppsResult,
     {
       // Ignore shapes that don't calculate distances and those that are
       // too far away anyhow
-      HTr A_CI;
-      HTr_transform(&A_CI, BODY->A_BI, &SHAPE->A_CB);
-
       if (((SHAPE->computeType & RCSSHAPE_COMPUTE_DISTANCE) != 0) &&
-          (RcsShape_boundingSphereDistance(A_SI.org, &A_CI, SHAPE) < maxDist))
+          (RcsShape_boundingSphereDistance(A_SI.org, BODY->A_BI, SHAPE) < maxDist))
       {
         for (unsigned int id = 0; id < dimension; ++id)
         {

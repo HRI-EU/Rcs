@@ -142,12 +142,13 @@ bool RcsShape_computeLineIntersection(const double linePt[3],
  *         necessarily the best approximation (e.g., for a cone)
  *
  * \param[in] Pt Point in world coordinates
- * \param[in] A_SI Transformation from world frame into shape frame
+ * \param[in] A_BI Transformation from world frame into the frame of the body that
+ *                 contains the shape
  * \param[in] shape Pointer to shape
  * \return Distance to shape's bounding sphere approximation
  */
 double RcsShape_boundingSphereDistance(const double Pt[3],
-                                       const HTr* A_SI,
+                                       const HTr* A_BI,
                                        const RcsShape* shape);
 
 /*! \ingroup RcsShapeFunctions

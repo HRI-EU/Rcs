@@ -56,15 +56,15 @@ IF (USE_BULLET STREQUAL 2.83_double)
 
   IF(DEFINED ENV{SIT})
     # SIT available, use that version by default
-    SET(BT_LIB_DIR ${HGR}/External/Bullet/2.83/lib/${MKPLT})
-    SET(BULLET_INCLUDE_DIRS ${HGR}/External/Bullet/2.83/include)
+    SET(BT_LIB_DIR ${HGR}/External/Bullet/2.83/lib/${MKPLT} CACHE PATH "Bullet library directory")
+    SET(BULLET_INCLUDE_DIRS ${HGR}/External/Bullet/2.83/include CACHE PATH "Bullet include directory")
   ELSE()
     # SIT not available, path must be set
     SET(BT_LIB_DIR "" CACHE PATH "Bullet library directory")
     SET(BULLET_INCLUDE_DIRS "" CACHE PATH "Bullet include directory")
   ENDIF()
 
-  SET(BULLET_DEFINITIONS -DUSE_BULLET -DBT_USE_DOUBLE_PRECISION)
+  SET(BULLET_DEFINITIONS -DUSE_BULLET -DBT_USE_DOUBLE_PRECISION CACHE PATH "Bullet definitions")
   SET(BULLET_CXX_FLAGS "-isystem ${BULLET_INCLUDE_DIRS}")
 
   IF(UNIX)

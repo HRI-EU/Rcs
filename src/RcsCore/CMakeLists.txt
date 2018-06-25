@@ -35,6 +35,7 @@ Rcs_mathTests.cpp
 Rcs_MatNd.c
 Rcs_mesh.c
 Rcs_parser.c
+Rcs_quaternion.c
 Rcs_resourcePath.cpp
 Rcs_sensor.c
 Rcs_shape.c
@@ -46,6 +47,7 @@ Rcs_utils.c
 Rcs_utilsCPP.cpp
 Rcs_Vec3d.c
 Rcs_VecNd.c
+SensorComponent.cpp
 SolverRAC.cpp
 TaskAngularMomentum3D.cpp
 TaskCollision.cpp
