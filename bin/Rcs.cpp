@@ -476,10 +476,8 @@ int main(int argc, char** argv)
         {
           if (SENSOR->type==RCSSENSOR_PPS)
           {
-            RLOG(0, "Adding PPS sensor \"%s\"", SENSOR->name);
-            osg::ref_ptr<Rcs::PPSSensorNode> ppsNd = new Rcs::PPSSensorNode(SENSOR,
-                                                                            RcsLogLevel > 0 ? true : false);
-            viewer->add(ppsNd.get());
+            bool debug = RcsLogLevel > 0 ? true : false;
+            viewer->add(new Rcs::PPSSensorNode(SENSOR, debug));
           }
 
         }

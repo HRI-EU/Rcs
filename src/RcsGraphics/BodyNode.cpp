@@ -144,24 +144,12 @@ public:
     // Set the nodes transform
     _bdyNode->setTransformation(A);
 
-    // Set alpha value based on saliency. That's a HACK from the 2009 demo.
-    if (_bdyNode->body()->extraInfo)
-    {
-      double* conf = (double*) _bdyNode->body()->extraInfo;
-      double alpha = 1.0;
-      if (*conf < 0.8)
-      {
-        alpha = *conf / 0.8;
-      }
-      _bdyNode->setAlpha(alpha, _bdyNode);
-    }
-
-    // update debug lines
+    // Update debug lines
     if ((_bdyNode->body()->parent) && (_bdyNode->_debugLine.valid()))
     {
       _bdyNode->_debugLine->clear();
 
-      // add the two body positions in local reference
+      // Add the two body positions in local reference
       HTr A_12;
       HTr_invTransform(&A_12, _bdyNode->body()->A_BI,
                        _bdyNode->body()->parent->A_BI);
@@ -182,7 +170,7 @@ public:
     // Change the geometry according to the bodies shapes
     _bdyNode->updateDynamicShapes();
 
-    // traverse subtree
+    // Traverse subtree
     traverse(node, nv);
   }
 
@@ -212,7 +200,6 @@ BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
   RCHECK(scale > 0.0);
   setScale(osg::Vec3(scale, scale, scale));
 
-  this->bdy          = b;
   this->A_BI          = b->A_BI;
   _refNode       = new osg::Switch;
   _debugNode     = addDebugInformation();
@@ -264,10 +251,9 @@ BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
 osg::Switch* BodyNode::addShapes(int mask)
 {
   int shapeCount = 0;
-
   RcsShape** s = &this->bdy->shape[0];
   osg::ref_ptr<osg::TessellationHints> hints = new osg::TessellationHints;
-  hints->setDetailRatio(0.5f);
+  hints->setDetailRatio(2.0);
   osg::Switch* shapeNode = new osg::Switch;
 
   // Loop through all shapes of the body
@@ -307,12 +293,9 @@ osg::Switch* BodyNode::addShapes(int mask)
     const HTr* A_CB = &(*s)->A_CB;
     osg::Quat qA;
 
-    qA.set(osg::Matrix(A_CB->rot[0][0], A_CB->rot[0][1],
-                       A_CB->rot[0][2], 0.0,
-                       A_CB->rot[1][0], A_CB->rot[1][1],
-                       A_CB->rot[1][2], 0.0,
-                       A_CB->rot[2][0], A_CB->rot[2][1],
-                       A_CB->rot[2][2], 0.0,
+    qA.set(osg::Matrix(A_CB->rot[0][0], A_CB->rot[0][1], A_CB->rot[0][2], 0.0,
+                       A_CB->rot[1][0], A_CB->rot[1][1], A_CB->rot[1][2], 0.0,
+                       A_CB->rot[2][0], A_CB->rot[2][1], A_CB->rot[2][2], 0.0,
                        0.0, 0.0, 0.0, 1.0));
     shapeTransform->setPosition(osg::Vec3(A_CB->org[0], A_CB->org[1],
                                           A_CB->org[2]));
@@ -330,8 +313,7 @@ osg::Switch* BodyNode::addShapes(int mask)
       double r = (*s)->extents[0], length = (*s)->extents[2];
       osg::Capsule* capsule =
         new osg::Capsule(osg::Vec3(0.0, 0.0, length / 2.0), r, length);
-      osg::ShapeDrawable* shape = new osg::ShapeDrawable(capsule,
-                                                         hints.get());
+      osg::ShapeDrawable* shape = new osg::ShapeDrawable(capsule, hints.get());
       if (_resizeable)
       {
         shape->setUseDisplayList(false);
@@ -362,8 +344,7 @@ osg::Switch* BodyNode::addShapes(int mask)
       osg::Box* box =
         new osg::Box(osg::Vec3(0.0, 0.0, 0.0),
                      (*s)->extents[0], (*s)->extents[1], (*s)->extents[2]);
-      osg::ShapeDrawable* shape = new osg::ShapeDrawable(box,
-                                                         hints.get());
+      osg::ShapeDrawable* shape = new osg::ShapeDrawable(box, hints.get());
       if (_resizeable)
       {
         shape->setUseDisplayList(false);
@@ -393,8 +374,7 @@ osg::Switch* BodyNode::addShapes(int mask)
       osg::Sphere* sphere =
         new osg::Sphere(osg::Vec3(0.0, 0.0, 0.0),
                         (*s)->extents[0]);
-      osg::ShapeDrawable* shape = new osg::ShapeDrawable(sphere,
-                                                         hints.get());
+      osg::ShapeDrawable* shape = new osg::ShapeDrawable(sphere, hints.get());
       if (_resizeable)
       {
         shape->setUseDisplayList(false);
@@ -430,8 +410,7 @@ osg::Switch* BodyNode::addShapes(int mask)
         new osg::Capsule(osg::Vec3(-lx / 2.0, 0.0, 0.0), r, ly);
       cSSR1->setRotation(osg::Quat(osg::inDegrees(90.0f),
                                    osg::Vec3(1.0f, 0.0f, 0.0f)));
-      osg::ShapeDrawable* sdrC1 = new osg::ShapeDrawable(cSSR1,
-                                                         hints.get());
+      osg::ShapeDrawable* sdrC1 = new osg::ShapeDrawable(cSSR1, hints.get());
       if (_resizeable)
       {
         sdrC1->setUseDisplayList(false);
@@ -443,8 +422,7 @@ osg::Switch* BodyNode::addShapes(int mask)
         new osg::Capsule(osg::Vec3(lx / 2.0, 0.0, 0.0), r, ly);
       cSSR2->setRotation(osg::Quat(osg::inDegrees(90.0f),
                                    osg::Vec3(1.0f, 0.0f, 0.0f)));
-      osg::ShapeDrawable* sdrC2 = new osg::ShapeDrawable(cSSR2,
-                                                         hints.get());
+      osg::ShapeDrawable* sdrC2 = new osg::ShapeDrawable(cSSR2, hints.get());
       if (_resizeable)
       {
         sdrC2->setUseDisplayList(false);
@@ -456,8 +434,7 @@ osg::Switch* BodyNode::addShapes(int mask)
         new osg::Capsule(osg::Vec3(0.0, ly / 2.0, 0.0), r, lx);
       cSSR3->setRotation(osg::Quat(osg::inDegrees(90.0f),
                                    osg::Vec3(0.0f, 1.0f, 0.0f)));
-      osg::ShapeDrawable* sdrC3 = new osg::ShapeDrawable(cSSR3,
-                                                         hints.get());
+      osg::ShapeDrawable* sdrC3 = new osg::ShapeDrawable(cSSR3, hints.get());
       if (_resizeable)
       {
         sdrC3->setUseDisplayList(false);
@@ -469,8 +446,7 @@ osg::Switch* BodyNode::addShapes(int mask)
         new osg::Capsule(osg::Vec3(0.0, -ly / 2.0, 0.0), r, lx);
       cSSR4->setRotation(osg::Quat(osg::inDegrees(90.0f),
                                    osg::Vec3(0.0f, 1.0f, 0.0f)));
-      osg::ShapeDrawable* sdrC4 = new osg::ShapeDrawable(cSSR4,
-                                                         hints.get());
+      osg::ShapeDrawable* sdrC4 = new osg::ShapeDrawable(cSSR4, hints.get());
       if (_resizeable)
       {
         sdrC4->setUseDisplayList(false);
@@ -480,8 +456,7 @@ osg::Switch* BodyNode::addShapes(int mask)
       // Box part
       osg::Box* bSSR =
         new osg::Box(osg::Vec3(0.0, 0.0, 0.0), lx, ly, 2.0 * r);
-      osg::ShapeDrawable* sdrBox = new osg::ShapeDrawable(bSSR,
-                                                          hints.get());
+      osg::ShapeDrawable* sdrBox = new osg::ShapeDrawable(bSSR, hints.get());
       if (_resizeable)
       {
         sdrBox->setUseDisplayList(false);
@@ -549,8 +524,7 @@ osg::Switch* BodyNode::addShapes(int mask)
       // For some reason the cone shape is shifted along the z-axis by the
       // below compensated base offset value.
       cone->setCenter(osg::Vec3(0.0f, 0.0f, -cone->getBaseOffset()));
-      osg::ShapeDrawable* shape =
-        new osg::ShapeDrawable(cone, hints.get());
+      osg::ShapeDrawable* shape = new osg::ShapeDrawable(cone, hints.get());
       if (_resizeable)
       {
         shape->setUseDisplayList(false);
@@ -642,7 +616,8 @@ osg::Switch* BodyNode::addShapes(int mask)
           {
 #if OPENSCENEGRAPH_MAJOR_VERSION == 3
             // fixes loading of obj without normals (doesn't work for OSG 2.8)
-            osg::ref_ptr<osgDB::Options> options = new osgDB::Options("generateFacetNormals=true noRotation=true");
+            osg::ref_ptr<osgDB::Options> options = 
+              new osgDB::Options("generateFacetNormals=true noRotation=true");
             meshNode = osgDB::readNodeFile((*s)->meshFile, options.get());
 #else
             meshNode = osgDB::readNodeFile((*s)->meshFile);
@@ -781,8 +756,7 @@ osg::Switch* BodyNode::addShapes(int mask)
            shapeCount, getName().c_str(), (*s)->r);
       osg::Sphere* sphere =
         new osg::Sphere(osg::Vec3(0.0, 0.0, 0.0), 0.005);
-      osg::ShapeDrawable* shape = new osg::ShapeDrawable(sphere,
-                                                         hints.get());
+      osg::ShapeDrawable* shape = new osg::ShapeDrawable(sphere, hints.get());
       if (_resizeable)
       {
         shape->setUseDisplayList(false);
@@ -801,13 +775,12 @@ osg::Switch* BodyNode::addShapes(int mask)
 
     else if ((*s)->type == RCSSHAPE_MARKER)
     {
-      NLOG(5, "Adding marker %d id %d of \"%s\" with length %f ",
-           shapeCount, *((int*)(*s)->userData), getName().c_str(), (*s)->extents[2]);
+      NLOG(5, "Adding marker %d id %d of \"%s\" with length %f ", shapeCount, 
+           *((int*)(*s)->userData), getName().c_str(), (*s)->extents[2]);
       osg::Box* box =
         new osg::Box(osg::Vec3(0.0, 0.0, 0.0),
                      (*s)->extents[2], (*s)->extents[2], 0.001);
-      osg::ShapeDrawable* shape = new osg::ShapeDrawable(box,
-                                                         hints.get());
+      osg::ShapeDrawable* shape = new osg::ShapeDrawable(box, hints.get());
       if (_resizeable)
       {
         shape->setUseDisplayList(false);
@@ -995,7 +968,10 @@ osg::Switch* BodyNode::addDebugInformation()
   {
     osg::Geode* comGeode = new osg::Geode();
     setNodeMaterial("BLUE", comGeode);
-    osg::Sphere* sphere = new osg::Sphere(osg::Vec3(this->bdy->Inertia->org[0], this->bdy->Inertia->org[1], this->bdy->Inertia->org[2]), 1.01*r);
+    osg::Sphere* sphere = new osg::Sphere(osg::Vec3(this->bdy->Inertia->org[0],
+                                                    this->bdy->Inertia->org[1],
+                                                    this->bdy->Inertia->org[2]),
+                                          1.01*r);
     osg::ShapeDrawable* shape = new osg::ShapeDrawable(sphere, hints.get());
     comGeode->addDrawable(shape);
     debugNode->addChild(comGeode);
@@ -1613,8 +1589,7 @@ void BodyNode::updateDynamicShapes()
       // Here we adjust the size of a SSL.
       case RCSSHAPE_SSL:
       {
-        osg::Capsule* c =
-          static_cast<osg::Capsule*>(uDat->geometry.front());
+        osg::Capsule* c = static_cast<osg::Capsule*>(uDat->geometry.front());
         RCHECK(c);
         c->setCenter(osg::Vec3(0.0, 0.0, uDat->shape()->extents[2]/2.0));
         c->setHeight(uDat->shape()->extents[2]);
