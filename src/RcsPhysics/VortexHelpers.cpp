@@ -778,10 +778,19 @@ Vx::VxConstraint* Rcs::createJoint1D(Vx::VxPart* part0,
   {
     joint->setLockMinimumAndMaximumForce(coordId,
                                          -jnt->maxTorque, jnt->maxTorque);
-    joint->setLockStiffnessAndDamping(coordId,
-                                      jointLockStiffness, jointLockDamping);
     joint->setLockPosition(coordId, q0);
-    joint->setControl(coordId, Vx::VxConstraint::kControlLocked);
+
+    if (jnt->maxTorque==0.0)
+    {
+      joint->setControl(coordId, Vx::VxConstraint::kControlFree);
+      joint->setLockStiffnessAndDamping(coordId, 0.0, 0.0);
+    }
+    else
+    {
+      joint->setLockStiffnessAndDamping(coordId,
+                                        jointLockStiffness, jointLockDamping);
+      joint->setControl(coordId, Vx::VxConstraint::kControlLocked);
+    }
   }
   else if (jnt->ctrlType == RCSJOINT_CTRL_VELOCITY)
   {

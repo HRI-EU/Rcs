@@ -69,11 +69,11 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_):
   modelNd->toggleGraphicsModel();
   modelNd->togglePhysicsModel();
   modelNd->setGhostMode(true, "RED");
-  addChild(modelNd);
+  pat->addChild(modelNd);
 
   osg::ref_ptr<ContactsNode> cn = new ContactsNode(sim, 0.1, "RUBY");
   cn->toggle();   // Start with contacts
-  addChild(cn.get());
+  pat->addChild(cn.get());
 
 
 
@@ -85,7 +85,7 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_):
                                   false, false);
   physicsNd->toggleGraphicsModel();
   physicsNd->togglePhysicsModel();
-  addChild(physicsNd);
+  pat->addChild(physicsNd);
 
   RCSGRAPH_TRAVERSE_BODIES(physicsNd->getGraphPtr())
   {
@@ -99,7 +99,7 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_):
     {
       osg::ref_ptr<FTSensorNode> ftn = new FTSensorNode(SENSOR);
       ftn->setTransformPtr(sim->getPhysicsTransformPtr(ftn->getMountBody()));
-      addChild(ftn.get());
+      pat->addChild(ftn.get());
     }
   }
 
@@ -109,7 +109,7 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_):
 
 
   osg::ref_ptr<ForceDragger> draggerNd = new ForceDragger(sim_);
-  addChild(draggerNd.get());
+  pat->addChild(draggerNd.get());
 
 #if defined (USE_BULLET)
   Rcs::BulletSimulation* bSim = dynamic_cast<Rcs::BulletSimulation*>(sim_);
@@ -119,7 +119,7 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_):
     BulletDebugDrawer* gDebugDrawer = new BulletDebugDrawer();
     gDebugDrawer->setDebugMode(btIDebugDraw::DBG_DrawWireframe |
                                btIDebugDraw::DBG_DrawContactPoints);
-    addChild(gDebugDrawer);
+    pat->addChild(gDebugDrawer);
   }
 #endif
 
@@ -219,7 +219,7 @@ bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
 
         if (s == NULL)
         {
-          RLOG(1, "Can't toggle debug drawer for other simulations than Bullet");
+          RLOG(1, "No debug drawer for other simulations than Bullet");
           break;
         }
 
@@ -229,23 +229,21 @@ bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
         {
           dDraw->hide();
           s->setDebugDrawer(NULL);
-          RLOG(5, "Hiding debug drawer");
         }
         else   // Enable the debug drawer
         {
           BulletDebugDrawer* nd_i = NULL;
 
           // Find the debug drawer from the children of this class
-          for (unsigned int i=0; i<getNumChildren(); ++i)
+          for (unsigned int i=0; i<pat->getNumChildren(); ++i)
           {
-            nd_i = dynamic_cast<BulletDebugDrawer*>(getChild(i));
+            nd_i = dynamic_cast<BulletDebugDrawer*>(pat->getChild(i));
           }
 
           if (nd_i != NULL)
           {
             nd_i->show();
             s->setDebugDrawer(nd_i);
-            RLOG(5, "Showing debug drawer");
           }
 
         }

@@ -2358,8 +2358,12 @@ void Rcs::VortexSimulation::applyControl(double dt)
 
     if (c->getCoordinateCount() != 1)
     {
-      RLOG(4, "Skipping constraint %s with %d dofs (only 1 is supported)",
-           c->getName(), c->getCoordinateCount());
+
+      if (c->getCoordinateCount() > 1)   // 0 for fixed joints
+      {
+        RLOG(4, "Skipping constraint %s with %d dofs (only 1 is supported)",
+             c->getName(), c->getCoordinateCount());
+      }
       continue;
     }
 

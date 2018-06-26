@@ -3226,6 +3226,11 @@ void MatNd_toString(const MatNd* M, char* str)
 
 MatNd* MatNd_createFromString(const char* str)
 {
+  if (str==NULL)
+  {
+    return NULL;
+  }
+
   int lengthCount = 0;
   const char* sPtr = str;
 

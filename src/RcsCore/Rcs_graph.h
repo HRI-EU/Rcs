@@ -44,6 +44,7 @@ typedef struct _RcsShape          RcsShape;
 typedef struct _RcsPair           RcsPair;
 typedef struct _RcsCollisionMdl   RcsCollisionMdl;
 typedef struct _RcsSensor         RcsSensor;
+typedef struct _RcsTexel          RcsTexel;
 
 
 typedef enum
@@ -193,6 +194,14 @@ RcsBody* RcsBody_getLastChild(const RcsBody* body);
 #define RCSPAIR_TRAVERSE(pairlist) \
   for (RcsPair **pPtr = (RcsPair**)(pairlist), *PAIR = *pPtr; *pPtr; \
        pPtr++, PAIR=*pPtr)
+
+/*! \ingroup RcsGraphTraversalFunctions
+ *  \brief Traverses all shapes of a body, starting from the first one.
+ *         The joints can be accessed with variable "SHAPE".
+ */
+#define RCSSENSOR_TRAVERSE_TEXELS(sensor) \
+  for (RcsTexel **sPtr = (RcsTexel**)((sensor)->texel), *TEXEL = *sPtr; *sPtr; \
+       sPtr++, TEXEL=*sPtr)
 
 
 

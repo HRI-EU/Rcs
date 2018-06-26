@@ -1225,9 +1225,6 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
     sensorNode = sensorNode->next;
   }
 
-  // set the confidence value to initial 1
-  b->confidence = 1.0;
-
   return b;
 }
 

@@ -99,6 +99,7 @@
 #include <CapsuleNode.h>
 #include <HUD.h>
 #include <VertexArrayNode.h>
+#include <PPSSensorNode.h>
 #include <KeyCatcher.h>
 #include <JointWidget.h>
 #include <RcsViewer.h>
@@ -470,6 +471,19 @@ int main(int argc, char** argv)
 
         kc = new Rcs::KeyCatcher();
         viewer->add(kc);
+
+        RCSGRAPH_TRAVERSE_SENSORS(graph)
+        {
+          if (SENSOR->type==RCSSENSOR_PPS)
+          {
+            RLOG(0, "Adding PPS sensor \"%s\"", SENSOR->name);
+            osg::ref_ptr<Rcs::PPSSensorNode> ppsNd = new Rcs::PPSSensorNode(SENSOR,
+                                                                            RcsLogLevel > 0 ? true : false);
+            viewer->add(ppsNd.get());
+          }
+
+        }
+
         viewer->runInThread(mtx);
         if (editMode == false)
         {
@@ -993,7 +1007,9 @@ int main(int argc, char** argv)
                                                       SENSOR->rawData->n,
                                                       SENSOR->rawData->ele,
                                                       scaling));
+              viewer->add(new Rcs::PPSSensorNode(SENSOR));
             }
+
           }
 
           Rcs::PPSGui::create(ppsEntries, mtx);

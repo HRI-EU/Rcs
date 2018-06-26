@@ -34,60 +34,32 @@
 
 *******************************************************************************/
 
-#ifndef RCS_ARROWNODE_H
-#define RCS_ARROWNODE_H
+#ifndef RCS_PPSSENSORNODE_H
+#define RCS_PPSSENSORNODE_H
 
 #include "NodeBase.h"
 
-#include <osg/ShapeDrawable>
-
+#include <Rcs_graph.h>
 
 
 namespace Rcs
 {
 
-/*!
+/**
  * \ingroup RcsGraphics
  */
-class ArrowNode: public NodeBase
+class PPSSensorNode: public NodeBase
 {
 
 public:
 
-  /*! \brief TODO.
-   */
-  ArrowNode();
-  ArrowNode(const double* origin, const double* direction, double scale=1.0,
-            const double* offset=NULL, const std::string& color="BLUE",
-            double radius=0.005);
-
-  const double* origin() const;
-  const double* direction() const;
-  const double* offset() const;
-  void setOriginPtr(const double* org);
-  void setDirectionPtr(const double* dir);
-  void setOrigin(const double org[3]);
-  void setDirection(const double dir[3]);
-  void setArrowLength(double length);
-  void setRadius(double radius);
-  virtual bool frameCallback();
-
+  PPSSensorNode(const RcsSensor* pps, bool debug=false);
+  virtual ~PPSSensorNode();
 protected:
 
-  void init(double length, double radius, const std::string& color);
-  const double* originPtr;
-  const double* directionPtr;
-  const double* offsetPtr;
-  double scaleFactor;
-  double radius;
-  double staticOrigin[3];
-  double staticDirection[3];
-  osg::ref_ptr<osg::Cylinder> cylZ;
-  osg::ref_ptr<osg::Cone> coneZ;
-  osg::ref_ptr<osg::Sphere> centerSphere;
+  const RcsSensor* pps;
 };
 
 }   // namespace Rcs
 
-#endif // RCS_ARROWNODE_H
-
+#endif // RCS_PPSSENSORNODE_H

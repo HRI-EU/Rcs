@@ -44,6 +44,7 @@
 #include <Rcs_parser.h>
 
 #include <COSNode.h>
+#include <ArrowNode.h>
 #include <VertexArrayNode.h>
 #include <GraphNode.h>
 #include <KeyCatcher.h>
@@ -301,6 +302,41 @@ static void testCameraTransform()
 }
 
 /*******************************************************************************
+ * Test for viewer setCamera functions
+ ******************************************************************************/
+static void testArrowNode()
+{
+  double org[3], dir[3], radius = 0.1, length = 1.0;
+  Vec3d_setZero(org);
+  Vec3d_setUnitVector(dir, 2);
+
+
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-x", &org[0], "X-position of arrow origin");
+  argP.getArgument("-y", &org[1], "Y-position of arrow origin");
+  argP.getArgument("-z", &org[2], "Z-position of arrow origin");
+  argP.getArgument("-r", &radius, "Radius of arrow");
+  argP.getArgument("-l", &length, "Length of arrow");
+
+  Rcs::ArrowNode* an1 = new Rcs::ArrowNode();
+  an1->setPosition(org);
+  an1->setDirection(dir);
+  an1->setRadius(radius);
+  an1->setArrowLength(length);
+
+
+
+  Rcs::Viewer* viewer = new Rcs::Viewer();
+  viewer->add(an1);
+  viewer->add(new Rcs::COSNode());
+  viewer->runInThread();
+
+  RPAUSE();
+
+  delete viewer;
+}
+
+/*******************************************************************************
  * Select test modes
  ******************************************************************************/
 int main(int argc, char** argv)
@@ -324,6 +360,7 @@ int main(int argc, char** argv)
       printf("\t\t0    Test viewer with VertexArrayNode\n");
       printf("\t\t1    Test MeshNode\n");
       printf("\t\t2    Test camera transformation\n");
+      printf("\t\t3    Test ArrowNode\n");
       break;
 
     case 0:
@@ -341,6 +378,10 @@ int main(int argc, char** argv)
         runLoop = true;
         testCameraTransform();
       }
+      break;
+
+    case 3:
+      testArrowNode();
       break;
 
     default:

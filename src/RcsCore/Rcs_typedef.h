@@ -209,8 +209,6 @@ struct _RcsBody
   RcsShape** shape;       ///< Shapes of the body for collision detection
   RcsJoint* jnt;          ///< Joint to which body is attached
 
-  double confidence;      ///< If this body's position is obtained from object detection, a confidence in the detected position.
-
   void* actor;
   void* extraInfo;
 };
@@ -219,20 +217,28 @@ struct _RcsBody
 typedef enum
 {
   RCSSENSOR_CUSTOM = 0,      ///< Use this type for self made sensors
-  RCSSENSOR_LOAD_CELL,       ///< Measuring forces and torques, can be defined in physics simulation
+  RCSSENSOR_LOAD_CELL,       ///< Measuring forces and torques
   RCSSENSOR_JOINT_TORQUE,    ///< Retrieve the current torque acting in a joint
-  RCSSENSOR_CONTACT_FORCE,   ///< Artificial skin sensor, get contact information, e.g. while grasping
+  RCSSENSOR_CONTACT_FORCE,   ///< Artificial skin sensor
   RCSSENSOR_PPS              ///< Artificial skin sensor array
 } RCSSENSOR_TYPE;
 
+struct _RcsTexel
+{
+  double position[3];    ///< Texel position in sensor frame
+  double normal[3];      ///< Texel unit normal in sensor frame
+  double extents[3];     ///< Texel side lengths xyz
+};
+
 struct _RcsSensor
 {
-  RCSSENSOR_TYPE type;   ///< id on sensor type
-  char* name;            ///< name, memory will be deleted in RcsSensor_destroy
-  RcsSensor* next;       ///< pointer to next sensor, NULL otherwise
-  RcsBody* body;         ///< pointer to the body the sensor is attached to, NULL, if not fixed to a body
-  HTr* offset;           ///< relative offset of the sensor mount point to the body
-  char* extraInfo;       ///< XML tag to pass on extra information, needs to be parsed by sensor creator, memory will be deleted in RcsSensor_destroy
+  RCSSENSOR_TYPE type;   ///< Sensor type, see enum RCSSENSOR_TYPE
+  char* name;            ///< Name of the sensor
+  RcsSensor* next;       ///< Pointer to next sensor, NULL otherwise
+  RcsBody* body;         ///< Pointer to the body the sensor is attached to
+  HTr* offset;           ///< Relative transformation of the sensor mount point
+  char* extraInfo;       ///< Pressure array data
+  RcsTexel** texel;      ///< Array of texels for PPS sensors
   MatNd* rawData;        ///< Raw sensor data array
 };
 

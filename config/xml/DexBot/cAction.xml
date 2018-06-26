@@ -1,13 +1,22 @@
 <Controller graph="gScenario.xml" >
 
   <Task name="PowerGrasp_L XYZ"   controlVariable="XYZ"   effector="PowerGrasp_L" cmplGain="0.002 0.002 0.002" active="true" />
-  <Task name="PowerGrasp_L ABC"   controlVariable="ABC"   effector="PowerGrasp_L" xcmplGain="0.002 0 0" prio="1" />
+  <Task name="PowerGrasp_L ABC"   controlVariable="ABC"   effector="PowerGrasp_L" cmplGain="0.002 0 0" prio="1" />
 
   <Task name="PowerGrasp_R XYZ"   controlVariable="XYZ"   effector="PowerGrasp_R" active="true" />
   <Task name="PowerGrasp_R ABC"   controlVariable="ABC"   effector="PowerGrasp_R" cmplGain="0.002 0 0" prio="1" />
 
+  <!-- Overall center of gravity in heel coordinates -->
+  <Task name="COG X" controlVariable="COGX" refBdy="Base" />
+  <Task name="COG Y" controlVariable="COGY" refBdy="Base" />
 
-  <!-- Feet wrt. heel frame -->
+   <Task name="PowerGrasp_L" controlVariable="Joints"
+       jnts="fing1-knuck1_L tip1-fing1_L fing2-knuck2_L tip2-fing2_L fing3-knuck3_L tip3-fing3_L knuck1-base_L" tmc="0.1" vmax="1000" />
+
+   <Task name="PowerGrasp_R" controlVariable="Joints"
+       jnts="fing1-knuck1_R tip1-fing1_R fing2-knuck2_R tip2-fing2_R fing3-knuck3_R tip3-fing3_R knuck1-base_R" tmc="0.1" vmax="1000" />
+
+  <!-- COM wrt. mobile base -->
   <Task name="Base X"   controlVariable="Joint" jnt="DofBaseX"   active="true" />
   <Task name="Base Y"   controlVariable="Joint" jnt="DofBaseY"   active="true" />
   <Task name="Base ThZ" controlVariable="Joint" jnt="DofBaseThZ" active="true" />

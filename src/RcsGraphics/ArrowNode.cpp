@@ -73,8 +73,8 @@ Rcs::ArrowNode::ArrowNode(const double* org,
   offsetPtr(offset),
   scaleFactor(scale)
 {
-  this->originPtr = org ? org : Vec3d_zeroVec();
-  this->directionPtr = dir ? dir : Vec3d_ez();
+  this->originPtr = org ? org : this->staticOrigin;
+  this->directionPtr = dir ? dir : this->staticDirection;
   this->radius = fabs(radius_);
 
   init(Vec3d_getLength(this->directionPtr), radius, color);
@@ -88,7 +88,10 @@ Rcs::ArrowNode::ArrowNode(const double* org,
 void Rcs::ArrowNode::init(double length, double radius,
                           const std::string& color)
 {
-  float coneHeight = 0.03f;
+  Vec3d_setZero(this->staticOrigin);
+  Vec3d_setUnitVector(this->staticDirection, 2);
+
+  float coneHeight = 3.0*radius;
   osg::ref_ptr<osg::Geode> geode = new osg::Geode();
   osg::ref_ptr<osg::TessellationHints> hints = new osg::TessellationHints;
   hints->setDetailRatio(0.5f);
@@ -169,6 +172,24 @@ void Rcs::ArrowNode::setDirectionPtr(const double* dir)
 /*******************************************************************************
  *
  ******************************************************************************/
+void Rcs::ArrowNode::setOrigin(const double org[3])
+{
+  Vec3d_copy(this->staticOrigin, org);
+  setOriginPtr(this->staticOrigin);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::ArrowNode::setDirection(const double dir[3])
+{
+  Vec3d_copy(this->staticDirection, dir);
+  setDirectionPtr(this->staticDirection);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void Rcs::ArrowNode::setArrowLength(double length)
 {
   length *= this->scaleFactor;
@@ -186,6 +207,7 @@ void Rcs::ArrowNode::setRadius(double r)
   this->centerSphere->setRadius(2.0*r);
   this->cylZ->setRadius(r);
   this->coneZ->setRadius(3.0*r);
+  this->coneZ->setHeight(3.0*r);
 }
 
 /*******************************************************************************
@@ -198,6 +220,7 @@ bool Rcs::ArrowNode::frameCallback()
   // Here we copy the direction and origin pointers, so that it is
   // ensured it doesn't change inside the Mat3d_fromVec() function.
   Vec3d_copy(dir, direction());
+  Vec3d_normalizeSelf(dir);
   Vec3d_copy(org, origin());
 
   // add optional offset

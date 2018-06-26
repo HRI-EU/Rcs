@@ -238,11 +238,19 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
       // If the mesh is large, we compress it.
       if (mesh->nVertices>MAX_VERTICES_WITHOUT_COMPRESSION)
       {
-        RLOG(4, "[%s]: Compressing mesh with %u vertices",
+        RLOG(5, "[%s]: Compressing mesh with %u vertices",
              body->name, mesh->nVertices);
         btConvexHullShape* hull = meshToCompressedHull(mesh);
-        RcsMesh_destroy(mesh);             // Delete original mesh
         sh->userData = hullToMesh(hull);   // and link the compressed one
+
+        if (sh->userData != NULL)
+        {
+          RcsMesh_destroy(mesh);             // Delete original mesh
+        }
+        else
+        {
+          sh->userData = mesh;
+        }
         bShape = hull;
       }
       else // If the mesh has 100 vertices or less, use it like it is

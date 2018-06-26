@@ -1171,6 +1171,8 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
   btFixedConstraint* jnt =
     static_cast<btFixedConstraint*>(rb->getUserPointer());
 
+  RCHECK(jnt);
+
   const btJointFeedback* jf = jnt->getJointFeedback();
 
   if (jf==NULL)

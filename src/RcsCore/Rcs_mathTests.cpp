@@ -3425,20 +3425,20 @@ bool testQuaternionConversion(int argc, char** argv)
     double frobNorm = Mat3d_getFrobeniusnorm(err);
 
     if (frobNorm>1.0e-8)
-      {
-        success = false;
+    {
+      success = false;
 
-        REXEC(1)
-          {
-            REXEC(2)
-              {
-                Mat3d_printCommentDigits("A_BI", A_BI, 6);
-                VecNd_printComment("q from rotation matrix", q, 4);
-                Mat3d_printCommentDigits("A_BI from quaternion", A_BI2, 6);
-              }
-            Mat3d_printCommentDigits("Error", err, 12);
-          }
+      REXEC(1)
+      {
+        REXEC(2)
+        {
+          Mat3d_printCommentDigits("A_BI", A_BI, 6);
+          VecNd_printComment("q from rotation matrix", q, 4);
+          Mat3d_printCommentDigits("A_BI from quaternion", A_BI2, 6);
+        }
+        Mat3d_printCommentDigits("Error", err, 12);
       }
+    }
   }
 
   {
