@@ -101,3 +101,8 @@ void Rcs::CapsuleNode::setRadius(double r)
 {
   capsule->setRadius(r);
 }
+
+void Rcs::CapsuleNode::setCenter(double x, double y, double z)
+{
+  capsule->setCenter(osg::Vec3(x, y, z));
+}

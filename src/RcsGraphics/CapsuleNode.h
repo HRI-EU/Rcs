@@ -69,6 +69,9 @@ public:
    */
   void setRadius(double radius);
 
+  void setCenter(double x, double y, double z);
+
+
 protected:
 
   osg::ref_ptr<osg::Capsule> capsule;

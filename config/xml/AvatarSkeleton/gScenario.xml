@@ -1,31 +1,12 @@
-<!-- Configuration file for general kinematics and dynamics computations-->
-<!-- for the humanoid robot ASIMO.  Units are in meters and degrees     -->
-<!-- (NOT radians) for better interpretability.                         -->
-<!--                                                                    -->
-<!--                                                                    -->
-<!-- name: name of the rigid body                                       -->
-<!-- prev: name of the previous body in the chain. Here, the joint order-->
-<!--       matters, so the backward chain traverses the tree through    -->
-<!--       the joints that connect the body to the basis.               -->
-<!-- extents: Size of a cuboid that defines the inertia tensor          -->
-<!-- cogVector: Vector from the body origin to the gravity center       -->
-<!-- jointType: None, RotX, RotY, RotZ, XYThz, 6DOF (3 translations,    -->
-<!--            3 Kardan rotations)                                     -->
-<!-- jointVector: Vector from the previous body to the connecting joint,-->
-<!--              represented in the coordinates of the previous body   -->
-<!-- mass: Weight of the body in [kg]                                   -->
+<Graph xmlns:xi="http://www.w3.org/2003/XInclude" >
 
+  <Body name="Ground Plane" >
+    <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0"
+	   textureFile="textures/white-hardwood-floor.jpg"
+	   color="PEWTER" graphics="true" />
+    <Shape type="FRAME" scale="1" />
+  </Body>
 
-
-<Graph content="This file holds the kinematic data of Asimo J1 B"
-       xmlns:xi="http://www.w3.org/2003/XInclude" >
-
-
-
-<xi:include href="human-full.xml" />
-
-<!-- Physics test playground  -->
-<!--<xi:include href="../table.xml" />
-<xi:include href="cylinders.xml" />-->
+  <xi:include href="human-full.xml" />
 
 </Graph>
