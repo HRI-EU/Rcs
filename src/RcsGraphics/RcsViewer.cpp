@@ -214,9 +214,11 @@ public:
         else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_F11)
         {
           HTr A_CI;
+          double x[6];
           _viewer->getCameraTransform(&A_CI);
-          RMSGS("Camera transform is");
-          HTr_fprint(stdout, &A_CI);
+          HTr_to6DVector(x, &A_CI);
+          RMSGS("Camera pose is %f %f %f   %f %f %f",
+                x[0], x[1], x[2], x[3], x[4], x[5]);
         }
 
         //

@@ -224,6 +224,7 @@ double Rcs::SolverRAC::test(const MatNd* a_des) const
   Rcs::ControllerBase cb(*controller);
   Rcs::SolverRAC sr(&cb);
 
+  RCHECK(cb.getGraph());
   MatNd_setRandom(cb.getGraph()->q, -1.0, 1.0);
   MatNd_setRandom(cb.getGraph()->q_dot, -1.0, 1.0);
   RcsGraph_setState(cb.getGraph(), NULL, NULL);

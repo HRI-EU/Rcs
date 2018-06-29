@@ -4,7 +4,7 @@ Rcs is a set of C and C++ libraries for robot control and simulation. It is writ
 
 ## Getting Started
 
-Rcs can be compiled with the cmake build system and has mainly been developed on Ubuntu 14.04. To compile it, just type:
+Rcs can be compiled with the cmake build system and has mainly been developed on Ubuntu 14.04. It does also compile under Ubuntu 16.04 (however Vortex Essentials cannot be enabled there). To compile it, just type:
 
     cd <build-directory>
     cmake <source-directory>
@@ -48,10 +48,10 @@ It is also possible to compile it on Microsoft Visual Studio, however with some 
 
 Rcs has been designed carefully to have only little dependencies. The ones that have been selected are in our opinion very matured libraries:
 
- - Libxml2 (MIT License)
- - Qt: LGPL (Also dual commercial license available)
- - qwt (LGPL with additions)
- - OpenSceneGraph (OSGPL)
+ - Libxml2 (MIT License, Ubuntu-package libxml2-dev)
+ - Qt: LGPL (Also dual commercial license available, Ubuntu-package libqt4-dev)
+ - qwt (LGPL with additions, Ubuntu-package libqwt5-qt4-dev)
+ - OpenSceneGraph (OSGPL, Ubuntu-package libopenscenegraph-dev)
 
 Optionally (please use the ccmake tool to manage the compile options), additional functionality can be compiled in when activating
 

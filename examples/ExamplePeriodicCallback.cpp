@@ -356,7 +356,7 @@ static void testSchedulingPriority(int argc, char** argv)
 
   while (cb.getLoopCount() < 100)
   {
-    RLOG(0, "Loop count is %d", cb.getLoopCount());
+    RLOG(0, "Loop count is %d", (int) cb.getLoopCount());
     Timer_waitDT(0.1);
   }
 

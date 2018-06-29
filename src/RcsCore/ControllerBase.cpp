@@ -828,7 +828,7 @@ void Rcs::ControllerBase::computeDX(MatNd* dx,
 
       // Check that access to x_des is not out of memory bounds
       RCHECK_MSG(x_des->size >= nRowsAll + dimTask, "While adding"
-                 " task \"%s\": size of x_des: %d  arrayIdx: %zu  dimTask: %d",
+                 " task \"%s\": size of x_des: %u  arrayIdx: %u  dimTask: %d",
                  getTaskName(i).c_str(), x_des->size, nRowsAll, dimTask);
       x_des_i = &x_des->ele[nRowsAll];
 
@@ -1702,7 +1702,10 @@ void Rcs::ControllerBase::computeTaskForce_org(MatNd* ft_task,
   MatNd_reshape(ft_task, J_task->m, 1);
   MatNd_mul(ft_task, J_task, pinvJF);
 
-  decompressFromActiveSelf(ft_task, activation);
+  if (activation != NULL)
+  {
+    decompressFromActiveSelf(ft_task, activation);
+  }
 
   MatNd_destroy(J_sensor);
   MatNd_destroy(pinvJ_sensor);
@@ -2033,7 +2036,7 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
     MatNd_set(thrds_abs, 5,0, 0.75); // 0.25
 
     // if a vector of filters has been initialised
-    if (secOrderfilt != NULL)
+    if ((secOrderfilt!=NULL) && (filter!=secOrderfilt->end()))
       // if (MedFilters_vec != NULL)
     {
       // filter the ft sensor values
@@ -2114,7 +2117,10 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
   MatNd_mul(ft_task, J_task, T_sensor);
   // MatNd_printCommentDigits("T_sensor", T_sensor, 6);
 
-  decompressFromActiveSelf(ft_task, activation);
+  if (activation != NULL)
+  {
+    decompressFromActiveSelf(ft_task, activation);
+  }
   // MatNd_printCommentDigits("ft_task", ft_task, 6);
 
   // VecNd_constMulSelf(&ft_sensor->ele[0], -1.0, 6);

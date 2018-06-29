@@ -292,7 +292,7 @@ unsigned int String_countSubStrings(const char* str, const char* delim)
 /*******************************************************************************
  *
  ******************************************************************************/
-char* String_expandMacros_(char* str)
+static char* String_expandMacros_(char* str)
 {
   const char* p = str;
   int count = 0;

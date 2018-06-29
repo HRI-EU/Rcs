@@ -318,8 +318,8 @@ void Rcs::PeriodicCallback::print() const
   printf("  ave           = %.3f msec\n", 0.001*mean);
   printf("  max           = %.3f msec\n", 0.001*durMax);
   printf("  stdev         = %.3f msec\n", 0.001*stdev);
-  printf("  total cycles  = %u\n", getLoopCount());
-  printf("  overruns      = %u\n", getOverruns());
+  printf("  total cycles  = %lu\n", getLoopCount());
+  printf("  overruns      = %lu\n", getOverruns());
 }
 
 /*******************************************************************************

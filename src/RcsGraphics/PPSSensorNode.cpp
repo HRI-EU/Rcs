@@ -73,6 +73,7 @@ Rcs::PPSSensorNode::PPSSensorNode(const RcsSensor* pps, bool debug)
   RCSSENSOR_TRAVERSE_TEXELS(pps)
   {
     HTr relTrans;
+    Vec3d_setZero(relTrans.org);
     Mat3d_fromVec(relTrans.rot, TEXEL->normal, 2);
     osg::ref_ptr<osg::Box> box = new osg::Box();
     box->setHalfLengths(osg::Vec3(0.5*TEXEL->extents[0], 0.5*TEXEL->extents[1],
