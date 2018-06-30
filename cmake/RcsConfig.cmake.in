@@ -2,22 +2,46 @@
 @PACKAGE_INIT@
 
 # Write across config vars which are important
-# This excludes WM5 and Octomap since they are not part of the interface
+# This excludes Eigen and Octomap since they are not part of the interface
 SET(USE_BULLET @USE_BULLET@)
 SET(USE_EIGEN3 @USE_EIGEN3@)
 SET(USE_VORTEX @USE_VORTEX@)
+SET(HEADLESS_BUILD @HEADLESS_BUILD@)
 SET(VORTEX_ESSENTIALS_DIR @VORTEX_ESSENTIALS_DIR@ CACHE PATH "" FORCE)
+SET(BT_LIB_DIR @BT_LIB_DIR@ CACHE PATH "Bullet library directory")
+SET(BULLET_INCLUDE_DIRS @BULLET_INCLUDE_DIRS@ CACHE PATH "Bullet include directory")
 
 # Make FindQwt.cmake available
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 # Include dependencies
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/Externals.cmake")
-# For some reason, Qt is only required from the RcsGui CMakeLists.txt, instead of being referred in Externals.cmake
-FIND_PACKAGE(Qt4 REQUIRED)
 
 # Include targets definition
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/RcsTargets.cmake")
-CHECK_REQUIRED_COMPONENTS("@PACKAGE_NAME@")
+
+# Check which included targets are available
+# For simplicity, the component names are equal to the target names
+# Note that the list of supported components always includes the UI parts even in headless mode
+# They are still supported, just not available.
+SET(_supported_components RcsCore RcsPhysics RcsGraphics RcsGui)
+FOREACH(_comp ${Rcs_FIND_COMPONENTS})
+
+  IF (NOT ";${_supported_components};" MATCHES ";${_comp};")
+    SET(@PACKAGE_NAME@_FOUND FALSE)
+    SET(@PACKAGE_NAME@_NOTFOUND_MESSAGE "Unsupported component: ${_comp}")
+  ELSEIF(NOT TARGET ${_comp})
+    SET(@PACKAGE_NAME@_${_comp}_FOUND FALSE)
+  ELSE()
+    SET(@PACKAGE_NAME@_${_comp}_FOUND TRUE)
+  ENDIF()
+
+ENDFOREACH()
 
 # Make Rcs config dir available to users
 SET(RCS_CONFIG_DIR "@RCS_CONFIG_DIR@")
+
+# Handle REQUIRED and QUIET arguments, as well as required components
+# Note, REQUIRED_VARS only contains the config dir here since we use imported targets for the libraries
+FIND_PACKAGE_HANDLE_STANDARD_ARGS("@PACKAGE_NAME@"
+  REQUIRED_VARS RCS_CONFIG_DIR
+  HANDLE_COMPONENTS)

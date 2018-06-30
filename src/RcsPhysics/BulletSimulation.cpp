@@ -38,7 +38,10 @@
 #include "BulletSimulation.h"
 #include "BulletRigidBody.h"
 #include "BulletHelpers.h"
+
+#ifndef HEADLESS_BUILD
 #include "BulletDebugDrawer.h"
+#endif
 
 #include <Rcs_typedef.h>
 #include <Rcs_macros.h>
@@ -445,18 +448,22 @@ void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
   }
 
   lock();
+#ifndef HEADLESS_BUILD
   if (this->debugDrawer != NULL)
   {
     debugDrawer->clear();
   }
+#endif
 
   dynamicsWorld->stepSimulation(dt, 0);
 
+#ifndef HEADLESS_BUILD
   if (this->debugDrawer != NULL)
   {
     dynamicsWorld->debugDrawWorld();
     debugDrawer->apply();
   }
+#endif
   unlock();
 
   updateSensors();
@@ -1358,7 +1365,9 @@ void Rcs::BulletSimulation::setDebugDrawer(BulletDebugDrawer* drawer)
 {
   lock();
   this->debugDrawer = drawer;
+#ifndef HEADLESS_BUILD
   dynamicsWorld->setDebugDrawer(this->debugDrawer);
+#endif
   unlock();
 }
 

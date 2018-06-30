@@ -13,9 +13,12 @@ IF(USE_BULLET)
     BulletDistance.cpp
     BulletHelpers.cpp
     BulletHingeJoint.cpp
-    BulletDebugDrawer.cpp
     BulletRigidBody.cpp
     BulletSimulation.cpp)
+  IF(NOT HEADLESS_BUILD)
+    LIST(APPEND RCS_PHYSICS_SRCS
+      BulletDebugDrawer.cpp)
+  ENDIF(NOT HEADLESS_BUILD)
 ENDIF(USE_BULLET)
 
 IF(USE_VORTEX)
@@ -33,6 +36,8 @@ TARGET_LINK_LIBRARIES(RcsPhysics RcsCore)
 
 IF(NOT HEADLESS_BUILD)
   TARGET_LINK_LIBRARIES(RcsPhysics RcsGraphics)
+ELSE()
+  TARGET_COMPILE_DEFINITIONS(RcsPhysics PRIVATE -DHEADLESS_BUILD)
 ENDIF()
 
 IF(USE_BULLET)
