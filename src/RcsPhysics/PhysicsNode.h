@@ -50,7 +50,7 @@ class PhysicsNode : public NodeBase
 
 public:
 
-  PhysicsNode(PhysicsBase* sim);
+  PhysicsNode(PhysicsBase* sim, bool resizeable=false);
   virtual ~PhysicsNode();
   void setPhysicsTransform(bool enable);
   void setModelTransform(bool enable);

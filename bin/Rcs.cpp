@@ -890,6 +890,8 @@ int main(int argc, char** argv)
       argP.getArgument("-dir", directory,
                        "Configuration file directory (default is \"%s\")",
                        directory);
+      bool resizeable = argP.hasArgument("-resizeable", "Adjust visualization "
+                                         "of shapes dynamically");
       getModel(directory, xmlFileName);
 
       if (argP.hasArgument("-h"))
@@ -977,7 +979,7 @@ int main(int argc, char** argv)
       if (valgrind==false)
       {
         viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
-        simNode = new Rcs::PhysicsNode(sim);
+        simNode = new Rcs::PhysicsNode(sim, resizeable);
         viewer->add(simNode);
         hud = new Rcs::HUD();
         viewer->add(hud);

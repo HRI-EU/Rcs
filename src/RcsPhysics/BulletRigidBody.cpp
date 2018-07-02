@@ -785,3 +785,40 @@ Rcs::BulletRigidBody::~BulletRigidBody()
 
   delete sh;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+btCollisionShape* Rcs::BulletRigidBody::getShape(const RcsShape* shape)
+{
+  btCollisionShape* sh = getCollisionShape();
+
+  if (sh==NULL)
+  {
+    return NULL;
+  }
+
+  RcsShape* ptr = (RcsShape*) sh->getUserPointer();
+
+  if (ptr == shape)
+  {
+    return sh;
+  }
+
+  btCompoundShape* cSh = dynamic_cast<btCompoundShape*>(sh);
+
+  if (cSh != NULL)
+  {
+    for (int i=0; i<cSh->getNumChildShapes(); ++i)
+    {
+      ptr = (RcsShape*) cSh->getChildShape(i)->getUserPointer();
+
+      if (ptr == shape)
+      {
+        return cSh->getChildShape(i);
+      }
+    }
+  }
+
+  return NULL;
+}

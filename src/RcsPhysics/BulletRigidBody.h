@@ -63,6 +63,7 @@ public:
   static btCollisionShape* createShape(RcsShape* sh,
                                        btTransform& relTrans,
                                        const RcsBody* body);
+  btCollisionShape* getShape(const RcsShape* shape);
 
   BulletRigidBody(const btRigidBody::btRigidBodyConstructionInfo& rbInfo,
                   const RcsBody* body);

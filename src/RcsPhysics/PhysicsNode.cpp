@@ -56,7 +56,7 @@
 /*******************************************************************************
  * We instantiate a GraphNode without resizing and without TargetSetters.
  ******************************************************************************/
-Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_):
+Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable):
   NodeBase(), modelNd(NULL), physicsNd(NULL), sim(sim_), displayMode(0)
 {
   KeyCatcherBase::registerKey("C", "Toggle contacts node", "PhysicsNode");
@@ -65,7 +65,7 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_):
   KeyCatcherBase::registerKey("T", "Toggle physics or graph transform display",
                               "PhysicsNode");
 
-  this->modelNd = new GraphNode(sim_->getGraph(), false, false);
+  this->modelNd = new GraphNode(sim_->getGraph(), resizeable, false);
   modelNd->toggleGraphicsModel();
   modelNd->togglePhysicsModel();
   modelNd->setGhostMode(true, "RED");
@@ -81,8 +81,7 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_):
 
 
 
-  this->physicsNd = new GraphNode(RcsGraph_clone(sim_->getGraph()),
-                                  false, false);
+  this->physicsNd = new GraphNode(sim_->getGraph(), resizeable, false);
   physicsNd->toggleGraphicsModel();
   physicsNd->togglePhysicsModel();
   pat->addChild(physicsNd);

@@ -369,11 +369,11 @@ osg::Switch* BodyNode::addShapes(int mask)
 
     else if ((*s)->type == RCSSHAPE_SPHERE)
     {
-      NLOG(5, "Adding sphere %d of \"%s\" with radius %f",
-           shapeCount, getName().c_str(), (*s)->r);
+      NLOG(5, "Adding %s %d of \"%s\" with radius %f",
+           _resizeable ? "resizeable sphere" : " sphere",
+           shapeCount, getName().c_str(), (*s)->extents[0]);
       osg::Sphere* sphere =
-        new osg::Sphere(osg::Vec3(0.0, 0.0, 0.0),
-                        (*s)->extents[0]);
+        new osg::Sphere(osg::Vec3(0.0, 0.0, 0.0), (*s)->extents[0]);
       osg::ShapeDrawable* shape = new osg::ShapeDrawable(sphere, hints.get());
       if (_resizeable)
       {
@@ -616,7 +616,7 @@ osg::Switch* BodyNode::addShapes(int mask)
           {
 #if OPENSCENEGRAPH_MAJOR_VERSION == 3
             // fixes loading of obj without normals (doesn't work for OSG 2.8)
-            osg::ref_ptr<osgDB::Options> options = 
+            osg::ref_ptr<osgDB::Options> options =
               new osgDB::Options("generateFacetNormals=true noRotation=true");
             meshNode = osgDB::readNodeFile((*s)->meshFile, options.get());
 #else
@@ -775,7 +775,7 @@ osg::Switch* BodyNode::addShapes(int mask)
 
     else if ((*s)->type == RCSSHAPE_MARKER)
     {
-      NLOG(5, "Adding marker %d id %d of \"%s\" with length %f ", shapeCount, 
+      NLOG(5, "Adding marker %d id %d of \"%s\" with length %f ", shapeCount,
            *((int*)(*s)->userData), getName().c_str(), (*s)->extents[2]);
       osg::Box* box =
         new osg::Box(osg::Vec3(0.0, 0.0, 0.0),
@@ -1595,6 +1595,8 @@ void BodyNode::updateDynamicShapes()
         c->setHeight(uDat->shape()->extents[2]);
         c->setRadius((uDat->shape())->extents[0]);
 
+        RLOG(0, "ssl Setting radius to %f", uDat->shape()->extents[0]);
+
         // "Dirty" the shapes bounding box to adjust bounding box
         uDat->drawable.front()->dirtyBound();
       }
@@ -1633,6 +1635,8 @@ void BodyNode::updateDynamicShapes()
         osg::Sphere* s = static_cast<osg::Sphere*>(uDat->geometry.front());
         RCHECK(s);
         s->setRadius(uDat->shape()->extents[0]);
+
+        RLOG(0, "Setting radius to %f", uDat->shape()->extents[0]);
 
         // "Dirty" the shapes bounding box to adjust bounding box
         uDat->drawable.front()->dirtyBound();

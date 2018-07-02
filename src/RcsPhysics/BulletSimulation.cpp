@@ -1491,14 +1491,57 @@ bool Rcs::BulletSimulation::setParameter(ParameterCategory category,
           btBdy->setDamping(value, btBdy->getAngularDamping());
           success = true;
         }
+        else if (STRCASEEQ(type, "radius"))
+        {
+          RcsShape* ball = NULL;
+          RCSBODY_TRAVERSE_SHAPES(bdy)
+          {
+            if (SHAPE->type==RCSSHAPE_SPHERE)
+            {
+              ball = SHAPE;
+            }
+          }
+
+          if (ball==NULL)
+          {
+            RLOG(4, "No RCSSHAPE_SPHERE found in body \"%s\"", name);
+            success = false;
+          }
+          else
+          {
+            btSphereShape* sphere =
+              dynamic_cast<btSphereShape*>(btBdy->getShape(ball));
+
+            if (sphere==NULL)
+            {
+              RLOG(4, "No btSphereShape found in body \"%s\"", name);
+              success = false;
+            }
+            else
+            {
+              sphere->setUnscaledRadius(value);
+              ball->extents[0] = value;
+              success = true;
+            }
+
+          }   // ball != NULL
+
+        }
         else if (STRCASEEQ(type, "angular_damping"))
         {
           btBdy->setDamping(btBdy->getLinearDamping(), value);
           success = true;
         }
 
+
+
         // Add body again
         dynamicsWorld->addRigidBody(btBdy);
+
+
+
+
+
       }
       else
       {
