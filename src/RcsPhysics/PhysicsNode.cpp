@@ -56,8 +56,9 @@
 /*******************************************************************************
  * We instantiate a GraphNode without resizing and without TargetSetters.
  ******************************************************************************/
-Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable):
-  NodeBase(), modelNd(NULL), physicsNd(NULL), sim(sim_), displayMode(0)
+Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
+  NodeBase(), modelNd(NULL), physicsNd(NULL), sim(sim_), displayMode(0),
+  resizeable(resizeable_)
 {
   KeyCatcherBase::registerKey("C", "Toggle contacts node", "PhysicsNode");
   KeyCatcherBase::registerKey("f", "Scale drag force by 0.1", "PhysicsNode");
@@ -86,10 +87,7 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable):
   physicsNd->togglePhysicsModel();
   pat->addChild(physicsNd);
 
-  RCSGRAPH_TRAVERSE_BODIES(physicsNd->getGraphPtr())
-  {
-    physicsNd->setBodyTransformPtr(BODY, sim->getPhysicsTransformPtr(RcsGraph_getBodyByName(modelNd->getGraphPtr(), BODY->name)));
-  }
+  updateTransformPointers();
 
 
   RCSGRAPH_TRAVERSE_SENSORS(sim_->getGraph())
@@ -204,6 +202,16 @@ void Rcs::PhysicsNode::setPhysicsTransform(bool enable)
 bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
                                      osgGA::GUIActionAdapter& aa)
 {
+  // In case the graph is resizeable, bodies might be repalced on the fly. To
+  // make sure we always point to the correct ones, we update the transformation
+  // pointers before each iteration.
+  if (resizeable==true && modelNd->isVisible())
+  {
+    updateTransformPointers();
+  }
+
+
+
   switch (ea.getEventType())
   {
     case (osgGA::GUIEventAdapter::KEYDOWN):
@@ -475,4 +483,19 @@ void Rcs::PhysicsNode::showBodyCOMs()
     }
   }
 #endif
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::PhysicsNode::updateTransformPointers()
+{
+  RCSGRAPH_TRAVERSE_BODIES(physicsNd->getGraphPtr())
+  {
+    const RcsBody* simBdy = RcsGraph_getBodyByName(modelNd->getGraphPtr(),
+                                                   BODY->name);
+    const HTr* physicsTrf = sim->getPhysicsTransformPtr(simBdy);
+    physicsNd->setBodyTransformPtr(BODY, physicsTrf);
+  }
+
 }

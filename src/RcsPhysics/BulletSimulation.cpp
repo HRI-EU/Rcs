@@ -1521,6 +1521,9 @@ bool Rcs::BulletSimulation::setParameter(ParameterCategory category,
             {
               sphere->setUnscaledRadius(value);
               ball->extents[0] = value;
+              btBdy = BulletRigidBody::create(bdy);
+              bdyMap[bdy] = btBdy;
+
               success = true;
             }
 

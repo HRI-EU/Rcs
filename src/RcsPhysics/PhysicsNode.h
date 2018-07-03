@@ -75,11 +75,14 @@ protected:
   virtual bool eventCallback(const osgGA::GUIEventAdapter& ea,
                              osgGA::GUIActionAdapter& aa);
 
+  void updateTransformPointers();
+
 public:
   GraphNode* modelNd;
   GraphNode* physicsNd;
   PhysicsBase* sim; ///> Physics simulation
   int displayMode;
+  bool resizeable;
 };
 
 }   // namespace Rcs

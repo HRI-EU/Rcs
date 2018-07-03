@@ -136,6 +136,7 @@ public:
    *             - rolling_friction
    *             - linear_damping
    *             - angular_damping
+   *             - radius
    *
    *         For the category "Simulation", the argument "name" is not needed
    *         and is ignored (you may use NULL).
