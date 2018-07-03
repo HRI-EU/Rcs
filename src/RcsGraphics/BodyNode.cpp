@@ -1595,8 +1595,6 @@ void BodyNode::updateDynamicShapes()
         c->setHeight(uDat->shape()->extents[2]);
         c->setRadius((uDat->shape())->extents[0]);
 
-        RLOG(0, "ssl Setting radius to %f", uDat->shape()->extents[0]);
-
         // "Dirty" the shapes bounding box to adjust bounding box
         uDat->drawable.front()->dirtyBound();
       }
@@ -1635,8 +1633,6 @@ void BodyNode::updateDynamicShapes()
         osg::Sphere* s = static_cast<osg::Sphere*>(uDat->geometry.front());
         RCHECK(s);
         s->setRadius(uDat->shape()->extents[0]);
-
-        RLOG(0, "Setting radius to %f", uDat->shape()->extents[0]);
 
         // "Dirty" the shapes bounding box to adjust bounding box
         uDat->drawable.front()->dirtyBound();

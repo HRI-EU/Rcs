@@ -1533,15 +1533,8 @@ bool Rcs::BulletSimulation::setParameter(ParameterCategory category,
           success = true;
         }
 
-
-
         // Add body again
         dynamicsWorld->addRigidBody(btBdy);
-
-
-
-
-
       }
       else
       {
