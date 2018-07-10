@@ -70,8 +70,7 @@ static btConvexShape* createShape(const RcsShape* sh, HTr* A_SB)
 
     case RCSSHAPE_POINT:
     {
-      // Capsule with zero radius and length
-      bShape = new btCapsuleShapeZ(0.0, 0.0);
+      bShape = new btSphereShape(0.0);
       RCHECK(bShape);
       break;
     }

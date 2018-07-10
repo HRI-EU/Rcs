@@ -1828,7 +1828,7 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
   // are sometimes pretty small.
   if (Mat3d_maxAbsEle(self->Inertia->rot) > 0.0)
   {
-    int len = snprintf(buf, 256, "inertia=\"%g %g %g   %g %g %g   %g %g %g\" ",
+    int len = snprintf(buf, 256, "inertia=\"%g %g %g   %g %g %g   %g %g %g",
                        self->Inertia->rot[0][0],
                        self->Inertia->rot[0][1],
                        self->Inertia->rot[0][2],
