@@ -369,7 +369,7 @@ Viewer::Viewer(bool fancy, bool startupWithShadow) :
  ******************************************************************************/
 Viewer::~Viewer()
 {
-  stopThread();
+  stopUpdateThread();
   pthread_mutex_destroy(&this->mtxInternal);
 }
 
@@ -933,7 +933,7 @@ bool Viewer::isThreadRunning() const
 /*******************************************************************************
  *
  ******************************************************************************/
-void Viewer::stopThread()
+void Viewer::stopUpdateThread()
 {
   if (threadRunning == false)
   {

@@ -115,6 +115,18 @@ public:
    */
   virtual double getCallbackUpdatePeriod() const = 0;
 
+  /*!  \brief Starts the component's thread with its specific update period.
+   *
+   *   \return True for success, false otherwise.
+   */
+  virtual bool startThread() = 0;
+
+  /*!  \brief Stops the component's thread.
+   *
+   *   \return True for success, false otherwise.
+   */
+  virtual bool stopThread() = 0;
+
   /*! \brief Called periodically to check if the component is in a critical
    *         state and the robot should be stopped.
    *

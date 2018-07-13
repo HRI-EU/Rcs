@@ -158,6 +158,7 @@ public:
   bool toggleVideoRecording();
   double getFieldOfView() const;
   void setFieldOfView(double fov);
+  void stopUpdateThread();
 
   float mouseX;
   float mouseY;
@@ -168,7 +169,6 @@ protected:
   static void* ViewerThread(void* arg);
   void create(bool fancy, bool startupWithShadow);
   void init();
-  void stopThread();
   void setSceneData(osg::Node* node);
   bool isInitialized() const;
   bool isThreadRunning() const;

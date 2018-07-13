@@ -75,6 +75,9 @@ Rcs::MotionControlLayer::~MotionControlLayer()
     disconnectCallback();
   }
 
+  // Stop all hardware components
+  stopThreads();
+
   // Delete all hardware components
   for (size_t i=0; i<componentVec.size(); ++i)
   {
@@ -507,4 +510,26 @@ void Rcs::MotionControlLayer::setStepMode(bool pauseAfterStep)
 bool Rcs::MotionControlLayer::getEmergency() const
 {
   return this->emergency;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::MotionControlLayer::startThreads()
+{
+  for (size_t i=0; i<componentVec.size(); ++i)
+  {
+    componentVec[i]->startThread();
+  }
+}
+
+/*******************************************************************************
+ * Stop all hardware components
+ ******************************************************************************/
+void Rcs::MotionControlLayer::stopThreads()
+{
+  for (size_t i=0; i<componentVec.size(); ++i)
+  {
+    componentVec[i]->stopThread();
+  }
 }

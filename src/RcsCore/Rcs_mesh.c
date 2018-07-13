@@ -645,7 +645,7 @@ static double* RcsMesh_readObjFile(const char* fileName,
   {
     if (STRNEQ(lineStr, "v ", 2))
     {
-      RLOG(5, "Vertex line: %s", lineStr);
+      NLOG(5, "Vertex line: %s", lineStr);
       (*numVertices) ++;
     }
   }

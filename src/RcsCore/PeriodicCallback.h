@@ -178,6 +178,11 @@ public:
    */
   virtual double getUpdateFrequency() const;
 
+  /*! \brief Sets the update frequency. This will be overwritten if start() is
+   *         called with a different frequency. This function is thread-safe.
+   */
+  virtual void setUpdateFrequency(double updateFrequency);
+
   /*! \brief Returns the loop count. This variable is incremented in each call
    *         to callback(). This function is thread-safe.
    */

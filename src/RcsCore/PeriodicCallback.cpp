@@ -396,6 +396,16 @@ double Rcs::PeriodicCallback::getUpdateFrequency() const
 /*******************************************************************************
  *
  ******************************************************************************/
+void Rcs::PeriodicCallback::setUpdateFrequency(double updateFrequency)
+{
+  pthread_mutex_lock(&this->settingsMtx);
+  this->updateFreq = updateFrequency;
+  pthread_mutex_unlock(&this->settingsMtx);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void Rcs::PeriodicCallback::setSchedulingPolicy(int policy)
 {
   pthread_mutex_lock(&this->settingsMtx);

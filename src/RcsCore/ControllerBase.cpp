@@ -247,6 +247,8 @@ Rcs::ControllerBase& Rcs::ControllerBase::operator= (const Rcs::ControllerBase& 
     delete(this->tasks[i]);
   }
 
+  this->tasks.clear();
+
   RcsGraph_destroy(this->graph);
 
   // do the copy

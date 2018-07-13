@@ -150,6 +150,9 @@ public:
 
   bool getEmergency() const;
 
+  virtual void startThreads();
+  virtual void stopThreads();
+
 protected:
   virtual void updateControl() = 0;
   virtual void updateGraph();
