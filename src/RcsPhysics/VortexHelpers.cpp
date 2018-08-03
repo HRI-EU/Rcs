@@ -699,7 +699,7 @@ Vx::VxConstraint* Rcs::createFixedJoint(Vx::VxPart* vxParent,
   // Give the RPRO joint some reduced stiffness, so that in case we get into
   // a rigid contact, the joint will absorb impacts. The settings have been
   // tuned for an acceptable deflection for a robot wrist FT sensor.
-  Vx::VxReal stiffness = 10000.0;
+  Vx::VxReal stiffness = 10000.0*1000.0;
   Vx::VxReal halfLife = 5.0;
   Vx::VxUniverse* universe = &Vx::VxFrame::instance()->getUniverse();
   Vx::VxReal damping = universe->getCriticalDamping(stiffness, halfLife);

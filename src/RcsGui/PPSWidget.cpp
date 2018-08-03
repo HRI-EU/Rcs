@@ -180,7 +180,8 @@ void PPSWidget::updateDisplay()
 
       this->painter.setBrush(QBrush(QColor(r, g, b)));
       this->painter.setPen(QPen(Qt::NoPen));
-      this->painter.drawRect(i * this->pixelSize, (this->height - j - 1) * this->pixelSize, this->pixelSize, this->pixelSize);
+      //this->painter.drawRect(i * this->pixelSize, (this->height - j - 1) * this->pixelSize, this->pixelSize, this->pixelSize);
+      this->painter.drawRect(i * this->pixelSize, j * this->pixelSize, this->pixelSize, this->pixelSize);
     }
   }
 

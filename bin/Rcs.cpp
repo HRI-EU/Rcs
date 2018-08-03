@@ -479,7 +479,6 @@ int main(int argc, char** argv)
             bool debug = RcsLogLevel > 0 ? true : false;
             viewer->add(new Rcs::PPSSensorNode(SENSOR, debug));
           }
-
         }
 
         viewer->runInThread(mtx);
@@ -1007,18 +1006,14 @@ int main(int argc, char** argv)
                                                       SENSOR->rawData->n,
                                                       SENSOR->rawData->ele,
                                                       scaling));
-              viewer->add(new Rcs::PPSSensorNode(SENSOR));
+              bool debug = RcsLogLevel > 0 ? true : false;
+              viewer->add(new Rcs::PPSSensorNode(SENSOR, debug));
             }
-
           }
 
           Rcs::PPSGui::create(ppsEntries, mtx);
         }
-
-
       }
-
-
 
       Timer* timer = Timer_create(dt);
       unsigned int loopCount = 0;

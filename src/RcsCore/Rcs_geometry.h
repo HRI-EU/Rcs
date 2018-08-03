@@ -84,6 +84,18 @@ double Math_distPointConvexPolygon2D(const double point[2],
                                      double cpPoly[2],
                                      double nPoly[2]);
 
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Checks if a given 2D polygon is valid. The function checks if the
+ *         polygon centroid lies within the edges spanned by the polygon
+ *         vertices. If that's not the case, the ordering of the vertices is
+ *         not counter-clockwise..
+ *
+ *  \param[in]  polygon    Polygon vertices
+ *  \param[in]  nVertices  Number of polygon vertices.
+ *  \return True if valid, false otherwise.
+ */
+bool Math_checkPolygon2D(double polygon[][2], unsigned int nVertices);
+
 ///@}
 
 

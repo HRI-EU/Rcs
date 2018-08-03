@@ -148,6 +148,16 @@ static bool Math_pointInsideOrOnConvexPolygon2D(const double pt[2],
                                                 double polygon[][2],
                                                 unsigned int nVertices)
 {
+  if (nVertices==0)
+  {
+    if (pt[0]==0.0 && pt[1]==0.0)
+    {
+      return true;
+    }
+
+    return false;
+  }
+
   for (unsigned int i=0; i<nVertices; ++i)
   {
     const double* lPt0 = polygon[i];
@@ -198,12 +208,14 @@ static void Math_centroidConvexPolygon2D(double centroid[2],
     centroid[1] += poly[i][1];
   }
 
+  if (nVertices>0.0)
+  {
   centroid[0] /= nVertices;
   centroid[1] /= nVertices;
 }
+}
 
-static inline bool Math_checkPolygon2D(double polygon[][2],
-                                       unsigned int nVertices)
+bool Math_checkPolygon2D(double polygon[][2], unsigned int nVertices)
 {
   double centroid[2];
   Math_centroidConvexPolygon2D(centroid, polygon, nVertices);

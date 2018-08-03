@@ -72,6 +72,12 @@ Rcs::PPSSensorNode::PPSSensorNode(const RcsSensor* pps, bool debug)
 
   RCSSENSOR_TRAVERSE_TEXELS(pps)
   {
+    // skip texels without proper normal
+    double length = Vec3d_getLength(TEXEL->normal);
+    if (fabs(length) < 0.1) {
+      continue;
+    }
+
     HTr relTrans;
     Vec3d_setZero(relTrans.org);
     Mat3d_fromVec(relTrans.rot, TEXEL->normal, 2);

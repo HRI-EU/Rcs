@@ -261,9 +261,9 @@ bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
       /////////////////////////////////////////////////////////////
       else if (ea.getKey() == 'C')
       {
-        for (unsigned int i=0; i<getNumChildren(); ++i)
+        for (unsigned int i=0; i<pat->getNumChildren(); ++i)
         {
-          Node* ndi = getChild(i);
+          Node* ndi = pat->getChild(i);
           Rcs::ContactsNode* cn = dynamic_cast<Rcs::ContactsNode*>(ndi);
           if (cn != NULL)
           {
@@ -276,9 +276,9 @@ bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
       /////////////////////////////////////////////////////////////
       else if (ea.getKey() == 'f')
       {
-        for (unsigned int i=0; i<getNumChildren(); ++i)
+        for (unsigned int i=0; i<pat->getNumChildren(); ++i)
         {
-          Node* ndi = getChild(i);
+          Node* ndi = pat->getChild(i);
           Rcs::ForceDragger* dn = dynamic_cast<Rcs::ForceDragger*>(ndi);
           if (dn != NULL)
           {
@@ -291,12 +291,13 @@ bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
       /////////////////////////////////////////////////////////////
       else if (ea.getKey() == 'F')
       {
-        for (unsigned int i=0; i<getNumChildren(); ++i)
+        for (unsigned int i=0; i<pat->getNumChildren(); ++i)
         {
-          Node* ndi = getChild(i);
+          Node* ndi = pat->getChild(i);
           Rcs::ForceDragger* dn = dynamic_cast<Rcs::ForceDragger*>(ndi);
           if (dn != NULL)
           {
+            RLOG(5, "Scaling drag force to %f", 10.0*dn->getForceScaling());
             dn->scaleDragForce(10.0*dn->getForceScaling());
           }
         }
@@ -373,9 +374,9 @@ void Rcs::PhysicsNode::setDisplayMode(int mode)
 
   Rcs::ContactsNode* cnd = NULL;
 
-  for (unsigned int i=0; i<getNumChildren(); ++i)
+  for (unsigned int i=0; i<pat->getNumChildren(); ++i)
   {
-    cnd = dynamic_cast<Rcs::ContactsNode*>(getChild(i));
+    cnd = dynamic_cast<Rcs::ContactsNode*>(pat->getChild(i));
     if (cnd != NULL)
     {
       break;

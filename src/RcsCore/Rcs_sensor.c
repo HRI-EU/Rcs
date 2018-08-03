@@ -720,12 +720,17 @@ bool RcsSensor_computePPS(const RcsSensor* self, MatNd* ppsResult,
       offset[dim] = TEXEL->position[dim] + sensorDepth*lineDir[dim]/3.0;
     }
 
-    if (fabs(Vec3d_getLength(lineDir)-1.0)>1.0e-5)
+    if (fabs(Vec3d_getLength(lineDir)-1.0)>1.0e-3)
     {
       Vec3d_setZero(MatNd_getRowPtr(lineDirMat, id));
     }
     else
     {
+      if (fabs(Vec3d_getLength(lineDir)-1.0)>1.0e-5)
+      {
+        Vec3d_normalizeSelf(lineDir);
+      }
+
       maxDist = fmax(maxDist, Vec3d_getLength(offset));
 
       Vec3d_transRotateSelf(lineDir, A_SI.rot);

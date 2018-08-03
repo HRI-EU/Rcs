@@ -194,6 +194,7 @@ JointWidget::JointWidget(RcsGraph* graph, pthread_mutex_t* graphLock,
       // Here the joint scale
       double lb = JNT->q_min;
       double ub = JNT->q_max;
+      double range = ub - lb;
       double qi = MatNd_get(_q_des, JNT->jointIndex, 0);
 
       double scaleFactor = 1.0;
@@ -206,7 +207,7 @@ JointWidget::JointWidget(RcsGraph* graph, pthread_mutex_t* graphLock,
         scaleFactor = 1000.0;
       }
 
-      jsc_q[i] = new JointSlider(lb, qi, ub, scaleFactor);
+      jsc_q[i] = new JointSlider(lb-0.1*range, qi, ub+0.1*range, scaleFactor);
 
       constraintsLayout->addWidget(check_constraints[i], i, 0,
                                    Qt::AlignLeft);
