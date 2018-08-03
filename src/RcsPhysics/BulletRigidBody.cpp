@@ -182,7 +182,8 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
     case RCSSHAPE_TORUS:
     {
       RLOG(5, "Creating TORUS for object \"%s\"", body->name);
-      bShape = new btCompoundShape();
+      btCompoundShape* compound = new btCompoundShape();
+      bShape = compound;
       const int nSlices = 16;
       MatNd* points = MatNd_create(nSlices, 3);
 
@@ -215,7 +216,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
         setMargin(ssl);
 
         btTransform sslTrans = btTransformFromHTr(&A);
-        static_cast<btCompoundShape*>(bShape)->addChildShape(sslTrans, ssl);
+        compound->addChildShape(sslTrans, ssl);
       }
 
       MatNd_destroy(points);
@@ -775,10 +776,22 @@ Rcs::BulletRigidBody::~BulletRigidBody()
 
   btCompoundShape* cSh = dynamic_cast<btCompoundShape*>(sh);
 
+  // A body can have a compound shape if several shapes have been added to it.
   if (cSh != NULL)
   {
     for (int i=cSh->getNumChildShapes()-1; i>=0 ; i--)
     {
+      // Some shapes are compounds themselves (e.g. torus or SSR). We need to
+      // explicitely delete their children as well.
+      btCompoundShape* cSh_i = dynamic_cast<btCompoundShape*>(cSh->getChildShape(i));
+      if (cSh_i)
+      {
+        for (int i=cSh_i->getNumChildShapes()-1; i>=0 ; i--)
+        {
+          delete cSh_i->getChildShape(i);
+        }
+      }
+
       delete cSh->getChildShape(i);
     }
   }

@@ -264,16 +264,40 @@ void Rcs::PeriodicCallback::start(double updateFreq_, int prio)
   if (rtSuccess == true)
   {
     att = &attrRT;
-    RLOG(1, "Succeeded to get real-time thread attributes");
+    RLOG(5, "Succeeded to get real-time thread attributes");
   }
   else
   {
     RLOG(1, "Failed to get real-time thread attributes");
   }
+
   pthread_mutex_unlock(&this->settingsMtx);
 
 
-  pthread_create(&this->callbackThread, att, &threadFuncPosix, this);
+  int res = pthread_create(&this->callbackThread, att, &threadFuncPosix, this);
+
+  switch (res)
+    {
+    case 0:
+      RLOG(5, "Success to get real-time thread attributes");
+      break;
+
+    case EAGAIN:
+      RLOG(1, "EAGAIN Insufficient resources to create another thread");
+      break;
+
+    case EINVAL:
+      RLOG(1, "EINVAL Invalid settings in attr");
+      break;
+
+    case EPERM:
+      RLOG(1, "EPERM  No permission to set the scheduling policy and parameters");
+      break;
+
+    default:
+      RLOG(1, "Unknown error %d", res);
+      break;
+    }
 }
 
 /*******************************************************************************

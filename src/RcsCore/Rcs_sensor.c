@@ -378,7 +378,6 @@ RcsSensor* RcsSensor_createFromXML(xmlNode* node, RcsBody* parentBody)
       if (isXMLNodeName(node, "Texel"))
       {
         RcsTexel* texel = RALLOC(RcsTexel);
-        sensor->texel[texelCount] = RALLOC(RcsTexel);
         getXMLNodePropertyVec3(node, "position", texel->position);
         getXMLNodePropertyVec3(node, "normal", texel->normal);
         Vec3d_copy(texel->extents, extents);
@@ -443,6 +442,29 @@ RcsSensor* RcsSensor_clone(const RcsSensor* src, const RcsGraph* dstGraph)
   self->extraInfo = String_clone(src->extraInfo);
   self->rawData = MatNd_clone(src->rawData);
 
+  if (src->texel)
+  {
+    unsigned int nTexels = 0;
+
+    for (RcsTexel **sPtr = src->texel; *sPtr; sPtr++)
+    {
+      nTexels++;
+    }
+
+    if (nTexels > 0)
+    {
+      self->texel = RNALLOC(nTexels+1, RcsTexel*);
+
+      for (unsigned int i=0; i<nTexels; ++i)
+      {
+        self->texel[i] = RALLOC(RcsTexel);
+        memcpy(self->texel[i], src->texel[i], sizeof(RcsTexel));
+      }
+
+    }
+  }
+
+
   return self;
 }
 
@@ -451,6 +473,7 @@ RcsSensor* RcsSensor_clone(const RcsSensor* src, const RcsGraph* dstGraph)
  ******************************************************************************/
 void RcsSensor_copy(RcsSensor* self, const RcsSensor* src)
 {
+  RFATAL("FIXME");
   self->type = src->type;
   String_copyOrRecreate(&self->name, src->name);
   HTr_copyOrRecreate(&self->offset, src->offset);
@@ -472,6 +495,16 @@ void RcsSensor_destroy(RcsSensor* self)
   RFREE(self->extraInfo);
   RCHECK(self->rawData);
   MatNd_destroy(self->rawData);
+
+  if (self->texel)
+  {
+    for (RcsTexel **sPtr = self->texel; *sPtr; sPtr++)
+    {
+      RFREE(*sPtr);
+    }
+
+    RFREE(self->texel);
+  }
 
   // Reset all internal memory
   memset(self, 0, sizeof(RcsSensor));

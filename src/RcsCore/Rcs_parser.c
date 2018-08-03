@@ -849,6 +849,8 @@ bool getXMLNodePropertyIntN(xmlNodePtr nd, const char* tag, int* x,
              "(or more) values could be found (found %d, should be %d)",
              tag, matchedStrings, n);
 
+  RFREE(tmp);
+
   return true;
 }
 
@@ -911,6 +913,8 @@ bool getXMLNodePropertyUnsignedIntN(xmlNodePtr nd, const char* tag,
   RCHECK_MSG(matchedStrings == n, "during parsing for tag \"%s\", not all "
              "(or more) values could be found (found %d, should be %d)",
              tag, matchedStrings, n);
+
+  RFREE(tmp);
 
   return true;
 }
