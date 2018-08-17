@@ -113,3 +113,11 @@ void SimpleSlider::setSliderValue(double value)
 {
   qwtslider->setValue(this->scaleFactor*value);
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+QwtSlider* SimpleSlider::getSlider()
+{
+  return this->qwtslider;
+}

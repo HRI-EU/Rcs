@@ -45,6 +45,7 @@
 class SimpleSlider;
 
 class QwtThermo;
+class QwtSlider;
 
 class JointSlider: public QWidget
 {
@@ -60,8 +61,7 @@ public:
   void   setValue(double val);
   void   setSliderValue(double val);
   double getSliderValue(void);
-
-public slots:
+  QwtSlider* getSlider();
 
 private:
   double _lb;
@@ -71,9 +71,6 @@ private:
   double _scaleFactor;
   QwtThermo* t1, *t2;
   SimpleSlider* sl;
-
-private slots:
-
 };
 
 

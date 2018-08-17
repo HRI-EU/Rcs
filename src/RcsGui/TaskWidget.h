@@ -64,6 +64,14 @@ public:
 
   virtual ~TaskWidget();
 
+  class TaskChangeCallback
+  {
+  public:
+    virtual void callback() = 0;
+  };
+
+  void registerCallback(TaskChangeCallback* callback);
+
 public slots:
   void setActive(int status);
   void setConstraint();
@@ -103,6 +111,7 @@ protected:
 
   void lock();
   void unlock();
+  std::vector<TaskChangeCallback*> callback;
 };
 
 #endif // TASKWIDGET_H

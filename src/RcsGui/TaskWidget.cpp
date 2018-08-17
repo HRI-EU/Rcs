@@ -417,6 +417,11 @@ void TaskWidget::setTarget()
   lock();
   VecNd_copy(this->x_des, target, this->dimTask);
   unlock();
+
+  for (size_t i=0; i<callback.size(); ++i)
+  {
+    callback[i]->callback();
+  }
 }
 
 /******************************************************************************
@@ -530,3 +535,11 @@ void TaskWidget::unlock()
   }
 }
 
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void TaskWidget::registerCallback(TaskChangeCallback* cb)
+{
+  callback.push_back(cb);
+}

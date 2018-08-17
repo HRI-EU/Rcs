@@ -144,6 +144,26 @@ extern "C" {
     }
   }
 
+  bool RcsGuiFactory_deleteGUI(int handle)
+  {
+    QWidget* w = (QWidget*)RcsGuiFactory_getPointerDirectly(handle);
+
+    if (!w)
+    {
+      RLOG(4, "No widget found for handle %d", handle);
+      return false;
+    }
+
+    if (w->parent())
+    {
+      RLOG(4, "Widget with handle %d has parent - not deleting", handle);
+      return false;
+    }
+
+    w->deleteLater();
+    return true;
+  }
+
 }
 
 
@@ -191,8 +211,11 @@ GuiFactory::~GuiFactory()
   {
     RLOGS(6, "Destroying widget \"%s\"",
           (*it)->windowTitle().toStdString().c_str());
-    delete *it;
+    //delete *it;
+    (*it)->deleteLater();
   }
+
+  RLOGS(5, "Done destroying GuiFactory and all GUIs created...");
 }
 
 /******************************************************************************

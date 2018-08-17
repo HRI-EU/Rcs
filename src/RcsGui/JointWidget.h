@@ -56,12 +56,14 @@ class JointWidget: public QScrollArea
   Q_OBJECT
 
 public:
-  static JointWidget* create(RcsGraph* graph,
+  static int create(RcsGraph* graph,
                              pthread_mutex_t* graphLock = NULL,
                              MatNd* q_des = NULL,
                              MatNd* q_curr = NULL,
                              bool alwaysWriteToQ = false,
                              bool passive = false);
+
+  static bool destroy(int handle);
 
   JointWidget(RcsGraph* graph, pthread_mutex_t* graphLock = NULL,
               MatNd* q_des = NULL, MatNd* q_curr = NULL,
@@ -70,7 +72,16 @@ public:
   ~JointWidget();
   void reset(const MatNd* q);
 
+  class JointChangeCallback
+  {
+  public:
+    virtual void callback() = 0;
+  };
+
+  void registerCallback(JointChangeCallback* callback);
+
 public slots:
+
   void toggle(void);
   void setJoint(void);
   void setConstraint(void);
@@ -90,6 +101,7 @@ private:
   QCheckBox** check_constraints;
   QTimer* _timer;
   pthread_mutex_t* mutex;
+  std::vector<JointChangeCallback*> callback;
 };
 
 }   // namespace Rcs

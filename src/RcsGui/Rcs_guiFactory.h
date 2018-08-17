@@ -105,6 +105,11 @@ typedef void* (*RcsGuiCallbackFct)(void*);
 */
 int RcsGuiFactory_requestGUI(RcsGuiCallbackFct func, void* arg);
 
+/*  \brief Destroys the Gui with the given handle, and removes it out of
+ *         the list of Guis.
+*/
+bool RcsGuiFactory_destroyGUI(int handle);
+
 /*  \brief Globally disables GUI launching through the factory methods.
 */
 void RcsGuiFactory_disable(void);

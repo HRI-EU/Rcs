@@ -988,7 +988,9 @@ int main(int argc, char** argv)
 
         if (skipGui==false)
         {
-          jw = Rcs::JointWidget::create(graph, mtx, q_des, graph->q);
+          int guiHandle = Rcs::JointWidget::create(graph, mtx, q_des, graph->q);
+          void* ptr = RcsGuiFactory_getPointer(guiHandle);
+          jw = static_cast<Rcs::JointWidget*>(ptr);
         }
 
         if (withPPS==true)
@@ -1037,7 +1039,9 @@ int main(int argc, char** argv)
         else if (kc && kc->getAndResetKey('W'))
         {
           RMSGS("Creating JointWidget");
-          jw = Rcs::JointWidget::create(graph, mtx, q_des, graph->q);
+          int guiHandle = Rcs::JointWidget::create(graph, mtx, q_des, graph->q);
+          void* ptr = RcsGuiFactory_getPointer(guiHandle);
+          jw = static_cast<Rcs::JointWidget*>(ptr);
         }
         else if (kc && kc->getAndResetKey('p'))
         {

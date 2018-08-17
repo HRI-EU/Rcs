@@ -57,6 +57,8 @@ typedef struct
   void* ptr[10];
 } VoidPointerList;
 
+
+
 /*****************************************************************************
   \brief Thread function.
 *****************************************************************************/
@@ -77,7 +79,6 @@ void* ControllerWidgetBase::controllerGuiBase(void* arg)
 
   ControllerWidgetBase* widget =
     new ControllerWidgetBase(cntrl, a_des, a_curr, x_des, x_curr, mutex, *showOnly);
-
   widget->show();
 
   delete showOnly;
@@ -88,7 +89,7 @@ void* ControllerWidgetBase::controllerGuiBase(void* arg)
 /*****************************************************************************
   \brief Static instantiation method.
 *****************************************************************************/
-ControllerWidgetBase* ControllerWidgetBase::create(ControllerBase* c,
+int ControllerWidgetBase::create(ControllerBase* c,
                                                    MatNd* a_des,
                                                    MatNd* x_des,
                                                    const MatNd* x_curr,
@@ -110,13 +111,13 @@ ControllerWidgetBase* ControllerWidgetBase::create(ControllerBase* c,
   int handle =
     RcsGuiFactory_requestGUI(ControllerWidgetBase::controllerGuiBase, (void*) p);
 
-  return (ControllerWidgetBase*) RcsGuiFactory_getPointer(handle);
+  return handle;
 }
 
 /*****************************************************************************
   \brief Static instantiation method.
 *****************************************************************************/
-ControllerWidgetBase* ControllerWidgetBase::create(ControllerBase* c,
+int ControllerWidgetBase::create(ControllerBase* c,
                                                    MatNd* a_des,
                                                    MatNd* a_curr,
                                                    MatNd* x_des,
@@ -139,7 +140,15 @@ ControllerWidgetBase* ControllerWidgetBase::create(ControllerBase* c,
   int handle =
     RcsGuiFactory_requestGUI(ControllerWidgetBase::controllerGuiBase, (void*) p);
 
-  return (ControllerWidgetBase*) RcsGuiFactory_getPointer(handle);
+  return handle;
+}
+
+/*****************************************************************************
+  \brief Static destroy method.
+*****************************************************************************/
+bool ControllerWidgetBase::destroy(int handle)
+{
+  return RcsGuiFactory_destroyGUI(handle);
 }
 
 /*****************************************************************************
@@ -380,6 +389,17 @@ void ControllerWidgetBase::unlock()
   if (this->mutex != NULL)
   {
     pthread_mutex_unlock(this->mutex);
+  }
+}
+
+/*****************************************************************************
+
+*****************************************************************************/
+void ControllerWidgetBase::registerCallback(TaskWidget::TaskChangeCallback* callback)
+{
+  for (size_t i=0; i<taskWidgets.size(); ++i)
+  {
+    taskWidgets[i]->registerCallback(callback);
   }
 }
 

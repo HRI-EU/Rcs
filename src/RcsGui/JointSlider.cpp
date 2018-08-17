@@ -49,12 +49,9 @@
 
 
 
-/******************************************************************************
-
-
-
+/*******************************************************************************
+ *
 ******************************************************************************/
-
 JointSlider::JointSlider(double lower_bound,
                          double zero_pos,
                          double upper_bound,
@@ -79,7 +76,7 @@ JointSlider::JointSlider(double lower_bound,
   QHBoxLayout* stateBoxLayout = new QHBoxLayout;
 
   // Label for lower bound joint value
-  sprintf(a, " %5.1f", lower_bound * _scaleFactor);
+  snprintf(a, 31, " %5.1f", lower_bound * _scaleFactor);
   QLabel* label_lb = new QLabel(a);
   label_lb->setFont(QFont("Helvetica", 8, QFont::Bold));
   label_lb->setFixedWidth(30);
@@ -114,7 +111,7 @@ JointSlider::JointSlider(double lower_bound,
   t2->setValue(_zp);
 
   // Label for upper bound joint value
-  sprintf(a, " %5.1f", upper_bound * _scaleFactor);
+  snprintf(a, 31, " %5.1f", upper_bound * _scaleFactor);
   QLabel* label_ub = new QLabel(a);
   label_ub->setFont(QFont("Helvetica", 8, QFont::Bold));
   label_ub->setFixedWidth(30);
@@ -130,14 +127,9 @@ JointSlider::JointSlider(double lower_bound,
   setLayout(stateBoxLayout);
 }
 
-
-
-/****************************************************************************
-
-
-
- ***************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void JointSlider::setValue(double val)
 {
 
@@ -156,30 +148,28 @@ void JointSlider::setValue(double val)
 
 }
 
-
-
-/****************************************************************************
-
-
-
- ***************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 double JointSlider::getSliderValue(void)
 {
   return sl->getSliderValue();
 }
 
-
-
-/****************************************************************************
-
-
-
- ***************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void JointSlider::setSliderValue(double val)
 {
   sl->setSliderValue(val);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+QwtSlider* JointSlider::getSlider()
+{
+  return sl->getSlider();
 }
 
 

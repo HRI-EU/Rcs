@@ -82,6 +82,7 @@ public:
    */
   void setSliderValue(double value);
 
+  QwtSlider* getSlider();
 
 private:
   QwtSlider* qwtslider;

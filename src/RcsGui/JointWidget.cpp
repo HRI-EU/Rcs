@@ -36,6 +36,7 @@
 
 #include "JointWidget.h"
 #include "JointSlider.h"
+#include "SimpleSlider.h"
 
 #include <Rcs_typedef.h>
 #include <Rcs_macros.h>
@@ -91,7 +92,7 @@ static void* stateGui(void* arg)
   return w;
 }
 
-JointWidget* JointWidget::create(RcsGraph* graph, pthread_mutex_t* graphLock,
+int JointWidget::create(RcsGraph* graph, pthread_mutex_t* graphLock,
                                  MatNd* q_des, MatNd* q_curr,
                                  bool alwaysWriteToQ, bool passive)
 {
@@ -111,7 +112,7 @@ JointWidget* JointWidget::create(RcsGraph* graph, pthread_mutex_t* graphLock,
 
   int handle = RcsGuiFactory_requestGUI(stateGui, p);
 
-  return (JointWidget*) RcsGuiFactory_getPointer(handle);
+  return handle;
 }
 
 /*******************************************************************************
@@ -209,6 +210,11 @@ JointWidget::JointWidget(RcsGraph* graph, pthread_mutex_t* graphLock,
 
       jsc_q[i] = new JointSlider(lb-0.1*range, qi, ub+0.1*range, scaleFactor);
 
+      if (passive == false)
+      {
+        connect(jsc_q[i]->getSlider(), SIGNAL(valueChanged(double)), SLOT(setJoint()));
+      }
+
       constraintsLayout->addWidget(check_constraints[i], i, 0,
                                    Qt::AlignLeft);
       constraintsLayout->addWidget(lcd_q_cmd[i], i, 1, Qt::AlignLeft);
@@ -245,12 +251,6 @@ JointWidget::JointWidget(RcsGraph* graph, pthread_mutex_t* graphLock,
   // 25 Hz timer callback
   //
   _timer = new QTimer(this);
-
-  if (passive == false)
-  {
-    connect(_timer, SIGNAL(timeout()), SLOT(setJoint()));
-  }
-
   connect(_timer, SIGNAL(timeout()), SLOT(displayAct()));
   _timer->start(40);
 
@@ -270,7 +270,8 @@ JointWidget::~JointWidget()
     delete [] check_constraints;
   }
 
-  killTimer(_timer->timerId());
+  _timer->stop();
+  //killTimer(_timer->timerId());
 }
 
 /*******************************************************************************
@@ -350,7 +351,6 @@ void JointWidget::setConstraint(void)
 void JointWidget::setJoint(void)
 {
   int i = 0;
-
   lock();
 
   RCSGRAPH_TRAVERSE_JOINTS(_graph)
@@ -364,6 +364,12 @@ void JointWidget::setJoint(void)
   }
 
   unlock();
+
+  for (size_t i=0; i<callback.size(); ++i)
+  {
+    callback[i]->callback();
+  }
+
 }
 
 /*******************************************************************************
@@ -393,8 +399,6 @@ void JointWidget::unlock()
  ******************************************************************************/
 void JointWidget::reset(const MatNd* q)
 {
-  //disconnect(_timer, SLOT(setJoint()));
-
   MatNd_copy(_q_des, q);
   MatNd_copy(_q_curr, q);
 
@@ -403,8 +407,14 @@ void JointWidget::reset(const MatNd* q)
     jsc_q[i]->setValue(q->ele[i]);
     jsc_q[i]->setSliderValue(q->ele[i]);
   }
+}
 
-  //connect(_timer, SIGNAL(timeout()), SLOT(setJoint()));
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void JointWidget::registerCallback(JointChangeCallback* cb)
+{
+  callback.push_back(cb);
 }
 
 }   // namespace Rcs

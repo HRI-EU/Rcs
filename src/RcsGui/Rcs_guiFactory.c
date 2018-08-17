@@ -68,6 +68,7 @@ extern "C" {
 // cast as "extern C" so that we can call it from here.
 void RcsGuiFactory_create();
 void RcsGuiFactory_stopApplication();
+bool RcsGuiFactory_deleteGUI(int handle);
 
 
 
@@ -328,6 +329,23 @@ void RcsGuiFactory_update()
   pthread_mutex_unlock(&RCSGUIFACTORY_MUTEX);
 }
 
+bool RcsGuiFactory_destroyGUI(int handle)
+{
+  pthread_mutex_lock(&RCSGUIFACTORY_MUTEX);
+  bool success = RcsGuiFactory_deleteGUI(handle);
+
+  if (!success)
+  {
+    RLOG(4, "Failed to delete Gui with handle %d", handle);
+    pthread_mutex_unlock(&RCSGUIFACTORY_MUTEX);
+    return false;
+  }
+
+  RCSGUIFACTORY_HANDLE[handle] = NULL;
+  pthread_mutex_unlock(&RCSGUIFACTORY_MUTEX);
+
+  return true;
+}
 
 #ifdef __cplusplus
 }
