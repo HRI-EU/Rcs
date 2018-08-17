@@ -1,0 +1,16 @@
+<!-- A graph defining an enviromnet to stack beer pitchers on a bench -->
+<Graph name="Pitcher" >
+
+  <Body name="Pitcher" physics="dynamic" mass="1.3" rigid_body_joints="true" >
+    <!-- Pitcher Body -->
+    <Shape type="CYLINDER" radius="0.065" length="0.15" transform="0 0 0.075 0 0 0" physics="true" graphics="true" distance="true" color="GLASS" textureFile="../textures/beer.png" />
+    <Shape type="CYLINDER" radius="0.065" length="0.05" transform="0 0 0.175 0 0 0" physics="true" graphics="true" distance="true" color="GLASS" textureFile="../textures/foam.png" />
+    <Shape type="FRAME" graphics="true" scale="0.5"/>
+    <!-- Pitcher Handle -->
+    <Shape type="SSL" length="0.05" radius="0.01" transform="0.065 0 0.04 0 60 0" physics="true" graphics="true" distance="true" color="GLASS" />
+    <Shape type="SSL" length="0.02" radius="0.01" transform="0.10891 0 0.06556 0 40 0" physics="true" graphics="true" distance="true" color="GLASS" />
+    <Shape type="SSL" length="0.04" radius="0.01" transform="0.1218 0 0.08040 0 0 0" physics="true" graphics="true" distance="true" color="GLASS" />
+    <Shape type="SSL" length="0.02" radius="0.01" transform="0.1218 0 0.12070 0 -45 0" physics="true" graphics="true" distance="true" color="GLASS" />
+    <Shape type="SSL" length="0.045" radius="0.01" transform="0.10742 0 0.13530 0 -90 0" physics="true" graphics="true" distance="true" color="GLASS" />
+    </Body>
+</Graph>

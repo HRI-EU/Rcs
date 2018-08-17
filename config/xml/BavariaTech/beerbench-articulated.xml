@@ -1,0 +1,76 @@
+<Graph >
+
+  <Body name="Beerbench" mass="4" physics="dynamic" rigid_body_joints="true" >
+    <Shape type="SSR" extents="2.17 0.22 0.03" color="ORANGE" transform="0 0 0.46 0 0 0" graphics="true" />
+    <Shape type="BOX" extents="0.03 0.23 0.047" color="ORANGE" transform="-0.84 0 0.4215 0 0 0" graphics="true" />
+    <Shape type="BOX" extents="0.03 0.23 0.047" color="ORANGE" transform="0.84 0 0.4215 0 0 0" graphics="true" />
+
+    <!-- <Shape type="BOX" extents="0.06 0.013 0.04" color="GREEN" transform="-0.625 0 0.425 0 0 0" /> -->
+    <!-- <Shape type="BOX" extents="0.06 0.013 0.04" color="GREEN" transform="0.625 0 0.425 0 0 0" /> -->
+
+    <Shape type="BOX" extents="0.03 0.013 0.03" color="GREEN" transform="-0.61 0 0.43 0 0 0" graphics="true" />
+    <Shape type="BOX" extents="0.03 0.013 0.03" color="GREEN" transform="-0.653 0 0.43 0 0 0" graphics="true" />
+
+    <Shape type="BOX" extents="0.03 0.013 0.03" color="GREEN" transform="0.61 0 0.43 0 0 0" graphics="true" />
+    <Shape type="BOX" extents="0.03 0.013 0.03" color="GREEN" transform="0.653 0 0.43 0 0 0" graphics="true" />
+
+    <Shape type="FRAME" scale="0.05" transform="-1.1 0 0.46 0 0 0" />
+
+    <Shape type="FRAME" scale="0.05" transform="-1.1 0.08 0.46 0 0 0" />
+    <Shape type="FRAME" scale="0.05" transform="-1.05 0.125 0.46 0 0 -90" />
+    <Shape type="FRAME" scale="0.05" transform="-0.95 0.125 0.46 0 0 -90" />
+
+    <Shape type="FRAME" scale="0.05" transform="-1.1 -0.08 0.46 0 0 0" />
+    <Shape type="FRAME" scale="0.05" transform="-1.05 -0.125 0.46 0 0 90" />
+    <Shape type="FRAME" scale="0.05" transform="-0.95 -0.125 0.46 0 0 90" />
+
+  </Body>
+
+  <Body name="Beerbench-Leg1" prev="Beerbench" mass="3" physics="dynamic" >
+    <Joint name="Joint_Leg1" range="-180 0 180" type="RotY" transform="0.78 0 0.425 0 0 0" ctrlType="Torque" torqueLimit="0" />
+    <Shape type="BOX" extents="0.03 0.03 0.46" color="GREEN" transform="0 0.1 -0.195 0 0 0"  graphics="true" />
+    <Shape type="BOX" extents="0.03 0.03 0.46" color="GREEN" transform="0 -0.1 -0.195 0 0 0"  graphics="true" />
+    <Shape type="BOX" extents="0.03 0.23 0.004" color="GREEN" transform="0 0 -0.408 0 0 0"  graphics="true" />
+    <Shape type="CYLINDER" radius="0.004" length="0.23" color="GREEN" transform="0 0 -0.15 90 0 0" graphics="true" />
+    <Shape type="BOX" extents="0.004 0.23 0.03" color="GREEN" transform="0.01 0 -0.0775 0 0 0" graphics="true" />
+
+  </Body>
+
+  <Body name="Beerbench-Leg2" prev="Beerbench" mass="3" physics="dynamic" >
+    <Joint name="Joint_Leg2" range="-180 0 180" type="RotY" transform="-0.78 0 0.425 0 0 0" ctrlType="Torque" torqueLimit="0" />
+    <Shape type="BOX" extents="0.03 0.03 0.46" color="GREEN" transform="0 0.1 -0.195 0 0 0"  graphics="true" />
+    <Shape type="BOX" extents="0.03 0.03 0.46" color="GREEN" transform="0 -0.1 -0.195 0 0 0"  graphics="true" />
+    <Shape type="BOX" extents="0.03 0.23 0.004" color="GREEN" transform="0 0 -0.408 0 0 0"  graphics="true" />
+    <Shape type="CYLINDER" radius="0.004" length="0.23" color="GREEN" transform="0 0 -0.15 90 0 0" graphics="true" />
+    <Shape type="BOX" extents="0.004 0.23 0.03" color="GREEN" transform="-0.01 0 -0.0775 0 0 0" graphics="true" />
+
+    <Shape type="FRAME" scale="0.05" transform="0 0.115 -0.1 0 0 -90" />
+    <Shape type="FRAME" scale="0.05" transform="0 0.115 -0.225 0 0 -90" />
+    <Shape type="FRAME" scale="0.05" transform="0 0.115 -0.35 0 0 -90" />
+
+    <Shape type="FRAME" scale="0.05" transform="0 -0.115 -0.1 0 0 90" />
+    <Shape type="FRAME" scale="0.05" transform="0 -0.115 -0.225 0 0 90" />
+    <Shape type="FRAME" scale="0.05" transform="0 -0.115 -0.35 0 0 90" />
+
+    <Shape type="FRAME" scale="0.05" transform="-0.015 0 -0.408 0 0 0" />
+    <Shape type="FRAME" scale="0.05" transform="-0.005 0 -0.15 0 0 0" />
+  </Body>
+
+  <Body name="Beerbench-Link1" prev="Beerbench-Leg1" mass="1.25" physics="dynamic" >
+    <Joint name="Joint_Link1" range="-180 -135 180" type="RotY" transform="0 0 -0.15 0 0 0" ctrlType="Torque" torqueLimit="0" />
+    <Shape type="BOX" extents="0.2 0.004 0.02" color="GREEN" transform="0.1 0.05 0 0 0 -30" graphics="true" />
+    <Shape type="BOX" extents="0.2 0.004 0.02" color="GREEN" transform="0.1 -0.05 0 0 0 30" graphics="true" />
+    <Shape type="CYLINDER" radius="0.005" length="0.03" color="GREEN" transform="0.21 0 0 90 0 0" graphics="true" />
+  </Body>
+
+  <Body name="Beerbench-Link2" prev="Beerbench-Leg2" mass="1.25" physics="dynamic" >
+    <Joint name="Joint_Link2" range="-180 -45 180" type="RotY" transform="0 0 -0.15 0 0 0" ctrlType="Torque" torqueLimit="0" />
+    <Shape type="BOX" extents="0.2 0.004 0.02" color="GREEN" transform="0.1 0.05 0 0 0 -30" graphics="true" />
+    <Shape type="BOX" extents="0.2 0.004 0.02" color="GREEN" transform="0.1 -0.05 0 0 0 30" graphics="true" />
+    <Shape type="CYLINDER" radius="0.005" length="0.03" color="GREEN" transform="0.21 0 0 90 0 0" graphics="true" />
+
+    <Shape type="FRAME" scale="0.05" transform="0.1 0.05 -0.01 0 0 -30" />
+    <Shape type="FRAME" scale="0.05" transform="0.1 -0.05 -0.01 0 0 30" />
+  </Body>
+
+</Graph>

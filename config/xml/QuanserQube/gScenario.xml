@@ -1,23 +1,23 @@
 <Graph name="QuanserCube">
 
   <Body name="GroundPlane">
-    <Shape type="BOX" extents="2.0 2.0 0.004" transform="0 0 -0.002 0 0 0" graphics="true" physics="true" color="LIGHTBLUE"/>
+    <Shape type="BOX" extents="2.0 2.0 0.004" transform="0 0 -0.002 0 0 0" graphics="true" physics="true" color="LIGHTBLUE" textureFile="../textures/fMRT_brown_pattern_2x2.png"/>
   </Body>
 
   <Body name="Qube" mass="1.2" physics="kinematic">
-    <Shape type="BOX" extents="0.117 0.102 0.108" transform="0 0 0.054 0 0 0" graphics="true" physics="true" color="DARKGRAY"/> <!-- z-extends = 0.102m + 6mm rubbber feet-->
-    <xShape type="FRAME" scale="0.15" />
+    <Shape type="BOX" extents="0.117 0.102 0.108" transform="0 0 0.054 0 0 0" graphics="true" physics="true" color="DARKGRAY"/> <!-- z-extends = 0.102m + 6mm frubbber feet-->
+    <Shape type="FRAME" scale="0.12" />
   </Body>
 
   <Body name="CableFlag" prev="Qube">
     <Shape type="CYLINDER" radius="0.001" length="0.06" transform="-0.028 0 0.138 0 0 0" graphics="true" physics="false" color="DARKGRAY"/>
-    <Shape type="BOX" extents="0.03 0.001 0.02" transform="-0.043 0 0.158 0 0 0" graphics="true" physics="false"/>
+    <Shape type="BOX" extents="0.03 0.001 0.02" transform="-0.043 0 0.158 0 0 0" graphics="true" physics="false" textureFile="../textures/fMRT_bavaria.png"/>
   </Body>
 
   <Body name="Arm" prev="Qube" mass="0.095" physics="dynamic" color="LIGHTGRAY">
-    <Joint name="ActPoleJoint" type="RotZ" range="-135 0 135" transform="0 0 0.130 0 0 0" ctrlType="Torque" torqueLimit="100" />  <!-- 22mm offset in z-direction-->
+    <Joint name="ActPoleJoint" type="RotZ" range="-135 0 135" transform="0 0 0.130 0 0 0" ctrlType="Torque" torqueLimit="1000" />  <!-- 22mm offset in z-direction-->
     <Shape type="CYLINDER" radius="0.003" length="0.085" transform="0.0425 0 0 0 90 0" graphics="true" physics="true" />
-    <Shape type="FRAME" scale="0.15" />
+    <Shape type="FRAME" scale="0.12" />
   </Body>
 
   <Body name="EncoderAndFlange" prev="Arm">
@@ -26,10 +26,11 @@
     <Shape type="CYLINDER" radius="0.01" length="0.012" transform=" 0 0 -0.016 0 0 0" graphics="true" physics="false" color="DARKGRAY"/>
   </Body>
 
-  <Body name="Pendulum" prev="Arm" mass="0.0024" physics="dynamic" cogVector="0 0 -0.061"> <!-- (0.129 - 0.007)/d2 in cogVector due to 7mm offset-->
-    <Joint name="PendPoleJoint" type="RotX" range="-360 0 360" transform="0.085 0 0 0 0 0" ctrlType="Torque" torqueLimit="0" constraint="True"/>
+  <Body name="Pendulum" prev="Arm" mass="0.024" physics="dynamic" cogVector="0 0 -0.061"> <!-- (0.129 - 0.007)/d2 in cogVector due to 7mm offset-->
+    <Joint name="PendPoleJoint" type="RotX" range="-36000 180 36000" transform="0.085 0 0 180 0 0" constraint="True" ctrlType="Position" torqueLimit="0"/> <!--torqueLimit="0.001"-->
+    <!--Joint name="PendPoleJoint" type="RotX" range="-360 0 360" transform="0 0 0.0895 0 -90 0" ctrlType="Torque" torqueLimit="0" /-->
     <Shape type="CYLINDER" radius="0.0045" length="0.129" transform="0 0 -0.0575 0 0 0" graphics="true" physics="true" color="RUBY_S"/> <!-- transform: -0.0645m + 7mm offset-->
-    <Shape type="FRAME" scale="0.15" />
+    <Shape type="FRAME" scale="0.12" />
   </Body>
 
 </Graph>
