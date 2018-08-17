@@ -725,7 +725,7 @@ int main(int argc, char** argv)
     // ==============================================================
     // BVH test
     // ==============================================================
-  case 7:
+    case 7:
     {
       char dotFile[256] = "BVH.dot";
       strcpy(xmlFileName, "config/xml/BVH/test.bvh");
@@ -748,9 +748,9 @@ int main(int argc, char** argv)
       int err = system(dottyCommand.c_str());
 
       if (err == -1)
-        {
-          RMSG("Couldn't start dot file viewer!");
-        }
+      {
+        RMSG("Couldn't start dot file viewer!");
+      }
       break;
     }
 

@@ -101,7 +101,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     fscanf(fd, "%d", &nChannels);
     RLOG(5, "Found %d channels", nChannels);
 
-    for (int i=0;i<nChannels;++i)
+    for (int i=0; i<nChannels; ++i)
     {
       fscanf(fd, "%63s", buf);   // direction
 
@@ -200,18 +200,18 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     RCHECK(STREQ(buf,"}"));
     fscanf(fd, "%63s", buf);   // Next keyword
 
-      // Sphere at parent origin
-      double len = 0.8*Vec3d_getLength(endOffset);
-      RcsShape* shape = RALLOC(RcsShape);
-      HTr_setIdentity(&shape->A_CB);
-      shape->scale = 1.0;
-      shape->type = RCSSHAPE_SPHERE;
-      shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
-      shape->extents[0] = 0.1*len;
-      shape->extents[1] = 0.1*len;
-      shape->extents[2] = 0.1*len;
-      shape->color = String_clone("BLACK_RUBBER");
-      RcsBody_addShape(body, shape);
+    // Sphere at parent origin
+    double len = 0.8*Vec3d_getLength(endOffset);
+    RcsShape* shape = RALLOC(RcsShape);
+    HTr_setIdentity(&shape->A_CB);
+    shape->scale = 1.0;
+    shape->type = RCSSHAPE_SPHERE;
+    shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
+    shape->extents[0] = 0.1*len;
+    shape->extents[1] = 0.1*len;
+    shape->extents[2] = 0.1*len;
+    shape->color = String_clone("BLACK_RUBBER");
+    RcsBody_addShape(body, shape);
 
 
     RLOG(5, "Recursing after END SITE with next keyword %s", buf);
@@ -275,7 +275,10 @@ static void addGeometry(RcsGraph* self)
       Vec3d_sub(K_p12, K_p2, K_p1);
       Vec3d_constMulAndAdd(K_center, K_p1, K_p12, 0.5);
       double len = 0.8*Vec3d_getLength(K_p12);
-      if (len < 0.2) len = 0.2;
+      if (len < 0.2)
+      {
+        len = 0.2;
+      }
 
       // Box from parent to child
       RcsShape* shape = RALLOC(RcsShape);
@@ -351,5 +354,5 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName)
 
   RLOG(5, "Reached end");
 
-    return self;
+  return self;
 }

@@ -210,9 +210,9 @@ static void Math_centroidConvexPolygon2D(double centroid[2],
 
   if (nVertices>0.0)
   {
-  centroid[0] /= nVertices;
-  centroid[1] /= nVertices;
-}
+    centroid[0] /= nVertices;
+    centroid[1] /= nVertices;
+  }
 }
 
 bool Math_checkPolygon2D(double polygon[][2], unsigned int nVertices)

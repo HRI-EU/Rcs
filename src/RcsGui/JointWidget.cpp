@@ -93,8 +93,8 @@ static void* stateGui(void* arg)
 }
 
 int JointWidget::create(RcsGraph* graph, pthread_mutex_t* graphLock,
-                                 MatNd* q_des, MatNd* q_curr,
-                                 bool alwaysWriteToQ, bool passive)
+                        MatNd* q_des, MatNd* q_curr,
+                        bool alwaysWriteToQ, bool passive)
 {
   bool* _alwaysWriteToQ = new bool;
   *_alwaysWriteToQ = alwaysWriteToQ;

@@ -57,11 +57,11 @@ class JointWidget: public QScrollArea
 
 public:
   static int create(RcsGraph* graph,
-                             pthread_mutex_t* graphLock = NULL,
-                             MatNd* q_des = NULL,
-                             MatNd* q_curr = NULL,
-                             bool alwaysWriteToQ = false,
-                             bool passive = false);
+                    pthread_mutex_t* graphLock = NULL,
+                    MatNd* q_des = NULL,
+                    MatNd* q_curr = NULL,
+                    bool alwaysWriteToQ = false,
+                    bool passive = false);
 
   static bool destroy(int handle);
 

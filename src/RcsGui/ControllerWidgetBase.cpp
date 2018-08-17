@@ -90,11 +90,11 @@ void* ControllerWidgetBase::controllerGuiBase(void* arg)
   \brief Static instantiation method.
 *****************************************************************************/
 int ControllerWidgetBase::create(ControllerBase* c,
-                                                   MatNd* a_des,
-                                                   MatNd* x_des,
-                                                   const MatNd* x_curr,
-                                                   pthread_mutex_t* mutex,
-                                                   bool showOnly)
+                                 MatNd* a_des,
+                                 MatNd* x_des,
+                                 const MatNd* x_curr,
+                                 pthread_mutex_t* mutex,
+                                 bool showOnly)
 {
   VoidPointerList* p = new VoidPointerList;
   p->ptr[0] = (void*) c;
@@ -118,12 +118,12 @@ int ControllerWidgetBase::create(ControllerBase* c,
   \brief Static instantiation method.
 *****************************************************************************/
 int ControllerWidgetBase::create(ControllerBase* c,
-                                                   MatNd* a_des,
-                                                   MatNd* a_curr,
-                                                   MatNd* x_des,
-                                                   const MatNd* x_curr,
-                                                   pthread_mutex_t* mutex,
-                                                   bool showOnly)
+                                 MatNd* a_des,
+                                 MatNd* a_curr,
+                                 MatNd* x_des,
+                                 const MatNd* x_curr,
+                                 pthread_mutex_t* mutex,
+                                 bool showOnly)
 {
   VoidPointerList* p = new VoidPointerList;
   p->ptr[0] = (void*) c;

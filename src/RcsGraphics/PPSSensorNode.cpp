@@ -74,7 +74,8 @@ Rcs::PPSSensorNode::PPSSensorNode(const RcsSensor* pps, bool debug)
   {
     // skip texels without proper normal
     double length = Vec3d_getLength(TEXEL->normal);
-    if (fabs(length) < 0.1) {
+    if (fabs(length) < 0.1)
+    {
       continue;
     }
 

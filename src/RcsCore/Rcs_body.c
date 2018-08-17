@@ -111,16 +111,16 @@ void RcsBody_destroy(RcsBody* self)
   // Destroy all associated shapes
   NLOG(0, "Starting to delete shapes");
   if (self->shape != NULL)
+  {
+    RcsShape** sPtr = self->shape;
+    while (*sPtr)
     {
-      RcsShape** sPtr = self->shape;
-      while (*sPtr)
-        {
-          RcsShape_destroy(*sPtr);
-          sPtr++;
-        }
-
-      RFREE(self->shape);
+      RcsShape_destroy(*sPtr);
+      sPtr++;
     }
+
+    RFREE(self->shape);
+  }
 
   RFREE(self->name);
   RFREE(self->xmlName);
@@ -794,12 +794,12 @@ void RcsBody_fprint(FILE* out, const RcsBody* b)
   fprintf(out, "\thas %d shapes\n", RcsBody_numShapes(b));
 
   if (b->shape != NULL)
+  {
+    RCSBODY_TRAVERSE_SHAPES(b)
     {
-      RCSBODY_TRAVERSE_SHAPES(b)
-      {
-        RcsShape_fprint(out, SHAPE);
-      }
+      RcsShape_fprint(out, SHAPE);
     }
+  }
 
   fprintf(out, "\n\n");
 }
@@ -1885,12 +1885,12 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
   }
 
   if (self->shape != NULL)
+  {
+    RCSBODY_TRAVERSE_SHAPES(self)
     {
-      RCSBODY_TRAVERSE_SHAPES(self)
-      {
-        RcsShape_fprintXML(out, SHAPE);
-      }
+      RcsShape_fprintXML(out, SHAPE);
     }
+  }
 
   // Place the sensor's xml into the body description
   RCSGRAPH_TRAVERSE_SENSORS(graph)

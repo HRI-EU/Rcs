@@ -446,7 +446,7 @@ RcsSensor* RcsSensor_clone(const RcsSensor* src, const RcsGraph* dstGraph)
   {
     unsigned int nTexels = 0;
 
-    for (RcsTexel **sPtr = src->texel; *sPtr; sPtr++)
+    for (RcsTexel** sPtr = src->texel; *sPtr; sPtr++)
     {
       nTexels++;
     }
@@ -498,7 +498,7 @@ void RcsSensor_destroy(RcsSensor* self)
 
   if (self->texel)
   {
-    for (RcsTexel **sPtr = self->texel; *sPtr; sPtr++)
+    for (RcsTexel** sPtr = self->texel; *sPtr; sPtr++)
     {
       RFREE(*sPtr);
     }

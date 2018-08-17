@@ -287,7 +287,7 @@ void Rcs::PeriodicCallback::start(double updateFreq_, int prio)
   int res = pthread_create(&this->callbackThread, att, &threadFuncPosix, this);
 
   switch (res)
-    {
+  {
     case 0:
       RLOG(5, "Success to get real-time thread attributes");
       break;
@@ -307,7 +307,7 @@ void Rcs::PeriodicCallback::start(double updateFreq_, int prio)
     default:
       RLOG(1, "Unknown error %d", res);
       break;
-    }
+  }
 }
 
 /*******************************************************************************

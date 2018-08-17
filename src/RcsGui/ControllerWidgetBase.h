@@ -62,19 +62,19 @@ class ControllerWidgetBase: public QScrollArea
 public:
   static void* controllerGuiBase(void* arg);
   static int create(ControllerBase* cntrl,
-                                      MatNd* a_des,
-                                      MatNd* x_des,
-                                      const MatNd* x_curr,
-                                      pthread_mutex_t* lock_=NULL,
-                                      bool showOnly = false);
+                    MatNd* a_des,
+                    MatNd* x_des,
+                    const MatNd* x_curr,
+                    pthread_mutex_t* lock_=NULL,
+                    bool showOnly = false);
 
   static int create(ControllerBase* cntrl,
-                                      MatNd* a_des,
-                                      MatNd* a_curr,
-                                      MatNd* x_des,
-                                      const MatNd* x_curr,
-                                      pthread_mutex_t* lock_=NULL,
-                                      bool showOnly = false);
+                    MatNd* a_des,
+                    MatNd* a_curr,
+                    MatNd* x_des,
+                    const MatNd* x_curr,
+                    pthread_mutex_t* lock_=NULL,
+                    bool showOnly = false);
 
   static bool destroy(int handle);
 
