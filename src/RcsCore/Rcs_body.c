@@ -223,6 +223,21 @@ unsigned int RcsBody_numDistanceShapes(const RcsBody* self)
 
   \brief See header.
 
+******************************************************************************/
+
+void RcsBody_addShape(RcsBody* self, RcsShape* shape)
+{
+  unsigned int nShapes = RcsBody_numShapes(self);
+  self->shape = (RcsShape**) realloc(self->shape, (nShapes+2)*sizeof(RcsShape*));
+  self->shape[nShapes] = shape;
+  self->shape[nShapes+1] = NULL;
+}
+
+
+/******************************************************************************
+
+  \brief See header.
+
 *****************************************************************************/
 
 RcsBody* RcsBody_getLastInGraph(const RcsGraph* self)

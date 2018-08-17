@@ -37,6 +37,7 @@
 #include "Rcs_typedef.h"
 #include "Rcs_graphParser.h"
 #include "Rcs_URDFParser.h"
+#include "Rcs_BVHParser.h"
 #include "Rcs_macros.h"
 #include "Rcs_utils.h"
 #include "Rcs_body.h"
@@ -333,6 +334,11 @@ RcsGraph* RcsGraph_create(const char* configFile)
     Rcs_printResourcePath();
     RFATAL("RcsGraph configuration file \"%s\" not found in "
            "ressource path - exiting", configFile ? configFile : "NULL");
+  }
+
+  if (String_hasEnding(filename, ".bvh", false))
+  {
+    return RcsGraph_createFromBVHFile(filename);
   }
 
   // Read XML file

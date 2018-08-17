@@ -15,6 +15,7 @@ PeriodicCallback.cpp
 PhysicsBase.cpp
 Rcs_basicMath.c
 Rcs_body.c
+Rcs_BVHParser.c
 Rcs_cmdLine.cpp
 Rcs_collisionModel.c
 Rcs_distanceWM5.cpp

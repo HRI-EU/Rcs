@@ -91,6 +91,12 @@ unsigned int RcsBody_numShapes(const RcsBody* self);
 unsigned int RcsBody_numDistanceShapes(const RcsBody* self);
 
 /*! \ingroup RcsBodyFunctions
+ *  \brief Appends a shape to the bodie's shapes. The shapes array will be
+ *         resized if needed (using realloc).
+ */
+void RcsBody_addShape(RcsBody* self, RcsShape* shape);
+
+/*! \ingroup RcsBodyFunctions
  *  \brief Returns the last body in the graph according to a depth-first
  *         traversal. If the graph is empty, NULL is returned.
  */

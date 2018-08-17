@@ -48,6 +48,7 @@
 #include <Rcs_body.h>
 #include <Rcs_kinematics.h>
 #include <Rcs_dynamics.h>
+#include <Rcs_BVHParser.h>
 
 #include <SegFaultHandler.h>
 
@@ -716,6 +717,40 @@ int main(int argc, char** argv)
       }
 
       RMSGS("Graph tests %s", (success==true) ? "SUCCEEDED" : "FAILED");
+      break;
+    }
+
+
+
+    // ==============================================================
+    // BVH test
+    // ==============================================================
+  case 7:
+    {
+      char dotFile[256] = "BVH.dot";
+      strcpy(xmlFileName, "config/xml/BVH/test.bvh");
+      argP.getArgument("-f", xmlFileName, "Configuration file name");
+      RcsGraph* graph = RcsGraph_createFromBVHFile(xmlFileName);
+      RCHECK(graph);
+      RPAUSE_DL(5);
+      RMSG("Here's the forward tree:");
+      RcsGraph_fprint(stderr, graph);
+      RcsGraph_writeDotFile(graph, dotFile);
+
+      RMSG("Writing graph to xml file");
+      FILE* out = fopen("graph.xml", "w+");
+      RcsGraph_fprintXML(out, graph);
+      fclose(out);
+
+      RcsGraph_destroy(graph);
+
+      std::string dottyCommand = "dotty " + std::string(dotFile) + "&";
+      int err = system(dottyCommand.c_str());
+
+      if (err == -1)
+        {
+          RMSG("Couldn't start dot file viewer!");
+        }
       break;
     }
 

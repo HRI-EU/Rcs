@@ -844,13 +844,13 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
   }
 
   // Color
-  if (!STREQ(self->color, "DEFAULT"))
+  if (self->color && (!STREQ(self->color, "DEFAULT")))
   {
     fprintf(out, "color=\"%s\" ", self->color);
   }
 
   // Material
-  if (!STREQ(self->material, "default"))
+  if (self->material && (!STREQ(self->material, "default")))
   {
     fprintf(out, "material=\"%s\" ", self->material);
   }
