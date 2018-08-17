@@ -1293,7 +1293,10 @@ void RcsGraph_parseBodies(xmlNodePtr node,
       while (pch != NULL)
       {
         sscanf(pch, "%255s", path);
-        Rcs_addResourcePath(path);
+
+        char* ePath = String_expandEnvironmentVariables(path);
+        Rcs_addResourcePath(ePath);
+        RFREE(ePath);
         RLOG(9, "Adding path %d to ressource path: \"%s\"", nPaths++, path);
         pch = strtok(NULL, " ");
       }
