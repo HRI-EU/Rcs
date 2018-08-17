@@ -346,6 +346,12 @@ const char* materialDefs =
                     <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
                     </MaterialDefinition>
 
+                    <MaterialDefinition Name="GLASS" Shininess="96.0">
+                    <Ambient R="0.0" G="0.0" B="0.0" A="0.4"/>
+                    <Diffuse R="0.705882" G="0.804706" B="0.875294" A="0.7"/>
+                    <Specular R="0.9" G="0.9" B="0.9" A="0.7"/>
+                    </MaterialDefinition>
+
                     </Materials>);
 // *INDENT-ON*
 
