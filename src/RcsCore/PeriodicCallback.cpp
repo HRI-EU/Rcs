@@ -177,6 +177,7 @@ Rcs::PeriodicCallback::PeriodicCallback() :
   loopCount(0),
   overruns(0),
   schedulingPolicy(SCHED_OTHER),
+  threadPriority(50),
   className("Rcs::PeriodicCallback"),
   syncMode(Synchronize_Soft)
 {
@@ -234,6 +235,14 @@ Rcs::PeriodicCallback::getSynchronizationMode() const
 /*******************************************************************************
  *
  ******************************************************************************/
+void Rcs::PeriodicCallback::start()
+{
+  start(getUpdateFrequency(), getThreadPriority());
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void Rcs::PeriodicCallback::start(double updateFreq_, int prio)
 {
   if (isStarted() == true)
@@ -258,6 +267,7 @@ void Rcs::PeriodicCallback::start(double updateFreq_, int prio)
   pthread_attr_t* att = NULL;
   pthread_attr_t attrRT;
 
+  setThreadPriority(prio);
   bool rtSuccess = Rcs_getRealTimeThreadAttribute(this->schedulingPolicy,
                                                   prio, &attrRT);
 
@@ -435,6 +445,32 @@ void Rcs::PeriodicCallback::setSchedulingPolicy(int policy)
   pthread_mutex_lock(&this->settingsMtx);
   this->schedulingPolicy = policy;
   pthread_mutex_unlock(&this->settingsMtx);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::PeriodicCallback::setThreadPriority(int prio)
+{
+  pthread_mutex_lock(&this->settingsMtx);
+  this->threadPriority = prio;
+  pthread_mutex_unlock(&this->settingsMtx);
+
+  return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+int Rcs::PeriodicCallback::getThreadPriority() const
+{
+  int prio;
+
+  pthread_mutex_lock(&this->settingsMtx);
+  prio = this->threadPriority;
+  pthread_mutex_unlock(&this->settingsMtx);
+
+  return prio;
 }
 
 /*******************************************************************************

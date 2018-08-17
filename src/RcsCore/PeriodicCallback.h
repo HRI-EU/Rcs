@@ -119,10 +119,34 @@ public:
    */
   virtual void setSchedulingPolicy(int policy);
 
+  /*! \brief Sets the thread priority. It will only take effect before starting
+   *         the thread.
+   *
+   *  \param[in] priority   New thread priority
+   *  \return True for success, false otherwise.
+   */
+  bool setThreadPriority(int priority);
+
+  /*! \brief Sets the scheduling policy:
+   *         - SCHED_OTHER
+   *         - SCHED_FIFO
+   *         - SCHED_RR
+   *         See pthread_attr_setschedpolicy for details.
+   *         This function is thread-safe.
+   */
+  int getThreadPriority() const;
+
   /*! \brief Returns the current synchronization mode.
    *         This function is thread-safe.
    */
   virtual SynchronizeMode getSynchronizationMode() const;
+
+  /*! \brief Starts a thread that calls the \ref callback() function with
+   *         the previously set update frequency. If the scheduling policy is
+   *         set to SCHED_RR or SCHED_FIFO, then the thread priority will take
+   *         effect.
+   */
+  virtual void start();
 
   /*! \brief Starts a thread that calls the \ref callback() function with
    *         the given frequency. If the scheduling policy is set to
@@ -132,7 +156,7 @@ public:
    *  \param[in] updateFreq   Thread update frequency
    *  \param[in] prio         Thread priority
    */
-  virtual void start(double updateFreq=10.0, int prio=50);
+  virtual void start(double updateFreq, int prio=50);
 
   /*! \brief Stops the thread. This quits the thread and should be called
    *         before calling the destructor.
@@ -210,6 +234,7 @@ private:
   unsigned long loopCount;  ///< Counts each callback function call
   unsigned long overruns;   ///< Counts each missed timing
   int schedulingPolicy;     ///< Default: SCHED_OTHER
+  int threadPriority;       ///< Default: 50
   pthread_t callbackThread; ///< Handle to callback thread
   std::string className;    ///< Default: Rcs::PeriodicCallback
   SynchronizeMode syncMode; ///< See enum description
