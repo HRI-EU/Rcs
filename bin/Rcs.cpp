@@ -80,6 +80,7 @@
 #include <Rcs_geometry.h>
 #include <Rcs_gradientTests.h>
 #include <Rcs_resourcePath.h>
+#include "Rcs_BVHParser.h"
 #include <Rcs_timer.h>
 #include <Rcs_sensor.h>
 #include <Rcs_typedef.h>
@@ -365,8 +366,9 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("p", "Print information to console");
       Rcs::KeyCatcherBase::registerKey("q", "Quit");
       Rcs::KeyCatcherBase::registerKey("W", "Merge bodies");
+      Rcs::KeyCatcherBase::registerKey("x", "Rewind bvh file");
 
-      double dtSim = 0.0;
+      double dtSim = 0.0, dtStep = 0.04;
       char hudText[512] = "", comRef[64] = "";
       char dotFile[256] = "RcsGraph.dot";
       strcpy(xmlFileName, "gScenario.xml");
@@ -385,6 +387,7 @@ int main(int argc, char** argv)
                                          "of shapes dynamically");
       bool editMode = argP.hasArgument("-edit", "Start in xml edit mode "
                                        "(no Qt Gui)");
+      bool playBVH = argP.hasArgument("-bvh", "Play bvh file");
 
       Rcs_addResourcePath(directory);
 
@@ -422,6 +425,20 @@ int main(int argc, char** argv)
         RMSG("Failed to create graph from file \"%s\" - exiting",
              xmlFileName);
         break;
+      }
+
+      MatNd* bvhTraj = NULL;
+      unsigned int bvhIdx = 0;
+      if (playBVH && String_hasEnding(xmlFileName, ".bvh", false))
+      {
+        bvhTraj = RcsGraph_createTrajectoryFromBVHFile(graph->xmlFile, &dtStep);
+        if (bvhTraj->n!=graph->dof)
+        {
+          RLOG(1, "Mismatch in bvh array dimensions: found %d columns, but "
+               "graph has %d dof", bvhTraj->n, graph->dof);
+          MatNd_destroy(bvhTraj);
+          bvhTraj = NULL;
+        }
       }
 
       if (testCopy==true)
@@ -482,7 +499,7 @@ int main(int argc, char** argv)
         }
 
         viewer->runInThread(mtx);
-        if (editMode == false)
+        if ((editMode==false) && (bvhTraj==NULL))
         {
           Rcs::JointWidget::create(graph, mtx);
         }
@@ -492,6 +509,7 @@ int main(int argc, char** argv)
       {
         RPAUSE_MSG("Hit enter to start kinematics computation loop");
       }
+
 
 
       while (runLoop)
@@ -505,6 +523,24 @@ int main(int argc, char** argv)
 
         if (graph != NULL)
         {
+          if (bvhTraj!=NULL)
+          {
+            MatNd row = MatNd_getRowViewTranspose(bvhTraj, bvhIdx);
+
+            RCSGRAPH_TRAVERSE_JOINTS(graph)
+            {
+              double scale = RcsJoint_isRotation(JNT) ? M_PI/180.0 : 0.001;
+              graph->q->ele[JNT->jointIndex] = scale*row.ele[JNT->jointIndex];
+            }
+
+            //MatNd_copy(graph->q, &row);
+            bvhIdx++;
+            if (bvhIdx >= bvhTraj->m)
+            {
+              bvhIdx = 0;
+            }
+          }
+
           dtSim = Timer_getSystemTime();
           RcsGraph_setState(graph, NULL, NULL);
           dtSim = Timer_getSystemTime() - dtSim;
@@ -738,11 +774,23 @@ int main(int argc, char** argv)
             //pthread_mutex_lock(&graphLock);
             //pthread_mutex_unlock(&graphLock);
           }
+          else if (kc->getAndResetKey('x'))
+          {
+            RMSG("Rewinding BVH file");
+            bvhIdx = 0;
+          }
         }   // KeyCatcher
 
         sprintf(hudText, "Graph \"%s\"\nDof: %d nJ: %d\n"
-                "Forward kinematics step: %.1f ms",
+                "Forward kinematics step: %.1f ms\n",
                 graph->xmlFile, graph->dof, graph->nJ, dtSim*1000.0);
+
+        if (bvhTraj!=NULL)
+        {
+          char a[256];
+          sprintf(a, "BVH row %d (from %d)\n", bvhIdx, bvhTraj->m);
+          strcat(hudText, a);
+        }
 
         if (hud != NULL)
         {
@@ -758,7 +806,7 @@ int main(int argc, char** argv)
           RPAUSE();
         }
 
-        Timer_usleep(40000);
+        Timer_waitDT(dtStep);
         loopCount++;
       }
       if (!valgrind)

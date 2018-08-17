@@ -51,6 +51,32 @@
 /*******************************************************************************
  *
  ******************************************************************************/
+static bool findKeyword(const char* keyword, FILE* fd)
+{
+  const unsigned int bufLen = 32;
+  int nItemsRead = 0;
+  char buf[bufLen];
+
+  do
+    {
+      nItemsRead = fscanf(fd, "%31s", buf);
+      RLOG(10, "Reading keyword \"%s\"", buf);
+
+      if (nItemsRead != 1)
+        {
+          RLOG(1, "Keyword \"%s\": Couldn't read 1 item: %d",
+               keyword, nItemsRead);
+          continue;
+        }
+
+    } while ((nItemsRead!=EOF) && (!STRNCASEEQ(buf, keyword, bufLen)));
+
+  return (nItemsRead!=EOF) ? true : false;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 static RcsShape* createFrameShape(double scale)
 {
   RcsShape* shape = RALLOC(RcsShape);
@@ -355,4 +381,97 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName)
   RLOG(5, "Reached end");
 
   return self;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+MatNd* RcsGraph_createTrajectoryFromBVHFile(const char* fileName, double* dt)
+{
+  FILE* fd = fopen(fileName, "r");
+
+  if (fd==NULL)
+  {
+    RLOG(1, "Error opening BVH file \"%s\"", fileName);
+    return NULL;
+  }
+
+
+  bool success = findKeyword("MOTION", fd);
+
+  if (success==false)
+  {
+    RLOG(1, "Couldn't find MOTION keyword - giving up");
+    fclose(fd);
+    return NULL;
+  }
+
+  char buf[64] = "";
+  fscanf(fd, "%63s", buf);
+  RCHECK(STRCASEEQ(buf, "Frames:"));
+
+  int numFrames = 0;
+  fscanf(fd, "%d", &numFrames);
+  RLOG(5, "Trajectory has %d frames", numFrames);
+
+  fscanf(fd, "%63s", buf);
+  RCHECK_MSG(STRCASEEQ(buf, "Frame"), "%s", buf);
+
+  fscanf(fd, "%63s", buf);
+  RCHECK_MSG(STRCASEEQ(buf, "Time:"), "%s", buf);
+
+  double frameTime = 0.0;
+  fscanf(fd, "%lf", &frameTime);
+  RLOG(5, "Trajectory has frameTime %f", frameTime);
+
+  if (dt!=NULL)
+  {
+    *dt = frameTime;
+  }
+
+  fpos_t trajPos;
+  int res = fgetpos(fd, &trajPos);
+  unsigned int numValues = 0;
+  RCHECK(res==0);
+  int isEOF = 0;
+
+  do
+  {
+    double dummy;
+    isEOF = fscanf(fd, "%lf", &dummy);
+    numValues++;
+  }
+  while (isEOF != EOF);
+
+  RLOG(5, "Found %d values", numValues);
+  numValues--;
+
+
+  if (numValues%numFrames!=0)
+  {
+    RLOG(4, "Modulo is %d but should be 0", numValues % numFrames);
+    fclose(fd);
+    return NULL;
+  }
+
+  res = fsetpos(fd, &trajPos);
+
+  RLOG(5, "Creating %d x %d array", numFrames, (int)numValues/numFrames);
+  MatNd* data = MatNd_create(numFrames, (int)numValues/numFrames);
+
+  numValues = 0;
+  isEOF = 0;
+  do
+  {
+
+    isEOF = fscanf(fd, "%lf", &data->ele[numValues]);
+    numValues++;
+  }
+  while (isEOF != EOF);
+
+
+
+  fclose(fd);
+
+  return data;
 }
