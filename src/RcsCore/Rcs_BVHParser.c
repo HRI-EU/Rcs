@@ -96,7 +96,7 @@ static RcsShape* createFrameShape(double scale)
  *
  ******************************************************************************/
 static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
-                           const double offset[3], double linearScaleToSI, 
+                           const double offset[3], double linearScaleToSI,
                            bool Z_up_x_forward)
 {
   if (STRCASEEQ(buf, "ROOT"))
@@ -118,7 +118,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     fscanf(fd, "%63s", buf);   // Next keyword
 
     RLOG(5, "Recursing after ROOT with next keyword %s", buf);
-    parseRecursive(buf, self, child, fd, Vec3d_zeroVec(), linearScaleToSI, 
+    parseRecursive(buf, self, child, fd, Vec3d_zeroVec(), linearScaleToSI,
                    Z_up_x_forward);
   }
   else if (STRCASEEQ(buf, "OFFSET"))
@@ -128,7 +128,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     Vec3d_constMulSelf(offs, linearScaleToSI);
     fscanf(fd, "%63s", buf);   // Next keyword
     RLOG(5, "Recursing after OFFSET with next keyword %s", buf);
-    parseRecursive(buf, self, body, fd, offs, linearScaleToSI, 
+    parseRecursive(buf, self, body, fd, offs, linearScaleToSI,
                    Z_up_x_forward);
   }
   else if (STRCASEEQ(buf, "CHANNELS"))
@@ -208,7 +208,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
 
     fscanf(fd, "%63s", buf);   // Next keyword
     RLOG(5, "Recursing after CHANNELS with next keyword %s", buf);
-    parseRecursive(buf, self, body, fd, Vec3d_zeroVec(), linearScaleToSI, 
+    parseRecursive(buf, self, body, fd, Vec3d_zeroVec(), linearScaleToSI,
                    Z_up_x_forward);
   }
   else if (STRCASEEQ(buf, "JOINT"))
@@ -267,7 +267,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
 
 
     RLOG(5, "Recursing after END SITE with next keyword %s", buf);
-    parseRecursive(buf, self, body, fd, Vec3d_zeroVec(), linearScaleToSI, 
+    parseRecursive(buf, self, body, fd, Vec3d_zeroVec(), linearScaleToSI,
                    Z_up_x_forward);
   }
 
@@ -292,7 +292,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
   }
   else
   {
-    parseRecursive(buf, self, body, fd, Vec3d_zeroVec(), linearScaleToSI, 
+    parseRecursive(buf, self, body, fd, Vec3d_zeroVec(), linearScaleToSI,
                    Z_up_x_forward);
   }
 
@@ -370,7 +370,9 @@ static void addGeometry(RcsGraph* self)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-RcsGraph* RcsGraph_createFromBVHFile(const char* fileName, double linearScaleToSI, bool Z_up_x_forward)
+RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
+                                     double linearScaleToSI,
+                                     bool Z_up_x_forward)
 {
   FILE* fd = fopen(fileName, "r");
 
@@ -432,8 +434,8 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName, double linearScaleToS
  * See header.
  ******************************************************************************/
 MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
-                                            const char* fileName, 
-                                            double* dt, 
+                                            const char* fileName,
+                                            double* dt,
                                             double linearScaleToSI,
                                             double angularScaleToSI)
 {

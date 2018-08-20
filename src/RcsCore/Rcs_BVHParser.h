@@ -44,11 +44,45 @@
 extern "C" {
 #endif
 
-  RcsGraph* RcsGraph_createFromBVHFile(const char* fileName, double linearScaleToSI, bool Z_up_x_forward);
-  MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph, 
-                                              const char* fileName, double* dt, 
-                                              double linearScaleToSI,
-                                              double angularScaleToSI);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Creates a graph from a given BVH file. BVH stands for "Bounding
+ *         Volume Hierarchy" and is a Motion Capture format.
+ *
+ *  \param[in]  fileName         Fully qualified name of BVH file
+ *  \param[in]  linearScaleToSI  Value that scales the BVH-file's translations
+ *                               to SI units (meters).
+ *  \param[in] Z_up_x_forward    When false, the root frame is kept in BVH-
+ *                               conventions (y-up), otherwise it is transformed
+ *                               into z-up x-forward convention.
+ *  \return                      Graph according to BVH file, or NULL if loading
+ *                               failed. In the latter case, debug messages are
+ *                               printed to the console on debug levels 1 and
+ *                               higher.
+ */
+RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
+                                     double linearScaleToSI,
+                                     bool Z_up_x_forward);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Creates a matrix of animation poses from a given BVH file.
+ *
+ *  \param[in]  graph             Graph corresponding to BVH file.
+ *  \param[in]  fileName          Fully qualified name of BVH file
+ *  \param[out]  dt               Time step between two consecutive frames. If
+ *                                it is NULL, it will be ignored.
+ *  \param[in]  linearScaleToSI   Value that scales the BVH-file's translations
+ *                                to SI units (meters).
+ *  \param[out] Z_up_x_forward    When false, the root frame is kept in BVH-
+ *                                conventions (y-up), otherwise it is transformed
+ *                                into z-up x-forward convention.
+ */
+MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
+                                            const char* fileName,
+                                            double* dt,
+                                            double linearScaleToSI,
+                                            double angularScaleToSI);
+
 
 #ifdef __cplusplus
 }

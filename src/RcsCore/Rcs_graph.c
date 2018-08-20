@@ -338,7 +338,7 @@ RcsGraph* RcsGraph_create(const char* configFile)
 
   if (String_hasEnding(filename, ".bvh", false))
   {
-    return RcsGraph_createFromBVHFile(filename);
+    return RcsGraph_createFromBVHFile(filename, 0.01, true);
   }
 
   // Read XML file
