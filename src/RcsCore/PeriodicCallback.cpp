@@ -267,7 +267,7 @@ void Rcs::PeriodicCallback::start(double updateFreq_, int prio)
   pthread_attr_t* att = NULL;
   pthread_attr_t attrRT;
 
-  setThreadPriority(prio);
+  this->threadPriority = prio;
   bool rtSuccess = Rcs_getRealTimeThreadAttribute(this->schedulingPolicy,
                                                   prio, &attrRT);
 
