@@ -730,7 +730,7 @@ int main(int argc, char** argv)
       char dotFile[256] = "BVH.dot";
       strcpy(xmlFileName, "config/xml/BVH/test.bvh");
       argP.getArgument("-f", xmlFileName, "Configuration file name");
-      RcsGraph* graph = RcsGraph_createFromBVHFile(xmlFileName);
+      RcsGraph* graph = RcsGraph_createFromBVHFile(xmlFileName, 0.01, true);
       RCHECK(graph);
       RPAUSE_DL(5);
       RMSG("Here's the forward tree:");

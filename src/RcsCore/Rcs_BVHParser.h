@@ -44,8 +44,11 @@
 extern "C" {
 #endif
 
-RcsGraph* RcsGraph_createFromBVHFile(const char* fileName);
-MatNd* RcsGraph_createTrajectoryFromBVHFile(const char* fileName, double* dt);
+  RcsGraph* RcsGraph_createFromBVHFile(const char* fileName, double linearScaleToSI, bool Z_up_x_forward);
+  MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph, 
+                                              const char* fileName, double* dt, 
+                                              double linearScaleToSI,
+                                              double angularScaleToSI);
 
 #ifdef __cplusplus
 }

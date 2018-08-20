@@ -39,6 +39,7 @@
 #include "Rcs_typedef.h"
 #include "Rcs_utils.h"
 #include "Rcs_body.h"
+#include "Rcs_joint.h"
 #include "Rcs_Vec3d.h"
 #include "Rcs_Mat3d.h"
 #include "Rcs_basicMath.h"
@@ -95,7 +96,8 @@ static RcsShape* createFrameShape(double scale)
  *
  ******************************************************************************/
 static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
-                           const double offset[3])
+                           const double offset[3], double linearScaleToSI, 
+                           bool Z_up_x_forward)
 {
   if (STRCASEEQ(buf, "ROOT"))
   {
@@ -105,21 +107,29 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     child->name = String_clone(buf);
     child->Inertia = HTr_create();
     Mat3d_setZero(child->Inertia->rot);
-    RcsBody_addShape(child, createFrameShape(2.0));
+    if (Z_up_x_forward)
+      {
+        child->A_BP = HTr_create();
+        //Mat3d_fromEulerAngles2(child->A_BP->rot, M_PI_2, M_PI_2, 0.0);
+      }
+    RcsBody_addShape(child, createFrameShape(0.5));
     RcsGraph_insertBody(self, body, child);
     fscanf(fd, "%63s", buf);   // Curly brace open
     fscanf(fd, "%63s", buf);   // Next keyword
 
     RLOG(5, "Recursing after ROOT with next keyword %s", buf);
-    parseRecursive(buf, self, child, fd, Vec3d_zeroVec());
+    parseRecursive(buf, self, child, fd, Vec3d_zeroVec(), linearScaleToSI, 
+                   Z_up_x_forward);
   }
   else if (STRCASEEQ(buf, "OFFSET"))
   {
     double offs[3];
     fscanf(fd, "%lf %lf %lf", &offs[0], &offs[1], &offs[2]);
+    Vec3d_constMulSelf(offs, linearScaleToSI);
     fscanf(fd, "%63s", buf);   // Next keyword
     RLOG(5, "Recursing after OFFSET with next keyword %s", buf);
-    parseRecursive(buf, self, body, fd, offs);
+    parseRecursive(buf, self, body, fd, offs, linearScaleToSI, 
+                   Z_up_x_forward);
   }
   else if (STRCASEEQ(buf, "CHANNELS"))
   {
@@ -137,6 +147,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
       jnt->name = String_clone(a);
       jnt->weightJL = 1.0;
       jnt->weightMetric = 1.0;
+      jnt->ctrlType = RCSJOINT_CTRL_POSITION;
 
       if ((i==0) && (Vec3d_sqrLength(offset)>0.0))
       {
@@ -149,36 +160,42 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
         jnt->type = RCSJOINT_TRANS_X;
         jnt->q_min = -1.0;
         jnt->q_max = 1.0;
+        jnt->dirIdx = 0;
       }
       else if (STRNCASEEQ(buf, "Yposition", 63))
       {
         jnt->type = RCSJOINT_TRANS_Y;
         jnt->q_min = -1.0;
         jnt->q_max = 1.0;
+        jnt->dirIdx = 1;
       }
       else if (STRNCASEEQ(buf, "Zposition", 63))
       {
         jnt->type = RCSJOINT_TRANS_Z;
         jnt->q_min = -1.0;
         jnt->q_max = 1.0;
+        jnt->dirIdx = 2;
       }
       else if (STRNCASEEQ(buf, "Xrotation", 63))
       {
         jnt->type = RCSJOINT_ROT_X;
         jnt->q_min = -M_PI;
         jnt->q_max = M_PI;
+        jnt->dirIdx = 0;
       }
       else if (STRNCASEEQ(buf, "Yrotation", 63))
       {
         jnt->type = RCSJOINT_ROT_Y;
         jnt->q_min = -M_PI;
         jnt->q_max = M_PI;
+        jnt->dirIdx = 1;
       }
       else if (STRNCASEEQ(buf, "Zrotation", 63))
       {
         jnt->type = RCSJOINT_ROT_Z;
         jnt->q_min = -M_PI;
         jnt->q_max = M_PI;
+        jnt->dirIdx = 2;
       }
       else
       {
@@ -191,7 +208,8 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
 
     fscanf(fd, "%63s", buf);   // Next keyword
     RLOG(5, "Recursing after CHANNELS with next keyword %s", buf);
-    parseRecursive(buf, self, body, fd, Vec3d_zeroVec());
+    parseRecursive(buf, self, body, fd, Vec3d_zeroVec(), linearScaleToSI, 
+                   Z_up_x_forward);
   }
   else if (STRCASEEQ(buf, "JOINT"))
   {
@@ -203,13 +221,14 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     child->name = String_clone(buf);
     child->Inertia = HTr_create();
     Mat3d_setZero(child->Inertia->rot);
-    RcsBody_addShape(child, createFrameShape(1.0));
+    RcsBody_addShape(child, createFrameShape(0.1));
     RcsGraph_insertBody(self, body, child);
 
     fscanf(fd, "%63s", buf);   // Opening curly brace
     fscanf(fd, "%63s", buf);   // Next keyword
     RLOG(5, "Recursing after OFFSET with next keyword %s", buf);
-    bool success = parseRecursive(buf, self, child, fd, Vec3d_zeroVec());
+    bool success = parseRecursive(buf, self, child, fd, Vec3d_zeroVec(),
+                           linearScaleToSI, Z_up_x_forward);
     RCHECK(success);
     fscanf(fd, "%63s", buf);   // Closing curly brace
   }
@@ -227,7 +246,14 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     fscanf(fd, "%63s", buf);   // Next keyword
 
     // Sphere at parent origin
+    Vec3d_constMulSelf(endOffset, linearScaleToSI);
     double len = 0.8*Vec3d_getLength(endOffset);
+
+    if (len < 0.01)
+      {
+        len = 0.01;
+      }
+
     RcsShape* shape = RALLOC(RcsShape);
     HTr_setIdentity(&shape->A_CB);
     shape->scale = 1.0;
@@ -241,7 +267,8 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
 
 
     RLOG(5, "Recursing after END SITE with next keyword %s", buf);
-    parseRecursive(buf, self, body, fd, Vec3d_zeroVec());
+    parseRecursive(buf, self, body, fd, Vec3d_zeroVec(), linearScaleToSI, 
+                   Z_up_x_forward);
   }
 
 
@@ -259,13 +286,14 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
   {
     return true;
   }
-  else if (STREQ(buf, "Frame Time:"))
+  else if (STREQ(buf, "Frame"))   // "Frame Time:"
   {
     return true;
   }
   else
   {
-    parseRecursive(buf, self, body, fd, Vec3d_zeroVec());
+    parseRecursive(buf, self, body, fd, Vec3d_zeroVec(), linearScaleToSI, 
+                   Z_up_x_forward);
   }
 
   return true;
@@ -301,10 +329,11 @@ static void addGeometry(RcsGraph* self)
       Vec3d_sub(K_p12, K_p2, K_p1);
       Vec3d_constMulAndAdd(K_center, K_p1, K_p12, 0.5);
       double len = 0.8*Vec3d_getLength(K_p12);
-      if (len < 0.2)
-      {
-        len = 0.2;
-      }
+
+      if (len < 0.01)
+        {
+          len = 0.01;
+        }
 
       // Box from parent to child
       RcsShape* shape = RALLOC(RcsShape);
@@ -341,7 +370,7 @@ static void addGeometry(RcsGraph* self)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-RcsGraph* RcsGraph_createFromBVHFile(const char* fileName)
+RcsGraph* RcsGraph_createFromBVHFile(const char* fileName, double linearScaleToSI, bool Z_up_x_forward)
 {
   FILE* fd = fopen(fileName, "r");
 
@@ -367,9 +396,25 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName)
   RcsGraph* self = RALLOC(RcsGraph);
   RCHECK(self);
   self->xmlFile = String_clone(fileName);
+  RcsBody* bvhRoot = self->root;
+
+  if (Z_up_x_forward == true)
+    {
+      RcsBody* xyzRoot = RALLOC(RcsBody);
+      xyzRoot->A_BI = HTr_create();
+      xyzRoot->name = String_clone("BVHROOT");
+      xyzRoot->Inertia = HTr_create();
+      xyzRoot->A_BP = HTr_create();
+      Mat3d_fromEulerAngles2(xyzRoot->A_BP->rot, M_PI_2, M_PI_2, 0.0);
+      Mat3d_setZero(xyzRoot->Inertia->rot);
+      RcsBody_addShape(xyzRoot, createFrameShape(1.0));
+      RcsGraph_insertBody(self, NULL, xyzRoot);
+      bvhRoot = xyzRoot;
+    }
 
   // Start recursion with root link
-  success = parseRecursive(buf, self, self->root, fd, Vec3d_zeroVec());
+  success = parseRecursive(buf, self, bvhRoot, fd, Vec3d_zeroVec(),
+                           linearScaleToSI, Z_up_x_forward);
   RCHECK(success);
 
   fclose(fd);
@@ -386,7 +431,11 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-MatNd* RcsGraph_createTrajectoryFromBVHFile(const char* fileName, double* dt)
+MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
+                                            const char* fileName, 
+                                            double* dt, 
+                                            double linearScaleToSI,
+                                            double angularScaleToSI)
 {
   FILE* fd = fopen(fileName, "r");
 
@@ -459,6 +508,8 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const char* fileName, double* dt)
   RLOG(5, "Creating %d x %d array", numFrames, (int)numValues/numFrames);
   MatNd* data = MatNd_create(numFrames, (int)numValues/numFrames);
 
+  RCHECK(graph->dof*numFrames==numValues);
+
   numValues = 0;
   isEOF = 0;
   do
@@ -472,6 +523,20 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const char* fileName, double* dt)
 
 
   fclose(fd);
+
+  MatNd* scaleArr = MatNd_create(1, graph->dof);
+  RCSGRAPH_TRAVERSE_JOINTS(graph)
+  {
+    scaleArr->ele[JNT->jointIndex] = RcsJoint_isRotation(JNT) ? angularScaleToSI : linearScaleToSI;
+  }
+
+  for (unsigned int i=0; i<data->m; ++i)
+    {
+      MatNd row = MatNd_getRowView(data, i);
+      MatNd_eleMulSelf(&row, scaleArr);
+    }
+
+  MatNd_destroy(scaleArr);
 
   return data;
 }

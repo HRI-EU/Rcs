@@ -427,12 +427,19 @@ int main(int argc, char** argv)
         break;
       }
 
+      char bvhFile[256];
+      strcpy(bvhFile, graph->xmlFile);
+      argP.getArgument("-bvhFile", bvhFile, "BVH file "
+                       "(default is \"%s\")", bvhFile);
+
       MatNd* bvhTraj = NULL;
       unsigned int bvhIdx = 0;
-      if (playBVH && String_hasEnding(xmlFileName, ".bvh", false))
+      if (playBVH && String_hasEnding(bvhFile, ".bvh", false))
       {
-        bvhTraj = RcsGraph_createTrajectoryFromBVHFile(graph->xmlFile, &dtStep);
-        if (bvhTraj->n!=graph->dof)
+        bvhTraj = RcsGraph_createTrajectoryFromBVHFile(graph, bvhFile, 
+                                                       &dtStep, 0.01, 
+                                                       M_PI/180.0);
+        if (bvhTraj && (bvhTraj->n!=graph->dof))
         {
           RLOG(1, "Mismatch in bvh array dimensions: found %d columns, but "
                "graph has %d dof", bvhTraj->n, graph->dof);
@@ -526,14 +533,8 @@ int main(int argc, char** argv)
           if (bvhTraj!=NULL)
           {
             MatNd row = MatNd_getRowViewTranspose(bvhTraj, bvhIdx);
+            MatNd_copy(graph->q, &row);
 
-            RCSGRAPH_TRAVERSE_JOINTS(graph)
-            {
-              double scale = RcsJoint_isRotation(JNT) ? M_PI/180.0 : 0.001;
-              graph->q->ele[JNT->jointIndex] = scale*row.ele[JNT->jointIndex];
-            }
-
-            //MatNd_copy(graph->q, &row);
             bvhIdx++;
             if (bvhIdx >= bvhTraj->m)
             {
@@ -661,6 +662,8 @@ int main(int argc, char** argv)
           {
             if (graph != NULL)
             {
+              RMSG("Here's the forward tree:");
+              RcsGraph_fprint(stderr, graph);
               RLOGS(0, "m=%f   r_com=%f %f %f",
                     mass, r_com[0], r_com[1], r_com[2]);
             }
@@ -815,6 +818,7 @@ int main(int argc, char** argv)
         delete viewer;
       }
       RcsGraph_destroy(graph);
+      MatNd_destroy(bvhTraj);
       break;
     }
 
