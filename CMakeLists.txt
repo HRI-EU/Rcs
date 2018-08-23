@@ -146,6 +146,18 @@ ENDIF()
 
 ################################################################################
 #
+# Setup exported target collection
+#
+################################################################################
+# Setup RCS_EXPORT_LIBRARIES so the component CMakeLists.txt can modify it
+SET(RCS_EXPORT_LIBRARIES "" CACHE INTERNAL "")
+# Create a macro for adding an export library
+FUNCTION(RCS_ADD_EXPORT_LIBRARY library)
+  SET(RCS_EXPORT_LIBRARIES ${RCS_EXPORT_LIBRARIES} ${library} CACHE INTERNAL "")
+ENDFUNCTION()
+
+################################################################################
+#
 # Add source code directories
 #
 ################################################################################
