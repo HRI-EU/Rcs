@@ -1,4 +1,5 @@
 SET(RCS_PHYSICS_SRCS
+  PhysicsConfig.cpp
   PhysicsFactory.cpp)
 
 IF(NOT HEADLESS_BUILD)
