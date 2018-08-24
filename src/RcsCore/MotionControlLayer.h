@@ -150,6 +150,14 @@ public:
 
   bool getEmergency() const;
 
+  /**
+   * Control whether the forward kinematics of the velocities should be computed.
+   *
+   * This is true by default. However, if you don't need the velocity information
+   * and want to avoid the computation cost, you can set this to false.
+   */
+  void setFKComputeVelocity(bool doit);
+
   virtual void startThreads();
   virtual void stopThreads();
 
@@ -170,6 +178,7 @@ private:
   static void staticCallback(void* param);
   bool ownsDesiredGraph;
   bool stepMe;
+  bool fkComputeVelocity;
   bool emergency;
   unsigned int loopCount, overruns;
   double dtMin, dtMax, dtDesired, sum;

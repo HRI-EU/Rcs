@@ -30,6 +30,7 @@ Rcs::MotionControlLayer::MotionControlLayer():
   callbackTriggerComponent(NULL),
   ownsDesiredGraph(false),
   stepMe(false),
+  fkComputeVelocity(true),
   emergency(false),
   loopCount(0), overruns(0),
   dtMin(1.0), dtMax(0.0), dtDesired(0.0), sum(0.0)
@@ -45,6 +46,7 @@ Rcs::MotionControlLayer::MotionControlLayer(const char* xmlFile):
   callbackTriggerComponent(NULL),
   ownsDesiredGraph(true),
   stepMe(false),
+  fkComputeVelocity(true),
   emergency(false),
   loopCount(0), overruns(0),
   dtMin(1.0), dtMax(0.0), dtDesired(0.0), sum(0.0)
@@ -161,8 +163,8 @@ void Rcs::MotionControlLayer::updateGraph()
     componentVec[i]->updateGraph(this->currentGraph);
   }
 
-  RcsGraph_setState(this->desiredGraph, NULL, NULL);
-  RcsGraph_setState(this->currentGraph, NULL, NULL);
+  RcsGraph_setState(this->desiredGraph, NULL, fkComputeVelocity ? this->desiredGraph->q_dot : NULL);
+  RcsGraph_setState(this->currentGraph, NULL, fkComputeVelocity ? this->currentGraph->q_dot : NULL);
 
   for (size_t i=0; i<componentVec.size(); ++i)
   {
@@ -532,4 +534,12 @@ void Rcs::MotionControlLayer::stopThreads()
   {
     componentVec[i]->stopThread();
   }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::MotionControlLayer::setFKComputeVelocity(bool doit)
+{
+    fkComputeVelocity = doit;
 }
