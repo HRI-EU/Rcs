@@ -32,16 +32,16 @@ namespace Rcs
 struct PhysicsMaterial
 {
   // coefficient of linear friction
-  double frictionCoefficient = 0.8;
+  double frictionCoefficient;
   // coefficient of angular (rolling) friction.
-  double rollingFrictionCoefficient = 0.0;
+  double rollingFrictionCoefficient;
   // bouncyness
-  double restitution = 0.0;
+  double restitution;
   // TODO add others?
 
   // xml node whose properties defined this material.
   // allows physics engines to load engine-specific attributes
-  xmlNodePtr materialNode = NULL;
+  xmlNodePtr materialNode;
 
   // default constructor applies default values
   PhysicsMaterial();
@@ -69,10 +69,8 @@ public:
   /**
    * Load the physics configuration from the given xml file.
    */
-  explicit
-  PhysicsConfig (const char* xmlFile);
-  virtual
-  ~PhysicsConfig ();
+  explicit PhysicsConfig(const char* xmlFile);
+  virtual ~PhysicsConfig();
 
   /**
    * Obtain the material properties of the named material.
@@ -87,8 +85,7 @@ public:
    * @param materialName material name to look up
    * @return named material
    */
-  PhysicsMaterial*
-  getMaterial (const std::string& materialName);
+  PhysicsMaterial* getMaterial(const std::string& materialName);
 
   /**
    * Obtain the material properties of the named material.
@@ -100,40 +97,33 @@ public:
    * @param materialName material name to look up
    * @return named material
    */
-  const PhysicsMaterial*
-  getMaterial (const std::string& materialName) const;
+  const PhysicsMaterial* getMaterial(const std::string& materialName) const;
 
   /**
    * Get a reference to the default material data.
    */
-  PhysicsMaterial*
-  getDefaultMaterial();
+  PhysicsMaterial* getDefaultMaterial();
 
   /**
    * Get a reference to the default material data.
    */
-  const PhysicsMaterial*
-  getDefaultMaterial() const;
+  const PhysicsMaterial* getDefaultMaterial() const;
 
   /**
    * Get the names of all registered materials.
    */
-  std::vector<std::string>
-  getMaterialNames () const;
+  std::vector<std::string> getMaterialNames() const;
 
   /**
    * Return the root xml node of the config file.
    */
-  xmlNodePtr
-  getXMLRootNode () const;
-
+  xmlNodePtr getXMLRootNode() const;
 
 
 private:
 
   // load the material data from xml
-  void
-  loadMaterials ();
+  void loadMaterials();
 
   // xml document, owns all xml objects
   xmlDocPtr doc;
