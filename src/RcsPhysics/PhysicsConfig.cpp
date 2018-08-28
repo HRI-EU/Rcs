@@ -10,6 +10,7 @@
 #include <Rcs_resourcePath.h>
 #include <Rcs_macros.h>
 #include <Rcs_parser.h>
+#include <Rcs_utils.h>
 
 namespace Rcs
 {
@@ -25,6 +26,9 @@ PhysicsMaterial::PhysicsMaterial()
 
 PhysicsConfig::PhysicsConfig(const char* xmlFile)
 {
+  // store passed file name
+  this->xmlFile = String_clone(xmlFile);
+
   // Determine absolute file name of config file and copy the XML file name
   char filename[256] = "";
   bool fileExists = Rcs_getAbsoluteFileName(xmlFile, filename);
@@ -60,6 +64,9 @@ PhysicsConfig::~PhysicsConfig()
 {
   // free xml document
   xmlFreeDoc(doc);
+
+  // free config file name
+  RFREE(this->xmlFile);
 
   // the material map is freed automatically
 }
@@ -109,14 +116,19 @@ const PhysicsMaterial* PhysicsConfig::getMaterial(const std::string& materialNam
   }
 }
 
+const char* PhysicsConfig::getConfigFileName() const
+{
+  return xmlFile;
+}
+
 xmlNodePtr PhysicsConfig::getXMLRootNode() const
 {
   return root;
 }
 
-std::vector<std::string> PhysicsConfig::getMaterialNames() const
+PhysicsConfig::MaterialNameList PhysicsConfig::getMaterialNames() const
 {
-  std::vector<std::string> result;
+  MaterialNameList result;
   result.reserve(materials.size() + 1);
 
   // add default material name

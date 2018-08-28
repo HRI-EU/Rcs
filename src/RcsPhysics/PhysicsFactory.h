@@ -37,6 +37,8 @@
 #ifndef RCS_PHYSICSFACTORY_H
 #define RCS_PHYSICSFACTORY_H
 
+#include "PhysicsConfig.h"
+
 #include <PhysicsBase.h>
 
 #include <string>
@@ -67,6 +69,17 @@ public:
    */
   static PhysicsBase* create(const std::string& className, RcsGraph* graph,
                              const char* cfgFile);
+  /*!
+   * \brief Creates a new Physics simulation instance by name using the
+   *        appropriate registered construction function.
+   * \param className The name with which the physics is registered at the
+   *        factory
+   * \param graph The underlying graph for the kinematics
+   * \param config Loaded physics configuration
+   * \return New PhysicsBase instance
+   */
+  static PhysicsBase* create(const std::string& className, RcsGraph* graph,
+                             const PhysicsConfig* config);
 
   /*!
    * \brief Prints the list of all registered physics simulations to stdout.
@@ -77,7 +90,7 @@ private:
 
   typedef PhysicsBase* (*PhysicsCreateFunction)(std::string className,
                                                 RcsGraph* graph,
-                                                const char* cfgFile);
+                                                const PhysicsConfig* config);
 
   /*! \brief Private constructor because PhysicsFactory is a singleton
    */
@@ -136,9 +149,9 @@ public:
    * \return New physics simulation instance of type T
    */
   static PhysicsBase* create(std::string className, RcsGraph* graph,
-                             const char* cfgFile)
+                             const PhysicsConfig* config)
   {
-    return new T(graph, cfgFile);
+    return new T(graph, config);
   }
 };
 

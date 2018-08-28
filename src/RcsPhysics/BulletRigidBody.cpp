@@ -275,7 +275,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
  *
  ******************************************************************************/
 //! \todo Compound shape principal axis transform
-Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy)
+Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy, const PhysicsConfig* config)
 {
   if (bdy == NULL)
   {
@@ -300,7 +300,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy)
   // Traverse through shapes
   RcsShape** sPtr = &bdy->shape[0];
   btCompoundShape* cSh = new btCompoundShape();
-
+  const char* materialName = NULL;
   while (*sPtr)
   {
 
@@ -320,6 +320,12 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy)
     {
       shape->setUserPointer(*sPtr);
       cSh->addChildShape(relTrans, shape);
+
+      if (materialName == NULL)
+      {
+        // Bullet cannot set material properties per shape, so we only use the material of the first shape.
+        materialName = (*sPtr)->material;
+      }
     }
     else
     {
@@ -412,9 +418,13 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy)
     btBody->setDamping(0.1, 0.9);
   }
 
-  btBody->setFriction(0.8);
-  //btBody->setRollingFriction(0.1);
+  // apply material properties
+  const PhysicsMaterial* material = config->getMaterial(materialName);
+
+  btBody->setFriction(material->frictionCoefficient);
+  btBody->setRollingFriction(material->rollingFrictionCoefficient);
   //btBody->setSpinningFriction(0.1);
+  btBody->setRestitution(material->restitution);
 
   Vec3d_copy(btBody->A_PB_.org, bdy->Inertia->org);
   Mat3d_copy(btBody->A_PB_.rot, A_PB);

@@ -37,6 +37,7 @@
 #ifndef RCS_BULLETRIGIDBODY_H
 #define RCS_BULLETRIGIDBODY_H
 
+#include "PhysicsConfig.h"
 #include "BulletHingeJoint.h"
 
 
@@ -49,7 +50,7 @@ class BulletRigidBody : public btRigidBody
   friend class BulletSimulation;
 
 public:
-  static BulletRigidBody* create(const RcsBody* body);
+  static BulletRigidBody* create(const RcsBody* body, const PhysicsConfig* config);
   const RcsBody* getBodyPtr() const;
   void getBodyTransform(HTr* A_BI) const;
   void getLocalBodyTransform(HTr* A_PB) const;

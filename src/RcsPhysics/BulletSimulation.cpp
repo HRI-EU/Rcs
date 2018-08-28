@@ -50,6 +50,7 @@
 #include <Rcs_joint.h>
 #include <Rcs_sensor.h>
 #include <Rcs_utils.h>
+#include <Rcs_parser.h>
 
 #include <BulletDynamics/MLCPSolvers/btDantzigSolver.h>
 #include <BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h>
@@ -145,10 +146,43 @@ Rcs::BulletSimulation::BulletSimulation(const RcsGraph* graph_,
   lastDt(0.001),
   dragBody(NULL),
   debugDrawer(NULL),
-  physicsConfigFile(NULL)
+  physicsConfigFile(NULL),
+  rigidBodyLinearDamping(0.1),
+  rigidBodyAngularDamping(0.9)
 {
   pthread_mutex_init(&this->mtx, NULL);
-  initPhysics(cfgFile);
+
+  PhysicsConfig config(cfgFile);
+  initPhysics(&config);
+
+  REXEC(5)
+  {
+    print();
+    RLOG(5, "Done BulletSimulation constructor");
+  }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+Rcs::BulletSimulation::BulletSimulation(const RcsGraph* graph_,
+                                        const PhysicsConfig* config) :
+    Rcs::PhysicsBase(graph_),
+    dynamicsWorld(NULL),
+    broadPhase(NULL),
+    dispatcher(NULL),
+    solver(NULL),
+    mlcpSolver(NULL),
+    collisionConfiguration(NULL),
+    lastDt(0.001),
+    dragBody(NULL),
+    debugDrawer(NULL),
+    physicsConfigFile(NULL),
+    rigidBodyLinearDamping(0.1),
+    rigidBodyAngularDamping(0.9)
+{
+  pthread_mutex_init(&this->mtx, NULL);
+  initPhysics(config);
 
   REXEC(5)
   {
@@ -171,10 +205,14 @@ Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe):
   lastDt(copyFromMe.lastDt),
   dragBody(NULL),
   debugDrawer(NULL),
-  physicsConfigFile(NULL)
+  physicsConfigFile(NULL),
+  rigidBodyLinearDamping(copyFromMe.rigidBodyLinearDamping),
+  rigidBodyAngularDamping(copyFromMe.rigidBodyAngularDamping)
 {
   pthread_mutex_init(&this->mtx, NULL);
-  initPhysics(copyFromMe.physicsConfigFile);
+
+  PhysicsConfig config(copyFromMe.physicsConfigFile);
+  initPhysics(&config);
 }
 
 /*******************************************************************************
@@ -192,10 +230,14 @@ Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe,
   lastDt(copyFromMe.lastDt),
   dragBody(NULL),
   debugDrawer(NULL),
-  physicsConfigFile(NULL)
+  physicsConfigFile(NULL),
+  rigidBodyLinearDamping(copyFromMe.rigidBodyLinearDamping),
+  rigidBodyAngularDamping(copyFromMe.rigidBodyAngularDamping)
 {
   pthread_mutex_init(&this->mtx, NULL);
-  initPhysics(copyFromMe.physicsConfigFile);
+
+  PhysicsConfig config(copyFromMe.physicsConfigFile);
+  initPhysics(&config);
 }
 
 /*******************************************************************************
@@ -283,31 +325,63 @@ void Rcs::BulletSimulation::unlock() const
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::BulletSimulation::initPhysics(const char* physicsConfigFile)
+void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
 {
-  this->physicsConfigFile = String_clone(physicsConfigFile);
+  this->physicsConfigFile = String_clone(config->getConfigFileName());
+
+  // lookup bullet config node
+  xmlNodePtr bulletParams = getXMLChildByName(config->getXMLRootNode(), "bullet_parameters");
+  if (bulletParams == NULL)
+  {
+    RLOG(1, "Physics configuration file %s did not contain a \"bullet parameters\""
+            " node!", this->physicsConfigFile);
+  }
+
   this->collisionConfiguration = new btDefaultCollisionConfiguration();
   this->dispatcher = new btCollisionDispatcher(collisionConfiguration);
   dispatcher->setNearCallback(MyNearCallbackEnabled);
 
   btVector3 worldAabbMin(-10.0, -10.0, -10.0);
   btVector3 worldAabbMax(10.0, 10.0, 10.0);
+  if (bulletParams) {
+    // load axis sweep params from xml
+    double vec[3];
+
+    if (getXMLNodePropertyVec3(bulletParams, "world_aabb_min", vec))
+    {
+      worldAabbMin[0] = vec[0];
+      worldAabbMin[1] = vec[1];
+      worldAabbMin[2] = vec[2];
+    }
+    if (getXMLNodePropertyVec3(bulletParams, "world_aabb_max", vec))
+    {
+      worldAabbMax[0] = vec[0];
+      worldAabbMax[1] = vec[1];
+      worldAabbMax[2] = vec[2];
+    }
+  }
   broadPhase = new btAxisSweep3(worldAabbMin, worldAabbMax);
 
   bool useMCLPSolver = false;
 
 #if BT_BULLET_VERSION > 281
   //useMCLPSolver = true;
+  if (bulletParams) {
+    // load solver type from xml
+    getXMLNodePropertyBoolString(bulletParams, "use_mclp_solver", &useMCLPSolver);
+  }
   if (useMCLPSolver)
   {
     this->mlcpSolver = new btDantzigSolver();
     //this->mlcpSolver = new btSolveProjectedGaussSeidel;
     solver = new btMLCPSolver(this->mlcpSolver);
+    RLOG(1, "Using MCLP solver");
   }
   else
 #endif
   {
     solver = new btSequentialImpulseConstraintSolver;
+    RLOG(1, "Using sequential impulse solver");
   }
 
 
@@ -334,15 +408,30 @@ void Rcs::BulletSimulation::initPhysics(const char* physicsConfigFile)
                     SOLVER_USE_WARMSTARTING;
   si.m_minimumSolverBatchSize = useMCLPSolver ? 1 : 128;
 
+
+  if (bulletParams)
+  {
+    // load body params from xml
+    getXMLNodePropertyDouble(bulletParams, "body_linear_damping",
+                             &this->rigidBodyAngularDamping);
+    getXMLNodePropertyDouble(bulletParams, "body_angular_damping",
+                             &this->rigidBodyAngularDamping);
+  }
   // Create physics for RcsGraph
   RCSGRAPH_TRAVERSE_BODIES(graph)
   {
     RLOGS(5, "Creating bullet body for \"%s\"", BODY->name);
 
-    BulletRigidBody* btBody = BulletRigidBody::create(BODY);
+    BulletRigidBody* btBody = BulletRigidBody::create(BODY, config);
 
     if (btBody!=NULL)
     {
+      // apply configured damping
+      if (BODY->rigid_body_joints)
+      {
+        btBody->setDamping(rigidBodyLinearDamping, rigidBodyAngularDamping);
+      }
+
       bdyMap[BODY] = btBody;
 
       body_it it = bdyMap.find(BODY->parent);
@@ -601,7 +690,7 @@ void Rcs::BulletSimulation::applyForce(const RcsBody* body, const double F[3],
     if (oldDragBody!=NULL)
     {
       oldDragBody->applyCentralForce(btVector3(0.0, 0.0, 0.0));
-      oldDragBody->setDamping(0.1, 0.9);
+      oldDragBody->setDamping(rigidBodyLinearDamping, rigidBodyAngularDamping);
     }
 
     return;
@@ -1521,8 +1610,8 @@ bool Rcs::BulletSimulation::setParameter(ParameterCategory category,
             {
               sphere->setUnscaledRadius(value);
               ball->extents[0] = value;
-              btBdy = BulletRigidBody::create(bdy);
-              bdyMap[bdy] = btBdy;
+//              btBdy = BulletRigidBody::create(bdy);
+//              bdyMap[bdy] = btBdy;
 
               success = true;
             }

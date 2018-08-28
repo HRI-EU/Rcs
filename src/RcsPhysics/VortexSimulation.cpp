@@ -86,7 +86,7 @@ static Rcs::PhysicsFactoryRegistrar<Rcs::VortexSimulation> physics(className);
 
 
 /*******************************************************************************
- * Constructor from Graph
+ * Constructor from Graph & Config file
  ******************************************************************************/
 Rcs::VortexSimulation::VortexSimulation(const RcsGraph* g,
                                         const char* physicsConfigFile,
@@ -106,7 +106,31 @@ Rcs::VortexSimulation::VortexSimulation(const RcsGraph* g,
   materialFileName(NULL)
 {
   this->materialFileName = String_clone(physicsConfigFile);
-  initPhysics(physicsConfigFile, withGroundPlane);
+
+  PhysicsConfig config(materialFileName);
+  initPhysics(&config, withGroundPlane);
+}
+
+/*******************************************************************************
+ * Constructor from Graph & Config object
+ ******************************************************************************/
+Rcs::VortexSimulation::VortexSimulation(const RcsGraph* g, const Rcs::PhysicsConfig* config, bool withGroundPlane):
+    PhysicsBase(g),
+    trafoUpdateLock(NULL),
+    integratorDt(RCSVORTEX_DEFAULT_INTEGRATOR_DT),
+    bodyLinearDamping(-1.0),
+    bodyAngularDamping(-1.0),
+    jointLockStiffness(RCSVORTEX_DEFAULT_JOINT_LOCK_STIFFNESS),
+    jointLockDamping(RCSVORTEX_DEFAULT_JOINT_LOCK_DAMPING),
+    jointMotorLoss(RCSVORTEX_DEFAULT_JOINT_MOTOR_LOSS),
+    jointLimitsActive(true),
+    b_ext(NULL),
+    groundPlane(NULL),
+    universe(NULL),
+    materialFileName(NULL)
+{
+  this->materialFileName = String_clone(config->getConfigFileName());
+  initPhysics(config, withGroundPlane);
 }
 
 /*******************************************************************************
@@ -130,13 +154,15 @@ Rcs::VortexSimulation::VortexSimulation(const VortexSimulation& copyFromMe,
 {
   this->materialFileName = String_clone(copyFromMe.materialFileName);
   bool withGroundPlane = copyFromMe.groundPlane ? true : false;
-  initPhysics(materialFileName, withGroundPlane);
+
+  PhysicsConfig config(materialFileName);
+  initPhysics(&config, withGroundPlane);
 }
 
 /*******************************************************************************
  * Physics initialization
  ******************************************************************************/
-void Rcs::VortexSimulation::initPhysics(const char* physicsConfigFile,
+void Rcs::VortexSimulation::initPhysics(const PhysicsConfig* physicsConfig,
                                         bool withGroundPlane)
 {
   Vec3d_setZero(this->F_ext);
@@ -178,23 +204,13 @@ void Rcs::VortexSimulation::initPhysics(const char* physicsConfigFile,
   this->jointLockDamping = RCSVORTEX_DEFAULT_JOINT_LOCK_DAMPING;
   this->jointMotorLoss = RCSVORTEX_DEFAULT_JOINT_MOTOR_LOSS;
 
-  // Determine absolute file name of config file and copy the XML file name
-  char absFileName[256] = "";
-  bool fileExists = Rcs_getAbsoluteFileName(physicsConfigFile, absFileName);
+  // load settings and materials from config
+  initSettings(physicsConfig);
+  RLOG(5, "Physics initialized");
 
-  if (fileExists == false)
-  {
-    RLOG(1, "Rcs physics configuration file \"%s\" not found",
-         physicsConfigFile);
-  }
-  else
-  {
-    initSettings(absFileName);
-    RLOG(5, "Physics initialized");
+  initMaterial(physicsConfig);
+  RLOG(5, "Materials initialized");
 
-    initMaterial(absFileName);
-    RLOG(5, "Materials initialized");
-  }
 
   // Ground plane
   if (withGroundPlane)
@@ -373,22 +389,13 @@ void Rcs::VortexSimulation::updateSensors()
 /*******************************************************************************
  *
  ******************************************************************************/
-bool Rcs::VortexSimulation::initSettings(const char* configFile)
+bool Rcs::VortexSimulation::initSettings(const PhysicsConfig* config)
 {
-  xmlDocPtr xmlDoc;
-  xmlNodePtr xmlRootNode = parseXMLFile(configFile, "content", &xmlDoc);
-
-  if (xmlRootNode==NULL)
-  {
-    RLOG(1, "Node \"content\" not found in file \"%s\"", configFile);
-    return false;
-  }
-
   int grpIdx = 0, halflife = 5;
   Vx::VxSolverParameters* sParam = universe->getSolverParameters(grpIdx);
 
   // Read XML file
-  xmlNodePtr node = xmlRootNode->children;
+  xmlNodePtr node = config->getXMLRootNode()->children;
   bool found_param_node = false;
 
   while (node)
@@ -437,8 +444,6 @@ bool Rcs::VortexSimulation::initSettings(const char* configFile)
 
     node = node->next;
   }
-  // Free the xml memory
-  xmlFreeDoc(xmlDoc);
 
   if (found_param_node==false)
   {
@@ -454,118 +459,105 @@ bool Rcs::VortexSimulation::initSettings(const char* configFile)
 /*******************************************************************************
  * Define materials using XML file
  ******************************************************************************/
-void Rcs::VortexSimulation::initMaterial(const char* materialFile)
+void Rcs::VortexSimulation::initMaterial(const PhysicsConfig* config)
 {
-  // Read XML file
   char msg[256];
-  xmlDocPtr xmlDoc;
-  xmlNodePtr xmlRootNode = parseXMLFile(materialFile, "content", &xmlDoc);
-  RCHECK_MSG(xmlRootNode, "Node \"content\" not found in file \"%s\"", materialFile);
 
-  xmlNodePtr node = xmlRootNode->children;
-  while (node)
+  // copy PhysicsMaterial definitions into vortex material table
+  PhysicsConfig::MaterialNameList materialNames = config->getMaterialNames();
+
+  for (size_t i = 0; i < materialNames.size(); ++i)
   {
-    if (isXMLNodeName(node, "material"))
+    const PhysicsMaterial* matDef = config->getMaterial(materialNames[i]);
+
+    // create corresponding vortex material
+    Vx::VxMaterial* material = getMaterialTable()->registerMaterial(materialNames[i].c_str());
+
+    // set common properties
+    material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisLinear, matDef->frictionCoefficient);
+
+    material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisAngularPrimary,
+                                     matDef->rollingFrictionCoefficient);
+    material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisAngularSecondary,
+                                     matDef->rollingFrictionCoefficient);
+
+    material->setRestitution(matDef->restitution);
+
+    // set vortex-specific properties from xml
+    double value;
+    char option[64];
+
+    if (getXMLNodePropertyStringN(matDef->materialNode, "friction_model", option, 64))
     {
-      if (getXMLNodePropertyStringN(node, "name", msg, 256))
+      if (STRCASEEQ(option, "Box"))
       {
-        Vx::VxMaterial* material = getMaterialTable()->registerMaterial(msg);
-
-        double value;
-        char option[64];
-
-        if (getXMLNodePropertyStringN(node, "friction_model", option, 64))
-        {
-          if (STRCASEEQ(option, "Box"))
-          {
-            material->setFrictionModel(Vx::VxMaterialBase::kFrictionAxisLinear,
-                                       Vx::VxMaterialBase::kFrictionModelBox);
-          }
-          else if (STRCASEEQ(option, "ScaledBox"))
-          {
-            material->setFrictionModel(Vx::VxMaterialBase::kFrictionAxisLinear,
-                                       Vx::VxMaterialBase::kFrictionModelScaledBox);
-          }
-          else if (STRCASEEQ(option, "ScaledBoxFast"))
-          {
-            material->setFrictionModel(Vx::VxMaterialBase::kFrictionAxisLinear,
-                                       Vx::VxMaterialBase::kFrictionModelScaledBoxFast);
-          }
-          else
-          {
-            RLOG(1, "unknown friction model \"%s\" in material definition "
-                 "for %s", option, msg);
-          }
-        }
-
-        if (getXMLNodePropertyDouble(node, "friction_coefficient", &value))
-        {
-          material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisLinear, value);
-        }
-        if (getXMLNodePropertyDouble(node, "static_friction_scale", &value))
-        {
-          material->setStaticFrictionScale(Vx::VxMaterialBase::kFrictionAxisLinear, value);
-        }
-        if (getXMLNodePropertyDouble(node, "slip", &value))
-        {
-          material->setSlip(Vx::VxMaterialBase::kFrictionAxisLinear, value);
-        }
-        bool isd = false;
-        if (getXMLNodePropertyBoolString(node, "integrated_slip_displacement", &isd))
-        {
-          if (isd)
-          {
-            material->setIntegratedSlipDisplacement(Vx::VxMaterial::kIntegratedSlipDisplacementActivated);
-          }
-          else
-          {
-            material->setIntegratedSlipDisplacement(Vx::VxMaterial::kIntegratedSlipDisplacementDeactivated);
-          }
-        }
-        if (getXMLNodePropertyDouble(node, "slide", &value))
-        {
-          material->setSlide(Vx::VxMaterialBase::kFrictionAxisLinear, value);
-        }
-        if (getXMLNodePropertyDouble(node, "compliance", &value))
-        {
-          material->setCompliance(value);
-          // as a default, set critical damping
-          // material->setDamping(universe->getCriticalDamping(value));
-          // from the Vortex documentation:
-          // Nearly optimal value of damping is given by:
-          // damping = 5*time_step/compliance
-          material->setDamping((5.0 * this->integratorDt) / value);
-        }
-        if (getXMLNodePropertyDouble(node, "damping", &value))
-        {
-          material->setDamping(value);
-        }
-        if (getXMLNodePropertyDouble(node, "restitution", &value))
-        {
-          material->setRestitution(value);
-        }
-        if (getXMLNodePropertyDouble(node, "restitution_threshold", &value))
-        {
-          material->setRestitutionThreshold(value);
-        }
-        if (getXMLNodePropertyDouble(node, "adhesive_force", &value))
-        {
-          material->setAdhesiveForce(value);
-        }
+        material->setFrictionModel(Vx::VxMaterialBase::kFrictionAxisLinear,
+                                   Vx::VxMaterialBase::kFrictionModelBox);
+      }
+      else if (STRCASEEQ(option, "ScaledBox"))
+      {
+        material->setFrictionModel(Vx::VxMaterialBase::kFrictionAxisLinear,
+                                   Vx::VxMaterialBase::kFrictionModelScaledBox);
+      }
+      else if (STRCASEEQ(option, "ScaledBoxFast"))
+      {
+        material->setFrictionModel(Vx::VxMaterialBase::kFrictionAxisLinear,
+                                   Vx::VxMaterialBase::kFrictionModelScaledBoxFast);
       }
       else
       {
-        RLOG(1, "file \"%s\" has a material entry without a name property, so"
-             " it is ignored", materialFile);
+        RLOG(1, "unknown friction model \"%s\" in material definition "
+                "for %s", option, msg);
       }
     }
 
-
-    node = node->next;
+    if (getXMLNodePropertyDouble(matDef->materialNode, "static_friction_scale", &value))
+    {
+      material->setStaticFrictionScale(Vx::VxMaterialBase::kFrictionAxisLinear, value);
+    }
+    if (getXMLNodePropertyDouble(matDef->materialNode, "slip", &value))
+    {
+      material->setSlip(Vx::VxMaterialBase::kFrictionAxisLinear, value);
+    }
+    bool isd = false;
+    if (getXMLNodePropertyBoolString(matDef->materialNode, "integrated_slip_displacement", &isd))
+    {
+      if (isd)
+      {
+        material->setIntegratedSlipDisplacement(Vx::VxMaterial::kIntegratedSlipDisplacementActivated);
+      }
+      else
+      {
+        material->setIntegratedSlipDisplacement(Vx::VxMaterial::kIntegratedSlipDisplacementDeactivated);
+      }
+    }
+    if (getXMLNodePropertyDouble(matDef->materialNode, "slide", &value))
+    {
+      material->setSlide(Vx::VxMaterialBase::kFrictionAxisLinear, value);
+    }
+    if (getXMLNodePropertyDouble(matDef->materialNode, "compliance", &value))
+    {
+      material->setCompliance(value);
+      // as a default, set critical damping
+      // material->setDamping(universe->getCriticalDamping(value));
+      // from the Vortex documentation:
+      // Nearly optimal value of damping is given by:
+      // damping = 5*time_step/compliance
+      material->setDamping((5.0 * this->integratorDt) / value);
+    }
+    if (getXMLNodePropertyDouble(matDef->materialNode, "damping", &value))
+    {
+      material->setDamping(value);
+    }
+    if (getXMLNodePropertyDouble(matDef->materialNode, "restitution_threshold", &value))
+    {
+      material->setRestitutionThreshold(value);
+    }
+    if (getXMLNodePropertyDouble(matDef->materialNode, "adhesive_force", &value))
+    {
+      material->setAdhesiveForce(value);
+    }
   }
-
-  // Free the xml memory
-  xmlFreeDoc(xmlDoc);
 
   RLOG(5, "initMaterial finished");
 }

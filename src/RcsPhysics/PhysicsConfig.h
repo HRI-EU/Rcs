@@ -65,6 +65,7 @@ class PhysicsConfig
 {
 public:
   typedef std::map<std::string, PhysicsMaterial> MaterialMap;
+  typedef std::vector<std::string> MaterialNameList;
 
   /**
    * Load the physics configuration from the given xml file.
@@ -112,7 +113,12 @@ public:
   /**
    * Get the names of all registered materials.
    */
-  std::vector<std::string> getMaterialNames() const;
+  MaterialNameList getMaterialNames() const;
+
+  /**
+   * Return the name of the xml file the config was loaded from.
+   */
+  const char* getConfigFileName() const;
 
   /**
    * Return the root xml node of the config file.
@@ -124,6 +130,9 @@ private:
 
   // load the material data from xml
   void loadMaterials();
+
+  // full path of xml file
+  char* xmlFile;
 
   // xml document, owns all xml objects
   xmlDocPtr doc;
