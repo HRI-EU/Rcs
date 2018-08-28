@@ -31,19 +31,29 @@ PhysicsConfig::PhysicsConfig(const char* xmlFile)
 
   if (!fileExists)
   {
-    RMSG("Resource path is:");
-    Rcs_printResourcePath();
-    RFATAL("Experiment configuration file \"%s\" not found in "
-           "ressource path - exiting",
-           xmlFile ? xmlFile : "NULL");
+    RLOG(1, "Rcs physics configuration file \"%s\" not found",
+         xmlFile);
+    // Build backing doc manually
+
+    // create empty configuration node
+    doc = xmlNewDoc(BAD_CAST "1.0");
+    root = xmlNewDocNode(doc, NULL, BAD_CAST "content", NULL);
+    xmlDocSetRootElement(doc, root);
+
+    // create material node for default material
+    defaultMaterial.materialNode = xmlNewDocNode(doc, NULL, BAD_CAST "material", NULL);
+    xmlSetProp(defaultMaterial.materialNode, BAD_CAST "name", BAD_CAST DEFAULT_MATERIAL_NAME);
+    xmlAddChild(root, defaultMaterial.materialNode);
   }
+  else
+  {
+    // load xml tree
+    root = parseXMLFile(filename, "content", &doc);
+    RCHECK(root);
 
-  // load xml tree
-  root = parseXMLFile(filename, "content", &doc);
-  RCHECK(root);
-
-  // load material definitions
-  loadMaterials();
+    // load material definitions
+    loadMaterials();
+  }
 }
 
 PhysicsConfig::~PhysicsConfig()
@@ -142,7 +152,7 @@ void PhysicsConfig::loadMaterials()
       if (getXMLNodePropertyStringN(node, "name", msg, 256))
       {
         PhysicsMaterial* material;
-        if (STREQ(msg, "default"))
+        if (STREQ(msg, DEFAULT_MATERIAL_NAME))
         {
           // default material definition
           if (!materials.empty())
