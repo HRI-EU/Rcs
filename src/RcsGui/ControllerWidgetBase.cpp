@@ -43,11 +43,21 @@
 #include <Rcs_guiFactory.h>
 
 #include <QtCore/QTimer>
+
+#include <QtGlobal>
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QGridLayout>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QGroupBox>
+#include <QtWidgets/QCheckBox>
+#include <QtWidgets/QLabel>
+#else
 #include <QtGui/QGridLayout>
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QGroupBox>
 #include <QtGui/QCheckBox>
 #include <QtGui/QLabel>
+#endif
 
 namespace Rcs
 {

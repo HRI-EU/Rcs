@@ -612,7 +612,7 @@ void RcsSensor_fprint(FILE* out, const RcsSensor* s)
 
   fprintf(out, "\tRaw sensor data:\n\t");
 
-  for (int i = 1; i <= s->rawData->size; i++)
+  for (unsigned int i = 1; i <= s->rawData->size; i++)
   {
     fprintf(out, "%+.3f ", s->rawData->ele[i-1]);
     if (i%10==0)

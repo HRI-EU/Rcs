@@ -39,7 +39,13 @@
 
 #include <Task.h>
 
+#include <QtGlobal>
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QGroupBox>
+#else
 #include <QtGui/QGroupBox>
+#endif
+
 #include <QLCDNumber>
 
 #include <pthread.h>

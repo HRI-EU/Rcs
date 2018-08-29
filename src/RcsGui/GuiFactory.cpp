@@ -39,6 +39,7 @@
 
 #include <Rcs_macros.h>
 
+#include <QtGlobal>
 #include <QApplication>
 #include <QWidget>
 #include <QTimer>
@@ -77,7 +78,9 @@ void* RcsGuiFactory_thread(void*)
   else
   {
     // solves the performance issues of the native graphicssystem
+#if QT_VERSION < 0x050000
     QApplication::setGraphicsSystem("raster");
+#endif
     app = new QApplication(argc, argv);
     // app->setFont(QFont("Helvetica", 8, QFont::Normal));
   }

@@ -176,8 +176,8 @@ ENDIF(WIN32)
 #
 ################################################################################
 IF(WIN32)
-  SET(LIBXML2_LIBRARIES ${HGR}/External/libxml2-win/libxml2-2.7.8.win32/lib/libxml2.lib)
-  SET(LIBXML2_INCLUDE_DIR ${HGR}/External/libxml2-win/libxml2-2.7.8.win32/include)
+  SET(LIBXML2_LIBRARIES ${HGR}/External/libxml2-win/2.78/lib/${MKPLT}/RcsLibXml2.lib)
+  SET(LIBXML2_INCLUDE_DIR ${HGR}/External/libxml2-win/2.78/include)
 ELSE(WIN32)
   FIND_PACKAGE(LibXml2 REQUIRED)
 ENDIF(WIN32)
@@ -188,8 +188,8 @@ ENDIF(WIN32)
 #
 ################################################################################
 IF(WIN32)
-  SET(PTHREAD_LIBRARIES ${HGR}/External/pthreads-win/pthreads-w32-2-9-1-release/Pre-built.2/lib/x86/pthreadVC2.lib)
-  SET(PTHREAD_INCLUDE_DIR ${HGR}/External/pthreads-win/pthreads-w32-2-9-1-release/Pre-built.2/include)
+  SET(PTHREAD_LIBRARIES ${HGR}/External/pthreads-win/2.91/lib/${MKPLT}/RcsPthreadsVC2.lib)
+  SET(PTHREAD_INCLUDE_DIR ${HGR}/External/pthreads-win/2.91/include)
 ELSE(WIN32)
   SET(PTHREAD_LIBRARIES pthread)
 ENDIF()
@@ -201,8 +201,14 @@ ENDIF()
 ################################################################################
 IF(NOT HEADLESS_BUILD)
 
+  IF (MSVC_VERSION STREQUAL 1900)
+    MESSAGE("Configuring for Qt5")
+	SET(CMAKE_AUTOMOC ON)
+    FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets)
+  ELSE()
   FIND_PACKAGE(Qt4 REQUIRED)
   INCLUDE(${QT_USE_FILE})
+  ENDIF()
 
 ENDIF(NOT HEADLESS_BUILD)
 
@@ -215,6 +221,20 @@ IF(NOT HEADLESS_BUILD)
 
   IF(WIN32)
 
+    IF (MSVC_VERSION STREQUAL 1900)
+	
+      SET(QWT_INCLUDE_DIRS ${HGR}/External/qwt/6.1.3/include)
+      SET(QWT_LIBRARY_DIR ${HGR}/External/qwt/6.1.3/lib/${MKPLT})
+      #SET(QWT_LIBRARIES ${HGR}/External/qwt/6.1.3/lib/${MKPLT}/qwt.lib)
+      SET(QWT_MAJOR_VERSION 6)
+  
+      ADD_LIBRARY(libqwt STATIC IMPORTED)
+      SET_PROPERTY(TARGET libqwt PROPERTY IMPORTED_LOCATION ${QWT_LIBRARY_DIR}/qwt.lib)
+      SET_PROPERTY(TARGET libqwt PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${QWT_INCLUDE_DIRS})
+      SET(QWT_LIBRARIES libqwt)
+
+	ELSE()
+	
     SET(QWT_INCLUDE_DIRS ${HGR}/External/qwt/5.2/include)
     SET(QWT_INCLUDE_DIR ${HGR}/External/qwt/5.2/include)
     SET(QWT_LIBRARY_DIR ${HGR}/External/qwt/5.2/lib/${MKPLT})
@@ -224,6 +244,8 @@ IF(NOT HEADLESS_BUILD)
     SET_PROPERTY(TARGET libqwt PROPERTY IMPORTED_LOCATION ${QWT_LIBRARY_DIR}/qwt5${RCS_DEBUG_SUFFIX}.lib)
     SET_PROPERTY(TARGET libqwt PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${HGR}/External/qwt/5.2/include)
     SET(QWT_LIBRARIES libqwt)
+	
+	ENDIF()
 
   ELSE(WIN32)
 

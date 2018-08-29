@@ -37,6 +37,7 @@
 #include "JointSlider.h"
 #include "SimpleSlider.h"
 
+#include <qglobal.h>
 #include <qwt_thermo.h>
 
 #include <QApplication>
@@ -93,8 +94,14 @@ JointSlider::JointSlider(double lower_bound,
   // t1->setFillColor(QColor("green"));
   // t1->setAlarmColor(QColor("DarkRed"));
   t1->setAlarmLevel(0.25 * (_lb));
+#if QWT_VERSION < 0x060103
   t1->setOrientation(Qt::Horizontal, QwtThermo::NoScale);
   t1->setRange(_zp, _lb);
+#else
+  t1->setOrientation(Qt::Horizontal);
+  t1->setLowerBound(_zp);
+  t1->setUpperBound(_lb);
+#endif
   t1->setValue(_lb);
 
   // Bar for right joint range
@@ -106,8 +113,15 @@ JointSlider::JointSlider(double lower_bound,
   // t2->setFillColor(QColor("green"));
   // t2->setAlarmColor(QColor("DarkRed"));
   t2->setAlarmLevel(0.75 * _ub);
+
+#if QWT_VERSION < 0x060103
   t2->setOrientation(Qt::Horizontal, QwtThermo::NoScale);
   t2->setRange(_zp, _ub);
+#else
+  t2->setOrientation(Qt::Horizontal);
+  t2->setLowerBound(_zp);
+  t2->setUpperBound(_ub);
+#endif
   t2->setValue(_zp);
 
   // Label for upper bound joint value

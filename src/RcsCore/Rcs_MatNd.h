@@ -228,7 +228,7 @@ MatNd* MatNd_createFromString(const char* str);
  */
 #define MatNd_fromStack(self,rows,cols)                           \
   {                                                               \
-    size_t size = (rows)*(cols) == 0 ? 1 : (rows)*(cols);         \
+    unsigned int size = (rows)*(cols) == 0 ? 1 : (rows)*(cols);         \
     self = (MatNd*) alloca(sizeof(MatNd) + size*sizeof(double));  \
     MATND_COUNT_ALLOCA_BYTES_ROW_X_COL(rows,cols);                \
     self->ele = (double*) (self + 1);                             \

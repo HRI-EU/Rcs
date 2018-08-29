@@ -40,11 +40,20 @@
 #include <Rcs_macros.h>
 #include <Rcs_VecNd.h>
 
+#include <QtGlobal>
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QGridLayout>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QCheckBox>
+#include <QtWidgets/QLabel>
+#else
 #include <QtGui/QGridLayout>
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QCheckBox>
 #include <QtGui/QLabel>
+#endif
 #include <QtCore/QTimer>
 
 #include <vector>

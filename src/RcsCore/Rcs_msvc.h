@@ -46,6 +46,8 @@
 #include <cfloat>
 #include <limits>
 
+#pragma warning(disable:4267)
+
 #if defined(WIN_DLL)
 #    ifdef RCSCORE_EXPORTS
 #        define RCSCORE_API __declspec(dllexport)
@@ -95,6 +97,7 @@
 #define __FILENAME__ STRIPPATH(__FILE__)
 
 #define strcasecmp _stricmp
+#define strncasecmp _strnicmp
 #define snprintf   _snprintf
 #define copysign   _copysign
 #define popen      _popen
@@ -114,6 +117,7 @@ static inline double drand48()
   return (double) rand() / RAND_MAX;
 }
 
+#if (_MSC_VER < 1900)
 static inline int round(double x)
 {
   int i = (int) x;
@@ -127,6 +131,7 @@ static inline int round(double x)
     return (-x+i >= 0.5) ? (i - 1) : (i);
   }
 }
+#endif
 
 static inline double fmin(double x, double y)
 {

@@ -36,6 +36,7 @@
 
 #include "SimpleSlider.h"
 
+#include <qglobal.h>
 #include <qwt_slider.h>
 
 #include <QApplication>
@@ -59,9 +60,14 @@ SimpleSlider::SimpleSlider(double lowerBound,
 
   qwtslider = new QwtSlider(this);
   qwtslider->setFixedWidth(200);
+#if QWT_VERSION < 0x060103
   qwtslider->setRange(lowerBound*scaleFactor, upperBound*scaleFactor,
                       0.01, // Fraction of the interval length
                       10); // Page size (?)
+#else
+  qwtslider->setLowerBound(lowerBound*scaleFactor);
+  qwtslider->setUpperBound(upperBound*scaleFactor);
+#endif
   qwtslider->setValue(zeroPos*scaleFactor);
 
   QPushButton* button_reset = new QPushButton("Reset");

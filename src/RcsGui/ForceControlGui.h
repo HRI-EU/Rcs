@@ -40,7 +40,13 @@
 #include <ControllerBase.h>
 #include <Rcs_MatNd.h>
 
+#include <QtGlobal>
+#if QT_VERSION >= 0x050000
+#include <QtWidgets/QScrollArea>
+#else
 #include <QtGui/QScrollArea>
+#endif
+
 
 #include <pthread.h>
 

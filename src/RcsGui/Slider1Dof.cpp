@@ -39,12 +39,13 @@
 #include <Rcs_macros.h>
 #include <Rcs_guiFactory.h>
 
+#include <qglobal.h>
+#include <qwt_slider.h>
+
 #include <QHBoxLayout>
 #include <QGridLayout>
 #include <QLabel>
 #include <QTimer>
-
-#include <qwt_slider.h>
 
 
 
@@ -177,10 +178,15 @@ Slider1Dof::Slider1Dof(double* q_des_,
 
   // Slider
   this->slider = new QwtSlider(this);
+#if QWT_VERSION < 0x060103
   this->slider->setRange(lowerBound_,
                          upperBound_,
                          ticSize * 0.1, // Fraction of the interval length
                          10);   // Page size (?)
+#else
+  this->slider->setLowerBound(lowerBound_);
+  this->slider->setUpperBound(upperBound_);
+#endif
   this->slider->setValue(zeroPos);
   connect(this->slider, SIGNAL(valueChanged(double)), SLOT(updateLcd1()));
 

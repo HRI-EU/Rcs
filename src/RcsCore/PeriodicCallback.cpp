@@ -42,6 +42,7 @@
 
 #include <cfloat>          // DBL_MAX
 #include <cmath>           // std::sqrt
+#include <algorithm>       // std::min
 
 #if !defined (_MSC_VER)
 #include <sys/time.h>      // getrlimit

@@ -38,6 +38,7 @@
 
 #include <Rcs_macros.h>
 
+#include <qglobal.h>
 #include <qwt_slider.h>
 
 #include <QHBoxLayout>
@@ -139,9 +140,14 @@ void LcdSlider::init(double lowerBound,
     ub = valueCurr + 0.5*(ub-lb);
   }
 
+#if QWT_VERSION < 0x060103
   this->slider->setRange(lb, ub,
                          ticSize * 0.1, // Fraction of the interval length
                          10);   // Page size (?)
+#else
+  this->slider->setLowerBound(lb);
+  this->slider->setUpperBound(ub);
+#endif
   this->slider->setValue(valueCurr);
   connect(this->slider, SIGNAL(valueChanged(double)), SLOT(updateCmd()));
 
@@ -431,7 +437,11 @@ void LcdSlider::updateControls()
   {
     double q_des = getSliderValue();
     double diff2Zero = (this->zeroPos - q_des);
+#if QWT_VERSION < 0x060103
     double minDecrease = .02*fabs(this->slider->maxValue() - this->slider->minValue())/this->scaleFactor;
+#else
+	double minDecrease = .02*fabs(this->slider->upperBound() - this->slider->lowerBound()) / this->scaleFactor;
+#endif
     double step = .2*diff2Zero;
 
     if (fabs(step)<minDecrease)

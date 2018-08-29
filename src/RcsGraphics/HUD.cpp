@@ -113,6 +113,7 @@ public:
 
     if (hud->backgroundChanged==true)
     {
+#if !defined (_MSC_VER)
       if (hud->autoScale==true)
       {
         osg::BoundingBox bb = hud->hudText->getBound();
@@ -132,7 +133,7 @@ public:
 
         hud->resizeNoMutex(hud->llx, hud->lly, newSizeX, newSizeY);
       }
-
+#endif
       hud->backgroundChanged = false;
       hud->bgGeometry->setVertexArray(hud->backgroundVertices.get());
       hud->hudText->setPosition(osg::Vec3(hud->llx+margin,

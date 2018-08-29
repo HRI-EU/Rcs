@@ -45,7 +45,6 @@
 
 #include <osg/LightModel>
 #include <osg/ShapeDrawable>
-#include <osgShadow/ShadowVolume>
 #include <osgShadow/ShadowTexture>
 #include <osgShadow/SoftShadowMap>
 #include <osgShadow/ParallelSplitShadowMap>
