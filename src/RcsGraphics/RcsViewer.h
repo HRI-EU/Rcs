@@ -129,6 +129,7 @@ public:
    *  \param[in] A_CI Transformation from world to camera frame
    */
   void setCameraTransform(const HTr* A_CI);
+  void setCameraTransform(double x, double y, double z, double thx, double thy, double thz);
 
   void setCameraHomePosition(const osg::Vec3d& eye,
                              const osg::Vec3d& center,

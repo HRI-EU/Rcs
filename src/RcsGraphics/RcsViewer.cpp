@@ -42,6 +42,7 @@
 #include <Rcs_timer.h>
 #include <KeyCatcherBase.h>
 #include <Rcs_utils.h>
+#include <Rcs_VecNd.h>
 
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
@@ -217,8 +218,9 @@ public:
           double x[6];
           _viewer->getCameraTransform(&A_CI);
           HTr_to6DVector(x, &A_CI);
-          RMSGS("Camera pose is %f %f %f   %f %f %f",
-                x[0], x[1], x[2], x[3], x[4], x[5]);
+          RMSGS("Camera pose is %f %f %f   %f %f %f   (degrees: %.3f %.3f %.3f)",
+                x[0], x[1], x[2], x[3], x[4], x[5],
+                RCS_RAD2DEG(x[3]), RCS_RAD2DEG(x[4]), RCS_RAD2DEG(x[5]));
         }
 
         //
@@ -661,6 +663,20 @@ void Viewer::getCameraTransform(HTr* A_CI) const
 void Viewer::setCameraTransform(const HTr* A_CI)
 {
   osg::Matrix vm = viewMatrixFromHTr(A_CI);
+  viewer->getCameraManipulator()->setByInverseMatrix(vm);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Viewer::setCameraTransform(double x, double y, double z,
+                                double thx, double thy, double thz)
+{
+  HTr A_CI;
+  double x6[6];
+  VecNd_set6(x6, x, y, z, thx, thy, thz);
+  HTr_from6DVector(&A_CI, x6);
+  osg::Matrix vm = viewMatrixFromHTr(&A_CI);
   viewer->getCameraManipulator()->setByInverseMatrix(vm);
 }
 

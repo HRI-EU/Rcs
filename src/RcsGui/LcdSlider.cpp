@@ -147,6 +147,10 @@ void LcdSlider::init(double lowerBound,
 #else
   this->slider->setLowerBound(lb);
   this->slider->setUpperBound(ub);
+  //this->slider->setFixedWidth(400);
+  this->slider->setPageSteps(10);
+  this->slider->setOrientation(Qt::Horizontal);
+  //this->slider->setTotalSteps(100);
 #endif
   this->slider->setValue(valueCurr);
   connect(this->slider, SIGNAL(valueChanged(double)), SLOT(updateCmd()));
