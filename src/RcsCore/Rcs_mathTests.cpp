@@ -108,10 +108,10 @@ bool testEulerAnglesFunctions(int argc, char** argv)
   Mat3d_fromEulerAngles(A_KI, ea0);
   Mat3d_toEulerAngles(ea1, A_KI);
   Mat3d_fromEulerAngles(A_test, ea1);
-  RLOG(1, "in:  %f   %f   %f",
+  RLOG(2, "in:  %f   %f   %f",
        ea0[0] * (180.0 / M_PI), ea0[1] * (180.0 / M_PI),
        ea0[2] * (180.0 / M_PI));
-  RLOG(1, "out: %f   %f   %f",
+  RLOG(2, "out: %f   %f   %f",
        ea1[0] * (180.0 / M_PI), ea1[1] * (180.0 / M_PI),
        ea1[2] * (180.0 / M_PI));
 
@@ -121,20 +121,20 @@ bool testEulerAnglesFunctions(int argc, char** argv)
 
   if (err>errMax)
   {
-    Mat3d_printCommentDigits("A_KI", A_KI, 4);
-    Mat3d_printCommentDigits("A_test", A_test, 4);
-    Mat3d_printCommentDigits("A_diff", A_diff, 4);
+    REXEC(2)
+    {
+      Mat3d_printCommentDigits("A_KI", A_KI, 4);
+      Mat3d_printCommentDigits("A_test", A_test, 4);
+      Mat3d_printCommentDigits("A_diff", A_diff, 4);
+    }
     success = false;
   }
-  else
-  {
-    RLOG(1, "SUCCESS for Euler angles test: error is %g (<%g)", err, errMax);
-  }
+
+  RLOGS(1, "%s", success ? "SUCCESS" : "FAILURE");
+  RLOG(2, "Error is %g (<%g)", err, errMax);
 
   return success;
 }
-
-
 
 /*******************************************************************************
  * Test for simple vector-matrix functions:
@@ -152,9 +152,9 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
   // MatNd_copyColumns
   {
     // Copy column 0, 4 and 1 from src into dst.
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test for MatNd_copyColumns");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test for MatNd_copyColumns");
+    RLOGS(2, "**************************************");
     int rows = 5;
     MatNd* src = MatNd_create(rows, 6);
     MatNd_setRandom(src, 0.0, 1.0);
@@ -162,7 +162,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
     int cols[4] = { 0, 4, 1, -1 };
     MatNd_copyColumns(dst, src, cols);
 
-    REXEC(1)
+    REXEC(2)
     {
       MatNd_printCommentDigits("src", src, 3);
       MatNd_printCommentDigits("dst", dst, 3);
@@ -184,7 +184,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
     if (sqrErr>0.0)
     {
       success = false;
-      RLOG(1, "Test for MatNd_copyColumns failed: sqrErr = %g", sqrErr);
+      RLOG(2, "Test for MatNd_copyColumns failed: sqrErr = %g", sqrErr);
     }
 
     MatNd_destroy(src);
@@ -193,9 +193,9 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
 
   // MatNd_postMulDiagSelf
   {
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test for MatNd_postMulDiagSelf");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test for MatNd_postMulDiagSelf");
+    RLOGS(2, "**************************************");
     MatNd* A = MatNd_create(2, 3);
     char matrixA[512] = "1 2 3 , 4 5 6";
     MatNd_fromString(A, matrixA);
@@ -204,7 +204,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
     char matrixB[512] = "10 , 20 , 30";
     MatNd_fromString(B, matrixB);
 
-    REXEC(1)
+    REXEC(2)
     {
       RMSGS("A is");
       MatNd_print(A);
@@ -214,7 +214,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
 
     MatNd_postMulDiagSelf(A, B);
 
-    REXEC(1)
+    REXEC(2)
     {
       RMSGS("Result: A is");
       MatNd_print(A);
@@ -233,7 +233,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
     if (MatNd_isEqual(expectedResult, A, 0.0) == false)
     {
       success = false;
-      RLOG(1, "Test for MatNd_postMulDiagSelf failed");
+      RLOG(2, "Test for MatNd_postMulDiagSelf failed");
     }
 
     MatNd_destroy(A);
@@ -243,9 +243,9 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
 
   // MatNd_insertColumns
   {
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test for MatNd_insertColumns");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test for MatNd_insertColumns");
+    RLOGS(2, "**************************************");
     int rows = 10;
     MatNd* A = MatNd_create(rows, 5);
     for (unsigned int i = 0; i < A->n; i++)
@@ -262,7 +262,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
         MatNd_set(B, j, i, i + 10);
       }
 
-    REXEC(1)
+    REXEC(2)
     {
       MatNd_printCommentDigits("A", A_org, 3);
       MatNd_printCommentDigits("B", B, 3);
@@ -272,7 +272,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
 
     MatNd_insertColumns(A, 1, B, 1, 3);
 
-    REXEC(1)
+    REXEC(2)
     {
       MatNd_printCommentDigits("A", A, 3);
     }
@@ -315,7 +315,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
     if (sqrErr>0.0)
     {
       success = false;
-      RLOG(1, "Test for MatNd_insertColumns failed: sqrErr = %g", sqrErr);
+      RLOG(2, "Test for MatNd_insertColumns failed: sqrErr = %g", sqrErr);
     }
 
 
@@ -329,11 +329,11 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
   // MatNd_toFile
   // MatNd_fromFile
   {
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test for MatNd_fromString");
-    RLOGS(1, "         MatNd_toFile");
-    RLOGS(1, "         MatNd_fromFile");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test for MatNd_fromString");
+    RLOGS(2, "         MatNd_toFile");
+    RLOGS(2, "         MatNd_fromFile");
+    RLOGS(2, "**************************************");
     MatNd* A = MatNd_create(10, 10);
     MatNd* B = MatNd_create(10, 10);
     char matrix[512] = "1 2 3 4 , 5 6 7 8 , 9 10 11 12 , 13 14 15 16";
@@ -345,19 +345,19 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
     const char* fileName = "/tmp/deleteme.dat";
 #endif
 
-    REXEC(1)
+    REXEC(2)
     {
       RMSGS("A is");
       MatNd_print(A);
     }
 
-    RLOG(1, "Writing A to %s", fileName);
+    RLOG(2, "Writing A to %s", fileName);
     MatNd_toFile(A, fileName);
 
-    RLOG(1, "Reading B from %s", fileName);
+    RLOG(2, "Reading B from %s", fileName);
     MatNd_fromFile(B, fileName);
 
-    REXEC(1)
+    REXEC(2)
     {
       RMSGS("B is");
       MatNd_print(B);
@@ -365,7 +365,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
 
     if (MatNd_isEqual(A, B, 0.0) == false)
     {
-      REXEC(1)
+      REXEC(2)
       {
         RMSGS("[Test for MatNd_fromString, MatNd_toFile, "
               "MatNd_fromFile]: A and B are not equal:");
@@ -379,7 +379,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
     MatNd_destroy(A);
     MatNd_destroy(B);
 
-    RLOG(1, "Deleting %s", fileName);
+    RLOG(2, "Deleting %s", fileName);
     char sysStr[256];
 #if defined (_MSC_VER)
     strcpy(sysStr, "del ");
@@ -391,7 +391,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
 
     if (err == -1)
     {
-      RLOG(1, "Couldn't delete %s - please do manually", fileName);
+      RLOG(2, "Couldn't delete %s - please do manually", fileName);
       success = false;
     }
 
@@ -399,9 +399,9 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
 
   // MatNd_appendToFile
   {
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test for MatNd_appendToFile");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test for MatNd_appendToFile");
+    RLOGS(2, "**************************************");
     MatNd* A = MatNd_create(5, 2);
 
 #if defined (_MSC_VER)
@@ -419,27 +419,27 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
 
     }
 
-    REXEC(1)
+    REXEC(2)
     {
       RMSGS("A is");
       MatNd_print(A);
     }
 
-    RLOG(1, "Writing A to %s", fileName);
+    RLOG(2, "Writing A to %s", fileName);
     MatNd_toFile(A, fileName);
 
-    RLOG(1, "Appending A to %s", fileName);
+    RLOG(2, "Appending A to %s", fileName);
     MatNd_appendToFile(A, fileName);
 
     MatNd* B = MatNd_createFromFile(fileName);
     RCHECK(B);
 
-    REXEC(1)
+    REXEC(2)
     {
       MatNd_printCommentDigits("A appended to itself is", B, 3);
     }
 
-    RLOG(1, "Deleting %s", fileName);
+    RLOG(2, "Deleting %s", fileName);
     char sysStr[256];
 #if defined (_MSC_VER)
     strcpy(sysStr, "del ");
@@ -451,7 +451,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
 
     if (err == -1)
     {
-      RLOG(1, "Couldn't delete %s - please do manually", fileName);
+      RLOG(2, "Couldn't delete %s - please do manually", fileName);
       success = false;
     }
 
@@ -461,9 +461,9 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
 
   // MatNd_sqrMulABAt
   {
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test for MatNd_sqrMulABAt");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test for MatNd_sqrMulABAt");
+    RLOGS(2, "**************************************");
     int m=30, n=10, iter=1;
     Rcs::CmdLineParser argP(argc, argv);
     argP.getArgument("-rows", &m, "Number of rows (Default is 30)");
@@ -501,17 +501,17 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
 
     double msqError = MatNd_msqError(ABAt1, ABAt2);
 
-    RLOG(1, "dt1=%.4f usec   dt2=%.4f usec   err=%g",
+    RLOG(2, "dt1=%.4f usec   dt2=%.4f usec   err=%g",
          1.0e6*dt1, 1.0e6*dt2, msqError);
 
-    REXEC(2)
+    REXEC(3)
     {
       MatNd_printTwoArraysDiff(ABAt1, ABAt2, 3);
     }
 
     if (msqError > 1.0e-8)
     {
-      RLOG(1, "MatNd_sqrMulABAt has error of %g (> 1.0e-8)", msqError);
+      RLOG(2, "MatNd_sqrMulABAt has error of %g (> 1.0e-8)", msqError);
       success = false;
     }
 
@@ -521,7 +521,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
     MatNd_destroy(ABAt2);
   }
 
-
+  RLOGS(1, "%s", success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -548,9 +548,9 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
   // MatNd_choleskyDecomposition
   if (testAll || testChol)
   {
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test for MatNd_choleskyDecomposition");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test for MatNd_choleskyDecomposition");
+    RLOGS(2, "**************************************");
     int n = dim;   // dimension of square matrix
     MatNd* J      = MatNd_create(3 * n, n);
     MatNd* A      = MatNd_create(n, n);
@@ -564,8 +564,12 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
     bool isSymmetric = MatNd_isSymmetric(A, 1.0e-12);
     if (isSymmetric==false)
     {
-      MatNd_printCommentDigits("A", A, 6);
-      RFATAL("A is not symmetric");
+      REXEC(2)
+      {
+        MatNd_printCommentDigits("A", A, 6);
+        RLOGS(2, "A is not symmetric");
+        success = false;
+      }
     }
 
     Timer_setZero();
@@ -582,7 +586,7 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
 
     if (errNorm < maxErr)
     {
-      RLOGS(1, "SUCCESS for Cholesky decomposition after %.4f msec: error is "
+      RLOGS(2, "SUCCESS for Cholesky decomposition after %.4f msec: error is "
             "%g (<%g)", 1.0e3*dt, errNorm, maxErr);
     }
     else
@@ -590,13 +594,14 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
       success = false;
       RMSGS("FAILURE for Cholesky decompositionafter %.2f msec: error is %g"
             " (>%g)", 1.0e3*dt, errNorm, maxErr);
-    }
 
-    if ((errNorm>=maxErr) || (RcsLogLevel>1) || ((RcsLogLevel>0)&&(dim<10)))
-    {
-      MatNd_printCommentDigits("A", A, 5);
-      MatNd_printCommentDigits("L", L, 5);
-      MatNd_printCommentDigits("L*transpose(L)", A_test, 5);
+      REXEC(3)
+      {
+        MatNd_printCommentDigits("A", A, 5);
+        MatNd_printCommentDigits("L", L, 5);
+        MatNd_printCommentDigits("L*transpose(L)", A_test, 5);
+      }
+
     }
 
     MatNd_destroy(J);
@@ -611,9 +616,9 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
   {
     // Create a square symmetric positiv definite matrix A with
     // random values
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test for MatNd_choleskySolve");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test for MatNd_choleskySolve");
+    RLOGS(2, "**************************************");
     int n = dim;
     int rhsCols = 2;
     argP.getArgument("-rhsDim", &rhsCols,
@@ -646,7 +651,7 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
 
     if (errNorm < maxErr)
     {
-      RLOGS(1, "SUCCESS for Cholesky solve after %.2f msec: error is %g (<%g)",
+      RLOGS(2, "SUCCESS for Cholesky solve after %.2f msec: error is %g (<%g)",
             1.0e3*dt, errNorm, maxErr);
     }
     else
@@ -654,14 +659,13 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
       success = false;
       RMSGS("FAILURE for Cholesky solve after %.2f msec: error is %g (>%g)",
             1.0e3*dt, errNorm, maxErr);
-    }
 
-    if (((errNorm>=maxErr) && (RcsLogLevel>2)) ||
-        ((RcsLogLevel>0)&&(dim<10)))
-    {
-      MatNd_printCommentDigits("Error", err, 8);
-      MatNd_printCommentDigits("Ax", Ax, 8);
-      MatNd_printCommentDigits("b", b, 8);
+      REXEC(3)
+      {
+        MatNd_printCommentDigits("Error", err, 8);
+        MatNd_printCommentDigits("Ax", Ax, 8);
+        MatNd_printCommentDigits("b", b, 8);
+      }
     }
 
     // Clean up
@@ -677,9 +681,9 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
   {
     // Create a square symmetric positiv definite matrix A with
     // random values
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test for MatNd_gaussSeidelSolve");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test for MatNd_gaussSeidelSolve");
+    RLOGS(2, "**************************************");
     int n = dim;
     MatNd* L = MatNd_create(n, 2 * n);
     MatNd_setRandom(L, -1.0, 1.0);
@@ -703,14 +707,14 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
     MatNd_mul(Ax, A, x);
     MatNd_sub(err, Ax, b);
 
-    RLOGS(1, "Gauss-Seidel took %d steps (%.1f usec)", nSteps, 1.0e6*dt);
+    RLOGS(2, "Gauss-Seidel took %d steps (%.1f usec)", nSteps, 1.0e6*dt);
 
     double errNorm = MatNd_getNorm(err);
     const double maxErr = 1.0e-6;
 
     if (errNorm < maxErr)
     {
-      RLOGS(1, "SUCCESS for Gauss-Seidl solve: error is %g (<%g)",
+      RLOGS(2, "SUCCESS for Gauss-Seidl solve: error is %g (<%g)",
             errNorm, maxErr);
     }
     else
@@ -718,15 +722,14 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
       success = false;
       RMSGS("FAILURE for Gauss-Seidl solve: error is %g (>=%g)",
             errNorm, maxErr);
-    }
 
-    if (((errNorm>=maxErr) && (RcsLogLevel>2)) ||
-        ((RcsLogLevel>0)&&(dim<10)))
-    {
-      MatNd_printCommentDigits("Error", err, 8);
-      MatNd_printCommentDigits("Ax", Ax, 8);
-      MatNd_printCommentDigits("b", b, 8);
-      RMSGS("Error norm is %g", MatNd_getNorm(err));
+      REXEC(3)
+      {
+        MatNd_printCommentDigits("Error", err, 8);
+        MatNd_printCommentDigits("Ax", Ax, 8);
+        MatNd_printCommentDigits("b", b, 8);
+        RMSGS("Error norm is %g", MatNd_getNorm(err));
+      }
     }
 
     // Clean up
@@ -741,9 +744,9 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
   // Here's some test code based on inv(A)*A = E:
   if (testAll || testChol)
   {
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test for MatNd_choleskyInverse");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test for MatNd_choleskyInverse");
+    RLOGS(2, "**************************************");
     int n = dim;
     MatNd* sqrtA  = MatNd_create(n, 2 * n);
     MatNd* A      = MatNd_create(n, n);
@@ -758,7 +761,7 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
     double t1 = Timer_getTime();
     MatNd_mul(A_invA, A_inv, A);
 
-    if ((RcsLogLevel>1) || ((RcsLogLevel>0) && (dim<10)))
+    if ((RcsLogLevel>2) || ((RcsLogLevel>1) && (dim<10)))
     {
       MatNd_printCommentDigits("A", A, 5);
       MatNd_printCommentDigits("inv(A)", A_inv, 5);
@@ -767,18 +770,21 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
 
     if (MatNd_isIdentity(A_invA, 1.0e-8))
     {
-      RLOGS(1, "SUCCESS for Cholesky inverse: A*inv(A) = I");
+      RLOGS(2, "SUCCESS for Cholesky inverse: A*inv(A) = I");
     }
     else
     {
       success = false;
-      RMSGS("FAILURE for Cholesky inverse: A*inv(A) != I");
-      MatNd_printCommentDigits("A", A, 5);
-      MatNd_printCommentDigits("inv(A)", A_inv, 5);
-      MatNd_printCommentDigits("A*inv(A) = I", A_invA, 5);
+      REXEC(3)
+      {
+        RMSGS("FAILURE for Cholesky inverse: A*inv(A) != I");
+        MatNd_printCommentDigits("A", A, 5);
+        MatNd_printCommentDigits("inv(A)", A_inv, 5);
+        MatNd_printCommentDigits("A*inv(A) = I", A_invA, 5);
+      }
     }
 
-    RLOGS(1, "det = %g, inversion took %g usec", det, 1.0e6 * (t1 - t0));
+    RLOGS(2, "det = %g, inversion took %g usec", det, 1.0e6 * (t1 - t0));
 
     MatNd_destroy(sqrtA);
     MatNd_destroy(A);
@@ -786,6 +792,8 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
     MatNd_destroy(A_invA);
   }
 
+
+  RLOGS(1, "%s", success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -899,12 +907,12 @@ bool testDerivatives(int argc, char** argv)
   argP.getArgument("-iter", &iter, "Number of iterations");
 
   bool success = true;
-  bool verbose = (RcsLogLevel>0) ? true : false;
+  bool verbose = (RcsLogLevel>1) ? true : false;
   double eps = 1.0e-2;
   argP.getArgument("-eps", &eps, "Permissable gradient error (Default is"
                    " 0.01, which is 1 percent)");
 
-  RLOG(1, "Testing gradients");
+  RLOG(2, "Testing gradients");
 
   MatNd* x = MatNd_create(3, 3);
   for (int i = 0; i < iter; i++)
@@ -916,34 +924,37 @@ bool testDerivatives(int argc, char** argv)
     int rndXYZ = (int)(3.0 * (rand() / (RAND_MAX + 1.0)));
     RCHECK((rndXYZ >= 0) && (rndXYZ < 3));
 
-    REXEC(1)
+    REXEC(2)
     {
       fprintf(stderr, "Test:                    ");
     }
-    success = success && Rcs_testGradient(test_f, test_df, NULL, x->ele, 5, 1, eps, verbose);
+    success = success && Rcs_testGradient(test_f, test_df, NULL, x->ele,
+                                          5, 1, eps, verbose);
 
-    REXEC(1)
+    REXEC(2)
     {
       fprintf(stderr, "Local Rotmat gradient:   ");
     }
     success = success && Rcs_testGradient(test_LocalRotMat, test_dLocalRotMat,
                                           &rndXYZ, x->ele, 1, 9, eps, verbose);
 
-    REXEC(1)
+    REXEC(2)
     {
       fprintf(stderr, "Local Rotmat grad. (rel):");
     }
-    success = success && Rcs_testGradient(test_LocalRotMatRel, test_dLocalRotMatRel,
+    success = success && Rcs_testGradient(test_LocalRotMatRel,
+                                          test_dLocalRotMatRel,
                                           NULL, x->ele, 1, 9, eps, verbose);
 
-    REXEC(1)
+    REXEC(2)
     {
       fprintf(stderr, "Axis angle wrt. Eul. ang:");
     }
-    success = success && Rcs_testGradient(test_AxisAngle, test_dAxisAngleDEuler,
+    success = success && Rcs_testGradient(test_AxisAngle,
+                                          test_dAxisAngleDEuler,
                                           NULL, x->ele, 3, 1, eps, verbose);
 
-    REXEC(1)
+    REXEC(2)
     {
       if (success==false)
       {
@@ -961,6 +972,7 @@ bool testDerivatives(int argc, char** argv)
 
   MatNd_destroy(x);
 
+  RLOGS(1, "%s", success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -1022,6 +1034,11 @@ bool testHTr(int argc, char** argv)
  ******************************************************************************/
 bool testBasicMath(int argc, char** argv)
 {
+  printf ( "lround (2.3) = %ld\n", lround(2.3));
+  printf ( "lround (3.8) = %ld\n", lround(3.8));
+  printf ( "lround (-2.3) = %ld\n", lround(-2.3));
+  printf ( "lround (-3.8) = %ld\n", lround(-3.8));
+
   MatNd* sqrMat  = MatNd_create(3, 6);
   MatNd* Mat     = MatNd_create(3, 3);
   MatNd_setRandom(sqrMat, -1.0, 1.0);
@@ -2851,9 +2868,9 @@ bool testMat3dFunctions(int argc, char** argv)
 
   // Create a square symmetric positiv definite matrix A with
   // random values
-  RLOGS(1, "**************************************");
-  RLOGS(1, "Test for Mat3d_fromVec()");
-  RLOGS(1, "**************************************");
+  RLOGS(2, "**************************************");
+  RLOGS(2, "Test for Mat3d_fromVec()");
+  RLOGS(2, "**************************************");
   {
     double A[3][3], v[3];
     Vec3d_setRandom(v, -1.0, 1.0);
@@ -3411,9 +3428,9 @@ bool testQuaternionConversion(int argc, char** argv)
   bool success = true;
 
   {
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test quaternion - rotation matrix");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test quaternion - rotation matrix");
+    RLOGS(2, "**************************************");
 
     double q[4], A_BI[3][3], A_BI2[3][3], err[3][3];
 
@@ -3442,9 +3459,9 @@ bool testQuaternionConversion(int argc, char** argv)
   }
 
   {
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test quaternion - Euler angles");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test quaternion - Euler angles");
+    RLOGS(2, "**************************************");
 
     double q[4], q2[4], ea[3], rm[3][3], err[4];
     Vec3d_setRandom(ea, -3.0*M_PI, 3.0*M_PI);
@@ -3549,9 +3566,9 @@ bool testFunctionsEigen3(int argc, char** argv)
 
   // MatNd_SVD
   {
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test for MatNd_SVD");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test for MatNd_SVD");
+    RLOGS(2, "**************************************");
     int m = 3, n = 5;
     double eps = 1.0e-8;
 
@@ -3587,14 +3604,14 @@ bool testFunctionsEigen3(int argc, char** argv)
     int rankTest = MatNd_rank(J, eps);
     if (rankTest != rank)
     {
-      RLOGS(1, "FAILURE for MatNd_rank(): Result doesn't match SVD: %d != %d",
+      RLOGS(2, "FAILURE for MatNd_rank(): Result doesn't match SVD: %d != %d",
             rankTest, rank);
       success = false;
     }
 
     if (rmsErr < maxErr)
     {
-      RLOGS(1, "SUCCESS for SVD: RMS error is %g (<%g), rank of J is %d",
+      RLOGS(2, "SUCCESS for SVD: RMS error is %g (<%g), rank of J is %d",
             rmsErr, maxErr, rank);
     }
     else
@@ -3626,9 +3643,9 @@ bool testFunctionsEigen3(int argc, char** argv)
 
   // MatNd_svdSolve
   {
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test for MatNd_svdSolve");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test for MatNd_svdSolve");
+    RLOGS(2, "**************************************");
     // Create a square symmetric positiv definite matrix A with
     // random values
     int n = dim;
@@ -3642,7 +3659,7 @@ bool testFunctionsEigen3(int argc, char** argv)
     // Solve Ax = b for x
     MatNd* x  = MatNd_create(n, 1);
     double det = MatNd_SVDSolve(x, A, b);
-    RLOGS(1, "Determinant is %g", det);
+    RLOGS(2, "Determinant is %g", det);
 
     // Test: Ax = b
     MatNd* Ax  = MatNd_create(n, 1);
@@ -3655,7 +3672,7 @@ bool testFunctionsEigen3(int argc, char** argv)
 
     if (errNorm < maxErr)
     {
-      RLOGS(1, "SUCCESS for SVD solve: error norm is %g (<%g)",
+      RLOGS(2, "SUCCESS for SVD solve: error norm is %g (<%g)",
             errNorm, maxErr);
     }
     else
@@ -3684,9 +3701,9 @@ bool testFunctionsEigen3(int argc, char** argv)
   // MatNd_inverse: inv = V diag(S^-1) U^T
   // Here's some test code based on inv(A)*A = E:
   {
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test for MatNd_SVDInverse");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test for MatNd_SVDInverse");
+    RLOGS(2, "**************************************");
     int n = dim;
     MatNd* A      = MatNd_create(n, n);
     MatNd* A_inv  = MatNd_create(n, n);
@@ -3698,11 +3715,11 @@ bool testFunctionsEigen3(int argc, char** argv)
     double t1 = Timer_getTime();
     MatNd_mul(A_invA, A_inv, A);
 
-    RLOGS(1, "det = %g, inversion took %g usec", det, 1.0e6 * (t1 - t0));
+    RLOGS(2, "det = %g, inversion took %g usec", det, 1.0e6 * (t1 - t0));
 
     if (MatNd_isIdentity(A_invA, 1.0e-8))
     {
-      RLOGS(1, "SUCCESS for SVD inverse: A*inv(A) = I");
+      RLOGS(2, "SUCCESS for SVD inverse: A*inv(A) = I");
     }
     else
     {
@@ -3727,9 +3744,9 @@ bool testFunctionsEigen3(int argc, char** argv)
 
   // MatNd_QRDecomposition
   {
-    RLOGS(1, "**************************************");
-    RLOGS(1, "Test for MatNd_QRDecomposition");
-    RLOGS(1, "**************************************");
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test for MatNd_QRDecomposition");
+    RLOGS(2, "**************************************");
     int m = dim;
     int n = 3*dim;
     argP.getArgument("-rows", &m, "Number of rows");
@@ -3758,7 +3775,7 @@ bool testFunctionsEigen3(int argc, char** argv)
 
     if ((errNorm < maxErr) && (isQorthogonal==true))
     {
-      RLOGS(1, "SUCCESS for QR decomposition after %.2f msec: error is "
+      RLOGS(2, "SUCCESS for QR decomposition after %.2f msec: error is "
             "%g (<%g)", 1.0e3*dt, errNorm, maxErr);
     }
     else

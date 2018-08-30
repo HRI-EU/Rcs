@@ -50,18 +50,16 @@
 RCS_INSTALL_ERRORHANDLERS
 
 
-int main(int argc, char** argv)
+bool testMode(int mode, int argc, char** argv)
 {
-  int mode = 0, numTests = 1;
+  int numTests = 1;
   bool success = true;
 
   // To initialize random seed
   Math_getRandomNumber(-1.0, 1.0);
 
   // Parse command line arguments
-  Rcs::CmdLineParser argP(argc, argv);
-  argP.getArgument("-dl", &RcsLogLevel, "Set debug level");
-  argP.getArgument("-m", &mode, "Set test mode");
+  Rcs::CmdLineParser argP;
   argP.getArgument("-numTests", &numTests, "Number of repetitions");
 
 
@@ -79,7 +77,8 @@ int main(int argc, char** argv)
         fprintf(stderr, "(0 is default)\n\t-dim");
         fprintf(stderr, "\t<0...>  Dimension of arrays ");
         fprintf(stderr, "(5 is default)\n\t-m");
-        fprintf(stderr, "\t0   Prints this message (default)\n");
+        fprintf(stderr, "\t-1  Runs all tests\n");
+        fprintf(stderr, "\t\t0   Prints this message (default)\n");
         fprintf(stderr, "\t\t1   Tests Euler Angles functions\n");
         fprintf(stderr, "\t\t2   Tests simple matrix functions\n");
         fprintf(stderr, "\t\t3   Tests linear algebra functions\n");
@@ -223,12 +222,44 @@ int main(int argc, char** argv)
   }   // for (int i=0; i<numTests; i++)
 
 
+  return success;
+}
+
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+int main(int argc, char** argv)
+{
+  int mode = 0;
+
+  // Parse command line arguments
+  Rcs::CmdLineParser argP(argc, argv);
+  argP.getArgument("-dl", &RcsLogLevel, "Set debug level (default is %d)", RcsLogLevel);
+  argP.getArgument("-m", &mode, "Set test mode (default is %d)", mode);
+
+  bool success = true;
+
+  if (mode==-1)
+  {
+    for (int i=1;i<=4;++i)
+    {
+      success = testMode(i, argc, argv) | success;
+    }
+  }
+  else
+  {
+    success = testMode(mode, argc, argv);
+  }
+
   if (argP.hasArgument("-h"))
   {
     argP.print();
   }
-
-  printf("Test %s\n", success ? "SUCCEEDED" : "FAILED");
+  else
+  {
+    printf("Test %s\n", success ? "SUCCEEDED" : "FAILED");
+  }
 
   return 0;
 }
