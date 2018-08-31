@@ -82,7 +82,7 @@ static inline void getUniqueFileName(char* fileName)
  *
  ******************************************************************************/
 ViaPointSequence::ViaPointSequence() :
-  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL)
+  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL), computeAllParams(true)
 {
 }
 
@@ -90,19 +90,19 @@ ViaPointSequence::ViaPointSequence() :
  *
  ******************************************************************************/
 ViaPointSequence::ViaPointSequence(const MatNd* viaDescr_) :
-  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL)
+  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL), computeAllParams(true)
 {
-  init(viaDescr_, true);
+  init(viaDescr_);
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
 ViaPointSequence::ViaPointSequence(const char* viaString) :
-  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL)
+  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL), computeAllParams(true)
 {
   MatNd* tmp = MatNd_createFromString(viaString);
-  init(tmp, true);
+  init(tmp);
   MatNd_destroy(tmp);
 }
 
@@ -122,6 +122,7 @@ ViaPointSequence::~ViaPointSequence()
  * Copy constructor doing deep copying.
  ******************************************************************************/
 ViaPointSequence::ViaPointSequence(const ViaPointSequence& copyFromMe):
+  computeAllParams(copyFromMe.computeAllParams),
   constraintType(copyFromMe.constraintType),
   viaTime(copyFromMe.viaTime)
 {
@@ -142,12 +143,12 @@ ViaPointSequence& ViaPointSequence::operator=(const ViaPointSequence& rhs)
     return *this;
   }
 
-
   this->viaDescr = MatNd_realloc(this->viaDescr, rhs.viaDescr->m, rhs.viaDescr->n);
   this->B = MatNd_realloc(this->B, rhs.B->m, rhs.B->n);
   this->invB = MatNd_realloc(this->invB, rhs.invB->m, rhs.invB->n);
   this->x = MatNd_realloc(this->x, rhs.x->m, rhs.x->n);
   this->p = MatNd_realloc(this->p, rhs.p->m, rhs.p->n);
+  this->computeAllParams = rhs.computeAllParams;
 
   MatNd_copy(this->viaDescr, rhs.viaDescr);
   MatNd_copy(this->B, rhs.B);
@@ -215,7 +216,7 @@ void ViaPointSequence::compressDescriptor(MatNd* desc) const
 /*******************************************************************************
  *
  ******************************************************************************/
-bool ViaPointSequence::init(const MatNd* viaDescr_, bool computeAllParams)
+bool ViaPointSequence::init(const MatNd* viaDescr_)
 {
   RCHECK_MSG(viaDescr_->m >= 2, "m = %d (should be >= 2)", viaDescr_->m);
   RCHECK_MSG(viaDescr_->n >= 5, "n = %d (should be >= 5)", viaDescr_->n);
@@ -237,7 +238,7 @@ bool ViaPointSequence::init(const MatNd* viaDescr_, bool computeAllParams)
 
   // Disregard all constraints after a flag 7 constraint. This must be called
   // after sorting.
-  if (computeAllParams==false)
+  if (this->computeAllParams==false)
   {
     // truncate trajectory to the first full constraint via
     compressDescriptor(viaDescr);
@@ -1757,6 +1758,21 @@ void ViaPointSequence::computeRHS(MatNd* rhs, double t) const
 
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void ViaPointSequence::setTurboMode(bool enable)
+{
+  this->computeAllParams = !enable;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool ViaPointSequence::getTurboMode() const
+{
+  return !this->computeAllParams;
+}
 
 
 

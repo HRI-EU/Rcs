@@ -90,7 +90,7 @@ public:
 
   ViaPointSequence* clone() const;
 
-  virtual bool init(const MatNd* viaDescr, bool computeAllParams=true);
+  virtual bool init(const MatNd* viaDescr);
 
   /*! \brief Adds a via point to the sequence. It is just added to the classes
    *         descriptor. To recompute the polynomial, the \ref init() function
@@ -274,6 +274,8 @@ public:
   bool gradientDxDvia(MatNd* dxdvia, unsigned int row, double t0, double t1, double dt) const;
   bool gradientDxDvia_a(MatNd* dxdvia, unsigned int row, double t0, double t1, double dt) const;
   void computeRHS(MatNd* rhs, double t) const;
+  void setTurboMode(bool enable);
+  bool getTurboMode() const;
 
 protected:
 
@@ -288,6 +290,7 @@ protected:
   void compressDescriptor(MatNd* desc) const;
 
   MatNd* B, *invB, *x, *p;
+  bool computeAllParams;
 
   // Vectors with dimension equal to the number of rows / columns of B
   std::vector<int> constraintType;
