@@ -165,28 +165,27 @@ void Rcs::MeshNode::setMesh(const double* vertices, unsigned int numVertices,
   clear();
 
   osg::ref_ptr<osg::TriangleMesh> mesh = new osg::TriangleMesh;
-  this->shape = new osg::ShapeDrawable(mesh.get());
-  this->geode->addDrawable(this->shape);
 
   // Assign vertices
-  osg::ref_ptr<osg::Vec3Array> v = new osg::Vec3Array;// (numVertices);
+  osg::ref_ptr<osg::Vec3Array> v = new osg::Vec3Array;
   for (unsigned int i = 0; i < numVertices; i++)
   {
-	  const unsigned i3 = i * 3;
-	  v->push_back(osg::Vec3(vertices[i3 + 0], vertices[i3 + 1], vertices[i3 + 2])); 
-   // (*v)[i].set(vertices[i * 3 + 0], vertices[i * 3 + 1], vertices[i * 3 + 2]);
+    const unsigned i3 = i * 3;
+    v->push_back(osg::Vec3(vertices[i3 + 0], vertices[i3 + 1], vertices[i3 + 2]));
   }
 
   // Assign index array
-  osg::ref_ptr<osg::UIntArray> f = new osg::UIntArray;// (3 * numFaces);
+  osg::ref_ptr<osg::UIntArray> f = new osg::UIntArray;
   for (unsigned int i = 0; i < 3 * numFaces; i++)
   {
-	  f->push_back(faces[i]);
-    //(*f)[i] = faces[i];
+    f->push_back(faces[i]);
   }
 
   mesh->setVertices(v.get());
   mesh->setIndices(f.get());
+
+  this->shape = new osg::ShapeDrawable(mesh.get());
+  this->geode->addDrawable(this->shape);
 }
 
 /*******************************************************************************

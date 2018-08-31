@@ -73,9 +73,9 @@
 #include "Rcs_macros.h"
 
 #include <osg/MatrixTransform>
+#include <osg/Version>
 
 #define HUD_FONTSIZE   (25)
-
 
 
 /*******************************************************************************
@@ -113,10 +113,13 @@ public:
 
     if (hud->backgroundChanged==true)
     {
-#if !defined (_MSC_VER)
       if (hud->autoScale==true)
       {
+#if OSG_VERSION_GREATER_OR_EQUAL(3, 6, 2)
+        osg::BoundingBox bb = hud->hudText->getBoundingBox();
+#else
         osg::BoundingBox bb = hud->hudText->getBound();
+#endif
         int newSizeX = (int)(bb.xMax()-bb.xMin())+2*margin;
         int newSizeY = (int)(bb.yMax()-bb.yMin())+2*margin;
 
@@ -133,11 +136,10 @@ public:
 
         hud->resizeNoMutex(hud->llx, hud->lly, newSizeX, newSizeY);
       }
-#endif
       hud->backgroundChanged = false;
       hud->bgGeometry->setVertexArray(hud->backgroundVertices.get());
-      hud->hudText->setPosition(osg::Vec3(hud->llx+margin,
-                                          hud->lly+hud->sizeY-margin, -1.0));
+      //hud->hudText->setPosition(osg::Vec3(hud->llx+margin,
+      //                                    hud->lly+hud->sizeY-margin, -1.0));
     }   // if (hud->backgroundChanged==true)
 
 
@@ -178,99 +180,6 @@ Rcs::HUD::HUD(int llx_, int lly_, int sizeX_, int sizeY_,
   llx(llx_), lly(lly_), sizeX(sizeX_), sizeY(sizeY_)
 {
   init(llx, lly, sizeX, sizeY, textColor);
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-void Rcs::HUD::init(int llx, int lly, int sizeX, int sizeY,
-                    const char* textColor)
-{
-  const size_t margin = 10;
-
-  // Set up background rectangle
-  this->backgroundVertices = new osg::Vec3Array;
-  osg::ref_ptr<osg::Vec3Array> normals = new osg::Vec3Array;
-  normals->push_back(osg::Vec3(0.0f, 0.0f, 1.0f));
-  osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
-  colors->push_back(osg::Vec4(0.8f, 0.8f, 0.8f, 0.8f));
-  backgroundVertices->push_back(osg::Vec3(llx,          lly,         -1.0));
-  backgroundVertices->push_back(osg::Vec3(llx + sizeX,  lly,         -1.0));
-  backgroundVertices->push_back(osg::Vec3(llx + sizeX,  lly + sizeY, -1.0));
-  backgroundVertices->push_back(osg::Vec3(llx,          lly + sizeY, -1.0));
-
-  // Set up background geometry
-  this->bgGeometry = new osg::Geometry;
-  bgGeometry->setVertexArray(backgroundVertices.get());
-  bgGeometry->setNormalArray(normals.get());
-  bgGeometry->setColorArray(colors.get());
-  bgGeometry->addPrimitiveSet(new osg::DrawArrays(GL_QUADS,0,4));
-
-  // Create text instance that will show up in the HUD
-  this->hudText = new osgText::Text();
-  hudText->setAxisAlignment(osgText::Text::SCREEN);
-  hudText->setAlignment(osgText::TextBase::LEFT_TOP);
-  hudText->setColor(colorFromString(textColor));
-
-  char fontFile[256];
-  bool fontFound = Rcs_getAbsoluteFileName("fonts/VeraMono.ttf", fontFile);
-
-  if (fontFound == true)
-  {
-    hudText->setCharacterSize(HUD_FONTSIZE);
-    hudText->setFont(fontFile);
-  }
-  else
-  {
-    RLOG(4, "Couldn't find font file in resource path");
-    hudText->setCharacterSize(50);
-  }
-
-  // Add to this camera a subgraph to render
-  this->geode = new osg::Geode();
-
-  // Turn off lighting for the text
-  // Disable depth testing to ensure it's always ontop
-  // Turn on blending so that alpha of texture is correct
-  // Make sure this geometry is draw last.
-  osg::StateSet* hudState = geode->getOrCreateStateSet();
-  hudState->setMode(GL_LIGHTING,osg::StateAttribute::OFF);
-  hudState->setMode(GL_DEPTH_TEST, osg::StateAttribute::OFF);
-  hudState->setMode(GL_BLEND, osg::StateAttribute::ON);
-  hudState->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
-  hudState->setRenderBinDetails(11, "RenderBin");
-
-  // Add the text (Text class is derived from drawable) to the geode:
-  geode->addDrawable(hudText.get());
-  geode->addDrawable(bgGeometry.get());
-
-
-  // For the HUD model view matrix use an identity matrix:
-  osg::ref_ptr<osg::MatrixTransform> mdlViewMat = new osg::MatrixTransform;
-  mdlViewMat->setMatrix(osg::Matrix::identity());
-  mdlViewMat->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
-  mdlViewMat->addChild(geode.get());
-
-
-  // Set the projection matrix
-  osg::ref_ptr<osg::Projection> prjMat = new osg::Projection;
-  prjMat->setMatrix(osg::Matrix::ortho2D(0, 1024, 0, 768));
-  prjMat->addChild(mdlViewMat.get());
-
-  addChild(prjMat.get());
-
-  // Only clear the depth buffer
-  setClearMask(GL_DEPTH_BUFFER_BIT);
-
-  // Draw subgraph after main camera view.
-  setRenderOrder(osg::Camera::POST_RENDER);
-
-  // Disallow camera to grab event focus from the viewers main camera(s).
-  setAllowEventFocus(false);
-
-  // Thread-safe update callback for applying text changes
-  hudText->setUpdateCallback(new HUDUpdateCallback(this, margin));
-  setName("Rcs::HUD");
 }
 
 /*******************************************************************************
@@ -381,4 +290,103 @@ void Rcs::HUD::resizeNoMutex(int llx_, int lly_, int sizeX_, int sizeY_)
   backgroundVertices->push_back(osg::Vec3(llx + sizeX,  lly + sizeY, -1.0));
   backgroundVertices->push_back(osg::Vec3(llx,          lly + sizeY, -1.0));
   backgroundChanged = true;
+}
+
+/*******************************************************************************
+*
+******************************************************************************/
+void Rcs::HUD::init(int llx, int lly, int sizeX, int sizeY,
+                    const char* textColor)
+{
+  //this->autoScale = false;
+  size_t margin = 10;
+
+  // set the projection matrix
+  setProjectionMatrix(osg::Matrix::ortho2D(0, 1024, 0, 768));
+
+  // set the view matrix
+  setReferenceFrame(osg::Transform::ABSOLUTE_RF);
+  setViewMatrix(osg::Matrix::identity());
+
+  // only clear the depth buffer
+  setClearMask(GL_DEPTH_BUFFER_BIT);
+
+  // draw subgraph after main camera view.
+  setRenderOrder(osg::Camera::POST_RENDER);
+
+  // we don't want the camera to grab event focus from the viewers main camera(s).
+  setAllowEventFocus(false);
+
+  this->geode = new osg::Geode();
+
+  // turn lighting off for the text and disable depth test to ensure it's always ontop.
+  osg::StateSet* stateset = geode->getOrCreateStateSet();
+  stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+
+  this->hudText = new  osgText::Text;
+  geode->addDrawable(hudText);
+
+  //std::string timesFont("fonts/arial.ttf");
+  //hudText->setFont(timesFont);
+  hudText->setPosition(osg::Vec3(llx + margin, lly + margin, -1.0));
+  hudText->setAxisAlignment(osgText::Text::SCREEN);
+  hudText->setAlignment(osgText::TextBase::LEFT_BOTTOM);
+  hudText->setColor(colorFromString(textColor));
+
+  char fontFile[256];
+  bool fontFound = Rcs_getAbsoluteFileName("fonts/VeraMono.ttf", fontFile);
+
+  if (fontFound == true)
+  {
+    hudText->setCharacterSize(HUD_FONTSIZE);
+    hudText->setFont(fontFile);
+  }
+  else
+  {
+    RLOG(4, "Couldn't find font file in resource path");
+    hudText->setCharacterSize(50);
+  }
+
+
+  osg::BoundingBox bb;
+  for (unsigned int i = 0; i < geode->getNumDrawables(); ++i)
+  {
+#if OSG_VERSION_GREATER_OR_EQUAL(3, 6, 2)
+    bb.expandBy(geode->getDrawable(i)->getBoundingBox());
+#else
+    bb.expandBy(geode->getDrawable(i)->getBound());
+#endif
+  }
+
+
+  this->backgroundVertices = new osg::Vec3Array;
+  backgroundVertices->push_back(osg::Vec3(llx, lly, -1.0));
+  backgroundVertices->push_back(osg::Vec3(llx + sizeX, lly, -1.0));
+  backgroundVertices->push_back(osg::Vec3(llx + sizeX, lly + sizeY, -1.0));
+  backgroundVertices->push_back(osg::Vec3(llx, lly + sizeY, -1.0));
+
+  this->bgGeometry = new osg::Geometry;
+  bgGeometry->setVertexArray(backgroundVertices);
+
+  osg::Vec3Array* normals = new osg::Vec3Array;
+  normals->push_back(osg::Vec3(0.0f, 0.0f, 1.0f));
+  bgGeometry->setNormalArray(normals, osg::Array::BIND_OVERALL);
+
+  osg::Vec4Array* colors = new osg::Vec4Array;
+  colors->push_back(osg::Vec4(0.8f, 0.8f, 0.8f, 0.2f));// was osg::Vec4(1.0f, 1.0, 0.8f, 0.2f)
+
+  bgGeometry->setColorArray(colors, osg::Array::BIND_OVERALL);
+  bgGeometry->addPrimitiveSet(new osg::DrawArrays(GL_QUADS, 0, 4));
+
+  osg::StateSet* ss = bgGeometry->getOrCreateStateSet();
+  ss->setMode(GL_BLEND, osg::StateAttribute::ON);
+  //ss->setAttribute(new osg::PolygonOffset(1.0f,1.0f),osg::StateAttribute::ON);
+  ss->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+
+  geode->addDrawable(bgGeometry);
+  addChild(geode);
+
+  // Thread-safe update callback for applying text changes
+  hudText->setUpdateCallback(new HUDUpdateCallback(this, margin));
+  setName("Rcs::HUD");
 }
