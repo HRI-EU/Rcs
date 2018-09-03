@@ -22,10 +22,10 @@ IF(USE_BULLET)
 ENDIF(USE_BULLET)
 
 IF(USE_VORTEX)
-  SET(VX_SRCS 
-    VortexHelpers.cpp
-    VortexSimulation.cpp)
+  SET(VX_SRCS  VortexHelpers.cpp VortexSimulation.cpp) 
+  IF (UNIX)
   SET_SOURCE_FILES_PROPERTIES(${VX_SRCS} PROPERTIES COMPILE_FLAGS -std=c++11) 
+  ENDIF()
   SET(RCS_PHYSICS_SRCS ${RCS_PHYSICS_SRCS} ${VX_SRCS})
 ENDIF(USE_VORTEX)
 

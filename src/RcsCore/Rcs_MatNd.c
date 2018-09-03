@@ -1588,7 +1588,7 @@ void MatNd_insertColumns(MatNd* self,
 void MatNd_condenseRows(MatNd* dst, const MatNd* src, double ratio)
 {
   unsigned int i;
-  unsigned int keepLine = round(1.0 / ratio);
+  unsigned int keepLine = lround(1.0 / ratio);
 
   if ((ratio < 0.0) || (ratio > 1.0))
   {
@@ -5611,7 +5611,7 @@ unsigned int minJerkTrajectoryLengthFromMaxVelocity(double max_velocity)
   double int_0_1 = 1.0/5.0 - 1.0/2.0*p3 + 1.0/3.0*p3*p3 - 1.0/2.0*p2 + 4.0/3.0*p2*p3 -
                    p2*p3*p3 + 1.0/3.0*p2*p2 - p2*p2*p3;
 
-  unsigned int T = round(ceil((pow((0.5-p2), 2) * pow((0.5-p3), 2)) /
+  unsigned int T = lround(ceil((pow((0.5-p2), 2) * pow((0.5-p3), 2)) /
                               (max_velocity * int_0_1)));
 
   return T;

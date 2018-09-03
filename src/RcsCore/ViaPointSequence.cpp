@@ -201,7 +201,7 @@ void ViaPointSequence::compressDescriptor(MatNd* desc) const
 {
   for (unsigned int i=1; i<desc->m; ++i)
   {
-    unsigned int flag = round(MatNd_get2(desc, i, 4));
+    unsigned int flag = lround(MatNd_get2(desc, i, 4));
 
     if (flag==7)
     {
@@ -252,7 +252,7 @@ bool ViaPointSequence::init(const MatNd* viaDescr_)
   // Initial and final boundary conditions must be position, velocity and
   // acceleration. We do a fatal check here, since the following steps would
   // screw up memory allocation for the matrices otherwise.
-  int bConstraint = round(MatNd_get2(this->viaDescr, 0, 4));
+  int bConstraint = lround(MatNd_get2(this->viaDescr, 0, 4));
 
   if (bConstraint != 7)
   {
@@ -262,7 +262,7 @@ bool ViaPointSequence::init(const MatNd* viaDescr_)
            ", velocity and acceleration?", bConstraint);
   }
 
-  bConstraint = round(MatNd_get2(this->viaDescr, this->viaDescr->m-1, 4));
+  bConstraint = lround(MatNd_get2(this->viaDescr, this->viaDescr->m-1, 4));
 
   if (bConstraint != 7)
   {
@@ -280,7 +280,7 @@ bool ViaPointSequence::init(const MatNd* viaDescr_)
 
   for (size_t i=0; i<this->viaDescr->m; i++)
   {
-    unsigned int flag = round(MatNd_get2(this->viaDescr, i, 4));
+    unsigned int flag = lround(MatNd_get2(this->viaDescr, i, 4));
 
     if (Math_isBitSet(flag, VIA_POS))
     {
@@ -355,7 +355,7 @@ void ViaPointSequence::computeB(MatNd* B, const MatNd* vDescr)
 
   for (size_t i=1; i<vDescr->m-1; i++)
   {
-    unsigned int flag = round(MatNd_get2(vDescr, i, 4));
+    unsigned int flag = lround(MatNd_get2(vDescr, i, 4));
 
     // These flags ensure that we push the indices only once per row
     bool posIsUpdated = false;
@@ -430,7 +430,7 @@ void ViaPointSequence::computeB(MatNd* B, const MatNd* vDescr)
     double t4 = t2*t2;
     double t5 = t3*t2;
 
-    unsigned int flag = round(MatNd_get(vDescr, i, 4));
+    unsigned int flag = lround(MatNd_get(vDescr, i, 4));
 
     // Position polynomial elements first
     if (Math_isBitSet(flag, VIA_POS))
@@ -716,7 +716,7 @@ bool ViaPointSequence::check() const
   for (size_t j=0; j<this->viaDescr->m; j++)
   {
     double t_via = MatNd_get(this->viaDescr, j, 0);
-    unsigned int flag = round(MatNd_get(this->viaDescr, j, 4));
+    unsigned int flag = lround(MatNd_get(this->viaDescr, j, 4));
 
     double xt, xt_dot, xt_ddot;
     computeTrajectoryPoint(xt, xt_dot, xt_ddot, t_via);
@@ -778,8 +778,8 @@ bool ViaPointSequence::check() const
 static bool mergeViaPoints(double* dst, const double* newPt)
 {
   bool conflict = false;
-  int newFlag = round(newPt[4]);
-  int dstFlag = round(dst[4]);
+  int newFlag = lround(newPt[4]);
+  int dstFlag = lround(dst[4]);
 
   dstFlag |= newFlag;
   dst[4] = dstFlag;
@@ -898,7 +898,7 @@ void ViaPointSequence::gnuplot(double t0, double t1, double dt, int flag) const
   }
 
   // Calculate trajectory
-  MatNd* traj = MatNd_create(3, 4*round((t1-t0)/dt));
+  MatNd* traj = MatNd_create(3, 4*lround((t1-t0)/dt));
   computeTrajectory(traj, t0, t1, dt);
 
   const size_t maxFileNameSize = 64;
@@ -921,7 +921,7 @@ void ViaPointSequence::gnuplot(double t0, double t1, double dt, int flag) const
 
   for (size_t i=0; i<this->viaDescr->m; i++)
   {
-    unsigned int flag = round(MatNd_get(this->viaDescr, i, 4));
+    unsigned int flag = lround(MatNd_get(this->viaDescr, i, 4));
     double t = MatNd_get(this->viaDescr, i, 0);
 
     if (Math_isBitSet(flag, VIA_POS))
@@ -1073,7 +1073,7 @@ void ViaPointSequence::computeTrajectory(MatNd* traj, double dt) const
 void ViaPointSequence::computeTrajectory(MatNd* traj, double t0, double t1,
                                          double dt) const
 {
-  int nSteps = round((t1-t0)/dt);
+  int nSteps = lround((t1-t0)/dt);
 
   MatNd_reshape(traj, 4, nSteps+1);
 
@@ -1310,7 +1310,7 @@ void ViaPointSequence::print() const
   for (size_t j=0; j<this->viaDescr->m; j++)
   {
     double t_via = MatNd_get(this->viaDescr, j, 0);
-    unsigned int flag = round(MatNd_get(this->viaDescr, j, 4));
+    unsigned int flag = lround(MatNd_get(this->viaDescr, j, 4));
 
     double xt, xt_dot, xt_ddot;
     computeTrajectoryPoint(xt, xt_dot, xt_ddot, t_via);
@@ -1446,7 +1446,7 @@ size_t ViaPointSequence::computeNumberOfConstraints(const MatNd* descr)
 
   for (size_t i=0; i<descr->m; i++)
   {
-    unsigned int flag = round(MatNd_get2(descr, i, 4));
+    unsigned int flag = lround(MatNd_get2(descr, i, 4));
 
     if (Math_isBitSet(flag, VIA_POS))
     {
@@ -1543,7 +1543,7 @@ bool ViaPointSequence::gradientDxDvia(MatNd* dxdvia, unsigned int row,
 {
   MatNd_reshapeAndSetZero(dxdvia, nSteps, 1);
 
-  unsigned int flag = round(MatNd_get2(viaDescr, row, 4));
+  unsigned int flag = lround(MatNd_get2(viaDescr, row, 4));
 
   if (!Math_isBitSet(flag, VIA_POS))
   {
@@ -1574,7 +1574,7 @@ bool ViaPointSequence::gradientDxDvia(MatNd* dxdvia, unsigned int row,
 bool ViaPointSequence::gradientDxDvia(MatNd* dxdvia, unsigned int row,
                                       double t0, double t1, double dt) const
 {
-  unsigned int nSteps = round((t1-t0)/dt)+1;
+  unsigned int nSteps = lround((t1-t0)/dt)+1;
   return gradientDxDvia(dxdvia, row, t0, dt, nSteps);
 }
 
@@ -1595,7 +1595,7 @@ int ViaPointSequence::getConstraintIndex(const MatNd* desc,
 
   for (unsigned int i=0; i<row; i++)
   {
-    flag = round(MatNd_get2(desc, i, 4));
+    flag = lround(MatNd_get2(desc, i, 4));
 
     if (Math_isBitSet(flag, VIA_POS))
     {
@@ -1616,7 +1616,7 @@ int ViaPointSequence::getConstraintIndex(const MatNd* desc,
 
 
 
-  flag = round(MatNd_get2(desc, row, 4));
+  flag = lround(MatNd_get2(desc, row, 4));
 
   switch (pos_vel_or_acc)
   {
@@ -1672,7 +1672,7 @@ bool ViaPointSequence::gradientDxDvia_a(MatNd* dxdvia, unsigned int row,
                                         double t0, double t1, double dt) const
 {
   // Number of time steps including t0 and t1
-  const int nSteps = round((t1-t0)/dt)+1;
+  const int nSteps = lround((t1-t0)/dt)+1;
 
   if (nSteps < 0)
   {
@@ -1827,7 +1827,7 @@ void ViaPointSequencePlotter::enableFixedAxes(const ViaPointSequence& via,
   }
 
   const double dt = 0.01;
-  MatNd* traj = MatNd_create(4, 1+round(via.duration()/dt));
+  MatNd* traj = MatNd_create(4, 1+lround(via.duration()/dt));
   via.computeTrajectory(traj, via.t0(), via.t1(), dt);
   lowerLimitY[0] = MatNd_get(traj, 1, 0);
   lowerLimitY[1] = MatNd_get(traj, 2, 0);
@@ -1917,7 +1917,7 @@ void ViaPointSequencePlotter::plot(const ViaPointSequence& via,
 
   // Calculate trajectory and write it to file in gnuplot-compatible conventions
   char trajFile[64] = "traj.dat";
-  MatNd* traj = MatNd_create(3, 4*round((t1-t0)/dt));
+  MatNd* traj = MatNd_create(3, 4*lround((t1-t0)/dt));
   via.computeTrajectory(traj, t0, t1, dt);
   MatNd_transposeSelf(traj);
   MatNd_toFile(traj, trajFile);
@@ -1936,7 +1936,7 @@ void ViaPointSequencePlotter::plot(const ViaPointSequence& via,
   // Write files for the display of the points
   for (size_t i=0; i<via.viaDescr->m; i++)
   {
-    unsigned int flag = round(MatNd_get(via.viaDescr, i, 4));
+    unsigned int flag = lround(MatNd_get(via.viaDescr, i, 4));
     double t = MatNd_get(via.viaDescr, i, 0);
 
     if (Math_isBitSet(flag, VIA_POS))
@@ -2071,7 +2071,7 @@ void ViaPointSequencePlotter::plot2(const ViaPointSequence& via,
 
   // Calculate trajectory and write it to file in gnuplot-compatible conventions
   char trajFile[64] = "traj.dat";
-  MatNd* traj = MatNd_create(3, 4*round((t1-t0)/dt));
+  MatNd* traj = MatNd_create(3, 4*lround((t1-t0)/dt));
   via.computeTrajectory(traj, t0, t1, dt);
   MatNd_transposeSelf(traj);
   MatNd_toFile(traj, trajFile);
@@ -2090,7 +2090,7 @@ void ViaPointSequencePlotter::plot2(const ViaPointSequence& via,
   // Write files for the display of the points
   for (size_t i=0; i<via.viaDescr->m; i++)
   {
-    unsigned int flag = round(MatNd_get(via.viaDescr, i, 4));
+    unsigned int flag = lround(MatNd_get(via.viaDescr, i, 4));
     double t = MatNd_get(via.viaDescr, i, 0);
 
     if (Math_isBitSet(flag, VIA_POS))

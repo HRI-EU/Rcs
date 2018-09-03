@@ -269,7 +269,7 @@ int Math_getRandomInteger(int lower, int upper)
   ele *= upper - lower + 1.0;
   ele += lower - 0.5;
 
-  int return_temp = round(ele);
+  int return_temp = lround(ele);
 
   // pedantic checks for numeric/rounding errors (especially if original ele
   // is close to 1)

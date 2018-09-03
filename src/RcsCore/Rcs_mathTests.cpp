@@ -130,7 +130,8 @@ bool testEulerAnglesFunctions(int argc, char** argv)
     success = false;
   }
 
-  RLOGS(1, "%s", success ? "SUCCESS" : "FAILURE");
+  RLOGS(1, "%s testing Euler angle functions ", 
+	    success ? "SUCCESS" : "FAILURE");
   RLOG(2, "Error is %g (<%g)", err, errMax);
 
   return success;
@@ -521,7 +522,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
     MatNd_destroy(ABAt2);
   }
 
-  RLOGS(1, "%s", success ? "SUCCESS" : "FAILURE");
+  RLOGS(1, "%s testing simple matrix functions", success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -793,7 +794,8 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
   }
 
 
-  RLOGS(1, "%s", success ? "SUCCESS" : "FAILURE");
+  RLOGS(1, "%s testing linear algebra functions",
+	    success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -972,7 +974,7 @@ bool testDerivatives(int argc, char** argv)
 
   MatNd_destroy(x);
 
-  RLOGS(1, "%s", success ? "SUCCESS" : "FAILURE");
+  RLOGS(1, "%s testing gradients", success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -2953,7 +2955,7 @@ bool testViaPointSequence(int argc, char** argv)
   RCHECK(viaDesc);
   MatNd_printCommentDigits("ViaDesc", viaDesc, 4);
 
-  MatNd* traj = MatNd_create(4, round(1.5/dt)+1);
+  MatNd* traj = MatNd_create(4, lround(1.5/dt)+1);
   Rcs::ViaPointSequence via(viaDesc);
   RCHECK(via.check());
   via.computeTrajectory(traj, 0.0, 1.5, dt);
@@ -3036,7 +3038,7 @@ bool testViaPointSequence_new(int argc, char** argv)
   RCHECK(viaDesc);
   MatNd_printCommentDigits("ViaDesc", viaDesc, 4);
 
-  MatNd* traj = MatNd_create(4, round(1.5/dt)+1);
+  MatNd* traj = MatNd_create(4, lround(1.5/dt)+1);
   Rcs::ViaPointSequence via(viaDesc);
   RCHECK(via.check());
   via.computeTrajectory(traj, 0.0, 1.5, dt);

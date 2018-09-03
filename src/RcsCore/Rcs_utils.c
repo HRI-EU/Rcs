@@ -786,9 +786,9 @@ void Rcs_printComputerStats(FILE* out)
   fprintf(out, "  Page size: %u\n", sysinfo.dwPageSize);
   fprintf(out, "  Processor type: %u\n", sysinfo.dwProcessorType);
   fprintf(out, "  Minimum application address: %lx\n",
-          sysinfo.lpMinimumApplicationAddress);
+          (unsigned int)sysinfo.lpMinimumApplicationAddress);
   fprintf(out, "  Maximum application address: %lx\n",
-          sysinfo.lpMaximumApplicationAddress);
+	  (unsigned int)sysinfo.lpMaximumApplicationAddress);
   fprintf(out, "  Active processor mask: %u\n",
           sysinfo.dwActiveProcessorMask);
 #endif

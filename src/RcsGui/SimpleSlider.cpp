@@ -67,6 +67,7 @@ SimpleSlider::SimpleSlider(double lowerBound,
 #else
   qwtslider->setLowerBound(lowerBound*scaleFactor);
   qwtslider->setUpperBound(upperBound*scaleFactor);
+  qwtslider->setOrientation(Qt::Horizontal);
 #endif
   qwtslider->setValue(zeroPos*scaleFactor);
 
