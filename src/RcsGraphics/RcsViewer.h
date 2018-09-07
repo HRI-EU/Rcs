@@ -190,8 +190,6 @@ protected:
   osg::ref_ptr<osg::LightSource> cameraLight;
   osg::ref_ptr<osg::Group> rootnode;
   osg::ref_ptr<osg::ClearNode> clearNode;
-  osg::ref_ptr<osg::Image> _colorImage;
-  osg::ref_ptr<osg::Image> _zImage;
   std::vector<osg::ref_ptr<osg::Camera> > hud;
 
 private:

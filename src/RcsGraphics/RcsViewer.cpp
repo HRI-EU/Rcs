@@ -47,7 +47,6 @@
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
 #include <osgViewer/ViewerEventHandlers>
-#include <osgViewer/GraphicsWindow>
 #include <osgUtil/Optimizer>
 #include <osg/StateSet>
 #include <osg/PolygonMode>
@@ -55,19 +54,15 @@
 #include <osgFX/Cartoon>
 #include <osgGA/TrackballManipulator>
 
-#if !defined (_MSC_VER)
-#include <osgViewer/api/X11/GraphicsWindowX11>
-
-#include <X11/Xlib.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#endif
-
 #include <iostream>
 
 
 
 #if !defined (_MSC_VER)
+
+#include <sys/wait.h>
+#include <unistd.h>
+
 static pid_t forkProcess(const char* command)
 {
   pid_t pid = fork();
@@ -381,7 +376,7 @@ Viewer::~Viewer()
 void Viewer::create(bool fancy, bool startupWithShadow)
 {
 #if defined(_MSC_VER)
-  setWindowSize(12, 31, 640, 480);
+  setWindowSize(12, 38, 640, 480);
 #else
   setWindowSize(0, 0, 640, 480);
 #endif
@@ -416,7 +411,7 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   this->clearNode->setClearColor(colorFromString("LIGHT_GRAYISH_GREEN"));
   this->rootnode->addChild(this->clearNode.get());
 
-  // Light model: We switch off hte default viewer light, and configure two
+  // Light model: We switch off the default viewer light, and configure two
   // light sources. The sunlight shines down from 10m. Another light source
   // moves with the camera, so that there are no dark spots whereever
   // the mouse manipulator moves to.

@@ -46,8 +46,6 @@
 #include <cfloat>
 #include <limits>
 
-#pragma warning(disable:4267)
-
 #if defined(WIN_DLL)
 #    ifdef RCSCORE_EXPORTS
 #        define RCSCORE_API __declspec(dllexport)

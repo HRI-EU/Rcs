@@ -24,6 +24,37 @@ SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
 ################################################################################
 #
+# Copy config directories:
+#   - Symlink for Linux
+#   - Deep copy of the config directory for windows
+#
+# This needs to go before including the sub directories, since they 
+# partially create links /copies inside the config directory
+#
+################################################################################
+IF(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/config")
+
+  IF(UNIX)
+    SET(CONFIGDIR_COPY_COMMAND create_symlink)
+    MESSAGE("-- Linking config directory")
+  ELSE()
+    SET(CONFIGDIR_COPY_COMMAND copy_directory)
+    MESSAGE("-- Copying config directory")
+  ENDIF()
+
+  EXECUTE_PROCESS (COMMAND
+   ${CMAKE_COMMAND} -E ${CONFIGDIR_COPY_COMMAND}
+   ${PROJECT_SOURCE_DIR}/config
+   ${CMAKE_CURRENT_BINARY_DIR}/config)
+
+ELSE()
+
+  MESSAGE("-- Config directory already exists - skipping")
+
+ENDIF()
+
+################################################################################
+#
 # Create shared libraries for Linux, and static ones for Windows
 # For CMake 3.4 and higher, there is an easy way to create windows dlls. For
 # details, see http://www.kitware.com/blog/home/post/939
@@ -96,38 +127,6 @@ IF(UNIX)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__FILENAME__='\"$(subst ${CMAKE_SOURCE_DIR}/,,$(abspath $<))\"'")
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__FILENAME__='\"$(subst ${CMAKE_SOURCE_DIR}/,,$(abspath $<))\"'")
 ENDIF()
-
-################################################################################
-#
-# Copy config directories:
-#   - Symlink for Linux
-#   - Deep copy of the config directory for windows
-#
-# This needs to go before including the sub directories, since they 
-# partially create links / copies inside the config directory
-#
-################################################################################
-IF(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/config")
-
-  IF(UNIX)
-    SET(CONFIGDIR_COPY_COMMAND create_symlink)
-    MESSAGE("-- Linking config directory")
-  ELSE()
-    SET(CONFIGDIR_COPY_COMMAND copy_directory)
-    MESSAGE("-- Copying config directory")
-  ENDIF()
-
-  EXECUTE_PROCESS (COMMAND
-   ${CMAKE_COMMAND} -E ${CONFIGDIR_COPY_COMMAND}
-   ${PROJECT_SOURCE_DIR}/config
-   ${CMAKE_CURRENT_BINARY_DIR}/config)
-
-ELSE()
-
-  MESSAGE("-- Config directory already exists - skipping")
-
-ENDIF()
-
 
 ################################################################################
 #

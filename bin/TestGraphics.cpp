@@ -55,8 +55,11 @@
 #include <osg/Node>
 #include <osg/Geometry>
 #include <osg/Geode>
+#include <osg/ClearNode>
 #include <osg/ShapeDrawable>
 #include <osg/PositionAttitudeTransform>
+#include <osgGA/TrackballManipulator>
+#include <osgDB/Registry>
 
 #include <csignal>
 
@@ -80,6 +83,124 @@ void quit(int /*sig*/)
     fprintf(stderr, "Exiting without cleanup\n");
     exit(0);
   }
+}
+
+/*******************************************************************************
+* Test for native viewer
+******************************************************************************/
+static void testOsgViewer()
+{
+	Rcs::CmdLineParser argP;
+
+	// Rotate loaded file nodes to standard coordinate conventions
+	// (z: up, x: forward)
+	osgDB::ReaderWriter::Options* options = new osgDB::ReaderWriter::Options;
+	options->setOptionString("noRotation");
+	osgDB::Registry::instance()->setOptions(options);
+
+	osgViewer::Viewer* viewer = new osgViewer::Viewer();
+
+	osg::ref_ptr<osgGA::TrackballManipulator> trackball = new osgGA::TrackballManipulator();
+	viewer->setCameraManipulator(trackball.get());
+
+	osg::ref_ptr<osg::Group> rootnode = new osg::Group;
+	rootnode->addChild(new Rcs::COSNode());
+
+	// Light grayish blue universe
+	if (argP.hasArgument("-clearNode", "Test ClearNode"))
+	{
+		osg::ref_ptr<osg::ClearNode> clearNode = new osg::ClearNode;
+		clearNode->setClearColor(osg::Vec4(0.8, 0.8, 0.95, 1.0));
+		rootnode->addChild(clearNode.get());
+	}
+
+	// Disable small feature culling to avoid problems with drawing single points
+	// as they have zero bounding box size
+	if (argP.hasArgument("-smallFeatures", "Test small feature culling"))
+	{
+		RLOG(1, "Test small feature culling enabled");
+		viewer->getCamera()->setCullingMode(viewer->getCamera()->getCullingMode() &
+			~osg::CullSettings::SMALL_FEATURE_CULLING);
+	}
+
+	// Light model: We switch off the default viewer light, and configure two
+	// light sources. The sunlight shines down from 10m. Another light source
+	// moves with the camera, so that there are no dark spots whereever
+	// the mouse manipulator moves to.
+	if (argP.hasArgument("-antialias", "Test anti-aliasing"))
+	{
+		RLOG(1, "Anti-aliasing test enabled");
+
+		// Set anti-aliasing
+		osg::ref_ptr<osg::DisplaySettings> ds = new osg::DisplaySettings;
+		ds->setNumMultiSamples(4);
+		viewer->setDisplaySettings(ds.get());
+	}
+
+	osg::ref_ptr<osg::LightSource> sunlight;
+
+	if (argP.hasArgument("-light", "Test light"))
+	{
+		RLOG(1, "Light test enabled");
+
+		// Disable default light
+		rootnode->getOrCreateStateSet()->setMode(GL_LIGHT0, osg::StateAttribute::OFF);
+
+		// Light source that moves with the camera
+		osg::ref_ptr<osg::LightSource> cameraLight = new osg::LightSource;
+		cameraLight->getLight()->setLightNum(1);
+		//cameraLight->getLight()->setPosition(osg::Vec4(0.0, 0.0, 10.0, 1.0));
+		cameraLight->getLight()->setSpecular(osg::Vec4(1.0, 1.0, 1.0, 1.0));
+		rootnode->addChild(cameraLight.get());
+		rootnode->getOrCreateStateSet()->setMode(GL_LIGHT1, osg::StateAttribute::ON);
+
+		// Light source that shines down
+		sunlight = new osg::LightSource;
+		sunlight->getLight()->setLightNum(2);
+		//sunlight->getLight()->setPosition(osg::Vec4(0.0, 0.0, 10.0, 1.0));
+		rootnode->addChild(sunlight.get());
+		rootnode->getOrCreateStateSet()->setMode(GL_LIGHT2, osg::StateAttribute::ON);
+	}
+
+	if (argP.hasArgument("-shadow", "Test shadows"))
+	{
+		RLOG(1, "Shadow test enabled");
+		// Shadow map scene. We use the sunlight to case shadows.
+		osg::ref_ptr<osgShadow::ShadowedScene> shadowScene = new osgShadow::ShadowedScene;
+		osg::ref_ptr<osgShadow::ShadowMap> sm = new osgShadow::ShadowMap;
+		sm->setTextureSize(osg::Vec2s(2048, 2048));
+		if (sunlight.valid())
+		{
+			sm->setLight(sunlight->getLight());
+		}
+		sm->setPolygonOffset(osg::Vec2(-0.7, 0.0));
+		sm->setAmbientBias(osg::Vec2(0.7, 0.3));   // values need to sum up to 1.0
+
+		shadowScene->setShadowTechnique(sm.get());
+		shadowScene->addChild(rootnode.get());
+		//shadowScene->setReceivesShadowTraversalMask(ReceivesShadowTraversalMask);
+		//shadowScene->setCastsShadowTraversalMask(CastsShadowTraversalMask);
+		viewer->setSceneData(shadowScene.get());
+	}
+	else
+	{
+		viewer->setSceneData(rootnode.get());
+	}
+
+
+	if (argP.hasArgument("-cullThread", "Test osgViewer::Viewer::CullDrawThreadPerContext"))
+	{
+		// Change the threading model. The default threading model is
+	// osgViewer::Viewer::CullThreadPerCameraDrawThreadPerContext.
+	// This leads to problems with multi-threaded updates (HUD).
+		viewer->setThreadingModel(osgViewer::Viewer::CullDrawThreadPerContext);
+	}
+
+
+	viewer->setUpViewInWindow(12, 38, 640, 480);
+	viewer->realize();
+
+	viewer->run();
 }
 
 /*******************************************************************************
@@ -382,6 +503,10 @@ int main(int argc, char** argv)
 
     case 3:
       testArrowNode();
+		break;
+
+	case 4:
+		testOsgViewer();
       break;
 
     default:

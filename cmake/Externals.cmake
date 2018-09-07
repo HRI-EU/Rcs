@@ -107,9 +107,9 @@ IF(NOT HEADLESS_BUILD)
 
   IF(WIN32)
 
-    SET(OPENSCENEGRAPH_INCLUDE_DIRS ${HGR}/External/OpenSceneGraph/3.0/${MKPLT}/include)
-    SET(OSG_BINARY_DIR ${HGR}/External/OpenSceneGraph/3.0/${MKPLT}/bin)
-    SET(OSG_LIBRARY_DIR ${HGR}/External/OpenSceneGraph/3.0/${MKPLT}/lib)
+    SET(OPENSCENEGRAPH_INCLUDE_DIRS ${HGR}/External/OpenSceneGraph/3.6.2/${MKPLT}/include)
+    SET(OSG_BINARY_DIR ${HGR}/External/OpenSceneGraph/3.6.2/${MKPLT}/bin)
+    SET(OSG_LIBRARY_DIR ${HGR}/External/OpenSceneGraph/3.6.2/${MKPLT}/lib)
 
     SET(OPENSCENEGRAPH_LIBRARIES
       ${OSG_LIBRARY_DIR}/osgAnimation${RCS_DEBUG_SUFFIX}.lib
