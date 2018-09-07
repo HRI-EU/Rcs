@@ -124,3 +124,21 @@ bool Rcs::HardwareComponent::checkEmergencyCondition()
 void Rcs::HardwareComponent::postUpdateGraph()
 {
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::HardwareComponent::startThread()
+{
+  // no thread
+  return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::HardwareComponent::stopThread()
+{
+  // no thread
+  return true;
+}

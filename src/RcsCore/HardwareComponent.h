@@ -119,13 +119,13 @@ public:
    *
    *   \return True for success, false otherwise.
    */
-  virtual bool startThread() = 0;
+  virtual bool startThread();
 
   /*!  \brief Stops the component's thread.
    *
    *   \return True for success, false otherwise.
    */
-  virtual bool stopThread() = 0;
+  virtual bool stopThread();
 
   /*! \brief Called periodically to check if the component is in a critical
    *         state and the robot should be stopped.
