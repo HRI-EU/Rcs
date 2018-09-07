@@ -57,7 +57,7 @@ Rcs::ArrowNode::ArrowNode() :
   scaleFactor(1.0),
   radius(0.005)
 {
-  init(1.0, radius, "BLUE");
+  init(0.0, radius, "BLUE");
 }
 
 /*******************************************************************************
