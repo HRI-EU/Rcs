@@ -62,6 +62,7 @@ TaskDifferentialConstraint1D.cpp
 TaskEuler1D.cpp
 TaskEuler3D.cpp
 TaskFactory.cpp
+TaskGenericEuler3D.cpp
 TaskGenericIK.cpp
 TaskJoint.cpp
 TaskJointLimit.cpp
