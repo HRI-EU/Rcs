@@ -192,7 +192,7 @@ static bool getModel(char* directory, char* xmlFileName)
 int main(int argc, char** argv)
 {
   RMSG("Starting Rcs...");
-  int mode = 0, simpleGraphics = 0;
+  int mode = 0;
   char xmlFileName[128] = "", directory[128] = "";
 
   // Ctrl-C callback handler
@@ -210,8 +210,8 @@ int main(int argc, char** argv)
   argP.getArgument("-dir", directory, "Configuration file directory");
   bool valgrind = argP.hasArgument("-valgrind",
                                    "Start without Guis and graphics");
-  simpleGraphics = argP.hasArgument("-simpleGraphics", "OpenGL without "
-                                    "fancy stuff (shadows, anti-aliasing)");
+  bool simpleGraphics = argP.hasArgument("-simpleGraphics", "OpenGL without fan"
+                                         "cy stuff (shadows, anti-aliasing)");
 
   // Initialize GUI and OSG mutex
   pthread_mutex_t graphLock;

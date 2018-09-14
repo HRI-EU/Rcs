@@ -55,6 +55,7 @@ public:
   virtual bool getAndResetKey(int i) = 0;
 
   static bool registerKey(const std::string& key, const std::string& description, const std::string& group = "Main");
+  static bool deregisterKey(const std::string& key, const std::string& group = "Main");
   static void printRegisteredKeys();
 
 protected:

@@ -29,10 +29,19 @@ IF(USE_VORTEX STREQUAL ESSENTIALS)
 
     SET(VORTEX_INCLUDE_DIR ${VORTEX_ESSENTIALS_DIR}/include)
     SET(VORTEX_LIBRARY_DIR ${VORTEX_ESSENTIALS_DIR}/lib)
+	IF(UNIX)
     SET(VORTEX_LIBRARIES
       ${VORTEX_LIBRARY_DIR}/libVxCore.so
       ${VORTEX_LIBRARY_DIR}/libVxDynamics.so)
     SET(VORTEX_DEFINITIONS -DLINUX)
+	ELSE()
+      SET(VORTEX_LIBRARIES
+        ${VORTEX_LIBRARY_DIR}/VxCore.lib
+        ${VORTEX_LIBRARY_DIR}/VxMath.lib
+        ${VORTEX_LIBRARY_DIR}/VxFoundation.lib
+        ${VORTEX_LIBRARY_DIR}/VxPlatform.lib
+        ${VORTEX_LIBRARY_DIR}/VxDynamics.lib)
+	ENDIF()
 
 ENDIF()
 
@@ -88,7 +97,7 @@ IF (USE_BULLET STREQUAL 2.83_double)
       ${BT_LIB_DIR}/GIMPACTUtils.lib 
       ${BT_LIB_DIR}/LinearMath.lib 
       opengl32 glu32
-      ${BT_LIB_DIR}/glut32.lib
+      #${BT_LIB_DIR}/glut32.lib
       )
   ENDIF()
   
@@ -203,7 +212,7 @@ IF(NOT HEADLESS_BUILD)
 
   IF (MSVC_VERSION STREQUAL 1900)
     MESSAGE("Configuring for Qt5")
-	SET(CMAKE_AUTOMOC ON)
+	#SET(CMAKE_AUTOMOC ON)
     FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets)
   ELSE()
   FIND_PACKAGE(Qt4 REQUIRED)
@@ -225,7 +234,6 @@ IF(NOT HEADLESS_BUILD)
 	
       SET(QWT_INCLUDE_DIRS ${HGR}/External/qwt/6.1.3/include)
       SET(QWT_LIBRARY_DIR ${HGR}/External/qwt/6.1.3/lib/${MKPLT})
-      #SET(QWT_LIBRARIES ${HGR}/External/qwt/6.1.3/lib/${MKPLT}/qwt.lib)
       SET(QWT_MAJOR_VERSION 6)
   
       ADD_LIBRARY(libqwt STATIC IMPORTED)

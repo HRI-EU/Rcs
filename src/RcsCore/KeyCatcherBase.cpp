@@ -91,6 +91,18 @@ bool KeyCatcherBase::registerKey(const std::string& key, const std::string& desc
   return true;
 }
 
+bool KeyCatcherBase::deregisterKey(const std::string& key, const std::string& group)
+{
+  if (_registered_keys[group].find(key) == _registered_keys[group].end())
+  {
+    RLOG(5, "Key \"%s\" not registered in group \"%s\"!", key.c_str(), group.c_str());
+    return false;
+  }
+
+  _registered_keys.erase(key);
+  return true;
+}
+
 void KeyCatcherBase::printRegisteredKeys()
 {
   printf("\nRegistered keys:\n\n");

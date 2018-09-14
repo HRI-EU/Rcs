@@ -42,6 +42,7 @@
 #include <Rcs_math.h>
 #include <Rcs_mesh.h>
 #include <Rcs_parser.h>
+#include <Rcs_typedef.h>
 
 #include <COSNode.h>
 #include <ArrowNode.h>
@@ -194,6 +195,24 @@ static void testOsgViewer()
 	// osgViewer::Viewer::CullThreadPerCameraDrawThreadPerContext.
 	// This leads to problems with multi-threaded updates (HUD).
 		viewer->setThreadingModel(osgViewer::Viewer::CullDrawThreadPerContext);
+	}
+
+
+	if (argP.hasArgument("-graph", "Add GraphNode"))
+	{
+		RcsGraph* graph = RcsGraph_create("config/xml/DexBot/LBR.xml");
+		RCHECK(graph);
+		osg::ref_ptr<Rcs::GraphNode> gn = new Rcs::GraphNode(graph);
+		rootnode->addChild(gn.get());
+	}
+
+
+	if (argP.hasArgument("-body", "Add BodyNode"))
+	{
+		RcsGraph* graph = RcsGraph_create("config/xml/DexBot/LBR.xml");
+		RCHECK(graph);
+		osg::ref_ptr<Rcs::BodyNode> gn = new Rcs::BodyNode(graph->root);
+		rootnode->addChild(gn.get());
 	}
 
 
