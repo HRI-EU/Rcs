@@ -70,7 +70,37 @@ Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const std::string& className,
 
   if (it != instance()->constructorMap.end())
   {
-    sim = it->second(className, graph, cfgFile);
+    PhysicsConfig config(cfgFile);
+    sim = it->second(className, graph, &config);
+  }
+  else
+  {
+    REXEC(1)
+    {
+      RMSG("Couldn't instantiate physics engine \"%s\"", className.c_str());
+      RMSG("Options are:");
+      print();
+    }
+  }
+
+  return sim;
+}
+
+/*******************************************************************************
+ * Creates the physics engine for className and the given graph and config obj
+ ******************************************************************************/
+Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const std::string& className,
+                                              RcsGraph* graph,
+                                              const PhysicsConfig* config)
+{
+  Rcs::PhysicsBase* sim = NULL;
+  std::map<std::string, PhysicsCreateFunction>::iterator it;
+
+  it = instance()->constructorMap.find(className);
+
+  if (it != instance()->constructorMap.end())
+  {
+    sim = it->second(className, graph, config);
   }
   else
   {

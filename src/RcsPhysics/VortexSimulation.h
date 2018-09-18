@@ -37,6 +37,8 @@
 #ifndef RCS_VORTEXSIMULATION_H
 #define RCS_VORTEXSIMULATION_H
 
+#include "PhysicsConfig.h"
+
 #include <PhysicsBase.h>
 
 #include <pthread.h>
@@ -75,6 +77,20 @@ public:
    */
   VortexSimulation(const RcsGraph* graph,
                    const char* cfgFile="config/physics/vortex.xml",
+                   bool groundPlane=true);
+
+  /*! \brief Constructs an instance of a physics simulation.
+   *
+   *  \param[in] graph         Pointer to the RcsGraph structure that the
+   *                           simulation should correspond to.
+   *  \param[in] config        Config with the default parameters of the
+   *                           simulation. For details, see \ref initPhysics
+   *                           and \ref initMaterial.
+   *  \param[in] groundPlane   If true, a ground plane in the x-y plane on
+   *                           height z=0 is created.
+   */
+  VortexSimulation(const RcsGraph* graph,
+                   const PhysicsConfig* config,
                    bool groundPlane=true);
   VortexSimulation(const VortexSimulation& copyFromMe,
                    const RcsGraph* newGraph);
@@ -262,9 +278,9 @@ public:
 
 private:
 
-  bool initSettings(const char* configFile);
+  bool initSettings(const PhysicsConfig* config);
 
-  void initMaterial(const char* materialFile=NULL);
+  void initMaterial(const PhysicsConfig* config);
 
   /*! \brief Creates a physical body and adds it to the simulation. All
    *         collision shapes are subsumed into one composite shape, which
@@ -287,7 +303,7 @@ private:
   void updateTransformations();
   void applyControl(double dt);
   void applyControl2(double dt);
-  void initPhysics(const char* physicsConfigFile, bool groundPlane);
+  void initPhysics(const PhysicsConfig* physicsConfig, bool groundPlane);
   bool updateFTS(RcsSensor* sensor);
   bool updateJointTorqueSensor(RcsSensor* sensor);
   bool updateContactForceSensor(RcsSensor* sensor);

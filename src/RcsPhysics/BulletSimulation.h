@@ -37,6 +37,8 @@
 #ifndef RCS_BULLETSIMULATION_H
 #define RCS_BULLETSIMULATION_H
 
+#include "PhysicsConfig.h"
+
 #include <PhysicsBase.h>
 
 #include <pthread.h>
@@ -65,6 +67,7 @@ class BulletSimulation : public PhysicsBase
 public:
 
   BulletSimulation(const RcsGraph* graph, const char* configFile=NULL);
+  BulletSimulation(const RcsGraph* graph, const PhysicsConfig* config);
   BulletSimulation(const BulletSimulation& copyFromMe);
   BulletSimulation(const BulletSimulation& copyFromMe, const RcsGraph* newGraph);
   ~BulletSimulation();
@@ -164,7 +167,7 @@ public:
 
 private:
 
-  void initPhysics(const char* physicsConfigFile);
+  void initPhysics(const PhysicsConfig* config);
   void applyControl(double dt);
   void updateSensors();
   bool updatePPSSensor(RcsSensor* sensor);
@@ -189,6 +192,9 @@ private:
 
   BulletDebugDrawer* debugDrawer;
   char* physicsConfigFile;
+
+  double rigidBodyLinearDamping;
+  double rigidBodyAngularDamping;
 
   /*! \brief Private assignment operator to avoid it from being used
    */
