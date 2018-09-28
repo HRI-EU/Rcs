@@ -343,7 +343,8 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
 
   btVector3 worldAabbMin(-10.0, -10.0, -10.0);
   btVector3 worldAabbMax(10.0, 10.0, 10.0);
-  if (bulletParams) {
+  if (bulletParams)
+  {
     // load axis sweep params from xml
     double vec[3];
 
@@ -366,7 +367,8 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
 
 #if BT_BULLET_VERSION > 281
   //useMCLPSolver = true;
-  if (bulletParams) {
+  if (bulletParams)
+  {
     // load solver type from xml
     getXMLNodePropertyBoolString(bulletParams, "use_mclp_solver", &useMCLPSolver);
   }
@@ -622,6 +624,9 @@ void Rcs::BulletSimulation::reset()
   MatNd_copy(this->q_des, graph->q);
   MatNd_setZero(this->q_dot_des);
   MatNd_setZero(this->T_des);
+
+  // Update also the internal desired graph for the rigid body transforms.
+  setControlInput(this->q_des, this->q_dot_des, this->T_des);
 
   btBroadphaseInterface* bi = dynamicsWorld->getBroadphase();
   btOverlappingPairCache* opc = bi->getOverlappingPairCache();
@@ -1610,6 +1615,8 @@ bool Rcs::BulletSimulation::setParameter(ParameterCategory category,
             {
               sphere->setUnscaledRadius(value);
               ball->extents[0] = value;
+// \todo: Don't we need the below lies?
+RFATAL("FIXME");
 //              btBdy = BulletRigidBody::create(bdy);
 //              bdyMap[bdy] = btBdy;
 

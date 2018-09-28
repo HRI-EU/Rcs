@@ -65,7 +65,7 @@ PhysicsConfig::PhysicsConfig(const char* xmlFile)
   if (!fileExists)
   {
     RLOG(1, "Rcs physics configuration file \"%s\" not found",
-         xmlFile);
+         xmlFile ? xmlFile : "NULL");
     // Build backing doc manually
 
     // create empty configuration node

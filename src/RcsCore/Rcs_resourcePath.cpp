@@ -191,6 +191,11 @@ extern "C" {
    ****************************************************************************/
   bool Rcs_getAbsoluteFileName(const char* fileName, char* absFileName)
   {
+    if (fileName==NULL)
+    {
+      return false;
+    }
+
     if (File_exists(fileName))
     {
       NLOG(6, "Found file \"%s\" in relative path", fileName);

@@ -992,6 +992,9 @@ void Rcs::VortexSimulation::reset()
   MatNd_setZero(this->q_dot_des);
   MatNd_setZero(this->T_des);
 
+  // Update also the internal desired graph for the rigid body transforms.
+  setControlInput(this->q_des, this->q_dot_des, this->T_des);
+
 
 
 

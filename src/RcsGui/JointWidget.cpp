@@ -45,11 +45,7 @@
 
 #include <qwt_slider.h>
 
-#include <QApplication>
 #include <QLabel>
-#include <QLayout>
-#include <QPushButton>
-#include <QTabWidget>
 #include <QGridLayout>
 
 #include <cstdio>

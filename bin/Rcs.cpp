@@ -436,8 +436,8 @@ int main(int argc, char** argv)
       unsigned int bvhIdx = 0;
       if (playBVH && String_hasEnding(bvhFile, ".bvh", false))
       {
-        bvhTraj = RcsGraph_createTrajectoryFromBVHFile(graph, bvhFile, 
-                                                       &dtStep, 0.01, 
+        bvhTraj = RcsGraph_createTrajectoryFromBVHFile(graph, bvhFile,
+                                                       &dtStep, 0.01,
                                                        M_PI/180.0);
         if (bvhTraj && (bvhTraj->n!=graph->dof))
         {
@@ -2776,7 +2776,7 @@ int main(int argc, char** argv)
       argP.getArgument("-radius", &radius, "Radius (default is %g)", radius);
       argP.getArgument("-height", &height, "Height (default is %g)", height);
 
-      double poly[4][2];
+      double poly[5][2];
       poly[0][0] = -radius;
       poly[0][1] = -0.5*height;
       poly[1][0] =  radius;
