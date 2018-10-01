@@ -70,7 +70,7 @@ bool getXMLFileTag(const char* filename, char* tag);
  *  \brief Same as parseXMLFile(), but result is read from the memory pointed
  *         to by buffer.
  */
-xmlNodePtr parseXMLMemory(const char* buffer, unsigned int size,
+xmlNodePtr parseXMLMemory(const char* buffer, size_t size,
                           xmlDocPtr* doc);
 
 /*! \ingroup RcsParserFunctions

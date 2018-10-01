@@ -790,7 +790,7 @@ void Rcs_printComputerStats(FILE* out)
   fprintf(out, "  Maximum application address: %lx\n",
 	  (unsigned int)sysinfo.lpMaximumApplicationAddress);
   fprintf(out, "  Active processor mask: %u\n",
-          sysinfo.dwActiveProcessorMask);
+          (unsigned int) sysinfo.dwActiveProcessorMask);
 #endif
 
   // Stack size

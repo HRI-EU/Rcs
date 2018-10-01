@@ -128,7 +128,7 @@ bool getXMLFileTag(const char* filename, char* tag)
 
 *******************************************************************************/
 
-xmlNodePtr parseXMLMemory(const char* buffer, unsigned int size,
+xmlNodePtr parseXMLMemory(const char* buffer, size_t size,
                           xmlDocPtr* doc)
 {
   xmlNodePtr node;   // xml root node
