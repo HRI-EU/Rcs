@@ -1,4 +1,4 @@
-<Graph resourcePath="/hri/sit/LTS/Data/RobotMeshes/1.0/data" >
+<Graph resourcePath="${SIT}/Data/RobotMeshes/1.0/data" >
 
   <Body name="lbr_link_0" mass="5" inertia="0.05 0 0 0 0.06 0 0 0 0.03" physics="kinematic" >
     <Shape type="SSL" radius="0.125" length="0.08" distance="true" physics="false" color="PEWTER" />

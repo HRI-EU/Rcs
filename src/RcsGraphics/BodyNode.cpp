@@ -35,9 +35,6 @@
 *******************************************************************************/
 
 #include "BodyNode.h"
-#ifdef USE_OCTOMAP
-#include "OctomapNode.h"
-#endif
 #include "Rcs_graphicsUtils.h"
 
 #include <Rcs_resourcePath.h>
@@ -52,6 +49,7 @@
 #include <TorusNode.h>
 
 #ifdef USE_OCTOMAP
+#include "OctomapNode.h"
 #include <octomap/OcTree.h>
 #include <octomap/octomap_types.h>
 #endif
