@@ -493,15 +493,27 @@ void Rcs::VortexSimulation::initMaterial(const PhysicsConfig* config)
       {
         material->setFrictionModel(Vx::VxMaterialBase::kFrictionAxisLinear,
                                    Vx::VxMaterialBase::kFrictionModelBox);
+        material->setFrictionModel(Vx::VxMaterialBase::kFrictionAxisAngularPrimary,
+                                   Vx::VxMaterialBase::kFrictionModelBox);
+        material->setFrictionModel(Vx::VxMaterialBase::kFrictionAxisAngularSecondary,
+                                   Vx::VxMaterialBase::kFrictionModelBox);
       }
       else if (STRCASEEQ(option, "ScaledBox"))
       {
         material->setFrictionModel(Vx::VxMaterialBase::kFrictionAxisLinear,
                                    Vx::VxMaterialBase::kFrictionModelScaledBox);
+        material->setFrictionModel(Vx::VxMaterialBase::kFrictionAxisAngularPrimary,
+                                   Vx::VxMaterialBase::kFrictionModelScaledBox);
+        material->setFrictionModel(Vx::VxMaterialBase::kFrictionAxisAngularSecondary,
+                                   Vx::VxMaterialBase::kFrictionModelScaledBox);
       }
       else if (STRCASEEQ(option, "ScaledBoxFast"))
       {
         material->setFrictionModel(Vx::VxMaterialBase::kFrictionAxisLinear,
+                                   Vx::VxMaterialBase::kFrictionModelScaledBoxFast);
+        material->setFrictionModel(Vx::VxMaterialBase::kFrictionAxisAngularPrimary,
+                                   Vx::VxMaterialBase::kFrictionModelScaledBoxFast);
+        material->setFrictionModel(Vx::VxMaterialBase::kFrictionAxisAngularSecondary,
                                    Vx::VxMaterialBase::kFrictionModelScaledBoxFast);
       }
       else
