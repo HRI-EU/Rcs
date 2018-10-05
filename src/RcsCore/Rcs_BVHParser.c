@@ -59,18 +59,19 @@ static bool findKeyword(const char* keyword, FILE* fd)
   char buf[bufLen];
 
   do
+  {
+    nItemsRead = fscanf(fd, "%31s", buf);
+    RLOG(10, "Reading keyword \"%s\"", buf);
+
+    if (nItemsRead != 1)
     {
-      nItemsRead = fscanf(fd, "%31s", buf);
-      RLOG(10, "Reading keyword \"%s\"", buf);
+      RLOG(1, "Keyword \"%s\": Couldn't read 1 item: %d",
+           keyword, nItemsRead);
+      continue;
+    }
 
-      if (nItemsRead != 1)
-        {
-          RLOG(1, "Keyword \"%s\": Couldn't read 1 item: %d",
-               keyword, nItemsRead);
-          continue;
-        }
-
-    } while ((nItemsRead!=EOF) && (!STRNCASEEQ(buf, keyword, bufLen)));
+  }
+  while ((nItemsRead!=EOF) && (!STRNCASEEQ(buf, keyword, bufLen)));
 
   return (nItemsRead!=EOF) ? true : false;
 }
@@ -108,10 +109,10 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     child->Inertia = HTr_create();
     Mat3d_setZero(child->Inertia->rot);
     if (Z_up_x_forward)
-      {
-        child->A_BP = HTr_create();
-        //Mat3d_fromEulerAngles2(child->A_BP->rot, M_PI_2, M_PI_2, 0.0);
-      }
+    {
+      child->A_BP = HTr_create();
+      //Mat3d_fromEulerAngles2(child->A_BP->rot, M_PI_2, M_PI_2, 0.0);
+    }
     RcsBody_addShape(child, createFrameShape(0.5));
     RcsGraph_insertBody(self, body, child);
     fscanf(fd, "%63s", buf);   // Curly brace open
@@ -228,7 +229,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     fscanf(fd, "%63s", buf);   // Next keyword
     RLOG(5, "Recursing after OFFSET with next keyword %s", buf);
     bool success = parseRecursive(buf, self, child, fd, Vec3d_zeroVec(),
-                           linearScaleToSI, Z_up_x_forward);
+                                  linearScaleToSI, Z_up_x_forward);
     RCHECK(success);
     fscanf(fd, "%63s", buf);   // Closing curly brace
   }
@@ -250,9 +251,9 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     double len = 0.8*Vec3d_getLength(endOffset);
 
     if (len < 0.01)
-      {
-        len = 0.01;
-      }
+    {
+      len = 0.01;
+    }
 
     RcsShape* shape = RALLOC(RcsShape);
     HTr_setIdentity(&shape->A_CB);
@@ -331,9 +332,9 @@ static void addGeometry(RcsGraph* self)
       double len = 0.8*Vec3d_getLength(K_p12);
 
       if (len < 0.01)
-        {
-          len = 0.01;
-        }
+      {
+        len = 0.01;
+      }
 
       // Box from parent to child
       RcsShape* shape = RALLOC(RcsShape);
@@ -401,18 +402,18 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
   RcsBody* bvhRoot = self->root;
 
   if (Z_up_x_forward == true)
-    {
-      RcsBody* xyzRoot = RALLOC(RcsBody);
-      xyzRoot->A_BI = HTr_create();
-      xyzRoot->name = String_clone("BVHROOT");
-      xyzRoot->Inertia = HTr_create();
-      xyzRoot->A_BP = HTr_create();
-      Mat3d_fromEulerAngles2(xyzRoot->A_BP->rot, M_PI_2, M_PI_2, 0.0);
-      Mat3d_setZero(xyzRoot->Inertia->rot);
-      RcsBody_addShape(xyzRoot, createFrameShape(1.0));
-      RcsGraph_insertBody(self, NULL, xyzRoot);
-      bvhRoot = xyzRoot;
-    }
+  {
+    RcsBody* xyzRoot = RALLOC(RcsBody);
+    xyzRoot->A_BI = HTr_create();
+    xyzRoot->name = String_clone("BVHROOT");
+    xyzRoot->Inertia = HTr_create();
+    xyzRoot->A_BP = HTr_create();
+    Mat3d_fromEulerAngles2(xyzRoot->A_BP->rot, M_PI_2, M_PI_2, 0.0);
+    Mat3d_setZero(xyzRoot->Inertia->rot);
+    RcsBody_addShape(xyzRoot, createFrameShape(1.0));
+    RcsGraph_insertBody(self, NULL, xyzRoot);
+    bvhRoot = xyzRoot;
+  }
 
   // Start recursion with root link
   success = parseRecursive(buf, self, bvhRoot, fd, Vec3d_zeroVec(),
@@ -510,7 +511,10 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
   RLOG(5, "Creating %d x %d array", numFrames, (int)numValues/numFrames);
   MatNd* data = MatNd_create(numFrames, (int)numValues/numFrames);
 
-  RCHECK(graph->dof*numFrames==numValues);
+  if (graph != NULL)
+  {
+    RCHECK(graph->dof*numFrames==numValues);
+  }
 
   numValues = 0;
   isEOF = 0;
@@ -526,19 +530,30 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
 
   fclose(fd);
 
-  MatNd* scaleArr = MatNd_create(1, graph->dof);
-  RCSGRAPH_TRAVERSE_JOINTS(graph)
+  MatNd* scaleArr = MatNd_create(1, (graph!=NULL) ? graph->dof : data->n);
+  if (graph != NULL)
   {
-    scaleArr->ele[JNT->jointIndex] = RcsJoint_isRotation(JNT) ? angularScaleToSI : linearScaleToSI;
+    RCSGRAPH_TRAVERSE_JOINTS(graph)
+    {
+      scaleArr->ele[JNT->jointIndex] = RcsJoint_isRotation(JNT) ? angularScaleToSI : linearScaleToSI;
+    }
+  }
+  else
+  {
+    for (int i=0; i<data->n; i++)
+    {
+      scaleArr->ele[i] = (i<3) ? linearScaleToSI : angularScaleToSI;
+    }
   }
 
   for (unsigned int i=0; i<data->m; ++i)
-    {
-      MatNd row = MatNd_getRowView(data, i);
-      MatNd_eleMulSelf(&row, scaleArr);
-    }
+  {
+    MatNd row = MatNd_getRowView(data, i);
+    MatNd_eleMulSelf(&row, scaleArr);
+  }
 
   MatNd_destroy(scaleArr);
 
   return data;
 }
+

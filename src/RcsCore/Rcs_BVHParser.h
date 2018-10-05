@@ -67,15 +67,20 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
 /*! \ingroup RcsGraphFunctions
  *  \brief Creates a matrix of animation poses from a given BVH file.
  *
- *  \param[in]  graph             Graph corresponding to BVH file.
+ *  \param[in]  graph             Graph corresponding to BVH file. If graph is
+ *                                NULL, the first 3 rows of the data array is
+ *                                scaled by linearScaleToSI, and the remaining
+ *                                ones by angularScaleToSI. If graph is not NULL,
+ *                                all values corresponding to a rotational joint
+ *                                are scaled by angularScaleToSI, and the linear
+ *                                ones by linearScaleToSI.
  *  \param[in]  fileName          Fully qualified name of BVH file
  *  \param[out]  dt               Time step between two consecutive frames. If
  *                                it is NULL, it will be ignored.
  *  \param[in]  linearScaleToSI   Value that scales the BVH-file's translations
  *                                to SI units (meters).
- *  \param[out] Z_up_x_forward    When false, the root frame is kept in BVH-
- *                                conventions (y-up), otherwise it is transformed
- *                                into z-up x-forward convention.
+ *  \param[in] angularScaleToSI   Value that scales the BVH-file's rotations
+ *                                to SI units (radians).
  */
 MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
                                             const char* fileName,
