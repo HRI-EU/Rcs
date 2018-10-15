@@ -1449,6 +1449,94 @@ void RcsGraph_parseBodies(xmlNodePtr node,
     self->dof += dof;
     self->q = MatNd_realloc(self->q, self->dof, 1);
 
+    // There is no direct way to determine whether the root link should be fixed or free.
+    // However, we can easily use a rgid_body_joints xml parameter to determine this.
+    bool hasRBJTag = getXMLNodeProperty(node, "rigid_body_joints");
+    double q_rbj[12];
+    VecNd_setZero(q_rbj, 12);
+    // parse rigid body joints tag
+    unsigned int nRBJTagStr = 0;
+    if (hasRBJTag==true)
+    {
+      urdfRoot->rigid_body_joints = true;
+      nRBJTagStr = getXMLNodeNumStrings(node, "rigid_body_joints");
+
+      switch (nRBJTagStr)
+      {
+        case 1:
+          getXMLNodePropertyBoolString(node, "rigid_body_joints",
+                                       &urdfRoot->rigid_body_joints);
+          break;
+
+        case 6:
+          getXMLNodePropertyVecN(node, "rigid_body_joints", q_rbj, 6);
+
+          // convert Euler angles from degrees to radians
+          Vec3d_constMulSelf(&q_rbj[3], M_PI / 180.0);
+          break;
+
+        case 12:
+          getXMLNodePropertyVecN(node, "rigid_body_joints", q_rbj, 12);
+
+          // convert Euler angles from degrees to radians
+          Vec3d_constMulSelf(&q_rbj[3], M_PI / 180.0);
+          break;
+
+        default:
+          RFATAL("Tag \"rigid_body_joints\" of body \"%s\" has %d entries"
+                 " - should be 6 or 1", urdfRoot->name, nRBJTagStr);
+      }
+
+      NLOG(5, "[%s]: Found %d strings in rigid_body_joint tag \"%s\", flag is "
+              "%s", urdfRoot->name, nStr, "rigid_body_joints",
+           urdfRoot->rigid_body_joints ? "true" : "false");
+    }
+    // create rigid body joints if requested
+    if (urdfRoot->rigid_body_joints)
+    {
+      RcsJoint* rbj0 = RcsBody_createRBJ(self, urdfRoot, q_rbj);
+
+      // Determine constraint dofs for physics simulation. If a dof is
+      // constrained will be interpreted by a "0" in the joint's weightMetric
+      // property.
+      if (nRBJTagStr == 12)
+      {
+        unsigned int checkRbjNum = 0;
+        for (RcsJoint* JNT = rbj0; JNT; JNT = JNT->next)
+        {
+          JNT->weightMetric = q_rbj[6 + checkRbjNum];
+          checkRbjNum++;
+        }
+        RCHECK(checkRbjNum == 6);
+      }
+
+      // Rigid body joints don't have any relative transformations after
+      // construction. If there is a transformation coming from a group, it needs
+      // to be applied to the first of the six rigid body joints. We can simply
+      // clone it.
+      if (HTr_isIdentity(&A_local) == false)
+      {
+        rbj0->A_JP = HTr_clone(&A_local);
+        // since the group transform was already applied to the body, remove it there again
+        HTr_setIdentity(urdfRoot->A_BP);
+      }
+    }
+    else if (urdfRoot->physicsSim != RCSBODY_PHYSICS_NONE)
+    {
+      // no rigid body joints - urdf root is fixed to it's parent. Make sure that the physics simulation treats it correctly.
+      if (pB != NULL && (pB->physicsSim == RCSBODY_PHYSICS_DYNAMIC || pB->physicsSim == RCSBODY_PHYSICS_FIXED))
+      {
+        // or to fixed if the parent is dynamic
+        urdfRoot->physicsSim = RCSBODY_PHYSICS_FIXED;
+      }
+      else
+      {
+        // set it to kinematic if the parent is kinematic or not participating at all
+        urdfRoot->physicsSim = RCSBODY_PHYSICS_KINEMATIC;
+      }
+    }
+
+
     // If the URDF subree has a parent node, we attach the subgraph as the last
     // child of it.
     if (pB != NULL)
