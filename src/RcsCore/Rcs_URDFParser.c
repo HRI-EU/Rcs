@@ -232,8 +232,8 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
   }
   else
   {
-    // set distance true
-    shape->computeType = RCSSHAPE_COMPUTE_DISTANCE;
+    // set distance and physics true
+    shape->computeType = RCSSHAPE_COMPUTE_DISTANCE | RCSSHAPE_COMPUTE_PHYSICS;
   }
 
   return shape;
@@ -291,8 +291,9 @@ static RcsBody* parseBodyURDF(xmlNode* node)
   // Allocate memory for shape node lists (visual and collision tags)
   size_t inertialTagCount = 0;
   size_t shapeCount = 0;
+  size_t numCollisionShapes = getNumXMLNodes(node, "collision");
   size_t numShapes = getNumXMLNodes(node, "visual") +
-                     getNumXMLNodes(node, "collision");
+                     numCollisionShapes;
   body->shape = RNALLOC(numShapes+1, RcsShape*);
 
 
@@ -360,8 +361,28 @@ static RcsBody* parseBodyURDF(xmlNode* node)
   // Rigid body joints not supported
   body->rigid_body_joints = false;
 
-  // \todo: URDF body not yet part of physics, not modelled in physics
-  body->physicsSim = RCSBODY_PHYSICS_NONE;
+  // determine physics type
+  if (body->m > 0.0)
+  {
+    // bodies with non-zero mass can be simulated dynamically
+    body->physicsSim = RCSBODY_PHYSICS_DYNAMIC;
+    if (numCollisionShapes == 0)
+    {
+      RLOG(1, "You specified a non-zero mass but no collision shapes for body \"%s\". "
+              "Body will not partake in physics simulation", body->name);
+      body->physicsSim = RCSBODY_PHYSICS_NONE;
+    }
+  }
+  else if (numCollisionShapes > 0)
+  {
+    // collision, but no inertia
+    body->physicsSim = RCSBODY_PHYSICS_KINEMATIC;
+  }
+  else
+  {
+    // neither inertia nor collision, ignore in physics
+    body->physicsSim = RCSBODY_PHYSICS_NONE;
+  }
 
   return body;
 }
@@ -714,6 +735,12 @@ static void connectURDF(xmlNode* node, RcsBody** bdyVec, RcsJoint** jntVec,
       lastChild->next = childBody;
       childBody->prev = lastChild;
       parentBody->lastChild = childBody;
+    }
+
+    if (childBody->physicsSim == RCSBODY_PHYSICS_DYNAMIC)
+    {
+      // Rcs physics module expects physics=fixed for fixed joints
+      childBody->physicsSim = RCSBODY_PHYSICS_FIXED;
     }
 
   }   // STRCASEEQ(type, "fixed")
