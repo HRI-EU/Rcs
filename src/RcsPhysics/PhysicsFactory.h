@@ -49,8 +49,8 @@
 namespace Rcs
 {
 
-/*! \brief This class is inspired by the MPFactory and follows the same
- *         concepts.
+/*! \ingroup RcsPhysics
+ *  \brief Factory class for physics simulation classes.
  */
 class PhysicsFactory
 {
@@ -58,17 +58,18 @@ class PhysicsFactory
 
 public:
 
-  /*!
-   * \brief Creates a new Physics simulation instance by name using the
-   *        appropriate registered construction function.
+  /*! \brief Creates a new Physics simulation instance by name using the
+   *         appropriate registered construction function.
+   *
    * \param className The name with which the physics is registered at the
-   *        factory
-   * \param graph The underlying graph for the kinematics
-   * \param cfgFile Name of xml configuration file
-   * \return New PhysicsBase instance
+   *                  factory
+   * \param graph     The underlying graph for the kinematics
+   * \param cfgFile   Name of xml configuration file
+   * \return          New PhysicsBase instance or NULL if failure happened
    */
   static PhysicsBase* create(const std::string& className, RcsGraph* graph,
                              const char* cfgFile);
+
   /*!
    * \brief Creates a new Physics simulation instance by name using the
    *        appropriate registered construction function.
@@ -119,19 +120,25 @@ private:
 
 
 
-/*!
- * \brief This class is inspired by the MPFactoryRegistrar and follows the
- *        same concepts.
+/*! \ingroup RcsPhysics
+ * \brief Registrar class for physics simulation classes. Here is how to use
+ *        it:
+ *        - Implement a physics simulation derieved from PhysicsBase
+ *        - In the implementation of this class on the global scope, add:<br>
+ *          static PhysicsFactoryRegistrar<MySimulation> physics("MySim");
+ *        - This registers a simulator that can be instantiated by the name
+ *          MySim: <br>
+ *          PhysicsBase* sim = PhysicsFactory::create("MySim", graph, cfgFile);
  */
 template<class T>
 class PhysicsFactoryRegistrar
 {
 public:
 
-  /*!
-   * \brief Registers a new physics simulation with a given name
-   * \param className The name that is used for instanciating a new
-   *        physics simulation by name
+  /*! \brief Registers a new physics simulation with a given name
+   *
+   *  \param className The name that is used for instanciating a new
+   *                   physics simulation by name
    */
   PhysicsFactoryRegistrar(std::string className)
   {
@@ -140,13 +147,13 @@ public:
     tf->registerPhysics(className, &PhysicsFactoryRegistrar::create);
   }
 
-  /*!
-   * \brief This function creates a new physics simulation instance of type T
+  /*! \brief This function creates a new physics simulation instance of type T
    *        passing the given variables to the respective constructor
+   *
    * \param className String identifier for task
-   * \param graph Pointer to tasks's RcsGraph structure
-   * \param cfgFile Name of xml configuration file
-   * \return New physics simulation instance of type T
+   * \param graph     Pointer to tasks's RcsGraph structure
+   * \param config    Name of xml configuration file
+   * \return          New physics simulation instance of type T
    */
   static PhysicsBase* create(std::string className, RcsGraph* graph,
                              const PhysicsConfig* config)

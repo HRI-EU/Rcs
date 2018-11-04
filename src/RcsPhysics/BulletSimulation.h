@@ -62,6 +62,9 @@ class BulletRigidBody;
 class BulletHingeJoint;
 class BulletDebugDrawer;
 
+/*! \ingroup RcsPhysics
+ *  \brief Bullet physics simulation class.
+ */
 class BulletSimulation : public PhysicsBase
 {
 public:
