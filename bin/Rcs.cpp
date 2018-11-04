@@ -224,7 +224,23 @@ int main(int argc, char** argv)
     mtx = NULL;
   }
 
-  runLoop = true;
+  // Option to set locale - mainly for parsing tests
+  if (argP.hasArgument("-locale", "Set locale"))
+  {
+    char localeStr[256] = "de_DE.utf8";
+    argP.getArgument("-locale", localeStr);
+    char* res = setlocale(LC_ALL, localeStr);
+    if (res==NULL)
+      {
+        RLOG(1, "Failed to set locale \"%s\"", localeStr);
+      }
+    else
+      {
+        struct lconv* loc = localeconv();
+        RLOG(1, "Locale successfully set to %s", res);
+        RLOG(1, "Decimal character is %c", *(loc->decimal_point));
+      }
+  }
 
   const char* hgr = getenv("SIT");
   if (hgr != NULL)

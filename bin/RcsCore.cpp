@@ -210,9 +210,9 @@ static bool test_localeFreeParsing()
   argP.getArgument("-str", str, "String to convert (default is %s)", str);
   argP.getArgument("-iter", &nIter, "Iterations (default is %d)", nIter);
 
-  if (argP.hasArgument("-comma", "Set Dutch locale (nl_AW)"))
+  if (argP.hasArgument("-comma", "Set locale (de_DE.utf8)"))
   {
-    char* res = setlocale(LC_ALL, "nl_AW");
+    char* res = setlocale(LC_ALL, "de_DE.utf8");
     RLOG(1, "setlocale() returned \"%s\"", res ? res : "NULL");
   }
 
