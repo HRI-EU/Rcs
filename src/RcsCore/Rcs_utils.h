@@ -131,7 +131,7 @@ bool String_hasEnding(const char* str, const char* ending, bool caseSensitive);
  *  \param[out] str    Char pointer holding the value as a string. Must be long
  *                     enough.
  *  \param[in]  value  Value to be converted into string
- *  \param maxDigits   Max. number of digits after the point.
+ *  \param[in] maxDigits   Max. number of digits after the point.
  *  \return Pointer to str
  */
 char* String_fromDouble(char* str, double value, unsigned int maxDigits);
@@ -159,6 +159,17 @@ unsigned int String_countSubStrings(const char* str, const char* delim);
  *        returns NULL.
  */
 char* String_expandEnvironmentVariables(const char* str);
+
+/*! \ingroup RcsUtilsFunctions
+ * \brief Converts a string to a double value using the C locale: It means that
+ *        the decimal separator will be interpreted as a dot, and does not
+ *        depend on the currently avtive locale.
+ *
+ *  \param[in] str   Terminated string holding the character representation of
+ *                   the value
+ *  \return Corresponding double value
+ */
+double String_toDouble_l(const char* str);
 
 ///@}
 

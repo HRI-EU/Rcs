@@ -45,7 +45,10 @@
 
 #include <SegFaultHandler.h>
 
-
+#include <sstream>
+#include <string>
+#include <stdio.h>
+#include <locale.h>
 
 RCS_INSTALL_SEGFAULTHANDLER
 
@@ -197,6 +200,74 @@ static bool test_envString()
 }
 
 /******************************************************************************
+ * 
+ *****************************************************************************/
+static bool test_localeFreeParsing()
+{
+  char str[256] = "3.1415926535";
+  int nIter = 1;
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-str", str, "String to convert (default is %s)", str);
+  argP.getArgument("-iter", &nIter, "Iterations (default is %d)", nIter);
+
+  if (argP.hasArgument("-comma", "Set Dutch locale (nl_AW)"))
+  {
+    char* res = setlocale(LC_ALL, "nl_AW");
+    RLOG(1, "setlocale() returned \"%s\"", res ? res : "NULL");
+  }
+
+  struct lconv* loc = localeconv();
+
+  RLOG(1, "Decimal character is %c", *(loc->decimal_point));
+  RLOG(1, "String to convert to double: \"%s\"", str);
+
+
+  // Locale conversion with sscanf
+  {
+    double b, dt = Timer_getSystemTime();
+    for (int i=0; i<nIter; ++i)
+    {
+      sscanf(str, "%lf", &b);
+    }
+    dt = Timer_getSystemTime() - dt;
+    RLOG(1, "sscanf: double value is %f ... took %.4f usec", 
+         b, (1.0/nIter)*1.0e6*dt);
+  }
+
+
+  // Locale-free conversion with strtod_l
+  {
+    double res, dt = Timer_getSystemTime();
+    for (int i=0; i<nIter; ++i)
+    {
+      res = String_toDouble_l(str);
+    }
+    dt = Timer_getSystemTime() - dt;
+    RLOG(1, "strtod_l: double value is %f ... took %.4f usec", 
+         res, (1.0/nIter)*1.0e6*dt);
+  }
+
+
+  // Locale-free conversion with stringstream
+  {
+    double a, dt = Timer_getSystemTime();
+    for (int i=0; i<nIter; ++i)
+    {
+      std::stringstream ss2;
+      ss2.imbue(std::locale::classic());
+      ss2 << str;
+      ss2 >> a;
+    }
+    dt = Timer_getSystemTime() - dt;
+    RLOG(1, "stringstream with imbue: double value is %f ... took %.4f usec", 
+         a, (1.0/nIter)*1.0e6*dt);
+  }
+
+  return true;
+}
+
+
+/******************************************************************************
  *
  *****************************************************************************/
 int main(int argc, char** argv)
@@ -232,6 +303,7 @@ int main(int argc, char** argv)
       fprintf(stderr, "\t\t2   String ending comparison test\n");
       fprintf(stderr, "\t\t3   Mesh test\n");
       fprintf(stderr, "\t\t4   String environment expansion test\n");
+      fprintf(stderr, "\t\t5   Locale-independent parsing test\n");
       fprintf(stderr, "\n\nResource path:\n");
       Rcs_printResourcePath();
       break;
@@ -259,7 +331,11 @@ int main(int argc, char** argv)
       break;
     }
 
-
+    case 5:
+    {
+      success = test_localeFreeParsing();
+      break;
+    }
 
     default:
     {
@@ -269,6 +345,11 @@ int main(int argc, char** argv)
   }   // switch(mode)
 
   RMSGS("Test %s", success ? "SUCCEEDED" : "FAILED");
+
+  if (argP.hasArgument("-h"))
+    {
+      argP.print();
+    }
 
   // Clean up global stuff. From the libxml2 documentation:
   // WARNING: if your application is multithreaded or has plugin support

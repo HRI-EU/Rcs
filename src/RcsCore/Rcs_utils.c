@@ -38,6 +38,8 @@
 #include "Rcs_macros.h"
 #include "Rcs_timer.h"
 
+#include <locale.h>
+
 #if !defined(_MSC_VER)
 #include <unistd.h>
 #include <termios.h>
@@ -362,6 +364,18 @@ char* String_expandEnvironmentVariables(const char* str)
 {
   char* copyOfString = String_clone(str);
   return String_expandMacros_(copyOfString);
+}
+
+/*******************************************************************************
+ * See header
+ ******************************************************************************/
+double String_toDouble_l(const char* str)
+{
+  locale_t tmpLocale = newlocale(LC_NUMERIC_MASK, "C", NULL);
+  double val = strtod_l(str, NULL, tmpLocale);
+  freelocale(tmpLocale);
+
+  return val;
 }
 
 /*******************************************************************************
@@ -788,7 +802,7 @@ void Rcs_printComputerStats(FILE* out)
   fprintf(out, "  Minimum application address: %lx\n",
           (unsigned int)sysinfo.lpMinimumApplicationAddress);
   fprintf(out, "  Maximum application address: %lx\n",
-	  (unsigned int)sysinfo.lpMaximumApplicationAddress);
+          (unsigned int)sysinfo.lpMaximumApplicationAddress);
   fprintf(out, "  Active processor mask: %u\n",
           (unsigned int) sysinfo.dwActiveProcessorMask);
 #endif
