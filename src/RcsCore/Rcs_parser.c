@@ -555,18 +555,17 @@ bool getXMLNodePropertyVecN(xmlNodePtr nd, const char* tag, double* x,
   }
 
   char* pch = strtok(tmp, " ");
-  double value;
   unsigned int matchedStrings = 0;
+  char buf[64];
 
   while (pch != NULL)
   {
-    if (sscanf(pch, "%lf", &value))
+    if (sscanf(pch, "%63s", buf))
     {
-      RCHECK(isfinite(value));
       matchedStrings++;
       if (matchedStrings <= n)
       {
-        x[matchedStrings - 1] = value;
+        x[matchedStrings - 1] = String_toDouble_l(buf);
       }
     }
     pch = strtok(NULL, " ");
@@ -649,12 +648,14 @@ bool getXMLNodePropertyBoolN(xmlNodePtr nd, const char* tag, bool* x,
 
   char* pch = strtok(tmp, " ");
   double value;
+  char buf[64];
   unsigned int matchedStrings = 0;
 
   while (pch != NULL)
   {
-    if (sscanf(pch, "%lf", &value))
+    if (sscanf(pch, "%s", buf))
     {
+      value = String_toDouble_l(buf);
       RCHECK(isfinite(value));
       matchedStrings++;
       if (matchedStrings <= n)
@@ -1075,18 +1076,17 @@ bool getXMLNodeVecN(xmlNodePtr nd, double* x, unsigned int n)
     if (len > 0)
     {
       char* pch = strtok(tmp, " ");
-      double value;
+      char buf[64];
       unsigned int matchedStrings = 0;
 
       while (pch != NULL)
       {
-        if (sscanf(pch, "%lf", &value))
+        if (sscanf(pch, "%63s", buf))
         {
-          RCHECK(isfinite(value));
           matchedStrings++;
           if (matchedStrings <= n)
           {
-            x[matchedStrings - 1] = value;
+            x[matchedStrings - 1] = String_toDouble_l(buf);
           }
         }
         pch = strtok(NULL, " ");

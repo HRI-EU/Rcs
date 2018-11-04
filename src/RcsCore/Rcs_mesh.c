@@ -218,7 +218,8 @@ static double* RcsMesh_readAsciiSTLFile(FILE* fd, unsigned int* numVertices)
   {
     if (STRCASEEQ(buf, "vertex"))
     {
-      itemsMatched = fscanf(fd, "%lf", vPtr);
+      itemsMatched = fscanf(fd, "%s", buf);
+      *vPtr = String_toDouble_l(buf);
 
       if (itemsMatched < 1)
       {
@@ -229,7 +230,8 @@ static double* RcsMesh_readAsciiSTLFile(FILE* fd, unsigned int* numVertices)
       }
 
       vPtr++;
-      itemsMatched = fscanf(fd, "%lf", vPtr);
+      itemsMatched = fscanf(fd, "%s", buf);
+      *vPtr = String_toDouble_l(buf);
 
       if (itemsMatched < 1)
       {
@@ -241,6 +243,9 @@ static double* RcsMesh_readAsciiSTLFile(FILE* fd, unsigned int* numVertices)
 
       vPtr++;
 
+      itemsMatched = fscanf(fd, "%s", buf);
+      *vPtr = String_toDouble_l(buf);
+
       if (itemsMatched < 1)
       {
         RLOG(1, "Couldn't read vertex z");
@@ -249,7 +254,6 @@ static double* RcsMesh_readAsciiSTLFile(FILE* fd, unsigned int* numVertices)
         return NULL;
       }
 
-      itemsMatched = fscanf(fd, "%lf", vPtr);
       vPtr++;
     }
   }
@@ -664,15 +668,19 @@ static double* RcsMesh_readObjFile(const char* fileName,
     return NULL;
   }
 
-  char buf[32];
+  char buf[32], v1[32], v2[32], v3[32];
   unsigned int count = 0;
 
   while (fgets(lineStr, sizeof(lineStr), fd))
   {
     if (STRNEQ(lineStr, "v ", 2))
     {
-      int nItemsRead = sscanf(lineStr, "%31s %lf %lf %lf", buf,
-                              &verts[count], &verts[count+1], &verts[count+2]);
+      int nItemsRead = sscanf(lineStr, "%31s %31s %31s %31s",
+                              buf, v1, v2, v3);
+
+      verts[count]   = String_toDouble_l(v1);
+      verts[count+1] = String_toDouble_l(v2);
+      verts[count+2] = String_toDouble_l(v3);
 
       if (nItemsRead < 4)
       {
@@ -813,7 +821,9 @@ bool RcsMesh_readFromFile(const char* meshFile, RcsMeshData* meshData)
 
     for (unsigned int i=0; i<3*meshData->nVertices; ++i)
     {
-      int nItemsRead = fscanf(fd, "%lf", &meshData->vertices[i]);
+      int nItemsRead = fscanf(fd, "%s", triString);
+      meshData->vertices[i] = String_toDouble_l(triString);
+
 
       if (nItemsRead < 1)
       {
