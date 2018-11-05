@@ -384,7 +384,11 @@ RcsGraph* RcsGraph_create(const char* configFile)
  ******************************************************************************/
 RcsGraph* RcsGraph_createFromBuffer(const char* buffer, unsigned int size)
 {
-  RCHECK(buffer != NULL);
+  if (buffer == NULL)
+  {
+    RLOG(1, "buffer node is NULL");
+    return NULL;
+  }
 
   // Read XML file
   xmlDocPtr doc;
@@ -392,8 +396,9 @@ RcsGraph* RcsGraph_createFromBuffer(const char* buffer, unsigned int size)
 
   if (node == NULL)
   {
+    RLOG(1, "xmlNodePtr node is NULL");
     RLOG(4, "buffer is \"%s\"", buffer);
-    RFATAL("node is NULL");
+    return NULL;
   }
 
   RcsGraph* self = RcsGraph_createFromXmlNode(node);
@@ -406,11 +411,8 @@ RcsGraph* RcsGraph_createFromBuffer(const char* buffer, unsigned int size)
     return NULL;
   }
 
-  const char* filename = "Created_from_memory_buffer";
   RFREE(self->xmlFile);
-  self->xmlFile = RNALLOC(strlen(filename) + 1, char);
-  RCHECK(self->xmlFile);
-  strcpy(self->xmlFile, filename);
+  self->xmlFile = String_clone("Created_from_memory_buffer");
 
   return self;
 }

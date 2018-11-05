@@ -414,20 +414,21 @@ void RcsGraph_bodyTorque(const RcsGraph* self, const RcsBody* body,
  *
  *         Currently, the following tests are done:
  *         - self is NULL pointer
- *         - Bodies with rigid body joints have 6 joints in the order
+ *         - bodies with rigid body joints have 6 joints in the order
  *           transX-transY-transZ-rotX-rotY-rotZ (rotations are relative to
  *           previous frame, not static axis representation), and NULL or
- *           identity relative transforms A_KV
+ *           identity relative transforms
  *         - duplicate body names
  *         - joint centers out of range
  *         - joint indices out of range
  *         - Jacobian indices out of range
- *         - Joint direction index out of range
- *         - Consistency of coupled joints
- *         - Bodies have a mass >= 0
- *         - Bodies with finite inertia have a mass > 0
+ *         - joint direction index out of range
+ *         - consistency of coupled joints
+ *         - bodies have a mass >= 0
+ *         - bodies with finite inertia have a mass > 0
  *
  *  \param[in] self  Pointer to the graph to be checked.
+ *  \return Number of errors.
  */
 int RcsGraph_check(const RcsGraph* self);
 

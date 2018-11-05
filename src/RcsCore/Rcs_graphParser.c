@@ -1286,14 +1286,14 @@ void RcsGraph_parseBodies(xmlNodePtr node,
       char resourceDir[1024] = "";
       getXMLNodePropertyStringN(node, "resourcePath", resourceDir, 1024);
 
-      char* pch = strtok(resourceDir, " "), path[256];
+      char* pch = strtok(resourceDir, " ");
+      char path[256];
       int nPaths = 0;
 
       // Determine paths by space-separated tags
       while (pch != NULL)
       {
         sscanf(pch, "%255s", path);
-
         char* ePath = String_expandEnvironmentVariables(path);
         Rcs_addResourcePath(ePath);
         RFREE(ePath);
