@@ -290,7 +290,6 @@ unsigned int String_countSubStrings(const char* str, const char* delim)
   return nSubStrings;
 }
 
-
 /*******************************************************************************
  *
  ******************************************************************************/
@@ -367,15 +366,74 @@ char* String_expandEnvironmentVariables(const char* str)
 }
 
 /*******************************************************************************
- * See header
+*
  ******************************************************************************/
 double String_toDouble_l(const char* str)
 {
+#if defined (_MSC_VER)
+  _locale_t tmpLocale = _create_locale(LC_NUMERIC_MASK, "C");
+  double val = _strtod_l(str, NULL, tmpLocale);
+  _free_locale(tmpLocale);
+#else
   locale_t tmpLocale = newlocale(LC_NUMERIC_MASK, "C", NULL);
   double val = strtod_l(str, NULL, tmpLocale);
   freelocale(tmpLocale);
+#endif
 
   return val;
+}
+
+/*******************************************************************************
+*
+******************************************************************************/
+bool String_toDoubleArray_l(const char* str, double* x_, unsigned int n)
+{
+  if ((str==NULL) || (strlen(str) == 0) || (n == 0) || (x_==NULL))
+  {
+    return false;
+  }
+
+  char* tmp = String_clone(str);
+  char* pch = strtok(tmp, " ");
+  char buf[256];
+  unsigned int matchedStrings = 0;
+  double* x = RNALLOC(n, double);
+
+  while (pch != NULL)
+  {
+    if (sscanf(pch, "%255s", buf))
+    {
+      double value = String_toDouble_l(buf);// locale-independent
+
+      if (!isfinite(value))
+      {
+        RLOG(1, "Found non-finite value during parsing");
+        RFREE(tmp);
+        return false;
+      }
+
+      if (matchedStrings < n)
+      {
+        x[matchedStrings] = value;
+      }
+      matchedStrings++;
+    }
+    pch = strtok(NULL, " ");
+  }
+
+  RFREE(tmp);
+
+  if (matchedStrings != n)
+  {
+    RLOG(1, "%d values could be parsed (should be %d)", matchedStrings, n);
+    RFREE(x);
+    return false;
+  }
+
+  memcpy(x_, x, n * sizeof(double));
+  RFREE(x);
+
+  return true;
 }
 
 /*******************************************************************************

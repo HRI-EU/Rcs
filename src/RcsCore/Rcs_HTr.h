@@ -178,10 +178,11 @@ void HTr_toString(char* str, const HTr* A);
  *  \brief Reads the contents of a HTr from a given string (which has been
  *         previously generated using HTr_toString()
  *
- *  There is currently not much error checking, so be sure that you provide
- *  correct data.
+ *  \return true for success, false otherwise:
+ *          - A or str is NULL
+ *          - not 12 space-separated entries found in str.
  */
-void HTr_fromString(HTr* A, const char* str);
+bool HTr_fromString(HTr* A, const char* str);
 
 /*! \ingroup RcsHTrFunctions
  *  \brief Constructs a HTr from 2 points, so that p1-p2 will become the

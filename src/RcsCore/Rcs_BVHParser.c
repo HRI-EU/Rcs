@@ -125,7 +125,11 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
   else if (STRCASEEQ(buf, "OFFSET"))
   {
     double offs[3];
-    fscanf(fd, "%lf %lf %lf", &offs[0], &offs[1], &offs[2]);
+    char bufStr[3][256];
+    fscanf(fd, "%255s %255s %255s", bufStr[0], bufStr[1], bufStr[2]);
+    offs[0] = String_toDouble_l(bufStr[0]);
+    offs[1] = String_toDouble_l(bufStr[1]);
+    offs[2] = String_toDouble_l(bufStr[2]);
     Vec3d_constMulSelf(offs, linearScaleToSI);
     fscanf(fd, "%63s", buf);   // Next keyword
     RLOG(5, "Recursing after OFFSET with next keyword %s", buf);
@@ -239,9 +243,12 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     fscanf(fd, "%63s", buf);  // Site
     fscanf(fd, "%63s", buf);  // {
     fscanf(fd, "%63s", buf);  // OFFSET
-    fscanf(fd, "%lf", &endOffset[0]);  // x
-    fscanf(fd, "%lf", &endOffset[1]);  // y
-    fscanf(fd, "%lf", &endOffset[2]);  // z
+    fscanf(fd, "%63s", buf);  // x
+    endOffset[0] = String_toDouble_l(buf);
+    fscanf(fd, "%63s", buf);  // y
+    endOffset[1] = String_toDouble_l(buf);
+    fscanf(fd, "%63s", buf);  // z
+    endOffset[2] = String_toDouble_l(buf);
     fscanf(fd, "%63s", buf);  // }
     RCHECK(STREQ(buf,"}"));
     fscanf(fd, "%63s", buf);   // Next keyword
@@ -472,8 +479,8 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
   fscanf(fd, "%63s", buf);
   RCHECK_MSG(STRCASEEQ(buf, "Time:"), "%s", buf);
 
-  double frameTime = 0.0;
-  fscanf(fd, "%lf", &frameTime);
+  fscanf(fd, "%63s", buf);
+  double frameTime = String_toDouble_l(buf);
   RLOG(5, "Trajectory has frameTime %f", frameTime);
 
   if (dt!=NULL)
@@ -489,8 +496,7 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
 
   do
   {
-    double dummy;
-    isEOF = fscanf(fd, "%lf", &dummy);
+    isEOF = fscanf(fd, "%63s", buf);
     numValues++;
   }
   while (isEOF != EOF);
@@ -520,8 +526,8 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
   isEOF = 0;
   do
   {
-
-    isEOF = fscanf(fd, "%lf", &data->ele[numValues]);
+    isEOF = fscanf(fd, "%63s", buf);
+    data->ele[numValues] = String_toDouble_l(buf);
     numValues++;
   }
   while (isEOF != EOF);
@@ -540,7 +546,7 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
   }
   else
   {
-    for (int i=0; i<data->n; i++)
+    for (unsigned int i=0; i<data->n; ++i)
     {
       scaleArr->ele[i] = (i<3) ? linearScaleToSI : angularScaleToSI;
     }

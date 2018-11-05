@@ -36,6 +36,7 @@
 
 #include "Rcs_math.h"
 #include "Rcs_macros.h"
+#include "Rcs_utils.h"
 
 #include <float.h>
 
@@ -255,26 +256,48 @@ void HTr_toString(char* str, const HTr* A)
   RCHECK(str);
   RCHECK(A);
 
-  snprintf(str, HTR_TOSTRING_MAXSIZE, "%f %f %f %f %f %f %f %f %f %f %f %f",
-           A->org[0], A->org[1], A->org[2],
-           A->rot[0][0], A->rot[0][1], A->rot[0][2],
-           A->rot[1][0], A->rot[1][1], A->rot[1][2],
-           A->rot[2][0], A->rot[2][1], A->rot[2][2]);
+  char buf[12][32];
+  const unsigned int maxDigits = 8;
+
+  snprintf(str, HTR_TOSTRING_MAXSIZE,
+           "%31s %31s %31s %31s %31s %31s %31s %31s %31s %31s %31s %31s",
+           String_fromDouble(buf[0], A->org[0], maxDigits),
+           String_fromDouble(buf[1], A->org[1], maxDigits),
+           String_fromDouble(buf[2], A->org[2], maxDigits),
+           String_fromDouble(buf[3], A->rot[0][0], maxDigits),
+           String_fromDouble(buf[4], A->rot[0][1], maxDigits),
+           String_fromDouble(buf[5], A->rot[0][2], maxDigits),
+           String_fromDouble(buf[6], A->rot[1][0], maxDigits),
+           String_fromDouble(buf[7], A->rot[1][1], maxDigits),
+           String_fromDouble(buf[8], A->rot[1][2], maxDigits),
+           String_fromDouble(buf[9], A->rot[2][0], maxDigits),
+           String_fromDouble(buf[10], A->rot[2][1], maxDigits),
+           String_fromDouble(buf[11], A->rot[2][2], maxDigits));
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-void HTr_fromString(HTr* A, const char* str)
+bool HTr_fromString(HTr* A, const char* str)
 {
-  RCHECK(A);
-  RCHECK(str);
+  if ((A == NULL) || (str == NULL))
+  {
+    return false;
+  }
 
-  sscanf(str, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
-         &A->org[0], &A->org[1], &A->org[2],
-         &A->rot[0][0], &A->rot[0][1], &A->rot[0][2],
-         &A->rot[1][0], &A->rot[1][1], &A->rot[1][2],
-         &A->rot[2][0], &A->rot[2][1], &A->rot[2][2]);
+  double x[12];
+
+  bool success = String_toDoubleArray_l(str, x, 12);
+
+  if (success == true)
+  {
+    Vec3d_copy(A->org, &x[0]);
+    Vec3d_copy(A->rot[0], &x[3]);
+    Vec3d_copy(A->rot[1], &x[6]);
+    Vec3d_copy(A->rot[2], &x[9]);
+  }
+
+  return success;
 }
 
 /*******************************************************************************

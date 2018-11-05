@@ -67,15 +67,6 @@ unsigned int getXMLNodePropertySTLString(xmlNodePtr node, const char* tag,
 /*******************************************************************************
  *
  ******************************************************************************/
-void setXMLNodePropertySTLString(xmlNodePtr node, const char* tag,
-                                 const std::string& str)
-{
-  setXMLNodePropertyString(node, tag, str.c_str());
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
 unsigned int getXMLNodePropertyVecSTLString(xmlNodePtr node, const char* tag,
                                             std::vector<std::string>& vec)
 {

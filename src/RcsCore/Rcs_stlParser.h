@@ -58,16 +58,6 @@ unsigned int getXMLNodePropertySTLString(xmlNodePtr node, const char* tag,
 
 /*!
  * \ingroup RcsParserFunctions
- * \brief Set node property from STL string
- * \param[out] node The xml node to write to
- * \param[in] tag   The name of node property to write
- * \param[in] str   Reference to std::string object that should be written
- */
-void setXMLNodePropertySTLString(xmlNodePtr node, const char* tag,
-                                 const std::string& str);
-
-/*!
- * \ingroup RcsParserFunctions
  * \brief Reads multiple words from xml node into a vector of STL strings
  * \param[in] node The xml node to read from
  * \param[in] tag  The name of node property to read

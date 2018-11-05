@@ -116,6 +116,9 @@
    
      <h1> Conventions </h1>
    
+     - For reading and writing files, we use the C locale numbering system:
+       The decimal separator is a point (and not a comma). For printing and
+       scanning to and from the console, please do whatever you like.
      - Indices should consistently be used with this meaning:
        - B: Body
        - C: Collision shape

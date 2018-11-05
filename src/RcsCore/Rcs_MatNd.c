@@ -844,10 +844,14 @@ bool MatNd_fromFile(MatNd* M, const char* fileName)
   }
 
   MatNd_reshape(M, m, n);
+  char buf[256];
 
   for (i = 0; i < m * n; i++)
   {
-    nItems = fscanf(fd, "%lf", &M->ele[nEle++]);
+    nItems = fscanf(fd, "%255s", buf);
+    M->ele[nEle] = String_toDouble_l(buf);// locale-independent
+    nEle++;
+
     RCHECK_MSG(nItems != EOF, "Read error!");
   }
 
@@ -889,10 +893,13 @@ MatNd* MatNd_createFromFile(const char* fileName)
   }
 
   self = MatNd_create(m, n);
+  char buf[256];
 
   for (i = 0; i < m * n; i++)
   {
-    nItems = fscanf(fd, "%lf", &self->ele[nEle++]);
+    nItems = fscanf(fd, "%255s", buf);
+    self->ele[nEle] = String_toDouble_l(buf);// locale-independent
+    nEle++;
     RCHECK_MSG(nItems != EOF, "Read error!");
   }
 

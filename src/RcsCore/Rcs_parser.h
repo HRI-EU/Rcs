@@ -143,12 +143,6 @@ bool getXMLNodeProperty(xmlNodePtr node, const char* tag);
 unsigned int getXMLNodeBytes(xmlNodePtr node, const char* tag);
 
 /*! \ingroup RcsParserFunctions
- * \brief Creates a new property with name tag and content str
- */
-void setXMLNodePropertyString(xmlNodePtr node, const char* tag,
-                              const char* str);
-
-/*! \ingroup RcsParserFunctions
  * \brief The contents of argument tag are copied into str (interpreted as
  *        char[]), but maximum n bytes including the trailing '\\0'. If the
  *        tag is a NULL pointer, argument str will be unchanged and 0 is
@@ -167,12 +161,6 @@ unsigned int getXMLNodePropertyStringN(xmlNodePtr node, const char* tag,
 bool getXMLNodePropertyDouble(xmlNodePtr node, const char* tag, double* x);
 
 /*!\ingroup RcsParserFunctions
- * \brief Creates a new property with name tag and content x
- */
-void setXMLNodePropertyDouble(xmlNodePtr node, const char* tag,
-                              const double* x);
-
-/*! \ingroup RcsParserFunctions
  * \brief If the tag is a NULL pointer, argument x will be unchanged and
  *        "false" is returned. Otherwise, the contents of argument tag
  *        are copied into x (interpreted as array of 2 double values). The
@@ -202,12 +190,6 @@ bool getXMLNodePropertyVecN(xmlNodePtr node, const char* tag, double* x,
                             unsigned int n);
 
 /*! \ingroup RcsParserFunctions
- * \brief creates a new property with values of x and name tag
- */
-void setXMLNodePropertyVecN(xmlNodePtr node, const char* tag,
-                            const double* x, unsigned int n);
-
-/*! \ingroup RcsParserFunctions
  * \brief If the tag is a NULL pointer, argument x will be unchanged and
  *        "false" is returned. Otherwise, n scanned elements of argument
  *        tag are copied into x (interpreted as boolean values). The function
@@ -219,25 +201,12 @@ bool getXMLNodePropertyBoolN(xmlNodePtr node, const char* tag, bool* x,
                              unsigned int n);
 
 /*! \ingroup RcsParserFunctions
- * \brief creates a new property with values of x and name tag
- */
-void setXMLNodePropertyBoolN(xmlNodePtr node, const char* tag,
-                             const bool* x, unsigned int n);
-
-/*! \ingroup RcsParserFunctions
  *  \brief If the tag is a NULL pointer, argument x will be unchanged and
  *         "false" is returned. Otherwise, the contents of argument tag
  *         are copied into x (interpreted as integer). If the value in the
  *         xml node is not finite, the function will exit with a fatal error.
  */
 bool getXMLNodePropertyInt(xmlNodePtr node, const char* tag, int* x);
-
-
-/*! \ingroup RcsParserFunctions
- *  \brief Creates a new property with value x and name tag
- */
-void setXMLNodePropertyInt(xmlNodePtr node, const char* tag,
-                           const int* x);
 
 /*! \ingroup RcsParserFunctions
  *  \brief If the tag is a NULL pointer, argument x will be unchanged and
@@ -246,12 +215,6 @@ void setXMLNodePropertyInt(xmlNodePtr node, const char* tag,
  */
 bool getXMLNodePropertyUnsignedInt(xmlNodePtr node, const char* tag,
                                    unsigned int* x);
-
-/*! \ingroup RcsParserFunctions
- *  \brief Creates a new property with value x and name tag
- */
-void setXMLNodePropertyUnsignedInt(xmlNodePtr node, const char* tag,
-                                   const unsigned int* x);
 
 /*! \ingroup RcsParserFunctions
  *  \brief If the tag is a NULL pointer, argument x will be unchanged and
@@ -280,12 +243,6 @@ bool getXMLNodePropertyUnsignedIntN(xmlNodePtr node, const char* tag,
 bool getXMLNodePropertyBoolString(xmlNodePtr node, const char* tag, bool* x);
 
 /*! \ingroup RcsParserFunctions
- *  \brief Creates a new property with value x and name tag
- */
-void setXMLNodePropertyBoolString(xmlNodePtr node, const char* tag,
-                                  const bool* x);
-
-/*! \ingroup RcsParserFunctions
  * \brief Returns the number of strings found in the tag.
  */
 unsigned int getXMLNodeNumStrings(xmlNodePtr nd, const char* tag);
@@ -297,56 +254,6 @@ unsigned int getXMLNodeNumStrings(xmlNodePtr nd, const char* tag);
  */
 bool getXMLNodePropertyQuat(xmlNodePtr node, const char* tag,
                             double A_BI[3][3]);
-
-/*! \ingroup RcsParserFunctions
- * \brief Otherwise, the contents of the node are
- *        copied into str (interpreted as char[]), the number of bytes
- *        (including the trailing '\\0') is returned.
- */
-unsigned int getXMLNodeString(xmlNodePtr node, char* str);
-
-/*! \ingroup RcsParserFunctions
- * \brief The contents of the node
- *        are copied into x (interpreted as array of 3 double values).
- */
-bool getXMLNodeVec3(xmlNodePtr node, double* x);
-
-/*! \ingroup RcsParserFunctions
- * \brief n scanned elements of node are copied into x (interpreted as
- *        double values). The function will exit with a fatal error if
- *        - the number of values in the xml node does not match n
- *        - Any of the values is not finite
- *        - The length of the XML string must not exceed 512 bytes.
- */
-bool getXMLNodeVecN(xmlNodePtr node, double* x, unsigned int n);
-
-/*! \ingroup RcsParserFunctions
- * \brief If the node contains 4 values, the function returns true and
- *        converts it from a quaternion (order is w x y z) to a rotation
- *        matrix. Otherwise, A_BI remains unchanged and false is returned.
- */
-bool getXMLNodeQuat(xmlNodePtr node, double A_BI[3][3]);
-
-/*! \ingroup RcsParserFunctions
-   *  \brief n scanned elements of the node are copied into x (interpreted
-   *         as integer).
-   */
-bool getXMLNodeIntN(xmlNodePtr node, int* x, unsigned int n);
-
-void MatNd_toXML(const MatNd* A, xmlNodePtr parentNode, const char* nodeName);
-
-void MatNd_fromXML(MatNd* A, xmlNodePtr node, bool realloc);
-
-MatNd* MatNd_createFromXML(xmlNodePtr node);
-
-void VecNd_toXML(const double* vec, xmlNodePtr parentNode,
-                 const char* nodeName, unsigned int dim);
-
-void VecNd_fromXML(double* vec, xmlNodePtr node, unsigned int dim);
-
-void double_fromXML(double* value, xmlNodePtr node);
-
-void double_toXML(double value, xmlNodePtr parentNode, const char* nodeName);
 
 /*! \ingroup RcsParserFunctions
  *  \brief If the tag is a NULL pointer, argument A will be unchanged and

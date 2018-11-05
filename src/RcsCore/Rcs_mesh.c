@@ -668,7 +668,7 @@ static double* RcsMesh_readObjFile(const char* fileName,
     return NULL;
   }
 
-  char buf[32], v1[32], v2[32], v3[32];
+  char buf[4][32];
   unsigned int count = 0;
 
   while (fgets(lineStr, sizeof(lineStr), fd))
@@ -676,11 +676,7 @@ static double* RcsMesh_readObjFile(const char* fileName,
     if (STRNEQ(lineStr, "v ", 2))
     {
       int nItemsRead = sscanf(lineStr, "%31s %31s %31s %31s",
-                              buf, v1, v2, v3);
-
-      verts[count]   = String_toDouble_l(v1);
-      verts[count+1] = String_toDouble_l(v2);
-      verts[count+2] = String_toDouble_l(v3);
+                              buf[0], buf[1], buf[2], buf[3]);
 
       if (nItemsRead < 4)
       {
@@ -690,6 +686,12 @@ static double* RcsMesh_readObjFile(const char* fileName,
         *numVertices = 0;
         fclose(fd);
         return NULL;
+      }
+      else
+      {
+        verts[count]   = String_toDouble_l(buf[1]);
+        verts[count+1] = String_toDouble_l(buf[2]);
+        verts[count+2] = String_toDouble_l(buf[3]);
       }
 
       count += 3;

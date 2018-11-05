@@ -1351,7 +1351,7 @@ double RcsBody_collisionCost(const RcsBody* b1,
   {
     cost += -2.0 * s * dClosestPts / db + s;
 
-    RLOG(6, "Collision[C]: <%s - %s>: %lf\n", b1->name, b2->name, dClosestPts);
+    RLOG(6, "Collision[C]: <%s - %s>: %f\n", b1->name, b2->name, dClosestPts);
   }
   else
   {
@@ -1363,7 +1363,7 @@ double RcsBody_collisionCost(const RcsBody* b1,
     cost += s / db * (db - dClosestPts);
 #endif
 
-    RLOG(6, "Collision[N]: <%s - %s>: %lf\n", b1->name, b2->name, dClosestPts);
+    RLOG(6, "Collision[N]: <%s - %s>: %f\n", b1->name, b2->name, dClosestPts);
   }
 
 

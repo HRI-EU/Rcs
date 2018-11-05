@@ -125,18 +125,6 @@ void String_prepend(char* s, const char* t);
 bool String_hasEnding(const char* str, const char* ending, bool caseSensitive);
 
 /*! \ingroup RcsUtilsFunctions
- *  \brief Converts a double value to a string with a maximum of maxDigits
- *         digits after the dot. Trailing zeroes are removed.
- *
- *  \param[out] str    Char pointer holding the value as a string. Must be long
- *                     enough.
- *  \param[in]  value  Value to be converted into string
- *  \param[in] maxDigits   Max. number of digits after the point.
- *  \return Pointer to str
- */
-char* String_fromDouble(char* str, double value, unsigned int maxDigits);
-
-/*! \ingroup RcsUtilsFunctions
  * \brief Convenience function to convert a string to bool:
  *        - Any upper- or lower case combination of the letters of true
  *          (e.g. "true", "True", "TRUE", "TrUe") returns true
@@ -145,8 +133,7 @@ char* String_fromDouble(char* str, double value, unsigned int maxDigits);
 bool String_toBool(const char* str);
 
 /*! \ingroup RcsUtilsFunctions
- * \brief Returns the number of strings in str that are separated by
- *        delim.
+ * \brief Returns the number of strings in str that are separated by delim.
  */
 unsigned int String_countSubStrings(const char* str, const char* delim);
 
@@ -161,6 +148,19 @@ unsigned int String_countSubStrings(const char* str, const char* delim);
 char* String_expandEnvironmentVariables(const char* str);
 
 /*! \ingroup RcsUtilsFunctions
+ *  \brief Converts a double value to a string with a maximum of maxDigits
+ *         digits after the dot. Trailing zeroes are removed. The separator
+ *         will be a dot, independent of the current locale.
+ *
+ *  \param[out] str         Char pointer holding the value as a string. Must be
+ *                          long enough.
+ *  \param[in]  value       Value to be converted into string
+ *  \param[in]  maxDigits   Max. number of digits after the point.
+ *  \return Pointer to str
+ */
+char* String_fromDouble(char* str, double value, unsigned int maxDigits);
+
+/*! \ingroup RcsUtilsFunctions
  * \brief Converts a string to a double value using the C locale: It means that
  *        the decimal separator will be interpreted as a dot, and does not
  *        depend on the currently avtive locale.
@@ -170,6 +170,27 @@ char* String_expandEnvironmentVariables(const char* str);
  *  \return Corresponding double value
  */
 double String_toDouble_l(const char* str);
+
+/*! \ingroup RcsUtilsFunctions
+ * \brief Converts a string to an array of doubles with n elements using the
+ *        C locale: It means that the decimal separator will be interpreted as
+ *        a point, and does not depend on the currently avtive locale.
+ *
+ *  \param[in] str   Terminated string with space-separated substrings that
+ *                   holding the character representation ofthe values
+ *  \param[out] x    Array of doubles that the values are written into. It must
+ *                   provide memory for at least n elements.
+ *  \param[in] n     Number of expected values inside string.
+ *  \return True for success, false otherwise. In the case of false, the argument
+ *          array x is unchanged. Failure cases are:
+ *          - str is NULL or of zero length
+ *          - x is NULL
+ *          - n is 0
+ *          - any of the values is not finite
+ *          - number of substrings in str does not match n
+ *
+ */
+bool String_toDoubleArray_l(const char* str, double* x, unsigned int n);
 
 ///@}
 
