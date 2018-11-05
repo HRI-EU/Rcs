@@ -371,7 +371,7 @@ char* String_expandEnvironmentVariables(const char* str)
 double String_toDouble_l(const char* str)
 {
 #if defined (_MSC_VER)
-  _locale_t tmpLocale = _create_locale(LC_NUMERIC_MASK, "C");
+  _locale_t tmpLocale = _create_locale(LC_NUMERIC, "C");
   double val = _strtod_l(str, NULL, tmpLocale);
   _free_locale(tmpLocale);
 #else
