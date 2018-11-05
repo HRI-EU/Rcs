@@ -660,20 +660,22 @@ void RcsSensor_fprintXML(FILE* out, const RcsSensor* self)
   }
 
   // Relative transformation only if non-zero elements exist
-  if ((Vec3d_sqrLength(self->offset->org)>1.0e-8) ||
-      (Mat3d_getFrobeniusnorm(self->offset->rot)>1.0e-8))
   {
     double trf[6];
     Vec3d_copy(&trf[0], self->offset->org);
     Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->offset->rot);
     Vec3d_constMulSelf(&trf[3], 180.0 / M_PI);
-    fprintf(out, "transform=\"%s ", String_fromDouble(buf, trf[0], 6));
-    fprintf(out, "%s ", String_fromDouble(buf, trf[1], 6));
-    fprintf(out, "%s ", String_fromDouble(buf, trf[2], 6));
-    fprintf(out, "%s ", String_fromDouble(buf, trf[3], 6));
-    fprintf(out, "%s ", String_fromDouble(buf, trf[4], 6));
-    fprintf(out, "%s\" ", String_fromDouble(buf, trf[5], 6));
-  }
+
+    if (VecNd_maxAbsEle(trf, 6) > 1.0e-8)
+      {
+        fprintf(out, "transform=\"%s ", String_fromDouble(buf, trf[0], 6));
+        fprintf(out, "%s ", String_fromDouble(buf, trf[1], 6));
+        fprintf(out, "%s ", String_fromDouble(buf, trf[2], 6));
+        fprintf(out, "%s ", String_fromDouble(buf, trf[3], 6));
+        fprintf(out, "%s ", String_fromDouble(buf, trf[4], 6));
+        fprintf(out, "%s\" ", String_fromDouble(buf, trf[5], 6));
+      }
+    }
 
   // PPS parameter string
   if (self->extraInfo != NULL)

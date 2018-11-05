@@ -629,21 +629,22 @@ void RcsJoint_fprintXML(FILE* out, const RcsJoint* self)
 
 
   if (self->A_JP != NULL)
-  {
-    if (VecNd_maxAbsEle((double*) self->A_JP, 12) > 1.0e-8)
     {
       double trf[6];
       Vec3d_copy(&trf[0], self->A_JP->org);
       Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->A_JP->rot);
       Vec3d_constMulSelf(&trf[3], 180.0 / M_PI);
-      fprintf(out, "transform=\"%s ", String_fromDouble(buf, trf[0], 6));
-      fprintf(out, "%s ", String_fromDouble(buf, trf[1], 6));
-      fprintf(out, "%s ", String_fromDouble(buf, trf[2], 6));
-      fprintf(out, "%s ", String_fromDouble(buf, trf[3], 6));
-      fprintf(out, "%s ", String_fromDouble(buf, trf[4], 6));
-      fprintf(out, "%s\" ", String_fromDouble(buf, trf[5], 6));
+
+      if (VecNd_maxAbsEle(trf, 6) > 1.0e-8)
+        {
+          fprintf(out, "transform=\"%s ", String_fromDouble(buf, trf[0], 6));
+          fprintf(out, "%s ", String_fromDouble(buf, trf[1], 6));
+          fprintf(out, "%s ", String_fromDouble(buf, trf[2], 6));
+          fprintf(out, "%s ", String_fromDouble(buf, trf[3], 6));
+          fprintf(out, "%s ", String_fromDouble(buf, trf[4], 6));
+          fprintf(out, "%s\" ", String_fromDouble(buf, trf[5], 6));
+        }
     }
-  }
 
   if ((self->maxTorque!=DBL_MAX) &&
       !(self->ctrlType==RCSJOINT_CTRL_TORQUE && self->maxTorque!=1.0))

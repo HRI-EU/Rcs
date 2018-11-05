@@ -810,18 +810,21 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
   }
 
   // Relative transformation only if non-zero elements exist
-  if (VecNd_maxAbsEle((double*) &self->A_CB, 12) > 1.0e-8)
   {
     double trf[6];
     Vec3d_copy(&trf[0], self->A_CB.org);
     Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->A_CB.rot);
     Vec3d_constMulSelf(&trf[3], 180.0 / M_PI);
-    fprintf(out, "transform=\"%s ", String_fromDouble(buf, trf[0], 6));
-    fprintf(out, "%s ", String_fromDouble(buf, trf[1], 6));
-    fprintf(out, "%s ", String_fromDouble(buf, trf[2], 6));
-    fprintf(out, "%s ", String_fromDouble(buf, trf[3], 6));
-    fprintf(out, "%s ", String_fromDouble(buf, trf[4], 6));
-    fprintf(out, "%s\" ", String_fromDouble(buf, trf[5], 6));
+
+    if (VecNd_maxAbsEle(trf, 6) > 1.0e-8)
+      {
+        fprintf(out, "transform=\"%s ", String_fromDouble(buf, trf[0], 6));
+        fprintf(out, "%s ", String_fromDouble(buf, trf[1], 6));
+        fprintf(out, "%s ", String_fromDouble(buf, trf[2], 6));
+        fprintf(out, "%s ", String_fromDouble(buf, trf[3], 6));
+        fprintf(out, "%s ", String_fromDouble(buf, trf[4], 6));
+        fprintf(out, "%s\" ", String_fromDouble(buf, trf[5], 6));
+      }
   }
 
   // Mesh file
