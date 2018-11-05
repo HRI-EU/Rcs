@@ -154,7 +154,7 @@ char* String_expandEnvironmentVariables(const char* str);
  *
  *  \param[out] str         Char pointer holding the value as a string. Must be
  *                          long enough.
- *  \param[in]  value       Value to be converted into string
+ *  \param[in]  value       Value to be converted into string.
  *  \param[in]  maxDigits   Max. number of digits after the point.
  *  \return Pointer to str
  */
@@ -181,8 +181,8 @@ double String_toDouble_l(const char* str);
  *  \param[out] x    Array of doubles that the values are written into. It must
  *                   provide memory for at least n elements.
  *  \param[in] n     Number of expected values inside string.
- *  \return True for success, false otherwise. In the case of false, the argument
- *          array x is unchanged. Failure cases are:
+ *  \return True for success, false otherwise. In the case of false, the 
+ *          argument array x is unchanged. Failure cases are:
  *          - str is NULL or of zero length
  *          - x is NULL
  *          - n is 0

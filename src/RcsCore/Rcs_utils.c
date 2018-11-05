@@ -237,9 +237,45 @@ static void morphNumericString(char* s, int n)
   }
 }
 
-char* String_fromDouble(char* str, double value, unsigned int maxDigits)
+char* String_fromDoublexxx(char* str, double value, unsigned int maxDigits)
 {
   nDecimals(str, value, maxDigits);
+  morphNumericString(str, maxDigits);
+
+  if (STREQ(str, "-0"))
+  {
+    strcpy(str, "0");
+  }
+
+  return str;
+}
+
+char* String_fromDouble(char* str, double value, unsigned int maxDigits)
+{
+  int decpt, sign; 
+  fcvt_r(value, maxDigits, &decpt, &sign, str, 64);
+
+  if (decpt <= 0)
+    {
+      char a[32];
+      strcpy(a, "0.");
+      for (int i=0;i>decpt;--i)
+        {
+          strcat(a, "0");
+        }
+      String_prepend(str, a);
+    }
+  else
+    {
+      memmove(&str[decpt+1], &str[decpt], maxDigits);
+      str[decpt] = '.';
+    }
+
+  if (sign != 0)
+    {
+      String_prepend(str, "-");
+    }
+
   morphNumericString(str, maxDigits);
 
   if (STREQ(str, "-0"))

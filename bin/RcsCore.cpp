@@ -263,6 +263,18 @@ static bool test_localeFreeParsing()
          a, (1.0/nIter)*1.0e6*dt);
   }
 
+
+  // Locale-free double to string conversion
+  {
+    double num = -12345.1239456789;
+    int ndigits = 3;
+    argP.getArgument("-num", &num);
+    argP.getArgument("-digits", &ndigits);
+    char sir[64];
+    String_fromDouble(sir, num, ndigits);
+    RLOG(1, "str=%s" , sir);
+  }
+
   return true;
 }
 
@@ -286,9 +298,6 @@ int main(int argc, char** argv)
   Rcs::CmdLineParser argP(argc, argv);
   argP.getArgument("-dl", &RcsLogLevel, "Debug level (default is 0)");
   argP.getArgument("-m", &mode, "Test mode");
-
-
-  runLoop = true;
 
 
   switch (mode)
