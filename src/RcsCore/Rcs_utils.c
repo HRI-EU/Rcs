@@ -253,7 +253,12 @@ char* String_fromDoublexxx(char* str, double value, unsigned int maxDigits)
 char* String_fromDouble(char* str, double value, unsigned int maxDigits)
 {
   int decpt, sign; 
+
+#if defined (_MSC_VER)
+  _fcvt_s(str, 64, value, maxDigits, &decpt, &sign);
+#else
   fcvt_r(value, maxDigits, &decpt, &sign, str, 64);
+#endif
 
   if (decpt <= 0)
     {
