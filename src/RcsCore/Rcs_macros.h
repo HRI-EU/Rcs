@@ -363,6 +363,14 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
   } while (0)
 #endif
 
+#ifdef __cplusplus
+#define RLOG_CPP(debugLevel, msg) \
+  do { \
+    if (debugLevel <= RcsLogLevel) { \
+      std::cerr << "[" << __FILENAME__ << ": " << __FUNCTION__ << "(" << __LINE__ << ")]: " << msg << std::endl; } \
+  } while (0)
+#endif
+
 /*! \ingroup RcsMacros
  *  \brief Execution macro with debug level.
  */
@@ -454,6 +462,7 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 #define RCHECK_EQ(var1, var2)
 #define RCHECK_MSG(cond, ...)
 #define RLOG(debugLevel, ...)
+#define RLOG_CPP(debugLevel, ...)
 #define RLOGS(debugLevel, ...)
 #define REXEC(debugLevel) \
   if (false)
