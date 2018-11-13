@@ -115,19 +115,19 @@ Rcs::VortexSimulation::VortexSimulation(const RcsGraph* g,
  * Constructor from Graph & Config object
  ******************************************************************************/
 Rcs::VortexSimulation::VortexSimulation(const RcsGraph* g, const Rcs::PhysicsConfig* config, bool withGroundPlane):
-    PhysicsBase(g),
-    trafoUpdateLock(NULL),
-    integratorDt(RCSVORTEX_DEFAULT_INTEGRATOR_DT),
-    bodyLinearDamping(-1.0),
-    bodyAngularDamping(-1.0),
-    jointLockStiffness(RCSVORTEX_DEFAULT_JOINT_LOCK_STIFFNESS),
-    jointLockDamping(RCSVORTEX_DEFAULT_JOINT_LOCK_DAMPING),
-    jointMotorLoss(RCSVORTEX_DEFAULT_JOINT_MOTOR_LOSS),
-    jointLimitsActive(true),
-    b_ext(NULL),
-    groundPlane(NULL),
-    universe(NULL),
-    materialFileName(NULL)
+  PhysicsBase(g),
+  trafoUpdateLock(NULL),
+  integratorDt(RCSVORTEX_DEFAULT_INTEGRATOR_DT),
+  bodyLinearDamping(-1.0),
+  bodyAngularDamping(-1.0),
+  jointLockStiffness(RCSVORTEX_DEFAULT_JOINT_LOCK_STIFFNESS),
+  jointLockDamping(RCSVORTEX_DEFAULT_JOINT_LOCK_DAMPING),
+  jointMotorLoss(RCSVORTEX_DEFAULT_JOINT_MOTOR_LOSS),
+  jointLimitsActive(true),
+  b_ext(NULL),
+  groundPlane(NULL),
+  universe(NULL),
+  materialFileName(NULL)
 {
   this->materialFileName = String_clone(config->getConfigFileName());
   initPhysics(config, withGroundPlane);
@@ -519,7 +519,7 @@ void Rcs::VortexSimulation::initMaterial(const PhysicsConfig* config)
       else
       {
         RLOG(1, "unknown friction model \"%s\" in material definition "
-                "for %s", option, msg);
+             "for %s", option, msg);
       }
     }
 
@@ -923,7 +923,10 @@ void Rcs::VortexSimulation::simulate(double dt,
                                      MatNd* T,
                                      bool control)
 {
-  RCHECK(dt>=0.0);
+  if (dt<=0.0)
+  {
+    return;
+  }
 
   // Get joint velocities before step to compute accelerations:
   // q_ddot = (q_dot-q_dot_prev)/dt

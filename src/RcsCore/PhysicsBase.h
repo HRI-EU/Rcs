@@ -98,7 +98,9 @@ public:
   /*! \brief Computes a single simulation step with the given time interval
    *         in [secs].
    *
-   *  \param[in] dt      Simulation time interval in seconds.
+   *  \param[in] dt      Simulation time interval in seconds. If it is smaller
+   *                     or equal to zero, the function returns without doing
+   *                     anything.
    *  \param[out] q      Vector holding the value for each degree of freedom.
    *                     If the vector is on input of dimension
    *                     RcsGraph::dof x 1, all degrees of freedom are copied.

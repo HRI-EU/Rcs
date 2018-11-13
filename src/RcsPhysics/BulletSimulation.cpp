@@ -167,19 +167,19 @@ Rcs::BulletSimulation::BulletSimulation(const RcsGraph* graph_,
  ******************************************************************************/
 Rcs::BulletSimulation::BulletSimulation(const RcsGraph* graph_,
                                         const PhysicsConfig* config) :
-    Rcs::PhysicsBase(graph_),
-    dynamicsWorld(NULL),
-    broadPhase(NULL),
-    dispatcher(NULL),
-    solver(NULL),
-    mlcpSolver(NULL),
-    collisionConfiguration(NULL),
-    lastDt(0.001),
-    dragBody(NULL),
-    debugDrawer(NULL),
-    physicsConfigFile(NULL),
-    rigidBodyLinearDamping(0.1),
-    rigidBodyAngularDamping(0.9)
+  Rcs::PhysicsBase(graph_),
+  dynamicsWorld(NULL),
+  broadPhase(NULL),
+  dispatcher(NULL),
+  solver(NULL),
+  mlcpSolver(NULL),
+  collisionConfiguration(NULL),
+  lastDt(0.001),
+  dragBody(NULL),
+  debugDrawer(NULL),
+  physicsConfigFile(NULL),
+  rigidBodyLinearDamping(0.1),
+  rigidBodyAngularDamping(0.9)
 {
   pthread_mutex_init(&this->mtx, NULL);
   initPhysics(config);
@@ -334,7 +334,7 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
   if (bulletParams == NULL)
   {
     RLOG(1, "Physics configuration file %s did not contain a \"bullet parameters\""
-            " node!", this->physicsConfigFile);
+         " node!", this->physicsConfigFile);
   }
 
   this->collisionConfiguration = new btDefaultCollisionConfiguration();
@@ -511,9 +511,26 @@ void Rcs::BulletSimulation::step(double dt)
 void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
                                      MatNd* q_ddot, MatNd* T, bool control)
 {
+  if (dt<=0.0)
+  {
+    return;
+  }
+
   this->simTime += dt;
   this->lastDt = dt;
-  applyControl(dt);
+
+  // Get joint velocities before step to compute accelerations:
+  // q_ddot = (q_dot-q_dot_prev)/dt
+  if (q_ddot != NULL)
+  {
+    getJointVelocities(q_ddot);
+    MatNd_constMulSelf(q_ddot, -1.0);
+  }
+
+  if (control==true)
+  {
+    applyControl(dt);
+  }
 
 
   if (this->dragBody)
@@ -613,6 +630,24 @@ void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
     }
   }
 
+
+  if (q_ddot != NULL)
+  {
+    bool q_dotOnHeap = false;
+
+    if (q_dot == NULL)
+    {
+      q_dot = MatNd_create(q_ddot->m, q_ddot->n);
+      q_dotOnHeap = true;
+      getJointVelocities(q_dot);
+    }
+    MatNd_addSelf(q_ddot, q_dot);
+    MatNd_constMulSelf(q_ddot, 1.0 / dt);
+    if (q_dotOnHeap == true)
+    {
+      MatNd_destroy(q_dot);
+    }
+  }
 
 }
 
@@ -1615,10 +1650,10 @@ bool Rcs::BulletSimulation::setParameter(ParameterCategory category,
             {
               sphere->setUnscaledRadius(value);
               ball->extents[0] = value;
-// \todo: Don't we need the below lies?
-RFATAL("FIXME");
-//              btBdy = BulletRigidBody::create(bdy);
-//              bdyMap[bdy] = btBdy;
+              // \todo: Don't we need the below lies?
+              RFATAL("FIXME");
+              //              btBdy = BulletRigidBody::create(bdy);
+              //              bdyMap[bdy] = btBdy;
 
               success = true;
             }
