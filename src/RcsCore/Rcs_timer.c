@@ -198,11 +198,16 @@ double Timer_getSystemTime()
 
 void Timer_waitDT(double dt)
 {
+  if (dt <= 0.0)
+  {
+    return;
+  }
+
   double t0 = Timer_getSystemTime();
 
   do
   {
-    Timer_usleep(1000);
+    Timer_usleep(100);
   }
   while (Timer_getSystemTime() - t0 < dt);
 }
