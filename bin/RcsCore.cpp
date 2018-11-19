@@ -146,6 +146,7 @@ static bool test_compareEnding()
 static bool test_mesh()
 {
   std::string meshFile;
+  char outFile[256] = "mesh1.tri";
 
   const char* hgr = getenv("SIT");
 
@@ -156,6 +157,8 @@ static bool test_mesh()
   }
 
   Rcs::CmdLineParser argP;
+  argP.getArgument("-outFile", outFile, "Name of mesh file to be written "
+                   "(default is %s)", meshFile.c_str());
   argP.getArgument("-f", &meshFile, "Name of mesh file (default is %s)",
                    meshFile.c_str());
 
@@ -171,10 +174,10 @@ static bool test_mesh()
   t = Timer_getTime() - t;
   RLOG(0, "[%.3f msec]: Compressed mesh has %u vertices and %u faces",
        t, mesh1->nVertices, mesh1->nFaces);
-  RcsMesh_toFile(mesh1, "mesh1.tri");
+  RcsMesh_toFile(mesh1, outFile);
 
   t = Timer_getTime();
-  RcsMeshData* mesh2 = RcsMesh_createFromFile("mesh1.tri");
+  RcsMeshData* mesh2 = RcsMesh_createFromFile(outFile);
   RCHECK(mesh2);
   t = Timer_getTime() - t;
   RLOG(0, "[%.3f msec]: Reloaded mesh has %u vertices and %u faces",
