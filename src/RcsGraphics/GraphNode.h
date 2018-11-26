@@ -69,6 +69,11 @@ class GraphNode: public osg::PositionAttitudeTransform
 
 public:
 
+  /*! \brief Constructs an empty GraphNode. To complete, init() needs to be
+   *         called.
+   */
+  GraphNode();
+
   /*! \brief Constructs a GraphNode from a given RcsGraph data structure.
    *
    *  \param[in] graph            RcsGraph the node will be built from
@@ -82,7 +87,18 @@ public:
    */
   GraphNode(const RcsGraph* graph, bool resizeable=false,
             bool addTargetSetters=true);
+
+  /*! \brief Removes event handlers
+   */
   virtual ~GraphNode();
+
+  /*! \brief Adds all shapes and starts the event callback for updating.
+   *
+   *  \return true for success, false for failure:
+   *          - graph is NULL
+   *          - Class already initialized
+   */
+  bool init(const RcsGraph* graph, bool resizeable, bool addTargetSetters);
 
   /*! \brief Toggles the visibility of the graphics model of all BodyNodes
    */
@@ -236,6 +252,7 @@ protected:
   osg::ref_ptr<osgGA::GUIEventHandler> frameHandler;
 
 private:
+
   const RcsGraph* graph;
   bool wireframe;
   bool ghostMode;

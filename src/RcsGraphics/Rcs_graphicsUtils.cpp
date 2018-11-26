@@ -1129,12 +1129,22 @@ RcsMaterialData* getMaterial(const std::string& matString)
   // has already been loaded, we look up its pointer from the map. Otherwise, we
   // load the material and store its pointer in the map.
   static std::map<std::string, RcsMaterialData> matMap;
+  static OpenThreads::Mutex matMtx;
+  RcsMaterialData* res = NULL;
+
+  matMtx.lock();
   std::map<std::string, RcsMaterialData>::iterator it = matMap.find(matString);
 
   if (it!=matMap.end())
   {
     NLOG(1, "Found color %s from fast internal map", matString.c_str());
-    return &it->second;
+    res = &it->second;
+  }
+  matMtx.unlock();
+
+  if (res != NULL)
+  {
+    return res;
   }
 
   RcsMaterialData matData;
@@ -1169,10 +1179,14 @@ RcsMaterialData* getMaterial(const std::string& matString)
 
   if (success==true)
   {
-    NLOG(1, "Adding material %s to fast internal map", matString.c_str());
+    matMtx.lock();
     matMap[matString] = matData;
-    return &matMap[matString];
+    res = &matMap[matString];
+    matMtx.unlock();
+    return res;
   }
+
+
 
   RLOG(4, "Loading material %s FAILED", matString.c_str());
   return NULL;

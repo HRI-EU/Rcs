@@ -105,6 +105,19 @@ namespace Rcs
 /*******************************************************************************
  * RcsGraph root node.
  ******************************************************************************/
+GraphNode::GraphNode() :
+  osg::PositionAttitudeTransform(),
+  graph(NULL),
+  wireframe(false),
+  ghostMode(false)
+{
+  this->switchNode = new osg::Switch;
+  addChild(switchNode.get());
+}
+
+/*******************************************************************************
+ * RcsGraph root node.
+ ******************************************************************************/
 GraphNode::GraphNode(const RcsGraph* g, bool resizeable,
                      bool automatically_add_target_setters) :
   osg::PositionAttitudeTransform(),
@@ -112,6 +125,42 @@ GraphNode::GraphNode(const RcsGraph* g, bool resizeable,
   wireframe(false),
   ghostMode(false)
 {
+  this->switchNode = new osg::Switch;
+  addChild(switchNode.get());
+
+  init(graph, resizeable, automatically_add_target_setters);
+}
+
+/*******************************************************************************
+ * Destructor
+ ******************************************************************************/
+GraphNode::~GraphNode()
+{
+  RLOG(5, "Removing event callbacks");
+  removeEventCallback(this->frameHandler.get());
+  RLOG(5, "Destroying GraphNode");
+}
+
+/*******************************************************************************
+ * RcsGraph root node.
+ ******************************************************************************/
+bool GraphNode::init(const RcsGraph* g, bool resizeable,
+                     bool automatically_add_target_setters)
+{
+  if (g==NULL)
+  {
+    RLOG(1, "GraphNode initialized with NULL graph - you won't see anything");
+    return false;
+  }
+
+  this->graph = g;
+
+  if (frameHandler.valid())
+  {
+    RLOG(1, "GraphNode for %s already initialized - skipping", graph->xmlFile);
+    return false;
+  }
+
   KeyCatcherBase::registerKey("r", "Toggle visualization of reference frames",
                               "GraphNode");
   KeyCatcherBase::registerKey("c", "Toggle visualization of collision model",
@@ -127,10 +176,6 @@ GraphNode::GraphNode(const RcsGraph* g, bool resizeable,
                               " the mouse", "GraphNode");
   KeyCatcherBase::registerKey("I", "Display information about RcsBody under the"
                               " mouse", "GraphNode");
-
-  RCHECK(this->graph);
-  this->switchNode = new osg::Switch;
-  addChild(switchNode.get());
 
   RCSGRAPH_TRAVERSE_BODIES(g)
   {
@@ -171,20 +216,11 @@ GraphNode::GraphNode(const RcsGraph* g, bool resizeable,
     }   // RCSGRAPH_TRAVERSE_BODIES(graph)
   }
 
-
   // Assign transformation update callback upon scene traversal
   this->frameHandler = new GraphNodeEventHandler(this);
   addEventCallback(this->frameHandler.get());
-}
 
-/*******************************************************************************
- * Destructor
- ******************************************************************************/
-GraphNode::~GraphNode()
-{
-  RLOG(5, "Removing event callbacks");
-  removeEventCallback(this->frameHandler.get());
-  RLOG(5, "Destroying GraphNode");
+  return true;
 }
 
 /*******************************************************************************

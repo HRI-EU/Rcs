@@ -69,6 +69,8 @@ bool BodyNode::_fontFileSearched = false;
 
 std::map<std::string, osg::ref_ptr<osg::Node> > BodyNode::_meshBuffer;
 std::map<std::string, osg::ref_ptr<osg::Texture2D> > BodyNode::_textureBuffer;
+OpenThreads::Mutex _meshBufferMtx;
+OpenThreads::Mutex _textureBufferMtx;
 
 
 
@@ -562,6 +564,9 @@ osg::Switch* BodyNode::addShapes(int mask)
         // the map. Otherwise, we load the mesh and store its pointer
         // in the map.
         std::map<std::string, osg::ref_ptr<osg::Node> >::iterator it;
+
+
+        _meshBufferMtx.lock();
         for (it = _meshBuffer.begin() ; it != _meshBuffer.end(); ++it)
         {
           if (it->first == (*s)->meshFile)
@@ -583,10 +588,13 @@ osg::Switch* BodyNode::addShapes(int mask)
             }
 
             break;
-
           }
 
         }
+        _meshBufferMtx.unlock();
+
+
+
 #endif
 
         if (!meshNode.valid())
@@ -626,7 +634,9 @@ osg::Switch* BodyNode::addShapes(int mask)
             // everthing else. That's due to an issue with the color
             // assignment for the mesh vertices. It somehow doesn't work. If
             // anyone has an idea, it's appreciated.
+            _meshBufferMtx.lock();
             _meshBuffer[std::string((*s)->meshFile)] = meshNode;
+            _meshBufferMtx.unlock();
           }
         }
 
@@ -816,6 +826,8 @@ osg::Switch* BodyNode::addShapes(int mask)
       // the map. Otherwise, we load the texture and store its pointer
       // in the map.
       std::map<std::string, osg::ref_ptr<osg::Texture2D> >::iterator it;
+
+      _textureBufferMtx.lock();
       for (it = _textureBuffer.begin() ; it != _textureBuffer.end(); ++it)
       {
         if (it->first == (*s)->textureFile)
@@ -828,6 +840,7 @@ osg::Switch* BodyNode::addShapes(int mask)
         }
 
       }
+      _textureBufferMtx.unlock();
 
       // texture not found, let's create new one
       if (!texture.valid())
@@ -855,7 +868,9 @@ osg::Switch* BodyNode::addShapes(int mask)
           texture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP);
           // Assign the texture to the image we read from file
           texture->setImage(texture_image.get());
+          _textureBufferMtx.lock();
           _textureBuffer[std::string((*s)->textureFile)] = texture;
+          _textureBufferMtx.unlock();
         }
       }
 
