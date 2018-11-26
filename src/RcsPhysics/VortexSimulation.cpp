@@ -787,24 +787,7 @@ bool Rcs::VortexSimulation::createCompositeBody(RcsBody* body)
   // Assign dynamic properties
   if (body->m > 0.0)
   {
-#if 1
     p->setMassAndInertia(body->m, body->Inertia->rot);
-#else // old&wrong code works better for force control
-    // The inertia tensor used by Vortex must factor in the mass (see
-    // documentation)
-    Vx::VxReal33 I;
-    for (int i = 0; i < 3; i++)
-      for (int j = 0; j < 3; j++)
-      {
-        I[i][j] = body->Inertia->rot[i][j] * body->m;
-      }
-
-    p->setMassAndInertia(body->m, I);
-#endif
-
-    // Vx::VxMassProperties::setMass
-    // Vx::VxMassProperties::setInertiaTensorLocal
-    // Vx::VxMassProperties::setCOMPositionLocal
 
     // if the inertia tensor is zero, Vortex calculates it based on the collision model
     // and sets the mass to 1 kg
@@ -928,17 +911,17 @@ void Rcs::VortexSimulation::simulate(double dt,
     return;
   }
 
+  if (control==true)
+  {
+    applyControl(dt);
+  }
+
   // Get joint velocities before step to compute accelerations:
   // q_ddot = (q_dot-q_dot_prev)/dt
   if (q_ddot != NULL)
   {
     getJointVelocities(q_ddot);
     MatNd_constMulSelf(q_ddot, -1.0);
-  }
-
-  if (control==true)
-  {
-    applyControl(dt);
   }
 
   pthread_mutex_lock(&this->extForceLock);
@@ -1033,25 +1016,25 @@ void Rcs::VortexSimulation::reset()
 
       vxBdy->setAngularVelocity(Vx::VxVector3(0.0, 0.0, 0.0));
       vxBdy->setLinearVelocity(Vx::VxVector3(0.0, 0.0, 0.0));
-      // vxBdy->resetDynamics();
+      vxBdy->resetDynamics();
     }
 
   }
 
 
-  // RCSGRAPH_TRAVERSE_JOINTS(this->graph)
-  //   {
-  //     Vx::VxConstraint* c = (Vx::VxConstraint*) JNT->extraInfo;
-  //     if (c != NULL)
-  //       {
-  //         c->resetDynamics();
-  //       }
-  //   }
+  RCSGRAPH_TRAVERSE_JOINTS(this->graph)
+    {
+      Vx::VxConstraint* c = (Vx::VxConstraint*) JNT->extraInfo;
+      if (c != NULL)
+        {
+          c->resetDynamics();
+          c->setLockPosition(0, MatNd_get(this->graph->q, JNT->jointIndex, 0));
+        }
+    }
 
   universe->resetDynamics();
   universe->resetContacts();
-
-  step(1.0e-8);
+  // step(1.0e-8);
 }
 
 /*******************************************************************************
@@ -1343,206 +1326,6 @@ bool Rcs::VortexSimulation::createJoint(RcsBody* body)
   }
 
   return true;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-void Rcs::VortexSimulation::applyControl2(double dt)
-{
-  RCSGRAPH_TRAVERSE_BODIES(this->graph)
-  {
-    switch (BODY->physicsSim)
-    {
-      case RCSBODY_PHYSICS_KINEMATIC:
-      {
-        RcsBody* BODY2 = RcsGraph_getBodyByName(internalDesiredGraph, BODY->name);
-
-        if (BODY2 == NULL)
-        {
-          RLOG(3, "Body \"%s\" does not exist", BODY->name);
-          break;
-        }
-
-        Vx::VxPart* p = getPartPtr(BODY);
-
-        if (p == NULL)
-        {
-          RLOG(3, "Body \"%s\" has no Vx::Part attached", BODY->name);
-          break;
-        }
-
-        RLOG(5, "Setting transform of body \"%s\" to %f %f %f", BODY2->name,
-             BODY2->A_BI->org[0], BODY2->A_BI->org[1], BODY2->A_BI->org[2]);
-        p->setTransformKinematic(VxTransform_fromHTr(BODY2->A_BI), dt);
-      }
-      break;
-
-      case RCSBODY_PHYSICS_DYNAMIC:
-      {
-        // Vx::VxPart* p = getPartPtr(BODY);
-        // if (p != NULL && BODY->rigid_body_joints)
-        // {
-        //   Vx::VxVector3 negGrav(0.0, 0.0, -9.81*BODY->m);
-        //   p->addForce(negGrav);
-        // }
-
-
-        // No control input if number of joints != 1
-        if (RcsBody_numJoints(BODY) != 1)
-        {
-          if ((RcsBody_numJoints(BODY) != 0) && (!BODY->rigid_body_joints))
-          {
-            RLOG(4, "Body \"%s\" has %d joints - only one supported yet",
-                 BODY->name, RcsBody_numJoints(BODY));
-          }
-          break;
-        }
-
-        // No control input if maxTorque is zero
-        RcsJoint* jnt = BODY->jnt;
-
-        // TODO: Set hinge to free?
-        if (jnt->maxTorque == 0.0)
-        {
-          break;
-        }
-
-        // Pedantic: Only unconstrained joints should be driven by physics
-        // RCHECK_MSG(jnt->jacobiIndex != -1, "body name: %s, jnt name: %s",
-        //            BODY->name, jnt->name);
-
-        // Only apply control if this is a supported joint type
-        if (RcsJoint_isRotation(jnt) || RcsJoint_isTranslation(jnt))
-        {
-          Vx::VxConstraint::CoordinateID coordinate;
-          if (RcsJoint_isRotation(jnt))
-          {
-            coordinate = Vx::VxHinge::kAngularCoordinate;
-          }
-          else
-          {
-            coordinate = Vx::VxPrismatic::kLinearCoordinate;
-          }
-
-          Vx::VxConstraint* c = (Vx::VxConstraint*) jnt->extraInfo;
-          if (c == NULL)
-          {
-            RLOG(1, "constraint is NULL - body name: %s, jnt name: %s",
-                 BODY->name, jnt->name);
-            break;
-          }
-
-          // this is used in case of lock control (position control)
-          if (jnt->ctrlType == RCSJOINT_CTRL_POSITION)
-          {
-            int index = jnt->jointIndex;
-
-            Vx::VxReal q_cmd;
-
-            RcsJoint* j_master = jnt->coupledTo;
-
-            if (j_master != NULL)
-            {
-              // If the joint is coupled, set the position command according
-              // to its coupling factor.
-              if (jnt->couplingFactors->size == 0)
-              {
-                q_cmd = MatNd_get(this->q_des, index, 0);
-              }
-              else if (jnt->couplingFactors->size == 1)
-              {
-                Vx::VxReal q_cmd_master = MatNd_get(this->q_des,
-                                                    j_master->jointIndex, 0);
-                q_cmd = jnt->q0 + jnt->couplingFactors->ele[0] *
-                        (q_cmd_master - j_master->q0);
-              }
-              else
-              {
-                RFATAL("Incorrect number of coupling factors of joint %s: %d",
-                       jnt->name, jnt->couplingFactors->size);
-              }
-            }
-            else
-            {
-              q_cmd = MatNd_get(this->q_des, index, 0);
-            }
-
-            double lockCurr = c->getLockPosition(coordinate);
-            double deltaPos = q_cmd-lockCurr;
-
-            if (coordinate==Vx::VxHinge::kAngularCoordinate)
-            {
-
-              // deltaPos = Math_fmodAngle(deltaPos);
-
-              while (deltaPos > M_PI)
-              {
-                deltaPos -= M_PI;
-                // RLOG(0, "deltaPos > M_PI: now %f", deltaPos);
-              }
-
-              while (deltaPos < -M_PI)
-              {
-                // RLOG(0, "deltaPos < -M_PI: now %f", deltaPos);
-                deltaPos += M_PI;
-              }
-            }
-
-            double lockVel = deltaPos/dt;
-            c->setLockMaximumForce(coordinate, jnt->maxTorque);
-            c->setLockDamping(coordinate, 1.0);
-            c->setLockVelocity(coordinate, lockVel);
-            // c->setLockPosition(coordinate, q_cmd);
-          }
-          // this is used in case of motor control (velocity control)
-          else if (jnt->ctrlType == RCSJOINT_CTRL_VELOCITY)
-          {
-            Vx::VxReal q_dot_cmd = MatNd_get(this->q_dot_des, jnt->jointIndex, 0);
-            c->setMotorDesiredVelocity(coordinate, q_dot_cmd);
-            // c->setControl(coordinate, Vx::VxConstraint::kControlMotorized);
-            // c->setMotorMaximumForce(coordinate, jnt->maxTorque);
-          }
-          // Torque-controlled joints
-          else if (jnt->ctrlType == RCSJOINT_CTRL_TORQUE)
-          {
-            double Ti = MatNd_get(this->T_des, jnt->jointIndex, 0);
-            Ti = Math_clip(Ti, -jnt->maxTorque, jnt->maxTorque);
-
-            c->setControl(coordinate, Vx::VxConstraint::kControlMotorized);
-            c->setMotorLoss(coordinate, 0.0);
-
-            // If the max. force is set to 0, the motor gets deactivated
-            c->setMotorMaximumForce(coordinate, fabs(Ti) + 1.0e-8);
-
-            if (Ti==0.0)
-            {
-              c->setMotorDesiredVelocity(coordinate, 0.0);
-            }
-            else
-            {
-              c->setMotorDesiredVelocity(coordinate, Ti > 0.0 ? 1.0e6 : -1.0e6);
-            }
-          }
-          else
-          {
-            RFATAL("Unknown cntrlType: %d", jnt->ctrlType);
-          }
-
-        }
-      }
-      break;
-
-      default:
-      {
-        // other options are no physics or fixed, so no control has to be
-        // applied
-      }
-
-    } // switch
-
-  } // RCSGRAPH_TRAVERSE
-
 }
 
 /*******************************************************************************
@@ -2418,13 +2201,6 @@ void Rcs::VortexSimulation::applyControl(double dt)
     else if (jnt->ctrlType == RCSJOINT_CTRL_POSITION)
     {
       Vx::VxReal q_cmd = MatNd_get(this->q_des, jnt->jointIndex, 0);
-      RcsJoint* j_master = jnt->coupledTo;
-
-      if (j_master != NULL)
-      {
-        Vx::VxReal q_master = MatNd_get(this->q_des, j_master->jointIndex, 0);
-        q_cmd = RcsJoint_computeSlaveJointAngle(jnt, q_master);
-      }
 
       double lockCurr = c->getLockPosition(0);
       double deltaPos = q_cmd-lockCurr;
@@ -2444,7 +2220,8 @@ void Rcs::VortexSimulation::applyControl(double dt)
 
       double lockVel = deltaPos/dt;
       c->setLockMaximumForce(0, jnt->maxTorque);
-      // c->setLockDamping(0, 1.0);
+      c->setLockDamping(0, this->jointLockDamping);
+      c->setLockStiffness(0, this->jointLockStiffness);
       c->setLockVelocity(0, lockVel);
       // c->setLockPosition(0, q_cmd);
     }

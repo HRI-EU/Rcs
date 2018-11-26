@@ -198,8 +198,9 @@ void PhysicsConfig::loadMaterials()
           // default material definition
           if (!materials.empty())
           {
-            RLOG(1, "%lu materials have been defined before the default material. "
-                    "They will not be able to use the correct values.", materials.size());
+            RLOG_CPP(1, materials.size() << " materials have been defined "
+                 "before the default material. They will not be able to use"
+				 " the correct values.");
           }
           material = &defaultMaterial;
         }

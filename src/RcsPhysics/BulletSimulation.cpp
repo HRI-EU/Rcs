@@ -1256,28 +1256,7 @@ void Rcs::BulletSimulation::applyControl(double dt)
     }
     else if (JNT->ctrlType==RCSJOINT_CTRL_POSITION)
     {
-      double q_cmd;
-      RcsJoint* j_master = JNT->coupledTo;
-
-      if (j_master != NULL)
-      {
-        // If the joint is coupled, set the position command according
-        // to its coupling factor.
-        if (JNT->couplingFactors->size == 0)
-        {
-          q_cmd = MatNd_get(this->q_des, JNT->jointIndex, 0);
-        }
-        else
-        {
-          double q_master = MatNd_get(this->q_des, j_master->jointIndex, 0);
-          q_cmd = RcsJoint_computeSlaveJointAngle(JNT, q_master);
-        }
-      }
-      else
-      {
-        q_cmd = MatNd_get(this->q_des, JNT->jointIndex, 0);
-      }
-
+      double q_cmd = MatNd_get(this->q_des, JNT->jointIndex, 0);
       hinge->setJointAngle(q_cmd, dt);
     }
     else   // RCSJOINT_CTRL_VELOCITY

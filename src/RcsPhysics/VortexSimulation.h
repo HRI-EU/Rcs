@@ -302,7 +302,6 @@ private:
 
   void updateTransformations();
   void applyControl(double dt);
-  void applyControl2(double dt);
   void initPhysics(const PhysicsConfig* physicsConfig, bool groundPlane);
   bool updateFTS(RcsSensor* sensor);
   bool updateJointTorqueSensor(RcsSensor* sensor);
