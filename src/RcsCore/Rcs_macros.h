@@ -88,6 +88,8 @@ typedef void (*RLOG_CB_FUNC)(int log_level, const char* file,
 typedef void* (*RCS_MALLOC_FUNC)(size_t nmemb, size_t size);
 
 #ifdef __cplusplus
+#include <iostream>
+
 extern "C" {
 #endif
 
