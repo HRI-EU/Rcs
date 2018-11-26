@@ -302,57 +302,6 @@ void RcsJoint_copy(RcsJoint* dst, const RcsJoint* src)
 
 
 /******************************************************************************
- * Return joint angle of salve joint with respect to master joint angle
- * analytical solution for Asimo version2.0 elbow joint (should be
- * generalized)
- *
- *        q_sl = p0*q^4 + p1*q^3 + p2*q^2 + p3*q + p4
- *****************************************************************************/
-//! \todo This function is obsolete. Please replace it with the more generic RcsJoint_calcCouplingPolynomial()
-static double RcsJoint_calcSlaveJointAngle(const double q_master,
-                                           const double depend_coef[5])
-{
-  double q_slave;
-
-  q_slave =
-    + depend_coef[0] * q_master * q_master * q_master * q_master
-    + depend_coef[1] * q_master * q_master * q_master
-    + depend_coef[2] * q_master * q_master
-    + depend_coef[3] * q_master
-    + depend_coef[4];
-
-  return q_slave;
-}
-
-
-
-/******************************************************************************
- * Return sensitivity of salve joint with respect to master joint
- * dq_sl = 4*p0*q^3 + 3*p1*q^2 + 2*p2*q + p3
- *****************************************************************************/
-//! \todo This function is obsolete. Please replace it with the more generic RcsJoint_calcCouplingPolynomialDerivative()
-static double RcsJoint_calcSlaveJointSensitive(const double q_master,
-                                               const double depend_coef[5])
-{
-  double sensitiv;
-
-  sensitiv =
-    + depend_coef[0] * 4.0 * q_master * q_master * q_master
-    + depend_coef[1] * 3.0 * q_master * q_master
-    + depend_coef[2] * 2.0 * q_master
-    + depend_coef[3];
-
-  if (sensitiv < 0.0)
-  {
-    sensitiv = 0.0;
-  }
-
-  return sensitiv;
-}
-
-
-
-/******************************************************************************
 
   \brief Return joint angle of salve joint with respect to master joint angle
          analytical solution for Asimo version2.0 elbow joint (should be
@@ -370,7 +319,6 @@ static double RcsJoint_calcCouplingPolynomial(const double q_master,
 
   for (int i=0; i<=orderM1; i++)
   {
-    NLOG(0, "q_sl += coeff[%d]*q_master**%d", i, orderM1-i);
     q_slave += coeff->ele[i] * pow(q_master, (int)orderM1-i);
   }
 
@@ -393,7 +341,6 @@ static double RcsJoint_calcCouplingPolynomialDerivative(const double q_master,
 
   for (unsigned int i=0; i<orderM1; i++)
   {
-    NLOG(0, "dq_sl += %d*coeff[%d]*q_master**%d", orderM1-i, i, orderM1-1-i);
     dq_slave += (orderM1-i)*coeff->ele[i] * pow(q_master, (int)(orderM1-1-i));
   }
 
@@ -411,7 +358,7 @@ static double RcsJoint_calcCouplingPolynomialDerivative(const double q_master,
 double RcsJoint_computeSlaveJointAngle(const RcsJoint* slave,
                                        const double q_master)
 {
-  RcsJoint* master = slave->coupledTo;
+  const RcsJoint* master = slave->coupledTo;
   double q_slave = 0.0;
 
   if (master==NULL)
@@ -425,72 +372,33 @@ double RcsJoint_computeSlaveJointAngle(const RcsJoint* slave,
     q_slave = slave->q_init +
               slave->couplingFactors->ele[0] * (q_master - master->q_init);
   }
-  else if (slave->couplingFactors->size == 5)
+  else
   {
 
+    // If out of range, do tangent at the border value
     if (q_master < master->q_min)
     {
-      double dq, sens;
-      dq =  master->q_min - q_master;
-      sens = RcsJoint_calcSlaveJointSensitive(master->q_min,
-                                              slave->couplingFactors->ele);
-      q_slave = slave->q_min - sens*dq;
+      const double sens =
+        RcsJoint_calcCouplingPolynomialDerivative(master->q_min -
+                                                  master->q_init,
+                                                  slave->couplingFactors);
+      q_slave = slave->q_min - sens*(master->q_min - q_master);
     }
     else if (q_master > master->q_max)
     {
-      double dq, sens;
-      dq =  q_master - master->q_max;
-      sens = RcsJoint_calcSlaveJointSensitive(master->q_max,
-                                              slave->couplingFactors->ele);
-      q_slave = slave->q_max + sens*dq;
+      const double sens =
+        RcsJoint_calcCouplingPolynomialDerivative(master->q_max -
+                                                  master->q_init,
+                                                  slave->couplingFactors);
+      q_slave = slave->q_max + sens*(q_master - master->q_max);
     }
     else
     {
-      q_slave = RcsJoint_calcSlaveJointAngle(q_master,
-                                             slave->couplingFactors->ele);
-    }
-
-  }
-  else if (slave->couplingFactors->size == 9)
-  {
-
-    if (q_master < master->q_min)
-    {
-      double dq, sens;
-      dq =  master->q_min - q_master;
-      sens = RcsJoint_calcCouplingPolynomialDerivative(master->q_min,
-                                                       slave->couplingFactors);
-      q_slave = slave->q_min - sens*dq;
-    }
-    else if (q_master > master->q_max)
-    {
-      double dq, sens;
-      dq =  q_master - master->q_max;
-      sens = RcsJoint_calcCouplingPolynomialDerivative(master->q_max,
-                                                       slave->couplingFactors);
-      q_slave = slave->q_max + sens*dq;
-    }
-    else
-    {
-      q_slave = RcsJoint_calcCouplingPolynomial(q_master,
+      q_slave = slave->q_init +
+                RcsJoint_calcCouplingPolynomial(q_master - master->q_init,
                                                 slave->couplingFactors);
     }
 
-    /* REXEC(2) */
-    /*   { */
-    /*     double sens =  */
-    /*       RcsJoint_calcCouplingPolynomialDerivative(q_master, */
-    /*                                                 slave->couplingFactors); */
-    /*     RMSG("Joint \"%s\": q_master=%f   q_slave=%f   dq=%f",  */
-    /*          slave->name, q_master*180.0/M_PI, q_slave*180.0/M_PI, sens); */
-    /*     MatNd_printCommentDigits("couplingFactors", slave->couplingFactors, 6); */
-    /*   } */
-
-  }
-  else
-  {
-    RFATAL("Incorrect number of coupling factors in joint \"%s\": %d",
-           slave->name, slave->couplingFactors->size);
   }
 
   return q_slave;
@@ -508,7 +416,7 @@ double RcsJoint_computeSlaveJointVelocity(const RcsJoint* slave,
                                           const double q_master,
                                           const double q_dot_master)
 {
-  RcsJoint* master = slave->coupledTo;
+  const RcsJoint* master = slave->coupledTo;
   double q_dot_slave = 0.0;
 
   if (master==NULL)
@@ -522,25 +430,13 @@ double RcsJoint_computeSlaveJointVelocity(const RcsJoint* slave,
   {
     q_dot_slave = slave->couplingFactors->ele[0]*q_dot_master;
   }
-  // Polynomial scaling of velocity
-  else if (slave->couplingFactors->size == 5)
-  {
-    double q_clipped = Math_clip(q_master, master->q_min, master->q_max);
-    double s = RcsJoint_calcSlaveJointSensitive(q_clipped,
-                                                slave->couplingFactors->ele);
-    q_dot_slave = s*q_dot_master;
-  }
-  else if (slave->couplingFactors->size == 9)
-  {
-    double q_clipped = Math_clip(q_master, master->q_min, master->q_max);
-    double s = RcsJoint_calcCouplingPolynomialDerivative(q_clipped,
-                                                         slave->couplingFactors);
-    q_dot_slave = s*q_dot_master;
-  }
+  // Clip to work range
   else
   {
-    RFATAL("Incorrect number of coupling factors in joint \"%s\": %d",
-           slave->name, slave->couplingFactors->size);
+    const double q_ltd = Math_clip(q_master, master->q_min, master->q_max);
+    const double s =
+      RcsJoint_calcCouplingPolynomialDerivative(q_ltd, slave->couplingFactors);
+    q_dot_slave = s*q_dot_master;
   }
 
   return q_dot_slave;
@@ -629,7 +525,7 @@ void RcsJoint_fprintXML(FILE* out, const RcsJoint* self)
 
 
   if (self->A_JP != NULL)
-    {
+  {
       double trf[6];
       Vec3d_copy(&trf[0], self->A_JP->org);
       Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->A_JP->rot);
@@ -637,14 +533,14 @@ void RcsJoint_fprintXML(FILE* out, const RcsJoint* self)
 
       if (VecNd_maxAbsEle(trf, 6) > 1.0e-8)
         {
-          fprintf(out, "transform=\"%s ", String_fromDouble(buf, trf[0], 6));
-          fprintf(out, "%s ", String_fromDouble(buf, trf[1], 6));
-          fprintf(out, "%s ", String_fromDouble(buf, trf[2], 6));
-          fprintf(out, "%s ", String_fromDouble(buf, trf[3], 6));
-          fprintf(out, "%s ", String_fromDouble(buf, trf[4], 6));
-          fprintf(out, "%s\" ", String_fromDouble(buf, trf[5], 6));
-        }
+      fprintf(out, "transform=\"%s ", String_fromDouble(buf, trf[0], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[1], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[2], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[3], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[4], 6));
+      fprintf(out, "%s\" ", String_fromDouble(buf, trf[5], 6));
     }
+  }
 
   if ((self->maxTorque!=DBL_MAX) &&
       !(self->ctrlType==RCSJOINT_CTRL_TORQUE && self->maxTorque!=1.0))
