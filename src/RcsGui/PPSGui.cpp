@@ -40,12 +40,7 @@
 #include <Rcs_macros.h>
 #include <Rcs_guiFactory.h>
 
-#include <QtGlobal>
-#if QT_VERSION >= 0x050000
-#include <QtWidgets/QHBoxLayout>
-#else
-#include <QtGui/QHBoxLayout>
-#endif
+#include <QHBoxLayout>
 
 
 

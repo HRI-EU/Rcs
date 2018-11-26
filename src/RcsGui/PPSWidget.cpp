@@ -39,7 +39,7 @@
 
 #include <Rcs_macros.h>
 
-#include <QtCore/QTimer>
+#include <QTimer>
 
 
 #define LABEL_WIDTH 160

@@ -37,12 +37,7 @@
 #ifndef PPSGUI_H
 #define PPSGUI_H
 
-#include <QtGlobal>
-#if QT_VERSION >= 0x050000
-#include <QtWidgets/QScrollArea>
-#else
-#include <QtGui/QScrollArea>
-#endif
+#include <QScrollArea>
 
 #include <vector>
 #include <string>

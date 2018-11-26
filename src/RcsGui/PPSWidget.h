@@ -37,19 +37,11 @@
 #ifndef PPSWIDGET_H
 #define PPSWIDGET_H
 
-#include <QtGlobal>
-#if QT_VERSION >= 0x050000
-#include <QtWidgets/QWidget>
-#include <QtWidgets/QLabel>
-#include <QtWidgets/QVBoxLayout>
-#else
-#include <QtGui/QWidget>
-#include <QtGui/QLabel>
-#include <QtGui/QVBoxLayout>
-#endif
-
-#include <QtGui/QPainter>
-#include <QtGui/QPixmap>
+#include <QWidget>
+#include <QLabel>
+#include <QVBoxLayout>
+#include <QPainter>
+#include <QPixmap>
 
 #include <pthread.h>
 
