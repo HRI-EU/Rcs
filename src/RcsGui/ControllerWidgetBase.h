@@ -34,22 +34,14 @@
 
 *******************************************************************************/
 
-#ifndef CONTROLLERWIDGETBASE_H_
-#define CONTROLLERWIDGETBASE_H_
+#ifndef CONTROLLERWIDGETBASE_H
+#define CONTROLLERWIDGETBASE_H
 
 #include "TaskWidget.h"
+
 #include <ControllerBase.h>
-#include <Rcs_MatNd.h>
 
-#include <QtGlobal>
-#if QT_VERSION >= 0x050000
-#include <QtWidgets/QScrollArea>
-#else
-#include <QtGui/QScrollArea>
-#endif
-
-#include <vector>
-#include <pthread.h>
+#include <QScrollArea>
 
 
 class LcdSlider;
@@ -96,6 +88,7 @@ public:
   virtual ~ControllerWidgetBase();
 
   void registerCallback(TaskWidget::TaskChangeCallback* callback);
+  void reset(const MatNd* a_des, const MatNd* x_des);
 
 protected slots:
   virtual void showActiveTasks(int checkBoxState);
@@ -118,4 +111,4 @@ protected:
 
 }
 
-#endif /* CONTROLLERWIDGETBASE_H_ */
+#endif // CONTROLLERWIDGETBASE_H

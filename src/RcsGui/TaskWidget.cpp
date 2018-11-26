@@ -40,23 +40,15 @@
 #include <Rcs_macros.h>
 #include <Rcs_VecNd.h>
 
-#include <QtGlobal>
-#if QT_VERSION >= 0x050000
-#include <QtWidgets/QGridLayout>
-#include <QtWidgets/QVBoxLayout>
-#include <QtWidgets/QHBoxLayout>
-#include <QtWidgets/QCheckBox>
-#include <QtWidgets/QLabel>
-#else
-#include <QtGui/QGridLayout>
-#include <QtGui/QVBoxLayout>
-#include <QtGui/QHBoxLayout>
-#include <QtGui/QCheckBox>
-#include <QtGui/QLabel>
-#endif
-#include <QtCore/QTimer>
+#include <QGridLayout>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QCheckBox>
+#include <QLabel>
+#include <QTimer>
 
 #include <vector>
+#include <algorithm>
 
 
 using namespace Rcs;
@@ -77,29 +69,10 @@ TaskWidget::TaskWidget(const Task* task,
   x_curr(x_curr_),
   mutex(mutex_),
   show_only(show_only_),
-  max_label_width(0),
+  maxLabelWidth(0),
   dimTask(task->getDim())
 {
-
-  // Box for the _dim task lines
-  QVBoxLayout* mainGrid = new QVBoxLayout();
-  mainGrid->setMargin(0);
-  mainGrid->setSpacing(0);
-
-  mainGrid->addWidget(createActivationBox(task));
-  mainGrid->addWidget(createActivationSlider(task));
-
-
-  // Sliders for task target values
-  for (size_t i = 0; i < this->dimTask; i++)
-  {
-    mainGrid->addWidget(createTaskComponent(task, i));
-  }
-
-  setLayout(mainGrid);
-
   init(task);
-
   RLOG(5, "TaskWidget \"%s\" generated", task->getName().c_str());
 }
 
@@ -120,29 +93,10 @@ TaskWidget::TaskWidget(const Task* task,
   x_curr(x_curr_),
   mutex(mutex_),
   show_only(show_only),
-  max_label_width(0),
+  maxLabelWidth(0),
   dimTask(task->getDim())
 {
-
-  // Box for the _dim task lines
-  QVBoxLayout* mainGrid = new QVBoxLayout();
-  mainGrid->setMargin(0);
-  mainGrid->setSpacing(0);
-
-  mainGrid->addWidget(createActivationBox(task));
-  mainGrid->addWidget(createActivationSlider(task));
-
-
-  // Sliders for task target values
-  for (size_t i = 0; i < this->dimTask; i++)
-  {
-    mainGrid->addWidget(createTaskComponent(task, i, true));
-  }
-
-  setLayout(mainGrid);
-
   init(task);
-
   RLOG(5, "TaskWidget \"%s\" generated", task->getName().c_str());
 }
 
@@ -152,6 +106,53 @@ TaskWidget::TaskWidget(const Task* task,
 ******************************************************************************/
 TaskWidget::~TaskWidget()
 {
+}
+
+
+/******************************************************************************
+  \brief Default initializations.
+******************************************************************************/
+void TaskWidget::init(const Rcs::Task* task)
+{
+  RLOG(5, "Adding task %s", task->getName().c_str());
+
+  // Box for the _dim task lines
+  QVBoxLayout* mainGrid = new QVBoxLayout();
+  mainGrid->setMargin(0);
+  mainGrid->setSpacing(0);
+
+  mainGrid->addWidget(createActivationBox(task));
+  mainGrid->addWidget(createActivationSlider(task));
+
+  // Sliders for task target values
+  for (size_t i = 0; i < this->dimTask; i++)
+  {
+    mainGrid->addWidget(createTaskComponent(task, i, true));
+  }
+
+  setLayout(mainGrid);
+
+  this->setStyleSheet("QCheckBox { font-weight: bold; }"
+                      "QGroupBox { font-weight: bold; color: gray; }"
+                      "QLabel { font-size: 12px; }"
+                      "QProgressBar {border: 1px solid black; border-radius: 1px; "
+                      "text-align: center; font-size: 11px; }"
+                     );
+
+  displayAct();
+  setTarget();
+
+  setActive(this->show_only ? Qt::Unchecked : Qt::Checked);
+}
+
+
+
+/*******************************************************************************
+ *
+******************************************************************************/
+unsigned int TaskWidget::getDim() const
+{
+  return this->dimTask;
 }
 
 
@@ -194,10 +195,11 @@ QWidget* TaskWidget::createActivationBox(const Rcs::Task* task)
 QWidget* TaskWidget::createActivationSlider(const Rcs::Task* task)
 {
   this->activation_slider = new LcdSlider(0.0, *a_des, 1.0, 1.0, 0.01, "Activation");
-  this->max_label_width = (this->activation_slider->labelWidthHint() > this->max_label_width) ? this->activation_slider->labelWidthHint() : this->max_label_width;
+  this->maxLabelWidth = std::max(activation_slider->labelWidthHint(), maxLabelWidth);
   this->activation_slider->hide();
   this->activation_slider->updateLcd1FromSlider();
-  connect(this->activation_slider, SIGNAL(valueChanged(double)), SLOT(setActivation(double)));
+  connect(this->activation_slider, SIGNAL(valueChanged(double)),
+          SLOT(setActivation(double)));
 
   return this->activation_slider;
 }
@@ -243,38 +245,12 @@ QWidget* TaskWidget::createTaskComponent(const Rcs::Task* task,
                                     tick_size, param->name.c_str(),
                                     withActivationLcd,
                                     false);
-  //task->getProperties().getAsBool("pull2zero"));
-  this->max_label_width = (slider->labelWidthHint() > this->max_label_width) ? slider->labelWidthHint() : this->max_label_width;
+
+  this->maxLabelWidth = std::max(slider->labelWidthHint(), maxLabelWidth);
   sliders.push_back(slider);
   connect(slider, SIGNAL(valueChanged(double)), SLOT(setTarget()));
 
   return slider;
-}
-
-
-/******************************************************************************
-  \brief Default initializations.
-******************************************************************************/
-void TaskWidget::init(const Rcs::Task* task)
-{
-  RLOG(5, "Adding task %s", task->getName().c_str());
-
-  this->setStyleSheet("QCheckBox { font-weight: bold; }"
-                      "QGroupBox { font-weight: bold; color: gray; }"
-                      "QLabel { font-size: 12px; }"
-                      "QProgressBar {border: 1px solid black; border-radius: 1px; text-align: center; font-size: 11px; }"
-                     );
-
-  QTimer* timer = new QTimer(this);
-  connect(timer, SIGNAL(timeout()), SLOT(updateUnconstrainedControls()));
-  connect(timer, SIGNAL(timeout()), SLOT(displayAct()));
-
-  displayAct();
-  setTarget();
-
-  setActive(this->show_only ? Qt::Unchecked : Qt::Checked);
-
-  timer->start(100);
 }
 
 
@@ -335,6 +311,31 @@ void TaskWidget::updateUnconstrainedControls()
 }
 
 
+/*******************************************************************************
+ * Reset with externally given activation and task vector. \todo: ax is missing
+ ******************************************************************************/
+void TaskWidget::reset(const double* a, const double* x)
+{
+  lock();
+
+  VecNd_copy(this->a_des, a, 1);
+  VecNd_copy(this->x_des, x, this->dimTask);
+
+  double activation = *this->a_des;
+  this->check_activate->setChecked(activation > 0.0 ? true : false);
+  this->activation_slider->setValueLcd2(activation);
+  this->activation_slider->setSliderValue(activation);
+
+  for (size_t i = 0; i < this->dimTask; i++)
+  {
+    this->sliders[i]->setValueLcd2(this->x_des[i]);
+    this->sliders[i]->setValueLcd1(this->x_des[i]);
+    this->sliders[i]->setSliderValue(this->x_des[i]);
+  }
+
+  unlock();
+}
+
 /******************************************************************************
   \brief Displays task target and current values.
 ******************************************************************************/
@@ -376,7 +377,7 @@ void TaskWidget::displayAct()
 *******************************************************************************/
 int TaskWidget::getMaxLabelWidth()
 {
-  return this->max_label_width;
+  return this->maxLabelWidth;
 }
 
 /******************************************************************************

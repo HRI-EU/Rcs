@@ -39,13 +39,7 @@
 
 #include <Task.h>
 
-#include <QtGlobal>
-#if QT_VERSION >= 0x050000
-#include <QtWidgets/QGroupBox>
-#else
-#include <QtGui/QGroupBox>
-#endif
-
+#include <QGroupBox>
 #include <QLCDNumber>
 
 #include <pthread.h>
@@ -77,14 +71,17 @@ public:
   };
 
   void registerCallback(TaskChangeCallback* callback);
+  unsigned int getDim() const;
+
+  /*! \brief This is thread-safe.
+   */
+  double getActivation();
+  void reset(const double* a_des, const double* x_des);
 
 public slots:
   void setActive(int status);
   void setConstraint();
-  void setActivation(double weight);
   void displayAct();
-  void setTarget();
-  double getActivation();
 
   /*! \brief If the task is inactive, the function computes its values and
    *         displays them in the LCDs. Further, the sliders are set to the
@@ -92,11 +89,15 @@ public slots:
    *         in the controller's mutex.
    */
   void updateUnconstrainedControls();
-  void toggleActivationSliders(int checkBoxState);
   int getMaxLabelWidth();
   void setLabelWidth(int width);
 
-protected:
+private slots:
+  void setActivation(double weight);
+  void setTarget();
+  void toggleActivationSliders(int checkBoxState);
+
+private:
   void init(const Rcs::Task* task);
   QWidget* createActivationBox(const Rcs::Task* task);
   QWidget* createActivationSlider(const Rcs::Task* task);
@@ -112,7 +113,7 @@ protected:
   QCheckBox* check_activation;
   LcdSlider* activation_slider;
   std::vector<LcdSlider*> sliders;
-  int max_label_width;
+  int maxLabelWidth;
   unsigned int dimTask;
 
   void lock();

@@ -42,22 +42,14 @@
 #include <Rcs_macros.h>
 #include <Rcs_guiFactory.h>
 
-#include <QtCore/QTimer>
+#include <QTimer>
+#include <QGridLayout>
+#include <QVBoxLayout>
+#include <QGroupBox>
+#include <QCheckBox>
+#include <QLabel>
 
-#include <QtGlobal>
-#if QT_VERSION >= 0x050000
-#include <QtWidgets/QGridLayout>
-#include <QtWidgets/QVBoxLayout>
-#include <QtWidgets/QGroupBox>
-#include <QtWidgets/QCheckBox>
-#include <QtWidgets/QLabel>
-#else
-#include <QtGui/QGridLayout>
-#include <QtGui/QVBoxLayout>
-#include <QtGui/QGroupBox>
-#include <QtGui/QCheckBox>
-#include <QtGui/QLabel>
-#endif
+#include <algorithm>
 
 namespace Rcs
 {
@@ -185,6 +177,7 @@ ControllerWidgetBase::ControllerWidgetBase(ControllerBase* cntrl,
 {
   int max_label_width = 0;
 
+  QTimer* timer = new QTimer(this);
   setWindowTitle("Generic task space controller");
 
   // remove redundant frame
@@ -221,11 +214,13 @@ ControllerWidgetBase::ControllerWidgetBase(ControllerBase* cntrl,
                                                &x_curr->ele[rowIndex],
                                                mutex_, showOnly);
 
-      max_label_width = (task_widget->getMaxLabelWidth() > max_label_width) ? task_widget->getMaxLabelWidth() : max_label_width;
+      max_label_width = std::max(task_widget->getMaxLabelWidth(), max_label_width);
       this->taskWidgets.push_back(task_widget);
       taskLayout->addWidget(task_widget);
       connect(check_active_gui, SIGNAL(stateChanged(int)),
               task_widget, SLOT(setActive(int)));
+      connect(timer, SIGNAL(timeout()), task_widget, SLOT(updateUnconstrainedControls()));
+      connect(timer, SIGNAL(timeout()), task_widget, SLOT(displayAct()));
       rowIndex += _controller->getTask(id)->getDim();
     }
 
@@ -247,7 +242,6 @@ ControllerWidgetBase::ControllerWidgetBase(ControllerBase* cntrl,
   this->setWidget(scrollWidget);
   this->setWidgetResizable(true);
 
-  QTimer* timer = new QTimer(this);
   connect(timer, SIGNAL(timeout()), SLOT(displayAct()));
 
   timer->start(100);
@@ -412,6 +406,22 @@ void ControllerWidgetBase::registerCallback(TaskWidget::TaskChangeCallback* call
     taskWidgets[i]->registerCallback(callback);
   }
 }
+
+/*******************************************************************************
+ * Reset with externally given activation and task vector. \todo: ax is missing
+ ******************************************************************************/
+void ControllerWidgetBase::reset(const MatNd* a, const MatNd* x)
+{
+  unsigned int rowIndex = 0;
+
+  for (size_t id = 0; id < taskWidgets.size(); id++)
+  {
+    taskWidgets[id]->reset(&a->ele[id], &x->ele[rowIndex]);
+    rowIndex += taskWidgets[id]->getDim();
+  }
+
+}
+
 
 
 
