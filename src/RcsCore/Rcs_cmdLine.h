@@ -148,6 +148,12 @@ public:
    */
   static void print();
 
+  /*!
+   *  \brief Adds a command line description that will be printed to the
+   *         console.
+   */
+  void addDescription(const char* tag, const char* description, ...) const;
+
 
 
 protected:

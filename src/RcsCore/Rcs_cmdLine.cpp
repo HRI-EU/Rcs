@@ -388,6 +388,28 @@ void Rcs::CmdLineParser::print()
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+void Rcs::CmdLineParser::addDescription(const char* tag,
+                                        const char* description,
+                                        ...) const
+{
+  if (tag==NULL)
+  {
+    RLOG(4, "Tag is NULL - skipping");
+    return;
+  }
+
+  if (description != NULL)
+  {
+    va_list args;
+    va_start(args, description);
+    appendDescription(tag, description, args);
+    va_end(args);
+  }
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void Rcs::CmdLineParser::appendDescription(const char* tag,
                                            const char* description,
                                            va_list args) const
