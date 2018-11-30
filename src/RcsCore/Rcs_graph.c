@@ -936,8 +936,10 @@ unsigned int RcsGraph_numJointLimitsViolated(const RcsGraph* self,
     if ((qi < JNT->q_min) || (qi > JNT->q_max))
     {
       if (verbose)
+      {
         RMSG("Joint limit of \"%s\" violated: %f [%f %f]",
              JNT->name, qi, JNT->q_min, JNT->q_max);
+      }
       violations++;
     }
   }
@@ -1590,7 +1592,7 @@ double RcsGraph_limitJointSpeeds(const RcsGraph* self, MatNd* dq, double dt,
     // Get speed limits in units/sec
     double q_dot_max = JNT->speedLimit;
     double q_dot     = fabs(dq->ele[index] / dt);
-    NLOG(1, "Comparing joint %s: q_dot = %f   q_dot_max = %f",
+    NLOG(0, "Comparing joint %s: q_dot = %f   q_dot_max = %f",
          JNT->name, q_dot, q_dot_max);
     if (q_dot > q_dot_max)
     {
@@ -1903,17 +1905,23 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src)
   // body.
   for (int i = 0; i < 10; i++)
   {
+    RcsBody* gSrc = (RcsBody*) src->gBody[i].extraInfo;
+
     memset(&dst->gBody[i], 0, sizeof(RcsBody));
     dst->gBody[i].name      = RNALLOC(64, char);
     dst->gBody[i].xmlName   = RNALLOC(64, char);
     dst->gBody[i].suffix    = RNALLOC(64, char);
+
+    if (gSrc != NULL)
+    {
     dst->gBody[i].A_BI      = HTr_create();
     dst->gBody[i].A_BP      = HTr_create();
     dst->gBody[i].Inertia   = HTr_create();
     HTr_setZero(dst->gBody[i].Inertia);
+    }
+
     sprintf(dst->gBody[i].name, "GenericBody%d", i);
 
-    RcsBody* gSrc = (RcsBody*) src->gBody[i].extraInfo;
     RcsGraph_linkGenericBody(dst, i, gSrc ? gSrc->name : "");
   }
 
