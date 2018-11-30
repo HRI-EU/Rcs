@@ -158,8 +158,10 @@ public:
    */
   virtual void start(double updateFreq, int prio=50);
 
-  /*! \brief Stops the thread. This quits the thread and should be called
-   *         before calling the destructor.
+  /*! \brief Stops the thread. This joins the thread and should be called
+   *         before calling the destructor. When stop() returns, the thread
+   *         has successfully been joined and it is guaranteed that no
+   *         thread computation is executed afterwards.
    *
    *         Note: Calling this function in the constructor will lead to
    *               runtime errors due to calling a pure virtual function.
