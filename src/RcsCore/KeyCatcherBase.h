@@ -34,8 +34,8 @@
 
 *******************************************************************************/
 
-#ifndef KEYCATCHERBASE_H_
-#define KEYCATCHERBASE_H_
+#ifndef KEYCATCHERBASE_H
+#define KEYCATCHERBASE_H
 
 #include <string>
 #include <map>
@@ -58,10 +58,10 @@ public:
   static bool deregisterKey(const std::string& key, const std::string& group = "Main");
   static void printRegisteredKeys();
 
-protected:
+private:
   static std::map< std::string, std::map<std::string, std::string> > _registered_keys;
 };
 
 }
 
-#endif /* KEYCATCHERBASE_H_ */
+#endif // KEYCATCHERBASE_H

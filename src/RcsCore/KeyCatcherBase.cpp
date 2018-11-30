@@ -37,8 +37,45 @@
 #include "KeyCatcherBase.h"
 #include "Rcs_macros.h"
 
+#include <pthread.h>
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
+
+static pthread_mutex_t staticLock;
+static bool staticMtxInitialized = false;
+
+static inline void cleanupLock()
+{
+  if (staticMtxInitialized == true)
+  {
+    pthread_mutex_destroy(&staticLock);
+    staticMtxInitialized = false;
+  }
+}
+
+static inline void initLock()
+{
+  if (staticMtxInitialized == false)
+  {
+    staticMtxInitialized = true;
+    pthread_mutex_init(&staticLock, NULL);
+    atexit(cleanupLock);
+  }
+}
+
+static inline void lock()
+{
+  initLock();
+  pthread_mutex_unlock(&staticLock);
+}
+
+static inline void unlock()
+{
+  initLock();
+  pthread_mutex_lock(&staticLock);
+}
+
 
 namespace Rcs
 {
@@ -80,31 +117,46 @@ KeyCatcherBase::~KeyCatcherBase()
 
 bool KeyCatcherBase::registerKey(const std::string& key, const std::string& description, const std::string& group)
 {
+  lock();
+  bool success = true;
+
   if (_registered_keys[group].find(key) != _registered_keys[group].end())
   {
     RLOG(5, "Key \"%s\" already registered, please choose a different one", key.c_str());
-    return false;
+    success = false;
   }
+  else
+  {
+    _registered_keys[group][key] = description;
+  }
+  unlock();
 
-  _registered_keys[group][key] = description;
-
-  return true;
+  return success;
 }
 
 bool KeyCatcherBase::deregisterKey(const std::string& key, const std::string& group)
 {
+  lock();
+  bool success = true;
+
   if (_registered_keys[group].find(key) == _registered_keys[group].end())
   {
     RLOG(5, "Key \"%s\" not registered in group \"%s\"!", key.c_str(), group.c_str());
-    return false;
+    success = false;
   }
+  else
+  {
+    _registered_keys.erase(key);
+  }
+  unlock();
 
-  _registered_keys.erase(key);
-  return true;
+  return success;
 }
 
 void KeyCatcherBase::printRegisteredKeys()
 {
+  lock();
+
   printf("\nRegistered keys:\n\n");
 
   for (std::map< std::string, std::map<std::string, std::string> >::iterator group_it = _registered_keys.begin(); group_it != _registered_keys.end(); ++group_it)
@@ -126,6 +178,8 @@ void KeyCatcherBase::printRegisteredKeys()
     }
     printf("\n");
   }
+
+  unlock();
 }
 
 
