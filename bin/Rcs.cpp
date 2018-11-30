@@ -911,6 +911,7 @@ int main(int argc, char** argv)
     {
       Rcs::KeyCatcherBase::registerKey("q", "Quit");
       Rcs::KeyCatcherBase::registerKey("p", "Reset physics");
+      Rcs::KeyCatcherBase::registerKey("o", "Set physics to random state");
       Rcs::KeyCatcherBase::registerKey("Space", "Toggle pause");
       Rcs::KeyCatcherBase::registerKey("S", "Print out joint torques");
       Rcs::KeyCatcherBase::registerKey("j", "Disable joint limits");
@@ -1117,6 +1118,23 @@ int main(int argc, char** argv)
           MatNd_setZero(q_dot_curr);
           pthread_mutex_lock(&graphLock);
           RcsGraph_setState(graph, q0, q_dot_curr);
+          sim->reset();
+          MatNd_copy(q_des, graph->q);
+          MatNd_copy(q_des_f, graph->q);
+          jw->reset(graph->q);
+          pthread_mutex_unlock(&graphLock);
+        }
+        else if (kc && kc->getAndResetKey('o'))
+        {
+          RMSGS("Resetting physics");
+          MatNd_setZero(q_dot_curr);
+          pthread_mutex_lock(&graphLock);
+          MatNd_copy(graph->q, q0);
+          MatNd* q_rnd = MatNd_create(graph->dof, 1);
+          MatNd_setRandom(q_rnd, -RCS_DEG2RAD(25.0), RCS_DEG2RAD(25.0));
+          MatNd_addSelf(graph->q, q_rnd);
+          RcsGraph_setState(graph, NULL, q_dot_curr);
+          MatNd_destroy(q_rnd);
           sim->reset();
           MatNd_copy(q_des, graph->q);
           MatNd_copy(q_des_f, graph->q);
@@ -1362,6 +1380,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("o", "Toggle distance calculation");
       Rcs::KeyCatcherBase::registerKey("m", "Manipulability null space");
       Rcs::KeyCatcherBase::registerKey("e", "Link generic body");
+      Rcs::KeyCatcherBase::registerKey("v", "Write current state to model_state");
 
       int algo = 0;
       double alpha = 0.05, lambda = 1.0e-8, tmc = 0.1, dt = 0.01, dt_calc = 0.0;
@@ -1678,6 +1697,11 @@ int main(int argc, char** argv)
                                                  0, bdyName.c_str());
           RMSG("Linked against \"%s\"", lb ? lb->name : "NULL");
         }
+        else if (kc && kc->getAndResetKey('v'))
+        {
+          RcsGraph_fprintModelState(stdout, controller.getGraph(), controller.getGraph()->q);
+        }
+
 
         sprintf(hudText, "IK calculation: %.1f us\ndof: %d nJ: %d "
                 "nqr: %d nx: %d\nJL-cost: %.6f dJL-cost: %.6f %s %s"
