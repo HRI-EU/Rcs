@@ -249,10 +249,20 @@ public:
   /*! \brief Computes the vector of task variables according to the graph's
    *         current state.
    *
-   *         Vector a_des is of dimension [allTasks x 1]
-   *         The task vector is composed of only the parts that correspond
+   *         Vector a_des is of dimension [allTasks x 1]. If it is NULL, the
+   *         vector x will be computed with all task elements.
+   *         The task vector x is composed of only the parts that correspond
    *         to active tasks (activation > 0). The function checks if
    *         memory is written over the bounds of x.
+   *
+   *  \param[out] x      Task vector according to current graph's state. It
+   *                     must provide memory for the task values of all active
+   *                     tasks (according to a_des). Vector x is reshaped to
+   *                     the correct dimensions by this function.
+   *  \param[in]  a_des  Activation vector of size getTaskDim() x 1. If it is
+   *                     NULL, it is assumed to be a vector holding all
+   *                     entries of 1. The corresponding entry of x is computed
+   *                     if the element of a is > 0.
    */
   virtual void computeX(MatNd* x, const MatNd* a_des=NULL) const;
 
