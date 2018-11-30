@@ -69,8 +69,6 @@ protected:
   virtual bool callback(const osgGA::GUIEventAdapter& ea,
                         osgGA::GUIActionAdapter& aa);
 
-private:
-
   PhysicsBase* physics;
 };
 
