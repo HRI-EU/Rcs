@@ -375,12 +375,6 @@ Viewer::~Viewer()
  ******************************************************************************/
 void Viewer::create(bool fancy, bool startupWithShadow)
 {
-#if defined(_MSC_VER)
-  setWindowSize(12, 38, 640, 480);
-#else
-  setWindowSize(0, 0, 640, 480);
-#endif
-
   pthread_mutex_init(&this->mtxInternal, NULL);
 
   this->shadowsEnabled = startupWithShadow;
