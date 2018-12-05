@@ -200,17 +200,17 @@ struct _RcsBody
   HTr* A_BI;              ///< Absolute transformation
   HTr* Inertia;           ///< Inertia tensor and local COG vector
 
-  RcsBody* parent;        ///< parent body
-  RcsBody* firstChild;    ///< first child body
-  RcsBody* lastChild;     ///< last child body
-  RcsBody* next;          ///< next sibling body
-  RcsBody* prev;          ///< previous sibling body
+  RcsBody* parent;        ///< Parent body
+  RcsBody* firstChild;    ///< First child body
+  RcsBody* lastChild;     ///< Last child body
+  RcsBody* next;          ///< Next sibling body
+  RcsBody* prev;          ///< Previous sibling body
 
   RcsShape** shape;       ///< Shapes of the body for collision detection
   RcsJoint* jnt;          ///< Joint to which body is attached
 
-  void* actor;
-  void* extraInfo;
+  void* actor;            ///< Vortex only
+  void* extraInfo;        ///< For generic bodies
 };
 
 

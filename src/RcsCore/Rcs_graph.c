@@ -1587,7 +1587,7 @@ double RcsGraph_limitJointSpeeds(const RcsGraph* self, MatNd* dq, double dt,
       continue;
     }
 
-    int index = type == RcsStateIK ? JNT->jacobiIndex : JNT->jointIndex;
+    int index = (type == RcsStateIK) ? JNT->jacobiIndex : JNT->jointIndex;
 
     // Get speed limits in units/sec
     double q_dot_max = JNT->speedLimit;
