@@ -231,15 +231,15 @@ int main(int argc, char** argv)
     argP.getArgument("-locale", localeStr);
     char* res = setlocale(LC_ALL, localeStr);
     if (res==NULL)
-      {
-        RLOG(1, "Failed to set locale \"%s\"", localeStr);
-      }
+    {
+      RLOG(1, "Failed to set locale \"%s\"", localeStr);
+    }
     else
-      {
-        struct lconv* loc = localeconv();
-        RLOG(1, "Locale successfully set to %s", res);
-        RLOG(1, "Decimal character is %c", *(loc->decimal_point));
-      }
+    {
+      struct lconv* loc = localeconv();
+      RLOG(1, "Locale successfully set to %s", res);
+      RLOG(1, "Decimal character is %c", *(loc->decimal_point));
+    }
   }
 
   const char* hgr = getenv("SIT");
@@ -375,9 +375,6 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("f", "Write graph to file");
       Rcs::KeyCatcherBase::registerKey("j", "Create JointWidget");
       Rcs::KeyCatcherBase::registerKey("l", "Reload graph file");
-      Rcs::KeyCatcherBase::registerKey("L", "Reload graph file (force). If "
-                                       "the JointWidget is active the "
-                                       "application might crash.");
       Rcs::KeyCatcherBase::registerKey("m", "Set q to model state");
       Rcs::KeyCatcherBase::registerKey("p", "Print information to console");
       Rcs::KeyCatcherBase::registerKey("q", "Quit");
@@ -481,6 +478,7 @@ int main(int argc, char** argv)
         JNT->constrained = true;
       }
 
+      int guiHandle = -1;
       unsigned int loopCount = 0;
       double mass = 0.0, Id[3][3], r_com[3];
       Mat3d_setIdentity(Id);
@@ -524,7 +522,7 @@ int main(int argc, char** argv)
         viewer->runInThread(mtx);
         if ((editMode==false) && (bvhTraj==NULL))
         {
-          Rcs::JointWidget::create(graph, mtx);
+          guiHandle = Rcs::JointWidget::create(graph, mtx);
         }
       }
 
@@ -610,7 +608,7 @@ int main(int argc, char** argv)
           else if (kc->getAndResetKey('j'))
           {
             RMSGS("Creating JointWidget");
-            Rcs::JointWidget::create(graph, &graphLock);
+            guiHandle = Rcs::JointWidget::create(graph, &graphLock);
           }
           else if (kc->getAndResetKey('C'))
           {
@@ -686,56 +684,21 @@ int main(int argc, char** argv)
           }
           else if (kc->getAndResetKey('l'))
           {
-            if (!argP.hasArgument("-edit"))
-            {
-              RLOG(0, "Please start this mode with option "
-                   "\"-edit\", otherwise reloading will not "
-                   "work. You can also close the Gui and reload "
-                   "with key \"L\"");
-            }
-            else
-            {
-              RMSG("Reloading GraphNode from %s", xmlFileName);
-              pthread_mutex_lock(&graphLock);
-              bool collisionVisible = gn->collisionModelVisible();
-              bool graphicsVisible = gn->graphicsModelVisible();
-              bool physicsVisible = gn->physicsModelVisible();
-              bool framesVisible = gn->referenceFramesVisible();
-              bool ghostVisible = gn->getGhostMode();
-              bool wireframeVisible = gn->getWireframe();
-              viewer->removeNode(gn);
-              gn = NULL;
-              RcsGraph_destroy(graph);
-              graph = RcsGraph_create(xmlFileName);
-              comBase = RcsGraph_getBodyByName(graph, comRef);
-
-              if (graph != NULL)
-              {
-                gn = new Rcs::GraphNode(graph);
-                gn->toggleReferenceFrames();
-                gn->displayGraphicsModel(graphicsVisible);
-                gn->displayPhysicsModel(physicsVisible);
-                gn->displayCollisionModel(collisionVisible);
-                gn->displayReferenceFrames(framesVisible);
-                gn->setGhostMode(ghostVisible);
-                gn->showWireframe(wireframeVisible);
-                pthread_mutex_unlock(&graphLock);
-                viewer->add(gn);
-                pthread_mutex_lock(&graphLock);
-              }
-              else
-              {
-                RLOG(1, "Couldn't create graph - skipping osg "
-                     "node");
-              }
-              pthread_mutex_unlock(&graphLock);
-              RMSG("... done");
-            }
-          }
-          else if (kc->getAndResetKey('L'))
-          {
             RMSG("Reloading GraphNode from %s", xmlFileName);
+
+            if (guiHandle != -1)
+            {
+              bool success = RcsGuiFactory_destroyGUI(guiHandle);
+              RLOG(0, "%s destroyed Gui", success ? "Successfully" : "Not");
+            }
+
             pthread_mutex_lock(&graphLock);
+            bool collisionVisible = gn->collisionModelVisible();
+            bool graphicsVisible = gn->graphicsModelVisible();
+            bool physicsVisible = gn->physicsModelVisible();
+            bool framesVisible = gn->referenceFramesVisible();
+            bool ghostVisible = gn->getGhostMode();
+            bool wireframeVisible = gn->getWireframe();
             viewer->removeNode(gn);
             gn = NULL;
             RcsGraph_destroy(graph);
@@ -746,6 +709,12 @@ int main(int argc, char** argv)
             {
               gn = new Rcs::GraphNode(graph);
               gn->toggleReferenceFrames();
+              gn->displayGraphicsModel(graphicsVisible);
+              gn->displayPhysicsModel(physicsVisible);
+              gn->displayCollisionModel(collisionVisible);
+              gn->displayReferenceFrames(framesVisible);
+              gn->setGhostMode(ghostVisible);
+              gn->showWireframe(wireframeVisible);
               pthread_mutex_unlock(&graphLock);
               viewer->add(gn);
               pthread_mutex_lock(&graphLock);
@@ -788,10 +757,7 @@ int main(int argc, char** argv)
             gn = NULL;
             gn = new Rcs::GraphNode(graph);
             gn->toggleReferenceFrames();
-            //pthread_mutex_unlock(&graphLock);
             viewer->add(gn);
-            //pthread_mutex_lock(&graphLock);
-            //pthread_mutex_unlock(&graphLock);
           }
           else if (kc->getAndResetKey('x'))
           {

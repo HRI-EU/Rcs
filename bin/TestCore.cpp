@@ -203,7 +203,7 @@ static bool test_envString()
 }
 
 /******************************************************************************
- * 
+ *
  *****************************************************************************/
 static bool test_localeFreeParsing()
 {
@@ -233,7 +233,7 @@ static bool test_localeFreeParsing()
       sscanf(str, "%lf", &b);
     }
     dt = Timer_getSystemTime() - dt;
-    RLOG(1, "sscanf: double value is %f ... took %.4f usec", 
+    RLOG(1, "sscanf: double value is %f ... took %.4f usec",
          b, (1.0/nIter)*1.0e6*dt);
   }
 
@@ -246,7 +246,7 @@ static bool test_localeFreeParsing()
       res = String_toDouble_l(str);
     }
     dt = Timer_getSystemTime() - dt;
-    RLOG(1, "strtod_l: double value is %f ... took %.4f usec", 
+    RLOG(1, "strtod_l: double value is %f ... took %.4f usec",
          res, (1.0/nIter)*1.0e6*dt);
   }
 
@@ -262,7 +262,7 @@ static bool test_localeFreeParsing()
       ss2 >> a;
     }
     dt = Timer_getSystemTime() - dt;
-    RLOG(1, "stringstream with imbue: double value is %f ... took %.4f usec", 
+    RLOG(1, "stringstream with imbue: double value is %f ... took %.4f usec",
          a, (1.0/nIter)*1.0e6*dt);
   }
 
@@ -359,9 +359,9 @@ int main(int argc, char** argv)
   RMSGS("Test %s", success ? "SUCCEEDED" : "FAILED");
 
   if (argP.hasArgument("-h"))
-    {
-      argP.print();
-    }
+  {
+    argP.print();
+  }
 
   // Clean up global stuff. From the libxml2 documentation:
   // WARNING: if your application is multithreaded or has plugin support

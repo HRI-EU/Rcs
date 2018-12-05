@@ -15,4 +15,7 @@ IF(NOT HEADLESS_BUILD)
   ADD_EXECUTABLE(TestGraphics TestGraphics.cpp)
   TARGET_LINK_LIBRARIES(TestGraphics RcsGraphics)
 
+  ADD_EXECUTABLE(TestOrientations TestOrientations.cpp)
+  TARGET_LINK_LIBRARIES(TestOrientations RcsCore RcsGui RcsGraphics)
+
 ENDIF(NOT HEADLESS_BUILD)

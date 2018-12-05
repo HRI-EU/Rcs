@@ -242,7 +242,7 @@ int main(int argc, char** argv)
 
   if (mode==-1)
   {
-    for (int i=1;i<=6;++i)
+    for (int i=1; i<=6; ++i)
     {
       success = testMode(i, argc, argv) | success;
     }
