@@ -58,9 +58,9 @@ static inline void initLock()
 {
   if (staticMtxInitialized == false)
   {
-    staticMtxInitialized = true;
     pthread_mutex_init(&staticLock, NULL);
     atexit(cleanupLock);
+    staticMtxInitialized = true;
   }
 }
 
