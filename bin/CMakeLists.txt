@@ -1,11 +1,11 @@
-ADD_EXECUTABLE(UtilTests RcsCore.cpp)
-TARGET_LINK_LIBRARIES(UtilTests RcsCore)
+ADD_EXECUTABLE(TestCore TestCore.cpp)
+TARGET_LINK_LIBRARIES(TestCore RcsCore)
 
-ADD_EXECUTABLE(MathTests MathTests.cpp)
-TARGET_LINK_LIBRARIES(MathTests RcsCore)
+ADD_EXECUTABLE(TestMath TestMath.cpp)
+TARGET_LINK_LIBRARIES(TestMath RcsCore)
 
-ADD_EXECUTABLE(GraphTests RcsGraph.cpp)
-TARGET_LINK_LIBRARIES(GraphTests RcsCore)
+ADD_EXECUTABLE(TestGraph TestGraph.cpp)
+TARGET_LINK_LIBRARIES(TestGraph RcsCore)
 
 IF(NOT HEADLESS_BUILD)
 
