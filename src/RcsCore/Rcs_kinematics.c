@@ -1507,7 +1507,7 @@ double RcsGraph_jointLimitGradient(const RcsGraph* self,
   double cost = 0.0;
   int dimension = (type == RcsStateFull ? self->dof : self->nJ);
 
-  MatNd_reshape(dH, dimension, 1);
+  MatNd_reshape(dH, 1, dimension);
   MatNd_setZero(dH);
 
   RCSGRAPH_TRAVERSE_JOINTS(self)
@@ -1546,8 +1546,7 @@ double RcsGraph_jointLimitGradientPlateau(const RcsGraph* self,
   double cost = 0.0;
   int dimension = (type == RcsStateFull ? self->dof : self->nJ);
 
-  MatNd_reshape(dH, dimension, 1);
-  MatNd_setZero(dH);
+  MatNd_reshapeAndSetZero(dH, 1, dimension);
 
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {
