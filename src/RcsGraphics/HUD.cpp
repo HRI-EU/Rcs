@@ -89,7 +89,7 @@ class HUDUpdateCallback : public osg::Drawable::UpdateCallback
 public:
 
   HUDUpdateCallback(HUD* hud_, size_t margin_=10) :
-    hud(hud_), margin(margin_)
+    hud(hud_), margin(margin_), bugCount(0)
   {
   }
 
@@ -110,6 +110,12 @@ public:
       }
 
     }   // if (hud->textChanged==true)
+
+    if (bugCount==0)
+    {
+      bugCount++;
+      return;
+    }
 
     if (hud->backgroundChanged==true)
     {
@@ -142,11 +148,11 @@ public:
       //                                    hud->lly+hud->sizeY-margin, -1.0));
     }   // if (hud->backgroundChanged==true)
 
-
   }
 
   HUD* hud;
   size_t margin;
+  size_t bugCount;
 };
 
 }   // namespace Rcs

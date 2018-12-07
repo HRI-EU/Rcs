@@ -328,7 +328,7 @@ private:
 Viewer::Viewer() :
   mouseX(0.0), mouseY(0.0), fps(0.0), mtxFrameUpdate(NULL),
   threadRunning(false), updateFreq(25.0), initialized(false),
-  wireFrame(false), shadowsEnabled(false)
+  wireFrame(false), shadowsEnabled(false), llx(0), lly(0), sizeX(640), sizeY(480)
 {
   // Check if logged in remotely
   const char* sshClient = getenv("SSH_CLIENT");
@@ -354,7 +354,7 @@ Viewer::Viewer() :
 Viewer::Viewer(bool fancy, bool startupWithShadow) :
   mouseX(0.0), mouseY(0.0), fps(0.0), mtxFrameUpdate(NULL),
   threadRunning(false), updateFreq(25.0), initialized(false),
-  wireFrame(false), shadowsEnabled(false)
+  wireFrame(false), shadowsEnabled(false), llx(0), lly(0), sizeX(640), sizeY(480)
 {
   create(fancy, startupWithShadow);
 
@@ -393,7 +393,7 @@ void Viewer::create(bool fancy, bool startupWithShadow)
 
   // Handle some default keys (see handler above)
   this->keyHandler = new KeyHandler(this);
-  viewer->addEventHandler(this->keyHandler);
+  viewer->addEventHandler(this->keyHandler.get());
 
   // Root node (instead of a Group we create an Cartoon node for optional
   // cell shading)
@@ -520,11 +520,31 @@ void Viewer::add(osgGA::GUIEventHandler* eventHandler)
  ******************************************************************************/
 void Viewer::add(osg::Node* node)
 {
-  osg::Camera* hud = dynamic_cast<osg::Camera*>(node);
+  osg::Camera* newHud = dynamic_cast<osg::Camera*>(node);
 
-  if (hud != NULL)
+  // If it's a camera, it needs a graphics context. This doesn't exist right
+  // after construction, therefore in that case we push all cameras on a
+  // vector and add them later. In case the graphics context exists, we can
+  // directly add it.
+  if (newHud != NULL)
   {
-    this->hud.push_back(hud);
+    osgViewer::Viewer::Windows windows;
+    viewer->getWindows(windows);
+
+    if (windows.empty())
+    {
+      this->hud.push_back(newHud);
+    }
+    else
+    {
+      lock();
+      newHud->setGraphicsContext(windows[0]);
+      newHud->setViewport(0, 0, windows[0]->getTraits()->width,
+                          windows[0]->getTraits()->height);
+      viewer->addSlave(newHud, false);
+      unlock();
+    }
+
     return;
   }
 
@@ -889,6 +909,7 @@ void Viewer::init()
       viewer->addSlave(hud[i].get(), false);
     }
 
+    hud.clear();
   }
 
   this->initialized = true;

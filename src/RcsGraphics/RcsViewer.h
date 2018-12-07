@@ -194,7 +194,7 @@ protected:
 
 private:
   mutable pthread_mutex_t mtxInternal;
-  KeyHandler* keyHandler;
+  osg::ref_ptr<KeyHandler> keyHandler;
 };
 
 
