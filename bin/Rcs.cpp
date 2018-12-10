@@ -80,7 +80,7 @@
 #include <Rcs_geometry.h>
 #include <Rcs_gradientTests.h>
 #include <Rcs_resourcePath.h>
-#include "Rcs_BVHParser.h"
+#include <Rcs_BVHParser.h>
 #include <Rcs_timer.h>
 #include <Rcs_sensor.h>
 #include <Rcs_typedef.h>
@@ -320,7 +320,7 @@ int main(int argc, char** argv)
 
       if (argP.hasArgument("-h"))
       {
-        RMSG("Mode %d: Rcs.exe -m %d -dir <graph-directory> -f "
+        RMSG("Mode %d: Rcs -m %d -dir <graph-directory> -f "
              "<graph-file>\n\n\t- Creates a graph from an xml file\n\t- "
              "prints it's contents to the console\n\t- creates a dot-file "
              "RcsGraph.dot and\n\t- launches it with the dotty tool\n\n\t"
@@ -406,7 +406,7 @@ int main(int argc, char** argv)
 
       if (argP.hasArgument("-h"))
       {
-        RMSG("Mode %d: Rcs.exe -m %d -dir <graph-directory> -f "
+        RMSG("Mode %d: Rcs -m %d -dir <graph-directory> -f "
              "<graph-file>\n\n\t- Creates a graph from an xml file\n\t"
              "- Creates a viewer (if option -valgrind is not set)\n\t"
              "- Creates a JointWidget (if option -valgrind is not set)\n\t"
@@ -818,7 +818,7 @@ int main(int argc, char** argv)
 
       if (argP.hasArgument("-h"))
       {
-        RMSG("Mode %d: Rcs.exe -m %d -dir <graph-directory> -f "
+        RMSG("Mode %d: Rcs -m %d -dir <graph-directory> -f "
              "<graph-file>\n\n\t- Creates a graph from an xml file)\n\t"
              "- Runs a set of gradient tests on it\n\n\t"
              "On debug level 1 and higher, a viewer is launched, and more "
@@ -930,7 +930,7 @@ int main(int argc, char** argv)
 
       if (argP.hasArgument("-h"))
       {
-        RMSG("Mode %d: Rcs.exe -m %d -dir <graph-directory> -f "
+        RMSG("Mode %d: Rcs -m %d -dir <graph-directory> -f "
              "<graph-file>\n\n\t- Creates a graph from an xml file\n\t"
              "- Creates a viewer (if option -valgrind is not set)\n\t"
              "- Creates a StateGui (if option -valgrind is not set)\n\t"
@@ -1357,11 +1357,11 @@ int main(int argc, char** argv)
       char effortBdyName[256] = "";
 
       argP.getArgument("-algo", &algo, "IK algorithm: 0: left inverse, 1: "
-                       "left inverse (Nakamura), 2: right inverse, 3: "
-                       "experimental, 4: Solving according to Klein/Huang");
+                       "right inverse (default is %d)", algo);
       argP.getArgument("-alpha", &alpha,
-                       "Null space scaling factor (default is 0.05)");
-      argP.getArgument("-lambda", &lambda, "Regularization");
+                       "Null space scaling factor (default is %f)", alpha);
+      argP.getArgument("-lambda", &lambda, "Regularization (default is %f)", 
+                       lambda);
       argP.getArgument("-f", xmlFileName);
       argP.getArgument("-dir", directory);
       argP.getArgument("-tmc", &tmc, "Filter time constant for sliders");
@@ -1750,10 +1750,8 @@ int main(int argc, char** argv)
 
       if (argP.hasArgument("-h"))
       {
-        RMSG("Mode %d: Rcs.exe -m %d\n", mode, mode);
-        printf("\n\tController gradient tests:\n");
-        argP.print();
-        Rcs::KeyCatcherBase::printRegisteredKeys();
+        RMSG("Mode %d: Rcs -m %d\n", mode, mode);
+        printf("\n\tController gradient tests\n");
         break;
       }
 
@@ -1848,21 +1846,42 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("n", "Reset");
 
       int algo = 1;
-      double alpha = 0.05;
+      unsigned int loopCount = 0, nIter = 10000;
+      double alpha = 0.01;
       double lambda = 1.0e-8;
       double jlCost = 0.0, dJlCost = 0.0, eps=1.0e-5;
       strcpy(xmlFileName, "cAction.xml");
       strcpy(directory, "config/xml/DexBot");
 
-      argP.getArgument("-algo", &algo);
-      argP.getArgument("-alpha", &alpha);
-      argP.getArgument("-lambda", &lambda);
+      argP.getArgument("-iter", &nIter, "Number of iterations before next pose"
+                       "(default is %u)", nIter);
+      argP.getArgument("-algo", &algo, "IK algorithm: 0: left inverse, 1: "
+                       "right inverse (default is %d)", algo);
+      argP.getArgument("-alpha", &alpha,
+                       "Null space scaling factor (default is %f)", alpha);
+      argP.getArgument("-lambda", &lambda, "Regularization (default is %f)", 
+                       lambda);
       argP.getArgument("-f", xmlFileName);
       argP.getArgument("-dir", directory);
-      argP.getArgument("-eps", &eps);
-      bool pause = argP.hasArgument("-pause");
+      argP.getArgument("-eps", &eps, "Small numerical treshold that is "
+                       "acceptable as increase of the null space cost "
+                       "(default is %f)", eps);
+      bool pause = argP.hasArgument("-pause", "Pause after each iteration");
 
       Rcs_addResourcePath(directory);
+
+      if (argP.hasArgument("-h"))
+      {
+        RMSG("Rcs -m %d\n", mode);
+        printf("\n\tController nullspace gradient tests: The controller is "
+               "initialized in a random pose. From there, the null space is "
+               "iterated for a fixed number of steps (command line argument"
+               " \"iter\"). In each iteration, it is checked if the cost "
+               "function value is decreasing. If it is not the case (with a"
+               " threshold of command line argument \"eps\"), the program is"
+               " paused in the respective pose.\n");
+        break;
+      }
 
       // Create controller
       Rcs::ControllerBase controller(xmlFileName, true);
@@ -1892,7 +1911,7 @@ int main(int argc, char** argv)
         v       = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
         kc      = new Rcs::KeyCatcher();
         gn      = new Rcs::GraphNode(controller.getGraph());
-        hud     = new Rcs::HUD(0,0,500,160);
+        hud     = new Rcs::HUD();
         dragger = new Rcs::BodyPointDragger();
         v->add(gn);
         v->add(hud);
@@ -1915,7 +1934,6 @@ int main(int argc, char** argv)
         mw->setLabels(labels);
       }
 
-      unsigned int loopCount = 0;
 
 
       // Endless loop
@@ -1925,9 +1943,13 @@ int main(int argc, char** argv)
         double dt = Timer_getTime();
 
         // Set state to random and compute null space cost and gradient
-        if (loopCount%10000==0)
+        if (loopCount%nIter==0)
         {
-          MatNd_setRandom(controller.getGraph()->q, -M_PI, M_PI);
+          //MatNd_setRandom(controller.getGraph()->q, -M_PI, M_PI);
+          RCSGRAPH_TRAVERSE_JOINTS(controller.getGraph())
+            {
+              controller.getGraph()->q->ele[JNT->jointIndex] = Math_getRandomNumber(JNT->q_min, JNT->q_max);
+            }
         }
 
         RcsGraph_setState(controller.getGraph(), NULL, NULL);
@@ -2005,9 +2027,10 @@ int main(int argc, char** argv)
           RcsGraph_setDefaultState(controller.getGraph());
         }
 
-        sprintf(hudText, "IK calculation: %.2f ms\ndof: %d nJ: %d "
+        sprintf(hudText, "%.1f %%: IK calculation: %.2f ms\ndof: %d nJ: %d "
                 "nqr: %d nx: %zu\nJL-cost: %.6f dJL-cost: %.6f %s %s\n"
                 "dt=%.2f us\nalgo: %d lambda:%g alpha: %g",
+                fmod(100.0*((double)loopCount/nIter), 100.0),
                 1.0e3*dt, controller.getGraph()->dof,
                 ikSolver.nq, ikSolver.nqr,
                 controller.getActiveTaskDim(a_des),
@@ -2072,14 +2095,15 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("q", "Quit");
       Rcs::KeyCatcherBase::registerKey("t", "Run controller test");
       Rcs::KeyCatcherBase::registerKey("Space", "Toggle pause");
-      Rcs::KeyCatcherBase::registerKey("p", "Print information to console");
       Rcs::KeyCatcherBase::registerKey("n", "Reset");
       Rcs::KeyCatcherBase::registerKey("o", "Set random pose");
+      Rcs::KeyCatcherBase::registerKey("T", "RAC solver test");
 
       double lambda = 0.0;
       double jlCost = 0.0, dJlCost=0.0, tmc=0.1, dt=0.01, kp_nullspace=100.0;
       double kp = 100.0;
       bool pause = false;
+      int guiHandle = -1;
       strcpy(xmlFileName, "cAction.xml");
       strcpy(directory, "config/xml/DexBot");
 
@@ -2170,8 +2194,8 @@ int main(int argc, char** argv)
         // Launch the task widget
         if (ffwd == false)
         {
-          Rcs::ControllerWidgetBase::create(&controller, a_des,
-                                            x_des, x_curr, mtx);
+          guiHandle = Rcs::ControllerWidgetBase::create(&controller, a_des,
+                                                        x_des, x_curr, mtx);
         }
         else
         {
@@ -2243,7 +2267,7 @@ int main(int argc, char** argv)
         // RcsGraph_stateVectorToIK(controller.getGraph(),
         //                          controller.getGraph()->q_dot, q_dot_ik);
         // MatNd_transposeSelf(q_dot_ik);
-        // MatNd_constMulAndAddSelf(dH, q_dot_ik, kd_nullspace);
+        // MatNd_constMulAndAddSelf(dH, q_dot_ik, -kd_nullspace);
 
 
         dragger->addJointTorque(dH, controller.getGraph());
@@ -2275,17 +2299,6 @@ int main(int argc, char** argv)
           pause = !pause;
           RMSG("Pause modus is %s", pause ? "ON" : "OFF");
         }
-        else if (kc && kc->getAndResetKey('p'))
-        {
-          RMSG("Writing q to file \"q.dat\"");
-          MatNd_toFile(controller.getGraph()->q, "q.dat");
-        }
-        else if (kc && kc->getAndResetKey('P'))
-        {
-          RMSG("Reading q from file \"q.dat\"");
-          MatNd_fromFile(controller.getGraph()->q, "q.dat");
-          RcsGraph_setState(controller.getGraph(), NULL, NULL);
-        }
         else if (kc && kc->getAndResetKey('n'))
         {
           RMSG("Resetting");
@@ -2298,6 +2311,9 @@ int main(int argc, char** argv)
           MatNd_copy(x_des_f, x_des);
           MatNd_setZero(xp_des);
           MatNd_setZero(xpp_des);
+          void* ptr = RcsGuiFactory_getPointer(guiHandle);
+          Rcs::ControllerWidgetBase* cw = static_cast<Rcs::ControllerWidgetBase*>(ptr);
+          cw->reset(a_des, x_des);
         }
         else if (kc && kc->getAndResetKey('o'))
         {
@@ -2310,13 +2326,16 @@ int main(int argc, char** argv)
           MatNd_copy(x_des_f, x_des);
           MatNd_setZero(xp_des);
           MatNd_setZero(xpp_des);
+          void* ptr = RcsGuiFactory_getPointer(guiHandle);
+          Rcs::ControllerWidgetBase* cw = static_cast<Rcs::ControllerWidgetBase*>(ptr);
+          cw->reset(a_des, x_des);
         }
         else if (kc && kc->getAndResetKey('T'))
         {
           solver.test(a_des);
         }
 
-        sprintf(hudText, "IK calculation: %.2f ms\n"
+        sprintf(hudText, "RAC calculation: %.2f ms\n"
                 "nx: %d\nJL-cost: %.6f dJL-cost: %.6f"
                 "\nlambda:%g alpha: %g tmc: %g",
                 1.0e3*dt_compute, (int) controller.getActiveTaskDim(a_des),
@@ -2367,10 +2386,38 @@ int main(int argc, char** argv)
       MatNd_destroy(ax_des);
       MatNd_destroy(dH);
       break;
+    }
 
+    // ==============================================================
+    // MatNdWidget test
+    // ==============================================================
+    case 9:
+    {
+      unsigned int rows = 10, cols = 1;
+      argP.getArgument("-rows", &rows, "Rows (default is %u)", rows);
+      argP.getArgument("-cols", &cols, "Columns (default is %u)", cols);
 
+      if (argP.hasArgument("-h"))
+      {
+        RMSG("Mode %d: Rcs -m %d\n", mode, mode);
+        printf("\n\tMatNdWidget test\n");
+        break;
+      }
 
+      MatNd* mat = MatNd_create(rows,cols);
+      MatNd_setRandom(mat, -1.0, 1.0);
+      MatNdWidget::create(mat, NULL, mtx);
 
+      while (runLoop==true)
+        {
+          pthread_mutex_lock(&graphLock);
+          MatNd_printCommentDigits("mat", mat, 4);
+          pthread_mutex_unlock(&graphLock);
+          Timer_usleep(1000);
+        }
+
+      MatNd_destroy(mat);
+      break;
     }
 
     // ==============================================================
@@ -2378,7 +2425,6 @@ int main(int argc, char** argv)
     // ==============================================================
     case 12:
     {
-      Rcs::CmdLineParser argP(argc, argv);
       int shapeType1 = RCSSHAPE_SSL;
       int shapeType2 = RCSSHAPE_SSL;
       char textLine[2056] = "";
