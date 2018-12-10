@@ -38,58 +38,15 @@
 #include "Rcs_guiFactory.h"
 
 #include <Rcs_macros.h>
-#include <Rcs_timer.h>
 
 #include <QTimer>
 #include <QLayout>
 
-#include <csignal>
 
 
-
-/******************************************************************************
-
-  \brief MatNdWidget test function
-
-******************************************************************************/
-bool runTestLoop = true;
-
-void quitTest(int /*sig*/)
-{
-  runTestLoop = false;
-}
-
-void MatNdWidget::test()
-{
-  signal(SIGINT, quitTest);
-
-  pthread_mutex_t mutex;
-  pthread_mutex_init(&mutex, NULL);
-
-  MatNd* mat = MatNd_create(10,1);
-  MatNd_setRandom(mat, -1.0, 1.0);
-  MatNdWidget::create(mat, NULL, &mutex);
-
-  while (runTestLoop==true)
-  {
-    pthread_mutex_lock(&mutex);
-    MatNd_printCommentDigits("mat", mat, 4);
-    pthread_mutex_unlock(&mutex);
-    Timer_usleep(1000);
-  }
-
-  MatNd_destroy(mat);
-  pthread_mutex_destroy(&mutex);
-}
-
-
-
-/******************************************************************************
-
-  \brief Factory instantiation method for Qt thread.
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 typedef struct
 {
   void* ptr[10];
@@ -107,11 +64,10 @@ static void* matndGui(void* arg)
   double* ub             = (double*) p->ptr[4];
   const MatNd* dispMat   = (const MatNd*) p->ptr[5];
 
-  MatNdWidget* w;
-
   double lowerBound = (lb != NULL) ? *lb : -1.0;
   double upperBound = (ub != NULL) ? *ub :  1.0;
-  w = new MatNdWidget(mat, dispMat, lowerBound, upperBound, title, mutex);
+  MatNdWidget* w = new MatNdWidget(mat, dispMat, lowerBound, upperBound, 
+                                   title, mutex);
   w->show();
 
   if (lb != NULL)
@@ -129,6 +85,9 @@ static void* matndGui(void* arg)
   return w;
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
 MatNdWidget* MatNdWidget::create(MatNd* mat, const char* title,
                                  pthread_mutex_t* mutex)
 {
@@ -145,6 +104,9 @@ MatNdWidget* MatNdWidget::create(MatNd* mat, const char* title,
   return (MatNdWidget*) RcsGuiFactory_getPointer(handle);
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
 MatNdWidget* MatNdWidget::create(MatNd* mat, double lower, double upper,
                                  const char* title, pthread_mutex_t* mutex)
 {
@@ -167,6 +129,9 @@ MatNdWidget* MatNdWidget::create(MatNd* mat, double lower, double upper,
   return (MatNdWidget*) RcsGuiFactory_getPointer(handle);
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
 MatNdWidget* MatNdWidget::create(MatNd* mat, const MatNd* dispMat,
                                  double lower, double upper,
                                  const char* title, pthread_mutex_t* mutex)
@@ -190,13 +155,9 @@ MatNdWidget* MatNdWidget::create(MatNd* mat, const MatNd* dispMat,
   return (MatNdWidget*) RcsGuiFactory_getPointer(handle);
 }
 
-
-
-/******************************************************************************
-
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 MatNdWidget::MatNdWidget(MatNd* mat_, const MatNd* dispMat_,
                          double lower, double upper,
                          const char* title, pthread_mutex_t* mutex_) :
@@ -210,25 +171,17 @@ MatNdWidget::MatNdWidget(MatNd* mat_, const MatNd* dispMat_,
   init(mat_, dispMat_, lower, upper, title);
 }
 
-
-
-/******************************************************************************
-
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 MatNdWidget::~MatNdWidget()
 {
   RLOG(5, "Destroying MatNdWidget");
 }
 
-
-
-/******************************************************************************
-
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNdWidget::setLowerLimit(const MatNd* limit)
 {
   if (this->lowerLimit != NULL)
@@ -239,13 +192,9 @@ void MatNdWidget::setLowerLimit(const MatNd* limit)
   this->lowerLimit = MatNd_clone(limit);
 }
 
-
-
-/******************************************************************************
-
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNdWidget::setUpperLimit(const MatNd* limit)
 {
   if (this->upperLimit != NULL)
@@ -256,13 +205,9 @@ void MatNdWidget::setUpperLimit(const MatNd* limit)
   this->upperLimit = MatNd_clone(limit);
 }
 
-
-
-/******************************************************************************
-
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNdWidget::setLowerLimit(double limit)
 {
   RCHECK(this->mat);
@@ -270,13 +215,9 @@ void MatNdWidget::setLowerLimit(double limit)
   MatNd_setElementsTo(this->lowerLimit, limit);
 }
 
-
-
-/******************************************************************************
-
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNdWidget::setUpperLimit(double limit)
 {
   RCHECK(this->mat);
@@ -284,13 +225,9 @@ void MatNdWidget::setUpperLimit(double limit)
   MatNd_setElementsTo(this->upperLimit, limit);
 }
 
-
-
-/******************************************************************************
-
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNdWidget::setLabels(std::vector<std::string>& labels)
 {
   if (labels.size() != this->slider.size())
@@ -309,18 +246,17 @@ void MatNdWidget::setLabels(std::vector<std::string>& labels)
 
 }
 
-
-
-/******************************************************************************
-
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNdWidget::setMutex(pthread_mutex_t* mutex)
 {
   this->mutex = mutex;
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNdWidget::setUpdateEnabled(bool enabled)
 {
   lock();
@@ -328,13 +264,9 @@ void MatNdWidget::setUpdateEnabled(bool enabled)
   unlock();
 }
 
-
-
-/******************************************************************************
-
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNdWidget::init(MatNd* mat_, const MatNd* dispMat_,
                        double lower, double upper,
                        const char* title)
@@ -358,8 +290,8 @@ void MatNdWidget::init(MatNd* mat_, const MatNd* dispMat_,
       char indexStr[32];
       sprintf(indexStr, "%u", i);
       LcdSlider* sl =
-        new LcdSlider(lower, this->mat->ele[i*this->mat->n+j], upper, 1.0, 0.0001, indexStr);
-      //new LcdSlider(lower, this->mat->ele[i], upper, 1.0, 1.0e-10, indexStr);
+        new LcdSlider(lower, this->mat->ele[i*this->mat->n+j], upper, 
+                      1.0, 0.0001, indexStr);
       sl->updateLcd1FromSlider();
       matLayout->addWidget(sl, i, j, Qt::AlignLeft);
       this->slider.push_back(sl);
@@ -375,21 +307,15 @@ void MatNdWidget::init(MatNd* mat_, const MatNd* dispMat_,
 
   QTimer* timer = new QTimer(this);
   connect(timer, SIGNAL(timeout()), SLOT(displayAct()));
-  //connect(timer, SIGNAL(timeout()), SLOT(setCommand()));
 
   setCommand();
 
   timer->start(40);
 }
 
-
-
-/******************************************************************************
-
-  \brief Displays task target and current values.
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNdWidget::displayAct()
 {
   if (this->dispMat == NULL)
@@ -407,14 +333,9 @@ void MatNdWidget::displayAct()
   unlock();
 }
 
-
-
-/******************************************************************************
-
-  \brief Displays task target and current values.
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNdWidget::setCommand()
 {
   lock();
@@ -434,14 +355,9 @@ void MatNdWidget::setCommand()
   unlock();
 }
 
-
-
-/******************************************************************************
-
-  \brief
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNdWidget::lock()
 {
   if (this->mutex != NULL)
@@ -450,14 +366,9 @@ void MatNdWidget::lock()
   }
 }
 
-
-
-/******************************************************************************
-
-  \brief
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNdWidget::unlock()
 {
   if (this->mutex != NULL)
@@ -466,14 +377,9 @@ void MatNdWidget::unlock()
   }
 }
 
-
-
-/******************************************************************************
-
-  \brief
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 bool MatNdWidget::isUpdateEnabled()
 {
   lock();
@@ -481,6 +387,26 @@ bool MatNdWidget::isUpdateEnabled()
   unlock();
 
   return isUpdated;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void MatNdWidget::reset(const MatNd* values)
+{
+  if ((this->mat->m!=values->m) || (this->mat->n!=values->n))
+    {
+      RLOG(1, "Mismatch in reset: mat is %u x %u, desired matrix is %u x %u",
+           mat->m, mat->n, values->m, values->n);
+      return;
+    }
+
+  MatNd_copy(this->mat, values);
+
+  for (unsigned int i=0; i<values->m; ++i)
+  {
+    slider[i]->setSliderValue(values->ele[i]);
+  }
 }
 
 

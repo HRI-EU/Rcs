@@ -97,23 +97,23 @@ protected:
 
   const RcsBody* bdy;
   const HTr* A_BI;
+  bool _resizeable;
+  bool ghostMode;
   osg::ref_ptr<osg::Switch> _collisionNode;
   osg::ref_ptr<osg::Switch> _graphicsNode;
   osg::ref_ptr<osg::Switch> _physicsNode;
   osg::ref_ptr<osg::Switch> _refNode;
+  std::vector<osg::ref_ptr<osg::Geode> > _dynamicShapes;
   osg::ref_ptr<osg::Switch> _debugNode;
   osg::ref_ptr<osgText::Text> _debugText;
-  std::vector<osg::ref_ptr<osg::Geode> > _dynamicShapes;
-  static std::map<std::string, osg::ref_ptr<osg::Node> > _meshBuffer;
-  static std::map<std::string, osg::ref_ptr<osg::Texture2D> > _textureBuffer;
-  bool _resizeable;
-  bool ghostMode;
   osg::ref_ptr<osg::Vec3Array> _debugLine;
   osg::ref_ptr<osg::Geometry> _debugLineGeometry;
 
   static char _fontFile[256];
   static bool _fontFileFound;
   static bool _fontFileSearched;
+  static std::map<std::string, osg::ref_ptr<osg::Node> > _meshBuffer;
+  static std::map<std::string, osg::ref_ptr<osg::Texture2D> > _textureBuffer;
 };
 
 

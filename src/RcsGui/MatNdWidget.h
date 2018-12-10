@@ -53,7 +53,6 @@ class MatNdWidget: public QScrollArea
   Q_OBJECT
 
 public:
-  static void test();
   static MatNdWidget* create(MatNd* mat, const char* title=NULL,
                              pthread_mutex_t* mutex=NULL);
   static MatNdWidget* create(MatNd* mat, double lower, double upper,
@@ -75,6 +74,7 @@ public:
   void setMutex(pthread_mutex_t* mutex);
   void setUpdateEnabled(bool enabled);
   bool isUpdateEnabled();
+  void reset(const MatNd* values);
 
 protected:
   void init(MatNd* mat, const MatNd* dispMat, double lower, double upper,
