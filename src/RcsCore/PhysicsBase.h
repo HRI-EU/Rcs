@@ -427,6 +427,12 @@ public:
    */
   virtual const RcsGraph* getGraph() const;
 
+  /*! \brief Returns a pointer to the underlying graph.
+   *
+   *  \return Pointer to the simulation's internal desired RcsGraph structure.
+   */
+  virtual const RcsGraph* getDesiredGraph() const;
+
   /*! \brief Returns the simulation time. The simulation time is 0 on
    *         construction, and will be increased by dt for each call of
    *         \ref simulate.

@@ -216,6 +216,14 @@ const RcsGraph* Rcs::PhysicsBase::getGraph() const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+const RcsGraph* Rcs::PhysicsBase::getDesiredGraph() const
+{
+  return this->internalDesiredGraph;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 double Rcs::PhysicsBase::time() const
 {
   return this->simTime;
