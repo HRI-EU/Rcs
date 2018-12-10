@@ -12,4 +12,7 @@ IF(NOT HEADLESS_BUILD)
   ADD_EXECUTABLE(ExampleForwardKinematics ExampleForwardKinematics.cpp)
   TARGET_LINK_LIBRARIES(ExampleForwardKinematics RcsCore RcsGui RcsGraphics)
 
+  ADD_EXECUTABLE(ExampleKinetics ExampleKinetics.cpp)
+  TARGET_LINK_LIBRARIES(ExampleKinetics RcsCore RcsGui RcsGraphics RcsPhysics)
+
 ENDIF(NOT HEADLESS_BUILD)
