@@ -135,6 +135,13 @@ void MatNd_QRDecomposition(MatNd* Q, MatNd* R, const MatNd* A);
  */
 bool MatNd_getEigenVectors(MatNd* V, double* d, const MatNd* A);
 
+/*! \ingroup MatNdFunctions
+ *  \brief Solves the linear equation system A*X=B for X. All quantities may
+ *         be in matrix form. The function uses the Eigen3 column-pivoting
+ *         Housholder QR decomposition.
+ */
+void MatNd_HouseholderQR(MatNd* X, const MatNd* A, const MatNd* B);
+
 #ifdef __cplusplus
 }
 #endif

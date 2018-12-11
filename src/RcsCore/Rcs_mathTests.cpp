@@ -522,7 +522,8 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
     MatNd_destroy(ABAt2);
   }
 
-  RLOGS(1, "%s testing simple matrix functions", success ? "SUCCESS" : "FAILURE");
+  RLOGS(1, "%s testing simple matrix functions", 
+        success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -539,8 +540,7 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
   Rcs::CmdLineParser argP(argc, argv);
   argP.getArgument("-dim", &dim, "Set default dimansionality");
   bool testChol = argP.hasArgument("-chol", "Test Cholesky functions only");
-  bool testGS = argP.hasArgument("-gaussSeidl", "Test Gauss-Seidl "
-                                 "functions");
+  bool testGS = argP.hasArgument("-gaussSeidl", "Test Gauss-Seidl functions");
   bool testInverse = argP.hasArgument("-inverse", "Test matrix inversion");
   bool testSolve = argP.hasArgument("-solve", "Test solving linear equation "
                                     "systems with all algorithms");
@@ -3779,7 +3779,7 @@ bool testFunctionsEigen3(int argc, char** argv)
             rmsErr, maxErr, rank);
     }
 
-    if ((rmsErr>=maxErr) || (RcsLogLevel>1) || ((RcsLogLevel>0)&&(dim<10)))
+    if ((rmsErr>=maxErr) || (RcsLogLevel>1))
     {
       MatNd_printCommentDigits("U", U, 4);
       MatNd_printComment("S", S);
@@ -3840,8 +3840,7 @@ bool testFunctionsEigen3(int argc, char** argv)
     }
 
 
-    if (((errNorm>=maxErr) && (RcsLogLevel>2)) ||
-        ((RcsLogLevel>0)&&(dim<10)))
+    if ((errNorm>=maxErr) && (RcsLogLevel>1))
     {
       MatNd_printCommentDigits("Error", err, 8);
       MatNd_printCommentDigits("Ax", Ax, 8);
@@ -3882,17 +3881,13 @@ bool testFunctionsEigen3(int argc, char** argv)
     else
     {
       success = false;
+      REXEC(2)
+        {
       RMSGS("FAILURE for SVD inverse: A*inv(A) != I");
       MatNd_printCommentDigits("A", A, 5);
       MatNd_printCommentDigits("inv(A)", A_inv, 5);
       MatNd_printCommentDigits("A*inv(A) = I", A_invA, 5);
     }
-
-    if ((RcsLogLevel>1) || ((RcsLogLevel>0) && (dim<10)))
-    {
-      MatNd_printCommentDigits("A", A, 5);
-      MatNd_printCommentDigits("inv(A)", A_inv, 5);
-      MatNd_printCommentDigits("A*inv(A) = E", A_invA, 5);
     }
 
     MatNd_destroy(A);
@@ -3943,8 +3938,7 @@ bool testFunctionsEigen3(int argc, char** argv)
             " (>%g)", 1.0e3*dt, errNorm, maxErr);
     }
 
-    if ((errNorm>=maxErr) || (isQorthogonal==false) || (RcsLogLevel>1) ||
-        ((RcsLogLevel>0)&&(dim<10)))
+    if ((errNorm>=maxErr) || (isQorthogonal==false) || (RcsLogLevel>1))
     {
       MatNd_printCommentDigits("J", J, 5);
       MatNd_printCommentDigits("Q", Q, 5);
@@ -3960,9 +3954,67 @@ bool testFunctionsEigen3(int argc, char** argv)
     MatNd_destroy(J_test);
   }
 
+  // MatNd_QRDecomposition
+  {
+    RLOGS(2, "**************************************");
+    RLOGS(2, "Test for MatNd_HouseholderQR");
+    RLOGS(2, "**************************************");
+    int m = dim;
+    int n = dim;
+    argP.getArgument("-rows", &m, "Number of rows");
+    argP.getArgument("-cols", &n, "Number of columns");
+    MatNd* A = MatNd_create(m, n);
+    MatNd* B = MatNd_create(m, m);
+    MatNd* X = MatNd_create(m, n);
+
+    MatNd_setRandom(A, -1.0, 1.0);
+    MatNd_setRandom(B, -1.0, 1.0);
+
+    Timer_setZero();
+    MatNd_HouseholderQR(X, A, B);
+    double dt = Timer_getTime();
+
+    // Test A*X=B
+    MatNd* B_test = MatNd_create(m, m);
+    MatNd_mul(B_test, A, X);
+
+    double errNorm = MatNd_msqError(B, B_test);
+    const double maxErr = 1.0e-12;
+
+    if (errNorm < maxErr)
+    {
+      RLOGS(2, "SUCCESS for Householder QR after %.2f msec: error is "
+            "%g (<%g)", 1.0e3*dt, errNorm, maxErr);
+    }
+    else
+    {
+      success = false;
+      RMSGS("FAILURE for Householder QR decompositionafter %.2f msec: error "
+            "is %g (>%g)", 1.0e3*dt, errNorm, maxErr);
+    }
+
+    MatNd_subSelf(B_test, B);
+
+    if ((errNorm>=maxErr) || (RcsLogLevel>1))
+    {
+      MatNd_printCommentDigits("A", A, 5);
+      MatNd_printCommentDigits("X", X, 5);
+      MatNd_printCommentDigits("B", B, 5);
+      MatNd_printCommentDigits("B_test", B_test, 5);
+    }
+
+    MatNd_destroy(A);
+    MatNd_destroy(X);
+    MatNd_destroy(B);
+    MatNd_destroy(B_test);
+  }
+
+  RLOGS(1, "%s testing Eigen3 linear algebra functions", 
+        success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
+
 #else
 
 bool testFunctionsEigen3(int argc, char** argv)

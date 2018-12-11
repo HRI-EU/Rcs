@@ -78,6 +78,16 @@
 
 using namespace Eigen;
 
+#if defined (MATND_MAX_STACK_VECTOR_SIZE)
+#undef MATND_MAX_STACK_VECTOR_SIZE
+#endif
+
+#if defined (MATND_MAX_STACK_MATRIX_SIZE)
+#undef MATND_MAX_STACK_MATRIX_SIZE
+#endif
+
+#define MATND_MAX_STACK_VECTOR_SIZE (25)
+#define MATND_MAX_STACK_MATRIX_SIZE (25*25)
 
 
 // These types have an unknown size at compile time, and therefore are
@@ -355,6 +365,16 @@ static inline bool EigenVectors(MatNd* V_, double* d_, const MatNd* A_)
   return true;
 }
 
+template <typename MatT>
+static inline void ColPivHhQR(MatNd* X_, const MatNd* A_, const MatNd* B_)
+{
+  Map<const MatT> A(A_->ele, A_->m, A_->n);
+  Map<const MatT> B(B_->ele, B_->m, B_->n);
+  Map<MatT> X(X_->ele, X_->m, X_->n);
+
+  // A X = B
+  X = A.colPivHouseholderQr().solve(B);
+}
 
 
 
@@ -591,6 +611,26 @@ bool MatNd_getEigenVectors(MatNd* V, double* d, const MatNd* A)
 
   return success;
 }
+
+void MatNd_HouseholderQR(MatNd* X, const MatNd* A, const MatNd* B)
+{
+  if ((A->m > MATND_MAX_STACK_VECTOR_SIZE) ||
+      (A->n > MATND_MAX_STACK_VECTOR_SIZE))
+  {
+    return ColPivHhQR<HeapMat>(X, A, B);
+  }
+  else
+  {
+#ifdef EIGEN_RUNTIME_NO_MALLOC
+    Eigen::internal::set_is_malloc_allowed(false);
+#endif
+    return ColPivHhQR<StackMat>(X, A, B);
+#ifdef EIGEN_RUNTIME_NO_MALLOC
+    Eigen::internal::set_is_malloc_allowed(true);
+#endif
+  }
+}
+
 
 
 
