@@ -240,6 +240,48 @@ void Rcs::HUD::setText(const std::stringstream& text)
 /*******************************************************************************
  *
  ******************************************************************************/
+void Rcs::HUD::clearText()
+{
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mutex);
+  textChanged = true;
+  _text.clear();
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::HUD::addText(const std::string& text)
+{
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mutex);
+  textChanged = true;
+  _text.append(text);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::HUD::addText(const char* text)
+{
+  if (text==NULL)
+  {
+    RLOG(1, "Text is NULL - ignoring");
+    return;
+  }
+
+  addText(std::string(text));
+}
+
+/*******************************************************************************
+ * See above
+ ******************************************************************************/
+void Rcs::HUD::addText(const std::stringstream& text)
+{
+  addText(text.str());
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 const char* Rcs::HUD::className() const
 {
   return "Rcs::HUD";

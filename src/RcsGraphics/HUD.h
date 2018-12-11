@@ -85,9 +85,16 @@ public:
   HUD(int llx, int lly, int sizeX, int sizeY, const char* text_color="WHITE");
   virtual ~HUD();
 
-  virtual void setText(const char* text);
-  virtual void setText(const std::string& text);
-  virtual void setText(const std::stringstream& text);
+  void setText(const char* text);
+  void setText(const std::string& text);
+  void setText(const std::stringstream& text);
+
+  void addText(const char* text);
+  void addText(const std::string& text);
+  void addText(const std::stringstream& text);
+
+  void clearText();
+
   virtual const char* className() const;
 
   /*! \brief Updates the font size of the text used in the HUD
