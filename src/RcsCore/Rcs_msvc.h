@@ -38,6 +38,8 @@
 #ifndef RCS_MSVC_H
 #define RCS_MSVC_H
 
+#pragma warning(disable: 4267)   //conversion from ??? to ???, possible loss of data
+
 #include <stdio.h>    // _snprintf
 #include <stdlib.h>
 #include <string.h>   // _stricmp
