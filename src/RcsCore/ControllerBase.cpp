@@ -1200,8 +1200,8 @@ void Rcs::ControllerBase::decompressFromActiveSelf(MatNd* xc,
 void Rcs::ControllerBase::decompressActivationToTask(MatNd* x,
                                                      const MatNd* a) const
 {
-  RCHECK(x->m == getTaskDim());
   RCHECK(a->m == getNumberOfTasks());
+  MatNd_reshape(x, getTaskDim(), 1);
 
   size_t rowIdx = 0;
 
@@ -1230,7 +1230,23 @@ void Rcs::ControllerBase::decompressActivationToTask(MatNd* x) const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-double Rcs::ControllerBase::computeJointlimitCost(double borderRatio) const
+double Rcs::ControllerBase::computeJointlimitCost() const
+{
+  return RcsGraph_jointLimitCost(this->graph, RcsStateIK);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void Rcs::ControllerBase::computeJointlimitGradient(MatNd* grad) const
+{
+  RcsGraph_jointLimitGradient(this->graph, grad, RcsStateIK);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+double Rcs::ControllerBase::computeJointlimitBorderCost(double borderRatio) const
 {
   return RcsGraph_jointLimitBorderCost(this->graph, borderRatio, RcsStateIK);
 }
@@ -1238,7 +1254,7 @@ double Rcs::ControllerBase::computeJointlimitCost(double borderRatio) const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void Rcs::ControllerBase::computeJointlimitGradient(MatNd* grad,
+void Rcs::ControllerBase::computeJointlimitBorderGradient(MatNd* grad,
                                                     double borderRatio) const
 {
   RcsGraph_jointLimitBorderGradient(this->graph, grad, borderRatio, RcsStateIK);
@@ -1713,8 +1729,6 @@ void Rcs::ControllerBase::computeTaskForce_org(MatNd* ft_task,
   MatNd_destroy(pinvJ_sensor);
   MatNd_destroy(pinvJF);
   MatNd_destroy(J_task);
-
-
 }
 
 
@@ -1725,10 +1739,10 @@ void Rcs::ControllerBase::computeTaskForce_org(MatNd* ft_task,
  ******************************************************************************/
 bool Rcs::ControllerBase::add(const ControllerBase& other,
                               const char* suffix,
-                              const HTr* A_KV)
+                              const HTr* A_BP)
 {
   bool success = RcsGraph_appendCopyOfGraph(getGraph(), NULL,
-                                            other.getGraph(), suffix, A_KV);
+                                            other.getGraph(), suffix, A_BP);
   if (success == false)
   {
     return false;
@@ -1804,7 +1818,6 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
  ******************************************************************************/
 void Rcs::ControllerBase::add(Task* other)
 {
-
   if (this->taskArrayIdx.empty())   // back() is undefined if vector is empty
   {
     this->taskArrayIdx.push_back(0);

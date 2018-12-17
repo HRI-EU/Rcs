@@ -392,8 +392,36 @@ public:
    */
   void decompressFromActiveSelf(MatNd* xc, const MatNd* activations) const;
 
+  /*! \brief Given a vector of activations a with the number of rows
+   *         corresponding to the number of tasks, the function copies
+   *         the activation value to all task elements of the corresponding
+   *         task.
+   *
+   * \param[out] x   Task vector, will be reshaped to the correct dimensions.
+   * \param[in]  a   Activation vector, must be [num tasks x 1]. If this is not
+   *                 the case, the function will exit fatally.
+   */
   void decompressActivationToTask(MatNd* x, const MatNd* a) const;
+
+  /*! \brief In-place version of the above \ref decompressActivationToTask
+   *         function.
+   *
+   * \param[in,out] a_to_x   Activation vector of size [num tasks x 1]. It must
+   *                         have enough memory for task-dim elements,
+   *                         otherwise the function exits fatally.
+   */
   void decompressActivationToTask(MatNd* a_to_x) const;
+
+  /*! \brief Computes the joint limit costs. This function uses the
+   *         method RcsGraph_jointLimitCost().
+   */
+  virtual double computeJointlimitCost() const;
+
+  /*! \brief Gradient for the function computeJointlimitCost(). The gradient
+   *         is an 1 x dof vector, where dof is the number of unconstrained
+   *         degrees of freedom of the system.
+   */
+  virtual void computeJointlimitGradient(MatNd* grad) const;
 
   /*! \brief Computes the joint limit costs. This function uses the
    *         method RcsGraph_jointLimitBorderCost(). The variable
@@ -402,14 +430,14 @@ public:
    *         borderRatio, a quadratic penalty is computed. See
    *         RcsGraph_jointLimitBorderCost() for details.
    */
-  virtual double computeJointlimitCost(double borderRatio=0.0) const;
+  virtual double computeJointlimitBorderCost(double borderRatio) const;
 
   /*! \brief Gradient for the function computeJointlimitCost(). The gradient
    *         is an 1 x dof vector, where dof is the number of unconstrained
    *         degrees of freedom of the system.
    */
-  virtual void computeJointlimitGradient(MatNd* grad,
-                                         double borderRatio=0.0) const;
+  virtual void computeJointlimitBorderGradient(MatNd* grad,
+                                               double borderRatio) const;
 
   /*! \brief Computes the collision model. This function traverses the
    *         collision pairs that are defined in the underlying collision
@@ -479,8 +507,7 @@ public:
                                  const MatNd* W=NULL,
                                  const MatNd* activation=NULL) const;
 
-  /*!
-   * \brief Gradient for the function \ref computeTaskCost() according to
+  /*! \brief Gradient for the function \ref computeTaskCost() according to
    *         \f[
    *         \frac{\partial c}{\partial \mathbf{q}} = \mathbf{\Delta x^T W J}
    *         \f]
@@ -609,7 +636,7 @@ public:
   virtual xmlNodePtr getXmlNode() const;
 
   virtual bool add(const ControllerBase& other, const char* suffix,
-                   const HTr* A_KV);
+                   const HTr* A_BP);
 
   virtual void add(Task* other);
 

@@ -540,7 +540,8 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
   Rcs::CmdLineParser argP(argc, argv);
   argP.getArgument("-dim", &dim, "Set default dimansionality");
   bool testChol = argP.hasArgument("-chol", "Test Cholesky functions only");
-  bool testGS = argP.hasArgument("-gaussSeidl", "Test Gauss-Seidl functions");
+  bool testGS = argP.hasArgument("-gaussSeidl", "Test Gauss-Seidl "
+                                 "functions");
   bool testInverse = argP.hasArgument("-inverse", "Test matrix inversion");
   bool testSolve = argP.hasArgument("-solve", "Test solving linear equation "
                                     "systems with all algorithms");

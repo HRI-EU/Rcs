@@ -403,7 +403,7 @@ int main(int argc, char** argv)
       FILE* fd = fopen("jlcost.dat", "w+");
       RCHECK(fd);
 
-      for (double q = jlJoint->q_min; q < jlJoint->q_max; q = q + 0.001)
+      for (double q = jlJoint->q_min-0.5; q < jlJoint->q_max+0.5; q = q + 0.001)
       {
         //*jlJoint->q = q;
         MatNd_set(graph->q, jlJoint->jointIndex, 0, q);
