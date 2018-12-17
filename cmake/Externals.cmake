@@ -288,5 +288,11 @@ ENDIF(WIN32)
 # 
 ################################################################################
 IF(USE_EIGEN3)
-  FIND_PACKAGE (Eigen3 3.2.0 REQUIRED)
+  FIND_PACKAGE (Eigen3 3.2.0 QUIET)
+
+  IF(NOT Eigen3_FOUND)
+    MESSAGE("-- Using Eigen3 from Rcs external directory")
+    SET(EIGEN3_INCLUDE_DIR ${RCS_THIRDPARTY_DIR}/Eigen)
+  ENDIF()
+
 ENDIF()
