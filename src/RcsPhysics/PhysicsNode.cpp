@@ -46,6 +46,7 @@
 
 #include <Rcs_typedef.h>
 #include <Rcs_macros.h>
+#include <Rcs_basicMath.h>
 #include <KeyCatcherBase.h>
 #include <FTSensorNode.h>
 #include <CapsuleNode.h>
@@ -67,8 +68,8 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
                               "PhysicsNode");
 
   this->modelNd = new GraphNode(sim_->getGraph(), resizeable, false);
-  modelNd->toggleGraphicsModel();
-  modelNd->togglePhysicsModel();
+  modelNd->displayGraphicsModel(false);
+  modelNd->displayPhysicsModel(true);
   modelNd->setGhostMode(true, "RED");
   pat->addChild(modelNd);
 
@@ -76,15 +77,9 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   cn->toggle();   // Start with contacts
   pat->addChild(cn.get());
 
-
-
-
-
-
-
   this->physicsNd = new GraphNode(sim_->getGraph(), resizeable, false);
-  physicsNd->toggleGraphicsModel();
-  physicsNd->togglePhysicsModel();
+  physicsNd->displayGraphicsModel(false);
+  physicsNd->displayPhysicsModel(true);
   pat->addChild(physicsNd);
 
   updateTransformPointers();
@@ -99,11 +94,6 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
       pat->addChild(ftn.get());
     }
   }
-
-
-
-
-
 
   osg::ref_ptr<ForceDragger> draggerNd = new ForceDragger(sim_);
   pat->addChild(draggerNd.get());
@@ -120,9 +110,7 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   }
 #endif
 
-
-
-
+  setDisplayMode(2);
 
   makeDynamic();
 }
@@ -366,6 +354,21 @@ int Rcs::PhysicsNode::getDisplayMode() const
 }
 
 /*******************************************************************************
+*
+******************************************************************************/
+const char* Rcs::PhysicsNode::getDisplayModeStr() const
+{
+  static char modeName[][32] = { "graph and physics",
+                                 "graph only",
+                                 "physics only",
+                                 "Unknown display mode"
+                               };
+
+  int idx = Math_iClip(this->displayMode, 0, 3);
+  return modeName[idx];
+}
+
+/*******************************************************************************
  * Set transparency for individual bodies
  ******************************************************************************/
 void Rcs::PhysicsNode::setDisplayMode(int mode)
@@ -499,4 +502,28 @@ void Rcs::PhysicsNode::updateTransformPointers()
     physicsNd->setBodyTransformPtr(BODY, physicsTrf);
   }
 
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::PhysicsNode::removeBodyNode(const char* body)
+{
+  bool success = modelNd->removeBodyNode(body);
+  success = physicsNd->removeBodyNode(body) && success;
+
+  return success;
+}
+
+/*******************************************************************************
+ * Adds a body node to both GraphNodes.
+ ******************************************************************************/
+void Rcs::PhysicsNode::addBodyNode(const RcsBody* body)
+{
+  modelNd->addBodyNode(body, 1.0, false);
+  BodyNode* node = physicsNd->addBodyNode(body, 1.0, false);
+
+  const RcsBody* simBdy = RcsGraph_getBodyByName(sim->getGraph(), body->name);
+  const HTr* physicsTrf = sim->getPhysicsTransformPtr(simBdy);
+  node->setTransformPtr(physicsTrf);
 }

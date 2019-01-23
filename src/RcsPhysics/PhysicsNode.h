@@ -57,6 +57,9 @@ public:
   bool setGhostMode(const std::string& bodyName, const std::string& matname="");
   void setDisplayMode(int mode);
   int getDisplayMode() const;
+  const char* getDisplayModeStr() const;
+  void addBodyNode(const RcsBody* body);
+  bool removeBodyNode(const char* body);
 
   /*! \brief Adds a wireframe box to show the considered bounding box for the
    *         simulation. This is specific for Bullet and will do nothing if
