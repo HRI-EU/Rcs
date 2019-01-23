@@ -142,415 +142,8 @@ static bool RcsGraph_parseModelState(xmlNodePtr node, RcsGraph* self,
 }
 
 /*******************************************************************************
- *
- ******************************************************************************/
-bool RcsGraph_setStateFromXML(RcsGraph* self, const char* modelStateName,
-                              int timeStamp)
-{
-  if ((self==NULL) || (modelStateName==NULL))
-  {
-    return false;
-  }
-
-  // Read XML file
-  xmlDocPtr doc;
-  xmlNodePtr node = parseXMLFile(self->xmlFile, "Graph", &doc);
-
-  if (node == NULL)
-  {
-    xmlFreeDoc(doc);
-    return false;
-  }
-
-  bool success = RcsGraph_parseModelState(node, self, modelStateName);
-  xmlFreeDoc(doc);
-
-  return success;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
-{
-  if (node == NULL)
-  {
-    RLOG(1, "XML node is NULL - failed to create RcsGraph");
-    return NULL;
-  }
-
-  // Get memory for the graph
-  RcsGraph* self = RALLOC(RcsGraph);
-  RCHECK(self);
-  self->xmlFile = String_clone("Created_from_xml_node");
-
-  // This is the arrays for the state vectors and velocities. We need to
-  // create them here, since in the RcsJoint data structure a pointer will
-  // point to the self->q values.
-  self->q = MatNd_create(0, 1);
-
-  // Recurse through bodies
-  char vrmlPath[256] = "";
-  HTr A_rel;
-  HTr_setIdentity(&A_rel);
-  RcsBody* root[RCSGRAPH_MAX_GROUPDEPTH];
-  memset(root, 0, RCSGRAPH_MAX_GROUPDEPTH * sizeof(RcsBody*));
-
-  // Initialize generic bodies. Here we allocate memory for names and body
-  // transforms. They are deleted once relinked to another body. We initialize
-  // it before parsing, since they can already be linked in the xml files.
-  for (int i = 0; i < 10; i++)
-  {
-    memset(&self->gBody[i], 0, sizeof(RcsBody));
-    self->gBody[i].name      = RNALLOC(64, char);
-    self->gBody[i].xmlName   = RNALLOC(64, char);
-    self->gBody[i].suffix    = RNALLOC(64, char);
-    self->gBody[i].A_BI      = HTr_create();
-    self->gBody[i].A_BP      = HTr_create();
-    self->gBody[i].Inertia   = HTr_create();
-    HTr_setZero(self->gBody[i].Inertia);
-    sprintf(self->gBody[i].name, "GenericBody%d", i);
-  }
-
-  RcsGraph_parseBodies(node, self, vrmlPath, (char*) "DEFAULT", (char*) "",
-                       (char*) "", &A_rel, false, 0, root, false);
-
-  // Create velocity vector. It is done here since self->dof has been
-  // computed during parsing.
-  self->q_dot = MatNd_create(self->dof, 1);
-
-  // Re-order joint indices to match depth-first traversal, and connect coupled
-  // joints
-  RcsGraph_makeJointsConsistent(self);
-
-  // Apply model state
-  char mdlName[64] = "";
-  int nBytes = getXMLNodePropertyStringN(node, "name", mdlName, 64);
-  if (nBytes > 0)
-  {
-    RcsGraph_parseModelState(node, self, mdlName);
-  }
-
-  // Set state vector
-  RcsGraph_setState(self, NULL, NULL);
-
-  // Check for consistency
-  int graphErrors = RcsGraph_check(self);
-
-  if (graphErrors > 0)
-  {
-    RLOG(1, "Check for graph failed: %d errors", graphErrors);
-    RcsGraph_destroy(self);
-    return NULL;
-  }
-
-  return self;
-}
-
-/*******************************************************************************
- * Joint initialization function.
- ******************************************************************************/
-static RcsJoint* RcsBody_initJoint(RcsGraph* self,
-                                   RcsBody* b,
-                                   xmlNodePtr node,
-                                   const char* suffix,
-                                   const HTr* A_group)
-{
-  char msg[256];
-  double ka[3];
-  RcsJoint* jnt  = NULL;
-  bool verbose = false;
-  int strLength = 0;
-
-  RCHECK(HTr_isValid(A_group));
-
-  jnt = RNALLOC(1, RcsJoint);
-  RCHECK_PEDANTIC(jnt);
-
-  RcsGraph_insertJoint(self, b, jnt);
-
-  if (verbose == true)
-  {
-    RMSG("%s: dof = %d", b->name, jnt->jointIndex);
-  }
-
-  HTr_setIdentity(&jnt->A_JI);
-
-  //  Joint name
-  strLength = getXMLNodeBytes(node, "name");
-
-  if (strLength > 0)
-  {
-    unsigned int nBytes = strLength + strlen(suffix) + 1;
-    jnt->name = RNALLOC(nBytes, char);
-    RCHECK_PEDANTIC(jnt->name);
-    getXMLNodePropertyStringN(node, "name", jnt->name, nBytes);
-    strcat(jnt->name, suffix);
-  }
-  else
-  {
-    jnt->name = RNALLOC(strlen("unnamed joint") + strlen(suffix) + 1, char);
-    RCHECK_PEDANTIC(jnt->name);
-    strcpy(jnt->name, "unnamed joint");
-    strcat(jnt->name, suffix);
-    RLOG(4, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
-         "unnamed joint\"", b->name, b->parent ? b->parent->name : "NULL");
-  }
-
-  // Relative transformation from prev. body to joint (in prev. body coords)
-  // It is only created if the XML file transform is not the identity matrix.
-  if (getXMLNodeProperty(node, "transform"))
-  {
-    HTr A_BP;
-    getXMLNodePropertyHTr(node, "transform", &A_BP);
-    if (!HTr_isIdentity(&A_BP))
-    {
-      jnt->A_JP = HTr_clone(&A_BP);
-    }
-  }
-
-  // check if the quat tag exists and if yes, transform is not allowed
-  if (getXMLNodeProperty(node, "quat"))
-  {
-    bool success = !getXMLNodeProperty(node, "transform");
-    RCHECK_MSG(success, "\"transform\" is not allowed if \"quat\" exists.");
-
-    HTr A_BP;
-    HTr_setIdentity(&A_BP);
-    success = getXMLNodePropertyQuat(node, "quat", A_BP.rot);
-    getXMLNodePropertyVec3(node, "pos", A_BP.org);
-    if (!HTr_isIdentity(&A_BP))
-    {
-      jnt->A_JP = HTr_clone(&A_BP);
-    }
-  }
-
-  if (b->jnt == jnt) // the joint is the first joint of the body
-  {
-    // Here we apply the groups transform to the first joint of the body.
-    if (HTr_isIdentity(A_group) == false)
-    {
-      if (!jnt->A_JP)
-      {
-        jnt->A_JP = HTr_clone(A_group);
-      }
-      else
-      {
-        HTr_transformSelf(jnt->A_JP, A_group);
-      }
-      if (verbose)
-      {
-        RMSG("Applied group transform to joint \"%s\"", jnt->name);
-      }
-    }
-  }
-
-  // Joint constraint
-  getXMLNodePropertyBoolString(node, "constraint", &jnt->constrained);
-
-  // Joint type
-  if (getXMLNodePropertyStringN(node, "type", msg, 256))
-  {
-    if (verbose)
-    {
-      RMSG("%s: Joint (%s):   ", b->name, msg);
-    }
-
-    if (STREQ(msg, "TransX"))
-    {
-      jnt->type = RCSJOINT_TRANS_X;
-      jnt->dirIdx = 0;
-    }
-    else if (STREQ(msg, "TransY"))
-    {
-      jnt->type = RCSJOINT_TRANS_Y;
-      jnt->dirIdx = 1;
-    }
-    else if (STREQ(msg, "TransZ"))
-    {
-      jnt->type = RCSJOINT_TRANS_Z;
-      jnt->dirIdx = 2;
-    }
-    else if (STREQ(msg, "RotX"))
-    {
-      jnt->type = RCSJOINT_ROT_X;
-      jnt->dirIdx = 0;
-    }
-    else if (STREQ(msg, "RotY"))
-    {
-      jnt->type = RCSJOINT_ROT_Y;
-      jnt->dirIdx = 1;
-    }
-    else if (STREQ(msg, "RotZ"))
-    {
-      jnt->type = RCSJOINT_ROT_Z;
-      jnt->dirIdx = 2;
-    }
-    else
-    {
-      RFATAL("Joint \"%s\": Unknown joint type \"%s\"", jnt->name, msg);
-    }
-
-  }
-
-  // Joint range (must go after joint type)
-  if (getXMLNodePropertyVec3(node, "range", ka))
-  {
-    jnt->q_min = ka[0];
-    jnt->q0    = ka[1];
-    jnt->q_max = ka[2];
-
-    RCHECK(jnt->q_min <= jnt->q_max);
-    RCHECK((jnt->q0 >= jnt->q_min) && (jnt->q0 <= jnt->q_max));
-
-    if (RcsJoint_isRotation(jnt) == true)
-    {
-      jnt->q_min *= (M_PI / 180.0);
-      jnt->q0    *= (M_PI / 180.0);
-      jnt->q_max *= (M_PI / 180.0);
-    }
-
-    jnt->q_init = jnt->q0;
-  }
-  else
-  {
-    if (getXMLNodeProperty(node, "coupledTo") == false)
-    {
-      RFATAL("Joint \"%s\" has no range and is not coupled to another "
-             "joint!", jnt->name);
-    }
-
-    jnt->q_init = 0.0;
-  }
-
-
-  // Joint weight. That's used to multply the joint limit gradient,
-  // such redistributing the joint speeds in the inverse kinematics
-  // computation. A larger weight leads to a relatively higher speed.
-  REXEC(4)
-  {
-    bool success = !getXMLNodeProperty(node, "weight");
-    RCHECK_MSG(success,
-               "Tag \"weight\" has changed to \"weightJL\" - please update "
-               "your xml file (body \"%s\", joint \"%s\")",
-               b->name, jnt->name);
-  }
-
-  // Joint weight. That's used to multply the joint limit gradient,
-  // such redistributing the joint speeds in the inverse kinematics
-  // computation. A larger weight leads to a relatively higher speed.
-  jnt->weightJL = 1.0;
-  getXMLNodePropertyDouble(node, "weightJL", &jnt->weightJL);
-
-  // Proximity weight. That's used to multply the collision gradient,
-  // such redistributing the joint speeds in the inverse kinematics
-  // computation. A larger weight leads to a relatively higher speed.
-  jnt->weightCA = 1.0;
-  getXMLNodePropertyDouble(node, "weightCA", &jnt->weightCA);
-
-  // Metric weight. That's used to pre-multply the weighting matrix,
-  // such redistributing the joint speeds in the inverse kinematics
-  // computation.
-  jnt->weightMetric = 1.0;
-  getXMLNodePropertyDouble(node, "weightMetric", &jnt->weightMetric);
-
-  // Joint controller type (pos, vel, torque)
-  jnt->ctrlType = RCSJOINT_CTRL_POSITION;
-  jnt->maxTorque = DBL_MAX; // Default: No limit for non-torque joints
-
-  if (getXMLNodePropertyStringN(node, "ctrlType", msg, 256))
-  {
-    if (STREQ(msg, "Position") || STREQ(msg, "pos"))
-    {
-      jnt->ctrlType = RCSJOINT_CTRL_POSITION;
-    }
-    else if (STREQ(msg, "Velocity") || STREQ(msg, "vel"))
-    {
-      jnt->ctrlType = RCSJOINT_CTRL_VELOCITY;
-    }
-    else if (STREQ(msg, "Torque") || STREQ(msg, "tor"))
-    {
-      jnt->maxTorque = 1.0; // Default: 1 Nm for torque joints
-      jnt->ctrlType = RCSJOINT_CTRL_TORQUE;
-    }
-    else
-    {
-      RFATAL("Joint \"%s\": Unknown joint controller type (ctrlType) \"%s\"",
-             jnt->name, msg);
-    }
-  }
-
-  // Max. joint torque
-  getXMLNodePropertyDouble(node, "torqueLimit", &jnt->maxTorque);
-  RCHECK(jnt->maxTorque >= 0.0);
-
-  // Speed limit
-  jnt->speedLimit = DBL_MAX;   // Default
-  getXMLNodePropertyDouble(node, "speedLimit", &jnt->speedLimit);
-
-  // Gear ratio
-  double gearRatio = 1.0;
-
-  if (getXMLNodePropertyDouble(node, "gearRatio", &gearRatio) == true)
-  {
-    RCHECK_MSG(gearRatio >= 0.0,
-               "Joint gear ratio of \"%s\" is negative (%f) - exiting",
-               jnt->name, gearRatio);
-    double rpm2rad = 2.0*M_PI/60.0;
-    jnt->speedLimit *= rpm2rad/gearRatio;
-  }
-
-  // If the joint is of type rotation and no gear ratio is given,
-  // we convert the value to radians (degrees assumed).
-  if ((gearRatio==1.0)&&RcsJoint_isRotation(jnt)&&(jnt->speedLimit!=DBL_MAX))
-  {
-    jnt->speedLimit *= (M_PI / 180.0);
-  }
-
-  // Coupled joint
-  strLength = getXMLNodeBytes(node, "coupledTo");
-
-  if (strLength > 0)
-  {
-    unsigned int nBytes = strLength + strlen(suffix) + 1;
-    jnt->coupledJointName = RNALLOC(nBytes, char);
-    getXMLNodePropertyStringN(node, "coupledTo", jnt->coupledJointName, nBytes);
-    strcat(jnt->coupledJointName, suffix);
-
-    unsigned int polyGrad = getXMLNodeNumStrings(node, "couplingFactor");
-    if (polyGrad == 0)
-    {
-      polyGrad = 1;
-    }
-    RLOG(5, "Coupled joint \"%s\" has %d parameters", jnt->name, polyGrad);
-    RCHECK_MSG((polyGrad == 1) || (polyGrad == 5) || (polyGrad == 9),
-               "Currently only polynomials of order 1 or 5 or 9 are "
-               "supported, and not %d parameters", polyGrad);
-    jnt->couplingFactors = MatNd_create(polyGrad, 1);
-    MatNd_setElementsTo(jnt->couplingFactors, 1.0);
-    getXMLNodePropertyVecN(node, "couplingFactor",
-                           jnt->couplingFactors->ele, polyGrad);
-
-    // Check if a range is given, because it will later be overwritten
-    bool hasRangeTag = getXMLNodeProperty(node, "range");
-    if (hasRangeTag==true)
-    {
-      RLOG(5, "Joint \"%s\" has a range, even though it is coupled to "
-           "another joint (\"%s\")", jnt->name, jnt->coupledJointName);
-    }
-  }
-
-  if (verbose)
-  {
-    RPAUSE();
-  }
-
-  return jnt;
-}
-
-/*******************************************************************************
- * Shape for distance computation.
- ******************************************************************************/
+* Shape for distance computation.
+******************************************************************************/
 static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
                                    const char* bodyColor)
 {
@@ -686,7 +279,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   // Physics and distance computation is not carried out for meshes by default.
   if (shape->type == RCSSHAPE_MESH)
   {
-    physics  = false;
+    physics = false;
     distance = false;
   }
 
@@ -701,7 +294,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   {
     graphics = true;
     distance = false;
-    physics  = false;
+    physics = false;
   }
 
   // Marker are usually invisible and don not interact with anything
@@ -709,11 +302,11 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   {
     graphics = false;
     distance = false;
-    physics  = false;
+    physics = false;
   }
 
   getXMLNodePropertyBoolString(node, "distance", &distance);
-  getXMLNodePropertyBoolString(node, "physics",  &physics);
+  getXMLNodePropertyBoolString(node, "physics", &physics);
   getXMLNodePropertyBoolString(node, "graphics", &graphics);
 
   if (distance == true)
@@ -742,7 +335,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   if (strLength > 0)
   {
     char fileName[256] = "-", fullName[512] = "-";
-    RCHECK((shape->type==RCSSHAPE_MESH) || (shape->type==RCSSHAPE_OCTREE));
+    RCHECK((shape->type == RCSSHAPE_MESH) || (shape->type == RCSSHAPE_OCTREE));
     getXMLNodePropertyStringN(node, "meshFile", fileName, 256);
     Rcs_getAbsoluteFileName(fileName, fullName);
 
@@ -750,14 +343,14 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
     {
       shape->meshFile = String_clone(fullName);
 
-      if (shape->type==RCSSHAPE_MESH)
+      if (shape->type == RCSSHAPE_MESH)
       {
         RcsMeshData* mesh = RcsMesh_createFromFile(shape->meshFile);
-        if (mesh==NULL)
+        if (mesh == NULL)
         {
           RLOG(4, "Failed to add mesh \"%s\" to shape", shape->meshFile);
         }
-        shape->userData = (void*) mesh;
+        shape->userData = (void*)mesh;
       }
     }
     else
@@ -841,8 +434,8 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   {
     // Lets be pedantic with the configuration file: Disallow "extents"
     // and require "radius" and "height" for SSLs and cylinders
-    if (((shape->type==RCSSHAPE_SSL) || (shape->type==RCSSHAPE_CYLINDER)) &&
-        (getXMLNodeProperty(node, "from2Points")==false))
+    if (((shape->type == RCSSHAPE_SSL) || (shape->type == RCSSHAPE_CYLINDER)) &&
+        (getXMLNodeProperty(node, "from2Points") == false))
     {
       bool success = getXMLNodeProperty(node, "length");
       RCHECK_MSG(success, "%s has no \"length\" tag", body->name);
@@ -855,7 +448,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 
     // Lets be pedantic with the configuration file: Disallow "extents"
     // and "height" but require "radius" for spheres
-    if (shape->type==RCSSHAPE_SPHERE)
+    if (shape->type == RCSSHAPE_SPHERE)
     {
       bool success = !getXMLNodeProperty(node, "length");
       RCHECK_MSG(success, "%s", body->name);
@@ -867,7 +460,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 
     // Lets be pedantic with the configuration file: Disallow "radius"
     // and "height" for SSRs
-    if (shape->type==RCSSHAPE_SSR)
+    if (shape->type == RCSSHAPE_SSR)
     {
       bool success = !getXMLNodeProperty(node, "length");
       RCHECK_MSG(success,
@@ -879,10 +472,10 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 
     // Lets be pedantic with the configuration file: Disallow "extents"
     // and force "radius" and "length" for TORUS
-    if (shape->type==RCSSHAPE_TORUS)
+    if (shape->type == RCSSHAPE_TORUS)
     {
       bool success = getXMLNodeProperty(node, "length");
-      RCHECK_MSG(success,"TORUS of body \"%s\" has not length!", body->name);
+      RCHECK_MSG(success, "TORUS of body \"%s\" has not length!", body->name);
       success = getXMLNodeProperty(node, "radius");
       RCHECK_MSG(success, "TORUS of body \"%s\" has no radius tag!",
                  body->name);
@@ -897,11 +490,309 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 }
 
 /*******************************************************************************
- * Allocates memory and initializes a RcsBody data structure from an XML node.
- ******************************************************************************/
+* Joint initialization function.
+******************************************************************************/
+static RcsJoint* RcsBody_initJoint(RcsGraph* self,
+                                   RcsBody* b,
+                                   xmlNodePtr node,
+                                   const char* suffix,
+                                   const HTr* A_group)
+{
+  char msg[256];
+  double ka[3];
+  RcsJoint* jnt = NULL;
+  bool verbose = false;
+  unsigned int strLength = 0;
+
+  RCHECK(HTr_isValid(A_group));
+
+  jnt = RNALLOC(1, RcsJoint);
+  RCHECK_PEDANTIC(jnt);
+
+  RcsGraph_insertJoint(self, b, jnt);
+
+  if (verbose == true)
+  {
+    RMSG("%s: dof = %d", b->name, jnt->jointIndex);
+  }
+
+  HTr_setIdentity(&jnt->A_JI);
+
+  //  Joint name
+  strLength = getXMLNodeBytes(node, "name");
+
+  if (strLength > 0)
+  {
+    unsigned int nBytes = strLength + strlen(suffix) + 1;
+    jnt->name = RNALLOC(nBytes, char);
+    getXMLNodePropertyStringN(node, "name", jnt->name, nBytes);
+    strcat(jnt->name, suffix);
+  }
+  else
+  {
+    jnt->name = RNALLOC(strlen("unnamed joint") + strlen(suffix) + 1, char);
+    strcpy(jnt->name, "unnamed joint");
+    strcat(jnt->name, suffix);
+    RLOG(4, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
+         "unnamed joint\"", b->name, b->parent ? b->parent->name : "NULL");
+  }
+
+  // Relative transformation from prev. body to joint (in prev. body coords)
+  // It is only created if the XML file transform is not the identity matrix.
+  if (getXMLNodeProperty(node, "transform"))
+  {
+    HTr A_BP;
+    getXMLNodePropertyHTr(node, "transform", &A_BP);
+    if (!HTr_isIdentity(&A_BP))
+    {
+      jnt->A_JP = HTr_clone(&A_BP);
+    }
+  }
+
+  // check if the quat tag exists and if yes, transform is not allowed
+  if (getXMLNodeProperty(node, "quat"))
+  {
+    bool success = !getXMLNodeProperty(node, "transform");
+    RCHECK_MSG(success, "\"transform\" is not allowed if \"quat\" exists.");
+
+    HTr A_BP;
+    HTr_setIdentity(&A_BP);
+    success = getXMLNodePropertyQuat(node, "quat", A_BP.rot);
+    getXMLNodePropertyVec3(node, "pos", A_BP.org);
+    if (!HTr_isIdentity(&A_BP))
+    {
+      jnt->A_JP = HTr_clone(&A_BP);
+    }
+  }
+
+  if (b->jnt == jnt) // the joint is the first joint of the body
+  {
+    // Here we apply the groups transform to the first joint of the body.
+    if (HTr_isIdentity(A_group) == false)
+    {
+      if (!jnt->A_JP)
+      {
+        jnt->A_JP = HTr_clone(A_group);
+      }
+      else
+      {
+        HTr_transformSelf(jnt->A_JP, A_group);
+      }
+      if (verbose)
+      {
+        RMSG("Applied group transform to joint \"%s\"", jnt->name);
+      }
+    }
+  }
+
+  // Joint constraint
+  getXMLNodePropertyBoolString(node, "constraint", &jnt->constrained);
+
+  // Joint type
+  if (getXMLNodePropertyStringN(node, "type", msg, 256))
+  {
+    if (verbose)
+    {
+      RMSG("%s: Joint (%s):   ", b->name, msg);
+    }
+
+    if (STREQ(msg, "TransX"))
+    {
+      jnt->type = RCSJOINT_TRANS_X;
+      jnt->dirIdx = 0;
+    }
+    else if (STREQ(msg, "TransY"))
+    {
+      jnt->type = RCSJOINT_TRANS_Y;
+      jnt->dirIdx = 1;
+    }
+    else if (STREQ(msg, "TransZ"))
+    {
+      jnt->type = RCSJOINT_TRANS_Z;
+      jnt->dirIdx = 2;
+    }
+    else if (STREQ(msg, "RotX"))
+    {
+      jnt->type = RCSJOINT_ROT_X;
+      jnt->dirIdx = 0;
+    }
+    else if (STREQ(msg, "RotY"))
+    {
+      jnt->type = RCSJOINT_ROT_Y;
+      jnt->dirIdx = 1;
+    }
+    else if (STREQ(msg, "RotZ"))
+    {
+      jnt->type = RCSJOINT_ROT_Z;
+      jnt->dirIdx = 2;
+    }
+    else
+    {
+      RFATAL("Joint \"%s\": Unknown joint type \"%s\"", jnt->name, msg);
+    }
+
+  }
+
+  // Joint range (must go after joint type)
+  if (getXMLNodePropertyVec3(node, "range", ka))
+  {
+    jnt->q_min = ka[0];
+    jnt->q0 = ka[1];
+    jnt->q_max = ka[2];
+
+    RCHECK(jnt->q_min <= jnt->q_max);
+    RCHECK((jnt->q0 >= jnt->q_min) && (jnt->q0 <= jnt->q_max));
+
+    if (RcsJoint_isRotation(jnt) == true)
+    {
+      jnt->q_min *= (M_PI / 180.0);
+      jnt->q0 *= (M_PI / 180.0);
+      jnt->q_max *= (M_PI / 180.0);
+    }
+
+    jnt->q_init = jnt->q0;
+  }
+  else
+  {
+    if (getXMLNodeProperty(node, "coupledTo") == false)
+    {
+      RFATAL("Joint \"%s\" has no range and is not coupled to another "
+             "joint!", jnt->name);
+    }
+
+    jnt->q_init = 0.0;
+  }
+
+
+  // Joint weight. That's used to multply the joint limit gradient,
+  // such redistributing the joint speeds in the inverse kinematics
+  // computation. A larger weight leads to a relatively higher speed.
+  REXEC(4)
+  {
+    bool success = !getXMLNodeProperty(node, "weight");
+    RCHECK_MSG(success,
+               "Tag \"weight\" has changed to \"weightJL\" - please update "
+               "your xml file (body \"%s\", joint \"%s\")",
+               b->name, jnt->name);
+  }
+
+  // Joint weight. That's used to multply the joint limit gradient,
+  // such redistributing the joint speeds in the inverse kinematics
+  // computation. A larger weight leads to a relatively higher speed.
+  jnt->weightJL = 1.0;
+  getXMLNodePropertyDouble(node, "weightJL", &jnt->weightJL);
+
+  // Proximity weight. That's used to multply the collision gradient,
+  // such redistributing the joint speeds in the inverse kinematics
+  // computation. A larger weight leads to a relatively higher speed.
+  jnt->weightCA = 1.0;
+  getXMLNodePropertyDouble(node, "weightCA", &jnt->weightCA);
+
+  // Metric weight. That's used to pre-multply the weighting matrix,
+  // such redistributing the joint speeds in the inverse kinematics
+  // computation.
+  jnt->weightMetric = 1.0;
+  getXMLNodePropertyDouble(node, "weightMetric", &jnt->weightMetric);
+
+  // Joint controller type (pos, vel, torque)
+  jnt->ctrlType = RCSJOINT_CTRL_POSITION;
+  jnt->maxTorque = DBL_MAX; // Default: No limit for non-torque joints
+
+  if (getXMLNodePropertyStringN(node, "ctrlType", msg, 256))
+  {
+    if (STREQ(msg, "Position") || STREQ(msg, "pos"))
+    {
+      jnt->ctrlType = RCSJOINT_CTRL_POSITION;
+    }
+    else if (STREQ(msg, "Velocity") || STREQ(msg, "vel"))
+    {
+      jnt->ctrlType = RCSJOINT_CTRL_VELOCITY;
+    }
+    else if (STREQ(msg, "Torque") || STREQ(msg, "tor"))
+    {
+      jnt->maxTorque = 1.0; // Default: 1 Nm for torque joints
+      jnt->ctrlType = RCSJOINT_CTRL_TORQUE;
+    }
+    else
+    {
+      RFATAL("Joint \"%s\": Unknown joint controller type (ctrlType) \"%s\"",
+             jnt->name, msg);
+    }
+  }
+
+  // Max. joint torque
+  getXMLNodePropertyDouble(node, "torqueLimit", &jnt->maxTorque);
+  RCHECK(jnt->maxTorque >= 0.0);
+
+  // Speed limit
+  jnt->speedLimit = DBL_MAX;   // Default
+  getXMLNodePropertyDouble(node, "speedLimit", &jnt->speedLimit);
+
+  // Gear ratio
+  double gearRatio = 1.0;
+
+  if (getXMLNodePropertyDouble(node, "gearRatio", &gearRatio) == true)
+  {
+    RCHECK_MSG(gearRatio >= 0.0,
+               "Joint gear ratio of \"%s\" is negative (%f) - exiting",
+               jnt->name, gearRatio);
+    double rpm2rad = 2.0*M_PI / 60.0;
+    jnt->speedLimit *= rpm2rad / gearRatio;
+  }
+
+  // If the joint is of type rotation and no gear ratio is given,
+  // we convert the value to radians (degrees assumed).
+  if ((gearRatio == 1.0) && RcsJoint_isRotation(jnt) && (jnt->speedLimit != DBL_MAX))
+  {
+    jnt->speedLimit *= (M_PI / 180.0);
+  }
+
+  // Coupled joint
+  strLength = getXMLNodeBytes(node, "coupledTo");
+
+  if (strLength > 0)
+  {
+    unsigned int nBytes = strLength + strlen(suffix) + 1;
+    jnt->coupledJointName = RNALLOC(nBytes, char);
+    getXMLNodePropertyStringN(node, "coupledTo", jnt->coupledJointName, nBytes);
+    strcat(jnt->coupledJointName, suffix);
+
+    unsigned int polyGrad = getXMLNodeNumStrings(node, "couplingFactor");
+    if (polyGrad == 0)
+    {
+      polyGrad = 1;
+    }
+    RLOG(5, "Coupled joint \"%s\" has %d parameters", jnt->name, polyGrad);
+    RCHECK_MSG((polyGrad == 1) || (polyGrad == 5) || (polyGrad == 9),
+               "Currently only polynomials of order 1 or 5 or 9 are "
+               "supported, and not %d parameters", polyGrad);
+    jnt->couplingFactors = MatNd_create(polyGrad, 1);
+    MatNd_setElementsTo(jnt->couplingFactors, 1.0);
+    getXMLNodePropertyVecN(node, "couplingFactor",
+                           jnt->couplingFactors->ele, polyGrad);
+
+    // Check if a range is given, because it will later be overwritten
+    bool hasRangeTag = getXMLNodeProperty(node, "range");
+    if (hasRangeTag == true)
+    {
+      RLOG(5, "Joint \"%s\" has a range, even though it is coupled to "
+           "another joint (\"%s\")", jnt->name, jnt->coupledJointName);
+    }
+  }
+
+  if (verbose)
+  {
+    RPAUSE();
+  }
+
+  return jnt;
+}
+
+/*******************************************************************************
+* Allocates memory and initializes a RcsBody data structure from an XML node.
+******************************************************************************/
 static RcsBody* RcsBody_createFromXML(RcsGraph* self,
                                       xmlNode* bdyNode,
-                                      const char* vrmlPath,
                                       const char* defaultColor,
                                       const char* suffix,
                                       const char* parentGroup,
@@ -926,8 +817,9 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   b->A_BI = HTr_create();
 
   // Body name
+  static int bdyCount = 0;
   char msg[256];
-  strcpy(msg, "unnamed body");
+  snprintf(msg, 255, "unnamed body %d", bdyCount++);
 
   // The name as indicated in the xml file
   getXMLNodePropertyStringN(bdyNode, "name", msg, 256);
@@ -967,7 +859,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
     if (!firstInGroup)
     {
       // first try to find the body with suffix
-      char* bodyNameWithSuffix = RNALLOC(strlen(msg)+strlen(suffix)+1, char);
+      char* bodyNameWithSuffix = RNALLOC(strlen(msg) + strlen(suffix) + 1, char);
       strcpy(bodyNameWithSuffix, msg);
       strcat(bodyNameWithSuffix, suffix);
       parentBdy = RcsGraph_getBodyByName(self, bodyNameWithSuffix);
@@ -1063,7 +955,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   double q_rbj[12];
   VecNd_setZero(q_rbj, 12);
 
-  if (hasRBJTag==true)
+  if (hasRBJTag == true)
   {
     b->rigid_body_joints = true;
     nJoints = 6;
@@ -1080,14 +972,14 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
         getXMLNodePropertyVecN(bdyNode, "rigid_body_joints", q_rbj, 6);
 
         // convert Euler angles from degrees to radians
-        Vec3d_constMulSelf(&q_rbj[3], M_PI/180.0);
+        Vec3d_constMulSelf(&q_rbj[3], M_PI / 180.0);
         break;
 
       case 12:
         getXMLNodePropertyVecN(bdyNode, "rigid_body_joints", q_rbj, 12);
 
         // convert Euler angles from degrees to radians
-        Vec3d_constMulSelf(&q_rbj[3], M_PI/180.0);
+        Vec3d_constMulSelf(&q_rbj[3], M_PI / 180.0);
         break;
 
       default:
@@ -1097,22 +989,22 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
 
     NLOG(5, "[%s]: Found %d strings in rigid_body_joint tag \"%s\", flag is "
          "%s", b->name, nStr, "rigid_body_joints",
-         b->rigid_body_joints?"true":"false");
+         b->rigid_body_joints ? "true" : "false");
 
     RcsJoint* rbj0 = RcsBody_createRBJ(self, b, q_rbj);
 
     // Determine constraint dofs for physics simulation. If a dof is
     // constrained will be interpreted by a "0" in the joint's weightMetric
     // property.
-    if (nStr==12)
+    if (nStr == 12)
     {
-      unsigned int checkRbjNum =0;
-      for (RcsJoint* JNT = rbj0  ; JNT ; JNT=JNT->next)
+      unsigned int checkRbjNum = 0;
+      for (RcsJoint* JNT = rbj0; JNT; JNT = JNT->next)
       {
-        JNT->weightMetric = q_rbj[6+checkRbjNum];
+        JNT->weightMetric = q_rbj[6 + checkRbjNum];
         checkRbjNum++;
       }
-      RCHECK(checkRbjNum==6);
+      RCHECK(checkRbjNum == 6);
     }
 
 
@@ -1120,7 +1012,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
     // construction. If there is a transformation coming from a group, it needs
     // to be applied to the first of the six rigid body joints. We can simply
     // clone it.
-    if (HTr_isIdentity(A_group)==false)
+    if (HTr_isIdentity(A_group) == false)
     {
       rbj0->A_JP = HTr_clone(A_group);
     }
@@ -1159,14 +1051,17 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   RcsBody_computeInertiaTensor(b, b->Inertia);
 
   // Overwrite them if a tag is given
-  getXMLNodePropertyVecN(bdyNode, "inertia", &b->Inertia->rot[0][0], 9);
+  double inertiaVec[9];
+  Mat3d_toArray(inertiaVec, b->Inertia->rot);
+  getXMLNodePropertyVecN(bdyNode, "inertia", inertiaVec, 9);
+  Mat3d_fromArray(b->Inertia->rot, inertiaVec);
   getXMLNodePropertyVec3(bdyNode, "cogVector", b->Inertia->org);
 
   // Specifying an inertia tensor, and not the COG offset easily leads to
   // trouble in the equations of motion. We therefore warn to be explicit
   // about it.
-  if ((getXMLNodeProperty(bdyNode, "inertia")==true) &&
-      (getXMLNodeProperty(bdyNode, "cogVector")==false))
+  if ((getXMLNodeProperty(bdyNode, "inertia") == true) &&
+      (getXMLNodeProperty(bdyNode, "cogVector") == false))
   {
     RLOGS(5, "You specified an inertia but not a cogVector in body \"%s\"",
           b->name);
@@ -1186,7 +1081,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
       // If a non-identity group transform is given, it needs to be applied to
       // the first joint only.
       RcsBody_initJoint(self, b, jntNode, suffix,
-                        xmlJntCount==0 ? A_group : HTr_identity());
+                        xmlJntCount == 0 ? A_group : HTr_identity());
       nJoints++;
       xmlJntCount++;
     }
@@ -1196,9 +1091,9 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   // If the body is not attached to any joint and the group transform is not
   // the identity matrix, the group transform is applied to the bodies relative
   // transformation. If it doesn't exist, it will be created.
-  if ((nJoints==0) && (HTr_isIdentity(A_group)==false))
+  if ((nJoints == 0) && (HTr_isIdentity(A_group) == false))
   {
-    if (b->A_BP==NULL)
+    if (b->A_BP == NULL)
     {
       b->A_BP = HTr_clone(A_group);
     }
@@ -1229,44 +1124,43 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
 }
 
 /*******************************************************************************
- *
- * This function recursively parses from the given xml node and
- * initializes the bodies. It implements a depth-first traversal through
- * the RcsGraph tree by the following rules:
- *
- * 1. If a "Graph" or "Group" node has been found, first its children,
- * and then its "next" nodes on the same level are called recursively.
- * Then the function returns (to the upper level).
- *
- * 2. If another node ("Body" or some junk memory) are found, the
- * corresponding body will be created and the "next" node on the same
- * level is called recursively.
- *
- * The transformation A is the relative transformation of a group. It
- * will be resetted to identity when a body
- * has successfully created (in RcsBody_createFromXML(...)). That's
- * the case since it only has to be applied to the first body of the
- * group.
- *
- ******************************************************************************/
-void RcsGraph_parseBodies(xmlNodePtr node,
-                          RcsGraph* self,
-                          char* vDir,
-                          char* gCol,
-                          char* suffix,
-                          char* parentGroup,
-                          HTr* A,
-                          bool firstInGroup,
-                          int level,
-                          RcsBody* root[RCSGRAPH_MAX_GROUPDEPTH],
-                          bool verbose)
+*
+* This function recursively parses from the given xml node and
+* initializes the bodies. It implements a depth-first traversal through
+* the RcsGraph tree by the following rules:
+*
+* 1. If a "Graph" or "Group" node has been found, first its children,
+* and then its "next" nodes on the same level are called recursively.
+* Then the function returns (to the upper level).
+*
+* 2. If another node ("Body" or some junk memory) are found, the
+* corresponding body will be created and the "next" node on the same
+* level is called recursively.
+*
+* The transformation A is the relative transformation of a group. It
+* will be resetted to identity when a body
+* has successfully created (in RcsBody_createFromXML(...)). That's
+* the case since it only has to be applied to the first body of the
+* group.
+*
+******************************************************************************/
+static void RcsGraph_parseBodies(xmlNodePtr node,
+                                 RcsGraph* self,
+                                 const char* gCol,
+                                 const char* suffix,
+                                 const char* parentGroup,
+                                 HTr* A,
+                                 bool firstInGroup,
+                                 int level,
+                                 RcsBody* root[RCSGRAPH_MAX_GROUPDEPTH],
+                                 bool verbose)
 {
   if (node == NULL)
   {
     return;
   }
 
-  RCHECK_MSG(level < RCSGRAPH_MAX_GROUPDEPTH-2, "Group level exceeds maximum "
+  RCHECK_MSG(level < RCSGRAPH_MAX_GROUPDEPTH - 2, "Group level exceeds maximum "
              "level: %d >= %d", level, RCSGRAPH_MAX_GROUPDEPTH);
 
   // Set debug level to 9 when verbose
@@ -1302,7 +1196,7 @@ void RcsGraph_parseBodies(xmlNodePtr node,
       }
     }
 
-    RcsGraph_parseBodies(node->children, self, vDir, gCol, suffix,
+    RcsGraph_parseBodies(node->children, self, gCol, suffix,
                          parentGroup, A, firstInGroup, level, root, verbose);
 
     // After we parsed the children of the graph, the graph has been
@@ -1311,7 +1205,7 @@ void RcsGraph_parseBodies(xmlNodePtr node,
     // and warn
     RLOG(9, "Ascending from Graph node - firstInGroup is false");
     firstInGroup = false;
-    RcsGraph_parseBodies(node->next, self, vDir, gCol, suffix,
+    RcsGraph_parseBodies(node->next, self, gCol, suffix,
                          parentGroup, A, firstInGroup, level, root, verbose);
 
     // Then we look for the generic bodies and link them accordingly
@@ -1325,7 +1219,7 @@ void RcsGraph_parseBodies(xmlNodePtr node,
         RLOG(5, "Linking \"%s\"", a);
         RcsBody* b = RcsGraph_getBodyByName(self, gBody);
 
-        if (b==NULL)
+        if (b == NULL)
         {
           RLOG(1, "%s points to \"%s\", which does not exist!",
                a, gBody);
@@ -1334,7 +1228,7 @@ void RcsGraph_parseBodies(xmlNodePtr node,
         {
           RcsBody* l = RcsGraph_linkGenericBody(self, i, b->name);
 
-          if (l==NULL)
+          if (l == NULL)
           {
             RLOG(1, "Body \"%s\" not found - %s points to NULL", gBody, a);
           }
@@ -1384,7 +1278,7 @@ void RcsGraph_parseBodies(xmlNodePtr node,
     }
 
     // Copy current root node and descend one level
-    root[level+1] = root[level];
+    root[level + 1] = root[level];
     level++;
 
     if (getXMLNodePropertyStringN(node, "prev", tmp, 64) > 0)
@@ -1398,7 +1292,7 @@ void RcsGraph_parseBodies(xmlNodePtr node,
       }
     }
 
-    RcsGraph_parseBodies(node->children, self, vDir, col, ndExt,
+    RcsGraph_parseBodies(node->children, self, col, ndExt,
                          pGroupSuffix, &A_group, true, level, root,
                          verbose);
 
@@ -1409,7 +1303,7 @@ void RcsGraph_parseBodies(xmlNodePtr node,
     level--;
     strcpy(ndExt, suffix);
 
-    RcsGraph_parseBodies(node->next, self, vDir, gCol, ndExt,
+    RcsGraph_parseBodies(node->next, self, gCol, ndExt,
                          parentGroup, A, firstInGroup, level, root, verbose);
   }
   else if (isXMLNodeName(node, "URDF"))
@@ -1434,7 +1328,7 @@ void RcsGraph_parseBodies(xmlNodePtr node,
     // parse URDF file
 
     // New extension = suffix + new group name
-    char urdfSuffix[132]="", ndExt[132]="";
+    char urdfSuffix[132] = "", ndExt[132] = "";
     getXMLNodePropertyStringN(node, "suffix", urdfSuffix, 132);
     strcpy(ndExt, suffix);
     strcat(ndExt, urdfSuffix);
@@ -1456,7 +1350,7 @@ void RcsGraph_parseBodies(xmlNodePtr node,
     VecNd_setZero(q_rbj, 12);
     // parse rigid body joints tag
     unsigned int nRBJTagStr = 0;
-    if (hasRBJTag==true)
+    if (hasRBJTag == true)
     {
       urdfRoot->rigid_body_joints = true;
       nRBJTagStr = getXMLNodeNumStrings(node, "rigid_body_joints");
@@ -1488,7 +1382,7 @@ void RcsGraph_parseBodies(xmlNodePtr node,
       }
 
       NLOG(5, "[%s]: Found %d strings in rigid_body_joint tag \"%s\", flag is "
-              "%s", urdfRoot->name, nStr, "rigid_body_joints",
+           "%s", urdfRoot->name, nStr, "rigid_body_joints",
            urdfRoot->rigid_body_joints ? "true" : "false");
     }
     // create rigid body joints if requested
@@ -1542,7 +1436,7 @@ void RcsGraph_parseBodies(xmlNodePtr node,
     if (pB != NULL)
     {
       urdfRoot->parent = pB;
-      if (pB->firstChild!= NULL)
+      if (pB->firstChild != NULL)
       {
         pB->lastChild->next = urdfRoot;
         urdfRoot->prev = pB->lastChild;
@@ -1575,7 +1469,7 @@ void RcsGraph_parseBodies(xmlNodePtr node,
       }
     }
 
-    RcsGraph_parseBodies(node->next, self, vDir, gCol, suffix,
+    RcsGraph_parseBodies(node->next, self, gCol, suffix,
                          parentGroup, A, firstInGroup, level, root, verbose);
   }
   else // can be a body or some junk
@@ -1585,7 +1479,7 @@ void RcsGraph_parseBodies(xmlNodePtr node,
 
     RcsBody* nr = NULL;
 
-    nr = RcsBody_createFromXML(self, node, vDir, gCol, suffix, parentGroup,
+    nr = RcsBody_createFromXML(self, node, gCol, suffix, parentGroup,
                                A, firstInGroup, level,
                                root[level], verbose);
 
@@ -1594,7 +1488,7 @@ void RcsGraph_parseBodies(xmlNodePtr node,
       firstInGroup = false;
     }
 
-    RcsGraph_parseBodies(node->next, self, vDir, gCol, suffix,
+    RcsGraph_parseBodies(node->next, self, gCol, suffix,
                          parentGroup, A, firstInGroup, level, root, verbose);
 
     RLOG(19, "Falling back - root[%d] \"%s\"",
@@ -1609,4 +1503,107 @@ void RcsGraph_parseBodies(xmlNodePtr node,
     RcsLogLevel = lDl;
   }
 
+}/*******************************************************************************
+ *
+ ******************************************************************************/
+bool RcsGraph_setModelStateFromXML(RcsGraph* self, const char* modelStateName,
+                                   int timeStamp)
+{
+  if ((self==NULL) || (modelStateName==NULL))
+  {
+    return false;
+  }
+
+  // Read XML file
+  xmlDocPtr doc;
+  xmlNodePtr node = parseXMLFile(self->xmlFile, "Graph", &doc);
+
+  if (node == NULL)
+  {
+    xmlFreeDoc(doc);
+    return false;
+  }
+
+  bool success = RcsGraph_parseModelState(node, self, modelStateName);
+  xmlFreeDoc(doc);
+
+  return success;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
+{
+  if (node == NULL)
+  {
+    RLOG(1, "XML node is NULL - failed to create RcsGraph");
+    return NULL;
+  }
+
+  // Get memory for the graph
+  RcsGraph* self = RALLOC(RcsGraph);
+  RCHECK(self);
+  self->xmlFile = String_clone("Created_from_xml_node");
+
+  // This is the arrays for the state vectors and velocities. We need to
+  // create them here, since in the RcsJoint data structure a pointer will
+  // point to the self->q values.
+  self->q = MatNd_create(0, 1);
+
+  // Recurse through bodies
+  HTr A_rel;
+  HTr_setIdentity(&A_rel);
+  RcsBody* root[RCSGRAPH_MAX_GROUPDEPTH];
+  memset(root, 0, RCSGRAPH_MAX_GROUPDEPTH * sizeof(RcsBody*));
+
+  // Initialize generic bodies. Here we allocate memory for names and body
+  // transforms. They are deleted once relinked to another body. We initialize
+  // it before parsing, since they can already be linked in the xml files.
+  for (int i = 0; i < 10; i++)
+  {
+    memset(&self->gBody[i], 0, sizeof(RcsBody));
+    self->gBody[i].name      = RNALLOC(64, char);
+    self->gBody[i].xmlName   = RNALLOC(64, char);
+    self->gBody[i].suffix    = RNALLOC(64, char);
+    self->gBody[i].A_BI      = HTr_create();
+    self->gBody[i].A_BP      = HTr_create();
+    self->gBody[i].Inertia   = HTr_create();
+    HTr_setZero(self->gBody[i].Inertia);
+    sprintf(self->gBody[i].name, "GenericBody%d", i);
+  }
+
+  RcsGraph_parseBodies(node, self, "DEFAULT", "", "",
+                       &A_rel, false, 0, root, false);
+
+  // Create velocity vector. It is done here since self->dof has been
+  // computed during parsing.
+  self->q_dot = MatNd_create(self->dof, 1);
+
+  // Re-order joint indices to match depth-first traversal, and connect coupled
+  // joints
+  RcsGraph_makeJointsConsistent(self);
+
+  // Apply model state
+  char mdlName[64] = "";
+  int nBytes = getXMLNodePropertyStringN(node, "name", mdlName, 64);
+  if (nBytes > 0)
+  {
+    RcsGraph_parseModelState(node, self, mdlName);
+  }
+
+  // Set state vector
+  RcsGraph_setState(self, NULL, NULL);
+
+  // Check for consistency
+  int graphErrors = RcsGraph_check(self);
+
+  if (graphErrors > 0)
+  {
+    RLOG(1, "Check for graph failed: %d errors", graphErrors);
+    RcsGraph_destroy(self);
+    return NULL;
+  }
+
+  return self;
 }

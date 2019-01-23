@@ -237,8 +237,9 @@ extern "C" {
  * joints that attach it to its predecessor.
  *
  * - name: Body name. If no name is given, the name will be set to
- *         "unnamed body". It is required to assign a unique name to the
- *         body in order to avoid having several joints with the same name.
+ *         "unnamed body <num>" where num is a unique number that is incremented
+ *         for each body. It is required to assign a unique name to the
+ *         body in order to avoid having several body with the same name.
  *         The function \ref RcsGraph_check() checks for this.
  *
  * - prev: Body name of the parent body. If it is not given, the bodie's
@@ -294,16 +295,14 @@ extern "C" {
 RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node);
 
 /*! \ingroup RcsParserFunctions
- *  \brief This function recursively parses from the given xml node and
- *         initializes the subsequent bodies. It implements a depth-first
- *         traversal. The maximum recursion depth is limited to
- *         RCSGRAPH_MAX_GROUPDEPTH.
+*  \brief Loads the graph's xml file, looks for the tag "model_state" with
+*         the specified time stamp, and if found, sets the state to the
+*         corresponding values. Currently, timeStamp is ignored.
+*
+*  \return true for success, false otherwise.
  */
-void RcsGraph_parseBodies(xmlNodePtr node, RcsGraph* self, char* resourcePath,
-                          char* groupColor, char* suffix, char* parentGroup,
-                          HTr* A_gr, bool firstInGroup, int level,
-                          RcsBody* root[RCSGRAPH_MAX_GROUPDEPTH],
-                          bool verbose);
+bool RcsGraph_setModelStateFromXML(RcsGraph* self, const char* modelStateName,
+                                   int timeStamp);
 
 
 #ifdef __cplusplus
