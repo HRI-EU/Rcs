@@ -1248,7 +1248,7 @@ bool testBasicMath(int argc, char** argv)
       if (vec_dst[i] != vec_src[dim-1-i])
         {
           RLOG(2, "Error in VecNd_reverseSelf() at index %d: %f != %f", 
-               i, vec_dst[i], vec_src[dim-i]);
+           i, vec_dst[i], vec_src[dim-i-i]);
           success = false;
         }
     }
