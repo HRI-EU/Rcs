@@ -1,0 +1,135 @@
+<Graph name="1" resourcePath="/hri/sit/LTS/Data/RobotMeshes/1.0/data/" >
+
+  <!-- Ground & Base -->
+  <Body name="GroundPlane" >
+    <Shape type="BOX" extents="6 6 0.04" distance="true" physics="false" graphics="true" transform="0 0 -0.02 0 0 0" color="PEWTER" />
+  </Body>
+
+  <Body name="Table" physics="kinematic" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.5" transform="0 0 0 0 0 0" />
+    <Shape type="BOX" extents="0.8 0.8 0.03" distance="true" physics="true" graphics="true" transform="0 0 0.835 0 0 0" textureFile="../textures/wood-ikea-birch.jpg" />
+    <Shape type="BOX" extents="0.1 0.1 0.82" distance="true" physics="true" graphics="true" transform="0.35 0.35 0.41 0 0 0" textureFile="../textures/aluminium-profile.jpg" />
+    <Shape type="BOX" extents="0.1 0.1 0.82" distance="true" physics="true" graphics="true" transform="0.35 -0.35 0.41 0 0 0" textureFile="../textures/aluminium-profile.jpg" />
+    <Shape type="BOX" extents="0.1 0.1 0.82" distance="true" physics="true" graphics="true" transform="-0.35 0.35 0.41 0 0 0" textureFile="../textures/aluminium-profile.jpg" />
+    <Shape type="BOX" extents="0.1 0.1 0.82" distance="true" physics="true" graphics="true" transform="-0.35 -0.35 0.41 0 0 0" textureFile="../textures/aluminium-profile.jpg" />
+    <Shape type="BOX" extents="0.4 0.8 0.03" distance="true" physics="true" graphics="true" transform="0.1 0 0.45 0 0 0" textureFile="../textures/wood-ikea-birch.jpg" />
+    <Shape type="BOX" extents="0.04 0.04 0.3" distance="true" physics="true" graphics="true" transform="0.22 0.35 0.345 0 -45 0" textureFile="../textures/aluminium-profile.jpg" />
+    <Shape type="BOX" extents="0.04 0.04 0.3" distance="true" physics="true" graphics="true" transform="0.22 -0.35 0.345 0 -45 0" textureFile="../textures/aluminium-profile.jpg" />
+    <Shape type="BOX" extents="0.14 0.14 0.34" distance="true" physics="true" graphics="true" transform="0.2 0 0.63 0 0 0" textureFile="../textures/aluminium-profile.jpg" />
+    <Shape type="BOX" extents="0.24 0.2 0.06" distance="true" physics="true" graphics="true" transform="0.16 0 0.49 0 0 0" textureFile="../textures/brushed-metal.jpg" />
+  </Body>
+
+  <Body name="Arm" prev="Table" transform="0.1975 0 1 0 0 0" physics="kinematic" >
+    <xJoint name="ArmHeight" range="0 1.325 2" constraint="true" type="TransZ" torqueLimit="500" />
+    <xShape type="FRAME" distance="false" physics="false" graphics="true" scale="0.3" transform="0 0 0 0 0 0" />
+    <Shape type="BOX" extents="0.16 0.16 0.485" distance="true" physics="true" graphics="true" transform="0 0 -0.2725 0 0 0" textureFile="../textures/aluminium-profile.jpg" />
+    <Shape type="BOX" extents="0.36 0.28 0.03" distance="true" physics="true" graphics="true" transform="0.02 0 -0.015 0 0 0" textureFile="../textures/wood-ikea-birch.jpg" />
+  </Body>
+
+  <!-- Robot -->
+  <Body name="lwa-base" prev="Arm" transform="0.11 0 0 0 0 0" physics="kinematic" mass="10" inertia="0.0152329 0 0   0 0.0152329 0   0 0 0.0226714" >
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 0 0 0" meshFile="Schunk/3385031017_fus_120_x.tri" color="POLISHED_SILVER" />
+    <Shape type="CYLINDER" length="0.06" radius="0.09" distance="false" physics="false" graphics="false" transform="0 0 0.03 0 0 0" color="POLISHED_SILVER" />
+    <xxxxxShape type="FRAME" distance="false" physics="false" graphics="true" scale="0.5" transform="0 0 0 0 0 0" color="POLISHED_SILVER" />
+  </Body>
+
+  <Body name="m3" prev="lwa-base" physics="dynamic" mass="3.6" inertia="0.0112266 0 0.000254725   0 0.0188817 0   0.000254725 0 0.0160777" >
+    <Joint name="base-m3" range="-180 0 180" weightJL="10" weightMetric="0.05" type="RotZ" transform="0 0 0.12 0 0 0" speedLimit="25" />
+    <Shape type="CYLINDER" length="0.14" radius="0.06" distance="false" physics="true" graphics="true" transform="0 0 0 0 0 0" color="COPPER" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0.108 0 0 0 -90 0" meshFile="Schunk/3385031117_vbe_1212_x.tri" color="COPPER" />
+    <Shape type="SSL" length="0.05" radius="0.09" distance="true" physics="false" graphics="false" transform="0 0 -0.02 0 0 0" color="COPPER" />
+  </Body>
+
+  <Body name="m4" prev="m3" physics="dynamic" mass="3.6" inertia="0.0147886 0 0   0 0.0147886 0   0 0 0.00507093" >
+    <Joint name="m3-m4" range="-270 -90 90" weightJL="10" weightMetric="0.05" type="RotZ" transform="0.175 0 0 0 90 0" speedLimit="25" />
+    <Shape type="CYLINDER" length="0.133" radius="0.062" distance="false" physics="true" graphics="true" transform="0 0 0.0065 0 0 0" color="JADE_S" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0.08 0 0 180" meshFile="Schunk/3385038117_vbe_1210_x.tri" color="JADE_S" />
+    <Shape type="SSL" length="0.14" radius="0.062" distance="true" physics="false" graphics="false" transform="0 0 -0.06 0 0 0" color="JADE_S" />
+  </Body>
+
+  <Body name="m5" prev="m4" physics="dynamic" mass="2" inertia="0.00926296 0 0   0 0.0110406 0   0 0 0.00790613" >
+    <Joint name="m4-m5" range="-115 60 115" weightJL="10" weightMetric="0.05" type="RotZ" transform="0 0 0.175 0 -90 0" speedLimit="24" />
+    <Shape type="CYLINDER" length="0.118" radius="0.052" distance="false" physics="true" graphics="true" transform="0 0 0 0 0 0" color="BRASS" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0.1 0 0 180 -90 0" meshFile="Schunk/3385031317_vbe_1010_x.tri" color="BRASS" />
+    <Shape type="SSL" length="0.08" radius="0.095" distance="true" physics="false" graphics="false" transform="0.02 0 -0.04 0 0 0" color="BRASS" />
+  </Body>
+
+  <Body name="m6" prev="m5" physics="dynamic" mass="2" inertia="0.0100339 0 0   0 0.0100339 0   0 0 0.00213133" >
+    <Joint name="m5-m6" range="-270 -90 90" weightJL="10" weightMetric="0.05" type="RotZ" transform="0.1515 0 0 0 90 0" speedLimit="24" />
+    <Shape type="CYLINDER" length="0.118" radius="0.052" distance="false" physics="true" graphics="true" transform="0 0 0.0145 0 0 0" color="BRONZE" />
+    <Shape type="CYLINDER" length="0.0605" radius="0.052" distance="false" physics="true" graphics="true" transform="0 0 0.10375 0 0 0" color="BLUE" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0.141 0 0 180" meshFile="Schunk/3385038417_vbe_1008_x.tri" color="BRONZE" />
+    <Shape type="SSL" length="0.178" radius="0.052" distance="true" physics="false" graphics="false" transform="0 0 -0.02 0 0 0" color="BRONZE" />
+  </Body>
+
+  <Body name="m7" prev="m6" physics="dynamic" mass="1.2" inertia="0.00359881 0 -2.62763e-05   0 0.00457799 0   -2.62763e-05 0 0.00353929" >
+    <Joint name="m6-m7" range="-110 45 115" weightJL="10" weightMetric="0.05" type="RotZ" transform="0 0 0.2115 0 -90 0" speedLimit="27" />
+    <Shape type="CYLINDER" length="0.0965" radius="0.042" distance="false" physics="true" graphics="true" transform="0 0 0 0 0 0" color="PEWTER" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0.08 0 0 180 -90 0" meshFile="Schunk/3385031517_vbe_0808_x.tri" color="PEWTER" />
+    <Shape type="SSL" length="0.055" radius="0.08" distance="true" physics="false" graphics="false" transform="0 0 -0.03 0 0 0" color="PEWTER" />
+  </Body>
+
+  <Body name="m8" prev="m7" physics="dynamic" mass="1.2" inertia="0.00331526 0 0   0 0.00331526 0   0 0 0.000784139" >
+    <Joint name="m7-m8" range="-360 -180 0" weightJL="10" weightMetric="0.05" type="RotZ" transform="0.12575 0 0 0 90 0" speedLimit="27" />
+    <Shape type="CYLINDER" length="0.09" radius="0.042" distance="false" physics="true" graphics="true" transform="0 0 0.0063 0 0 0" color="COPPER" />
+    <Shape type="CYLINDER" length="0.0416" radius="0.042" distance="false" physics="true" graphics="true" transform="0 0 0.0721 0 0 0" color="BLUE" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0.1 0 0 180" meshFile="Schunk/3385038717_vbe_0806_x.tri" color="COPPER" />
+    <xxxxxShape type="SSL" length="0.12" radius="0.042" distance="true" physics="true" graphics="false" transform="0 0 -0.02 0 0 0" color="COPPER" />
+  </Body>
+
+  <Body name="m9" prev="m8" physics="dynamic" mass="1" inertia="0.00315422 0 -2.71718e-05   0 0.00425097 0   -2.71718e-05 0 0.00333652" >
+    <Joint name="m8-m9" range="-120 -45 120" weightJL="10" weightMetric="0.05" type="RotZ" transform="0 0 0.16575 0 -90 0" speedLimit="50" />
+    <Shape type="CYLINDER" length="0.086" radius="0.03" distance="false" physics="true" graphics="true" transform="0 0 0 0 0 0" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0.08 0 0 180 -90 0" meshFile="Schunk/3385031717_vbe_0606_x.tri" />
+    <Shape type="CYLINDER" length="0.016" radius="0.032" distance="false" physics="true" graphics="true" transform="0.095 0 0 0 90 0" />
+    <xxShape type="CYLINDER" length="0.042" radius="0.032" distance="false" physics="true" graphics="true" transform="0.124 0 0 0 90 0" color="BLUE" />
+  </Body>
+
+  <Body name="SchunkFTS" prev="m9" transform="0.104 0 0 0 90 0" physics="fixed" mass="1.92" inertia="0.000793599 0 0   0 0.000793599 0   0 0 0.00104544" >
+    <!-- The blue cylinder is the same as in m9, but has redued stiffness -->
+    <Shape type="CYLINDER" length="0.042" radius="0.032" distance="false" physics="true" graphics="true" transform="0 0 0.02 0 0 0" color="BLUE" />
+    <Sensor name="WristLoadCellSchunk" type="LOADCELL"/>
+  </Body>
+
+  <!-- Plate & Ball -->
+  <Body name="Plate" prev="SchunkFTS" transform="0 0 0.061 0 0 -90" physics="fixed" mass="1.054" inertia="0.001757 0 0   0 0.001757 0   0 0 0.001757" >
+    <Shape type="BOX" extents="1.0 1.0 0.02" transform="0 0 -0.01 0 0 -15" color="LIGHTGRAY"  material="plate_mat" textureFile="../textures/fMRT_pattern_circular.png"  physics="true" graphics="true"/>
+    <Shape type="SSL" length="0.02" radius="0.065" distance="true" physics="false" graphics="false" transform="0 0 0.02 0 0 0" color="RED" />
+    <xxxxxShape type="BOX" extents="0.5 0.5 0.02" material="plate_mat" physics="true" graphics="true" transform="0 0 0 0 0 -15" color="LIGHTGRAY"/>
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.5"/>
+  </Body>
+
+  <Body name="Ball" physics="dynamic" rigid_body_joints="1.0767 0 1.49 0 0 0" mass="1">
+    <Shape type="SPHERE" radius="0.075" material="ball_mat" physics="true" graphics="true" color="RUBY_S"/>
+    <shape type="FRAME" graphics="true" scale="0.2"/>
+  </Body>
+
+  <model_state model="1" time_stamp="0">
+    <joint_state joint="base-m3" position="11.0525818366227284" />
+    <joint_state joint="m3-m4" position="-131.6810274337746876" />
+    <joint_state joint="m4-m5" position="32.2132514392405014" />
+    <joint_state joint="m5-m6" position="42.4129787688554245" />
+    <joint_state joint="m6-m7" position="-93.8008498304068183" />
+    <joint_state joint="m7-m8" position="-169.1087342263319897" />
+    <joint_state joint="m8-m9" position="20.0457841563108659" />
+  </model_state>
+<!--
+  <model_state model="1" time_stamp="0">
+    <joint_state joint="m3-m4" position="-130" />
+    <joint_state joint="m4-m5" position="30" />
+    <joint_state joint="m5-m6" position="40" />
+    <joint_state joint="m6-m7" position="-90" />
+    <joint_state joint="m7-m8" position="-165" />
+    <joint_state joint="m8-m9" position="25" />
+  </model_state>
+
+  <model_state model="2" time_stamp="0">
+    <joint_state joint="m3-m4" position="-90" />
+    <joint_state joint="m4-m5" position="45" />
+    <joint_state joint="m5-m6" position="0" />
+    <joint_state joint="m6-m7" position="-90" />
+    <joint_state joint="m8-m9" position="45" />
+  </model_state>
+-->
+  
+</Graph>

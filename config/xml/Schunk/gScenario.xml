@@ -1,0 +1,46 @@
+<Graph xmlns:xi="http://www.w3.org/2003/XInclude" name="1" >
+
+<Body name="Ground Plane" physics="kinematic" >
+  <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0" 
+         color="PEWTER" graphics="true" physics="true" />
+  <Shape type="BOX" extents="0.1 6 0.2" transform="2.95 0 0.1 0 0 0" 
+         color="PEWTER" graphics="true" physics="true" />
+  <Shape type="BOX" extents="0.1 6 0.2" transform="-2.95 0 0.1 0 0 0" 
+         color="PEWTER" graphics="true" physics="true" />
+  <Shape type="BOX" extents="6 0.1 0.2" transform="0 2.95 0.1 0 0 0" 
+         color="PEWTER" graphics="true" physics="true" />
+  <Shape type="BOX" extents="6 0.1 0.2" transform="0 -2.95 0.1 0 0 0" 
+         color="PEWTER" graphics="true" physics="true" />
+</Body>
+
+<xi:include href="LWA-platform.xml" />
+
+<Group prev="Arm">
+<xi:include href="lwa.xml" />
+</Group>
+
+
+ <Group name="" prev="m9" transform="0.104 0 0 0 90 0" >
+   <xi:include href="Schunk-ft-sensor.xml" />
+ </Group>
+
+<Group prev="SchunkFTS" transform="0 0 0.04 0 0 195" >
+  <xi:include href="sdh.xml" />
+</Group>
+
+<Body name="LeftHandTip" prev="m9"  transform="0.2 0 0 0 0 0" >
+  <Shape type="FRAME" scale="0.25" />
+</Body>
+
+
+
+  <model_state model="1" time_stamp="0">
+
+    <joint_state joint="knuck1-base" position="0" />
+    <joint_state joint="knuck1-base" position="0" />
+
+  </model_state>
+
+
+
+</Graph>
