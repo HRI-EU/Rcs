@@ -400,6 +400,8 @@ static bool setBulletDistanceFunctions()
                                          RcsShape_distanceBullet) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_CYLINDER,
                                          RcsShape_distanceBullet) && success;
+  success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_BOX,
+                                         RcsShape_distanceBullet) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_CONE,
                                          RcsShape_distanceBullet) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_TORUS,

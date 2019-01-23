@@ -49,7 +49,8 @@ namespace Rcs
 /**
  * Name of the default material.
  *
- * When a PhysicsMaterial is created, it's values are initialized to those of the default material.
+ * When a PhysicsMaterial is created, it's values are initialized to those of
+ * the default material.
  *
  * Note that later modifications of the parameter values will not be used.
  */

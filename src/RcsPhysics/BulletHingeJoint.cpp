@@ -84,6 +84,9 @@ Rcs::BulletHingeJoint::BulletHingeJoint(RcsJoint* jnt, double q0,
   // This allows us to query inter-body reaction forces and moments
   setJointFeedback(&this->jf);
   enableFeedback(true);
+
+  // Initialize with given joint angle q0
+  setJointAngle(q0, 1.0);
 }
 
 /*******************************************************************************

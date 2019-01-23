@@ -268,6 +268,8 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
   }
 
 
+  RLOG(5, "Successfully created shape");
+
   return bShape;
 }
 
@@ -275,7 +277,8 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
  *
  ******************************************************************************/
 //! \todo Compound shape principal axis transform
-Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy, const PhysicsConfig* config)
+Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
+                                                   const PhysicsConfig* config)
 {
   if (bdy == NULL)
   {
@@ -323,7 +326,8 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy, const Phy
 
       if (materialName == NULL)
       {
-        // Bullet cannot set material properties per shape, so we only use the material of the first shape.
+        // Bullet cannot set material properties per shape, so we only use the
+        // material of the first shape.
         materialName = (*sPtr)->material;
       }
     }
@@ -343,6 +347,9 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy, const Phy
     delete cSh;
     return NULL;
   }
+
+  RLOG(5, "All shapes created");
+
 
   // Compute the transformation from COM (Index P) frame to body frame
   // The principal axes of inertia correspond to the Eigenvectors
@@ -416,11 +423,16 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy, const Phy
   {
     //btBody->setDamping(0.05, 0.85);
     btBody->setDamping(0.1, 0.9);
+
+    btBody->setLinearVelocity(btVector3(bdy->x_dot[0], bdy->x_dot[1], bdy->x_dot[2]));
+    btBody->setAngularVelocity(btVector3(bdy->omega[0], bdy->omega[1], bdy->omega[2]));
   }
 
   // apply material properties
+  RCHECK(config);
+  RCHECK(materialName);
   const PhysicsMaterial* material = config->getMaterial(materialName);
-
+  RCHECK(material);
   btBody->setFriction(material->frictionCoefficient);
   btBody->setRollingFriction(material->rollingFrictionCoefficient);
   //btBody->setSpinningFriction(0.1);
@@ -454,6 +466,9 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy, const Phy
     btBody->setLinearFactor(linFac);
     btBody->setAngularFactor(angFac);
   }
+
+  RLOG(5, "Successfully created BulletRigidBody for \"%s\"",
+       btBody->getBodyName());
 
   return btBody;
 }
@@ -782,31 +797,48 @@ Rcs::BulletRigidBody::BulletRigidBody(const btRigidBody::btRigidBodyConstruction
  ******************************************************************************/
 Rcs::BulletRigidBody::~BulletRigidBody()
 {
-  btCollisionShape* sh = getCollisionShape();
+  clearShapes();
+}
 
-  btCompoundShape* cSh = dynamic_cast<btCompoundShape*>(sh);
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::BulletRigidBody::clearShapes()
+{
+  btCollisionShape* sh = getCollisionShape();
+  btCompoundShape* compound = NULL;
+
+  if (sh->isCompound())
+  {
+    compound = static_cast<btCompoundShape*>(sh);
+  }
 
   // A body can have a compound shape if several shapes have been added to it.
-  if (cSh != NULL)
+  if (compound != NULL)
   {
-    for (int i=cSh->getNumChildShapes()-1; i>=0 ; i--)
+    for (int i= compound->getNumChildShapes()-1; i>=0 ; i--)
     {
       // Some shapes are compounds themselves (e.g. torus or SSR). We need to
       // explicitely delete their children as well.
-      btCompoundShape* cSh_i = dynamic_cast<btCompoundShape*>(cSh->getChildShape(i));
-      if (cSh_i)
+      if (compound->getChildShape(i)->isCompound())
       {
-        for (int i=cSh_i->getNumChildShapes()-1; i>=0 ; i--)
+        btCompoundShape* subCompound = static_cast<btCompoundShape*>(compound->getChildShape(i));
+        for (int j=subCompound->getNumChildShapes()-1; j>=0 ; j--)
         {
-          delete cSh_i->getChildShape(i);
+          btCollisionShape* subChild = subCompound->getChildShape(j);
+          subCompound->removeChildShape(subChild);
+          delete subChild;
         }
       }
 
-      delete cSh->getChildShape(i);
+      btCollisionShape* child = compound->getChildShape(i);
+      compound->removeChildShape(child);
+      delete child;
     }
   }
 
-  delete sh;
+  //delete sh;
+  //sh = NULL;
 }
 
 /*******************************************************************************
