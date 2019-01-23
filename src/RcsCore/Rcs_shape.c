@@ -1196,6 +1196,45 @@ static double RcsShape_closestCylinderToPoint(const RcsShape* cyl,
 }
 
 /*******************************************************************************
+*
+******************************************************************************/
+static double RcsShape_closestPointToBox(const RcsShape* point,
+                                         const RcsShape* box,
+                                         const HTr* A_point,
+                                         const HTr* A_box,
+                                         double I_cpPt[3],
+                                         double I_cpBox[3],
+                                         double I_nPtBox[3])
+{
+  double dist = Math_distPointBox(A_point->org, A_box, box->extents,
+                                  I_cpBox, I_nPtBox);
+  Vec3d_constMulSelf(I_nPtBox, -1.0);
+  Vec3d_copy(I_cpPt, A_point->org);
+
+  return dist;
+}
+
+/*******************************************************************************
+*
+******************************************************************************/
+static double RcsShape_closestBoxToPoint(const RcsShape* box,
+                                         const RcsShape* point,
+                                         const HTr* A_box,
+                                         const HTr* A_point,
+                                         double I_cp1[3],
+                                         double I_cp2[3],
+                                         double I_n[3])
+{
+  double dist = RcsShape_closestPointToBox(point, box, A_point, A_box,
+                                           I_cp2, I_cp1, I_n);
+
+  // Revert the normal, because we are calling the reverse method
+  Vec3d_constMulSelf(I_n, -1.0);
+
+  return dist;
+}
+
+/*******************************************************************************
  * Look-up array for distance functions.
  ******************************************************************************/
 static RcsDistanceFunction
@@ -1269,7 +1308,7 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
     RcsShape_noDistance,                // RCSSHAPE_GPISF
     RcsShape_noDistance,                // RCSSHAPE_TORUS
     RcsShape_noDistance,                // RCSSHAPE_OCTREE
-    RcsShape_noDistance,                // RCSSHAPE_POINT
+    RcsShape_closestBoxToPoint,         // RCSSHAPE_POINT
     RcsShape_noDistance                 // RCSSHAPE_MARKER
   },
 
@@ -1387,7 +1426,7 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
     RcsShape_closestPointToSSL,         // RCSSHAPE_SSL
     RcsShape_noDistance,                // RCSSHAPE_SSR
     RcsShape_noDistance,                // RCSSHAPE_MESH
-    RcsShape_noDistance,                // RCSSHAPE_BOX
+    RcsShape_closestPointToBox,         // RCSSHAPE_BOX
     RcsShape_closestPointToCylinder,    // RCSSHAPE_CYLINDER
     RcsShape_noDistance,                // RCSSHAPE_REFFRAME
     RcsShape_closestPointToSphere,      // RCSSHAPE_SPHERE

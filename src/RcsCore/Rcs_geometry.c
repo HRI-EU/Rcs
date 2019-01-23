@@ -680,3 +680,77 @@ double Math_distPointCylinder(const double I_pt[3],
 
   return Math_distPointSpinningPolygon(I_pt, A_CI, poly, 4, I_cp);
 }
+
+double Math_distPointBox(const double I_p[3],
+                         const HTr* A_box,
+                         const double extents[3],
+                         double cpBox[3],
+                         double nBox[3])
+{
+  int inside = 0;
+  double sgn = 1.0, halfExt[3];
+  Vec3d_constMul(halfExt, extents, 0.5);
+  Vec3d_setZero(nBox);
+
+  // Transform point into box frame
+  Vec3d_invTransform(cpBox, A_box, I_p);
+
+  // if one component of the point is outside the box, project it onto box face.
+  for (int i = 0; i < 3; ++i)
+  {
+    if (cpBox[i] < -halfExt[i])
+    {
+      cpBox[i] = -halfExt[i];
+      nBox[i] = -1.0;
+    }
+    else if (cpBox[i] > halfExt[i])
+    {
+      cpBox[i] = halfExt[i];
+      nBox[i] = 1.0;
+    }
+    else
+    {
+      inside++;
+    }
+  }
+
+  // Handle case when point is contained in box:  Find the closest face.
+  if (inside == 3)
+  {
+    sgn = -1.0;
+    double sgn_i[3], tmp[3];
+
+    for (int i = 0; i < 3; ++i)
+    {
+      double d1 = halfExt[i] - cpBox[i];
+      double d2 = halfExt[i] + cpBox[i];
+      tmp[i] = fmin(d1, d2);
+      sgn_i[i] = (d1 < d2) ? 1.0 : -1.0;
+    }
+
+    int idx = VecNd_indexMin(tmp, 3);
+    cpBox[idx] = sgn_i[idx] * halfExt[idx];
+
+    // In the case the point is contained, the closest point will always lie on
+    // a face, and never on an edge or corner. Therefore, the normal will be an
+    // elementary vector in the box frame. We need to rotate this into the
+    // world frame.
+    nBox[idx] = sgn_i[idx];
+    Vec3d_transRotateSelf(nBox, (double(*)[3]) A_box->rot);
+  }
+
+  // Transform point back into world frame
+  Vec3d_transformSelf(cpBox, A_box);
+
+  // If the point lies outside the box, we do have a finite delta in the closest
+  // points (see < and > operators instead of <= and >= for checking this). We
+  // therefore can assume that the normalization of the difference between the
+  // closest points always works.
+  if (inside < 3)
+  {
+    Vec3d_sub(nBox, I_p, cpBox);
+    Vec3d_normalizeSelf(nBox);
+  }
+
+  return sgn*Vec3d_distance(cpBox, I_p);
+}

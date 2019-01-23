@@ -266,6 +266,11 @@ double Math_distPointCylinder(const double p[3],
                               double radius,
                               double cpCone[3]);
 
+double Math_distPointBox(const double p[3],
+                         const HTr* A_box,
+                         const double extents[3],
+                         double cpBox[3],
+                         double nBox[3]);
 ///@}
 
 
