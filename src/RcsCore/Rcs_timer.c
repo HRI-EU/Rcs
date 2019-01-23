@@ -254,8 +254,11 @@ bool Timer_wait(Timer* self)
   do
   {
     self->t = Timer_get(self);
-    dt_wait = self->t_des - self->t >= 0. ? self->t_des - self->t : 0.;
+    dt_wait = self->t_des - self->t;
+    if (dt_wait>0.0)
+    {
     Timer_usleep((unsigned long)(dt_wait * 1.0e6));
+    }
   }
   while (self->t < self->t_des);
 
@@ -276,7 +279,6 @@ bool Timer_wait(Timer* self)
 
 void Timer_waitNoCatchUp(Timer* self)
 {
-  double dt_wait;
 
   if (self == NULL)
   {
@@ -290,8 +292,10 @@ void Timer_waitNoCatchUp(Timer* self)
   do
   {
     self->t = Timer_get(self);
-    dt_wait = (self->t_des - self->t >= 0.0) ? self->t_des - self->t : 0.0;
-    Timer_usleep((unsigned long)(dt_wait * 1.0e6));
+    if (self->t<self->t_des)
+    {
+      Timer_usleep((unsigned long)(1.0e6*(self->t_des - self->t)));
+    }
   }
   while (self->t < self->t_des);
 
@@ -377,7 +381,8 @@ void Timer_destroy(Timer* self)
 void Timer_usleep(unsigned long usec)
 {
 #if defined (_MSC_VER)
-  Sleep((int)ceil((double)(usec*1.0e-3)));  // msec resolution
+  double dt_msec = 1.0e-3*(double)usec;
+  Sleep((DWORD)floor(dt_msec));  // msec resolution
 #else
   usleep(usec);
 #endif
@@ -394,6 +399,26 @@ void Timer_usleep(unsigned long usec)
 void Timer_setZero()
 {
   RCS_TIMER_T0 = Timer_getSystemTime();
+}
+
+
+
+/******************************************************************************
+
+\brief See header.
+
+******************************************************************************/
+
+void Timer_setTo(Timer* self, double t_des)
+{
+  if (self == NULL)
+  {
+    RLOG(1, "Timer is NULL - not setting");
+    return;
+  }
+
+  self->t = self->t0 + t_des;
+  self->t_des = self->t + self->dt;
 }
 
 

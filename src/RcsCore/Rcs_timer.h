@@ -138,7 +138,10 @@ void Timer_usleep(unsigned long usec);
  */
 void Timer_setZero();
 
-
+/*! \ingroup RcsTimerFunctions
+*  \brief Sets the timer to the given tim.
+*/
+void Timer_setTo(Timer* self, double t_des);
 
 #ifdef __cplusplus
 }
