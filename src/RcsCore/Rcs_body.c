@@ -80,12 +80,9 @@
 
 
 
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void RcsBody_destroy(RcsBody* self)
 {
   RcsJoint* jnt, *next;
@@ -135,14 +132,9 @@ void RcsBody_destroy(RcsBody* self)
   RFREE(self);
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 unsigned int RcsBody_numJoints(const RcsBody* self)
 {
   unsigned int nJoints = 0;
@@ -159,14 +151,9 @@ unsigned int RcsBody_numJoints(const RcsBody* self)
   return nJoints;
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 unsigned int RcsBody_numShapes(const RcsBody* self)
 {
   unsigned int nShapes = 0;
@@ -189,14 +176,9 @@ unsigned int RcsBody_numShapes(const RcsBody* self)
   return nShapes;
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 unsigned int RcsBody_numDistanceShapes(const RcsBody* self)
 {
   unsigned int nShapes = 0;
@@ -217,14 +199,9 @@ unsigned int RcsBody_numDistanceShapes(const RcsBody* self)
   return nShapes;
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void RcsBody_addShape(RcsBody* self, RcsShape* shape)
 {
   unsigned int nShapes = RcsBody_numShapes(self);
@@ -233,13 +210,9 @@ void RcsBody_addShape(RcsBody* self, RcsShape* shape)
   self->shape[nShapes+1] = NULL;
 }
 
-
-/******************************************************************************
-
-  \brief See header.
-
-*****************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 RcsBody* RcsBody_getLastInGraph(const RcsGraph* self)
 {
   RcsBody* b = self->root;
@@ -259,14 +232,9 @@ RcsBody* RcsBody_getLastInGraph(const RcsGraph* self)
   return b;
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-*****************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 RcsBody* RcsBody_getGraphRoot(const RcsBody* self)
 {
   if (self==NULL)
@@ -287,14 +255,9 @@ RcsBody* RcsBody_getGraphRoot(const RcsBody* self)
   return (RcsBody*) self;
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 bool RcsBody_attachToBody(RcsGraph* graph, RcsBody* body, RcsBody* target,
                           const HTr* A_BP)
 {
@@ -468,19 +431,17 @@ bool RcsBody_attachToBody(RcsGraph* graph, RcsBody* body, RcsBody* target,
 
 
 
-/******************************************************************************
-
-  \brief Makes a deep copy of a RcsBody data structure. The fields extraInfo
-         and actor are skipped. The following fields can only get updated on
-         the level of the graph:
-
-         RcsBody *prev
-         RcsBody *next
-         RcsShape **shape
-         RcsJoint *jnt
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ * Makes a deep copy of a RcsBody data structure. The field extraInfo is
+ * skipped. The following fields can only get updated on the level of the graph:
+ *
+ * RcsBody *prev
+ * RcsBody *next
+ * RcsShape **shape
+ * RcsJoint *jnt
+ *
+ ******************************************************************************/
 void RcsBody_copy(RcsBody* dst, const RcsBody* src)
 {
   dst->m = src->m;
@@ -498,17 +459,61 @@ void RcsBody_copy(RcsBody* dst, const RcsBody* src)
   HTr_copyOrRecreate(&dst->Inertia, src->Inertia);
 }
 
-
-
-/******************************************************************************
-
-   \brief See header.
-
+/*******************************************************************************
+* See header.
 ******************************************************************************/
+RcsBody* RcsBody_clone(const RcsBody* src)
+{
+  if (src == NULL)
+  {
+    return NULL;
+  }
 
+  // Make a copy of the body.
+  RcsBody* newBody = RALLOC(RcsBody);
+  RcsBody_copy(newBody, src);
+
+  // Make a copy of all body shapes and attach them to the body
+  int nShapes = RcsBody_numShapes(src);
+  newBody->shape = RNALLOC(nShapes + 1, RcsShape*);
+  for (int i = 0; i < nShapes; i++)
+  {
+    newBody->shape[i] = RALLOC(RcsShape);
+    RcsShape_copy(newBody->shape[i], src->shape[i]);
+  }
+
+  // Make a copy of all body joints and attach them to the body
+  RcsJoint* prevJoint = NULL;
+
+  RCSBODY_TRAVERSE_JOINTS(src)
+  {
+    RcsJoint* j = RALLOC(RcsJoint);
+    RcsJoint_copy(j, JNT);
+
+    // Connect joints that belong to body. All outside body connections are
+    // not handled here.
+    if (prevJoint == NULL)
+    {
+      newBody->jnt = j;
+    }
+    else
+    {
+      j->prev = prevJoint;
+      prevJoint->next = j;
+    }
+
+    prevJoint = j;
+  }   // RCSBODY_TRAVERSE_JOINTS(BODY)
+
+  return newBody;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 RcsBody* RcsBody_depthFirstTraversalGetNext(const RcsBody* body)
 {
-  if (!body)
+  if (body==NULL)
   {
     return NULL;
   }
@@ -538,13 +543,9 @@ RcsBody* RcsBody_depthFirstTraversalGetNext(const RcsBody* body)
   return NULL;
 }
 
-
-
-/******************************************************************************
-
-
-******************************************************************************/
-//! \todo Write documentation
+/*******************************************************************************
+ * \todo Write documentation
+ ******************************************************************************/
 RcsBody* RcsBody_depthFirstTraversalGetPrevious(const RcsBody* body)
 {
   if (!body || (!body->prev && !body->parent))
@@ -570,14 +571,9 @@ RcsBody* RcsBody_depthFirstTraversalGetPrevious(const RcsBody* body)
   return b;
 }
 
-
-
-/******************************************************************************
-
-   \brief
-
-******************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 RcsBody* RcsBody_getLastChild(const RcsBody* body)
 {
   if (!body)
@@ -594,14 +590,9 @@ RcsBody* RcsBody_getLastChild(const RcsBody* body)
   return b;
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 bool RcsBody_isChild(const RcsBody* possibleChild,
                      const RcsBody* possibleParent)
 {
@@ -619,14 +610,22 @@ bool RcsBody_isChild(const RcsBody* possibleChild,
   return false;
 }
 
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool RcsBody_isLeaf(const RcsBody* bdy)
+{
+  if (bdy->firstChild==NULL)
+  {
+    return true;
+  }
 
+  return false;
+}
 
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 bool RcsBody_isArticulated(const RcsBody* self)
 {
   RcsJoint* jnt = RcsBody_lastJointBeforeBody(self);
@@ -643,14 +642,9 @@ bool RcsBody_isArticulated(const RcsBody* self)
   return false;
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 bool RcsBody_isInGraph(const RcsBody* self, const RcsGraph* graph)
 {
   RCSGRAPH_TRAVERSE_BODIES(graph)
@@ -664,14 +658,9 @@ bool RcsBody_isInGraph(const RcsBody* self, const RcsGraph* graph)
   return false;
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void RcsBody_fprint(FILE* out, const RcsBody* b)
 {
   if (b == NULL)
@@ -804,15 +793,10 @@ void RcsBody_fprint(FILE* out, const RcsBody* b)
   fprintf(out, "\n\n");
 }
 
-
-
-/******************************************************************************
-
-  \brief Computes the local COM in the body frame according to the volume
-         of all shapes.
-
-******************************************************************************/
-
+/*******************************************************************************
+ *  Computes the local COM in the body frame according to the volume
+ *     of all shapes.
+ ******************************************************************************/
 static void RcsBody_computeLocalCOM(const RcsBody* self, double* r_com)
 {
   Vec3d_setZero(r_com);
@@ -842,15 +826,10 @@ static void RcsBody_computeLocalCOM(const RcsBody* self, double* r_com)
 
 }
 
-
-
-/******************************************************************************
-
-  \brief Returns the volume of the body including all shapes in cubic
-         meter. See RcsShape_computeVolume() for details.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * Returns the volume of the body including all shapes in cubic
+ * meter. See RcsShape_computeVolume() for details.
+ ******************************************************************************/
 double RcsBody_computeVolume(const RcsBody* self)
 {
   double v = 0.0;
@@ -863,14 +842,9 @@ double RcsBody_computeVolume(const RcsBody* self)
   return v;
 }
 
-
-
-/******************************************************************************
-
-  \brief Density: rho = m / V
-
-******************************************************************************/
-
+/*******************************************************************************
+ * Density: rho = m / V
+ ******************************************************************************/
 void RcsBody_computeInertiaTensor(const RcsBody* self, HTr* I)
 {
   Mat3d_setZero(I->rot);
@@ -915,14 +889,9 @@ void RcsBody_computeInertiaTensor(const RcsBody* self, HTr* I)
 
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
+/*******************************************************************************
+  * See header.
 ******************************************************************************/
-
 double RcsBody_distance(const RcsBody* b1,
                         const RcsBody* b2,
                         double cp1[3],
@@ -999,14 +968,9 @@ double RcsBody_distance(const RcsBody* b1,
   return d_closest;
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 double RcsBody_distanceToPoint(const RcsBody* body,
                                const double I_pt[3],
                                double I_cpBdy[3],
@@ -1038,14 +1002,9 @@ double RcsBody_distanceToPoint(const RcsBody* body,
   return d;
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 double RcsBody_centerDistance(const RcsBody* b1,
                               const RcsBody* b2,
                               const double k_p1[3],
@@ -1085,21 +1044,17 @@ double RcsBody_centerDistance(const RcsBody* b1,
   return Vec3d_distance(I_p1, I_p2);
 }
 
-
-
-/******************************************************************************
-
- \brief Computes the distance gradient del(d)/del(q).
-
-        1. dp = (p2-p1) / |p2-p1| (or the normal vector, if available)
-        2. dDdq = transpose(Jp2-Jp1) * dp
-
-        The points are represented in inertial coordinates, since the
-        different shapes associated with a body might have different
-        orientations. This way we save a lot of rotations.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * Computes the distance gradient del(d)/del(q).
+ *
+ *       1. dp = (p2-p1) / |p2-p1| (or the normal vector, if available)
+ *       2. dDdq = transpose(Jp2-Jp1) * dp
+ *
+ *       The points are represented in inertial coordinates, since the
+ *       different shapes associated with a body might have different
+ *       orientations. This way we save a lot of rotations.
+ *
+ ******************************************************************************/
 void RcsBody_distanceGradient(const RcsGraph* self,
                               const RcsBody* b1,
                               const RcsBody* b2,
@@ -1191,14 +1146,9 @@ void RcsBody_distanceGradient(const RcsGraph* self,
   MatNd_destroy(J2);
 }
 
-
-
-/******************************************************************************
-
-  \brief Computes the distance Hessian.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * Computes the distance Hessian.
+ ******************************************************************************/
 void RcsBody_distanceHessian(const RcsGraph* self,
                              const RcsBody* b1,
                              const RcsBody* b2,
@@ -1310,24 +1260,20 @@ void RcsBody_distanceHessian(const RcsGraph* self,
   MatNd_destroy(J2);
 }
 
-
-
-/******************************************************************************
-
- \brief Computes the collision cost. The cost consists of two parts:
-
-        1. Portion related to closest point distance.
-
-        2. Portion related to the distance of the body centers. This is
-           added once the distance of the bodies is closer than the
-           threshold RCS_DISTANCE_THRESHOLD. It is scaled with
-           (1.0-dClosestPts/RCS_DISTANCE_THRESHOLD)
-
-        Closest-point cost: c_clp = (s/db^2)*(d-db)^2
-        Center-point cost:  c_cep = k*(1.0-d/db)*exp(-d)
-
-******************************************************************************/
-
+/*******************************************************************************
+ * Computes the collision cost. The cost consists of two parts:
+ *
+ *      1. Portion related to closest point distance.
+ *
+ *      2. Portion related to the distance of the body centers. This is
+ *         added once the distance of the bodies is closer than the
+ *         threshold RCS_DISTANCE_THRESHOLD. It is scaled with
+ *         (1.0-dClosestPts/RCS_DISTANCE_THRESHOLD)
+ *
+ *       Closest-point cost: c_clp = (s/db^2)*(d-db)^2
+ *       Center-point cost:  c_cep = k*(1.0-d/db)*exp(-d)
+ *
+ ******************************************************************************/
 double RcsBody_collisionCost(const RcsBody* b1,
                              const RcsBody* b2,
                              double dThreshold)
@@ -1383,23 +1329,19 @@ double RcsBody_collisionCost(const RcsBody* b1,
   return cost;
 }
 
-
-
-/******************************************************************************
-
- \brief Computes the collision gradient del(g)/del(q).
-
-        Mixture gradient: cost function is
-
-          g(dClosestPts, dCenters) =
-            CD_GRADIENT_CENTERSCALE*(1.0-dClosestPts/db)*exp(-dCenters)
-
-  TODO: - That's damn slow. We should compute the distance gradient only
-          if needed!
-        - What is "status"? Let's document it (whoever added this variable)
-
-*****************************************************************************/
-
+/*******************************************************************************
+ * Computes the collision gradient del(g)/del(q).
+ *
+ *        Mixture gradient: cost function is
+ *
+ *          g(dClosestPts, dCenters) =
+ *            CD_GRADIENT_CENTERSCALE*(1.0-dClosestPts/db)*exp(-dCenters)
+ *
+ *  TODO: - That's damn slow. We should compute the distance gradient only
+ *          if needed!
+ *        - What is "status"? Let's document it (whoever added this variable)
+ *
+ ******************************************************************************/
 double RcsBody_collisionGradient(const RcsGraph* self,
                                  const RcsBody* b1,
                                  const RcsBody* b2,
@@ -1511,16 +1453,12 @@ double RcsBody_collisionGradient(const RcsGraph* self,
   return cost;
 }
 
-
-
-/******************************************************************************
-
- \brief Computes the collision Hessian del^2(g)/del(q)^2.
-        TODO: Make more efficient. There's a bunch of heavy things
-        computed even when they are multiplied with zero.
-
-*****************************************************************************/
-
+/*******************************************************************************
+ * Computes the collision Hessian del^2(g)/del(q)^2.
+ * \todo: Make more efficient. There's a bunch of heavy things
+ * computed even when they are multiplied with zero.
+ *
+ ******************************************************************************/
 void RcsBody_collisionHessian(const RcsGraph* self,
                               const RcsBody* b1,
                               const RcsBody* b2,
@@ -1666,23 +1604,19 @@ void RcsBody_collisionHessian(const RcsGraph* self,
   MatNd_destroy(ddpdq);
 }
 
-
-
-/******************************************************************************
-
-  \brief Finds the last "driving" joint before the body. This is
-         required to recurse through the Jacobians.
-
-         Starting from the bodie's driving joint, we
-
-         - first check if it exists. If this is not the case, we climb up the
-           parents until we find one.
-         - Once found, we traverse it until we get to the last one.
-
-         That should cover all cases.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * Finds the last "driving" joint before the body. This is
+ * required to recurse through the Jacobians.
+ *
+ * Starting from the bodie's driving joint, we
+ *
+ * - first check if it exists. If this is not the case, we climb up the
+ *   parents until we find one.
+ * - Once found, we traverse it until we get to the last one.
+ *
+ * That should cover all cases.
+ *
+ ******************************************************************************/
 RcsJoint* RcsBody_lastJointBeforeBody(const RcsBody* body)
 {
   if (body == NULL)
@@ -1715,11 +1649,9 @@ RcsJoint* RcsBody_lastJointBeforeBody(const RcsBody* body)
   return jnt;
 }
 
-/******************************************************************************
-
-  \brief Creates and initializes the 6 joints associated to a rigid body joint.
-
-******************************************************************************/
+/*******************************************************************************
+ * Creates and initializes the 6 joints associated to a rigid body joint.
+ ******************************************************************************/
 RcsJoint* RcsBody_createRBJ(RcsGraph* self, RcsBody* b, const double q_rbj[6])
 {
   RcsJoint* jnt0 = NULL;
@@ -1775,13 +1707,9 @@ RcsJoint* RcsBody_createRBJ(RcsGraph* self, RcsBody* b, const double q_rbj[6])
   return jnt0;
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
 {
   char buf[256];
@@ -1794,22 +1722,22 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
   }
 
   if (self->A_BP != NULL)
-    {
-      double trf[6];
-      Vec3d_copy(&trf[0], self->A_BP->org);
-      Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->A_BP->rot);
-      Vec3d_constMulSelf(&trf[3], 180.0 / M_PI);
+  {
+    double trf[6];
+    Vec3d_copy(&trf[0], self->A_BP->org);
+    Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->A_BP->rot);
+    Vec3d_constMulSelf(&trf[3], 180.0 / M_PI);
 
-      if (VecNd_maxAbsEle(trf, 6) > 1.0e-8)
-        {
-          fprintf(out, "transform=\"%s ", String_fromDouble(buf, trf[0], 6));
-          fprintf(out, "%s ", String_fromDouble(buf, trf[1], 6));
-          fprintf(out, "%s ", String_fromDouble(buf, trf[2], 6));
-          fprintf(out, "%s ", String_fromDouble(buf, trf[3], 6));
-          fprintf(out, "%s ", String_fromDouble(buf, trf[4], 6));
-          fprintf(out, "%s\" ", String_fromDouble(buf, trf[5], 6));
-        }
+    if (VecNd_maxAbsEle(trf, 6) > 1.0e-8)
+    {
+      fprintf(out, "transform=\"%s ", String_fromDouble(buf, trf[0], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[1], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[2], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[3], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[4], 6));
+      fprintf(out, "%s\" ", String_fromDouble(buf, trf[5], 6));
     }
+  }
 
   switch (self->physicsSim)
   {
@@ -1905,13 +1833,9 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
   fprintf(out, "  </Body>\n\n");
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 bool RcsBody_isFloatingBase(const RcsBody* self)
 {
   if (self == NULL)
@@ -1951,13 +1875,9 @@ bool RcsBody_isFloatingBase(const RcsBody* self)
   return true;
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName)
 {
   RcsBody* body = RcsGraph_getBodyByName(graph, bodyName);
@@ -2141,14 +2061,9 @@ bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName)
   return true;
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void RcsBody_computeAABB(const RcsBody* self,
                          double xyzMin[3], double xyzMax[3])
 {
@@ -2184,4 +2099,104 @@ void RcsBody_computeAABB(const RcsBody* self,
     }
   }
 
+}
+
+/*******************************************************************************
+* See header.
+******************************************************************************/
+RcsBody* RcsBody_createBouncingSphere(const double pos[3],
+                                      double mass, double radius)
+{
+  static int sphereCount = 0;
+  RcsShape* sphere = RALLOC(RcsShape);
+
+  sphere->type = RCSSHAPE_SPHERE;
+  HTr_setIdentity(&sphere->A_CB);
+  Vec3d_setElementsTo(sphere->extents, radius);
+  sphere->scale = 1.0;
+  sphere->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
+  sphere->computeType |= RCSSHAPE_COMPUTE_PHYSICS;
+  sphere->material = String_clone("default");
+  sphere->color = String_clone("YELLOW");
+
+  RcsBody* bdy = RALLOC(RcsBody);
+  bdy->shape = RNALLOC(2, RcsShape*);
+  bdy->shape[0] = sphere;
+  bdy->shape[1] = NULL;
+  char a[64];
+  sprintf(a, "BouncingSphere_%d", sphereCount);
+  bdy->name = String_clone(a);
+  bdy->m = mass;
+  bdy->physicsSim = RCSBODY_PHYSICS_DYNAMIC;
+  bdy->A_BI = HTr_create();
+  bdy->Inertia = HTr_create();
+  RcsBody_computeInertiaTensor(bdy, bdy->Inertia);
+  double q_rbj[6];
+  VecNd_setZero(q_rbj, 6);
+  Vec3d_copy(q_rbj, pos);
+
+  bdy->rigid_body_joints = true;
+
+  for (int i = 0; i < 6; i++)
+  {
+    RcsJoint* jnt = RNALLOC(1, RcsJoint);
+    HTr_setIdentity(&jnt->A_JI);
+    jnt->name =
+      RNALLOC(strlen(bdy->name) + strlen("_rigidBodyJnt") + 1 + 1, char);
+    sprintf(jnt->name, "%s_rigidBodyJnt%d", bdy->name, i);
+    jnt->constrained = true;
+
+    switch (i)
+    {
+      case 0:
+        bdy->jnt = jnt;
+        jnt->type = RCSJOINT_TRANS_X;
+        jnt->dirIdx = 0;
+        jnt->prev = NULL;
+        break;
+      case 1:
+        jnt->type = RCSJOINT_TRANS_Y;
+        jnt->dirIdx = 1;
+        jnt->prev = bdy->jnt;
+        jnt->prev->next = jnt;
+        break;
+      case 2:
+        jnt->type = RCSJOINT_TRANS_Z;
+        jnt->dirIdx = 2;
+        jnt->prev = bdy->jnt->next;
+        jnt->prev->next = jnt;
+        break;
+      case 3:
+        jnt->type = RCSJOINT_ROT_X;
+        jnt->dirIdx = 0;
+        jnt->prev = bdy->jnt->next->next;
+        jnt->prev->next = jnt;
+        break;
+      case 4:
+        jnt->type = RCSJOINT_ROT_Y;
+        jnt->dirIdx = 1;
+        jnt->prev = bdy->jnt->next->next->next;
+        jnt->prev->next = jnt;
+        break;
+      case 5:
+        jnt->type = RCSJOINT_ROT_Z;
+        jnt->dirIdx = 2;
+        jnt->prev = bdy->jnt->next->next->next->next;
+        jnt->prev->next = jnt;
+        jnt->next = NULL;
+        break;
+      default:
+        RFATAL("Joint type is \"%s\" (%d)", RcsJoint_typeName(i), i);
+    }
+
+    jnt->q0 = q_rbj[i];
+    jnt->q_max = q_rbj[i] + 2.0*M_PI;
+    jnt->q_min = q_rbj[i] - 2.0*M_PI;
+    jnt->q_init = q_rbj[i];
+    jnt->weightMetric = 1.0;
+  }
+
+  sphereCount++;
+
+  return bdy;
 }

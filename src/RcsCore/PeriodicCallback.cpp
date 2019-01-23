@@ -302,13 +302,17 @@ void Rcs::PeriodicCallback::start(double updateFreq_, int prio)
       break;
 
     case EPERM:
-      RLOG(1, "EPERM  No permission to set the scheduling policy and parameters");
+      RLOG(1, "EPERM  No permission to set the scheduling policy and "
+           "parameters");
       break;
 
     default:
       RLOG(1, "Unknown error %d", res);
       break;
   }
+
+  // This removes a memory issues in our memory debugger, but leads to crashes.
+  //pthread_attr_destroy(&attrRT);
 }
 
 /*******************************************************************************

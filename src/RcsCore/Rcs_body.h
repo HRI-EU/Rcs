@@ -73,6 +73,21 @@ void RcsBody_destroy(RcsBody* self);
 void RcsBody_copy(RcsBody* dst, const RcsBody* src);
 
 /*! \ingroup RcsBodyFunctions
+*  \brief Returns a clone of the body, and relates it to the graph. The
+*         following elements are cloned:
+*         - All body joints.
+*         - All body shapes.
+*         The following elements need to be considered for fully linking the
+*         body into a new graph: Joint connection to prev. body and from next
+*         body, coupled joints, body depth first pointers.
+*
+* \param[in] src        Body to be cloned.
+*  \return Clone of the body, or NULL on failure.
+*/
+RcsBody* RcsBody_clone(const RcsBody* src);
+
+
+/*! \ingroup RcsBodyFunctions
  *  \brief Returns the number of joints by which the body is attached to its
  *         predecessor.
  */
@@ -133,6 +148,11 @@ bool RcsBody_attachToBody(RcsGraph* graph, RcsBody* body, RcsBody* target,
  */
 bool RcsBody_isChild(const RcsBody* possibleChild,
                      const RcsBody* possibleParent);
+
+/*! \ingroup RcsBodyFunctions
+*  \brief Returns true if bdy is a leaf node, false otherwise.
+*/
+bool RcsBody_isLeaf(const RcsBody* bdy);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns true if the body is connected to the root node having at
@@ -272,7 +292,8 @@ void RcsBody_collisionHessian(const RcsGraph* self, const RcsBody* b1,
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns the last "driving" joint before the body. If body is
- *         NULL, the function returns NULL.
+ *         NULL, the function returns NULL. If there is no driving joint,
+ *         the function returns NULL.
  */
 RcsJoint* RcsBody_lastJointBeforeBody(const RcsBody* body);
 
@@ -328,6 +349,9 @@ bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName);
  */
 void RcsBody_computeAABB(const RcsBody* body,
                          double xyzMin[3], double xyzMax[3]);
+
+RcsBody* RcsBody_createBouncingSphere(const double pos[3],
+                                      double mass, double radius);
 
 #ifdef __cplusplus
 }

@@ -115,6 +115,26 @@ Rcs::PhysicsBase::~PhysicsBase()
 }
 
 /*******************************************************************************
+*
+******************************************************************************/
+void Rcs::PhysicsBase::simulate(double dt, RcsGraph* graph, MatNd* q_ddot,
+                                MatNd* T, bool control)
+{
+  simulate(dt, graph->q, graph->q_dot, q_ddot, T, control);
+
+  // Copy sensors
+  RcsSensor* dstSensorPtr = graph->sensor;
+  const RcsSensor* srcSensorPtr = internalDesiredGraph->sensor;
+
+  while (dstSensorPtr != NULL)
+  {
+    MatNd_copy(dstSensorPtr->rawData, srcSensorPtr->rawData);
+    dstSensorPtr = dstSensorPtr->next;
+    srcSensorPtr = srcSensorPtr->next;
+  }
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
 void Rcs::PhysicsBase::disableCollisionsWithinGroup(const char* suffix)
@@ -349,4 +369,40 @@ void Rcs::PhysicsBase::setEnablePPS(bool enable)
 bool Rcs::PhysicsBase::getEnablePPS() const
 {
   return this->enablePPS;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::PhysicsBase::removeBody(const char* name)
+{
+  RLOG(0, "Implement or overwrite me");
+  return false;
+}
+
+/*******************************************************************************
+*
+******************************************************************************/
+bool Rcs::PhysicsBase::addBody(const RcsBody* body)
+{
+  RLOG(0, "Implement or overwrite me");
+  return false;
+}
+
+/*******************************************************************************
+*
+******************************************************************************/
+bool Rcs::PhysicsBase::deactivateBody(const char* name)
+{
+  RLOG(0, "Implement or overwrite me");
+  return false;
+}
+
+/*******************************************************************************
+*
+******************************************************************************/
+bool Rcs::PhysicsBase::activateBody(const char* name, const HTr* A_BI)
+{
+  RLOG(0, "Implement or overwrite me");
+  return false;
 }
