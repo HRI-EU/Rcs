@@ -192,6 +192,28 @@ double String_toDouble_l(const char* str);
  */
 bool String_toDoubleArray_l(const char* str, double* x, unsigned int n);
 
+/*! \ingroup RcsUtilsFunctions
+ * \brief Creates a unique string with 12 characters. It contains the system
+ *        time in microseconds, chopped off at 1e6 seconds. After this period
+ *        there is a theoretic chance the function returns the same string
+ *        again.
+ *
+ *  \return Created string with 12 characters. The caller is responsible to
+ *          free the returned string.
+ */
+char* String_createUnique();
+
+/*! \ingroup RcsUtilsFunctions
+ * \brief Creates a random string with size characters. The string is composed
+ *        of only non-capital letters.
+ *
+ *  \param[in] size   Length of the string, must be > 0
+ *  \return Created string or NULL on failure. The caller is responsible to
+ *          free the returned string. Failure cases are:
+ *          - size is 0
+ *          - size is so large that the memory can't be created on the heap
+ */
+char* String_createRandom(unsigned int size);
 ///@}
 
 

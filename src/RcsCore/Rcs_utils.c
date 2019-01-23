@@ -478,6 +478,53 @@ bool String_toDoubleArray_l(const char* str, double* x_, unsigned int n)
 }
 
 /*******************************************************************************
+* 6 digits seconds, 6 digits usec
+******************************************************************************/
+char* String_createUnique()
+{
+  double t = Timer_getSystemTime() / 1.0e6;
+  t -= floor(t);
+  t *= 1.0e12;
+
+  char* str = RNALLOC(13, char);
+  snprintf(str, 12, "%.0f", t);
+
+  return str;
+}
+
+/*******************************************************************************
+* See header
+******************************************************************************/
+char* String_createRandom(unsigned int size)
+{
+  if (size == 0)
+  {
+    RLOG(1, "Can't create string of size 0");
+    return NULL;
+  }
+
+  char* str = RNALLOC(size+1, char);
+
+  if (str == 0)
+  {
+    RLOG(1, "Failed to create string with %u characters", size);
+    return NULL;
+  }
+
+  static const char charset[] = "abcdefghijklmnopqrstuvwxyz";
+
+  for (unsigned int n = 0; n < size; ++n)
+  {
+    int key = rand() % (int)(sizeof charset - 1);
+    str[n] = charset[key];
+  }
+
+  str[size] = '\0';
+
+  return str;
+}
+
+/*******************************************************************************
  * See header
  ******************************************************************************/
 bool File_exists(const char* filename)
@@ -894,16 +941,15 @@ void Rcs_printComputerStats(FILE* out)
 
   fprintf(out, "Hardware information: \n");
   fprintf(out, "  OEM ID: %u\n", sysinfo.dwOemId);
-  fprintf(out, "  Number of processors: %u\n",
-          sysinfo.dwNumberOfProcessors);
+  fprintf(out, "  Number of processors: %u\n", sysinfo.dwNumberOfProcessors);
   fprintf(out, "  Page size: %u\n", sysinfo.dwPageSize);
   fprintf(out, "  Processor type: %u\n", sysinfo.dwProcessorType);
-  fprintf(out, "  Minimum application address: %lx\n",
-          (unsigned int)sysinfo.lpMinimumApplicationAddress);
-  fprintf(out, "  Maximum application address: %lx\n",
-          (unsigned int)sysinfo.lpMaximumApplicationAddress);
-  fprintf(out, "  Active processor mask: %u\n",
-          (unsigned int) sysinfo.dwActiveProcessorMask);
+  //fprintf(out, "  Minimum application address: %lx\n",
+  //        (unsigned int)sysinfo.lpMinimumApplicationAddress);
+  //fprintf(out, "  Maximum application address: %lx\n",
+  //        (unsigned int)sysinfo.lpMaximumApplicationAddress);
+  //fprintf(out, "  Active processor mask: %u\n",
+  //        (unsigned int) sysinfo.dwActiveProcessorMask);
 #endif
 
   // Stack size
@@ -1067,8 +1113,14 @@ bool Rcs_getRealTimeThreadAttribute(int schedulingPolicy, int prio,
   }
 
   // Now we set the thread attributes to real-time
-  pthread_attr_init(attrRT);
-  int res = pthread_attr_setinheritsched(attrRT, PTHREAD_EXPLICIT_SCHED);
+  int res = pthread_attr_init(attrRT);
+  if (res!=0)
+  {
+    RLOG(1, "pthread_attr_init: %s", strerror(res));
+    return false;
+  }
+
+  res = pthread_attr_setinheritsched(attrRT, PTHREAD_EXPLICIT_SCHED);
   if (res!=0)
   {
     RLOG(1, "pthread_attr_setinheritsched: %s", strerror(res));
@@ -1160,19 +1212,18 @@ char* File_createUniqueName(char* fileName,
   close(fd);
   unlink(fileName);
 #else
-  //strcpy(fileName, "C:\\temp");   // Slash added by tmpnam
-  strcpy(fileName, "C:/temp/");
-  const char* tmp = tmpnam(NULL);
-  strcat(fileName, &tmp[1]);   // Ignore back slash at index 0 added by tmpnam
+  char* tmp = String_createUnique();
+  strcpy(fileName, tmp);
   if (suffix != NULL)
   {
+    strcat(fileName, ".");
     strcat(fileName, suffix);
   }
   else
   {
-    strcat(fileName, "tmp");
+    strcat(fileName, ".tmp");
   }
-  RLOG(5, "tmp-file is \"%s\"   tmpnam is \"%s\"", fileName, tmp);
+  RFREE(tmp);
 #endif
 
   return fileName;
