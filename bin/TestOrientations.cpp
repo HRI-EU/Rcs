@@ -193,6 +193,8 @@ static void testEulerAngles(int argc, char** argv)
 
   }   // while(runLoop)
 
+  delete v;
+  pthread_mutex_destroy(&OSGLock);
 }
 
 
@@ -300,6 +302,8 @@ static void testOmega(int argc, char** argv)
 
   }   // while(runLoop)
 
+  delete v;
+  pthread_mutex_destroy(&OSGLock);
 }
 
 
@@ -434,6 +438,8 @@ static void testAxisAngleLocalFrame(int argc, char** argv)
 
   }   // while(runLoop)
 
+  delete viewer;
+  pthread_mutex_destroy(&mtx);
 }
 
 
@@ -564,6 +570,8 @@ static void testAxisAngleWorldFrame(int argc, char** argv)
 
   }   // while(runLoop)
 
+  delete viewer;
+  pthread_mutex_destroy(&mtx);
 }
 
 
@@ -720,6 +728,9 @@ static void testRotationAverage(int argc, char** argv, bool useRotationAxes = fa
 
   // Clean up
   MatNd_destroy(weight);
+
+  delete viewer;
+  pthread_mutex_destroy(&mtx);
 }
 
 

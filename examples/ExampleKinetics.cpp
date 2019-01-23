@@ -178,13 +178,15 @@ int main(int argc, char** argv)
 
 
       RcsGraph* graph = RcsGraph_create(xmlFileName);
+      RCHECK(graph);
 
       Rcs::BodyPointDragger* dragger = NULL;
       Rcs::HUD* hud                  = NULL;
       Rcs::KeyCatcher* kc            = NULL;
+      Rcs::Viewer* viewer            = NULL;
       if (!valgrind)
       {
-        Rcs::Viewer* viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
+        viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
         Rcs::GraphNode* gn = new Rcs::GraphNode(graph);
         dragger = new Rcs::BodyPointDragger();
         hud = new Rcs::HUD();
@@ -368,6 +370,8 @@ int main(int argc, char** argv)
       MatNd_destroy(F_ext);
       RcsGraph_destroy(graph);
       Timer_destroy(timer);
+
+      delete viewer;
       break;
     }
 
@@ -387,8 +391,10 @@ int main(int argc, char** argv)
       double dt = 0.001, tmc = 0.1, vmax = 1.0;
  
       argP.getArgument("-dt", &dt, "Integration step (default is %f sec)", dt);
-      argP.getArgument("-tmc", &tmc, "Slider filter time constant (default is %f)", tmc);
-      argP.getArgument("-vmax", &vmax, "Slider max. filter velocity (default is %f)", vmax);
+      argP.getArgument("-tmc", &tmc, "Slider filter time constant (default is"
+                       " %f)", tmc);
+      argP.getArgument("-vmax", &vmax, "Slider max. filter velocity (default "
+                       "is %f)", vmax);
       argP.getArgument("-f", xmlFileName, "Configuration file name (default"
                        " is \"%s\")", xmlFileName);
       argP.getArgument("-dir", directory, "Configuration file directory "
@@ -398,13 +404,15 @@ int main(int argc, char** argv)
       argP.getArgument("-physicsEngine", physicsEngine,
                        "Physics engine (default is \"%s\")", physicsEngine);
       bool plot = argP.hasArgument("-plot", "Plot joint torques in HighGui");
-      bool noJointLimits = argP.hasArgument("-noJointLimits", "No joint limits");
+      bool noJointLimits = argP.hasArgument("-noJointLimits", "No joint "
+                                            "limits");
       bool noCollisions = argP.hasArgument("-noCollisions", "No collisions");
 
       double kp = 100.0;
       argP.getArgument("-kp", &kp, "Position gain (default is %f)", kp);
       double kd = 0.5*sqrt(4.0*kp);
-      argP.getArgument("-kd", &kd, "Velocity gain (default is asymptotically damped: %f)", kd);
+      argP.getArgument("-kd", &kd, "Velocity gain (default is asymptotically"
+                       " damped: %f)", kd);
 
 
       Rcs_addResourcePath(directory);
@@ -415,6 +423,7 @@ int main(int argc, char** argv)
       }
 
       RcsGraph* graph = RcsGraph_create(xmlFileName);
+      RCHECK(graph);
       MatNd* q_gui    = MatNd_clone(graph->q);
       MatNd* q_des    = MatNd_create(graph->dof,1);
       MatNd* qp_des   = MatNd_create(graph->dof,1);
@@ -445,6 +454,7 @@ int main(int argc, char** argv)
       // Create physics simulation
       Rcs::PhysicsBase* sim = Rcs::PhysicsFactory::create(physicsEngine, 
                                                           graph, pCfg);
+      RCHECK(sim);
 
       if (noCollisions)
       {
@@ -537,7 +547,8 @@ int main(int argc, char** argv)
           // Set the speed of the kinematic and constrained joints to zero
           RCSGRAPH_TRAVERSE_JOINTS(graph)
           {
-            if ((JNT->ctrlType!=RCSJOINT_CTRL_TORQUE) || (JNT->constrained==true))
+            if ((JNT->ctrlType!=RCSJOINT_CTRL_TORQUE) ||
+                (JNT->constrained==true))
               {
                 MatNd_set(aq, JNT->jacobiIndex, 0, 0.0);
               }
@@ -558,8 +569,10 @@ int main(int argc, char** argv)
               if (fabs(T_des->ele[i]) > T_limit->ele[i])
                 {
                   torqueLimitsViolated++;
+                  RcsJoint* jidx = RcsGraph_getJointByIndex(graph, i,
+                                                            RcsStateFull);
                   RLOG(1, "Torque limit violation at index %d (%s): %f > %f", 
-                       i, RcsGraph_getJointByIndex(graph, i, RcsStateFull)->name,
+                       i, jidx ? jidx->name : "NULL",
                        fabs(T_des->ele[i]), T_limit->ele[i]);
                 }
             }
@@ -609,7 +622,8 @@ int main(int argc, char** argv)
               pthread_mutex_unlock(&graphLock);
             }
 
-          sprintf(hudText, "Time: %.3f (real: %.3f) dt: %.1f msec\ndt_dyn: %.3f msec "
+          sprintf(hudText, "Time: %.3f (real: %.3f) dt: %.1f msec\ndt_dyn: "
+                  "%.3f msec "
                   "dt_sim: %.3f msec\n%u torque limits violated\n", 
                   sim->time(), Timer_get(rtClock), 1000.0*dt,
                   1000.0*(t_dyn-t_start), 1000.0*(t_sim-t_start),
@@ -648,6 +662,7 @@ int main(int argc, char** argv)
       MatNd_destroy(aq);
       MatNd_destroy(qp_ik);
       MatNd_destroy(T_limit);
+      delete viewer;
 
       break;
     }

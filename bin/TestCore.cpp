@@ -227,7 +227,7 @@ static bool test_localeFreeParsing()
 
   // Locale conversion with sscanf
   {
-    double b, dt = Timer_getSystemTime();
+    double b = 0.0, dt = Timer_getSystemTime();
     for (int i=0; i<nIter; ++i)
     {
       sscanf(str, "%lf", &b);
@@ -240,7 +240,7 @@ static bool test_localeFreeParsing()
 
   // Locale-free conversion with strtod_l
   {
-    double res, dt = Timer_getSystemTime();
+    double res = 0.0, dt = Timer_getSystemTime();
     for (int i=0; i<nIter; ++i)
     {
       res = String_toDouble_l(str);
@@ -253,7 +253,7 @@ static bool test_localeFreeParsing()
 
   // Locale-free conversion with stringstream
   {
-    double a, dt = Timer_getSystemTime();
+    double a = 0.0, dt = Timer_getSystemTime();
     for (int i=0; i<nIter; ++i)
     {
       std::stringstream ss2;

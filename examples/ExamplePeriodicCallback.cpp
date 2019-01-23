@@ -259,6 +259,7 @@ static void createCpuLoad(int argc, char** argv)
   {
     RLOG(0, "Stopping thread %d", i);
     cpuHog[i]->stop();
+    delete cpuHog[i];
   }
 
 }
