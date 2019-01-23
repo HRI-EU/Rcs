@@ -2,23 +2,29 @@
 
 Rcs is a set of C and C++ libraries for robot control and simulation. It is written for research purposes and for simulation and analysis in robotics. It contains algorithms for vector-matrix calculations, rigid body kinematics, dynamics, control, physical simulation and more. There are many utilities such as OpenSceneGraph nodes and Qt Guis to support research and testing. 
 
+<p float="left">
 <img src="doc/images/asimo-sim-1.5.png" width="19%" > 
 <img src="doc/images/darwin.jpg" width="19%" > 
 <img src="doc/images/valkyrie.jpg" width="19%" > 
 <img src="doc/images/atlas.jpg" width="19%" > 
 <img src="doc/images/humanoid.jpg" width="19%" >
+</p>
 
+<p float="left">
 <img src="doc/images/wam.jpg" width="19%" > 
 <img src="doc/images/jaco.jpg" width="19%" > 
 <img src="doc/images/husky.jpg" width="19%" > 
 <img src="doc/images/lwa.jpg" width="19%" > 
 <img src="doc/images/pa10.jpg" width="19%" > 
+</p>
 
+<p float="left">
 <img src="doc/images/face.jpg" width="19%" > 
 <img src="doc/images/ergo.jpg" width="19%" > 
 <img src="doc/images/mobile-manipulator.jpg" width="19%" >
 <img src="doc/images/pa10-creature.jpg" width="19%" > 
 <img src="doc/images/WAM-bulb.png" width="19%" >
+</p>
 
 ## Getting Started
 
