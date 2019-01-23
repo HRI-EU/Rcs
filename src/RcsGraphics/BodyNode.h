@@ -63,7 +63,7 @@ public:
 
   BodyNode(const RcsBody* bdy, float scale = 1.0f, bool resizeable = true);
   virtual const char* className() const;
-  void setTransformation(const HTr* A_KI);
+  void setTransformation(const HTr* A_BI);
   void displayCollisionNode(bool visibility = true);
   void displayGraphicsNode(bool visibility = true);
   void displayPhysicsNode(bool visibility = true);

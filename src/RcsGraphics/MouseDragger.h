@@ -184,11 +184,12 @@ public:
 protected:
 
   /*! \brief This function is empty and can be overwritten by derieved
-   *         classes. It is called with a locked mutex.
+   *         classes. It is called with a locked mutex in each frame.
    */
   virtual void update();
 
-  /*! \brief Handles the Gui events.
+  /*! \brief Handles the Gui events, e.g. memorizes which button has been
+   *         pressed, and which body is currently being tracked.
    */
   virtual bool callback(const osgGA::GUIEventAdapter& ea,
                         osgGA::GUIActionAdapter& aa);

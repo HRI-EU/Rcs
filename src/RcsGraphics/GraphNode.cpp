@@ -118,8 +118,7 @@ GraphNode::GraphNode() :
 /*******************************************************************************
  * RcsGraph root node.
  ******************************************************************************/
-GraphNode::GraphNode(const RcsGraph* g, bool resizeable,
-                     bool automatically_add_target_setters) :
+GraphNode::GraphNode(const RcsGraph* g, bool resizeable, bool addSetters) :
   osg::PositionAttitudeTransform(),
   graph(g),
   wireframe(false),
@@ -128,7 +127,7 @@ GraphNode::GraphNode(const RcsGraph* g, bool resizeable,
   this->switchNode = new osg::Switch;
   addChild(switchNode.get());
 
-  init(graph, resizeable, automatically_add_target_setters);
+  init(graph, resizeable, addSetters);
 }
 
 /*******************************************************************************
@@ -617,12 +616,36 @@ const RcsGraph* GraphNode::getGraphPtr() const
 }
 
 /*******************************************************************************
+* Adds a body node.
+******************************************************************************/
+BodyNode* GraphNode::addBodyNode(const RcsBody* body, double scale,
+                                 bool resizeable, pthread_mutex_t* mtx)
+{
+  osg::ref_ptr<BodyNode> bNd = new BodyNode(body, scale, resizeable);
+
+  if (mtx != NULL)
+  {
+    pthread_mutex_lock(mtx);
+  }
+
+  switchNode->addChild(bNd.get());
+
+  if (mtx != NULL)
+  {
+    pthread_mutex_unlock(mtx);
+  }
+
+  return bNd;
+}
+
+/*******************************************************************************
  * Removes the body node for the given pointer.
  ******************************************************************************/
-bool GraphNode::removeBodyNode(const RcsBody* body, pthread_mutex_t* mtx)
+bool GraphNode::removeBodyNode(const RcsBody* body)
 {
   if (body==NULL)
   {
+    RLOG(4, "Can't remove NULL body - skipping");
     return false;
   }
 
@@ -632,42 +655,92 @@ bool GraphNode::removeBodyNode(const RcsBody* body, pthread_mutex_t* mtx)
 
   for (li = bnv.nodes.begin(); li != bnv.nodes.end(); ++li)
   {
-    Rcs::BodyNode* node = (*li).get();
+    osg::ref_ptr<Rcs::BodyNode> node = *li;
+
     if (node->body() == body)
     {
-      RLOG(0, "Removing body node %s", body->name);
-
-      if (mtx != NULL)
+      bool success = switchNode->removeChild(node);
+      if (success == false)
       {
-        pthread_mutex_lock(mtx);
+        RLOG(4, "BodyNode %s is not child of GraphNode - skipping", body->name);
       }
-
-      removeChild(node);
-
-      if (mtx != NULL)
-      {
-        pthread_mutex_unlock(mtx);
-      }
-
       return true;
     }
   }
+
+  RLOG(4, "BodyNode %s is not child of GraphNode - skipping", body->name);
 
   return false;
 }
 
 /*******************************************************************************
- * Removes the body node for the given name. \todo: Doesn't work.
- ******************************************************************************/
-bool GraphNode::removeBodyNode(const char* body, pthread_mutex_t* mtx)
+* Removes the body node for the given pointer.
+******************************************************************************/
+bool GraphNode::removeBodyNode(BodyNode* bdyNode)
 {
-  if (body==NULL)
+  if (bdyNode == NULL)
   {
+    RLOG(4, "Can't remove NULL node - skipping");
     return false;
   }
 
-  RcsBody* bdy = RcsGraph_getBodyByName(this->graph, body);
-  return removeBodyNode(bdy, mtx);
+  GraphNodeList::iterator li;
+  BodyNodeVisitor bnv;
+  this->accept(bnv);
+
+  for (li = bnv.nodes.begin(); li != bnv.nodes.end(); ++li)
+  {
+    if (bdyNode == *li)
+    {
+      bool success = switchNode->removeChild(*li);
+      if (success == false)
+      {
+        RLOG(4, "BodyNode %s is not child of GraphNode - skipping",
+             bdyNode->body()->name);
+      }
+      return true;
+    }
+  }
+
+  RLOG(4, "BodyNode %s is not child of GraphNode - skipping",
+       bdyNode->body()->name);
+
+  return false;
+}
+
+/*******************************************************************************
+ * Removes the body node for the given name.
+ ******************************************************************************/
+bool GraphNode::removeBodyNode(const char* name)
+{
+  if (name == NULL)
+  {
+    RLOG(4, "Can't remove node with NULL name - skipping");
+    return false;
+  }
+
+  GraphNodeList::iterator li;
+  BodyNodeVisitor bnv;
+  this->accept(bnv);
+
+  for (li = bnv.nodes.begin(); li != bnv.nodes.end(); ++li)
+  {
+    osg::ref_ptr<Rcs::BodyNode> node = *li;
+
+    if (node->getName() == std::string(name))
+    {
+      bool success = switchNode->removeChild(node);
+      if (success == false)
+      {
+        RLOG(4, "BodyNode %s is not child of GraphNode - skipping", name);
+      }
+      return true;
+    }
+  }
+
+  RLOG(4, "BodyNode %s is not child of GraphNode - skipping", name);
+
+  return false;
 }
 
 /*******************************************************************************

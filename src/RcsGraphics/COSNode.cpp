@@ -108,7 +108,7 @@ void Rcs::COSNode::init(float scale, float lengthX, float lengthY, float lengthZ
   HTr_setIdentity(&A_KI);
   osg::Geode* geode = new osg::Geode();
   osg::TessellationHints* hints = new osg::TessellationHints;
-  hints->setDetailRatio(0.5f);
+  hints->setDetailRatio(0.2f);
 
   // Center sphere
   osg::Sphere* centerSphere =

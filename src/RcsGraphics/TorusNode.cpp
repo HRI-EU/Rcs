@@ -50,15 +50,15 @@ TorusNode::TorusNode(double radius, double thickness, double start_angle,
                      double end_angle) :
   _radius(radius), _thickness(thickness)
 {
-  osg::Geode* torus = createGeometry(start_angle, end_angle);
-  patPtr()->addChild(torus);
+  osg::ref_ptr<osg::Geode> torus = createGeometry(start_angle, end_angle);
+  patPtr()->addChild(torus.get());
 }
 
 TorusNode::~TorusNode()
 {
 }
 
-osg::Geode* TorusNode::createGeometry(double start_angle, double end_angle) const
+osg::ref_ptr<osg::Geode> TorusNode::createGeometry(double start_angle, double end_angle) const
 {
   osg::ref_ptr<osg::Geode> geode = new osg::Geode;
 
@@ -134,7 +134,7 @@ osg::Geode* TorusNode::createGeometry(double start_angle, double end_angle) cons
   geometry->setUseDisplayList(true);
   geode->addDrawable(geometry.get());
 
-  return (geode.release());
+  return geode;
 }
 
 

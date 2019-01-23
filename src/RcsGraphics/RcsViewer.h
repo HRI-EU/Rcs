@@ -129,7 +129,8 @@ public:
    *  \param[in] A_CI Transformation from world to camera frame
    */
   void setCameraTransform(const HTr* A_CI);
-  void setCameraTransform(double x, double y, double z, double thx, double thy, double thz);
+  void setCameraTransform(double x, double y, double z,
+                          double thx, double thy, double thz);
 
   void setCameraHomePosition(const osg::Vec3d& eye,
                              const osg::Vec3d& center,
@@ -141,6 +142,8 @@ public:
    *         mouse pointer (closest intersection of picking ray and node)
    */
   osg::Node* getNodeUnderMouse(double I_mouseCoords[3]=NULL);
+
+  void getMouseTip(double I_tip[3]) const;
 
   /*! \brief Convenience template function for any type of node: Call it with
    *         MyNode* nd = viewer->getNodeUnderMouse<MyNode*>();
@@ -161,11 +164,17 @@ public:
   void setFieldOfView(double fov);
   void stopUpdateThread();
 
-  float mouseX;
-  float mouseY;
   double fps;
 
 protected:
+
+  float mouseX;
+  float mouseY;
+  float normalizedMouseX;
+  float normalizedMouseY;
+
+  bool handle(const osgGA::GUIEventAdapter& ea,
+              osgGA::GUIActionAdapter& aa);
 
   static void* ViewerThread(void* arg);
   void create(bool fancy, bool startupWithShadow);
@@ -183,6 +192,7 @@ protected:
   bool shadowsEnabled;
 
   unsigned int llx, lly, sizeX, sizeY;
+  bool cartoonEnabled;
   pthread_t frameThread;
 
   osg::ref_ptr<osgViewer::Viewer> viewer;

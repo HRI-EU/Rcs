@@ -172,6 +172,19 @@ public:
   void toggle();
   const RcsGraph* getGraphPtr() const;
 
+  /*! \brief Adds a BodyNode to the GraphNode.
+  *
+  *  \param[in] body       Pointer to the body to be added.
+  *  \param[in] scale      Scaling factor for meshes.
+  *  \param[in] resizeable True for run-time rescalability. Comes with some
+  *                        performance overhead.
+  *  \param[in] mtx        Mutex around the viewer's frame() call. This must be
+  *                        given in order to avoid crashes when the viewer's
+  *                        frame() function is called from a different thread.
+  */
+  BodyNode* addBodyNode(const RcsBody* body, double scale=1.0,
+                        bool resizeable=false, pthread_mutex_t* mtx=NULL);
+
   /*! \brief Removes a BodyNode by pointer from the GraphNode.
    *
    *  \param[in] body  Pointer to the body to be removed. If it is NULL, the
@@ -179,12 +192,9 @@ public:
    *                   is found, the function also returns false. If a node for
    *                   this body is found, it will be removed and the function
    *                   returns true.
-   *  \param[in] mtx   Mutex around the viewer's frame() call. This must be
-   *                   given in order to avoid crashes when the viewer's
-   *                   frame() function is called from a different thread.
    * \return true for success, false otherwise.
    */
-  bool removeBodyNode(const RcsBody* body, pthread_mutex_t* mtx=NULL);
+  bool removeBodyNode(const RcsBody* body);
 
   /*! \brief Removes a BodyNode by name from the GraphNode.
    *
@@ -193,12 +203,10 @@ public:
    *                   is found, the function also returns false. If a node for
    *                   this body is found, it will be removed and the function
    *                   returns true.
-   *  \param[in] mtx   Mutex around the viewer's frame() call. This must be
-   *                   given in order to avoid crashes when the viewer's
-   *                   frame() function is called from a different thread.
    * \return true for success, false otherwise.
    */
-  bool removeBodyNode(const char* body, pthread_mutex_t* mtx=NULL);
+  bool removeBodyNode(const char* body);
+  bool removeBodyNode(BodyNode* bdyNode);
 
   bool hideBodyNode(const RcsBody* body);
   bool hideBodyNode(const char* body);

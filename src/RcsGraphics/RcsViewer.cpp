@@ -42,6 +42,7 @@
 #include <Rcs_timer.h>
 #include <KeyCatcherBase.h>
 #include <Rcs_utils.h>
+#include <Rcs_Vec3d.h>
 #include <Rcs_VecNd.h>
 
 #include <osgDB/ReadFile>
@@ -87,6 +88,12 @@ using namespace Rcs;
 
 
 
+/*******************************************************************************
+ * Keyboard handler for default keys. The default manipulator is extended so
+ * that the default space behavior (default camera pose) is disabled, and that
+ * the mouse does not move the tracker once Shift-L is pressed. This allows to
+ * implement a mouse spring.
+ ******************************************************************************/
 class RcsManipulator : public osgGA::TrackballManipulator
 {
 public:
@@ -101,6 +108,7 @@ public:
   virtual bool handle(const osgGA::GUIEventAdapter& ea,
                       osgGA::GUIActionAdapter& aa)
   {
+    bool spacePressed = false;
 
     switch (ea.getEventType())
     {
@@ -110,6 +118,11 @@ public:
         {
           this->leftShiftPressed = true;
         }
+        else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Space)
+        {
+          spacePressed = true;
+        }
+
         break;
       }
 
@@ -127,7 +140,7 @@ public:
       }
     }   // switch(...)
 
-    if (this->leftShiftPressed == true)
+    if ((this->leftShiftPressed==true) || (spacePressed==true))
     {
       return false;
     }
@@ -149,12 +162,10 @@ class KeyHandler : public osgGA::GUIEventHandler
 {
 public:
 
-  KeyHandler(Rcs::Viewer* viewer)
+  KeyHandler(Rcs::Viewer* viewer) : _viewer(viewer),
+    _video_capture_process(-1)
   {
-    RCHECK(viewer);
-    _viewer = viewer;
-    _cartoonEnabled = false;
-    _video_capture_process = -1;
+    RCHECK(_viewer);
 
     KeyCatcherBase::registerKey("0-9", "Set Rcs debug level", "Viewer");
     KeyCatcherBase::registerKey("w", "Toggle wireframe mode", "Viewer");
@@ -177,92 +188,7 @@ public:
   virtual bool handle(const osgGA::GUIEventAdapter& ea,
                       osgGA::GUIActionAdapter& aa)
   {
-    switch (ea.getEventType())
-    {
-
-      case (osgGA::GUIEventAdapter::FRAME):
-      {
-        _viewer->mouseX = ea.getX();
-        _viewer->mouseY = ea.getY();
-
-        if (_viewer->cameraLight.valid())
-        {
-          HTr A_CI;
-          _viewer->getCameraTransform(&A_CI);
-          osg::Vec4 lightpos;
-          lightpos.set(A_CI.org[0], A_CI.org[1], A_CI.org[2]+0*2.0, 1.0f);
-          _viewer->cameraLight->getLight()->setPosition(lightpos);
-        }
-        break;
-      }
-
-      case (osgGA::GUIEventAdapter::KEYDOWN):
-      {
-        // key '0' is ASCII code 48, then running up to 57 for '9'
-        if ((ea.getKey() >= 48) && (ea.getKey() <= 57))
-        {
-          unsigned int dLev =  ea.getKey() - 48;
-          RcsLogLevel = dLev;
-          RMSG("Setting debug level to %u", dLev);
-          return false;
-        }
-
-        else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_F11)
-        {
-          HTr A_CI;
-          double x[6];
-          _viewer->getCameraTransform(&A_CI);
-          HTr_to6DVector(x, &A_CI);
-          RMSGS("Camera pose is %f %f %f   %f %f %f   (degrees: %.3f %.3f %.3f)",
-                x[0], x[1], x[2], x[3], x[4], x[5],
-                RCS_RAD2DEG(x[3]), RCS_RAD2DEG(x[4]), RCS_RAD2DEG(x[5]));
-        }
-
-        //
-        // Toggle wireframe
-        //
-        else if (ea.getKey() == 'w')
-        {
-          _viewer->toggleWireframe();
-          return false;
-        }
-
-        //
-        // Toggle shadows
-        //
-        else if (ea.getKey() == 's')
-        {
-          _viewer->setShadowEnabled(!_viewer->shadowsEnabled);
-          return false;
-        }
-
-        //
-        // Toggle cartoon mode
-        //
-        else if (ea.getKey() == 'R')
-        {
-          // Once cartoon mode is enabled, other keys than R don't work
-          // anymore. This is a OSG bug, because the effect node seems to
-          // not call the children's eventhandlers
-          _cartoonEnabled = !_cartoonEnabled;
-          _viewer->setCartoonEnabled(_cartoonEnabled);
-          return false;
-        }
-        else if (ea.getKey() == 'M')
-        {
-          toggleVideoCapture();
-          return false;
-        }
-
-        break;
-      }   // case(osgGA::GUIEventAdapter::KEYDOWN):
-
-      default:
-        break;
-
-    }   // switch(ea.getEventType())
-
-    return false;
+    return _viewer->handle(ea, aa);
   }
 
   bool toggleVideoCapture()
@@ -317,7 +243,6 @@ public:
 private:
 
   Rcs::Viewer* _viewer;
-  bool _cartoonEnabled;
   pid_t _video_capture_process;
 };
 }
@@ -326,9 +251,10 @@ private:
  * Viewer class.
  ******************************************************************************/
 Viewer::Viewer() :
-  mouseX(0.0), mouseY(0.0), fps(0.0), mtxFrameUpdate(NULL),
-  threadRunning(false), updateFreq(25.0), initialized(false),
-  wireFrame(false), shadowsEnabled(false), llx(0), lly(0), sizeX(640), sizeY(480)
+  fps(0.0), mouseX(0.0), mouseY(0.0), normalizedMouseX(0.0),
+  normalizedMouseY(0.0), mtxFrameUpdate(NULL), threadRunning(false),
+  updateFreq(25.0), initialized(false), wireFrame(false), shadowsEnabled(false),
+  llx(0), lly(0), sizeX(640), sizeY(480), cartoonEnabled(false)
 {
   // Check if logged in remotely
   const char* sshClient = getenv("SSH_CLIENT");
@@ -352,9 +278,10 @@ Viewer::Viewer() :
  * Viewer class.
  ******************************************************************************/
 Viewer::Viewer(bool fancy, bool startupWithShadow) :
-  mouseX(0.0), mouseY(0.0), fps(0.0), mtxFrameUpdate(NULL),
-  threadRunning(false), updateFreq(25.0), initialized(false),
-  wireFrame(false), shadowsEnabled(false), llx(0), lly(0), sizeX(640), sizeY(480)
+  fps(0.0), mouseX(0.0), mouseY(0.0), normalizedMouseX(0.0),
+  normalizedMouseY(0.0), mtxFrameUpdate(NULL), threadRunning(false),
+  updateFreq(25.0), initialized(false), wireFrame(false), shadowsEnabled(false),
+  llx(0), lly(0), sizeX(640), sizeY(480)
 {
   create(fancy, startupWithShadow);
 
@@ -388,7 +315,9 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   this->viewer = new osgViewer::Viewer();
 
   // Mouse manipulator (needs to go before event handler)
-  osg::ref_ptr<RcsManipulator> trackball = new RcsManipulator();
+  osg::ref_ptr<osgGA::TrackballManipulator> trackball = new RcsManipulator();
+
+
   viewer->setCameraManipulator(trackball.get());
 
   // Handle some default keys (see handler above)
@@ -1008,4 +937,117 @@ bool Viewer::unlock() const
 bool Viewer::toggleVideoRecording()
 {
   return keyHandler->toggleVideoCapture();
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Viewer::getMouseTip(double tip[3]) const
+{
+  osg::Matrix vm = viewer->getCamera()->getViewMatrix();
+  osg::Matrix pm = viewer->getCamera()->getProjectionMatrix();
+
+  HTr A_CamI;
+  getCameraTransform(&A_CamI);
+
+  double planePt[3];
+  Vec3d_add(planePt, A_CamI.org, A_CamI.rot[0]);
+
+  Rcs::getMouseTip(vm, pm, normalizedMouseX, normalizedMouseY, planePt, tip);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Viewer::handle(const osgGA::GUIEventAdapter& ea,
+                    osgGA::GUIActionAdapter& aa)
+{
+  switch (ea.getEventType())
+  {
+
+    case (osgGA::GUIEventAdapter::FRAME):
+    {
+      this->mouseX = ea.getX();
+      this->mouseY = ea.getY();
+      this->normalizedMouseX = ea.getXnormalized();
+      this->normalizedMouseY = ea.getYnormalized();
+
+      if (cameraLight.valid())
+      {
+        HTr A_CI;
+        getCameraTransform(&A_CI);
+        osg::Vec4 lightpos;
+        lightpos.set(A_CI.org[0], A_CI.org[1], A_CI.org[2] + 0 * 2.0, 1.0f);
+        cameraLight->getLight()->setPosition(lightpos);
+      }
+      break;
+    }
+
+    case (osgGA::GUIEventAdapter::KEYDOWN):
+    {
+      // key '0' is ASCII code 48, then running up to 57 for '9'
+      if ((ea.getKey() >= 48) && (ea.getKey() <= 57))
+      {
+        unsigned int dLev = ea.getKey() - 48;
+        RcsLogLevel = dLev;
+        RMSG("Setting debug level to %u", dLev);
+        return false;
+      }
+
+      else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_F11)
+      {
+        HTr A_CI;
+        double x[6];
+        this->getCameraTransform(&A_CI);
+        HTr_to6DVector(x, &A_CI);
+        RMSGS("Camera pose is %f %f %f   %f %f %f   (degrees: %.3f %.3f %.3f)",
+              x[0], x[1], x[2], x[3], x[4], x[5],
+              RCS_RAD2DEG(x[3]), RCS_RAD2DEG(x[4]), RCS_RAD2DEG(x[5]));
+      }
+
+      //
+      // Toggle wireframe
+      //
+      else if (ea.getKey() == 'w')
+      {
+        toggleWireframe();
+        return false;
+      }
+
+      //
+      // Toggle shadows
+      //
+      else if (ea.getKey() == 's')
+      {
+        setShadowEnabled(!this->shadowsEnabled);
+        return false;
+      }
+
+      //
+      // Toggle cartoon mode
+      //
+      else if (ea.getKey() == 'R')
+      {
+        // Once cartoon mode is enabled, other keys than R don't work
+        // anymore. This is a OSG bug, because the effect node seems to
+        // not call the children's eventhandlers
+        this->cartoonEnabled = !this->cartoonEnabled;
+        setCartoonEnabled(this->cartoonEnabled);
+        return false;
+      }
+      else if (ea.getKey() == 'M')
+      {
+        keyHandler->toggleVideoCapture();
+        return false;
+      }
+
+      break;
+    }   // case(osgGA::GUIEventAdapter::KEYDOWN):
+
+    default:
+      break;
+
+  }   // switch(ea.getEventType())
+
+  return false;
 }
