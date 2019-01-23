@@ -84,6 +84,7 @@
 #include <Rcs_timer.h>
 #include <Rcs_sensor.h>
 #include <Rcs_typedef.h>
+#include <Rcs_graphParser.h>
 #include <Rcs_kinematics.h>
 #include <Rcs_dynamics.h>
 #include <Rcs_joint.h>
@@ -380,6 +381,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("q", "Quit");
       Rcs::KeyCatcherBase::registerKey("W", "Merge bodies");
       Rcs::KeyCatcherBase::registerKey("x", "Rewind bvh file");
+      Rcs::KeyCatcherBase::registerKey("e", "Remove body under mouse");
 
       double dtSim = 0.0, dtStep = 0.04;
       char hudText[512] = "", comRef[64] = "";
@@ -601,7 +603,7 @@ int main(int argc, char** argv)
             RMSG("Changing model state");
             printf("Enter name of model state: ");
             std::cin >> mdlState;
-            bool ok = RcsGraph_setStateFromXML(graph, mdlState.c_str(), 0);
+            bool ok = RcsGraph_setModelStateFromXML(graph, mdlState.c_str(), 0);
             RMSG("%s changing model state to %s",
                  ok ? "SUCCEEDED" : "FAILED", mdlState.c_str());
           }
@@ -609,6 +611,25 @@ int main(int argc, char** argv)
           {
             RMSGS("Creating JointWidget");
             guiHandle = Rcs::JointWidget::create(graph, &graphLock);
+          }
+          else if (kc->getAndResetKey('e'))
+          {
+            Rcs::BodyNode* bNd =
+              viewer->getBodyNodeUnderMouse<Rcs::BodyNode*>();
+            if (bNd==NULL)
+            {
+              RMSG("No BodyNode found under mouse");
+              continue;
+            }
+            RMSG("Removing body \"%s\" under mouse", bNd->body()->name);
+            pthread_mutex_lock(&graphLock);
+            bool ok = RcsGraph_removeBody(graph, bNd->body()->name, NULL, 0);
+            if (ok)
+            {
+              ok = gn->removeBodyNode(bNd);
+            }
+            pthread_mutex_unlock(&graphLock);
+            RMSG("%s removing body", ok ? "SUCCEESS" : "FAILURE");
           }
           else if (kc->getAndResetKey('C'))
           {
@@ -879,18 +900,22 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("p", "Reset physics");
       Rcs::KeyCatcherBase::registerKey("o", "Set physics to random state");
       Rcs::KeyCatcherBase::registerKey("Space", "Toggle pause");
-      Rcs::KeyCatcherBase::registerKey("S", "Print out joint torques");
+      Rcs::KeyCatcherBase::registerKey("S", "Print out sensors and simulation");
       Rcs::KeyCatcherBase::registerKey("j", "Disable joint limits");
       Rcs::KeyCatcherBase::registerKey("J", "Enable joint limits");
-      Rcs::KeyCatcherBase::registerKey("G", "Toggle gravity compensation");
+      Rcs::KeyCatcherBase::registerKey("u", "Toggle gravity compensation");
       Rcs::KeyCatcherBase::registerKey("W", "Create joint widget");
       Rcs::KeyCatcherBase::registerKey("m", "Change physics parameters");
+      Rcs::KeyCatcherBase::registerKey("e", "Remove body by name");
+      Rcs::KeyCatcherBase::registerKey("k", "Shoot sphere");
+      Rcs::KeyCatcherBase::registerKey("D", "Show dot file of graph");
+      Rcs::KeyCatcherBase::registerKey("a", "Deactivate body under mouse");
+      Rcs::KeyCatcherBase::registerKey("A", "Activate body under mouse");
 
-      double dt = 0.005, tmc = 0.01;
-      double damping = 2.0;
+      double dt = 0.005, tmc = 0.01, damping = 2.0, shootMass = 1.0;
       char hudText[2056] = "";
       char physicsEngine[32] = "Bullet";
-      char physicsCfg[128] = "config/physics/vortex.xml";
+      char physicsCfg[128] = "config/physics/physics.xml";
       strcpy(xmlFileName, "gScenario.xml");
       strcpy(directory, "config/xml/DexBot");
       bool pause = argP.hasArgument("-pause", "Hit key for each iteration");
@@ -903,29 +928,31 @@ int main(int argc, char** argv)
       bool disableCollisions = argP.hasArgument("-disableCollisions",
                                                 "Disable collisions between"
                                                 " all rigid bodies");
+      bool disableJointLimits = argP.hasArgument("-disableJointLimits",
+                                                 "Disable all joint limits");
       bool testCopy = argP.hasArgument("-copy", "Test physics copying");
       bool withPPS = argP.hasArgument("-pps", "Launch PPS widgets");
       bool gravComp = argP.hasArgument("-gravComp", "Apply gravity compensation"
                                        " to torque joints");
+      bool resizeable = argP.hasArgument("-resizeable", "Adjust visualization "
+                                         "of shapes dynamically");
+      bool syncHard = argP.hasArgument("-syncHard", "Try to sync with wall "
+                                       "clock time as hard as possible");
       argP.getArgument("-physics_config", physicsCfg, "Configuration file name"
                        " for physics (default is %s)", physicsCfg);
       argP.getArgument("-physicsEngine", physicsEngine,
                        "Physics engine (default is \"%s\")", physicsEngine);
-      argP.getArgument("-dt", &dt, "Simulation time step (default is %f)",
-                       dt);
+      argP.getArgument("-dt", &dt, "Simulation time step (default is %f)", dt);
       argP.getArgument("-tmc", &tmc, "Gui filter, smaller is softer (default"
-                       " is: %f)",
-                       tmc);
+                       " is: %f)", tmc);
       argP.getArgument("-damping", &damping,
                        "Joint torque damping (default is %f)", damping);
-      argP.getArgument("-f", xmlFileName,
-                       "Configuration file name (default is \"%s\")",
-                       xmlFileName);
-      argP.getArgument("-dir", directory,
-                       "Configuration file directory (default is \"%s\")",
-                       directory);
-      bool resizeable = argP.hasArgument("-resizeable", "Adjust visualization "
-                                         "of shapes dynamically");
+      argP.getArgument("-f", xmlFileName, "Configuration file name (default "
+                       "is \"%s\")", xmlFileName);
+      argP.getArgument("-dir", directory, "Configuration file directory "
+                       "(default is \"%s\")", directory);
+      argP.getArgument("-shootMass", &shootMass, "Mass of shooting ball"
+                       "(default is \"%f\")", shootMass);
       getModel(directory, xmlFileName);
 
       if (argP.hasArgument("-h"))
@@ -944,6 +971,7 @@ int main(int argc, char** argv)
       Rcs_addResourcePath(directory);
 
       RcsGraph* graph = RcsGraph_create(xmlFileName);
+      RCHECK(graph);
 
       if (posCntrl == true)
       {
@@ -958,9 +986,8 @@ int main(int argc, char** argv)
         RcsGraph_setState(graph, NULL, NULL);
       }
 
-      // physics simulation
-      Rcs::PhysicsBase* sim = Rcs::PhysicsFactory::create(physicsEngine, graph,
-                                                          physicsCfg);
+      Rcs::PhysicsBase* sim = Rcs::PhysicsFactory::create(physicsEngine,
+                                                          graph, physicsCfg);
       if (sim==NULL)
       {
         Rcs::PhysicsFactory::print();
@@ -1023,7 +1050,7 @@ int main(int argc, char** argv)
 
         if (skipGui==false)
         {
-          int guiHandle = Rcs::JointWidget::create(graph, mtx, q_des, graph->q);
+          int guiHandle = Rcs::JointWidget::create(graph, mtx, q_des, q_curr);
           void* ptr = RcsGuiFactory_getPointer(guiHandle);
           jw = static_cast<Rcs::JointWidget*>(ptr);
         }
@@ -1052,8 +1079,10 @@ int main(int argc, char** argv)
         }
       }
 
+      Timer_setZero();
       Timer* timer = Timer_create(dt);
       unsigned int loopCount = 0;
+      bool bodyAdded = false;
 
       while (runLoop)
       {
@@ -1071,10 +1100,23 @@ int main(int argc, char** argv)
           RMSGS("Quitting run loop");
           runLoop = false;
         }
+        else if (kc->getAndResetKey('D'))
+        {
+          RMSGS("Writing dot file");
+          RcsGraph_writeDotFile(graph, "graph.dot");
+          char osCmd[256];
+          sprintf(osCmd, "dotty graph.dot&");
+          int err = system(osCmd);
+
+          if (err == -1)
+          {
+            RMSG("Couldn't start dot file viewer!");
+          }
+        }
         else if (kc && kc->getAndResetKey('W'))
         {
           RMSGS("Creating JointWidget");
-          int guiHandle = Rcs::JointWidget::create(graph, mtx, q_des, graph->q);
+          int guiHandle = Rcs::JointWidget::create(graph, mtx, q_des, q_curr);
           void* ptr = RcsGuiFactory_getPointer(guiHandle);
           jw = static_cast<Rcs::JointWidget*>(ptr);
         }
@@ -1117,7 +1159,7 @@ int main(int argc, char** argv)
           RMSGS("Enabling joint limits");
           sim->setJointLimits(true);
         }
-        else if (kc && kc->getAndResetKey('G'))
+        else if (kc && kc->getAndResetKey('u'))
         {
           gravComp = !gravComp;
           RMSGS("Gravity compensation is %s", gravComp ? "ON" : "OFF");
@@ -1143,6 +1185,7 @@ int main(int argc, char** argv)
         else if (kc && kc->getAndResetKey(' '))
         {
           pause = !pause;
+          Timer_setTo(timer, sim->time());
           RMSG("Pause modus is %s", pause ? "ON" : "OFF");
         }
         else if (kc && kc->getAndResetKey('l'))
@@ -1177,6 +1220,10 @@ int main(int argc, char** argv)
             if (disableCollisions==true)
             {
               sim->disableCollisions();
+            }
+            if (disableJointLimits == true)
+            {
+              sim->disableJointLimits();
             }
             t_reload2 = Timer_getSystemTime() - t_reload2;
 
@@ -1217,6 +1264,7 @@ int main(int argc, char** argv)
           {
             RcsSensor_fprint(stdout, SENSOR);
           }
+          sim->print();
         }   // if (kc && ...)
 
         if (valgrind)
@@ -1302,11 +1350,18 @@ int main(int argc, char** argv)
         }
 
 
+        if (syncHard)
+        {
+          Timer_wait(timer);
+        }
+        else
+        {
         Timer_waitNoCatchUp(timer);
+        }
 
         loopCount++;
 
-        if (loopCount>10 && (valgrind==true))
+        if ((loopCount>10) && (valgrind==true))
         {
           runLoop = false;
         }
@@ -1346,7 +1401,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("o", "Toggle distance calculation");
       Rcs::KeyCatcherBase::registerKey("m", "Manipulability null space");
       Rcs::KeyCatcherBase::registerKey("e", "Link generic body");
-      Rcs::KeyCatcherBase::registerKey("v", "Write current state to model_state");
+      Rcs::KeyCatcherBase::registerKey("v", "Write current q to model_state");
 
       int algo = 0;
       double alpha = 0.05, lambda = 1.0e-8, tmc = 0.1, dt = 0.01, dt_calc = 0.0;
@@ -1665,7 +1720,8 @@ int main(int argc, char** argv)
         }
         else if (kc && kc->getAndResetKey('v'))
         {
-          RcsGraph_fprintModelState(stdout, controller.getGraph(), controller.getGraph()->q);
+          RcsGraph_fprintModelState(stdout, controller.getGraph(),
+                                    controller.getGraph()->q);
         }
 
 
@@ -1945,10 +2001,10 @@ int main(int argc, char** argv)
         // Set state to random and compute null space cost and gradient
         if (loopCount%nIter==0)
         {
-          //MatNd_setRandom(controller.getGraph()->q, -M_PI, M_PI);
           RCSGRAPH_TRAVERSE_JOINTS(controller.getGraph())
             {
-              controller.getGraph()->q->ele[JNT->jointIndex] = Math_getRandomNumber(JNT->q_min, JNT->q_max);
+            controller.getGraph()->q->ele[JNT->jointIndex] =
+              Math_getRandomNumber(JNT->q_min, JNT->q_max);
             }
         }
 
@@ -2312,7 +2368,8 @@ int main(int argc, char** argv)
           MatNd_setZero(xp_des);
           MatNd_setZero(xpp_des);
           void* ptr = RcsGuiFactory_getPointer(guiHandle);
-          Rcs::ControllerWidgetBase* cw = static_cast<Rcs::ControllerWidgetBase*>(ptr);
+          Rcs::ControllerWidgetBase* cw =
+            static_cast<Rcs::ControllerWidgetBase*>(ptr);
           cw->reset(a_des, x_des);
         }
         else if (kc && kc->getAndResetKey('o'))
@@ -2327,7 +2384,8 @@ int main(int argc, char** argv)
           MatNd_setZero(xp_des);
           MatNd_setZero(xpp_des);
           void* ptr = RcsGuiFactory_getPointer(guiHandle);
-          Rcs::ControllerWidgetBase* cw = static_cast<Rcs::ControllerWidgetBase*>(ptr);
+          Rcs::ControllerWidgetBase* cw =
+            static_cast<Rcs::ControllerWidgetBase*>(ptr);
           cw->reset(a_des, x_des);
         }
         else if (kc && kc->getAndResetKey('T'))
@@ -2461,7 +2519,7 @@ int main(int argc, char** argv)
       double* cp0 = &I_closestPts[0];
       double* cp1 = &I_closestPts[3];
       double n01[3];
-      Vec3d_setZero(n01);
+      Vec3d_set(n01, 0.0, 0.0, 0.25);
 
       // Graphics
       Rcs::HUD* hud = NULL;

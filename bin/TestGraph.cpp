@@ -52,6 +52,10 @@
 
 #include <SegFaultHandler.h>
 
+#include <vector>
+#include <string>
+#include <iostream>
+#include <unordered_map>
 
 
 RCS_INSTALL_SEGFAULTHANDLER
@@ -751,6 +755,117 @@ int main(int argc, char** argv)
       {
         RMSG("Couldn't start dot file viewer!");
       }
+      break;
+    }
+    // ==============================================================
+    // Body lookup test
+    // ==============================================================
+    case 8:
+    {
+      strcpy(xmlFileName, "gScenario.xml");
+      strcpy(directory, "config/xml/GenericHumanoid");
+
+      int nIter = 1000;
+      argP.getArgument("-f", xmlFileName, "Configuration file name (default "
+                       "is \"%s\")", xmlFileName);
+      argP.getArgument("-dir", directory, "Configuration file directory "
+                       "(default is \"%s\")", directory);
+      argP.getArgument("-iter", &nIter, "Number of iterations "
+                       "(default is \"%d\")", nIter);
+      Rcs_addResourcePath(directory);
+
+      if (argP.hasArgument("-h"))
+      {
+        break;
+      }
+
+
+      RcsGraph* graph = RcsGraph_create(xmlFileName);
+
+      RMSGS("Looking up %u joints", graph->dof);
+
+
+      std::vector<std::string> nameVec;
+      std::unordered_map<std::string, RcsJoint*> jmap_unordered;
+      std::map<std::string, RcsJoint*> jmap;
+
+      RCSGRAPH_TRAVERSE_JOINTS(graph)
+      {
+        nameVec.push_back(std::string(JNT->name));
+        jmap_unordered[std::string(JNT->name)] = JNT;
+        jmap[std::string(JNT->name)] = JNT;
+      }
+
+      ////////////////////////////////////////////////////////////////
+      // unordered_map
+      ////////////////////////////////////////////////////////////////
+      {
+        int misses = 0;
+        double dt = Timer_getTime();
+
+        for (int i = 0; i<nIter; ++i)
+        {
+          for (size_t j = 0; j<nameVec.size(); ++j)
+          {
+            if (jmap_unordered.find(nameVec[j]) == jmap_unordered.end())
+            {
+              misses++;
+            }
+          }
+        }
+
+        dt = Timer_getTime() - dt;
+        RMSGS("unordered_map: lookup took %.3f usec (%.3f), %d misses",
+              1.0e6*dt / (nameVec.size()*nIter), 1.0e6*dt / (nIter), misses);
+      }
+
+      ////////////////////////////////////////////////////////////////
+      // map
+      ////////////////////////////////////////////////////////////////
+      {
+        int misses = 0;
+        double dt = Timer_getTime();
+
+        for (int i = 0; i<nIter; ++i)
+        {
+          for (size_t j = 0; j<nameVec.size(); ++j)
+          {
+            if (jmap.find(nameVec[j]) == jmap.end())
+            {
+              misses++;
+            }
+          }
+        }
+
+        dt = Timer_getTime() - dt;
+        RMSGS("map: lookup took %.3f usec (%.3f), %d misses",
+              1.0e6*dt / (nameVec.size()*nIter), 1.0e6*dt / (nIter), misses);
+      }
+
+      ////////////////////////////////////////////////////////////////
+      // linear search
+      ////////////////////////////////////////////////////////////////
+      {
+        int misses = 0;
+        double dt = Timer_getTime();
+
+        for (int i = 0; i<nIter; ++i)
+        {
+          for (size_t j = 0; j<nameVec.size(); ++j)
+          {
+            if (RcsGraph_getJointByName(graph, nameVec[j].c_str()) == NULL)
+            {
+              misses++;
+            }
+          }
+        }
+
+        dt = Timer_getTime() - dt;
+        RMSGS("linear: lookup took %.3f usec (%.3f), %d misses",
+              1.0e6*dt / (nameVec.size()*nIter), 1.0e6*dt / (nIter), misses);
+      }
+
+      RcsGraph_destroy(graph);
       break;
     }
 
