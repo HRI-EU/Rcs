@@ -110,15 +110,20 @@ public:
    */
   virtual std::string getTaskType(size_t id) const;
 
+  /*! \brief Returns the full dimension of all tasks.
+  *
+  *  \return Overall task space dimension for id=-1, or the dimension of
+  *          the task with the given id.
+  */
+  virtual size_t getTaskDim() const;
+
   /*! \brief Returns the full dimension of a task with the given ID. If
-   *         id is -1, the task dimension of all tasks is returned. If
    *         id is out of range, the function will exit with a fatal error.
    *
    *  \param[in] id   Task index
-   *  \return Overall task space dimension for id=-1, or the dimension of
-   *          the task with the given id.
+  *  \return Dimension of the task with the given id.
    */
-  virtual size_t getTaskDim(int id=-1) const;
+  virtual size_t getTaskDim(size_t id) const;
 
   /*! \brief Returns the dimension of all active tasks. The number of rows
    *         of array activation must match the number of tasks.

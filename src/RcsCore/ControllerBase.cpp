@@ -312,24 +312,24 @@ const std::string& Rcs::ControllerBase::getTaskName(size_t id) const
 /*******************************************************************************
  * Returns the full dimension of a task with the given ID.
  ******************************************************************************/
-size_t Rcs::ControllerBase::getTaskDim(int id) const
-{
-  if (id==-1)
+size_t Rcs::ControllerBase::getTaskDim() const
   {
     size_t dim = 0;
 
     for (size_t id = 0; id < this->tasks.size(); id++)
     {
-      dim += getTaskDim(id);
+      dim += tasks[id]->getDim();
     }
     return dim;
   }
-  else
-  {
-    RCHECK(id < (int)this->tasks.size());
-    return this->tasks[id]->getDim();
-  }
 
+/*******************************************************************************
+* Returns the full dimension of a task with the given ID.
+******************************************************************************/
+size_t Rcs::ControllerBase::getTaskDim(size_t id) const
+  {
+    RCHECK(id < this->tasks.size());
+    return this->tasks[id]->getDim();
 }
 
 /*******************************************************************************
@@ -353,7 +353,8 @@ size_t Rcs::ControllerBase::getActiveTaskDim(const MatNd* activation) const
 }
 
 /*******************************************************************************
- * Returns the task's index to its entries in x_curr, x_des, and x_dot_des vectors.
+ * Returns the task's index to its entries in x_curr, x_des, and x_dot_des
+ * vectors.
  ******************************************************************************/
 size_t Rcs::ControllerBase::getTaskArrayIndex(size_t id) const
 {
