@@ -34,8 +34,8 @@
 
 *******************************************************************************/
 
-#ifndef RCS_PERIODIC_CALLBACK_H
-#define RCS_PERIODIC_CALLBACK_H
+#ifndef RCS_PERIODICCALLBACK_H
+#define RCS_PERIODICCALLBACK_H
 
 #include <pthread.h>
 #include <string>
@@ -250,4 +250,4 @@ private:
 
 }
 
-#endif // RCS_PERIODIC_CALLBACK_H
+#endif // RCS_PERIODICCALLBACK_H

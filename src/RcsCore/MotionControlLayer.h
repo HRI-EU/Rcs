@@ -13,8 +13,8 @@
 
 ******************************************************************************/
 
-#ifndef RCS_MOTION_CONTROL_LAYER_H
-#define RCS_MOTION_CONTROL_LAYER_H
+#ifndef RCS_MOTIONCONTROLLAYER_H
+#define RCS_MOTIONCONTROLLAYER_H
 
 #include "HardwareComponent.h"
 
@@ -150,11 +150,10 @@ public:
 
   bool getEmergency() const;
 
-  /**
-   * Control whether the forward kinematics of the velocities should be computed.
-   *
-   * This is true by default. However, if you don't need the velocity information
-   * and want to avoid the computation cost, you can set this to false.
+  /*! \brief Control whether the forward kinematics of the velocities should be
+   *         computed. This is true by default. However, if you don't need the
+   *         velocity information and want to avoid the computation cost, you
+   *         can set this to false.
    */
   void setFKComputeVelocity(bool doit);
 
@@ -182,8 +181,11 @@ private:
   bool emergency;
   unsigned int loopCount, overruns;
   double dtMin, dtMax, dtDesired, sum;
+
+  MotionControlLayer(const MotionControlLayer&);
+  MotionControlLayer& operator=(const MotionControlLayer&);
 };
 
 }
 
-#endif   // RCS_MOTION_CONTROL_LAYER_H
+#endif   // RCS_MOTIONCONTROLLAYER_H

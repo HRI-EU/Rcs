@@ -34,8 +34,8 @@
 
 *******************************************************************************/
 
-#ifndef RCS_TASK_GERNERIC_EULER3D_H
-#define RCS_TASK_GERNERIC_EULER3D_H
+#ifndef RCS_TASKGENERICEULER3D_H
+#define RCS_TASKGENERICEULER3D_H
 
 #include "TaskGenericIK.h"
 
@@ -243,4 +243,4 @@ protected:
 
 }
 
-#endif // RCS_TASK_GERNERIC_EULER3D_H
+#endif // RCS_TASKGENERICEULER3D_H

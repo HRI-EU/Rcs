@@ -34,8 +34,8 @@
 
 *******************************************************************************/
 
-#ifndef RCS_HARDWARE_COMPONENT_H
-#define RCS_HARDWARE_COMPONENT_H
+#ifndef RCS_HARDWARECOMPONENT_H
+#define RCS_HARDWARECOMPONENT_H
 
 
 #include <Rcs_graph.h>
@@ -159,4 +159,4 @@ protected:
 
 }
 
-#endif   // RCS_HARDWARE_COMPONENT_H
+#endif   // RCS_HARDWARECOMPONENT_H

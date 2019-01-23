@@ -34,8 +34,8 @@
 
 *******************************************************************************/
 
-#ifndef RCS_SENSOR_COMPONENT_H
-#define RCS_SENSOR_COMPONENT_H
+#ifndef RCS_SENSORCOMPONENT_H
+#define RCS_SENSORCOMPONENT_H
 
 
 #include "HardwareComponent.h"
@@ -58,4 +58,4 @@ public:
 
 }
 
-#endif   // RCS_SENSOR_COMPONENT_H
+#endif   // RCS_SENSORCOMPONENT_H
