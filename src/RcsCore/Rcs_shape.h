@@ -134,7 +134,8 @@ void RcsShape_computeInertiaTensor(const RcsShape* self, const double density,
  */
 bool RcsShape_computeLineIntersection(const double linePt[3],
                                       const double lineDir[3], const HTr* A_BI,
-                                      const RcsShape* shape, double closestLinePt[3]);
+                                      const RcsShape* shape,
+                                      double closestLinePt[3]);
 
 /*! \ingroup RcsShapeFunctions
  *  \brief Computes the distance between a point and the bounding sphere of a
@@ -142,8 +143,8 @@ bool RcsShape_computeLineIntersection(const double linePt[3],
  *         necessarily the best approximation (e.g., for a cone)
  *
  * \param[in] Pt Point in world coordinates
- * \param[in] A_BI Transformation from world frame into the frame of the body that
- *                 contains the shape
+ * \param[in] A_BI Transformation from world frame into the frame of the body
+ *                 that contains the shape
  * \param[in] shape Pointer to shape
  * \return Distance to shape's bounding sphere approximation
  */

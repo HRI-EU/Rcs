@@ -359,7 +359,7 @@ RcsSensor* RcsSensor_createFromXML(xmlNode* node, RcsBody* parentBody)
     xy[1] = sensor->rawData->n;
 
     getXMLNodePropertyIntN(node, "dimensions", xy, 2);
-    MatNd_realloc(sensor->rawData, xy[0], xy[1]);
+    sensor->rawData = MatNd_realloc(sensor->rawData, xy[0], xy[1]);
 
     double extents[3];
     Vec3d_setZero(extents);

@@ -146,7 +146,6 @@ xmlNodePtr parseXMLFile(const char* filename, const char* tag, xmlDocPtr* doc)
 
   xmlParserOption options = XML_PARSE_XINCLUDE ;
 
-  RCHECK(tag);
   RCHECK_MSG(File_exists(filename), "XML-file \"%s\" not found (Tag \"%s\")!",
              filename, tag);
 
@@ -167,7 +166,7 @@ xmlNodePtr parseXMLFile(const char* filename, const char* tag, xmlDocPtr* doc)
     return NULL;
   }
 
-  if (xmlStrcmp(node->name, (const xmlChar*) tag))
+  if (tag && xmlStrcmp(node->name, (const xmlChar*) tag))
   {
     NLOG(1, "Wrong file type (\"%s\"), root node is \"%s\" and not \"%s\"",
          filename, node->name, tag);

@@ -433,8 +433,6 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
 
   addGeometry(self);
 
-  RLOG(5, "Reached end");
-
   return self;
 }
 

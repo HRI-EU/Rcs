@@ -218,7 +218,7 @@ static double* RcsMesh_readAsciiSTLFile(FILE* fd, unsigned int* numVertices)
   {
     if (STRCASEEQ(buf, "vertex"))
     {
-      itemsMatched = fscanf(fd, "%s", buf);
+      itemsMatched = fscanf(fd, "%255s", buf);
       *vPtr = String_toDouble_l(buf);
 
       if (itemsMatched < 1)
@@ -230,7 +230,7 @@ static double* RcsMesh_readAsciiSTLFile(FILE* fd, unsigned int* numVertices)
       }
 
       vPtr++;
-      itemsMatched = fscanf(fd, "%s", buf);
+      itemsMatched = fscanf(fd, "%255s", buf);
       *vPtr = String_toDouble_l(buf);
 
       if (itemsMatched < 1)
@@ -243,7 +243,7 @@ static double* RcsMesh_readAsciiSTLFile(FILE* fd, unsigned int* numVertices)
 
       vPtr++;
 
-      itemsMatched = fscanf(fd, "%s", buf);
+      itemsMatched = fscanf(fd, "%255s", buf);
       *vPtr = String_toDouble_l(buf);
 
       if (itemsMatched < 1)
@@ -318,7 +318,7 @@ static bool RcsMesh_toSTLFile(const RcsMeshData* mesh,
 {
   char header[80];
   memset(header, 0, 80*sizeof(char));
-  strcpy(header, fileName);
+  snprintf(header, 80, "%s", fileName);
 
   size_t itemsWritten = fwrite(header, sizeof(uint8_t), 80, fd);
 
@@ -823,7 +823,7 @@ bool RcsMesh_readFromFile(const char* meshFile, RcsMeshData* meshData)
 
     for (unsigned int i=0; i<3*meshData->nVertices; ++i)
     {
-      int nItemsRead = fscanf(fd, "%s", triString);
+      int nItemsRead = fscanf(fd, "%255s", triString);
       meshData->vertices[i] = String_toDouble_l(triString);
 
 

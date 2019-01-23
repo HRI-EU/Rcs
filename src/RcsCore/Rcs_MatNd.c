@@ -397,7 +397,7 @@ void MatNd_printTwoArrays(const MatNd* v1, const MatNd* v2, int digits)
   char formatStr[16];
 
   RCHECK_MSG(v1->m == v2->m, "Row numbers differ: %d != %d", v1->m, v2->m);
-  sprintf(formatStr, "%%+.%df ", digits);
+  snprintf(formatStr, 16, "%%+.%df ", digits);
 
   for (i = 0; i < v1->m; i++)
   {
@@ -433,7 +433,7 @@ void MatNd_printThreeArrays(const MatNd* v1, const MatNd* v2, const MatNd* v3,
 
   RCHECK_MSG(v1->m == v2->m, "Row numbers differ: %d != %d", v1->m, v2->m);
   RCHECK_MSG(v1->m == v3->m, "Row numbers differ: %d != %d", v1->m, v3->m);
-  sprintf(formatStr, "%%+.%df ", digits);
+  snprintf(formatStr, 16, "%%+.%df ", digits);
 
   for (i = 0; i < v1->m; i++)
   {
@@ -473,7 +473,7 @@ void MatNd_printTwoArraysDiff(const MatNd* v1, const MatNd* v2, int digits)
   unsigned int i, j;
   char formatStr[16];
 
-  sprintf(formatStr, "%%+.%df ", digits);
+  snprintf(formatStr, 16, "%%+.%df ", digits);
 
   RCHECK_MSG(v1->m == v2->m, "Row numbers differ: %d != %d", v1->m, v2->m);
   RCHECK_MSG(v1->n == v2->n, "Column numbers differ: %d != %d", v1->n, v2->n);
@@ -511,11 +511,15 @@ void MatNd_printTwoArraysDiff(const MatNd* v1, const MatNd* v2, int digits)
 
 *******************************************************************************/
 
-void MatNd_toFile(const MatNd* M, const char* fileName)
+bool MatNd_toFile(const MatNd* M, const char* fileName)
 {
   FILE* fd = fopen(fileName, "w+");
 
-  RCHECK_MSG(fd, "Error opening file \"%s\"", fileName);
+  if (fd == NULL)
+  {
+    RLOG(1, "Error opening file \"%s\"", fileName);
+    return false;
+  }
 
   for (unsigned int i = 0; i < M->m; i++)
   {
@@ -528,6 +532,8 @@ void MatNd_toFile(const MatNd* M, const char* fileName)
   }
 
   fclose(fd);
+
+  return true;
 }
 
 /*******************************************************************************
@@ -611,17 +617,21 @@ void MatNd_gnuplotPipes(const char* title, const MatNd* self)
   pclose(gnuplotPipe);
 }
 
-bool MatNd_gnuplot(const char* title, const MatNd* self)
+bool MatNd_gnuplot2(const char* title, const MatNd* self)
 {
   char fileName[256], gpFileName[256];
 
   File_createUniqueName(fileName, "MatNd_", "dat");
   File_createUniqueName(gpFileName, "MatNd_", "gnu");
 
-  MatNd_toFile(self, fileName);
+  bool wroteFile = MatNd_toFile(self, fileName);
 
-
-
+  // Warning is done in MatNd_toFile()
+  if (wroteFile == false)
+  {
+    return false;
+  }
+  RLOG(0, "A");
   char gpCmd[4096], gpCmd_col[512];
   if (title != NULL)
   {
@@ -631,9 +641,11 @@ bool MatNd_gnuplot(const char* title, const MatNd* self)
   {
     strcpy(gpCmd, "set grid\n\nplot ");
   }
-
+  RLOG(0, "b");
   for (unsigned int i=1; i<=self->n; i++)
   {
+    RLOG(0, "row %d from %d", i, self->n);
+
     sprintf(gpCmd_col, "\"%s\" u ($%d) w steps title \"%d\"", fileName, i, i);
     strcat(gpCmd, gpCmd_col);
 
@@ -643,12 +655,14 @@ bool MatNd_gnuplot(const char* title, const MatNd* self)
     }
   }
   strcat(gpCmd, "\n");
+  RLOG(0, "c");
 
   FILE* outDat = fopen(gpFileName, "w+");
-  RCHECK(outDat);
+  RCHECK_MSG(outDat, "Couldn't open file \"%s\"", gpFileName ? gpFileName : "NULL");
   fprintf(outDat, "%s", gpCmd);
   fflush(outDat);
   fclose(outDat);
+  RLOG(0, "d");
 
   char sysCallStr[256];
 
@@ -657,8 +671,8 @@ bool MatNd_gnuplot(const char* title, const MatNd* self)
 #else
   sprintf(sysCallStr, "/usr/bin/gnuplot -persist %s", gpFileName);
 #endif
-
   int err = system(sysCallStr);
+  RLOG(0, "e");
 
   if (err == -1)
   {
@@ -668,6 +682,81 @@ bool MatNd_gnuplot(const char* title, const MatNd* self)
   else
   {
     RLOGS(5, "\n\n%s\n\n%s", gpCmd, sysCallStr);
+  }
+
+  return true;
+}
+
+bool MatNd_gnuplot(const char* title, const MatNd* self)
+{
+  char fileName[256], gpFileName[256];
+
+  File_createUniqueName(fileName, "MatNd_", "dat");
+  File_createUniqueName(gpFileName, "MatNd_", "gnu");
+
+  bool wroteFile = MatNd_toFile(self, fileName);
+
+  // Warning is done in MatNd_toFile()
+  if (wroteFile == false)
+  {
+    return false;
+  }
+  FILE* outDat = fopen(gpFileName, "w+");
+
+  if (outDat == NULL)
+  {
+    RLOG(4, "Couldn't open file \"%s\"", gpFileName ? gpFileName : "NULL");
+    return false;
+  }
+
+  char gpCmd_col[512];
+  if (title != NULL)
+  {
+    fprintf(outDat, "set grid\nset title \"%s\"\nplot ", title);
+  }
+  else
+  {
+    fprintf(outDat, "set grid\n\nplot ");
+  }
+  for (unsigned int i = 1; i <= self->n; i++)
+  {
+    int len = snprintf(gpCmd_col, 512, "\"%s\" u ($%d) w steps title \"%d\"",
+                       fileName, i, i);
+
+    if (len >= 512)
+    {
+      RLOG(4, "Line buffer overflow when writing file \"%s\". Thecommand is %d"
+           "characters long, but should be less than 512",
+           gpFileName ? gpFileName : "NULL", len);
+      fclose(outDat);
+      return false;
+    }
+
+    fprintf(outDat, "%s", gpCmd_col);
+
+    if (i != self->n)
+    {
+      fprintf(outDat, ", ");
+    }
+  }
+  fprintf(outDat, "\n");
+
+  fflush(outDat);
+  fclose(outDat);
+
+  char sysCallStr[256];
+
+#if defined(_MSC_VER)
+  sprintf(sysCallStr, "START \"\" wgnuplot.exe -persist %s &", gpFileName);
+#else
+  sprintf(sysCallStr, "/usr/bin/gnuplot -persist %s", gpFileName);
+#endif
+  int err = system(sysCallStr);
+
+  if (err == -1)
+  {
+    RLOG(4, "Couldn't start gnuplot");
+    return false;
   }
 
   return true;
@@ -1515,7 +1604,7 @@ void MatNd_insertRows(MatNd* self, int rowDst, const MatNd* from, int rowSrc,
              "to %d, but the array only has %d rows",
              rowSrc, rowSrc + nRows, from->m);
 
-  MatNd_realloc(self, self->m + nRows, self->n);
+  self = MatNd_realloc(self, self->m + nRows, self->n);
   MatNd_clone2(buf, self);
   RCHECK(buf);
 
@@ -5619,7 +5708,7 @@ unsigned int minJerkTrajectoryLengthFromMaxVelocity(double max_velocity)
                    p2*p3*p3 + 1.0/3.0*p2*p2 - p2*p2*p3;
 
   unsigned int T = lround(ceil((pow((0.5-p2), 2) * pow((0.5-p3), 2)) /
-                              (max_velocity * int_0_1)));
+                               (max_velocity * int_0_1)));
 
   return T;
 }

@@ -324,59 +324,107 @@ void RcsGraph_computeForwardKinematics(RcsGraph* self,
  ******************************************************************************/
 RcsGraph* RcsGraph_create(const char* configFile)
 {
-  // Determine absolute file name of config file and copy the XML file name
+  // Determine absolute file name of config file and return if it doesn't exist
   char filename[256] = "";
   bool fileExists = Rcs_getAbsoluteFileName(configFile, filename);
 
   if (fileExists==false)
   {
+    REXEC(1)
+  {
     RMSG("Resource path is:");
     Rcs_printResourcePath();
-    RFATAL("RcsGraph configuration file \"%s\" not found in "
+      RMSG("RcsGraph configuration file \"%s\" not found in "
            "ressource path - exiting", configFile ? configFile : "NULL");
+    }
+    return NULL;
   }
 
+  // Try parsing bounding volume hierarchy file for .bvh suffix
   if (String_hasEnding(filename, ".bvh", false))
   {
     return RcsGraph_createFromBVHFile(filename, 0.01, true);
   }
 
   // Read XML file
-  xmlDocPtr doc;
-  xmlNodePtr node = parseXMLFile(filename, "Graph", &doc);
+  xmlDocPtr doc = NULL;
+  xmlNodePtr node = parseXMLFile(filename, NULL, &doc);
 
-  // If this didn't work, we try URDF
   if (node == NULL)
   {
-    // Free the xml memory
-    xmlFreeDoc(doc);
-
-    // Try URDF
-    RcsGraph* urdfGraph = RcsGraph_fromURDFFile(filename);
-
-    if (urdfGraph==NULL)
+    if (doc != NULL)
     {
-      RLOG(1, "Failed to parse XML-file \"%s\" - returning NULL", filename);
+    xmlFreeDoc(doc);
     }
 
-    return urdfGraph;
+    RLOG(1, "Failed to parse xml file \"%s\"", filename);
+    return NULL;
   }
 
-  RcsGraph* self = RcsGraph_createFromXmlNode(node);
+  // From here, we have a valid xmlNode pointer and xml document pointer.
+
+  // If the top-level xml tag is <Graph>, we directly parse from there.
+  if (!xmlStrcmp(node->name, (const xmlChar*) "Graph"))
+    {
+    RcsGraph* self = RcsGraph_createFromXmlNode(node);
+
+    if (self != NULL)
+    {
+      String_copyOrRecreate(&self->xmlFile, filename);
+    }
+
+    xmlFreeDoc(doc);
+    return self;
+  }
+
+  // From here, we don't have a Graph element on the top-level node.
+
+  // It might be one level deeper (for instance included in a controller
+  // xml file). We therefore search through the node's children.
+  RLOG(5, "Node type is \"%s\" - looking for \"Graph\" in children",
+       node->name);
+  xmlNodePtr childNode = getXMLChildByName(node, "Graph");
+
+  // In case we found it, the node is set to the corresponding child
+  // and we continue parsing from there.
+  if (childNode)
+  {
+    RLOG(5, "Found child node \"Graph\" in children");
+    RcsGraph* self = RcsGraph_createFromXmlNode(childNode);
 
   if (self != NULL)
   {
     String_copyOrRecreate(&self->xmlFile, filename);
   }
-  else
-  {
-    RLOG(1, "Construction of graph \"%s\" failed", filename);
+    xmlFreeDoc(doc);
+    return self;
   }
 
-  // Free the xml memory
+
+
+  // We test if the top-level node has a string property "graph". In this case,
+  // it's likely to be a controller file, and we parse the graph by its name.
+  RLOG(5, "Didn't find child node \"Graph\" in children - trying"
+       " graph property");
+
+  char graphFilename[256] = "";
+  unsigned int len = getXMLNodePropertyStringN(node, "graph",
+                                               graphFilename, 256);
+
+  // If this test succeeds, we clear all memory and call this
+  // function recursively with the graph's file name.
+  if (len>0)
+  {
+    RLOG(5, "Found \"graph\" property - parsing \"%s\"", graphFilename);
+    xmlFreeDoc(doc);
+    return RcsGraph_create(graphFilename);
+  }
+
+  // If nothing worked, we try if it is an URDF file
+  RLOG(5, "Trying URDF file");
   xmlFreeDoc(doc);
 
-  return self;
+  return RcsGraph_fromURDFFile(filename);
 }
 
 /*******************************************************************************
@@ -1802,6 +1850,31 @@ int RcsGraph_check(const RcsGraph* self)
 
   }
 
+  // Check for body connection consistencs
+  RCSGRAPH_TRAVERSE_BODIES(self)
+  {
+    if ((BODY->firstChild!=NULL) && (BODY->firstChild->prev!=NULL))
+    {
+      RLOG(1, "Body \"%s\" has firstChild (\"%s\") with prev body (\"%s\")",
+           BODY->name, BODY->firstChild->name, BODY->firstChild->prev->name);
+      nErrors++;
+    }
+
+    if ((BODY->lastChild != NULL) && (BODY->lastChild->next != NULL))
+    {
+      RLOG(1, "Body \"%s\" has lastChild (\"%s\") with next body (\"%s\")",
+           BODY->name, BODY->lastChild->name, BODY->lastChild->next->name);
+      nErrors++;
+    }
+
+    if ((BODY->firstChild == NULL) && (BODY->lastChild != NULL))
+    {
+      RLOG(1, "Body \"%s\" has no firstChild but lastChild (\"%s\")",
+           BODY->name, BODY->lastChild->name);
+      nErrors++;
+    }
+  }
+
   RLOG(6, "Graph check : %d errors", nErrors);
 
   return nErrors;
@@ -2228,7 +2301,7 @@ void RcsGraph_insertJoint(RcsGraph* graph, RcsBody* body, RcsJoint* jnt)
 
   if ((graph->q==NULL)|| (graph->q->m<graph->dof))
   {
-    RLOG(9, "Resizing q to %d elements", graph->dof);
+    NLOG(9, "Resizing q to %d elements", graph->dof);
     graph->q = MatNd_realloc(graph->q, graph->dof, 1);
     RCHECK(graph->q);
   }
@@ -2241,7 +2314,7 @@ void RcsGraph_insertJoint(RcsGraph* graph, RcsBody* body, RcsJoint* jnt)
   if (body->jnt == NULL)
   {
     body->jnt = jnt;
-    RLOG(9, "Added first joint \"%s\" to body \"%s\"", jnt->name, body->name);
+    NLOG(9, "Added first joint \"%s\" to body \"%s\"", jnt->name, body->name);
 
     // Find last joint of previous body
     if (body->parent != NULL)    // The body has a predecessor
@@ -2272,7 +2345,7 @@ void RcsGraph_insertJoint(RcsGraph* graph, RcsBody* body, RcsJoint* jnt)
     jnt->prev = prevJnt;
   }  // End of joint being not the first joint of body
 
-  RLOG(9, "Joint with jointIndex %d inserted", jnt->jointIndex);
+  NLOG(9, "Joint with jointIndex %d inserted", jnt->jointIndex);
 }
 
 /*******************************************************************************
@@ -2376,7 +2449,7 @@ bool RcsGraph_setRigidBodyDoFs(RcsGraph* self, const RcsBody* body,
  ******************************************************************************/
 bool RcsGraph_updateSlaveJoints(const RcsGraph* self, MatNd* q, MatNd* q_dot)
 {
-  RCHECK((q->m==self->dof) && (q->n==1));
+  RCHECK_MSG((q->m==self->dof) && (q->n==1), "%d %d %d", q->m, self->dof, q->n);
 
   if (q_dot != NULL)
   {
@@ -2546,46 +2619,82 @@ int RcsGraph_coupledJointMatrix(const RcsGraph* self, MatNd* A, MatNd* invA)
 }
 
 /*******************************************************************************
- * See header.
+ * Re-order joint indices according to depth-first traversal. The graph's q and
+ * q_dot arrays are kept consistent so that the same joint values can be
+ * accessed with the jointIndex even if the index changed.
+ * It is assumed that the graph's q and q_dot vector have been adjusted to have
+ * enough memory for possibly added joints.
  ******************************************************************************/
-void RcsGraph_makeJointsConsistent(RcsGraph* self)
+static void RcsGraph_recomputeJointIndices(RcsGraph* self, MatNd* stateVec[],
+                                           unsigned int nVec)
 {
-  // Re-order joint indices according to depth-first traversal. Otherwise,
-  // there might be differences in jacobiIndex and jointIndex after a
-  // RcsGraph_setState() function.
   unsigned int nqCount = 0, njCount = 0;
+  MatNd* q_org = NULL;
+  MatNd* qd_org = NULL;
+  MatNd_clone2(q_org, self->q);
+  MatNd_clone2(qd_org, self->q_dot);
+
+  // Create copies of the stateVec arrays so that no overwriting happens
+  MatNd** stateVecCp = RNALLOC(nVec, MatNd*);
+  for (unsigned int i = 0; i < nVec; ++i)
+  {
+    stateVecCp[i] = MatNd_clone(stateVec[i]);
+  }
 
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {
-    JNT->jointIndex = nqCount;
+    if (JNT->jointIndex != nqCount)
+    {
+      MatNd_set(self->q, nqCount, 0, q_org->ele[JNT->jointIndex]);
+      MatNd_set(self->q_dot, nqCount, 0, qd_org->ele[JNT->jointIndex]);
 
-    MatNd_set(self->q, JNT->jointIndex, 0, JNT->q0);
+      for (unsigned int i = 0; i < nVec; ++i)
+      {
+        MatNd_set(stateVec[i], nqCount, 0, stateVecCp[i]->ele[JNT->jointIndex]);
+      }
 
+      JNT->jointIndex = nqCount;
+    }
     nqCount++;
 
-    if (JNT->constrained == true)
-    {
-      JNT->jacobiIndex = -1;
+    JNT->jacobiIndex = (JNT->constrained == false) ? njCount : -1;
+    njCount++;
     }
-    else
+  self->q->m = nqCount;
+  self->q_dot->m = nqCount;
+  self->dof = nqCount;
+  self->nJ = njCount;
+
+  MatNd_destroy(q_org);
+  MatNd_destroy(qd_org);
+
+  for (unsigned int i = 0; i < nVec; ++i)
     {
-      JNT->jacobiIndex = njCount;
-      njCount++;
+    stateVec[i]->m = nqCount;
+    MatNd_destroy(stateVecCp[i]);
     }
+  RFREE(stateVecCp);
   }
+/*******************************************************************************
+* See header.
+******************************************************************************/
+void RcsGraph_makeJointsConsistent(RcsGraph* self)
+{
+  // Re-order joint indices according to depth-first traversal.
+  RcsGraph_recomputeJointIndices(self, NULL, 0);
 
   // Link pointers of coupled joints and initialize range from master (if its
   // a complex coupling)
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {
+    MatNd_set(self->q, JNT->jointIndex, 0, JNT->q0);
     if (JNT->coupledJointName != NULL)
     {
       RcsJoint* master = RcsGraph_getJointByName(self, JNT->coupledJointName);
-      RCHECK_MSG(master, "Missing coupled joint \"%s\"",
-                 JNT->coupledJointName);
+      RCHECK_MSG(master, "No coupled joint \"%s\"", JNT->coupledJointName);
       JNT->coupledTo = master;
 
-      // calculate range and initial posture
+      // Calculate range and initial posture
       double q_min  = RcsJoint_computeSlaveJointAngle(JNT, master->q_min);
       double q_max  = RcsJoint_computeSlaveJointAngle(JNT, master->q_max);
       double q0     = RcsJoint_computeSlaveJointAngle(JNT, master->q0);
@@ -2907,4 +3016,146 @@ void RcsGraph_scale(RcsGraph* self, double scaleFactor)
   }
 
   RcsGraph_setState(self, NULL, NULL);
+}
+
+/*******************************************************************************
+* See header.
+******************************************************************************/
+bool RcsGraph_removeBody(RcsGraph* self, const char* bdyName,
+                         MatNd* stateVec[], unsigned int nVec)
+{
+  RcsBody* bdy = RcsGraph_getBodyByName(self, bdyName);
+
+  if (bdy == NULL)
+  {
+    RLOG(1, "Couldn't find body \"%s\" to remove - skipping", bdyName);
+    return false;
+  }
+
+  if (RcsBody_isLeaf(bdy)==false)
+  {
+    RLOG(1, "Body \"%s\" has children - currently can't be removed", bdyName);
+    return false;
+  }
+
+  // Now we re-wire the graph
+
+  // 1. parent
+  RcsBody* parent = bdy->parent;
+
+  if (parent)
+  {
+    if (parent->firstChild == bdy)
+    {
+      parent->firstChild = bdy->next;
+    }
+
+    if (parent->lastChild == bdy)
+    {
+      parent->lastChild = bdy->prev;
+    }
+  }
+
+  if (bdy->prev)
+  {
+    bdy->prev->next = bdy->next;
+  }
+
+  if (bdy->next)
+  {
+    bdy->next->prev = bdy->prev;
+  }
+
+  if (bdy == self->root)
+  {
+    self->root = bdy->next ? bdy->next : bdy->firstChild;
+    RCHECK(self->root);
+  }
+
+  RcsBody_destroy(bdy);
+  RcsGraph_recomputeJointIndices(self, stateVec, nVec);
+
+  return true;
+}
+
+/*******************************************************************************
+*
+******************************************************************************/
+bool RcsGraph_addBody(RcsGraph* graph, RcsBody* parent, RcsBody* body,
+                      MatNd* stateVec[], unsigned int nVec)
+{
+  if (body == NULL)
+  {
+    RLOG(1, "Can't append NULL body");
+    return false;
+  }
+
+  body->prev = NULL;
+  body->next = NULL;
+  body->firstChild = NULL;
+  body->lastChild = NULL;
+  body->parent = parent;
+
+  if (parent != NULL)
+  {
+    if (parent->lastChild != NULL)  // parent already has children
+    {
+      parent->lastChild->next = body;
+      body->prev = parent->lastChild;
+    }
+    else
+    {
+      parent->firstChild = body;
+    }
+
+    parent->lastChild = body;
+  }
+  else
+  {
+    if (graph->root != NULL)
+    {
+      RcsBody* b = graph->root;
+      while (b->next)
+      {
+        b = b->next;
+      }
+
+      b->next = body;
+      body->prev = b;
+    }
+    else
+    {
+      graph->root = body;
+    }
+  }
+
+  // Connect joints.
+  if (body->jnt != NULL)
+  {
+    body->jnt->prev = RcsBody_lastJointBeforeBody(parent);
+    unsigned int nj = RcsBody_numJoints(body);
+
+    graph->q = MatNd_realloc(graph->q, graph->q->m + nj, 1);
+    graph->q_dot = MatNd_realloc(graph->q_dot, graph->q_dot->m + nj, 1);
+
+    for (unsigned int i = 0; i < nVec; ++i)
+    {
+      stateVec[i] = MatNd_realloc(stateVec[i], graph->q_dot->m + nj, 1);
+    }
+
+    RcsGraph_recomputeJointIndices(graph, stateVec, nVec);
+
+    RCSBODY_TRAVERSE_JOINTS(body)
+    {
+      MatNd_set(graph->q, JNT->jointIndex, 0, JNT->q_init);
+    }
+
+  }
+
+  NLOG(9, "Inserted Body into Graph: name=%s parent=%s prev=%s",
+       body->name,
+       body->parent ? body->parent->name : "NULL",
+       body->prev ? body->prev->name : "NULL");
+
+  return true;
 }

@@ -632,9 +632,11 @@ void MatNd_PinvHessian2(MatNd* dqJpinv, const MatNd* J, const MatNd* dqJ,
 ///@{
 
 /*! \ingroup MatNdFunctions
- *  \brief Prints the array to a file.
+ *  \brief Prints the array to a file with the given file name.
+ *  \return True for success, false otherwise. In the faliure case, a debug
+ *          message is printed to the console on debug levels 1 or higher.
  */
-void MatNd_toFile(const MatNd* M, const char* fileName);
+bool MatNd_toFile(const MatNd* M, const char* fileName);
 
 /*! \ingroup MatNdFunctions
  *  \brief Appends the array to a file. If the file doesn't exist, it will be

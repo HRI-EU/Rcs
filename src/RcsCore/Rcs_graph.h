@@ -309,16 +309,6 @@ void RcsGraph_computeForwardKinematics(RcsGraph* self, const MatNd* q,
 void RcsGraph_setDefaultState(RcsGraph* self);
 
 /*! \ingroup RcsGraphFunctions
- *  \brief Loads the graph's xml file, looks for the tag "model_state" with
- *         the specified time stamp, and if found, sets the state to the
- *         corresponding values.
- *
- *  \return true for success, false otherwise.
- */
-bool RcsGraph_setStateFromXML(RcsGraph* self, const char* modelStateName,
-                              int timeStamp);
-
-/*! \ingroup RcsGraphFunctions
  * \brief This function overwrites the joint centers with the given values.
  *
  *  \param[in]  self   The graph containing the joint centers to be overwritten
@@ -403,7 +393,6 @@ unsigned int RcsGraph_numBodies(const RcsGraph* self);
  *         overwritten, but the bodyTorque is added to it. So set torque
  *         to zero before calling this method if you only want this
  *         specific torque.
- *  \author MM
  */
 void RcsGraph_bodyTorque(const RcsGraph* self, const RcsBody* body,
                          MatNd* torque);
@@ -426,6 +415,7 @@ void RcsGraph_bodyTorque(const RcsGraph* self, const RcsBody* body,
  *         - consistency of coupled joints
  *         - bodies have a mass >= 0
  *         - bodies with finite inertia have a mass > 0
+ *         - correct connectivity of graph structure
  *
  *  \param[in] self  Pointer to the graph to be checked.
  *  \return Number of errors.
@@ -469,7 +459,18 @@ RcsBody* RcsGraph_linkGenericBody(RcsGraph* self, int bdyNum,
 RcsBody* RcsGraph_getGenericBodyPtr(const RcsGraph* self, int bdyNum);
 
 /*! \ingroup RcsGraphFunctions
- *  \brief Please explain.
+ *  \brief Adds the given body as the last child of parent, and connects all
+ *         siblings etc. accordingly. If the parent body is NULL, the body
+ *         is inserted as the last sibling on the top level of the graph. If
+ *         the graph is empty, the body will straight be connected to its
+ *         root.
+ *
+ *  \param[in] graph  Pointer to the graph to be extended with the body.
+ *  \param[in] parent Pointer to the parent body (may be NULL)
+ *  \param[in] body   Pointer to the body to be added. After adding, the graph
+ *                    takes its ownership.
+ * \return True for success, false otherwise (body is NULL). In the failure
+ *         case, the graph is not modified.
  */
 void RcsGraph_insertBody(RcsGraph* graph, RcsBody* parent, RcsBody* body);
 
@@ -480,8 +481,6 @@ void RcsGraph_insertJoint(RcsGraph* graph, RcsBody* body, RcsJoint* jnt);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Re-order joint indices according to depth-first traversal.
- *         Otherwise, there might be differences in jacobiIndex and jointIndex
- *         after a RcsGraph_setState() function.
  *         Link pointers of coupled joints and initialize range from master
  *         (if its a complex coupling)
  *
@@ -523,6 +522,39 @@ void RcsGraph_setRandomState(RcsGraph* self);
 bool RcsGraph_appendCopyOfGraph(RcsGraph* self, RcsBody* root,
                                 const RcsGraph* other, const char* suffix,
                                 const HTr* A_BP);
+
+/*! \ingroup RcsGraphFunctions
+*  \brief Removes the named body from the graph, and deletes all its memory.
+*         The graph will be restructured so that the removed body will not
+*         lead to a jump of the remaining bodies and their transforms.
+*
+*  \param[in] self    Graph containing body to be removed
+*  \param[in] bdyName Name of body to be removed.
+*  \return    True for success, false for failure.
+*/
+bool RcsGraph_removeBody(RcsGraph* self, const char* bdyName,
+                         MatNd* stateVec[], unsigned int nVec);
+
+/*! \ingroup RcsGraphFunctions
+*  \brief Adds the given body as the last child of parent, and connects all
+*         siblings etc. accordingly. If the parent body is NULL, the body
+*         is inserted as the last sibling on the top level of the graph. If
+*         the graph is empty, the body will straight be connected to its
+*         root. If the body contains joints, they will be connected to
+*         the parent (if it is not NULL), the joint indices will be
+*         recomputed. This will also swap values in the graph's q and q_dot
+*         arrays to make them consistent. The graph's q vector elements of the
+*         added body will get assigned with their q_init values.
+*
+*  \param[in] graph  Pointer to the graph to be extended with the body.
+*  \param[in] parent Pointer to the parent body (may be NULL)
+*  \param[in] body   Pointer to the body to be added. After adding, the graph
+*                    takes its ownership.
+* \return True for success, false otherwise (body is NULL). In the failure
+*         case, the graph is not modified.
+*/
+bool RcsGraph_addBody(RcsGraph* graph, RcsBody* parent, RcsBody* body,
+                      MatNd* stateVec[], unsigned int nVec);
 
 
 
