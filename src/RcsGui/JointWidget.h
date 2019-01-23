@@ -40,9 +40,8 @@
 #include <Rcs_graph.h>
 
 #include <QScrollArea>
-#include <qlcdnumber.h>
-#include <qcheckbox.h>
-#include <qtimer.h>
+#include <QLCDNumber>
+#include <QCheckBox>
 
 #include <pthread.h>
 
@@ -56,6 +55,13 @@ class JointWidget: public QScrollArea
   Q_OBJECT
 
 public:
+  static int create(const RcsGraph* graph,
+                    pthread_mutex_t* graphLock = NULL,
+                    MatNd* q_des = NULL,
+                    MatNd* q_curr = NULL,
+                    bool alwaysWriteToQ = false,
+                    bool passive = false);
+
   static int create(RcsGraph* graph,
                     pthread_mutex_t* graphLock = NULL,
                     MatNd* q_des = NULL,
@@ -64,12 +70,6 @@ public:
                     bool passive = false);
 
   static bool destroy(int handle);
-
-  JointWidget(RcsGraph* graph, pthread_mutex_t* graphLock = NULL,
-              MatNd* q_des = NULL, MatNd* q_curr = NULL,
-              bool alwaysWriteToQ = false,
-              bool passive = false);
-  ~JointWidget();
   void reset(const MatNd* q);
 
   class JointChangeCallback
@@ -80,7 +80,7 @@ public:
 
   void registerCallback(JointChangeCallback* callback);
 
-public slots:
+private slots:
 
   void toggle(void);
   void setJoint(void);
@@ -88,9 +88,20 @@ public slots:
   void displayAct(void);
 
 private:
-  void lock();
-  void unlock();
+
+  static void* stateGui(void* arg);
+
+  JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
+              pthread_mutex_t* graphLock = NULL,
+              MatNd* q_des = NULL, MatNd* q_curr = NULL,
+              bool alwaysWriteToQ = false,
+              bool passive = false);
+  ~JointWidget();
+
+  void lock() const;
+  void unlock() const;
   RcsGraph* _graph;
+  const RcsGraph* _constGraph;
   int _togglestate;
   bool _alwaysWriteToQ;
   MatNd* _q_des;
@@ -99,8 +110,7 @@ private:
   QLCDNumber** lcd_q_act;
   JointSlider** jsc_q;
   QCheckBox** check_constraints;
-  QTimer* _timer;
-  pthread_mutex_t* mutex;
+  mutable pthread_mutex_t* mutex;
   std::vector<JointChangeCallback*> callback;
 };
 

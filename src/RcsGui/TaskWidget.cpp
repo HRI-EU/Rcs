@@ -169,10 +169,13 @@ QWidget* TaskWidget::createActivationBox(const Rcs::Task* task)
   sub_box->setLayout(check_grid);
 
   // Checkbox to activate task
-  this->check_activate = new QCheckBox(task->getName().c_str());
+  QString nameLabel = QString::fromStdString(task->getName()) +
+                      QString(" [Task::") + QString::fromStdString(task->getClassName()) +
+                      QString("]");
+  this->check_activate = new QCheckBox(nameLabel);
   this->check_activate->setStyleSheet("QCheckBox { font-weight: bold; }");
   this->check_activate->setChecked(*a_des>0.0);
-  this->check_activate->setToolTip("Toggles activation between Zero and One");
+  this->check_activate->setToolTip("Toggles activation between zero and one");
   check_grid->addWidget(this->check_activate);
   connect(check_activate, SIGNAL(stateChanged(int)), SLOT(setConstraint()));
 
@@ -194,8 +197,11 @@ QWidget* TaskWidget::createActivationBox(const Rcs::Task* task)
 ******************************************************************************/
 QWidget* TaskWidget::createActivationSlider(const Rcs::Task* task)
 {
-  this->activation_slider = new LcdSlider(0.0, *a_des, 1.0, 1.0, 0.01, "Activation");
-  this->maxLabelWidth = std::max(activation_slider->labelWidthHint(), maxLabelWidth);
+  this->activation_slider = new LcdSlider(0.0, *a_des, 1.0, 1.0, 0.01,
+                                          "Activation");
+  this->activation_slider->setToolTip("Continuously change activation between zero and one");
+  this->maxLabelWidth = std::max(activation_slider->labelWidthHint(),
+                                 maxLabelWidth);
   this->activation_slider->hide();
   this->activation_slider->updateLcd1FromSlider();
   connect(this->activation_slider, SIGNAL(valueChanged(double)),
@@ -336,8 +342,8 @@ void TaskWidget::reset(const double* a, const double* x)
   unlock();
 }
 
-/******************************************************************************
-  \brief Displays task target and current values.
+/*******************************************************************************
+ * Displays task target and current values.
 ******************************************************************************/
 void TaskWidget::displayAct()
 {

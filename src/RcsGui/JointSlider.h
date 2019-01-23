@@ -37,8 +37,8 @@
 #ifndef JOINTSLIDER_H
 #define JOINTSLIDER_H
 
-#include <qwidget.h>
-#include <qlabel.h>
+#include <QWidget>
+#include <QLabel>
 
 
 

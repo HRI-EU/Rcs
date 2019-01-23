@@ -47,6 +47,7 @@
 
 #include <QLabel>
 #include <QGridLayout>
+#include <QTimer>
 
 #include <cstdio>
 #include <cmath>
@@ -65,21 +66,22 @@ typedef struct
 } VoidPointerList;
 
 
-static void* stateGui(void* arg)
+void* JointWidget::stateGui(void* arg)
 {
   VoidPointerList* p = (VoidPointerList*) arg;
   RCHECK(arg);
   RcsGraph* graph      = (RcsGraph*)        p->ptr[0];
-  pthread_mutex_t* mtx = (pthread_mutex_t*) p->ptr[1];
-  MatNd* q_des         = (MatNd*)           p->ptr[2];
-  MatNd* q_curr        = (MatNd*)           p->ptr[3];
-  bool* alwaysWriteToQ = (bool*)            p->ptr[4];
-  bool* passive        = (bool*)            p->ptr[5];
+  const RcsGraph* constGraph = (const RcsGraph*)        p->ptr[1];
+  pthread_mutex_t* mtx = (pthread_mutex_t*) p->ptr[2];
+  MatNd* q_des         = (MatNd*)           p->ptr[3];
+  MatNd* q_curr        = (MatNd*)           p->ptr[4];
+  bool* alwaysWriteToQ = (bool*)            p->ptr[5];
+  bool* passive        = (bool*)            p->ptr[6];
 
   delete p;
 
-  JointWidget* w = new JointWidget(graph, mtx, q_des, q_curr, *alwaysWriteToQ,
-                                   *passive);
+  JointWidget* w = new JointWidget(graph, constGraph, mtx, q_des, q_curr,
+                                   *alwaysWriteToQ, *passive);
   w->show();
 
   delete alwaysWriteToQ;
@@ -88,6 +90,9 @@ static void* stateGui(void* arg)
   return w;
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
 int JointWidget::create(RcsGraph* graph, pthread_mutex_t* graphLock,
                         MatNd* q_des, MatNd* q_curr,
                         bool alwaysWriteToQ, bool passive)
@@ -99,12 +104,13 @@ int JointWidget::create(RcsGraph* graph, pthread_mutex_t* graphLock,
   *_passive = passive;
 
   VoidPointerList* p = new VoidPointerList;
-  p->ptr[0] = (void*) graph;
-  p->ptr[1] = (void*) graphLock;
-  p->ptr[2] = (void*) q_des;
-  p->ptr[3] = (void*) q_curr;
-  p->ptr[4] = (void*) _alwaysWriteToQ;
-  p->ptr[5] = (void*) _passive;
+  p->ptr[0] = (void*)graph;
+  p->ptr[1] = (void*)graph;
+  p->ptr[2] = (void*) graphLock;
+  p->ptr[3] = (void*) q_des;
+  p->ptr[4] = (void*) q_curr;
+  p->ptr[5] = (void*) _alwaysWriteToQ;
+  p->ptr[6] = (void*) _passive;
 
   int handle = RcsGuiFactory_requestGUI(stateGui, p);
 
@@ -114,26 +120,63 @@ int JointWidget::create(RcsGraph* graph, pthread_mutex_t* graphLock,
 /*******************************************************************************
  *
  ******************************************************************************/
-JointWidget::JointWidget(RcsGraph* graph, pthread_mutex_t* graphLock,
+int JointWidget::create(const RcsGraph* graph, pthread_mutex_t* graphLock,
+                        MatNd* q_des, MatNd* q_curr,
+                        bool alwaysWriteToQ, bool passive)
+{
+  bool* _alwaysWriteToQ = new bool;
+  *_alwaysWriteToQ = alwaysWriteToQ;
+
+  bool* _passive = new bool;
+  *_passive = passive;
+
+  VoidPointerList* p = new VoidPointerList;
+  p->ptr[0] = (void*)NULL;
+  p->ptr[1] = (void*)graph;
+  p->ptr[2] = (void*)graphLock;
+  p->ptr[3] = (void*)q_des;
+  p->ptr[4] = (void*)q_curr;
+  p->ptr[5] = (void*)_alwaysWriteToQ;
+  p->ptr[6] = (void*)_passive;
+
+  int handle = RcsGuiFactory_requestGUI(stateGui, p);
+
+  return handle;
+}
+
+/*******************************************************************************
+ * Static destroy method.
+ ******************************************************************************/
+bool JointWidget::destroy(int handle)
+{
+  return RcsGuiFactory_destroyGUI(handle);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
+                         pthread_mutex_t* graphLock,
                          MatNd* q_des, MatNd* q_curr, bool alwaysWriteToQ,
                          bool passive) :
   QScrollArea(),
   _graph(graph),
+  _constGraph(constGraph),
   _togglestate(false),
   _alwaysWriteToQ(alwaysWriteToQ),
-  _q_des(q_des ? q_des : graph->q),
-  _q_curr(q_curr ? q_curr : graph->q),
+  _q_des(q_des ? q_des : constGraph->q),
+  _q_curr(q_curr ? q_curr : constGraph->q),
   lcd_q_cmd(NULL),
   lcd_q_act(NULL),
   mutex(graphLock)
 {
-  RLOG(5, "Creating Widget with %d dof", graph->dof);
+  RLOG(5, "Creating Widget with %d dof", _constGraph->dof);
 
   setWindowTitle("RCS Joint Control");
 
   QWidget* scrollWidget = new QWidget(this);
 
-  if (graph->dof > 0)
+  if (_constGraph->dof > 0)
   {
     QPalette palette;
     palette.setColor(QPalette::Normal, QPalette::Foreground, Qt::red);
@@ -146,12 +189,12 @@ JointWidget::JointWidget(RcsGraph* graph, pthread_mutex_t* graphLock,
     palette.setColor(QPalette::Inactive, QPalette::Light, Qt::yellow);
     palette.setColor(QPalette::Inactive, QPalette::Dark, Qt::darkYellow);
 
-    lcd_q_cmd         = new QLCDNumber*[graph->dof];
-    lcd_q_act         = new QLCDNumber*[graph->dof];
-    jsc_q             = new JointSlider*[graph->dof];
-    check_constraints = new QCheckBox*[graph->dof];
+    lcd_q_cmd         = new QLCDNumber*[_constGraph->dof];
+    lcd_q_act         = new QLCDNumber*[_constGraph->dof];
+    jsc_q             = new JointSlider*[_constGraph->dof];
+    check_constraints = new QCheckBox*[_constGraph->dof];
 
-    for (unsigned int k=0; k<graph->dof; k++)
+    for (unsigned int k=0; k<_constGraph->dof; k++)
     {
       lcd_q_cmd[k]         = NULL;
       lcd_q_act[k]         = NULL;
@@ -165,16 +208,22 @@ JointWidget::JointWidget(RcsGraph* graph, pthread_mutex_t* graphLock,
     QGridLayout* constraintsLayout = new QGridLayout;
 
     int i = 0;
-    RCSGRAPH_TRAVERSE_JOINTS(graph)
+    RCSGRAPH_TRAVERSE_JOINTS(_constGraph)
     {
       RLOG(5, "Creating Widget for joint \"%s\"", JNT->name);
 
       check_constraints[i] = new QCheckBox(JNT->name);
       check_constraints[i]->setChecked(JNT->constrained);
-      connect(check_constraints[i], SIGNAL(clicked()),
-              SLOT(setConstraint()));
 
-      if (JNT->coupledTo != NULL)
+      if (graph != NULL)
+      {
+        if (JNT->coupledTo == NULL)
+        {
+          connect(check_constraints[i], SIGNAL(clicked()),
+                  SLOT(setConstraint()));
+        }
+      }
+      else
       {
         check_constraints[i]->setEnabled(false);
       }
@@ -193,22 +242,14 @@ JointWidget::JointWidget(RcsGraph* graph, pthread_mutex_t* graphLock,
       double ub = JNT->q_max;
       double range = ub - lb;
       double qi = MatNd_get(_q_des, JNT->jointIndex, 0);
-
-      double scaleFactor = 1.0;
-      if (RcsJoint_isRotation(JNT))
-      {
-        scaleFactor = 180.0/M_PI;
-      }
-      else
-      {
-        scaleFactor = 1000.0;
-      }
+      double scaleFactor = RcsJoint_isRotation(JNT) ? 180.0/M_PI : 1000.0;
 
       jsc_q[i] = new JointSlider(lb-0.1*range, qi, ub+0.1*range, scaleFactor);
 
       if (passive == false)
       {
-        connect(jsc_q[i]->getSlider(), SIGNAL(valueChanged(double)), SLOT(setJoint()));
+        connect(jsc_q[i]->getSlider(), SIGNAL(valueChanged(double)),
+                SLOT(setJoint()));
       }
 
       constraintsLayout->addWidget(check_constraints[i], i, 0,
@@ -223,7 +264,7 @@ JointWidget::JointWidget(RcsGraph* graph, pthread_mutex_t* graphLock,
 
     scrollWidget->setLayout(constraintsLayout);
 
-  }   // if(graph->dof>0)
+  }   // if(_constGraph->dof>0)
 
   else
   {
@@ -246,7 +287,7 @@ JointWidget::JointWidget(RcsGraph* graph, pthread_mutex_t* graphLock,
   //
   // 25 Hz timer callback
   //
-  _timer = new QTimer(this);
+  QTimer* _timer = new QTimer(this);
   connect(_timer, SIGNAL(timeout()), SLOT(displayAct()));
   _timer->start(40);
 
@@ -258,7 +299,7 @@ JointWidget::JointWidget(RcsGraph* graph, pthread_mutex_t* graphLock,
  ******************************************************************************/
 JointWidget::~JointWidget()
 {
-  if (_graph->dof > 0)
+  if (_constGraph->dof > 0)
   {
     delete [] lcd_q_cmd;
     delete [] lcd_q_act;
@@ -266,8 +307,6 @@ JointWidget::~JointWidget()
     delete [] check_constraints;
   }
 
-  _timer->stop();
-  //killTimer(_timer->timerId());
 }
 
 /*******************************************************************************
@@ -293,30 +332,24 @@ void JointWidget::toggle()
 void JointWidget::displayAct(void)
 {
   int i = 0;
+  char a[9];
+  double scaleFactor;
 
-  RCSGRAPH_TRAVERSE_JOINTS(_graph)
+  RCSGRAPH_TRAVERSE_JOINTS(_constGraph)
   {
-    char a[256];
+    scaleFactor = RcsJoint_isRotation(JNT) ? 180.0 / M_PI : 1000.0;
 
-    double scaleFactor = 1.0;
-    if (RcsJoint_isRotation(JNT))
-    {
-      scaleFactor = 180. / M_PI;
-    }
-    else
-    {
-      scaleFactor = 1000.0;
-    }
-
-    snprintf(a, 8, "%5.1f", scaleFactor * _q_curr->ele[JNT->jointIndex]);
+    snprintf(a, 8, "%5.1f", scaleFactor*_q_curr->ele[JNT->jointIndex]);
     lcd_q_act[i]->display(a);
 
-    snprintf(a, 8, "%5.1f", scaleFactor * _q_des->ele[JNT->jointIndex]);
+    snprintf(a, 8, "%5.1f", scaleFactor*_q_des->ele[JNT->jointIndex]);
     lcd_q_cmd[i]->display(a);
 
-    // if (!JNT->hide)
+    jsc_q[i]->setValue(_q_curr->ele[JNT->jointIndex]);
+
+    if (_graph == NULL)
     {
-      jsc_q[i]->setValue(_q_curr->ele[JNT->jointIndex]);
+      check_constraints[i]->setChecked(JNT->constrained);
     }
 
     i++;
@@ -333,6 +366,7 @@ void JointWidget::setConstraint(void)
   lock();
 
   // Assign values from constraint check boxes
+  RCHECK(_graph);
   RCSGRAPH_TRAVERSE_JOINTS(_graph)
   {
     JNT->constrained = check_constraints[i++]->isChecked();
@@ -342,14 +376,14 @@ void JointWidget::setConstraint(void)
 }
 
 /*******************************************************************************
- * Assign values do _q_des from sliders
+ * Assign values to _q_des from sliders
  ******************************************************************************/
 void JointWidget::setJoint(void)
 {
   int i = 0;
   lock();
 
-  RCSGRAPH_TRAVERSE_JOINTS(_graph)
+  RCSGRAPH_TRAVERSE_JOINTS(_constGraph)
   {
     if ((JNT->constrained || _alwaysWriteToQ) && (!JNT->coupledTo))
     {
@@ -371,7 +405,7 @@ void JointWidget::setJoint(void)
 /*******************************************************************************
  *
  ******************************************************************************/
-void JointWidget::lock()
+void JointWidget::lock() const
 {
   if (this->mutex)
   {
@@ -382,7 +416,7 @@ void JointWidget::lock()
 /*******************************************************************************
  *
  ******************************************************************************/
-void JointWidget::unlock()
+void JointWidget::unlock() const
 {
   if (this->mutex)
   {
