@@ -1,0 +1,18 @@
+
+#define RCSGRAPH_TRAVERSE_BODIES(graph) for (RcsBody* BODY = (graph)->root; BODY; BODY = RcsBody_depthFirstTraversalGetNext(BODY))
+
+#define RCSBODY_TRAVERSE_BODIES(body) for (RcsBody* BODY = (body), *LAST = RcsBody_depthFirstTraversalGetNext(RcsBody_getLastChild(BODY)); BODY && BODY != LAST; BODY = RcsBody_depthFirstTraversalGetNext(BODY))
+
+#define RCSBODY_TRAVERSE_CHILD_BODIES(body) for (RcsBody* BODY = RcsBody_depthFirstTraversalGetNext(body), *LAST = RcsBody_depthFirstTraversalGetNext(RcsBody_getLastChild(body)); BODY && BODY != LAST; BODY = RcsBody_depthFirstTraversalGetNext(BODY))
+
+#define RCSGRAPH_TRAVERSE_JOINTS(graph) RCSGRAPH_TRAVERSE_BODIES(graph) RCSBODY_TRAVERSE_JOINTS(BODY)
+
+#define RCSGRAPH_TRAVERSE_SENSORS(graph) for (RcsSensor *SENSOR = (graph)->sensor; SENSOR; SENSOR=SENSOR->next)
+
+#define RCSBODY_TRAVERSE_JOINTS(body) for (RcsJoint *JNT = (body)->jnt  ; JNT ; JNT=JNT->next)
+
+#define RCSBODY_TRAVERSE_SHAPES(body) for (RcsShape **sPtr = (RcsShape**)((body)->shape), *SHAPE = *sPtr; *sPtr; sPtr++, SHAPE=*sPtr)
+
+#define RCSPAIR_TRAVERSE(pairlist) for (RcsPair **pPtr = (RcsPair**)(pairlist), *PAIR = *pPtr; *pPtr; pPtr++, PAIR=*pPtr)
+
+#define RCSSENSOR_TRAVERSE_TEXELS(sensor) for (RcsTexel **sPtr = (RcsTexel**)((sensor)->texel), *TEXEL = *sPtr; *sPtr; sPtr++, TEXEL=*sPtr)
