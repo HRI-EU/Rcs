@@ -78,7 +78,7 @@ void Rcs::ForceDragger::update()
 bool Rcs::ForceDragger::callback(const osgGA::GUIEventAdapter& ea,
                                  osgGA::GUIActionAdapter& aa)
 {
-  MouseDragger::callback(ea, aa);
+  MouseDragger::callback(ea, aa);   // calls update (see above)
 
   const RcsBody* bdy = Rcs::MouseDragger::getBodyUnderMouse(ea, aa);
 
