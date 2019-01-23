@@ -59,6 +59,7 @@ Rcs::PhysicsBase::PhysicsBase(const RcsGraph* graph_) :
   this->q_dot_des = MatNd_create(this->graph->dof, 1);
 
   this->internalDesiredGraph = RcsGraph_clone(this->graph);
+  this->graph = internalDesiredGraph;
 }
 
 /*******************************************************************************
@@ -79,6 +80,7 @@ Rcs::PhysicsBase::PhysicsBase(const PhysicsBase& copyFromMe) :
   this->q_dot_des = MatNd_clone(copyFromMe.q_dot_des);
 
   this->internalDesiredGraph = RcsGraph_clone(this->graph);
+  this->graph = internalDesiredGraph;
 }
 
 /*******************************************************************************
@@ -100,6 +102,7 @@ Rcs::PhysicsBase::PhysicsBase(const PhysicsBase& copyFromMe,
   this->q_dot_des = MatNd_clone(copyFromMe.q_dot_des);
 
   this->internalDesiredGraph = RcsGraph_clone(this->graph);
+  this->graph = internalDesiredGraph;
 }
 
 /*******************************************************************************

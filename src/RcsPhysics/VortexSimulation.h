@@ -41,6 +41,7 @@
 
 #include <PhysicsBase.h>
 
+#include <unordered_map>
 #include <pthread.h>
 #include <fstream>
 
@@ -61,6 +62,8 @@ namespace Rcs
  *
  *         Each instance of this class owns its own universe.
  */
+class VortexBody;
+
 class VortexSimulation : public PhysicsBase
 {
 public:
@@ -147,6 +150,7 @@ public:
    */
   void simulate(double dt, MatNd* q = NULL, MatNd* qp = NULL,
                 MatNd* qpp = NULL, MatNd* T = NULL, bool control = false);
+
   void reset();
   void applyForce(const RcsBody* body, const double F[3], const double r[3]);
   void applyTransform(const RcsBody* body, const HTr* A_BI);
@@ -161,7 +165,8 @@ public:
   void setMassAndInertiaFromPhysics(RcsGraph* graph);
   void getPhysicsTransform(HTr* A_BI, const RcsBody* body) const;
   void disableCollision(const RcsBody* b0, const RcsBody* b1);
-  virtual void setJointLimits(bool enable);
+  void disableCollisions();
+  void setJointLimits(bool enable);
   Contacts getContacts();
   void setJointCompliance(const MatNd* stiffness, const MatNd* damping=NULL);
   void getJointCompliance(MatNd* stiffness, MatNd* damping=NULL) const;
@@ -218,6 +223,16 @@ public:
    *         graph restructuring
    */
   bool removeBodyConstraints(RcsBody* body);
+
+  /*! \brief Removes a body from the simulation. The function returns true on
+  *         success, false otherwise.
+  */
+  bool removeBody(const char* name);
+
+  bool addBody(const RcsBody* body);
+
+  bool deactivateBody(const char* name);
+  bool activateBody(const char* name, const HTr* A_BI=NULL);
 
 
 
@@ -278,6 +293,8 @@ public:
 
 private:
 
+  VortexBody* getPartPtr(const RcsBody* body) const;
+
   bool initSettings(const PhysicsConfig* config);
 
   void initMaterial(const PhysicsConfig* config);
@@ -288,11 +305,11 @@ private:
    *         the internal contact point generation, which works differently
    *         for composite shapes.
    */
-  bool createCompositeBody(RcsBody* body);
+  bool createCompositeBody(const RcsBody* body);
 
   /*! \brief Creates a physical joint and adds it to the simulation.
    */
-  bool createJoint(RcsBody* body);
+  bool createJoint(const RcsBody* body);
 
   /*! \brief Removes a physical joint from the simulation and deletes it. The
    *         function returns true if the joint removed succeeded, and false
@@ -326,6 +343,9 @@ private:
   char* materialFileName;
 
   mutable pthread_mutex_t extForceLock;
+
+  std::unordered_map<const RcsBody*, VortexBody*> bdyMap;
+  std::map<std::string,Vx::VxPart*> deactivatedBodies;
 
 
   /*! \brief Assignment operator. Ideally, this should be implemented, rather

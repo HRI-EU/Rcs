@@ -1120,6 +1120,48 @@ int main(int argc, char** argv)
           void* ptr = RcsGuiFactory_getPointer(guiHandle);
           jw = static_cast<Rcs::JointWidget*>(ptr);
         }
+        else if (kc && kc->getAndResetKey('k'))
+        {
+          RcsBody* bdy = RcsBody_createBouncingSphere(Vec3d_zeroVec(),
+                                                      shootMass, 0.05);
+
+          // Calculate initial velocity vector from eye point to mouse tip
+          double I_mouseCoords[3];
+          viewer->getMouseTip(I_mouseCoords);
+          viewer->getCameraTransform(bdy->A_BI);
+          Vec3d_sub(bdy->x_dot, I_mouseCoords, bdy->A_BI->org);
+          Vec3d_normalizeSelf(bdy->x_dot);
+          Vec3d_constMulSelf(bdy->x_dot, 20.0);
+
+          pthread_mutex_lock(&graphLock);
+          RLOG(1, "RcsGraph_addBody");
+
+          RLOG(1, "Adding body to simulation");
+          bool ok = sim->addBody(bdy);
+
+          if (ok)
+          {
+            RLOG(1, "Adding body to graph");
+
+            MatNd* arrBuf[6];
+            arrBuf[0] = q_curr;
+            arrBuf[1] = q_dot_curr;
+            arrBuf[2] = q_des;
+            arrBuf[3] = q_des_f;
+            arrBuf[4] = q0;
+            arrBuf[5] = T_gravity;
+
+            ok = RcsGraph_addBody(graph, NULL, bdy, arrBuf, 6);
+
+            RLOG(1, "Adding body to graphics");
+            simNode->addBodyNode(bdy);
+          }
+          pthread_mutex_unlock(&graphLock);
+
+          RMSG("%s adding body \"%s\"", ok ? "SUCCEEDED" : "FAILED", bdy->name);
+
+          bodyAdded = true;
+        }
         else if (kc && kc->getAndResetKey('p'))
         {
           RMSGS("Resetting physics");
@@ -1129,7 +1171,20 @@ int main(int argc, char** argv)
           sim->reset();
           MatNd_copy(q_des, graph->q);
           MatNd_copy(q_des_f, graph->q);
+          if (jw != NULL)
+          {
+            if (bodyAdded==true)
+            {
+              RMSGS("Resetting physics after adding bodies only works if "
+                    "there is no JointWidget running. Please click it away "
+                    "before resetting the physics, or start the program with "
+                    " the command line option \"-skipGui\"");
+            }
+            else
+            {
           jw->reset(graph->q);
+            }
+          }
           pthread_mutex_unlock(&graphLock);
         }
         else if (kc && kc->getAndResetKey('o'))
@@ -1146,7 +1201,10 @@ int main(int argc, char** argv)
           sim->reset();
           MatNd_copy(q_des, graph->q);
           MatNd_copy(q_des_f, graph->q);
+          if (jw != NULL)
+          {
           jw->reset(graph->q);
+          }
           pthread_mutex_unlock(&graphLock);
         }
         else if (kc && kc->getAndResetKey('j'))
@@ -1163,6 +1221,89 @@ int main(int argc, char** argv)
         {
           gravComp = !gravComp;
           RMSGS("Gravity compensation is %s", gravComp ? "ON" : "OFF");
+        }
+        else if (kc && kc->getAndResetKey('e'))
+        {
+          std::string bdyName;
+          //RMSG("Removing body");
+          //printf("Enter body to remove: ");
+          //std::cin >> bdyName;
+
+          Rcs::BodyNode* bNd = viewer->getBodyNodeUnderMouse<Rcs::BodyNode*>();
+          if (bNd == NULL)
+          {
+            RMSG("No BodyNode found under mouse");
+            continue;
+          }
+          bdyName = std::string(bNd->body()->name);
+
+          RMSG("Removing body \"%s\" under mouse", bdyName.c_str());
+          pthread_mutex_lock(&graphLock);
+          bool ok = sim->removeBody(bdyName.c_str());
+
+          if (ok)
+          {
+            ok = simNode->removeBodyNode(bdyName.c_str()) && ok;
+
+            MatNd* arrBuf[6];
+            arrBuf[0] = q_curr;
+            arrBuf[1] = q_dot_curr;
+            arrBuf[2] = q_des;
+            arrBuf[3] = q_des_f;
+            arrBuf[4] = q0;
+            arrBuf[5] = T_gravity;
+
+            ok = RcsGraph_removeBody(graph, bdyName.c_str(), arrBuf, 6) && ok;
+          }
+          pthread_mutex_unlock(&graphLock);
+          RMSG("%s removing body \"%s\"", ok ? "SUCCEEDED" : "FAILED",
+               bdyName.c_str());
+        }
+        else if (kc && kc->getAndResetKey('a'))
+        {
+          Rcs::BodyNode* bNd = viewer->getBodyNodeUnderMouse<Rcs::BodyNode*>();
+          if (bNd == NULL)
+          {
+            RMSG("No BodyNode found under mouse");
+            continue;
+          }
+          std::string bdyName = std::string(bNd->body()->name);
+
+          RMSG("Deactivating body \"%s\" under mouse", bdyName.c_str());
+          pthread_mutex_lock(&graphLock);
+          bool ok = sim->deactivateBody(bdyName.c_str());
+          if (ok)
+          {
+            bNd->setGhostMode(true, "WHITE");
+          }
+          pthread_mutex_unlock(&graphLock);
+          RMSG("%s deactivating body \"%s\"", ok ? "SUCCEEDED" : "FAILED",
+               bdyName.c_str());
+        }
+        else if (kc && kc->getAndResetKey('A'))
+        {
+          Rcs::BodyNode* bNd = viewer->getBodyNodeUnderMouse<Rcs::BodyNode*>();
+          if (bNd == NULL)
+          {
+            RMSG("No BodyNode found under mouse");
+            continue;
+          }
+          std::string bdyName = std::string(bNd->body()->name);
+
+          RMSG("Activating body \"%s\" under mouse", bdyName.c_str());
+          pthread_mutex_lock(&graphLock);
+          HTr A_BI;
+          HTr_copy(&A_BI, bNd->getTransformPtr());
+          A_BI.org[2] += 0.2;
+          bool ok = sim->activateBody(bdyName.c_str(), &A_BI);
+          if (ok)
+          {
+            bNd->setGhostMode(false);
+          }
+
+          pthread_mutex_unlock(&graphLock);
+          RMSG("%s activating body \"%s\"", ok ? "SUCCEEDED" : "FAILED",
+               bdyName.c_str());
         }
         else if (kc && kc->getAndResetKey('m'))
         {
@@ -1319,7 +1460,8 @@ int main(int argc, char** argv)
         //////////////////////////////////////////////////////////////
 
         double dtSim = Timer_getTime();
-        sim->simulate(dt, q_curr, q_dot_curr, NULL, NULL, !skipControl);
+        // sim->simulate(dt, q_curr, q_dot_curr, NULL, NULL, !skipControl);
+        sim->simulate(dt, graph, NULL, NULL, !skipControl);
         dtSim = Timer_getTime() - dtSim;
 
 
@@ -1335,10 +1477,11 @@ int main(int argc, char** argv)
           RLOG(1, "Step");
         }
 
-        sprintf(hudText, "[%s]: Sim-step: %.1f ms\nSim time: %.1f sec\n"
-                "Gravity compensation: %s",
-                sim->getClassName(), dtSim*1000.0, sim->time(),
-                gravComp ? "ON" : "OFF");
+        sprintf(hudText, "[%s]: Sim-step: %.1f ms\nSim time: %.1f (%.1f) sec\n"
+                "Gravity compensation: %s\nDisplaying %s",
+                sim->getClassName(), dtSim*1000.0, sim->time(), Timer_get(timer),
+                gravComp ? "ON" : "OFF",
+                simNode ? simNode->getDisplayModeStr() : "nothing");
 
         if (hud != NULL)
         {

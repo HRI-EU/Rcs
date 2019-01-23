@@ -93,7 +93,6 @@ struct _RcsJoint
   RcsJoint* next;      ///< Next joint
   RcsJoint* coupledTo; ///< Joint to which this one is coupled
 
-  void* extraInfo;     ///< For user extensions
 };
 
 
@@ -209,7 +208,6 @@ struct _RcsBody
   RcsShape** shape;       ///< Shapes of the body for collision detection
   RcsJoint* jnt;          ///< Joint to which body is attached
 
-  void* actor;            ///< Vortex only
   void* extraInfo;        ///< For generic bodies
 };
 

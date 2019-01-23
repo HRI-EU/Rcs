@@ -2200,7 +2200,6 @@ RcsBody* RcsGraph_linkGenericBody(RcsGraph* self, int bdyNum,
   self->gBody[bdyNum].prev              = b->prev;
   self->gBody[bdyNum].shape             = b->shape;
   self->gBody[bdyNum].jnt               = b->jnt;
-  self->gBody[bdyNum].actor             = b->actor;
   self->gBody[bdyNum].extraInfo         = b;
 
   return b;

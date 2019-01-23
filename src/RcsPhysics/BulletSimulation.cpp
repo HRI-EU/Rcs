@@ -330,11 +330,12 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
   this->physicsConfigFile = String_clone(config->getConfigFileName());
 
   // lookup bullet config node
-  xmlNodePtr bulletParams = getXMLChildByName(config->getXMLRootNode(), "bullet_parameters");
+  xmlNodePtr bulletParams = getXMLChildByName(config->getXMLRootNode(),
+                                              "bullet_parameters");
   if (bulletParams == NULL)
   {
-    RLOG(1, "Physics configuration file %s did not contain a \"bullet parameters\""
-         " node!", this->physicsConfigFile);
+    RLOG(1, "Physics configuration file %s did not contain a "
+         "\"bullet parameters\" node!", this->physicsConfigFile);
   }
 
   this->collisionConfiguration = new btDefaultCollisionConfiguration();
@@ -370,20 +371,21 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
   if (bulletParams)
   {
     // load solver type from xml
-    getXMLNodePropertyBoolString(bulletParams, "use_mclp_solver", &useMCLPSolver);
+    getXMLNodePropertyBoolString(bulletParams, "use_mclp_solver",
+                                 &useMCLPSolver);
   }
   if (useMCLPSolver)
   {
     this->mlcpSolver = new btDantzigSolver();
     //this->mlcpSolver = new btSolveProjectedGaussSeidel;
     solver = new btMLCPSolver(this->mlcpSolver);
-    RLOG(1, "Using MCLP solver");
+    RLOG(5, "Using MCLP solver");
   }
   else
 #endif
   {
     solver = new btSequentialImpulseConstraintSolver;
-    RLOG(1, "Using sequential impulse solver");
+    RLOG(5, "Using sequential impulse solver");
   }
 
 
@@ -477,11 +479,23 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
   }
 
   // Create ground plane
-  btCollisionShape* gnd = new btStaticPlaneShape(btVector3(0.0, 0.0, 1.0), 0.0);
-  btDefaultMotionState* gms = new btDefaultMotionState();
-  btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0, gms, gnd);
-  btRigidBody* groundRigidBody = new btRigidBody(groundRigidBodyCI);
-  dynamicsWorld->addRigidBody(groundRigidBody);
+  if (bulletParams)
+  {
+    // Check if ground plane is to be skipped
+    bool useGroundPlane = true;
+    getXMLNodePropertyBoolString(bulletParams, "use_ground_plane",
+                                 &useGroundPlane);
+
+    if (useGroundPlane)
+    {
+      btCollisionShape* gnd = new btStaticPlaneShape(btVector3(0.0, 0.0, 1.0),
+                                                     0.0);
+      btDefaultMotionState* gms = new btDefaultMotionState();
+      btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0, gms, gnd);
+      btRigidBody* groundRigidBody = new btRigidBody(groundRigidBodyCI);
+      dynamicsWorld->addRigidBody(groundRigidBody);
+    }
+  }
 
   // Force dragging
   this->dragBody = NULL;
@@ -1209,7 +1223,8 @@ size_t Rcs::BulletSimulation::getNumberOfContacts() const
 
   for (int i=0; i<numManifolds; i++)
   {
-    btPersistentManifold* contactManifold = this->dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
+    btPersistentManifold* contactManifold =
+      this->dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
     numContacts += contactManifold->getNumContacts();
   }
 
@@ -1228,14 +1243,16 @@ void Rcs::BulletSimulation::applyControl(double dt)
 
     for (it = bdyMap.begin(); it!=bdyMap.end(); ++it)
     {
-      const RcsBody* rb_ = it->first;
-      const RcsBody* rb = RcsGraph_getBodyByName(internalDesiredGraph,
-                                                 rb_->name);
-      RCHECK(rb);
       BulletRigidBody* btBdy = it->second;
       if (btBdy && btBdy->isStaticOrKinematicObject())
       {
-        btBdy->setBodyTransform(rb->A_BI, dt);
+        const RcsBody* rb_ = it->first;
+        const RcsBody* rb = RcsGraph_getBodyByName(internalDesiredGraph,
+                                                   rb_->name);
+        if (rb)
+        {
+          btBdy->setBodyTransform(rb->A_BI, dt);
+        }
       }
     }
 
@@ -1740,7 +1757,8 @@ bool Rcs::BulletSimulation::updatePPSSensor(RcsSensor* sensor)
                       pt.m_lateralFrictionDir2[i]*pt.m_appliedImpulseLateral2)/this->lastDt;
         }
 
-        NLOG(1, "Adding f[%s,%d]=%f %f %f", sensor->body->name, j, force[0], force[1], force[2]);
+        NLOG(1, "Adding f[%s,%d]=%f %f %f", sensor->body->name, j,
+             force[0], force[1], force[2]);
 
         Vec3d_constMulAndAddSelf(contactForce, force, signOfForce);
       }
@@ -1750,4 +1768,204 @@ bool Rcs::BulletSimulation::updatePPSSensor(RcsSensor* sensor)
   }   // for (int i=0; i<numManifolds; i++)
 
   return RcsSensor_computePPS(sensor, sensor->rawData, contactForce);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::BulletSimulation::removeBody(const char* name)
+{
+  RcsBody* bdy = RcsGraph_getBodyByName(this->graph, name);
+  if (bdy==NULL)
+  {
+    RLOG(1, "Couldn't find body \"%s\" in graph - skipping removal",
+         name ? name : "NULL");
+    return false;
+  }
+
+  std::map<const RcsBody*, Rcs::BulletRigidBody*>::const_iterator it;
+
+  it = bdyMap.find(bdy);
+
+  if (it==bdyMap.end())
+  {
+    RLOG(1, "Couldn't find body \"%s\" in bdyMap - skipping removal",
+         name ? name : "NULL");
+    return false;
+  }
+
+  BulletRigidBody* btBdy = it->second;
+  lock();
+  btBdy->clearShapes();
+  dynamicsWorld->removeRigidBody(btBdy);
+  bdyMap.erase(it);
+  delete btBdy;
+
+
+  MatNd* arrBuf[3];
+  arrBuf[0] = this->q_des;
+  arrBuf[1] = this->q_dot_des;
+  arrBuf[2] = this->T_des;
+  RcsGraph_removeBody(this->internalDesiredGraph, name, arrBuf, 3);
+
+  unlock();
+
+  return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
+{
+  RLOG(1, "Creating bullet body for \"%s\"", body_->name);
+
+  PhysicsConfig config(this->physicsConfigFile);
+
+  lock();
+
+  RcsBody* body = RcsBody_clone(body_);
+  body->parent = RcsGraph_getBodyByName(internalDesiredGraph, body_->name);
+
+  BulletRigidBody* btBody = BulletRigidBody::create(body, &config);
+  RCHECK(btBody);
+
+  if (btBody != NULL)
+  {
+    // apply configured damping
+    if (body->rigid_body_joints)
+    {
+      btBody->setDamping(rigidBodyLinearDamping, rigidBodyAngularDamping);
+    }
+
+    bdyMap[body] = btBody;
+
+    body_it it = bdyMap.find(body->parent);
+
+    if (it != bdyMap.end())
+    {
+      btBody->setParentBody(it->second);
+    }
+
+    dynamicsWorld->addRigidBody(btBody);
+
+    btTypedConstraint* jnt = btBody->createJoint(graph);
+
+    if (jnt != NULL)
+    {
+      // Fixed joints don't have a RcsJoint pointer, this must be checked
+      // before applying the offset
+      if (body->jnt != NULL)
+      {
+        BulletHingeJoint* hinge = dynamic_cast<BulletHingeJoint*>(jnt);
+
+        if (hinge != NULL)
+        {
+          hingeMap[body->jnt] = hinge;
+          RLOGS(5, "Joint %s has value %f (%f)",
+                body->jnt->name, hinge->getHingeAngle(),
+                graph->q->ele[body->jnt->jointIndex]);
+        }
+      }
+
+      dynamicsWorld->addConstraint(jnt, true);
+    }
+
+  }
+
+
+  MatNd* arrBuf[3];
+  arrBuf[0] = this->q_des;
+  arrBuf[1] = this->q_dot_des;
+  arrBuf[2] = this->T_des;
+
+  unsigned int nJoints = RcsBody_numJoints(body);
+
+  if (nJoints > 0)
+  {
+    this->T_des = MatNd_realloc(this->T_des, graph->dof, 1);
+    this->q_des = MatNd_realloc(this->q_des, graph->dof, 1);
+    this->q_dot_des = MatNd_realloc(this->q_dot_des, graph->dof, 1);
+  }
+
+  RcsGraph_addBody(internalDesiredGraph, body->parent, body, arrBuf, 3);
+
+  unlock();
+
+  RLOG(1, "%s adding \"%s\" to Bullet universe",
+       btBody ? "SUCCESS" : "FAILURE", body->name);
+
+  return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::BulletSimulation::deactivateBody(const char* name)
+{
+  RcsBody* bdy = RcsGraph_getBodyByName(this->internalDesiredGraph, name);
+  if (bdy == NULL)
+  {
+    RLOG(1, "Couldn't find body \"%s\" in graph - skipping deactivation",
+         name ? name : "NULL");
+    return false;
+  }
+
+  if (!RcsBody_isLeaf(bdy))
+  {
+    RLOG(1, "Can't deactivate non-leaf body \"%s\" - skipping", bdy->name);
+    return false;
+  }
+
+  body_it it = bdyMap.find(bdy);
+  BulletRigidBody* part = NULL;
+
+  if (it != bdyMap.end())
+  {
+    part = it->second;
+  }
+  else
+  {
+    RLOG(1, "Can't find BulletRigidBody for body \"%s\" - skipping deactivation",
+         bdy->name);
+    return false;
+  }
+
+  dynamicsWorld->removeRigidBody(part);
+  bdyMap.erase(it);
+
+  this->deactivatedBodies[name] = part;
+
+  return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::BulletSimulation::activateBody(const char* name, const HTr* A_BI)
+{
+  if (name == NULL)
+  {
+    RLOG(1, "Can't retrieve body with name pointing to NULL");
+    return false;
+  }
+
+  auto it = deactivatedBodies.find(std::string(name));
+
+  if (it == deactivatedBodies.end())
+  {
+    RLOG(1, "Body \"%s\" is not deactivated - skipping activation", name);
+    return false;
+  }
+
+  BulletRigidBody* part = it->second;
+  const RcsBody* bdy = RcsGraph_getBodyByName(this->graph, it->first.c_str());
+  part->reset(A_BI);
+
+  dynamicsWorld->addRigidBody(part);
+
+  bdyMap[bdy] = part;
+  deactivatedBodies.erase(it);
+
+  return true;
 }

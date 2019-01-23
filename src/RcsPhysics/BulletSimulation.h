@@ -165,6 +165,10 @@ public:
   virtual BulletRigidBody* getRigidBody(const RcsBody* bdy) const;
   virtual void getWorldBoundingBox(btVector3& aabbMin,
                                    btVector3& aabbMax) const;
+  virtual bool addBody(const RcsBody* body);
+  virtual bool removeBody(const char* name);
+  virtual bool deactivateBody(const char* name);
+  virtual bool activateBody(const char* name, const HTr* A_BI = NULL);
 
   btDynamicsWorld* dynamicsWorld;
 
@@ -188,6 +192,8 @@ private:
   double lastDt;
   std::map<const RcsBody*, BulletRigidBody*> bdyMap;
   std::map<const RcsJoint*, BulletHingeJoint*> hingeMap;
+  std::map<std::string, BulletRigidBody*> deactivatedBodies;
+
 
   BulletRigidBody* dragBody;
   double dragForce[3];
