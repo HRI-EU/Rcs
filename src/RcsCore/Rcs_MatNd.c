@@ -658,7 +658,7 @@ bool MatNd_gnuplot2(const char* title, const MatNd* self)
   RLOG(0, "c");
 
   FILE* outDat = fopen(gpFileName, "w+");
-  RCHECK_MSG(outDat, "Couldn't open file \"%s\"", gpFileName ? gpFileName : "NULL");
+  RCHECK_MSG(outDat, "Couldn't open file \"%s\"", gpFileName);
   fprintf(outDat, "%s", gpCmd);
   fflush(outDat);
   fclose(outDat);
@@ -705,7 +705,7 @@ bool MatNd_gnuplot(const char* title, const MatNd* self)
 
   if (outDat == NULL)
   {
-    RLOG(4, "Couldn't open file \"%s\"", gpFileName ? gpFileName : "NULL");
+    RLOG(4, "Couldn't open file \"%s\"", gpFileName);
     return false;
   }
 
@@ -726,8 +726,7 @@ bool MatNd_gnuplot(const char* title, const MatNd* self)
     if (len >= 512)
     {
       RLOG(4, "Line buffer overflow when writing file \"%s\". Thecommand is %d"
-           "characters long, but should be less than 512",
-           gpFileName ? gpFileName : "NULL", len);
+           "characters long, but should be less than 512", gpFileName, len);
       fclose(outDat);
       return false;
     }
