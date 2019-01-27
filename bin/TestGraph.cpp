@@ -55,7 +55,10 @@
 #include <vector>
 #include <string>
 #include <iostream>
+
+#if defined(USE_CPP_11)
 #include <unordered_map>
+#endif
 
 
 RCS_INSTALL_SEGFAULTHANDLER
@@ -149,6 +152,8 @@ int main(int argc, char** argv)
       fprintf(stderr, "\t\t4   Test joint limit costs with gnuplot\n");
       fprintf(stderr, "\t\t5   Test forward kinematics with velocities\n");
       fprintf(stderr, "\t\t6   Test all graphs in directory\n");
+      fprintf(stderr, "\t\t7   Test BVH parsing\n");
+      fprintf(stderr, "\t\t8   Test body lookup by name\n");
       fprintf(stderr, "\n\nResource path:\n");
       Rcs_printResourcePath();
       break;
@@ -782,23 +787,28 @@ int main(int argc, char** argv)
 
       RcsGraph* graph = RcsGraph_create(xmlFileName);
 
-      RMSGS("Looking up %u joints", graph->dof);
+      RMSGS("Looking up %u joints, averaging %d trials", graph->dof, nIter);
 
 
       std::vector<std::string> nameVec;
+#if defined(USE_CPP_11)
       std::unordered_map<std::string, RcsJoint*> jmap_unordered;
+#endif
       std::map<std::string, RcsJoint*> jmap;
 
       RCSGRAPH_TRAVERSE_JOINTS(graph)
       {
         nameVec.push_back(std::string(JNT->name));
+#if defined(USE_CPP_11)
         jmap_unordered[std::string(JNT->name)] = JNT;
+#endif
         jmap[std::string(JNT->name)] = JNT;
       }
 
       ////////////////////////////////////////////////////////////////
       // unordered_map
       ////////////////////////////////////////////////////////////////
+#if defined(USE_CPP_11)
       {
         int misses = 0;
         double dt = Timer_getTime();
@@ -815,10 +825,10 @@ int main(int argc, char** argv)
         }
 
         dt = Timer_getTime() - dt;
-        RMSGS("unordered_map: lookup took %.3f usec (%.3f), %d misses",
+        RMSGS("unordered_map: %.3f usec per body (%.3f whole graph), %d misses",
               1.0e6*dt / (nameVec.size()*nIter), 1.0e6*dt / (nIter), misses);
       }
-
+#endif
       ////////////////////////////////////////////////////////////////
       // map
       ////////////////////////////////////////////////////////////////
@@ -838,7 +848,7 @@ int main(int argc, char** argv)
         }
 
         dt = Timer_getTime() - dt;
-        RMSGS("map: lookup took %.3f usec (%.3f), %d misses",
+        RMSGS("map: %.3f usec per body (%.3f whole graph), %d misses", 
               1.0e6*dt / (nameVec.size()*nIter), 1.0e6*dt / (nIter), misses);
       }
 
@@ -861,7 +871,7 @@ int main(int argc, char** argv)
         }
 
         dt = Timer_getTime() - dt;
-        RMSGS("linear: lookup took %.3f usec (%.3f), %d misses",
+        RMSGS("linear: %.3f usec per body (%.3f whole graph), %d misses", 
               1.0e6*dt / (nameVec.size()*nIter), 1.0e6*dt / (nIter), misses);
       }
 
