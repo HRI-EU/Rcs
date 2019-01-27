@@ -1196,8 +1196,8 @@ static double RcsShape_closestCylinderToPoint(const RcsShape* cyl,
 }
 
 /*******************************************************************************
-*
-******************************************************************************/
+ *
+ ******************************************************************************/
 static double RcsShape_closestPointToBox(const RcsShape* point,
                                          const RcsShape* box,
                                          const HTr* A_point,
@@ -1215,8 +1215,8 @@ static double RcsShape_closestPointToBox(const RcsShape* point,
 }
 
 /*******************************************************************************
-*
-******************************************************************************/
+ *
+ ******************************************************************************/
 static double RcsShape_closestBoxToPoint(const RcsShape* box,
                                          const RcsShape* point,
                                          const HTr* A_box,
@@ -1230,6 +1230,48 @@ static double RcsShape_closestBoxToPoint(const RcsShape* box,
 
   // Revert the normal, because we are calling the reverse method
   Vec3d_constMulSelf(I_n, -1.0);
+
+  return dist;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static double RcsShape_closestSphereToBox(const RcsShape* sphere,
+                                         const RcsShape* box,
+                                         const HTr* A_sphere,
+                                         const HTr* A_box,
+                                         double I_cpSph[3],
+                                         double I_cpBox[3],
+                                         double I_nSphBox[3])
+{
+  double dist = Math_distPointBox(A_sphere->org, A_box, box->extents,
+                                  I_cpBox, I_nSphBox);
+  Vec3d_constMulSelf(I_nSphBox, -1.0);
+  Vec3d_copy(I_cpSph, A_sphere->org);
+
+  // Point on sphere surface: cp_sphere = cp_point + radius_sphere*n
+  Vec3d_constMulAndAddSelf(I_cpSph, I_nSphBox, sphere->extents[0]);
+
+  return dist - sphere->extents[0];
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static double RcsShape_closestBoxToSphere(const RcsShape* box,
+                                         const RcsShape* sphere,
+                                         const HTr* A_box,
+                                         const HTr* A_sphere,
+                                         double I_cpBox[3],
+                                         double I_cpSph[3],
+                                         double I_nBoxSph[3])
+{
+  double dist = RcsShape_closestSphereToBox(sphere, box, A_sphere, A_box,
+                                           I_cpSph, I_cpBox, I_nBoxSph);
+
+  // Revert the normal, because we are calling the reverse method
+  Vec3d_constMulSelf(I_nBoxSph, -1.0);
 
   return dist;
 }
@@ -1303,7 +1345,7 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
     RcsShape_noDistance,                // RCSSHAPE_BOX
     RcsShape_noDistance,                // RCSSHAPE_CYLINDER
     RcsShape_noDistance,                // RCSSHAPE_REFFRAME
-    RcsShape_noDistance ,               // RCSSHAPE_SPHERE
+    RcsShape_closestBoxToSphere,        // RCSSHAPE_SPHERE
     RcsShape_noDistance,                // RCSSHAPE_CONE
     RcsShape_noDistance,                // RCSSHAPE_GPISF
     RcsShape_noDistance,                // RCSSHAPE_TORUS
@@ -1345,7 +1387,7 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
     RcsShape_closestSphereToSSL,        // RCSSHAPE_SSL
     RcsShape_noDistance,                // RCSSHAPE_SSR
     RcsShape_noDistance,                // RCSSHAPE_MESH
-    RcsShape_noDistance,                // RCSSHAPE_BOX
+    RcsShape_closestSphereToBox,        // RCSSHAPE_BOX
     RcsShape_noDistance,                // RCSSHAPE_CYLINDER
     RcsShape_noDistance,                // RCSSHAPE_REFFRAME
     RcsShape_closestSphereToSphere,     // RCSSHAPE_SPHERE
