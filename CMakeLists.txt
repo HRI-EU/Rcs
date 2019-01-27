@@ -8,7 +8,7 @@ IF (NOT CMAKE_BUILD_TYPE)
     SET(CMAKE_BUILD_TYPE "Release" CACHE STRING
        "Choose the type of build, options are: Debug Release." FORCE)
   ELSE()
-    SET(CMAKE_BUILD_TYPE "Debug" CACHE STRING 
+    SET(CMAKE_BUILD_TYPE "Release" CACHE STRING 
        "Choose the type of build, options are: Debug Release." FORCE)
   ENDIF()
 ENDIF (NOT CMAKE_BUILD_TYPE)
