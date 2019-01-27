@@ -1,0 +1,62 @@
+<Controller >
+
+  <Graph >
+
+    <Body name="Plate" >
+      <Joint name="DofX_Plate"   type="TransX" range="-1 0 1" />
+      <Joint name="DofY_Plate"   type="TransY" range="-1 0 1" />
+      <Joint name="DofZ_Plate"   type="TransZ" range="-1 0 1" />
+      <Joint name="DofThX_Plate" type="RotX"   range="-600 0 600" />
+      <Joint name="DofThY_Plate" type="RotY"   range="-600 0 600" />
+      <Joint name="DofThZ_Plate" type="RotZ"   range="-600 0 600" />
+      <Shape type="BOX" extents="1.25 2.5 0.04" transform="0 0 -0.02 0 0 0"
+	     color="PEWTER" graphics="true" physics="true" distance="true" />
+      <Shape type="FRAME" scale="1.0" />
+    </Body>
+
+    <Body name="Ball" >
+      <Joint name="DofX_Ball"   type="TransX" range="-10 0 10" />
+      <Joint name="DofY_Ball"   type="TransY" range="-10 -0.5 10" />
+      <Joint name="DofZ_Ball"   type="TransZ" range="-10 0.25 10" />
+      <Joint name="DofThX_Ball" type="RotX"   range="-600 0 600" />
+      <Joint name="DofThY_Ball" type="RotY"   range="-600 0 600" />
+      <Joint name="DofThZ_Ball" type="RotZ"   range="-600 0 600" />
+
+      <Shape type="SPHERE" radius="0.25" graphics="true" distance="true" textureFile="textures/fMRT_bavaria.png"/>
+      <Shape type="FRAME" scale="0.5" />
+    </Body>
+
+  <Body name="Box" mass="10" color="DARKRED_TRANS" >
+    <Joint name="DofX_Box"   type="TransX" range="-10 0 10" />
+    <Joint name="DofY_Box"   type="TransY" range="-10 0.5 10" />
+    <Joint name="DofZ_Box"   type="TransZ" range="-10 0.15 10" />
+    <Joint name="DofThX_Box" type="RotX"   range="-600 0 600" />
+    <Joint name="DofThY_Box" type="RotY"   range="-600 0 600" />
+    <Joint name="DofThZ_Box" type="RotZ"   range="-600 0 600" />
+
+    <Shape type="BOX" extents="1 0.6 0.26" graphics="true" physics="false" distance="false" />
+    <Shape type="SPHERE" radius="0.02" transform=" 0.5  0.3  0.13 0 0 0" graphics="true" distance="true" />
+    <Shape type="SPHERE" radius="0.02" transform=" 0.5  0.3 -0.13 0 0 0" graphics="true" distance="true" />
+    <Shape type="SPHERE" radius="0.02" transform=" 0.5 -0.3  0.13 0 0 0" graphics="true" distance="true" />
+    <Shape type="SPHERE" radius="0.02" transform=" 0.5 -0.3 -0.13 0 0 0" graphics="true" distance="true" />
+    <Shape type="SPHERE" radius="0.02" transform="-0.5  0.3  0.13 0 0 0" graphics="true" distance="true" />
+    <Shape type="SPHERE" radius="0.02" transform="-0.5  0.3 -0.13 0 0 0" graphics="true" distance="true" />
+    <Shape type="SPHERE" radius="0.02" transform="-0.5 -0.3  0.13 0 0 0" graphics="true" distance="true" />
+    <Shape type="SPHERE" radius="0.02" transform="-0.5 -0.3 -0.13 0 0 0" graphics="true" distance="true" />
+
+    <Shape type="FRAME" scale="0.25" />
+  </Body>
+
+  </Graph>
+
+
+  <Task name="Phi Ball" controlVariable="Joints" jnts="DofThX_Ball DofThY_Ball DofThZ_Ball" active="true" />
+  <Task name="Phi Box"  controlVariable="Joints" jnts="DofThX_Box DofThY_Box DofThZ_Box"    active="true" />
+
+  <Task name="Phi Plate" controlVariable="XYZABC" effector="Plate" active="true" />
+
+  <Task name="DistanceBall" controlVariable="Distance3D" effector="Ball" refBdy="Plate" active="true" />
+  <Task name="DistanceBoxZ" controlVariable="DistanceZ"  effector="Box"  refBdy="Plate" active="true" />
+  <Task name="PositionBoxXY" controlVariable="Joints" jnts="DofX_Box DofY_Box" active="true" />
+
+</Controller>
