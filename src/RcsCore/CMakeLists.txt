@@ -86,6 +86,8 @@ TaskStaticEffort.cpp
 TaskVelocity1D.cpp
 TaskVelocity3D.cpp
 TaskVelocityJoint.cpp
+TaskDistance1D.cpp
+TaskDistance3D.cpp
 ViaPointSequence.cpp
 ${RCS_THIRDPARTY_DIR}/Rcs_thirdPartyMath.c
 ${RCS_THIRDPARTY_DIR}/EulerAngles.c
