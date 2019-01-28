@@ -386,6 +386,7 @@ int main(int argc, char** argv)
       double dtSim = 0.0, dtStep = 0.04;
       char hudText[512] = "", comRef[64] = "";
       char dotFile[256] = "RcsGraph.dot";
+      char bgColor[64] = "LIGHT_GRAYISH_GREEN";
       strcpy(xmlFileName, "gScenario.xml");
       strcpy(directory, "config/xml/DexBot");
       getModel(directory, xmlFileName);
@@ -397,6 +398,8 @@ int main(int argc, char** argv)
                        "(default is \"%s\")", directory);
       argP.getArgument("-comRef", comRef, "Reference body for COM (default is "
                        "root)");
+      argP.getArgument("-bgColor", bgColor, "Background color (default is "
+                       "\"%s\"), bgColor");
       bool testCopy = argP.hasArgument("-copy", "Test graph copying");
       bool resizeable = argP.hasArgument("-resizeable", "Adjust visualization "
                                          "of shapes dynamically");
@@ -495,6 +498,7 @@ int main(int argc, char** argv)
       if (!valgrind)
       {
         viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
+        viewer->setBackgroundColor(bgColor);
         gn = new Rcs::GraphNode(graph, resizeable);
         gn->toggleReferenceFrames();
         viewer->add(gn);
@@ -916,6 +920,7 @@ int main(int argc, char** argv)
       char hudText[2056] = "";
       char physicsEngine[32] = "Bullet";
       char physicsCfg[128] = "config/physics/physics.xml";
+      char bgColor[64] = "LIGHT_GRAYISH_GREEN";
       strcpy(xmlFileName, "gScenario.xml");
       strcpy(directory, "config/xml/DexBot");
       bool pause = argP.hasArgument("-pause", "Hit key for each iteration");
@@ -938,6 +943,7 @@ int main(int argc, char** argv)
                                          "of shapes dynamically");
       bool syncHard = argP.hasArgument("-syncHard", "Try to sync with wall "
                                        "clock time as hard as possible");
+
       argP.getArgument("-physics_config", physicsCfg, "Configuration file name"
                        " for physics (default is %s)", physicsCfg);
       argP.getArgument("-physicsEngine", physicsEngine,
@@ -953,6 +959,8 @@ int main(int argc, char** argv)
                        "(default is \"%s\")", directory);
       argP.getArgument("-shootMass", &shootMass, "Mass of shooting ball"
                        "(default is \"%f\")", shootMass);
+      argP.getArgument("-bgColor", bgColor, "Background color (default is "
+                       "\"%s\"), bgColor");
       getModel(directory, xmlFileName);
 
       if (argP.hasArgument("-h"))
@@ -988,6 +996,7 @@ int main(int argc, char** argv)
 
       Rcs::PhysicsBase* sim = Rcs::PhysicsFactory::create(physicsEngine,
                                                           graph, physicsCfg);
+
       if (sim==NULL)
       {
         Rcs::PhysicsFactory::print();
@@ -1040,6 +1049,7 @@ int main(int argc, char** argv)
       if (valgrind==false)
       {
         viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
+        viewer->setBackgroundColor(bgColor);
         simNode = new Rcs::PhysicsNode(sim, resizeable);
         viewer->add(simNode);
         hud = new Rcs::HUD();
@@ -1086,7 +1096,6 @@ int main(int argc, char** argv)
 
       while (runLoop)
       {
-
         if (pause==true)
         {
           RPAUSE_MSG("Hit enter to continue iteration %u", loopCount);
@@ -1182,7 +1191,7 @@ int main(int argc, char** argv)
             }
             else
             {
-          jw->reset(graph->q);
+              jw->reset(graph->q);
             }
           }
           pthread_mutex_unlock(&graphLock);
@@ -1203,7 +1212,7 @@ int main(int argc, char** argv)
           MatNd_copy(q_des_f, graph->q);
           if (jw != NULL)
           {
-          jw->reset(graph->q);
+            jw->reset(graph->q);
           }
           pthread_mutex_unlock(&graphLock);
         }
@@ -1362,6 +1371,7 @@ int main(int argc, char** argv)
             {
               sim->disableCollisions();
             }
+
             if (disableJointLimits == true)
             {
               sim->disableJointLimits();
@@ -1405,6 +1415,7 @@ int main(int argc, char** argv)
           {
             RcsSensor_fprint(stdout, SENSOR);
           }
+
           sim->print();
         }   // if (kc && ...)
 
@@ -1452,7 +1463,6 @@ int main(int argc, char** argv)
           q_des_f->ele[i] = (1.0-tmc)*q_des_f->ele[i] + tmc*q_des->ele[i];
         }
 
-
         sim->setControlInput(q_des_f, NULL, T_gravity);
 
         //////////////////////////////////////////////////////////////
@@ -1492,14 +1502,13 @@ int main(int argc, char** argv)
           std::cout << hudText;
         }
 
-
         if (syncHard)
         {
           Timer_wait(timer);
         }
         else
         {
-        Timer_waitNoCatchUp(timer);
+          Timer_waitNoCatchUp(timer);
         }
 
         loopCount++;
@@ -1508,6 +1517,7 @@ int main(int argc, char** argv)
         {
           runLoop = false;
         }
+
       }
 
       Timer_destroy(timer);
@@ -1558,7 +1568,7 @@ int main(int argc, char** argv)
                        "right inverse (default is %d)", algo);
       argP.getArgument("-alpha", &alpha,
                        "Null space scaling factor (default is %f)", alpha);
-      argP.getArgument("-lambda", &lambda, "Regularization (default is %f)", 
+      argP.getArgument("-lambda", &lambda, "Regularization (default is %f)",
                        lambda);
       argP.getArgument("-f", xmlFileName);
       argP.getArgument("-dir", directory);
@@ -2058,7 +2068,7 @@ int main(int argc, char** argv)
                        "right inverse (default is %d)", algo);
       argP.getArgument("-alpha", &alpha,
                        "Null space scaling factor (default is %f)", alpha);
-      argP.getArgument("-lambda", &lambda, "Regularization (default is %f)", 
+      argP.getArgument("-lambda", &lambda, "Regularization (default is %f)",
                        lambda);
       argP.getArgument("-f", xmlFileName);
       argP.getArgument("-dir", directory);
@@ -2145,10 +2155,10 @@ int main(int argc, char** argv)
         if (loopCount%nIter==0)
         {
           RCSGRAPH_TRAVERSE_JOINTS(controller.getGraph())
-            {
+          {
             controller.getGraph()->q->ele[JNT->jointIndex] =
               Math_getRandomNumber(JNT->q_min, JNT->q_max);
-            }
+          }
         }
 
         RcsGraph_setState(controller.getGraph(), NULL, NULL);
@@ -2610,12 +2620,12 @@ int main(int argc, char** argv)
       MatNdWidget::create(mat, NULL, mtx);
 
       while (runLoop==true)
-        {
-          pthread_mutex_lock(&graphLock);
-          MatNd_printCommentDigits("mat", mat, 4);
-          pthread_mutex_unlock(&graphLock);
-          Timer_usleep(1000);
-        }
+      {
+        pthread_mutex_lock(&graphLock);
+        MatNd_printCommentDigits("mat", mat, 4);
+        pthread_mutex_unlock(&graphLock);
+        Timer_usleep(1000);
+      }
 
       MatNd_destroy(mat);
       break;
