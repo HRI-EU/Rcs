@@ -52,6 +52,7 @@
 Rcs::ControllerBase::ControllerBase(const std::string& xmlDescription,
                                     bool xmlParsingFinished) :
   graph(NULL),
+  ownsGraph(true),
   xmlRootNode(NULL),
   xmlDoc(NULL),
   cMdl(NULL),
@@ -134,9 +135,6 @@ void Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
   // Descend one level in XML parsing to find Task et al.
   xmlNodePtr node = xmlNodeController->children;
 
-  // count the task dimensions along the way
-  int taskDim = 0;
-
   while (node)
   {
     if (isXMLNodeName(node, "Task"))
@@ -145,15 +143,7 @@ void Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
       if (getXMLNodePropertyStringN(node, "controlVariable", txt, 256))
       {
         std::string cVar(txt);
-        Task* tsk = TaskFactory::instance()->createTask(cVar, node, graph);
-
-        if (tsk != NULL)
-        {
-          // add task and indices to lists and increase counters
-          this->tasks.push_back(tsk);
-          this->taskArrayIdx.push_back(taskDim);
-          taskDim += tsk->getDim();
-        }
+        add(TaskFactory::instance()->createTask(cVar, node, graph));
       }
       else
       {
@@ -187,6 +177,7 @@ void Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
  ******************************************************************************/
 Rcs::ControllerBase::ControllerBase(RcsGraph* graph):
   graph(graph),
+  ownsGraph(false),
   xmlRootNode(NULL),
   xmlDoc(NULL),
   cMdl(NULL),
@@ -203,6 +194,7 @@ Rcs::ControllerBase::ControllerBase(RcsGraph* graph):
  ******************************************************************************/
 Rcs::ControllerBase::ControllerBase(const ControllerBase& copyFromMe):
   graph(NULL),
+  ownsGraph(true),
   xmlRootNode(NULL),
   xmlDoc(NULL),
   cMdl(NULL),
@@ -253,6 +245,7 @@ Rcs::ControllerBase& Rcs::ControllerBase::operator= (const Rcs::ControllerBase& 
 
   // do the copy
   this->graph = RcsGraph_clone(copyFromMe.graph);
+  this->ownsGraph = true;
 
   // clone tasks (index lists are cloned above)
   for (std::vector<Task*>::const_iterator itr = copyFromMe.tasks.begin();
@@ -281,7 +274,10 @@ Rcs::ControllerBase::~ControllerBase()
     delete(this->tasks[i]);
   }
 
-  RcsGraph_destroy(this->graph);
+  if (this->ownsGraph == true)
+  {
+    RcsGraph_destroy(this->graph);
+  }
 }
 
 /*******************************************************************************
@@ -313,23 +309,23 @@ const std::string& Rcs::ControllerBase::getTaskName(size_t id) const
  * Returns the full dimension of a task with the given ID.
  ******************************************************************************/
 size_t Rcs::ControllerBase::getTaskDim() const
-  {
-    size_t dim = 0;
+{
+  size_t dim = 0;
 
-    for (size_t id = 0; id < this->tasks.size(); id++)
-    {
-      dim += tasks[id]->getDim();
-    }
-    return dim;
+  for (size_t id = 0; id < this->tasks.size(); id++)
+  {
+    dim += tasks[id]->getDim();
   }
+  return dim;
+}
 
 /*******************************************************************************
 * Returns the full dimension of a task with the given ID.
 ******************************************************************************/
 size_t Rcs::ControllerBase::getTaskDim(size_t id) const
-  {
-    RCHECK(id < this->tasks.size());
-    return this->tasks[id]->getDim();
+{
+  RCHECK(id < this->tasks.size());
+  return this->tasks[id]->getDim();
 }
 
 /*******************************************************************************
@@ -1256,7 +1252,7 @@ double Rcs::ControllerBase::computeJointlimitBorderCost(double borderRatio) cons
  * See header.
  ******************************************************************************/
 void Rcs::ControllerBase::computeJointlimitBorderGradient(MatNd* grad,
-                                                    double borderRatio) const
+                                                          double borderRatio) const
 {
   RcsGraph_jointLimitBorderGradient(this->graph, grad, borderRatio, RcsStateIK);
 }
@@ -1819,6 +1815,12 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
  ******************************************************************************/
 void Rcs::ControllerBase::add(Task* other)
 {
+  if (other == NULL)
+  {
+    RLOG(4, "Ignoring NULL task");
+    return;
+  }
+
   if (this->taskArrayIdx.empty())   // back() is undefined if vector is empty
   {
     this->taskArrayIdx.push_back(0);

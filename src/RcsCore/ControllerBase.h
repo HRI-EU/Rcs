@@ -648,6 +648,7 @@ public:
 protected:
 
   RcsGraph* graph;                   //!< Underlying graph
+  bool ownsGraph;                    //!< True if controller needs to destroy it
   std::vector<Task*> tasks;          //!< List of tasksof the controller
 
 private:
