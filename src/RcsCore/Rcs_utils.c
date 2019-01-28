@@ -237,7 +237,7 @@ static void morphNumericString(char* s, int n)
   }
 }
 
-char* String_fromDoublexxx(char* str, double value, unsigned int maxDigits)
+char* String_fromDouble_old(char* str, double value, unsigned int maxDigits)
 {
   nDecimals(str, value, maxDigits);
   morphNumericString(str, maxDigits);
@@ -252,7 +252,11 @@ char* String_fromDoublexxx(char* str, double value, unsigned int maxDigits)
 
 char* String_fromDouble(char* str, double value, unsigned int maxDigits)
 {
-  int decpt, sign; 
+#if defined (_MSC_VER)
+  return String_fromDouble_old(str, value, maxDigits);
+#endif
+
+  int decpt, sign;
 
 #if defined (_MSC_VER)
   _fcvt_s(str, 64, value, maxDigits, &decpt, &sign);
@@ -261,25 +265,25 @@ char* String_fromDouble(char* str, double value, unsigned int maxDigits)
 #endif
 
   if (decpt <= 0)
+  {
+    char a[32];
+    strcpy(a, "0.");
+    for (int i=0; i>decpt; --i)
     {
-      char a[32];
-      strcpy(a, "0.");
-      for (int i=0;i>decpt;--i)
-        {
-          strcat(a, "0");
-        }
-      String_prepend(str, a);
+      strcat(a, "0");
     }
+    String_prepend(str, a);
+  }
   else
-    {
-      memmove(&str[decpt+1], &str[decpt], maxDigits);
-      str[decpt] = '.';
-    }
+  {
+    memmove(&str[decpt+1], &str[decpt], maxDigits);
+    str[decpt] = '.';
+  }
 
   if (sign != 0)
-    {
-      String_prepend(str, "-");
-    }
+  {
+    String_prepend(str, "-");
+  }
 
   morphNumericString(str, maxDigits);
 
