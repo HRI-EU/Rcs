@@ -271,6 +271,7 @@ double Math_distPointBox(const double p[3],
                          const double extents[3],
                          double cpBox[3],
                          double nBox[3]);
+
 ///@}
 
 

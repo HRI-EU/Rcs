@@ -331,9 +331,9 @@ RcsGraph* RcsGraph_create(const char* configFile)
   if (fileExists==false)
   {
     REXEC(1)
-  {
-    RMSG("Resource path is:");
-    Rcs_printResourcePath();
+    {
+      RMSG("Resource path is:");
+      Rcs_printResourcePath();
       RMSG("RcsGraph configuration file \"%s\" not found in "
            "ressource path - exiting", configFile ? configFile : "NULL");
     }
@@ -354,7 +354,7 @@ RcsGraph* RcsGraph_create(const char* configFile)
   {
     if (doc != NULL)
     {
-    xmlFreeDoc(doc);
+      xmlFreeDoc(doc);
     }
 
     RLOG(1, "Failed to parse xml file \"%s\"", filename);
@@ -365,7 +365,7 @@ RcsGraph* RcsGraph_create(const char* configFile)
 
   // If the top-level xml tag is <Graph>, we directly parse from there.
   if (!xmlStrcmp(node->name, (const xmlChar*) "Graph"))
-    {
+  {
     RcsGraph* self = RcsGraph_createFromXmlNode(node);
 
     if (self != NULL)
@@ -392,10 +392,11 @@ RcsGraph* RcsGraph_create(const char* configFile)
     RLOG(5, "Found child node \"Graph\" in children");
     RcsGraph* self = RcsGraph_createFromXmlNode(childNode);
 
-  if (self != NULL)
-  {
-    String_copyOrRecreate(&self->xmlFile, filename);
-  }
+    if (self != NULL)
+    {
+      String_copyOrRecreate(&self->xmlFile, filename);
+    }
+
     xmlFreeDoc(doc);
     return self;
   }
@@ -1987,10 +1988,10 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src)
 
     if (gSrc != NULL)
     {
-    dst->gBody[i].A_BI      = HTr_create();
-    dst->gBody[i].A_BP      = HTr_create();
-    dst->gBody[i].Inertia   = HTr_create();
-    HTr_setZero(dst->gBody[i].Inertia);
+      dst->gBody[i].A_BI      = HTr_create();
+      dst->gBody[i].A_BP      = HTr_create();
+      dst->gBody[i].Inertia   = HTr_create();
+      HTr_setZero(dst->gBody[i].Inertia);
     }
 
     sprintf(dst->gBody[i].name, "GenericBody%d", i);
@@ -2658,7 +2659,8 @@ static void RcsGraph_recomputeJointIndices(RcsGraph* self, MatNd* stateVec[],
 
     JNT->jacobiIndex = (JNT->constrained == false) ? njCount : -1;
     njCount++;
-    }
+  }
+
   self->q->m = nqCount;
   self->q_dot->m = nqCount;
   self->dof = nqCount;
@@ -2668,12 +2670,14 @@ static void RcsGraph_recomputeJointIndices(RcsGraph* self, MatNd* stateVec[],
   MatNd_destroy(qd_org);
 
   for (unsigned int i = 0; i < nVec; ++i)
-    {
+  {
     stateVec[i]->m = nqCount;
     MatNd_destroy(stateVecCp[i]);
-    }
-  RFREE(stateVecCp);
   }
+
+  RFREE(stateVecCp);
+}
+
 /*******************************************************************************
 * See header.
 ******************************************************************************/
@@ -2687,6 +2691,7 @@ void RcsGraph_makeJointsConsistent(RcsGraph* self)
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {
     MatNd_set(self->q, JNT->jointIndex, 0, JNT->q0);
+
     if (JNT->coupledJointName != NULL)
     {
       RcsJoint* master = RcsGraph_getJointByName(self, JNT->coupledJointName);
@@ -2732,7 +2737,6 @@ void RcsGraph_makeJointsConsistent(RcsGraph* self)
       double master_q = MatNd_get(self->q, master->jointIndex, 0);
       MatNd_set(self->q, JNT->jointIndex, 0,
                 RcsJoint_computeSlaveJointAngle(JNT, master_q));
-
 
     }
   }

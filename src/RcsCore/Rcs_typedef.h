@@ -92,7 +92,6 @@ struct _RcsJoint
   RcsJoint* prev;      ///< Previous joint
   RcsJoint* next;      ///< Next joint
   RcsJoint* coupledTo; ///< Joint to which this one is coupled
-
 };
 
 

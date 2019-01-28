@@ -127,6 +127,7 @@ public:
 
   virtual void simulate(double dt, RcsGraph* graph, MatNd* q_ddot = NULL,
                         MatNd* T=NULL, bool control=true);
+
   /*! \brief Resets the simulation to the current state, so that all
    *         momentum is zero.
    */
@@ -461,6 +462,7 @@ public:
   /*! \brief Returns true if tactile sensors are computed, false otherwise.
    */
   virtual bool getEnablePPS() const;
+
   /*! \brief Adds a body to the simulation. The function returns true on
    *         success, false otherwise.
    */

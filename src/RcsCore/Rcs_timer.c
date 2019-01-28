@@ -257,7 +257,7 @@ bool Timer_wait(Timer* self)
     dt_wait = self->t_des - self->t;
     if (dt_wait>0.0)
     {
-    Timer_usleep((unsigned long)(dt_wait * 1.0e6));
+      Timer_usleep((unsigned long)(dt_wait * 1.0e6));
     }
   }
   while (self->t < self->t_des);
@@ -279,7 +279,6 @@ bool Timer_wait(Timer* self)
 
 void Timer_waitNoCatchUp(Timer* self)
 {
-
   if (self == NULL)
   {
     RLOG(1, "Timer is NULL - not waiting");

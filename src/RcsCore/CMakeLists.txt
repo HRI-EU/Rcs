@@ -59,6 +59,8 @@ TaskCylindrical1D.cpp
 TaskCylindrical3D.cpp
 TaskCylindricalForce1D.cpp
 TaskDifferentialConstraint1D.cpp
+TaskDistance1D.cpp
+TaskDistance3D.cpp
 TaskEuler1D.cpp
 TaskEuler3D.cpp
 TaskFactory.cpp
@@ -86,8 +88,6 @@ TaskStaticEffort.cpp
 TaskVelocity1D.cpp
 TaskVelocity3D.cpp
 TaskVelocityJoint.cpp
-TaskDistance1D.cpp
-TaskDistance3D.cpp
 ViaPointSequence.cpp
 ${RCS_THIRDPARTY_DIR}/Rcs_thirdPartyMath.c
 ${RCS_THIRDPARTY_DIR}/EulerAngles.c

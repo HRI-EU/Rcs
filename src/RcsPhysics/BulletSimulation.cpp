@@ -1249,6 +1249,7 @@ void Rcs::BulletSimulation::applyControl(double dt)
         const RcsBody* rb_ = it->first;
         const RcsBody* rb = RcsGraph_getBodyByName(internalDesiredGraph,
                                                    rb_->name);
+
         if (rb)
         {
           btBdy->setBodyTransform(rb->A_BI, dt);

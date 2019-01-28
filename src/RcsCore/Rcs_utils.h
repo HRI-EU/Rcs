@@ -181,7 +181,7 @@ double String_toDouble_l(const char* str);
  *  \param[out] x    Array of doubles that the values are written into. It must
  *                   provide memory for at least n elements.
  *  \param[in] n     Number of expected values inside string.
- *  \return True for success, false otherwise. In the case of false, the 
+ *  \return True for success, false otherwise. In the case of false, the
  *          argument array x is unchanged. Failure cases are:
  *          - str is NULL or of zero length
  *          - x is NULL
@@ -214,6 +214,7 @@ char* String_createUnique();
  *          - size is so large that the memory can't be created on the heap
  */
 char* String_createRandom(unsigned int size);
+
 ///@}
 
 
