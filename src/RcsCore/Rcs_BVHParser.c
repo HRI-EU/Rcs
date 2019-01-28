@@ -504,18 +504,23 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
 
       if (JNT->type == RCSJOINT_TRANS_X)
       {
+        MatNd_set(self->q, JNT->jointIndex, 0, BODY->jnt->A_JP->org[0]);
         BODY->jnt->A_JP->org[0] = 0.0;
       }
       else if (JNT->type == RCSJOINT_TRANS_Y)
       {
+        MatNd_set(self->q, JNT->jointIndex, 0, BODY->jnt->A_JP->org[1]);
         BODY->jnt->A_JP->org[1] = 0.0;
       }
       else if (JNT->type == RCSJOINT_TRANS_Z)
       {
+        MatNd_set(self->q, JNT->jointIndex, 0, BODY->jnt->A_JP->org[2]);
         BODY->jnt->A_JP->org[2] = 0.0;
       }
     }
   }
+
+  RcsGraph_setState(self, NULL, NULL);
 
   return self;
 }
