@@ -215,10 +215,13 @@ BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
   _graphicsNode->setAllChildrenOn();
   _physicsNode->setAllChildrenOff();
 
-  addChild(_collisionNode.get());
-  addChild(_graphicsNode.get());
-  addChild(_physicsNode.get());
-  addChild(_refNode.get());
+  _nodeSwitch = new osg::Switch();
+  addChild(_nodeSwitch.get());
+
+  _nodeSwitch->addChild(_collisionNode.get());
+  _nodeSwitch->addChild(_graphicsNode.get());
+  _nodeSwitch->addChild(_physicsNode.get());
+  _nodeSwitch->addChild(_refNode.get());
 
 
   // Assign the initial transformation to the node
@@ -1424,12 +1427,35 @@ void BodyNode::setTransformPtr(const HTr* A_BI_)
  ******************************************************************************/
 void BodyNode::hide()
 {
-  _refNode->setAllChildrenOff();
-  _collisionNode->setAllChildrenOff();
-  _graphicsNode->setAllChildrenOff();
-  _physicsNode->setAllChildrenOff();
+  //_refNode->setAllChildrenOff();
+  //_collisionNode->setAllChildrenOff();
+  //_graphicsNode->setAllChildrenOff();
+  //_physicsNode->setAllChildrenOff();
+  _nodeSwitch->setAllChildrenOff();
 }
 
+/*******************************************************************************
+* See header.
+******************************************************************************/
+void BodyNode::show()
+{
+  _nodeSwitch->setAllChildrenOn();
+}
+
+/*******************************************************************************
+* See header.
+******************************************************************************/
+void BodyNode::setVisibility(bool visible)
+{
+  if (visible)
+  {
+    show();
+  }
+  else
+  {
+    hide();
+  }
+}
 /*******************************************************************************
  * See header.
  ******************************************************************************/

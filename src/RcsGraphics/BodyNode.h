@@ -87,6 +87,8 @@ public:
   void setTransformPtr(const HTr* A_BI);
   void updateDynamicShapes();
   void hide();
+  void show();
+  void setVisibility(bool visible);
   void setGhostMode(bool enabled, const std::string& matname="");
 
 protected:
@@ -103,6 +105,7 @@ protected:
   osg::ref_ptr<osg::Switch> _graphicsNode;
   osg::ref_ptr<osg::Switch> _physicsNode;
   osg::ref_ptr<osg::Switch> _refNode;
+  osg::ref_ptr<osg::Switch> _nodeSwitch;
   std::vector<osg::ref_ptr<osg::Geode> > _dynamicShapes;
   osg::ref_ptr<osg::Switch> _debugNode;
   osg::ref_ptr<osgText::Text> _debugText;
