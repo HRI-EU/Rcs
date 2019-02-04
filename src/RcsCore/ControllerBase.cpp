@@ -2153,5 +2153,21 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
   MatNd_destroy(ft_sensor);
   MatNd_destroy(pinvJ_sensor);
   MatNd_destroy(J_task);
+}
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::ControllerBase::printX(const MatNd* x, const MatNd* a_des) const
+{
+  for (size_t i = 0; i < getNumberOfTasks(); i++)
+  {
+    size_t row = this->taskArrayIdx[i];
+
+    for (size_t j = 0; j < getTaskDim(i); j++)
+    {
+      printf("Task \"%s\"[%d]: %f\n", getTaskName(i).c_str(), (int) j,
+             MatNd_get(x, row+j, 0));
+    }
+  }
 }

@@ -645,6 +645,9 @@ public:
 
   virtual void add(Task* other);
 
+  virtual void printX(const MatNd* x, const MatNd* a_des = NULL) const;
+
+
 protected:
 
   RcsGraph* graph;                   //!< Underlying graph
