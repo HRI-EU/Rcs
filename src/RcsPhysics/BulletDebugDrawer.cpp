@@ -125,7 +125,9 @@ void Rcs::BulletDebugDrawer::clear()
 }
 
 /*******************************************************************************
- *
+ * This must happen outside the frame() call of the viewer, otherwise we'll
+ * get into trouble with parallel access to the vertex data. From the simulator
+ * side, the function is called within the simulate mutex already.
  ******************************************************************************/
 void Rcs::BulletDebugDrawer::apply()
 {
@@ -134,4 +136,3 @@ void Rcs::BulletDebugDrawer::apply()
   geometry->setVertexArray(pointsArray.get());
   geometry->setPrimitiveSet(0, ps);
 }
-

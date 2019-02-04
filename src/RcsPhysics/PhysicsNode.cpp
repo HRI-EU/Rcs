@@ -222,6 +222,7 @@ bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
 
         if (dDraw != NULL)   // Disable the debug drawer
         {
+          RLOG(0, "Disabling debug drawer");
           dDraw->hide();
           s->setDebugDrawer(NULL);
         }
@@ -237,6 +238,7 @@ bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
 
           if (nd_i != NULL)
           {
+            RLOG(0, "Enabling debug drawer");
             nd_i->show();
             s->setDebugDrawer(nd_i);
           }

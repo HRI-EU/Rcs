@@ -18,6 +18,7 @@ IF(USE_BULLET)
     BulletSimulation.cpp)
   IF(NOT HEADLESS_BUILD)
     LIST(APPEND RCS_PHYSICS_SRCS
+	     BulletDebugNode.cpp
       BulletDebugDrawer.cpp)
   ENDIF(NOT HEADLESS_BUILD)
 ENDIF(USE_BULLET)

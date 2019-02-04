@@ -34,63 +34,36 @@
 
 *******************************************************************************/
 
-#ifndef RCS_BULLETDEBUGDRAWER_H
-#define RCS_BULLETDEBUGDRAWER_H
+#ifndef RCS_BULLETDEBUGNODE_H
+#define RCS_BULLETDEBUGNODE_H
 
-#include <VertexArrayNode.h>
+#include <NodeBase.h>
+#include <PhysicsBase.h>
 
-#include <LinearMath/btIDebugDraw.h>
-
-
+#include <pthread.h>
 
 namespace Rcs
 {
 
-class BulletDebugDrawer : public btIDebugDraw, public VertexArrayNode
+class BulletDebugNode : public NodeBase
 {
 public:
 
-  BulletDebugDrawer();
-  virtual ~BulletDebugDrawer();
-
-  virtual void clear();
-  virtual void apply();
-
-  /**
-   * @name VirtualInterface
-   *
-   * Virtual interface of the btIDebugDraw class, must be implemented here
-   */
-
-  ///@{
-
-  virtual void drawLine(const btVector3& from,
-                        const btVector3& to,
-                        const btVector3& color);
-
-  virtual void drawContactPoint(const btVector3& PointOnB,
-                                const btVector3& normalOnB,
-                                btScalar distance,
-                                int lifeTime,
-                                const btVector3& color);
-
-  virtual void reportErrorWarning(const char* warningString);
-
-  virtual void draw3dText(const btVector3& location,
-                          const char* textString);
-
-  virtual void setDebugMode(int debugMode);
-
-  virtual int getDebugMode() const;
-
-  ///@}
-
+  BulletDebugNode(PhysicsBase* sim, pthread_mutex_t* viewerLock);
+  virtual ~BulletDebugNode();
 
 private:
 
-  int debugMode;
+  virtual bool eventCallback(const osgGA::GUIEventAdapter& ea,
+                             osgGA::GUIActionAdapter& aa);
+
+  void lockViewer();
+  void unlockViewer();
+
+  PhysicsBase* sim;
+  pthread_mutex_t* viewerLock;
 };
 
 }   // namespace Rcs
 
-#endif   // RCS_BULLETDEBUGDRAWER_H
+#endif   // RCS_BULLETDEBUGNODE_H
