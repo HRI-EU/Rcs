@@ -834,12 +834,15 @@ int main(int argc, char** argv)
     // ==============================================================
     case 3:
     {
+      int loopCount = 0, nIter = 1000;
       strcpy(xmlFileName, "LBR.xml");
       strcpy(directory, "config/xml/DexBot");
       argP.getArgument("-f", xmlFileName, "Configuration file name (default "
                        "is \"%s\")", xmlFileName);
       argP.getArgument("-dir", directory, "Configuration file directory "
                        "(default is \"%s\")", directory);
+      argP.getArgument("-iter", &nIter, "Number of test iterations "
+                       "(default is \"%d\")", nIter);
 
       if (argP.hasArgument("-h"))
       {
@@ -887,6 +890,13 @@ int main(int argc, char** argv)
 
         MatNd_copy(q_test, graph->q);
         Rcs_gradientTestGraph(graph, q_test, true);
+
+        if (loopCount > nIter)
+        {
+          runLoop = false;
+        }
+
+        loopCount++;
       }
 
       RcsGraph_destroy(graph);
@@ -943,7 +953,6 @@ int main(int argc, char** argv)
                                          "of shapes dynamically");
       bool syncHard = argP.hasArgument("-syncHard", "Try to sync with wall "
                                        "clock time as hard as possible");
-
       argP.getArgument("-physics_config", physicsCfg, "Configuration file name"
                        " for physics (default is %s)", physicsCfg);
       argP.getArgument("-physicsEngine", physicsEngine,
@@ -960,7 +969,7 @@ int main(int argc, char** argv)
       argP.getArgument("-shootMass", &shootMass, "Mass of shooting ball"
                        "(default is \"%f\")", shootMass);
       argP.getArgument("-bgColor", bgColor, "Background color (default is "
-                       "\"%s\"), bgColor");
+                       "\"%s\")", bgColor);
       getModel(directory, xmlFileName);
 
       if (argP.hasArgument("-h"))
