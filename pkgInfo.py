@@ -16,11 +16,13 @@ name = "Rcs"
 
 category="Libraries"
 
-sqLevel          = "advanced"
+sqOptOutRules    = [ 'GEN04', 'C12', 'PY05', 'DOC04' ]
 
-sqOptOutRules    = ["GEN10","C04","DOC04"]
-
-sqComments       = {"GEN10":"Software will be hosted in a public Git repository","C04":"Not applicable for C++","DOC04":"Should not be public outside institute"}
+sqComments       = { 'C01': 'exits stop system / robot before getting into dangerous situations.',
+                     'C10': 'Some of them are false positives, unclear how to eliminate the remaining ones',
+                     'DOC04': 'Should not be public outside institute',
+                     'GEN04': 'Software partially licensed under BSD licenses',
+                     'PY05': 'No python code contained' }
 
 
 # EOF
