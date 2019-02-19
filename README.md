@@ -28,7 +28,7 @@ Rcs is a set of C and C++ libraries for robot control and simulation. It is writ
 
 ## Getting Started
 
-Rcs can be compiled with the cmake build system and has mainly been developed on Ubuntu 14.04. It does also compile under Ubuntu 16.04 (however Vortex Essentials cannot be enabled there). To compile it, just type:
+Rcs can be compiled with the cmake build system and has mainly been developed on Ubuntu 14.04 and GCC 4.8. To compile it, just type:
 
     cd <build-directory>
     cmake <source-directory>
@@ -37,6 +37,8 @@ Rcs can be compiled with the cmake build system and has mainly been developed on
 To build the doxygen documentation, just type:
 
     make doc
+
+Compilation has also been tested on Ubuntu 16.04 with GCC 5. However, Vortex Essentials is only available as pre-compiled binaries using GCC 4.8, so it cannot be used with newer GCC versions. If you install GCC 4.8 on a newer system to work around this issue, you also must  take care to use matching version of OpenSceneGraph, since the one installed via the package manager will not be compatible with GCC 4.8.
 
 It is also possible to compile it on Microsoft Visual Studio, however with some additional efforts. The libxml2 and pthreads library as well as the below mentioned dependencies need to be installed. Further, a cmake version higher than 3.4 is required. They support automatic symbol generation for windows compilation. The formerly mandatory export declaratives are not needed (except for global variables). Here is how to call it:
 
