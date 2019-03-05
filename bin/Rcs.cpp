@@ -382,6 +382,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("W", "Merge bodies");
       Rcs::KeyCatcherBase::registerKey("x", "Rewind bvh file");
       Rcs::KeyCatcherBase::registerKey("e", "Remove body under mouse");
+      Rcs::KeyCatcherBase::registerKey("T", "Load trajectory file");
 
       double dtSim = 0.0, dtStep = 0.04;
       char hudText[512] = "", comRef[64] = "";
@@ -391,6 +392,8 @@ int main(int argc, char** argv)
       strcpy(directory, "config/xml/DexBot");
       getModel(directory, xmlFileName);
 
+      argP.getArgument("-dt", &dtStep, "Animation time step (default is %f)",
+                       dtStep);
       argP.getArgument("-dotFile", dotFile, "Dot file name");
       argP.getArgument("-f", xmlFileName, "Configuration file name (default"
                        " is \"%s\")", xmlFileName);
@@ -399,7 +402,7 @@ int main(int argc, char** argv)
       argP.getArgument("-comRef", comRef, "Reference body for COM (default is "
                        "root)");
       argP.getArgument("-bgColor", bgColor, "Background color (default is "
-                       "\"%s\"), bgColor");
+                       "\"%s\")", bgColor);
       bool testCopy = argP.hasArgument("-copy", "Test graph copying");
       bool resizeable = argP.hasArgument("-resizeable", "Adjust visualization "
                                          "of shapes dynamically");
@@ -788,6 +791,27 @@ int main(int argc, char** argv)
           {
             RMSG("Rewinding BVH file");
             bvhIdx = 0;
+          }
+          else if (kc->getAndResetKey('T'))
+          {
+            RMSG("Loading trajectory file");
+            std::string tFile;
+            printf("Enter file name: ");
+            std::cin >> tFile;
+
+            MatNd* newTraj = MatNd_createFromFile(tFile.c_str());
+
+            if ((newTraj!=NULL) && (newTraj->n==graph->dof))
+            {
+              MatNd_destroy(bvhTraj);
+              bvhTraj = newTraj;
+              bvhIdx = 0;
+            }
+            else
+            {
+              RLOG(1, "Failed to read trajectory file \"%s\"", tFile.c_str());
+            }
+
           }
         }   // KeyCatcher
 
