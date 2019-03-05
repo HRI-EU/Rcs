@@ -288,8 +288,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
 
   if (bdy->physicsSim == RCSBODY_PHYSICS_NONE)
   {
-    RLOG(5, "Body \"%s\": physicsSim is not set - skipping part creation",
-         bdy->name);
+    RLOG(5, "Body \"%s\": physicsSim is not set - skipping part", bdy->name);
     return NULL;
   }
 

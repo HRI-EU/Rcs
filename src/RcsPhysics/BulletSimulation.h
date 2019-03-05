@@ -89,6 +89,9 @@ public:
   virtual void setGravity(const double gravity[3]);
   virtual void reset();
   virtual const char* getClassName() const;
+  virtual void setForce(const RcsBody* body, const double F[3],
+                        const double p[3]);
+  virtual void applyImpulse(const RcsBody* body, const double F[3], const double p[3]);
   virtual void applyForce(const RcsBody* body, const double F[3],
                           const double r[3]);
   virtual void applyTransform(const RcsBody* body, const HTr* A_BI);
@@ -169,6 +172,8 @@ public:
   virtual bool removeBody(const char* name);
   virtual bool deactivateBody(const char* name);
   virtual bool activateBody(const char* name, const HTr* A_BI = NULL);
+
+  virtual bool check() const;
 
   btDynamicsWorld* dynamicsWorld;
 

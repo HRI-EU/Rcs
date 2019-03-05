@@ -143,6 +143,27 @@ public:
   virtual void setGravity(const double gravity[3]) = 0;
 
   /*! \brief Applies a force to the body. Both force and point are in world
+   *         coordinates. The force will only persist for the next simulation
+   *         timestep.
+   *
+   *  \param[in] body   RcsBody that the given force is applied to.
+   *  \param[in] F      Force vector in world coordinates.
+   *  \param[in] p      Force point in world coordinates. If NULL, force is applied to object's COM.
+   */
+    virtual void setForce(const RcsBody* body, const double F[3],
+                            const double p[3] = nullptr) = 0;
+
+  /*! \brief Applies a force impulse to the body. Both force and point are
+   *         in world coordinates.
+   *
+   *  \param[in] body   RcsBody that the given force is applied to.
+   *  \param[in] F      Force vector in world coordinates.
+   *  \param[in] r      Force point in world coordinates. If NULL, force is applied to object's COM.
+   */
+    virtual void applyImpulse(const RcsBody* body, const double F[3],
+                              const double r[3] = nullptr) = 0;
+
+  /*! \brief Applies a force to the body. Both force and point are in world
    *         coordinates. The force will not be resetted after stepping the
    *         simulation.
    *
@@ -476,6 +497,7 @@ public:
   virtual bool deactivateBody(const char* name);
   virtual bool activateBody(const char* name, const HTr* A_BI=NULL);
 
+  virtual bool check() const;
 
 protected:
 

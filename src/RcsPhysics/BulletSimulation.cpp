@@ -501,6 +501,8 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
   this->dragBody = NULL;
   Vec3d_setZero(this->dragForce);
   Vec3d_setZero(this->dragAnchor);
+
+  RCHECK(check());
 }
 
 /*******************************************************************************
@@ -726,6 +728,57 @@ const HTr* Rcs::BulletSimulation::getPhysicsTransformPtr(const RcsBody* body) co
   return bb->getBodyTransformPtr();
 }
 
+void Rcs::BulletSimulation::setForce(const RcsBody* body, const double F[3],
+                                     const double p[3])
+{
+  RCHECK_MSG(body != NULL, "Cannot set force on a NULL body!");
+  BulletRigidBody* rigidBody = getRigidBody(body);
+
+  if (rigidBody != NULL)
+  {
+    if (p != nullptr)
+    {
+      double relPos[3];
+      Vec3d_sub(relPos, p, body->A_BI->org);
+
+      rigidBody->applyForce(btVector3(F[0], F[1], F[2]), btVector3(relPos[0], relPos[1], relPos[2]));
+    }
+    else
+    {
+      rigidBody->applyCentralForce(btVector3(F[0], F[1], F[2]));
+    }
+  }
+  else
+  {
+    RLOG(1, "Could not find a physical body for RcsBody: \"%s\"", body->name);
+  }
+}
+
+void Rcs::BulletSimulation::applyImpulse(const RcsBody* body, const double F[3], const double p[3])
+{
+  RCHECK_MSG(body != NULL, "Cannot apply impulse to a NULL body!");
+  BulletRigidBody* rigidBody = getRigidBody(body);
+
+  if (rigidBody != NULL)
+  {
+    if (p != nullptr)
+    {
+      double relPos[3];
+      Vec3d_sub(relPos, p, body->A_BI->org);
+
+      rigidBody->applyImpulse(btVector3(F[0], F[1], F[2]), btVector3(relPos[0], relPos[1], relPos[2]));
+    }
+    else
+    {
+      rigidBody->applyCentralImpulse(btVector3(F[0], F[1], F[2]));
+    }
+  }
+  else
+  {
+    RLOG(1, "Could not find a physical body for RcsBody: '%s'", body->name);
+  }
+}
+
 /*******************************************************************************
  * setDamping() internally clips values between [0...1]
  ******************************************************************************/
@@ -904,6 +957,7 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
     RCHECK(rb);
 
     if (rb->rigid_body_joints == true)
+      //if (RcsBody_isFloatingBase(rb) == true)
     {
       Rcs::BulletRigidBody* btBdy = it->second;
       RCHECK_MSG(btBdy, "%s", rb->name);
@@ -943,7 +997,7 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
       }
 
       RcsGraph_relativeRigidBodyDoFs(rb, &A_BI, &A_ParentI, &q->ele[idx]);
-    }
+    }   // if (rb->rigid_body_joints == true)
   }
 
 }
@@ -1865,7 +1919,7 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
           hingeMap[body->jnt] = hinge;
           RLOGS(5, "Joint %s has value %f (%f)",
                 body->jnt->name, hinge->getHingeAngle(),
-                graph->q->ele[body->jnt->jointIndex]);
+                MatNd_get(graph->q, body->jnt->jointIndex, 0));
         }
       }
 
@@ -1969,4 +2023,52 @@ bool Rcs::BulletSimulation::activateBody(const char* name, const HTr* A_BI)
   deactivatedBodies.erase(it);
 
   return true;
+}
+
+/*******************************************************************************
+*
+******************************************************************************/
+bool Rcs::BulletSimulation::check() const
+{
+  bool success = true;
+
+  if (!bdyMap.empty())
+  {
+    std::map<const RcsBody*, Rcs::BulletRigidBody*>::const_iterator it;
+
+    for (it = bdyMap.begin(); it != bdyMap.end(); ++it)
+    {
+      // const RcsBody* rb = it->first;
+      BulletRigidBody* btBdy = it->second;
+
+      // Here we check that objects that are labelled static or dynamic in
+      // Bullet correspond to an RcsBody with the RCSBODY_PHYSICS_KINEMATIC
+      // property. That's the only ones that should be static or kinematic.
+      if (btBdy && btBdy->isStaticOrKinematicObject())
+      {
+        if (btBdy->getBodyPtr()->physicsSim != RCSBODY_PHYSICS_KINEMATIC)
+        {
+          RLOG(1, "Body \"%s\" is not kinematic in the RcsBody properties but "
+               "somehow got kinematic in Bullet - did you forget to assign "
+               "a mass?", btBdy->getBodyName());
+          success = false;
+        }
+      }
+
+      // Here we check that all bodies within the body map are connected through
+      // 6 consecutive joints (not necessarily having the RcsBody::rigid_body_jnt
+      // property)
+      //if (RcsBody_isFloatingBase(rb) == false)
+      //{
+      //  RLOG(1, "Body \"%s\" does not have six consecutive joints but somehow got"
+      //       " into the Bullet bdyMap", btBdy->getBodyName());
+      //  success = false;
+      //}
+    }
+
+  }
+
+  success = PhysicsBase::check() && success;
+
+  return success;
 }

@@ -152,6 +152,8 @@ public:
                 MatNd* qpp = NULL, MatNd* T = NULL, bool control = false);
 
   void reset();
+  void setForce(const RcsBody* body, const double F[3], const double p[3]);
+  void applyImpulse(const RcsBody* body, const double F[3], const double r[3]);
   void applyForce(const RcsBody* body, const double F[3], const double r[3]);
   void applyTransform(const RcsBody* body, const HTr* A_BI);
   void applyLinearVelocity(const RcsBody* body, const double v[3]);
