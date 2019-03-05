@@ -125,6 +125,9 @@ public:
    */
   void setLabel(const char* text);
 
+  void setLowerBound(double value);
+  void setUpperBound(double value);
+
 
 
 signals:
@@ -140,9 +143,9 @@ signals:
 private:
 
   void init(double lowerBound,
-            double zeroPos_,
+            double zeroPos,
             double upperBound,
-            double scaleFactor_,
+            double scaleFactor,
             double ticSize,
             const char* name,
             bool createAuxiliaryLcd,
@@ -179,7 +182,6 @@ private slots:
   void updateControls();
   void startMouseInteraction();
   void stopMouseInteraction();
-
 };
 
 

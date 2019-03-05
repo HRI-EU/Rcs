@@ -36,13 +36,21 @@
 
 #include "DblSlider.h"
 
-DoubleSlider::DoubleSlider(QWidget* parent) : QSlider(parent)
+DoubleSlider::DoubleSlider(double lowerBound,
+                           double initialValue,
+                           double upperBound,
+                           int digits,
+                           int tic,
+                           QWidget* parent)
+  :
+  QSlider(parent),
+  dblScale(pow(10.0, digits))
 {
   connect(this, SIGNAL(valueChanged(int)), this, SLOT(notifyValueChanged(int)));
 }
 
 void DoubleSlider::notifyValueChanged(int value)
 {
-  double doubleValue = value / 10.0;
+  double doubleValue = value / dblScale;
   emit doubleValueChanged(doubleValue);
 }

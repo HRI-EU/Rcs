@@ -44,13 +44,17 @@ class DoubleSlider : public QSlider
   Q_OBJECT
 
 public:
-  DoubleSlider(QWidget* parent=NULL);
+  DoubleSlider(double lowerBound, double initialValue, double upperBound,
+               int digits, int tic, QWidget* parent=NULL);
 
 signals:
   void doubleValueChanged(double value);
 
 public slots:
   void notifyValueChanged(int value);
+
+private:
+  double dblScale;
 };
 
 #endif   // RCS_DBLSLIDER_H

@@ -473,3 +473,21 @@ void LcdSlider::stopMouseInteraction()
   this->mouseInteraction = false;
 }
 
+void LcdSlider::setLowerBound(double value)
+{
+#if QWT_VERSION < 0x060103
+  slider->setRange(value*this->scaleFactor, slider->maxValue());
+#else
+  slider->setLowerBound(value*this->scaleFactor);
+#endif
+}
+
+void LcdSlider::setUpperBound(double value)
+{
+#if QWT_VERSION < 0x060103
+  slider->setRange(slider->minValue(), value*this->scaleFactor);
+#else
+  slider->setUpperBound(value*this->scaleFactor);
+#endif
+}
+
