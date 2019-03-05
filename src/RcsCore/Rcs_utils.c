@@ -64,8 +64,40 @@ char* String_clone(const char* src)
     // strlen does not include the trailing zero
     size_t len = 1+strlen(src);
     dst = RNALLOC(len, char);
-    RCHECK(dst);
-    memcpy(dst, src, len);
+
+    if (dst)
+    {
+      snprintf(dst, len, "%s", src);
+    }
+
+  }
+
+  return dst;
+}
+
+/*******************************************************************************
+ * Clones a character array with dynamic memory allocation.
+ ******************************************************************************/
+char* String_cloneN(const char* src, size_t maxCharacters)
+{
+  char* dst = NULL;
+
+  if (src != NULL)
+  {
+    // strlen does not include the trailing zero
+    size_t len = 1+strlen(src);
+
+    if (len > maxCharacters+1)
+    {
+      len = maxCharacters+1;
+    }
+
+    dst = RNALLOC(len, char);
+
+    if (dst)
+    {
+      snprintf(dst, len, "%s", src);
+    }
   }
 
   return dst;
@@ -331,6 +363,11 @@ unsigned int String_countSubStrings(const char* str, const char* delim)
   }
 
   RFREE(lStr);
+
+  if (str[strlen(str)-2]==32)   // Ignore white space at the end of the line
+  {
+    nSubStrings--;
+  }
 
   return nSubStrings;
 }

@@ -81,12 +81,21 @@ extern "C" {
 ///@{
 
 /*! \ingroup RcsUtilsFunctions
- *  \brief Returns an (deep) copy of src from the heap. You have to take care
- *         that it gets deleted. If src is NULL, no memory will be allocated
- *         and NULL is returned. If the memory allocation fails, the function
- *         exits with a fatal error. That's the difference to strdup.
+ *  \brief Returns an (deep) copy of src from the heap. The caller is
+ *         responsible to free the returned memory. If src is NULL, no memory
+ *         will be allocated and NULL is returned. If the memory allocation
+ *         fails, the function exits with a fatal error. That's the difference
+ *         to strdup. The returned string is always properly terminated (even if
+ *         src is not).
  */
 char* String_clone(const char* src);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Same as above, except that a maximum of maxCharacters bytes will be
+ *         copied. The returned string is always properly terminated (even if
+ *         src is not).
+ */
+char* String_cloneN(const char* src, size_t maxCharacters);
 
 /*! \ingroup RcsUtilsFunctions
  *  \brief Copies the character array in src into the de-referenced dst.
