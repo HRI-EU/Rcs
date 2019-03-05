@@ -97,6 +97,11 @@ bool HTr_isIdentity(const HTr* A);
 void HTr_fprint(FILE* fd, const HTr* A);
 
 /*! \ingroup RcsHTrFunctions
+ *  \brief Prints the transform.
+ */
+void HTr_print(const HTr* A);
+
+/*! \ingroup RcsHTrFunctions
  *  \brief Returns an identity HTr from the heap. You have to take care
  *         that it gets deleted. The function terminates if no memory could
  *         be allocated.
