@@ -352,10 +352,10 @@ static RcsBody* parseBodyURDF(xmlNode* node)
   }
 
   // Check if we have a finite inertia but no mass
-  if (Mat3d_getFrobeniusnorm(body->Inertia->rot) > 0.0)
+  if ((Mat3d_getFrobeniusnorm(body->Inertia->rot)>0.0) && (body->m<=0.0))
   {
-    RCHECK_MSG(body->m > 0.0, "You specified a non-zero inertia but a zero "
-               "mass for body \"%s\". Shame on you!", body->name);
+    RLOG(4, "You specified a non-zero inertia but a zero mass for body \"%s\"."
+         " Shame on you!", body->name);
   }
 
   // Rigid body joints not supported
