@@ -28,7 +28,7 @@ Rcs is a set of C and C++ libraries for robot control and simulation. It is writ
 
 ## Getting Started
 
-Rcs can be compiled with the cmake build system and has mainly been developed on Ubuntu 14.04. It does also compile under Ubuntu 16.04 (however Vortex Essentials cannot be enabled there). To compile it, just type:
+Rcs can be compiled with the cmake build system and has mainly been developed on Ubuntu 14.04. It does also compile under Ubuntu 16.04 and 18.04 (however Vortex Essentials cannot be enabled there). To compile it, just type:
 
     cd <build-directory>
     cmake <source-directory>
