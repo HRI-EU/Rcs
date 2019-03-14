@@ -41,7 +41,7 @@
 #include <float.h>
 
 
-#define HTR_TOSTRING_MAXSIZE (12 * 30)
+#define HTR_TOSTRING_MAXSIZE (12 * 32)
 
 
 static HTr Identity = { {0., 0., 0.} ,

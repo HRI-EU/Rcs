@@ -36,6 +36,8 @@
 
 #include "DblSlider.h"
 
+#include <cmath>
+
 DoubleSlider::DoubleSlider(double lowerBound,
                            double initialValue,
                            double upperBound,
