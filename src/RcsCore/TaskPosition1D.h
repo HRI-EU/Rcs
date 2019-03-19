@@ -61,6 +61,12 @@ public:
    */
   TaskPosition1D(const TaskPosition1D& copyFromFe, RcsGraph* newGraph=NULL);
 
+  /*! Constructor based on graph and effectors.
+   */
+  TaskPosition1D(const std::string& className, RcsGraph* graph,
+                 const RcsBody* effector=NULL, const RcsBody* refBdy=NULL,
+                 const RcsBody* refFrame=NULL);
+
   /*! Destructor
    */
   virtual ~TaskPosition1D();

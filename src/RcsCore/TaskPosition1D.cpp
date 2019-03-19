@@ -93,6 +93,40 @@ Rcs::TaskPosition1D::TaskPosition1D(const TaskPosition1D& copyFromMe,
 }
 
 /*******************************************************************************
+ * For programmatic creation
+ ******************************************************************************/
+Rcs::TaskPosition1D::TaskPosition1D(const std::string& className,
+                                    RcsGraph* graph,
+                                    const RcsBody* effector,
+                                    const RcsBody* refBdy,
+                                    const RcsBody* refFrame):
+  TaskPosition3D(graph, effector, refBdy, refFrame), index(-1)
+{
+  setClassName(className);
+  setDim(1);
+
+  std::vector<Parameters*>& params = getParameters();
+  params.clear();
+  params.push_back(new Task::Parameters(-2.5, 2.5, 1.0, "Position [m]"));
+
+  if (getClassName()=="X")
+  {
+    this->index = 0;
+    getParameter(0)->name.assign("X Position [m]");
+  }
+  else if (getClassName()=="Y")
+  {
+    this->index = 1;
+    getParameter(0)->name.assign("Y Position [m]");
+  }
+  else if ((getClassName()=="Z") || (getClassName()=="CylZ"))
+  {
+    this->index = 2;
+    getParameter(0)->name.assign("Z Position [m]");
+  }
+}
+
+/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskPosition1D::~TaskPosition1D()
