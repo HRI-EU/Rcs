@@ -364,7 +364,7 @@ unsigned int String_countSubStrings(const char* str, const char* delim)
 
   RFREE(lStr);
 
-  if (str[strlen(str)-2]==32)   // Ignore white space at the end of the line
+  if (str[strlen(str)-1]==32)   // Ignore white space at the end of the line
   {
     nSubStrings--;
   }
