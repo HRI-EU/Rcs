@@ -713,9 +713,9 @@ void Rcs::BulletSimulation::reset()
   dynamicsWorld->getConstraintSolver()->reset();
 }
 
-/******************************************************************************
+/*******************************************************************************
  *
- *****************************************************************************/
+ ******************************************************************************/
 const HTr* Rcs::BulletSimulation::getPhysicsTransformPtr(const RcsBody* body) const
 {
   Rcs::BulletRigidBody* bb = getRigidBody(body);
@@ -728,6 +728,9 @@ const HTr* Rcs::BulletSimulation::getPhysicsTransformPtr(const RcsBody* body) co
   return bb->getBodyTransformPtr();
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void Rcs::BulletSimulation::setForce(const RcsBody* body, const double F[3],
                                      const double p[3])
 {
@@ -736,7 +739,7 @@ void Rcs::BulletSimulation::setForce(const RcsBody* body, const double F[3],
 
   if (rigidBody != NULL)
   {
-    if (p != nullptr)
+    if (p != NULL)
     {
       double relPos[3];
       Vec3d_sub(relPos, p, body->A_BI->org);
@@ -754,14 +757,18 @@ void Rcs::BulletSimulation::setForce(const RcsBody* body, const double F[3],
   }
 }
 
-void Rcs::BulletSimulation::applyImpulse(const RcsBody* body, const double F[3], const double p[3])
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::BulletSimulation::applyImpulse(const RcsBody* body, const double F[3],
+                                         const double p[3])
 {
   RCHECK_MSG(body != NULL, "Cannot apply impulse to a NULL body!");
   BulletRigidBody* rigidBody = getRigidBody(body);
 
   if (rigidBody != NULL)
   {
-    if (p != nullptr)
+    if (p != NULL)
     {
       double relPos[3];
       Vec3d_sub(relPos, p, body->A_BI->org);
@@ -1838,7 +1845,7 @@ bool Rcs::BulletSimulation::removeBody(const char* name)
     return false;
   }
 
-  std::map<const RcsBody*, Rcs::BulletRigidBody*>::const_iterator it;
+  std::map<const RcsBody*, Rcs::BulletRigidBody*>::iterator it;
 
   it = bdyMap.find(bdy);
 
@@ -2005,7 +2012,7 @@ bool Rcs::BulletSimulation::activateBody(const char* name, const HTr* A_BI)
     return false;
   }
 
-  auto it = deactivatedBodies.find(std::string(name));
+  std::map<std::string, BulletRigidBody*>::iterator it = deactivatedBodies.find(std::string(name));
 
   if (it == deactivatedBodies.end())
   {
