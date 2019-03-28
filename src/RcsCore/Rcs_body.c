@@ -148,6 +148,7 @@ unsigned int RcsBody_numJoints(const RcsBody* self)
   {
     nJoints++;
   }
+
   return nJoints;
 }
 
@@ -206,6 +207,7 @@ void RcsBody_addShape(RcsBody* self, RcsShape* shape)
 {
   unsigned int nShapes = RcsBody_numShapes(self);
   self->shape = (RcsShape**) realloc(self->shape, (nShapes+2)*sizeof(RcsShape*));
+  RCHECK(self->shape);
   self->shape[nShapes] = shape;
   self->shape[nShapes+1] = NULL;
 }

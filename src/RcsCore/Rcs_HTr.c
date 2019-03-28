@@ -41,7 +41,7 @@
 #include <float.h>
 
 
-#define HTR_TOSTRING_MAXSIZE (12 * 30)
+#define HTR_TOSTRING_MAXSIZE (12 * 32)
 
 
 static HTr Identity = { {0., 0., 0.} ,
@@ -205,6 +205,14 @@ void HTr_fprint(FILE* fd, const HTr* A)
           A->rot[1][0], A->rot[1][1], A->rot[1][2], A->org[1]);
   fprintf(fd, "\t%.6f\t%.6f\t%.6f\t\t%.6f\n",
           A->rot[2][0], A->rot[2][1], A->rot[2][2], A->org[2]);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void HTr_print(const HTr* A)
+{
+  HTr_fprint(stdout, A);
 }
 
 /*******************************************************************************

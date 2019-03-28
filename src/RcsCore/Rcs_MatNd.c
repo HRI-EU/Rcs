@@ -830,8 +830,6 @@ bool MatNd_arraySizeFromFile(FILE* fd, int* rows, int* cols, int* nHeaderLines)
     {
       *cols = String_countSubStrings(line, " ");
 
-      NLOG(0, "Found %d sub strings in line", *cols);
-
       if (colPrev != -1)
       {
         if (colPrev != *cols)
@@ -988,7 +986,7 @@ MatNd* MatNd_createFromFile(const char* fileName)
     nItems = fscanf(fd, "%255s", buf);
     self->ele[nEle] = String_toDouble_l(buf);// locale-independent
     nEle++;
-    RCHECK_MSG(nItems != EOF, "Read error!");
+    RCHECK_MSG(nItems != EOF, "Read error at element %d", nEle);
   }
 
   fclose(fd);

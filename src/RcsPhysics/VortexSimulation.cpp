@@ -1065,6 +1065,64 @@ void Rcs::VortexSimulation::reset()
 }
 
 /*******************************************************************************
+ * Applies force F to the given body at location p (in world coordinates).
+ ******************************************************************************/
+void Rcs::VortexSimulation::setForce(const RcsBody* body,
+                                       const double F[3],
+                                       const double p[3])
+{
+  RCHECK_MSG(body != NULL, "Cannot set force on a NULL body!");
+
+  Vx::VxPart* vxBdy = getPartPtr(body);
+  if (vxBdy != NULL)
+  {
+    pthread_mutex_lock(&this->extForceLock);
+    if (p != nullptr)
+    {
+      vxBdy->addForceAtAbsolutePosition(Vx::VxVector3(F[0], F[1], F[2]), Vx::VxVector3(p[0], p[1], p[2]));
+    }
+    else
+    {
+      vxBdy->addForce(Vx::VxVector3(F[0], F[1], F[2]));
+    }
+    pthread_mutex_unlock(&this->extForceLock);
+  }
+  else
+  {
+    NLOG(1, "Could not find a physical body for RcsBody '%s'", body->name);
+  }
+}
+
+/*******************************************************************************
+ * Applies impulse F to the given body at location p (in world coordinates).
+ ******************************************************************************/
+void Rcs::VortexSimulation::applyImpulse(const RcsBody* body,
+                                     const double F[3],
+                                     const double p[3])
+{
+  RCHECK_MSG(body != NULL, "Cannot set force on a NULL body!");
+
+  Vx::VxPart* vxBdy = getPartPtr(body);
+  if (vxBdy != NULL)
+  {
+    pthread_mutex_lock(&this->extForceLock);
+    if (p != nullptr)
+    {
+      vxBdy->addImpulseAtAbsolutePosition(Vx::VxVector3(F[0], F[1], F[2]), Vx::VxVector3(p[0], p[1], p[2]));
+    }
+    else
+    {
+      vxBdy->addImpulse(Vx::VxVector3(F[0], F[1], F[2]));
+    }
+    pthread_mutex_unlock(&this->extForceLock);
+  }
+  else
+  {
+    NLOG(1, "Could not find a physical body for RcsBody '%s'", body->name);
+  }
+}
+
+/*******************************************************************************
  * Applies force F to the body at vector r (in world coordinates).
  ******************************************************************************/
 void Rcs::VortexSimulation::applyForce(const RcsBody* body,
@@ -1341,6 +1399,12 @@ bool Rcs::VortexSimulation::createJoint(const RcsBody* body)
         NLOG(0, "Created fixed joint (VxRPRO) between %s - %s",
              body->parent->name, body->name);
       }
+      else
+      {
+        RLOG(4, "Creating fixed joint between \"%s\" and \"%s\" failed",
+             body->parent ? body->parent->name : "NULL", body->name);
+
+      }
     }
     break;
 
@@ -1459,12 +1523,10 @@ void Rcs::VortexSimulation::getJointAngles(MatNd* q, RcsStateType sType) const
   switch (sType)
   {
     case RcsStateFull:
-      //MatNd_reshapeCopy(q, this->graph->q);
       MatNd_reshapeCopy(q, this->q_des);
       break;
     case  RcsStateIK:
       MatNd_reshape(q, this->graph->nJ, 1);
-      //RcsGraph_stateVectorToIK(this->graph, this->graph->q, q);
       RcsGraph_stateVectorToIK(this->graph, this->q_des, q);
       break;
     default:
@@ -1719,8 +1781,14 @@ bool Rcs::VortexSimulation::removeJoint(RcsBody* body)
   if (body->physicsSim == RCSBODY_PHYSICS_KINEMATIC)
   {
     Vx::VxPart* part1 = getPartPtr(body);
+
+    if (part1 != NULL)
+    {
     part1->setControl(Vx::VxPart::kControlDynamic);
-    return part1 ? true : false;
+      return true;
+    }
+
+    return false;
   }
 
   Vx::VxPart* part0 = body->parent ? getPartPtr(body->parent) : NULL;
@@ -2588,6 +2656,7 @@ bool Rcs::VortexSimulation::addBody(const RcsBody* body)
   pthread_mutex_lock(&this->extForceLock);
 
   RcsBody* cpyOfBody = RcsBody_clone(body);
+  RCHECK(cpyOfBody);
   cpyOfBody->parent = RcsGraph_getBodyByName(internalDesiredGraph, body->name);
 
   bool success = createCompositeBody(cpyOfBody);

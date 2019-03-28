@@ -1,0 +1,11 @@
+# This is a link created through cmake
+config/xml/ECS
+
+# Emacs backup files
+*~
+
+.idea
+
+klocwork
+
+build*

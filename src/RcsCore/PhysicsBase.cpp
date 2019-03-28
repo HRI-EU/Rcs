@@ -409,3 +409,11 @@ bool Rcs::PhysicsBase::activateBody(const char* name, const HTr* A_BI)
   RLOG(0, "Implement or overwrite me");
   return false;
 }
+
+/*******************************************************************************
+*
+******************************************************************************/
+bool Rcs::PhysicsBase::check() const
+{
+  return true;
+}

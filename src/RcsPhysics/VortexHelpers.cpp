@@ -633,8 +633,7 @@ Vx::VxConstraint* Rcs::createFixedJoint(Vx::VxPart* vxParent,
     return NULL;
   }
 
-  HTr A_childI;
-  HTr A_parentI;
+  HTr A_childI, A_parentI;
   HTr_copy(&A_childI, child->A_BI);
   HTr_copy(&A_parentI, parent->A_BI);
 

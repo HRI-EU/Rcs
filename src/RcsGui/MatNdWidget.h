@@ -44,6 +44,7 @@
 #include <QScrollArea>
 
 #include <vector>
+#include <string>
 #include <pthread.h>
 
 
@@ -66,10 +67,32 @@ public:
               const char* title, pthread_mutex_t* mutex);
   virtual ~MatNdWidget();
 
-  void setLowerLimit(const MatNd* limit);
-  void setUpperLimit(const MatNd* limit);
-  void setLowerLimit(double limit);
-  void setUpperLimit(double limit);
+  /*! \brief Sets all slider lower bounds to the values given in limit. Array
+   *         limit must have exactly as many rows as there are sliders. If this
+   *         is not the case, the function complains on debug level 1 and does
+   *         nothing. It is fine to set the lower bound larger than the upper
+   *         bound.
+   */
+  void setLowerBound(const MatNd* limit);
+
+  /*! \brief Sets all slider lower bounds to the values given in limit. Array
+   *         limit must have exactly as many rows as there are sliders. If this
+   *         is not the case, the function complains on debug level 1 and does
+   *         nothing. It is fine to set the lower bound larger than the upper
+   *         bound.
+   */
+  void setUpperBound(const MatNd* limit);
+
+  /*! \brief Sets all slider lower bounds to the given value. See
+   *         \ref setLowerBound(const MatNd* limit)
+   */
+  void setLowerBound(double limit);
+
+  /*! \brief Sets all slider upper bounds to the given value. See
+   *         \ref setIpperBound(const MatNd* limit)
+   */
+  void setUpperBound(double limit);
+
   void setLabels(std::vector<std::string>& labels);
   void setMutex(pthread_mutex_t* mutex);
   void setUpdateEnabled(bool enabled);
@@ -83,13 +106,11 @@ protected:
   void unlock();
 
   MatNd* mat;
-  MatNd* lowerLimit;
-  MatNd* upperLimit;
   const MatNd* dispMat;
   pthread_mutex_t* mutex;
   std::vector<LcdSlider*> slider;
   std::vector<std::string> labels;
-  bool _update_enabled;
+  bool updateEnabled;
 
 private slots:
   void displayAct();

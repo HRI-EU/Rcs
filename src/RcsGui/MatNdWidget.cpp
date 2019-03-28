@@ -66,7 +66,7 @@ static void* matndGui(void* arg)
 
   double lowerBound = (lb != NULL) ? *lb : -1.0;
   double upperBound = (ub != NULL) ? *ub :  1.0;
-  MatNdWidget* w = new MatNdWidget(mat, dispMat, lowerBound, upperBound, 
+  MatNdWidget* w = new MatNdWidget(mat, dispMat, lowerBound, upperBound,
                                    title, mutex);
   w->show();
 
@@ -163,10 +163,8 @@ MatNdWidget::MatNdWidget(MatNd* mat_, const MatNd* dispMat_,
                          const char* title, pthread_mutex_t* mutex_) :
   QScrollArea(),
   mat(mat_),
-  lowerLimit(NULL),
-  upperLimit(NULL),
   mutex(mutex_),
-  _update_enabled(true)
+  updateEnabled(true)
 {
   init(mat_, dispMat_, lower, upper, title);
 }
@@ -182,47 +180,63 @@ MatNdWidget::~MatNdWidget()
 /*******************************************************************************
  *
  ******************************************************************************/
-void MatNdWidget::setLowerLimit(const MatNd* limit)
+void MatNdWidget::setLowerBound(const MatNd* limit)
 {
-  if (this->lowerLimit != NULL)
+  if (limit->m != this->slider.size())
   {
-    MatNd_destroy(this->lowerLimit);
+    RLOG(1, "The number of bounds does not match the number of sliders: "
+         "%u != %zu", limit->m, this->slider.size());
+    return;
   }
 
-  this->lowerLimit = MatNd_clone(limit);
+  lock();
+  for (size_t i = 0; i < slider.size(); ++i)
+  {
+    slider[i]->setLowerBound(MatNd_get(limit, i, 0));
+  }
+  unlock();
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-void MatNdWidget::setUpperLimit(const MatNd* limit)
+void MatNdWidget::setUpperBound(const MatNd* limit)
 {
-  if (this->upperLimit != NULL)
+  if (limit->m != this->slider.size())
   {
-    MatNd_destroy(this->upperLimit);
+    RLOG(1, "The number of bounds does not match the number of sliders: "
+         "%u != %zu", limit->m, this->slider.size());
+    return;
   }
 
-  this->upperLimit = MatNd_clone(limit);
+  lock();
+  for (size_t i = 0; i < slider.size(); ++i)
+  {
+    slider[i]->setUpperBound(MatNd_get(limit, i, 0));
+  }
+  unlock();
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-void MatNdWidget::setLowerLimit(double limit)
+void MatNdWidget::setLowerBound(double value)
 {
-  RCHECK(this->mat);
-  this->lowerLimit = MatNd_create(this->mat->m, this->mat->n);
-  MatNd_setElementsTo(this->lowerLimit, limit);
+  MatNd* bound = MatNd_create(slider.size(), 1);
+  MatNd_setElementsTo(bound, value);
+  setLowerBound(bound);
+  MatNd_destroy(bound);
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-void MatNdWidget::setUpperLimit(double limit)
+void MatNdWidget::setUpperBound(double value)
 {
-  RCHECK(this->mat);
-  this->upperLimit = MatNd_create(this->mat->m, this->mat->n);
-  MatNd_setElementsTo(this->upperLimit, limit);
+  MatNd* bound = MatNd_create(slider.size(), 1);
+  MatNd_setElementsTo(bound, value);
+  setUpperBound(bound);
+  MatNd_destroy(bound);
 }
 
 /*******************************************************************************
@@ -260,7 +274,7 @@ void MatNdWidget::setMutex(pthread_mutex_t* mutex)
 void MatNdWidget::setUpdateEnabled(bool enabled)
 {
   lock();
-  _update_enabled = enabled;
+  updateEnabled = enabled;
   unlock();
 }
 
@@ -290,7 +304,7 @@ void MatNdWidget::init(MatNd* mat_, const MatNd* dispMat_,
       char indexStr[32];
       sprintf(indexStr, "%u", i);
       LcdSlider* sl =
-        new LcdSlider(lower, this->mat->ele[i*this->mat->n+j], upper, 
+        new LcdSlider(lower, this->mat->ele[i*this->mat->n+j], upper,
                       1.0, 0.0001, indexStr);
       sl->updateLcd1FromSlider();
       matLayout->addWidget(sl, i, j, Qt::AlignLeft);
@@ -340,9 +354,9 @@ void MatNdWidget::setCommand()
 {
   lock();
 
-  if (_update_enabled)
+  if (updateEnabled)
   {
-    int i = 0;
+    unsigned int i = 0;
     std::vector<LcdSlider*>::iterator it;
 
     for (it = this->slider.begin(); it != this->slider.end(); ++it)
@@ -383,7 +397,7 @@ void MatNdWidget::unlock()
 bool MatNdWidget::isUpdateEnabled()
 {
   lock();
-  bool isUpdated = _update_enabled;
+  bool isUpdated = updateEnabled;
   unlock();
 
   return isUpdated;
@@ -395,11 +409,11 @@ bool MatNdWidget::isUpdateEnabled()
 void MatNdWidget::reset(const MatNd* values)
 {
   if ((this->mat->m!=values->m) || (this->mat->n!=values->n))
-    {
-      RLOG(1, "Mismatch in reset: mat is %u x %u, desired matrix is %u x %u",
-           mat->m, mat->n, values->m, values->n);
-      return;
-    }
+  {
+    RLOG(1, "Mismatch in reset: mat is %u x %u, desired matrix is %u x %u",
+         mat->m, mat->n, values->m, values->n);
+    return;
+  }
 
   MatNd_copy(this->mat, values);
 
