@@ -773,7 +773,8 @@ void Rcs::BulletSimulation::applyImpulse(const RcsBody* body, const double F[3],
       double relPos[3];
       Vec3d_sub(relPos, p, body->A_BI->org);
 
-      rigidBody->applyImpulse(btVector3(F[0], F[1], F[2]), btVector3(relPos[0], relPos[1], relPos[2]));
+      rigidBody->applyImpulse(btVector3(F[0], F[1], F[2]),
+                              btVector3(relPos[0], relPos[1], relPos[2]));
     }
     else
     {
