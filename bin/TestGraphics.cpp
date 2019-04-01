@@ -61,6 +61,7 @@
 #include <osg/PositionAttitudeTransform>
 #include <osgGA/TrackballManipulator>
 #include <osgDB/Registry>
+#include <osgFX/Cartoon>
 
 #include <csignal>
 
@@ -104,7 +105,18 @@ static void testOsgViewer()
   osg::ref_ptr<osgGA::TrackballManipulator> trackball = new osgGA::TrackballManipulator();
   viewer->setCameraManipulator(trackball.get());
 
-  osg::ref_ptr<osg::Group> rootnode = new osg::Group;
+  osg::ref_ptr<osg::Group> rootnode;
+
+  // Cartoon mode
+  if (argP.hasArgument("-cartoon", "Test Cartoon mode"))
+  {
+    rootnode = new osgFX::Cartoon;
+  }
+  else
+  {
+    rootnode = new osg::Group;
+  }
+
   rootnode->addChild(new Rcs::COSNode());
 
   // Light grayish blue universe

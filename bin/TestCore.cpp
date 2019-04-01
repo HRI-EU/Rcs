@@ -281,6 +281,32 @@ static bool test_localeFreeParsing()
   return true;
 }
 
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool test_countSubStrings()
+{
+  const char* testStr1 = "1.0 2.0 3.0 4.0 5.0 6.0";
+  const char* testStr2 = "1.0 2.0 3.0 4.0 5.0 6.0 ";
+  const char* testStr3 = " 1.0 2.0 3.0 4.0 5.0 6.0";
+  const char* testStr4 = " 1.0 2.0 3.0 4.0 5.0 6.0 ";
+  const char* testStr5 = "        1.0   2.0    3.0   4.0   5.0    6.0     ";
+
+  unsigned int n1 = String_countSubStrings(testStr1, " ");
+  unsigned int n2 = String_countSubStrings(testStr2, " ");
+  unsigned int n3 = String_countSubStrings(testStr3, " ");
+  unsigned int n4 = String_countSubStrings(testStr4, " ");
+  unsigned int n5 = String_countSubStrings(testStr5, " ");
+
+  RLOG(0, "n1=%d n2=%d n3=%d n4=%d n5=%d", n1, n2, n3, n4, n5);
+
+  const char* testStr6 = "2.237060 -0.013035 3.141593 0.986085 0.003336 -0.000065 -0.014339 0.050996 0.007063 -0.014165 0.040262 0.013000 -0.013770 0.025398 0.018120 -0.013447 0.003783 0.023044 0.006052 0.040289 0.068821 0.013788 -0.146118 -0.084346 0.009802 0.261406 0.101507 -0.406857 3.048911 -0.915538 -4.403101 6.391742 -0.362587 -0.030473 -0.224328 -0.125127 0.242712 -0.142775 -0.670336 -1.071533 -0.086619 0.515012 0.001037 -0.136142 0.001102 0.267114 -0.002522 0.160046 -0.001497 0.001004 -0.264057 0.000630 0.001037 -0.136153 0.001102 0.267151 -0.002521 0.159979 -0.001497 0.001004 -0.264017 0.000630 ";
+  unsigned int n6 = String_countSubStrings(testStr6, " ");
+
+  RLOG(0, "n6=%d", n6);
+
+  return true;
+}
 
 /******************************************************************************
  *
@@ -316,6 +342,7 @@ int main(int argc, char** argv)
       fprintf(stderr, "\t\t3   Mesh test\n");
       fprintf(stderr, "\t\t4   String environment expansion test\n");
       fprintf(stderr, "\t\t5   Locale-independent parsing test\n");
+      fprintf(stderr, "\t\t6   Sub-strings in string counting test\n");
       fprintf(stderr, "\n\nResource path:\n");
       Rcs_printResourcePath();
       break;
@@ -346,6 +373,12 @@ int main(int argc, char** argv)
     case 5:
     {
       success = test_localeFreeParsing();
+      break;
+    }
+
+    case 6:
+    {
+      success = test_countSubStrings();
       break;
     }
 
