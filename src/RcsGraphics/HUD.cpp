@@ -311,7 +311,7 @@ void Rcs::HUD::setColor(const char* colorName)
  ******************************************************************************/
 void Rcs::HUD::resize(int sizeX_, int sizeY_)
 {
-  resize(llx, lly, sizeX, sizeY);
+  resize(llx, lly, sizeX_, sizeY_);
 }
 
 /*******************************************************************************
