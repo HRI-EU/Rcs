@@ -510,6 +510,12 @@ protected:
   MatNd* q_des;      ///< Desired joint angles [RcsGraph::dof x 1]
   MatNd* q_dot_des;  ///< Desired joint velocities [RcsGraph::dof x 1]
   bool enablePPS;    ///< Tactile sensor arrays flag
+
+private:
+
+  /*! \brief Private assignment operator to avoid double freeing of memory
+   */
+  PhysicsBase& operator = (const PhysicsBase&);
 };
 
 }   // namespace Rcs

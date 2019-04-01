@@ -130,8 +130,8 @@ bool testEulerAnglesFunctions(int argc, char** argv)
     success = false;
   }
 
-  RLOGS(1, "%s testing Euler angle functions ", 
-	    success ? "SUCCESS" : "FAILURE");
+  RLOGS(1, "%s testing Euler angle functions ",
+      success ? "SUCCESS" : "FAILURE");
   RLOG(2, "Error is %g (<%g)", err, errMax);
 
   return success;
@@ -522,7 +522,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
     MatNd_destroy(ABAt2);
   }
 
-  RLOGS(1, "%s testing simple matrix functions", 
+  RLOGS(1, "%s testing simple matrix functions",
         success ? "SUCCESS" : "FAILURE");
 
   return success;
@@ -796,7 +796,7 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
 
 
   RLOGS(1, "%s testing linear algebra functions",
-	    success ? "SUCCESS" : "FAILURE");
+      success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -1247,8 +1247,8 @@ bool testBasicMath(int argc, char** argv)
     {
       if (vec_dst[i] != vec_src[dim-1-i])
         {
-          RLOG(2, "Error in VecNd_reverseSelf() at index %d: %f != %f", 
-           i, vec_dst[i], vec_src[dim-i-i]);
+          RLOG(2, "Error in VecNd_reverseSelf() at index %d: %f != %f",
+           i, vec_dst[i], vec_src[dim-i-1]);
           success = false;
         }
     }
@@ -4010,7 +4010,7 @@ bool testFunctionsEigen3(int argc, char** argv)
     MatNd_destroy(B_test);
   }
 
-  RLOGS(1, "%s testing Eigen3 linear algebra functions", 
+  RLOGS(1, "%s testing Eigen3 linear algebra functions",
         success ? "SUCCESS" : "FAILURE");
 
   return success;

@@ -173,6 +173,10 @@ private:
   PhysicsMaterial defaultMaterial;
   // map from material name to material data
   MaterialMap materials;
+
+  /*! \brief Private assignment operator to avoid double freeing of memory
+   */
+  PhysicsConfig& operator = (const PhysicsConfig&);
 };
 
 } /* namespace Rcs */

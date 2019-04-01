@@ -235,14 +235,16 @@ static void testOsgViewer()
 
   if (argP.hasArgument("-h"))
   {
+    delete viewer;
     return;
   }
 
 
   viewer->setUpViewInWindow(12, 38, 640, 480);
   viewer->realize();
-
   viewer->run();
+
+  delete viewer;
 }
 
 /*******************************************************************************
@@ -252,13 +254,6 @@ static void testVertexArrayNode()
 {
   Rcs::CmdLineParser argP;
 
-  // Initialize GUI and OSG mutex
-  pthread_mutex_t mtx;
-  pthread_mutex_init(&mtx, NULL);
-
-  MatNd* rndMat = MatNd_create(1000, 3);
-  MatNd_setRandom(rndMat, -0.5, 0.5);
-
   char oglMode[32] = "Points";
   argP.getArgument("-oglMode", oglMode, "OpenGL mode: Points, Lines ...");
 
@@ -267,6 +262,11 @@ static void testVertexArrayNode()
     return;
   }
 
+  pthread_mutex_t mtx;
+  pthread_mutex_init(&mtx, NULL);
+
+  MatNd* rndMat = MatNd_create(1000, 3);
+  MatNd_setRandom(rndMat, -0.5, 0.5);
 
   osg::ref_ptr<Rcs::VertexArrayNode> vn;
 
@@ -301,6 +301,7 @@ static void testVertexArrayNode()
 
   delete viewer;
   MatNd_destroy(rndMat);
+  pthread_mutex_destroy(&mtx);
 }
 
 /*******************************************************************************
