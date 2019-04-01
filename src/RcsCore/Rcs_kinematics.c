@@ -757,13 +757,10 @@ void RcsGraph_1dPosJacobian(const RcsGraph* self, const RcsBody* effector,
                             const RcsBody* refBdy, const RcsBody* refFrame,
                             int index, MatNd* J)
 {
-  RCHECK(index >= 0 && index < 3);  // Only x, y and z
-
   MatNd* J3 = NULL;
   MatNd_create2(J3, 3, self->nJ);
   RcsGraph_3dPosJacobian(self, effector, refBdy, refFrame, J3);
-  MatNd_reshape(J, 1, self->nJ);
-  memcpy(J->ele, &J3->ele[index * self->nJ], self->nJ * sizeof(double));
+  MatNd_getRow(J, index, J3);
   MatNd_destroy(J3);
 }
 
