@@ -303,21 +303,18 @@ Viewer::~Viewer()
 void Viewer::create(bool fancy, bool startupWithShadow)
 {
   pthread_mutex_init(&this->mtxInternal, NULL);
-
   this->shadowsEnabled = startupWithShadow;
 
   // Rotate loaded file nodes to standard coordinate conventions
   // (z: up, x: forward)
-  osgDB::ReaderWriter::Options* options = new osgDB::ReaderWriter::Options;
+  osg::ref_ptr<osgDB::ReaderWriter::Options> options = new osgDB::ReaderWriter::Options;
   options->setOptionString("noRotation");
-  osgDB::Registry::instance()->setOptions(options);
+  osgDB::Registry::instance()->setOptions(options.get());
 
   this->viewer = new osgViewer::Viewer();
 
   // Mouse manipulator (needs to go before event handler)
   osg::ref_ptr<osgGA::TrackballManipulator> trackball = new RcsManipulator();
-
-
   viewer->setCameraManipulator(trackball.get());
 
   // Handle some default keys (see handler above)
@@ -407,9 +404,10 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   KeyCatcherBase::registerKey("F9", "Toggle continuous screenshots", "Viewer");
   KeyCatcherBase::registerKey("F8", "Take screenshot(s)", "Viewer");
   osg::ref_ptr<osgViewer::ScreenCaptureHandler> captureHandler = new osgViewer::ScreenCaptureHandler(
-    new osgViewer::ScreenCaptureHandler::WriteToFile("screenshot", "jpg", osgViewer::ScreenCaptureHandler::WriteToFile::SEQUENTIAL_NUMBER), -1);
+    new osgViewer::ScreenCaptureHandler::WriteToFile("screenshot", "png", osgViewer::ScreenCaptureHandler::WriteToFile::SEQUENTIAL_NUMBER), -1);
   captureHandler->setKeyEventToggleContinuousCapture(osgGA::GUIEventAdapter::KEY_F9);
   captureHandler->setKeyEventTakeScreenShot(osgGA::GUIEventAdapter::KEY_F8);
+  captureHandler->setFramesToCapture(1);
   viewer->addEventHandler(captureHandler.get());
 }
 
@@ -816,9 +814,6 @@ void Viewer::init()
   // Stop listening to ESC key, cause it doesn't end RCS properly
   viewer->setKeyEventSetsDone(0);
   viewer->realize();
-
-  // Memorize the view matrix
-  //this->lastViewMatrix = viewer->getCamera()->getViewMatrix();
 
   // Add all HUD's after creation of the window
   osgViewer::Viewer::Windows windows;
