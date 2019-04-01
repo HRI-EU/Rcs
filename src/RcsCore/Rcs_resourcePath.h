@@ -115,6 +115,12 @@ bool Rcs_getAbsoluteFileName(const char* fileName, char* absFileName);
 bool Rcs_getAbsolutePath(const char* fileName, char* absPath);
 
 /*! \ingroup ResourcePathFunctions
+ *  \brief Returns true if the file is found in all resource paths, false
+ *         otherwise.
+ */
+bool Rcs_fileInResourcePath(const char* fileName);
+
+/*! \ingroup ResourcePathFunctions
  *  \brief Prints out the resource paths to stderr.
  */
 void Rcs_printResourcePath(void);

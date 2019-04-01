@@ -199,7 +199,11 @@ extern "C" {
     if (File_exists(fileName))
     {
       NLOG(6, "Found file \"%s\" in relative path", fileName);
+
+      if (absFileName != NULL)
+      {
       strcpy(absFileName, fileName);
+      }
       return true;
     }
     else
@@ -224,7 +228,11 @@ extern "C" {
       if (File_exists(fullName.c_str()))
       {
         NLOG(6, "Found file \"%s\" in path \"%s\"", fileName, fullName.c_str());
+
+        if (absFileName != NULL)
+        {
         strcpy(absFileName, fullName.c_str());
+        }
         return true;
       }
     }
@@ -291,6 +299,14 @@ extern "C" {
     RLOG(6, "Didn't find file \"%s\" in resource paths", fileName);
 
     return false;
+  }
+
+  /*****************************************************************************
+   *
+   ****************************************************************************/
+  bool Rcs_fileInResourcePath(const char* fileName)
+  {
+    return Rcs_getAbsoluteFileName(fileName, NULL);
   }
 
   /*****************************************************************************
