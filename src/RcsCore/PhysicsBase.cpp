@@ -43,44 +43,40 @@
  * Constructor.
  ******************************************************************************/
 Rcs::PhysicsBase::PhysicsBase(const RcsGraph* graph_) :
-  graph(graph_),
-  internalDesiredGraph(NULL),
-  simTime(0.0),
   T_des(NULL),
   q_des(NULL),
   q_dot_des(NULL),
-  enablePPS(false)
+  simTime(0.0),
+  enablePPS(false),
+  internalDesiredGraph(NULL)
 {
-  RCHECK(this->graph);
+  RCHECK(graph_);
 
   // create arrays for joint positions, velocities and torque
-  this->T_des = MatNd_create(this->graph->dof, 1);
-  this->q_des = MatNd_clone(this->graph->q);
-  this->q_dot_des = MatNd_create(this->graph->dof, 1);
+  this->T_des = MatNd_create(graph_->dof, 1);
+  this->q_des = MatNd_clone(graph_->q);
+  this->q_dot_des = MatNd_create(graph_->dof, 1);
 
-  this->internalDesiredGraph = RcsGraph_clone(this->graph);
-  this->graph = internalDesiredGraph;
+  this->internalDesiredGraph = RcsGraph_clone(graph_);
 }
 
 /*******************************************************************************
  * Copy constructor.
  ******************************************************************************/
 Rcs::PhysicsBase::PhysicsBase(const PhysicsBase& copyFromMe) :
-  graph(copyFromMe.graph),
-  internalDesiredGraph(NULL),
-  simTime(copyFromMe.simTime),
   T_des(NULL),
   q_des(NULL),
   q_dot_des(NULL),
-  enablePPS(false)
+  simTime(copyFromMe.simTime),
+  enablePPS(false),
+  internalDesiredGraph(NULL)
 {
   // Create arrays for joint positions, velocities and torques
   this->T_des = MatNd_clone(copyFromMe.T_des);
   this->q_des = MatNd_clone(copyFromMe.q_des);
   this->q_dot_des = MatNd_clone(copyFromMe.q_dot_des);
 
-  this->internalDesiredGraph = RcsGraph_clone(this->graph);
-  this->graph = internalDesiredGraph;
+  this->internalDesiredGraph = RcsGraph_clone(copyFromMe.getGraph());
 }
 
 /*******************************************************************************
@@ -88,21 +84,44 @@ Rcs::PhysicsBase::PhysicsBase(const PhysicsBase& copyFromMe) :
  ******************************************************************************/
 Rcs::PhysicsBase::PhysicsBase(const PhysicsBase& copyFromMe,
                               const RcsGraph* newGraph) :
-  graph(newGraph),
-  internalDesiredGraph(NULL),
-  simTime(copyFromMe.simTime),
   T_des(NULL),
   q_des(NULL),
   q_dot_des(NULL),
-  enablePPS(false)
+  simTime(copyFromMe.simTime),
+  enablePPS(false),
+  internalDesiredGraph(NULL)
 {
   // Create arrays for joint positions, velocities and torques
   this->T_des = MatNd_clone(copyFromMe.T_des);
   this->q_des = MatNd_clone(copyFromMe.q_des);
   this->q_dot_des = MatNd_clone(copyFromMe.q_dot_des);
 
-  this->internalDesiredGraph = RcsGraph_clone(this->graph);
-  this->graph = internalDesiredGraph;
+  this->internalDesiredGraph = RcsGraph_clone(newGraph);
+}
+
+/*******************************************************************************
+ * Assignment operator.
+ ******************************************************************************/
+Rcs::PhysicsBase& Rcs::PhysicsBase::operator= (const Rcs::PhysicsBase& copyFromMe)
+{
+  // check for self-assignment by comparing the address of the
+  // implicit object and the parameter
+  if (this == &copyFromMe)
+  {
+    return *this;
+  }
+
+  MatNd_resizeCopy(&this->T_des, copyFromMe.T_des);
+  MatNd_resizeCopy(&this->q_des, copyFromMe.q_des);
+  MatNd_resizeCopy(&this->q_dot_des, copyFromMe.q_dot_des);
+
+  this->simTime = copyFromMe.time();
+  this->enablePPS = copyFromMe.getEnablePPS();
+
+  RcsGraph_destroy(this->internalDesiredGraph);
+  this->internalDesiredGraph = RcsGraph_clone(copyFromMe.getGraph());
+
+  return *this;
 }
 
 /*******************************************************************************
@@ -118,8 +137,8 @@ Rcs::PhysicsBase::~PhysicsBase()
 }
 
 /*******************************************************************************
-*
-******************************************************************************/
+ *
+ ******************************************************************************/
 void Rcs::PhysicsBase::simulate(double dt, RcsGraph* graph, MatNd* q_ddot,
                                 MatNd* T, bool control)
 {
@@ -143,13 +162,13 @@ void Rcs::PhysicsBase::simulate(double dt, RcsGraph* graph, MatNd* q_ddot,
 void Rcs::PhysicsBase::disableCollisionsWithinGroup(const char* suffix)
 {
   // if suffix == NULL, disable collisions within all groups
-  RCSGRAPH_TRAVERSE_BODIES(this->graph)
+  RCSGRAPH_TRAVERSE_BODIES(this->internalDesiredGraph)
   {
     //if ((suffix && STREQ(suffix, BODY->suffix)) || (!suffix))
     if ((suffix && STREQ(suffix, BODY->suffix)))
     {
       RcsBody* b1 = BODY;
-      RCSGRAPH_TRAVERSE_BODIES(this->graph)
+      RCSGRAPH_TRAVERSE_BODIES(this->internalDesiredGraph)
       {
         if (STREQ(b1->suffix, BODY->suffix) && BODY != b1)
         {
@@ -165,7 +184,7 @@ void Rcs::PhysicsBase::disableCollisionsWithinGroup(const char* suffix)
  ******************************************************************************/
 void Rcs::PhysicsBase::disableMeshCollisions()
 {
-  RCSGRAPH_TRAVERSE_BODIES(this->graph)
+  RCSGRAPH_TRAVERSE_BODIES(this->internalDesiredGraph)
   {
     RcsBody* b1 = BODY;
 
@@ -173,7 +192,7 @@ void Rcs::PhysicsBase::disableMeshCollisions()
     {
       if (SHAPE->type == RCSSHAPE_MESH)
       {
-        RCSGRAPH_TRAVERSE_BODIES(this->graph)
+        RCSGRAPH_TRAVERSE_BODIES(this->internalDesiredGraph)
         {
           RCSBODY_TRAVERSE_SHAPES(BODY)
           {
@@ -197,11 +216,11 @@ void Rcs::PhysicsBase::disableMeshCollisions()
  ******************************************************************************/
 void Rcs::PhysicsBase::disableCollisions()
 {
-  RCSGRAPH_TRAVERSE_BODIES(this->graph)
+  RCSGRAPH_TRAVERSE_BODIES(this->internalDesiredGraph)
   {
     RcsBody* b1 = BODY;
 
-    RCSGRAPH_TRAVERSE_BODIES(this->graph)
+    RCSGRAPH_TRAVERSE_BODIES(this->internalDesiredGraph)
     {
       if (b1 != BODY)
       {
@@ -233,13 +252,13 @@ void Rcs::PhysicsBase::enableJointLimits()
  ******************************************************************************/
 const RcsGraph* Rcs::PhysicsBase::getGraph() const
 {
-  return this->graph;
+  return this->internalDesiredGraph;
 }
 
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-const RcsGraph* Rcs::PhysicsBase::getDesiredGraph() const
+RcsGraph* Rcs::PhysicsBase::getGraph()
 {
   return this->internalDesiredGraph;
 }
@@ -263,6 +282,22 @@ void Rcs::PhysicsBase::resetTime()
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+void Rcs::PhysicsBase::setTime(double t)
+{
+  this->simTime = t;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void Rcs::PhysicsBase::incrementTime(double dt)
+{
+  this->simTime += dt;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void Rcs::PhysicsBase::setControlInput(const MatNd* q_des_,
                                        const MatNd* q_dot_des_,
                                        const MatNd* T_des_)
@@ -272,18 +307,18 @@ void Rcs::PhysicsBase::setControlInput(const MatNd* q_des_,
   {
     RCHECK_EQ(q_des_->n, 1);
 
-    if (q_des_->m==this->graph->dof)
+    if (q_des_->m==this->internalDesiredGraph->dof)
     {
       MatNd_copy(this->q_des, q_des_);
     }
-    else if (q_des_->m==this->graph->nJ)
+    else if (q_des_->m==this->internalDesiredGraph->nJ)
     {
-      RcsGraph_stateVectorFromIK(this->graph, q_des_, this->q_des);
+      RcsGraph_stateVectorFromIK(this->internalDesiredGraph, q_des_, this->q_des);
     }
     else
     {
       RFATAL("Dimension mismatch: q_des_->m=%d, but dof=%d and nJ=%d",
-             q_des_->m, this->graph->dof, this->graph->nJ);
+             q_des_->m, this->internalDesiredGraph->dof, this->internalDesiredGraph->nJ);
     }
 
     // Forward kinematics based on the desired state. This is needed in order
@@ -296,18 +331,18 @@ void Rcs::PhysicsBase::setControlInput(const MatNd* q_des_,
   {
     RCHECK_EQ(q_dot_des_->n, 1);
 
-    if (q_dot_des_->m==this->graph->dof)
+    if (q_dot_des_->m==this->internalDesiredGraph->dof)
     {
       MatNd_copy(this->q_dot_des, q_dot_des_);
     }
-    else if (q_dot_des_->m==this->graph->nJ)
+    else if (q_dot_des_->m==this->internalDesiredGraph->nJ)
     {
-      RcsGraph_stateVectorFromIK(this->graph, q_dot_des_, this->q_dot_des);
+      RcsGraph_stateVectorFromIK(this->internalDesiredGraph, q_dot_des_, this->q_dot_des);
     }
     else
     {
       RFATAL("Dimension mismatch: q_dot_des_->m=%d, but dof=%d and nJ=%d",
-             q_dot_des_->m, this->graph->dof, this->graph->nJ);
+             q_dot_des_->m, this->internalDesiredGraph->dof, this->internalDesiredGraph->nJ);
     }
   }
 
@@ -316,18 +351,18 @@ void Rcs::PhysicsBase::setControlInput(const MatNd* q_des_,
   {
     RCHECK_EQ(T_des_->n, 1);
 
-    if (T_des_->m==this->graph->dof)
+    if (T_des_->m==this->internalDesiredGraph->dof)
     {
       MatNd_copy(this->T_des, T_des_);
     }
-    else if (T_des_->m==this->graph->nJ)
+    else if (T_des_->m==this->internalDesiredGraph->nJ)
     {
-      RcsGraph_stateVectorFromIK(this->graph, T_des_, this->T_des);
+      RcsGraph_stateVectorFromIK(this->internalDesiredGraph, T_des_, this->T_des);
     }
     else
     {
       RFATAL("Dimension mismatch: T_des_->m=%d, but dof=%d and nJ=%d",
-             T_des_->m, this->graph->dof, this->graph->nJ);
+             T_des_->m, this->internalDesiredGraph->dof, this->internalDesiredGraph->nJ);
     }
   }
 }

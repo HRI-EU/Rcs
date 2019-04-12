@@ -481,7 +481,7 @@ int main(int argc, char** argv)
         viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
         simNode = new Rcs::PhysicsNode(sim);
         viewer->add(simNode);
-        Rcs::GraphNode* gnDes = new Rcs::GraphNode(sim->getDesiredGraph());
+        Rcs::GraphNode* gnDes = new Rcs::GraphNode(sim->getGraph());
         gnDes->setGhostMode(true, "RED");
         viewer->add(gnDes);
         hud = new Rcs::HUD();

@@ -227,14 +227,14 @@ void Rcs::VortexSimulation::initPhysics(const PhysicsConfig* physicsConfig,
 
   // Create all Vortex VxParts from the RcsGraph's bodies
   RLOG(5, "Creating bodies");
-  RCSGRAPH_TRAVERSE_BODIES(this->graph)
+  RCSGRAPH_TRAVERSE_BODIES(getGraph())
   {
     createCompositeBody(BODY);
   }
 
   // Create all joints between the RcsGraph's bodies
   RLOG(5, "Creating joints");
-  RCSGRAPH_TRAVERSE_BODIES(this->graph)
+  RCSGRAPH_TRAVERSE_BODIES(getGraph())
   {
     createJoint(BODY);
   }
@@ -360,7 +360,7 @@ void Rcs::VortexSimulation::updateSensors()
 
 
 
-  RCSGRAPH_TRAVERSE_SENSORS(this->graph)
+  RCSGRAPH_TRAVERSE_SENSORS(getGraph())
   {
     switch (SENSOR->type)
     {
@@ -949,7 +949,7 @@ void Rcs::VortexSimulation::simulate(double dt,
   updateTransformations();
 
 
-  this->simTime += dt;
+  incrementTime(dt);
 
 
   // Update arrays
@@ -995,7 +995,7 @@ void Rcs::VortexSimulation::simulate(double dt,
  ******************************************************************************/
 void Rcs::VortexSimulation::reset()
 {
-  MatNd_copy(this->q_des, graph->q);
+  MatNd_copy(this->q_des, getGraph()->q);
   MatNd_setZero(this->q_dot_des);
   MatNd_setZero(this->T_des);
 
@@ -1031,13 +1031,13 @@ void Rcs::VortexSimulation::reset()
   }
 
 #if 0
-  RCSGRAPH_TRAVERSE_JOINTS(this->graph)
+  RCSGRAPH_TRAVERSE_JOINTS(getGraph())
   {
     Vx::VxConstraint* c = (Vx::VxConstraint*) JNT->extraInfo;
     if (c != NULL)
     {
       c->resetDynamics();
-      c->setLockPosition(0, MatNd_get(this->graph->q, JNT->jointIndex, 0));
+      c->setLockPosition(0, MatNd_get(getGraph()->q, JNT->jointIndex, 0));
     }
   }
 #else
@@ -1052,7 +1052,7 @@ void Rcs::VortexSimulation::reset()
         c->isOfClassType(Vx::VxPrismatic::getStaticClassType()))
     {
       RcsJoint* jnt = (RcsJoint*)c->getUserDataPtr();
-      c->setLockPosition(0, MatNd_get(this->graph->q, jnt->jointIndex, 0));
+      c->setLockPosition(0, MatNd_get(getGraph()->q, jnt->jointIndex, 0));
     }
 
   }
@@ -1356,7 +1356,7 @@ bool Rcs::VortexSimulation::createJoint(const RcsBody* body)
         }
       }
 
-      double qInit = MatNd_get(graph->q, body->jnt->jointIndex, 0);
+      double qInit = MatNd_get(getGraph()->q, body->jnt->jointIndex, 0);
       Vx::VxConstraint* vJnt = createJoint1D(part0, part1,
                                              this->jointLockStiffness,
                                              this->jointLockDamping,
@@ -1389,7 +1389,7 @@ bool Rcs::VortexSimulation::createJoint(const RcsBody* body)
         break;
       }
 
-      Vx::VxConstraint* vJnt = createFixedJoint(part0, part1, this->graph);
+      Vx::VxConstraint* vJnt = createFixedJoint(part0, part1, getGraph());
 
       if (vJnt != NULL)
       {
@@ -1422,18 +1422,18 @@ void Rcs::VortexSimulation::setJointTorque(const MatNd* T_des)
 {
   RcsStateType type;
 
-  if (T_des->m == this->graph->dof)
+  if (T_des->m == getGraph()->dof)
   {
     type = RcsStateFull;
   }
-  else if (T_des->m == this->graph->nJ)
+  else if (T_des->m == getGraph()->nJ)
   {
     type = RcsStateIK;
   }
   else
   {
     RFATAL("Dimension mismatch in T_des: has %d rows, but RcsGraph::dof=%d and"
-           " RcsGraph::nJ=%d", T_des->m, this->graph->dof, this->graph->nJ);
+           " RcsGraph::nJ=%d", T_des->m, getGraph()->dof, getGraph()->nJ);
   }
 
 
@@ -1502,10 +1502,10 @@ void Rcs::VortexSimulation::getJointTorque(MatNd* T, RcsStateType sType) const
   switch (sType)
   {
     case RcsStateFull:
-      MatNd_reshapeAndSetZero(T, this->graph->dof, 1);
+      MatNd_reshapeAndSetZero(T, getGraph()->dof, 1);
       break;
     case  RcsStateIK:
-      MatNd_reshapeAndSetZero(T, this->graph->nJ, 1);
+      MatNd_reshapeAndSetZero(T, getGraph()->nJ, 1);
       break;
     default:
       RFATAL("Wrong state type: %d", sType);
@@ -1526,8 +1526,8 @@ void Rcs::VortexSimulation::getJointAngles(MatNd* q, RcsStateType sType) const
       MatNd_reshapeCopy(q, this->q_des);
       break;
     case  RcsStateIK:
-      MatNd_reshape(q, this->graph->nJ, 1);
-      RcsGraph_stateVectorToIK(this->graph, this->q_des, q);
+      MatNd_reshape(q, getGraph()->nJ, 1);
+      RcsGraph_stateVectorToIK(getGraph(), this->q_des, q);
       break;
     default:
       RFATAL("Wrong state type: %d", sType);
@@ -1599,10 +1599,10 @@ void Rcs::VortexSimulation::getJointVelocities(MatNd* q_dot,
   switch (sType)
   {
     case RcsStateFull:
-      MatNd_reshapeAndSetZero(q_dot, this->graph->dof, 1);
+      MatNd_reshapeAndSetZero(q_dot, getGraph()->dof, 1);
       break;
     case  RcsStateIK:
-      MatNd_reshapeAndSetZero(q_dot, this->graph->nJ, 1);
+      MatNd_reshapeAndSetZero(q_dot, getGraph()->nJ, 1);
       break;
     default:
       RFATAL("Wrong state type: %d", sType);
@@ -1672,7 +1672,7 @@ void Rcs::VortexSimulation::getJointVelocities(MatNd* q_dot,
  ******************************************************************************/
 void Rcs::VortexSimulation::setMassAndInertiaFromPhysics(RcsGraph* graph_)
 {
-  bool isGraphFromPhysics = graph_ == this->graph;
+  bool isGraphFromPhysics = (graph_ == getGraph());
 
   const Vx::VxPartSet& parts = universe->getParts();
 
@@ -1784,7 +1784,7 @@ bool Rcs::VortexSimulation::removeJoint(RcsBody* body)
 
     if (part1 != NULL)
     {
-    part1->setControl(Vx::VxPart::kControlDynamic);
+      part1->setControl(Vx::VxPart::kControlDynamic);
       return true;
     }
 
@@ -1853,10 +1853,10 @@ bool Rcs::VortexSimulation::removeBodyConstraints(RcsBody* body)
  ******************************************************************************/
 bool Rcs::VortexSimulation::addBodyConstraints(RcsBody* body)
 {
-  this->T_des = MatNd_realloc(this->T_des, graph->dof, 1);
-  this->q_des = MatNd_realloc(this->q_des, graph->dof, 1);
-  MatNd_copy(this->q_des, graph->q);
-  this->q_dot_des = MatNd_realloc(this->q_dot_des, graph->dof, 1);
+  this->T_des = MatNd_realloc(this->T_des, getGraph()->dof, 1);
+  this->q_des = MatNd_realloc(this->q_des, getGraph()->dof, 1);
+  MatNd_copy(this->q_des, getGraph()->q);
+  this->q_dot_des = MatNd_realloc(this->q_dot_des, getGraph()->dof, 1);
 
   if (body == NULL)
   {
@@ -2120,11 +2120,11 @@ void Rcs::VortexSimulation::setJointCompliance(const MatNd* stiffness,
 void Rcs::VortexSimulation::getJointCompliance(MatNd* stiffness,
                                                MatNd* damping) const
 {
-  MatNd_reshapeAndSetZero(stiffness, graph->dof, 1);
+  MatNd_reshapeAndSetZero(stiffness, getGraph()->dof, 1);
 
   if (damping!=NULL)
   {
-    MatNd_reshapeAndSetZero(damping, graph->dof, 1);
+    MatNd_reshapeAndSetZero(damping, getGraph()->dof, 1);
   }
 
   const Vx::VxConstraintSet& constraints = universe->getConstraints();
@@ -2173,7 +2173,7 @@ void Rcs::VortexSimulation::applyControl(double dt)
 
     if ((vxBdy!=NULL) && (vxBdy->body->physicsSim==RCSBODY_PHYSICS_KINEMATIC))
     {
-      RcsBody* transformBdy = RcsGraph_getBodyByName(internalDesiredGraph,
+      RcsBody* transformBdy = RcsGraph_getBodyByName(getGraph(),
                                                      vxBdy->body->name);
 
       RCHECK_MSG(transformBdy, "This must never happen: body \"%s\" is not"
@@ -2597,7 +2597,7 @@ Rcs::VortexBody* Rcs::VortexSimulation::getPartPtr(const RcsBody* body) const
 ******************************************************************************/
 bool Rcs::VortexSimulation::removeBody(const char* name)
 {
-  RcsBody* bdy = RcsGraph_getBodyByName(this->internalDesiredGraph, name);
+  RcsBody* bdy = RcsGraph_getBodyByName(getGraph(), name);
   if (bdy == NULL)
   {
     RLOG(1, "Couldn't find body \"%s\" in graph - skipping removal",
@@ -2638,7 +2638,7 @@ bool Rcs::VortexSimulation::removeBody(const char* name)
   arrBuf[0] = this->q_des;
   arrBuf[1] = this->q_dot_des;
   arrBuf[2] = this->T_des;
-  RcsGraph_removeBody(this->internalDesiredGraph, name, arrBuf, 3);
+  RcsGraph_removeBody(getGraph(), name, arrBuf, 3);
 
   Vx::VxPart* nowMyPart = universe->removePart(part);
   delete nowMyPart;
@@ -2657,7 +2657,7 @@ bool Rcs::VortexSimulation::addBody(const RcsBody* body)
 
   RcsBody* cpyOfBody = RcsBody_clone(body);
   RCHECK(cpyOfBody);
-  cpyOfBody->parent = RcsGraph_getBodyByName(internalDesiredGraph, body->name);
+  cpyOfBody->parent = RcsGraph_getBodyByName(getGraph(), body->name);
 
   bool success = createCompositeBody(cpyOfBody);
 
@@ -2672,12 +2672,12 @@ bool Rcs::VortexSimulation::addBody(const RcsBody* body)
 
   if (nJoints > 0)
   {
-    this->T_des = MatNd_realloc(this->T_des, graph->dof, 1);
-    this->q_des = MatNd_realloc(this->q_des, graph->dof, 1);
-    this->q_dot_des = MatNd_realloc(this->q_dot_des, graph->dof, 1);
+    this->T_des = MatNd_realloc(this->T_des, getGraph()->dof, 1);
+    this->q_des = MatNd_realloc(this->q_des, getGraph()->dof, 1);
+    this->q_dot_des = MatNd_realloc(this->q_dot_des, getGraph()->dof, 1);
   }
 
-  RcsGraph_addBody(internalDesiredGraph, cpyOfBody->parent, cpyOfBody, arrBuf, 3);
+  RcsGraph_addBody(getGraph(), cpyOfBody->parent, cpyOfBody, arrBuf, 3);
 
 
   pthread_mutex_unlock(&this->extForceLock);
@@ -2693,7 +2693,7 @@ bool Rcs::VortexSimulation::addBody(const RcsBody* body)
 ******************************************************************************/
 bool Rcs::VortexSimulation::deactivateBody(const char* name)
 {
-  RcsBody* bdy = RcsGraph_getBodyByName(this->internalDesiredGraph, name);
+  RcsBody* bdy = RcsGraph_getBodyByName(getGraph(), name);
   if (bdy == NULL)
   {
     RLOG(1, "Couldn't find body \"%s\" in graph - skipping deactivation",

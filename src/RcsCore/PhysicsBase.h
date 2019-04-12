@@ -362,6 +362,15 @@ public:
   virtual void getJointCompliance(MatNd* stiffness,
                                   MatNd* damping=NULL) const = 0;
 
+
+
+
+
+
+
+
+
+
   /*! \brief Function for setting physics parameter. The concrete implementation
    *         depends on the derieved physics class. This classes implementation
    *         is empty.
@@ -374,7 +383,6 @@ public:
    */
   virtual bool setParameter(ParameterCategory category,
                             const char* name, const char* type, double value);
-
 
   /*! \brief Base class constructor.
    *
@@ -397,6 +405,10 @@ public:
    *  \param[in] newGraph     RcsGraph to refer to.
    */
   PhysicsBase(const PhysicsBase& copyFromMe, const RcsGraph* newGraph);
+
+  /*! \brief Assignment operator for deep copying everything.
+   */
+  PhysicsBase& operator = (const PhysicsBase&);
 
   /*! \brief Virtual destructor to allow overloading.
    */
@@ -455,9 +467,9 @@ public:
 
   /*! \brief Returns a pointer to the underlying graph.
    *
-   *  \return Pointer to the simulation's internal desired RcsGraph structure.
+   *  \return Pointer to the simulation's RcsGraph structure.
    */
-  virtual const RcsGraph* getDesiredGraph() const;
+  virtual RcsGraph* getGraph();
 
   /*! \brief Returns the simulation time. The simulation time is 0 on
    *         construction, and will be increased by dt for each call of
@@ -501,21 +513,29 @@ public:
 
   virtual bool check() const;
 
+
+
 protected:
 
-  const RcsGraph* graph;   ///< Points to the underlying RcsGraph
-  RcsGraph* internalDesiredGraph;   // For kinematic transforms based on q_des
-  double simTime;    ///< Simulation time in [sec]
+  /*! \brief Sets the internal simulation time.
+   */
+  virtual void setTime(double t);
+
+  /*! \brief Adds dt to the internal simulation time.
+   */
+  virtual void incrementTime(double dt);
+
   MatNd* T_des;      ///< Desired joint torque [RcsGraph::dof x 1]
   MatNd* q_des;      ///< Desired joint angles [RcsGraph::dof x 1]
   MatNd* q_dot_des;  ///< Desired joint velocities [RcsGraph::dof x 1]
-  bool enablePPS;    ///< Tactile sensor arrays flag
+
+
 
 private:
 
-  /*! \brief Private assignment operator to avoid double freeing of memory
-   */
-  PhysicsBase& operator = (const PhysicsBase&);
+  double simTime;    ///< Simulation time in [sec]
+  bool enablePPS;    ///< Tactile sensor arrays flag
+  RcsGraph* internalDesiredGraph;   // For kinematic transforms based on q_des
 };
 
 }   // namespace Rcs

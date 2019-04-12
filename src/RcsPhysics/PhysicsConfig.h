@@ -34,8 +34,8 @@
 
 *******************************************************************************/
 
-#ifndef SRC_RCSPHYSICS_PHYSICSCONFIG_H_
-#define SRC_RCSPHYSICS_PHYSICSCONFIG_H_
+#ifndef RCS_PHYSICSCONFIG_H
+#define RCS_PHYSICSCONFIG_H
 
 #include <libxml/tree.h>
 
@@ -46,7 +46,7 @@
 namespace Rcs
 {
 
-/**
+/*!
  * Name of the default material.
  *
  * When a PhysicsMaterial is created, it's values are initialized to those of
@@ -56,17 +56,14 @@ namespace Rcs
  */
 #define DEFAULT_MATERIAL_NAME "default"
 
-/**
+/*!
  * Definition of the material properties used by the physics simulator.
  */
 struct PhysicsMaterial
 {
-  // coefficient of linear friction
-  double frictionCoefficient;
-  // coefficient of angular (rolling) friction.
-  double rollingFrictionCoefficient;
-  // bouncyness
-  double restitution;
+  double frictionCoefficient;         //!< coefficient of linear friction
+  double rollingFrictionCoefficient;  //!< coefficient of angular (rolling) friction.
+  double restitution;                 //!<bouncyness
   // TODO add others?
 
   // xml node whose properties defined this material.
@@ -77,7 +74,7 @@ struct PhysicsMaterial
   PhysicsMaterial();
 };
 
-/**
+/*!
  * Physics engine configuration parameters.
  *
  * This is the C++-side model of the physics configuration XML file.
@@ -97,13 +94,15 @@ public:
   typedef std::map<std::string, PhysicsMaterial> MaterialMap;
   typedef std::vector<std::string> MaterialNameList;
 
-  /**
+  /*!
    * Load the physics configuration from the given xml file.
    */
-  explicit PhysicsConfig(const char* xmlFile);
+  PhysicsConfig(const char* xmlFile);
+  PhysicsConfig(const PhysicsConfig& copyFromMe);
+  PhysicsConfig& operator = (const PhysicsConfig&);
   virtual ~PhysicsConfig();
 
-  /**
+  /*!
    * Obtain the material properties of the named material.
    *
    * If a material of the given name doesn't exist, a new one is inserted,
@@ -118,7 +117,7 @@ public:
    */
   PhysicsMaterial* getMaterial(const std::string& materialName);
 
-  /**
+  /*!
    * Obtain the material properties of the named material.
    *
    * If a material of the given name doesn't exist, the default material is returned.
@@ -130,27 +129,27 @@ public:
    */
   const PhysicsMaterial* getMaterial(const std::string& materialName) const;
 
-  /**
+  /*!
    * Get a reference to the default material data.
    */
   PhysicsMaterial* getDefaultMaterial();
 
-  /**
+  /*!
    * Get a reference to the default material data.
    */
   const PhysicsMaterial* getDefaultMaterial() const;
 
-  /**
+  /*!
    * Get the names of all registered materials.
    */
   MaterialNameList getMaterialNames() const;
 
-  /**
+  /*!
    * Return the name of the xml file the config was loaded from.
    */
   const char* getConfigFileName() const;
 
-  /**
+  /*!
    * Return the root xml node of the config file.
    */
   xmlNodePtr getXMLRootNode() const;
@@ -158,27 +157,19 @@ public:
 
 private:
 
+  // load xml file and initialize all materials
+  void init(const char* configFile);
+
   // load the material data from xml
   void loadMaterials();
 
-  // full path of xml file
-  char* xmlFile;
-
-  // xml document, owns all xml objects
-  xmlDocPtr doc;
-  // document root node
-  xmlNodePtr root;
-
-  // default material data
-  PhysicsMaterial defaultMaterial;
-  // map from material name to material data
-  MaterialMap materials;
-
-  /*! \brief Private assignment operator to avoid double freeing of memory
-   */
-  PhysicsConfig& operator = (const PhysicsConfig&);
+  char* xmlFile;                     ///< full path of xml file
+  xmlDocPtr doc;                     ///< xml document, owns all xml objects
+  xmlNodePtr root;                   ///< document root node
+  PhysicsMaterial defaultMaterial;   ///< default material data
+  MaterialMap materials;             ///< map from material name to material data
 };
 
 } /* namespace Rcs */
 
-#endif /* SRC_RCSPHYSICS_PHYSICSCONFIG_H_ */
+#endif // RCS_PHYSICSCONFIG_H

@@ -195,7 +195,7 @@ Rcs::BulletSimulation::BulletSimulation(const RcsGraph* graph_,
  * Copy constructor
  ******************************************************************************/
 Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe):
-  PhysicsBase(copyFromMe, copyFromMe.graph),
+  PhysicsBase(copyFromMe, copyFromMe.getGraph()),
   dynamicsWorld(NULL),
   broadPhase(NULL),
   dispatcher(NULL),
@@ -422,7 +422,7 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
                              &this->rigidBodyAngularDamping);
   }
   // Create physics for RcsGraph
-  RCSGRAPH_TRAVERSE_BODIES(graph)
+  RCSGRAPH_TRAVERSE_BODIES(getGraph())
   {
     RLOGS(5, "Creating bullet body for \"%s\"", BODY->name);
 
@@ -450,7 +450,7 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
       dynamicsWorld->addRigidBody(btBody);
       //dynamicsWorld->addCollisionObject(btBdy);
 
-      btTypedConstraint* jnt = btBody->createJoint(graph);
+      btTypedConstraint* jnt = btBody->createJoint(getGraph());
 
       if (jnt!=NULL)
       {
@@ -465,7 +465,7 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
             hingeMap[BODY->jnt] = hinge;
             RLOGS(5, "Joint %s has value %f (%f)",
                   BODY->jnt->name, hinge->getHingeAngle(),
-                  graph->q->ele[BODY->jnt->jointIndex]);
+                  getGraph()->q->ele[BODY->jnt->jointIndex]);
           }
         }
 
@@ -532,7 +532,7 @@ void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
     return;
   }
 
-  this->simTime += dt;
+  incrementTime(dt);
   this->lastDt = dt;
 
   // Get joint velocities before step to compute accelerations:
@@ -612,18 +612,18 @@ void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
   // Read joint angles
   if (q != NULL)
   {
-    if (q->m == graph->dof)
+    if (q->m == getGraph()->dof)
     {
       getJointAngles(q, RcsStateFull);
     }
-    else if (q->m == graph->nJ)
+    else if (q->m == getGraph()->nJ)
     {
       getJointAngles(q, RcsStateIK);
     }
     else
     {
       RFATAL("Wrong dimensions of q-vector: [%d x %d], dof=%d nJ=%d",
-             q->m, q->n, graph->dof, graph->nJ);
+             q->m, q->n, getGraph()->dof, getGraph()->nJ);
     }
   }
 
@@ -631,18 +631,18 @@ void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
   // Read joint velocities
   if (q_dot != NULL)
   {
-    if (q_dot->m == graph->dof)
+    if (q_dot->m == getGraph()->dof)
     {
       getJointVelocities(q_dot, RcsStateFull);
     }
-    else if (q_dot->m == graph->nJ)
+    else if (q_dot->m == getGraph()->nJ)
     {
       getJointVelocities(q_dot, RcsStateIK);
     }
     else
     {
       RFATAL("Wrong dimensions of q_dot-vector: [%d x %d], dof=%d nJ=%d",
-             q_dot->m, q_dot->n, graph->dof, graph->nJ);
+             q_dot->m, q_dot->n, getGraph()->dof, getGraph()->nJ);
     }
   }
 
@@ -672,7 +672,7 @@ void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
  ******************************************************************************/
 void Rcs::BulletSimulation::reset()
 {
-  MatNd_copy(this->q_des, graph->q);
+  MatNd_copy(this->q_des, getGraph()->q);
   MatNd_setZero(this->q_dot_des);
   MatNd_setZero(this->T_des);
 
@@ -802,7 +802,7 @@ void Rcs::BulletSimulation::applyForce(const RcsBody* body, const double F[3],
     Vec3d_setZero(this->dragForce);
     Vec3d_setZero(this->dragAnchor);
 
-    if (oldDragBody!=NULL)
+    if (oldDragBody != NULL)
     {
       oldDragBody->applyCentralForce(btVector3(0.0, 0.0, 0.0));
       oldDragBody->setDamping(rigidBodyLinearDamping, rigidBodyAngularDamping);
@@ -910,7 +910,7 @@ void Rcs::BulletSimulation::getAngularVelocity(const RcsBody* body,
  ******************************************************************************/
 void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
 {
-  MatNd_reshape(q, (type == RcsStateFull) ? graph->dof : graph->nJ, 1);
+  MatNd_reshape(q, (type == RcsStateFull) ? getGraph()->dof : getGraph()->nJ, 1);
 
 #if 0
   // Update all hinge joints
@@ -924,7 +924,7 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
     if (hinge != NULL)
     {
       int idx = (type==RcsStateFull) ? rj->jointIndex : rj->jacobiIndex;
-      RCHECK_MSG(idx>=0 && idx<(int)graph->dof, "Joint \"%s\": idx = %d",
+      RCHECK_MSG(idx>=0 && idx<(int)getGraph()->dof, "Joint \"%s\": idx = %d",
                  rj ? rj->name : "NULL", idx);
       q->ele[idx] = hinge->getJointAngle();
     }
@@ -935,10 +935,10 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
 
   }
 #else
-  RCSGRAPH_TRAVERSE_JOINTS(this->graph)
+  RCSGRAPH_TRAVERSE_JOINTS(getGraph())
   {
     int idx = (type==RcsStateFull) ? JNT->jointIndex : JNT->jacobiIndex;
-    RCHECK_MSG(idx>=0 && idx<(int)graph->dof, "Joint \"%s\": idx = %d",
+    RCHECK_MSG(idx>=0 && idx<(int)getGraph()->dof, "Joint \"%s\": idx = %d",
                JNT->name, idx);
 
     Rcs::BulletHingeJoint* hinge = getHinge(JNT);
@@ -972,7 +972,7 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
       HTr A_BI;
       btBdy->getBodyTransform(&A_BI);
       int idx = (type==RcsStateFull) ? rb->jnt->jointIndex : rb->jnt->jacobiIndex;
-      RCHECK_MSG(idx>=0 && idx<(int)graph->dof, "Joint \"%s\": idx = %d",
+      RCHECK_MSG(idx>=0 && idx<(int)getGraph()->dof, "Joint \"%s\": idx = %d",
                  rb->jnt ? rb->jnt->name : "NULL", idx);
 
       // Transformation update: Here we compute the rigid body degrees of
@@ -1016,7 +1016,7 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
 void Rcs::BulletSimulation::getJointVelocities(MatNd* q_dot,
                                                RcsStateType type) const
 {
-  MatNd_reshape(q_dot, (type==RcsStateFull) ? graph->dof : graph->nJ, 1);
+  MatNd_reshape(q_dot, (type==RcsStateFull) ? getGraph()->dof : getGraph()->nJ, 1);
 
   // First update all hinge joints
   std::map<const RcsJoint*, Rcs::BulletHingeJoint*>::const_iterator it;
@@ -1029,7 +1029,7 @@ void Rcs::BulletSimulation::getJointVelocities(MatNd* q_dot,
     if (hinge != NULL)
     {
       int idx = (type==RcsStateFull) ? rj->jointIndex : rj->jacobiIndex;
-      RCHECK_MSG(idx>=0 && idx<(int)graph->dof, "Joint \"%s\": idx = %d",
+      RCHECK_MSG(idx>=0 && idx<(int)getGraph()->dof, "Joint \"%s\": idx = %d",
                  rj ? rj->name : "NULL", idx);
       q_dot->ele[idx] = hinge->getJointVelocity();
     }
@@ -1126,9 +1126,9 @@ bool Rcs::BulletSimulation::setJointAngle(const RcsJoint* jnt, double angle,
  ******************************************************************************/
 void Rcs::BulletSimulation::setJointTorque(const MatNd* T_des)
 {
-  RCSGRAPH_TRAVERSE_JOINTS(this->graph)
+  RCSGRAPH_TRAVERSE_JOINTS(getGraph())
   {
-    int idx = (T_des->m==graph->dof) ? JNT->jointIndex : JNT->jacobiIndex;
+    int idx = (T_des->m==getGraph()->dof) ? JNT->jointIndex : JNT->jacobiIndex;
     setJointTorque(JNT, MatNd_get(T_des, idx, 0));
   }
 }
@@ -1309,7 +1309,7 @@ void Rcs::BulletSimulation::applyControl(double dt)
       if (btBdy && btBdy->isStaticOrKinematicObject())
       {
         const RcsBody* rb_ = it->first;
-        const RcsBody* rb = RcsGraph_getBodyByName(internalDesiredGraph,
+        const RcsBody* rb = RcsGraph_getBodyByName(getGraph(),
                                                    rb_->name);
 
         if (rb)
@@ -1438,7 +1438,7 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
  ******************************************************************************/
 void Rcs::BulletSimulation::updateSensors()
 {
-  RCSGRAPH_TRAVERSE_SENSORS(this->graph)
+  RCSGRAPH_TRAVERSE_SENSORS(getGraph())
   {
     switch (SENSOR->type)
     {
@@ -1636,7 +1636,7 @@ bool Rcs::BulletSimulation::setParameter(ParameterCategory category,
 
     case Body:
     {
-      const RcsBody* bdy = RcsGraph_getBodyByName(this->graph, name);
+      const RcsBody* bdy = RcsGraph_getBodyByName(getGraph(), name);
       BulletRigidBody* btBdy = getRigidBody(bdy);
 
       if (btBdy != NULL)
@@ -1838,7 +1838,7 @@ bool Rcs::BulletSimulation::updatePPSSensor(RcsSensor* sensor)
  ******************************************************************************/
 bool Rcs::BulletSimulation::removeBody(const char* name)
 {
-  RcsBody* bdy = RcsGraph_getBodyByName(this->graph, name);
+  RcsBody* bdy = RcsGraph_getBodyByName(getGraph(), name);
   if (bdy==NULL)
   {
     RLOG(1, "Couldn't find body \"%s\" in graph - skipping removal",
@@ -1869,7 +1869,7 @@ bool Rcs::BulletSimulation::removeBody(const char* name)
   arrBuf[0] = this->q_des;
   arrBuf[1] = this->q_dot_des;
   arrBuf[2] = this->T_des;
-  RcsGraph_removeBody(this->internalDesiredGraph, name, arrBuf, 3);
+  RcsGraph_removeBody(getGraph(), name, arrBuf, 3);
 
   unlock();
 
@@ -1888,7 +1888,7 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
   lock();
 
   RcsBody* body = RcsBody_clone(body_);
-  body->parent = RcsGraph_getBodyByName(internalDesiredGraph, body_->name);
+  body->parent = RcsGraph_getBodyByName(getGraph(), body_->name);
 
   BulletRigidBody* btBody = BulletRigidBody::create(body, &config);
   RCHECK(btBody);
@@ -1912,7 +1912,7 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
 
     dynamicsWorld->addRigidBody(btBody);
 
-    btTypedConstraint* jnt = btBody->createJoint(graph);
+    btTypedConstraint* jnt = btBody->createJoint(getGraph());
 
     if (jnt != NULL)
     {
@@ -1927,7 +1927,7 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
           hingeMap[body->jnt] = hinge;
           RLOGS(5, "Joint %s has value %f (%f)",
                 body->jnt->name, hinge->getHingeAngle(),
-                MatNd_get(graph->q, body->jnt->jointIndex, 0));
+                MatNd_get(getGraph()->q, body->jnt->jointIndex, 0));
         }
       }
 
@@ -1946,12 +1946,12 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
 
   if (nJoints > 0)
   {
-    this->T_des = MatNd_realloc(this->T_des, graph->dof, 1);
-    this->q_des = MatNd_realloc(this->q_des, graph->dof, 1);
-    this->q_dot_des = MatNd_realloc(this->q_dot_des, graph->dof, 1);
+    this->T_des = MatNd_realloc(this->T_des, getGraph()->dof, 1);
+    this->q_des = MatNd_realloc(this->q_des, getGraph()->dof, 1);
+    this->q_dot_des = MatNd_realloc(this->q_dot_des, getGraph()->dof, 1);
   }
 
-  RcsGraph_addBody(internalDesiredGraph, body->parent, body, arrBuf, 3);
+  RcsGraph_addBody(getGraph(), body->parent, body, arrBuf, 3);
 
   unlock();
 
@@ -1966,7 +1966,7 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
  ******************************************************************************/
 bool Rcs::BulletSimulation::deactivateBody(const char* name)
 {
-  RcsBody* bdy = RcsGraph_getBodyByName(this->internalDesiredGraph, name);
+  RcsBody* bdy = RcsGraph_getBodyByName(getGraph(), name);
   if (bdy == NULL)
   {
     RLOG(1, "Couldn't find body \"%s\" in graph - skipping deactivation",
@@ -2022,7 +2022,7 @@ bool Rcs::BulletSimulation::activateBody(const char* name, const HTr* A_BI)
   }
 
   BulletRigidBody* part = it->second;
-  const RcsBody* bdy = RcsGraph_getBodyByName(this->graph, it->first.c_str());
+  const RcsBody* bdy = RcsGraph_getBodyByName(getGraph(), it->first.c_str());
   part->reset(A_BI);
 
   dynamicsWorld->addRigidBody(part);
