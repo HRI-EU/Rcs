@@ -60,7 +60,7 @@ PhysicsConfig::PhysicsConfig(const char* xmlFile)
 
 PhysicsConfig::PhysicsConfig(const PhysicsConfig& copyFromMe)
 {
-  init(copyFromMe.getConfigFileName());
+  initFromCopy(copyFromMe);
 }
 
 PhysicsConfig& PhysicsConfig::operator= (const PhysicsConfig& copyFromMe)
@@ -73,8 +73,7 @@ PhysicsConfig& PhysicsConfig::operator= (const PhysicsConfig& copyFromMe)
   }
 
   xmlFreeDoc(doc);
-  RFREE(this->xmlFile);
-  init(copyFromMe.getConfigFileName());
+  initFromCopy(copyFromMe);
 
   // return the existing object
   return *this;
@@ -83,16 +82,16 @@ PhysicsConfig& PhysicsConfig::operator= (const PhysicsConfig& copyFromMe)
 void PhysicsConfig::init(const char* configFile)
 {
   // store passed file name
-  this->xmlFile = String_clone(configFile);
+  this->xmlFile = configFile;
 
   // Determine absolute file name of config file and copy the XML file name
   char filename[256] = "";
-  bool fileExists = Rcs_getAbsoluteFileName(xmlFile, filename);
+  bool fileExists = Rcs_getAbsoluteFileName(configFile, filename);
 
   if (!fileExists)
   {
     RLOG(1, "Rcs physics configuration file \"%s\" not found",
-         xmlFile ? xmlFile : "NULL");
+        configFile ? configFile : "NULL");
     // Build backing doc manually
 
     // create empty configuration node
@@ -116,13 +115,38 @@ void PhysicsConfig::init(const char* configFile)
   }
 }
 
+void PhysicsConfig::initFromCopy(const PhysicsConfig& copyFromMe)
+{
+  xmlFile = copyFromMe.xmlFile;
+  // copy xml document
+  doc = xmlCopyDoc(copyFromMe.doc, 1);
+  RCHECK(doc);
+  root = xmlDocGetRootElement(doc);
+
+  // create material node for default material
+  defaultMaterial.materialNode = xmlNewDocNode(doc, NULL, BAD_CAST "material", NULL);
+  xmlSetProp(defaultMaterial.materialNode, BAD_CAST "name", BAD_CAST DEFAULT_MATERIAL_NAME);
+  xmlAddChild(root, defaultMaterial.materialNode);
+
+  // copy modified material data
+  defaultMaterial.frictionCoefficient = copyFromMe.defaultMaterial.frictionCoefficient;
+  defaultMaterial.rollingFrictionCoefficient = copyFromMe.defaultMaterial.rollingFrictionCoefficient;
+  defaultMaterial.restitution = copyFromMe.defaultMaterial.restitution;
+
+  for (MaterialMap::const_iterator it = copyFromMe.materials.begin(); it != copyFromMe.materials.end(); it++)
+  {
+    PhysicsMaterial* mat = getMaterial(it->first);
+
+    mat->frictionCoefficient = it->second.frictionCoefficient;
+    mat->rollingFrictionCoefficient = it->second.rollingFrictionCoefficient;
+    mat->restitution = it->second.restitution;
+  }
+}
+
 PhysicsConfig::~PhysicsConfig()
 {
   // free xml document
   xmlFreeDoc(doc);
-
-  // free config file name
-  RFREE(this->xmlFile);
 
   // the material map is freed automatically
 }
@@ -174,7 +198,7 @@ const PhysicsMaterial* PhysicsConfig::getMaterial(const std::string& materialNam
 
 const char* PhysicsConfig::getConfigFileName() const
 {
-  return xmlFile;
+  return xmlFile.c_str();
 }
 
 xmlNodePtr PhysicsConfig::getXMLRootNode() const
