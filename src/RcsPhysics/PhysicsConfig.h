@@ -160,10 +160,14 @@ private:
   // load xml file and initialize all materials
   void init(const char* configFile);
 
+  // copy from different config. Used by the copy ctor&assignment
+  // assumes fresh state, so copy assignment must clean up first.
+  void initFromCopy(const PhysicsConfig&);
+
   // load the material data from xml
   void loadMaterials();
 
-  char* xmlFile;                     ///< full path of xml file
+  std::string xmlFile;                     ///< full path of xml file
   xmlDocPtr doc;                     ///< xml document, owns all xml objects
   xmlNodePtr root;                   ///< document root node
   PhysicsMaterial defaultMaterial;   ///< default material data
