@@ -1920,7 +1920,9 @@ bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName)
   {
     for (int i=0; i<3; ++i)
     {
-      parent->Inertia->org[i] = (parent->Inertia->org[i]*parent->m + V_r_com[i]*body->m) / (parent->m+body->m);
+      parent->Inertia->org[i] =
+        (parent->Inertia->org[i]*parent->m + V_r_com[i]*body->m) /
+        (parent->m+body->m);
     }
   }
 
@@ -2201,4 +2203,75 @@ RcsBody* RcsBody_createBouncingSphere(const double pos[3],
   sphereCount++;
 
   return bdy;
+}
+
+/*******************************************************************************
+ * See header. We don't need to adjust the sensor mount points, since they are
+ * represented with respect to the body.
+ ******************************************************************************/
+bool RcsBody_removeJoints(RcsBody* self, RcsGraph* graph)
+{
+  if (!RcsBody_isInGraph(self, graph))
+  {
+    RLOG(4, "Body \"%s\" not found in graph - skipping joint removal",
+         self ? self->name : "NULL");
+    return false;
+  }
+
+  HTr A_JB;
+  HTr_setIdentity(&A_JB);
+
+  RCSBODY_TRAVERSE_JOINTS(self)
+  {
+    if (JNT->A_JP)
+    {
+      HTr_transformSelf(&A_JB, JNT->A_JP);
+    }
+
+    double qi = MatNd_get(graph->q, JNT->jointIndex, 0);
+
+    // Apply transformations of joints
+    int dirIdx = RcsJoint_getDirectionIndex(JNT);
+
+    if (RcsJoint_isTranslation(JNT))
+    {
+      Vec3d_constMulAndAddSelf(A_JB.org, A_JB.rot[dirIdx], qi);
+    }
+    else
+    {
+      Mat3d_rotateSelfAboutXYZAxis(A_JB.rot, dirIdx, qi);
+    }
+  }
+
+  // Update body relative transform to predecessor
+  if (self->A_BP)
+  {
+    HTr_transformSelf(self->A_BP, &A_JB);
+  }
+  else
+  {
+    self->A_BP = HTr_clone(&A_JB);
+  }
+
+  // Remove all joints
+  unsigned int nJoints = RcsBody_numJoints(self);
+  unsigned int ji = 0;
+  RcsJoint** jArr = RNALLOC(nJoints, RcsJoint*);
+
+  RCSBODY_TRAVERSE_JOINTS(self)
+  {
+    jArr[ji] = JNT;
+    ji++;
+  }
+
+  for (unsigned int i = 0; i < nJoints; ++i)
+  {
+    RcsJoint_destroy(jArr[i]);
+  }
+
+  RFREE(jArr);
+  self->jnt = NULL;
+  RcsGraph_makeJointsConsistent(graph);
+
+  return true;
 }

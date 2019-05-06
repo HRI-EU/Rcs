@@ -296,7 +296,7 @@ bool RcsGraph_setState(RcsGraph* self, const MatNd* q, const MatNd* qp);
  *         kinematically coupled joints will not be made consistent.
  */
 void RcsGraph_computeForwardKinematics(RcsGraph* self, const MatNd* q,
-                                       const MatNd* qp);
+                                       const MatNd* q_dot);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Sets the state default state vector, computes the forward

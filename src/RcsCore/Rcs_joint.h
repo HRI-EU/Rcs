@@ -161,6 +161,17 @@ void RcsJoint_fprintXML(FILE* out, const RcsJoint* self);
  */
 int RcsJoint_getJointIndex(const RcsJoint* self);
 
+/*! \ingroup RcsJointFunctions
+*  \brief Returns the joint's directionel index:
+*         - 0 for RCSJOINT_ROT_X and RCSJOINT_TRANS_X
+*         - 1 for RCSJOINT_ROT_Y and RCSJOINT_TRANS_Y
+*         - 2 for RCSJOINT_ROT_Z and RCSJOINT_TRANS_Z
+*
+*         If the joint type doesn't match any of these, the function returns -1.
+*/
+int RcsJoint_getDirectionIndex(const RcsJoint* self);
+
+
 #ifdef __cplusplus
 }
 #endif

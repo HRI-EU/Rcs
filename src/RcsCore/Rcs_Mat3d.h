@@ -231,7 +231,7 @@ bool Mat3d_isSymmetric(double A[3][3], double eps);
 
 /*! \ingroup RcsMat3dFunctions
  *  \brief Returns true if the matrix is diagonal. Off-diagonal elements are
- *         considered to be 0 if they are below eps.
+ *         considered to be 0 if thir absolute value is less than eps.
  */
 bool Mat3d_isDigonal(double A[3][3], double eps);
 

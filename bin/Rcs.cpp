@@ -382,7 +382,11 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("W", "Merge bodies");
       Rcs::KeyCatcherBase::registerKey("x", "Rewind bvh file");
       Rcs::KeyCatcherBase::registerKey("e", "Remove body under mouse");
+      Rcs::KeyCatcherBase::registerKey("J", "Remove joints of body by name");
+      Rcs::KeyCatcherBase::registerKey("E", "Remove all joints of graph");
       Rcs::KeyCatcherBase::registerKey("T", "Load trajectory file");
+      Rcs::KeyCatcherBase::registerKey("X", "Make monolithic");
+      Rcs::KeyCatcherBase::registerKey("S", "Scale graph");
 
       double dtSim = 0.0, dtStep = 0.04;
       char hudText[512] = "", comRef[64] = "";
@@ -602,7 +606,9 @@ int main(int argc, char** argv)
             RMSG("Changing scale factor");
             printf("Enter scaling factor: ");
             std::cin >> scaleFactor;
+            pthread_mutex_lock(&graphLock);
             RcsGraph_scale(graph, scaleFactor);
+            pthread_mutex_unlock(&graphLock);
           }
           else if (kc->getAndResetKey('m'))
           {
@@ -610,7 +616,9 @@ int main(int argc, char** argv)
             RMSG("Changing model state");
             printf("Enter name of model state: ");
             std::cin >> mdlState;
+            pthread_mutex_lock(&graphLock);
             bool ok = RcsGraph_setModelStateFromXML(graph, mdlState.c_str(), 0);
+            pthread_mutex_unlock(&graphLock);
             RMSG("%s changing model state to %s",
                  ok ? "SUCCEEDED" : "FAILED", mdlState.c_str());
           }
@@ -637,6 +645,29 @@ int main(int argc, char** argv)
             }
             pthread_mutex_unlock(&graphLock);
             RMSG("%s removing body", ok ? "SUCCEESS" : "FAILURE");
+          }
+          else if (kc->getAndResetKey('J'))
+          {
+            std::string bodyName;
+            RMSG("Removing all joints of a body");
+            printf("Enter body name: ");
+            std::cin >> bodyName;
+            RcsBody* bdy = RcsGraph_getBodyByName(graph, bodyName.c_str());
+            bool success = RcsBody_removeJoints(bdy, graph);
+            RMSG("Removing all joints of a body %s %s", bodyName.c_str(),
+                 success ? "SUCCEEDED" : "FAILED");
+          }
+          else if (kc->getAndResetKey('E'))
+          {
+            RMSG("Removing all joints of graph");
+            pthread_mutex_lock(&graphLock);
+            RCSGRAPH_TRAVERSE_BODIES(graph)
+            {
+              bool success = RcsBody_removeJoints(BODY, graph);
+              RLOG(1, "Removing all joints of a body %s %s", BODY->name,
+                   success ? "SUCCEEDED" : "FAILED");
+            }
+            pthread_mutex_unlock(&graphLock);
           }
           else if (kc->getAndResetKey('C'))
           {
@@ -812,6 +843,33 @@ int main(int argc, char** argv)
               RLOG(1, "Failed to read trajectory file \"%s\"", tFile.c_str());
             }
 
+          }
+          else if (kc->getAndResetKey('X'))
+          {
+            RMSG("Merging graph to a single rigid body");
+            pthread_mutex_lock(&graphLock);
+            RMSG("Removing all joints of graph");
+            RCSGRAPH_TRAVERSE_BODIES(graph)
+            {
+              bool success = RcsBody_removeJoints(BODY, graph);
+              RMSG("Removing all joints of a body %s %s", BODY->name,
+                   success ? "SUCCEEDED" : "FAILED");
+            }
+
+            RcsBody* first = RcsBody_depthFirstTraversalGetNext(graph->root);
+
+            while (first)
+            {
+              bool success = RcsBody_mergeWithParent(graph, first->name);
+              RMSG("%s to merge body %s with root",
+                   success ? "SUCCEEDED" : "FAILED", first->name);
+              first = RcsBody_depthFirstTraversalGetNext(graph->root);
+              RMSG("Next body to merge: %s", first->name);
+              RPAUSE();
+            }
+
+
+            pthread_mutex_unlock(&graphLock);
           }
         }   // KeyCatcher
 
@@ -1522,8 +1580,8 @@ int main(int argc, char** argv)
 
         sprintf(hudText, "[%s]: Sim-step: %.1f ms\nSim time: %.1f (%.1f) sec\n"
                 "Gravity compensation: %s\nDisplaying %s",
-                sim->getClassName(), dtSim*1000.0, sim->time(), Timer_get(timer),
-                gravComp ? "ON" : "OFF",
+                sim->getClassName(), dtSim*1000.0, sim->time(),
+                Timer_get(timer), gravComp ? "ON" : "OFF",
                 simNode ? simNode->getDisplayModeStr() : "nothing");
 
         if (hud != NULL)
@@ -3001,17 +3059,17 @@ int main(int argc, char** argv)
     case 15:
     {
 
-      RLOG(0, "Trace 0: phi = %f", 180.0/M_PI*Math_acos(0.5 * (0.0 - 1.0)));
-      RLOG(0, "Trace 1: phi = %f", 180.0/M_PI*Math_acos(0.5 * (1.0 - 1.0)));
-      RLOG(0, "Trace 2: phi = %f", 180.0/M_PI*Math_acos(0.5 * (2.0 - 1.0)));
-      RLOG(0, "Trace 3: phi = %f", 180.0/M_PI*Math_acos(0.5 * (3.0 - 1.0)));
+      RLOG(0, "Trace 0: phi = %f", 180.0/M_PI*Math_acos(0.5 * (0.0-1.0)));
+      RLOG(0, "Trace 1: phi = %f", 180.0/M_PI*Math_acos(0.5 * (1.0-1.0)));
+      RLOG(0, "Trace 2: phi = %f", 180.0/M_PI*Math_acos(0.5 * (2.0-1.0)));
+      RLOG(0, "Trace 3: phi = %f", 180.0/M_PI*Math_acos(0.5 * (3.0-1.0)));
 
-      RLOG(0, "Trace 0.5: phi = %f", 180.0/M_PI*Math_acos(0.5 * (0.5 - 1.0)));
-      RLOG(0, "Trace 1.5: phi = %f", 180.0/M_PI*Math_acos(0.5 * (1.5 - 1.0)));
-      RLOG(0, "Trace 2.5: phi = %f", 180.0/M_PI*Math_acos(0.5 * (2.5 - 1.0)));
+      RLOG(0, "Trace 0.5: phi = %f", 180.0/M_PI*Math_acos(0.5 * (0.5-1.0)));
+      RLOG(0, "Trace 1.5: phi = %f", 180.0/M_PI*Math_acos(0.5 * (1.5-1.0)));
+      RLOG(0, "Trace 2.5: phi = %f", 180.0/M_PI*Math_acos(0.5 * (2.5-1.0)));
 
-      RLOG(0, "Trace 1/3: phi = %f", 180.0/M_PI*Math_acos(0.5 * (1.0/3.0 - 1.0)));
-      RLOG(0, "Trace 2/3: phi = %f", 180.0/M_PI*Math_acos(0.5 * (2.0/3.0 - 1.0)));
+      RLOG(0, "Trace 1/3: phi = %f", 180.0/M_PI*Math_acos(0.5 * (1.0/3.0-1.0)));
+      RLOG(0, "Trace 2/3: phi = %f", 180.0/M_PI*Math_acos(0.5 * (2.0/3.0-1.0)));
       // 0 .33 .66 1 1.33 1.66 2 2.33 2.66 3
 
 

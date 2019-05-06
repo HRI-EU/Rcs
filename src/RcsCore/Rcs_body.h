@@ -350,8 +350,34 @@ bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName);
 void RcsBody_computeAABB(const RcsBody* body,
                          double xyzMin[3], double xyzMax[3]);
 
+/*! \ingroup RcsBodyFunctions
+*  \brief This convenience function creates a sphere with the given mass and
+*         radius that can be added to a physics engine. The caller is
+*         responsible to free the returned memory.
+*
+*  \param[in] pos      Initial position of the sphere. This rigid body joint's
+*                      q0 members will be initialized with this.
+*  \param[in] mass     Sphere mass in [kg]
+*  \param[in] radius   Sphere radius in [m]
+*  \return Body with the given properties. The function will always succeed,
+*          even if weird values (e.g. negative mass) is given as input.
+*/
 RcsBody* RcsBody_createBouncingSphere(const double pos[3],
                                       double mass, double radius);
+
+/*! \ingroup RcsBodyFunctions
+*  \brief This function removes all joints from a body. The relative transforms
+*         of the bodie's shapes will be preserved. The joint positions will be
+*         considered as given in the graph's q-vector. All changes will
+*         consistently be reflected in the graph.
+*
+*  \param[in] self   Valid (not NULL) pointer to body.
+*  \return true for success, false otherwise:
+*          - self is NULL
+*          - self is not part of graph
+*/
+
+bool RcsBody_removeJoints(RcsBody* self, RcsGraph* graph);
 
 #ifdef __cplusplus
 }

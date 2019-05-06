@@ -612,3 +612,40 @@ int RcsJoint_getJointIndex(const RcsJoint* self)
 {
   return self ? self->jointIndex : -1;
 }
+
+
+
+/******************************************************************************
+
+\brief See header.
+
+******************************************************************************/
+
+int RcsJoint_getDirectionIndex(const RcsJoint* self)
+{
+  int idx = -1;
+
+  switch (self->type)
+  {
+    case RCSJOINT_TRANS_X:
+    case RCSJOINT_ROT_X:
+    {
+      idx = 0;
+      break;
+    }
+    case RCSJOINT_TRANS_Y:
+    case RCSJOINT_ROT_Y:
+    {
+      idx = 1;
+      break;
+    }
+    case RCSJOINT_TRANS_Z:
+    case RCSJOINT_ROT_Z:
+    {
+      idx = 2;
+      break;
+    }
+  }
+
+  return idx;
+}
