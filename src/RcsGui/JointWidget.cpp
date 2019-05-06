@@ -228,11 +228,11 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
         check_constraints[i]->setEnabled(false);
       }
 
-      lcd_q_cmd[i] = new QLCDNumber(6);
+      lcd_q_cmd[i] = new QLCDNumber(7);
       lcd_q_cmd[i]->setAutoFillBackground(true);
       lcd_q_cmd[i]->setFixedHeight(20);
       lcd_q_cmd[i]->setPalette(palette);
-      lcd_q_act[i] = new QLCDNumber(6);
+      lcd_q_act[i] = new QLCDNumber(7);
       lcd_q_act[i]->setAutoFillBackground(true);
       lcd_q_act[i]->setFixedHeight(20);
       lcd_q_act[i]->setPalette(palette);
