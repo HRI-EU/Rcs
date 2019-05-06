@@ -350,6 +350,10 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
         {
           RLOG(4, "Failed to add mesh \"%s\" to shape", shape->meshFile);
         }
+        if (shape->scale != 1.0)
+        {
+          RcsMesh_scale(mesh, shape->scale);
+        }
         shape->userData = (void*)mesh;
       }
     }

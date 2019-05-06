@@ -169,6 +169,14 @@ void RcsMesh_computeAABB(const RcsMeshData* mesh,
                          double xyzMin[3], double xyzMax[3]);
 
 
+/*! \ingroup RcsUtilsFunctions
+ *  \brief This function scales all vertices of the mesh with the given scale factor.
+ *
+ *  \param[in] mesh       Mesh data, must be not NULL.
+ *  \param[in] scale      Scaling factor. All vertices are multiplied with this value.
+ */
+void RcsMesh_scale(RcsMeshData* mesh, double scale);
+
 #ifdef __cplusplus
 }
 #endif
