@@ -1097,6 +1097,16 @@ void ViaPointSequence::computeTrajectory(MatNd* traj, double t0, double t1,
 void ViaPointSequence::computeTrajectoryPoint(double& xt, double& xt_dot,
                                               double& xt_ddot, double t) const
 {
+  if ((this->viaDescr->m) > 0 && (t >= MatNd_get(this->viaDescr, this->viaDescr->m-1, 0)))
+  {
+    xt = MatNd_get(this->viaDescr, this->viaDescr->m-1, 1);
+    xt_dot = MatNd_get(this->viaDescr, this->viaDescr->m-1, 2);
+    xt_ddot = MatNd_get(this->viaDescr, this->viaDescr->m-1, 3);
+    return;
+  }
+
+
+
   const double t2 = t*t;
   const double t3 = t2*t;
   const double t4 = t2*t2;
@@ -1157,6 +1167,11 @@ void ViaPointSequence::computeTrajectoryPoint(double& xt, double& xt_dot,
  ******************************************************************************/
 double ViaPointSequence::computeTrajectoryPos(double t) const
 {
+  if (t >= MatNd_get(this->viaDescr, this->viaDescr->m-1, 0))
+  {
+    return MatNd_get(this->viaDescr, this->viaDescr->m-1, 1);
+  }
+
 #if 0
   double xt, xt_dot, xt_ddot;
   computeTrajectoryPoint(xt, xt_dot, xt_ddot, t);
