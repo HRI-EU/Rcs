@@ -41,9 +41,6 @@
 
 #include <PhysicsBase.h>
 
-#include <string>
-#include <map>
-
 
 
 namespace Rcs

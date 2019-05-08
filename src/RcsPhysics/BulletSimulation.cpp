@@ -37,6 +37,7 @@
 #include "PhysicsFactory.h"
 #include "BulletSimulation.h"
 #include "BulletRigidBody.h"
+#include "BulletHingeJoint.h"
 #include "BulletHelpers.h"
 
 #ifndef HEADLESS_BUILD

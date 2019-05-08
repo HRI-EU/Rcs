@@ -89,7 +89,7 @@ public:
   void setLowerBound(double limit);
 
   /*! \brief Sets all slider upper bounds to the given value. See
-   *         \ref setIpperBound(const MatNd* limit)
+   *         \ref setUpperBound(const MatNd* limit)
    */
   void setUpperBound(double limit);
 

@@ -38,7 +38,6 @@
 
 #include <Rcs_macros.h>
 #include <Rcs_math.h>
-#include <Rcs_graphicsUtils.h>
 #include <RcsViewer.h>
 
 #include <osg/Geode>

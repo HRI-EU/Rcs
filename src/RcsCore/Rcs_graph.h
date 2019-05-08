@@ -524,37 +524,43 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self, RcsBody* root,
                                 const HTr* A_BP);
 
 /*! \ingroup RcsGraphFunctions
-*  \brief Removes the named body from the graph, and deletes all its memory.
-*         The graph will be restructured so that the removed body will not
-*         lead to a jump of the remaining bodies and their transforms.
-*
-*  \param[in] self    Graph containing body to be removed
-*  \param[in] bdyName Name of body to be removed.
-*  \return    True for success, false for failure.
-*/
+ *  \brief Removes the named body from the graph, and deletes all its memory.
+ *         The graph will be restructured so that the removed body will not
+ *         lead to a jump of the remaining bodies and their transforms.
+ *
+ *  \param[in] self    Graph containing body to be removed
+ *  \param[in] bdyName Name of body to be removed.
+ *  \param[in] qVec    Array of pointers to q-vectors that need to be reshaped
+ *                     to match the newly added dof.
+ *  \param[in] nVec    Number of vectors in qVec.
+ *  \return    True for success, false for failure.
+ */
 bool RcsGraph_removeBody(RcsGraph* self, const char* bdyName,
-                         MatNd* stateVec[], unsigned int nVec);
+                         MatNd* qVec[], unsigned int nVec);
 
 /*! \ingroup RcsGraphFunctions
-*  \brief Adds the given body as the last child of parent, and connects all
-*         siblings etc. accordingly. If the parent body is NULL, the body
-*         is inserted as the last sibling on the top level of the graph. If
-*         the graph is empty, the body will straight be connected to its
-*         root. If the body contains joints, they will be connected to
-*         the parent (if it is not NULL), the joint indices will be
-*         recomputed. This will also swap values in the graph's q and q_dot
-*         arrays to make them consistent. The graph's q vector elements of the
-*         added body will get assigned with their q_init values.
-*
-*  \param[in] graph  Pointer to the graph to be extended with the body.
-*  \param[in] parent Pointer to the parent body (may be NULL)
-*  \param[in] body   Pointer to the body to be added. After adding, the graph
-*                    takes its ownership.
-* \return True for success, false otherwise (body is NULL). In the failure
-*         case, the graph is not modified.
-*/
+ *  \brief Adds the given body as the last child of parent, and connects all
+ *         siblings etc. accordingly. If the parent body is NULL, the body
+ *         is inserted as the last sibling on the top level of the graph. If
+ *         the graph is empty, the body will straight be connected to its
+ *         root. If the body contains joints, they will be connected to
+ *         the parent (if it is not NULL), the joint indices will be
+ *         recomputed. This will also swap values in the graph's q and q_dot
+ *         arrays to make them consistent. The graph's q vector elements of the
+ *         added body will get assigned with their q_init values.
+ *
+ *  \param[in] graph  Pointer to the graph to be extended with the body.
+ *  \param[in] parent Pointer to the parent body (may be NULL)
+ *  \param[in] body   Pointer to the body to be added. After adding, the graph
+ *                    takes its ownership.
+ *  \param[in] qVec   Array of pointers to q-vectors that need to be reshaped
+ *                    to match the newly added dof.
+ *  \param[in] nVec   Number of vectors in qVec.
+ *  \return True for success, false otherwise (body is NULL). In the failure
+ *          case, the graph is not modified.
+ */
 bool RcsGraph_addBody(RcsGraph* graph, RcsBody* parent, RcsBody* body,
-                      MatNd* stateVec[], unsigned int nVec);
+                      MatNd* qVec[], unsigned int nVec);
 
 
 

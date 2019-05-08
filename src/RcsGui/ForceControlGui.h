@@ -38,7 +38,6 @@
 #define RCS_FORCECONTROLGUI_H
 
 #include <ControllerBase.h>
-#include <Rcs_MatNd.h>
 
 #include <QScrollArea>
 

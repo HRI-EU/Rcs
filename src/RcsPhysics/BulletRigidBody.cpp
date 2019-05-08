@@ -35,6 +35,7 @@
 *******************************************************************************/
 
 #include "BulletRigidBody.h"
+#include "BulletHingeJoint.h"
 #include "BulletHelpers.h"
 
 #include <Rcs_typedef.h>
@@ -50,8 +51,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <string>
-#include <vector>
 
 #define DEFAULT_COLLISION_MARGIN (0.001)   // 1mm
 #define MAX_VERTICES_WITHOUT_COMPRESSION (100)

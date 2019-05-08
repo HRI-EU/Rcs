@@ -42,7 +42,6 @@
 #include <PhysicsBase.h>
 
 #include <pthread.h>
-#include <map>
 
 class btBroadphaseInterface;
 class btCollisionShape;

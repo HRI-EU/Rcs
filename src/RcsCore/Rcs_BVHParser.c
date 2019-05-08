@@ -44,8 +44,6 @@
 #include "Rcs_Mat3d.h"
 #include "Rcs_basicMath.h"
 
-#include <stdio.h>
-
 
 #define STRNCASEEQ(a,b,n) (strncasecmp((a),(b),(n))==0)
 
