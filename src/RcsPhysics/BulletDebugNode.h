@@ -51,17 +51,20 @@ public:
 
   BulletDebugNode(PhysicsBase* sim, pthread_mutex_t* viewerLock);
   virtual ~BulletDebugNode();
+  virtual void show();
+  virtual void hide();
+  virtual bool isVisible() const;
 
 private:
 
   virtual bool eventCallback(const osgGA::GUIEventAdapter& ea,
                              osgGA::GUIActionAdapter& aa);
 
-  void lockViewer();
-  void unlockViewer();
+  void lockViewer() const;
+  void unlockViewer() const;
 
   PhysicsBase* sim;
-  pthread_mutex_t* viewerLock;
+  mutable pthread_mutex_t* viewerLock;
 };
 
 }   // namespace Rcs

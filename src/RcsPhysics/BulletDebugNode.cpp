@@ -57,12 +57,6 @@ Rcs::BulletDebugNode::BulletDebugNode(PhysicsBase* sim_, pthread_mutex_t* mtx):
   addChild(debugDrawer);
   makeDynamic();
   debugDrawer->show();
-  //Rcs::BulletSimulation* bSim = dynamic_cast<Rcs::BulletSimulation*>(sim);
-  //if (bSim)
-  //{
-  //  bSim->setDebugDrawer(debugDrawer);
-  //}
-
 }
 
 /*******************************************************************************
@@ -78,46 +72,15 @@ Rcs::BulletDebugNode::~BulletDebugNode()
 bool Rcs::BulletDebugNode::eventCallback(const osgGA::GUIEventAdapter& ea,
                                          osgGA::GUIActionAdapter& aa)
 {
-  Rcs::BulletSimulation* bSim = dynamic_cast<Rcs::BulletSimulation*>(sim);
-  if (bSim == NULL)
-  {
-    return false;
-  }
-
   switch (ea.getEventType())
   {
 
     case (osgGA::GUIEventAdapter::KEYDOWN):
     {
-      /////////////////////////////////////////////////////////////
-      // Toggle Bullet physics debug node
-      /////////////////////////////////////////////////////////////
       if (ea.getKey() == 'd')
       {
-        BulletDebugDrawer* dDraw = bSim->getDebugDrawer();
-
-        if (dDraw != NULL)   // Disable the debug drawer
-        {
-          dDraw->hide();
-          bSim->setDebugDrawer(NULL);
+        toggle();
         }
-        else   // Enable the debug drawer
-        {
-          BulletDebugDrawer* nd_i = NULL;
-
-          // Find the debug drawer from the children of this class
-          for (unsigned int i = 0; i < getNumChildren(); ++i)
-          {
-            nd_i = dynamic_cast<BulletDebugDrawer*>(getChild(i));
-          }
-
-          if (nd_i != NULL)
-          {
-            nd_i->show();
-            bSim->setDebugDrawer(nd_i);
-          }
-        }   // if (dDraw != NULL)
-      }   // if (ea.getKey() == 'd')
     }   // case (osgGA::GUIEventAdapter::KEYDOWN)
 
     default:
@@ -131,7 +94,7 @@ bool Rcs::BulletDebugNode::eventCallback(const osgGA::GUIEventAdapter& ea,
 /*******************************************************************************
 *
 ******************************************************************************/
-void Rcs::BulletDebugNode::lockViewer()
+void Rcs::BulletDebugNode::lockViewer() const
 {
   if (viewerLock)
   {
@@ -142,10 +105,81 @@ void Rcs::BulletDebugNode::lockViewer()
 /*******************************************************************************
 *
 ******************************************************************************/
-void Rcs::BulletDebugNode::unlockViewer()
+void Rcs::BulletDebugNode::unlockViewer() const
 {
   if (viewerLock)
   {
     pthread_mutex_unlock(viewerLock);
   }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::BulletDebugNode::show()
+{
+  Rcs::BulletSimulation* bSim = dynamic_cast<Rcs::BulletSimulation*>(sim);
+
+  if (bSim == NULL)
+  {
+    return;
+  }
+
+  BulletDebugDrawer* nd_i = NULL;
+
+  // Find the debug drawer from the children of this class
+  for (unsigned int i = 0; i < getNumChildren(); ++i)
+  {
+    nd_i = dynamic_cast<BulletDebugDrawer*>(getChild(i));
+  }
+
+  if (nd_i != NULL)
+  {
+    nd_i->show();
+    bSim->setDebugDrawer(nd_i);
+  }
+}
+
+/*******************************************************************************
+ * Disable the debug drawer
+ ******************************************************************************/
+void Rcs::BulletDebugNode::hide()
+{
+  Rcs::BulletSimulation* bSim = dynamic_cast<Rcs::BulletSimulation*>(sim);
+
+  if (bSim == NULL)
+  {
+    return;
+  }
+
+  BulletDebugDrawer* dDraw = bSim->getDebugDrawer();
+
+  if (dDraw != NULL)
+  {
+    dDraw->hide();
+    bSim->setDebugDrawer(NULL);
+  }
+
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::BulletDebugNode::isVisible() const
+{
+  Rcs::BulletSimulation* bSim = dynamic_cast<Rcs::BulletSimulation*>(sim);
+
+  if (bSim == NULL)
+  {
+    return false;
+  }
+
+  BulletDebugDrawer* dDraw = bSim->getDebugDrawer();
+
+  if (dDraw == NULL)
+  {
+    return false;
+  }
+
+  return true;
 }

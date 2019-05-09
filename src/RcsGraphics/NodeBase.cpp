@@ -147,15 +147,15 @@ void Rcs::NodeBase::hide()
  ******************************************************************************/
 bool Rcs::NodeBase::toggle()
 {
-  bool visible = getValue(0);
+  bool visible = isVisible();
 
   if (visible)
   {
-    setAllChildrenOff();
+    hide();
   }
   else
   {
-    setAllChildrenOn();
+    show();
   }
 
   return !visible;
