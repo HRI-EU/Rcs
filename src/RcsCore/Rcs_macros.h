@@ -285,6 +285,18 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
   } while (0)
 
 /*! \ingroup RcsMacros
+ *  \brief Pause macro with message.
+ */
+#define RPAUSE_MSG_DL(debugLevel, ...) \
+  do {                                                \
+    if (debugLevel <= RcsLogLevel) {                  \
+      fprintf(stderr, "[%s: %s(%d)]: ",               \
+              __FILENAME__, __FUNCTION__, __LINE__);  \
+      fprintf(stderr, __VA_ARGS__);                   \
+      getchar(); }                                    \
+  } while (0)
+
+/*! \ingroup RcsMacros
  *  \brief Check macro. Exits if condition is not met.
  */
 #define RCHECK(cond) \
@@ -459,7 +471,8 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 
 #define RPAUSE()
 #define RPAUSE_DL(debugLevel)
-#define RPAUSE_MSG(cond, ...)
+#define RPAUSE_MSG(...)
+#define RPAUSE_MSG_DL(debugLevel, ...)
 #define RCHECK(cond)
 #define RCHECK_EQ(var1, var2)
 #define RCHECK_MSG(cond, ...)
