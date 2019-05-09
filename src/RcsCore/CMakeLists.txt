@@ -66,6 +66,7 @@ TaskEuler3D.cpp
 TaskFactory.cpp
 TaskGenericEuler3D.cpp
 TaskGenericIK.cpp
+TaskInclination.cpp
 TaskJoint.cpp
 TaskJointLimit.cpp
 TaskJointLimitPlateau.cpp
