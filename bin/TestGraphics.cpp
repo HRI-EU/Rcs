@@ -49,16 +49,9 @@
 #include <VertexArrayNode.h>
 #include <GraphNode.h>
 #include <KeyCatcher.h>
-// #include <Rcs_graphicsUtils.h>
 #include <Rcs_utils.h>
 #include <MeshNode.h>
 
-// #include <osg/Node>
-// #include <osg/Geometry>
-// #include <osg/Geode>
-// #include <osg/ClearNode>
-// #include <osg/ShapeDrawable>
-// #include <osg/PositionAttitudeTransform>
 #include <osgGA/TrackballManipulator>
 #include <osgDB/Registry>
 #include <osgFX/Cartoon>
