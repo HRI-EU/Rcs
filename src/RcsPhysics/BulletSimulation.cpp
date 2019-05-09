@@ -674,6 +674,7 @@ void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
 void Rcs::BulletSimulation::reset()
 {
   MatNd_copy(this->q_des, getGraph()->q);
+  MatNd_setZero(getGraph()->q_dot);
   MatNd_setZero(this->q_dot_des);
   MatNd_setZero(this->T_des);
 
