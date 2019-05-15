@@ -77,6 +77,24 @@ static void quit(int /*sig*/)
 /******************************************************************************
  *
  *****************************************************************************/
+static bool test_stringSplit(std::string src, std::string delim)
+{
+  RMSG("Original string: \"%s\"", src.c_str());
+  std::vector<std::string> split = String_split(src, delim);
+
+  for (size_t i=0; i<split.size(); ++i)
+  {
+    RMSG("substring[%d] = \"%s\"", (int) i, split[i].c_str());
+  }
+
+  RMSG("Remaining string: \"%s\"", src.c_str());
+
+  return true;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
 static bool test_uniqueFileName()
 {
   char fileName[256];
@@ -343,6 +361,7 @@ int main(int argc, char** argv)
       fprintf(stderr, "\t\t4   String environment expansion test\n");
       fprintf(stderr, "\t\t5   Locale-independent parsing test\n");
       fprintf(stderr, "\t\t6   Sub-strings in string counting test\n");
+      fprintf(stderr, "\t\t7   Test string-splitting\n");
       fprintf(stderr, "\n\nResource path:\n");
       Rcs_printResourcePath();
       break;
@@ -379,6 +398,16 @@ int main(int argc, char** argv)
     case 6:
     {
       success = test_countSubStrings();
+      break;
+    }
+
+    case 7:
+    {
+      success = test_stringSplit("Honda|Hallo1#Hallo2#Hallo 3#abc def ", "#");
+      success = test_stringSplit("Honda|Honda|Honda|Honda|Honda|", "#");
+      success = test_stringSplit("##", "#");
+      success = test_stringSplit("SLAMDeviceInput&1&Tap", "&");
+      success = test_stringSplit("ARDeviceTransform&SLAMDeviceId&posx\"posy\"posz$qx\"qy\"qz\"quatw", "&");
       break;
     }
 

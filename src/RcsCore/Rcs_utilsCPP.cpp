@@ -49,7 +49,7 @@
 #endif
 
 
-bool hasEnding(const std::string& fullString, const std::string& ending)
+bool String_hasEnding(const std::string& fullString, const std::string& ending)
 {
   if (fullString.length() >= ending.length())
   {
@@ -61,7 +61,7 @@ bool hasEnding(const std::string& fullString, const std::string& ending)
   }
 }
 
-bool startsWith(const std::string& fullString, const std::string& beginning)
+bool String_startsWith(const std::string& fullString, const std::string& beginning)
 {
   if (fullString.length() >= beginning.length())
   {
@@ -96,11 +96,11 @@ std::list<std::string> getFilenamesInDirectory(const std::string& dirname, bool 
       std::string file = entry->d_name;
       if (file.compare(".") != 0 &&
           file.compare("..") != 0 &&
-          hasEnding(file, extension))
+          String_hasEnding(file, extension))
       {
         if (returnFullPath)
         {
-          if (!hasEnding(dirname, "/"))
+          if (!String_hasEnding(dirname, "/"))
           {
             file.insert(0, "/");
           }
@@ -167,7 +167,7 @@ std::string formatStdString(const char* fmt, va_list ap)
   return ret_val;
 }
 
-bool filesEqual(const char* file1, const char* file2)
+bool File_isEqual(const char* file1, const char* file2)
 {
   std::ifstream in1(file1, std::ios::binary);
   std::ifstream in2(file2, std::ios::binary);
@@ -208,3 +208,21 @@ bool filesEqual(const char* file1, const char* file2)
 }
 
 
+
+std::vector<std::string> String_split(std::string& toBeSplitted,
+                                      std::string delim)
+{
+  std::vector<std::string> splittedString;
+  size_t startIdx = 0, endIdx = 0;
+
+  while ((endIdx = toBeSplitted.find(delim, startIdx)) < toBeSplitted.size())
+  {
+    std::string val = toBeSplitted.substr(startIdx, endIdx - startIdx);
+    splittedString.push_back(val);
+    startIdx = endIdx + delim.size();
+  }
+
+  toBeSplitted = toBeSplitted.substr(startIdx);
+
+  return splittedString;
+}

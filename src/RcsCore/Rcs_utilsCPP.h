@@ -38,62 +38,81 @@
 #define RCS_UTILSCPP_H
 
 #include <string>
+#include <vector>
 #include <list>
 #include <utility>
 #include <cstdarg>
 
-/*! \ingroup RcsUtilsFunctions
- *  \brief Checks if a given string ends with another string. Basically for
- *         checking if a file has a given extension
- */
-bool hasEnding(const std::string& fullString, const std::string& ending);
 
-
-/*! \ingroup RcsUtilsFunctions
- * \brief Checks if a given string starts with another string.
- */
-bool startsWith(const std::string& fullString, const std::string& beginning);
 
 /*! \ingroup RcsUtilsFunctions
  *  \brief Returns a list of string containing all file names of given directory
  *         that end with a given extension. If returnFullPath is true (default)
  *         then the full path including the provided directory name is returned
  */
-std::list<std::string> getFilenamesInDirectory(const std::string& dirname, bool returnFullPath = true, const std::string& extension = "");
+std::list<std::string> getFilenamesInDirectory(const std::string& dirname,
+                                               bool returnFullPath=true,
+                                               const std::string& extension="");
 
 /*! \ingroup RcsUtilsFunctions
  * \brief Returns the path and the filename of the currently executed binary
  * \param argv The argument list coming from the main()
- * \return A pair holding the path and the filename of the currently executed binary
+ * \return A pair holding the path and the filename of the currently executed
+ *         binary
  */
 std::pair<std::string, std::string> Rcs_getExecutablePathAndFilename(char* argv[]);
 
-/*!
- * \brief Method for formatting a std::string in the fprintf style
- * \param fmt Format string + variable arguments
- * \return String generated from format + arguments
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Method for formatting a std::string in the fprintf style
+ *  \param fmt Format string + variable arguments
+ *  \return String generated from format + arguments
  *
- * This function uses formatStdString(const char *fmt, va_list ap)
+ *  This function uses formatStdString(const char *fmt, va_list ap)
  */
 std::string formatStdString(const char* fmt, ...);
 
-/*!
- * \brief Method for formatting a std::string in the fprintf style
- * \param fmt Format string
- * \param ap Variable argument list already started with va_start
- * \return String generated from format + arguments
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Method for formatting a std::string in the fprintf style
+ *  \param fmt Format string
+ *  \param ap Variable argument list already started with va_start
+ *  \return String generated from format + arguments
  *
- * Note that call va_end is the responsibility of the user.
+ *  Note that call va_end is the responsibility of the user.
  */
 std::string formatStdString(const char* fmt, va_list ap);
 
-/*!
- * \brief Checks if two files are equal
- * \param file1 Filename 1
- * \param file2 Filename 2
- * \return True if files are equal
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Checks if two files are equal. Thir binary content is compared.
+ *  \param file1 Filename 1
+ *  \param file2 Filename 2
+ *  \return True if files are equal
  */
+bool File_isEqual(const char* file1, const char* file2);
 
-bool filesEqual(const char* file1, const char* file2);
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Splits the given string into pieces that are separated by the given
+ *         delimiter. After splitting, the string that is to be splitted will
+ *         contain only the remainder of what's left after the last delimiter.
+ *
+ *  \param stringToBeSplitted The string that is to be splitted.
+ *  \param delimiter Pattern that spearates the sub-strings
+ *  \return Vector of sub-strings without delimiter. The remainder of the
+ *          stringToBeSplitted is not contained.
+ */
+std::vector<std::string> String_split(std::string& stringToBeSplitted,
+                                      std::string delimiter);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Checks if a given string ends with another string. Basically for
+ *         checking if a file has a given extension
+ */
+bool String_hasEnding(const std::string& fullString,
+                      const std::string& ending);
+
+/*! \ingroup RcsUtilsFunctions
+ * \brief Checks if a given string starts with another string.
+ */
+bool String_startsWith(const std::string& fullString,
+                       const std::string& beginning);
 
 #endif   // RCS_UTILSCPP_H
