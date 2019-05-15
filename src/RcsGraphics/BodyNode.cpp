@@ -554,20 +554,15 @@ osg::Switch* BodyNode::addShapes(int mask)
     {
       if ((*s)->meshFile != NULL)
       {
-        // static double usedTime = 0.0;
-        // double t0 = Timer_getTime();
-
         osg::ref_ptr<osg::Node> meshNode;
 
-        // \todo: Identical meshes with different colors don't work
-        // (only last assigned color is used). Please fix at some time
-#if 1
         // Little map that stores name-pointer pairs of mesh files. If
         // a mesh has already been loaded, we look up its pointer from
         // the map. Otherwise, we load the mesh and store its pointer
         // in the map.
+        // \todo(MG): Identical meshes with different colors don't work
+        // (only last assigned color is used). Please fix at some time
         std::map<std::string, osg::ref_ptr<osg::Node> >::iterator it;
-
 
         _meshBufferMtx.lock();
         for (it = _meshBuffer.begin() ; it != _meshBuffer.end(); ++it)
@@ -579,15 +574,11 @@ osg::Switch* BodyNode::addShapes(int mask)
             //setNodeMaterial((*s)->color, meshNode);
             Rcs::MeshNode* mn = static_cast<Rcs::MeshNode*>(meshNode.get());
 
-            if (mn != NULL)
+            if ((mn != NULL) && ((*s)->color != NULL))
             {
               NLOG(0, "Setting color of body \"%s\" (%s) to \"%s\"",
                    getName().c_str(), (*s)->meshFile, (*s)->color);
-
-              if ((*s)->color != NULL)
-              {
-                mn->setColor((*s)->color);
-              }
+              mn->setColor((*s)->color);
             }
 
             break;
@@ -598,13 +589,15 @@ osg::Switch* BodyNode::addShapes(int mask)
 
 
 
-#endif
-
+        // If no mesh was found in the _meshBuffer, we create it here.
+        bool meshFromOsgReader = false;
         if (!meshNode.valid())
         {
           NLOG(0, "NO mesh file \"%s\" loaded", (*s)->meshFile);
           RcsMeshData* mesh = (RcsMeshData*)(*s)->userData;
 
+          // If there's a mesh attached to the shape, we create a MeshNode
+          // from it.
           if (mesh && mesh->nFaces>0)
           {
             NLOG(0, "Creating MeshNode from shape (%s)",
@@ -621,25 +614,25 @@ osg::Switch* BodyNode::addShapes(int mask)
               mn->setColor((*s)->color);
             }
           }   // (mesh && mesh->nFaces>0)
+          // Otherwise, we use the OpenSceneGraph classes
           else
           {
-#if OPENSCENEGRAPH_MAJOR_VERSION == 3
             // fixes loading of obj without normals (doesn't work for OSG 2.8)
             osg::ref_ptr<osgDB::Options> options =
               new osgDB::Options("generateFacetNormals=true noRotation=true");
             meshNode = osgDB::readNodeFile((*s)->meshFile, options.get());
-#else
-            meshNode = osgDB::readNodeFile((*s)->meshFile);
-#endif
+            meshFromOsgReader = true;
 
-            // \todo: Check if meshNode is valid?
             // We only add the non-MeshNodes to the buffer, and recreate
             // everthing else. That's due to an issue with the color
             // assignment for the mesh vertices. It somehow doesn't work. If
             // anyone has an idea, it's appreciated.
-            _meshBufferMtx.lock();
-            _meshBuffer[std::string((*s)->meshFile)] = meshNode;
-            _meshBufferMtx.unlock();
+            if (meshNode.valid())
+            {
+              _meshBufferMtx.lock();
+              _meshBuffer[std::string((*s)->meshFile)] = meshNode;
+              _meshBufferMtx.unlock();
+            }
           }
         }
 
@@ -647,9 +640,17 @@ osg::Switch* BodyNode::addShapes(int mask)
         if (meshNode.valid())
         {
           shapeTransform->addChild(meshNode.get());
-          shapeTransform->setScale(osg::Vec3((*s)->scale,
-                                             (*s)->scale,
-                                             (*s)->scale));
+
+          // The mesh is only scaled if it has been read from the
+          // osgDB::readNodeFile class. Otherwise, the scaling has already
+          // been done during parsing the graph (meshes need to be consistent
+          // with the physics simulator).
+          if (meshFromOsgReader == true)
+          {
+            shapeTransform->setScale(osg::Vec3((*s)->scale,
+                                               (*s)->scale,
+                                               (*s)->scale));
+          }
           if ((*s)->color != NULL)
           {
             setNodeMaterial((*s)->color, shapeTransform);
