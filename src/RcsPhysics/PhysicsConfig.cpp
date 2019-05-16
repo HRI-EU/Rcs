@@ -82,7 +82,10 @@ PhysicsConfig& PhysicsConfig::operator= (const PhysicsConfig& copyFromMe)
 void PhysicsConfig::init(const char* configFile)
 {
   // store passed file name
-  this->xmlFile = configFile;
+  if (configFile != NULL)
+  {
+    this->xmlFile = std::string(configFile);
+  }
 
   // Determine absolute file name of config file and copy the XML file name
   char filename[256] = "";
