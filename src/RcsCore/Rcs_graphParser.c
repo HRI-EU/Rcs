@@ -1507,7 +1507,9 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     RcsLogLevel = lDl;
   }
 
-}/*******************************************************************************
+}
+
+/*******************************************************************************
  *
  ******************************************************************************/
 bool RcsGraph_setModelStateFromXML(RcsGraph* self, const char* modelStateName,
@@ -1530,6 +1532,44 @@ bool RcsGraph_setModelStateFromXML(RcsGraph* self, const char* modelStateName,
 
   bool success = RcsGraph_parseModelState(node, self, modelStateName);
   xmlFreeDoc(doc);
+
+  return success;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool RcsGraph_getModelStateFromXML(MatNd* q, const RcsGraph* self,
+                                   const char* modelStateName, int timeStamp)
+{
+  if ((self==NULL) || (modelStateName==NULL))
+  {
+    return false;
+  }
+
+  RcsGraph* copyOfGraph = RcsGraph_clone(self);
+
+  if (copyOfGraph==NULL)
+  {
+    return false;
+  }
+
+  // Read XML file
+  xmlDocPtr doc;
+  xmlNodePtr node = parseXMLFile(copyOfGraph->xmlFile, "Graph", &doc);
+
+  if (node == NULL)
+  {
+    xmlFreeDoc(doc);
+    return false;
+  }
+
+  bool success = RcsGraph_parseModelState(node, copyOfGraph, modelStateName);
+  xmlFreeDoc(doc);
+
+  MatNd_reshapeCopy(q, copyOfGraph->q);
+
+  RcsGraph_destroy(copyOfGraph);
 
   return success;
 }

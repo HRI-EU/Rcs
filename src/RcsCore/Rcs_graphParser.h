@@ -304,6 +304,8 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node);
 bool RcsGraph_setModelStateFromXML(RcsGraph* self, const char* modelStateName,
                                    int timeStamp);
 
+bool RcsGraph_getModelStateFromXML(MatNd* q, const RcsGraph* self,
+                                   const char* modelStateName, int timeStamp);
 
 #ifdef __cplusplus
 }
