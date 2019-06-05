@@ -185,7 +185,7 @@ typedef enum
 struct _RcsBody
 {
   double m;               ///< Body mass
-  bool rigid_body_joints; ///< True if body is connected to parent by six rigid body degrees of freedom in the order x-y-z-thx-thy-thz
+  bool rigid_body_joints; ///< Body is linked to parent with 6 rigid body dof
   int physicsSim;         ///< see enum RCSBODY_PHYSICS_SIMULATION_TYPE
   double x_dot[3];        ///< Bodie's linear velocity in world coordinates
   double omega[3];        ///< Bodie's angular velocity in world coordinates

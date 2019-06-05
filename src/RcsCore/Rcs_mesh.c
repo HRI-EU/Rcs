@@ -364,8 +364,8 @@ static bool RcsMesh_toSTLFile(const RcsMeshData* mesh,
 
     if (itemsWritten != 3)
     {
-      RLOG(4, "Error writing normal vector of face %d to binary STL file \"%s\"",
-           i, fileName);
+      RLOG(4, "Error writing normal vector of face %d to binary STL file"
+           "\"%s\"", i, fileName);
       return false;
     }
 
@@ -394,8 +394,8 @@ static bool RcsMesh_toSTLFile(const RcsMeshData* mesh,
 
     if (itemsWritten != 1)
     {
-      RLOG(4, "Error writing attribute byte count of face %d to binary STL file \"%s\"",
-           i, fileName);
+      RLOG(4, "Error writing attribute byte count of face %d to binary STL "
+           "file \"%s\"", i, fileName);
       return false;
     }
 

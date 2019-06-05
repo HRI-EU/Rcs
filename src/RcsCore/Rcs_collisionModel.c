@@ -263,7 +263,8 @@ void RcsCollisionModel_fprintCollisions(FILE* fd, const RcsCollisionMdl* self,
   }
 
 
-  fprintf(fd, "The following pairs have a distance below %f:\n", distanceThreshold);
+  fprintf(fd, "The following pairs have a distance below %f:\n",
+          distanceThreshold);
 
 
   int k = 0;

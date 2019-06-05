@@ -284,7 +284,6 @@ const char* materialDefs =
                     <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
                     </MaterialDefinition>
 
-
                     <MaterialDefinition Name="LIGHTGRAY_TRANS" Shininess="10.0">
                     <Ambient R="0.25" G="0.25" B="0.25" A="0.3"/>
                     <Diffuse R="0.9" G="0.9" B="0.9" A="0.3"/>

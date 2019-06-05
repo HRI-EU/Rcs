@@ -1620,10 +1620,10 @@ double RcsGraph_limitJointSpeeds(const RcsGraph* self, MatNd* dq, double dt,
                                  RcsStateType type)
 {
   int dimension = (type == RcsStateFull) ? self->dof : self->nJ;
-  RCHECK_MSG(dq->m == dimension, "dq->m is %d     dimension is %d"
-             "     graph->dof is %d     graph->nJ is %d     type is %d",
-             dq->m , dimension, self->dof, self->nJ, type);
-  RCHECK(dq->n == 1);
+
+  RCHECK_MSG((dq->m==dimension && dq->n==1) || (dq->m==1 &&  dq->n==dimension),
+             "dq is of size %d x %d - should be %d x 1 or 1 x %d",
+             dq->m , dq->n, dimension, dimension);
 
   int theEvilIndex = 0;
   double sc_i = 1.0, sc = 1.0;

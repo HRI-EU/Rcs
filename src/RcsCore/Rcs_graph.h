@@ -688,6 +688,19 @@ bool RcsGraph_setJoint(RcsGraph* self, const char* jntName, double val);
 /*! \ingroup RcsGraphFunctions
  *  \brief Limits the joint speeds according to the limits given.
  *         The function returns the scaling factor with which dq is scaled.
+ *         The array dq is assumed to be of size nq x 1 or 1 x nq, where
+ *         nq is RcsGraph::nJ for type being RcsStateIK, and RcsGraph::dof
+ *         for type being RcsStateFull.
+ *
+ *  \param[in] self     Valid pointer to graph.
+ *  \param[in/out] dq   Array of joint displacements. The array may be a row
+ *                      or a column vector. See explanations about
+ *                      dimensions above.
+ *  \param[in] dt       Time step to be considered for the displacement vector.
+ *                      If dq corresponds to velocities, dt should be 1.
+ *  \param[in] type     If type is RcsStateIK, the large dimension of the array
+ *                      dq is assumed to be RcsGraph::dof, otherwise
+ *                      it must be RcsGraph::nJ.
  */
 double RcsGraph_limitJointSpeeds(const RcsGraph* self, MatNd* dq,
                                  double dt, RcsStateType type);
