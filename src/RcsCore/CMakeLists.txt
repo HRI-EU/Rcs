@@ -7,6 +7,7 @@ SET(RCS_CORE_SRCS
 CompositeTask.cpp
 ControllerBase.cpp
 HardwareComponent.cpp
+IkSolverConstraintRMR.cpp
 IkSolverPrioRMR.cpp
 IkSolverRMR.cpp
 KeyCatcherBase.cpp
@@ -59,6 +60,7 @@ TaskCylindrical1D.cpp
 TaskCylindrical3D.cpp
 TaskCylindricalForce1D.cpp
 TaskDifferentialConstraint1D.cpp
+TaskDistance.cpp
 TaskDistance1D.cpp
 TaskDistance3D.cpp
 TaskEuler1D.cpp

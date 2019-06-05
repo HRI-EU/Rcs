@@ -3,9 +3,11 @@
 # Settings for finding files and directories
 #
 ################################################################################
-SET(HGR   $ENV{SIT})
-SET(MKPLT $ENV{MAKEFILE_PLATFORM})
+#SET(HGR   $ENV{SIT})
+#SET(MKPLT $ENV{MAKEFILE_PLATFORM})
 
+string (REPLACE "\\" "/" HGR $ENV{SIT})
+string (REPLACE "\\" "/" MKPLT $ENV{MAKEFILE_PLATFORM})
 
 ################################################################################
 #
@@ -295,4 +297,15 @@ IF(USE_EIGEN3)
     SET(EIGEN3_INCLUDE_DIR ${RCS_THIRDPARTY_DIR}/Eigen)
   ENDIF()
 
+ENDIF()
+
+################################################################################
+#
+# GeometricToolsEngine 
+# 
+################################################################################
+IF(USE_GTE)
+  SET(GTE_DEFINITIONS USE_GTE)
+  SET(GTE_INCLUDE_DIR ${HGR}/External/GTEngine/3.25/Include)
+  SET(GTE_SOURCE_DIR ${HGR}/External/GTEngine/3.25/Source)
 ENDIF()

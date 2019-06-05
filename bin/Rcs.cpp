@@ -91,7 +91,7 @@
 #include <Rcs_body.h>
 #include <Rcs_shape.h>
 #include <Rcs_utils.h>
-#include <IkSolverRMR.h>
+#include <IkSolverConstraintRMR.h>
 #include <SolverRAC.h>
 #include <TaskFactory.h>
 #include <PhysicsFactory.h>
@@ -387,6 +387,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("T", "Load trajectory file");
       Rcs::KeyCatcherBase::registerKey("X", "Make monolithic");
       Rcs::KeyCatcherBase::registerKey("S", "Scale graph");
+      Rcs::KeyCatcherBase::registerKey("b", "Boxify graph");
 
       double dtSim = 0.0, dtStep = 0.04;
       char hudText[512] = "", comRef[64] = "";
@@ -516,6 +517,17 @@ int main(int argc, char** argv)
         comNd->toggleWireframe();
         comNd->hide();
         viewer->add(comNd);
+
+        char xmlFile2[64] = "";
+        argP.getArgument("-f2", xmlFile2, "Optional second graph file (default"
+                         "is empty)");
+        if (strlen(xmlFile2) > 0)
+        {
+          RcsGraph* graph2 = RcsGraph_create(xmlFile2);
+          RCHECK(graph2);
+          viewer->add(new Rcs::GraphNode(graph2, resizeable));
+        }
+
 
         hud = new Rcs::HUD();
         viewer->add(hud);
@@ -740,6 +752,22 @@ int main(int argc, char** argv)
               RLOGS(0, "m=%f   r_com=%f %f %f",
                     mass, r_com[0], r_com[1], r_com[2]);
             }
+          }
+          else if (kc->getAndResetKey('b'))
+          {
+            RMSG("Boxifying graph ...");
+            pthread_mutex_lock(&graphLock);
+            viewer->removeNode(gn);
+            gn = NULL;
+            RCSGRAPH_TRAVERSE_BODIES(graph)
+            {
+              bool success = RcsBody_boxify(BODY, RCSSHAPE_COMPUTE_GRAPHICS+RCSSHAPE_COMPUTE_PHYSICS);
+              RLOG(0, "%s boxifying body %s", success ? "SUCCESS" : "FAILURE", BODY->name);
+            }
+            gn = new Rcs::GraphNode(graph);
+            pthread_mutex_unlock(&graphLock);
+            viewer->add(gn);
+            RMSG("... done boxifying graph");
           }
           else if (kc->getAndResetKey('l'))
           {
@@ -1674,6 +1702,10 @@ int main(int argc, char** argv)
       bool manipulability = argP.hasArgument("-manipulability",
                                              "Manipulability criterion in "
                                              "null space");
+      bool cAvoidance = argP.hasArgument("-ca", "Collision avoidance in "
+                                         "null space");
+      bool constraintIK = argP.hasArgument("-constraintIK", "Use constraint IK"
+                                           " solver");
 
       if (argP.hasArgument("-h"))
       {
@@ -1685,13 +1717,21 @@ int main(int argc, char** argv)
 
       // Create controller
       Rcs::ControllerBase controller(xmlFileName, true);
-      Rcs::IkSolverRMR ikSolver(&controller);
+      Rcs::IkSolverRMR* ikSolver = NULL;
+
+      if (constraintIK==true)
+      {
+        ikSolver = new Rcs::IkSolverConstraintRMR(&controller);
+      }
+      else
+      {
+        ikSolver = new Rcs::IkSolverRMR(&controller);
+      }
 
       MatNd* dq_des  = MatNd_create(controller.getGraph()->dof, 1);
       MatNd* q_dot_des  = MatNd_create(controller.getGraph()->dof, 1);
       MatNd* a_des   = MatNd_create(controller.getNumberOfTasks(), 1);
       MatNd* x_curr  = MatNd_create(controller.getTaskDim(), 1);
-      MatNd* x_dot_curr = MatNd_create(controller.getTaskDim(), 1);
       MatNd* x_des   = MatNd_create(controller.getTaskDim(), 1);
       MatNd* x_des_f = MatNd_create(controller.getTaskDim(), 1);
       MatNd* dx_des  = MatNd_create(controller.getTaskDim(), 1);
@@ -1799,7 +1839,6 @@ int main(int argc, char** argv)
       unsigned int loopCount = 0;
 
 
-
       // Endless loop
       while (runLoop == true)
       {
@@ -1827,6 +1866,16 @@ int main(int argc, char** argv)
         if (calcDistance==true)
         {
           controller.computeCollisionCost();
+        }
+
+        if (cAvoidance==true)
+        {
+          MatNd* dH_ca = MatNd_create(1, controller.getGraph()->dof);
+          controller.getCollisionGradient(dH_ca);
+          RcsGraph_limitJointSpeeds(controller.getGraph(), dH_ca,
+                                    dt, RcsStateIK);
+          MatNd_constMulSelf(dH_ca, 10.0);
+          MatNd_addSelf(dH, dH_ca);
         }
 
         if (manipulability)
@@ -1865,11 +1914,11 @@ int main(int argc, char** argv)
         switch (algo)
         {
           case 0:
-            ikSolver.solveLeftInverse(dq_des, dx_des, dH, a_des, lambda);
+            ikSolver->solveLeftInverse(dq_des, dx_des, dH, a_des, lambda);
             break;
 
           case 1:
-            ikSolver.solveRightInverse(dq_des, dx_des, dH, a_des, lambda);
+            ikSolver->solveRightInverse(dq_des, dx_des, dH, a_des, lambda);
             break;
 
           default:
@@ -1880,8 +1929,8 @@ int main(int argc, char** argv)
 
         MatNd_addSelf(controller.getGraph()->q, dq_des);
         RcsGraph_setState(controller.getGraph(), NULL, q_dot_des);
+        bool poseOK = controller.checkLimits();
         controller.computeX(x_curr);
-        //controller.computeXp(x_dot_curr);
 
         dJlCost = -jlCost;
         jlCost = controller.computeJointlimitCost();
@@ -1973,18 +2022,20 @@ int main(int argc, char** argv)
                 "nqr: %d nx: %d\nJL-cost: %.6f dJL-cost: %.6f %s %s"
                 "\nalgo: %d lambda:%g alpha: %g tmc: %.3f\n"
                 "Manipulability index: %.6f\n"
-                "Static effort: %.6f",
+                "Static effort: %.6f\n"
+                "Robot pose %s",
                 1.0e6*dt_calc, controller.getGraph()->dof,
-                ikSolver.nq, ikSolver.nqr,
+                controller.getGraph()->nJ, ikSolver->getInternalDof(),
                 (int) controller.getActiveTaskDim(a_des),
                 jlCost, dJlCost,
-                ikSolver.getDeterminant()==0.0?"SINGULAR":"",
+                ikSolver->getDeterminant()==0.0?"SINGULAR":"",
                 ((dJlCost > 1.0e-8) && (MatNd_getNorm(dx_des) == 0.0)) ?
                 "COST INCREASE" : "",
                 algo, lambda, alpha, tmc,
                 controller.computeManipulabilityCost(a_des),
                 RcsGraph_staticEffort(controller.getGraph(),
-                                      effortBdy, &F_effort3, NULL, NULL));
+                                      effortBdy, &F_effort3, NULL, NULL),
+                poseOK ? "VALID" : "VIOLATES LIMITS");
 
         if (hud != NULL)
         {
@@ -2022,11 +2073,13 @@ int main(int argc, char** argv)
       MatNd_destroy(q_dot_des);
       MatNd_destroy(a_des);
       MatNd_destroy(x_curr);
-      MatNd_destroy(x_dot_curr);
       MatNd_destroy(x_des);
       MatNd_destroy(x_des_f);
       MatNd_destroy(dx_des);
       MatNd_destroy(dH);
+
+      delete ikSolver;
+
       break;
     }
 
@@ -2332,7 +2385,7 @@ int main(int argc, char** argv)
                 "dt=%.2f us\nalgo: %d lambda:%g alpha: %g",
                 fmod(100.0*((double)loopCount/nIter), 100.0),
                 1.0e3*dt, controller.getGraph()->dof,
-                ikSolver.nq, ikSolver.nqr,
+                controller.getGraph()->nJ, ikSolver.getInternalDof(),
                 controller.getActiveTaskDim(a_des),
                 jlCost, dJlCost,
                 ikSolver.getDeterminant()==0.0?"SINGULAR":"",

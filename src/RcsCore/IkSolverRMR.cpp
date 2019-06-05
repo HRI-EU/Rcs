@@ -45,7 +45,7 @@
 
 
 /*******************************************************************************
- * Constructor based on xml parsing.
+ *
  ******************************************************************************/
 Rcs::IkSolverRMR::IkSolverRMR(Rcs::ControllerBase* controller_) :
   controller(controller_), nx(controller->getTaskDim()),
@@ -111,9 +111,9 @@ Rcs::IkSolverRMR::IkSolverRMR(Rcs::ControllerBase* controller_) :
   reshape();
 }
 
-/********************************************************************************
- * \brief Destructor.
- *******************************************************************************/
+/*******************************************************************************
+ *
+ ******************************************************************************/
 Rcs::IkSolverRMR::~IkSolverRMR()
 {
   MatNd_destroy(this->A);
@@ -135,25 +135,25 @@ Rcs::IkSolverRMR::~IkSolverRMR()
   MatNd_destroy(this->dx);
 }
 
-/********************************************************************************
+/*******************************************************************************
  * Returns the determinant from the last solver call
- *******************************************************************************/
+ ******************************************************************************/
 double Rcs::IkSolverRMR::getDeterminant() const
 {
   return this->det;
 }
 
-/********************************************************************************
+/*******************************************************************************
  * Returns the pointer to the internal controller
- *******************************************************************************/
+ ******************************************************************************/
 Rcs::ControllerBase* Rcs::IkSolverRMR::getController() const
 {
   return this->controller;
 }
 
-/********************************************************************************
+/*******************************************************************************
  * \brief Change array dimensions of the internal arrays
- *******************************************************************************/
+ ******************************************************************************/
 void Rcs::IkSolverRMR::reshape()
 {
   this->nx     = controller->getTaskDim();
@@ -172,9 +172,9 @@ void Rcs::IkSolverRMR::reshape()
   MatNd_reshape(this->dH_ca, 1, this->nq);
 }
 
-/********************************************************************************
+/*******************************************************************************
  * Calculate Jacobians etc.
- *******************************************************************************/
+ ******************************************************************************/
 void Rcs::IkSolverRMR::computeKinematics(const MatNd* activation,
                                          double lambda0)
 {
@@ -272,9 +272,9 @@ void Rcs::IkSolverRMR::solveLeftInverse(MatNd* dq_des,
 }
 
 
-/********************************************************************************
+/*******************************************************************************
  * Calculate the inverse kinematics, left-hand (nq x nq) inverse.
- *******************************************************************************/
+ ******************************************************************************/
 void Rcs::IkSolverRMR::solveLeftInverse(MatNd* dq_ts,
                                         MatNd* dq_ns,
                                         const MatNd* dx,
@@ -367,10 +367,10 @@ void Rcs::IkSolverRMR::solveLeftInverse(MatNd* dq_ts,
   }
 }
 
-/********************************************************************************
+/*******************************************************************************
  * Calculate the inverse kinematics using the right-hand pseudo-inverse. This
  * follows the derivation of Liegeois.
- *******************************************************************************/
+ ******************************************************************************/
 void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_des,
                                          const MatNd* dx,
                                          const MatNd* dH,
@@ -441,12 +441,12 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_des,
   RcsGraph_stateVectorFromIKSelf(graph, dq_des);
 }
 
-/********************************************************************************
+/*******************************************************************************
  * Calculate the inverse kinematics using the right-hand pseudo-inverse. This
  * follows the derivation of Liegeois.
  *
  * This version uses a full lambda vector instead of a single value
- *******************************************************************************/
+ ******************************************************************************/
 void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_des,
                                          const MatNd* dx,
                                          const MatNd* dH,
@@ -516,11 +516,10 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_des,
   RcsGraph_stateVectorFromIKSelf(graph, dq_des);
 }
 
-
-/********************************************************************************
+/*******************************************************************************
  *
- *******************************************************************************/
-void Rcs::IkSolverRMR::computeBlendingMatrix(const Rcs::ControllerBase& controller,
+ ******************************************************************************/
+void Rcs::IkSolverRMR::computeBlendingMatrix(const Rcs::ControllerBase& cntrl,
                                              MatNd* Wx,
                                              const MatNd* a_des,
                                              const MatNd* J,
@@ -529,23 +528,23 @@ void Rcs::IkSolverRMR::computeBlendingMatrix(const Rcs::ControllerBase& controll
 {
   unsigned int i, j, dimTask, nRows = 0;
 
-  for (i=0; i<controller.getNumberOfTasks(); i++)
+  for (i=0; i<cntrl.getNumberOfTasks(); i++)
   {
 
     if (MatNd_get(a_des, i, 0) == 0.0)
     {
       NLOG(4, "Skipping task \"%s\": activation is %f",
-           controller.getTaskName(i).c_str(), a_des->ele[i]);
+           cntrl.getTaskName(i).c_str(), a_des->ele[i]);
       continue;
     }
 
     const double ci = Math_clip(MatNd_get(a_des, i, 0), 0.0, 1.0);
 
-    dimTask = controller.getTaskDim(i);
+    dimTask = cntrl.getTaskDim(i);
 
     RCHECK_MSG(Wx->size >= nRows + dimTask, "While adding task "
                "\"%s\": size of Wx: %d   m: %d   dimTask: %d",
-               controller.getTaskName(i).c_str(), Wx->size, nRows, dimTask);
+               cntrl.getTaskName(i).c_str(), Wx->size, nRows, dimTask);
 
     for (j=0; j<dimTask; j++)
     {
@@ -588,4 +587,12 @@ void Rcs::IkSolverRMR::computeBlendingMatrix(const Rcs::ControllerBase& controll
   // Reshape
   Wx->m = nRows;
   Wx->n = 1;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+unsigned int Rcs::IkSolverRMR::getInternalDof() const
+{
+  return this->nqr;
 }

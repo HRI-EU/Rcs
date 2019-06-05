@@ -130,12 +130,6 @@ public:
    */
   size_t getActiveTaskDim(const MatNd* activation) const;
 
-  /*! \brief Returns the task's index to its entries in x_curr, x_des, and
-   *         xp_des vectors. If id is larger than the number of tasks, the
-   *         function will exit with a fatal error.
-   */
-  virtual size_t getTaskArrayIndex(size_t id) const;
-
   /*! \brief Returns the index of the task. If a task with the given name
    *         is not found, or name is NULL, the function returns -1.
    *
@@ -151,6 +145,12 @@ public:
    *  \return Task index in the vector, or -1, if none found.
    */
   virtual int getTaskIndex(const Task* task) const;
+
+  /*! \brief Returns the task's index to its entries in x_curr, x_des, and
+  *         xp_des vectors. If id is larger than the number of tasks, the
+  *         function will exit with a fatal error.
+  */
+  virtual size_t getTaskArrayIndex(size_t id) const;
 
   /*! \brief Returns the index of the task vector element. If a task with
    *         the given name is not found, or name is NULL, the function
@@ -184,6 +184,10 @@ public:
   /*! \brief Return the number of registered tasks (this->tasks.size())
    */
   virtual size_t getNumberOfTasks() const;
+
+  /*! \brief Returns a vector of all active tasks.
+   */
+  virtual std::vector<Task*> getTasks(const MatNd* activation=NULL) const;
 
   /*! \brief Return a pointer to the controller's underlying graph
    */
@@ -647,6 +651,17 @@ public:
 
   virtual void printX(const MatNd* x, const MatNd* a_des = NULL) const;
 
+  bool getModelState(MatNd* q, const char* modelStateName, int timeStamp=0);
+
+  bool checkLimits(bool checkJointLimits=true, bool checkCollisions=true,
+                   bool checkJointVelocities=true) const;
+
+  void swapTaskVec(std::vector<Task*>& newTasks,
+                   bool recomputeArrayIndices=false);
+
+  /*! \brief Prints information about tasks to console.
+   */
+  virtual void print() const;
 
 protected:
 

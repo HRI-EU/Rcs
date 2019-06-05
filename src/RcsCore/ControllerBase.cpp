@@ -42,6 +42,7 @@
 #include "Rcs_resourcePath.h"
 #include "Rcs_graphParser.h"
 #include "Rcs_kinematics.h"
+#include "Rcs_joint.h"
 
 
 
@@ -487,6 +488,24 @@ size_t Rcs::ControllerBase::getNumberOfTasks() const
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+std::vector<Rcs::Task*> Rcs::ControllerBase::getTasks(const MatNd* a) const
+{
+  std::vector<Task*> tVec;
+
+  for (size_t i = 0; i < this->tasks.size(); i++)
+  {
+    if ((a==NULL) || (MatNd_get(a, i, 0) > 0.0))
+    {
+      tVec.push_back(this->tasks[i]);
+    }
+  }
+
+  return tVec;
+}
+
+/*******************************************************************************
  * Returns the type of a task with the given ID.
  ******************************************************************************/
 std::string Rcs::ControllerBase::getTaskType(size_t id) const
@@ -564,8 +583,11 @@ void Rcs::ControllerBase::readActivationsFromXML(MatNd* a_init) const
   // Free the xml memory in case no child ctors need to continue parsing
   xmlFreeDoc(docPtr);
 
-  RCHECK_MSG(taskCount==nTasks, "Mismatch in initialization of activations: "
-             "Parsed %d tasks, should be %d", taskCount, nTasks);
+  if (taskCount != nTasks)
+  {
+    RLOG(1, "Mismatch in initialization of activations: "
+         "Parsed %d tasks, should be %d", taskCount, nTasks);
+  }
 }
 
 /*******************************************************************************
@@ -696,9 +718,9 @@ void Rcs::ControllerBase::computeJ(MatNd* J, const MatNd* a_des) const
       // Check that appending the current task Jacobian will not write
       // into non-existing memory
       dimTask = tasks[i]->getDim();
-      RCHECK_MSG(J->size >= (nRows + dimTask)*nq, "While adding task "
+      RCHECK_MSG(J->size >= (nRows + dimTask)*nq, "While adding task %zd: "
                  "\"%s\": size of J: %d   m: %d   dimTask: %d   n: %d",
-                 getTaskName(i).c_str(), J->size, nRows, dimTask, nq);
+                 i, getTaskName(i).c_str(), J->size, nRows, dimTask, nq);
 
       // Create a local Jacobian that points to the augmented row and
       // append the task's Jacobian to J.
@@ -2169,5 +2191,121 @@ void Rcs::ControllerBase::printX(const MatNd* x, const MatNd* a_des) const
       printf("Task \"%s\"[%d]: %f\n", getTaskName(i).c_str(), (int) j,
              MatNd_get(x, row+j, 0));
     }
+  }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::ControllerBase::getModelState(MatNd* q, const char* modelStateName,
+                                        int timeStamp)
+{
+  return RcsGraph_getModelStateFromXML(q, getGraph(), modelStateName,
+                                       timeStamp);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::ControllerBase::checkLimits(bool checkJointLimits,
+                                      bool checkCollisions,
+                                      bool checkJointVelocities) const
+{
+  bool success = true;
+
+  // Joint limit check
+  if (checkJointLimits)
+  {
+    bool verbose = (RcsLogLevel >= 3) ? true : false;
+    unsigned int aor = RcsGraph_numJointLimitsViolated(getGraph(), verbose);
+    if (aor > 0)
+    {
+      success = false;
+      RLOG(3, "%d joint limit violations", aor);
+      REXEC(4)
+      {
+        RcsGraph_printState(getGraph(), getGraph()->q);
+      }
+    }
+  }
+
+  // Collision check. It is assumed that the collision model was computed before
+  // calling this function. We shouldn't call it here since the function is
+  // declared to be const.
+  if (checkCollisions && getCollisionMdl())
+  {
+    const double distLimit = 0.001;
+    double minDist = RcsCollisionMdl_getMinDist(getCollisionMdl());
+    if (minDist < distLimit)
+    {
+      success = false;
+      RLOG(3, "Found collision distance of %f (must be >%f)",
+           minDist, distLimit);
+      REXEC(4)
+      {
+        RcsCollisionModel_fprintCollisions(stdout, getCollisionMdl(),
+                                           distLimit);
+      }
+    }
+  }
+
+  // Speed limit check
+  if (checkJointVelocities)
+  {
+    MatNd* q_dot = MatNd_clone(getGraph()->q_dot);
+    double scaling = RcsGraph_limitJointSpeeds(getGraph(), q_dot,
+                                               1.0, RcsStateFull);
+    if (scaling < 1.0)
+    {
+      success = false;
+      RLOG(3, "Joint speed limit violation");
+      RCSGRAPH_TRAVERSE_JOINTS(getGraph())
+      {
+        if ((!JNT->constrained) &&
+            (fabs(q_dot->ele[JNT->jointIndex]) >= JNT->speedLimit))
+        {
+          double sf = RcsJoint_isRotation(JNT) ? 180.0 / M_PI : 1.0;
+          RLOG(4, "%s: q_dot=%f   limit=%f [%s]", JNT->name,
+               sf*q_dot->ele[JNT->jointIndex],
+               sf*JNT->speedLimit, sf == 1.0 ? "m/sec" : "deg/sec");
+        }
+      }
+    }
+    MatNd_destroy(q_dot);
+  }
+
+  return success;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::ControllerBase::swapTaskVec(std::vector<Task*>& newTasks,
+                                      bool recomputeArrayIndices)
+{
+  std::swap(newTasks, this->tasks);
+
+  if (recomputeArrayIndices==true && (!tasks.empty()))
+  {
+    taskArrayIdx.clear();
+    taskArrayIdx.push_back(0);
+
+    for (size_t i=0; i<tasks.size()-1; ++i)
+    {
+      size_t idx = this->taskArrayIdx.back() + this->tasks.back()->getDim();
+      this->taskArrayIdx.push_back(idx);
+    }
+  }
+
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::ControllerBase::print() const
+{
+  for (size_t i = 0; i < getNumberOfTasks(); i++)
+  {
+    tasks[i]->print();
   }
 }

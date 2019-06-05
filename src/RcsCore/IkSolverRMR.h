@@ -52,11 +52,10 @@ namespace Rcs
 class IkSolverRMR
 {
 public:
+
   IkSolverRMR(ControllerBase* controller);
 
   virtual ~IkSolverRMR();
-
-  void reshape();
 
   /*! \brief Inverse kinematics with left-hand pseudo inverse, with both
    *         task-space and joint-space weighting:<br><br>
@@ -95,14 +94,13 @@ public:
    *                                  \ref computeKinematics is called before
    *                                  calculating the above equations.
    */
-  void solveLeftInverse(MatNd* dq, const MatNd* dx, const MatNd* dH,
-                        const MatNd* activation, double lambda,
-                        bool recomputeKinematics=true);
+  virtual void solveLeftInverse(MatNd* dq, const MatNd* dx, const MatNd* dH,
+                                const MatNd* activation, double lambda,
+                                bool recomputeKinematics=true);
 
-  void solveLeftInverse(MatNd* dq_ts, MatNd* dq_ns, const MatNd* dx,
-                        const MatNd* dH, const MatNd* activation,
-                        double lambda, bool recomputeKinematics=true);
-
+  virtual void solveLeftInverse(MatNd* dq_ts, MatNd* dq_ns, const MatNd* dx,
+                                const MatNd* dH, const MatNd* activation,
+                                double lambda, bool recomputeKinematics=true);
 
   /*! \brief Computes the joint velocities based on the task space inverse
    *         kinematics according to Liegeois:<br>
@@ -132,8 +130,8 @@ public:
    *  \param[in]  activation  Desired task activations.
    *  \param[in]  lambda      Regularization factor for the pseudo-inverse.
    */
-  void solveRightInverse(MatNd* dq_des, const MatNd* dx, const MatNd* dH,
-                         const MatNd* activation, double lambda);
+  virtual void solveRightInverse(MatNd* dq_des, const MatNd* dx, const MatNd* dH,
+                                 const MatNd* activation, double lambda);
 
   /*! \brief Computes the joint velocities based on the task space inverse
      *         kinematics according to Liegeois:<br>
@@ -164,12 +162,11 @@ public:
      *  \param[in]  lambda      Regularization factors for the pseudo-inverse.
      *                          Must be 1 x 1 or nJ x 1
      */
-  void solveRightInverse(MatNd* dq_des,
-                         const MatNd* dx,
-                         const MatNd* dH,
-                         const MatNd* activation,
-                         const MatNd* lambda);
-
+  virtual void solveRightInverse(MatNd* dq_des,
+                                 const MatNd* dx,
+                                 const MatNd* dH,
+                                 const MatNd* activation,
+                                 const MatNd* lambda);
 
   /*! \brief Computes the task blending matrix Wx. We compute it as a
    *         vector, since the matrix is diagonal. The vector only
@@ -195,18 +192,26 @@ public:
   /*! \brief Returns the determinant of the Jacobian from the last solver
    *         iteration.
    */
-  double getDeterminant() const;
+  virtual double getDeterminant() const;
 
   /*! \brief Returns the pointer to the internal controller.
    */
-  ControllerBase* getController() const;
+  virtual ControllerBase* getController() const;
+
+  /*! \brief Returns the internal number of degrees of freedom. These are the
+   *         ones relevant for the IK (RcsGraph::nJ) substracted by the
+   *         number of coupled degrees of freedom / joints.
+   *
+   *  \return Number of internal dof of the IK algorithm.
+   */
+  virtual unsigned int getInternalDof() const;
 
 
+
+protected:
+
+  void reshape();
   void computeKinematics(const MatNd* activation, double lambda0);
-
-
-
-  //protected:
 
   ControllerBase* controller;
   unsigned int nx, nTasks, nq, nqr;
