@@ -68,6 +68,11 @@ public:
    */
   TaskDistance3D(const TaskDistance3D& src, RcsGraph* newGraph=NULL);
 
+  /*! Constructor based on graph and effectors.
+  */
+  TaskDistance3D(RcsGraph* graph, const RcsBody* effector,
+                 const RcsBody* refBdy);
+
   /*! Destructor.
    */
   virtual ~TaskDistance3D();
@@ -106,7 +111,7 @@ public:
    *           in graph
    *         - XML tag "controlVariable" is "Distance3D"
    */
-  static bool isValid(xmlNode* xml_node, const RcsGraph* graph);
+  static bool isValid(xmlNode* node, const RcsGraph* graph);
 };
 
 }

@@ -34,50 +34,82 @@
 
 *******************************************************************************/
 
-#ifndef RCS_TASKPOSE6D_H
-#define RCS_TASKPOSE6D_H
+#ifndef RCS_TASKDISTANCE_H
+#define RCS_TASKDISTANCE_H
 
-#include "CompositeTask.h"
+#include "TaskGenericIK.h"
 
 
 namespace Rcs
 {
 /*! \ingroup RcsTask
- * \brief This tasks allows to set a 6D pose (XYZABC) of an effector
- *
- *  This tasks allows to set a 6D position (XYZABC) of an effector. The pose
- *  can also be relative to another body and reference frame.
+ * \brief One component of the TaskDistance3D task.
  */
-class TaskPose6D: public CompositeTask
+class TaskDistance: public TaskGenericIK
 {
 public:
 
-  /*! Constructor based on xml parsing
+  /*! Constructor based on xml parsing.
    */
-  TaskPose6D(const std::string& className, xmlNode* node, RcsGraph* graph);
-
-  /*! Constructor based on graph and effectors.
-   */
-  TaskPose6D(RcsGraph* graph, const RcsBody* effector,
-             const RcsBody* refBdy, const RcsBody* refFrame);
+  TaskDistance(const std::string& className, xmlNode* node,
+               RcsGraph* graph, int dim=1);
 
   /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
+   *         pointer.
    */
-  TaskPose6D(const TaskPose6D& copyFromMe, RcsGraph* newGraph=NULL);
+  TaskDistance(const TaskDistance& src, RcsGraph* newGraph=NULL);
 
-  /*! \brief Virtual copy constructor with optional new graph
+  /*! Constructor based on graph and effectors.
+  */
+  TaskDistance(RcsGraph* graph, const RcsBody* effector,
+               const RcsBody* refBdy);
+
+  /*! Destructor.
    */
-  TaskPose6D* clone(RcsGraph* newGraph=NULL) const;
+  virtual ~TaskDistance();
+
+  /*!
+   * \brief Virtual copy constructor with optional new graph.
+   */
+  virtual TaskDistance* clone(RcsGraph* newGraph=NULL) const;
+
+  /*! \brief Computes the current value of the task variable
+   *
+   *  The result is written to parameter \e x_res.
+   */
+  virtual void computeX(double* x_res) const;
+
+  /*! \brief Computes current task Jacobian to parameter \e jacobian.
+   *
+   *  \param[out] jacobian Task Jacobian with dimension 3 x nJ
+   *                       where nJ is the number of unconstrained degrees of
+   *                       freedom (see \ref RcsGraph)
+   */
+  virtual void computeJ(MatNd* jacobian) const;
+
+  /*! \brief Computes current task Hessian to parameter \e hessian.
+   *
+   *  \param[out] hessian Task Hessian with dimension nJ x (3*nJ)
+   *                      where nJ is the number of unconstrained degrees of
+   *                      freedom (see \ref RcsGraph).
+   */
+  virtual void computeH(MatNd* hessian) const;
+
+  /*! \brief We skip the hessian derivative test since it usually fails due to
+   *         the assumption that the closest points are body-fixed. This
+   *         function is empty and just returns true.
+   */
+  virtual bool testHessian(bool verbose = false);
 
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise. The following checks are performed:
-   *         - XML tag "effector" corresponds to body in graph
-   *         - XML tag "controlVariable" is "XYZ"
+   *         - XML tag "effector" exists and corresponds to body in graph
+   *         - XML tag "refBdy" or "refBody"  exists and corresponds to body
+   *           in graph
+   *         - XML tag "controlVariable" is "Distance3D"
    */
   static bool isValid(xmlNode* xml_node, const RcsGraph* graph);
 };
-
 }
 
-#endif // RCS_TASKPOSE6D_H
+#endif // RCS_TASKDISTANCE_H

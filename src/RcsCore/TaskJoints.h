@@ -57,6 +57,15 @@ public:
    */
   TaskJoints(const std::string& className, xmlNode* node, RcsGraph* graph);
 
+  /*! \brief Copy constructor doing deep copying with optional new graph
+   *         pointer
+   */
+  TaskJoints(const TaskJoints& copyFromMe, RcsGraph* newGraph=NULL);
+
+  /*! \brief Virtual copy constructor with optional new graph
+   */
+  TaskJoints* clone(RcsGraph* newGraph=NULL) const;
+
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise. The following checks are performed:
    *         - XML tag "effector" corresponds to body in graph

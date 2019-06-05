@@ -217,6 +217,10 @@ public:
    */
   RcsGraph* getGraph() const;
 
+  /*! \brief Prints information about task to console.
+   */
+  virtual void print() const;
+
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise. The task is invalid if
    *         - No tag "name" exists

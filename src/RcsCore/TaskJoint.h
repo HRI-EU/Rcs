@@ -65,7 +65,11 @@ public:
 
   /*! Constructor for tasks using the joint pointer directly.
    */
-  TaskJoint(RcsJoint* joint, xmlNode* node, RcsGraph* graph=NULL);
+  TaskJoint(RcsJoint* joint, xmlNode* node, RcsGraph* graph = NULL);
+
+  /*! Constructor for tasks using the joint pointer directly.
+   */
+  TaskJoint(RcsGraph* graph, RcsJoint* joint);
 
   /*! Destructor
    */
@@ -122,7 +126,6 @@ public:
 
 protected:
   RcsJoint* joint;         //!< Joint for single joint tasks
-  bool rad_diff_jnt_fb;    //!< Joint error based on radian feedback
 };
 
 }

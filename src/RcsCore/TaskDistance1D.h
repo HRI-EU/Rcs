@@ -59,6 +59,11 @@ public:
    */
   TaskDistance1D(const TaskDistance1D& src, RcsGraph* newGraph=NULL);
 
+  /*! Constructor based on graph and effectors.
+  */
+  TaskDistance1D(RcsGraph* graph, const RcsBody* effector,
+                 const RcsBody* refBdy);
+
   /*! Destructor.
    */
   virtual ~TaskDistance1D();

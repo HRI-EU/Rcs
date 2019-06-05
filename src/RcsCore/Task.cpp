@@ -270,6 +270,14 @@ RcsGraph* Rcs::Task::getGraph() const
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::Task::print() const
+{
+  printf("Task %s: type %s\n", getName().c_str(), getClassName().c_str());
+}
+
+/*******************************************************************************
  * Returns the parameters for task dimension index
  ******************************************************************************/
 Rcs::Task::Parameters* Rcs::Task::getParameter(size_t index) const

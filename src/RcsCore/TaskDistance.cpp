@@ -34,139 +34,124 @@
 
 *******************************************************************************/
 
-#include "TaskDistance1D.h"
+#include "TaskDistance.h"
 #include "TaskFactory.h"
 #include "Rcs_typedef.h"
 #include "Rcs_macros.h"
 #include "Rcs_parser.h"
+#include "Rcs_body.h"
+#include "Rcs_Vec3d.h"
+#include "Rcs_kinematics.h"
 
 
-static Rcs::TaskFactoryRegistrar<Rcs::TaskDistance1D> registrar1("DistanceX");
-static Rcs::TaskFactoryRegistrar<Rcs::TaskDistance1D> registrar2("DistanceY");
-static Rcs::TaskFactoryRegistrar<Rcs::TaskDistance1D> registrar3("DistanceZ");
+static Rcs::TaskFactoryRegistrar<Rcs::TaskDistance> registrar1("Distance");
 
 
 /*******************************************************************************
  * Constructor based on xml parsing
  ******************************************************************************/
-Rcs::TaskDistance1D::TaskDistance1D(const std::string& className_,
-                                    xmlNode* node,
-                                    RcsGraph* _graph,
-                                    int dim):
-  TaskDistance3D(className_, node, _graph, dim), index(-1)
+Rcs::TaskDistance::TaskDistance(const std::string& className_,
+                                xmlNode* node,
+                                RcsGraph* _graph,
+                                int dim):
+  TaskGenericIK(className_, node, _graph, dim)
 {
-  if (getClassName()=="DistanceX")
-  {
-    this->index = 0;
-    getParameter(0)->name.assign("X [m]");
-  }
-  else if (getClassName()=="DistanceY")
-  {
-    this->index = 1;
-    getParameter(0)->name.assign("Y [m]");
-  }
-  else if (getClassName()=="DistanceZ")
-  {
-    this->index = 2;
-    getParameter(0)->name.assign("Z [m]");
-  }
-
+  getParameter(0)->name.assign("Distance [m]");
 }
 
 /*******************************************************************************
  * Copy constructor doing deep copying
  ******************************************************************************/
-Rcs::TaskDistance1D::TaskDistance1D(const TaskDistance1D& copyFromMe,
-                                    RcsGraph* newGraph):
-  TaskDistance3D(copyFromMe, newGraph),
-  index(copyFromMe.index)
+Rcs::TaskDistance::TaskDistance(const TaskDistance& copyFromMe,
+                                RcsGraph* newGraph):
+  TaskGenericIK(copyFromMe, newGraph)
 {
 }
 
 /*******************************************************************************
-* Constructor based on body pointers
-******************************************************************************/
+ * Constructor based on body pointers
+ ******************************************************************************/
 //! \todo Memory leak when derieved class calls params.clear()
-Rcs::TaskDistance1D::TaskDistance1D(RcsGraph* graph_,
-                                    const RcsBody* effector,
-                                    const RcsBody* refBdy) :
-  TaskDistance3D(graph_, effector, refBdy), index(0)
+Rcs::TaskDistance::TaskDistance(RcsGraph* graph_,
+                                const RcsBody* effector,
+                                const RcsBody* refBdy) : TaskGenericIK()
 {
-  setClassName("Distance1D");
-  setName("Dist1D " + std::string(effector ? effector->name : "NULL") + "-"
+  this->graph = graph_;
+  setClassName("Distance");
+  setName("Distance " + std::string(effector ? effector->name : "NULL") + "-"
           + std::string(refBdy ? refBdy->name : NULL));
+  setEffector(effector);
+  setRefBody(refBdy);
+  setRefFrame(refFrame ? refFrame : refBdy);
   setDim(1);
   std::vector<Parameters*>& params = getParameters();
   params.clear();
-  params.push_back(new Task::Parameters(-1.0, 1.0, 1.0, "Dist [m]"));
+  params.push_back(new Task::Parameters(-1.0, 1.0, 1.0, "Distance [m]"));
 }
 
 /*******************************************************************************
  * Destructor
  ******************************************************************************/
-Rcs::TaskDistance1D::~TaskDistance1D()
+Rcs::TaskDistance::~TaskDistance()
 {
 }
 
 /*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskDistance1D* Rcs::TaskDistance1D::clone(RcsGraph* newGraph) const
+Rcs::TaskDistance* Rcs::TaskDistance::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskDistance1D(*this, newGraph);
+  return new Rcs::TaskDistance(*this, newGraph);
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskDistance1D::computeX(double* x_res) const
+void Rcs::TaskDistance::computeX(double* x_res) const
 {
-  double result_3d[3];
-  TaskDistance3D::computeX(result_3d);
-  x_res[0] = result_3d[this->index];
+  x_res[0] = RcsBody_distance(this->refBody, this->ef, NULL, NULL, NULL);
 }
 
 /*******************************************************************************
- * Computes current task Jacobian to parameter jacobian. See
- * RcsGraph_3dPosJacobian() for details.
+ *
  ******************************************************************************/
-void Rcs::TaskDistance1D::computeJ(MatNd* jacobian) const
+void Rcs::TaskDistance::computeJ(MatNd* jacobian) const
 {
-  MatNd* Jpos = NULL;
-  MatNd_create2(Jpos, 3, this->graph->nJ);
-  TaskDistance3D::computeJ(Jpos);
-  MatNd_getRow(jacobian, this->index, Jpos);
-  MatNd_destroy(Jpos);
+  double cpEf[3], cpRef[3], nRE[3];
+  RcsBody_distance(this->refBody, this->ef, cpRef, cpEf, nRE);
+  RcsBody_distanceGradient(graph, this->refBody, this->ef, true,
+                           cpRef, cpEf, nRE, jacobian);
+  MatNd_reshape(jacobian, 1, graph->nJ); // \todo(MG): Fix in RcsBody_distanceGradient() function
 }
 
 /*******************************************************************************
- * Computes current task Hessian to parameter hessian. See
- * RcsGraph_3dPosHessian() for details.
+ *
  ******************************************************************************/
-void Rcs::TaskDistance1D::computeH(MatNd* hessian) const
+void Rcs::TaskDistance::computeH(MatNd* hessian) const
 {
-  int n = graph->nJ, nn = n * n;
-  MatNd* H3 = NULL;
-  MatNd_create2(H3, 3 * n, n);
+  double cpEf[3], cpRef[3], nRE[3];
+  RcsBody_distance(this->refBody, this->ef, cpRef, cpEf, nRE);
+  MatNd_reshapeAndSetZero(hessian, graph->nJ, graph->nJ);
+  RcsBody_distanceHessian(graph, this->refBody, this->ef, true,
+                          cpRef, cpEf, hessian->ele);
+}
 
-  TaskDistance3D::computeH(H3);
-
-  MatNd_reshape(hessian, n, n);
-  MatNd slice = MatNd_fromPtr(n, n, &H3->ele[this->index*nn]);
-  MatNd_copy(hessian, &slice);
-  //memcpy(hessian->ele, &H3->ele[index * nn], nn * sizeof(double));
-  MatNd_destroy(H3);
+/*******************************************************************************
+ * See header
+ ******************************************************************************/
+bool Rcs::TaskDistance::testHessian(bool verbose)
+{
+  RLOG(4, "Skipping Hessian test for task \"%s\"", getName().c_str());
+  return true;
 }
 
 /*******************************************************************************
  * This task required an effector and a reference body.
  ******************************************************************************/
-bool Rcs::TaskDistance1D::isValid(xmlNode* node, const RcsGraph* graph)
+bool Rcs::TaskDistance::isValid(xmlNode* node, const RcsGraph* graph)
 {
   std::vector<std::string> classNameVec;
-  classNameVec.push_back(std::string("DistanceX"));
-  classNameVec.push_back(std::string("DistanceY"));
-  classNameVec.push_back(std::string("DistanceZ"));
+  classNameVec.push_back(std::string("Distance"));
 
   bool success = Rcs::Task::isValid(node, graph, classNameVec);
 

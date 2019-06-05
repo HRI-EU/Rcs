@@ -56,6 +56,23 @@ Rcs::TaskPose5D::TaskPose5D(const std::string& className_,
 }
 
 /*******************************************************************************
+ * Copy constructor doing deep copying
+ ******************************************************************************/
+Rcs::TaskPose5D::TaskPose5D(const Rcs::TaskPose5D& copyFromMe,
+                            RcsGraph* newGraph):
+  CompositeTask(copyFromMe, newGraph)
+{
+}
+
+/*******************************************************************************
+ * Clone function
+ ******************************************************************************/
+Rcs::TaskPose5D* Rcs::TaskPose5D::clone(RcsGraph* newGraph) const
+{
+  return new Rcs::TaskPose5D(*this, newGraph);
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
 bool Rcs::TaskPose5D::isValid(xmlNode* node, const RcsGraph* graph)

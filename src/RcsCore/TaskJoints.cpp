@@ -77,6 +77,23 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
 }
 
 /*******************************************************************************
+ * Copy constructor doing deep copying
+ ******************************************************************************/
+Rcs::TaskJoints::TaskJoints(const Rcs::TaskJoints& copyFromMe,
+                            RcsGraph* newGraph):
+  CompositeTask(copyFromMe, newGraph)
+{
+}
+
+/*******************************************************************************
+ * Clone function
+ ******************************************************************************/
+Rcs::TaskJoints* Rcs::TaskJoints::clone(RcsGraph* newGraph) const
+{
+  return new Rcs::TaskJoints(*this, newGraph);
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
 bool Rcs::TaskJoints::isValid(xmlNode* node, const RcsGraph* graph)

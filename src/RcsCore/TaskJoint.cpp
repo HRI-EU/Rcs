@@ -54,8 +54,7 @@ Rcs::TaskJoint::TaskJoint(const std::string& className,
                           RcsGraph* _graph,
                           int dim):
   TaskGenericIK(className, node, _graph, dim),
-  joint(NULL),
-  rad_diff_jnt_fb(true)
+  joint(NULL)
 {
   // Parse XML file
   char msg[265] = "";
@@ -69,11 +68,6 @@ Rcs::TaskJoint::TaskJoint(const std::string& className,
   // Jacobian.
   RCHECK_MSG(this->joint->constrained==false, "Joint \"%s\" is constrained",
              msg);
-
-  // radian feedback toggle
-  bool tmp;
-  getXMLNodePropertyBoolString(node, "radDiff", &tmp);
-  this->rad_diff_jnt_fb = tmp;
 
   // re-initialize parameters
   if (RcsJoint_isTranslation(this->joint) == true)
@@ -97,18 +91,12 @@ Rcs::TaskJoint::TaskJoint(RcsJoint* _joint,
                           xmlNode* node,
                           RcsGraph* _graph):
   TaskGenericIK("Joint", node, _graph, 1),
-  joint(_joint),
-  rad_diff_jnt_fb(true)
+  joint(_joint)
 {
   // We require the joint to be unconstrained. Otherwise, we'll have a zero
   // Jacobian.
   RCHECK_MSG(this->joint->constrained==false, "Joint \"%s\" is constrained",
              this->joint->name);
-
-  // radian feedback toggle
-  bool tmp;
-  getXMLNodePropertyBoolString(node, "radDiff", &tmp);
-  this->rad_diff_jnt_fb = tmp;
 
   // re-initialize parameters
   if (RcsJoint_isTranslation(this->joint) == true)
@@ -126,12 +114,49 @@ Rcs::TaskJoint::TaskJoint(RcsJoint* _joint,
 }
 
 /*******************************************************************************
+* Constructor based on body pointers
+******************************************************************************/
+//! \todo Memory leak when derieved class calls params.clear()
+Rcs::TaskJoint::TaskJoint(RcsGraph* graph_, RcsJoint* jnt) :
+  TaskGenericIK(),
+  joint(jnt)
+{
+  // We require the joint to be unconstrained. Otherwise, we'll have a zero
+  // Jacobian.
+  RCHECK(this->joint);
+  RCHECK_MSG(this->joint->constrained == false, "Joint \"%s\" is constrained",
+             this->joint->name);
+
+  this->graph = graph_;
+  setClassName("Joint");
+  setName("Jnt " + std::string(jnt->name));
+  setDim(1);
+  std::vector<Parameters*>& params = getParameters();
+  params.clear();
+  params.push_back(new Task::Parameters(-1.0, 1.0, 1.0, "X [m]"));
+
+  // re-initialize parameters. That's all done a bit weird and needs revision.
+  if (RcsJoint_isTranslation(this->joint) == true)
+  {
+    std::string label = std::string(this->joint->name) + " [m]";
+    getParameter(0)->setParameters(this->joint->q_min, this->joint->q_max,
+                                   1.0, label);
+  }
+  else
+  {
+    std::string label = std::string(this->joint->name) + " [deg]";
+    getParameter(0)->setParameters(this->joint->q_min, this->joint->q_max,
+                                   (180. / M_PI), label);
+  }
+
+}
+
+/*******************************************************************************
  * Copy constructor doing deep copying
  ******************************************************************************/
 Rcs::TaskJoint::TaskJoint(const TaskJoint& copyFromMe, RcsGraph* newGraph):
   TaskGenericIK(copyFromMe, newGraph),
-  joint(NULL),
-  rad_diff_jnt_fb(copyFromMe.rad_diff_jnt_fb)
+  joint(NULL)
 {
   if (newGraph != NULL)
   {

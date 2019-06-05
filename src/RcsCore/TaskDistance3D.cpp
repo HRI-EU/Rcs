@@ -84,6 +84,29 @@ Rcs::TaskDistance3D::TaskDistance3D(const TaskDistance3D& src,
 }
 
 /*******************************************************************************
+ * Constructor based on body pointers
+ ******************************************************************************/
+//! \todo Memory leak when derieved class calls params.clear()
+Rcs::TaskDistance3D::TaskDistance3D(RcsGraph* graph_,
+                                    const RcsBody* effector,
+                                    const RcsBody* refBdy) : TaskGenericIK()
+{
+  this->graph = graph_;
+  setClassName("Distance3D");
+  setName("Dist3D " + std::string(effector ? effector->name : "NULL") + "-"
+          + std::string(refBdy ? refBdy->name : NULL));
+  setDim(3);
+  setEffector(effector);
+  setRefBody(refBdy);
+  setRefFrame(refBdy);
+  std::vector<Parameters*>& params = getParameters();
+  params.clear();
+  params.push_back(new Task::Parameters(-1.0, 1.0, 1.0, "X [m]"));
+  params.push_back(new Task::Parameters(-1.0, 1.0, 1.0, "Y [m]"));
+  params.push_back(new Task::Parameters(-1.0, 1.0, 1.0, "Z [m]"));
+}
+
+/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskDistance3D::~TaskDistance3D()
