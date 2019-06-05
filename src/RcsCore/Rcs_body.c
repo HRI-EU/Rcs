@@ -43,6 +43,7 @@
 #include "Rcs_utils.h"
 #include "Rcs_macros.h"
 #include "Rcs_math.h"
+#include "Rcs_intersectionWM5.h"
 
 #include <float.h>
 
@@ -2275,3 +2276,96 @@ bool RcsBody_removeJoints(RcsBody* self, RcsGraph* graph)
 
   return true;
 }
+
+/*******************************************************************************
+ * This function needs the GeometricTools library to be linked. Otherwise the
+ * OBB cannot be computed and we return false.
+ ******************************************************************************/
+bool RcsBody_boxify(RcsBody* self, int computeType)
+{
+  if (self == NULL)
+  {
+    RLOG(4, "Can't boxify NULL body");
+    return false;
+  }
+
+  if (self->shape == NULL)
+  {
+    RLOG(4, "Body \"%s\" has no shapes attached - skipping boxify",
+         self->name);
+    return false;
+  }
+
+  unsigned int nPts = 8*RcsBody_numShapes(self);
+  MatNd* vertices = MatNd_create(nPts, 3);
+  unsigned int shapeIdx = 0;
+
+  RCSBODY_TRAVERSE_SHAPES(self)
+  {
+    if ((SHAPE->computeType & computeType) != 0)
+    {
+      double xyzMin[3], xyzMax[3];
+      RcsShape_computeAABB(SHAPE, xyzMin, xyzMax);
+      double* row = MatNd_getRowPtr(vertices, 8*shapeIdx);
+
+      Vec3d_set(row,   xyzMin[0], xyzMin[1], xyzMin[2]);
+      Vec3d_set(row+3, xyzMax[0], xyzMin[1], xyzMin[2]);
+      Vec3d_set(row+6, xyzMax[0], xyzMax[1], xyzMin[2]);
+      Vec3d_set(row+9, xyzMin[0], xyzMax[1], xyzMin[2]);
+
+      Vec3d_set(row+12, xyzMin[0], xyzMin[1], xyzMax[2]);
+      Vec3d_set(row+15, xyzMax[0], xyzMin[1], xyzMax[2]);
+      Vec3d_set(row+18, xyzMax[0], xyzMax[1], xyzMax[2]);
+      Vec3d_set(row+21, xyzMin[0], xyzMax[1], xyzMax[2]);
+
+      for (int i=0; i<8; ++i)
+      {
+        Vec3d_transformSelf(&row[i*3], &SHAPE->A_CB);
+      }
+
+      shapeIdx++;
+    }
+
+  }
+
+  if (shapeIdx == 0)
+  {
+    RLOG(4, "Body \"%s\" has no shape to boxify for computeType %d",
+         self->name, computeType);
+    MatNd_destroy(vertices);
+    return false;
+  }
+
+  MatNd_reshape(vertices, 8*shapeIdx, 3);
+  RcsShape* boxShape = RALLOC(RcsShape);
+  boxShape->type = RCSSHAPE_BOX;
+
+  bool success = Rcs_computeOrientedBox(&boxShape->A_CB, boxShape->extents,
+                                        vertices->ele, vertices->m);
+
+  if (success==false)
+  {
+    RLOG(4, "Failed to compute enclosing box for body \"%s\"", self->name);
+    MatNd_destroy(vertices);
+    return false;
+  }
+
+  boxShape->scale = 1.0;
+  boxShape->computeType = computeType;
+
+  // Replace body shapes with enclosing box
+  RcsShape** sPtr = self->shape;
+  while (*sPtr)
+  {
+    RcsShape_destroy(*sPtr);
+    sPtr++;
+  }
+
+  self->shape[0] = boxShape;
+  self->shape[1] = NULL;
+
+  MatNd_destroy(vertices);
+
+  return true;
+}
+

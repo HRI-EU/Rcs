@@ -37,11 +37,10 @@
 #include "Rcs_intersectionWM5.h"
 #include "Rcs_typedef.h"
 #include "Rcs_macros.h"
-#include "Rcs_Vec3d.h"
-#include "Rcs_VecNd.h"
-#include "Rcs_basicMath.h"
+#include "Rcs_math.h"
 #include "Rcs_mesh.h"
 #include "Rcs_geometry.h"
+#include "Rcs_shape.h"
 
 #if defined (USE_WM5)
 
@@ -57,6 +56,8 @@
 #include <Wm5PolynomialRoots.h>
 
 #include <Wm5Delaunay3.h>
+
+#include <Wm5ContBox3.h>
 
 #include <limits>
 
@@ -613,6 +614,52 @@ extern "C" {
 
 } // extern "C"
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+extern "C" {
+
+  bool Rcs_computeOrientedBox(HTr* A_box, double extents[3], const double* points, unsigned int nPoints)
+  {
+    bool success = true;
+
+    Wm5::Vector3d* vertsWm5 = new Wm5::Vector3d[nPoints];
+
+    for (unsigned int i=0; i<nPoints; ++i)
+    {
+      const double* row = &points[3*i];
+      vertsWm5[i] = Wm5::Vector3d(row[0], row[1], row[2]);
+    }
+
+    Wm5::Box3<double> box = Wm5::ContOrientedBox(nPoints, vertsWm5);
+
+    for (int i=0; i<3; ++i)
+    {
+      A_box->org[i] = box.Center[i];
+      A_box->rot[0][i] = box.Axis[0][i];
+      A_box->rot[1][i] = box.Axis[1][i];
+      Vec3d_crossProduct(A_box->rot[2], A_box->rot[0], A_box->rot[1]);
+      //A_box->rot[2][i] = box.Axis[2][i];
+      extents[i] = 2.0*box.Extent[i];
+    }
+
+    if (!Mat3d_isValid(A_box->rot))
+    {
+      RLOG(4, "Enclosing box has invalid rotation matrix");
+      REXEC(4)
+      {
+        Mat3d_printCommentDigits("A_box", A_box->rot, 6);
+      }
+      success = false;
+    }
+
+    delete [] vertsWm5;
+
+    return success;
+  }
+
+} // extern "C"
+
 #else // USE_WM5
 
 extern "C" {
@@ -632,6 +679,18 @@ extern "C" {
     RLOG(4, "Delaunay triangulation requires GeometricTools library - "
          "not available");
     return NULL;
+  }
+
+  bool Rcs_computeOrientedBox(HTr* A_box, double extents[3], const double* points, unsigned int nPoints)
+  {
+    return false;
+  }
+
+  bool RcsBody_boxify(RcsBody* self, int computeType)
+  {
+    RLOG(4, "Body boxification requires GeometricTools library - "
+         "not available");
+    return false;
   }
 
 } // extern "C"

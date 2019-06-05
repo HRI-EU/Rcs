@@ -38,6 +38,7 @@
 #define RCS_INTERSECTIONWM5_H
 
 #include "Rcs_HTr.h"
+#include "Rcs_body.h"
 
 #include <stdlib.h>
 
@@ -146,6 +147,15 @@ bool Rcs_intersectionPlaneCylinder(const double planePt[3],
                                    const double cylinderPt[3],
                                    const double cylinderDir[3],
                                    double radius);
+
+/*! \ingroup DistanceFunctions
+ *  \brief Computes a minimum oriented bounding box that encloses the
+ *         given points.
+ */
+bool Rcs_computeOrientedBox(HTr* A_box, double extents[3],
+                            const double* points,
+                            unsigned int nPoints);
+
 
 #ifdef __cplusplus
 }

@@ -380,6 +380,18 @@ RcsBody* RcsBody_createBouncingSphere(const double pos[3],
 
 bool RcsBody_removeJoints(RcsBody* self, RcsGraph* graph);
 
+/*! \ingroup RcsBodyFunctions
+ *  \brief Replaces all body shapes with a minimum enclosing oriented box. On
+ *         success, the original shapes will all be deleted. Otherwise, they
+ *         remain unchanged.
+ *
+ *  \param[in/out] self     Body whose shapes are to be replaced by the OBB.
+ *  \param[in] computeType  See enum RCSSHAPE_COMPUTE_TYPE
+ *  \return True for success, false otherwise.
+ */
+bool RcsBody_boxify(RcsBody* self, int computeType);
+
+
 #ifdef __cplusplus
 }
 #endif

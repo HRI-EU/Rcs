@@ -817,14 +817,14 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
     Vec3d_constMulSelf(&trf[3], 180.0 / M_PI);
 
     if (VecNd_maxAbsEle(trf, 6) > 1.0e-8)
-      {
-        fprintf(out, "transform=\"%s ", String_fromDouble(buf, trf[0], 6));
-        fprintf(out, "%s ", String_fromDouble(buf, trf[1], 6));
-        fprintf(out, "%s ", String_fromDouble(buf, trf[2], 6));
-        fprintf(out, "%s ", String_fromDouble(buf, trf[3], 6));
-        fprintf(out, "%s ", String_fromDouble(buf, trf[4], 6));
-        fprintf(out, "%s\" ", String_fromDouble(buf, trf[5], 6));
-      }
+    {
+      fprintf(out, "transform=\"%s ", String_fromDouble(buf, trf[0], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[1], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[2], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[3], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[4], 6));
+      fprintf(out, "%s\" ", String_fromDouble(buf, trf[5], 6));
+    }
   }
 
   // Mesh file
@@ -1238,12 +1238,12 @@ static double RcsShape_closestBoxToPoint(const RcsShape* box,
  *
  ******************************************************************************/
 static double RcsShape_closestSphereToBox(const RcsShape* sphere,
-                                         const RcsShape* box,
-                                         const HTr* A_sphere,
-                                         const HTr* A_box,
-                                         double I_cpSph[3],
-                                         double I_cpBox[3],
-                                         double I_nSphBox[3])
+                                          const RcsShape* box,
+                                          const HTr* A_sphere,
+                                          const HTr* A_box,
+                                          double I_cpSph[3],
+                                          double I_cpBox[3],
+                                          double I_nSphBox[3])
 {
   double dist = Math_distPointBox(A_sphere->org, A_box, box->extents,
                                   I_cpBox, I_nSphBox);
@@ -1260,15 +1260,15 @@ static double RcsShape_closestSphereToBox(const RcsShape* sphere,
  *
  ******************************************************************************/
 static double RcsShape_closestBoxToSphere(const RcsShape* box,
-                                         const RcsShape* sphere,
-                                         const HTr* A_box,
-                                         const HTr* A_sphere,
-                                         double I_cpBox[3],
-                                         double I_cpSph[3],
-                                         double I_nBoxSph[3])
+                                          const RcsShape* sphere,
+                                          const HTr* A_box,
+                                          const HTr* A_sphere,
+                                          double I_cpBox[3],
+                                          double I_cpSph[3],
+                                          double I_nBoxSph[3])
 {
   double dist = RcsShape_closestSphereToBox(sphere, box, A_sphere, A_box,
-                                           I_cpSph, I_cpBox, I_nBoxSph);
+                                            I_cpSph, I_cpBox, I_nBoxSph);
 
   // Revert the normal, because we are calling the reverse method
   Vec3d_constMulSelf(I_nBoxSph, -1.0);
@@ -1680,6 +1680,7 @@ void* RcsShape_addOctree(RcsShape* self, const char* fileName)
 void RcsShape_computeAABB(const RcsShape* shape,
                           double xyzMin[3], double xyzMax[3])
 {
+  const double* e = shape->extents;
 
   switch (shape->type)
   {
@@ -1696,16 +1697,14 @@ void RcsShape_computeAABB(const RcsShape* shape,
     {
       // Radius: extents[0], height: extents[2]. The reference point is a
       // ball point, the line direction is z.
-      const double* e = shape->extents;
       Vec3d_set(xyzMin, -e[0], -e[0], -e[0]);
       Vec3d_set(xyzMax, e[0], e[0], e[2] + e[0]);
       break;
     }
     case RCSSHAPE_SSR:
     {
-      const double* e = shape->extents;
-      Vec3d_set(xyzMin, -e[0] - e[2], -e[0] - e[2], -e[2]);
-      Vec3d_set(xyzMax, e[0] + e[2], e[0] + e[2], e[2]);
+      Vec3d_set(xyzMin, -0.5*e[0] - 0.5*e[2], -0.5*e[0] - 0.5*e[2], -0.5*e[2]);
+      Vec3d_set(xyzMax, 0.5*e[0] + 0.5*e[2], 0.5*e[0] + 0.5*e[2], 0.5*e[2]);
       break;
     }
     case RCSSHAPE_MESH:
@@ -1715,20 +1714,18 @@ void RcsShape_computeAABB(const RcsShape* shape,
     }
     case RCSSHAPE_BOX:
     {
-      Vec3d_constMul(xyzMin, shape->extents, -0.5);
-      Vec3d_constMul(xyzMax, shape->extents, 0.5);
+      Vec3d_constMul(xyzMin, e, -0.5);
+      Vec3d_constMul(xyzMax, e, 0.5);
       break;
     }
     case RCSSHAPE_CYLINDER:
     {
-      const double* e = shape->extents;
       Vec3d_set(xyzMin, -e[0], -e[0], -0.5 * e[2]);
       Vec3d_set(xyzMax, e[0], e[0], 0.5 * e[2]);
       break;
     }
     case RCSSHAPE_SPHERE:
     {
-      const double* e = shape->extents;
       Vec3d_set(xyzMin, -e[0], -e[0], -e[0]);
       Vec3d_set(xyzMax, e[0], e[0], e[0]);
       break;
@@ -1736,14 +1733,12 @@ void RcsShape_computeAABB(const RcsShape* shape,
     case RCSSHAPE_CONE:
     {
       // The cone's reference point is the base plane.
-      const double* e = shape->extents;
       Vec3d_set(xyzMin, -e[0], -e[0], 0.0);
       Vec3d_set(xyzMax, e[0], e[0], e[2]);
       break;
     }
     case RCSSHAPE_TORUS:
     {
-      const double* e = shape->extents;
       Vec3d_set(xyzMin, -e[0], -e[0], -0.5 * e[2]);
       Vec3d_set(xyzMax, e[0], e[0], 0.5 * e[2]);
       break;
