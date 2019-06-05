@@ -693,7 +693,7 @@ bool RcsGraph_setJoint(RcsGraph* self, const char* jntName, double val);
  *         for type being RcsStateFull.
  *
  *  \param[in] self     Valid pointer to graph.
- *  \param[in/out] dq   Array of joint displacements. The array may be a row
+ *  \param[in,out] dq   Array of joint displacements. The array may be a row
  *                      or a column vector. See explanations about
  *                      dimensions above.
  *  \param[in] dt       Time step to be considered for the displacement vector.

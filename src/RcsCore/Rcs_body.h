@@ -385,7 +385,7 @@ bool RcsBody_removeJoints(RcsBody* self, RcsGraph* graph);
  *         success, the original shapes will all be deleted. Otherwise, they
  *         remain unchanged.
  *
- *  \param[in/out] self     Body whose shapes are to be replaced by the OBB.
+ *  \param[in,out] self     Body whose shapes are to be replaced by the OBB.
  *  \param[in] computeType  See enum RCSSHAPE_COMPUTE_TYPE
  *  \return True for success, false otherwise.
  */
