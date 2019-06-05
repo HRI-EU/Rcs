@@ -70,8 +70,6 @@ public:
    */
   virtual ~CompositeTask();
 
-  /*! \brief Virtual copy constructor with optional new graph
-   */
   virtual CompositeTask* clone(RcsGraph* newGraph=NULL) const;
 
   virtual void addTask(Task* subTask);
@@ -99,6 +97,8 @@ public:
   virtual void setEffector(const RcsBody* effector);
   virtual void setRefBody(const RcsBody* referenceBody);
   virtual void setRefFrame(const RcsBody* referenceFrame);
+  virtual const Task* getSubTask(size_t index) const;
+  virtual void print() const;
 
 protected:
 

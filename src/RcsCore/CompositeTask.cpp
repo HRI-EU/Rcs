@@ -353,3 +353,26 @@ void Rcs::CompositeTask::setRefFrame(const RcsBody* referenceFrame)
     subTask[i]->setRefFrame(referenceFrame);
   }
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+const Rcs::Task* Rcs::CompositeTask::getSubTask(size_t index) const
+{
+  return this->subTask[index];
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::CompositeTask::print() const
+{
+  printf("CompositeTask %s: type %s\n",
+         getName().c_str(), getClassName().c_str());
+
+  for (size_t i=0; i<subTask.size(); ++i)
+  {
+    printf("   Sub-task %zd: ", i);
+    subTask[i]->print();
+  }
+}
