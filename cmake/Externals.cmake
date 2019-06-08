@@ -3,11 +3,9 @@
 # Settings for finding files and directories
 #
 ################################################################################
-#SET(HGR   $ENV{SIT})
-#SET(MKPLT $ENV{MAKEFILE_PLATFORM})
 
-string (REPLACE "\\" "/" HGR $ENV{SIT})
-string (REPLACE "\\" "/" MKPLT $ENV{MAKEFILE_PLATFORM})
+string (REPLACE "\\" "/" HGR "$ENV{SIT}")
+string (REPLACE "\\" "/" MKPLT "$ENV{MAKEFILE_PLATFORM}")
 
 ################################################################################
 #
