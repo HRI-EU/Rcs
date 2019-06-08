@@ -686,13 +686,6 @@ extern "C" {
     return false;
   }
 
-  bool RcsBody_boxify(RcsBody* self, int computeType)
-  {
-    RLOG(4, "Body boxification requires GeometricTools library - "
-         "not available");
-    return false;
-  }
-
 } // extern "C"
 
 #endif
