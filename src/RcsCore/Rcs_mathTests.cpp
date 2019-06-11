@@ -3065,7 +3065,7 @@ bool testMat3dFunctions(int argc, char** argv)
 /*******************************************************************************
  * Test of Via point sequence
  ******************************************************************************/
-bool testViaPointSequence2(int argc, char** argv)
+bool testViaPointSequence(int argc, char** argv)
 {
   char viaFileName[256] = "";
 
@@ -3097,7 +3097,7 @@ bool testViaPointSequence2(int argc, char** argv)
   return true;
 }
 
-bool testViaPointSequence(int argc, char** argv)
+bool testViaPointSequence2(int argc, char** argv)
 {
   // Parse command line arguments
   double dt = 0.01;

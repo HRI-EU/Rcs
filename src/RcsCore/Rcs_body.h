@@ -322,11 +322,11 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph);
 /*! \ingroup RcsBodyFunctions
  *  \brief Checks if a body has 6 degrees of freedom. This is independent of the
  *         rigid_body_joints flag. It is also ignored if the joints are
- *         constrained or not.
+ *         constrained or not. If the body is NULL, the function returns false.
  *
  *  \return true if the body has 6 joints in the order xyzabc, false otherwise.
  */
-bool RcsBody_isFloatingBase(const RcsBody* b);
+bool RcsBody_isFloatingBase(const RcsBody* self);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Merges the body with its parent so that the kinematic and dynamic

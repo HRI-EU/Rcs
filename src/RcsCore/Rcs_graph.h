@@ -698,8 +698,8 @@ bool RcsGraph_setJoint(RcsGraph* self, const char* jntName, double val);
  *                      dimensions above.
  *  \param[in] dt       Time step to be considered for the displacement vector.
  *                      If dq corresponds to velocities, dt should be 1.
- *  \param[in] type     If type is RcsStateIK, the large dimension of the array
- *                      dq is assumed to be RcsGraph::dof, otherwise
+ *  \param[in] type     If type is RcsStateFull, the large dimension of the
+ *                      array dq is assumed to be RcsGraph::dof, otherwise
  *                      it must be RcsGraph::nJ.
  */
 double RcsGraph_limitJointSpeeds(const RcsGraph* self, MatNd* dq,
