@@ -89,10 +89,28 @@ Rcs::TaskDistance1D::TaskDistance1D(const TaskDistance1D& copyFromMe,
 //! \todo Memory leak when derieved class calls params.clear()
 Rcs::TaskDistance1D::TaskDistance1D(RcsGraph* graph_,
                                     const RcsBody* effector,
-                                    const RcsBody* refBdy) :
-  TaskDistance3D(graph_, effector, refBdy), index(0)
+                                    const RcsBody* refBdy,
+                                    int idx) :
+  TaskDistance3D(graph_, effector, refBdy), index(idx)
 {
-  setClassName("Distance1D");
+  switch (idx)
+    {
+    case 0:
+      setClassName("DistanceX");
+      break;
+
+    case 1:
+      setClassName("DistanceY");
+      break;
+
+    case 2:
+      setClassName("DistanceZ");
+      break;
+
+    default:
+      RFATAL("Unsupported index %d - should be 0, 1 or 2", idx);
+    }
+
   setName("Dist1D " + std::string(effector ? effector->name : "NULL") + "-"
           + std::string(refBdy ? refBdy->name : NULL));
   setDim(1);
