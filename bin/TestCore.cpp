@@ -77,19 +77,18 @@ static void quit(int /*sig*/)
 /******************************************************************************
  *
  *****************************************************************************/
-static bool test_stringSplit(std::string src, std::string delim)
+static bool test_stringSplit(std::string src, std::string delim, size_t expectedSize)
 {
+  RMSG("Delimiter:       %s", delim.c_str());
   RMSG("Original string: \"%s\"", src.c_str());
   std::vector<std::string> split = String_split(src, delim);
 
   for (size_t i=0; i<split.size(); ++i)
   {
-    RMSG("substring[%d] = \"%s\"", (int) i, split[i].c_str());
+    RMSG("\tsubstring[%d] = \"%s\"", (int) i, split[i].c_str());
   }
 
-  RMSG("Remaining string: \"%s\"", src.c_str());
-
-  return true;
+  return split.size() == expectedSize;
 }
 
 /******************************************************************************
@@ -403,11 +402,36 @@ int main(int argc, char** argv)
 
     case 7:
     {
-      success = test_stringSplit("Honda|Hallo1#Hallo2#Hallo 3#abc def ", "#");
-      success = test_stringSplit("Honda|Honda|Honda|Honda|Honda|", "#");
-      success = test_stringSplit("##", "#");
-      success = test_stringSplit("SLAMDeviceInput&1&Tap", "&");
-      success = test_stringSplit("ARDeviceTransform&SLAMDeviceId&posx\"posy\"posz$qx\"qy\"qz\"quatw", "&");
+      success = test_stringSplit("Honda|Hallo1#Hallo2#Hallo 3#abc def ", "#", 4);
+      RMSG("%s", (success ? "Pass" : "Fail"));
+      success = test_stringSplit("Honda|Honda|Honda|Honda|Honda|", "#", 1);
+      RMSG("%s", (success ? "Pass" : "Fail"));
+      success = test_stringSplit("##", "#", 3);
+      RMSG("%s", (success ? "Pass" : "Fail"));
+      success = test_stringSplit("SLAMDeviceInput&1&Tap", "&", 3);
+      RMSG("%s", (success ? "Pass" : "Fail"));
+      success = test_stringSplit("ARDeviceTransform&SLAMDeviceId&posx\"posy\"posz$qx\"qy\"qz\"quatw", "&", 3);
+      RMSG("%s", (success ? "Pass" : "Fail"));
+      success = test_stringSplit("", "", 1);
+      RMSG("%s", (success ? "Pass" : "Fail"));
+      success = test_stringSplit("Honda|Honda|Honda", "", 1);
+      RMSG("%s", (success ? "Pass" : "Fail"));
+      success = test_stringSplit("", "#", 1);
+      RMSG("%s", (success ? "Pass" : "Fail"));
+      success = test_stringSplit("Honda|Honda|Honda|Honda", "Honda", 3);
+      RMSG("%s", (success ? "Pass" : "Fail"));
+      success = test_stringSplit("Honda|Honda|Honda|Honda", "|", 4);
+      RMSG("%s", (success ? "Pass" : "Fail"));
+      success = test_stringSplit("Honda|Honda|Honda|Honda|", "|", 4);
+      RMSG("%s", (success ? "Pass" : "Fail"));
+      success = test_stringSplit("|Honda|Honda|Honda|Honda", "|", 4);
+      RMSG("%s", (success ? "Pass" : "Fail"));
+      success = test_stringSplit("|Honda|Honda|Honda|Honda|", "|", 4);
+      RMSG("%s", (success ? "Pass" : "Fail"));
+      success = test_stringSplit("$$$$$$$$$$$", "$", 0);
+      RMSG("%s", (success ? "Pass" : "Fail"));
+      success = test_stringSplit("$$$$$$$$$$$", "$$", 1);
+      RMSG("%s", (success ? "Pass" : "Fail"));
       break;
     }
 

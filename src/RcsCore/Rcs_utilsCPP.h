@@ -99,8 +99,8 @@ bool File_isEqual(const char* file1, const char* file2);
  *  \return Vector of sub-strings without delimiter. The remainder of the
  *          stringToBeSplitted is not contained.
  */
-std::vector<std::string> String_split(std::string& stringToBeSplitted,
-                                      std::string delimiter);
+std::vector<std::string> String_split(const std::string& stringToBeSplitted,
+                                      const std::string& delimiter);
 
 /*! \ingroup RcsUtilsFunctions
  *  \brief Checks if a given string ends with another string. Basically for

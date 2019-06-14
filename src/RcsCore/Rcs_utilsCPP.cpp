@@ -209,20 +209,31 @@ bool File_isEqual(const char* file1, const char* file2)
 
 
 
-std::vector<std::string> String_split(std::string& toBeSplitted,
-                                      std::string delim)
+std::vector<std::string> String_split(const std::string& toBeSplitted,
+                                      const std::string& delim)
 {
   std::vector<std::string> splittedString;
   size_t startIdx = 0, endIdx = 0;
 
-  while ((endIdx = toBeSplitted.find(delim, startIdx)) < toBeSplitted.size())
+  if (delim.size() != 0)
+  {
+    while ((endIdx = toBeSplitted.find(delim, startIdx)) != std::string::npos)
+    {
+      if (startIdx < endIdx) // ignore zero-length substrings
   {
     std::string val = toBeSplitted.substr(startIdx, endIdx - startIdx);
     splittedString.push_back(val);
+      }
     startIdx = endIdx + delim.size();
   }
+  }
+  else
+  {
+    splittedString.push_back(toBeSplitted);
+  }
 
-  toBeSplitted = toBeSplitted.substr(startIdx);
+  if (endIdx == std::string::npos && startIdx < toBeSplitted.size())
+    splittedString.push_back(toBeSplitted.substr(startIdx));
 
   return splittedString;
 }
