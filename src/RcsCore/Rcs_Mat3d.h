@@ -614,6 +614,14 @@ void Mat3d_slerp(double A[3][3], double A_1I[3][3], double A_2I[3][3],
                  double t);
 
 /*! \ingroup RcsMat3dFunctions
+ *  \brief Computes an rotation matrix (Slerp interpolation) that is the
+ *         interpolation between A_from and A_to, with the maximum distance
+ *         maxAngle from A_from.
+ */
+double Mat3d_clip(double A_clip[3][3], double A_from[3][3], double A_to[3][3],
+                  double maxAngle);
+
+/*! \ingroup RcsMat3dFunctions
  *  \brief Computes the skew-symmetric matrix so that
  *         \f$ a \times b = \tilde{a} b\f$
  *
@@ -724,13 +732,22 @@ double Mat3d_maxAbsEle(double A[3][3]);
  */
 bool Mat3d_getEigenVectors(double V[3][3], double d[3], double A[3][3]);
 
+/*! \ingroup RcsMat3dFunctions
+ *  \brief Compares the Eigenvectors and Eigenvalues and returns true if they
+ *         are equal, false otherwise. The Eigenbases are considered the same
+ *         invariant of the sign of the Eigenvector's direction.
+ *
+ *  \param[in]  lambda1  Eigenvalues of basis 1
+ *  \param[in]  V1       Eigenvectors of basis 1, stored in the columns of V1
+ *  \param[in]  lambda2  Eigenvalues of basis 2
+ *  \param[in]  V2       Eigenvectors of basis 2, stored in the columns of V1
+ *  \param[in]  eps      Angular threshold below which two vectors are
+ *                       considered to be parallel
+ *  \return True for success, false otherwise (e.g. A is non-symmetric).
+ */
 bool Mat3d_compareEigenbasis(double lambda1[3], double V1[3][3],
                              double lambda2[3], double V2[3][3],
                              double eps);
-
-void Mat3d_fromQuaternion(double A_BI[3][3], double x[4]);
-bool Mat3d_toQuaternion(double q[4], double rm[3][3]);
-void Mat3d_toQuaternion2(double q[4], double m[3][3]);
 
 
 #ifdef __cplusplus

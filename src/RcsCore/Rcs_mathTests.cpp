@@ -1639,6 +1639,57 @@ bool testRnd(int argc, char** argv)
 }
 
 /*******************************************************************************
+ * Slerp test: Against Mat3d_clip()
+ ******************************************************************************/
+bool testSlerp(int argc, char** argv)
+{
+  double A_from[3][3], A_to[3][3];
+  const double phiMax = RCS_DEG2RAD(1.0);
+
+  Mat3d_setRandomRotation(A_from);
+
+  double rndAxis[3], rndAngle;
+  Vec3d_setRandomUnitVector(rndAxis);
+  rndAngle = Math_getRandomNumber(100.0*phiMax, M_PI);
+  Mat3d_rotateAxisAngle(A_to, rndAxis, rndAngle, A_from);
+
+  double phi = Mat3d_diffAngle(A_from, A_to);
+
+  double A_slerp[3][3];
+  Mat3d_slerp(A_slerp, A_from, A_to, phiMax/phi);
+
+  double A_clip[3][3];
+  Mat3d_clip(A_clip, A_from, A_to, phiMax);
+
+  REXEC(4)
+    {
+      Mat3d_printCommentDigits("A_slerp", A_slerp, 6);
+      Mat3d_printCommentDigits("A_clip", A_clip, 6);
+    }
+
+  Mat3d_subSelf(A_clip, A_slerp);
+
+  REXEC(2)
+    {
+      Mat3d_printCommentDigits("A_err", A_clip, 6);
+    }
+
+  double err = Mat3d_getFrobeniusnorm(A_clip);
+
+  if (err > 1.0e-3)
+    {
+      RLOG(1, "err = %g - should be < 1.0e-3", err);
+      return false;
+    }
+  else
+    {
+      RLOG(1, "err = %g - is < 1.0e-3", err);
+    }
+
+  return true;
+}
+
+/*******************************************************************************
  * Axis angle test: Tests conversion from and to axis angle representation
  ******************************************************************************/
 bool testAxisAngleConversion(int argc, char** argv)
@@ -3628,7 +3679,7 @@ bool testQuaternionConversion(int argc, char** argv)
     Quat_fromEulerAngles(q, ea);
 
     Mat3d_fromEulerAngles(rm, ea);
-    Mat3d_toQuaternion(q2, rm);
+    Quat_fromRotationMatrix(q2, rm);
 
     if (q[0]<0.0)
     {

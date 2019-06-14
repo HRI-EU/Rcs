@@ -211,6 +211,7 @@ bool Quat_fromRotationMatrix(double q_[4], double rm[3][3])
     REXEC(1)
     {
       RMSG("Failed converting quaternion from rotation matrix: t = %g", t);
+      RMSG("Mat3d is %s", Mat3d_isValid(rm) ? "VALID" : "INVALID");
       Mat3d_printFormatted("Rotation matrix", "%g ", rm);
     }
     return false;

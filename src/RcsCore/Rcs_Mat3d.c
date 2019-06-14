@@ -1451,6 +1451,42 @@ void Mat3d_slerp(double A[3][3], double A_1I[3][3], double A_2I[3][3],
 }
 
 /*******************************************************************************
+ * See header.
+ ******************************************************************************/
+double Mat3d_clip(double A_clipped[3][3], double A_from[3][3], double A_to[3][3],
+                double maxAngle)
+{
+  const double phi = Mat3d_diffAngle(A_from, A_to);
+
+  if (phi <= maxAngle)
+    {
+      Mat3d_copy(A_clipped, A_to);
+      return 1.0;
+    }
+
+  // Compute orientation error e
+  double e[3], A_err[3][3];
+
+  if (phi<1.0*(M_PI/180.0))   // Less than 1 deg error: Use Euler error
+  {
+    Mat3d_getEulerError(e, A_from, A_to);
+  }
+  else   // Larger error: Use axis angle error
+  {
+    Mat3d_getAxisAngle(e, A_to, A_from);
+    Vec3d_constMulSelf(e, phi);
+  }
+
+  // Error e is in world coords, lets transform it into the local frame
+  Vec3d_rotateSelf(e, A_from);
+  Vec3d_constMulSelf(e, maxAngle/phi);
+  Mat3d_fromEulerAngles(A_err, e);
+  Mat3d_mul(A_clipped, A_err, A_from);
+
+  return maxAngle/phi;
+}
+
+/*******************************************************************************
  *
  *         0    -rz    ry
  *  ~r =   rz    0    -rx
@@ -2047,138 +2083,4 @@ bool Mat3d_getEigenVectors(double V[3][3], double lambda[3], double A[3][3])
   Mat3d_sortEigenbasis(lambda, V, true);
 
   return Mat3d_testEigenbasis(A, lambda, V, 1.0e-6);
-}
-
-/*******************************************************************************
- *  qw = q[0]
- *  qx = q[1]
- *  qy = q[2]
- *  qz = q[3]
- ******************************************************************************/
-void Mat3d_fromQuaternion(double A_BI[3][3], double x[4])
-{
-  double qw, qx, qy, qz;
-
-  qw = x[0];
-  qx = x[1];
-  qy = x[2];
-  qz = x[3];
-
-  // Set matrix with transposed style to fit HRI rotation axis
-  A_BI[0][0] = 1.0 - 2.0f*qy*qy - 2.0f*qz*qz;
-  A_BI[1][0] = 2.0*qx*qy - 2.0f*qz*qw;
-  A_BI[2][0] = 2.0*qx*qz + 2.0f*qy*qw;
-
-  A_BI[0][1] = 2.0*qx*qy + 2.0f*qz*qw;
-  A_BI[1][1] = 1.0 - 2.0f*qx*qx - 2.0f*qz*qz;
-  A_BI[2][1] = 2.0*qy*qz - 2.0f*qx*qw;
-
-  A_BI[0][2] = 2.0*qx*qz - 2.0f*qy*qw;
-  A_BI[1][2] = 2.0*qy*qz + 2.0f*qx*qw;
-  A_BI[2][2] = 1.0 - 2.0f*qx*qx - 2.0f*qy*qy;
-}
-
-/*******************************************************************************
- *  qw = q[0]
- *  qx = q[1]
- *  qy = q[2]
- *  qz = q[3]
- ******************************************************************************/
-bool Mat3d_toQuaternion(double q_[4], double rm[3][3])
-{
-  double q[4];
-  double t = 0.0;
-
-  if (rm[2][2] < 0.0)
-  {
-    if (rm[0][0] > rm[1][1])
-    {
-      t = 1.0 + rm[0][0] - rm[1][1] - rm[2][2];
-      q[1] = t;
-      q[2] = rm[0][1]+rm[1][0];
-      q[3] = rm[2][0]+rm[0][2];
-      q[0] = rm[1][2]-rm[2][1];
-    }
-    else
-    {
-      t = 1.0 - rm[0][0] + rm[1][1] - rm[2][2];
-      q[1] = rm[0][1]+rm[1][0];
-      q[2] = t;
-      q[3] = rm[1][2]+rm[2][1];
-      q[0] = rm[2][0]-rm[0][2];
-    }
-  }
-  else
-  {
-    if (rm[0][0] < -rm[1][1])
-    {
-      t = 1.0 - rm[0][0] - rm[1][1] + rm[2][2];
-      q[1] = rm[2][0]+rm[0][2];
-      q[2] = rm[1][2]+rm[2][1];
-      q[3] = t;
-      q[0] = rm[0][1]-rm[1][0];
-    }
-    else
-    {
-      t = 1.0 + rm[0][0] + rm[1][1] + rm[2][2];
-      q[1] = rm[1][2]-rm[2][1];
-      q[2] = rm[2][0]-rm[0][2];
-      q[3] = rm[0][1]-rm[1][0];
-      q[0] = t;
-    }
-  }
-
-  if (t<=0.0)
-  {
-    REXEC(4)
-    {
-      RMSG("Failed to convert Mat3d to quaternion: t = %g but should be >0", t);
-      Mat3d_printCommentDigits("rm", rm, 8);
-      RMSG("Mat3d is %s", Mat3d_isValid(rm) ? "VALID" : "INVALID");
-    }
-    return false;
-  }
-
-  VecNd_constMul(q_, q, 0.5/sqrt(t), 4);
-
-  return true;
-}
-
-void Mat3d_toQuaternion2(double q[4], double m[3][3])
-{
-  double k, trace = m[0][0] + m[1][1] + m[2][2];
-
-  if (trace > 0.0)
-  {
-    k = 0.5/sqrt(1.0+trace);
-    q[1] = k*(m[1][2] - m[2][1]);
-    q[2] = k*(m[2][0] - m[0][2]);
-    q[3] = k*(m[0][1] - m[1][0]);
-    q[0] = 0.25/k;
-  }
-  else if ((m[0][0] > m[1][1]) && (m[0][0] > m[2][2]))
-  {
-    k = 0.5/sqrt(1.0 + m[0][0] - m[1][1]  - m[2][2]);
-    q[1] = 0.25/k;
-    q[2] = k*(m[1][0] + m[0][1]);
-    q[3] = k*(m[2][0] + m[0][2]);
-    q[0] = k*(m[1][2] - m[2][1]);
-  }
-  else if (m[1][1] > m[2][2])
-  {
-    k = 0.5/sqrt(1.0 + m[1][1] - m[0][0] - m[2][2]);
-    q[1] = k*(m[1][0] + m[0][1]);
-    q[2] = 0.25/k;
-    q[3] = k*(m[2][1] + m[1][2]);
-    q[0] = k*(m[2][0] - m[0][2]);
-  }
-  else
-  {
-    k = 0.5/sqrt(1.0 + m[2][2] - m[0][0] - m[1][1]);
-    q[1] = k*(m[2][0] + m[0][2]);
-    q[2] = k*(m[2][1] + m[1][2]);
-    q[3] = 0.25/k;
-    q[0] = k*(m[0][1] - m[1][0]);
-  }
-
 }

@@ -112,6 +112,7 @@ bool testMode(int mode, int argc, char** argv)
         fprintf(stderr, "\t\t31  Test ViaPointTrajectory1D\n");
         fprintf(stderr, "\t\t32  Test Quaternion conversion\n");
         fprintf(stderr, "\t\t33  Test Eigen3 linear algebra functions\n");
+        fprintf(stderr, "\t\t34  Test SLERP against matrix clip\n");
         break;
       }
 
@@ -213,6 +214,9 @@ bool testMode(int mode, int argc, char** argv)
         break;
       case 33:
         success = testFunctionsEigen3(argc, argv);
+        break;
+      case 34:
+        success = testSlerp(argc, argv);
         break;
       default:
         RMSGS("there is no mode %d", mode);
