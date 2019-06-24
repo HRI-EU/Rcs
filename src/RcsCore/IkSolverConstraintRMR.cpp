@@ -157,8 +157,6 @@ void Rcs::IkSolverConstraintRMR::solveRightInverse(MatNd* dq_des,
 {
   controller->swapTaskVec(activeSet);
   this->nx = controller->getTaskDim();
-  RLOG(5, "Start: activeSet: %zu   tasks: %zu   nx: %d",
-       activeSet.size(), controller->getNumberOfTasks(), nx);
 
   MatNd* dx = MatNd_clone(dx_);
   MatNd* activation = MatNd_clone(activation_);
