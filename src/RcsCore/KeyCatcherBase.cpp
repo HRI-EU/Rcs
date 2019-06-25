@@ -67,13 +67,13 @@ static inline void initLock()
 static inline void lock()
 {
   initLock();
-  pthread_mutex_unlock(&staticLock);
+  pthread_mutex_lock(&staticLock);
 }
 
 static inline void unlock()
 {
   initLock();
-  pthread_mutex_lock(&staticLock);
+  pthread_mutex_unlock(&staticLock);
 }
 
 
