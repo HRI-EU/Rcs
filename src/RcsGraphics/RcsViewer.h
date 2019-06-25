@@ -107,7 +107,7 @@ public:
                      unsigned int lly,     // lower left y
                      unsigned int sizeX,   // size in x-direction
                      unsigned int sizeY);  // size in y-direction
-  void add(osg::Node* node);
+  bool add(osg::Node* node);
   void add(osgGA::GUIEventHandler* eventHandler);
   void removeNode(osg::Node* node);
   void runInThread(pthread_mutex_t* mutex = NULL);

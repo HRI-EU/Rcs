@@ -445,7 +445,7 @@ void Viewer::add(osgGA::GUIEventHandler* eventHandler)
 /*******************************************************************************
  * Add a node to the root node.
  ******************************************************************************/
-void Viewer::add(osg::Node* node)
+bool Viewer::add(osg::Node* node)
 {
   osg::Camera* newHud = dynamic_cast<osg::Camera*>(node);
 
@@ -472,19 +472,23 @@ void Viewer::add(osg::Node* node)
       unlock();
     }
 
-    return;
+    return true;
   }
+
+  bool success = false;
 
   if (node != NULL)
   {
     lock();
-    this->rootnode->addChild(node);
+    success = this->rootnode->addChild(node);
     unlock();
   }
   else
   {
     RLOG(1, "Failed to add osg::Node - node is NULL!");
   }
+
+  return success;
 }
 
 /*******************************************************************************
