@@ -111,7 +111,7 @@ Rcs::IkSolverConstraintRMR::IkSolverConstraintRMR(Rcs::ControllerBase* ctrl) :
   // Update with added active set constraints
   controller->swapTaskVec(activeSet);
 
-  RLOG(0, "activeSet: %zu   tasks: %zu",
+  RLOG(5, "activeSet: %zu   tasks: %zu",
        activeSet.size(), controller->getNumberOfTasks());
 
   MatNd_realloc(this->J, activeSet.size(), this->nq);
@@ -211,13 +211,15 @@ void Rcs::IkSolverConstraintRMR::solveRightInverse(MatNd* dq_des,
     {
       double x, eps = 0.01;
       distTsk->computeX(&x);
+      double penetration = eps-x;
 
-      if (x < eps)
+      if (penetration > 0.0)
       {
         const int xIdx = controller->getTaskArrayIndex(i);
         const double baumgarteLimit = 0.0001;
         activation->ele[i] = 1.0;
-        dx->ele[xIdx] = (eps-x > baumgarteLimit) ? 0.1*baumgarteLimit : 0.0;
+        //dx->ele[xIdx] = (penetration > baumgarteLimit) ? 0.1*baumgarteLimit : 0.0;
+        dx->ele[xIdx] = (penetration > baumgarteLimit) ? 0.9*(penetration-baumgarteLimit)+0.1*baumgarteLimit : 0.0;
         nViolations++;
         RLOG(5, "Applying distance constraint %s - %s at violation depth %f mm",
              distTsk->getEffector()->name, distTsk->getRefBody()->name,
