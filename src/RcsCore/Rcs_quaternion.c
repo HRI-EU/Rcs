@@ -133,7 +133,7 @@ double Quat_normalizeSelf(double q[4])
 /*******************************************************************************
  *
  ******************************************************************************/
-void Quat_toRotationMatrix(double A_BI[3][3], double q[4])
+void Quat_toRotationMatrix(double A_BI[3][3], const double q[4])
 {
   const double qw = q[0];
   const double qx = q[1];

@@ -127,7 +127,7 @@ double Quat_normalizeSelf(double q[4]);
  *  \param[out]  A_BI   Rotation matrix in row-major form
  *  \param[in]   q      Quaternion in ordering [qw qx qy qz]
  */
-void Quat_toRotationMatrix(double A_BI[3][3], double q[4]);
+void Quat_toRotationMatrix(double A_BI[3][3], const double q[4]);
 
 /*! \ingroup RcsQuaternionFunctions
  *  \brief Converts a rotation matrix in row-major form to a quaternion
