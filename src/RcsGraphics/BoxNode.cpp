@@ -41,12 +41,9 @@
 
 
 
-/******************************************************************************
-
-  \brief Constructors.
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 Rcs::BoxNode::BoxNode() : NodeBase()
 {
   osg::Box* box = new osg::Box();
@@ -57,14 +54,9 @@ Rcs::BoxNode::BoxNode() : NodeBase()
   setWireframe(true);
 }
 
-
-
-/******************************************************************************
-
-  \brief Constructors.
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 Rcs::BoxNode::BoxNode(const double center[3], double A_KI[3][3],
                       double lx, double ly, double lz,
                       bool resizeable) : NodeBase()
@@ -72,35 +64,25 @@ Rcs::BoxNode::BoxNode(const double center[3], double A_KI[3][3],
   init(center, A_KI, lx, ly, lz, resizeable);
 }
 
-
-
-/******************************************************************************
-
-  \brief Constructors.
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 Rcs::BoxNode::BoxNode(const double center[3], double A_KI[3][3],
                       const double ext[3], bool resizeable) : NodeBase()
 {
   init(center, A_KI, ext[0], ext[1], ext[2], resizeable);
 }
 
-
-
-/******************************************************************************
-
-  Initialization of graphics
-
-******************************************************************************/
-
+/*******************************************************************************
+ * Initialization of graphics
+ ******************************************************************************/
 void Rcs::BoxNode::init(const double center[3], double A_KI[3][3],
                         double lx, double ly, double lz, bool resizeable)
 {
-  osg::Box* box = new osg::Box();
+  this->box = new osg::Box();
   box->setHalfLengths(osg::Vec3(0.5*lx, 0.5*ly, 0.5*lz));
 
-  osg::ShapeDrawable* shape = new osg::ShapeDrawable(box);
+  osg::ShapeDrawable* shape = new osg::ShapeDrawable(box.get());
 
   if (resizeable==true)
   {
@@ -114,4 +96,20 @@ void Rcs::BoxNode::init(const double center[3], double A_KI[3][3],
   setPosition(center);
   setRotation(A_KI);
   setWireframe(true);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::BoxNode::resize(double lx, double ly, double lz)
+{
+  box->setHalfLengths(osg::Vec3(0.5*lx, 0.5*ly, 0.5*lz));
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::BoxNode::resize(const double extents[3])
+{
+  resize(extents[0], extents[1], extents[2]);
 }

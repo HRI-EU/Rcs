@@ -55,10 +55,15 @@ public:
           double lz, bool resizeable=false);
   BoxNode(const double center[3], double A_KI[3][3], const double extents[3],
           bool resizeable=false);
+  void resize(double lx, double ly, double lz);
+  void resize(const double extents[3]);
 
 protected:
+
   void init(const double center[3], double A_KI[3][3], double lx, double ly,
             double lz, bool resizeable);
+
+  osg::ref_ptr<osg::Box> box;
 };
 
 }   // namespace Rcs
