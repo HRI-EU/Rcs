@@ -75,8 +75,8 @@ public:
   virtual const double* getRotMatPtr() const;
   virtual void setPosPtr(const double* pos);
   virtual void setRotMatPtr(const double* rot);
-  virtual void setMaterial(const char* material);
-  virtual void setMaterial(const std::string& material);
+  virtual void setMaterial(const char* material, double alpha=1.0);
+  virtual void setMaterial(const std::string& material, double alpha=1.0);
   virtual bool isVisible() const;
   virtual bool frameCallback();
   virtual bool eventCallback(const osgGA::GUIEventAdapter& ea,

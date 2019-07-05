@@ -383,7 +383,7 @@ void Rcs::NodeBase::setRotMatPtr(const double* rot)
 /*******************************************************************************
  * Sets the material properties
  ******************************************************************************/
-void Rcs::NodeBase::setMaterial(const char* material)
+void Rcs::NodeBase::setMaterial(const char* material, double alpha)
 {
   if (material==NULL)
   {
@@ -391,15 +391,15 @@ void Rcs::NodeBase::setMaterial(const char* material)
     return;
   }
 
-  setMaterial(std::string(material));
+  setMaterial(std::string(material), alpha);
 }
 
 /*******************************************************************************
  * Sets the material properties.
  ******************************************************************************/
-void Rcs::NodeBase::setMaterial(const std::string& material)
+void Rcs::NodeBase::setMaterial(const std::string& material, double alpha)
 {
-  setNodeMaterial(material, pat.get());
+  setNodeMaterial(material, pat.get(), alpha);
 }
 
 /*******************************************************************************

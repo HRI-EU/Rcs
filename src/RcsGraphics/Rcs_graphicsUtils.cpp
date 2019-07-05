@@ -727,6 +727,11 @@ bool setNodeMaterial(const std::string& matString, osg::Node* node,
   // Assign material through state set
   osg::ref_ptr<osg::StateSet> stateset = node->getOrCreateStateSet();
 
+  if (alpha < 1.0)
+  {
+    stateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+  }
+
   stateset->setMode(GL_BLEND,
                     osg::StateAttribute::OVERRIDE |
                     osg::StateAttribute::ON);
@@ -1113,7 +1118,7 @@ static bool getMaterialFromColorFile(const std::string& matString,
   if (matFileFound == false)
   {
     RLOG(4, "Material file \"%s\" not found!", matString.c_str());
-    return NULL;
+    return false;
   }
 
   return getMaterialFromFile(matFile, matString.c_str(), amb, diff, spec, sh);
