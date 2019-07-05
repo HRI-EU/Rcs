@@ -51,6 +51,8 @@ class TaskCylindrical3D : public Rcs::TaskPosition3D
 {
 public:
 
+  using Task::computeDX;
+
   /*! \brief Constructor based on xml parsing
    */
   TaskCylindrical3D(const std::string& className, xmlNode* node,

@@ -35,7 +35,7 @@
 *******************************************************************************/
 
 #ifndef RCS_BVHPARSER_H
-#define RRCS_BVHPARSER_H
+#define RCS_BVHPARSER_H
 
 #include <Rcs_graph.h>
 

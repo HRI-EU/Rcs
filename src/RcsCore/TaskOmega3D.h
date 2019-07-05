@@ -58,6 +58,8 @@ class TaskOmega3D: public TaskGenericIK
 {
 public:
 
+  using Task::computeDX;
+
   /*! Constructor based on graph and effectors.
    */
   TaskOmega3D(RcsGraph* graph, const RcsBody* effector,

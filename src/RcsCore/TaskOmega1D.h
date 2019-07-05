@@ -58,6 +58,8 @@ class TaskOmega1D: public TaskGenericIK
 {
 public:
 
+  using Task::computeDX;
+
   /*! Constructor based on xml parsing
    */
   TaskOmega1D(const std::string& className, xmlNode* node, RcsGraph* _graph,

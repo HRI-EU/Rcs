@@ -172,7 +172,7 @@ void Rcs::TaskFactory::printRegisteredTasks() const
   std::map<std::string, TaskCheckFunction>::const_iterator it2;
   for (it2 = checkFunctionMap.begin(); it2 != checkFunctionMap.end(); ++it2)
   {
-    RLOGS(10, "%s: %p", it2->first.c_str(), it2->second);
+    RLOG_CPP(10, "Function: " << it2->first << " address: " << it2->second);
   }
 
 }

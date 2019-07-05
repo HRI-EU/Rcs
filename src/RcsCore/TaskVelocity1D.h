@@ -51,6 +51,8 @@ class TaskVelocity1D: public Rcs::TaskPosition1D
 {
 public:
 
+  using Task::computeDX;
+
   /*! Constructor based on xml parsing
    */
   TaskVelocity1D(const std::string& className, xmlNode* node,

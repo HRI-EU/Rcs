@@ -51,6 +51,8 @@ class TaskVelocity3D: public Rcs::TaskPosition3D
 {
 public:
 
+  using Task::computeDX;
+
   /*! Constructor based on graph and effectors.
    */
   TaskVelocity3D(RcsGraph* graph, const RcsBody* effector,

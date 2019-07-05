@@ -22,6 +22,16 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
+IF("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+  MESSAGE("-- Compiler is: Clang")
+ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  MESSAGE("-- Compiler is: GNU")
+ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+  MESSAGE("-- Compiler is: Intel")
+ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+  MESSAGE("-- Compiler is: MSVC")
+ENDIF()
+
 ################################################################################
 #
 # Copy config directories:

@@ -49,6 +49,8 @@ class TaskVelocityJoint: public Rcs::TaskJoint
 {
 public:
 
+  using Task::computeDX;
+
   /*! Constructor based on xml parsing
    */
   TaskVelocityJoint(const std::string& className, xmlNode* node,

@@ -51,6 +51,8 @@ class TaskSpherical1D : public Rcs::TaskSpherical3D
 {
 public:
 
+  using Task::computeDX;
+
   /*! \brief Constructor based on xml parsing
    */
   TaskSpherical1D(const std::string& className, xmlNode* node,
