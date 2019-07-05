@@ -189,6 +189,7 @@ struct _RcsBody
   int physicsSim;         ///< see enum RCSBODY_PHYSICS_SIMULATION_TYPE
   double x_dot[3];        ///< Bodie's linear velocity in world coordinates
   double omega[3];        ///< Bodie's angular velocity in world coordinates
+  double confidence;
 
   char* name;             ///< Fully qualified name of the body with suffix
   char* xmlName;          ///< Name of the body as indicated in xml file
