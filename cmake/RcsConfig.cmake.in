@@ -38,7 +38,7 @@ FOREACH(_comp ${Rcs_FIND_COMPONENTS})
 ENDFOREACH()
 
 # Make Rcs config dir available to users
-SET(RCS_CONFIG_DIR "@RCS_CONFIG_DIR@")
+SET(RCS_CONFIG_DIR "@PACKAGE_CONFIG_INSTALL_DIR@")
 
 # Handle REQUIRED and QUIET arguments, as well as required components
 # Note, REQUIRED_VARS only contains the config dir here since we use imported targets for the libraries

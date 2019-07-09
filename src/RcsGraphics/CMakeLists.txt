@@ -2,7 +2,13 @@ AUX_SOURCE_DIRECTORY (${CMAKE_CURRENT_SOURCE_DIR} RCS_GRAPHICS_SRCS)
 ADD_LIBRARY(RcsGraphics ${LIBRARY_LINKING_TYPE} ${RCS_GRAPHICS_SRCS})
 
 TARGET_INCLUDE_DIRECTORIES(RcsGraphics PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
+    # Header source location
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    
+    # Header install location
+    $<INSTALL_INTERFACE:include/RcsGraphics>
+    
+    # Regular dependencies
     ${OPENSCENEGRAPH_INCLUDE_DIRS}
 )
 
@@ -15,3 +21,13 @@ TARGET_LINK_LIBRARIES(RcsGraphics RcsCore ${OPENSCENEGRAPH_LIBRARIES})
 
 # Mark for export
 RCS_ADD_EXPORT_LIBRARY(RcsGraphics)
+
+# Installation
+# Headers
+INSTALL(
+  DIRECTORY . 
+  DESTINATION include/RcsGraphics
+  FILES_MATCHING PATTERN "*.h"
+)
+# Install the binaries
+INSTALL(TARGETS RcsGraphics EXPORT RcsExport DESTINATION lib)

@@ -127,6 +127,21 @@ IF(${CMAKE_BUILD_TYPE} STREQUAL "Release" AND NOT ENABLE_DEBUG_MACROS)
   MESSAGE("Compiling in RELEASE mode")
 ENDIF()
 
+# Add the automatically determined parts of the RPATH which point to directories 
+# outside the build tree to the install RPATH. Required for Vortex and other stuff
+# from the SIT.
+# Note: This only works with CMake >= 3.0. With 2.8, the library directories of the dependencies
+# must be added to the LD_LIBRARY_PATH manually in oredr to use the installed executables.
+# This has no effect on using the package in another CMake project.
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+# The RPATH to be used when installing, but only if it's not a system directory
+# Source: CMake wiki (https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/RPATH-handling)
+LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+IF("${isSystemDir}" STREQUAL "-1")
+   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+ENDIF("${isSystemDir}" STREQUAL "-1")
+
+
 ################################################################################
 #
 # Flags to strip down the file names for logging at compile time. Adapted from
