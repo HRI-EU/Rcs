@@ -120,8 +120,14 @@ ELSE()
 ENDIF()
 
 TARGET_INCLUDE_DIRECTORIES(RcsCore PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${RCS_THIRDPARTY_DIR}
+    # Header source location
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${RCS_THIRDPARTY_DIR}>
+    
+    # Header install location
+    $<INSTALL_INTERFACE:include/RcsCore>
+    
+    # Regular dependencies
     ${LIBXML2_INCLUDE_DIR}
     ${PTHREAD_INCLUDE_DIR})
 
@@ -139,3 +145,19 @@ ENDIF(USE_OCTOMAP)
 
 # Mark for export
 RCS_ADD_EXPORT_LIBRARY(RcsCore)
+
+# Installation
+# Headers
+INSTALL(
+  DIRECTORY . 
+  DESTINATION include/RcsCore
+  FILES_MATCHING PATTERN "*.h"
+)
+# The external headers go to the same directory
+INSTALL(
+  FILES ${RCS_THIRDPARTY_DIR}/EulerAngles.h
+        ${RCS_THIRDPARTY_DIR}/QuatTypes.h
+  DESTINATION include/RcsCore
+)
+# Install the binaries
+INSTALL(TARGETS RcsCore EXPORT RcsExport DESTINATION lib)

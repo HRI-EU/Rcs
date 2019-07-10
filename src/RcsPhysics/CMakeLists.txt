@@ -18,7 +18,7 @@ IF(USE_BULLET)
     BulletSimulation.cpp)
   IF(NOT HEADLESS_BUILD)
     LIST(APPEND RCS_PHYSICS_SRCS
-	     BulletDebugNode.cpp
+      BulletDebugNode.cpp
       BulletDebugDrawer.cpp)
   ENDIF(NOT HEADLESS_BUILD)
 ENDIF(USE_BULLET)
@@ -33,7 +33,13 @@ ENDIF(USE_VORTEX)
 
 
 ADD_LIBRARY(RcsPhysics ${LIBRARY_LINKING_TYPE} ${RCS_PHYSICS_SRCS})
-TARGET_INCLUDE_DIRECTORIES(RcsPhysics PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+TARGET_INCLUDE_DIRECTORIES(RcsPhysics PUBLIC 
+    # Header source location
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    
+    # Header install location
+    $<INSTALL_INTERFACE:include/RcsPhysics>
+)
 TARGET_LINK_LIBRARIES(RcsPhysics RcsCore)
 
 IF(NOT HEADLESS_BUILD)
@@ -64,3 +70,13 @@ ENDIF(USE_BULLET)
 
 # Mark for export
 RCS_ADD_EXPORT_LIBRARY(RcsPhysics)
+
+# Installation
+# Headers
+INSTALL(
+  DIRECTORY . 
+  DESTINATION include/RcsPhysics
+  FILES_MATCHING PATTERN "*.h"
+)
+# Install the binaries
+INSTALL(TARGETS RcsPhysics EXPORT RcsExport DESTINATION lib)
