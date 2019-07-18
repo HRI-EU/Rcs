@@ -59,6 +59,10 @@
    
      <h1> Programming notes </h1>
    
+     - How to change compilers to clang:
+       - export CXX=/usr/bin/clang++
+       - export CC=/usr/bin/clang
+       - recompile
      - Memory leak checking: memcheck executable \<options\> 2>&1 | tee /tmp/valgrind.txt
        (memcheck is aliased to valgrind --tool=memcheck --leak-check=full --show-reachable=yes) 
      - For memory allocation of the basic types in Rcs, we assume that it 

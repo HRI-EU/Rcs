@@ -41,7 +41,7 @@
 
 #include <QFrame>
 
-#if !defined (_MSC_VER)
+#if defined (WITH_X11_SUPPORT)
 #include <X11/X.h>
 #endif
 
@@ -68,7 +68,7 @@ public:
 
   void setWindowTitleSafe(const std::string& window_name);
 
-#if !defined (_MSC_VER)
+#if defined (WITH_X11_SUPPORT)
   void attachToWindow(Window window);
 #endif
 
@@ -84,7 +84,7 @@ private:
   QVBoxLayout* _misc_area;
   std::string _window_name;
   bool _new_window_name;
-#if !defined (_MSC_VER)
+#if defined (WITH_X11_SUPPORT)
   Window _window;
   Display* _display;
 #endif

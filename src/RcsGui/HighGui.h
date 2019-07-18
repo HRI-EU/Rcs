@@ -246,7 +246,7 @@ public:
                         const cv::Mat& image);
 #endif
 
-#if !defined (_MSC_VER)
+#if defined (WITH_X11_SUPPORT)
   /*!
    * \brief Attaches a HighGuiWindow to any X11 window
    *

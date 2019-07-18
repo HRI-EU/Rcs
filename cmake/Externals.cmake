@@ -73,7 +73,7 @@ IF (USE_BULLET STREQUAL 2.83_double)
     SET(BULLET_INCLUDE_DIRS "" CACHE PATH "Bullet include directory")
   ENDIF()
 
-  SET(BULLET_DEFINITIONS -DUSE_BULLET -DBT_USE_DOUBLE_PRECISION CACHE PATH "Bullet definitions")
+  SET(BULLET_DEFINITIONS -DUSE_BULLET -DBT_USE_DOUBLE_PRECISION)
   SET(BULLET_CXX_FLAGS "-isystem ${BULLET_INCLUDE_DIRS}")
 
   IF(UNIX)
@@ -104,6 +104,7 @@ IF (USE_BULLET STREQUAL 2.83_double)
 ELSEIF(USE_BULLET STREQUAL 2.83_float)
 
   FIND_PACKAGE(Bullet REQUIRED)
+  SET(BULLET_DEFINITIONS -DUSE_BULLET)
 
 ENDIF()
 
@@ -205,24 +206,6 @@ ENDIF()
 
 ################################################################################
 #
-# Settings for Qt
-#
-################################################################################
-IF(NOT HEADLESS_BUILD)
-
-  IF (MSVC_VERSION STREQUAL 1900)
-    MESSAGE("Configuring for Qt5")
-	#SET(CMAKE_AUTOMOC ON)
-    FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets)
-  ELSE()
-  FIND_PACKAGE(Qt4 REQUIRED)
-  INCLUDE(${QT_USE_FILE})
-  ENDIF()
-
-ENDIF(NOT HEADLESS_BUILD)
-
-################################################################################
-#
 # Settings for qwt
 #
 ################################################################################
@@ -260,6 +243,30 @@ IF(NOT HEADLESS_BUILD)
     FIND_PACKAGE(Qwt REQUIRED)
 
   ENDIF(WIN32)
+
+ENDIF(NOT HEADLESS_BUILD)
+
+################################################################################
+#
+# Settings for Qt
+#
+################################################################################
+IF(NOT HEADLESS_BUILD)
+
+  IF (MSVC_VERSION STREQUAL 1900)
+    MESSAGE("Configuring for Qt5")
+	#SET(CMAKE_AUTOMOC ON)
+    FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets)
+  ELSE()
+
+  IF (QWT_MAJOR_VERSION VERSION_LESS 6)
+    FIND_PACKAGE(Qt4 REQUIRED)
+    INCLUDE(${QT_USE_FILE})
+  ELSE()
+    FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
+  ENDIF()
+
+  ENDIF()
 
 ENDIF(NOT HEADLESS_BUILD)
 

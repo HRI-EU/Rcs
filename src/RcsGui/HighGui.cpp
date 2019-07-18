@@ -359,7 +359,7 @@ void HighGui::showImage(const std::string& name, unsigned int window,
 
 #endif
 
-#if !defined (_MSC_VER)
+#if defined (WITH_X11_SUPPORT)
 void HighGui::attachWindowToWindow(unsigned int window, Window x11window)
 {
   instance().lock();

@@ -43,7 +43,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-#if !defined (_MSC_VER)
+#if defined (WITH_X11_SUPPORT)
 #include <X11/Xlib.h>
 #endif
 
@@ -86,14 +86,14 @@ HighGuiWindow* HighGuiWindow::create(const std::string& name)
 HighGuiWindow::HighGuiWindow(const std::string& name) :
   HighGuiWidget(name),
   _new_window_name(false),
-#if !defined (_MSC_VER)
+#if defined (WITH_X11_SUPPORT)
   _window(0),
   _display(NULL),
 #endif
   _show(false)
 {
 
-#if !defined (_MSC_VER)
+#if defined (WITH_X11_SUPPORT)
   _display = XOpenDisplay(NULL);
 #endif
 
@@ -114,7 +114,7 @@ HighGuiWindow::HighGuiWindow(const std::string& name) :
 
 HighGuiWindow::~HighGuiWindow()
 {
-#if !defined (_MSC_VER)
+#if defined (WITH_X11_SUPPORT)
   XCloseDisplay(_display);
 #endif
 }
@@ -141,7 +141,7 @@ void HighGuiWindow::setWindowTitleSafe(const std::string& window_name)
   unlock();
 }
 
-#if !defined (_MSC_VER)
+#if defined (WITH_X11_SUPPORT)
 void HighGuiWindow::attachToWindow(Window window)
 {
   _window = window;
@@ -189,7 +189,7 @@ void HighGuiWindow::update()
 
 void HighGuiWindow::updateAttachment()
 {
-#if !defined (_MSC_VER)
+#if defined (WITH_X11_SUPPORT)
   if (_display && _window != 0)
   {
     setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
