@@ -38,7 +38,7 @@ To build the doxygen documentation, just type:
 
     make doc
 
-Compilation has also been tested on Ubuntu 16.04 with GCC 5. However, Vortex Essentials is only available as pre-compiled binaries using GCC 4.8, so it cannot be used with newer GCC versions. If you install GCC 4.8 on a newer system to work around this issue, you also must  take care to use matching version of OpenSceneGraph, since the one installed via the package manager will not be compatible with GCC 4.8.
+Compilation has also been tested on Ubuntu 16.04 with GCC 5 and Ubuntu 18.04 with GCC 7 and clang. However, Vortex Essentials is only available as pre-compiled binaries using GCC 4.8, so it cannot be used with newer GCC versions. If you install GCC 4.8 on a newer system to work around this issue, you also must  take care to use matching version of OpenSceneGraph, since the one installed via the package manager will not be compatible with GCC 4.8.
 
 It is also possible to compile it on Microsoft Visual Studio, however with some additional efforts. The libxml2 and pthreads library as well as the below mentioned dependencies need to be installed. Further, a cmake version higher than 3.4 is required. They support automatic symbol generation for windows compilation. The formerly mandatory export declaratives are not needed (except for global variables). Here is how to call it:
 
