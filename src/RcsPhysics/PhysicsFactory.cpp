@@ -116,6 +116,18 @@ Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const std::string& className,
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::PhysicsFactory::hasEngine(const std::string& className)
+{
+  std::map<std::string, PhysicsCreateFunction>::iterator it;
+
+  it = instance()->constructorMap.find(className);
+
+  return (it==instance()->constructorMap.end()) ? false : true;
+}
+
+/*******************************************************************************
  * This function is called through the registrar class. This happens before
  * main() is entered. Therefore, logging with debug levels doesn't make sense,
  * since the debug level has at that point not yet been parsed.

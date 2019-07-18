@@ -67,9 +67,9 @@ public:
   static PhysicsBase* create(const std::string& className, RcsGraph* graph,
                              const char* cfgFile);
 
-  /*!
-   * \brief Creates a new Physics simulation instance by name using the
+  /*! \brief Creates a new Physics simulation instance by name using the
    *        appropriate registered construction function.
+   *
    * \param className The name with which the physics is registered at the
    *        factory
    * \param graph The underlying graph for the kinematics
@@ -79,8 +79,16 @@ public:
   static PhysicsBase* create(const std::string& className, RcsGraph* graph,
                              const PhysicsConfig* config);
 
-  /*!
-   * \brief Prints the list of all registered physics simulations to stdout.
+  /*! \brief Checks if a physics engine with the given name has been
+   *         registered in the PhysicsFactory
+   *
+   * \param className The name with which the physics is registered at the
+   *        factory
+   * \return True if engine exists, false otherwise
+   */
+  static bool hasEngine(const std::string& className);
+
+  /*! \brief Prints the list of all registered physics simulations to stdout.
    */
   static void print();
 
@@ -99,8 +107,7 @@ private:
    */
   static PhysicsFactory* instance();
 
-  /*!
-   * \brief Registers a new function for creating physics. You should not
+  /*! \brief Registers a new function for creating physics. You should not
    *        need to call this function directly. Instead us the
    *        PhysicsFactoryRegistrar by adding the following line to your
    *        implementation:
