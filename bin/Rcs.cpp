@@ -2954,7 +2954,7 @@ int main(int argc, char** argv)
       }
       else
       {
-        snprintf(dotFileDfs, strlen(dotFile)-strlen(fileExtension)+1, dotFile);
+        snprintf(dotFileDfs, strlen(dotFile)-strlen(fileExtension)+1, "%s", dotFile);
         strcat(dotFileDfs, "DFS");
         strcat(dotFileDfs, fileExtension);
       }
