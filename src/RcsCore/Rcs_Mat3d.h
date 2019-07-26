@@ -651,6 +651,11 @@ void Mat3d_skew(double rSkew[3][3], const double a[3]);
 void Mat3d_transposeSkew(double rSkew[3][3], const double r[3]);
 
 /*! \ingroup RcsMat3dFunctions
+ *  \brief Prints the matrix to stdout.
+ */
+void Mat3d_print(double A[3][3]);
+
+/*! \ingroup RcsMat3dFunctions
  *  \brief Prints the matrix to a file descriptor.
  */
 void Mat3d_fprint(FILE* fd, double A[3][3]);

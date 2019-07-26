@@ -372,6 +372,17 @@ RcsBody* RcsGraph_getBodyByTruncatedName(const RcsGraph* self,
                                          const char* name);
 
 /*! \ingroup RcsGraphFunctions
+ *  \brief Returns a pointer to the idx-th (in the depth-first traversal sense)
+ *         body in a graph.
+ *
+ *  \param[in] self   Pointer to graph. If it is NULL, the function returns
+ *                    NULL.
+ *  \param[in] idx    Index of the body to be retrieved.
+ *  \return Pointer to the body within the graph, or NULL if idx is too large.
+ */
+RcsBody* RcsGraph_getBodyByIndex(const RcsGraph* graph, unsigned int idx);
+
+/*! \ingroup RcsGraphFunctions
  *  \brief Returns the summed mass of all bodies of the graph.
  */
 double RcsGraph_mass(const RcsGraph* self);

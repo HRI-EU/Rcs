@@ -1067,6 +1067,31 @@ RcsBody* RcsGraph_getBodyByName(const RcsGraph* self, const char* name)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+RcsBody* RcsGraph_getBodyByIndex(const RcsGraph* graph, unsigned int idx)
+{
+  if (graph==NULL)
+  {
+    return NULL;
+  }
+
+  unsigned int i = 0;
+
+  RCSGRAPH_TRAVERSE_BODIES(graph)
+  {
+    if (i==idx)
+    {
+      return BODY;
+    }
+
+    i++;
+  }
+
+  return NULL;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 RcsBody* RcsGraph_getBodyByTruncatedName(const RcsGraph* self, const char* name)
 {
   if ((name==NULL) || (self==NULL))
