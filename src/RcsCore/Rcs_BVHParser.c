@@ -520,6 +520,7 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
     }
   }
 
+  self->q_dot = MatNd_create(self->dof, 1);
   RcsGraph_setState(self, NULL, NULL);
 
   return self;
