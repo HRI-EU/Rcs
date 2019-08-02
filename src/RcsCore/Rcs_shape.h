@@ -174,6 +174,11 @@ const char* RcsShape_name(int shapeType);
 void RcsShape_copy(RcsShape* dst, const RcsShape* src);
 
 /*! \ingroup RcsShapeFunctions
+ *  \brief Returns a deep copy of a shape. See RcsShape_copy() for details.
+ */
+RcsShape* RcsShape_clone(const RcsShape* src);
+
+/*! \ingroup RcsShapeFunctions
  *  \brief Prints out the shape's information to out. The function accepts
  *         if s is NULL.
  */
@@ -193,6 +198,11 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self);
 RcsShape* RcsShape_createRandomShape(int shapeType);
 
 /*! \ingroup RcsShapeFunctions
+ *  \brief Creates a frame shape with default parameters and the given scaling.
+ */
+RcsShape* RcsShape_createFrameShape(double scale);
+
+/*! \ingroup RcsShapeFunctions
  *  \brief Prints the distance function table to out.
  */
 void RcsShape_fprintDistanceFunctions(FILE* out);
@@ -210,8 +220,16 @@ void* RcsShape_addOctree(RcsShape* self, const char* fileName);
  *  \param[in] xyzMin     Minimum point of the box
  *  \param[in] xyzMax     Maximum point of the box
  */
-void RcsShape_computeAABB(const RcsShape* shape,
+void RcsShape_computeAABB(const RcsShape* self,
                           double xyzMin[3], double xyzMax[3]);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Scales the geometry of the shape.
+ *
+ *  \param[in,out] self      to be reshaped.
+ *  \param[in] scale        Scaling factor.
+ */
+void RcsShape_scale(RcsShape* self, double scale);
 
 
 #ifdef __cplusplus

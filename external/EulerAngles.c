@@ -314,3 +314,62 @@ void computeEulerAngles(double ea[3],
   ea[1] = outAngs.y;
   ea[2] = outAngs.z;
 }
+
+/*******************************************************************************
+ * Prints all Euler angle combinations of a given rotation matrix to the
+ * console.
+ ******************************************************************************/
+void printAllEulerAngles(double rm[3][3])
+{
+  double tmp[3];
+
+  computeEulerAngles(tmp, rm, EulOrdXYZs);
+  printf("EulOrdXYZs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdXYXs);
+  printf("EulOrdXYXs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdXZYs);
+  printf("EulOrdXZYs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdXZXs);
+  printf("EulOrdXZXs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdYZXs);
+  printf("EulOrdYZXs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdYZYs);
+  printf("EulOrdYZYs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdYXZs);
+  printf("EulOrdYXZs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdYXYs);
+  printf("EulOrdYXYs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdZXYs);
+  printf("EulOrdZXYs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdZXZs);
+  printf("EulOrdZXZs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdZYXs);
+  printf("EulOrdZYXs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdZYZs);
+  printf("EulOrdZYZs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
+  computeEulerAngles(tmp, rm, EulOrdZYXr);
+  printf("EulOrdZYXr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdXYXr);
+  printf("EulOrdXYXr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdYZXr);
+  printf("EulOrdYZXr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdXZXr);
+  printf("EulOrdXZXr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdXZYr);
+  printf("EulOrdXZYr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdYZYr);
+  printf("EulOrdYZYr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdZXYr);
+  printf("EulOrdZXYr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdYXYr);
+  printf("EulOrdYXYr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdYXZr);
+  printf("EulOrdYXZr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdZXZr);
+  printf("EulOrdZXZr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdXYZr);
+  printf("EulOrdXYZr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+  computeEulerAngles(tmp, rm, EulOrdZYZr);
+  printf("EulOrdZYZr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+}

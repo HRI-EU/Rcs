@@ -427,6 +427,7 @@ void RcsGraph_bodyTorque(const RcsGraph* self, const RcsBody* body,
  *         - bodies have a mass >= 0
  *         - bodies with finite inertia have a mass > 0
  *         - correct connectivity of graph structure
+ *         - dof and dimension of q-vector match number of joints
  *
  *  \param[in] self  Pointer to the graph to be checked.
  *  \return Number of errors.
@@ -573,6 +574,13 @@ bool RcsGraph_removeBody(RcsGraph* self, const char* bdyName,
 bool RcsGraph_addBody(RcsGraph* graph, RcsBody* parent, RcsBody* body,
                       MatNd* qVec[], unsigned int nVec);
 
+/*! \ingroup RcsGraphFunctions
+*  \brief Adds box shapes between parent and child bodies so that an
+*         approximate can be visualized.
+*
+*  \param[in] self    Graph to which random shapes are to be added
+*/
+void RcsGraph_addRandomGeometry(RcsGraph* self);
 
 
 /**

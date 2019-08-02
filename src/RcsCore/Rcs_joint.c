@@ -649,3 +649,25 @@ int RcsJoint_getDirectionIndex(const RcsJoint* self)
 
   return idx;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void RcsJoint_scale(RcsJoint* joint, double scale)
+{
+  if (joint->A_JP)
+    {
+      Vec3d_constMulSelf(joint->A_JP->org, scale);
+    }
+
+    if (RcsJoint_isTranslation(joint) == true)
+    {
+      const double upperRange = joint->q_max - joint->q0;
+      const double lowerRange = joint->q0 - joint->q_min;
+      joint->q0 *= scale;
+      joint->q_init *= scale;
+      joint->q_min = joint->q0 - scale*lowerRange;
+      joint->q_max = joint->q0 + scale*upperRange;
+    }
+
+}

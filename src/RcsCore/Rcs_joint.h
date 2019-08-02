@@ -171,6 +171,14 @@ int RcsJoint_getJointIndex(const RcsJoint* self);
 */
 int RcsJoint_getDirectionIndex(const RcsJoint* self);
 
+/*! \ingroup RcsJointFunctions
+ *  \brief Scales the geometry of the joint.
+ *
+ *  \param[in,out] joint    Joint to be reshaped.
+ *  \param[in] scale        Scaling factor.
+ */
+void RcsJoint_scale(RcsJoint* joint, double scale);
+
 
 #ifdef __cplusplus
 }

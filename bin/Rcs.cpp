@@ -614,13 +614,32 @@ int main(int argc, char** argv)
           }
           else if (kc->getAndResetKey('S'))
           {
-            double scaleFactor;
             RMSG("Changing scale factor");
             printf("Enter scaling factor: ");
+            double scaleFactor;
             std::cin >> scaleFactor;
             pthread_mutex_lock(&graphLock);
+
+            bool collisionVisible = gn->collisionModelVisible();
+            bool graphicsVisible = gn->graphicsModelVisible();
+            bool physicsVisible = gn->physicsModelVisible();
+            bool framesVisible = gn->referenceFramesVisible();
+            bool ghostVisible = gn->getGhostMode();
+            bool wireframeVisible = gn->getWireframe();
+            viewer->removeNode(gn);
+            gn = NULL;
+
             RcsGraph_scale(graph, scaleFactor);
+            gn = new Rcs::GraphNode(graph);
+            gn->toggleReferenceFrames();
+            gn->displayGraphicsModel(graphicsVisible);
+            gn->displayPhysicsModel(physicsVisible);
+            gn->displayCollisionModel(collisionVisible);
+            gn->displayReferenceFrames(framesVisible);
+            gn->setGhostMode(ghostVisible);
+            gn->showWireframe(wireframeVisible);
             pthread_mutex_unlock(&graphLock);
+            viewer->add(gn);
           }
           else if (kc->getAndResetKey('m'))
           {

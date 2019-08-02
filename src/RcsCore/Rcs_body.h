@@ -112,6 +112,24 @@ unsigned int RcsBody_numDistanceShapes(const RcsBody* self);
 void RcsBody_addShape(RcsBody* self, RcsShape* shape);
 
 /*! \ingroup RcsBodyFunctions
+ *  \brief Destroys the idx-th shape of the body, and packs the other shapes
+ *         so that there is no NULL gap in the array.
+ *
+ *  \return True for success, false otherwies (e.g. there is no idx shapes in the
+ *          array)
+ */
+bool RcsBody_removeShape(RcsBody* self, unsigned int idx);
+
+/*! \ingroup RcsBodyFunctions
+ *  \brief Removes and destroys all shapes of the body, and sets the shape
+ *         array element to NULL. The shapes array is not destroyed (and not
+ *         resized).
+ *
+ *  \return Number of removed shapes.
+ */
+unsigned int RcsBody_removeShapes(RcsBody* self);
+
+/*! \ingroup RcsBodyFunctions
  *  \brief Returns the last body in the graph according to a depth-first
  *         traversal. If the graph is empty, NULL is returned.
  */
@@ -307,9 +325,31 @@ RcsJoint* RcsBody_lastJointBeforeBody(const RcsBody* body);
  *         - Rotation around y-axis
  *         - Rotation around z-axis
  *
+ *  \param[in] body    Graph the body is represented in.
+ *  \param[in] b       Body that is connected to the rigid body dofs.
+ *  \param[in] q_rbj   Values that the dof are initialized with. If this
+ *                     argument is NULL, the values are initialized with 0.
+ *
  *  \return Pointer to the first of the six rigid body joints.
  */
 RcsJoint* RcsBody_createRBJ(RcsGraph* self, RcsBody* b, const double q_rbj[6]);
+
+/*! \ingroup RcsBodyFunctions
+ *  \brief Creates and initializes the 6 joints associated to a rigid body
+ *         joint. The joint ordering is given in the array indexOrdering.
+ *
+ *  \param[in] body    Graph the body is represented in.
+ *  \param[in] b       Body that is connected to the rigid body dofs.
+ *  \param[in] q_rbj   Values that the dof are initialized with. If this
+ *                     argument is NULL, the values are initialized with 0.
+ *  \param[in] indexOrdering Index order, e.g. for y-x-z-thz-thy-thx it is
+ *                           1-0-2-5-4-3.
+ *
+ *  \return Pointer to the first of the six rigid body joints.
+ */
+RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* b,
+                                          const double q_rbj[6],
+                                          const int indexOrdering[6]);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Prints the bodie's xml representation to the given file
@@ -390,6 +430,17 @@ bool RcsBody_removeJoints(RcsBody* self, RcsGraph* graph);
  *  \return True for success, false otherwise.
  */
 bool RcsBody_boxify(RcsBody* self, int computeType);
+
+/*! \ingroup RcsBodyFunctions
+ *  \brief Scales the geometry of the body, and of all attached joints and
+ *         shapes. Translational joints require a scaling of the q-vector.
+ *         Since it is not accessible from the RcsBody, this is done separately
+ *         in RcsGraph_scale(). The mass and inertia properties are not scaled.
+ *
+ *  \param[in,out] self     Body to be reshaped.
+ *  \param[in] scale        Scaling factor.
+ */
+void RcsBody_scale(RcsBody* self, double scale);
 
 
 #ifdef __cplusplus

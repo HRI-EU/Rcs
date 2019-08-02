@@ -214,6 +214,64 @@ void RcsBody_addShape(RcsBody* self, RcsShape* shape)
 }
 
 /*******************************************************************************
+ * Destroy all associated shapes.
+ ******************************************************************************/
+unsigned int RcsBody_removeShapes(RcsBody* self)
+{
+  unsigned int count = 0;
+
+  if (self->shape == NULL)
+  {
+    return 0;
+  }
+
+  RCSBODY_TRAVERSE_SHAPES(self)
+  {
+    RcsShape_destroy(SHAPE);
+    SHAPE = NULL;
+    count++;
+  }
+
+  return count;
+}
+
+/*******************************************************************************
+ * Destroy all associated shapes.
+ ******************************************************************************/
+bool RcsBody_removeShape(RcsBody* self, unsigned int idx)
+{
+  unsigned int nShapes = RcsBody_numShapes(self);
+
+  if (nShapes == 0)   // self or self->shape are NULL
+  {
+    return false;
+  }
+
+  if (idx > nShapes-1)   // Index out of range
+  {
+    return false;
+  }
+  else if (idx == nShapes-1)   // Delete last one - no re-arranging needed
+  {
+    RcsShape_destroy(self->shape[idx]);
+    self->shape[idx] = NULL;
+    return true;
+  }
+
+  // Index is somewhere in the middle. We first delete the corresponding shape
+  RcsShape_destroy(self->shape[idx]);
+
+  // .. and then move all successors one index to the front. The last index
+  // (idx+1) is a NULL pointer, so there is no invalid memory read.
+  for (unsigned int i=idx; i<nShapes-1; ++i)
+  {
+    self->shape[idx] = self->shape[idx+1];
+  }
+
+  return true;
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
 RcsBody* RcsBody_getLastInGraph(const RcsGraph* self)
@@ -1657,6 +1715,22 @@ RcsJoint* RcsBody_lastJointBeforeBody(const RcsBody* body)
  ******************************************************************************/
 RcsJoint* RcsBody_createRBJ(RcsGraph* self, RcsBody* b, const double q_rbj[6])
 {
+  int indexOrdering[6];
+  for (int i=0;i<6;++i)
+  {
+    indexOrdering[i] = i;
+  }
+
+  return RcsBody_createOrdered6DofJoints(self, b, q_rbj, indexOrdering);
+}
+
+/*******************************************************************************
+ * Creates and initializes the 6 joints associated to a rigid body joint.
+ ******************************************************************************/
+RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* b,
+                                          const double q_rbj[6],
+                                          const int indexOrdering[6])
+{
   RcsJoint* jnt0 = NULL;
 
   for (int i = 0; i < 6; i++)
@@ -1669,7 +1743,9 @@ RcsJoint* RcsBody_createRBJ(RcsGraph* self, RcsBody* b, const double q_rbj[6])
     sprintf(jnt->name, "%s_rigidBodyJnt%d", b->name, i);
     jnt->constrained = true;
 
-    switch (i)
+    RCHECK((indexOrdering[i]>=0) && (indexOrdering[i]<6));
+
+    switch (indexOrdering[i])
     {
       case 0:
         jnt0 = jnt;
@@ -1700,10 +1776,11 @@ RcsJoint* RcsBody_createRBJ(RcsGraph* self, RcsBody* b, const double q_rbj[6])
         RFATAL("Joint type is \"%s\" (%d)", RcsJoint_typeName(i), i);
     }
 
-    jnt->q0     = q_rbj[i];
-    jnt->q_max  = q_rbj[i]+2.0*M_PI;
-    jnt->q_min  = q_rbj[i]-2.0*M_PI;
-    jnt->q_init = q_rbj[i];
+    const double qi = q_rbj ? q_rbj[i] : 0.0;
+    jnt->q0     = qi;
+    jnt->q_max  = qi+2.0*M_PI;
+    jnt->q_min  = qi-2.0*M_PI;
+    jnt->q_init = qi;
     jnt->weightMetric = 1.0;
   }
 
@@ -2367,5 +2444,27 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
   MatNd_destroy(vertices);
 
   return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void RcsBody_scale(RcsBody* bdy, double scale)
+{
+  if (bdy->A_BP)
+    {
+      Vec3d_constMulSelf(bdy->A_BP->org, scale);
+    }
+
+  RCSBODY_TRAVERSE_JOINTS(bdy)
+    {
+      RcsJoint_scale(JNT, scale);
+    }
+
+  RCSBODY_TRAVERSE_SHAPES(bdy)
+    {
+      RcsShape_scale(SHAPE, scale);
+    }
+
 }
 

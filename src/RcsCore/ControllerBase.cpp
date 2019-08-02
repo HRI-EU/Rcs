@@ -130,7 +130,7 @@ void Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
   {
     this->xmlGraphFile = std::string(txt);
     this->graph = RcsGraph_create(txt);
-    RCHECK(this->graph);
+    RCHECK_MSG(this->graph, "Failed to create graph \"%s\"", txt);
   }
 
   // Descend one level in XML parsing to find Task et al.

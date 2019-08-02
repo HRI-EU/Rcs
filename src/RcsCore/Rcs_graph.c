@@ -1475,7 +1475,8 @@ void RcsGraph_writeDotFile(const RcsGraph* self, const char* filename)
   fprintf(fd, "-1[label=\"Root\" style=filled color=\"0.7 0.3 1\"];\n");
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
-    fprintf(fd, "%d[label=\"%s\" ", i++, BODY->name);
+    fprintf(fd, "%d[label=\"%s (%d)\" ", i, BODY->name, i);
+    i++;
     fprintf(fd, "shape=box style=filled color=\"0.7 0.3 1\"];\n");
   }
 
@@ -1812,8 +1813,10 @@ int RcsGraph_check(const RcsGraph* self)
 
   // Check for joint centers out of range and for valid indices of the
   // joint array pointers
+  unsigned int numJoints = 0;
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {
+    numJoints++;
 
     if ((JNT->q0<JNT->q_min) && (JNT->coupledTo==NULL))
     {
@@ -1874,6 +1877,20 @@ int RcsGraph_check(const RcsGraph* self)
            JNT->name, JNT->speedLimit);
     }
 
+  }
+
+  if (numJoints != self->dof)
+  {
+    RLOG(1, "Number of joints (%d) doesn't match dof (%d)",
+         numJoints, self->dof);
+    nErrors++;
+  }
+
+  if ((self->q->m!=self->dof) || (self->q->n!=1))
+  {
+    RLOG(1, "Q-vector dimension mismatch: %d x %d != %d (dof) x 1",
+         self->q->m, self->q->n, self->dof);
+    nErrors++;
   }
 
   // Check for body connection consistencs
@@ -3001,50 +3018,29 @@ RcsSensor* RcsGraph_getSensorByName(const RcsGraph* self, const char* name)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void RcsGraph_scale(RcsGraph* self, double scaleFactor)
+void RcsGraph_scale(RcsGraph* graph, double scale)
 {
-  RCSGRAPH_TRAVERSE_BODIES(self)
-  {
-    RCSBODY_TRAVERSE_SHAPES(BODY)
-    {
-      Vec3d_constMulSelf(SHAPE->extents, scaleFactor);
-      Vec3d_constMulSelf(SHAPE->A_CB.org, scaleFactor);
-      SHAPE->scale *= scaleFactor;
-    }
-  }
+  double origin[3];
+  Vec3d_setZero(origin);
 
-  RCSGRAPH_TRAVERSE_JOINTS(self)
+  RCSGRAPH_TRAVERSE_BODIES(graph)
   {
-    if (JNT->A_JP)
-    {
-      Vec3d_constMulSelf(JNT->A_JP->org, scaleFactor);
+      double k_org[3];
+      Vec3d_add(k_org, origin, BODY->A_BI->org);
+      Vec3d_rotateSelf(k_org, BODY->A_BI->rot);
+      RcsBody_scale(BODY, scale);
     }
 
+  RCSGRAPH_TRAVERSE_JOINTS(graph)
+    {
     if (RcsJoint_isTranslation(JNT) == true)
     {
-      const double upperRange = JNT->q_max - JNT->q0;
-      const double lowerRange = JNT->q0 - JNT->q_min;
-      JNT->q0 *= scaleFactor;
-      JNT->q_init *= scaleFactor;
-      self->q->ele[JNT->jointIndex] *= scaleFactor;
-      JNT->q_min = JNT->q0 - scaleFactor*lowerRange;
-      JNT->q_max = JNT->q0 + scaleFactor*upperRange;
-    }
+      graph->q->ele[JNT->jointIndex] *= scale;
   }
 
-  RCSGRAPH_TRAVERSE_BODIES(self)
-  {
-    Vec3d_constMulSelf(BODY->Inertia->org, scaleFactor);
-
-    if (BODY->A_BP)
-    {
-      Vec3d_constMulSelf(BODY->A_BP->org, scaleFactor);
     }
 
   }
-
-  RcsGraph_setState(self, NULL, NULL);
-}
 
 /*******************************************************************************
 * See header.
@@ -3186,4 +3182,77 @@ bool RcsGraph_addBody(RcsGraph* graph, RcsBody* parent, RcsBody* body,
        body->prev ? body->prev->name : "NULL");
 
   return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void RcsGraph_addRandomGeometry(RcsGraph* self)
+{
+
+  RCSGRAPH_TRAVERSE_BODIES(self)
+  {
+    if (STREQ(BODY->name, "BVHROOT"))
+    {
+      continue;
+    }
+
+    RcsBody* CHILD = BODY->firstChild;
+
+    int rr = Math_getRandomInteger(0, 255);
+    int gg = Math_getRandomInteger(0, 255);
+    int bb = Math_getRandomInteger(0, 255);
+    char color[256];
+    sprintf(color, "#%02x%02x%02xff", rr, gg, bb);
+
+
+    while (CHILD!=NULL)
+    {
+      RLOG(5, "%s: Traversing child %s", BODY->name, CHILD->name);
+
+      const double* I_p1 = BODY->A_BI->org;
+      const double* I_p2 = CHILD->A_BI->org;
+
+      double K_p1[3], K_p2[3], K_p12[3], K_center[3];
+      Vec3d_invTransform(K_p1, BODY->A_BI,I_p1);
+      Vec3d_invTransform(K_p2, BODY->A_BI,I_p2);
+      Vec3d_sub(K_p12, K_p2, K_p1);
+      Vec3d_constMulAndAdd(K_center, K_p1, K_p12, 0.5);
+      double len = 0.8*Vec3d_getLength(K_p12);
+
+      if (len < 0.01)
+      {
+        len = 0.01;
+      }
+
+      // Box from parent to child
+      RcsShape* shape = RALLOC(RcsShape);
+      HTr_setIdentity(&shape->A_CB);
+      shape->scale = 1.0;
+      shape->type = RCSSHAPE_BOX;
+      shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
+      shape->extents[0] = 0.2*len;
+      shape->extents[1] = 0.2*len;
+      shape->extents[2] = len;
+      shape->color = String_clone(color);
+      Mat3d_fromVec(shape->A_CB.rot, K_p12, 2);
+      Vec3d_copy(shape->A_CB.org, K_center);
+      RcsBody_addShape(BODY, shape);
+
+      // Sphere at parent origin
+      shape = RALLOC(RcsShape);
+      HTr_setIdentity(&shape->A_CB);
+      shape->scale = 1.0;
+      shape->type = RCSSHAPE_SPHERE;
+      shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
+      shape->extents[0] = 0.15*len;
+      shape->extents[1] = 0.15*len;
+      shape->extents[2] = 0.15*len;
+      shape->color = String_clone(color);
+      RcsBody_addShape(BODY, shape);
+
+      CHILD=CHILD->next;
+    }
+  }
+
 }

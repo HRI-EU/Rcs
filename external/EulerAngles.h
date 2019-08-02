@@ -128,6 +128,7 @@ void convertEulerAnglesSelf(double inout[3], int outOrder, int inOrder);
 
 void computeEulerAngles(double ea[3], double A_BI[3][3], int eulerOrder);
 
+void printAllEulerAngles(double rm[3][3]);
 
 #ifdef __cplusplus
 }

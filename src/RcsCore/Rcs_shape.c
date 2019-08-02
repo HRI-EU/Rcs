@@ -629,6 +629,16 @@ void RcsShape_copy(RcsShape* dst, const RcsShape* src)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+RcsShape* RcsShape_clone(const RcsShape* src)
+{
+  RcsShape* shape = RALLOC(RcsShape);
+  RcsShape_copy(shape, src);
+  return shape;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void RcsShape_fprint(FILE* out, const RcsShape* s)
 {
   if (s == NULL)
@@ -912,10 +922,27 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
   return shape;
 }
 
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsShape* RcsShape_createFrameShape(double scale)
+{
+  RcsShape* shape = RALLOC(RcsShape);
+  HTr_setIdentity(&shape->A_CB);
+  shape->scale = scale;
+  shape->type = RCSSHAPE_REFFRAME;
+  shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
+  shape->extents[0] = 0.9;
+  shape->extents[1] = 0.9;
+  shape->extents[2] = 0.9;
+
+  return shape;
+}
+
 /*******************************************************************************
  * Default distance function: infinity distance.
  ******************************************************************************/
-
 static double RcsShape_noDistance(const RcsShape* s1, const RcsShape* s2,
                                   const HTr* A_1I, const HTr* A_2I,
                                   double I_cp1[3], double I_cp2[3],
@@ -1748,5 +1775,21 @@ void RcsShape_computeAABB(const RcsShape* shape,
     {
       RFATAL("Unsupported shape type \"%s\"", RcsShape_name(shape->type));
     }
+  }
+}
+
+/*******************************************************************************
+ * origin is represented in the bodie's frame.
+ ******************************************************************************/
+void RcsShape_scale(RcsShape* shape, double scale)
+{
+  Vec3d_constMulSelf(shape->A_CB.org, scale);
+
+  Vec3d_constMulSelf(shape->extents, scale);
+  shape->scale *= scale;
+
+  if (shape->type==RCSSHAPE_MESH && shape->userData)
+  {
+    RcsMesh_scale((RcsMeshData*) shape->userData, scale);
   }
 }
