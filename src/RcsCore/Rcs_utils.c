@@ -507,7 +507,8 @@ bool String_toDoubleArray_l(const char* str, double* x_, unsigned int n)
 
   if (matchedStrings != n)
   {
-    RLOG(1, "%d values could be parsed (should be %d)", matchedStrings, n);
+    RLOG(1, "[%s]: %d values could be parsed (should be %d)",
+         str, matchedStrings, n);
     RFREE(x);
     return false;
   }

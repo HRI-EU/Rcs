@@ -89,7 +89,7 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
   // geometry
   xmlNodePtr geometry_node = getXMLChildByName(node, "geometry");
   RCHECK(geometry_node);
-
+  RLOG(5, "URDF: Parsing \"%s\"", (const char*)geometry_node->name);
   xmlNodePtr geometry_type_node = NULL;
 
   if ((geometry_type_node = getXMLChildByName(geometry_node, "box")))
@@ -163,8 +163,9 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
   }
   else
   {
-    RFATAL("URDF: Unsupported shape type: %s",
-           geometry_type_node ? (const char*)geometry_type_node->name : "NULL");
+    RLOG(1, "URDF: Unsupported shape type: \"%s\" (parent: \"%s\")",
+         geometry_type_node ? (const char*)geometry_type_node->name : "NULL", 
+         (const char*)geometry_node->name);
   }
 
   // check for color and texture
