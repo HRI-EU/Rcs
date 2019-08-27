@@ -1389,13 +1389,14 @@ bool Rcs::VortexSimulation::createJoint(const RcsBody* body)
         break;
       }
 
+      // The constraints user data pointer will be set to the corresponding
+      // RcsSensor
       Vx::VxConstraint* vJnt = createFixedJoint(part0, part1, getGraph());
 
       if (vJnt != NULL)
       {
         universe->disablePairIntersect(part0, part1);
         universe->addConstraint(vJnt);
-        vJnt->setUserDataPtr(body->jnt);
         NLOG(0, "Created fixed joint (VxRPRO) between %s - %s",
              body->parent->name, body->name);
       }

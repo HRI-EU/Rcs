@@ -70,6 +70,8 @@ namespace Rcs
 {
 class ViaPointSequence
 {
+  friend class ViaPointSequencePlotter;
+
 public:
 
   /*! \brief Constructor without initialization. All member pointers are
@@ -79,17 +81,46 @@ public:
    */
   ViaPointSequence();
 
+  /*! \brief Constructor with descriptor. The polynomial parameters will will
+   *         be computed in the constructor.
+   */
   ViaPointSequence(const MatNd* viaDescr);
+
+  /*! \brief Convenience constructor with string version of descriptor. If no
+   *         descriptor can be destructed from it, the behavior is undefined.
+   */
   ViaPointSequence(const char* viaString);
+
+  /*! \brief Copy constructor. It does only member copying, no additional
+   *         initialization.
+   */
   ViaPointSequence(const ViaPointSequence& copyFromMe);
+
+  /*! \brief Assignment operator. It does only member copying, no additional
+   *         initialization.
+   */
   ViaPointSequence& operator=(const ViaPointSequence& rhs);
 
   /*! \brief Destroys the class instance and frees all internal memory.
    */
   virtual ~ViaPointSequence();
 
+  /*! \brief Clones the ViaPointSequence.
+   *
+   *  \return Deep copy of a ViaPointSequence
+   */
   ViaPointSequence* clone() const;
 
+  /*! \brief Computes the polynomial parameters of the descriptor. This is an
+   *         expensive operation. It will go through each row of the descriptor
+   *         and create a row for the corresponsing linear equation system that
+   *         describes the relation of constraints to polynomial parameters.
+   *         Rows with flag zero will be ignored. The equation system is then
+   *         solved.
+   *
+   *  \param[in] viaDescr   Via point descriptor to be analysed
+   *  \return True for success, false otherwise.
+   */
   virtual bool init(const MatNd* viaDescr);
 
   /*! \brief Adds a via point to the sequence. It is just added to the classes
@@ -229,15 +260,9 @@ public:
    */
   double computeTrajectoryJerk(double t) const;
 
-  double getMaxVelocity(double& t_vmax) const;
-
-  /*! \brief Gets the element of the vector p at the given index. If index is
-   *         out of range, the function will exit with a fatal error.
-   *
-   *  \param[in] index Index of the desired element
-   *  \return Element of the vector p at the given index
+  /*! \brief Not yet implemented.
    */
-  double getPolynomialParameter(size_t index) const;
+  double getMaxVelocity(double& t_vmax) const;
 
   /*! \brief Constructs a randomized via sequence descriptor and tests it
    *         with the \ref check() method. On debug level 1 or higher, the
@@ -248,16 +273,6 @@ public:
    */
   static bool test();
 
-  /*! \brief Sorts the rows of desc so that the time (column 0) always
-   *         increases.
-   *
-   *  \param[in] desc   Via point descriptor to be sorted
-   */
-  void sort(MatNd* desc) const;
-
-  MatNd* viaDescr;
-
-
   /*! \brief Computes the number of constraints that are present in the via
    *         point descriptr. This corresponds to the dimension of the square
    *         matrix B.
@@ -267,17 +282,47 @@ public:
    */
   static size_t computeNumberOfConstraints(const MatNd* desc);
 
-  static int getConstraintIndex(const MatNd* desc, unsigned int row,
-                                unsigned int pos_vel_or_acc);
+  /*! \brief Enables the turbo mode: Computes the polynomial parameters up to
+   *         the first full constraint in the descriptor. Any point after the
+   *         first constraint queried will return an undefined result.
+   *
+   *  \param[in] enable   True for activating turbo more, false otherwise.
+   */
+  void setTurboMode(bool enable);
+
+  /*! \brief See setTurboMode().
+   *
+   *  \return True for turbo mode being enabled, false otherwise.
+   */
+  bool getTurboMode() const;
 
   bool gradientDxDvia(MatNd* dxdvia, unsigned int row, double t0, double dt, unsigned int nSteps) const;
   bool gradientDxDvia(MatNd* dxdvia, unsigned int row, double t0, double t1, double dt) const;
   bool gradientDxDvia_a(MatNd* dxdvia, unsigned int row, double t0, double t1, double dt) const;
-  void computeRHS(MatNd* rhs, double t) const;
-  void setTurboMode(bool enable);
-  bool getTurboMode() const;
+
+  MatNd* viaDescr;
 
 protected:
+
+  void computeRHS(MatNd* rhs, double t) const;
+
+  /*! \brief Sorts the rows of desc so that the time (column 0) always
+   *         increases.
+   *
+   *  \param[in] desc   Via point descriptor to be sorted
+   */
+  void sort(MatNd* desc) const;
+
+  /*! \brief Gets the element of the vector p at the given index. If index is
+   *         out of range, the function will exit with a fatal error.
+   *
+   *  \param[in] index Index of the desired element
+   *  \return Element of the vector p at the given index
+   */
+  double getPolynomialParameter(size_t index) const;
+
+  static int getConstraintIndex(const MatNd* desc, unsigned int row,
+                                unsigned int pos_vel_or_acc);
 
   static void computeB(MatNd* B, const MatNd* vDesc);
 

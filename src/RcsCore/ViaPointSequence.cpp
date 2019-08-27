@@ -216,11 +216,33 @@ void ViaPointSequence::compressDescriptor(MatNd* desc) const
 /*******************************************************************************
  *
  ******************************************************************************/
+static int pruneZeroFlagRows(MatNd* desc)
+{
+  int nRows = desc->m;
+  int nDeleted = 0;
+
+  for (int i=0;i<nRows; ++i)
+  {
+    int bConstraint = lround(MatNd_get2(desc, i, 4));
+    if (bConstraint==0)
+    {
+      MatNd_deleteRow(desc, i);
+      i--;
+      nRows--;
+      nDeleted++;
+    }
+  }
+
+  return nDeleted;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 bool ViaPointSequence::init(const MatNd* viaDescr_)
 {
   RCHECK_MSG(viaDescr_->m >= 2, "m = %d (should be >= 2)", viaDescr_->m);
   RCHECK_MSG(viaDescr_->n >= 5, "n = %d (should be >= 5)", viaDescr_->n);
-
 
   // Resize arrays to allow for larger descriptors.
   if (this->viaDescr != viaDescr_)
@@ -229,6 +251,10 @@ bool ViaPointSequence::init(const MatNd* viaDescr_)
     RCHECK(this->viaDescr);
     MatNd_copy(this->viaDescr, viaDescr_);
   }
+
+  // Eliminate rows with a flag 0. They shoould not contribute to the equation
+  // system.
+  pruneZeroFlagRows(this->viaDescr);
 
   // Sort rows so that the time always increases. Sorting is done by row
   // swapping, rows with more than 5 elements get completely swapped. This
@@ -281,6 +307,9 @@ bool ViaPointSequence::init(const MatNd* viaDescr_)
   for (size_t i=0; i<this->viaDescr->m; i++)
   {
     unsigned int flag = lround(MatNd_get2(this->viaDescr, i, 4));
+    RCHECK_MSG(flag > 0, "Can't deal with flag 0 constraints on row %d. "
+               "It should have been removed by the pruneZeroFlagRows()"
+               " method before", i);
 
     if (Math_isBitSet(flag, VIA_POS))
     {

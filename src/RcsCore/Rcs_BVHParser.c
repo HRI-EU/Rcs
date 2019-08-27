@@ -36,6 +36,7 @@
 
 #include "Rcs_BVHParser.h"
 #include "Rcs_macros.h"
+#include "Rcs_resourcePath.h"
 #include "Rcs_typedef.h"
 #include "Rcs_utils.h"
 #include "Rcs_body.h"
@@ -530,11 +531,26 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
  * See header.
  ******************************************************************************/
 MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
-                                            const char* fileName,
+                                            const char* configFile,
                                             double* dt,
                                             double linearScaleToSI,
                                             double angularScaleToSI)
 {
+  char fileName[256] = "";
+  bool fileExists = Rcs_getAbsoluteFileName(configFile, fileName);
+
+  if (fileExists==false)
+  {
+    REXEC(1)
+    {
+      RMSG("Resource path is:");
+      Rcs_printResourcePath();
+      RMSG("RcsGraph bvh file \"%s\" not found in "
+           "ressource path - exiting", configFile ? configFile : "NULL");
+    }
+    return NULL;
+  }
+
   FILE* fd = fopen(fileName, "r");
 
   if (fd==NULL)
@@ -655,4 +671,3 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
 
   return data;
 }
-
