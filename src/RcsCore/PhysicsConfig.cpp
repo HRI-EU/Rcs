@@ -279,6 +279,7 @@ PhysicsMaterial PhysicsConfig::getFirstMaterial() const
     {
       return {node, defaultMaterial};
     }
+    node = node->next;
   }
   return { NULL, NULL };
 }

@@ -43,7 +43,11 @@
 
 
 
-static std::map<std::string, Rcs::PhysicsFactory::PhysicsCreateFunction> constructorMap;
+
+static std::map<std::string, Rcs::PhysicsFactory::PhysicsCreateFunction>& constructorMap() {
+  static std::map<std::string, Rcs::PhysicsFactory::PhysicsCreateFunction> cm;
+  return cm;
+}
 
 /*******************************************************************************
  * Singleton class has private constructor
@@ -62,9 +66,9 @@ Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const char* className,
   Rcs::PhysicsBase* sim = NULL;
   std::map<std::string, PhysicsCreateFunction>::iterator it;
 
-  it = constructorMap.find(className);
+  it = constructorMap().find(className);
 
-  if (it != constructorMap.end())
+  if (it != constructorMap().end())
   {
     PhysicsConfig config(cfgFile);
     sim = it->second(className, graph, &config);
@@ -92,9 +96,9 @@ Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const char* className,
   Rcs::PhysicsBase* sim = NULL;
   std::map<std::string, PhysicsCreateFunction>::iterator it;
 
-  it = constructorMap.find(className);
+  it = constructorMap().find(className);
 
-  if (it != constructorMap.end())
+  if (it != constructorMap().end())
   {
     sim = it->second(className, graph, config);
   }
@@ -118,9 +122,9 @@ bool Rcs::PhysicsFactory::hasEngine(const char* className)
 {
   std::map<std::string, PhysicsCreateFunction>::iterator it;
 
-  it = constructorMap.find(className);
+  it = constructorMap().find(className);
 
-  return (it==constructorMap.end()) ? false : true;
+  return (it==constructorMap().end()) ? false : true;
 }
 
 /*******************************************************************************
@@ -131,7 +135,7 @@ bool Rcs::PhysicsFactory::hasEngine(const char* className)
 void Rcs::PhysicsFactory::registerPhysics(const char* name,
                                           PhysicsCreateFunction createFunction)
 {
-  constructorMap[name] = createFunction;
+  constructorMap()[name] = createFunction;
 }
 
 /*******************************************************************************
@@ -139,7 +143,7 @@ void Rcs::PhysicsFactory::registerPhysics(const char* name,
  ******************************************************************************/
 void Rcs::PhysicsFactory::print()
 {
-  if (constructorMap.empty())
+  if (constructorMap().empty())
   {
     RMSG("No physics engines found");
     return;
@@ -150,8 +154,8 @@ void Rcs::PhysicsFactory::print()
 
   std::map<std::string, PhysicsCreateFunction>::const_iterator it;
 
-  for (it = constructorMap.begin();
-       it != constructorMap.end(); ++it)
+  for (it = constructorMap().begin();
+       it != constructorMap().end(); ++it)
   {
     printf("%s\n", it->first.c_str());
   }
