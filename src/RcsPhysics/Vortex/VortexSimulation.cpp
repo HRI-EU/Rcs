@@ -464,12 +464,12 @@ void Rcs::VortexSimulation::initMaterial(const PhysicsConfig* config)
   // copy PhysicsMaterial definitions into vortex material table
   PhysicsMaterial matDef = config->getFirstMaterial();
 
+  char name[256];
   while (matDef)
   {
-    const PhysicsMaterial* matDef = config->getMaterial(materialNames[i]);
-
     // create corresponding vortex material
-    Vx::VxMaterial* material = getMaterialTable()->registerMaterial(materialNames[i].c_str());
+    matDef.getMaterialName(name);
+    Vx::VxMaterial* material = getMaterialTable()->registerMaterial(name);
 
     // set common properties
     material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisLinear, matDef.getFrictionCoefficient());
@@ -554,7 +554,7 @@ void Rcs::VortexSimulation::initMaterial(const PhysicsConfig* config)
       // damping = 5*time_step/compliance
       material->setDamping((5.0 * this->integratorDt) / value);
     }
-    if (matDef.getDouble("damping", &value))
+    if (matDef.getDouble("damping", value))
     {
       material->setDamping(value);
     }
@@ -620,14 +620,14 @@ Rcs::VortexSimulation::Contacts Rcs::VortexSimulation::getContacts()
   for (; it != ie; ++it)
   {
     Contact contact1;
-    (*it)->getPosition(contact1.pos.data());
-    (*it)->getForce(0, contact1.force.data());
+    (*it)->getPosition(contact1.pos);
+    (*it)->getForce(0, contact1.force);
 
     // \todo: strange, we have to draw both contacts to see them all. But there
     // are no complementing forces
     Contact contact2;
-    (*it)->getPosition(contact2.pos.data());
-    (*it)->getForce(1, contact2.force.data());
+    (*it)->getPosition(contact2.pos);
+    (*it)->getForce(1, contact2.force);
 
     contacts.push_back(contact1);
     contacts.push_back(contact2);
