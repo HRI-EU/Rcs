@@ -167,7 +167,7 @@ private:
   // load the material data from xml
   void loadMaterials();
 
-  std::string xmlFile;                     ///< full path of xml file
+  char* xmlFile;                     ///< full path of xml file
   xmlDocPtr doc;                     ///< xml document, owns all xml objects
   xmlNodePtr root;                   ///< document root node
   PhysicsMaterial defaultMaterial;   ///< default material data

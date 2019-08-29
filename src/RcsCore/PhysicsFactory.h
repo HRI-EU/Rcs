@@ -37,10 +37,8 @@
 #ifndef RCS_PHYSICSFACTORY_H
 #define RCS_PHYSICSFACTORY_H
 
+#include "PhysicsBase.h"
 #include "PhysicsConfig.h"
-
-#include <PhysicsBase.h>
-
 
 
 namespace Rcs
@@ -64,7 +62,7 @@ public:
    * \param cfgFile   Name of xml configuration file
    * \return          New PhysicsBase instance or NULL if failure happened
    */
-  static PhysicsBase* create(const std::string& className, RcsGraph* graph,
+  static PhysicsBase* create(const char* className, RcsGraph* graph,
                              const char* cfgFile);
 
   /*! \brief Creates a new Physics simulation instance by name using the
@@ -76,7 +74,7 @@ public:
    * \param config Loaded physics configuration
    * \return New PhysicsBase instance
    */
-  static PhysicsBase* create(const std::string& className, RcsGraph* graph,
+  static PhysicsBase* create(const char* className, RcsGraph* graph,
                              const PhysicsConfig* config);
 
   /*! \brief Checks if a physics engine with the given name has been
@@ -86,7 +84,7 @@ public:
    *        factory
    * \return True if engine exists, false otherwise
    */
-  static bool hasEngine(const std::string& className);
+  static bool hasEngine(const char* className);
 
   /*! \brief Prints the list of all registered physics simulations to stdout.
    */
@@ -94,7 +92,7 @@ public:
 
 private:
 
-  typedef PhysicsBase* (*PhysicsCreateFunction)(std::string className,
+  typedef PhysicsBase* (*PhysicsCreateFunction)(const char* className,
                                                 RcsGraph* graph,
                                                 const PhysicsConfig* config);
 
@@ -114,7 +112,7 @@ private:
    *        "static Rcs::PhysicsFactoryRegistrar<Rcs::PhysicsBase>
    *                physics("name");"
    */
-  void registerPhysics(const std::string& name,
+  void registerPhysics(const char* name,
                        PhysicsCreateFunction createFunction);
 
   std::map<std::string, PhysicsCreateFunction> constructorMap;
@@ -144,7 +142,7 @@ public:
    *  \param className The name that is used for instanciating a new
    *                   physics simulation by name
    */
-  PhysicsFactoryRegistrar(std::string className)
+  PhysicsFactoryRegistrar(const char* className)
   {
     // Register the function to create and check the physics simulation
     PhysicsFactory* tf = PhysicsFactory::instance();
@@ -159,7 +157,7 @@ public:
    * \param config    Name of xml configuration file
    * \return          New physics simulation instance of type T
    */
-  static PhysicsBase* create(std::string className, RcsGraph* graph,
+  static PhysicsBase* create(const char* className, RcsGraph* graph,
                              const PhysicsConfig* config)
   {
     return new T(graph, config);

@@ -59,7 +59,7 @@ Rcs::PhysicsFactory::PhysicsFactory()
 /*******************************************************************************
  * Creates the physics engine for className and the given graph and xml content
  ******************************************************************************/
-Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const std::string& className,
+Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const char* className,
                                               RcsGraph* graph,
                                               const char* cfgFile)
 {
@@ -77,7 +77,7 @@ Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const std::string& className,
   {
     REXEC(1)
     {
-      RMSG("Couldn't instantiate physics engine \"%s\"", className.c_str());
+      RMSG("Couldn't instantiate physics engine \"%s\"", className);
       RMSG("Options are:");
       print();
     }
@@ -89,7 +89,7 @@ Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const std::string& className,
 /*******************************************************************************
  * Creates the physics engine for className and the given graph and config obj
  ******************************************************************************/
-Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const std::string& className,
+Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const char* className,
                                               RcsGraph* graph,
                                               const PhysicsConfig* config)
 {
@@ -106,7 +106,7 @@ Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const std::string& className,
   {
     REXEC(1)
     {
-      RMSG("Couldn't instantiate physics engine \"%s\"", className.c_str());
+      RMSG("Couldn't instantiate physics engine \"%s\"", className);
       RMSG("Options are:");
       print();
     }
@@ -118,7 +118,7 @@ Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const std::string& className,
 /*******************************************************************************
  *
  ******************************************************************************/
-bool Rcs::PhysicsFactory::hasEngine(const std::string& className)
+bool Rcs::PhysicsFactory::hasEngine(const char* className)
 {
   std::map<std::string, PhysicsCreateFunction>::iterator it;
 
@@ -132,7 +132,7 @@ bool Rcs::PhysicsFactory::hasEngine(const std::string& className)
  * main() is entered. Therefore, logging with debug levels doesn't make sense,
  * since the debug level has at that point not yet been parsed.
  ******************************************************************************/
-void Rcs::PhysicsFactory::registerPhysics(const std::string& name,
+void Rcs::PhysicsFactory::registerPhysics(const char* name,
                                           PhysicsCreateFunction createFunction)
 {
   constructorMap[name] = createFunction;

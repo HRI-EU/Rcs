@@ -14,6 +14,8 @@ KeyCatcherBase.cpp
 MotionControlLayer.cpp
 PeriodicCallback.cpp
 PhysicsBase.cpp
+PhysicsConfig.cpp
+PhysicsFactory.cpp
 Rcs_basicMath.c
 Rcs_body.c
 Rcs_BVHParser.c

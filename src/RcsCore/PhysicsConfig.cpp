@@ -72,6 +72,7 @@ PhysicsConfig& PhysicsConfig::operator= (const PhysicsConfig& copyFromMe)
     return *this;
   }
 
+  RFREE(xmlFile);
   xmlFreeDoc(doc);
   initFromCopy(copyFromMe);
 
@@ -84,7 +85,7 @@ void PhysicsConfig::init(const char* configFile)
   // store passed file name
   if (configFile != NULL)
   {
-    this->xmlFile = std::string(configFile);
+    this->xmlFile = String_clone(configFile);
   }
 
   // Determine absolute file name of config file and copy the XML file name
@@ -120,7 +121,7 @@ void PhysicsConfig::init(const char* configFile)
 
 void PhysicsConfig::initFromCopy(const PhysicsConfig& copyFromMe)
 {
-  xmlFile = copyFromMe.xmlFile;
+  xmlFile = String_clone(copyFromMe.xmlFile);
   // copy xml document
   doc = xmlCopyDoc(copyFromMe.doc, 1);
   RCHECK(doc);
@@ -148,6 +149,8 @@ void PhysicsConfig::initFromCopy(const PhysicsConfig& copyFromMe)
 
 PhysicsConfig::~PhysicsConfig()
 {
+  // free filename
+  RFREE(xmlFile);
   // free xml document
   xmlFreeDoc(doc);
 
@@ -172,6 +175,7 @@ PhysicsMaterial* PhysicsConfig::getMaterial(const std::string& materialName)
 
     // create a deep copy of the xml node. We use xmlDocCopy so that the new node is also owned by the doc
     mat->materialNode = xmlDocCopyNode(mat->materialNode, doc, 1);
+    xmlAddChild(root, mat->materialNode);
   }
 
   return mat;
@@ -201,7 +205,7 @@ const PhysicsMaterial* PhysicsConfig::getMaterial(const std::string& materialNam
 
 const char* PhysicsConfig::getConfigFileName() const
 {
-  return xmlFile.c_str();
+  return xmlFile;
 }
 
 xmlNodePtr PhysicsConfig::getXMLRootNode() const
