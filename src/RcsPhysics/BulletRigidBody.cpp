@@ -429,12 +429,12 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
   // apply material properties
   RCHECK(config);
   RCHECK(materialName);
-  const PhysicsMaterial* material = config->getMaterial(materialName);
+  const PhysicsMaterial material = config->getMaterial(materialName);
   RCHECK(material);
-  btBody->setFriction(material->frictionCoefficient);
-  btBody->setRollingFriction(material->rollingFrictionCoefficient);
+  btBody->setFriction(material.getFrictionCoefficient());
+  btBody->setRollingFriction(material.getRollingFrictionCoefficient());
   //btBody->setSpinningFriction(0.1);
-  btBody->setRestitution(material->restitution);
+  btBody->setRestitution(material.getRestitution());
 
   Vec3d_copy(btBody->A_PB_.org, bdy->Inertia->org);
   Mat3d_copy(btBody->A_PB_.rot, A_PB);

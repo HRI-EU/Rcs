@@ -38,16 +38,12 @@
 
 #include <Rcs_macros.h>
 
+#include <map>
+#include <string>
 
 
-/*******************************************************************************
- * Returns singleton instance pointer
- ******************************************************************************/
-Rcs::PhysicsFactory* Rcs::PhysicsFactory::instance()
-{
-  static Rcs::PhysicsFactory factory;
-  return &factory;
-}
+
+static std::map<std::string, Rcs::PhysicsFactory::PhysicsCreateFunction> constructorMap;
 
 /*******************************************************************************
  * Singleton class has private constructor
@@ -66,9 +62,9 @@ Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const char* className,
   Rcs::PhysicsBase* sim = NULL;
   std::map<std::string, PhysicsCreateFunction>::iterator it;
 
-  it = instance()->constructorMap.find(className);
+  it = constructorMap.find(className);
 
-  if (it != instance()->constructorMap.end())
+  if (it != constructorMap.end())
   {
     PhysicsConfig config(cfgFile);
     sim = it->second(className, graph, &config);
@@ -96,9 +92,9 @@ Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const char* className,
   Rcs::PhysicsBase* sim = NULL;
   std::map<std::string, PhysicsCreateFunction>::iterator it;
 
-  it = instance()->constructorMap.find(className);
+  it = constructorMap.find(className);
 
-  if (it != instance()->constructorMap.end())
+  if (it != constructorMap.end())
   {
     sim = it->second(className, graph, config);
   }
@@ -122,9 +118,9 @@ bool Rcs::PhysicsFactory::hasEngine(const char* className)
 {
   std::map<std::string, PhysicsCreateFunction>::iterator it;
 
-  it = instance()->constructorMap.find(className);
+  it = constructorMap.find(className);
 
-  return (it==instance()->constructorMap.end()) ? false : true;
+  return (it==constructorMap.end()) ? false : true;
 }
 
 /*******************************************************************************
@@ -143,7 +139,7 @@ void Rcs::PhysicsFactory::registerPhysics(const char* name,
  ******************************************************************************/
 void Rcs::PhysicsFactory::print()
 {
-  if (instance()->constructorMap.empty())
+  if (constructorMap.empty())
   {
     RMSG("No physics engines found");
     return;
@@ -154,8 +150,8 @@ void Rcs::PhysicsFactory::print()
 
   std::map<std::string, PhysicsCreateFunction>::const_iterator it;
 
-  for (it = instance()->constructorMap.begin();
-       it != instance()->constructorMap.end(); ++it)
+  for (it = constructorMap.begin();
+       it != constructorMap.end(); ++it)
   {
     printf("%s\n", it->first.c_str());
   }

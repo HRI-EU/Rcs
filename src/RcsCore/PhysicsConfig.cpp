@@ -44,14 +44,122 @@
 namespace Rcs
 {
 
-PhysicsMaterial::PhysicsMaterial()
-{
-  frictionCoefficient = 0.8;
-  rollingFrictionCoefficient = 0.0;
-  restitution = 0.0;
 
-  materialNode = NULL;
+PhysicsMaterial::PhysicsMaterial(xmlNodePtr node, xmlNodePtr defaultMaterialNode) : materialNode(node), defaultMaterialNode(defaultMaterialNode) {}
+
+PhysicsMaterial PhysicsMaterial::next() const
+{
+  // locate next "material" node
+  xmlNodePtr node = materialNode->next;
+  while (node)
+  {
+    if (isXMLNodeName(node, "material"))
+    {
+      // found it
+      return {node, defaultMaterialNode};
+    }
+    node = node->next;
+  }
+  // we were the last
+  return {NULL, NULL};
 }
+
+bool PhysicsMaterial::getDouble(const char* attr, double& out) const
+{
+  if (materialNode == NULL)
+    return false;
+
+  // try to load from this
+  if (getXMLNodePropertyDouble(materialNode, attr, &out))
+    return true;
+
+  // try to fallback to default material if we aren't the default
+  if (materialNode == defaultMaterialNode)
+    return false;
+
+  // load from default
+  return getXMLNodePropertyDouble(defaultMaterialNode, attr, &out);
+}
+
+void PhysicsMaterial::setDouble(const char* attr, double value)
+{
+  if (materialNode == NULL)
+    return;
+  char cvt[64];
+  sprintf(cvt, "%f", value);
+  xmlSetProp(materialNode, BAD_CAST attr, BAD_CAST cvt);
+}
+
+bool PhysicsMaterial::getBoolean(const char* attr, bool& out) const
+{
+  if (materialNode == NULL)
+    return false;
+
+  // try to load from this
+  if (getXMLNodePropertyBoolString(materialNode, attr, &out))
+    return true;
+
+  // try to fallback to default material if we aren't the default
+  if (materialNode == defaultMaterialNode)
+    return false;
+
+  // load from default
+  return getXMLNodePropertyBoolString(defaultMaterialNode, attr, &out);
+}
+
+void PhysicsMaterial::setBoolean(const char* attr, bool value)
+{
+  if (materialNode == NULL)
+    return;
+  if (value)
+  {
+    xmlSetProp(materialNode, BAD_CAST attr, BAD_CAST "true");
+  }
+  else
+  {
+    xmlSetProp(materialNode, BAD_CAST attr, BAD_CAST "false");
+  }
+}
+
+bool PhysicsMaterial::getString(const char* attr, char* out, unsigned int limit) const
+{
+  if (materialNode == NULL)
+    return false;
+
+  // try to load from this
+  if (getXMLNodePropertyStringN(materialNode, attr, out, limit))
+    return true;
+
+  // try to fallback to default material if we aren't the default
+  if (materialNode == defaultMaterialNode)
+    return false;
+
+  // load from default
+  return getXMLNodePropertyStringN(defaultMaterialNode, attr, out, limit);
+}
+
+void PhysicsMaterial::setString(const char* attr, const char* value)
+{
+  if (materialNode == NULL)
+    return;
+  xmlSetProp(materialNode, BAD_CAST attr, BAD_CAST value);
+}
+
+
+// utility to check the material name
+static bool isMaterialName(xmlNodePtr materialNode, const char* nameToCheck)
+{
+  // load value
+  xmlChar* actName = xmlGetProp(materialNode, BAD_CAST "name");
+  // check
+  bool result = STREQ((const char*) actName, nameToCheck);
+  // free loaded value
+  xmlFree(actName);
+
+  return result;
+}
+
+
 
 PhysicsConfig::PhysicsConfig(const char* xmlFile)
 {
@@ -104,9 +212,9 @@ void PhysicsConfig::init(const char* configFile)
     xmlDocSetRootElement(doc, root);
 
     // create material node for default material
-    defaultMaterial.materialNode = xmlNewDocNode(doc, NULL, BAD_CAST "material", NULL);
-    xmlSetProp(defaultMaterial.materialNode, BAD_CAST "name", BAD_CAST DEFAULT_MATERIAL_NAME);
-    xmlAddChild(root, defaultMaterial.materialNode);
+    defaultMaterial = xmlNewDocNode(doc, NULL, BAD_CAST "material", NULL);
+    xmlSetProp(defaultMaterial, BAD_CAST "name", BAD_CAST DEFAULT_MATERIAL_NAME);
+    xmlAddChild(root, defaultMaterial);
   }
   else
   {
@@ -114,8 +222,8 @@ void PhysicsConfig::init(const char* configFile)
     this->root = parseXMLFile(filename, "content", &this->doc);
     RCHECK(this->root);
 
-    // load material definitions
-    loadMaterials();
+    // find default material
+    findDefaultMaterial();
   }
 }
 
@@ -127,23 +235,30 @@ void PhysicsConfig::initFromCopy(const PhysicsConfig& copyFromMe)
   RCHECK(doc);
   root = xmlDocGetRootElement(doc);
 
-  // create material node for default material
-  defaultMaterial.materialNode = xmlNewDocNode(doc, NULL, BAD_CAST "material", NULL);
-  xmlSetProp(defaultMaterial.materialNode, BAD_CAST "name", BAD_CAST DEFAULT_MATERIAL_NAME);
-  xmlAddChild(root, defaultMaterial.materialNode);
+  // setup default material
+  findDefaultMaterial();
+}
 
-  // copy modified material data
-  defaultMaterial.frictionCoefficient = copyFromMe.defaultMaterial.frictionCoefficient;
-  defaultMaterial.rollingFrictionCoefficient = copyFromMe.defaultMaterial.rollingFrictionCoefficient;
-  defaultMaterial.restitution = copyFromMe.defaultMaterial.restitution;
-
-  for (MaterialMap::const_iterator it = copyFromMe.materials.begin(); it != copyFromMe.materials.end(); it++)
+void PhysicsConfig::findDefaultMaterial()
+{
+  xmlNodePtr node = root->children;
+  while (node)
   {
-    PhysicsMaterial* mat = getMaterial(it->first);
-
-    mat->frictionCoefficient = it->second.frictionCoefficient;
-    mat->rollingFrictionCoefficient = it->second.rollingFrictionCoefficient;
-    mat->restitution = it->second.restitution;
+    if (isXMLNodeName(node, "material"))
+    {
+      if (isMaterialName(node, "default"))
+      {
+        defaultMaterial = node;
+      }
+    }
+    node = node->next;
+  }
+  if (!defaultMaterial)
+  {
+    // create material node for default material
+    defaultMaterial = xmlNewDocNode(doc, NULL, BAD_CAST "material", NULL);
+    xmlSetProp(defaultMaterial, BAD_CAST "name", BAD_CAST DEFAULT_MATERIAL_NAME);
+    xmlAddChild(root, defaultMaterial);
   }
 }
 
@@ -153,54 +268,68 @@ PhysicsConfig::~PhysicsConfig()
   RFREE(xmlFile);
   // free xml document
   xmlFreeDoc(doc);
-
-  // the material map is freed automatically
 }
 
-PhysicsMaterial* PhysicsConfig::getMaterial(const std::string& materialName)
+PhysicsMaterial PhysicsConfig::getFirstMaterial() const
 {
-  if (materialName == DEFAULT_MATERIAL_NAME)
+  xmlNodePtr node = root->children;
+  while (node)
   {
-    // the default material is not stored in the map
-    return &defaultMaterial;
+    if (isXMLNodeName(node, "material"))
+    {
+      return {node, defaultMaterial};
+    }
   }
-
-  // obtain reference from map. using [] automatically creates a new entry for missing objects
-  PhysicsMaterial* mat = &materials[materialName];
-
-  if (mat->materialNode == NULL)
-  {
-    // a newly created material. copy values from default material.
-    *mat = defaultMaterial;
-
-    // create a deep copy of the xml node. We use xmlDocCopy so that the new node is also owned by the doc
-    mat->materialNode = xmlDocCopyNode(mat->materialNode, doc, 1);
-    xmlAddChild(root, mat->materialNode);
-  }
-
-  return mat;
+  return { NULL, NULL };
 }
 
-const PhysicsMaterial* PhysicsConfig::getMaterial(const std::string& materialName) const
+PhysicsMaterial PhysicsConfig::getDefaultMaterial() const
 {
-  if (materialName == DEFAULT_MATERIAL_NAME)
-  {
-    // the default material is not stored in the map
-    return &defaultMaterial;
-  }
-  // try to find in map
-  MaterialMap::const_iterator it = materials.find(materialName);
+  return { defaultMaterial, defaultMaterial };
+}
 
-  if (it != materials.end())
+PhysicsMaterial PhysicsConfig::getOrCreateMaterial(const char* materialName)
+{
+  if (STREQ(materialName, DEFAULT_MATERIAL_NAME))
   {
-    // found
-    return &it->second;
+    // the default material can be found quickly
+    return { defaultMaterial, defaultMaterial };
   }
-  else
+
+  // search list
+  PhysicsMaterial mat = getFirstMaterial();
+  while (mat)
   {
-    // not found. since the result is const, just return the default material
-    return &defaultMaterial;
+    if (isMaterialName(mat.materialNode, materialName))
+    {
+      return mat;
+    }
   }
+  // create new material. xml is empty at first.
+  xmlNodePtr newMat = xmlNewDocNode(doc, NULL, BAD_CAST "material", NULL);
+  xmlSetProp(newMat, BAD_CAST "name", BAD_CAST materialName);
+  xmlAddChild(root, newMat);
+  return { newMat, defaultMaterial };
+}
+
+PhysicsMaterial PhysicsConfig::getMaterial(const char* materialName) const
+{
+  if (STREQ(materialName, DEFAULT_MATERIAL_NAME))
+  {
+    // the default material can be found quickly
+    return { defaultMaterial, defaultMaterial };
+  }
+  // search list
+  PhysicsMaterial mat = getFirstMaterial();
+  while (mat)
+  {
+    if (isMaterialName(mat.materialNode, materialName))
+    {
+      return mat;
+    }
+  }
+  // return default material since it wasn't found
+  return { defaultMaterial, defaultMaterial };
 }
 
 const char* PhysicsConfig::getConfigFileName() const
@@ -211,142 +340,6 @@ const char* PhysicsConfig::getConfigFileName() const
 xmlNodePtr PhysicsConfig::getXMLRootNode() const
 {
   return root;
-}
-
-PhysicsConfig::MaterialNameList PhysicsConfig::getMaterialNames() const
-{
-  MaterialNameList result;
-  result.reserve(materials.size() + 1);
-
-  // add default material name
-  result.push_back(DEFAULT_MATERIAL_NAME);
-  // add other material names
-  for (MaterialMap::const_iterator it = materials.begin(); it != materials.end(); it++)
-  {
-    result.push_back(it->first);
-  }
-
-  return result;
-}
-
-PhysicsMaterial* PhysicsConfig::getDefaultMaterial()
-{
-  return &defaultMaterial;
-}
-
-const PhysicsMaterial* PhysicsConfig::getDefaultMaterial() const
-{
-  return &defaultMaterial;
-}
-
-void PhysicsConfig::loadMaterials()
-{
-  char msg[256];
-
-  xmlNodePtr node = root->children;
-  while (node)
-  {
-    if (isXMLNodeName(node, "material"))
-    {
-      if (getXMLNodePropertyStringN(node, "name", msg, 256))
-      {
-        PhysicsMaterial* material;
-        if (STREQ(msg, DEFAULT_MATERIAL_NAME))
-        {
-          // default material definition
-          if (!materials.empty())
-          {
-            RLOG_CPP(1, materials.size() << " materials have been defined "
-                 "before the default material. They will not be able to use"
-         " the correct values.");
-          }
-          material = &defaultMaterial;
-        }
-        else
-        {
-          // create new material from data
-          material = &materials[msg];
-          // copy values from default material.
-          *material = defaultMaterial;
-        }
-        material->materialNode = node;
-
-        double value;
-//  char option[64];
-
-        if (getXMLNodePropertyDouble(node, "friction_coefficient", &value))
-        {
-          material->frictionCoefficient = value;
-        }
-        if (getXMLNodePropertyDouble(node, "rolling_friction_coefficient", &value))
-        {
-          material->rollingFrictionCoefficient = value;
-        }
-//  if (getXMLNodePropertyDouble (node, "static_friction_scale", &value))
-//  {
-//    material->setStaticFrictionScale (
-//        Vx::VxMaterialBase::kFrictionAxisLinear, value);
-//  }
-//  if (getXMLNodePropertyDouble (node, "slip", &value))
-//  {
-//    material->setSlip (Vx::VxMaterialBase::kFrictionAxisLinear, value);
-//  }
-//  bool isd = false;
-//  if (getXMLNodePropertyBoolString (node, "integrated_slip_displacement",
-//            &isd))
-//  {
-//    if (isd)
-//    {
-//      material->setIntegratedSlipDisplacement (
-//    Vx::VxMaterial::kIntegratedSlipDisplacementActivated);
-//    }
-//    else
-//    {
-//      material->setIntegratedSlipDisplacement (
-//    Vx::VxMaterial::kIntegratedSlipDisplacementDeactivated);
-//    }
-//  }
-//  if (getXMLNodePropertyDouble (node, "slide", &value))
-//  {
-//    material->setSlide (Vx::VxMaterialBase::kFrictionAxisLinear, value);
-//  }
-//  if (getXMLNodePropertyDouble (node, "compliance", &value))
-//  {
-//    material->setCompliance (value);
-//    // as a default, set critical damping
-//    // material->setDamping(universe->getCriticalDamping(value));
-//    // from the Vortex documentation:
-//    // Nearly optimal value of damping is given by:
-//    // damping = 5*time_step/compliance
-//    material->setDamping ((5.0 * this->integratorDt) / value);
-//  }
-//  if (getXMLNodePropertyDouble (node, "damping", &value))
-//  {
-//    material->setDamping (value);
-//  }
-        if (getXMLNodePropertyDouble(node, "restitution", &value))
-        {
-          material->restitution = value;
-        }
-//  if (getXMLNodePropertyDouble (node, "restitution_threshold", &value))
-//  {
-//    material->setRestitutionThreshold (value);
-//  }
-//  if (getXMLNodePropertyDouble (node, "adhesive_force", &value))
-//  {
-//    material->setAdhesiveForce (value);
-//  }
-      }
-      else
-      {
-        RLOG(1, "Found a material entry without a name property, so"
-                " it is ignored");
-      }
-    }
-
-    node = node->next;
-  }
-
 }
 
 } /* namespace Rcs */

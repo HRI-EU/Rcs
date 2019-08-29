@@ -90,20 +90,17 @@ public:
    */
   static void print();
 
-private:
 
+  /*! \brief Signature of physics engine creator function.
+   */
   typedef PhysicsBase* (*PhysicsCreateFunction)(const char* className,
                                                 RcsGraph* graph,
                                                 const PhysicsConfig* config);
+private:
 
-  /*! \brief Private constructor because PhysicsFactory is a singleton
+  /*! \brief Private constructor because PhysicsFactory is a static-only class
    */
   PhysicsFactory();
-
-  /*! \brief Get the single instance of the factory
-   *  \return singleton instance
-   */
-  static PhysicsFactory* instance();
 
   /*! \brief Registers a new function for creating physics. You should not
    *        need to call this function directly. Instead us the
@@ -112,10 +109,8 @@ private:
    *        "static Rcs::PhysicsFactoryRegistrar<Rcs::PhysicsBase>
    *                physics("name");"
    */
-  void registerPhysics(const char* name,
-                       PhysicsCreateFunction createFunction);
-
-  std::map<std::string, PhysicsCreateFunction> constructorMap;
+  static void registerPhysics(const char* name,
+                              PhysicsCreateFunction createFunction);
 };
 
 
@@ -145,8 +140,7 @@ public:
   PhysicsFactoryRegistrar(const char* className)
   {
     // Register the function to create and check the physics simulation
-    PhysicsFactory* tf = PhysicsFactory::instance();
-    tf->registerPhysics(className, &PhysicsFactoryRegistrar::create);
+    PhysicsFactory::registerPhysics(className, &PhysicsFactoryRegistrar::create);
   }
 
   /*! \brief This function creates a new physics simulation instance of type T
