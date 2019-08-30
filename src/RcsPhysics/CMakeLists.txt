@@ -2,8 +2,8 @@
 # Build the vortex sub-library
 IF(USE_VORTEX)
   SET(RCSVORTEX_LIBRARY ${LIBRARY_OUTPUT_PATH}/libRcsVortex.so)
-  IF(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5.0")
-    # GCC 4.8, we can simply include the vortex library
+  IF(WIN32 OR CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5.0")
+    # GCC 4.8, we can simply include the vortex library. The same goes for any windows system.
     ADD_SUBDIRECTORY(Vortex)
     # Do not use RcsVortex as target dependency, to avoid export problems. The dependency must be added manually for
     # the external project anyways.
@@ -25,7 +25,7 @@ IF(USE_VORTEX)
             -DVORTEX_ESSENTIALS_DIR:PATH=${VORTEX_ESSENTIALS_DIR}
             -DRCSVORTEX_INSTALL_LIBDIR:PATH=${LIBRARY_OUTPUT_PATH})
     ELSE()
-      # use prebuilt version
+      # Can't build, use prebuilt version
       SET(RCSVORTEX_LIBRARY_PREBUILT "" CACHE PATH "Prebuilt RcsVortex library. Required since we can't build it ourselves.")
 
       IF(NOT EXISTS ${RCSVORTEX_LIBRARY_PREBUILT})
