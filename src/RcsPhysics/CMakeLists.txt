@@ -1,12 +1,12 @@
 
 # Build the vortex sub-library
 IF(USE_VORTEX)
+  SET(RCSVORTEX_LIBRARY ${LIBRARY_OUTPUT_PATH}/libRcsVortex.so)
   IF(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5.0")
     # GCC 4.8, we can simply include the vortex library
     ADD_SUBDIRECTORY(Vortex)
     # Do not use RcsVortex as target dependency, to avoid export problems. The dependency must be added manually for
     # the external project anyways.
-    SET(RCSVORTEX_LIBRARY ${LIBRARY_OUTPUT_PATH}/libRcsVortex.so)
   ELSE()
     # We need to check if the right GCC is available
     FIND_PROGRAM(GCC_48 "gcc-4.8")
@@ -22,13 +22,23 @@ IF(USE_VORTEX)
             -DCMAKE_C_COMPILER:PATH=${GCC_48}
             -DCMAKE_CXX_COMPILER:PATH=${GXX_48}
             -DUSE_VORTEX:STRING=${USE_VORTEX}
-            -DVORTEX_ESSENTIALS_DIR:STRING=${VORTEX_ESSENTIALS_DIR}
-            -DRCSVORTEX_INSTALL_LIBDIR:STRING=${LIBRARY_OUTPUT_PATH})
-      SET(RCSVORTEX_LIBRARY ${LIBRARY_OUTPUT_PATH}/libRcsVortex.so)
+            -DVORTEX_ESSENTIALS_DIR:PATH=${VORTEX_ESSENTIALS_DIR}
+            -DRCSVORTEX_INSTALL_LIBDIR:PATH=${LIBRARY_OUTPUT_PATH})
     ELSE()
-      # TODO use prebuilt version
+      # use prebuilt version
+      SET(RCSVORTEX_LIBRARY_PREBUILT "" CACHE PATH "Prebuilt RcsVortex library. Required since we can't build it ourselves.")
+
+      IF(NOT EXISTS ${RCSVORTEX_LIBRARY_PREBUILT})
+        MESSAGE(FATAL_ERROR "Cannot build RcsVortex library, so we need a prebuilt version!")
+      ENDIF()
+      
+      # Copy library into output dir
+      ADD_CUSTOM_TARGET(RcsVortex)
+      ADD_CUSTOM_COMMAND(TARGET RcsVortex PRE_BUILD
+          COMMAND ${CMAKE_COMMAND} -E copy ${RCSVORTEX_LIBRARY_PREBUILT} ${LIBRARY_OUTPUT_PATH})
     ENDIF()
-    INSTALL(FILES ${LIBRARY_OUTPUT_PATH}/libRcsVortex.so DESTINATION lib)
+    # Install custom library
+    INSTALL(FILES ${RCSVORTEX_LIBRARY} DESTINATION lib)
   ENDIF()
 ENDIF(USE_VORTEX)
 
