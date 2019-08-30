@@ -28,7 +28,7 @@ Rcs is a set of C and C++ libraries for robot control and simulation. It is writ
 
 ## Getting Started
 
-Rcs can be compiled with the cmake build system and has mainly been developed on Ubuntu 14.04 and GCC 4.8. It does also compile under Ubuntu 16.04 and 18.04 (however Vortex Essentials requires extra care, see comment below). To compile it, just type:
+Rcs can be compiled with the cmake build system and has mainly been developed on Ubuntu 14.04 and GCC 4.8. To compile it, just type:
 
     cd <build-directory>
     cmake <source-directory>
@@ -38,7 +38,9 @@ To build the doxygen documentation, just type:
 
     make doc
 
-Compilation has also been tested on Ubuntu 16.04 with GCC 5 and Ubuntu 18.04 with GCC 7 and clang. However, Vortex Essentials is only available as pre-compiled binaries using GCC 4.8, so it cannot be used with newer GCC versions. If you install GCC 4.8 on a newer system to work around this issue, you also must  take care to use matching version of OpenSceneGraph, since the one installed via the package manager will not be compatible with GCC 4.8.
+Compilation has also been tested on Ubuntu 16.04 with GCC 5 and Ubuntu 18.04 with GCC 7 and clang.
+
+Note that using Vortex Essentials on newer operating systems requires extra care. The official distribution is compiled with GCC 4.8, and will not work with newer compiler versions. To work around this limitation, Rcs compiles the Vortex integration module separately. If GCC 4.8 is available (by installing the `g++-4.8` package), the integration module is built automatically. If it isn't, you need to provide a pre-built version of libRcsVortex.so.
 
 It is also possible to compile it on Microsoft Visual Studio, however with some additional efforts. The libxml2 and pthreads library as well as the below mentioned dependencies need to be installed. Further, a cmake version higher than 3.4 is required. They support automatic symbol generation for windows compilation. The formerly mandatory export declaratives are not needed (except for global variables). Here is how to call it:
 
