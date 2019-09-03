@@ -26,7 +26,7 @@ IF(USE_VORTEX)
             -DRCSVORTEX_INSTALL_LIBDIR:PATH=${LIBRARY_OUTPUT_PATH})
     ELSE()
       # Can't build, use prebuilt version
-      SET(RCSVORTEX_LIBRARY_PREBUILT "" CACHE PATH "Prebuilt RcsVortex library. Required since we can't build it ourselves.")
+      SET(RCSVORTEX_LIBRARY_PREBUILT "${VORTEX_ESSENTIALS_DIR}/lib/libRcsVortex.so" CACHE PATH "Prebuilt RcsVortex library. Required since we can't build it ourselves.")
 
       IF(NOT EXISTS ${RCSVORTEX_LIBRARY_PREBUILT})
         MESSAGE(FATAL_ERROR "Cannot build RcsVortex library, so we need a prebuilt version!")
