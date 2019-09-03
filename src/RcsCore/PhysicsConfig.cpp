@@ -306,6 +306,7 @@ PhysicsMaterial PhysicsConfig::getOrCreateMaterial(const char* materialName)
     {
       return mat;
     }
+    mat = mat.next();
   }
   // create new material. xml is empty at first.
   xmlNodePtr newMat = xmlNewDocNode(doc, NULL, BAD_CAST "material", NULL);
@@ -329,6 +330,7 @@ PhysicsMaterial PhysicsConfig::getMaterial(const char* materialName) const
     {
       return mat;
     }
+    mat = mat.next();
   }
   // return default material since it wasn't found
   return { defaultMaterial, defaultMaterial };
