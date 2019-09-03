@@ -39,10 +39,6 @@
 
 #include <libxml/tree.h>
 
-#include <map>
-#include <vector>
-#include <string>
-
 namespace Rcs
 {
 
@@ -58,26 +54,134 @@ namespace Rcs
 
 /*!
  * Definition of the material properties used by the physics simulator.
+ *
+ * This is just a thin wrapper around an xml node that stores the actual properties.
  */
 struct PhysicsMaterial
 {
-  double frictionCoefficient;         //!< coefficient of linear friction
-  double rollingFrictionCoefficient;  //!< coefficient of angular (rolling) friction.
-  double restitution;                 //!<bouncyness
-  // TODO add others?
-
-  // xml node whose properties defined this material.
-  // allows physics engines to load engine-specific attributes
+public:
+  /*!
+   * Xml node whose properties defined this material. Accessible to allow physics engines to load engine-specific
+   * attributes.
+   */
   xmlNodePtr materialNode;
+private:
+  // default material, used as fallback by getters
+  xmlNodePtr defaultMaterialNode;
+  // ctor is private, for use by this an PhysicsConfig only.
+  PhysicsMaterial(xmlNodePtr node, xmlNodePtr defaultMaterialNode);
+  friend class PhysicsConfig;
+public:
+  // treat as xml node pointer for iteration
 
-  // default constructor applies default values
-  PhysicsMaterial();
+  //! check if this is a non-empty reference
+  inline operator bool() const
+  {
+    return materialNode != NULL;
+  }
+  /*!
+   * Obtain next material. Returns an empty material if done.
+   */
+  PhysicsMaterial next() const;
+
+  //! check if this is the default material
+  inline bool isDefault() const
+  {
+    return materialNode == defaultMaterialNode;
+  }
+
+  // generic accessor methods
+
+  /*!
+   * Read a double attribute.
+   *
+   * Will query the default material if not found.
+   *
+   * @param attr attribute name
+   * @param out value storage
+   * @return true if the attribute was found
+   */
+  bool getDouble(const char* attr, double& out) const;
+  /*!
+   * Write a double attribute.
+   *
+   * @param attr attribute name
+   * @param value new value
+   */
+  void setDouble(const char* attr, double value);
+
+  /*!
+   * Read a boolean attribute.
+   *
+   * Will query the default material if not found.
+   *
+   * @param attr attribute name
+   * @param out value storage
+   * @return true if the attribute was found
+   */
+  bool getBoolean(const char* attr, bool& out) const;
+  /*!
+   * Write a boolean attribute.
+   *
+   * @param attr attribute name
+   * @param value new value
+   */
+  void setBoolean(const char* attr, bool value);
+
+  /*!
+   * Read a string attribute.
+   *
+   * Will query the default material if not found.
+   *
+   * @param attr attribute name
+   * @param out value storage
+   * @param limit maximum string length
+   * @return true if the attribute was found
+   */
+  bool getString(const char* attr, char* out, unsigned int limit) const;
+  /*!
+   * Write a string attribute.
+   *
+   * @param attr attribute name
+   * @param value new value
+   */
+  void setString(const char* attr, const char* value);
+
+
+  // these are shortcuts for commonly used properties.
+
+  //! Material name
+  inline void getMaterialName(char name[256]) const
+  {
+    getString("name", name, 256);
+  }
+
+  // I'm lazy so macro!
+#define RCS_PM_ATTR_DOUBLE(attr, capitalized, default) \
+  inline double get##capitalized() const { \
+    double value = (default); \
+    getDouble(#attr, value); \
+    return value; \
+  } \
+  inline void set##capitalized(double value) { \
+    setDouble(#attr, value); \
+  }
+
+  //! coefficient of linear friction
+  RCS_PM_ATTR_DOUBLE(frictionCoefficient, FrictionCoefficient, 0.8)
+  //! coefficient of angular (rolling) friction.
+  RCS_PM_ATTR_DOUBLE(rollingFrictionCoefficient, RollingFrictionCoefficient, 0.0)
+  //! bouncyness
+  RCS_PM_ATTR_DOUBLE(restitution, Restitution, 0.0)
+
+#undef RCS_PM_ATTR_DOUBLE
 };
 
 /*!
  * Physics engine configuration parameters.
  *
- * This is the C++-side model of the physics configuration XML file.
+ * This is the C++-side model of the physics configuration XML file. All properties are stored in the xml structure,
+ * we merely provide more convenient access.
  *
  * The first part are the PhysicsMaterial definitions. Every material definition
  * holds material properties such as friction coefficients. When creating a shape,
@@ -91,13 +195,10 @@ struct PhysicsMaterial
 class PhysicsConfig
 {
 public:
-  typedef std::map<std::string, PhysicsMaterial> MaterialMap;
-  typedef std::vector<std::string> MaterialNameList;
-
   /*!
    * Load the physics configuration from the given xml file.
    */
-  PhysicsConfig(const char* xmlFile);
+  explicit PhysicsConfig(const char* xmlFile);
   PhysicsConfig(const PhysicsConfig& copyFromMe);
   PhysicsConfig& operator = (const PhysicsConfig&);
   virtual ~PhysicsConfig();
@@ -115,7 +216,7 @@ public:
    * @param materialName material name to look up
    * @return named material
    */
-  PhysicsMaterial* getMaterial(const std::string& materialName);
+  PhysicsMaterial getOrCreateMaterial(const char* materialName);
 
   /*!
    * Obtain the material properties of the named material.
@@ -127,22 +228,17 @@ public:
    * @param materialName material name to look up
    * @return named material
    */
-  const PhysicsMaterial* getMaterial(const std::string& materialName) const;
+  PhysicsMaterial getMaterial(const char* materialName) const;
 
   /*!
    * Get a reference to the default material data.
    */
-  PhysicsMaterial* getDefaultMaterial();
+  PhysicsMaterial getDefaultMaterial() const;
 
   /*!
-   * Get a reference to the default material data.
+   * Get a reference to the first material data in the material list.
    */
-  const PhysicsMaterial* getDefaultMaterial() const;
-
-  /*!
-   * Get the names of all registered materials.
-   */
-  MaterialNameList getMaterialNames() const;
+  PhysicsMaterial getFirstMaterial() const;
 
   /*!
    * Return the name of the xml file the config was loaded from.
@@ -157,21 +253,20 @@ public:
 
 private:
 
-  // load xml file and initialize all materials
+  // load xml file and initialize default material
   void init(const char* configFile);
 
   // copy from different config. Used by the copy ctor&assignment
   // assumes fresh state, so copy assignment must clean up first.
   void initFromCopy(const PhysicsConfig&);
 
-  // load the material data from xml
-  void loadMaterials();
+  // init once xml doc has been set up
+  void findDefaultMaterial();
 
-  std::string xmlFile;                     ///< full path of xml file
+  char* xmlFile;                     ///< full path of xml file
   xmlDocPtr doc;                     ///< xml document, owns all xml objects
   xmlNodePtr root;                   ///< document root node
-  PhysicsMaterial defaultMaterial;   ///< default material data
-  MaterialMap materials;             ///< map from material name to material data
+  xmlNodePtr defaultMaterial;        ///< default material node
 };
 
 } /* namespace Rcs */

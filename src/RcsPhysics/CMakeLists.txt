@@ -1,6 +1,49 @@
-SET(RCS_PHYSICS_SRCS
-  PhysicsConfig.cpp
-  PhysicsFactory.cpp)
+
+# Build the vortex sub-library
+IF(USE_VORTEX)
+  SET(RCSVORTEX_LIBRARY ${LIBRARY_OUTPUT_PATH}/libRcsVortex.so)
+  IF(WIN32 OR CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5.0")
+    # GCC 4.8, we can simply include the vortex library. The same goes for any windows system.
+    ADD_SUBDIRECTORY(Vortex)
+    # Do not use RcsVortex as target dependency, to avoid export problems. The dependency must be added manually for
+    # the external project anyways.
+  ELSE()
+    # We need to check if the right GCC is available
+    FIND_PROGRAM(GCC_48 "gcc-4.8")
+    FIND_PROGRAM(GXX_48 "g++-4.8")
+    IF(GCC_48 AND GXX_48)
+      # Build now using ExternalProject
+      INCLUDE(ExternalProject)
+
+      ExternalProject_Add(RcsVortex
+          SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Vortex
+          CMAKE_CACHE_ARGS
+            -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+            -DCMAKE_C_COMPILER:PATH=${GCC_48}
+            -DCMAKE_CXX_COMPILER:PATH=${GXX_48}
+            -DUSE_VORTEX:STRING=${USE_VORTEX}
+            -DVORTEX_ESSENTIALS_DIR:PATH=${VORTEX_ESSENTIALS_DIR}
+            -DRCSVORTEX_INSTALL_LIBDIR:PATH=${LIBRARY_OUTPUT_PATH})
+    ELSE()
+      # Can't build, use prebuilt version
+      SET(RCSVORTEX_LIBRARY_PREBUILT "" CACHE PATH "Prebuilt RcsVortex library. Required since we can't build it ourselves.")
+
+      IF(NOT EXISTS ${RCSVORTEX_LIBRARY_PREBUILT})
+        MESSAGE(FATAL_ERROR "Cannot build RcsVortex library, so we need a prebuilt version!")
+      ENDIF()
+      
+      # Copy library into output dir
+      ADD_CUSTOM_TARGET(RcsVortex)
+      ADD_CUSTOM_COMMAND(TARGET RcsVortex PRE_BUILD
+          COMMAND ${CMAKE_COMMAND} -E copy ${RCSVORTEX_LIBRARY_PREBUILT} ${LIBRARY_OUTPUT_PATH})
+    ENDIF()
+    # Install custom library
+    INSTALL(FILES ${RCSVORTEX_LIBRARY} DESTINATION lib)
+  ENDIF()
+ENDIF(USE_VORTEX)
+
+# Build the actual physics library
+SET(RCS_PHYSICS_SRCS)
 
 IF(NOT HEADLESS_BUILD)
   LIST(APPEND RCS_PHYSICS_SRCS 
@@ -22,14 +65,6 @@ IF(USE_BULLET)
       BulletDebugDrawer.cpp)
   ENDIF(NOT HEADLESS_BUILD)
 ENDIF(USE_BULLET)
-
-IF(USE_VORTEX)
-  SET(VX_SRCS  VortexHelpers.cpp VortexSimulation.cpp) 
-  IF (UNIX)
-    SET_SOURCE_FILES_PROPERTIES(${VX_SRCS} PROPERTIES COMPILE_FLAGS -std=c++11) 
-  ENDIF()
-  SET(RCS_PHYSICS_SRCS ${RCS_PHYSICS_SRCS} ${VX_SRCS})
-ENDIF(USE_VORTEX)
 
 
 ADD_LIBRARY(RcsPhysics ${LIBRARY_LINKING_TYPE} ${RCS_PHYSICS_SRCS})
@@ -55,11 +90,11 @@ IF(USE_BULLET)
 ENDIF(USE_BULLET)
 
 IF(USE_VORTEX)
-  TARGET_INCLUDE_DIRECTORIES(RcsPhysics SYSTEM PRIVATE ${VORTEX_INCLUDE_DIR})
-  TARGET_LINK_LIBRARIES(RcsPhysics ${VORTEX_LIBRARIES})
-  TARGET_COMPILE_DEFINITIONS(RcsPhysics PRIVATE ${VORTEX_DEFINITIONS})
-ENDIF(USE_VORTEX)
-
+  # Link RcsVortex library here, so RcsPhysics is still the goto dependency for it.
+  # Use no-as-needed to make sure the library is loaded, only then will the physics engine be registered.
+  TARGET_LINK_LIBRARIES(RcsPhysics -Wl,--no-as-needed ${RCSVORTEX_LIBRARY} -Wl,--as-needed ${VORTEX_LIBRARIES})
+  ADD_DEPENDENCIES(RcsPhysics RcsVortex)
+ENDIF()
 
 IF(USE_BULLET)
   ADD_EXECUTABLE(ExampleBullet ExampleBullet.cpp)

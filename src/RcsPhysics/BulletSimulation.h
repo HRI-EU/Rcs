@@ -43,6 +43,8 @@
 
 #include <pthread.h>
 
+#include <map>
+
 class btBroadphaseInterface;
 class btCollisionShape;
 class btOverlappingPairCache;

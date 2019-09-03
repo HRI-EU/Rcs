@@ -462,30 +462,30 @@ bool Rcs::VortexSimulation::initSettings(const PhysicsConfig* config)
 void Rcs::VortexSimulation::initMaterial(const PhysicsConfig* config)
 {
   // copy PhysicsMaterial definitions into vortex material table
-  PhysicsConfig::MaterialNameList materialNames = config->getMaterialNames();
+  PhysicsMaterial matDef = config->getFirstMaterial();
 
-  for (size_t i = 0; i < materialNames.size(); ++i)
+  char name[256];
+  while (matDef)
   {
-    const PhysicsMaterial* matDef = config->getMaterial(materialNames[i]);
-
     // create corresponding vortex material
-    Vx::VxMaterial* material = getMaterialTable()->registerMaterial(materialNames[i].c_str());
+    matDef.getMaterialName(name);
+    Vx::VxMaterial* material = getMaterialTable()->registerMaterial(name);
 
     // set common properties
-    material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisLinear, matDef->frictionCoefficient);
+    material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisLinear, matDef.getFrictionCoefficient());
 
     material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisAngularPrimary,
-                                     matDef->rollingFrictionCoefficient);
+                                     matDef.getRollingFrictionCoefficient());
     material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisAngularSecondary,
-                                     matDef->rollingFrictionCoefficient);
+                                     matDef.getRollingFrictionCoefficient());
 
-    material->setRestitution(matDef->restitution);
+    material->setRestitution(matDef.getRestitution());
 
     // set vortex-specific properties from xml
     double value;
     char option[64];
 
-    if (getXMLNodePropertyStringN(matDef->materialNode, "friction_model", option, 64))
+    if (matDef.getString("friction_model", option, 64))
     {
       if (STRCASEEQ(option, "Box"))
       {
@@ -520,16 +520,16 @@ void Rcs::VortexSimulation::initMaterial(const PhysicsConfig* config)
       }
     }
 
-    if (getXMLNodePropertyDouble(matDef->materialNode, "static_friction_scale", &value))
+    if (matDef.getDouble("static_friction_scale", value))
     {
       material->setStaticFrictionScale(Vx::VxMaterialBase::kFrictionAxisLinear, value);
     }
-    if (getXMLNodePropertyDouble(matDef->materialNode, "slip", &value))
+    if (matDef.getDouble("slip", value))
     {
       material->setSlip(Vx::VxMaterialBase::kFrictionAxisLinear, value);
     }
     bool isd = false;
-    if (getXMLNodePropertyBoolString(matDef->materialNode, "integrated_slip_displacement", &isd))
+    if (matDef.getBoolean("integrated_slip_displacement", isd))
     {
       if (isd)
       {
@@ -540,11 +540,11 @@ void Rcs::VortexSimulation::initMaterial(const PhysicsConfig* config)
         material->setIntegratedSlipDisplacement(Vx::VxMaterial::kIntegratedSlipDisplacementDeactivated);
       }
     }
-    if (getXMLNodePropertyDouble(matDef->materialNode, "slide", &value))
+    if (matDef.getDouble("slide", value))
     {
       material->setSlide(Vx::VxMaterialBase::kFrictionAxisLinear, value);
     }
-    if (getXMLNodePropertyDouble(matDef->materialNode, "compliance", &value))
+    if (matDef.getDouble("compliance", value))
     {
       material->setCompliance(value);
       // as a default, set critical damping
@@ -554,18 +554,20 @@ void Rcs::VortexSimulation::initMaterial(const PhysicsConfig* config)
       // damping = 5*time_step/compliance
       material->setDamping((5.0 * this->integratorDt) / value);
     }
-    if (getXMLNodePropertyDouble(matDef->materialNode, "damping", &value))
+    if (matDef.getDouble("damping", value))
     {
       material->setDamping(value);
     }
-    if (getXMLNodePropertyDouble(matDef->materialNode, "restitution_threshold", &value))
+    if (matDef.getDouble("restitution_threshold", value))
     {
       material->setRestitutionThreshold(value);
     }
-    if (getXMLNodePropertyDouble(matDef->materialNode, "adhesive_force", &value))
+    if (matDef.getDouble("adhesive_force", value))
     {
       material->setAdhesiveForce(value);
     }
+
+    matDef = matDef.next();
   }
 
   RLOG(5, "initMaterial finished");
@@ -618,14 +620,14 @@ Rcs::VortexSimulation::Contacts Rcs::VortexSimulation::getContacts()
   for (; it != ie; ++it)
   {
     Contact contact1;
-    (*it)->getPosition(contact1.pos.data());
-    (*it)->getForce(0, contact1.force.data());
+    (*it)->getPosition(contact1.pos);
+    (*it)->getForce(0, contact1.force);
 
     // \todo: strange, we have to draw both contacts to see them all. But there
     // are no complementing forces
     Contact contact2;
-    (*it)->getPosition(contact2.pos.data());
-    (*it)->getForce(1, contact2.force.data());
+    (*it)->getPosition(contact2.pos);
+    (*it)->getForce(1, contact2.force);
 
     contacts.push_back(contact1);
     contacts.push_back(contact2);

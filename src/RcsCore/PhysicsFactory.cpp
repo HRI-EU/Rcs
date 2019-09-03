@@ -38,15 +38,15 @@
 
 #include <Rcs_macros.h>
 
+#include <map>
+#include <string>
 
 
-/*******************************************************************************
- * Returns singleton instance pointer
- ******************************************************************************/
-Rcs::PhysicsFactory* Rcs::PhysicsFactory::instance()
-{
-  static Rcs::PhysicsFactory factory;
-  return &factory;
+
+
+static std::map<std::string, Rcs::PhysicsFactory::PhysicsCreateFunction>& constructorMap() {
+  static std::map<std::string, Rcs::PhysicsFactory::PhysicsCreateFunction> cm;
+  return cm;
 }
 
 /*******************************************************************************
@@ -59,16 +59,16 @@ Rcs::PhysicsFactory::PhysicsFactory()
 /*******************************************************************************
  * Creates the physics engine for className and the given graph and xml content
  ******************************************************************************/
-Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const std::string& className,
+Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const char* className,
                                               RcsGraph* graph,
                                               const char* cfgFile)
 {
   Rcs::PhysicsBase* sim = NULL;
   std::map<std::string, PhysicsCreateFunction>::iterator it;
 
-  it = instance()->constructorMap.find(className);
+  it = constructorMap().find(className);
 
-  if (it != instance()->constructorMap.end())
+  if (it != constructorMap().end())
   {
     PhysicsConfig config(cfgFile);
     sim = it->second(className, graph, &config);
@@ -77,7 +77,7 @@ Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const std::string& className,
   {
     REXEC(1)
     {
-      RMSG("Couldn't instantiate physics engine \"%s\"", className.c_str());
+      RMSG("Couldn't instantiate physics engine \"%s\"", className);
       RMSG("Options are:");
       print();
     }
@@ -89,16 +89,16 @@ Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const std::string& className,
 /*******************************************************************************
  * Creates the physics engine for className and the given graph and config obj
  ******************************************************************************/
-Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const std::string& className,
+Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const char* className,
                                               RcsGraph* graph,
                                               const PhysicsConfig* config)
 {
   Rcs::PhysicsBase* sim = NULL;
   std::map<std::string, PhysicsCreateFunction>::iterator it;
 
-  it = instance()->constructorMap.find(className);
+  it = constructorMap().find(className);
 
-  if (it != instance()->constructorMap.end())
+  if (it != constructorMap().end())
   {
     sim = it->second(className, graph, config);
   }
@@ -106,7 +106,7 @@ Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const std::string& className,
   {
     REXEC(1)
     {
-      RMSG("Couldn't instantiate physics engine \"%s\"", className.c_str());
+      RMSG("Couldn't instantiate physics engine \"%s\"", className);
       RMSG("Options are:");
       print();
     }
@@ -118,13 +118,13 @@ Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const std::string& className,
 /*******************************************************************************
  *
  ******************************************************************************/
-bool Rcs::PhysicsFactory::hasEngine(const std::string& className)
+bool Rcs::PhysicsFactory::hasEngine(const char* className)
 {
   std::map<std::string, PhysicsCreateFunction>::iterator it;
 
-  it = instance()->constructorMap.find(className);
+  it = constructorMap().find(className);
 
-  return (it==instance()->constructorMap.end()) ? false : true;
+  return (it==constructorMap().end()) ? false : true;
 }
 
 /*******************************************************************************
@@ -132,10 +132,10 @@ bool Rcs::PhysicsFactory::hasEngine(const std::string& className)
  * main() is entered. Therefore, logging with debug levels doesn't make sense,
  * since the debug level has at that point not yet been parsed.
  ******************************************************************************/
-void Rcs::PhysicsFactory::registerPhysics(const std::string& name,
+void Rcs::PhysicsFactory::registerPhysics(const char* name,
                                           PhysicsCreateFunction createFunction)
 {
-  constructorMap[name] = createFunction;
+  constructorMap()[name] = createFunction;
 }
 
 /*******************************************************************************
@@ -143,7 +143,7 @@ void Rcs::PhysicsFactory::registerPhysics(const std::string& name,
  ******************************************************************************/
 void Rcs::PhysicsFactory::print()
 {
-  if (instance()->constructorMap.empty())
+  if (constructorMap().empty())
   {
     RMSG("No physics engines found");
     return;
@@ -154,8 +154,8 @@ void Rcs::PhysicsFactory::print()
 
   std::map<std::string, PhysicsCreateFunction>::const_iterator it;
 
-  for (it = instance()->constructorMap.begin();
-       it != instance()->constructorMap.end(); ++it)
+  for (it = constructorMap().begin();
+       it != constructorMap().end(); ++it)
   {
     printf("%s\n", it->first.c_str());
   }

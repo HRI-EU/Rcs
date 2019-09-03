@@ -39,7 +39,6 @@
 
 #include "Rcs_graph.h"
 
-#include <list>
 #include <vector>
 
 
@@ -63,17 +62,10 @@ class PhysicsBase
 public:
   struct Contact
   {
-    Contact()
-    {
-      pos.resize(3);
-      force.resize(3);
-    }
-
-    std::vector<double> pos;
-    std::vector<double> force;
+    double pos[3];
+    double force[3];
   };
-
-  typedef std::list<Contact> Contacts;
+  typedef std::vector<Contact> Contacts;
 
 
 
