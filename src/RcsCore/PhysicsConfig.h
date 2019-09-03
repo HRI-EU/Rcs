@@ -72,6 +72,10 @@ private:
   PhysicsMaterial(xmlNodePtr node, xmlNodePtr defaultMaterialNode);
   friend class PhysicsConfig;
 public:
+  /*!
+   * Create an empty material reference.
+   */
+  PhysicsMaterial();
   // treat as xml node pointer for iteration
 
   //! check if this is a non-empty reference

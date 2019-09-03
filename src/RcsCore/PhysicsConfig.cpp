@@ -44,6 +44,7 @@
 namespace Rcs
 {
 
+PhysicsMaterial::PhysicsMaterial() : materialNode(NULL), defaultMaterialNode(NULL) {}
 
 PhysicsMaterial::PhysicsMaterial(xmlNodePtr node, xmlNodePtr defaultMaterialNode) : materialNode(node), defaultMaterialNode(defaultMaterialNode) {}
 
