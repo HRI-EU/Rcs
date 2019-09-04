@@ -165,20 +165,24 @@ ENDIF(NOT HEADLESS_BUILD)
 # Settings for GeometricTools 5.10
 #
 ################################################################################
-SET(WM5_DEFINITIONS USE_WM5)
-SET(WM5_INCLUDE_DIR ${HGR}/External/GeometricTools/5.10/include)
-SET(WM5_LIBRARY_DIR ${HGR}/External/GeometricTools/5.10/lib/${MKPLT})
+IF(USE_WM5)
 
-IF(WIN32)
-  SET(WM5_LIBRARIES
-    ${WM5_LIBRARY_DIR}/Wm5Mathematics${RCS_DEBUG_SUFFIX}.lib
-    ${WM5_LIBRARY_DIR}/Wm5Core${RCS_DEBUG_SUFFIX}.lib)
-ELSE(WIN32)
-  SET(WM5_FLAGS "-isystem ${WM5_INCLUDE_DIR}")
-  SET(WM5_LIBRARIES
-    ${WM5_LIBRARY_DIR}/libWm5Mathematics.so
-    ${WM5_LIBRARY_DIR}/libWm5Core.so)
-ENDIF(WIN32)
+  SET(WM5_DEFINITIONS USE_WM5)
+  SET(WM5_INCLUDE_DIR ${HGR}/External/GeometricTools/5.10/include CACHE PATH "WM5 include dir")
+  SET(WM5_LIBRARY_DIR ${HGR}/External/GeometricTools/5.10/lib/${MKPLT} CACHE PATH "WM5 library dir")
+
+  IF(WIN32)
+    SET(WM5_LIBRARIES
+      ${WM5_LIBRARY_DIR}/Wm5Mathematics${RCS_DEBUG_SUFFIX}.lib
+      ${WM5_LIBRARY_DIR}/Wm5Core${RCS_DEBUG_SUFFIX}.lib)
+  ELSE(WIN32)
+    SET(WM5_FLAGS "-isystem ${WM5_INCLUDE_DIR}")
+    SET(WM5_LIBRARIES
+      ${WM5_LIBRARY_DIR}/libWm5Mathematics.so
+      ${WM5_LIBRARY_DIR}/libWm5Core.so)
+  ENDIF(WIN32)
+
+ENDIF(USE_WM5)
 
 ################################################################################
 #
