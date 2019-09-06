@@ -65,6 +65,12 @@ public:
    */
   TaskEuler1D(const TaskEuler1D& copyFromMe, RcsGraph* newGraph=NULL);
 
+  /*! Constructor based on graph and effectors for programmatic construction.
+   */
+  TaskEuler1D(const std::string& className, RcsGraph* graph,
+              const RcsBody* effector, const RcsBody* refBdy,
+              const RcsBody* refFrame);
+
   /*! Virtual destructor to allow proper inheriting from this class.
    */
   virtual ~TaskEuler1D();

@@ -91,6 +91,44 @@ Rcs::TaskEuler1D::TaskEuler1D(const TaskEuler1D& copyFromMe,
 }
 
 /*******************************************************************************
+ * For programmatic creation
+ ******************************************************************************/
+Rcs::TaskEuler1D::TaskEuler1D(const std::string& className,
+                              RcsGraph* graph_,
+                              const RcsBody* effector,
+                              const RcsBody* refBdy,
+                              const RcsBody* refFrame):
+  TaskGenericIK(), index(-1)
+{
+  this->graph = graph_;
+  setClassName(className);
+  setDim(1);
+  setEffector(effector);
+  setRefBody(refBdy);
+  setRefFrame(refFrame ? refFrame : refBdy);
+
+  std::vector<Parameters*>& params = getParameters();
+  params.clear();
+  params.push_back(new Task::Parameters(-M_PI, M_PI, 180.0/M_PI, "Angle [deg]"));
+
+  if (getClassName()=="A")
+  {
+    this->index = 0;
+    getParameter(0)->name.assign("A [deg]");
+  }
+  else if (getClassName()=="B")
+  {
+    this->index = 1;
+    getParameter(0)->name.assign("B [deg]");
+  }
+  else if (getClassName()=="C")
+  {
+    this->index = 2;
+    getParameter(0)->name.assign("C [deg]");
+  }
+}
+
+/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskEuler1D::~TaskEuler1D()
