@@ -5,6 +5,7 @@
   <Task name="Right Hand Polar" controlVariable="POLAR" effector="RightHandTip" axisDirection="Z" />
 
   <Task name="Left Hand XYZ"    controlVariable="XYZ"   effector="LeftHandTip" active="true" />
+  <Task name="Left Hand velocity Z"    controlVariable="Zd"   effector="LeftHandTip" />
   <Task name="Left Hand ABC"    controlVariable="ABC"   effector="LeftHandTip" />
   <Task name="Left Hand Polar"  controlVariable="POLAR" effector="LeftHandTip" axisDirection="Z" />
 

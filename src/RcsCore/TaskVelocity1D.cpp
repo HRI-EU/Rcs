@@ -58,8 +58,7 @@ Rcs::TaskVelocity1D::TaskVelocity1D(const std::string& taskType,
                                     xmlNode* node,
                                     RcsGraph* _graph,
                                     int dim):
-  TaskPosition1D(taskType, node, _graph, dim),
-  velocity_des_temp(0.0)
+  TaskPosition1D(taskType, node, _graph, dim)
 {
 
   if (taskType=="Xd")
@@ -81,12 +80,42 @@ Rcs::TaskVelocity1D::TaskVelocity1D(const std::string& taskType,
 }
 
 /*******************************************************************************
+ * For programmatic creation
+ ******************************************************************************/
+Rcs::TaskVelocity1D::TaskVelocity1D(const std::string& className,
+                                    RcsGraph* graph,
+                                    const RcsBody* effector,
+                                    const RcsBody* refBdy,
+                                    const RcsBody* refFrame):
+  TaskPosition1D(className, graph, effector, refBdy, refFrame)
+{
+  std::vector<Parameters*>& params = getParameters();
+  params.clear();
+  params.push_back(new Task::Parameters(-1.0, 1.0, 1.0, "Velocity [m/s]"));
+
+  if (getClassName()=="Xd")
+  {
+    this->index = 0;
+    getParameter(0)->name.assign("X Velocity [m/s]");
+  }
+  else if (getClassName()=="Yd")
+  {
+    this->index = 1;
+    getParameter(0)->name.assign("Y Velocity [m/s]");
+  }
+  else if (getClassName()=="Zd")
+  {
+    this->index = 2;
+    getParameter(0)->name.assign("Z Velocity [m/s]");
+  }
+}
+
+/*******************************************************************************
  * Copy constructor doing deep copying
  ******************************************************************************/
 Rcs::TaskVelocity1D::TaskVelocity1D(const TaskVelocity1D& copyFromMe,
                                     RcsGraph* newGraph):
-  TaskPosition1D(copyFromMe, newGraph),
-  velocity_des_temp(copyFromMe.velocity_des_temp)
+  TaskPosition1D(copyFromMe, newGraph)
 {
 }
 
@@ -110,9 +139,7 @@ Rcs::TaskVelocity1D* Rcs::TaskVelocity1D::clone(RcsGraph* newGraph) const
  ******************************************************************************/
 void Rcs::TaskVelocity1D::computeX(double* x_res) const
 {
-  double temp;
-  computeXp(&temp);
-  *x_res = temp;
+  computeXp(x_res);
 }
 
 /*******************************************************************************
@@ -120,18 +147,7 @@ void Rcs::TaskVelocity1D::computeX(double* x_res) const
  ******************************************************************************/
 void Rcs::TaskVelocity1D::computeDX(double* dx, const double* x_des) const
 {
-  const_cast<Rcs::TaskVelocity1D*>(this)->velocity_des_temp = x_des[0];
-  *dx = 0.;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-void Rcs::TaskVelocity1D::computeDXp(double* dxp_res,
-                                     const double* desired_vel) const
-{
-  const_cast<double*>(desired_vel)[0] = this->velocity_des_temp;
-  Rcs::TaskPosition1D::computeDXp(dxp_res, desired_vel);
+  *dx = *x_des;
 }
 
 /*******************************************************************************

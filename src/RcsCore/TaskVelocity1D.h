@@ -58,33 +58,42 @@ public:
   TaskVelocity1D(const std::string& className, xmlNode* node,
                  RcsGraph* graph, int dim=1);
 
+  /*! Constructor based on graph and effectors.
+   */
+  TaskVelocity1D(const std::string& className, RcsGraph* graph,
+                 const RcsBody* effector, const RcsBody* refBdy=NULL,
+                 const RcsBody* refFrame=NULL);
+
   /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
+   *         pointer.
+   *
+   *  \param[in] copyFromMe   Task to be copied.
+   *  \param[in] newGraph     Optional graph. If this is not NULL, all task
+   *                          members reference this graph instead of the
+   *                          source task's graph.
    */
   TaskVelocity1D(const TaskVelocity1D& copyFromMe, RcsGraph* newGraph=NULL);
 
-  /*! Destructor
+  /*! Virtual destructor to allow correct polymorphism.
    */
   virtual ~TaskVelocity1D();
 
   /*!
-   * \brief Virtual copy constructor with optional new graph
+   * \brief Returns a deep copy of a task.
    */
   virtual TaskVelocity1D* clone(RcsGraph* newGraph=NULL) const;
 
   virtual void computeX(double* x_res) const;
 
+  /*! \brief In this particular task, the x_des command corresponds to the
+   *         desired velocity. Therefore it is just copied into dx.
+   */
   virtual void computeDX(double* dx, const double* x_des) const;
-
-  virtual void computeDXp(double* dxp_res, const double* desiredVel) const;
 
   /*! \brief Returns true for success, false otherwise:
    *         - Xml tag "controlVariable" is not "Xd", "Yd" or "Zd".
    */
   static bool isValid(xmlNode* node, const RcsGraph* graph);
-
-protected:
-  double velocity_des_temp;
 };
 
 }
