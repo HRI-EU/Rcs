@@ -1,11 +1,22 @@
 <Controller graph="gScenario.xml" >
 
+  <Task name="Left Hand velocity X"    controlVariable="Xd"   effector="LeftHandTip" />
+  <Task name="Left Hand velocity Y"    controlVariable="Yd"   effector="LeftHandTip" />
+  <Task name="Left Hand velocity Z"    controlVariable="Zd"   effector="LeftHandTip" />
+
+  <Task name="Left Hand omega X (World frame)"    controlVariable="Ad"   effector="LeftHandTip" />
+  <Task name="Left Hand omega Y (World frame)"    controlVariable="Bd"   effector="LeftHandTip" />
+  <Task name="Left Hand omega Z (World frame)"    controlVariable="Cd"   effector="LeftHandTip" />
+
+  <Task name="Left Hand omega X (Body frame)"    controlVariable="Ad"   effector="LeftHandTip" refFrame="LeftHandTip" />
+  <Task name="Left Hand omega Y (Body frame)"    controlVariable="Bd"   effector="LeftHandTip" refFrame="LeftHandTip" />
+  <Task name="Left Hand omega Z (Body frame)"    controlVariable="Cd"   effector="LeftHandTip" refFrame="LeftHandTip" />
+
   <Task name="Right Hand XYZ"   controlVariable="XYZ"   effector="RightHandTip" active="true" />
   <Task name="Right Hand ABC"   controlVariable="ABC"   effector="RightHandTip" />
   <Task name="Right Hand Polar" controlVariable="POLAR" effector="RightHandTip" axisDirection="Z" />
 
   <Task name="Left Hand XYZ"    controlVariable="XYZ"   effector="LeftHandTip" active="true" />
-  <Task name="Left Hand velocity Z"    controlVariable="Zd"   effector="LeftHandTip" />
   <Task name="Left Hand ABC"    controlVariable="ABC"   effector="LeftHandTip" />
   <Task name="Left Hand Polar"  controlVariable="POLAR" effector="LeftHandTip" axisDirection="Z" />
 

@@ -55,9 +55,7 @@ Rcs::TaskOmega1D::TaskOmega1D(const std::string& className_,
                               xmlNode* node,
                               RcsGraph* _graph,
                               int dim):
-  TaskGenericIK(className_, node, _graph, dim),
-  index(-1),
-  omega_des_temp(0.0)
+  TaskGenericIK(className_, node, _graph, dim), index(-1)
 {
 
   if (getClassName()=="Ad")
@@ -82,13 +80,50 @@ Rcs::TaskOmega1D::TaskOmega1D(const std::string& className_,
 }
 
 /*******************************************************************************
+ * For programmatic creation
+ ******************************************************************************/
+Rcs::TaskOmega1D::TaskOmega1D(const std::string& className,
+                              RcsGraph* graph_,
+                              const RcsBody* effector,
+                              const RcsBody* refBdy,
+                              const RcsBody* refFrame):
+  TaskGenericIK(), index(-1)
+{
+  this->graph = graph_;
+  setClassName(className);
+  setDim(1);
+  setEffector(effector);
+  setRefBody(refBdy);
+  setRefFrame(refFrame ? refFrame : refBdy);
+
+  std::vector<Parameters*>& params = getParameters();
+  params.clear();
+  params.push_back(new Task::Parameters(-M_PI_2, M_PI_2, 180.0/M_PI,
+                                        "Omega [deg/sec]"));
+
+  if (getClassName()=="Ad")
+  {
+    this->index = 0;
+    getParameter(0)->name.assign("Ad [deg/sec]");
+  }
+  else if (getClassName()=="Bd")
+  {
+    this->index = 1;
+    getParameter(0)->name.assign("Bd [deg/sec]");
+  }
+  else if (getClassName()=="Cd")
+  {
+    this->index = 2;
+    getParameter(0)->name.assign("Cd [deg/sec]");
+  }
+}
+
+/*******************************************************************************
  * Copy constructor doing deep copying
  ******************************************************************************/
 Rcs::TaskOmega1D::TaskOmega1D(const TaskOmega1D& copyFromMe,
                               RcsGraph* newGraph):
-  TaskGenericIK(copyFromMe, newGraph),
-  index(copyFromMe.index),
-  omega_des_temp(copyFromMe.omega_des_temp)
+  TaskGenericIK(copyFromMe, newGraph), index(copyFromMe.index)
 {
 }
 
@@ -162,19 +197,7 @@ void Rcs::TaskOmega1D::computeX(double* x_res) const
  ******************************************************************************/
 void Rcs::TaskOmega1D::computeDX(double* dx, const double* x_des) const
 {
-  const_cast<TaskOmega1D*>(this)->omega_des_temp = x_des[0];
-  *dx = 0.0;
-}
-
-
-/*******************************************************************************
- * Computes the velocity error
- ******************************************************************************/
-void Rcs::TaskOmega1D::computeDXp(double* dxp_res,
-                                  const double* desired_vel) const
-{
-  const_cast<double*>(desired_vel)[0] = this->omega_des_temp;
-  Rcs::TaskGenericIK::computeDXp(dxp_res, desired_vel);
+  *dx = *x_des;
 }
 
 /*******************************************************************************

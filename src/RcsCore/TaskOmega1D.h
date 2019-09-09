@@ -65,6 +65,12 @@ public:
   TaskOmega1D(const std::string& className, xmlNode* node, RcsGraph* _graph,
               int dim=1);
 
+  /*! Constructor based on graph and effectors for programmatic construction.
+   */
+  TaskOmega1D(const std::string& className, RcsGraph* graph,
+              const RcsBody* effector, const RcsBody* refBdy=NULL,
+              const RcsBody* refFrame=NULL);
+
   /*! \brief Copy constructor doing deep copying with optional new graph pointer
    */
   TaskOmega1D(const TaskOmega1D& copyFromMe, RcsGraph* newGraph=NULL);
@@ -94,8 +100,6 @@ public:
 
   virtual void computeDX(double* dx, const double* x_des) const;
 
-  virtual void computeDXp(double* dxp_res, const double* desired_vel) const;
-
   /*! \brief Returns true if the task is specified correctly, false otherwise.
    *         The following chechs are carried out:
    *         - tag "controlVariable" contains "Ad", "Bd" or "Cd"
@@ -103,8 +107,8 @@ public:
   static bool isValid(xmlNode* node, const RcsGraph* graph);
 
 protected:
+
   int index;
-  double omega_des_temp;
 };
 
 }

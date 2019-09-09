@@ -63,7 +63,7 @@ Rcs::TaskVelocity1D::TaskVelocity1D(const std::string& taskType,
 
   if (taskType=="Xd")
   {
-    getParameter(0)->setParameters(-10., 10., 1.0, "X Velocity [m/s]");
+    getParameter(0)->setParameters(-1.0, 1.0, 1.0, "X Velocity [m/s]");
     this->index = 0;
   }
   else if (taskType=="Yd")
