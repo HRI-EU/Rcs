@@ -1,4 +1,4 @@
-<Graph name="LWA" >
+<Graph name="LWA" resourcePath="${SIT}/Data/RobotMeshes/1.0/data" >
 
   <Body name="lwa-base" transform="0.11 0 0 0 0 0" color="POLISHED_SILVER" physics="kinematic" mass="10">
     <Shape type="MESH" meshFile="Schunk/3385031017_fus_120_x.tri" physics="true"/>
