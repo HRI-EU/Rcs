@@ -2155,7 +2155,7 @@ static double Rcs_distanceLinesegCone(const double p1[3],
       //min distance bottom
       //as this line is along the radius axis, checking the endpoints is enough
       distance = Rcs_distanceLinesegSqrtParabolaEndpoints2D(pc0, pc1, pl1, pl2, lineCoeffZ, cp1_2D, cp0_2D);
-      printf("dist: %f cp0_2D %f %f cp1_2D %f %f\n",distance,cp0_2D[0],cp0_2D[1],cp1_2D[0],cp1_2D[1]);
+      //printf("dist: %f cp0_2D %f %f cp1_2D %f %f\n",distance,cp0_2D[0],cp0_2D[1],cp1_2D[0],cp1_2D[1]);
 
       //min distance side
       if (pc1[1]!=pc2[1]) //degenerate cone = disk
@@ -2176,10 +2176,10 @@ static double Rcs_distanceLinesegCone(const double p1[3],
         int count = polyroots.GetCount();
         const double* roots = polyroots.GetRoots();
 
-        printf("limits %f %f\n",limits[0],limits[1]);
+        //printf("limits %f %f\n",limits[0],limits[1]);
         for (int i = 0; i < count; ++i)
         {
-          printf("roots[i] %f\n",roots[i]);
+          //printf("roots[i] %f\n",roots[i]);
           //on line?
           if (roots[i]>=limits[0] && roots[i]<=limits[1])
           {
