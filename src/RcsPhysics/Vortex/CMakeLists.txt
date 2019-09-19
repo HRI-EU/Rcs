@@ -45,6 +45,9 @@ TARGET_INCLUDE_DIRECTORIES(RcsVortex PRIVATE
 # We intentionally do not link against Vortex and RcsCore. This allows the resulting library to use the version available
 # at runtime. The linker needs us to specify vortex libraries explicitly anyways. Thus, a single prebuilt binary can be
 # used with any vortex installation.
+IF(NOT RCSVORTEX_MASTER_PROJECT)
+  TARGET_LINK_LIBRARIES(RcsVortex ${VORTEX_LIBRARIES})
+ENDIF()
 
 # Always use C++11
 TARGET_COMPILE_OPTIONS(RcsVortex PRIVATE "-std=c++11")
