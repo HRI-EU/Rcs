@@ -70,10 +70,11 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
  *  \param[in]  graph             Graph corresponding to BVH file. If graph is
  *                                NULL, the first 3 rows of the data array is
  *                                scaled by linearScaleToSI, and the remaining
- *                                ones by angularScaleToSI. If graph is not NULL,
- *                                all values corresponding to a rotational joint
- *                                are scaled by angularScaleToSI, and the linear
- *                                ones by linearScaleToSI.
+ *                                ones by angularScaleToSI. If graph is not
+ *                                NULL, all values corresponding to a
+ *                                rotational joint are scaled by
+ *                                angularScaleToSI, and the linear ones by
+ *                                linearScaleToSI.
  *  \param[in]  fileName          Fully qualified name of BVH file
  *  \param[out]  dt               Time step between two consecutive frames. If
  *                                it is NULL, it will be ignored.
@@ -81,6 +82,7 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
  *                                to SI units (meters).
  *  \param[in] angularScaleToSI   Value that scales the BVH-file's rotations
  *                                to SI units (radians).
+ *  \return Created trajectory, or NULL in case of failure.
  */
 MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
                                             const char* fileName,
@@ -88,6 +90,23 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
                                             double linearScaleToSI,
                                             double angularScaleToSI);
 
+/*! \ingroup RcsGraphFunctions
+ *  \brief Adds shapes for feet, hands and head if the BVH model contains the
+ *         following bodies:
+ *         - Head
+ *         - RightToe
+ *         - LeftToe
+ *         - RightWrist
+ *         - LeftWrist
+ *
+ *  \param[in]  graph             Graph corresponding to BVH file.
+ *  \param[in]  linearScaleToSI   Value that scales the BVH-file's translations
+ *                                to SI units (meters).
+ *  \return True for success, false otherwise. In case of failure, the graph
+ *          remains unchanged.
+ */
+bool RcsGraph_beautifyHumanModelBVH(RcsGraph* graph,
+                                    double linearScaleToSI);
 
 #ifdef __cplusplus
 }

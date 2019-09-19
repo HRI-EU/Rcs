@@ -40,6 +40,7 @@
 #include "Rcs_typedef.h"
 #include "Rcs_utils.h"
 #include "Rcs_body.h"
+#include "Rcs_shape.h"
 #include "Rcs_joint.h"
 #include "Rcs_Vec3d.h"
 #include "Rcs_Mat3d.h"
@@ -522,6 +523,9 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
   }
 
   self->q_dot = MatNd_create(self->dof, 1);
+
+  RcsGraph_beautifyHumanModelBVH(self, linearScaleToSI);
+
   RcsGraph_setState(self, NULL, NULL);
 
   return self;
@@ -670,4 +674,114 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
   MatNd_destroy(scaleArr);
 
   return data;
+}
+
+bool RcsGraph_beautifyHumanModelBVH(RcsGraph* graph,
+                                    double linearScaleToSI)
+{
+  RcsBody* head = RcsGraph_getBodyByName(graph, "Head");
+  RcsBody* rightToe = RcsGraph_getBodyByName(graph, "RightToe");
+  RcsBody* leftToe = RcsGraph_getBodyByName(graph, "LeftToe");
+  RcsBody* rightWrist = RcsGraph_getBodyByName(graph, "RightWrist");
+  RcsBody* leftWrist = RcsGraph_getBodyByName(graph, "LeftWrist");
+
+  if (head==NULL)
+    {
+      RLOG(4, "No body with name \"Head\" found");
+      return false;
+    }
+
+  if (rightToe==NULL)
+    {
+      RLOG(4, "No body with name \"RightToe\" found");
+      return false;
+    }
+
+  if (leftToe==NULL)
+    {
+      RLOG(4, "No body with name \"LeftToe\" found");
+      return false;
+    }
+
+  if (rightWrist==NULL)
+    {
+      RLOG(4, "No body with name \"RightWrist\" found");
+      return false;
+    }
+
+  if (leftWrist==NULL)
+    {
+      RLOG(4, "No body with name \"LeftWrist\" found");
+      return false;
+    }
+
+  // Head
+  RcsShape* shape = RALLOC(RcsShape);
+  HTr_setIdentity(&shape->A_CB);
+  Vec3d_set(shape->A_CB.org, 0.0, 0.12, 0.0);
+  shape->scale = 1.0;
+  shape->type = RCSSHAPE_SPHERE;
+  shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
+  Vec3d_set(shape->extents, 0.12, 0.0, 0.0);
+  shape->color = String_clone("YELLOW");
+  Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
+  Vec3d_constMulSelf(shape->extents, linearScaleToSI);
+  RcsBody_addShape(head, shape);
+
+  shape = RcsShape_clone(shape);
+  Vec3d_set(shape->A_CB.org, 0.0, 0.16, 0.05);
+  shape->type = RCSSHAPE_BOX;
+  Vec3d_set(shape->extents, 0.16, 0.1, 0.08);
+  Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
+  Vec3d_constMulSelf(shape->extents, linearScaleToSI);
+  RcsBody_addShape(head, shape);
+
+  // Feet
+  shape = RcsShape_clone(shape);
+  Vec3d_set(shape->A_CB.org, 0.0, 0.02, -0.05);
+  Vec3d_set(shape->extents, 0.12, 0.04, 0.3);
+  shape->color = String_clone("RED");
+  Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
+  Vec3d_constMulSelf(shape->extents, linearScaleToSI);
+  RcsBody_addShape(rightToe, shape);
+
+  shape = RcsShape_clone(shape);
+  Vec3d_set(shape->A_CB.org, 0.0, 0.02, -0.05);
+  Vec3d_set(shape->extents, 0.12, 0.04, 0.3);
+  Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
+  Vec3d_constMulSelf(shape->extents, linearScaleToSI);
+  RcsBody_addShape(leftToe, shape);
+
+  // Left hand
+  shape = RcsShape_clone(shape);
+  Vec3d_set(shape->A_CB.org, 0.1, 0.0, 0.0);
+  Vec3d_set(shape->extents, 0.16, 0.02, 0.1);
+  shape->color = String_clone("BLUE");
+  Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
+  Vec3d_constMulSelf(shape->extents, linearScaleToSI);
+  RcsBody_addShape(leftWrist, shape);
+
+  shape = RcsShape_clone(shape);
+  Vec3d_set(shape->A_CB.org, 0.03, -0.04, 0.0);
+  Vec3d_set(shape->extents, 0.02, 0.08, 0.1);
+  Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
+  Vec3d_constMulSelf(shape->extents, linearScaleToSI);
+  RcsBody_addShape(leftWrist, shape);
+
+  // Right hand
+  shape = RcsShape_clone(shape);
+  Vec3d_set(shape->A_CB.org, -0.1, 0.0, 0.0);
+  Vec3d_set(shape->extents, 0.16, 0.02, 0.1);
+  Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
+  Vec3d_constMulSelf(shape->extents, linearScaleToSI);
+  RcsBody_addShape(rightWrist, shape);
+
+  shape = RcsShape_clone(shape);
+  Vec3d_set(shape->A_CB.org, -0.03, -0.04, 0.0);
+  Vec3d_set(shape->extents, 0.02, 0.08, 0.1);
+  Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
+  Vec3d_constMulSelf(shape->extents, linearScaleToSI);
+  RcsBody_addShape(rightWrist, shape);
+
+  return true;
 }
