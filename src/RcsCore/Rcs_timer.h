@@ -111,7 +111,7 @@ double Timer_getSystemTime();
 
 /*! \ingroup RcsTimerFunctions
  *  \brief Waits for a period of dt seconds. The minimum resolution is
- *         1 msec.
+ *         1 msec. If dt is equal or less 0, the function does nothing.
  */
 void Timer_waitDT(double dt);
 
