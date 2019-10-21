@@ -351,8 +351,8 @@ static void addGeometry(RcsGraph* self)
     int rr = Math_getRandomInteger(0, 255);
     int gg = Math_getRandomInteger(0, 255);
     int bb = Math_getRandomInteger(0, 255);
-    char color[256];
-    sprintf(color, "#%02x%02x%02xff", rr, gg, bb);
+    char color[16];
+    snprintf(color, 16, "#%02x%02x%02xff", rr, gg, bb);
 
 
     while (CHILD!=NULL)

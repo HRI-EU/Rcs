@@ -60,21 +60,28 @@ Rcs::TaskPosition1D::TaskPosition1D(const std::string& className_,
                                     int _dim):
   TaskPosition3D(className_, node, _graph, _dim), index(-1)
 {
+  double guiMax = 1.0, guiMin = -1.0;
+
+  if (getDim() == 1)
+  {
+    getXMLNodePropertyDouble(node, "guiMax", &guiMax);
+    getXMLNodePropertyDouble(node, "guiMin", &guiMin);
+  }
 
   if (getClassName()=="X")
   {
     this->index = 0;
-    getParameter(0)->name.assign("X Position [m]");
+    getParameter(0)->setParameters(guiMin, guiMax, 1.0, "X [m]");
   }
   else if (getClassName()=="Y")
   {
     this->index = 1;
-    getParameter(0)->name.assign("Y Position [m]");
+    getParameter(0)->setParameters(guiMin, guiMax, 1.0, "Y [m]");
   }
   else if ((getClassName()=="Z") || (getClassName()=="CylZ"))
   {
     this->index = 2;
-    getParameter(0)->name.assign("Z Position [m]");
+    getParameter(0)->setParameters(guiMin, guiMax, 1.0, "Z [m]");
   }
 
   // Other tasks inherit from this. Therefore we can't do any hard checking

@@ -66,8 +66,11 @@ extern "C" {
 
 void* RcsGuiFactory_thread(void*)
 {
-  int argc = 0;
-  char** argv = NULL;
+  int argc = 1;
+  char dummy[32] = "RcsGuiFactory_thread";
+  char* argv[1];
+  argv[0] = dummy;
+  
   QApplication* app = NULL;
   GuiFactory* guiFactory = NULL;
 
@@ -77,12 +80,7 @@ void* RcsGuiFactory_thread(void*)
   }
   else
   {
-    // solves the performance issues of the native graphicssystem
-#if QT_VERSION < 0x050000
-    QApplication::setGraphicsSystem("raster");
-#endif
     app = new QApplication(argc, argv);
-    // app->setFont(QFont("Helvetica", 8, QFont::Normal));
   }
 
   guiFactory = new GuiFactory();

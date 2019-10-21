@@ -81,6 +81,7 @@ void* ControllerWidgetBase::controllerGuiBase(void* arg)
 
   ControllerWidgetBase* widget =
     new ControllerWidgetBase(cntrl, a_des, a_curr, x_des, x_curr, mutex, *showOnly);
+
   widget->show();
 
   delete showOnly;

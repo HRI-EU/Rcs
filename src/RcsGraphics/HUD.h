@@ -65,6 +65,7 @@
 #include <osg/Camera>
 #include <osgText/Text>
 #include <osg/Geode>
+#include <osg/Switch>
 
 #include <string>
 #include <sstream>
@@ -95,6 +96,10 @@ public:
 
   void clearText();
 
+  void show();
+  void hide();
+  bool toggle();
+
   virtual const char* className() const;
 
   /*! \brief Updates the font size of the text used in the HUD
@@ -117,6 +122,7 @@ private:
   void init(int llx, int lly, int sizeX, int sizeY, const char* textColor);
   void resizeNoMutex(int llx, int lly, int sizeX, int sizeY);
 
+  osg::ref_ptr<osg::Switch> switchNd;
   osg::ref_ptr<osg::Geometry> bgGeometry;
   osg::ref_ptr<osg::Geode> geode;
   osg::ref_ptr<osgText::Text> hudText;
@@ -137,4 +143,3 @@ private:
 
 
 #endif // RCS_HUD_H
-

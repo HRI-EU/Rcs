@@ -233,7 +233,6 @@ int RcsGuiFactory_requestGUI(RcsGuiCallbackFct func, void* arg)
   // Release mutex
   pthread_mutex_unlock(&RCSGUIFACTORY_MUTEX);
 
-  RLOG(5, "Returning handle %d", return_handle);
   return return_handle;
 }
 

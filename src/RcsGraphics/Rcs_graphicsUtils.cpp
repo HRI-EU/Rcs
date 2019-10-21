@@ -1127,7 +1127,7 @@ static bool getMaterialFromColorFile(const std::string& matString,
 /*******************************************************************************
  *
  ******************************************************************************/
-RcsMaterialData* getMaterial(const std::string& matString)
+RcsMaterialData* getMaterial(const std::string& matString_)
 {
   // Little map that stores name-pointer pairs of materials files. If a material
   // has already been loaded, we look up its pointer from the map. Otherwise, we
@@ -1135,6 +1135,7 @@ RcsMaterialData* getMaterial(const std::string& matString)
   static std::map<std::string, RcsMaterialData> matMap;
   static OpenThreads::Mutex matMtx;
   RcsMaterialData* res = NULL;
+  std::string matString = matString_;
 
   matMtx.lock();
   std::map<std::string, RcsMaterialData>::iterator it = matMap.find(matString);
@@ -1153,6 +1154,17 @@ RcsMaterialData* getMaterial(const std::string& matString)
 
   RcsMaterialData matData;
   bool success = false;
+
+  // Create random color
+  if (STRCASEEQ(matString_.c_str(), "Random"))
+  {
+    int rr = Math_getRandomInteger(0, 255);
+    int gg = Math_getRandomInteger(0, 255);
+    int bb = Math_getRandomInteger(0, 255);
+    char rndColor[16];
+    snprintf(rndColor, 16, "#%02x%02x%02xff", rr, gg, bb);
+    matString = std::string(rndColor);
+  }
 
   // Check if string starts with #
   if (matString.compare(0, 1, "#") == 0)

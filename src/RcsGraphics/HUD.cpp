@@ -365,6 +365,8 @@ void Rcs::HUD::init(int llx, int lly, int sizeX, int sizeY,
   // we don't want the camera to grab event focus from the viewers main camera(s).
   setAllowEventFocus(false);
 
+  this->switchNd = new osg::Switch();
+
   this->geode = new osg::Geode();
 
   // turn lighting off for the text and disable depth test to ensure it's always ontop.
@@ -432,9 +434,45 @@ void Rcs::HUD::init(int llx, int lly, int sizeX, int sizeY,
   ss->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
 
   geode->addDrawable(bgGeometry);
-  addChild(geode);
+  switchNd->addChild(geode);
+  addChild(switchNd);
 
   // Thread-safe update callback for applying text changes
   hudText->setUpdateCallback(new HUDUpdateCallback(this, margin));
   setName("Rcs::HUD");
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::HUD::show()
+{
+  switchNd->setAllChildrenOn();
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::HUD::hide()
+{
+  switchNd->setAllChildrenOff();
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::HUD::toggle()
+{
+  bool visible = switchNd->getValue(0);;
+
+  if (visible)
+  {
+    hide();
+  }
+  else
+  {
+    show();
+  }
+
+  return !visible;
 }

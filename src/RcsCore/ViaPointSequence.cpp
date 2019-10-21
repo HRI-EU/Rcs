@@ -304,12 +304,12 @@ bool ViaPointSequence::init(const MatNd* viaDescr_)
   RCHECK(this->x);
   this->x->m = 0;
 
-  for (size_t i=0; i<this->viaDescr->m; i++)
+  for (size_t i=0; i<this->viaDescr->m; ++i)
   {
     unsigned int flag = lround(MatNd_get2(this->viaDescr, i, 4));
     RCHECK_MSG(flag > 0, "Can't deal with flag 0 constraints on row %d. "
                "It should have been removed by the pruneZeroFlagRows()"
-               " method before", i);
+               " method before", (int) i);
 
     if (Math_isBitSet(flag, VIA_POS))
     {
@@ -923,6 +923,12 @@ void ViaPointSequence::gnuplot(double t0, double t1, double dt, int flag) const
   if (t1 <= t0)
   {
     RLOG(1, "t1 <= t0: t1=%f t0=%f", t1, t0);
+    return;
+  }
+
+  if (dt <= 0.0)
+  {
+    RLOG(1, "dt <= 0.0: %f", dt);
     return;
   }
 
@@ -1958,6 +1964,11 @@ void ViaPointSequencePlotter::plot(const ViaPointSequence& via,
     return;
   }
 
+  if (dt <= 0.0)
+  {
+    RLOG(1, "dt <= 0.0: %f", dt);
+    return;
+  }
 
   // Calculate trajectory and write it to file in gnuplot-compatible conventions
   char trajFile[64] = "traj.dat";
@@ -2112,6 +2123,11 @@ void ViaPointSequencePlotter::plot2(const ViaPointSequence& via,
     return;
   }
 
+  if (dt <= 0.0)
+  {
+    RLOG(1, "dt <= 0.0: %f", dt);
+    return;
+  }
 
   // Calculate trajectory and write it to file in gnuplot-compatible conventions
   char trajFile[64] = "traj.dat";

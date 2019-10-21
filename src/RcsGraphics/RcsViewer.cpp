@@ -302,6 +302,11 @@ Viewer::~Viewer()
  ******************************************************************************/
 void Viewer::create(bool fancy, bool startupWithShadow)
 {
+#if defined(_MSC_VER)
+  llx = 12;
+  lly = 31;
+#endif
+
   pthread_mutex_init(&this->mtxInternal, NULL);
   this->shadowsEnabled = startupWithShadow;
 
