@@ -87,6 +87,41 @@ Rcs::TaskPositionForce1D::TaskPositionForce1D(const std::string& className,
 }
 
 /*******************************************************************************
+ * For programmatic creation
+ ******************************************************************************/
+Rcs::TaskPositionForce1D::TaskPositionForce1D(const std::string& className,
+                                              RcsGraph* graph,
+                                              const RcsBody* effector,
+                                              const RcsBody* refBdy,
+                                              const RcsBody* refFrame,
+                                              const std::string& sensorName,
+                                              bool forceFeedback):
+  TaskPosition1D(className, graph, effector, refBdy, refFrame),
+  ft_curr_temp(0.0), ft_des_temp(0.0), force_feedback(true), fts(NULL)
+{
+
+  if (className=="ForceX")
+  {
+    this->index = 0;
+    getParameter(0)->setParameters(-10.0, 10.0, 1.0, "X Force [N]");
+  }
+  else if (className=="ForceY")
+  {
+    this->index = 1;
+    getParameter(0)->setParameters(-10.0, 10.0, 1.0, "Y Force [N]");
+  }
+  else if ((className=="ForceZ") || (className=="ForceCylZ"))
+  {
+    this->index = 2;
+    getParameter(0)->setParameters(-10.0, 10.0, 1.0, "Z Force [N]");
+  }
+
+  this->force_feedback = forceFeedback;
+
+  this->fts = RcsGraph_getSensorByName(graph, sensorName.c_str());
+}
+
+/*******************************************************************************
  * Copy constructor doing deep copying
  ******************************************************************************/
 Rcs::TaskPositionForce1D::TaskPositionForce1D(const TaskPositionForce1D& copyFromMe, RcsGraph* newGraph):

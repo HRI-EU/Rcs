@@ -58,6 +58,13 @@ public:
   TaskPositionForce1D(const std::string& className, xmlNode* node,
                       RcsGraph* graph, int dim=1);
 
+  /*! Constructor based on graph and effectors
+   */
+  TaskPositionForce1D(const std::string& className, RcsGraph* graph,
+                      const RcsBody* effector, const RcsBody* refBdy,
+                      const RcsBody* refFrame, const std::string& sensorName,
+                      bool forceFeedback);
+
   /*! \brief Copy constructor doing deep copying with optional new graph pointer
    */
   TaskPositionForce1D(const TaskPositionForce1D& copyFromMe,
