@@ -68,15 +68,21 @@ PhysicsMaterial PhysicsMaterial::next() const
 bool PhysicsMaterial::getDouble(const char* attr, double& out) const
 {
   if (materialNode == NULL)
+  {
     return false;
+  }
 
   // try to load from this
   if (getXMLNodePropertyDouble(materialNode, attr, &out))
+  {
     return true;
+  }
 
   // try to fallback to default material if we aren't the default
   if (materialNode == defaultMaterialNode)
+  {
     return false;
+  }
 
   // load from default
   return getXMLNodePropertyDouble(defaultMaterialNode, attr, &out);
@@ -85,7 +91,9 @@ bool PhysicsMaterial::getDouble(const char* attr, double& out) const
 void PhysicsMaterial::setDouble(const char* attr, double value)
 {
   if (materialNode == NULL)
+  {
     return;
+  }
   char cvt[64];
   sprintf(cvt, "%f", value);
   xmlSetProp(materialNode, BAD_CAST attr, BAD_CAST cvt);
@@ -94,15 +102,21 @@ void PhysicsMaterial::setDouble(const char* attr, double value)
 bool PhysicsMaterial::getBoolean(const char* attr, bool& out) const
 {
   if (materialNode == NULL)
+  {
     return false;
+  }
 
   // try to load from this
   if (getXMLNodePropertyBoolString(materialNode, attr, &out))
+  {
     return true;
+  }
 
   // try to fallback to default material if we aren't the default
   if (materialNode == defaultMaterialNode)
+  {
     return false;
+  }
 
   // load from default
   return getXMLNodePropertyBoolString(defaultMaterialNode, attr, &out);
@@ -111,7 +125,9 @@ bool PhysicsMaterial::getBoolean(const char* attr, bool& out) const
 void PhysicsMaterial::setBoolean(const char* attr, bool value)
 {
   if (materialNode == NULL)
+  {
     return;
+  }
   if (value)
   {
     xmlSetProp(materialNode, BAD_CAST attr, BAD_CAST "true");
@@ -125,24 +141,32 @@ void PhysicsMaterial::setBoolean(const char* attr, bool value)
 bool PhysicsMaterial::getString(const char* attr, char* out, unsigned int limit) const
 {
   if (materialNode == NULL)
+  {
     return false;
+  }
 
   // try to load from this
   if (getXMLNodePropertyStringN(materialNode, attr, out, limit))
+  {
     return true;
+  }
 
   // try to fallback to default material if we aren't the default
   if (materialNode == defaultMaterialNode)
+  {
     return false;
+  }
 
   // load from default
-  return getXMLNodePropertyStringN(defaultMaterialNode, attr, out, limit);
+  return getXMLNodePropertyStringN(defaultMaterialNode, attr, out, limit) ? true : false;
 }
 
 void PhysicsMaterial::setString(const char* attr, const char* value)
 {
   if (materialNode == NULL)
+  {
     return;
+  }
   xmlSetProp(materialNode, BAD_CAST attr, BAD_CAST value);
 }
 

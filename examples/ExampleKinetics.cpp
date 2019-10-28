@@ -647,6 +647,7 @@ int main(int argc, char** argv)
 
         }   // while(runLoop)
 
+      RcsGuiFactory_shutdown();
       delete sim;
 
       RcsGraph_destroy(graph);

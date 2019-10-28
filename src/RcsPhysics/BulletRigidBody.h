@@ -67,13 +67,14 @@ public:
   static btCollisionShape* createShape(RcsShape* sh,
                                        btTransform& relTrans,
                                        const RcsBody* body);
-  void clearShapes();
   btCollisionShape* getShape(const RcsShape* shape);
 
   BulletRigidBody(const btRigidBody::btRigidBodyConstructionInfo& rbInfo,
                   const RcsBody* body);
 private:
   virtual ~BulletRigidBody();
+
+  void clearShapes();
   void calcHingeTrans(const RcsJoint* jnt, btVector3& pivot, btVector3& axis);
   btTypedConstraint* createFixedJoint(const RcsGraph* graph);
   btTypedConstraint* createJoint(const RcsGraph* graph);
