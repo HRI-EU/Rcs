@@ -95,7 +95,7 @@ void PhysicsMaterial::setDouble(const char* attr, double value)
     return;
   }
   char cvt[64];
-  sprintf(cvt, "%f", value);
+  String_fromDouble(cvt, value, 6);
   xmlSetProp(materialNode, BAD_CAST attr, BAD_CAST cvt);
 }
 
