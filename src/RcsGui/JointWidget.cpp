@@ -166,8 +166,6 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
   _alwaysWriteToQ(alwaysWriteToQ),
   _q_des(q_des ? q_des : constGraph->q),
   _q_curr(q_curr ? q_curr : constGraph->q),
-  lcd_q_cmd(NULL),
-  lcd_q_act(NULL),
   mutex(graphLock)
 {
   RLOG(5, "Creating Widget with %d dof", _constGraph->dof);
@@ -189,19 +187,6 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
     palette.setColor(QPalette::Inactive, QPalette::Light, Qt::yellow);
     palette.setColor(QPalette::Inactive, QPalette::Dark, Qt::darkYellow);
 
-    lcd_q_cmd         = new QLCDNumber*[_constGraph->dof];
-    lcd_q_act         = new QLCDNumber*[_constGraph->dof];
-    jsc_q             = new JointSlider*[_constGraph->dof];
-    check_constraints = new QCheckBox*[_constGraph->dof];
-
-    for (unsigned int k=0; k<_constGraph->dof; k++)
-    {
-      lcd_q_cmd[k]         = NULL;
-      lcd_q_act[k]         = NULL;
-      jsc_q[k]             = NULL;
-      check_constraints[k] = NULL;
-    }
-
     //
     // Checkboxes for constraints
     //
@@ -212,8 +197,9 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
     {
       RLOG(5, "Creating Widget for joint \"%s\"", JNT->name);
 
-      check_constraints[i] = new QCheckBox(JNT->name);
-      check_constraints[i]->setChecked(JNT->constrained);
+      QCheckBox* cc = new QCheckBox(JNT->name);
+      cc->setChecked(JNT->constrained);
+      check_constraints.push_back(cc);
 
       if (graph != NULL)
       {
@@ -228,14 +214,17 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
         check_constraints[i]->setEnabled(false);
       }
 
-      lcd_q_cmd[i] = new QLCDNumber(7);
-      lcd_q_cmd[i]->setAutoFillBackground(true);
-      lcd_q_cmd[i]->setFixedHeight(20);
-      lcd_q_cmd[i]->setPalette(palette);
-      lcd_q_act[i] = new QLCDNumber(7);
-      lcd_q_act[i]->setAutoFillBackground(true);
-      lcd_q_act[i]->setFixedHeight(20);
-      lcd_q_act[i]->setPalette(palette);
+      QLCDNumber* lcd_cmd = new QLCDNumber(7);
+      lcd_cmd->setAutoFillBackground(true);
+      lcd_cmd->setFixedHeight(20);
+      lcd_cmd->setPalette(palette);
+      lcd_q_cmd.push_back(lcd_cmd);
+
+      QLCDNumber* lcd_act = new QLCDNumber(7);
+      lcd_act->setAutoFillBackground(true);
+      lcd_act->setFixedHeight(20);
+      lcd_act->setPalette(palette);
+      lcd_q_act.push_back(lcd_act);
 
       // Here the joint scale
       double lb = JNT->q_min;
@@ -244,7 +233,8 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
       double qi = MatNd_get(_q_des, JNT->jointIndex, 0);
       double scaleFactor = RcsJoint_isRotation(JNT) ? 180.0/M_PI : 1000.0;
 
-      jsc_q[i] = new JointSlider(lb-0.1*range, qi, ub+0.1*range, scaleFactor);
+      JointSlider* jsl = new JointSlider(lb-0.1*range, qi, ub+0.1*range, scaleFactor);
+      jsc_q.push_back(jsl);
 
       if (passive == false)
       {
@@ -299,14 +289,6 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
  ******************************************************************************/
 JointWidget::~JointWidget()
 {
-  if (_constGraph->dof > 0)
-  {
-    delete [] lcd_q_cmd;
-    delete [] lcd_q_act;
-    delete [] jsc_q;
-    delete [] check_constraints;
-  }
-
 }
 
 /*******************************************************************************
@@ -331,7 +313,7 @@ void JointWidget::toggle()
  ******************************************************************************/
 void JointWidget::displayAct(void)
 {
-  int i = 0;
+  size_t i = 0;
   char a[9];
   double scaleFactor;
 
@@ -339,15 +321,24 @@ void JointWidget::displayAct(void)
   {
     scaleFactor = RcsJoint_isRotation(JNT) ? 180.0 / M_PI : 1000.0;
 
-    snprintf(a, 8, "%5.1f", scaleFactor*_q_curr->ele[JNT->jointIndex]);
-    lcd_q_act[i]->display(a);
+    if (i<lcd_q_act.size())
+    {
+      snprintf(a, 8, "%5.1f", scaleFactor*_q_curr->ele[JNT->jointIndex]);
+      lcd_q_act[i]->display(a);
+    }
 
-    snprintf(a, 8, "%5.1f", scaleFactor*_q_des->ele[JNT->jointIndex]);
-    lcd_q_cmd[i]->display(a);
+    if (i<lcd_q_cmd.size())
+    {
+      snprintf(a, 8, "%5.1f", scaleFactor*_q_des->ele[JNT->jointIndex]);
+      lcd_q_cmd[i]->display(a);
+    }
 
-    jsc_q[i]->setValue(_q_curr->ele[JNT->jointIndex]);
+    if (i<jsc_q.size())
+    {
+      jsc_q[i]->setValue(_q_curr->ele[JNT->jointIndex]);
+    }
 
-    if (_graph == NULL)
+    if ((_graph == NULL) && (i<check_constraints.size()))
     {
       check_constraints[i]->setChecked(JNT->constrained);
     }
@@ -362,14 +353,18 @@ void JointWidget::displayAct(void)
  ******************************************************************************/
 void JointWidget::setConstraint(void)
 {
-  int i = 0;
+  size_t i = 0;
   lock();
 
   // Assign values from constraint check boxes
   RCHECK(_graph);
   RCSGRAPH_TRAVERSE_JOINTS(_graph)
   {
-    JNT->constrained = check_constraints[i++]->isChecked();
+    if (i < check_constraints.size())
+    {
+      JNT->constrained = check_constraints[i]->isChecked();
+    }
+    i++;
   }
 
   unlock();
@@ -380,12 +375,12 @@ void JointWidget::setConstraint(void)
  ******************************************************************************/
 void JointWidget::setJoint(void)
 {
-  int i = 0;
+  size_t i = 0;
   lock();
 
   RCSGRAPH_TRAVERSE_JOINTS(_constGraph)
   {
-    if ((JNT->constrained || _alwaysWriteToQ) && (!JNT->coupledTo))
+    if ((JNT->constrained || _alwaysWriteToQ) && (!JNT->coupledTo) && (i < jsc_q.size()))
     {
       _q_des->ele[JNT->jointIndex] = jsc_q[i]->getSliderValue();
     }

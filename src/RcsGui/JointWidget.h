@@ -43,6 +43,7 @@
 #include <QLCDNumber>
 #include <QCheckBox>
 
+#include <vector>
 #include <pthread.h>
 
 class JointSlider;
@@ -106,10 +107,10 @@ private:
   bool _alwaysWriteToQ;
   MatNd* _q_des;
   MatNd* _q_curr;
-  QLCDNumber** lcd_q_cmd;
-  QLCDNumber** lcd_q_act;
-  JointSlider** jsc_q;
-  QCheckBox** check_constraints;
+  std::vector<QLCDNumber*> lcd_q_cmd;
+  std::vector<QLCDNumber*> lcd_q_act;
+  std::vector<JointSlider*> jsc_q;
+  std::vector<QCheckBox*> check_constraints;
   mutable pthread_mutex_t* mutex;
   std::vector<JointChangeCallback*> callback;
 };
