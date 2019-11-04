@@ -101,8 +101,8 @@ static inline void MyNearCallbackEnabled(btBroadphasePair& collisionPair,
     NLOG(0, "Broadphase collision between %s and %s",
          rb0->getBodyName(), rb1->getBodyName());
 
-    if (rb0->getBodyPtr()->rigid_body_joints==false ||
-        rb1->getBodyPtr()->rigid_body_joints==false)
+    if ((rb0->getBodyPtr()->rigid_body_joints==false && rb0->getBodyPtr()->parent) ||
+        (rb1->getBodyPtr()->rigid_body_joints==false && rb1->getBodyPtr()->parent))
     {
 
       if ((RcsBody_isChild(rb0->getBodyPtr(), rb1->getBodyPtr())) ||
