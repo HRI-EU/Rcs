@@ -3119,10 +3119,14 @@ bool testMat3dFunctions(int argc, char** argv)
 bool testViaPointSequence(int argc, char** argv)
 {
   char viaFileName[256] = "";
+  double beyondRange = 0.0;
 
   // Parse command line arguments
   Rcs::CmdLineParser argP(argc, argv);
   argP.getArgument("-f", viaFileName, "Via point file name");
+  argP.getArgument("-beyondRange", &beyondRange, "Percentage of duraion to be "
+                   "plotted before and after time range (default: %f)",
+                   beyondRange);
 
   MatNd* viaDesc = NULL;
 
@@ -3141,7 +3145,11 @@ bool testViaPointSequence(int argc, char** argv)
   Rcs::ViaPointSequence via(viaDesc);
   via.print();
   RCHECK(via.check());
-  via.gnuplot();
+
+  double t0 = MatNd_get(viaDesc, 0, 0);
+  double t1 = MatNd_get(viaDesc, viaDesc->m-1, 0);
+  double duration = t1 - t0;
+  via.gnuplot(t0-beyondRange*duration, t1+beyondRange*duration);
 
   MatNd_destroy(viaDesc);
 

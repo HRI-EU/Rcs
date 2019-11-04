@@ -44,7 +44,8 @@
 
 
 
-static std::map<std::string, Rcs::PhysicsFactory::PhysicsCreateFunction>& constructorMap() {
+static std::map<std::string, Rcs::PhysicsFactory::PhysicsCreateFunction>& constructorMap()
+{
   static std::map<std::string, Rcs::PhysicsFactory::PhysicsCreateFunction> cm;
   return cm;
 }

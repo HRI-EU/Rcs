@@ -1247,7 +1247,7 @@ int main(int argc, char** argv)
           RMSGS("Quitting run loop");
           runLoop = false;
         }
-        else if (kc->getAndResetKey('D'))
+        else if (kc && kc->getAndResetKey('D'))
         {
           RMSGS("Writing dot file");
           RcsGraph_writeDotFile(graph, "graph.dot");
@@ -1892,8 +1892,8 @@ int main(int argc, char** argv)
           MatNd* dH_ca = MatNd_create(1, controller.getGraph()->dof);
           controller.getCollisionGradient(dH_ca);
           RcsGraph_limitJointSpeeds(controller.getGraph(), dH_ca,
-                                    dt, RcsStateIK);
-          MatNd_constMulSelf(dH_ca, 10.0);
+                                    1.0, RcsStateIK);
+          MatNd_constMulSelf(dH_ca, 0.01);
           MatNd_addSelf(dH, dH_ca);
         }
 
@@ -3304,4 +3304,3 @@ int main(int argc, char** argv)
 
   return 0;
 }
-

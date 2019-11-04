@@ -233,7 +233,9 @@ std::vector<std::string> String_split(const std::string& toBeSplitted,
   }
 
   if (endIdx == std::string::npos && startIdx < toBeSplitted.size())
+  {
     splittedString.push_back(toBeSplitted.substr(startIdx));
+  }
 
   return splittedString;
 }

@@ -40,7 +40,8 @@ TARGET_COMPILE_DEFINITIONS(RcsVortex PRIVATE ${VORTEX_DEFINITIONS})
 # RcsCore dependencies
 TARGET_INCLUDE_DIRECTORIES(RcsVortex PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../RcsCore
-    ${LIBXML2_INCLUDE_DIR})
+    ${LIBXML2_INCLUDE_DIR}
+	${PTHREAD_INCLUDE_DIR})
 
 # We intentionally do not link against Vortex and RcsCore. This allows the resulting library to use the version available
 # at runtime. The linker needs us to specify vortex libraries explicitly anyways. Thus, a single prebuilt binary can be
@@ -50,7 +51,9 @@ IF(NOT RCSVORTEX_MASTER_PROJECT)
 ENDIF()
 
 # Always use C++11
+IF (UNIX)
 TARGET_COMPILE_OPTIONS(RcsVortex PRIVATE "-std=c++11")
+ENDIF()
 # Avoid symbol conflicts
 SET_TARGET_PROPERTIES(RcsVortex PROPERTIES CXX_VISIBILITY_PRESET "hidden")
 

@@ -1,4 +1,4 @@
-<Graph resourcePath="${SIT}/Data/RobotMeshes/1.0/data" >
+<Graph resourcePath="${SIT}/Data/RobotMeshes/1.0/data" name="Default" >
 
   <Body name="lbr_link_0" mass="5" inertia="0.05 0 0 0 0.06 0 0 0 0.03" physics="kinematic" >
     <Shape type="SSL" radius="0.125" length="0.08" distance="true" physics="false" color="PEWTER" />
@@ -67,5 +67,16 @@
     <Shape type="SSL" radius="0.045" length="0.15" graphics="false" distance="true" physics="false" color="RED" />
     <noShape type="FRAME" scale="0.2" />
   </Body>
+  
+    <model_state model="Default" time_stamp="0">
+    <joint_state joint="lbr_joint_1" position="30" />
+    <joint_state joint="lbr_joint_2" position="50" />
+    <joint_state joint="lbr_joint_3" position="30" />
+    <joint_state joint="lbr_joint_4" position="70" />
+    <joint_state joint="lbr_joint_5" position="-20" />
+    <joint_state joint="lbr_joint_6" position="-30" />
+    <joint_state joint="lbr_joint_7" position="20" />
+  </model_state>
+
 
 </Graph>
