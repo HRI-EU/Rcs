@@ -38,6 +38,7 @@
 #include "Rcs_utils.h"
 #include "Rcs_macros.h"
 #include "Rcs_Vec3d.h"
+#include "Rcs_Mat3d.h"
 
 #include <stdint.h>
 #include <limits.h>
@@ -59,15 +60,34 @@ static inline void getFace(const RcsMeshData* mesh, unsigned int face,
 /*******************************************************************************
  *
  ******************************************************************************/
-bool RcsMesh_compressVertices(RcsMeshData* mesh, double eps)
+static inline unsigned int getLargestFaceIdx(const RcsMeshData* mesh)
+{
+  unsigned int largest = 0;
+
+  for (unsigned int i=0; i<3*mesh->nFaces; ++i)
+  {
+    if (mesh->faces[i] > largest)
+    {
+      largest = mesh->faces[i];
+    }
+  }
+
+  return largest;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+int RcsMesh_compressVertices(RcsMeshData* mesh, double eps)
 {
   unsigned int vertexCount = 0, indexCount = 0;
+  int nDuplicates = 0;
   unsigned int* faces = RNALLOC(mesh->nFaces*3, unsigned int);
 
   if (faces==NULL)
   {
     RLOG(4, "Failed to allocate memory for %d faces", mesh->nFaces);
-    return false;
+    return -1;
   }
 
   double* vertices = RNALLOC(mesh->nVertices*3, double);
@@ -76,7 +96,7 @@ bool RcsMesh_compressVertices(RcsMeshData* mesh, double eps)
   {
     RLOG(4, "Failed to allocate memory for %d vertices", mesh->nVertices);
     RFREE(faces);
-    return false;
+    return -1;
   }
 
   for (unsigned int i=0; i<3*mesh->nFaces; ++i)
@@ -87,7 +107,7 @@ bool RcsMesh_compressVertices(RcsMeshData* mesh, double eps)
            " = %d - skipping compression",  i, mesh->faces[i], mesh->nVertices);
       RFREE(faces);
       RFREE(vertices);
-      return false;
+      return -1;
     }
     const double* v_i = &mesh->vertices[3*mesh->faces[i]];
     bool foundDuplicate = false;
@@ -103,6 +123,7 @@ bool RcsMesh_compressVertices(RcsMeshData* mesh, double eps)
       {
         faces[indexCount] = j;
         foundDuplicate = true;
+        nDuplicates++;
         break;
       }
 
@@ -128,7 +149,7 @@ bool RcsMesh_compressVertices(RcsMeshData* mesh, double eps)
   mesh->vertices = vertices;
   mesh->faces = faces;
 
-  return true;
+  return nDuplicates;
 }
 
 /*******************************************************************************
@@ -884,7 +905,7 @@ void RcsMesh_print(const RcsMeshData* mesh)
   fprintf(stderr, "Mesh has %d (mod: %d) vertices and %d faces (mod: %d)\n",
           mesh->nVertices, mesh->nVertices%3, mesh->nFaces, mesh->nFaces%3);
 
-  for (unsigned int i=0; i<mesh->nVertices/3; ++i)
+  for (unsigned int i=0; i<mesh->nVertices; ++i)
   {
     fprintf(stderr, "Vertex %d: %f   %f   %f\n", i, mesh->vertices[i*3+0],
             mesh->vertices[i*3+1], mesh->vertices[i*3+2]);
@@ -892,9 +913,13 @@ void RcsMesh_print(const RcsMeshData* mesh)
 
   for (unsigned int i=0; i<mesh->nFaces; ++i)
   {
-    fprintf(stderr, "Face %d: %d   %d   %d\n", i,
-            mesh->faces[i*3+0], mesh->faces[i*3+1], mesh->faces[i*3+2]);
+    fprintf(stderr, "Face %d: %d   %d   %d (%f   %f   %f)\n", i,
+            mesh->faces[i*3+0], mesh->faces[i*3+1], mesh->faces[i*3+2],
+            mesh->vertices[mesh->faces[i*3+0]],
+            mesh->vertices[mesh->faces[i*3+1]],
+            mesh->vertices[mesh->faces[i*3+2]]);
   }
+
 }
 
 /*******************************************************************************
@@ -1027,4 +1052,623 @@ void RcsMesh_scale(RcsMeshData* mesh, double scale)
   {
     mesh->vertices[i] *= scale;
   }
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void RcsMesh_shift(RcsMeshData* mesh, double x, double y, double z)
+{
+  for (unsigned int i=0; i<3*mesh->nVertices; i=i+3)
+  {
+    mesh->vertices[i+0] += x;
+    mesh->vertices[i+1] += y;
+    mesh->vertices[i+2] += z;
+  }
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void RcsMesh_rotate(RcsMeshData* mesh, double A_MI[3][3])
+{
+  for (unsigned int i=0; i<3*mesh->nVertices; i=i+3)
+  {
+    Vec3d_transRotateSelf(&mesh->vertices[i], A_MI);
+  }
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void RcsMesh_add(RcsMeshData* mesh, const RcsMeshData* other)
+{
+  size_t vMem = 3*(mesh->nVertices+other->nVertices)*sizeof(double);
+  mesh->vertices = (double*) realloc(mesh->vertices, vMem);
+
+  size_t fMem = 3*(mesh->nFaces+other->nFaces)*sizeof(unsigned int);
+  mesh->faces = (unsigned int*) realloc(mesh->faces, fMem);
+
+  memcpy(&mesh->vertices[3*mesh->nVertices], other->vertices,
+         3*other->nVertices*sizeof(double));
+
+  unsigned int largestIdx = getLargestFaceIdx(mesh);
+
+  for (unsigned int i = 0; i < 3*other->nFaces; ++i)
+  {
+    mesh->faces[3*mesh->nFaces+i] = other->faces[i] + largestIdx + 1;
+  }
+
+  mesh->nVertices += other->nVertices;
+  mesh->nFaces += other->nFaces;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void RcsMesh_transform(RcsMeshData* mesh, const double pos[3],
+                       double A_MI[3][3])
+{
+  RcsMesh_rotate(mesh, A_MI);
+  RcsMesh_shift(mesh, pos[0], pos[1], pos[2]);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+RcsMeshData* RcsMesh_createBox(const double extents[3])
+{
+  RcsMeshData* mesh = RALLOC(RcsMeshData);
+  mesh->nFaces = 12;
+  mesh->nVertices = 8;
+  mesh->faces = RNALLOC(mesh->nFaces*3, unsigned int);
+  mesh->vertices = RNALLOC(mesh->nVertices*3, double);
+
+  const unsigned int vertexIndex[36] =
+  {
+    0, 2, 1, // front
+    0, 3, 2,
+    2, 3, 4, // top
+    2, 4, 5,
+    1, 2, 5, // right
+    1, 5, 6,
+    0, 7, 4, // left
+    0, 4, 3,
+    5, 4, 7, // back
+    5, 7, 6,
+    0, 6, 7, // bottom
+    0, 1, 6
+  };
+
+  const double verts[24] =
+  {
+    -0.5, -0.5, -0.5,
+    0.5, -0.5, -0.5,
+    0.5,  0.5, -0.5,
+    -0.5,  0.5, -0.5,
+    -0.5,  0.5,  0.5,
+    0.5,  0.5,  0.5,
+    0.5, -0.5,  0.5,
+    -0.5, -0.5,  0.5,
+  };
+
+  memcpy(mesh->faces, vertexIndex, 3*mesh->nFaces*sizeof(unsigned int));
+
+  for (unsigned int i=0; i<24; i=i+3)
+  {
+    mesh->vertices[i+0] = verts[i+0]*extents[0];
+    mesh->vertices[i+1] = verts[i+1]*extents[1];
+    mesh->vertices[i+2] = verts[i+2]*extents[2];
+  }
+
+  return mesh;
+}
+
+/*******************************************************************************
+ * This function is based on three.js library licensed under the MIT license:
+ * See https://raw.githubusercontent.com/mrdoob/three.js/master/src/
+ *             geometries/CylinderGeometry.js
+ ******************************************************************************/
+static RcsMeshData* RcsMesh_createDisk(double radius,
+                                       unsigned int radialSegments,
+                                       double angleAround,
+                                       bool top,
+                                       double halfHeight,
+                                       double centerOffset)
+{
+  const double thetaStart = 0.0;
+  const double thetaLength = angleAround;
+  const int sign = (top == true) ? 1 : - 1;
+  unsigned int index = 0;
+  unsigned int centerIndexStart, centerIndexEnd;
+
+  RcsMeshData* mesh = RALLOC(RcsMeshData);
+  mesh->nVertices = 2*radialSegments+1;
+  mesh->vertices = RNALLOC(3*mesh->nVertices, double);
+  mesh->nFaces = radialSegments+1;
+  mesh->faces = RNALLOC(3*mesh->nFaces, unsigned int);
+
+  // save the index of the first center vertex
+  centerIndexStart = index;
+
+  // Center vertex data of the cap.
+  for (unsigned int x = 1; x <= radialSegments; ++x)
+  {
+    double* vertex = &mesh->vertices[3*(x-1)];
+    vertex[0] = 0.0;
+    vertex[2] = halfHeight * sign + centerOffset;
+    vertex[1] = 0;
+
+    index++;
+  }
+
+  // Save the index of the last center vertex
+  centerIndexEnd = index;
+
+  // Surrounding vertices
+  for (unsigned int x = 0; x <= radialSegments; x ++)
+  {
+    double u = (double) x / radialSegments;
+    double theta = u * thetaLength + thetaStart;
+
+    double* vertex = &mesh->vertices[3*(centerIndexEnd+x)];
+    vertex[0] = radius * sin(theta);
+    vertex[2] = halfHeight * sign;
+    vertex[1] = radius * cos(theta);
+
+    index ++;
+
+  }
+
+  // generate indices
+  for (unsigned int x = 0; x < radialSegments; x ++)
+  {
+    unsigned int c = centerIndexStart + x;
+    unsigned int i = centerIndexEnd + x;
+    unsigned int* index = &mesh->faces[3*x];
+
+    if (top == true)// face top
+    {
+      index[0] = i;
+      index[2] = i+1;
+      index[1] = c;
+    }
+    else// face bottom
+    {
+      index[0] = i+1;
+      index[2] = i;
+      index[1] = c;
+    }
+
+  }
+
+  return mesh;
+}
+
+/*******************************************************************************
+ * This function is based on three.js library licensed under the MIT license:
+ * See https://raw.githubusercontent.com/mrdoob/three.js/master/src/
+ *             geometries/CylinderGeometry.js
+ ******************************************************************************/
+RcsMeshData* RcsMesh_createCylinderHull(double radiusBottom,
+                                        double radiusTop,
+                                        double height,
+                                        unsigned int radialSegments,
+                                        unsigned int heightSegments,
+                                        double angleAround)
+{
+  const double thetaStart = 0.0;
+  const double thetaLength = angleAround;
+  const double halfHeight = 0.5*height;
+  unsigned int index = 0;
+  RcsMeshData* mesh = RALLOC(RcsMeshData);
+  mesh->nVertices = (radialSegments+1)*(heightSegments+1);
+  mesh->vertices = RNALLOC(3*mesh->nVertices, double);
+  mesh->nFaces = 2*radialSegments*heightSegments;
+  mesh->faces = RNALLOC(3*mesh->nFaces, unsigned int);
+
+  unsigned int** indexArray = RNSTALLOC(heightSegments+1, unsigned int*);
+  for (unsigned int i=0; i<=heightSegments; ++i)
+  {
+    indexArray[i] = RNALLOC(radialSegments+1, unsigned int);
+  }
+
+  // generate vertices
+  for (unsigned int y = 0; y <= heightSegments; y ++)
+  {
+    double v = (double) y / heightSegments;
+
+    // calculate the radius of the current row
+    double radius = v*(radiusBottom-radiusTop) + radiusTop;
+
+    for (unsigned int x = 0; x <= radialSegments; x ++)
+    {
+      double u = (double) x / radialSegments;
+      double theta = u * thetaLength + thetaStart;
+
+      // vertex
+      unsigned int vIdx = y*(radialSegments+1)+x;
+      double* vertex = &mesh->vertices[3*vIdx];
+      vertex[0] = radius * sin(theta);
+      vertex[2] = -v * height + halfHeight;
+      vertex[1] = radius*cos(theta);
+
+      // save index of vertex in respective row
+      indexArray[y][x] = index++;
+    }
+
+  }
+
+  // generate indices
+  for (unsigned int x = 0; x < radialSegments; x ++)
+  {
+    for (unsigned int y = 0; y < heightSegments; y ++)
+    {
+      // we use the index array to access the correct indices
+      unsigned int a = indexArray[y][x];
+      unsigned int b = indexArray[y+1][x];
+      unsigned int c = indexArray[y+1][x+1];
+      unsigned int d = indexArray[y][x+1];
+
+      // faces
+      int fIdx = y*radialSegments+x;
+      unsigned int* index = &mesh->faces[6*fIdx];
+      index[0] = d;
+      index[1] = b;
+      index[2] = a;
+      index[3] = d;
+      index[4] = c;
+      index[5] = b;
+    }
+
+  }
+
+  for (unsigned int i=0; i<=heightSegments; ++i)
+  {
+    RFREE(indexArray[i]);
+  }
+
+  return mesh;
+}
+
+/*******************************************************************************
+ * This function is based on three.js library licensed under the MIT license:
+ * See https://raw.githubusercontent.com/mrdoob/three.js/master/src/
+ *             geometries/CylinderGeometry.js
+ ******************************************************************************/
+RcsMeshData* RcsMesh_createCylinder(double radius, double height,
+                                    unsigned int radialSegments)
+{
+  const double angleAround = 2.0*M_PI;
+  const unsigned int heghtSegments = 1;
+
+  RcsMeshData* mesh = RcsMesh_createCylinderHull(radius, radius, height,
+                                                 radialSegments, heghtSegments,
+                                                 angleAround);
+
+  RcsMeshData* topDisk = RcsMesh_createDisk(radius, radialSegments,
+                                            angleAround, true, 0.5*height, 0.0);
+  RcsMesh_add(mesh, topDisk);
+  RcsMesh_destroy(topDisk);
+
+  RcsMeshData* bottomDisk = RcsMesh_createDisk(radius, radialSegments,
+                                               angleAround, false,
+                                               0.5*height, 0.0);
+  RcsMesh_add(mesh, bottomDisk);
+  RcsMesh_destroy(bottomDisk);
+
+  return mesh;
+}
+
+/*******************************************************************************
+ * This function is based on three.js library licensed under the MIT license:
+ * See https://raw.githubusercontent.com/mrdoob/three.js/master/src/
+ *             geometries/CylinderGeometry.js
+ ******************************************************************************/
+RcsMeshData* RcsMesh_createSphereSegment(double radius,
+                                         unsigned int heightSegments,
+                                         unsigned int widthSegments,
+                                         double phiStart,
+                                         double phiLength,
+                                         double thetaStart,
+                                         double thetaLength)
+{
+  RcsMeshData* mesh = RALLOC(RcsMeshData);
+  mesh->nVertices = (heightSegments+1)*(widthSegments+1);
+  mesh->vertices = RNALLOC(3*mesh->nVertices, double);
+  mesh->nFaces = 2*heightSegments*widthSegments;
+  mesh->faces = RNALLOC(3*mesh->nFaces, unsigned int);
+
+  unsigned int** grid = RNSTALLOC(heightSegments+1, unsigned int*);
+  for (unsigned int i=0; i<=heightSegments; ++i)
+  {
+    grid[i] = RNALLOC(widthSegments+1, unsigned int);
+  }
+
+  int index = 0;
+  double thetaEnd = fmin(thetaStart + thetaLength, M_PI);
+
+
+  // generate vertices, normals and uvs
+  for (unsigned int iy = 0; iy <= heightSegments; iy ++)
+  {
+    double v = (double) iy / heightSegments;
+
+    for (unsigned int ix = 0; ix <= widthSegments; ix ++)
+    {
+      double u = (double) ix / widthSegments;
+
+      // vertex
+      unsigned int vIdx = iy*(widthSegments+1)+ix;
+      double* vtx = &mesh->vertices[3*vIdx];
+      vtx[0] = -radius*cos(phiStart+u*phiLength)*sin(thetaStart+v*thetaLength);
+      vtx[1] = radius*cos(thetaStart+v*thetaLength);
+      vtx[2] = radius*sin(phiStart+u*phiLength)*sin(thetaStart+v*thetaLength);
+
+      grid[iy][ix] = index++;
+    }
+
+  }
+
+  // indices
+  for (unsigned int iy = 0; iy < heightSegments; iy ++)
+  {
+    for (unsigned int ix = 0; ix < widthSegments; ix ++)
+    {
+      int a = grid[iy][ix+1];
+      int b = grid[iy][ix];
+      int c = grid[iy+1][ix];
+      int d = grid[iy+1][ix+1];
+
+      int fIdx = iy*widthSegments+ix;
+      unsigned int* index = &mesh->faces[6*fIdx];
+
+      if (iy != 0 || thetaStart > 0.0)
+      {
+        index[0] = a;
+        index[1] = b;
+        index[2] = d;
+      }
+
+      if (iy != heightSegments - 1 || thetaEnd < M_PI)
+      {
+        index[3] = b;
+        index[4] = c;
+        index[5] = d;
+      }
+
+    }
+
+  }
+
+  for (unsigned int i=0; i<=heightSegments; ++i)
+  {
+    RFREE(grid[i]);
+  }
+
+  return mesh;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsMeshData* RcsMesh_createSphere(double radius, unsigned int segments)
+{
+  return RcsMesh_createSphereSegment(radius, segments/2, segments,
+                                     0.0, 2.0*M_PI, 0.0, M_PI);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsMeshData* RcsMesh_createCapsule(double radius, double height,
+                                   unsigned int segments)
+{
+  RcsMeshData* mesh = RcsMesh_createCylinderHull(radius, radius, height,
+                                                 segments, segments, 2.0*M_PI);
+  RcsMesh_shift(mesh, 0.0, 0.0, 0.5*height);
+
+  RcsMeshData* topCap = RcsMesh_createSphereSegment(radius, segments/2, segments/2,
+                                                    0.0, M_PI, 0.0, M_PI);
+  RcsMesh_shift(topCap, 0.0, 0.0, height);
+  RcsMesh_add(mesh, topCap);
+  RcsMesh_destroy(topCap);
+
+  RcsMeshData* bottomCap = RcsMesh_createSphereSegment(radius, segments/2, segments/2,
+                                                       M_PI, M_PI, 0.0, M_PI);
+  RcsMesh_add(mesh, bottomCap);
+  RcsMesh_destroy(bottomCap);
+
+  return mesh;
+}
+
+/*******************************************************************************
+ * This function is based on three.js library licensed under the MIT license:
+ * https://github.com/mrdoob/three.js/blob/master/src/
+ *         geometries/TorusGeometry.js
+ ******************************************************************************/
+RcsMeshData* RcsMesh_createTorus(double radius,
+                                 double thickness,
+                                 unsigned int radialSegments,
+                                 unsigned int tubularSegments)
+{
+  double tube = 0.5*thickness;
+  double arc = 2.0*M_PI;
+  RcsMeshData* mesh = RALLOC(RcsMeshData);
+
+  mesh->nVertices = (radialSegments+1)*(tubularSegments+1);
+  mesh->nFaces = 2*radialSegments*tubularSegments;
+  mesh->vertices = RNALLOC(3 * mesh->nVertices, double);
+  mesh->faces = RNALLOC(3*mesh->nFaces, unsigned int);
+
+  unsigned int idx = 0;
+
+  for (unsigned int j = 0; j <= radialSegments; j++)
+  {
+    for (unsigned int i = 0; i <= tubularSegments; i++)
+    {
+      double u = (double)i / tubularSegments * arc;
+      double v = (double)j / radialSegments * M_PI * 2.0;
+
+      mesh->vertices[idx++] = (radius + tube * cos(v)) * cos(u);
+      mesh->vertices[idx++] = (radius + tube * cos(v)) * sin(u);
+      mesh->vertices[idx++] = tube * sin(v);
+    }
+  }
+
+  idx = 0;
+  for (unsigned int j = 1; j <= radialSegments; j++)
+  {
+    for (unsigned int i = 1; i <= tubularSegments; i++)
+    {
+      int a = (tubularSegments + 1) * j + i - 1;
+      int b = (tubularSegments + 1) * (j - 1) + i - 1;
+      int c = (tubularSegments + 1) * (j - 1) + i;
+      int d = (tubularSegments + 1) * j + i;
+
+      // faces
+      mesh->faces[idx++] = a;
+      mesh->faces[idx++] = b;
+      mesh->faces[idx++] = d;
+      mesh->faces[idx++] = b;
+      mesh->faces[idx++] = c;
+      mesh->faces[idx++] = d;
+    }
+  }
+
+  return mesh;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsMeshData* RcsMesh_createCone(double radius, double height,
+                                unsigned int segments)
+{
+  RcsMeshData* cone = RcsMesh_createDisk(radius, segments, 2.0*M_PI, true,
+                                         0.0, height);
+  RcsMeshData* disk = RcsMesh_createDisk(radius, segments, 2.0*M_PI, false,
+                                         0.0, 0.0);
+  RcsMesh_add(cone, disk);
+  RcsMesh_destroy(disk);
+
+  return cone;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+static RcsMeshData* RcsMesh_createRectangle(double x, double y)
+{
+  RcsMeshData* mesh = RALLOC(RcsMeshData);
+  mesh->nFaces = 2;
+  mesh->nVertices = 4;
+  mesh->faces = RNALLOC(mesh->nFaces*3, unsigned int);
+  mesh->vertices = RNALLOC(mesh->nVertices*3, double);
+
+  const unsigned int vertexIndex[6] =
+  {
+    0, 1, 2,
+    0, 2, 3
+  };
+
+  const double verts[12] =
+  {
+    -0.5, -0.5, 0.0,
+    0.5, -0.5, 0.0,
+    0.5,  0.5, 0.0,
+    -0.5,  0.5, 0.0,
+  };
+
+  memcpy(mesh->faces, vertexIndex, 3*mesh->nFaces*sizeof(unsigned int));
+
+  for (unsigned int i=0; i<12; i=i+3)
+  {
+    mesh->vertices[i+0] = verts[i+0]*x;
+    mesh->vertices[i+1] = verts[i+1]*y;
+    mesh->vertices[i+2] = 0.0;
+  }
+
+  return mesh;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsMeshData* RcsMesh_createSSR(const double extents[3], unsigned int segments)
+{
+  const double r = 0.5*extents[2];
+  double offset[3], rm[3][3];
+  RcsMeshData* mesh = RcsMesh_createRectangle(extents[0], extents[1]);
+  RcsMesh_shift(mesh, 0.0, 0.0, r);
+
+  RcsMeshData* quad = RcsMesh_createRectangle(extents[0], extents[1]);
+  Vec3d_set(offset, 0.0, 0.0, -r);
+  Mat3d_setRotMatX(rm, M_PI);
+  RcsMesh_transform(quad, offset, rm);
+  RcsMesh_add(mesh, quad);
+  RcsMesh_destroy(quad);
+
+  RcsMeshData* cap = RcsMesh_createSphereSegment(r, segments, segments/2,
+                                                 M_PI_2, M_PI_2, 0.0, M_PI);
+  Vec3d_set(offset, 0.5*extents[0], 0.5*extents[1], 0.0);
+  Mat3d_setRotMatX(rm, -M_PI_2);
+  RcsMesh_transform(cap, offset, rm);
+  RcsMesh_add(mesh, cap);
+  RcsMesh_destroy(cap);
+
+  cap = RcsMesh_createSphereSegment(r, segments, segments/2,
+                                    -M_PI, M_PI_2, 0.0, M_PI);
+  Vec3d_set(offset, 0.5*extents[0], -0.5*extents[1], 0.0);
+  Mat3d_setRotMatX(rm, -M_PI_2);
+  RcsMesh_transform(cap, offset, rm);
+  RcsMesh_add(mesh, cap);
+  RcsMesh_destroy(cap);
+
+  cap = RcsMesh_createSphereSegment(r, segments, segments/2,
+                                    -M_PI_2, M_PI_2, 0.0, M_PI);
+  Vec3d_set(offset, -0.5*extents[0], -0.5*extents[1], 0.0);
+  Mat3d_setRotMatX(rm, -M_PI_2);
+  RcsMesh_transform(cap, offset, rm);
+  RcsMesh_add(mesh, cap);
+  RcsMesh_destroy(cap);
+
+  cap = RcsMesh_createSphereSegment(r, segments, segments/2,
+                                    0.0, M_PI_2, 0.0, M_PI);
+  Vec3d_set(offset, -0.5*extents[0], 0.5*extents[1], 0.0);
+  Mat3d_setRotMatX(rm, -M_PI_2);
+  RcsMesh_transform(cap, offset, rm);
+  RcsMesh_add(mesh, cap);
+  RcsMesh_destroy(cap);
+
+  RcsMeshData* cyl = RcsMesh_createCylinderHull(r, r, extents[1],
+                                                segments, segments, M_PI);
+  Vec3d_set(offset, 0.5*extents[0], 0.0, 0.0);
+  Mat3d_setRotMatX(rm, M_PI_2);
+  RcsMesh_transform(cyl, offset, rm);
+  RcsMesh_add(mesh, cyl);
+  RcsMesh_destroy(cyl);
+
+  cyl = RcsMesh_createCylinderHull(r, r, extents[1], segments, segments, M_PI);
+  Vec3d_set(offset, -0.5*extents[0], 0.0, 0.0);
+  Mat3d_fromEulerAngles2(rm, M_PI_2, 0.0, M_PI);
+  RcsMesh_transform(cyl, offset, rm);
+  RcsMesh_add(mesh, cyl);
+  RcsMesh_destroy(cyl);
+
+  cyl = RcsMesh_createCylinderHull(r, r, extents[0], segments, segments, M_PI);
+  Vec3d_set(offset, 0.0, 0.5*extents[1], 0.0);
+  Mat3d_fromEulerAngles2(rm, M_PI_2, M_PI_2, 0.0);
+  RcsMesh_transform(cyl, offset, rm);
+  RcsMesh_add(mesh, cyl);
+  RcsMesh_destroy(cyl);
+
+  cyl = RcsMesh_createCylinderHull(r, r, extents[0], segments, segments, M_PI);
+  Vec3d_set(offset, 0.0, -0.5*extents[1], 0.0);
+  Mat3d_fromEulerAngles2(rm, M_PI_2, -M_PI_2, 0.0);
+  RcsMesh_transform(cyl, offset, rm);
+  RcsMesh_add(mesh, cyl);
+  RcsMesh_destroy(cyl);
+
+  return mesh;
 }

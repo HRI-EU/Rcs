@@ -3256,3 +3256,58 @@ void RcsGraph_addRandomGeometry(RcsGraph* self)
   }
 
 }
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+RcsMeshData* RcsGraph_meshify(const RcsGraph* self, double scale, char computeType)
+{
+  if (self==NULL)
+  {
+    RLOG(4, "Can't meshify NULL graph");
+    return NULL;
+  }
+
+
+  RcsMeshData* allMesh = NULL;
+
+  RCSGRAPH_TRAVERSE_BODIES(self)
+  {
+    RCSBODY_TRAVERSE_SHAPES(BODY)
+    {
+      if ((SHAPE->computeType&computeType)==0)
+      {
+        continue;
+      }
+
+      RcsMeshData* mesh = RcsShape_createMesh(SHAPE);
+
+      if (mesh==NULL)
+      {
+        continue;
+      }
+
+      HTr A_CI;
+      HTr_transform(&A_CI, BODY->A_BI, &SHAPE->A_CB);
+      RcsMesh_transform(mesh, A_CI.org, A_CI.rot);
+
+      if (allMesh==NULL)
+      {
+        allMesh = RcsMesh_clone(mesh);
+      }
+      else
+      {
+        RcsMesh_add(allMesh, mesh);
+      }
+
+      RcsMesh_destroy(mesh);
+    }
+  }
+
+  if (scale != 1.0)
+  {
+    RcsMesh_scale(allMesh, scale);
+  }
+
+  return allMesh;
+}

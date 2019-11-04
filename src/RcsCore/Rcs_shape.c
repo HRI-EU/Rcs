@@ -164,6 +164,67 @@ double RcsShape_computeVolume(const RcsShape* self)
 }
 
 /*******************************************************************************
+ * See header.
+ ******************************************************************************/
+RcsMeshData* RcsShape_createMesh(const RcsShape* self)
+{
+  RcsMeshData* mesh = NULL;
+  const unsigned int segments = 32;
+
+  switch (self->type)
+  {
+    case RCSSHAPE_SSL:
+    {
+      mesh = RcsMesh_createCapsule(self->extents[0], self->extents[2], segments);
+      break;
+    }
+    case RCSSHAPE_SSR:
+    {
+      mesh = RcsMesh_createSSR(self->extents, segments);
+      break;
+    }
+    case RCSSHAPE_MESH:
+    {
+      mesh = RcsMesh_clone((RcsMeshData*) self->userData);
+      break;
+    }
+    case RCSSHAPE_BOX:
+    {
+      mesh = RcsMesh_createBox(self->extents);
+      break;
+    }
+    case RCSSHAPE_CYLINDER:
+    {
+      mesh = RcsMesh_createCylinder(self->extents[0], self->extents[2], segments);
+      break;
+    }
+    case RCSSHAPE_SPHERE:
+    {
+      mesh = RcsMesh_createSphere(self->extents[0], segments);
+      break;
+    }
+    case RCSSHAPE_CONE:
+    {
+      mesh = RcsMesh_createCone(self->extents[0], self->extents[2], segments);
+      break;
+    }
+    case RCSSHAPE_TORUS:
+    {
+      mesh = RcsMesh_createTorus(self->extents[0], self->extents[2], segments, segments);
+      break;
+    }
+    default:
+    {
+      RLOG(1, "Shape type %s (%d) can't be converted to mesh",
+           RcsShape_name(self->type), self->type);
+      break;
+    }
+  }
+
+  return mesh;
+}
+
+/*******************************************************************************
  * Computes the local COM of the shape in the bodie's frame according to its
  * volume and the relative transformation A_CB from body frame to shape frame.
  ******************************************************************************/
@@ -1019,8 +1080,8 @@ static double RcsShape_closestSphereToSphere(const RcsShape* sphere1,
   Vec3d_copy(I_cp1, A_sphere1->org);
 
   Vec3d_sub(I_n12, A_sphere2->org, A_sphere1->org);
-  double sqrDist = Vec3d_normalizeSelf(I_n12);
-  if (sqrDist==0.0)
+  double dist = Vec3d_normalizeSelf(I_n12);
+  if (dist==0.0)
   {
     Vec3d_setUnitVector(I_n12, 2);
   }
@@ -1028,7 +1089,7 @@ static double RcsShape_closestSphereToSphere(const RcsShape* sphere1,
   Vec3d_constMulAndAdd(I_cp1, A_sphere1->org, I_n12, sphere1->extents[0]);
   Vec3d_constMulAndAdd(I_cp2, A_sphere2->org, I_n12, -sphere2->extents[0]);
 
-  return sqrt(sqrDist)-sphere2->extents[0]-sphere1->extents[0];
+  return dist-sphere2->extents[0]-sphere1->extents[0];
 }
 
 /*******************************************************************************

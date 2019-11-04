@@ -29,6 +29,9 @@ different than the Rcs software:
 - Eigen3 licensed under the Mozilla Public License Version 2.0
   http://eigen.tuxfamily.org
   https://www.mozilla.org/en-US/MPL/2.0
+- three.js licensed under the MIT license
+  https://threejs.org
+  https://github.com/mrdoob/three.js/blob/dev/LICENSE
 
 In the event that we accidentally failed to list a required notice, please 
 bring it to our attention.

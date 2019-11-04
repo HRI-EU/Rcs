@@ -56,6 +56,7 @@ typedef enum
 
 #include <Rcs_MatNd.h>
 #include <Rcs_HTr.h>
+#include <Rcs_mesh.h>
 
 
 #ifdef __cplusplus
@@ -968,6 +969,7 @@ void RcsGraph_writeDotFile(const RcsGraph* self, const char* filename);
 void RcsGraph_writeDotFileDfsTraversal(const RcsGraph* self,
                                        const char* filename);
 
+RcsMeshData* RcsGraph_meshify(const RcsGraph* self, double scale, char computeType);
 
 ///@}
 

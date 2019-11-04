@@ -80,6 +80,332 @@ void quit(int /*sig*/)
   }
 }
 
+/******************************************************************************
+ *
+ *****************************************************************************/
+static void showMesh(const RcsMeshData* mesh)
+{
+  Rcs::CmdLineParser argP;
+  bool valgrind = argP.hasArgument("-valgrind");
+
+  if (valgrind || (mesh==NULL))
+  {
+    return;
+  }
+
+  REXEC(1)
+  {
+    RcsMesh_print(mesh);
+  }
+  Rcs::MeshNode* mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
+                                        mesh->faces, mesh->nFaces);
+  Rcs::Viewer* viewer = new Rcs::Viewer();
+  viewer->add(mn);
+  viewer->add(new Rcs::COSNode());
+  viewer->runInThread();
+
+  RPAUSE();
+
+  delete viewer;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool test_ssrMesh()
+{
+  double extents[3];
+  Vec3d_set(extents, 1.0, 0.5, 0.2);
+  unsigned int segments = 16;
+
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-x", &extents[0], "X-dimension (default is %f)",
+                   extents[0]);
+  argP.getArgument("-y", &extents[1], "Y-dimension (default is %f)",
+                   extents[1]);
+  argP.getArgument("-z", &extents[2], "Z-dimension (default is %f)",
+                   extents[2]);
+  argP.getArgument("-segments", &segments, "Segments (default is %d)",
+                   segments);
+
+  if (argP.hasArgument("-h"))
+  {
+    return true;
+  }
+
+  RcsMeshData* mesh = RcsMesh_createSSR(extents, segments);
+
+  showMesh(mesh);
+  RcsMesh_destroy(mesh);
+
+  return true;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool test_coneMesh()
+{
+  double radius = 0.5, height = 1.0;
+  unsigned int segments = 32;
+
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-r", &radius, "Radius (default is %f)", radius);
+  argP.getArgument("-height", &height, "Heigth (default is %f)", height);
+  argP.getArgument("-segments", &segments, "Segments (default is %d)",
+                   segments);
+
+  if (argP.hasArgument("-h"))
+  {
+    return true;
+  }
+
+  RcsMeshData* mesh = RcsMesh_createCone(radius, 1.0, segments);
+
+  showMesh(mesh);
+  RcsMesh_destroy(mesh);
+
+  return true;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool test_torusMesh()
+{
+  double radius = 0.5, height = 0.1;
+  unsigned int rSegments = 16, tSegments = 16;
+
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-r", &radius, "Radius (default is %f)", radius);
+  argP.getArgument("-height", &height, "Heigth (default is %f)", height);
+  argP.getArgument("-radial", &rSegments, "Radial segments (default is %d)",
+                   rSegments);
+  argP.getArgument("-tubular", &tSegments, "Tubular segments (default is %d)",
+                   tSegments);
+
+  if (argP.hasArgument("-h"))
+  {
+    return true;
+  }
+
+  RcsMeshData* mesh = RcsMesh_createTorus(radius, height, rSegments, tSegments);
+
+  showMesh(mesh);
+  RcsMesh_destroy(mesh);
+
+  return true;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool test_capsuleMesh()
+{
+  double radius = 0.5, height = 1.0;
+  unsigned int segments = 16;
+
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-r", &radius, "Radius (default is %f)", radius);
+  argP.getArgument("-height", &height, "Heigth (default is %f)", height);
+  argP.getArgument("-segments", &segments, "Segments (default is %d)",
+                   segments);
+
+  if (argP.hasArgument("-h"))
+  {
+    return true;
+  }
+
+  RcsMeshData* mesh = RcsMesh_createCapsule(radius, 1.0, segments);
+
+  showMesh(mesh);
+  RcsMesh_destroy(mesh);
+
+  return true;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool test_sphereMesh()
+{
+  double radius = 0.5;
+  unsigned int segments = 16;
+
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-r", &radius, "Radius (default is %f)", radius);
+  argP.getArgument("-segments", &segments, "Segments (default is %d)",
+                   segments);
+
+  if (argP.hasArgument("-h"))
+  {
+    return true;
+  }
+
+  RcsMeshData* mesh = RcsMesh_createSphere(radius, segments);
+
+  showMesh(mesh);
+  RcsMesh_destroy(mesh);
+
+  return true;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool test_sphereSegmentMesh()
+{
+  double radius = 0.5;
+  unsigned int heightSegments = 16;
+  unsigned int widthSegments = 32;
+  double phiStart = 0.0;
+  double phiLength = 360.0;
+  double thetaStart = 0.0;
+  double thetaLength = 180.0;
+
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-r", &radius, "Radius (default is %f)", radius);
+  argP.getArgument("-heightSegments", &heightSegments, "Height segments "
+                   "(default is %d)", heightSegments);
+  argP.getArgument("-widthSegments", &widthSegments, "Width segments (default"
+                   "is %d)", widthSegments);
+  argP.getArgument("-phiStart", &phiStart, "Phi start [deg](default is %f)",
+                   phiStart);
+  argP.getArgument("-phiLength", &phiLength, "Phi length [deg](default is %f)",
+                   phiLength);
+  argP.getArgument("-thetaStart", &thetaStart, "Theta start [deg](default "
+                   "is %f)", thetaStart);
+  argP.getArgument("-thetaLength", &thetaLength, "Theta length [deg](default"
+                   "is %f)", thetaLength);
+
+  if (argP.hasArgument("-h"))
+  {
+    return true;
+  }
+
+  phiStart*= M_PI/180.0;
+  phiLength*= M_PI/180.0;
+  thetaStart*= M_PI/180.0;
+  thetaLength*= M_PI/180.0;
+
+  RcsMeshData* mesh = RcsMesh_createSphereSegment(radius, heightSegments,
+                                                  widthSegments, phiStart,
+                                                  phiLength, thetaStart,
+                                                  thetaLength);
+
+  showMesh(mesh);
+  RcsMesh_destroy(mesh);
+
+  return true;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool test_cylinderMesh()
+{
+  double radius = 0.5;
+  double height = 1.0;
+  unsigned int radialSegments = 16;
+  unsigned int heightSegments = 4;
+  double angleAround = 360.0;
+
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-r", &radius, "Radius (default is %f)", radius);
+  argP.getArgument("-h", &height, "Height (default is %f)", height);
+  argP.getArgument("-angleAround", &angleAround, "Angle around [deg](default"
+                   "is %f)", angleAround);
+  argP.getArgument("-radialSegments", &radialSegments, "Radial segments "
+                   "(default is %d)", radialSegments);
+  argP.getArgument("-heightSegments", &heightSegments, "Height segments "
+                   "(default is %d)", heightSegments);
+
+  if (argP.hasArgument("-h"))
+  {
+    return true;
+  }
+
+  angleAround *= M_PI/180.0;
+
+  RcsMeshData* mesh = RcsMesh_createCylinder(radius, height, 32);
+
+  showMesh(mesh);
+  RcsMesh_destroy(mesh);
+
+  return true;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool test_cylinderHullMesh()
+{
+  double radius = 0.5;
+  double height = 1.0;
+  unsigned int radialSegments = 16;
+  unsigned int heightSegments = 4;
+  double angleAround = 360.0;
+
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-r", &radius, "Radius (default is %f)", radius);
+  argP.getArgument("-h", &height, "Height (default is %f)", height);
+  argP.getArgument("-angleAround", &angleAround, "Angle around [deg](default "
+                   "is %f)", angleAround);
+  argP.getArgument("-radialSegments", &radialSegments, "Radial segments "
+                   "(default is %d)", radialSegments);
+  argP.getArgument("-heightSegments", &heightSegments, "Height segments "
+                   "(default is %d)", heightSegments);
+
+  if (argP.hasArgument("-h"))
+  {
+    return true;
+  }
+
+  angleAround *= M_PI/180.0;
+
+  RcsMeshData* mesh = RcsMesh_createCylinderHull(radius, 0.5*radius, height,
+                                                 radialSegments, heightSegments,
+                                                 angleAround);
+
+  showMesh(mesh);
+  RcsMesh_destroy(mesh);
+
+  return true;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool test_meshify()
+{
+  char xmlFileName[128] = "gScenario.xml";
+  char directory[128] = "config/xml/DexBot";
+  double scale = 1.0;
+  int computeType = RCSSHAPE_COMPUTE_GRAPHICS;
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-f", xmlFileName, "Configuration file name");
+  argP.getArgument("-dir", directory, "Configuration file directory");
+  argP.getArgument("-scale", &scale, "Scaling factor, default is %f", scale);
+  argP.getArgument("-computeType", &computeType, "Compute type: 1 distance, "
+                   "2 physics, 4 graphics, default is %d", computeType);
+
+  Rcs_addResourcePath("config");
+  Rcs_addResourcePath(directory);
+  RcsGraph* graph = RcsGraph_create(xmlFileName);
+  RcsMeshData* allMesh = RcsGraph_meshify(graph, scale, computeType);
+  bool success = allMesh ? true : false;
+
+  if (success)
+  {
+    RcsMesh_toFile(allMesh, "AllMesh.stl");
+    RcsMesh_destroy(allMesh);
+  }
+
+  RcsGraph_destroy(graph);
+
+  return success;
+}
+
 /*******************************************************************************
 * Test for native viewer
 ******************************************************************************/
@@ -302,16 +628,33 @@ static void testVertexArrayNode()
  ******************************************************************************/
 static void testMeshNode()
 {
-  char meshFile[256] = "/hri/sit/latest/Data/RobotMeshes/1.0/data/Schunk/SDH_Gehaeuse_x.tri";
+  char meshFile[256] = "";
   Rcs::CmdLineParser argP;
   argP.getArgument("-f", meshFile, "Mesh file (default is %s)", meshFile);
 
-  Rcs::MeshNode* mn = new Rcs::MeshNode(meshFile);
+  if (argP.hasArgument("-h"))
+  {
+    return;
+  }
 
+  Rcs::MeshNode* mn = NULL;
+
+  if (strlen(meshFile)>0)
+  {
+    mn = new Rcs::MeshNode(meshFile);
+  }
+  else
+  {
+    RcsMeshData* mesh = RcsMesh_createTorus(0.5, 0.25, 32, 32);
+    mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
+                           mesh->faces, mesh->nFaces);
+    RcsMesh_destroy(mesh);
+  }
 
 
   Rcs::Viewer* viewer = new Rcs::Viewer();
   viewer->add(mn);
+  viewer->add(new Rcs::COSNode());
   viewer->runInThread();
 
   RPAUSE();
@@ -519,6 +862,15 @@ int main(int argc, char** argv)
       printf("\t\t2    Test camera transformation\n");
       printf("\t\t3    Test ArrowNode\n");
       printf("\t\t4    Test nodes with native osgViewer\n");
+      printf("\t\t5    Test mesh creation from graph\n");
+      printf("\t\t6    Test cylinder hull mesh\n");
+      printf("\t\t7    Test cylinder mesh\n");
+      printf("\t\t8    Test sphere segment mesh\n");
+      printf("\t\t9    Test sphere mesh\n");
+      printf("\t\t10   Test capsule mesh\n");
+      printf("\t\t11   Test torus mesh\n");
+      printf("\t\t12   Test cone mesh\n");
+      printf("\t\t13   Test sphere swept rectangle mesh\n");
       break;
 
     case 0:
@@ -545,6 +897,60 @@ int main(int argc, char** argv)
     case 4:
       testOsgViewer();
       break;
+
+    case 5:
+    {
+      test_meshify();
+      break;
+    }
+
+    case 6:
+    {
+      test_cylinderHullMesh();
+      break;
+    }
+
+    case 7:
+    {
+      test_cylinderMesh();
+      break;
+    }
+
+    case 8:
+    {
+      test_sphereSegmentMesh();
+      break;
+    }
+
+    case 9:
+    {
+      test_sphereMesh();
+      break;
+    }
+
+    case 10:
+    {
+      test_capsuleMesh();
+      break;
+    }
+
+    case 11:
+    {
+      test_torusMesh();
+      break;
+    }
+
+    case 12:
+    {
+      test_coneMesh();
+      break;
+    }
+
+    case 13:
+    {
+      test_ssrMesh();
+      break;
+    }
 
     default:
       RFATAL("No mode %d", mode);

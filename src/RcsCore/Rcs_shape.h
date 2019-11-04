@@ -38,6 +38,7 @@
 #define RCS_SHAPE_H
 
 #include "Rcs_graph.h"
+#include "Rcs_mesh.h"
 
 
 
@@ -231,6 +232,22 @@ void RcsShape_computeAABB(const RcsShape* self,
  */
 void RcsShape_scale(RcsShape* self, double scale);
 
+/*! \ingroup RcsShapeFunctions
+ *  \brief Returns a mesh for the given shape. The following shape types are
+ *         supported:
+ *         - RCSSHAPE_SSL
+ *         - RCSSHAPE_SSR
+ *         - RCSSHAPE_MESH
+ *         - RCSSHAPE_BOX
+ *         - RCSSHAPE_CYLINDER
+ *         - RCSSHAPE_SPHERE
+ *         - RCSSHAPE_CONE
+ *         - RCSSHAPE_TORUS
+ *
+ *  \param[in] self  Shape to be represented in the mesh.
+ *  \return Mesh data structure, or NULL in case of failure.
+ */
+RcsMeshData* RcsShape_createMesh(const RcsShape* self);
 
 #ifdef __cplusplus
 }

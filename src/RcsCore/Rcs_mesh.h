@@ -152,10 +152,10 @@ bool RcsMesh_toFile(const RcsMeshData* mesh, const char* fileName);
  *  \param[in] mesh       Mesh data
  *  \param[in] eps        Distance threshold below which two vertices are
  *                        considered as one.
- *  \return True on success, false otherwise. The reason of failure is outputted
- *          on debug level 4.
+ *  \return -1 on failure, otherwise the number of compressed vertices. The
+ *          reason of failure is outputted on debug level 4.
  */
-bool RcsMesh_compressVertices(RcsMeshData* mesh, double eps);
+int RcsMesh_compressVertices(RcsMeshData* mesh, double eps);
 
 /*! \ingroup RcsUtilsFunctions
  *  \brief This function computes the axis-aligned bounding box of a mesh.
@@ -168,14 +168,177 @@ bool RcsMesh_compressVertices(RcsMeshData* mesh, double eps);
 void RcsMesh_computeAABB(const RcsMeshData* mesh,
                          double xyzMin[3], double xyzMax[3]);
 
-
 /*! \ingroup RcsUtilsFunctions
- *  \brief This function scales all vertices of the mesh with the given scale factor.
+ *  \brief This function scales all vertices of the mesh with the given scale
+ *         factor.
  *
  *  \param[in] mesh       Mesh data, must be not NULL.
- *  \param[in] scale      Scaling factor. All vertices are multiplied with this value.
+ *  \param[in] scale      Scaling factor. All vertices are multiplied with
+ *                        this value.
  */
 void RcsMesh_scale(RcsMeshData* mesh, double scale);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Adds a mesh to another one.
+ *
+ *  \param[in] mesh       Mesh data to be extended by other.
+ *  \param[in] other      Other mesh to be added.
+ */
+void RcsMesh_add(RcsMeshData* mesh, const RcsMeshData* other);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Shifts all vertices of a mesh by the given offset
+ *
+ *  \param[in] mesh  Mesh data to be shifted.
+ *  \param[in] x     Offset x in whatever coordinates the mesh is represented.
+ *  \param[in] y     Offset y.
+ *  \param[in] z     Offset z.
+ */
+void RcsMesh_shift(RcsMeshData* mesh, double x, double y, double z);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Applies a rotation to a mesh.
+ *
+ *  \param[in] mesh  Mesh data to be rotated.
+ *  \param[in] A_MI  Rotation matrix from I(nertial) to M(esh) frame.
+ */
+void RcsMesh_rotate(RcsMeshData* mesh, double A_MI[3][3]);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Applies a transformation to a mesh.
+ *
+ *  \param[in] mesh  Mesh data to be rotated.
+ *  \param[in] pos   Translation.
+ *  \param[in] A_MI  Rotation matrix from I(nertial) to M(esh) frame.
+ */
+void RcsMesh_transform(RcsMeshData* mesh, const double pos[3],
+                       double A_MI[3][3]);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Creates a mesh for a box with the given extents.
+ *
+ *  \param[in] extents   Box extents
+ *  \return Box mesh.
+ */
+RcsMeshData* RcsMesh_createBox(const double extents[3]);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Creates the cylindrical envelope of a cylinder without the caps.
+ *         This function is based on three.js library licensed under the
+ *         MIT license.
+ *
+ *  \param[in] radiusBottom   Radius at the bottom of the cylinder
+ *  \param[in] radiusTop      Radius at the top of the cylinder
+ *  \param[in] height         Height of the cylinder
+ *  \param[in] radialSegments Number of segments around radius
+ *  \param[in] heightSegments Number of slices over height
+ *  \param[in] angleAround    Angle of envelope (Pi for closed cylinder)
+ *  \return Triangle mesh according to dimensions. The caller is responsible to
+ *          delete the memory.
+ */
+RcsMeshData* RcsMesh_createCylinderHull(double radiusBottom,
+                                        double radiusTop,
+                                        double height,
+                                        unsigned int radialSegments,
+                                        unsigned int heightSegments,
+                                        double angleAround);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Creates a cylinder mesh including the caps.
+ *         This function is based on three.js library licensed under the
+ *         MIT license.
+ *
+ *  \param[in] radius      Radius at the top of the cylinder
+ *  \param[in] height      Height of the cylinder
+ *  \param[in] segments    Number of radial segments
+ *  \return Triangle mesh according to dimensions. The caller is responsible to
+ *          delete the memory.
+ */
+RcsMeshData* RcsMesh_createCylinder(double radius, double height,
+                                    unsigned int segments);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Creates a sphere segment.
+ *         This function is based on three.js library licensed under the
+ *         MIT license.
+ *
+ *  \param[in] radius           Sphere radius
+ *  \param[in] heightSegments   Number of slices over height
+ *  \param[in] widthSegments    Number of segments around radius
+ *  \param[in] phiStart         Vertical start angle slice
+ *  \param[in] phiLength        Vertical angle (Pi for complete sphere)
+ *  \param[in] thetaStart       Radial start angle slice
+ *  \param[in] thetaLength      Radial angle (Pi for complete sphere)
+ *  \return Triangle mesh according to dimensions. The caller is responsible to
+ *          delete the memory.
+ */
+RcsMeshData* RcsMesh_createSphereSegment(double radius,
+                                         unsigned int heightSegments,
+                                         unsigned int widthSegments,
+                                         double phiStart,
+                                         double phiLength,
+                                         double thetaStart,
+                                         double thetaLength);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Creates a sphere.
+ *
+ *  \param[in] radius           Sphere radius
+ *  \param[in] segments         Tesselation
+ *  \return Triangle mesh according to dimensions. The caller is responsible to
+ *          delete the memory.
+ */
+RcsMeshData* RcsMesh_createSphere(double radius, unsigned int segments);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Creates a sphere.
+ *
+ *  \param[in] radius           Capsule radius
+ *  \param[in] height           Distance of ball points
+ *  \param[in] segments         Tesselation
+ *  \return Triangle mesh according to dimensions. The caller is responsible to
+ *          delete the memory.
+ */
+RcsMeshData* RcsMesh_createCapsule(double radius, double height,
+                                   unsigned int segments);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Creates a cone with the given dimensions. The cone axis is aligned
+ *         with the z-axis, the bottom disk is at z=0.
+ *
+ *  \param[in] radius           Capsule radius
+ *  \param[in] height           Distance of ball points
+ *  \param[in] segments         Tesselation
+ *  \return Triangle mesh according to dimensions. The caller is responsible to
+ *          delete the memory.
+ */
+RcsMeshData* RcsMesh_createCone(double radius, double height,
+                                unsigned int segments);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Creates a triangle mesh of a torus.
+ *
+ *  \param[in] radius            Radius about the torus symmetry axis
+ *  \param[in] thickness         Thickness, or diameter of swept circle.
+ *  \param[in] radialSegments    Number of segments around swept circle.
+ *  \param[in] tubularSegments   Number of slices of the torus ring.
+ *  \return Triangle mesh according to dimensions. The caller is responsible to
+ *          delete the memory.
+ */
+RcsMeshData* RcsMesh_createTorus(double radius, double thickness,
+                                 unsigned int radialSegments,
+                                 unsigned int tubularSegments);
+
+/*! \ingroup RcsUtilsFunctions
+*  \brief Creates a triangle mesh of a sphere-swept rectangle.
+*
+*  \param[in] extents           Dimensions. The third element is the thickness.
+*  \param[in] segments          Number of segments around curves.
+*  \return Triangle mesh according to dimensions. The caller is responsible to
+*          delete the memory.
+*/
+RcsMeshData* RcsMesh_createSSR(const double extents[3], unsigned int segments);
+
 
 #ifdef __cplusplus
 }

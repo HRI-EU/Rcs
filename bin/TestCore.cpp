@@ -162,25 +162,14 @@ static bool test_compareEnding()
  *****************************************************************************/
 static bool test_mesh()
 {
-  std::string meshFile;
   char outFile[256] = "mesh1.tri";
-
-  const char* hgr = getenv("SIT");
-
-  if (hgr != NULL)
-  {
-    meshFile = std::string(hgr) + std::string("/Data/RobotMeshes/1.0/data/") +
-               std::string("iiwa_description/meshes/iiwa14/visual/link_1.stl");
-  }
 
   Rcs::CmdLineParser argP;
   argP.getArgument("-outFile", outFile, "Name of mesh file to be written "
-                   "(default is %s)", meshFile.c_str());
-  argP.getArgument("-f", &meshFile, "Name of mesh file (default is %s)",
-                   meshFile.c_str());
+                   "(default is %s)", outFile);
 
   double t = Timer_getTime();
-  RcsMeshData* mesh1 = RcsMesh_createFromFile(meshFile.c_str());
+  RcsMeshData* mesh1 = RcsMesh_createTorus(0.5, 0.1, 8, 32);
   t = Timer_getTime() - t;
   RCHECK(mesh1);
   RLOG(0, "[%.3f msec]: Mesh has %u vertices and %u faces",
@@ -194,11 +183,21 @@ static bool test_mesh()
   RcsMesh_toFile(mesh1, outFile);
 
   t = Timer_getTime();
-  RcsMeshData* mesh2 = RcsMesh_createFromFile(outFile);
+  RcsMeshData* mesh2 = RcsMesh_createCylinder(0.3, 1.5, 16);
   RCHECK(mesh2);
   t = Timer_getTime() - t;
   RLOG(0, "[%.3f msec]: Reloaded mesh has %u vertices and %u faces",
        t, mesh2->nVertices, mesh2->nFaces);
+
+  // Test shifting of mesh
+  RcsMesh_shift(mesh2, 0.5, 0.5, 0.5);
+
+  // Test merging of meshes
+  RLOG(0, "Merging meshes");
+  RcsMesh_add(mesh1, mesh2);
+  bool success = RcsMesh_toFile(mesh1, "MergedMesh.stl");
+  RLOG(0, "Merging mesh %s - see file MergedMesh.stl", success ? "succeeded" : "failed");
+  success = RcsMesh_toFile(mesh2, "ShiftedMesh.stl");
 
   RcsMesh_destroy(mesh1);
   RcsMesh_destroy(mesh2);
