@@ -42,6 +42,7 @@
 #include "Rcs_resourcePath.h"
 #include "Rcs_graphParser.h"
 #include "Rcs_kinematics.h"
+#include "Rcs_dynamics.h"
 #include "Rcs_joint.h"
 
 
@@ -854,6 +855,12 @@ void Rcs::ControllerBase::computeDX(MatNd* dx,
       x_des_i = &x_des->ele[nRowsAll];
 
       tasks[i]->computeDX(dx_i, x_des_i);
+
+      if (a_des)
+      {
+        VecNd_constMulSelf(dx_i, MatNd_get(a_des, i, 0), dimTask);
+      }
+
       nRowsActive += dimTask;
     }
 
@@ -2308,4 +2315,96 @@ void Rcs::ControllerBase::print() const
   {
     tasks[i]->print();
   }
+}
+
+/*******************************************************************************
+ * Calculate one step of the inverse dynamics: T = M*aq + h + g
+ *
+ *      Here we neglect the influence of the accelerations of the
+ *      kinematically driven joints. That's fine if there's no large
+ *      inertia being accelerated, such as in the case of the finger
+ *      movements. However, if the whole robot is for instance attached to
+ *      a kinematically driven torso, this must be considered.
+ ******************************************************************************/
+void Rcs::ControllerBase::computeInvDynJointSpace(MatNd* T_des,
+                                                  const RcsGraph* graph,
+                                                  const MatNd* q_des,
+                                                  const MatNd* qp_des,
+                                                  const MatNd* qpp_des,
+                                                  double positionGain,
+                                                  double velocityGain)
+{
+  const unsigned int nq = graph->nJ;
+  MatNd* M       = MatNd_create(nq, nq);
+  MatNd* g       = MatNd_create(nq, 1);
+  MatNd* h       = MatNd_create(nq, 1);
+  MatNd* aq      = MatNd_create(graph->dof, 1);
+  MatNd* qp_temp = MatNd_create(1, nq);
+
+  if (velocityGain==-1.0)
+  {
+    velocityGain = 0.5*sqrt(4.0*positionGain);
+  }
+
+  const MatNd* q_curr = graph->q;
+  MatNd_reshapeAndSetZero(T_des, nq, 1);
+
+  // Dynamics: Mass matrix, gravity load and h-vector
+  RcsGraph_computeKineticTerms(graph, M, h, g);
+
+  // aq = -kp*(q-q_des)
+  MatNd_sub(aq, q_curr, q_des);
+  RcsGraph_stateVectorToIKSelf(graph, aq);
+  MatNd_constMulSelf(aq, -positionGain);
+
+  // Get the current joint velocities
+  RcsGraph_stateVectorToIK(graph, graph->q_dot, qp_temp);
+
+  // aq = aq  -kd*qp_curr + kd*qp_des
+  MatNd_constMulAndAddSelf(aq, qp_temp, -velocityGain);
+
+  if (qp_des != NULL)
+  {
+    MatNd_constMulAndAddSelf(aq, qp_des, velocityGain);
+  }
+
+  if (qpp_des != NULL)
+  {
+    MatNd_addSelf(aq, qpp_des);  // +qpp_des
+  }
+
+  // Set the speed of the kinematic joints to zero
+  RCSGRAPH_TRAVERSE_JOINTS(graph)
+  {
+    if ((JNT->ctrlType!=RCSJOINT_CTRL_TORQUE) && (JNT->jacobiIndex!=-1))
+    {
+      MatNd_set(aq, JNT->jacobiIndex, 0, 0.0);
+    }
+  }
+
+  // Add gravity and coriolis compensation: u += h + Fg
+  // u = M*a + h + g
+  MatNd_reshape(T_des, nq, 1);
+  MatNd_mul(T_des, M, aq);   // Tracking error
+  MatNd_subSelf(T_des, h);   // Cancellation of coriolis forces
+  MatNd_subSelf(T_des, g);   // Cancellation of gravity forces
+
+  MatNd_destroy(M);
+  MatNd_destroy(g);
+  MatNd_destroy(h);
+  MatNd_destroy(aq);
+  MatNd_destroy(qp_temp);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::ControllerBase::computeInvDynJointSpace(MatNd* T_des,
+                                                  const RcsGraph* graph,
+                                                  const MatNd* q_des,
+                                                  double positionGain,
+                                                  double velocityGain)
+{
+  computeInvDynJointSpace(T_des, graph, q_des, NULL, NULL,
+                          positionGain, velocityGain);
 }

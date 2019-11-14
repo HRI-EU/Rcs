@@ -44,6 +44,7 @@
 #include <PhysicsNode.h>
 #include <HighGui.h>
 
+#include <ControllerBase.h>
 #include <PhysicsFactory.h>
 #include <Rcs_macros.h>
 #include <Rcs_cmdLine.h>
@@ -524,7 +525,7 @@ int main(int argc, char** argv)
           ////////////////////////////////////////////////////////////
           // Compute inverse dynamics
           ////////////////////////////////////////////////////////////
-
+#if 0
           // Mass matrix, gravity load and h-vector
           RcsGraph_computeKineticTerms(graph, M, h, g);
 
@@ -560,6 +561,9 @@ int main(int argc, char** argv)
           MatNd_mul(T_des, M, aq);   // Tracking error
           MatNd_subSelf(T_des, h);   // Cancellation of coriolis forces
           MatNd_subSelf(T_des, g);   // Cancellation of gravity forces
+#else
+        Rcs::ControllerBase::computeInvDynJointSpace(T_des, graph, q_des, kp);
+#endif
 
           // Check for torque limit violations
           unsigned int torqueLimitsViolated = 0;

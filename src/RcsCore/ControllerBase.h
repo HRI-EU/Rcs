@@ -54,7 +54,16 @@
 namespace Rcs
 {
 /*! \ingroup RcsController
- * \brief Controller Base Class
+ * \brief Controller Base Class. This class implements a number of generic
+ *        methods to compute kinematic and dynamic magnitudes, such as
+ *        Jacobians, Hessians, velocities etc. The class holds a pointer to a
+ *        graph, which is representing the kinematic state considered. None of
+ *        the methods will change the graph, with the exception of destroying
+ *        it when it is owned by the class itself (see constructor
+ *        documentation). The core of this class is the task vector, which can
+ *        conveniently be parsed from an xml file. Some tasks allow for another
+ *        construction, see details in the respective classes.
+ *
  */
 class ControllerBase
 {
@@ -662,6 +671,64 @@ public:
   /*! \brief Prints information about tasks to console.
    */
   virtual void print() const;
+
+  /*! \brief Computes the inverse dynamics for joint-space tracking:
+   *         \f[
+   *         T_{des} = M a_q + h + g
+   *         \f]
+   *
+   *         with
+   *         \f$
+   *         a_q = \ddot{q} -k_p (q-q_{des}) - k_d (\dot{q}-\dot{q}_{des})
+   *         \f$
+   *
+   *  \param[out] T_des   Desired joint torque. It will be reshaped to the
+   *                      full dimension (RcsGraph::dof x 1)
+   *  \param[in]  q_des   Desired joint angles. They must be of the full
+   *                      dimension (RcsGraph::dof x 1)
+   *  \param[in]  qp_des  Desired joint velocities. If qp_des is NULL, they
+   *                      are assumed to be zero. Otherwise they must be of
+   *                      the full dimension (RcsGraph::dof x 1)
+   *  \param[in]  qpp_des Desired joint angles. If qpp_des is NULL, they
+   *                      are assumed to be zero. Otherwise they must be of
+   *                      the full dimension (RcsGraph::dof x 1)
+   *  \param[in]  positionGain   Position gain for PD control
+   *  \param[in]  velocityGain   Velocity gain for PD control. If it is -1, the
+   *                             damping is set to asymptotic behavior
+   *                             (velocityGain = 0.5*sqrt(4.0*positionGain))
+   */
+  static void computeInvDynJointSpace(MatNd* T_des,
+                                      const RcsGraph* graph,
+                                      const MatNd* q_des,
+                                      const MatNd* qp_des,
+                                      const MatNd* qpp_des,
+                                      double positionGain,
+                                      double velocityGain);
+
+  /*! \brief Computes the inverse dynamics for joint-space tracking:
+   *         \f[
+   *         T_{des} = M a_q + h + g
+   *         \f]
+   *
+   *         with
+   *         \f$
+   *         a_q = -k_p (q-q_{des}) - k_d \dot{q}
+   *         \f$
+   *
+   *  \param[out] T_des   Desired joint torque. It will be reshaped to the
+   *                      full dimension (RcsGraph::dof x 1)
+   *  \param[in]  q_des   Desired joint angles. They must be of the full
+   *                      dimension (RcsGraph::dof x 1)
+   *  \param[in]  positionGain   Position gain for PD control
+   *  \param[in]  velocityGain   Velocity gain for PD control. If it is -1, the
+   *                             damping is set to asymptotic behavior
+   *                             (velocityGain = 0.5*sqrt(4.0*positionGain))
+   */
+  static void computeInvDynJointSpace(MatNd* T_des,
+                                      const RcsGraph* graph,
+                                      const MatNd* q_des,
+                                      double positionGain,
+                                      double velocityGain=-1.0);
 
 protected:
 
