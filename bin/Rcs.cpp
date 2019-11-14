@@ -1696,7 +1696,7 @@ int main(int argc, char** argv)
 
       int algo = 0;
       double alpha = 0.05, lambda = 1.0e-8, tmc = 0.1, dt = 0.01, dt_calc = 0.0;
-      double jlCost = 0.0, dJlCost = 0.0;
+      double jlCost = 0.0, dJlCost = 0.0, clipLimit = 0.1;
       bool calcDistance = true;
       strcpy(xmlFileName, "cAction.xml");
       strcpy(directory, "config/xml/DexBot");
@@ -1712,6 +1712,8 @@ int main(int argc, char** argv)
       argP.getArgument("-dir", directory);
       argP.getArgument("-tmc", &tmc, "Filter time constant for sliders");
       argP.getArgument("-dt", &dt, "Sampling time interval");
+      argP.getArgument("-clipLimit", &clipLimit, "Clip limit for dx (default"
+                       "is %f)", clipLimit);
       argP.getArgument("-staticEffort", effortBdyName,
                        "Body to map static effort");
       bool ffwd = argP.hasArgument("-ffwd", "Feed-forward dx only");
@@ -1875,7 +1877,6 @@ int main(int argc, char** argv)
           }
 
           controller.computeDX(dx_des, x_des_f);
-          double clipLimit = 0.1;
           MatNd clipArr = MatNd_fromPtr(1, 1, &clipLimit);
           MatNd_saturateSelf(dx_des, &clipArr);
         }
