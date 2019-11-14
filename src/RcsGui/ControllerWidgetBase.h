@@ -42,12 +42,10 @@
 #include <ControllerBase.h>
 
 #include <QScrollArea>
+#include <QGroupBox>
+#include <QCheckBox>
+#include <QLabel>
 
-
-class LcdSlider;
-class QCheckBox;
-class QGroupBox;
-class QLabel;
 
 
 namespace Rcs
@@ -57,7 +55,6 @@ class ControllerWidgetBase: public QScrollArea
 {
   Q_OBJECT
 public:
-  static void* controllerGuiBase(void* arg);
   static int create(ControllerBase* cntrl,
                     MatNd* a_des,
                     MatNd* x_des,
@@ -75,6 +72,16 @@ public:
 
   static bool destroy(int handle);
 
+  void registerCallback(TaskWidget::TaskChangeCallback* callback);
+  void reset(const MatNd* a_des, const MatNd* x_des);
+
+protected slots:
+  virtual void showActiveTasks(int checkBoxState);
+  virtual void setActive(int status);
+  virtual void displayAct();
+
+protected:
+
   ControllerWidgetBase();
 
   ControllerWidgetBase(ControllerBase* cntrl,
@@ -87,15 +94,7 @@ public:
 
   virtual ~ControllerWidgetBase();
 
-  void registerCallback(TaskWidget::TaskChangeCallback* callback);
-  void reset(const MatNd* a_des, const MatNd* x_des);
-
-protected slots:
-  virtual void showActiveTasks(int checkBoxState);
-  virtual void setActive(int status);
-  virtual void displayAct();
-
-protected:
+  static void* controllerGuiBase(void* arg);
   virtual QGroupBox* boxKinematicsInfo();
   virtual QGroupBox* boxControllerButtons();
   void lock();

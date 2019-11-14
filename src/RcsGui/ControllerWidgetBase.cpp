@@ -45,9 +45,6 @@
 #include <QTimer>
 #include <QGridLayout>
 #include <QVBoxLayout>
-#include <QGroupBox>
-#include <QCheckBox>
-#include <QLabel>
 
 #include <algorithm>
 
@@ -209,11 +206,26 @@ ControllerWidgetBase::ControllerWidgetBase(ControllerBase* cntrl,
 
     if (tsk->getName() != "Unnamed task")
     {
-      TaskWidget* task_widget = new TaskWidget(tsk,
+      TaskWidget* task_widget;
+
+      if (a_curr == NULL)
+      {
+        task_widget = new TaskWidget(tsk,
                                                &a_des->ele[id],
                                                &x_des->ele[rowIndex],
                                                &x_curr->ele[rowIndex],
                                                mutex_, showOnly);
+      }
+      else
+      {
+        task_widget = new TaskWidget(tsk,
+                                     &a_des->ele[id],
+                                     &x_des->ele[rowIndex],
+                                     &a_curr->ele[rowIndex],
+                                     &x_curr->ele[rowIndex],
+                                     mutex_, showOnly);
+      }
+
 
       max_label_width = std::max(task_widget->getMaxLabelWidth(), max_label_width);
       this->taskWidgets.push_back(task_widget);
