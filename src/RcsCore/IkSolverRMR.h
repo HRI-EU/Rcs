@@ -47,14 +47,24 @@ namespace Rcs
 {
 
 /*! \ingroup RcsController
- * \brief Inverse kinematics solver (Resolved motion rate control)
+ * \brief Inverse kinematics solver (Resolved motion rate control).
  */
 class IkSolverRMR
 {
 public:
 
+  /*! \brief Constructs a Resolved Motion Rate IK class instance based on the
+   *         given controller. All tasks from the controller's task list can
+   *         be used. The state of the system will be taken from the
+   *         controller's graph. This class will not change any internals of
+   *         the controller.
+   */
   IkSolverRMR(ControllerBase* controller);
 
+  /*! \brief Deletes the IK class instance and frees all memory. The pased
+   *         controller is not considered to be owned, so it will not be
+   *         deleted.
+   */
   virtual ~IkSolverRMR();
 
   /*! \brief Inverse kinematics with left-hand pseudo inverse, with both
@@ -77,8 +87,10 @@ public:
    *         Only the task elements with non-zero activations a_des are
    *         considered.
    *
-   *  \param[out] dq          Desired joint velocities. The array is
-   *                          reshaped to contain all dofs (RcsGraph::dof)
+   *  \param[out] dq_ts       Desired task space joint displacements. The array
+   *                          is reshaped to contain all dofs (RcsGraph::dof)
+   *  \param[out] dq_ns       Desired null space joint displacements. The array
+   *                          is reshaped to contain all dofs (RcsGraph::dof)
    *  \param[in]  dx          Delta in task space. Vector dx is a column
    *                          vector of either the overall task dimension, or
    *                          of the dimension of the active tasks only. If
@@ -94,44 +106,21 @@ public:
    *                                  \ref computeKinematics is called before
    *                                  calculating the above equations.
    */
-  virtual void solveLeftInverse(MatNd* dq, const MatNd* dx, const MatNd* dH,
-                                const MatNd* activation, double lambda,
-                                bool recomputeKinematics=true);
-
   virtual void solveLeftInverse(MatNd* dq_ts, MatNd* dq_ns, const MatNd* dx,
                                 const MatNd* dH, const MatNd* activation,
                                 double lambda, bool recomputeKinematics=true);
 
-  /*! \brief Computes the joint velocities based on the task space inverse
-   *         kinematics according to Liegeois:<br>
-   *         \f$
-   *         \mathbf{\dot{q} =  J^{\#} \dot{x} -
-   *         \alpha (I - J^{\#} J) W_q^{-1}
-   *         (\frac{\partial H}{\partial q})^T }
-   *         \f$
-   *         <br>
-   *         Only the task elements with non-zero activations a_des are
-   *         considered. The pseudo-inverse is computed as
-   *         <br>
-   *         \f$
-   *         \mathbf{J^{\#} =  W_q^{-1} J^T (J W_q^{-1} J^T}
-   *         + \mathsf{diag} (\mbox{\boldmath$\lambda$}))^{-1}
-   *         \f$
-   *         <br>
-   *         where \f$\lambda\f$ is self->lambda0 and \f$\mathbf{W_q}\f$ is
-   *         computed according to the joint ranges.
+  /*! \brief Same as
+   *         \ref IkSolverRMR::solveLeftInverse(MatNd* dq_ts, MatNd* dq_ns,
+   *              const MatNd* dx, const MatNd* dH, const MatNd* activation,
+   *              double lambda, bool recomputeKinematics=true)
    *
-   *  \param[out] dq_des      Desired joint velocities. The array is only
-   *                          composed of unconstrained dofs (RcsGraph::nJ)
-   *  \param[in]  dx          Delta in task space
-   *  \param[in]  dH          Null space gradient. It must be of size nJ x 1,
-   *                          or of 1 x nJ, where nJ is the number of
-   *                          unconstrained dofs.
-   *  \param[in]  activation  Desired task activations.
-   *  \param[in]  lambda      Regularization factor for the pseudo-inverse.
+   *         Argument dq comprises bot task and null space terms
+   *         (dq = dq_ts + dq_ns)
    */
-  virtual void solveRightInverse(MatNd* dq_des, const MatNd* dx, const MatNd* dH,
-                                 const MatNd* activation, double lambda);
+  virtual void solveLeftInverse(MatNd* dq, const MatNd* dx, const MatNd* dH,
+                                const MatNd* activation, double lambda,
+                                bool recomputeKinematics=true);
 
   /*! \brief Computes the joint velocities based on the task space inverse
      *         kinematics according to Liegeois:<br>
@@ -160,13 +149,25 @@ public:
      *                          unconstrained dofs.
      *  \param[in]  activation  Desired task activations.
      *  \param[in]  lambda      Regularization factors for the pseudo-inverse.
-     *                          Must be 1 x 1 or nJ x 1
+     *                          Must be 1 x 1 or nx x 1, where nx is the
+     *                          number of the active task dimensions.
      */
   virtual void solveRightInverse(MatNd* dq_des,
                                  const MatNd* dx,
                                  const MatNd* dH,
                                  const MatNd* activation,
                                  const MatNd* lambda);
+
+  /*! \brief Same as
+   *         \ref IkSolverRMR::solveRightInverse(MatNd* dq_des, const MatNd* dx,
+   *              const MatNd* dH, const MatNd* activation, const MatNd* lambda)
+   *
+   *         Argument lambda is a scalar and will be applied to all task
+   *         elements.
+   */
+  virtual void solveRightInverse(MatNd* dq_des, const MatNd* dx,
+                                 const MatNd* dH, const MatNd* activation,
+                                 double lambda);
 
   /*! \brief Computes the task blending matrix Wx. We compute it as a
    *         vector, since the matrix is diagonal. The vector only
@@ -182,7 +183,7 @@ public:
    *  \param[in]   useInnerProduct Flag to use normalization based on the
    *                               Jacobian
    */
-  static void computeBlendingMatrix(const Rcs::ControllerBase& controller,
+  static void computeBlendingMatrix(const ControllerBase& controller,
                                     MatNd* Wx,
                                     const MatNd* a_des,
                                     const MatNd* J,
@@ -217,7 +218,7 @@ protected:
   unsigned int nx, nTasks, nq, nqr;
   double det;
   MatNd* A, *invA, *invWq, *J, *pinvJ, *N, *dHA, *dq, *dqr, *dxr, *NinvW,
-         *Wx, *dHr, *dH, *dH_jl, *dH_ca, *dx;
+    *Wx, *dHr, *dH, *dH_jl, *dH_ca, *dx, *ax_curr;
 };
 
 

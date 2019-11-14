@@ -38,7 +38,6 @@
 #include "Rcs_macros.h"
 
 #include <fstream>
-#include <vector>
 #include <algorithm>
 
 #if !defined(_MSC_VER)

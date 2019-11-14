@@ -84,6 +84,9 @@ public:
 
   ///@{
 
+
+  /*! \copydoc PhysicsBase::step(double)
+   */
   virtual void step(double dt);
   virtual void simulate(double dt, MatNd* q =NULL, MatNd* q_dot=NULL,
                         MatNd* q_ddot=NULL, MatNd* T=NULL, bool control=false);

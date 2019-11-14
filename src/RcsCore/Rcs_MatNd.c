@@ -5584,8 +5584,9 @@ double MatNd_inverseDiag(MatNd* dst, const MatNd* src)
   {
     for (i = 0; i < src->m; i++)
     {
-      dst->ele[i] = src->ele[i] == 0.0 ? DBL_MAX : 1.0/src->ele[i];
-      det *= src->ele[i];
+      const double src_i = src->ele[i];
+      dst->ele[i] = (src_i == 0.0) ? DBL_MAX : 1.0/src_i;
+      det *= src_i;
     }
   }
   else
@@ -5594,8 +5595,9 @@ double MatNd_inverseDiag(MatNd* dst, const MatNd* src)
     {
       if (i % (src->m + 1) == 0)
       {
-        dst->ele[i] = src->ele[i] == 0.0 ? DBL_MAX : 1.0/src->ele[i];
-        det *= src->ele[i];
+        const double src_i = src->ele[i];
+        dst->ele[i] = (src_i == 0.0) ? DBL_MAX : 1.0/src_i;
+        det *= src_i;
       }
       else
       {

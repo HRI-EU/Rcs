@@ -112,7 +112,7 @@ Rcs::TaskDistance1D::TaskDistance1D(RcsGraph* graph_,
     }
 
   setName("Dist1D " + std::string(effector ? effector->name : "NULL") + "-"
-          + std::string(refBdy ? refBdy->name : NULL));
+          + std::string(refBdy ? refBdy->name : "NULL"));
   setDim(1);
   std::vector<Parameters*>& params = getParameters();
   params.clear();

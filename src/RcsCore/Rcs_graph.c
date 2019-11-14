@@ -3304,7 +3304,7 @@ RcsMeshData* RcsGraph_meshify(const RcsGraph* self, double scale, char computeTy
     }
   }
 
-  if (scale != 1.0)
+  if ((scale!=1.0) && (allMesh!=NULL))
   {
     RcsMesh_scale(allMesh, scale);
   }
