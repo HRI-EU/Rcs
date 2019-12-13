@@ -219,7 +219,7 @@ void Rcs::NodeBase::setRotation(double A_KI[3][3])
   {
     REXEC(4)
     {
-      RLOG(4, "Invalid rotation matrix:");
+      RLOG(4, "[%s] Invalid rotation matrix:", getName().c_str());
       Mat3d_fprint(stderr, A_KI);
     }
     return;

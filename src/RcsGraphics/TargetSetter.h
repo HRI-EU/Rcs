@@ -79,6 +79,11 @@ public:
                bool withSphericalTracker=true);
 
   /*!
+   *  \brief Constructor for Euler angles tracking.
+   */
+  TargetSetter(double posPtr[3], double size=0.25);
+
+  /*!
    *  \brief Virtual destructor to allow inheriting from this class.
    */
   virtual ~TargetSetter();

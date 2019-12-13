@@ -40,7 +40,7 @@
 /*!
  *  \defgroup RcsGraphics Graphics and visualization classes
  *
- * This group contains classes and methods related to the Rcs 3D visualization.
+ *  Classes and methods related to the Rcs 3D visualization.
  */
 
 #include <Rcs_graphicsUtils.h>
@@ -95,29 +95,112 @@ public:
    *         through calling \ref frame() or \ref runInThread().
    */
   Viewer();
+
   Viewer(bool fancy,              // Shadows and anti-aliasing on
          bool startupWithShadow); // Shadows on
+
+  /*! \brief Virtual destructor to allow polymorphism.
+   */
   virtual ~Viewer();
 
+  /*! \brief Applies OpenSceneGraph's optimization function to the viewer's
+   *         root node.
+   */
   virtual void optimize();
+
+  /*! \brief Locks all mutexes around the frame() call.
+   */
   virtual bool lock() const;
+
+  /*! \brief Unlocks all mutexes around the frame() call.
+   */
   virtual bool unlock() const;
 
-  void setWindowSize(unsigned int llx,     // lower left x
+  /*! \brief Changes the window size. This function only takes effect if there
+   *         was no frame() call before.
+   *
+   *  \param[in] llx     Lower left x screen coordinate
+   *  \param[in] lly     Lower left y screen coordinate
+   *  \param[in] sizeX   Screen size in x-direction
+   *  \param[in] sizeY   Screen size in y-direction
+   *  \return True for success, false otherwise: View has already been set
+   *          up (frame() has been called). In case of failure, there will be a
+   *          log message on debug level 1.
+   */
+  bool setWindowSize(unsigned int llx,     // lower left x
                      unsigned int lly,     // lower left y
                      unsigned int sizeX,   // size in x-direction
                      unsigned int sizeY);  // size in y-direction
+
+  /*! \brief Adds the osg::Node to the root node of the viewer's scene graph.
+   */
   bool add(osg::Node* node);
+
+  /*! \brief Adds the event handler to the root node of the viewer's scene graph.
+   */
   void add(osgGA::GUIEventHandler* eventHandler);
-  void removeNode(osg::Node* node);
+
+  /*! \brief Removes the given node from the viewer's scene graph.
+   *
+   * \return True for success, false otherwise: node is NULL, or not found in
+   *         the viewer's scenegraph.
+   */
+  bool removeNode(osg::Node* node);
+
+  /*! \brief Starts a thread that periodically calls the frame() call. The
+   *         thread will try to achieve the given updateFrequency. Changing the
+   *         update frequency will take effect also when the thread is running.
+   *
+   * \param[in] mutex   Optional mutex that will be locked whenever the viewer
+   *                    traverses or does changes to the scene graph.
+   */
   void runInThread(pthread_mutex_t* mutex = NULL);
-  void setUpdateFrequency(double Hz);   // Default is 25Hz
+
+  /*! \brief Sets the viewer's update frequency. This only has an effect if the
+   *         viewer runs its own thread (see runInThread() method). The default
+   *         is 25Hz.
+   *
+   *  \param[in] Hz  Update frequency in [Hz]
+   */
+  void setUpdateFrequency(double Hz);
+
+  /*! \brief Set wire frame mode.
+   *
+   *  \param[in] wf  True for wire frame display, false for solid.
+   */
   void displayWireframe(bool wf = true);
+
+  /*! \brief Toggles the wire frame mode.
+   */
   void toggleWireframe();
+
+  /*! \brief Enable or disable shadow casting.
+   *
+   *  \param[in] enabled  True for shadow casting, false for no shadows.
+   */
   void setShadowEnabled(bool enable);
+
+  /*! \brief Enable or disable cartoon mode.
+   *
+   *  \param[in] enabled  True for cartoon mode, false otherwise.
+   */
   void setCartoonEnabled(bool enabled);
+
+  /*! \brief Sets the viewer's background color. See colorFromString() for colors.
+   *
+   *  \param[in] color   Color to be set as background color. if color is NULL,
+   *                     it is set to white.
+   */
   void setBackgroundColor(const char* color);
+
+    /*! \brief Returns the viewer thread's update frequency.
+   */
   double updateFrequency() const;
+
+  /*! \brief Does all rendering. If the viewer's thread has been started
+   *         (see runInThread() method), the frame() call is called
+   *         periodically from there.
+   */
   virtual void frame();
 
   /*! \brief Copies the camera transformation to A_CI.
@@ -129,21 +212,25 @@ public:
    *  \param[in] A_CI Transformation from world to camera frame
    */
   void setCameraTransform(const HTr* A_CI);
+
+  /*! \brief Sets the camera transformation to the given position and Euler
+   *         angles. Euler angles are in x-y-z order (rotated frame)
+   *
+   *  \param[in] x      Camera x-position in world frame
+   *  \param[in] y      Camera y-position in world frame
+   *  \param[in] z      Camera z-position in world frame
+   *  \param[in] thx    Euler angle about x-axis
+   *  \param[in] thy    Euler angle about rotated y-axis
+   *  \param[in] thz    Euler angle about rotated z-axis
+   */
   void setCameraTransform(double x, double y, double z,
                           double thx, double thy, double thz);
-
-  void setCameraHomePosition(const osg::Vec3d& eye,
-                             const osg::Vec3d& center,
-                             const osg::Vec3d& up=osg::Vec3d(0.0, 0.0, 1.0));
-  void setCameraHomePosition(const HTr* transformation);
 
 
   /*! \brief Returns the node and the 3D world position of the
    *         mouse pointer (closest intersection of picking ray and node)
    */
   osg::Node* getNodeUnderMouse(double I_mouseCoords[3]=NULL);
-
-  void getMouseTip(double I_tip[3]) const;
 
   /*! \brief Convenience template function for any type of node: Call it with
    *         MyNode* nd = viewer->getNodeUnderMouse<MyNode*>();
@@ -158,21 +245,57 @@ public:
     return node;
   }
 
+  /*! \brief Sets the rotation center of the Trackball manipulator to the given
+   *         3d coordinates.
+   *
+   *  \param[in]   x Position x in [m]
+   *  \param[in]   y Position y in [m]
+   *  \param[in]   z Position z in [m]
+   *  \return True for success, false otherwise (no mouse manipulator found).
+   */
+  bool setTrackballCenter(double x, double y, double z);
 
+  /*! \brief Gets the rotation center of the Trackball manipulator in 3d
+   *         scene coordinates.
+   *
+   *  \param[out]   pos   3d position coordinates
+   *  \return True for success, false otherwise (no mouse manipulator found).
+   *          In case of false, argument pos remains unchanged.
+   */
+  bool getTrackballCenter(double pos[3]) const;
+
+  /*! \brief Toggles the screen capture mode. For screen recording, a process
+   *         is forked that records the screen with avsync or ffmpeg. This
+   *         function is also accessible through key "M".
+   */
   bool toggleVideoRecording();
-  double getFieldOfView() const;
-  void setFieldOfView(double fov);
+
+  /*! \brief Joins the viewer's thread in case it has been started. If not, the
+   *         function does nothing.
+   */
   void stopUpdateThread();
 
-  double fps;
+  /*! \brief Returns a reference to the internal osgViewer instance.
+   */
+  osg::ref_ptr<osgViewer::Viewer> getOsgViewer() const;
+  double getFieldOfView() const;
+  void setFieldOfView(double fov);
+  void getMouseTip(double I_tip[3]) const;
+
 
 protected:
+
+  double fps;
 
   float mouseX;
   float mouseY;
   float normalizedMouseX;
   float normalizedMouseY;
 
+  void setCameraHomePosition(const osg::Vec3d& eye,
+                             const osg::Vec3d& center,
+                             const osg::Vec3d& up=osg::Vec3d(0.0, 0.0, 1.0));
+  void setCameraHomePosition(const HTr* transformation);
   bool handle(const osgGA::GUIEventAdapter& ea,
               osgGA::GUIActionAdapter& aa);
 
@@ -194,7 +317,6 @@ protected:
   unsigned int llx, lly, sizeX, sizeY;
   bool cartoonEnabled;
   pthread_t frameThread;
-
   osg::ref_ptr<osgViewer::Viewer> viewer;
   osg::ref_ptr<osgShadow::ShadowedScene> shadowScene;
   osg::ref_ptr<osg::LightSource> cameraLight;
@@ -212,4 +334,3 @@ private:
 
 
 #endif // RCSVIEWER_H
-

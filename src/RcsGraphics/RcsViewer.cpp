@@ -419,7 +419,7 @@ void Viewer::create(bool fancy, bool startupWithShadow)
 /*******************************************************************************
  * Add a node to the root node.
  ******************************************************************************/
-void Viewer::setWindowSize(unsigned int llx_,     // lower left x
+bool Viewer::setWindowSize(unsigned int llx_,     // lower left x
                            unsigned int lly_,     // lower left y
                            unsigned int sizeX_,   // size in x-direction
                            unsigned int sizeY_)
@@ -428,13 +428,15 @@ void Viewer::setWindowSize(unsigned int llx_,     // lower left x
   {
     RLOG(1, "The window size can't be changed after launching the viewer "
          "window");
-    return;
+    return false;
   }
 
   this->llx = llx_;
   this->lly = lly_;
   this->sizeX = sizeX_;
   this->sizeY = sizeY_;
+
+  return true;
 }
 
 /*******************************************************************************
@@ -499,12 +501,12 @@ bool Viewer::add(osg::Node* node)
 /*******************************************************************************
  * Removes a node from the scene graph.
  ******************************************************************************/
-void Viewer::removeNode(osg::Node* node)
+bool Viewer::removeNode(osg::Node* node)
 {
   if (node == NULL)
   {
     RLOG(1, "Node is NULL - can't be deleted");
-    return;
+    return false;
   }
 
   osg::Camera* hud = dynamic_cast<osg::Camera*>(node);
@@ -516,7 +518,7 @@ void Viewer::removeNode(osg::Node* node)
     if (slave != NULL)
     {
       RLOG(4, "Hud can't be deleted - is not part of the scene graph");
-      return;
+      return false;
     }
 
     // We are a bit pedantic and check that the camera is not the
@@ -532,9 +534,10 @@ void Viewer::removeNode(osg::Node* node)
     else
     {
       RLOG(1, "Cannot remove the viewer's camera");
+      return false;
     }
 
-    return;
+    return true;
   }
 
   if (rootnode->containsNode(node))
@@ -544,8 +547,10 @@ void Viewer::removeNode(osg::Node* node)
   else
   {
     RLOG(4, "Node can't be deleted - is not part of the scene graph");
+    return false;
   }
 
+  return true;
 }
 
 /*******************************************************************************
@@ -906,6 +911,14 @@ void Viewer::stopUpdateThread()
 /*******************************************************************************
  *
  ******************************************************************************/
+osg::ref_ptr<osgViewer::Viewer> Viewer::getOsgViewer() const
+{
+  return this->viewer;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 bool Viewer::lock() const
 {
   pthread_mutex_lock(&this->mtxInternal);
@@ -1052,6 +1065,39 @@ bool Viewer::handle(const osgGA::GUIEventAdapter& ea,
       break;
 
   }   // switch(ea.getEventType())
+
+  return false;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Viewer::setTrackballCenter(double x, double y, double z)
+{
+  osgGA::TrackballManipulator* trackball = dynamic_cast<osgGA::TrackballManipulator*>(viewer->getCameraManipulator());
+
+  if (trackball)
+  {
+    trackball->setCenter(osg::Vec3(x, y, z));
+    return true;
+  }
+
+  return false;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Viewer::getTrackballCenter(double pos[3]) const
+{
+  osgGA::TrackballManipulator* trackball = dynamic_cast<osgGA::TrackballManipulator*>(viewer->getCameraManipulator());
+
+  if (trackball)
+  {
+    osg::Vec3d tbCenter = trackball->getCenter();
+    Vec3d_set(pos, tbCenter.x(), tbCenter.y(), tbCenter.z());
+    return true;
+  }
 
   return false;
 }

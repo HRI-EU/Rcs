@@ -51,8 +51,8 @@
  ******************************************************************************/
 Rcs::ArrowNode::ArrowNode() :
   NodeBase(),
-  originPtr(Vec3d_zeroVec()),
-  directionPtr(Vec3d_zeroVec()),
+  originPtr(staticOrigin),
+  directionPtr(staticDirection),
   offsetPtr(Vec3d_zeroVec()),
   scaleFactor(1.0),
   radius(0.005)

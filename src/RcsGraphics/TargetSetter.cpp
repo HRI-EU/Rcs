@@ -254,6 +254,21 @@ TargetSetter::TargetSetter(double posPtr_[3], double rmPtr_[3][3],
 /*******************************************************************************
  * Constructor for rotation matrix tracking.
  ******************************************************************************/
+TargetSetter::TargetSetter(double posPtr_[3], double size) :
+  osg::Switch(),
+  posPtr(posPtr_),
+  angPtr(NULL),
+  rmPtr(NULL),
+  scale(size),
+  withSphericalTracker(false)
+{
+  RLOG(5, "Creating position only tracker");
+  initGraphics();
+}
+
+/*******************************************************************************
+ * Constructor for rotation matrix tracking.
+ ******************************************************************************/
 TargetSetter::~TargetSetter()
 {
 }

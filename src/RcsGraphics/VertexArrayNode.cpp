@@ -157,7 +157,7 @@ bool Rcs::VertexArrayNode::setPoints(const MatNd* mat_)
     RLOG(4, "Matrix is NULL - skipping setPoints()");
     return false;
   }
-
+  this->mat = mat_;
   return setPoints(mat_->ele, mat_->m);
 }
 

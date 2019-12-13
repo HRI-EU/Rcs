@@ -2037,7 +2037,6 @@ int main(int argc, char** argv)
                                     controller.getGraph()->q);
         }
 
-
         sprintf(hudText, "IK calculation: %.1f us\ndof: %d nJ: %d "
                 "nqr: %d nx: %d\nJL-cost: %.6f dJL-cost: %.6f %s %s"
                 "\nalgo: %d lambda:%g alpha: %g tmc: %.3f\n"
@@ -2290,9 +2289,6 @@ int main(int argc, char** argv)
         v->add(hud);
         v->add(kc);
         v->add(dragger);
-        v->setCameraHomePosition(osg::Vec3d(2.5,  1.0, 1.8),
-                                 osg::Vec3d(0.0, -0.2, 0.8),
-                                 osg::Vec3d(0.0, 0.05, 1.0));
         v->runInThread(mtx);
 
         // Launch the activation widget

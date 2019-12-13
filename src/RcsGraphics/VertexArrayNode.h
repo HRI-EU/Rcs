@@ -87,6 +87,9 @@ public:
                   osg::PrimitiveSet::Mode mode=osg::PrimitiveSet::LINES,
                   const std::string& color = "RED");
   bool setPoints(const double* points, size_t nPoints);
+
+  /*! \brief Array mat must be shaped nPoints x 3.
+   */
   bool setPoints(const MatNd* mat);
   bool setColor(const std::string& color);
   bool setPointSize(float pointSize);
