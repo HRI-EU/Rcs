@@ -36,7 +36,6 @@
 
 #ifndef RCS_DISTANCEWM5_H
 #define RCS_DISTANCEWM5_H
-#if defined (USE_WM5)
 
 #include "Rcs_HTr.h"
 
@@ -129,5 +128,4 @@ bool Rcs_computePlanePlaneIntersection(const double p1[3],
 
 
 
-#endif   // USE_WM5
 #endif   // RCS_DISTANCEWM5_H

@@ -151,6 +151,10 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
     else
     {
       RcsMeshData* mesh = RcsMesh_createFromFile(shape->meshFile);
+      if (mesh==NULL)
+      {
+        RLOG(4, "Couldn't create mesh for file \"%s\"", shape->meshFile);
+      }
       shape->userData = (void*) mesh;
     }
 
@@ -160,6 +164,11 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
                "Only uniform scaling is supported in Rcs");
 
     shape->scale = scale_3d[0];
+
+    if ((RcsMeshData*) shape->userData)
+    {
+    RcsMesh_scale((RcsMeshData*) shape->userData, shape->scale);
+    }
   }
   else
   {

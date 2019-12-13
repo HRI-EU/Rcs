@@ -44,6 +44,7 @@
 #include <pthread.h>
 
 #include <map>
+#include <string>
 
 class btBroadphaseInterface;
 class btCollisionShape;

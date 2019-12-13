@@ -523,7 +523,6 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
   self->q_dot = MatNd_create(self->dof, 1);
 
   RcsGraph_beautifyHumanModelBVH(self, linearScaleToSI);
-
   RcsGraph_setState(self, NULL, NULL);
 
   return self;
@@ -682,7 +681,7 @@ bool RcsGraph_beautifyHumanModelBVH(RcsGraph* graph,
   RcsBody* leftToe = RcsGraph_getBodyByName(graph, "LeftToe");
   RcsBody* rightWrist = RcsGraph_getBodyByName(graph, "RightWrist");
   RcsBody* leftWrist = RcsGraph_getBodyByName(graph, "LeftWrist");
-
+  linearScaleToSI=1;
   if (head==NULL)
     {
       RLOG(4, "No body with name \"Head\" found");

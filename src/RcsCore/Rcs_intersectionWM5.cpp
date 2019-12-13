@@ -116,7 +116,11 @@ bool Rcs_findLineIntersections(double* closestLinePt, T intrsec,
 }
 
 /*******************************************************************************
- *
+ *! \ingroup DistanceFunctions
+ *  \brief Computes the intersection between a line given by a point and a
+ *         direction and a box. The function returns true if both intersect,
+ *         and stores the closest intersection point in closestLinePt (if it
+ *         is not NULL).
  ******************************************************************************/
 bool Rcs_intersectionLineBox(const double linePt[3],
                              const double lineDir[3],
@@ -142,6 +146,11 @@ bool Rcs_intersectionLineBox(const double linePt[3],
 }
 
 /*******************************************************************************
+ *! \ingroup DistanceFunctions
+ *  \brief Computes the intersection between a line given by a point and a
+ *         direction and a cylinder. The function returns true if both
+ *         intersect, and stores the closest intersection point in
+ *         closestLinePt (if it is not NULL).
  *
  ******************************************************************************/
 bool Rcs_intersectionLineCylinder(const double linePt[3],
@@ -170,6 +179,11 @@ bool Rcs_intersectionLineCylinder(const double linePt[3],
 }
 
 /*******************************************************************************
+ *! \ingroup DistanceFunctions
+ *  \brief Computes the intersection between a line given by a point and a
+ *         direction and a SSL/capsule. The function returns true if both
+ *         intersect, and stores the closest intersection point in
+ *         closestLinePt (if it is not NULL).
  *
  ******************************************************************************/
 bool Rcs_intersectionLineSSL(const double linePt[3],
@@ -198,6 +212,11 @@ bool Rcs_intersectionLineSSL(const double linePt[3],
 }
 
 /*******************************************************************************
+ *! \ingroup DistanceFunctions
+ *  \brief Computes the intersection between a line given by a point and a
+ *         direction and a sphere. The function returns true if both
+ *         intersect, and stores the closest intersection point in
+ *         closestLinePt (if it is not NULL).
  *
  ******************************************************************************/
 bool Rcs_intersectionLineSphere(const double linePt[3],
@@ -221,6 +240,11 @@ bool Rcs_intersectionLineSphere(const double linePt[3],
 }
 
 /*******************************************************************************
+ *! \ingroup DistanceFunctions
+ *  \brief Computes the intersection between a line given by a point and a
+ *         direction and a torus. The function returns true if both intersect,
+ *         and stores the closest intersection point in closestLinePt (if it
+ *         is not NULL).
  *
  ******************************************************************************/
 bool Rcs_intersectionLineTorus(const double linePt[3],
@@ -259,6 +283,11 @@ bool Rcs_intersectionLineTorus(const double linePt[3],
 }
 
 /*******************************************************************************
+ *! \ingroup DistanceFunctions
+ *  \brief Computes the intersection between a line given by a point and a
+ *         direction and a cone. The function returns true if both
+ *         intersect, and stores the closest intersection point in
+ *         closestLinePt (if it is not NULL).
  *
  ******************************************************************************/
 bool Rcs_intersectionLineCone(const double linePt[3],
@@ -337,6 +366,11 @@ bool Rcs_intersectionLineCone(const double linePt[3],
 }
 
 /*******************************************************************************
+ *! \ingroup DistanceFunctions
+ *  \brief Computes the intersection between a line given by a point and a
+ *         direction and a SSR. The function returns true if both intersect,
+ *         and stores the closest intersection point in closestLinePt (if it
+ *         is not NULL).
  *
  ******************************************************************************/
 bool Rcs_intersectionLineSSR(const double linePt[3],
@@ -410,6 +444,11 @@ bool Rcs_intersectionLineSSR(const double linePt[3],
 }
 
 /*******************************************************************************
+ *! \ingroup DistanceFunctions
+ *  \brief Computes the intersection between a plane given by a point and a
+ *         direction and a cylinder. The function returns true if both
+ *         intersect.
+ *
  * Compute extremes of signed distance Dot(N,X)-d for points on the
  * cylinder. These are
  * min = (Dot(N,C)-d) - r*sqrt(1-Dot(N,W)^2) - (h/2)*|Dot(N,W)|
@@ -670,6 +709,8 @@ extern "C" {
                                         const RcsShape* shape,
                                         double closestLinePt[3])
   {
+    RLOG(4, "RcsShape_computeLineIntersection requires GeometricTools library - "
+         "not available");
     return false;
   }
 
@@ -683,6 +724,8 @@ extern "C" {
 
   bool Rcs_computeOrientedBox(HTr* A_box, double extents[3], const double* points, unsigned int nPoints)
   {
+    RLOG(4, "Rcs_computeOrientedBox requires GeometricTools library - "
+         "not available");
     return false;
   }
 

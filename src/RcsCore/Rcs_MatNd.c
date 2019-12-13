@@ -4465,8 +4465,7 @@ bool MatNd_lineFit2D(double* A, double* B, const MatNd* data)
   if (data->m < 2)
   {
     RLOG(4, "Can't perform line fit for less than 2 points! "
-         "You gave me only %d",
-         data->m);
+         "You gave me only %d", data->m);
     return false;
   }
 
@@ -4493,7 +4492,7 @@ bool MatNd_lineFit2D(double* A, double* B, const MatNd* data)
 
   if (det == 0.0)
   {
-    RLOG(4, "Line fit failed!");
+    RLOG(4, "Line fit failed - can't invert covariance matrix!");
     return false;
   }
 

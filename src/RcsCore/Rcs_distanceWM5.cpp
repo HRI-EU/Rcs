@@ -34,11 +34,13 @@
 
 *******************************************************************************/
 
-#if defined (USE_WM5)
 #include "Rcs_distanceWM5.h"
+#include "Rcs_macros.h"
+
+#if defined (USE_WM5)
+
 #include "Rcs_shape.h"
 #include "Rcs_typedef.h"
-#include "Rcs_macros.h"
 #include "Rcs_math.h"
 
 #include <Wm5DistSegment3Box3.h>
@@ -2989,5 +2991,48 @@ static bool setWildMagicDistanceFunctions()
 // This is being called before main()
 static bool distanceInitialized = setWildMagicDistanceFunctions();
 
+#else // USE_WM5
+
+
+bool Rcs_containedPoint2DConvexPolygon2D(const double pt[2],
+                                         const double polygon[][2],
+                                         unsigned int N)
+{
+  RLOG(4, "Rcs_containedPoint2DConvexPolygon2D: WM5 library not available");
+  return false;
+}
+
+double Rcs_distancePoint2DConvexPolygon2D(const double pt[2],
+                                          const double polygon[][2],
+                                          unsigned int N,
+                                          double cp0[2],
+                                          double cp1[2])
+{
+  RLOG(4, "Rcs_distancePoint2DConvexPolygon2D: WM5 library not available");
+  return 0.0;
+}
+
+
+double Rcs_distancePoint3DConvexPolygon2D(const double pt[3],
+                                          const double polygon[][2],
+                                          unsigned int N,
+                                          const HTr* A,
+                                          double cp0[3],
+                                          double cp1[3])
+{
+  RLOG(4, "Rcs_distancePoint3DConvexPolygon2D: WM5 library not available");
+  return 0.0;
+}
+
+bool Rcs_computePlanePlaneIntersection(const double p1[3],
+                                       const double n1[3],
+                                       const double p2[3],
+                                       const double n2[3],
+                                       double origin[3],
+                                       double direction[3])
+{
+  RLOG(4, "Rcs_computePlanePlaneIntersection: WM5 library not available");
+  return false;
+}
 
 #endif // USE_WM5

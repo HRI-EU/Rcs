@@ -510,6 +510,7 @@ void RcsBody_copy(RcsBody* dst, const RcsBody* src)
   dst->physicsSim = src->physicsSim;
   Vec3d_copy(dst->x_dot, src->x_dot);
   Vec3d_copy(dst->omega, src->omega);
+  dst->confidence = src->confidence;
 
   String_copyOrRecreate(&dst->name, src->name);
   String_copyOrRecreate(&dst->xmlName, src->xmlName);
@@ -816,16 +817,26 @@ void RcsBody_fprint(FILE* out, const RcsBody* b)
       fprintf(out, "\tphysics=\"unknown\" (%d)\n", b->physicsSim);
   }
 
+  // Velocities
+  fprintf(out, "\n\tx_dot: %f %f %f\n", b->x_dot[0], b->x_dot[2], b->x_dot[2]);
+  fprintf(out, "\n\tomega: %f %f %f\n", b->omega[0], b->omega[2], b->omega[2]);
+
+  // Confidence
+  fprintf(out, "\n\tConfidence: %f\n", b->confidence);
+
   // Absolute transformation
   fprintf(out, "\n\tAbsolute transformation:\n");
   HTr_fprint(out, b->A_BI);
+  double ea[3];
+  Mat3d_toEulerAngles(ea, b->A_BI->rot);
+  fprintf(out, "\n\tEuler angles:%f %f %f [deg]\n",
+          RCS_RAD2DEG(ea[0]), RCS_RAD2DEG(ea[1]), RCS_RAD2DEG(ea[2]));
 
   // Relative transformation
   fprintf(out, "\n\tRelative transformation:\n");
   if (b->A_BP)
   {
     HTr_fprint(out, b->A_BP);
-    double ea[3];
     Mat3d_toEulerAngles(ea, b->A_BP->rot);
     fprintf(out, "\n\tEuler angles:%f %f %f [deg]\n",
             RCS_RAD2DEG(ea[0]), RCS_RAD2DEG(ea[1]), RCS_RAD2DEG(ea[2]));
@@ -2467,4 +2478,3 @@ void RcsBody_scale(RcsBody* bdy, double scale)
     }
 
 }
-
