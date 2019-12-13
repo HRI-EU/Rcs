@@ -14,34 +14,34 @@ string (REPLACE "\\" "/" MKPLT "$ENV{MAKEFILE_PLATFORM}")
 ################################################################################
 IF(USE_VORTEX STREQUAL ESSENTIALS)
 
-    IF(DEFINED ENV{SIT})
-        # SIT available, use that version by default
-        SET(VORTEX_ESSENTIALS_DIR "${HGR}/External/Vortex/Essentials/${MKPLT}" CACHE PATH "Vortex install directory")
-    ELSE()
-        # SIT not available, path must be set
-        SET(VORTEX_ESSENTIALS_DIR "" CACHE PATH "Vortex install directory")
-    ENDIF()
+    # IF(DEFINED ENV{SIT})
+    #     # SIT available, use that version by default
+    #     SET(VORTEX_ESSENTIALS_DIR "${HGR}/External/Vortex/Essentials/${MKPLT}" CACHE PATH "Vortex install directory")
+    # ELSE()
+    #     # SIT not available, path must be set
+    #     SET(VORTEX_ESSENTIALS_DIR "" CACHE PATH "Vortex install directory")
+    # ENDIF()
 
-    # Validate vortex dir
-    IF(NOT EXISTS ${VORTEX_ESSENTIALS_DIR})
-        MESSAGE(FATAL_ERROR "Set to use Vortex, but VORTEX_ESSENTIALS_DIR is not set or does not exist")
-    ENDIF()
+    # # Validate vortex dir
+    # IF(NOT EXISTS ${VORTEX_ESSENTIALS_DIR})
+    #     MESSAGE(FATAL_ERROR "Set to use Vortex, but VORTEX_ESSENTIALS_DIR is not set or does not exist")
+    # ENDIF()
 
-    SET(VORTEX_INCLUDE_DIR ${VORTEX_ESSENTIALS_DIR}/include)
-    SET(VORTEX_LIBRARY_DIR ${VORTEX_ESSENTIALS_DIR}/lib)
-	IF(UNIX)
-    SET(VORTEX_LIBRARIES
-      ${VORTEX_LIBRARY_DIR}/libVxCore.so
-      ${VORTEX_LIBRARY_DIR}/libVxDynamics.so)
-    SET(VORTEX_DEFINITIONS -DLINUX)
-	ELSE()
-      SET(VORTEX_LIBRARIES
-        ${VORTEX_LIBRARY_DIR}/VxCore.lib
-        ${VORTEX_LIBRARY_DIR}/VxMath.lib
-        ${VORTEX_LIBRARY_DIR}/VxFoundation.lib
-        ${VORTEX_LIBRARY_DIR}/VxPlatform.lib
-        ${VORTEX_LIBRARY_DIR}/VxDynamics.lib)
-	ENDIF()
+    # SET(VORTEX_INCLUDE_DIR ${VORTEX_ESSENTIALS_DIR}/include)
+    # SET(VORTEX_LIBRARY_DIR ${VORTEX_ESSENTIALS_DIR}/lib)
+    # 	IF(UNIX)
+    # SET(VORTEX_LIBRARIES
+    #   ${VORTEX_LIBRARY_DIR}/libVxCore.so
+    #   ${VORTEX_LIBRARY_DIR}/libVxDynamics.so)
+    # SET(VORTEX_DEFINITIONS -DLINUX)
+    # 	ELSE()
+    #   SET(VORTEX_LIBRARIES
+    #     ${VORTEX_LIBRARY_DIR}/VxCore.lib
+    #     ${VORTEX_LIBRARY_DIR}/VxMath.lib
+    #     ${VORTEX_LIBRARY_DIR}/VxFoundation.lib
+    #     ${VORTEX_LIBRARY_DIR}/VxPlatform.lib
+    #     ${VORTEX_LIBRARY_DIR}/VxDynamics.lib)
+    # 	ENDIF()
 
 ENDIF()
 
@@ -167,20 +167,20 @@ ENDIF(NOT HEADLESS_BUILD)
 ################################################################################
 IF(USE_WM5)
 
-  SET(WM5_DEFINITIONS USE_WM5)
-  SET(WM5_INCLUDE_DIR ${HGR}/External/GeometricTools/5.10/include CACHE PATH "WM5 include dir")
-  SET(WM5_LIBRARY_DIR ${HGR}/External/GeometricTools/5.10/lib/${MKPLT} CACHE PATH "WM5 library dir")
+  # SET(WM5_DEFINITIONS USE_WM5)
+  # SET(WM5_INCLUDE_DIR ${HGR}/External/GeometricTools/5.10/include CACHE PATH "WM5 include dir")
+  # SET(WM5_LIBRARY_DIR ${HGR}/External/GeometricTools/5.10/lib/${MKPLT} CACHE PATH "WM5 library dir")
 
-  IF(WIN32)
-    SET(WM5_LIBRARIES
-      ${WM5_LIBRARY_DIR}/Wm5Mathematics${RCS_DEBUG_SUFFIX}.lib
-      ${WM5_LIBRARY_DIR}/Wm5Core${RCS_DEBUG_SUFFIX}.lib)
-  ELSE(WIN32)
-    SET(WM5_FLAGS "-isystem ${WM5_INCLUDE_DIR}")
-    SET(WM5_LIBRARIES
-      ${WM5_LIBRARY_DIR}/libWm5Mathematics.so
-      ${WM5_LIBRARY_DIR}/libWm5Core.so)
-  ENDIF(WIN32)
+  # IF(WIN32)
+  #   SET(WM5_LIBRARIES
+  #     ${WM5_LIBRARY_DIR}/Wm5Mathematics${RCS_DEBUG_SUFFIX}.lib
+  #     ${WM5_LIBRARY_DIR}/Wm5Core${RCS_DEBUG_SUFFIX}.lib)
+  # ELSE(WIN32)
+  #   SET(WM5_FLAGS "-isystem ${WM5_INCLUDE_DIR}")
+  #   SET(WM5_LIBRARIES
+  #     ${WM5_LIBRARY_DIR}/libWm5Mathematics.so
+  #     ${WM5_LIBRARY_DIR}/libWm5Core.so)
+  # ENDIF(WIN32)
 
 ENDIF(USE_WM5)
 
@@ -217,7 +217,7 @@ IF(NOT HEADLESS_BUILD)
 
   IF(WIN32)
 
-    IF (MSVC_VERSION STREQUAL 1900)
+    IF (MSVC_VERSION VERSION_GREATER_EQUAL 1900)
 	
       SET(QWT_INCLUDE_DIRS ${HGR}/External/qwt/6.1.3/include)
       SET(QWT_LIBRARY_DIR ${HGR}/External/qwt/6.1.3/lib/${MKPLT})
@@ -257,7 +257,7 @@ ENDIF(NOT HEADLESS_BUILD)
 ################################################################################
 IF(NOT HEADLESS_BUILD)
 
-  IF (MSVC_VERSION STREQUAL 1900)
+  IF (NOT MSVC_VERSION VERSION_LESS 1900)
     MESSAGE("Configuring for Qt5")
 	#SET(CMAKE_AUTOMOC ON)
     FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets)

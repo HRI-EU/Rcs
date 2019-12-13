@@ -103,9 +103,13 @@
 #define popen      _popen
 #define pclose     _pclose
 
+#if (_MSC_VER == 1900)
 #define isfinite(x)   _finite((double)(x))
 #define isnan(x)      _isnan((double)(x))
 #define trunc(x)    (((x) < 0) ? ceil((x)) : floor((x)))
+#else
+#define _TIMESPEC_DEFINED
+#endif
 
 static inline void srand48(unsigned int seed)
 {

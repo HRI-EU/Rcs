@@ -46,7 +46,7 @@ TARGET_INCLUDE_DIRECTORIES(RcsVortex PRIVATE
 # We intentionally do not link against Vortex and RcsCore. This allows the resulting library to use the version available
 # at runtime. The linker needs us to specify vortex libraries explicitly anyways. Thus, a single prebuilt binary can be
 # used with any vortex installation.
-IF(NOT RCSVORTEX_MASTER_PROJECT)
+IF(RCSVORTEX_MASTER_PROJECT)
   TARGET_LINK_LIBRARIES(RcsVortex ${VORTEX_LIBRARIES})
 ENDIF()
 
@@ -58,4 +58,6 @@ ENDIF()
 SET_TARGET_PROPERTIES(RcsVortex PROPERTIES CXX_VISIBILITY_PRESET "hidden")
 
 # The install command is used to put the library into Rcs' own library dir.
+IF(NOT RCSVORTEX_MASTER_PROJECT)
 INSTALL(TARGETS RcsVortex DESTINATION ${RCSVORTEX_INSTALL_LIBDIR})
+ENDIF()

@@ -1,10 +1,14 @@
 # This is a link created through cmake
 config/xml/ECS
+config/xml/MotorCycle
+config/xml/RebaPrediction
+install
 
 # Emacs backup files
 *~
 
 .idea
+.vscode
 
 klocwork
 
