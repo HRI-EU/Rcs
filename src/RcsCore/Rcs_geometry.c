@@ -40,6 +40,8 @@
 #include "Rcs_basicMath.h"
 #include "Rcs_macros.h"
 
+#include <limits.h>
+
 
 
 /*******************************************************************************
@@ -73,6 +75,27 @@ double Math_sqrDistPointLine(const double pt[3],
   Vec3d_constMulAndAdd(cpLine, segPt, segDir, s);
 
   return Vec3d_sqrDistance(pt, cpLine);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+double Math_distPointPlane(const double pt[3],
+                           const double planePt[3],
+                           const double planeNormal[3],
+                           double cpPlane[3])
+{
+  double dist, diff[3];
+
+  Vec3d_sub(diff, pt, planePt);
+  dist = Vec3d_innerProduct(diff, planeNormal);
+
+  if (cpPlane != NULL)
+  {
+    Vec3d_constMulAndAdd(cpPlane, pt, planeNormal, -dist);
+  }
+
+  return dist;
 }
 
 /*******************************************************************************
@@ -144,6 +167,9 @@ static inline bool Math_pointLeftorOnLine2D(const double p[2],
   return (det<=0.0) ? false : true;
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
 static bool Math_pointInsideOrOnConvexPolygon2D(const double pt[2],
                                                 double polygon[][2],
                                                 unsigned int nVertices)
@@ -172,6 +198,9 @@ static bool Math_pointInsideOrOnConvexPolygon2D(const double pt[2],
   return true;
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
 static double Math_sqrDistPointLineseg2D(const double point[2],
                                          const double linePt0[2],
                                          const double linePt1[2],
@@ -195,6 +224,9 @@ static double Math_sqrDistPointLineseg2D(const double point[2],
   return d;
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
 static void Math_centroidConvexPolygon2D(double centroid[2],
                                          double poly[][2],
                                          unsigned int nVertices)
@@ -215,6 +247,9 @@ static void Math_centroidConvexPolygon2D(double centroid[2],
   }
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
 bool Math_checkPolygon2D(double polygon[][2], unsigned int nVertices)
 {
   double centroid[2];
@@ -222,6 +257,9 @@ bool Math_checkPolygon2D(double polygon[][2], unsigned int nVertices)
   return Math_pointInsideOrOnConvexPolygon2D(centroid, polygon, nVertices);
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
 double Math_distPointConvexPolygon2D(const double pt[2],
                                      double poly[][2],
                                      unsigned int nVertices,
@@ -251,7 +289,9 @@ double Math_distPointConvexPolygon2D(const double pt[2],
   // Iterate over all line segments and find closest distance.
   double cpTmp[2], tmp[2];
   double* cp = cpPoly ? cpPoly : cpTmp;
-  bool inside = Math_pointInsideOrOnConvexPolygon2D(pt, poly, nVertices);
+  //bool inside = Math_pointInsideOrOnConvexPolygon2D(pt, poly, nVertices);
+  int res = Math_pointInsideOrOnPolygon2D(pt, poly, nVertices);
+  bool inside = res%2!=0;
   double ptInsideSign = (inside==true) ? -1.0 : 1.0;
   double distance = 1.0e8;//Math_infinity();
 
@@ -279,6 +319,78 @@ double Math_distPointConvexPolygon2D(const double pt[2],
   return ptInsideSign*sqrt(distance);
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+double Math_lengthPolygon2D(double polygon[][2], unsigned int nVertices)
+{
+  double len = 0.0;
+
+  for (unsigned int i=0; i<nVertices; ++i)
+  {
+    const unsigned int iNext = (i==nVertices-1) ? 0 : i+1;
+    const double dx = polygon[iNext][0]-polygon[i][0];
+    const double dy = polygon[iNext][1]-polygon[i][1];
+    len += sqrt(dx*dx+dy*dy);
+  }
+
+  return len;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Math_interpolatePolygon2D(double res[2], double polygon[][2],
+                               unsigned int nVertices, double s)
+{
+  if ((s<=0.0) || (s>=1.0))
+    {
+      res[0] = polygon[0][0];
+      res[1] = polygon[0][1];
+    }
+
+  const double len = Math_lengthPolygon2D(polygon, nVertices);
+
+  double len_s = 0.0;
+
+  for (unsigned int i=0; i<nVertices; ++i)
+  {
+    const unsigned int iNext = (i==nVertices-1) ? 0 : i+1;
+    const double dx = polygon[iNext][0]-polygon[i][0];
+    const double dy = polygon[iNext][1]-polygon[i][1];
+    const double s0 = len_s/len;
+    len_s += sqrt(dx*dx+dy*dy);
+    const double s1 = len_s/len;
+
+    if ((s>s0) && (s<=s1))
+      {
+        const double ds = (s - s0)/(s1 - s0);
+        res[0] = polygon[i][0] + ds*dx;
+        res[1] = polygon[i][1] + ds*dy;
+        return;
+      }
+  }
+
+  // In case we get here, it's due to numerical issues and we are at the end.
+  res[0] = polygon[0][0];
+  res[1] = polygon[0][1];
+}
+
+/*******************************************************************************
+ * Trivial but slow
+ ******************************************************************************/
+void Math_resamplePolygon2D(double polyOut[][2], unsigned int nvOut,
+                            double polyIn[][2], unsigned int nvIn)
+{
+  const double ds = 1.0/nvOut;
+  double s = 0.0;
+
+  for (unsigned int i=0; i<nvOut; ++i)
+  {
+    Math_interpolatePolygon2D(polyOut[i], polyIn, nvIn, s);
+    s += ds;
+  }
+}
 
 /*******************************************************************************
  *
@@ -368,7 +480,7 @@ double Math_sqrDistPointConvexPolygon(const double I_pt[3],
  * with det  =  a11*a22 - a12*a21
  *
  ******************************************************************************/
-double Math_inverse2D(double invA[2][2], double A[2][2])
+static double Math_inverse2D(double invA[2][2], double A[2][2])
 {
   double det = A[0][0] * A[1][1] - A[0][1] * A[1][0];
 
@@ -420,7 +532,7 @@ double Math_sqrDistLineLine(const double lp1[3],
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-double Math_sqrDistLinesegLineseg(const double segPt0[3],
+double Math_sqrDistLinesegLineseg_old(const double segPt0[3],
                                   const double segDir0[3],
                                   const double segLength0,
                                   const double segPt1[3],
@@ -519,6 +631,347 @@ double Math_sqrDistLinesegLineseg(const double segPt0[3],
   Vec3d_copy(cp1_, cp1[minIdx]);
 
   return d[minIdx];
+}
+
+/******************************************************************************
+ *  Adapted from: Wildmagic library (version 5.8)
+ *  Geometric Tools LLC, Redmond WA 98052
+ *  Copyright (c) 1998-2015
+ *  Distributed under the Boost Software License, Version 1.0.
+ *  http://www.boost.org/LICENSE_1_0.txt
+ *  http://www.geometrictools.com/License/Boost/LICENSE_1_0.txt
+ ******************************************************************************/
+double Math_sqrDistLinesegLineseg(const double segPt0[3],
+                                  const double segDir0[3],
+                                  const double segLength0,
+                                  const double segPt1[3],
+                                  const double segDir1[3],
+                                  const double segLength1,
+                                  double cp0_[3],
+                                  double cp1_[3])
+{
+  const double zeroTol = 1.0e-8;
+  double cpTmp0[3], cpTmp1[3], diff[3], segCntr0[3], segCntr1[3];
+  double s0, s1, sqrDist, extDet0, extDet1, tmpS0, tmpS1;
+  double hExtent0 = 0.5*segLength0;
+  double hExtent1 = 0.5*segLength1;
+  double* cp0 = (cp0_==NULL) ? cpTmp0 : cp0_;
+  double* cp1 = (cp1_==NULL) ? cpTmp1 : cp1_;
+
+  Vec3d_constMulAndAdd(segCntr0, segPt0, segDir0, hExtent0);
+  Vec3d_constMulAndAdd(segCntr1, segPt1, segDir1, hExtent1);
+
+  // Call point-lineseg functions if length is 0
+  if (segLength0==0.0)
+  {
+    sqrDist = Math_sqrDistPointLineseg(segPt0, segPt1, segDir1, segLength1,
+                                       cp1_);
+    Vec3d_copy(cp0, segPt0);
+    return sqrDist;
+  }
+
+  Vec3d_sub(diff, segCntr0, segCntr1);
+
+  double a01 = -Vec3d_innerProduct(segDir0, segDir1);
+  double b0  =  Vec3d_innerProduct(diff, segDir0);
+  double b1  = -Vec3d_innerProduct(diff, segDir1);
+  double c   =  Vec3d_sqrLength(diff);
+  double det = fabs(1.0 - a01*a01);
+
+  if (det >= zeroTol)
+  {
+    // Segments are not parallel.
+    s0 = a01*b1 - b0;
+    s1 = a01*b0 - b1;
+    extDet0 = hExtent0*det;
+    extDet1 = hExtent1*det;
+
+    if (s0 >= -extDet0)
+    {
+      if (s0 <= extDet0)
+      {
+        if (s1 >= -extDet1)
+        {
+          if (s1 <= extDet1)  // region 0 (interior)
+          {
+            // Minimum at interior points of segments.
+            double invDet = 1.0/det;
+            s0 *= invDet;
+            s1 *= invDet;
+            sqrDist = s0*(s0 + a01*s1 + 2.0*b0) +
+                      s1*(a01*s0 + s1 + 2.0*b1) + c;
+          }
+          else  // region 3 (side)
+          {
+            s1 = hExtent1;
+            tmpS0 = -(a01*s1 + b0);
+            if (tmpS0 < -hExtent0)
+            {
+              s0 = -hExtent0;
+              sqrDist = s0*(s0 - 2.0*tmpS0) +
+                        s1*(s1 + (2.0)*b1) + c;
+            }
+            else if (tmpS0 <= hExtent0)
+            {
+              s0 = tmpS0;
+              sqrDist = -s0*s0 + s1*(s1 + 2.0*b1) + c;
+            }
+            else
+            {
+              s0 = hExtent0;
+              sqrDist = s0*(s0 - 2.0*tmpS0) + s1*(s1 + 2.0*b1) + c;
+            }
+          }
+        }
+        else  // region 7 (side)
+        {
+          s1 = -hExtent1;
+          tmpS0 = -(a01*s1 + b0);
+          if (tmpS0 < -hExtent0)
+          {
+            s0 = -hExtent0;
+            sqrDist = s0*(s0 - 2.0*tmpS0) + s1*(s1 + 2.0*b1) + c;
+          }
+          else if (tmpS0 <= hExtent0)
+          {
+            s0 = tmpS0;
+            sqrDist = -s0*s0 + s1*(s1 + 2.0*b1) + c;
+          }
+          else
+          {
+            s0 = hExtent0;
+            sqrDist = s0*(s0 - 2.0*tmpS0) + s1*(s1 + 2.0*b1) + c;
+          }
+        }
+      }
+      else
+      {
+        if (s1 >= -extDet1)
+        {
+          if (s1 <= extDet1)  // region 1 (side)
+          {
+            s0 = hExtent0;
+            tmpS1 = -(a01*s0 + b1);
+            if (tmpS1 < -hExtent1)
+            {
+              s1 = -hExtent1;
+              sqrDist = s1*(s1 - 2.0*tmpS1) + s0*(s0 + 2.0*b0) + c;
+            }
+            else if (tmpS1 <= hExtent1)
+            {
+              s1 = tmpS1;
+              sqrDist = -s1*s1 + s0*(s0 + 2.0*b0) + c;
+            }
+            else
+            {
+              s1 = hExtent1;
+              sqrDist = s1*(s1 - 2.0*tmpS1) + s0*(s0 + 2.0*b0) + c;
+            }
+          }
+          else  // region 2 (corner)
+          {
+            s1 = hExtent1;
+            tmpS0 = -(a01*s1 + b0);
+            if (tmpS0 < -hExtent0)
+            {
+              s0 = -hExtent0;
+              sqrDist = s0*(s0 - 2.0*tmpS0) + s1*(s1 + 2.0*b1) + c;
+            }
+            else if (tmpS0 <= hExtent0)
+            {
+              s0 = tmpS0;
+              sqrDist = -s0*s0 + s1*(s1 + 2.0*b1) + c;
+            }
+            else
+            {
+              s0 = hExtent0;
+              tmpS1 = -(a01*s0 + b1);
+              if (tmpS1 < -hExtent1)
+              {
+                s1 = -hExtent1;
+                sqrDist = s1*(s1 - 2.0*tmpS1) +
+                          s0*(s0 + 2.0*b0) + c;
+              }
+              else if (tmpS1 <= hExtent1)
+              {
+                s1 = tmpS1;
+                sqrDist = -s1*s1 + s0*(s0 + 2.0*b0) + c;
+              }
+              else
+              {
+                s1 = hExtent1;
+                sqrDist = s1*(s1 - 2.0*tmpS1) +
+                          s0*(s0 + 2.0*b0) + c;
+              }
+            }
+          }
+        }
+        else  // region 8 (corner)
+        {
+          s1 = -hExtent1;
+          tmpS0 = -(a01*s1 + b0);
+          if (tmpS0 < -hExtent0)
+          {
+            s0 = -hExtent0;
+            sqrDist = s0*(s0 - 2.0*tmpS0) + s1*(s1 + 2.0*b1) + c;
+          }
+          else if (tmpS0 <= hExtent0)
+          {
+            s0 = tmpS0;
+            sqrDist = -s0*s0 + s1*(s1 + 2.0*b1) + c;
+          }
+          else
+          {
+            s0 = hExtent0;
+            tmpS1 = -(a01*s0 + b1);
+            if (tmpS1 > hExtent1)
+            {
+              s1 = hExtent1;
+              sqrDist = s1*(s1 - 2.0*tmpS1) + s0*(s0 + 2.0*b0) + c;
+            }
+            else if (tmpS1 >= -hExtent1)
+            {
+              s1 = tmpS1;
+              sqrDist = -s1*s1 + s0*(s0 + 2.0*b0) + c;
+            }
+            else
+            {
+              s1 = -hExtent1;
+              sqrDist = s1*(s1 - 2.0*tmpS1) + s0*(s0 + 2.0*b0) + c;
+            }
+          }
+        }
+      }
+    }
+    else
+    {
+      if (s1 >= -extDet1)
+      {
+        if (s1 <= extDet1)  // region 5 (side)
+        {
+          s0 = -hExtent0;
+          tmpS1 = -(a01*s0 + b1);
+          if (tmpS1 < -hExtent1)
+          {
+            s1 = -hExtent1;
+            sqrDist = s1*(s1 - 2.0*tmpS1) + s0*(s0 + 2.0*b0) + c;
+          }
+          else if (tmpS1 <= hExtent1)
+          {
+            s1 = tmpS1;
+            sqrDist = -s1*s1 + s0*(s0 + 2.0*b0) + c;
+          }
+          else
+          {
+            s1 = hExtent1;
+            sqrDist = s1*(s1 - 2.0*tmpS1) + s0*(s0 + 2.0*b0) + c;
+          }
+        }
+        else  // region 4 (corner)
+        {
+          s1 = hExtent1;
+          tmpS0 = -(a01*s1 + b0);
+          if (tmpS0 > hExtent0)
+          {
+            s0 = hExtent0;
+            sqrDist = s0*(s0 - 2.0*tmpS0) + s1*(s1 + 2.0*b1) + c;
+          }
+          else if (tmpS0 >= -hExtent0)
+          {
+            s0 = tmpS0;
+            sqrDist = -s0*s0 + s1*(s1 + 2.0*b1) + c;
+          }
+          else
+          {
+            s0 = -hExtent0;
+            tmpS1 = -(a01*s0 + b1);
+            if (tmpS1 < -hExtent1)
+            {
+              s1 = -hExtent1;
+              sqrDist = s1*(s1 - 2.0*tmpS1) + s0*(s0 + 2.0*b0) + c;
+            }
+            else if (tmpS1 <= hExtent1)
+            {
+              s1 = tmpS1;
+              sqrDist = -s1*s1 + s0*(s0 + 2.0*b0) + c;
+            }
+            else
+            {
+              s1 = hExtent1;
+              sqrDist = s1*(s1 - 2.0*tmpS1) + s0*(s0 + 2.0*b0) + c;
+            }
+          }
+        }
+      }
+      else   // region 6 (corner)
+      {
+        s1 = -hExtent1;
+        tmpS0 = -(a01*s1 + b0);
+        if (tmpS0 > hExtent0)
+        {
+          s0 = hExtent0;
+          sqrDist = s0*(s0 - 2.0*tmpS0) + s1*(s1 + 2.0*b1) + c;
+        }
+        else if (tmpS0 >= -hExtent0)
+        {
+          s0 = tmpS0;
+          sqrDist = -s0*s0 + s1*(s1 + 2.0*b1) + c;
+        }
+        else
+        {
+          s0 = -hExtent0;
+          tmpS1 = -(a01*s0 + b1);
+          if (tmpS1 < -hExtent1)
+          {
+            s1 = -hExtent1;
+            sqrDist = s1*(s1 - 2.0*tmpS1) + s0*(s0 + 2.0*b0) + c;
+          }
+          else if (tmpS1 <= hExtent1)
+          {
+            s1 = tmpS1;
+            sqrDist = -s1*s1 + s0*(s0 + 2.0*b0) + c;
+          }
+          else
+          {
+            s1 = hExtent1;
+            sqrDist = s1*(s1 - 2.0*tmpS1) + s0*(s0 + 2.0*b0) + c;
+          }
+        }
+      }
+    }
+  }
+  else
+  {
+    // The segments are parallel.  The average b0 term is designed to
+    // ensure symmetry of the function.  That is, dist(seg0,seg1) and
+    // dist(seg1,seg0) should produce the same number.
+    double e0pe1 = hExtent0 + hExtent1;
+    double sign = (a01 > 0.0 ? -1.0 : 1.0);
+    double b0Avr = (0.5)*(b0 - sign*b1);
+    double lambda = -b0Avr;
+
+    if (lambda < -e0pe1)
+    {
+      lambda = -e0pe1;
+    }
+    else if (lambda > e0pe1)
+    {
+      lambda = e0pe1;
+    }
+
+    s1 = -sign*lambda*hExtent1/e0pe1;
+    s0 = lambda + sign*s1;
+    sqrDist = lambda*(lambda + 2.0*b0Avr) + c;
+  }
+
+  if ((cp0_!=NULL) || (cp1_!=NULL))
+  {
+    Vec3d_constMulAndAdd(cp0, segCntr0, segDir0, s0);
+    Vec3d_constMulAndAdd(cp1, segCntr1, segDir1, s1);
+  }
+
+  // Account for numerical round-off errors.
+  return (sqrDist < 0.0) ? 0.0 : sqrDist;
 }
 
 /*******************************************************************************
@@ -695,7 +1148,7 @@ double Math_distPointBox(const double I_p[3],
   // Transform point into box frame
   Vec3d_invTransform(cpBox, A_box, I_p);
 
-  // if one component of the point is outside the box, project it onto box face.
+  // If one component of the point is outside the box, project it onto box face.
   for (int i = 0; i < 3; ++i)
   {
     if (cpBox[i] < -halfExt[i])
@@ -753,4 +1206,261 @@ double Math_distPointBox(const double I_p[3],
   }
 
   return sgn*Vec3d_distance(cpBox, I_p);
+}
+
+/******************************************************************************
+ *  Adapted from: Wildmagic library (version 5.10): Wm5Vector2.inl
+ *  Geometric Tools LLC, Redmond WA 98052
+ *  Copyright (c) 1998-2015
+ *  Distributed under the Boost Software License, Version 1.0.
+ *  http://www.boost.org/LICENSE_1_0.txt
+ *  http://www.geometrictools.com/License/Boost/LICENSE_1_0.txt
+ ******************************************************************************/
+static inline double dotPerp(const double a[2], const double b[2])
+{
+  // Returns Cross((x,y,0),(V.x,V.y,0)) = x*V.y - y*V.x
+  return a[0]*b[1] - a[1]*b[0];
+}
+
+#define INTERSECT_NONE     (0)
+#define INTERSECT_NORMAL   (1)
+#define INTERSECT_VERTEX0  (2)
+#define INTERSECT_VERTEX1  (3)
+#define INTERSECT_COLINEAR (4)
+
+/******************************************************************************
+ *  Adapted from: Wildmagic library (version 5.10): IntrRay2Segment2.inl
+ *  Geometric Tools LLC, Redmond WA 98052
+ *  Copyright (c) 1998-2015
+ *  Distributed under the Boost Software License, Version 1.0.
+ *  http://www.boost.org/LICENSE_1_0.txt
+ *  http://www.geometrictools.com/License/Boost/LICENSE_1_0.txt
+ ******************************************************************************/
+static int IntrRay2Segment2_Classify(const double rayOrigin[2],
+                                     const double rayDir[2],
+                                     const double segCenter[2],
+                                     const double segDir[2],
+                                     double s[2],
+                                     double diff[2],
+                                     double diffN[2])
+{
+  // The intersection of two lines is a solution to P0+s0*D0 = P1+s1*D1.
+  // Rewrite this as s0*D0 - s1*D1 = P1 - P0 = Q.  If D0.Dot(Perp(D1)) = 0,
+  // the lines are parallel.  Additionally, if Q.Dot(Perp(D1)) = 0, the
+  // lines are the same.  If D0.Dot(Perp(D1)) is not zero, then
+  //   s0 = Q.Dot(Perp(D1))/D0.Dot(Per(D1))
+  // produces the point of intersection.  Also,
+  //   s1 = Q.Dot(Perp(D0))/D0.Dot(Perp(D1))
+  const double almostZero = 1.0e-8;
+  double originDiff[2];
+  originDiff[0] = segCenter[0] - rayOrigin[0];
+  originDiff[1] = segCenter[1] - rayOrigin[1];
+
+  if (diff)
+  {
+    diff[0] = originDiff[0];
+    diff[1] = originDiff[1];
+  }
+
+  double D0DotPerpD1 = dotPerp(rayDir, segDir);
+
+  if (fabs(D0DotPerpD1) > almostZero)
+  {
+    // Lines intersect in a single point.
+    if (s)
+    {
+      double invD0DotPerpD1 = 1.0/D0DotPerpD1;
+      double diffDotPerpD0 = dotPerp(originDiff, rayDir);
+      double diffDotPerpD1 = dotPerp(originDiff, segDir);
+      s[0] = diffDotPerpD1*invD0DotPerpD1;
+      s[1] = diffDotPerpD0*invD0DotPerpD1;
+    }
+
+    return INTERSECT_NORMAL;
+  }
+
+  // Lines are parallel.
+  VecNd_normalizeSelf(originDiff, 2);
+  if (diffN)
+  {
+    diffN[0] = originDiff[0];
+    diffN[1] = originDiff[1];
+  }
+
+  double diffNDotPerpD1 = dotPerp(originDiff, segDir);
+  if (fabs(diffNDotPerpD1) <= almostZero)
+  {
+    // Lines are colinear.
+    return INTERSECT_COLINEAR;
+  }
+
+  // Lines are parallel, but distinct.
+  return INTERSECT_NONE;
+}
+
+/******************************************************************************
+ *  Adapted from: Wildmagic library (version 5.10): IntrRay2Segment2.inl
+ *  Geometric Tools LLC, Redmond WA 98052
+ *  Copyright (c) 1998-2015
+ *  Distributed under the Boost Software License, Version 1.0.
+ *  http://www.boost.org/LICENSE_1_0.txt
+ *  http://www.geometrictools.com/License/Boost/LICENSE_1_0.txt
+ ******************************************************************************/
+static int IntrRay2Segment2_Find(const double rayOrigin[2],
+                                 const double rayDir[2],
+                                 const double segCenter[2],
+                                 const double segDir[2],
+                                 double segLength,
+                                 double intersectPt[2])
+{
+  const double almostZero = 1.0e-8;
+  double s[2] = { 0.0, 0.0 };
+  segLength *= 0.5; // half extents
+
+  int intersectionType = IntrRay2Segment2_Classify(rayOrigin, rayDir,
+                                                   segCenter, segDir,
+                                                   s, NULL, NULL);
+
+  if (intersectionType != INTERSECT_NORMAL)
+  {
+    return intersectionType;
+  }
+
+  // Test whether the line-line intersection is on the ray and on the
+  // segment.
+  if ((s[0] >= 0.0) && (fabs(s[1])<=segLength+almostZero))
+  {
+    if (fabs(s[1]+segLength)<=almostZero)
+    {
+      intersectionType = INTERSECT_VERTEX0;
+    }
+    else if (fabs(s[1]-segLength)<=almostZero)
+    {
+      intersectionType = INTERSECT_VERTEX1;
+    }
+
+    if (intersectPt)
+    {
+      intersectPt[0] = rayOrigin[0] + s[0]*rayDir[0];
+      intersectPt[1] = rayOrigin[1] + s[0]*rayDir[1];
+    }
+  }
+  else
+  {
+    intersectionType = INTERSECT_NONE;
+  }
+
+  return intersectionType;
+}
+
+int Math_intersectRayLineseg2D(const double rayOrigin[2],
+                               const double rayDir[2],
+                               const double segPt0[2],
+                               const double segPt1[2],
+                               double intersectPt[2])
+{
+  double segCenter[2], segDir[2];
+
+  for (int i=0; i<2; ++i)
+  {
+    segCenter[i] = 0.5*(segPt0[i]+segPt1[i]);
+    segDir[i] = segPt1[i] - segPt0[i];
+  }
+  const double segLength = VecNd_normalizeSelf(segDir, 2);
+
+  int res = IntrRay2Segment2_Find(rayOrigin, rayDir,
+                                  segCenter, segDir, segLength,
+                                  intersectPt);
+
+  if (res == INTERSECT_COLINEAR)
+  {
+    // Here we need to check if both vertex points are "behind" the ray
+    // origin. In this case, we have colinearity, but no intersection.
+    // vtx0 = rayPt + s*rayDir
+    // s = (vtx0[idx]-rayPt[idx)/rayDir[1]
+    // We determine idx as the index of the larger absolute value of
+    // rayDir to avoid division by zero.
+    const int idx = fabs(rayDir[0]) > fabs(rayDir[1]) ? 0 : 1;
+    const double sv0 = (segPt0[idx]-rayOrigin[idx])/rayDir[idx];
+    const double sv1 = (segPt1[idx]-rayOrigin[idx])/rayDir[idx];
+
+    if ((sv0<0.0) && (sv1<0.0))
+    {
+      res = INTERSECT_NONE;
+    }
+
+  }
+
+  return res;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+int Math_pointInsideOrOnPolygon2D(const double pt[2],
+                                  double polygon[][2],
+                                  unsigned int nVertices)
+{
+  if (nVertices<1)
+  {
+    return -1;
+  }
+
+  // Ensure that first and last vertices don't coincide
+  if ((polygon[0][0]==polygon[nVertices-1][0]) &&
+      (polygon[0][1]==polygon[nVertices-1][1]))
+  {
+    nVertices--;
+  }
+
+  const unsigned int maxIter = 10;
+  double rayDir[2] = { 1.0, 0.0 };
+
+  for (unsigned int iter=0; iter<maxIter; ++iter)
+  {
+    unsigned int iCount = 0;
+    bool success = true;
+
+    for (unsigned int i=0; i<nVertices; ++i)
+    {
+      const unsigned int iNext = (i==nVertices-1) ? 0 : i+1;
+      int res = Math_intersectRayLineseg2D(pt, rayDir, polygon[i],
+                                           polygon[iNext], NULL);
+      switch (res)
+      {
+        case 0:   // Nothing to do
+          break;
+        case 1:   // Increment count for each detected intersection
+          iCount++;
+          break;
+        case 2: // Currently ignore degenerate intersections and loop again
+        case 3:
+        case 4:
+          success = false;
+          break;
+        default:
+          RFATAL("Unknown result: %d", res);
+      }
+
+    }   // for (unsigned int i=0; i<nVertices; ++i)
+
+    if (success == true)
+    {
+      return iCount;
+    }
+
+    // In the unlikely case we hit a vertex or even got a colinear polygon
+    // segment, we set a new random ray direction. Its values are set in an
+    // interval not containing 0, so that we never (even if it is extremely
+    // unlikely) get a zero vector.
+    VecNd_setRandom(rayDir, 0.1, 1.0, 2);
+    VecNd_normalizeSelf(rayDir, 2);
+    RLOG(0, "Iteration %d failed", iter);
+
+  }   // for (unsigned int iter=0;iter<maxIter; ++iter)
+
+  // If we get here, we iterated maxIter times with different random ray
+  // directions without getting a valid solution. That's extremely unlikely,
+  // but bad luck in this case.
+  return -1;
 }

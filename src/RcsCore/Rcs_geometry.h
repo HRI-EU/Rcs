@@ -58,7 +58,7 @@ extern "C" {
 /**
  * @name Distance2D
  *
- * Distance functions in 2D
+ * Distance and polygon functions in 2D
  */
 
 ///@{
@@ -67,7 +67,9 @@ extern "C" {
  *  \brief Returns the distance and closest points between a point and a convex
  *         polygon in 2D.
  *  \param[in]  point      Query Point
- *  \param[in]  polygon    Polygon vertices in ordered counter-clockwise
+ *  \param[in]  polygon    Polygon vertices in ordered counter-clockwise. The
+ *                         polygon is assumed to be opened, the last vertex
+ *                         will be considered to be connected to the first one.
  *  \param[in]  nVertices  Number of polygon vertices. Must be > 0, otherwise
  *                         the function exits with a fatal error.
  *  \param[out] cpPoly     Closest point on the polygon. If it is NULL, it will
@@ -88,13 +90,98 @@ double Math_distPointConvexPolygon2D(const double point[2],
  *  \brief Checks if a given 2D polygon is valid. The function checks if the
  *         polygon centroid lies within the edges spanned by the polygon
  *         vertices. If that's not the case, the ordering of the vertices is
- *         not counter-clockwise..
+ *         not counter-clockwise.
  *
  *  \param[in]  polygon    Polygon vertices
  *  \param[in]  nVertices  Number of polygon vertices.
  *  \return True if valid, false otherwise.
  */
 bool Math_checkPolygon2D(double polygon[][2], unsigned int nVertices);
+
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Returns the arc length of a polygon. The function walks through the
+ *         (ordered) vertices and adds their segment lengths. It is assumed that
+ *         vertices are sorted according to their neighborhood. The last polygon
+ *         vertex will be considered to be connected to the first one.
+ *
+ *  \param[in]  polygon    Polygon vertices
+ *  \param[in]  nVertices  Number of polygon vertices.
+ *  \return Length of the polygon curve.
+ */
+double Math_lengthPolygon2D(double polygon[][2], unsigned int nVertices);
+
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Continuous interpolation of a polygon. The variable s defines the
+ *         interolation value. It is assumed to be 0 <= s <= 1. A value of
+ *         0 gets the first vertex, a value of 1 as well. A value of 0.5 gets
+ *         the polygon coordinate at 0.5 of the polygon lenght.
+ *
+ *  \param[out] res        Interpolation point on polygon curve.
+ *  \param[in]  polygon    Polygon vertices
+ *  \param[in]  nVertices  Number of polygon vertices.
+ *  \param[in]  s          Interpolation value. The function internally clips
+ *                         it to a range of [0...1].
+ */
+void Math_interpolatePolygon2D(double res[2], double polygon[][2],
+                               unsigned int nVertices, double s);
+
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Continuous interpolation of a polygon. The variable s defines the
+ *         interolation value. It is assumed to be 0 <= s <= 1. A value of
+ *         0 gets the first vertex, a value of 1 as well. A value of 0.5 gets
+ *         the polygon coordinate at 0.5 of the polygon lenght.
+ *
+ *  \param[out] polyOut  Re-sampled polygon
+ *  \param[in]  nvOut    Number of polygon vertices of the resampled polygon
+ *  \param[in]  polyIn   Polygon vertices of original polygon
+ *  \param[in]  nvIn     Number of polygon vertices of the incoming polygon
+ */
+void Math_resamplePolygon2D(double polyOut[][2], unsigned int nvOut,
+                            double polyIn[][2], unsigned int nvIn);
+
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief This function computes the intersection between a ray and a line
+ *         segment in 2 dimensions.
+ *
+ *  \param[in]  rayOrigin Start point of ray
+ *  \param[in]  rayDir    Ray direction vector. It must be of unit lengh,
+ *                        otherwise the result is undefined.
+ *  \param[in]  segPt0    First point of line segment
+ *  \param[in]  segPt1    Second point of line segment
+ *  \param[out] intersectPt Point of intersection. If it is NULL, it is ignored.
+ *                          If the result is not of type 1, 2 or 3, the
+ *                          argument intersectPt remains unchanged.
+ *  \return Result type:
+ *          - 0: no intersection
+ *          - 1: intersection on the line segment
+ *          - 2: intersection with first vertex point
+ *          - 3: intersection with second vertex point
+ *          - 4: co-linear line segment and ray (infinity intersections)
+ */
+int Math_intersectRayLineseg2D(const double rayOrigin[2],
+                               const double rayDir[2],
+                               const double segPt0[2],
+                               const double segPt1[2],
+                               double intersectPt[2]);
+
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Computes the number of polygon intersections of a ray starting out
+ *         from the query point with some random direction. In case the number
+ *         of polygon intersections is even, the point is outside the polygon.
+ *         In case it is odd, it is inside. This method is valid for any kind
+ *         of 2d polygon, also non-convex ones. It is known as ray-casting
+ *         algorithm (https://en.wikipedia.org/wiki/Point_in_polygon).
+ *
+ *  \param[in] pt        Query point to be checked
+ *  \param[in] polygon   Polygon vertices. The function can deal with vertex
+ *                       arrays where the last vertex is the same as the first.
+ *  \param[in] nVertices Number of polygon vertices of the polygon. Must be >=1.
+ *  \return Even number for outside, odd number for inside, -1 for no solution.
+ *          In the unlikely case of -1, the polygon is probably degenerated.
+ */
+int Math_pointInsideOrOnPolygon2D(const double pt[2],
+                                  double polygon[][2],
+                                  unsigned int nVertices);
 
 ///@}
 
@@ -125,6 +212,23 @@ double Math_sqrDistPointLine(const double pt[3],
                              const double linePt[3],
                              const double lineDir[3],
                              double cpLine[3]);
+
+/*! \ingroup RcsBasicMathFunctions
+  *  \brief This function returns the signed distance between a point and a
+  *         plane, and computes the closest plane point.
+  *
+  *  \param[in]  pt Point coordinates
+  *  \param[in]  planePt Arbitrary point on the plane
+  *  \param[in]  planeNormal Normal vector of the plane
+  *  \param[out] cpPlane Closest point on the plane. If it is NULL,
+  *              it will be ignored.
+  *  \return Signed distance of the point to the plane according to the plane
+  *          normal.
+  */
+double Math_distPointPlane(const double pt[3],
+                           const double planePt[3],
+                           const double planeNormal[3],
+                           double cpPlane[3]);
 
 /*! \ingroup RcsBasicMathFunctions
  *  \brief This function returns the squared distance between a point and a
@@ -199,6 +303,13 @@ double Math_sqrDistPointConvexPolygon(const double I_pt[3],
  *  \brief This function returns the squared distance between two line
  *         segments, and computes the closest points.
  *
+ *  Adapted from: Wildmagic library (version 5.8)
+ *  Geometric Tools LLC, Redmond WA 98052
+ *  Copyright (c) 1998-2015
+ *  Distributed under the Boost Software License, Version 1.0.
+ *  http://www.boost.org/LICENSE_1_0.txt
+ *  http://www.geometrictools.com/License/Boost/LICENSE_1_0.txt
+ *
  *  \param[in]  segPt0 Start point of the first line segment
  *  \param[in]  segDir0 Direction of the first line segment
  *  \param[in]  segLength0 Length of the second line segment
@@ -254,23 +365,65 @@ double Math_distCapsuleCapsule(const double linePt0[3],
                                double cp1[3],
                                double n01[3]);
 
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief This function returns the distance between a point and a cone,
+ *         and computes the closest points. The distance is negative when the
+ *         point penetrates the cone.
+ *
+ *  \param[in]  point Arbitrary 3d point
+ *  \param[in]  A_cone Transformation of the cone
+ *  \param[in]  height Cone height
+ *  \param[in]  radius Cone radius
+ *  \param[out] cpCone Closest point on the cone. If it is NULL, it will be
+ *              ignored.
+ *  \return Signed distance of closest points.
+ */
 double Math_distPointCone(const double p[3],
                           const HTr* A_cone,
                           double height,
                           double radius,
                           double cpCone[3]);
 
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief This function returns the distance between a point and a cylinder,
+ *         and computes the closest points. The distance is negative when the
+ *         point penetrates the cylinder.
+ *
+ *  \param[in]  point Arbitrary 3d point
+ *  \param[in]  A_cyl Transformation of the cylinder
+ *  \param[in]  height Cylinder height
+ *  \param[in]  radius Cylinder radius
+ *  \param[out] cpCyl Closest point on the cylinder. If it is NULL, it will
+ *              be ignored.
+ *  \return Signed distance of closest points.
+ */
 double Math_distPointCylinder(const double p[3],
-                              const HTr* A_cone,
+                              const HTr* A_cyl,
                               double height,
                               double radius,
-                              double cpCone[3]);
+                              double cpCyl[3]);
 
-double Math_distPointBox(const double p[3],
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief This function returns the distance between a point and a box, and
+ *         computes the closest points. The distance is negative when the
+ *         point penetrates the box.
+ *
+ *  \param[in]  point Arbitrary 3d point
+ *  \param[in]  A_box Transformation of the box
+ *  \param[in]  extents Side lengths of the box.
+ *  \param[out] cpBox Closest point on the box. If it is NULL, it will be
+ *              ignored.
+ *  \param[out] nBox Unit length normal from the point to the box. If the
+ *              closest points coincide, the vector normal is set to zero. If
+ *              it is NULL, it will be ignored.
+ *  \return Signed distance of closest points.
+ */
+double Math_distPointBox(const double point[3],
                          const HTr* A_box,
                          const double extents[3],
                          double cpBox[3],
                          double nBox[3]);
+
 
 ///@}
 
