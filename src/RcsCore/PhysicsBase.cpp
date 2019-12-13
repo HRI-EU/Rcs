@@ -452,3 +452,26 @@ bool Rcs::PhysicsBase::check() const
 {
   return true;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::PhysicsBase::resetRigidBodies()
+{
+    RCSGRAPH_TRAVERSE_BODIES(internalDesiredGraph)
+  {
+    if (BODY->rigid_body_joints &&
+        (BODY->physicsSim==RCSBODY_PHYSICS_KINEMATIC ||
+         BODY->physicsSim==RCSBODY_PHYSICS_DYNAMIC))
+    {
+      RCSBODY_TRAVERSE_JOINTS(BODY)
+      {
+        MatNd_set(internalDesiredGraph->q, JNT->jointIndex, 0, JNT->q_init);
+        MatNd_set(internalDesiredGraph->q_dot, JNT->jointIndex, 0, 0.0);
+      }
+    }
+  }
+
+  RcsGraph_setState(internalDesiredGraph, NULL, internalDesiredGraph->q_dot);
+  reset();
+}

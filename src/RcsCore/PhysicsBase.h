@@ -125,6 +125,10 @@ public:
    */
   virtual void reset() = 0;
 
+  /*! \brief Resets all kinematic and dynamic rigid bodies to their initial state.
+   */
+  virtual void resetRigidBodies();
+
   /*! \brief Returns the name of the instance, such as used in the
    *         PhysicsFactory for instantiation.
    */
@@ -533,4 +537,3 @@ private:
 }   // namespace Rcs
 
 #endif // RCS_PHYSICSBASE_H
-
