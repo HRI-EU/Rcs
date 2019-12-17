@@ -1464,3 +1464,60 @@ int Math_pointInsideOrOnPolygon2D(const double pt[2],
   // but bad luck in this case.
   return -1;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+double Math_polyVertexDistance(double polygon[][2],
+                               unsigned int nVertices,
+                               unsigned int idx1,
+                               unsigned int idx2)
+{
+  RCHECK_MSG(idx1<nVertices, "idx1: %d   nVertices: %d", idx1, nVertices);
+  RCHECK_MSG(idx2<nVertices, "idx2: %d   nVertices: %d", idx2, nVertices);
+
+  if (idx1==idx2 || nVertices<2)
+  {
+    return 0.0;
+  }
+
+  double dx, dy, len = 0.0;
+
+  if (idx2 > idx1)
+  {
+    for (unsigned int i=idx1; i<idx2-1; ++i)
+    {
+      dx = polygon[i+1][0]-polygon[i][0];
+      dy = polygon[i+1][1]-polygon[i][1];
+      len += sqrt(dx*dx+dy*dy);
+    }
+  }
+  else   // Wrap around first vertex
+  {
+    // Loop until last vertex
+    for (unsigned int i=idx1; i<nVertices-2; ++i)
+    {
+      dx = polygon[i+1][0]-polygon[i][0];
+      dy = polygon[i+1][1]-polygon[i][1];
+      len += sqrt(dx*dx+dy*dy);
+    }
+
+    // Transistion between last and first vertex
+    dx = polygon[nVertices-1][0]-polygon[0][0];
+    dy = polygon[nVertices-1][1]-polygon[0][1];
+    len += sqrt(dx*dx+dy*dy);
+
+    // Loop from first vertex to final one
+    if (idx2!=0)
+    {
+      for (unsigned int i=0; i<idx2-1; ++i)
+      {
+        dx = polygon[i+1][0]-polygon[i][0];
+        dy = polygon[i+1][1]-polygon[i][1];
+        len += sqrt(dx*dx+dy*dy);
+      }
+    }
+  }
+
+  return len;
+}

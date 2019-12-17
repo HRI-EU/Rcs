@@ -554,6 +554,20 @@ bool Viewer::removeNode(osg::Node* node)
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+unsigned int Viewer::removeNodes()
+{
+  lock();
+  unsigned int nDeleted = rootnode->getNumChildren();
+  rootnode->removeChildren(0, nDeleted);
+  this->rootnode->addChild(this->clearNode.get());
+  unlock();
+
+  return nDeleted;
+}
+
+/*******************************************************************************
  * Sets the update frequency in [Hz].
  ******************************************************************************/
 void Viewer::setUpdateFrequency(double Hz)

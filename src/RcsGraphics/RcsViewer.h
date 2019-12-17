@@ -147,6 +147,14 @@ public:
    */
   bool removeNode(osg::Node* node);
 
+  /*! \brief Removes all osg::Node from the viewer's root node. The frame mutex
+   *         is internally set around the scenegraph modification so that no
+   *         threading issues will occur.
+   *
+   * \return Number of nodes removed.
+   */
+  unsigned int removeNodes();
+
   /*! \brief Starts a thread that periodically calls the frame() call. The
    *         thread will try to achieve the given updateFrequency. Changing the
    *         update frequency will take effect also when the thread is running.

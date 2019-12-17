@@ -183,6 +183,24 @@ int Math_pointInsideOrOnPolygon2D(const double pt[2],
                                   double polygon[][2],
                                   unsigned int nVertices);
 
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Computes the distance between two polygon vertices along the
+ *         polygon's outline. The distance will be calculated along increasing
+ *         indices. If the index idx2 is less than idx1, the computation will
+ *         correctly wrap around the initial vertex. The function will exit
+ *         fatally if idx1 aor idx2 are not less than nVertices.
+ *
+ *  \param[out] polygon    Polygon vertices.
+ *  \param[in]  nVertices  Number of polygon vertices
+ *  \param[in]  idx1       Start vertex
+ *  \param[in]  idx2       End vertex
+ *  \return Distance between the two vertices.
+ */
+double Math_polyVertexDistance(double polygon[][2],
+                               unsigned int nVertices,
+                               unsigned int idx1,
+                               unsigned int idx2);
+
 ///@}
 
 

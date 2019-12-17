@@ -4456,7 +4456,7 @@ void MatNd_PinvHessian2(MatNd* dqJpinv, const MatNd* J, const MatNd* dqJ,
 
 *******************************************************************************/
 
-bool MatNd_lineFit2D(double* A, double* B, const MatNd* data)
+static bool MatNd_lineFit2D_(double* A, double* B, const MatNd* data)
 {
   unsigned int i;
   double x = 0.0, xx = 0.0, y = 0.0, xy = 0.0, xi, yi, det, invMat[2][2];
@@ -4473,8 +4473,8 @@ bool MatNd_lineFit2D(double* A, double* B, const MatNd* data)
 
   for (i = 0; i < data->m; i++) // number of samples
   {
-    xi = MatNd_get(data, i, 0);
-    yi = MatNd_get(data, i, 1);
+    xi = MatNd_get2(data, i, 0);
+    yi = MatNd_get2(data, i, 1);
 
     x += xi;
     xx += xi * xi;
@@ -4496,10 +4496,56 @@ bool MatNd_lineFit2D(double* A, double* B, const MatNd* data)
     return false;
   }
 
-  *A = invMat[0][0] * xy + invMat[0][1] * y;
-  *B = invMat[1][0] * xy + invMat[1][1] * y;
+  const double paramA = invMat[0][0] * xy + invMat[0][1] * y;
+  const double paramB = invMat[1][0] * xy + invMat[1][1] * y;
+
+  *A = paramA;
+  *B = paramB;
 
   return true;
+}
+
+bool MatNd_lineFit2D(double* A, double* B, const MatNd* data)
+{
+  MatNd* dataTp = MatNd_clone(data);
+  MatNd_transposeSelf(dataTp);
+
+  const double xMin = VecNd_minEle(&dataTp->ele[0], dataTp->n);
+  const double xMax = VecNd_maxEle(&dataTp->ele[0], dataTp->n);
+  const double yMin = VecNd_minEle(&dataTp->ele[dataTp->n], dataTp->n);
+  const double yMax = VecNd_maxEle(&dataTp->ele[dataTp->n], dataTp->n);
+
+  const double xRange = xMax - xMin;
+  const double yRange = yMax - yMin;
+
+  if (xRange >= yRange)
+  {
+    MatNd_destroy(dataTp);
+    return MatNd_lineFit2D_(A, B, data);
+  }
+
+  // x = Ay +B => y = (x - B) / A = (1/A)*x -B/A
+  for (unsigned int i=0;i<dataTp->n; ++i)
+  {
+    MatNd_swapElements(dataTp, 0, i, 1, i);
+  }
+  MatNd_transposeSelf(dataTp);
+
+  double A2, B2;
+  bool success = MatNd_lineFit2D_(&A2, &B2, dataTp);
+
+  if (A2==0.0)
+  {
+    RLOG(1, "Found vertical data points - setting line inclination to 1.0e8");
+    A2 = 1.0e-8;
+  }
+
+  *A = 1.0/A2;
+  *B = -B2/A2;
+
+  MatNd_destroy(dataTp);
+
+  return success;
 }
 
 /*******************************************************************************

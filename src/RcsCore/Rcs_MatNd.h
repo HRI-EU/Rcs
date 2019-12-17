@@ -1583,7 +1583,11 @@ void MatNd_calcMeanAndCovariance(const MatNd* A, double* mu, MatNd* sigma);
  *         y-values. To fit a line, at least 2 non-coinciding data points
  *         must exist. If the parameters cannot be determined, the
  *         function returns false and leaves A and B unchanged. If
- *         successful, the function returns true.
+ *         successful, the function returns true. The function can deal with
+ *         ill-formed data points, such as lying all on a vertical line.
+ *         Internally, the x- and y-coordinates are then swapped, the
+ *         orthogonal line fir is computed, and the parameters are projected
+ *         back.
  */
 bool MatNd_lineFit2D(double* A, double* B, const MatNd* data);
 
