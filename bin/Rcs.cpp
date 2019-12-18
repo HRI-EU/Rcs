@@ -1693,6 +1693,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("m", "Manipulability null space");
       Rcs::KeyCatcherBase::registerKey("e", "Link generic body");
       Rcs::KeyCatcherBase::registerKey("v", "Write current q to model_state");
+      Rcs::KeyCatcherBase::registerKey("f", "Toggle physics feedback");
 
       int algo = 0;
       double alpha = 0.05, lambda = 1.0e-8, tmc = 0.1, dt = 0.01, dt_calc = 0.0;
@@ -1701,6 +1702,8 @@ int main(int argc, char** argv)
       strcpy(xmlFileName, "cAction.xml");
       strcpy(directory, "config/xml/DexBot");
       char effortBdyName[256] = "";
+      char physicsEngine[32] = "Bullet";
+      char physicsCfg[128] = "config/physics/physics.xml";
 
       argP.getArgument("-algo", &algo, "IK algorithm: 0: left inverse, 1: "
                        "right inverse (default is %d)", algo);
@@ -1716,6 +1719,10 @@ int main(int argc, char** argv)
                        "is %f)", clipLimit);
       argP.getArgument("-staticEffort", effortBdyName,
                        "Body to map static effort");
+      argP.getArgument("-physics_config", physicsCfg, "Configuration file name"
+                       " for physics (default is %s)", physicsCfg);
+      argP.getArgument("-physicsEngine", physicsEngine,
+                       "Physics engine (default is \"%s\")", physicsEngine);
       bool ffwd = argP.hasArgument("-ffwd", "Feed-forward dx only");
       bool pause = argP.hasArgument("-pause", "Pause after each iteration");
       bool launchJointWidget = argP.hasArgument("-jointWidget",
@@ -1727,6 +1734,7 @@ int main(int argc, char** argv)
                                          "null space");
       bool constraintIK = argP.hasArgument("-constraintIK", "Use constraint IK"
                                            " solver");
+      bool physics = argP.hasArgument("-physics", "Use physics simulation");
 
       if (argP.hasArgument("-h"))
       {
@@ -1770,11 +1778,42 @@ int main(int argc, char** argv)
       MatNd_fromStack(F_effort, 4, 1);
       MatNd F_effort3 = MatNd_fromPtr(3, 1, F_effort->ele);
 
+      // Physics engine
+      Rcs::PhysicsBase* sim = NULL;
+      RcsGraph* simGraph = NULL;
+      bool physicsFeedback = false;
+
+      if (physics)
+      {
+        simGraph = RcsGraph_clone(controller.getGraph());
+
+        RCSGRAPH_TRAVERSE_JOINTS(simGraph)
+        {
+          if ((JNT->ctrlType == RCSJOINT_CTRL_VELOCITY) ||
+              (JNT->ctrlType == RCSJOINT_CTRL_TORQUE))
+          {
+            JNT->ctrlType = RCSJOINT_CTRL_POSITION;
+          }
+        }
+        RcsGraph_setState(simGraph, NULL, NULL);
+
+        sim = Rcs::PhysicsFactory::create(physicsEngine, simGraph, physicsCfg);
+
+        if (sim==NULL)
+        {
+          Rcs::PhysicsFactory::print();
+          RLOG(1, "Couldn't create physics engine \"%s\"", physicsEngine);
+          RcsGraph_destroy(simGraph);
+          simGraph = NULL;
+        }
+      }
+
 
       // Create visualization
       Rcs::Viewer* v           = NULL;
       Rcs::KeyCatcher* kc      = NULL;
       Rcs::GraphNode* gn       = NULL;
+      Rcs::GraphNode* simNode  = NULL;
       Rcs::HUD* hud            = NULL;
       Rcs::BodyPointDragger* dragger = NULL;
       Rcs::VertexArrayNode* cn = NULL;
@@ -1792,6 +1831,13 @@ int main(int argc, char** argv)
         v->add(hud);
         v->add(kc);
         v->add(dragger);
+
+        if (sim)
+        {
+          simNode = new Rcs::GraphNode(simGraph);
+          simNode->setGhostMode(true, "RED");
+          v->add(simNode);
+        }
 
         if (controller.getCollisionMdl() != NULL)
         {
@@ -1952,6 +1998,17 @@ int main(int argc, char** argv)
         bool poseOK = controller.checkLimits();
         controller.computeX(x_curr);
 
+        if (sim)
+        {
+          sim->setControlInput(controller.getGraph()->q, NULL, NULL);
+          sim->simulate(dt, simGraph);
+          RcsGraph_setState(simGraph, NULL, NULL);
+          if (physicsFeedback)
+          {
+            RcsGraph_setState(controller.getGraph(), simGraph->q, simGraph->q_dot);
+          }
+        }
+
         dJlCost = -jlCost;
         jlCost = controller.computeJointlimitCost();
         dJlCost += jlCost;
@@ -2035,6 +2092,11 @@ int main(int argc, char** argv)
         {
           RcsGraph_fprintModelState(stdout, controller.getGraph(),
                                     controller.getGraph()->q);
+        }
+        else if (kc && kc->getAndResetKey('f'))
+        {
+          physicsFeedback = !physicsFeedback;
+          RMSG("Physics feedback is %s", physicsFeedback ? "ON" : "OFF");
         }
 
         sprintf(hudText, "IK calculation: %.1f us\ndof: %d nJ: %d "
@@ -2760,197 +2822,6 @@ int main(int argc, char** argv)
     }
 
     // ==============================================================
-    // MatNdWidget test
-    // ==============================================================
-    case 9:
-    {
-      unsigned int rows = 10, cols = 1;
-      argP.getArgument("-rows", &rows, "Rows (default is %u)", rows);
-      argP.getArgument("-cols", &cols, "Columns (default is %u)", cols);
-
-      if (argP.hasArgument("-h"))
-      {
-        RMSG("Mode %d: Rcs -m %d\n", mode, mode);
-        printf("\n\tMatNdWidget test\n");
-        break;
-      }
-
-      MatNd* mat = MatNd_create(rows,cols);
-      MatNd_setRandom(mat, -1.0, 1.0);
-      MatNdWidget::create(mat, NULL, mtx);
-
-      while (runLoop==true)
-      {
-        pthread_mutex_lock(&graphLock);
-        MatNd_printCommentDigits("mat", mat, 4);
-        pthread_mutex_unlock(&graphLock);
-        Timer_usleep(1000);
-      }
-
-      MatNd_destroy(mat);
-      break;
-    }
-
-    // ==============================================================
-    // Distance function test
-    // ==============================================================
-    case 12:
-    {
-      int shapeType1 = RCSSHAPE_SSL;
-      int shapeType2 = RCSSHAPE_SSL;
-      char textLine[2056] = "";
-
-      argP.getArgument("-t1", &shapeType1, "Shape type for shape 1");
-      argP.getArgument("-t2", &shapeType2, "Shape type for shape 2");
-
-      if (argP.hasArgument("-h"))
-      {
-        RcsShape_fprintDistanceFunctions(stdout);
-        break;
-      }
-
-      RcsBody* b1 = RALLOC(RcsBody);
-      b1->A_BI = HTr_create();
-      b1->Inertia = HTr_create();
-      Vec3d_setRandom(b1->A_BI->org, -0.2, -0.1);
-      b1->shape = RNALLOC(2, RcsShape*);
-      b1->shape[0] = RcsShape_createRandomShape(shapeType1);
-      RCHECK(b1->shape[0]);
-      b1->shape[1] = NULL;
-
-      RcsBody* b2 = RALLOC(RcsBody);
-      b2->A_BI = HTr_create();
-      b2->Inertia = HTr_create();
-      Vec3d_setRandom(b1->A_BI->org, 0.1, 0.2);
-      b2->shape = RNALLOC(2, RcsShape*);
-      b2->shape[0] = RcsShape_createRandomShape(shapeType2);
-      RCHECK(b2->shape[0]);
-      b2->shape[1] = NULL;
-
-      double I_closestPts[6];
-      VecNd_setZero(I_closestPts, 6);
-      double* cp0 = &I_closestPts[0];
-      double* cp1 = &I_closestPts[3];
-      double n01[3];
-      Vec3d_set(n01, 0.0, 0.0, 0.25);
-
-      // Graphics
-      Rcs::HUD* hud = NULL;
-      Rcs::Viewer* viewer = NULL;
-      Rcs::KeyCatcher* kc = NULL;
-
-      if (!valgrind)
-      {
-        viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
-
-        // HUD
-        hud = new Rcs::HUD();
-        viewer->add(hud);
-
-        // BodyNodes
-        Rcs::BodyNode* bNd1 = new Rcs::BodyNode(b1);
-        Rcs::BodyNode* bNd2 = new Rcs::BodyNode(b2);
-        bNd1->setGhostMode(true, "RED");
-        bNd2->setGhostMode(true, "GREEN");
-        viewer->add(bNd1);
-        viewer->add(bNd2);
-
-        // TargetSetters
-        bool sphTracker = b1->shape[0]->type==RCSSHAPE_POINT ? false : true;
-        Rcs::TargetSetter* ts1 =
-          new Rcs::TargetSetter(b1->A_BI->org, b1->A_BI->rot, 0.5, sphTracker);
-        viewer->add(ts1);
-        viewer->add(ts1->getHandler());
-        sphTracker = b2->shape[0]->type==RCSSHAPE_POINT ? false : true;
-        Rcs::TargetSetter* ts2 =
-          new Rcs::TargetSetter(b2->A_BI->org, b2->A_BI->rot, 0.5, sphTracker);
-        viewer->add(ts2);
-        viewer->add(ts2->getHandler());
-
-        // VertexArrayNode for distance
-        Rcs::VertexArrayNode* cpLine =
-          new Rcs::VertexArrayNode(I_closestPts, 2);
-        cpLine->setColor("GREEN");
-        cpLine->setPointSize(2.0);
-        viewer->add(cpLine);
-
-        Rcs::CapsuleNode* sphereCP0 =
-          new Rcs::CapsuleNode(cp0, NULL, 0.015, 0.0);
-        sphereCP0->makeDynamic(cp0);
-        sphereCP0->setMaterial("RED");
-        viewer->add(sphereCP0);
-
-        Rcs::CapsuleNode* sphereCP1 =
-          new Rcs::CapsuleNode(cp1, NULL, 0.015, 0.0);
-        sphereCP1->makeDynamic(cp1);
-        sphereCP1->setMaterial("RED");
-        viewer->add(sphereCP1);
-
-        // ArrowNode for normal vector
-        Rcs::ArrowNode* normalArrow = new Rcs::ArrowNode(cp0, n01, 0.2);
-        viewer->add(normalArrow);
-
-        // KeyCatcher
-        kc = new Rcs::KeyCatcher();
-        viewer->add(kc);
-        viewer->runInThread(mtx);
-      }
-
-
-      while (runLoop)
-      {
-        pthread_mutex_lock(&graphLock);
-        double dt = Timer_getTime();
-        double dist;
-
-        dist = RcsShape_distance(b1->shape[0], b2->shape[0],
-                                 b1->A_BI, b2->A_BI, cp0, cp1, n01);
-
-        dt = Timer_getTime() - dt;
-        pthread_mutex_unlock(&graphLock);
-
-        std::stringstream hudText;
-        sprintf(textLine, "Distance: D = % 3.1f mm took %3.2f usec\n",
-                dist*1000.0, dt*1.0e6);
-        hudText << textLine;
-        if (hud)
-        {
-          hud->setText(hudText);
-        }
-        else
-        {
-          std::cout << hudText.str();
-        }
-
-        if (kc && kc->getAndResetKey('q'))
-        {
-          runLoop = false;
-        }
-
-        Timer_usleep(1000);
-        RPAUSE_DL(4);
-
-        if (valgrind)
-        {
-          runLoop = false;
-        }
-
-      } // while runLoop
-
-
-      // Clean up
-      RcsBody_destroy(b1);
-      RcsBody_destroy(b2);
-
-      if (viewer)
-      {
-        delete viewer;
-      }
-
-      break;
-    }
-
-    // ==============================================================
     // Depth first traversal test
     // ==============================================================
     case 13:
@@ -3186,80 +3057,6 @@ int main(int argc, char** argv)
       {
         RMSG("Bit %d is %s", i, Math_isBitSet(mask, i) ? "SET" : "CLEAR");
       }
-      break;
-    }
-
-    // ==============================================================
-    // 2D convex polygon
-    // ==============================================================
-    case 17:
-    {
-      double radius = 0.25;
-      double height = 1.0;
-      argP.getArgument("-radius", &radius, "Radius (default is %g)", radius);
-      argP.getArgument("-height", &height, "Height (default is %g)", height);
-
-      double poly[5][2];
-      poly[0][0] = -radius;
-      poly[0][1] = -0.5*height;
-      poly[1][0] =  radius;
-      poly[1][1] = -0.5*height;
-      poly[2][0] =  radius;
-      poly[2][1] =  0.5*height;
-      poly[3][0] = -radius;
-      poly[3][1] =  0.5*height;
-      poly[4][0] = -radius;
-      poly[4][1] = -0.5*height;
-      MatNd polyArr = MatNd_fromPtr(5, 2, &poly[0][0]);
-
-      Rcs::VertexArrayNode* vn =
-        new Rcs::VertexArrayNode(&polyArr, osg::PrimitiveSet::LINE_STRIP);
-
-      Rcs::Viewer* viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
-      viewer->add(vn);
-
-      double pt[3], ang[3], Id[3][3];
-      Mat3d_setIdentity(Id);
-      Vec3d_setZero(ang);
-      Vec3d_setZero(pt);
-      Rcs::TargetSetter* ts = new Rcs::TargetSetter(pt, ang, 0.5, false);
-      viewer->add(ts);
-
-      Rcs::CapsuleNode* pn = new Rcs::CapsuleNode(pt, Id, 0.025, 0.0);
-      pn->setMaterial("GREEN");
-      pn->makeDynamic(pt);
-      pn->setWireframe(false);
-      viewer->add(pn);
-
-      double cpPoly[3], nPoly[3];
-      Vec3d_setZero(cpPoly);
-      Vec3d_setZero(nPoly);
-      Rcs::CapsuleNode* cn = new Rcs::CapsuleNode(cpPoly, Id, 0.025, 0.0);
-      cn->makeDynamic(cpPoly);
-      cn->setMaterial("RED");
-      cn->setWireframe(false);
-      viewer->add(cn);
-
-      Rcs::ArrowNode* an = new Rcs::ArrowNode(cpPoly, nPoly, 0.2);
-      viewer->add(an);
-
-
-      char hudText[512] = "";
-      Rcs::HUD* hud = new Rcs::HUD();
-      viewer->add(hud);
-
-      viewer->runInThread(mtx);
-
-      while (runLoop)
-      {
-        pthread_mutex_lock(&graphLock);
-        double d = Math_distPointConvexPolygon2D(pt, poly, 4, cpPoly, nPoly);
-        sprintf(hudText, "d = %f", d);
-        hud->setText(hudText);
-        pthread_mutex_unlock(&graphLock);
-        Timer_waitDT(0.01);
-      }
-
       break;
     }
 
