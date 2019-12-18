@@ -540,13 +540,20 @@ bool Viewer::removeNode(osg::Node* node)
     return true;
   }
 
-  if (rootnode->containsNode(node))
+
+
+  osg::Node::ParentList parents = node->getParents();
+  size_t nDeleted = 0;
+
+  for (size_t i=0;i<parents.size(); ++i)
   {
-    rootnode->removeChild(node);
+    nDeleted++;
+    parents[i]->removeChild(node);
   }
-  else
+
+  if (nDeleted == 0)
   {
-    RLOG(4, "Node can't be deleted - is not part of the scene graph");
+  RLOG(1, "Node can't be deleted - is not part of the scene graph");
     return false;
   }
 
@@ -651,6 +658,14 @@ osg::Node* Viewer::getNodeUnderMouse(double I_mouseCoords[3])
 {
   return Rcs::getNodeUnderMouse<osg::Node*>(*this->viewer.get(),
                                             mouseX, mouseY, I_mouseCoords);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+osg::Node* Viewer::getNode(std::string nodeName)
+{
+  return findNamedNodeRecursive(rootnode, nodeName);
 }
 
 /*******************************************************************************

@@ -136,14 +136,16 @@ public:
    */
   bool add(osg::Node* node);
 
-  /*! \brief Adds the event handler to the root node of the viewer's scene graph.
+  /*! \brief Adds the event handler to the root node of the viewer's scene
+   *         graph.
    */
   void add(osgGA::GUIEventHandler* eventHandler);
 
   /*! \brief Removes the given node from the viewer's scene graph.
    *
    * \return True for success, false otherwise: node is NULL, or not found in
-   *         the viewer's scenegraph.
+   *         the viewer's scenegraph. The scenegraph is searched through all
+   *         levels.
    */
   bool removeNode(osg::Node* node);
 
@@ -194,7 +196,8 @@ public:
    */
   void setCartoonEnabled(bool enabled);
 
-  /*! \brief Sets the viewer's background color. See colorFromString() for colors.
+  /*! \brief Sets the viewer's background color. See colorFromString() for
+   *         colors.
    *
    *  \param[in] color   Color to be set as background color. if color is NULL,
    *                     it is set to white.
@@ -234,11 +237,15 @@ public:
   void setCameraTransform(double x, double y, double z,
                           double thx, double thy, double thz);
 
-
   /*! \brief Returns the node and the 3D world position of the
    *         mouse pointer (closest intersection of picking ray and node)
    */
   osg::Node* getNodeUnderMouse(double I_mouseCoords[3]=NULL);
+
+  /*! \brief Returns the node with the given name, or NULL if it is not
+   *         part of the scene graph.
+   */
+  osg::Node* getNode(std::string nodeName);
 
   /*! \brief Convenience template function for any type of node: Call it with
    *         MyNode* nd = viewer->getNodeUnderMouse<MyNode*>();

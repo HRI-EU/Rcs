@@ -70,7 +70,6 @@ Rcs::COSNode::COSNode(const double* pos, float scale, float lengthX, float lengt
 {
   setPosPtr(pos);
   init(scale, lengthX, lengthY, lengthZ);
-  // isDynamic = true;
   makeDynamic();
 }
 
@@ -89,7 +88,23 @@ Rcs::COSNode::COSNode(const double* pos, const double* rot, float scale,
   setPosPtr(pos);
   setRotMatPtr(rot);
   init(scale, lengthX, lengthY, lengthZ);
-  // isDynamic = true;
+  makeDynamic();
+}
+
+
+/******************************************************************************
+
+  \brief Constructor.
+
+******************************************************************************/
+
+Rcs::COSNode::COSNode(const HTr* A_CI, float scale, float lengthX,
+                      float lengthY, float lengthZ) :
+  NodeBase(), angMode(RotMat)
+{
+  setPosPtr(A_CI->org);
+  setRotMatPtr((double*)A_CI->rot);
+  init(scale, lengthX, lengthY, lengthZ);
   makeDynamic();
 }
 

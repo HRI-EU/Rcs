@@ -39,6 +39,10 @@
 
 #include "NodeBase.h"
 
+#include <Rcs_HTr.h>
+
+
+
 namespace Rcs
 {
 
@@ -93,6 +97,16 @@ public:
           AngularMode md = RotMat, float lengthX = 0.9,
           float lengthY = 0.9, float lengthZ = 0.9);
 
+  /*! \brief See above. Additionally the frame will be oriented according
+   *         to the transform. The pointers to
+   *         pos and rot will internally be memorized and the coordinate
+   *         system position will be updated upon each frame-callback.
+   *         Please make sure that the pointer remains valid, otherwise
+   *         undefined behavior will result.
+   */
+  COSNode(const HTr* A_BI, float scale = 1.0f, float lengthX = 0.9,
+          float lengthY = 0.9, float lengthZ = 0.9);
+
   /*! \brief Returns the angular description of the frame, see enum AngularMode.
    */
   AngularMode getAngularMode() const;
@@ -107,4 +121,3 @@ protected:
 }   // namespace Rcs
 
 #endif // RCS_COSNODE_H
-

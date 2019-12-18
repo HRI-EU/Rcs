@@ -366,8 +366,9 @@ void jetColorPalette(double color[3], double grayValue);
 
 void getGeodes(osg::Node* node, std::vector<osg::Geode*>& geodes);
 
+osg::Node* findNamedNodeRecursive(osg::Node* root, std::string nodeName);
+
 }   // namespace Rcs
 
 
 #endif // RCS_GRAPHICSUTILS_H
-
