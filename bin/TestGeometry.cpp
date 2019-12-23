@@ -116,6 +116,7 @@ static void testDistance(int argc, char** argv)
   if (argP.hasArgument("-h"))
   {
     RcsShape_fprintDistanceFunctions(stdout);
+    pthread_mutex_destroy(&graphLock);
     return;
   }
 
@@ -257,6 +258,7 @@ static void testDistance(int argc, char** argv)
     delete viewer;
   }
 
+  pthread_mutex_destroy(&graphLock);
 }
 
 /*******************************************************************************
@@ -288,6 +290,7 @@ static void testPolygon(int argc, char** argv)
 
   if (argP.hasArgument("-h"))
   {
+    pthread_mutex_destroy(&graphLock);
     return;
   }
 
@@ -436,6 +439,7 @@ static void testPolygon(int argc, char** argv)
 
   delete viewer;
   RcsGuiFactory_shutdown();
+  pthread_mutex_destroy(&graphLock);
 }
 
 /*******************************************************************************
@@ -474,6 +478,7 @@ static void testRayLinesegIntersection2D(int argc, char** argv)
 
   if (argP.hasArgument("-h"))
   {
+    pthread_mutex_destroy(&graphLock);
     return;
   }
 
@@ -569,6 +574,7 @@ static void testRayLinesegIntersection2D(int argc, char** argv)
     }
 
   delete viewer;
+  pthread_mutex_destroy(&graphLock);
 }
 
 /*******************************************************************************
