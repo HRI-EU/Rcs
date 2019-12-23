@@ -637,8 +637,11 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
   do
   {
     isEOF = fscanf(fd, "%63s", buf);
+    if (isEOF != EOF)
+    {
     data->ele[numValues] = String_toDouble_l(buf);
     numValues++;
+    }
   }
   while (isEOF != EOF);
 
