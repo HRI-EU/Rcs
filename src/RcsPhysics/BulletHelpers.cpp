@@ -157,7 +157,8 @@ RcsMeshData* Rcs::hullToMesh(const btConvexHullShape* convHull)
   {
     RLOG(5, "Succeeded to compute Delaunay triangulation for mesh: %d vertices",
          hullMesh->nVertices);
-    bool success = RcsMesh_compressVertices(hullMesh, 1.0e-8);
+    int nDuplicates = RcsMesh_compressVertices(hullMesh, 1.0e-8);
+    bool success = nDuplicates > 0 ? true : false;
     RLOG(5, "%s to compress mesh: now %d vertices",
          success ? "Succeeded" : "Failed", hullMesh->nVertices);
   }

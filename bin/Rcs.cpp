@@ -277,8 +277,6 @@ int main(int argc, char** argv)
       printf("\t\t6   Controller unit tests\n");
       printf("\t\t7   Null space convergence test\n");
       printf("\t\t8   Resolved acceleration controller test\n");
-      printf("\t\t9   MatNdWidget test\n");
-      printf("\t\t12  Distance function test\n");
       printf("\t\t13  Depth first traversal test\n");
 
       REXEC(1)
@@ -1852,8 +1850,8 @@ int main(int argc, char** argv)
         // Launch the task widget
         if (ffwd == false)
         {
-          Rcs::ControllerWidgetBase::create(&controller, a_des, x_des,
-                                            x_curr, mtx);
+          Rcs::ControllerWidgetBase::create(&controller, a_des, x_des, x_curr,
+                                            mtx);
         }
         else
         {

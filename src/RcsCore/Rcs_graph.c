@@ -3257,6 +3257,44 @@ void RcsGraph_addRandomGeometry(RcsGraph* self)
 
 }
 
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void RcsGraph_computeAABB(const RcsGraph* self,
+                         double xyzMin[3], double xyzMax[3])
+{
+  if (self == NULL || RcsGraph_numBodies(self)==0)
+  {
+    RLOG(4, "Graph is NULL or has no shapes - AABB is set to zero");
+    Vec3d_setZero(xyzMin);
+    Vec3d_setZero(xyzMax);
+    return;
+  }
+
+  Vec3d_set(xyzMin, DBL_MAX, DBL_MAX, DBL_MAX);
+  Vec3d_set(xyzMax, -DBL_MAX, -DBL_MAX, -DBL_MAX);
+
+  RCSGRAPH_TRAVERSE_BODIES(self)
+  {
+    double C_min[3], C_max[3];
+    RcsBody_computeAABB(BODY, C_min, C_max);
+
+    for (int j = 0; j < 3; ++j)
+    {
+      if (C_min[j] < xyzMin[j])
+      {
+        xyzMin[j] = C_min[j];
+      }
+
+      if (C_max[j] > xyzMax[j])
+      {
+        xyzMax[j] = C_max[j];
+      }
+    }
+  }
+
+}
+
 /******************************************************************************
  *
  *****************************************************************************/

@@ -583,6 +583,18 @@ bool RcsGraph_addBody(RcsGraph* graph, RcsBody* parent, RcsBody* body,
 */
 void RcsGraph_addRandomGeometry(RcsGraph* self);
 
+/*! \ingroup RcsGraphFunctions
+ *  \brief This function computes the axis-aligned bounding box of a shape.
+ *
+ *  \param[in] self       Graph. If it is NULL, or contains no bodies, the
+ *                        AABB is set to zero, and a debug message is issued
+ *                        on debul level 4.
+ *  \param[in] xyzMin     Minimum point of the box
+ *  \param[in] xyzMax     Maximum point of the box
+ */
+void RcsGraph_computeAABB(const RcsGraph* self,
+                         double xyzMin[3], double xyzMax[3]);
+
 
 /**
  * @name Joints

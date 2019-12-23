@@ -505,3 +505,31 @@ unsigned long Rcs::PeriodicCallback::getOverruns() const
 
   return orns;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+double Rcs::PeriodicCallback::getLastCallbackTime() const
+{
+  double timeOfLastCallback;
+
+  pthread_mutex_lock(&this->settingsMtx);
+  timeOfLastCallback = this->now;
+  pthread_mutex_unlock(&this->settingsMtx);
+
+  return timeOfLastCallback;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+double Rcs::PeriodicCallback::getLastCallbackDuration() const
+{
+  double tmp;
+
+  pthread_mutex_lock(&this->settingsMtx);
+  tmp = this->duration;
+  pthread_mutex_unlock(&this->settingsMtx);
+
+  return tmp;
+}

@@ -2,7 +2,7 @@
 # Build the vortex sub-library
 FIND_PACKAGE(Vortex)
 
-IF(USE_VORTEX)
+IF(USE_VORTEX AND VORTEX_FOUND)
   SET(RCSVORTEX_LIBRARY ${LIBRARY_OUTPUT_PATH}/libRcsVortex.so)
   IF(WIN32 OR CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5.0")
     # GCC 4.8, we can simply include the vortex library. The same goes for any windows system.
@@ -42,7 +42,7 @@ IF(USE_VORTEX)
     # Install custom library
     INSTALL(FILES ${RCSVORTEX_LIBRARY} DESTINATION lib)
   ENDIF()
-ENDIF(USE_VORTEX)
+ENDIF(USE_VORTEX AND VORTEX_FOUND)
 
 # Build the actual physics library
 SET(RCS_PHYSICS_SRCS)
@@ -94,7 +94,9 @@ ENDIF(USE_BULLET)
 IF(USE_VORTEX)
   # Link RcsVortex library here, so RcsPhysics is still the goto dependency for it.
   # Use no-as-needed to make sure the library is loaded, only then will the physics engine be registered.
+  IF (UNIX)
   TARGET_LINK_LIBRARIES(RcsPhysics -Wl,--no-as-needed ${RCSVORTEX_LIBRARY} -Wl,--as-needed ${VORTEX_LIBRARIES})
+  ENDIF(UNIX)
   ADD_DEPENDENCIES(RcsPhysics RcsVortex)
 ENDIF()
 

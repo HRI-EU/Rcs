@@ -220,6 +220,16 @@ public:
    */
   virtual unsigned long getOverruns() const;
 
+  /*! \brief Returns the computer's system time of the last call to callback().
+   *         This function is thread-safe.
+   */
+  virtual double getLastCallbackTime() const;
+
+  /*! \brief Returns the duration of the last callback() call in seconds.
+   *         This function is thread-safe.
+   */
+  virtual double getLastCallbackDuration() const;
+
 
 
 private:
