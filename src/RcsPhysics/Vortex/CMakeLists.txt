@@ -43,6 +43,10 @@ TARGET_INCLUDE_DIRECTORIES(RcsVortex PRIVATE
     ${LIBXML2_INCLUDE_DIR}
 	${PTHREAD_INCLUDE_DIR})
 
+IF (WIN32)
+  TARGET_LINK_LIBRARIES(RcsVortex RcsCore ${VORTEX_LIBRARIES})
+ENDIF()
+
 # We intentionally do not link against Vortex and RcsCore. This allows the resulting library to use the version available
 # at runtime. The linker needs us to specify vortex libraries explicitly anyways. Thus, a single prebuilt binary can be
 # used with any vortex installation.

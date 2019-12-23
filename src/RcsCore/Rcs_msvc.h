@@ -111,56 +111,19 @@
 #define _TIMESPEC_DEFINED
 #endif
 
-static inline void srand48(unsigned int seed)
-{
-  srand(seed);
-}
+void srand48(unsigned int seed);
 
-static inline double drand48()
-{
-  return (double) rand() / RAND_MAX;
-}
+double drand48();
 
 #if (_MSC_VER < 1900)
-static inline int round(double x)
-{
-  int i = (int) x;
+int round(double x);
 
-  if (x >= 0.0)
-  {
-    return ((x-i) >= 0.5) ? (i + 1) : (i);
-  }
-  else
-  {
-    return (-x+i >= 0.5) ? (i - 1) : (i);
-  }
-}
+double fmin(double x, double y);
+
+double fmax(double x, double y);
+
+double cbrt(double x);
 #endif
-
-static inline double fmin(double x, double y)
-{
-  return (x<y?x:y);
-}
-
-static inline double fmax(double x, double y)
-{
-  return (x>y?x:y);
-}
-
-static inline double cbrt(double x)
-{
-  if (fabs(x) < DBL_EPSILON)
-  {
-    return 0.0;
-  }
-
-  if (x > 0.0)
-  {
-    return pow(x, 1.0/3.0);
-  }
-
-  return -pow(-x, 1.0/3.0);
-}
 
 #endif   // RCS_MSVC_H
 #endif   // RCS_MSC_VER
