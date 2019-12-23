@@ -44,9 +44,14 @@
 namespace Rcs
 {
 
-PhysicsMaterial::PhysicsMaterial() : materialNode(NULL), defaultMaterialNode(NULL) {}
+PhysicsMaterial::PhysicsMaterial() : materialNode(NULL), defaultMaterialNode(NULL)
+{
+}
 
-PhysicsMaterial::PhysicsMaterial(xmlNodePtr node, xmlNodePtr defaultMaterialNode) : materialNode(node), defaultMaterialNode(defaultMaterialNode) {}
+PhysicsMaterial::PhysicsMaterial(xmlNodePtr node, xmlNodePtr defaultMaterialNode) :
+  materialNode(node), defaultMaterialNode(defaultMaterialNode)
+{
+}
 
 PhysicsMaterial PhysicsMaterial::next() const
 {
@@ -63,6 +68,16 @@ PhysicsMaterial PhysicsMaterial::next() const
   }
   // we were the last
   return {NULL, NULL};
+}
+
+PhysicsMaterial::operator bool() const
+{
+  return materialNode != NULL;
+}
+
+bool PhysicsMaterial::isDefault() const
+{
+  return materialNode == defaultMaterialNode;
 }
 
 bool PhysicsMaterial::getDouble(const char* attr, double& out) const
@@ -170,6 +185,46 @@ void PhysicsMaterial::setString(const char* attr, const char* value)
   xmlSetProp(materialNode, BAD_CAST attr, BAD_CAST value);
 }
 
+void PhysicsMaterial::getMaterialName(char name[256]) const
+{
+  getString("name", name, 256);
+}
+
+double PhysicsMaterial::getFrictionCoefficient() const
+{
+  double value = 0.8;
+  getDouble("frictionCoefficient", value);
+  return value;
+}
+
+void PhysicsMaterial::setFrictionCoefficient(double value)
+{
+  setDouble("frictionCoefficient", value);
+}
+
+double PhysicsMaterial::getRollingFrictionCoefficient() const
+{
+  double value = 0.0;
+  getDouble("rollingFrictionCoefficient", value);
+  return value;
+}
+
+void PhysicsMaterial::setRollingFrictionCoefficient(double value)
+{
+  setDouble("rollingFrictionCoefficient", value);
+}
+
+double PhysicsMaterial::getRestitution() const
+{
+  double value = 0.0;
+  getDouble("restitution", value);
+  return value;
+}
+
+void PhysicsMaterial::setRestitution(double value)
+{
+  setDouble("restitution", value);
+}
 
 // utility to check the material name
 static bool isMaterialName(xmlNodePtr materialNode, const char* nameToCheck)

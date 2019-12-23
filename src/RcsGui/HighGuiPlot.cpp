@@ -256,8 +256,8 @@ void HighGuiPlot::update()
         _curves[it->first]->setRawData(_x.data(), _data[it->first].first.data(),
                                        _capacity);
 #else
-		  _curves[it->first]->setSamples(_x.data(), _data[it->first].first.data(),
-			  _capacity);
+      _curves[it->first]->setSamples(_x.data(), _data[it->first].first.data(),
+        _capacity);
 #endif
       }
     }
@@ -335,8 +335,8 @@ void HighGuiPlot::update()
           _curves[value_id]->setRawData(_x.data(), _data[value_id].first.data(),
                                         _capacity);
 #else
-		  _curves[value_id]->setSamples(_x.data(), _data[value_id].first.data(),
-			  _capacity);
+      _curves[value_id]->setSamples(_x.data(), _data[value_id].first.data(),
+        _capacity);
 #endif
 
           // create marker
@@ -351,9 +351,9 @@ void HighGuiPlot::update()
                                   QSize(5,5));
           marker->setSymbol(marker_symbol);
 #else
-		  QwtSymbol* marker_symbol = new QwtSymbol(QwtSymbol::Ellipse, curve_color, curve_color,
-			  QSize(5, 5));
-		  marker->setSymbol(marker_symbol);
+      QwtSymbol* marker_symbol = new QwtSymbol(QwtSymbol::Ellipse, curve_color, curve_color,
+        QSize(5, 5));
+      marker->setSymbol(marker_symbol);
 
 #endif
           marker->setZ(100.0);
@@ -374,7 +374,7 @@ void HighGuiPlot::update()
 #if QWT_VERSION < 0x060103
         _curves[value_id]->setData(_x.data(), linearized_data.data(), _capacity);
 #else
-		RLOG(1, "Fixme");
+    RLOG(1, "Fixme");
 #endif
       }
       else

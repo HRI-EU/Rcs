@@ -1088,6 +1088,7 @@ void RcsMesh_add(RcsMeshData* mesh, const RcsMeshData* other)
 
   size_t fMem = 3*(mesh->nFaces+other->nFaces)*sizeof(unsigned int);
   mesh->faces = (unsigned int*) realloc(mesh->faces, fMem);
+  RCHECK(mesh->faces);
 
   memcpy(&mesh->vertices[3*mesh->nVertices], other->vertices,
          3*other->nVertices*sizeof(double));

@@ -1797,7 +1797,13 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
     const RcsBody* effector = copyOfOtherTask->getEffector();
     if (effector != NULL)
     {
-      std::string newName = std::string(otherTasks[i]->getEffector()->name);
+      std::string newName;
+
+      if (otherTasks[i]->getEffector())
+      {
+        newName = std::string(otherTasks[i]->getEffector()->name);
+      }
+
       if (suffix != NULL)
       {
         newName += std::string(suffix);
@@ -1810,7 +1816,12 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
     const RcsBody* refBdy = copyOfOtherTask->getRefBody();
     if (refBdy != NULL)
     {
-      std::string newName = std::string(otherTasks[i]->getRefBody()->name);
+      std::string newName;
+      if (otherTasks[i]->getRefBody())
+      {
+        newName = std::string(otherTasks[i]->getRefBody()->name);
+      }
+
       if (suffix != NULL)
       {
         newName += std::string(suffix);
@@ -1823,11 +1834,18 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
     const RcsBody* refFrame = copyOfOtherTask->getRefFrame();
     if (refFrame != NULL)
     {
-      std::string newName = std::string(otherTasks[i]->getRefFrame()->name);
+      std::string newName;
+
+      if (otherTasks[i]->getRefFrame())
+      {
+        newName = std::string(otherTasks[i]->getRefFrame()->name);
+      }
+
       if (suffix != NULL)
       {
         newName += std::string(suffix);
       }
+
       refFrame = RcsGraph_getBodyByName(this->graph, newName.c_str());
       RCHECK_MSG(refFrame, "Not found: %s", newName.c_str());
       copyOfOtherTask->setRefFrame(refFrame);

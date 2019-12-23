@@ -664,8 +664,7 @@ double Math_sqrDistLinesegLineseg(const double segPt0[3],
   // Call point-lineseg functions if length is 0
   if (segLength0==0.0)
   {
-    sqrDist = Math_sqrDistPointLineseg(segPt0, segPt1, segDir1, segLength1,
-                                       cp1_);
+    sqrDist = Math_sqrDistPointLineseg(segPt0, segPt1, segDir1, segLength1, cp1);
     Vec3d_copy(cp0, segPt0);
     return sqrDist;
   }

@@ -76,23 +76,19 @@ public:
    * Create an empty material reference.
    */
   PhysicsMaterial();
+
   // treat as xml node pointer for iteration
 
   //! check if this is a non-empty reference
-  inline operator bool() const
-  {
-    return materialNode != NULL;
-  }
+  operator bool() const;
+
   /*!
    * Obtain next material. Returns an empty material if done.
    */
   PhysicsMaterial next() const;
 
   //! check if this is the default material
-  inline bool isDefault() const
-  {
-    return materialNode == defaultMaterialNode;
-  }
+  bool isDefault() const;
 
   // generic accessor methods
 
@@ -106,6 +102,7 @@ public:
    * @return true if the attribute was found
    */
   bool getDouble(const char* attr, double& out) const;
+
   /*!
    * Write a double attribute.
    *
@@ -124,6 +121,7 @@ public:
    * @return true if the attribute was found
    */
   bool getBoolean(const char* attr, bool& out) const;
+
   /*!
    * Write a boolean attribute.
    *
@@ -143,6 +141,7 @@ public:
    * @return true if the attribute was found
    */
   bool getString(const char* attr, char* out, unsigned int limit) const;
+
   /*!
    * Write a string attribute.
    *
@@ -155,30 +154,14 @@ public:
   // these are shortcuts for commonly used properties.
 
   //! Material name
-  inline void getMaterialName(char name[256]) const
-  {
-    getString("name", name, 256);
-  }
+  void getMaterialName(char name[256]) const;
 
-  // I'm lazy so macro!
-#define RCS_PM_ATTR_DOUBLE(attr, capitalized, default) \
-  inline double get##capitalized() const { \
-    double value = (default); \
-    getDouble(#attr, value); \
-    return value; \
-  } \
-  inline void set##capitalized(double value) { \
-    setDouble(#attr, value); \
-  }
-
-  //! coefficient of linear friction
-  RCS_PM_ATTR_DOUBLE(frictionCoefficient, FrictionCoefficient, 0.8)
-  //! coefficient of angular (rolling) friction.
-  RCS_PM_ATTR_DOUBLE(rollingFrictionCoefficient, RollingFrictionCoefficient, 0.0)
-  //! bouncyness
-  RCS_PM_ATTR_DOUBLE(restitution, Restitution, 0.0)
-
-#undef RCS_PM_ATTR_DOUBLE
+  double getFrictionCoefficient() const;
+  void setFrictionCoefficient(double value);
+  double getRollingFrictionCoefficient() const;
+  void setRollingFrictionCoefficient(double value);
+  double getRestitution() const;
+  void setRestitution(double value);
 };
 
 /*!
