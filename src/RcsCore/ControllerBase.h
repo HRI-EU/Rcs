@@ -684,6 +684,7 @@ public:
    *
    *  \param[out] T_des   Desired joint torque. It will be reshaped to the
    *                      full dimension (RcsGraph::dof x 1)
+   *  \param[in] graph    Underlying graph
    *  \param[in]  q_des   Desired joint angles. They must be of the full
    *                      dimension (RcsGraph::dof x 1)
    *  \param[in]  qp_des  Desired joint velocities. If qp_des is NULL, they
@@ -717,6 +718,7 @@ public:
    *
    *  \param[out] T_des   Desired joint torque. It will be reshaped to the
    *                      full dimension (RcsGraph::dof x 1)
+   *  \param[in] graph    Underlying graph
    *  \param[in]  q_des   Desired joint angles. They must be of the full
    *                      dimension (RcsGraph::dof x 1)
    *  \param[in]  positionGain   Position gain for PD control

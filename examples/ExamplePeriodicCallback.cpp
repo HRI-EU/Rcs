@@ -255,9 +255,9 @@ static void createCpuLoad(int argc, char** argv)
 
   RPAUSE_MSG("Hit enter to stop threads");
 
-  for (unsigned int i=0; i<nThreads; ++i)
+  for (size_t i=0; i<cpuHog.size(); ++i)
   {
-    RLOG(0, "Stopping thread %d", i);
+    RLOG_CPP(0, "Stopping thread " << i);
     cpuHog[i]->stop();
     delete cpuHog[i];
   }

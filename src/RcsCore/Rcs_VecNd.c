@@ -331,7 +331,8 @@ double VecNd_normalizeSelf(double* v, unsigned int n)
 /*******************************************************************************
  *
  ******************************************************************************/
-double VecNd_norm(const double* v, double p, unsigned int n)
+#if 0
+static double VecNd_norm_(const double* v, double p, unsigned int n)
 {
   RCHECK(p != 0.0);
 
@@ -343,6 +344,31 @@ double VecNd_norm(const double* v, double p, unsigned int n)
   no = pow(no, 1/p);
   return no;
 }
+#endif
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+double VecNd_norm(const double* v, double p, unsigned int n)
+{
+  RCHECK(p != 0.0);
+
+  double no = 0.0;
+
+  for (unsigned int i = 0; i < n; ++i)
+  {
+    no += pow(fabs(v[i]), p);
+  }
+
+  no = pow(no, 1.0 / p);
+
+#if 0
+  RCHECK(fabs(no - VecNd_norm_(v, p, n))<1.0e-12);
+#endif
+
+  return no;
+}
+
 
 /*******************************************************************************
  *

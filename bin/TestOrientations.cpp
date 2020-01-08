@@ -144,15 +144,15 @@ static void testEulerAngles(int argc, char** argv)
   Vec3d_setZero(eaCurr);
   Mat3d_setIdentity(A);
 
-  Rcs::Viewer* v      = new Rcs::Viewer();
-  Rcs::COSNode* cn0   = new Rcs::COSNode(pos);
-  Rcs::COSNode* cn    = new Rcs::COSNode(pos, (double*) A);
-  Rcs::KeyCatcher* kc = new Rcs::KeyCatcher();
+  Rcs::Viewer v;
+  osg::ref_ptr<Rcs::COSNode> cn0   = new Rcs::COSNode(pos);
+  osg::ref_ptr<Rcs::COSNode> cn    = new Rcs::COSNode(pos, (double*) A);
+  osg::ref_ptr<Rcs::KeyCatcher> kc = new Rcs::KeyCatcher();
 
-  v->add(cn);
-  v->add(cn0);
-  v->add(kc);
-  v->runInThread(&OSGLock);
+  v.add(cn.get());
+  v.add(cn0.get());
+  v.add(kc.get());
+  v.runInThread(&OSGLock);
 
   Slider1Dof::create(&eaDeg[0], &eaCurr[0], "Alpha", -190.0, 0.0, 190.0, 0.1);
   Slider1Dof::create(&eaDeg[1], &eaCurr[1], "Beta",  -190.0, 0.0, 190.0, 0.1);
@@ -193,7 +193,6 @@ static void testEulerAngles(int argc, char** argv)
 
   }   // while(runLoop)
 
-  delete v;
   pthread_mutex_destroy(&OSGLock);
 }
 
@@ -223,17 +222,17 @@ static void testOmega(int argc, char** argv)
   bool refWorld = true;
   bool pause = false;
 
-  Rcs::Viewer* v      = new Rcs::Viewer();
-  Rcs::COSNode* cn0   = new Rcs::COSNode(pos);
-  Rcs::COSNode* cn    = new Rcs::COSNode(pos, (double*) A);
-  Rcs::KeyCatcher* kc = new Rcs::KeyCatcher();
-  Rcs::HUD* hud       = new Rcs::HUD(0, 0, 700, 250);
+  Rcs::Viewer v;
+  osg::ref_ptr<Rcs::COSNode> cn0   = new Rcs::COSNode(pos);
+  osg::ref_ptr<Rcs::COSNode> cn    = new Rcs::COSNode(pos, (double*) A);
+  osg::ref_ptr<Rcs::KeyCatcher> kc = new Rcs::KeyCatcher();
+  osg::ref_ptr<Rcs::HUD> hud       = new Rcs::HUD(0, 0, 700, 250);
 
-  v->add(cn);
-  v->add(cn0);
-  v->add(kc);
-  v->add(hud);
-  v->runInThread(&OSGLock);
+  v.add(cn.get());
+  v.add(cn0.get());
+  v.add(kc.get());
+  v.add(hud.get());
+  v.runInThread(&OSGLock);
 
   Slider1Dof::create(&omega[0], &omega[0], "omega_x", -1.0, 0.0, 1.0, 0.01);
   Slider1Dof::create(&omega[1], &omega[1], "omega_y", -1.0, 0.0, 1.0, 0.01);
@@ -302,18 +301,14 @@ static void testOmega(int argc, char** argv)
 
   }   // while(runLoop)
 
-  delete v;
   pthread_mutex_destroy(&OSGLock);
 }
 
 
 
 /*******************************************************************************
-
-  \brief Axis angle test
-
-*******************************************************************************/
-
+ * Axis angle test
+ ******************************************************************************/
 static void testAxisAngleLocalFrame(int argc, char** argv)
 {
   Rcs::KeyCatcherBase::registerKey("q", "Quit");
@@ -333,42 +328,42 @@ static void testAxisAngleLocalFrame(int argc, char** argv)
   pthread_mutex_t mtx;
   pthread_mutex_init(&mtx, NULL);
 
-  Rcs::Viewer* viewer = new Rcs::Viewer();
+  Rcs::Viewer viewer;
 
   // KeyCatcher
-  Rcs::KeyCatcher* kc = new Rcs::KeyCatcher();
-  viewer->add(kc);
+  osg::ref_ptr<Rcs::KeyCatcher> kc = new Rcs::KeyCatcher();
+  viewer.add(kc.get());
 
   // HUD
   Rcs::HUD* hud = new Rcs::HUD(0, 0, 700, 200);
-  viewer->add(hud);
+  viewer.add(hud);
 
   // Coordinate systems
   double x_avg[3], A_1I[3][3];
   Mat3d_setIdentity(A_1I);
   Vec3d_setZero(x_avg);
-  Rcs::COSNode* cnAvg = new Rcs::COSNode(x_avg, (double*)A_1I);
-  viewer->add(cnAvg);
+  osg::ref_ptr<Rcs::COSNode> cnAvg = new Rcs::COSNode(x_avg, (double*)A_1I);
+  viewer.add(cnAvg.get());
 
   double x1[3], A_2I[3][3];
   Mat3d_setIdentity(A_2I);
   Vec3d_set(x1, 0.0, -1.5, 0.0);
-  Rcs::COSNode* cn1 = new Rcs::COSNode(x1, (double*)A_2I);
-  viewer->add(cn1);
+  osg::ref_ptr<Rcs::COSNode> cn1 = new Rcs::COSNode(x1, (double*)A_2I);
+  viewer.add(cn1.get());
 
   // TargetSetter for coordinate systems
   Rcs::TargetSetter* ts1 = new Rcs::TargetSetter(x1, A_2I);
-  viewer->add(ts1);
-  viewer->add(ts1->getHandler());
+  viewer.add(ts1);
+  viewer.add(ts1->getHandler());
 
   // Axis angle arrows
   double axis[3], angle = 0;
   Vec3d_setZero(axis);
-  Rcs::ArrowNode* an1 = new Rcs::ArrowNode(Vec3d_zeroVec(), axis);
-  viewer->add(an1);
+  osg::ref_ptr<Rcs::ArrowNode> an1 = new Rcs::ArrowNode(Vec3d_zeroVec(), axis);
+  viewer.add(an1.get());
 
   // Run viewer
-  viewer->runInThread(&mtx);
+  viewer.runInThread(&mtx);
 
 
 
@@ -438,18 +433,14 @@ static void testAxisAngleLocalFrame(int argc, char** argv)
 
   }   // while(runLoop)
 
-  delete viewer;
   pthread_mutex_destroy(&mtx);
 }
 
 
 
 /*******************************************************************************
-
-  \brief Axis angle test
-
-*******************************************************************************/
-
+ * Axis angle test
+ ******************************************************************************/
 static void testAxisAngleWorldFrame(int argc, char** argv)
 {
   Rcs::KeyCatcherBase::registerKey("q", "Quit");
@@ -472,25 +463,25 @@ static void testAxisAngleWorldFrame(int argc, char** argv)
   Rcs::Viewer* viewer = new Rcs::Viewer();
 
   // KeyCatcher
-  Rcs::KeyCatcher* kc = new Rcs::KeyCatcher();
-  viewer->add(kc);
+  osg::ref_ptr<Rcs::KeyCatcher> kc = new Rcs::KeyCatcher();
+  viewer->add(kc.get());
 
   // HUD
-  Rcs::HUD* hud = new Rcs::HUD(0, 0, 700, 200);
-  viewer->add(hud);
+  osg::ref_ptr<Rcs::HUD> hud = new Rcs::HUD(0, 0, 700, 200);
+  viewer->add(hud.get());
 
   // Coordinate systems
   double x_avg[3], A_1I[3][3];
   Mat3d_setIdentity(A_1I);
   Vec3d_setZero(x_avg);
-  Rcs::COSNode* cnAvg = new Rcs::COSNode(x_avg, (double*)A_1I);
-  viewer->add(cnAvg);
+  osg::ref_ptr<Rcs::COSNode> cnAvg = new Rcs::COSNode(x_avg, (double*)A_1I);
+  viewer->add(cnAvg.get());
 
   double x1[3], A_2I[3][3];
   Mat3d_setIdentity(A_2I);
   Vec3d_set(x1, 0.0, -1.5, 0.0);
-  Rcs::COSNode* cn1 = new Rcs::COSNode(x1, (double*)A_2I);
-  viewer->add(cn1);
+  osg::ref_ptr<Rcs::COSNode> cn1 = new Rcs::COSNode(x1, (double*)A_2I);
+  viewer->add(cn1.get());
 
   // TargetSetter for coordinate systems
   Rcs::TargetSetter* ts1 = new Rcs::TargetSetter(x1, A_2I);
@@ -500,8 +491,8 @@ static void testAxisAngleWorldFrame(int argc, char** argv)
   // Axis angle arrows
   double axis[3], angle = 0;
   Vec3d_setZero(axis);
-  Rcs::ArrowNode* an1 = new Rcs::ArrowNode(Vec3d_zeroVec(), axis);
-  viewer->add(an1);
+  osg::ref_ptr<Rcs::ArrowNode> an1 = new Rcs::ArrowNode(Vec3d_zeroVec(), axis);
+  viewer->add(an1.get());
 
   // Run viewer
   viewer->runInThread(&mtx);
@@ -602,19 +593,19 @@ static void testRotationAverage(int argc, char** argv, bool useRotationAxes = fa
   Rcs::Viewer* viewer = new Rcs::Viewer();
 
   // KeyCatcher
-  Rcs::KeyCatcher* kc = new Rcs::KeyCatcher();
-  viewer->add(kc);
+  osg::ref_ptr<Rcs::KeyCatcher> kc = new Rcs::KeyCatcher();
+  viewer->add(kc.get());
 
   // HUD
-  Rcs::HUD* hud = new Rcs::HUD(0, 0, 700, 200);
-  viewer->add(hud);
+  osg::ref_ptr<Rcs::HUD> hud = new Rcs::HUD(0, 0, 700, 200);
+  viewer->add(hud.get());
 
   // Coordinate system of averaged rotation
   double x1[3], A_1I[3][3];
   Mat3d_setIdentity(A_1I);
   Vec3d_setZero(x1);
-  Rcs::COSNode* cnAvg = new Rcs::COSNode(x1, (double*)A_1I);
-  viewer->add(cnAvg);
+  osg::ref_ptr<Rcs::COSNode> cnAvg = new Rcs::COSNode(x1, (double*)A_1I);
+  viewer->add(cnAvg.get());
 
 
   // Coordinate systems of desired rotations
@@ -626,8 +617,8 @@ static void testRotationAverage(int argc, char** argv, bool useRotationAxes = fa
     double sign = (i%2==0) ? -1.0 : 1.0;
     Mat3d_setIdentity(A_2I[i]);
     Vec3d_set(x2[i], 0.0, sign*(halfI+1)*1.1, 0.0);
-    Rcs::COSNode* cn = new Rcs::COSNode(x2[i], (double*)A_2I[i], 0.75);
-    viewer->add(cn);
+    osg::ref_ptr<Rcs::COSNode> cn = new Rcs::COSNode(x2[i], (double*)A_2I[i], 0.75);
+    viewer->add(cn.get());
 
     // TargetSetter for coordinate systems
     Rcs::TargetSetter* ts = new Rcs::TargetSetter(x2[i], A_2I[i]);

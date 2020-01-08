@@ -549,8 +549,7 @@ void Rcs::Task::computeAX(double* a_res,
 
     // x_int += gain*x_error
     // the gain is scaled by the activation
-    VecNd_constMulAndAddSelf(integral_x, x_error, a_des*ki,
-                             dim);
+    VecNd_constMulAndAddSelf(integral_x, x_error, a_des*ki, dim);
 
     // saturate integral term to avoid windup
     // the clipping is scaled by the activation
@@ -612,6 +611,7 @@ void Rcs::Task::computeAF(double* ft_res,
       // add integral part
       VecNd_addSelf(ft_res, ft_int, dim);
     }
+
   }
 }
 
@@ -673,9 +673,10 @@ bool Rcs::Task::testJacobian(double errorLimit,
   const unsigned int nx = getDim();
 
   bool success = true;
-  double* x0 = RNSTALLOC(nx, double);
-  double* x1 = RNSTALLOC(nx, double);
-  double* dx = RNSTALLOC(nx, double);
+  MatNd* x0, *x1, *dx;
+  MatNd_create2(x0, nx, 1);
+  MatNd_create2(x1, nx, 1);
+  MatNd_create2(dx, nx, 1);
 
   // Set the state.
   RcsGraph_setState(this->graph, NULL, NULL);
@@ -685,7 +686,7 @@ bool Rcs::Task::testJacobian(double errorLimit,
   MatNd_clone2(q0, this->graph->q);
 
   // Compute the task vector for the current state
-  computeX(x0);
+  computeX(x0->ele);
 
   // Compute the Jacobian analytically for the given state
   MatNd* J = NULL;
@@ -720,13 +721,13 @@ bool Rcs::Task::testJacobian(double errorLimit,
     // MatNd_printTwoArraysDiff(q0, graph->q, 8);
 
     RcsGraph_setState(this->graph, NULL, NULL);
-    computeX(x1);
+    computeX(x1->ele);
 
     // Reset state and calculate dx
     RcsGraph_setState(this->graph, q0, NULL);
-    computeDX(dx, x1);
-    VecNd_constMulSelf(dx, 1.0 / delta, nx);
-    MatNd_setColumn(J_fd, JNT->jacobiIndex, dx, nx);
+    computeDX(dx->ele, x1->ele);
+    VecNd_constMulSelf(dx->ele, 1.0 / delta, nx);
+    MatNd_setColumn(J_fd, JNT->jacobiIndex, dx->ele, nx);
   }
 
   // Compute error: percentual difference of solutions
@@ -852,6 +853,10 @@ bool Rcs::Task::testJacobian(double errorLimit,
   MatNd_destroy(J_fd);
   MatNd_destroy(J_err);
   MatNd_destroy(J);
+
+  MatNd_destroy(x0);
+  MatNd_destroy(x1);
+  MatNd_destroy(dx);
 
   return success;
 }
@@ -1047,6 +1052,7 @@ void Rcs::Task::projectTaskForce(MatNd* ft_task,
   MatNd_destroy(J_sensor);
   MatNd_destroy(pinvJ_sensor);
   MatNd_destroy(J_task);
+  MatNd_destroy(JJt);
 }
 
 /*******************************************************************************

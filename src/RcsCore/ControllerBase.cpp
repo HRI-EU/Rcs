@@ -1021,11 +1021,18 @@ void Rcs::ControllerBase::integrateXp_ik(MatNd* x_res,
  * Delta x for differential kinematics.
  ******************************************************************************/
 void Rcs::ControllerBase::computeDXp(MatNd* dx_dot,
-                                     const MatNd* x_dot_des,
+                                     const MatNd* x_dot_des_,
                                      const MatNd* a_des) const
 {
-  unsigned int dimTask, nRows = 0;
-  double* x_dot_des_i;
+  unsigned int nRows = 0;
+  const MatNd* x_dot_des = x_dot_des_;
+  MatNd* x_dot_des_buf = NULL;
+
+  if (x_dot_des_ == NULL)
+  {
+    MatNd_create2(x_dot_des_buf, getTaskDim(), 1);
+    x_dot_des = x_dot_des_buf;
+  }
 
   for (size_t i = 0; i < this->tasks.size(); i++)
   {
@@ -1033,21 +1040,12 @@ void Rcs::ControllerBase::computeDXp(MatNd* dx_dot,
     {
       // Check that appending the current dx vector will not write
       // into non-existing memory
-      dimTask = tasks[i]->getDim();
+      const unsigned int dimTask = tasks[i]->getDim();
       RCHECK_MSG(dx_dot->size >= nRows + dimTask, "While adding task "
                  "\"%s\": size of dx_dot: %d   m: %d   dimTask: %d",
                  getTaskName(i).c_str(), dx_dot->size, nRows, dimTask);
 
-      if (x_dot_des != NULL)
-      {
-        x_dot_des_i = &x_dot_des->ele[this->taskArrayIdx[i]];
-      }
-      else
-      {
-        x_dot_des_i = RNSTALLOC(dimTask, double);
-        VecNd_setZero(x_dot_des_i, dimTask);
-      }
-
+      const double* x_dot_des_i = &x_dot_des->ele[this->taskArrayIdx[i]];
       double* dx_dot_i = &dx_dot->ele[nRows];
       tasks[i]->computeDXp(dx_dot_i, x_dot_des_i);
       nRows += dimTask;
@@ -1057,17 +1055,26 @@ void Rcs::ControllerBase::computeDXp(MatNd* dx_dot,
   // Reshape. See computeJ() for the reason why to do it here.
   dx_dot->m = nRows;
   dx_dot->n = 1;
+
+  MatNd_destroy(x_dot_des_buf);
 }
 
 /*******************************************************************************
  * Projects task-space accelerations into the Jacobian coordinates.
  ******************************************************************************/
 void Rcs::ControllerBase::computeFfXpp(MatNd* x_ddot_ik,
-                                       const MatNd* x_ddot,
+                                       const MatNd* x_ddot_,
                                        const MatNd* a_des) const
 {
   unsigned int dimTask, nRows = 0;
-  double* x_ddot_i;
+  const MatNd* x_ddot = x_ddot_;
+  MatNd* x_ddot_buf = NULL;
+
+  if (x_ddot_ == NULL)
+  {
+    MatNd_create2(x_ddot_buf, getTaskDim(), 1);
+    x_ddot = x_ddot_buf;
+  }
 
   for (size_t i = 0; i < this->tasks.size(); i++)
   {
@@ -1080,16 +1087,7 @@ void Rcs::ControllerBase::computeFfXpp(MatNd* x_ddot_ik,
                  "\"%s\": size of dx_dot: %d   m: %d   dimTask: %d",
                  getTaskName(i).c_str(), x_ddot_ik->size, nRows, dimTask);
 
-      if (x_ddot != NULL)
-      {
-        x_ddot_i = &x_ddot->ele[this->taskArrayIdx[i]];
-      }
-      else
-      {
-        x_ddot_i = RNSTALLOC(dimTask, double);
-        VecNd_setZero(x_ddot_i, dimTask);
-      }
-
+      const double* x_ddot_i = &x_ddot->ele[this->taskArrayIdx[i]];
       double* x_ddot_ik_i = &x_ddot_ik->ele[nRows];
       tasks[i]->computeFfXpp(x_ddot_ik_i, x_ddot_i);
       nRows += dimTask;
@@ -1099,6 +1097,8 @@ void Rcs::ControllerBase::computeFfXpp(MatNd* x_ddot_ik,
   // Reshape. See computeJ() for the reason why to do it here.
   x_ddot_ik->m = nRows;
   x_ddot_ik->n = 1;
+
+  MatNd_destroy(x_ddot_buf);
 }
 
 /*******************************************************************************
@@ -1694,6 +1694,7 @@ void Rcs::ControllerBase::computeTaskForce_org(MatNd* ft_task,
     }
 
     RcsSensor* loadCell = SENSOR;
+    RCHECK(loadCell->rawData->size <= 9);
     const double* S_ft = loadCell->rawData->ele;
     // RLOG(1," \n print the extra info %s ", loadCell->extraInfo);
 
@@ -1701,12 +1702,12 @@ void Rcs::ControllerBase::computeTaskForce_org(MatNd* ft_task,
 
     // filtering in sensor space and coordinate system
     // filter vector of sensor values
-    double* S_ft_f = RNSTALLOC(loadCell->rawData->size, double);
+    double S_ft_f[9];
 
     MatNd* thrds_abs = MatNd_create(loadCell->rawData->size, 1);
     // Here read the threshold from the xml
     // readTaskVectorFromXML(thrds_abs, "threshold");
-    MatNd_addConst(thrds_abs, 10);
+    MatNd_addConst(thrds_abs, 10.0);
 
     // threshold the ft sensor values
     thresholdFtSensor(S_ft_f, S_ft, thrds_abs, loadCell->rawData->size);
@@ -1767,29 +1768,28 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
                               const char* suffix,
                               const HTr* A_BP)
 {
-  bool success = RcsGraph_appendCopyOfGraph(getGraph(), NULL,
-                                            other.getGraph(), suffix, A_BP);
+  bool success = RcsGraph_appendCopyOfGraph(getGraph(), NULL, other.getGraph(),
+                                            suffix, A_BP);
+
   if (success == false)
   {
     return false;
   }
 
   const std::vector<Task*>& otherTasks = other.taskVec();
-  size_t otherTasksSize = otherTasks.size();
+  const size_t otherTasksSize = otherTasks.size();
 
   if (otherTasksSize == 0)
   {
     return true;
   }
 
-
-
   for (size_t i=0; i<otherTasksSize; ++i)
   {
     Task* copyOfOtherTask = otherTasks[i]->clone(this->graph);
 
     // Set the new task's name uniquely considering the suffix
-    if (suffix != NULL)
+    if (suffix)
     {
       copyOfOtherTask->setName(otherTasks[i]->getName() + std::string(suffix));
     }
@@ -1801,13 +1801,14 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
 
       if (otherTasks[i]->getEffector())
       {
-        newName = std::string(otherTasks[i]->getEffector()->name);
+        newName.assign(otherTasks[i]->getEffector()->name);
       }
 
-      if (suffix != NULL)
+      if (suffix)
       {
-        newName += std::string(suffix);
+        newName.append(suffix);
       }
+
       effector = RcsGraph_getBodyByName(this->graph, newName.c_str());
       RCHECK_MSG(effector, "Not found: %s", newName.c_str());
       copyOfOtherTask->setEffector(effector);
@@ -1817,15 +1818,17 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
     if (refBdy != NULL)
     {
       std::string newName;
+
       if (otherTasks[i]->getRefBody())
       {
-        newName = std::string(otherTasks[i]->getRefBody()->name);
+        newName.assign(otherTasks[i]->getRefBody()->name);
       }
 
-      if (suffix != NULL)
+      if (suffix)
       {
-        newName += std::string(suffix);
+        newName.append(suffix);
       }
+
       refBdy = RcsGraph_getBodyByName(this->graph, newName.c_str());
       RCHECK_MSG(refBdy, "Not found: %s", newName.c_str());
       copyOfOtherTask->setRefBody(refBdy);
@@ -1838,12 +1841,12 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
 
       if (otherTasks[i]->getRefFrame())
       {
-        newName = std::string(otherTasks[i]->getRefFrame()->name);
+        newName.assign(otherTasks[i]->getRefFrame()->name);
       }
 
-      if (suffix != NULL)
+      if (suffix)
       {
-        newName += std::string(suffix);
+        newName.append(suffix);
       }
 
       refFrame = RcsGraph_getBodyByName(this->graph, newName.c_str());
@@ -1916,6 +1919,8 @@ void Rcs::ControllerBase::computeAdmittance(MatNd* compliantFrame,
                                             const MatNd* Kp_ext,
                                             const MatNd* a_des)
 {
+  double cmplDelta_[6];
+
   for (size_t taskIdx = 0; taskIdx < this->tasks.size(); taskIdx++)
   {
     if (a_des->ele[taskIdx] <= 0.0)
@@ -1931,8 +1936,12 @@ void Rcs::ControllerBase::computeAdmittance(MatNd* compliantFrame,
 
     // angular Euler
     // const double t_treshold = 1.0; // Start above this threshold (in [Nm])
+    double* cmplDelta = cmplDelta_;
+    if (taskDim>6)
+    {
+      cmplDelta = new double[taskDim];
+    }
 
-    double* cmplDelta = RNSTALLOC(taskDim, double);
     calcAdmittanceDelta(cmplDelta, &ft_task->ele[xIdx], &Kp_ext->ele[xIdx],
                         f_treshold, taskDim); //0.50
 
@@ -1943,6 +1952,10 @@ void Rcs::ControllerBase::computeAdmittance(MatNd* compliantFrame,
                              &compliantFrame->ele[xIdx], cmplDelta, 1.0);
     }
 
+    if (taskDim>6)
+    {
+      delete [] cmplDelta;
+    }
 
   }   // for (int taskIdx = 0; taskIdx < this->tasks.size(); taskIdx++)
 
@@ -2074,9 +2087,12 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
     }
 
     RcsSensor* loadCell = SENSOR;
+    RCHECK(loadCell->rawData->size <= 9);
+
     const double* S_ft_init = loadCell->rawData->ele;
     // clone the ft snsor values to clip them
-    double* S_ft =  VecNd_clone(S_ft_init, loadCell->rawData->size);
+    double S_ft[9];
+    VecNd_copy(S_ft, S_ft_init, loadCell->rawData->size);
 
     // clipping
     MatNd* clipLimitFT = MatNd_create(loadCell->rawData->size, 1);
@@ -2092,7 +2108,7 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
     // ---
     // filtering in sensor space and coordinate system
     // filter vector of sensor values
-    double* S_ft_f = RNSTALLOC(loadCell->rawData->size, double);
+    double  S_ft_f[9];
     MatNd* thrds_abs = MatNd_create(loadCell->rawData->size, 1);
     // Here read the threshold from the xml (PENDING!!!!)
     MatNd_addConst(thrds_abs, 5.0);

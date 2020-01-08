@@ -152,7 +152,8 @@ double VecNd_normalize(double* dst, const double* src, unsigned int n);
 double VecNd_normalizeSelf(double* v, unsigned int n);
 
 /*! \ingroup RcsVecNdFunctions
- *  \brief Computes the p-norm of vector v, equal to sum(abs(v).^p)^(1/p).
+ *  \brief Computes the p-norm of vector v, equal to sum(abs(v).^p)^(1/p). If
+ *         p is 0, the function exits with a fatal error.
  */
 double VecNd_norm(const double* v, double p, unsigned int n);
 

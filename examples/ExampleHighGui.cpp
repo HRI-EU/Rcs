@@ -46,8 +46,7 @@
 
 #include <cstdlib>
 #include <cstdio>
-#include <signal.h>
-#include <stdlib.h>
+#include <csignal>
 
 
 using namespace Rcs;
@@ -55,12 +54,9 @@ using namespace Rcs;
 Rcs::Atomic<bool> runLoop(true);
 
 /*******************************************************************************
-
-  \brief Ctrl-C destructor. Tries to quit gracefully with the first Ctrl-C
-         press, then just exits.
-
-*******************************************************************************/
-
+ * Ctrl-C destructor. Tries to quit gracefully with the first Ctrl-C
+ * press, then just exits.
+ ******************************************************************************/
 void quit(int /*sig*/)
 {
   static int kHit = 0;
@@ -97,7 +93,9 @@ void* differentThread(void*)
     HighGui::showLabel("loop_count", 2, "Thread 2 loop count = %u", loop_count);
 
     double val = HighGui::getSlider("Slider1", 4);
-    HighGui::showLabel("slider value", 2, "Thread 2 accessing another thread's slider value %f", val);
+    HighGui::showLabel("slider value", 2,
+                       "Thread 2 accessing another thread's slider value %f",
+                       val);
 
     Timer_waitDT(0.1);
     loop_count++;
@@ -137,7 +135,8 @@ int main(int argc, char** argv)
 
   Rcs::Atomic<double> val;
   HighGui::showSlider("Slider1", 4, 0, 100, 0.1, &val);
-  HighGui::showSlider("Slider2 (coupled by variable to Slider 1)", 4, 0, 100, 0.1, &val);
+  HighGui::showSlider("Slider2 (coupled by variable to Slider 1)",
+                      4, 0, 100, 0.1, &val);
 
   // callback function to set y max range of "Plot" of window 11
   HighGui::configurePlot("Plot 1", 11, HighGuiPlot::DefaultCapacity, -1.0, 1.0);

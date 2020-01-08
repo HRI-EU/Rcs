@@ -146,9 +146,9 @@ static void testDistance(int argc, char** argv)
   Vec3d_set(n01, 0.0, 0.0, 0.25);
 
   // Graphics
-  Rcs::HUD* hud = NULL;
   Rcs::Viewer* viewer = NULL;
-  Rcs::KeyCatcher* kc = NULL;
+  osg::ref_ptr<Rcs::HUD> hud;
+  osg::ref_ptr<Rcs::KeyCatcher> kc;
 
   if (!valgrind)
   {
@@ -156,7 +156,7 @@ static void testDistance(int argc, char** argv)
 
     // HUD
     hud = new Rcs::HUD();
-    viewer->add(hud);
+    viewer->add(hud.get());
 
     // BodyNodes
     Rcs::BodyNode* bNd1 = new Rcs::BodyNode(b1);
@@ -203,7 +203,7 @@ static void testDistance(int argc, char** argv)
 
     // KeyCatcher
     kc = new Rcs::KeyCatcher();
-    viewer->add(kc);
+    viewer->add(kc.get());
     viewer->runInThread(mtx);
   }
 
@@ -224,7 +224,7 @@ static void testDistance(int argc, char** argv)
     sprintf(textLine, "Distance: D = % 3.1f mm took %3.2f usec\n",
             dist*1000.0, dt*1.0e6);
     hudText << textLine;
-    if (hud)
+    if (hud.valid())
     {
       hud->setText(hudText);
     }
@@ -233,7 +233,7 @@ static void testDistance(int argc, char** argv)
       std::cout << hudText.str();
     }
 
-    if (kc && kc->getAndResetKey('q'))
+    if (kc.valid() && kc->getAndResetKey('q'))
     {
       runLoop = false;
     }
@@ -253,7 +253,7 @@ static void testDistance(int argc, char** argv)
   RcsBody_destroy(b1);
   RcsBody_destroy(b2);
 
-  if (viewer)
+  if (!valgrind)
   {
     delete viewer;
   }
@@ -403,8 +403,8 @@ static void testPolygon(int argc, char** argv)
   Rcs::HUD* hud = new Rcs::HUD();
   viewer->add(hud);
 
-  Rcs::KeyCatcher* kc = new Rcs::KeyCatcher();
-  viewer->add(kc);
+  osg::ref_ptr<Rcs::KeyCatcher> kc = new Rcs::KeyCatcher();
+  viewer->add(kc.get());
 
   viewer->runInThread(mtx);
 
@@ -533,8 +533,8 @@ static void testRayLinesegIntersection2D(int argc, char** argv)
   viewer->add(rayNd);
   Rcs::HUD* hud = new Rcs::HUD();
   viewer->add(hud);
-  Rcs::KeyCatcher* kc = new Rcs::KeyCatcher();
-  viewer->add(kc);
+  osg::ref_ptr<Rcs::KeyCatcher> kc = new Rcs::KeyCatcher();
+  viewer->add(kc.get());
   viewer->runInThread(mtx);
 
   char hudText[512] = "";
@@ -547,8 +547,14 @@ static void testRayLinesegIntersection2D(int argc, char** argv)
       Vec3d_sub(rayDir, rayPt1, rayPt0);
       Vec3d_normalizeSelf(rayDir);
       int res = Math_intersectRayLineseg2D(rayPt0, rayDir, segPt0, segPt1, intersectPt);
-      if (res==0) intrsctNd->hide();
-      else intrsctNd->show();
+    if (res==0)
+    {
+      intrsctNd->hide();
+    }
+    else
+    {
+      intrsctNd->show();
+    }
 
 
       pthread_mutex_unlock(&graphLock);

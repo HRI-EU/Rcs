@@ -692,12 +692,12 @@ static void testCameraTransform()
 
   RcsGraph* graph = RcsGraph_create(xmlFileName);
   Rcs::Viewer* viewer = new Rcs::Viewer();
-  Rcs::KeyCatcher* kc = new Rcs::KeyCatcher();
-  Rcs::COSNode* cn = new Rcs::COSNode();
+  osg::ref_ptr<Rcs::KeyCatcher> kc = new Rcs::KeyCatcher();
+  osg::ref_ptr<Rcs::COSNode> cn = new Rcs::COSNode();
 
   viewer->add(new Rcs::GraphNode(graph));
-  viewer->add(cn);
-  viewer->add(kc);
+  viewer->add(cn.get());
+  viewer->add(kc.get());
   viewer->runInThread(&mtx);
 
   HTr A_CI;   // World to camera transform

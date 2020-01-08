@@ -219,14 +219,14 @@ int main(int argc, char** argv)
         JNT->constrained = true;
       }
 
-      Rcs::Viewer* viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
-      Rcs::GraphNode* gn = new Rcs::GraphNode(graph);
+      Rcs::Viewer viewer(!simpleGraphics, !simpleGraphics);
+      osg::ref_ptr<Rcs::GraphNode> gn = new Rcs::GraphNode(graph);
       gn->toggleReferenceFrames();
-      viewer->add(gn);
+      viewer.add(gn.get());
 
-      Rcs::KeyCatcher* kc = new Rcs::KeyCatcher();
-      viewer->add(kc);
-      viewer->runInThread(mtx);
+      osg::ref_ptr<Rcs::KeyCatcher> kc = new Rcs::KeyCatcher();
+      viewer.add(kc.get());
+      viewer.runInThread(mtx);
 
       Rcs::JointWidget::create(graph, mtx);
 
@@ -246,7 +246,6 @@ int main(int argc, char** argv)
       }
 
       RcsGuiFactory_shutdown();
-      delete viewer;
       RcsGraph_destroy(graph);
       break;
     }

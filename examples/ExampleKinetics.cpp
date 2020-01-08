@@ -181,9 +181,9 @@ int main(int argc, char** argv)
       RcsGraph* graph = RcsGraph_create(xmlFileName);
       RCHECK(graph);
 
-      Rcs::BodyPointDragger* dragger = NULL;
-      Rcs::HUD* hud                  = NULL;
-      Rcs::KeyCatcher* kc            = NULL;
+      osg::ref_ptr<Rcs::BodyPointDragger> dragger;
+      osg::ref_ptr<Rcs::HUD> hud;
+      osg::ref_ptr<Rcs::KeyCatcher> kc;
       Rcs::Viewer* viewer            = NULL;
       if (!valgrind)
       {
@@ -194,9 +194,9 @@ int main(int argc, char** argv)
         kc  = new Rcs::KeyCatcher();
         gn->toggleReferenceFrames();
         viewer->add(gn);
-        viewer->add(dragger);
-        viewer->add(hud);
-        viewer->add(kc);
+        viewer->add(dragger.get());
+        viewer->add(hud.get());
+        viewer->add(kc.get());
         viewer->runInThread(&graphLock);
       }
 
@@ -287,7 +287,7 @@ int main(int argc, char** argv)
                 time, Timer_getTime() - t0, n, dt, dt_opt, nSteps,
                 dtCompute*1.0e3, integrator, E, damping, gCancel, hCancel);
 
-        if (kc)
+        if (kc.valid())
         {
           if (kc->getAndResetKey('q'))
           {
@@ -345,13 +345,16 @@ int main(int argc, char** argv)
 
         MatNd_setZero(F_ext);
 
-        if (!valgrind)
+        if (dragger.valid())
         {
           // Map external mouse force to joints: M = J^T F
           dragger->getJointTorque(F_ext, graph);
           MatNd_constMulSelf(F_ext, -10.0);
 
+          if (hud.valid())
+          {
           hud->setText(hudText);
+        }
         }
         else
         {
@@ -472,23 +475,22 @@ int main(int argc, char** argv)
 
       // Viewer and Gui
       Rcs::Viewer* viewer = NULL;
-      Rcs::PhysicsNode* simNode = NULL;
-      Rcs::HUD* hud = NULL;
-      Rcs::KeyCatcher* kc = NULL;
+      osg::ref_ptr<Rcs::HUD> hud;
+      osg::ref_ptr<Rcs::KeyCatcher> kc;
       MatNdWidget* gui = NULL;
 
       if (!valgrind)
       {
         viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
-        simNode = new Rcs::PhysicsNode(sim);
-        viewer->add(simNode);
+        osg::ref_ptr<Rcs::PhysicsNode> simNode = new Rcs::PhysicsNode(sim);
+        viewer->add(simNode.get());
         Rcs::GraphNode* gnDes = new Rcs::GraphNode(sim->getGraph());
         gnDes->setGhostMode(true, "RED");
         viewer->add(gnDes);
         hud = new Rcs::HUD();
-        viewer->add(hud);
+        viewer->add(hud.get());
         kc = new Rcs::KeyCatcher();
-        viewer->add(kc);
+        viewer->add(kc.get());
         viewer->runInThread(&graphLock);
 
         gui = MatNdWidget::create(q_gui, q_curr, -3.0, 3.0, 
@@ -603,17 +605,19 @@ int main(int argc, char** argv)
           //////////////////////////////////////////////////////////////
           // Keycatcher and hud output
           /////////////////////////////////////////////////////////////////
-          if (kc && kc->getAndResetKey('q'))
+        if (kc.valid())
+        {
+          if (kc->getAndResetKey('q'))
             {
               RMSGS("Quitting run loop");
               runLoop = false;
             }
-          else if (kc && kc->getAndResetKey('p'))
+          else if (kc->getAndResetKey('p'))
             {
               pause = !pause;
               RLOGS(1, "Pause modus is %s", pause ? "ON" : "OFF");
             }
-          else if (kc && kc->getAndResetKey('o'))
+          else if (kc->getAndResetKey('o'))
             {
               RMSGS("Resetting physics");
               pthread_mutex_lock(&graphLock);
@@ -624,6 +628,7 @@ int main(int argc, char** argv)
               MatNd_copy(q_des, graph->q);
               filt.init(graph->q->ele);
               pthread_mutex_unlock(&graphLock);
+          }
             }
 
           sprintf(hudText, "Time: %.3f (real: %.3f) dt: %.1f msec\ndt_dyn: "
@@ -633,7 +638,7 @@ int main(int argc, char** argv)
                   1000.0*(t_dyn-t_start), 1000.0*(t_sim-t_start),
                   torqueLimitsViolated);
 
-          if (!valgrind)
+        if (hud.valid())
             {
               hud->setText(hudText);
             }
