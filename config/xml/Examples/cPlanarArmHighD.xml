@@ -1,0 +1,179 @@
+<Controller >
+
+  <Graph name="Default" >
+  
+  <Body name="Ground Plane" >
+    <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0" 
+           color="PEWTER" graphics="true" />
+    <Shape type="FRAME" scale="0.3" />
+  </Body>
+
+    <Body name="b1" >
+      <Joint name="j1" type="RotX" range="-360 0 360" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.3" 
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b2" prev="b1" >
+      <Joint name="j2" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b3" prev="b2" >
+      <Joint name="j3" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b4" prev="b3" >
+      <Joint name="j4" type="RotX" range="-22 0 22" transform="0 0 0.3 0 0 0" weightJL="0" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b5" prev="b4" >
+      <Joint name="j5" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b6" prev="b5" >
+      <Joint name="j6" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b7" prev="b6" >
+      <Joint name="j7" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b8" prev="b7" >
+      <Joint name="j8" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b9" prev="b8" >
+      <Joint name="j9" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b10" prev="b9" >
+      <Joint name="j10" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b11" prev="b10" >
+      <Joint name="j11" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b12" prev="b11" >
+      <Joint name="j12" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b13" prev="b12" >
+      <Joint name="j13" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b14" prev="b13" >
+      <Joint name="j14" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b15" prev="b14" >
+      <Joint name="j15" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="ee" prev="b15" transform="0 0 0.3 0 0 0" >
+      <Shape type="SPHERE" radius="0.1"   
+	     color="RED" graphics="true" physics="true" distance="true" />
+    </Body>
+
+
+    <Body name="obstacle1" rigid_body_joints="0.25 -0.0 1 0 -90 0" >
+      <Shape type="SSL" radius="0.1" length="0.5"
+	     color="RED" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="obstacle2" rigid_body_joints="0.25 0.65 1 0 -90 0" >
+      <Shape type="SSL" radius="0.1" length="0.5"
+	     color="RED" graphics="true" physics="true" distance="true" />
+    </Body>
+	
+	
+	
+  <model_state model="Default" time_stamp="0">
+    <joint_state joint="j1" position="-20" />
+    <joint_state joint="j2" position="-20" />
+    <joint_state joint="j3" position="20" />
+    <joint_state joint="j4" position="0" />
+    <joint_state joint="j5" position="20" />
+    <joint_state joint="j6" position="20" />
+    <joint_state joint="j7" position="20" />
+    <joint_state joint="j8" position="20" />
+    <joint_state joint="j9" position="20" />
+    <joint_state joint="j10" position="20" />
+    <joint_state joint="j11" position="20" />
+    <joint_state joint="j12" position="20" />
+    <joint_state joint="j13" position="20" />
+    <joint_state joint="j14" position="20" />
+    <joint_state joint="j15" position="20" />
+  </model_state>
+
+  
+  </Graph>
+
+
+  <Task name="y" controlVariable="Y" effector="ee" active="true" guiMin="-5" guiMax="5" />
+  <Task name="z" controlVariable="Z" effector="ee" active="true"  guiMin="-5" guiMax="5" />
+
+  <CollisionModel  DistanceThreshold="0.01" >
+    <CollisionPair body1="b1" body2="obstacle1" />
+    <CollisionPair body1="b2" body2="obstacle1" />
+    <CollisionPair body1="b3" body2="obstacle1" />
+    <CollisionPair body1="b4" body2="obstacle1" />
+    <CollisionPair body1="b5" body2="obstacle1" />
+    <CollisionPair body1="b6" body2="obstacle1" />
+    <CollisionPair body1="b7" body2="obstacle1" />
+    <CollisionPair body1="b8" body2="obstacle1" />
+    <CollisionPair body1="b9" body2="obstacle1" />
+    <CollisionPair body1="b10" body2="obstacle1" />
+    <CollisionPair body1="b11" body2="obstacle1" />
+    <CollisionPair body1="b12" body2="obstacle1" />
+    <CollisionPair body1="b13" body2="obstacle1" />
+    <CollisionPair body1="b14" body2="obstacle1" />
+    <CollisionPair body1="b15" body2="obstacle1" />
+	
+    <CollisionPair body1="b1" body2="obstacle2" />
+    <CollisionPair body1="b2" body2="obstacle2" />
+    <CollisionPair body1="b3" body2="obstacle2" />
+    <CollisionPair body1="b4" body2="obstacle2" />
+    <CollisionPair body1="b5" body2="obstacle2" />
+    <CollisionPair body1="b6" body2="obstacle2" />
+    <CollisionPair body1="b7" body2="obstacle2" />
+    <CollisionPair body1="b8" body2="obstacle2" />
+    <CollisionPair body1="b9" body2="obstacle2" />
+    <CollisionPair body1="b10" body2="obstacle2" />
+    <CollisionPair body1="b11" body2="obstacle2" />
+    <CollisionPair body1="b12" body2="obstacle2" />
+    <CollisionPair body1="b13" body2="obstacle2" />
+    <CollisionPair body1="b14" body2="obstacle2" />
+    <CollisionPair body1="b15" body2="obstacle2" />
+  </CollisionModel>
+
+  
+</Controller>
