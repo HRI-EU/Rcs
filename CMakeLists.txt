@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 SET(BST_INSTALL_CATEGORY Libraries) 
 
-PROJECT(Rcs_2.0)
+PROJECT(Rcs)
 
 IF (NOT CMAKE_BUILD_TYPE)
   IF (WIN32)
@@ -156,6 +156,18 @@ ENDIF()
 
 ################################################################################
 #
+# Setup exported target collection
+#
+################################################################################
+# Setup RCS_EXPORT_LIBRARIES so the component CMakeLists.txt can modify it
+SET(RCS_EXPORT_LIBRARIES "" CACHE INTERNAL "")
+# Create a macro for adding an export library
+FUNCTION(RCS_ADD_EXPORT_LIBRARY library)
+  SET(RCS_EXPORT_LIBRARIES ${RCS_EXPORT_LIBRARIES} ${library} CACHE INTERNAL "")
+ENDFUNCTION()
+
+################################################################################
+#
 # If a user-file is in the cmake directory, it will be called
 #
 ################################################################################
@@ -167,19 +179,6 @@ IF(EXISTS ${USER_LIST})
 ELSE()
   MESSAGE("-- Not found: " ${USER_LIST})
 ENDIF()
-
-
-################################################################################
-#
-# Setup exported target collection
-#
-################################################################################
-# Setup RCS_EXPORT_LIBRARIES so the component CMakeLists.txt can modify it
-SET(RCS_EXPORT_LIBRARIES "" CACHE INTERNAL "")
-# Create a macro for adding an export library
-FUNCTION(RCS_ADD_EXPORT_LIBRARY library)
-  SET(RCS_EXPORT_LIBRARIES ${RCS_EXPORT_LIBRARIES} ${library} CACHE INTERNAL "")
-ENDFUNCTION()
 
 ################################################################################
 #
