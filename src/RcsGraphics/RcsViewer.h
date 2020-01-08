@@ -186,7 +186,7 @@ public:
 
   /*! \brief Enable or disable shadow casting.
    *
-   *  \param[in] enabled  True for shadow casting, false for no shadows.
+   *  \param[in] enable  True for shadow casting, false for no shadows.
    */
   void setShadowEnabled(bool enable);
 
@@ -297,6 +297,10 @@ public:
   void setFieldOfView(double fov);
   void getMouseTip(double I_tip[3]) const;
 
+  void setCameraHomePosition(const osg::Vec3d& eye,
+                             const osg::Vec3d& center,
+                             const osg::Vec3d& up=osg::Vec3d(0.0, 0.0, 1.0));
+  void setCameraHomePosition(const HTr* transformation);
 
 protected:
 
@@ -307,10 +311,6 @@ protected:
   float normalizedMouseX;
   float normalizedMouseY;
 
-  void setCameraHomePosition(const osg::Vec3d& eye,
-                             const osg::Vec3d& center,
-                             const osg::Vec3d& up=osg::Vec3d(0.0, 0.0, 1.0));
-  void setCameraHomePosition(const HTr* transformation);
   bool handle(const osgGA::GUIEventAdapter& ea,
               osgGA::GUIActionAdapter& aa);
 
