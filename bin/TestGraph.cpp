@@ -654,7 +654,7 @@ int main(int argc, char** argv)
         {
           RLOGS(2, "File \"%s\" has tag \"%s\"", fileName, tag);
 
-          if (STREQ(tag, "Graph"))
+          if (STREQ(tag, "Graph") || STREQ(tag, "Controller"))
           {
             RcsGraph* graph = RcsGraph_create(fileName);
             int nErrors = 0;
