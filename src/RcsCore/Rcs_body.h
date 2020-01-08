@@ -325,7 +325,7 @@ RcsJoint* RcsBody_lastJointBeforeBody(const RcsBody* body);
  *         - Rotation around y-axis
  *         - Rotation around z-axis
  *
- *  \param[in] body    Graph the body is represented in.
+ *  \param[in] self    Graph the body is represented in.
  *  \param[in] b       Body that is connected to the rigid body dofs.
  *  \param[in] q_rbj   Values that the dof are initialized with. If this
  *                     argument is NULL, the values are initialized with 0.
@@ -338,8 +338,8 @@ RcsJoint* RcsBody_createRBJ(RcsGraph* self, RcsBody* b, const double q_rbj[6]);
  *  \brief Creates and initializes the 6 joints associated to a rigid body
  *         joint. The joint ordering is given in the array indexOrdering.
  *
- *  \param[in] body    Graph the body is represented in.
- *  \param[in] b       Body that is connected to the rigid body dofs.
+ *  \param[in] self    Graph the body is represented in.
+ *  \param[in] body    Body that is connected to the rigid body dofs.
  *  \param[in] q_rbj   Values that the dof are initialized with. If this
  *                     argument is NULL, the values are initialized with 0.
  *  \param[in] indexOrdering Index order, e.g. for y-x-z-thz-thy-thx it is
@@ -347,7 +347,7 @@ RcsJoint* RcsBody_createRBJ(RcsGraph* self, RcsBody* b, const double q_rbj[6]);
  *
  *  \return Pointer to the first of the six rigid body joints.
  */
-RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* b,
+RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* body,
                                           const double q_rbj[6],
                                           const int indexOrdering[6]);
 

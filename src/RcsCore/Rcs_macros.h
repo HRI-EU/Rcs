@@ -205,7 +205,11 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 /*! \ingroup RcsMacros
  *  \brief Gets the memory for nMemb variables of the given type from the
  *         stack. It must not be freed, otherwise there will be undefined
- *         behavior. The memory is uninitialized.
+ *         behavior. The memory is uninitialized. The alloca function is not
+ *         part of the C standard, and deemed unsafe. However, it behaves the
+ *         same as the variable sized arrays in C99, which we allow to use.
+ *         Therefore using alloca is accepted if used with care (small memory
+ *         allocations, no recursions, etc.).
  */
 #define RNSTALLOC(nMemb, type) (type*) alloca((nMemb)*sizeof(type))
 

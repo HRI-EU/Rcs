@@ -396,7 +396,7 @@ double Math_distCapsuleCapsule(const double linePt0[3],
  *              ignored.
  *  \return Signed distance of closest points.
  */
-double Math_distPointCone(const double p[3],
+double Math_distPointCone(const double point[3],
                           const HTr* A_cone,
                           double height,
                           double radius,
@@ -415,7 +415,7 @@ double Math_distPointCone(const double p[3],
  *              be ignored.
  *  \return Signed distance of closest points.
  */
-double Math_distPointCylinder(const double p[3],
+double Math_distPointCylinder(const double point[3],
                               const HTr* A_cyl,
                               double height,
                               double radius,

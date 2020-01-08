@@ -381,7 +381,7 @@ RcsBody* RcsGraph_getBodyByTruncatedName(const RcsGraph* self,
  *  \param[in] idx    Index of the body to be retrieved.
  *  \return Pointer to the body within the graph, or NULL if idx is too large.
  */
-RcsBody* RcsGraph_getBodyByIndex(const RcsGraph* graph, unsigned int idx);
+RcsBody* RcsGraph_getBodyByIndex(const RcsGraph* self, unsigned int idx);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Returns the summed mass of all bodies of the graph.

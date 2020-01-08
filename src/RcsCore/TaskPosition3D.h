@@ -76,7 +76,11 @@ public:
    */
   virtual TaskPosition3D* clone(RcsGraph* newGraph=NULL) const;
 
-  /*! \brief Computes the current value of the task variable
+  /*! \brief Computes the relative position of the effector with respect to the
+   *         reference body, projected into the coordinate system of the
+   *         refFrame body. Any of these max or may not exist (in the sense that
+   *         the body member is NULL). If it does not exist, it is considered
+   *         the world reference.
    *
    *  The result is written to parameter \e x_res.
    */
@@ -84,8 +88,9 @@ public:
 
   /*! \brief Computes the current velocity in task space:
    *         \f$
-   *         \mathbf{\dot{x} = A_{ref-I}
-   *                           (_I \dot{x}_{ef} - _I \dot{x}_{ref}) }
+   *         \mathbf{\dot{x} = A_{refFrm-I}
+   *                           (_I \dot{x}_{ef} - _I \dot{x}_{ref} +
+   *                           r_{ref-ef} \times \omega_{ref} } )
    *         \f$
    */
   virtual void computeXp_ik(double* xp) const;
