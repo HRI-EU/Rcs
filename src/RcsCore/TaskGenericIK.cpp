@@ -101,15 +101,17 @@ void Rcs::TaskGenericIK::computeXp(double* x_dot_res) const
 void Rcs::TaskGenericIK::computeDXp(double* dx_dot_res,
                                     const double* desired_vel) const
 {
-  double* current_vel = RNSTALLOC(getDim(), double);
-  computeXp(current_vel);
-  VecNd_sub(dx_dot_res, desired_vel, current_vel, getDim());
+  const unsigned int dim = getDim();
+  computeXp(dx_dot_res);
+  VecNd_constMulSelf(dx_dot_res, -1.0, dim);    // -x_dot_curr
+  VecNd_addSelf(dx_dot_res, desired_vel, dim);  // x_dot_des - x_dot_curr
 }
 
 /*******************************************************************************
  * Computes the current acceleration in task space
  ******************************************************************************/
-void Rcs::TaskGenericIK::computeXpp(double* x_ddot_res, const MatNd* q_ddot) const
+void Rcs::TaskGenericIK::computeXpp(double* x_ddot_res,
+                                    const MatNd* q_ddot) const
 {
   Task::computeXpp_ik(x_ddot_res, q_ddot);
 }
