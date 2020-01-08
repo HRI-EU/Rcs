@@ -16,13 +16,16 @@ name = "Rcs"
 
 category="Libraries"
 
-sqOptOutRules    = [ 'GEN04', 'C12', 'PY05', 'DOC04' ]
+sqLevel = "basic"
 
-sqComments       = { 'C01': 'exits stop system / robot before getting into dangerous situations.',
-                     'C10': 'Some of them are false positives, unclear how to eliminate the remaining ones',
-                     'DOC04': 'Should not be public outside institute',
-                     'GEN04': 'Software partially licensed under BSD licenses',
-                     'PY05': 'No python code contained' }
+sqOptOutRules    = [ 'GEN04', 'PY05' ]
+
+sqComments       = { 'GEN04': 'Copyright header with BSD license not recognized by quality checker',
+                     'PY05': 'No python code contained. ' }
+
+SQ_12 = [ 'build/bionic64/bin/TestMath -m -1' ]
+
+
 
 
 # EOF
