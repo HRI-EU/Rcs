@@ -44,6 +44,9 @@
 namespace Rcs
 {
 
+/*! \ingroup RcsTask
+ * \brief This tasks composes several sub-tasks into one.
+ */
 class CompositeTask: public Task
 {
 public:
@@ -74,10 +77,8 @@ public:
 
   virtual void addTask(Task* subTask);
 
-  /*! \brief Returns the dimension of the task.
+  /*! \brief Returns the overall dimension of all sub-tasks.
    */
-  virtual unsigned int getDim() const;
-
   virtual void computeX(double* x_res) const;
   virtual void computeJ(MatNd* jacobian) const;
   virtual void computeH(MatNd* hessian) const;
@@ -85,7 +86,9 @@ public:
   virtual void computeDX(double* dx, const double* x_des) const;
   virtual void computeDX(double* dx, const double* x_des,
                          const double* x_curr) const;
+
   virtual void computeXp(double* xp) const;
+
   virtual void computeDXp(double* dxp, const double* xp_des) const;
   virtual void computeXpp(double* xpp, const MatNd* qpp) const;
   virtual void computeFfXpp(double* xpp_res, const double* xpp_des) const;
@@ -94,7 +97,10 @@ public:
   virtual void forceTrafo(double* ft_task) const;
   virtual void selectionTrafo(double* S_trans, const double* S) const;
 
+  /*! \brief Sets the effector body to all sub-tasks.
+   */
   virtual void setEffector(const RcsBody* effector);
+
   virtual void setRefBody(const RcsBody* referenceBody);
   virtual void setRefFrame(const RcsBody* referenceFrame);
   virtual const Task* getSubTask(size_t index) const;

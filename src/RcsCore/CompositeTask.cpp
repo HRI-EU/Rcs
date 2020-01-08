@@ -106,7 +106,14 @@ void Rcs::CompositeTask::addTask(Task* tsk)
   this->subTask.push_back(tsk);
 
   // Update the Task's private taskDim member.
-  setDim(getDim());
+  unsigned int compositeDim = 0;
+
+  for (size_t i=0; i<subTask.size(); ++i)
+  {
+    compositeDim += subTask[i]->getDim();
+  }
+
+  setDim(compositeDim);
 
   // Add a parameter class instance for each sub-task. This is required since
   // the parents constructor is called with dimension 0 (We can't know it at
@@ -123,21 +130,6 @@ void Rcs::CompositeTask::addTask(Task* tsk)
                                             p->scale_factor, p->name));
   }
 
-}
-
-/*******************************************************************************
- * Return the dimension as the sum of all subtask's dimensions
- ******************************************************************************/
-unsigned int Rcs::CompositeTask::getDim() const
-{
-  unsigned int dim = 0;
-
-  for (size_t i=0; i<subTask.size(); ++i)
-  {
-    dim += subTask[i]->getDim();
-  }
-
-  return dim;
 }
 
 /*******************************************************************************
