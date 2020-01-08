@@ -174,12 +174,6 @@ public:
    */
   virtual unsigned int getDim() const;
 
-  /*! \brief Sets the dimension of the task. This should not be required in
-   *         most cases. However, in few exceptions (e.g. CompositeTask), it
-   *         is needed.
-   */
-  virtual void setDim(unsigned int taskDim);
-
   /*! \brief Sets the name of the task.
    */
   void setName(const std::string& name);
@@ -711,6 +705,12 @@ public:
 
 
 protected:
+
+  /*! \brief Sets the dimension of the task. This should not be required in
+   *         most cases. However, in few exceptions (e.g. CompositeTask), it
+   *         is needed.
+   */
+  virtual void setDim(unsigned int taskDim);
 
   /*! \brief Graph on which the task operates
    */
