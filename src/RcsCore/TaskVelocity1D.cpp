@@ -60,23 +60,29 @@ Rcs::TaskVelocity1D::TaskVelocity1D(const std::string& taskType,
                                     int dim):
   TaskPosition1D(taskType, node, _graph, dim)
 {
+  double guiMax = 1.0, guiMin = -1.0;
+
+  if (getDim() == 1)
+  {
+    getXMLNodePropertyDouble(node, "guiMax", &guiMax);
+    getXMLNodePropertyDouble(node, "guiMin", &guiMin);
+  }
 
   if (taskType=="Xd")
   {
-    getParameter(0)->setParameters(-1.0, 1.0, 1.0, "X Velocity [m/s]");
+    resetParameter(Parameters(guiMin, guiMax, 1.0, "X Velocity [m/s]"));
     this->index = 0;
   }
   else if (taskType=="Yd")
   {
-    getParameter(0)->setParameters(-1.0, 1.0, 1.0, "Y Velocity [m/s]");
+    resetParameter(Parameters(guiMin, guiMax, 1.0, "Y Velocity [m/s]"));
     this->index = 1;
   }
   else if (taskType=="Zd")
   {
-    getParameter(0)->setParameters(-1.0, 1.0, 1.0, "Z Velocity [m/s]");
+    resetParameter(Parameters(guiMin, guiMax, 1.0, "Z Velocity [m/s]"));
     this->index = 2;
   }
-
 }
 
 /*******************************************************************************
@@ -89,24 +95,20 @@ Rcs::TaskVelocity1D::TaskVelocity1D(const std::string& className,
                                     const RcsBody* refFrame):
   TaskPosition1D(className, graph, effector, refBdy, refFrame)
 {
-  std::vector<Parameters*>& params = getParameters();
-  params.clear();
-  params.push_back(new Task::Parameters(-1.0, 1.0, 1.0, "Velocity [m/s]"));
-
   if (getClassName()=="Xd")
   {
     this->index = 0;
-    getParameter(0)->name.assign("X Velocity [m/s]");
+    resetParameter(Task::Parameters(-1.0, 1.0, 1.0, "X Velocity [m/s]"));
   }
   else if (getClassName()=="Yd")
   {
     this->index = 1;
-    getParameter(0)->name.assign("Y Velocity [m/s]");
+    resetParameter(Task::Parameters(-1.0, 1.0, 1.0, "Y Velocity [m/s]"));
   }
   else if (getClassName()=="Zd")
   {
     this->index = 2;
-    getParameter(0)->name.assign("Z Velocity [m/s]");
+    resetParameter(Task::Parameters(-1.0, 1.0, 1.0, "Z Velocity [m/s]"));
   }
 }
 

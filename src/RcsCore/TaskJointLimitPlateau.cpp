@@ -58,7 +58,7 @@ Rcs::TaskJointLimitPlateau::TaskJointLimitPlateau(const std::string& className,
   TaskGenericIK(className, node, _graph, dim),
   borderRatio(0.05)
 {
-  getParameter(0)->setParameters(0.0, 1.0, 1.0, "sum(sqr(d))");
+  resetParameter(Parameters(0.0, 1.0, 1.0, "sum(sqr(d))"));
 }
 
 /*******************************************************************************

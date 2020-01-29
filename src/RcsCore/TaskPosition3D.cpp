@@ -57,7 +57,7 @@ Rcs::TaskPosition3D::TaskPosition3D(const std::string& className_,
                                     int dim):
   TaskGenericIK(className_, node, _graph, dim)
 {
-  if (getDim() == 3)
+  if (getClassName()=="XYZ")
   {
     double guiMax[3], guiMin[3];
     Vec3d_set(guiMax, 2.5, 2.5, 2.5);
@@ -65,9 +65,9 @@ Rcs::TaskPosition3D::TaskPosition3D(const std::string& className_,
     getXMLNodePropertyVec3(node, "guiMax", guiMax);
     getXMLNodePropertyVec3(node, "guiMin", guiMin);
 
-    getParameter(0)->setParameters(guiMin[0], guiMax[0], 1.0, "X [m]");
-    getParameter(1)->setParameters(guiMin[1], guiMax[1], 1.0, "Y [m]");
-    getParameter(2)->setParameters(guiMin[2], guiMax[2], 1.0, "Z [m]");
+    resetParameter(Parameters(guiMin[0], guiMax[0], 1.0, "X [m]"));
+    addParameter(Parameters(guiMin[1], guiMax[1], 1.0, "Y [m]"));
+    addParameter(Parameters(guiMin[2], guiMax[2], 1.0, "Z [m]"));
   }
 }
 
@@ -83,7 +83,6 @@ Rcs::TaskPosition3D::TaskPosition3D(const TaskPosition3D& src,
 /*******************************************************************************
  * Constructor based on body pointers
  ******************************************************************************/
-//! \todo Memory leak when derieved class calls params.clear()
 Rcs::TaskPosition3D::TaskPosition3D(RcsGraph* graph_,
                                     const RcsBody* effector,
                                     const RcsBody* refBdy,
@@ -95,11 +94,9 @@ Rcs::TaskPosition3D::TaskPosition3D(RcsGraph* graph_,
   setEffector(effector);
   setRefBody(refBdy);
   setRefFrame(refFrame ? refFrame : refBdy);
-  std::vector<Parameters*>& params = getParameters();
-  params.clear();
-  params.push_back(new Task::Parameters(-2.5, 2.5, 1.0, "X Position [m]"));
-  params.push_back(new Task::Parameters(-2.5, 2.5, 1.0, "Y Position [m]"));
-  params.push_back(new Task::Parameters(-2.5, 2.5, 1.0, "Z Position [m]"));
+  resetParameter(Parameters(-2.5, 2.5, 1.0, "X Position [m]"));
+  addParameter(Parameters(-2.5, 2.5, 1.0, "Y Position [m]"));
+  addParameter(Parameters(-2.5, 2.5, 1.0, "Z Position [m]"));
 }
 
 /*******************************************************************************

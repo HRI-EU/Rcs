@@ -57,18 +57,14 @@ Rcs::TaskJointLimit::TaskJointLimit(const std::string& className_,
   borderRatio(0.0)
 {
   // re-initialize parameters
-  getParameter(0)->setParameters(0.0, 1.0, 1.0, "sum(sqr(d))");
+  if (getClassName()=="JointLimit")
+  {
+    resetParameter(Parameters(0.0, 1.0, 1.0, "sum(sqr(d))"));
+  }
 
   // Border ratio (default is 0)
   getXMLNodePropertyDouble(node, "borderRatio", &this->borderRatio);
-
-  if ((this->borderRatio<0.0) || (this->borderRatio>1.0))
-  {
-    RLOG(1, "Border ratio out of range: %f - clipping to range [0...1]",
-         this->borderRatio);
     this->borderRatio = Math_clip(this->borderRatio, 0.0, 1.0);
-  }
-
 }
 
 /*******************************************************************************

@@ -57,21 +57,28 @@ Rcs::TaskOmega1D::TaskOmega1D(const std::string& className_,
                               int dim):
   TaskGenericIK(className_, node, _graph, dim), index(-1)
 {
+  double guiMax = M_PI, guiMin = -M_PI;
+
+  if (getDim() == 1)
+  {
+    getXMLNodePropertyDouble(node, "guiMax", &guiMax);
+    getXMLNodePropertyDouble(node, "guiMin", &guiMin);
+  }
 
   if (getClassName()=="Ad")
   {
     this->index = 0;
-    getParameter(0)->setParameters(-M_PI, M_PI, (180.0/M_PI), "Ad [deg/sec]");
+    resetParameter(Task::Parameters(guiMin, guiMax, 180.0/M_PI, "Ad [deg/sec]"));
   }
   else if (getClassName()=="Bd")
   {
     this->index = 1;
-    getParameter(0)->setParameters(-M_PI, M_PI, (180.0/M_PI), "Bd [deg/sec]");
+    resetParameter(Task::Parameters(guiMin, guiMax, 180.0/M_PI, "Bd [deg/sec]"));
   }
   else if (getClassName()=="Cd")
   {
     this->index = 2;
-    getParameter(0)->setParameters(-M_PI, M_PI, (180.0/M_PI), "Cd [deg/sec]");
+    resetParameter(Task::Parameters(guiMin, guiMax, 180.0/M_PI, "Cd [deg/sec]"));
   }
 
   // Other tasks inherit from this. Therefore we can't do any hard checking
@@ -96,25 +103,20 @@ Rcs::TaskOmega1D::TaskOmega1D(const std::string& className,
   setRefBody(refBdy);
   setRefFrame(refFrame ? refFrame : refBdy);
 
-  std::vector<Parameters*>& params = getParameters();
-  params.clear();
-  params.push_back(new Task::Parameters(-M_PI_2, M_PI_2, 180.0/M_PI,
-                                        "Omega [deg/sec]"));
-
   if (getClassName()=="Ad")
   {
     this->index = 0;
-    getParameter(0)->name.assign("Ad [deg/sec]");
+    resetParameter(Parameters(-M_PI_2, M_PI_2, 180.0/M_PI, "Ad [deg/sec]"));
   }
   else if (getClassName()=="Bd")
   {
     this->index = 1;
-    getParameter(0)->name.assign("Bd [deg/sec]");
+    resetParameter(Parameters(-M_PI_2, M_PI_2, 180.0/M_PI, "Bd [deg/sec]"));
   }
   else if (getClassName()=="Cd")
   {
     this->index = 2;
-    getParameter(0)->name.assign("Cd [deg/sec]");
+    resetParameter(Parameters(-M_PI_2, M_PI_2, 180.0/M_PI, "Cd [deg/sec]"));
   }
 }
 

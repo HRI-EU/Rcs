@@ -57,11 +57,11 @@ Rcs::TaskVelocity3D::TaskVelocity3D(RcsGraph* graph, const RcsBody* effector,
                                     const RcsBody* refBdy, const RcsBody* refFrame):
   TaskPosition3D(graph, effector, refBdy, refFrame)
 {
-  setClassName("ABCd");
+  setClassName("XYZd");
 
-  getParameter(0)->setParameters(-10., 10., 1.0, "X Velocity [m/s]");
-  getParameter(1)->setParameters(-1.0, 1.0, 1.0, "Y Velocity [m/s]");
-  getParameter(2)->setParameters(-1.0, 1.0, 1.0, "Z Velocity [m/s]");
+  resetParameter(Parameters(-10., 10., 1.0, "X Velocity [m/s]"));
+  addParameter(Parameters(-1.0, 1.0, 1.0, "Y Velocity [m/s]"));
+  addParameter(Parameters(-1.0, 1.0, 1.0, "Z Velocity [m/s]"));
 
   Vec3d_setZero(velocity_des_temp);
 }
@@ -75,9 +75,13 @@ Rcs::TaskVelocity3D::TaskVelocity3D(const std::string& taskType,
                                     int dim):
   TaskPosition3D(taskType, node, _graph, dim)
 {
-  getParameter(0)->setParameters(-10., 10., 1.0, "X Velocity [m/s]");
-  getParameter(1)->setParameters(-1.0, 1.0, 1.0, "Y Velocity [m/s]");
-  getParameter(2)->setParameters(-1.0, 1.0, 1.0, "Z Velocity [m/s]");
+
+  if (getClassName()=="XYZd")
+  {
+    resetParameter(Parameters(-10., 10., 1.0, "X Velocity [m/s]"));
+    addParameter(Parameters(-1.0, 1.0, 1.0, "Y Velocity [m/s]"));
+    addParameter(Parameters(-1.0, 1.0, 1.0, "Z Velocity [m/s]"));
+  }
 
   Vec3d_setZero(velocity_des_temp);
 }

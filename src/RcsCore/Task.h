@@ -144,7 +144,7 @@ public:
                        const double scaleFactor, const std::string& name);
     double minVal;
     double maxVal;
-    double scale_factor;
+    double scaleFactor;
     std::string name;
   };
 
@@ -186,15 +186,31 @@ public:
    *         index is out of the range of the parameter vector, the function
    *         exits with a fatal error.
    */
-  Parameters* getParameter(size_t index) const;
+  Parameters& getParameter(size_t index);
+
+  /*! \brief Same as above, but non-modifyable pointer.
+   */
+  const Parameters& getParameter(size_t index) const;
 
   /*! \brief Returns the whole parameter list
    */
-  const std::vector<Parameters*>& getParameters() const;
+  const std::vector<Parameters>& getParameters() const;
 
   /*! \brief Returns the whole parameter list
    */
-  std::vector<Parameters*>& getParameters();
+  std::vector<Parameters>& getParameters();
+
+  /*! \brief Clears the vector of parameters so that none are contained.
+   */
+  void clearParameters();
+
+  /*! \brief Adds a parameter instance to the vector of parameters.
+   */
+  void addParameter(const Parameters& newParam);
+
+  /*! \brief Clears all parameters and adds this one.
+   */
+  void resetParameter(const Parameters& newParam);
 
   /*! \brief Returns a copy of the string that holds the task's class
    *         name. The class name is the name to be used in the xml file's
@@ -740,7 +756,7 @@ private:
 
   /*! \brief List of constant task parameters for each dimension
    */
-  std::vector<Parameters*> params;
+  std::vector<Parameters> params;
 };
 
 }

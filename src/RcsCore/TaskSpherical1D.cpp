@@ -62,17 +62,17 @@ Rcs::TaskSpherical1D::TaskSpherical1D(const std::string& className_,
   if (getClassName()=="SphR")
   {
     this->index = 0;
-    getParameter(0)->setParameters(0, 2.5, 1.0, "Radius [m]");
+    resetParameter(Parameters(0, 2.5, 1.0, "Radius [m]"));
   }
   else if (getClassName()=="SphT")
   {
     this->index = 1;
-    getParameter(0)->setParameters(0., M_PI, 180.0/M_PI, "Theta [deg]");
+    resetParameter(Parameters(0., M_PI, 180.0/M_PI, "Theta [deg]"));
   }
   else if (getClassName()=="SphP")
   {
     this->index = 2;
-    getParameter(0)->setParameters(-M_PI, M_PI, 180.0/M_PI, "Phi [deg]");
+    resetParameter(Parameters(-M_PI, M_PI, 180.0/M_PI, "Phi [deg]"));
   }
   else
   {

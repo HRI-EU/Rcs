@@ -56,7 +56,10 @@ Rcs::TaskCollision::TaskCollision(const std::string& className_,
                                   int dim):
   TaskGenericIK(className_, node, graph_, dim), pair(NULL)
 {
-  getParameter(0)->setParameters(0.0, 1.0, 1.0, "sum(sqr(d))");
+  if (getClassName()=="Collision")
+  {
+    resetParameter(Parameters(0.0, 1.0, 1.0, "sum(sqr(d))"));
+  }
 
   // Parse XML file:
   char bdyName[256];

@@ -218,15 +218,15 @@ QWidget* TaskWidget::createTaskComponent(const Rcs::Task* task,
                                          unsigned int idx,
                                          bool withActivationLcd)
 {
-  Task::Parameters* param = task->getParameter(idx);
-  double range = (param->maxVal - param->minVal) * param->scale_factor;
-  double tick_size = 1.0;
+  const Task::Parameters& param = task->getParameter(idx);
+  double range = (param.maxVal - param.minVal) * param.scaleFactor;
+  double tickSize = 1.0;
 
   if (range > 0.0)
   {
     while (range < 1000.0)
     {
-      tick_size *= 0.1;
+      tickSize *= 0.1;
       range *= 10.0;
     }
   }
@@ -234,21 +234,21 @@ QWidget* TaskWidget::createTaskComponent(const Rcs::Task* task,
   // Here we handle the case that x_curr is out of the range given by the
   // parameter struct. In this case, we set the center to x_curr, and set the
   // range limits to +/- the half range.
-  double lowerBound = param->minVal;
-  double upperBound = param->maxVal;
+  double lowerBound = param.minVal;
+  double upperBound = param.maxVal;
 
-  if (this->x_curr[idx] > param->maxVal)
+  if (this->x_curr[idx] > upperBound)
   {
-    upperBound = this->x_curr[idx] + 0.5*(param->maxVal-param->minVal);
+    upperBound = this->x_curr[idx] + 0.5*(upperBound-lowerBound);
   }
-  if (this->x_curr[idx] < param->minVal)
+  if (this->x_curr[idx] < lowerBound)
   {
-    lowerBound = this->x_curr[idx] - 0.5*(param->maxVal-param->minVal);
+    lowerBound = this->x_curr[idx] - 0.5*(upperBound-lowerBound);
   }
 
   LcdSlider* slider = new LcdSlider(lowerBound, this->x_curr[idx],
-                                    upperBound, param->scale_factor,
-                                    tick_size, param->name.c_str(),
+                                    upperBound, param.scaleFactor,
+                                    tickSize, param.name.c_str(),
                                     withActivationLcd,
                                     false);
 
@@ -347,8 +347,8 @@ void TaskWidget::reset(const double* a, const double* x)
 ******************************************************************************/
 void TaskWidget::displayAct()
 {
-  double* x_curr_tmp = RNSTALLOC(this->dimTask, double);
-  double* x_des_tmp  = RNSTALLOC(this->dimTask, double);
+  double* x_curr_tmp = new double[this->dimTask];
+  double* x_des_tmp  = new double[this->dimTask];
   double activation;
 
   lock();
@@ -376,6 +376,8 @@ void TaskWidget::displayAct()
     }
   }
 
+  delete [] x_curr_tmp;
+  delete [] x_des_tmp;
 }
 
 /******************************************************************************
@@ -422,7 +424,7 @@ void TaskWidget::setTarget()
     return;
   }
 
-  double* target = RNSTALLOC(this->dimTask, double);
+  double* target = new double[this->dimTask];
 
   for (unsigned int i = 0; i < this->dimTask; i++)
   {
@@ -438,6 +440,8 @@ void TaskWidget::setTarget()
   {
     callback[i]->callback();
   }
+
+  delete [] target;
 }
 
 /******************************************************************************

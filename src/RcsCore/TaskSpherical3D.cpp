@@ -65,11 +65,11 @@ Rcs::TaskSpherical3D::TaskSpherical3D(const std::string& className,
                                       int dim):
   TaskPosition3D(className, node, _graph, dim)
 {
-  if (getDim() == 3)
+  if (getClassName()=="SphRTP")
   {
-    getParameter(0)->setParameters(0, 2.5, 1.0, "Radius [m]");
-    getParameter(1)->setParameters(0., M_PI, 180.0/M_PI, "Theta [deg]");
-    getParameter(2)->setParameters(-M_PI, M_PI, 180.0/M_PI, "Phi [deg]");
+    resetParameter(Parameters(0.0, 2.5, 1.0, "Radius [m]"));
+    addParameter(Parameters(0.0, M_PI, 180.0/M_PI, "Theta [deg]"));
+    addParameter(Parameters(-M_PI, M_PI, 180.0/M_PI, "Phi [deg]"));
   }
 }
 

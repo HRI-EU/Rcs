@@ -59,20 +59,21 @@ Rcs::TaskEuler1D::TaskEuler1D(const std::string& className, xmlNode* node,
                               RcsGraph* _graph, int dim):
   TaskGenericIK(className, node, _graph, dim)
 {
+
   if (className=="A")
   {
     this->index = 0;
-    getParameter(0)->setParameters(-M_PI, M_PI, (180.0/M_PI), "A [deg]");
+    resetParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "A [deg]"));
   }
   else if (className=="B")
   {
     this->index = 1;
-    getParameter(0)->setParameters(-M_PI, M_PI, (180.0/M_PI), "B [deg]");
+    resetParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "B [deg]"));
   }
   else if (className=="C")
   {
     this->index = 2;
-    getParameter(0)->setParameters(-M_PI, M_PI, (180.0/M_PI), "C [deg]");
+    resetParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "C [deg]"));
   }
   else
   {
@@ -107,24 +108,20 @@ Rcs::TaskEuler1D::TaskEuler1D(const std::string& className,
   setRefBody(refBdy);
   setRefFrame(refFrame ? refFrame : refBdy);
 
-  std::vector<Parameters*>& params = getParameters();
-  params.clear();
-  params.push_back(new Task::Parameters(-M_PI, M_PI, 180.0/M_PI, "Angle [deg]"));
-
   if (getClassName()=="A")
   {
     this->index = 0;
-    getParameter(0)->name.assign("A [deg]");
+    resetParameter(Task::Parameters(-M_PI, M_PI, 180.0/M_PI, "A [deg]"));
   }
   else if (getClassName()=="B")
   {
     this->index = 1;
-    getParameter(0)->name.assign("B [deg]");
+    resetParameter(Task::Parameters(-M_PI, M_PI, 180.0/M_PI, "B [deg]"));
   }
   else if (getClassName()=="C")
   {
     this->index = 2;
-    getParameter(0)->name.assign("C [deg]");
+    resetParameter(Task::Parameters(-M_PI, M_PI, 180.0/M_PI, "C [deg]"));
   }
 }
 

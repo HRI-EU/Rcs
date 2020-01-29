@@ -62,12 +62,12 @@ Rcs::TaskCylindrical1D::TaskCylindrical1D(const std::string& className,
   if (className == "CylR")
   {
     this->index = 0;
-    getParameter(0)->setParameters(0, 2.5, 1.0, "Radius [m]");
+    resetParameter(Parameters(0.0, 2.5, 1.0, "Radius [m]"));
   }
   else if (className == "CylP")
   {
     this->index = 1;
-    getParameter(0)->setParameters(-M_PI, M_PI, 180.0/M_PI, "Phi [deg]");
+    resetParameter(Parameters(-M_PI, M_PI, 180.0/M_PI, "Phi [deg]"));
   }
 
 }

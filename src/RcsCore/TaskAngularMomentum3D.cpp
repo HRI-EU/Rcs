@@ -58,15 +58,12 @@ Rcs::TaskAngularMomentum3D::TaskAngularMomentum3D(const std::string& className,
                                                   int dim):
   TaskGenericIK(className, node, _graph, dim)
 {
-  getParameter(0)->setParameters(-1.0, 1.0, 1.0, "Lx");
 
-  if (getDim() >= 2)
+  if (getClassName()=="AngularMomentum")
   {
-    getParameter(1)->setParameters(-1.0, 1.0, 1.0, "Ly");
-  }
-  if (getDim() >= 3)
-  {
-    getParameter(2)->setParameters(-1.0, 1.0, 1.0, "Lz");
+    resetParameter(Parameters(-1.0, 1.0, 1.0, "Lx"));
+    addParameter(Parameters(-1.0, 1.0, 1.0, "Ly"));
+    addParameter(Parameters(-1.0, 1.0, 1.0, "Lz"));
   }
 
 }

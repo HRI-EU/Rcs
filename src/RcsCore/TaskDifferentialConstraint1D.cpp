@@ -65,17 +65,17 @@ TaskDifferentialConstraint1D(const std::string& taskType,
   if (taskType=="DiffConstraintX")
   {
     this->index = 0;
-    getParameter(0)->setParameters(-1.0, 1.0, 1.0, "Delta x [m]");
+    resetParameter(Parameters(-1.0, 1.0, 1.0, "Delta x [m]"));
   }
   else if (taskType=="DiffConstraintY")
   {
     this->index = 1;
-    getParameter(0)->setParameters(-1.0, 1.0, 1.0, "Delta y [m]");
+    resetParameter(Parameters(-1.0, 1.0, 1.0, "Delta y [m]"));
   }
   else if (taskType=="DiffConstraintZ")
   {
     this->index = 2;
-    getParameter(0)->setParameters(-1.0, 1.0, 1.0, "Delta z [m]");
+    resetParameter(Parameters(-1.0, 1.0, 1.0, "Delta z [m]"));
   }
 
 }

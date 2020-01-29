@@ -60,13 +60,16 @@ Rcs::TaskVelocityJoint::TaskVelocityJoint(const std::string& className,
   TaskJoint(className, node, _graph, dim)
 {
   // re-initialize parameters
+  if (getClassName()=="Jointd")
+  {
   if (RcsJoint_isTranslation(this->joint) == true)
   {
-    getParameter(0)->setParameters(-1.0, 1.0, 1.0, "Vel. [m]");
+      resetParameter(Parameters(-1.0, 1.0, 1.0, "Vel. [m]"));
   }
   else
   {
-    getParameter(0)->setParameters(-90.0, 90.0, (180.0/M_PI), "Vel. [deg/s]");
+      resetParameter(Parameters(-90.0, 90.0, (180.0/M_PI), "Vel. [deg/s]"));
+    }
   }
 
 }

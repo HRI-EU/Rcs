@@ -42,8 +42,11 @@
 #include "Rcs_utils.h"
 #include "Rcs_joint.h"
 #include "Rcs_kinematics.h"
+#include "StackVec.h"
 
 #include <cfloat>
+
+typedef Rcs::StackVec<double, 8> TaskVec;
 
 
 
@@ -52,11 +55,11 @@
  ******************************************************************************/
 Rcs::Task::Parameters::Parameters(const double minVal,
                                   const double maxVal,
-                                  const double scaleFactor,
+                                  const double scaleFactor_,
                                   const std::string& name):
   minVal(minVal),
   maxVal(maxVal),
-  scale_factor(scaleFactor),
+  scaleFactor(scaleFactor_),
   name(name)
 {
 }
@@ -66,12 +69,12 @@ Rcs::Task::Parameters::Parameters(const double minVal,
  ******************************************************************************/
 void Rcs::Task::Parameters::setParameters(const double minVal,
                                           const double maxVal,
-                                          const double scaleFactor,
+                                          const double scaleFactor_,
                                           const std::string& name)
 {
   this->minVal = minVal;
   this->maxVal = maxVal;
-  this->scale_factor = scaleFactor;
+  this->scaleFactor = scaleFactor_;
   this->name.assign(name);
 }
 
@@ -113,7 +116,7 @@ Rcs::Task::Task(const std::string& className_,
   // initialize parameter list with default values
   for (unsigned int i = 0; i < getDim(); i++)
   {
-    this->params.push_back(new Task::Parameters(-1.0, 1.0, 1.0, "unnamed"));
+    addParameter(Parameters(-1.0, 1.0, 1.0, "unnamed"));
   }
 
   // Parse end effectors
@@ -159,10 +162,6 @@ Rcs::Task::Task(const std::string& className_,
     this->refFrame = this->refBody;
   }
 
-
-  // store all xml properties
-  //this->properties.fromXML(node);
-
   RLOG(5, "constructed task \"%s\" of type %s: dim: %d, dimIK: %d",
        getName().c_str(), className.c_str(), getDim(), getDim());
 }
@@ -176,18 +175,10 @@ Rcs::Task::Task(const Task& copyFromMe, RcsGraph* newGraph):
   refFrame(NULL),
   taskDim(copyFromMe.taskDim),
   name(copyFromMe.name),
-  className(copyFromMe.className)
+  className(copyFromMe.className),
+  params(copyFromMe.params)
 {
   this->graph = newGraph ? newGraph : copyFromMe.graph;
-
-  // clone parameter structs
-  for (size_t i = 0; i < copyFromMe.params.size(); i++)
-  {
-    Task::Parameters* param = copyFromMe.params[i];
-
-    // default copy constructor should work here
-    this->params.push_back(new Task::Parameters(*param));
-  }
 
   // End effectors
   if (newGraph != NULL)
@@ -221,11 +212,6 @@ Rcs::Task::Task(const Task& copyFromMe, RcsGraph* newGraph):
 Rcs::Task::~Task()
 {
   std::vector<Parameters*>::iterator it;
-
-  for (it = this->params.begin(); it != this->params.end(); ++it)
-  {
-    delete(*it);
-  }
 }
 
 /*******************************************************************************
@@ -280,16 +266,25 @@ void Rcs::Task::print() const
 /*******************************************************************************
  * Returns the parameters for task dimension index
  ******************************************************************************/
-Rcs::Task::Parameters* Rcs::Task::getParameter(size_t index) const
+Rcs::Task::Parameters& Rcs::Task::getParameter(size_t index)
 {
   RCHECK_MSG(index<this->params.size(), "%zu %zu", index, this->params.size());
-  return this->params[index];
+  return this->params.at(index);
+}
+
+/*******************************************************************************
+ * Returns the parameters for task dimension index
+ ******************************************************************************/
+const Rcs::Task::Parameters& Rcs::Task::getParameter(size_t index) const
+{
+  RCHECK_MSG(index<this->params.size(), "%zu %zu", index, this->params.size());
+  return this->params.at(index);
 }
 
 /*******************************************************************************
  * Returns the whole parameter list
  ******************************************************************************/
-const std::vector<Rcs::Task::Parameters*>& Rcs::Task::getParameters() const
+const std::vector<Rcs::Task::Parameters>& Rcs::Task::getParameters() const
 {
   return this->params;
 }
@@ -297,9 +292,34 @@ const std::vector<Rcs::Task::Parameters*>& Rcs::Task::getParameters() const
 /*******************************************************************************
  * Returns the whole parameter list
  ******************************************************************************/
-std::vector<Rcs::Task::Parameters*>& Rcs::Task::getParameters()
+std::vector<Rcs::Task::Parameters>& Rcs::Task::getParameters()
 {
   return this->params;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::Task::clearParameters()
+{
+  params.clear();
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::Task::addParameter(const Task::Parameters& newParam)
+{
+  params.push_back(newParam);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::Task::resetParameter(const Task::Parameters& newParam)
+{
+  clearParameters();
+  params.push_back(newParam);
 }
 
 /*******************************************************************************
@@ -373,7 +393,7 @@ void Rcs::Task::computeXpp_ik(double* x_ddot, const MatNd* q_ddot) const
  ******************************************************************************/
 void Rcs::Task::computeDX(double* dx, const double* x_des) const
 {
-  double* x_curr = RNSTALLOC(getDim(), double);
+  TaskVec x_curr(getDim());
   computeX(x_curr);
   computeDX(dx, x_des, x_curr);
 }
@@ -436,7 +456,7 @@ double Rcs::Task::computeTaskCost(const double* x_des,
 {
   unsigned int i, nx = getDim();
   double goalCost = 0.0;
-  double* dx = RNSTALLOC(nx, double);
+  TaskVec dx(nx);
 
   computeDX(dx, x_des);
 
@@ -510,7 +530,7 @@ void Rcs::Task::computeAX(double* a_res,
   const unsigned int dim = getDim();
 
   // calculate position error dx using the task's specialized function
-  double* dx = RNSTALLOC(dim, double);
+  TaskVec dx(dim);
   this->computeDX(dx, x_des);
 
   // a_res = kp * dx
@@ -518,14 +538,14 @@ void Rcs::Task::computeAX(double* a_res,
 
   // ax += kd * dx_dot
   // calculate velocity error dx_dot using the task's specialized function
-  double* dx_dot = RNSTALLOC(dim, double);
+  TaskVec dx_dot(dim);
   computeDXp(dx_dot, x_dot_des);
   VecNd_constMulAndAddSelf(a_res, dx_dot, kd, dim);
 
   // ax += ff_x_ddot
   if (x_ddot_des != NULL)
   {
-    double* ff_x_ddot = RNSTALLOC(dim, double);
+    TaskVec ff_x_ddot(dim);
     this->computeFfXpp(ff_x_ddot, x_ddot_des);
     VecNd_addSelf(a_res, ff_x_ddot, dim);
   }
@@ -536,7 +556,7 @@ void Rcs::Task::computeAX(double* a_res,
   if (integral_x != NULL)
   {
     // x_error = -dx*selection
-    double* x_error = RNSTALLOC(dim, double);
+    TaskVec x_error(dim);
 
     if (S_des != NULL)
     {
@@ -586,7 +606,7 @@ void Rcs::Task::computeAF(double* ft_res,
   if (ft_task != NULL)
   {
     // ft_error = (ft_des - ft_current)
-    double* ft_error = RNSTALLOC(dim, double);
+    TaskVec ft_error(dim);
     VecNd_sub(ft_error, ft_des, ft_task, dim);
 
     // proportional part

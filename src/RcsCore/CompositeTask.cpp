@@ -66,7 +66,7 @@ Rcs::CompositeTask::CompositeTask(const Rcs::CompositeTask& copyFromMe,
 
   for (size_t i=0; i<copyFromMe.subTask.size(); ++i)
   {
-    this->subTask.push_back(copyFromMe.subTask[i]->clone(newGraph));
+    addTask(copyFromMe.subTask[i]->clone(newGraph));
   }
 }
 
@@ -119,15 +119,12 @@ void Rcs::CompositeTask::addTask(Task* tsk)
   // the parents constructor is called with dimension 0 (We can't know it at
   // that point), and therefore doesn't create the parameter class instances
   // in the CompositeTask's constructor.
-  std::vector<Rcs::Task::Parameters*>& paramVec = getParameters();
 
   // Copy the parameters of the subtasks to the CompositeTask so that they will
   // be properly displayed in the Guis etc.
   for (size_t j=0; j<tsk->getParameters().size(); ++j)
   {
-    Parameters* p = tsk->getParameter(j);
-    paramVec.push_back(new Task::Parameters(p->minVal, p->maxVal,
-                                            p->scale_factor, p->name));
+    addParameter(tsk->getParameter(j));
   }
 
 }

@@ -62,11 +62,14 @@ Rcs::TaskInclination::TaskInclination(const std::string& className,
   direction(2),
   refDirection(2)
 {
-  getParameter(0)->setParameters(0.0, M_PI, 180.0/M_PI, "Inclination [deg]");
+  if (getClassName()=="Inclination")
+  {
+    resetParameter(Parameters(0.0, M_PI, 180.0/M_PI, "Inclination [deg]"));
+  }
 
   // Parse axis direction (should be X, Y or Z)
-  char text[256] = "Z";
-  getXMLNodePropertyStringN(node, "axisDirection", text, 256);
+  char text[16] = "Z";
+  getXMLNodePropertyStringN(node, "axisDirection", text, 16);
 
   if (STRCASEEQ(text, "X"))
   {
@@ -82,8 +85,8 @@ Rcs::TaskInclination::TaskInclination(const std::string& className,
   }
 
   // Parse reference axis direction (should be X, Y or Z)
-  char textRef[256] = "Z";
-  getXMLNodePropertyStringN(node, "refAxisDirection", textRef, 256);
+  char textRef[16] = "Z";
+  getXMLNodePropertyStringN(node, "refAxisDirection", textRef, 16);
 
   if (STRCASEEQ(textRef, "X"))
   {

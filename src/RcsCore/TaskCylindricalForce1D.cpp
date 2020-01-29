@@ -65,12 +65,11 @@ Rcs::TaskCylindricalForce1D::TaskCylindricalForce1D(const std::string& className
 
   if (className=="ForceCylR")
   {
-    getParameter(0)->setParameters(-10., 10., 1.0, "Radius Force [N]");
+    resetParameter(Parameters(-10., 10., 1.0, "Radius Force [N]"));
   }
   else if (className=="ForceCylP")
   {
-    getParameter(0)->setParameters(-4.0*M_PI, 4.0*M_PI, 180.0/M_PI,
-                                   "Phi Force [?]");
+    resetParameter(Parameters(-4.0*M_PI, 4.0*M_PI, 180.0/M_PI, "Phi Force"));
   }
 
   getXMLNodePropertyBoolString(node, "forceFeedback", &this->force_feedback);

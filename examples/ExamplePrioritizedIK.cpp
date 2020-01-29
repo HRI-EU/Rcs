@@ -517,7 +517,7 @@ int main(int argc, char** argv)
           {
             labels.push_back(controller.getTaskName(id) +
                              std::string(": ") +
-                             controller.getTask(id)->getParameter(j)->name);
+                             controller.getTask(id)->getParameter(j).name);
           }
         }
 

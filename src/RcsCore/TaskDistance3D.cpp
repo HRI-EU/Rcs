@@ -59,7 +59,7 @@ Rcs::TaskDistance3D::TaskDistance3D(const std::string& className_,
                                     int dim):
   TaskGenericIK(className_, node, _graph, dim)
 {
-  if (getDim() == 3)
+  if (getClassName()=="Distance3D")
   {
     double guiMax[3], guiMin[3];
     Vec3d_set(guiMax, 2.5, 2.5, 2.5);
@@ -67,9 +67,9 @@ Rcs::TaskDistance3D::TaskDistance3D(const std::string& className_,
     getXMLNodePropertyVec3(node, "guiMax", guiMax);
     getXMLNodePropertyVec3(node, "guiMin", guiMin);
 
-    getParameter(0)->setParameters(guiMin[0], guiMax[0], 1.0, "X [m]");
-    getParameter(1)->setParameters(guiMin[1], guiMax[1], 1.0, "Y [m]");
-    getParameter(2)->setParameters(guiMin[2], guiMax[2], 1.0, "Z [m]");
+    resetParameter(Task::Parameters(guiMin[0], guiMax[0], 1.0, "X [m]"));
+    addParameter(Task::Parameters(guiMin[1], guiMax[1], 1.0, "Y [m]"));
+    addParameter(Task::Parameters(guiMin[2], guiMax[2], 1.0, "Z [m]"));
   }
 
 }
@@ -86,7 +86,6 @@ Rcs::TaskDistance3D::TaskDistance3D(const TaskDistance3D& src,
 /*******************************************************************************
  * Constructor based on body pointers
  ******************************************************************************/
-//! \todo Memory leak when derieved class calls params.clear()
 Rcs::TaskDistance3D::TaskDistance3D(RcsGraph* graph_,
                                     const RcsBody* effector,
                                     const RcsBody* refBdy) : TaskGenericIK()
@@ -99,11 +98,9 @@ Rcs::TaskDistance3D::TaskDistance3D(RcsGraph* graph_,
   setEffector(effector);
   setRefBody(refBdy);
   setRefFrame(refBdy);
-  std::vector<Parameters*>& params = getParameters();
-  params.clear();
-  params.push_back(new Task::Parameters(-1.0, 1.0, 1.0, "X [m]"));
-  params.push_back(new Task::Parameters(-1.0, 1.0, 1.0, "Y [m]"));
-  params.push_back(new Task::Parameters(-1.0, 1.0, 1.0, "Z [m]"));
+  resetParameter(Task::Parameters(-1.0, 1.0, 1.0, "X [m]"));
+  addParameter(Task::Parameters(-1.0, 1.0, 1.0, "Y [m]"));
+  addParameter(Task::Parameters(-1.0, 1.0, 1.0, "Z [m]"));
 }
 
 /*******************************************************************************

@@ -58,11 +58,10 @@ Rcs::TaskPolarTarget2D::TaskPolarTarget2D(const std::string& className,
                                           int dim) :
   Task(className, node, _graph, dim), direction(2)
 {
-  getParameter(0)->setParameters(-M_PI, M_PI, (180.0/M_PI), "Phi [deg]");
-
-  if (getDim() >= 2)
+  if (getClassName()=="POLAR_TARGET")
   {
-    getParameter(1)->setParameters(-M_PI, M_PI, (180.0/M_PI), "Theta [deg]");
+    resetParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "Phi [deg]"));
+    addParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "Theta [deg]"));
   }
 
   // Parse axis direction (should be X, Y or Z)

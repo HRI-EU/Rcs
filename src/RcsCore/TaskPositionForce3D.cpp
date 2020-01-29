@@ -62,11 +62,11 @@ Rcs::TaskPositionForce3D::TaskPositionForce3D(const std::string& className,
   VecNd_setZero(ft_curr_temp, getDim());
   VecNd_setZero(ft_des_temp, getDim());
 
-  if (getDim() == 3)
+  if (getClassName()=="ForceXYZ")
   {
-    getParameter(0)->setParameters(-10.0, 10.0, 1.0, "X Force [N]");
-    getParameter(1)->setParameters(-10.0, 10.0, 1.0, "Y Force [N]");
-    getParameter(2)->setParameters(-10.0, 10.0, 1.0, "Z Force [N]");
+    resetParameter(Parameters(-10.0, 10.0, 1.0, "X Force [N]"));
+    addParameter(Parameters(-10.0, 10.0, 1.0, "Y Force [N]"));
+    addParameter(Parameters(-10.0, 10.0, 1.0, "Z Force [N]"));
   }
 
   getXMLNodePropertyBoolString(node, "forceFeedback", &this->force_feedback);

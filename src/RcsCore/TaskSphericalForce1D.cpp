@@ -61,23 +61,19 @@ Rcs::TaskSphericalForce1D::TaskSphericalForce1D(const std::string& className,
   TaskSpherical1D(className, node, _graph, dim),
   ft_curr_temp(0.0), ft_des_temp(0.), force_feedback(true)
 {
-
-
   if (className=="ForceSphR")
   {
-    getParameter(0)->setParameters(-10., 10., 1.0, "Radius Force [N]");
+    resetParameter(Parameters(-10.0, 10.0, 1.0, "Radius Force [N]"));
     this->index = 0;
   }
   else if (className=="ForceSphT")
   {
-    getParameter(0)->setParameters(-4.*M_PI, 4.*M_PI, 180.0/M_PI,
-                                   "Theta Force [?]");
+    resetParameter(Parameters(-4.0*M_PI, 4.0*M_PI, 180.0/M_PI, "Theta Force"));
     this->index = 1;
   }
   else if (className=="ForceSphP")
   {
-    getParameter(0)->setParameters(-4.*M_PI, 4.*M_PI, 180.0/M_PI,
-                                   "Phi Force [?]");
+    resetParameter(Parameters(-4.0*M_PI, 4.0*M_PI, 180.0/M_PI, "Phi Force"));
     this->index = 2;
   }
 

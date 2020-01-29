@@ -56,7 +56,10 @@ Rcs::TaskDistance::TaskDistance(const std::string& className_,
                                 int dim):
   TaskGenericIK(className_, node, _graph, dim)
 {
-  getParameter(0)->name.assign("Distance [m]");
+  if (getClassName()=="Distance")
+  {
+    resetParameter(Parameters(-1.0, 1.0, 1.0, "Distance [m]"));
+  }
 }
 
 /*******************************************************************************
@@ -71,7 +74,6 @@ Rcs::TaskDistance::TaskDistance(const TaskDistance& copyFromMe,
 /*******************************************************************************
  * Constructor based on body pointers
  ******************************************************************************/
-//! \todo Memory leak when derieved class calls params.clear()
 Rcs::TaskDistance::TaskDistance(RcsGraph* graph_,
                                 const RcsBody* effector,
                                 const RcsBody* refBdy) : TaskGenericIK()
@@ -84,9 +86,7 @@ Rcs::TaskDistance::TaskDistance(RcsGraph* graph_,
   setRefBody(refBdy);
   setRefFrame(refFrame ? refFrame : refBdy);
   setDim(1);
-  std::vector<Parameters*>& params = getParameters();
-  params.clear();
-  params.push_back(new Task::Parameters(-1.0, 1.0, 1.0, "Distance [m]"));
+  resetParameter(Parameters(-1.0, 1.0, 1.0, "Distance [m]"));
 }
 
 /*******************************************************************************

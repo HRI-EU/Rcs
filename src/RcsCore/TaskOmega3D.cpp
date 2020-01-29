@@ -61,10 +61,9 @@ Rcs::TaskOmega3D::TaskOmega3D(RcsGraph* graph, const RcsBody* effector,
   setRefBody(refBdy);
   setRefFrame(refFrame ? refFrame : refBdy);
 
-  getParameters().clear();
-  getParameters().push_back(new Parameters(-M_PI, M_PI, (180.0/M_PI), "Ad [deg/sec]"));
-  getParameters().push_back(new Parameters(-M_PI, M_PI, (180.0/M_PI), "Bd [deg/sec]"));
-  getParameters().push_back(new Parameters(-M_PI, M_PI, (180.0/M_PI), "Cd [deg/sec]"));
+  resetParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "Ad [deg/sec]"));
+  addParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "Bd [deg/sec]"));
+  addParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "Cd [deg/sec]"));
 
   Vec3d_setZero(this->omega_des_temp);
 }
@@ -77,10 +76,12 @@ Rcs::TaskOmega3D::TaskOmega3D(const std::string& className_,
                               RcsGraph* _graph):
   TaskGenericIK(className_, node, _graph, 3)
 {
-
-  getParameter(0)->setParameters(-M_PI, M_PI, (180.0/M_PI), "Ad [deg/sec]");
-  getParameter(1)->setParameters(-M_PI, M_PI, (180.0/M_PI), "Bd [deg/sec]");
-  getParameter(2)->setParameters(-M_PI, M_PI, (180.0/M_PI), "Cd [deg/sec]");
+  if (getClassName()=="ABCd")
+  {
+    resetParameter(Parameters(-M_PI, M_PI, 180.0/M_PI, "Ad [deg/sec]"));
+    addParameter(Parameters(-M_PI, M_PI, 180.0/M_PI, "Bd [deg/sec]"));
+    addParameter(Parameters(-M_PI, M_PI, 180.0/M_PI, "Cd [deg/sec]"));
+  }
 
   // Other tasks inherit from this. Therefore we can't do any hard checking
   // on classNames etc.

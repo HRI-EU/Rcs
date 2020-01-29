@@ -62,21 +62,20 @@ Rcs::TaskPositionForce1D::TaskPositionForce1D(const std::string& className,
   TaskPosition1D(className, node, _graph, _dim),
   ft_curr_temp(0.0), ft_des_temp(0.0), force_feedback(true), fts(NULL)
 {
-
   if (className=="ForceX")
   {
     this->index = 0;
-    getParameter(0)->setParameters(-10.0, 10.0, 1.0, "X Force [N]");
+    resetParameter(Parameters(-10.0, 10.0, 1.0, "X Force [N]"));
   }
   else if (className=="ForceY")
   {
     this->index = 1;
-    getParameter(0)->setParameters(-10.0, 10.0, 1.0, "Y Force [N]");
+    resetParameter(Parameters(-10.0, 10.0, 1.0, "Y Force [N]"));
   }
   else if ((className=="ForceZ") || (className=="ForceCylZ"))
   {
     this->index = 2;
-    getParameter(0)->setParameters(-10.0, 10.0, 1.0, "Z Force [N]");
+    resetParameter(Parameters(-10.0, 10.0, 1.0, "Z Force [N]"));
   }
 
   getXMLNodePropertyBoolString(node, "forceFeedback", &this->force_feedback);
@@ -103,17 +102,17 @@ Rcs::TaskPositionForce1D::TaskPositionForce1D(const std::string& className,
   if (className=="ForceX")
   {
     this->index = 0;
-    getParameter(0)->setParameters(-10.0, 10.0, 1.0, "X Force [N]");
+    resetParameter(Parameters(-10.0, 10.0, 1.0, "X Force [N]"));
   }
   else if (className=="ForceY")
   {
     this->index = 1;
-    getParameter(0)->setParameters(-10.0, 10.0, 1.0, "Y Force [N]");
+    resetParameter(Parameters(-10.0, 10.0, 1.0, "Y Force [N]"));
   }
   else if ((className=="ForceZ") || (className=="ForceCylZ"))
   {
     this->index = 2;
-    getParameter(0)->setParameters(-10.0, 10.0, 1.0, "Z Force [N]");
+    resetParameter(Parameters(-10.0, 10.0, 1.0, "Z Force [N]"));
   }
 
   this->force_feedback = forceFeedback;

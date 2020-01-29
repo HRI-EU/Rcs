@@ -56,11 +56,11 @@ Rcs::TaskEuler3D::TaskEuler3D(const std::string& className_,
                               int dim):
   Rcs::Task(className_, node, _graph, dim)
 {
-  if (getDim() == 3)
+  if (getClassName()=="ABC")
   {
-    getParameter(0)->setParameters(-M_PI, M_PI, (180.0/M_PI), "A [deg]");
-    getParameter(1)->setParameters(-M_PI, M_PI, (180.0/M_PI), "B [deg]");
-    getParameter(2)->setParameters(-M_PI, M_PI, (180.0/M_PI), "C [deg]");
+    resetParameter(Task::Parameters(-M_PI, M_PI, (180.0/M_PI), "A [deg]"));
+    addParameter(Task::Parameters(-M_PI, M_PI, (180.0/M_PI), "B [deg]"));
+    addParameter(Task::Parameters(-M_PI, M_PI, (180.0/M_PI), "C [deg]"));
   }
 }
 
@@ -87,11 +87,9 @@ Rcs::TaskEuler3D::TaskEuler3D(RcsGraph* graph_,
   setEffector(effector);
   setRefBody(refBdy);
   setRefFrame(refFrame ? refFrame : refBdy);
-  std::vector<Parameters*>& params = getParameters();
-  params.clear();/// \todo: Memory leak when derieved class calls this
-  params.push_back(new Task::Parameters(-M_PI, M_PI, (180.0/M_PI), "A [deg]"));
-  params.push_back(new Task::Parameters(-M_PI, M_PI, (180.0/M_PI), "B [deg]"));
-  params.push_back(new Task::Parameters(-M_PI, M_PI, (180.0/M_PI), "C [deg]"));
+  resetParameter(Task::Parameters(-M_PI, M_PI, (180.0/M_PI), "A [deg]"));
+  addParameter(Task::Parameters(-M_PI, M_PI, (180.0/M_PI), "B [deg]"));
+  addParameter(Task::Parameters(-M_PI, M_PI, (180.0/M_PI), "C [deg]"));
 }
 
 /*******************************************************************************

@@ -235,6 +235,7 @@ Rcs::TaskGenericEuler3D::TaskGenericEuler3D(const std::string& className_,
   this->eulerOrder = EulOrd(EulOrdPara[0], EulOrdPara[1], EulOrdPara[2], EulOrdPara[3]);
 
   // re-initialize parameters
+  clearParameters();
   for (size_t i = 0; i < getDim(); i++)
   {
     std::ostringstream label;
@@ -248,7 +249,7 @@ Rcs::TaskGenericEuler3D::TaskGenericEuler3D(const std::string& className_,
       label << "static";
     }
     label << " [deg]";
-    getParameter(i)->setParameters(-M_PI, M_PI, (180.0/M_PI), label.str());
+    addParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), label.str()));
   }
 
 }
@@ -393,7 +394,7 @@ Rcs::TaskGenericEuler3D::TaskGenericEuler3D(RcsGraph* graph_,
   this->eulerOrder = EulOrd(EulOrdPara[0], EulOrdPara[1], EulOrdPara[2], EulOrdPara[3]);
 
   // re-initialize parameters
-  getParameters().clear();
+  clearParameters();
   for (size_t i = 0; i < getDim(); i++)
   {
     std::ostringstream label;
@@ -408,7 +409,7 @@ Rcs::TaskGenericEuler3D::TaskGenericEuler3D(RcsGraph* graph_,
     }
     label << " [deg]";
 
-    getParameters().push_back(new Parameters(-M_PI, M_PI, (180.0/M_PI), label.str()));
+    addParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), label.str()));
   }
 }
 

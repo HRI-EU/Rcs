@@ -62,7 +62,7 @@ Rcs::TaskStaticEffort::TaskStaticEffort(const std::string& className,
   W(NULL),
   sensor(NULL)
 {
-  getParameter(0)->setParameters(0.0, 1.0, 1.0, "Effort");
+  resetParameter(Parameters(0.0, 1.0, 1.0, "Effort"));
 }
 
 /*******************************************************************************

@@ -1866,7 +1866,7 @@ int main(int argc, char** argv)
             for (unsigned int j=0; j<controller.getTaskDim(id); j++)
               labels.push_back(controller.getTaskName(id) +
                                std::string(": ") +
-                               controller.getTask(id)->getParameter(j)->name);
+                               controller.getTask(id)->getParameter(j).name);
           }
 
           mw->setLabels(labels);
@@ -2639,7 +2639,7 @@ int main(int argc, char** argv)
             for (unsigned int j=0; j<controller.getTaskDim(id); j++)
               labels.push_back(controller.getTaskName(id) +
                                std::string(": ") +
-                               controller.getTask(id)->getParameter(j)->name);
+                               controller.getTask(id)->getParameter(j).name);
           }
 
           mw->setLabels(labels);

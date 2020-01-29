@@ -56,11 +56,11 @@ Rcs::TaskCylindrical3D::TaskCylindrical3D(const std::string& className,
                                           int _dim):
   TaskPosition3D(className, node, _graph, _dim)
 {
-  if (getDim() == 3)
+  if (getClassName()=="CylRPZ")
   {
-    getParameter(0)->setParameters(0, 2.5, 1.0, "Radius [m]");
-    getParameter(1)->setParameters(-M_PI, M_PI, 180.0/M_PI, "Phi [deg]");
-    getParameter(2)->setParameters(-2.5, 2.5, 1.0, "Z Position [m]");
+    resetParameter(Parameters(0, 2.5, 1.0, "Radius [m]"));
+    addParameter(Parameters(-M_PI, M_PI, 180.0/M_PI, "Phi [deg]"));
+    addParameter(Parameters(-2.5, 2.5, 1.0, "Z Position [m]"));
   }
 }
 

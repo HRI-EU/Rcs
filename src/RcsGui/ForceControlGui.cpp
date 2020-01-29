@@ -81,11 +81,10 @@ void Rcs::ForceControlGui::populateFTguiList(std::vector<Rcs::ForceControlGui::E
 
     for (size_t i = 0; i < tsk->getDim(); i++)
     {
-      Rcs::Task::Parameters* param = tsk->getParameter(i);
-
+      const Rcs::Task::Parameters& param = tsk->getParameter(i);
 
       guiEntries.push_back(
-        Rcs::ForceControlGui::Entry(&ft_des->ele[curr_index+i], &ft_task->ele[curr_index+i], &s->ele[curr_index+i], param->name.c_str(), -20.0, 0.0, 20.0, 0.1));
+        Rcs::ForceControlGui::Entry(&ft_des->ele[curr_index+i], &ft_task->ele[curr_index+i], &s->ele[curr_index+i], param.name.c_str(), -20.0, 0.0, 20.0, 0.1));
     }
   }
 }

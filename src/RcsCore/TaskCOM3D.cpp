@@ -57,11 +57,11 @@ Rcs::TaskCOM3D::TaskCOM3D(const std::string& className,
                           int dim):
   Rcs::TaskGenericIK(className, node, _graph, dim)
 {
-  if (getDim() == 3)
+  if (getClassName()=="COG")
   {
-    getParameter(0)->setParameters(-2.5, 2.5, 1.0, "X Position [m]");
-    getParameter(1)->setParameters(-2.5, 2.5, 1.0, "Y Position [m]");
-    getParameter(2)->setParameters(-2.5, 2.5, 1.0, "Z Position [m]");
+    resetParameter(Parameters(-2.5, 2.5, 1.0, "X Position [m]"));
+    addParameter(Parameters(-2.5, 2.5, 1.0, "Y Position [m]"));
+    addParameter(Parameters(-2.5, 2.5, 1.0, "Z Position [m]"));
   }
 }
 
