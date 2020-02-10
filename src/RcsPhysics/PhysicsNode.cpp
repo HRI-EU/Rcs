@@ -529,3 +529,59 @@ void Rcs::PhysicsNode::addBodyNode(const RcsBody* body)
   const HTr* physicsTrf = sim->getPhysicsTransformPtr(simBdy);
   node->setTransformPtr(physicsTrf);
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::PhysicsNode::setDebugDrawer(bool enable)
+{
+#if defined (USE_BULLET)
+
+  Rcs::BulletSimulation* s = dynamic_cast<Rcs::BulletSimulation*>(sim);
+
+  if (s == NULL)
+  {
+    RLOG(1, "No debug drawer for other simulations than Bullet");
+    return false;
+  }
+
+
+  if (enable==false)   // Disable the debug drawer
+  {
+    RLOG(0, "Disabling debug drawer");
+    BulletDebugDrawer* dDraw = s->getDebugDrawer();
+    if (dDraw)
+    {
+      dDraw->hide();
+    }
+
+    s->setDebugDrawer(NULL);
+  }
+  else   // Enable the debug drawer
+  {
+    BulletDebugDrawer* nd_i = NULL;
+
+    // Find the debug drawer from the children of this class
+    for (unsigned int i=0; i<pat->getNumChildren(); ++i)
+    {
+      nd_i = dynamic_cast<BulletDebugDrawer*>(pat->getChild(i));
+    }
+
+    if (nd_i != NULL)
+    {
+      RLOG(0, "Enabling debug drawer");
+      nd_i->show();
+      s->setDebugDrawer(nd_i);
+    }
+
+  }
+
+  return true;
+
+#else
+
+  RLOG(1, "No debug drawer for other simulations than Bullet");
+  return false;
+
+#endif
+}
