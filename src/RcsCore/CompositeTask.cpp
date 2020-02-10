@@ -354,6 +354,14 @@ const Rcs::Task* Rcs::CompositeTask::getSubTask(size_t index) const
 /*******************************************************************************
  *
  ******************************************************************************/
+Rcs::Task* Rcs::CompositeTask::getSubTask(size_t index) 
+{
+  return this->subTask[index];
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void Rcs::CompositeTask::print() const
 {
   printf("CompositeTask %s: type %s\n",
@@ -364,4 +372,12 @@ void Rcs::CompositeTask::print() const
     printf("   Sub-task %zd: ", i);
     subTask[i]->print();
   }
+}
+
+/*******************************************************************************
+ * 
+ ******************************************************************************/
+size_t Rcs::CompositeTask::getNumberOfTasks() const
+{
+  return this->subTask.size();
 }

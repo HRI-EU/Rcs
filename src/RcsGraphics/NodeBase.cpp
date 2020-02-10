@@ -105,6 +105,7 @@ protected:
 Rcs::NodeBase::NodeBase() : showWireframe(false), posPtr(NULL),
   rmPtr(NULL), isDynamic(false)
 {
+  setName("NodeBase");
   this->pat = new osg::PositionAttitudeTransform();
   addChild(this->pat.get());
 }

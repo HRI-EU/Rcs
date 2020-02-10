@@ -36,6 +36,8 @@
 
 #include "ControllerBase.h"
 #include "TaskFactory.h"
+#include "TaskJoints.h"
+#include "TaskJoint.h"
 #include "Rcs_math.h"
 #include "Rcs_macros.h"
 #include "Rcs_typedef.h"
@@ -351,17 +353,6 @@ size_t Rcs::ControllerBase::getActiveTaskDim(const MatNd* activation) const
 }
 
 /*******************************************************************************
- * Returns the task's index to its entries in x_curr, x_des, and x_dot_des
- * vectors.
- ******************************************************************************/
-size_t Rcs::ControllerBase::getTaskArrayIndex(size_t id) const
-{
-  RCHECK_MSG(id < this->tasks.size(), "id: %zu   size: %zu",
-             id, this->tasks.size());
-  return this->taskArrayIdx[id];
-}
-
-/*******************************************************************************
  * See header.
  ******************************************************************************/
 int Rcs::ControllerBase::getTaskIndex(const char* name) const
@@ -404,6 +395,17 @@ int Rcs::ControllerBase::getTaskIndex(const Rcs::Task* task) const
 }
 
 /*******************************************************************************
+ * Returns the task's index to its entries in x_curr, x_des, and x_dot_des
+ * vectors.
+ ******************************************************************************/
+size_t Rcs::ControllerBase::getTaskArrayIndex(size_t id) const
+{
+  RCHECK_MSG(id < this->tasks.size(), "id: %zu   size: %zu",
+             id, this->tasks.size());
+  return this->taskArrayIdx[id];
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
 int Rcs::ControllerBase::getTaskArrayIndex(const char* name) const
@@ -422,6 +424,29 @@ int Rcs::ControllerBase::getTaskArrayIndex(const char* name) const
   }
 
   RLOG(4, "No task with name \"%s\" found!", name);
+
+  return -1;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+int Rcs::ControllerBase::getTaskArrayIndex(const Task* task) const
+{
+  if (task == NULL)
+  {
+    return -1;
+  }
+
+  for (size_t id = 0; id < this->tasks.size(); id++)
+  {
+    if (tasks[id]==task)
+    {
+      return getTaskArrayIndex(id);
+    }
+  }
+
+  RLOG(4, "No task \"%s\" found!", task->getName().c_str());
 
   return -1;
 }
@@ -1853,6 +1878,41 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
       RCHECK_MSG(refFrame, "Not found: %s", newName.c_str());
       copyOfOtherTask->setRefFrame(refFrame);
     }
+
+    // Rename joint names for TaskJoint
+    if (dynamic_cast<TaskJoint*>(copyOfOtherTask))
+      {
+        TaskJoint* jntTask = dynamic_cast<TaskJoint*>(copyOfOtherTask);
+        std::string newName = std::string(jntTask->getJoint()->name);
+        if (suffix)
+          {
+            newName.append(suffix);
+          }
+        jntTask->setJoint(RcsGraph_getJointByName(getGraph(), newName.c_str()));
+        RCHECK_MSG(jntTask->getJoint(), "Not found: joint %s", newName.c_str());
+      }
+ 
+    // Rename joint names for TaskJoints
+    if (dynamic_cast<TaskJoints*>(copyOfOtherTask))
+      {
+        RLOG(0, "Copying joints task %s", copyOfOtherTask->getName().c_str());
+        TaskJoints* jntsTask = dynamic_cast<TaskJoints*>(copyOfOtherTask);
+
+        for (size_t i=0;i<jntsTask->getNumberOfTasks(); ++i)
+          {
+            TaskJoint* jntTask = dynamic_cast<TaskJoint*>(jntsTask->getSubTask(i));
+            RCHECK(jntTask);
+            std::string newName = std::string(jntTask->getJoint()->name);
+            if (suffix)
+              {
+                newName.append(suffix);
+              }
+            jntTask->setJoint(RcsGraph_getJointByName(getGraph(), newName.c_str()));
+            RCHECK_MSG(jntTask->getJoint(), "Not found: joint %s", newName.c_str());
+
+          }
+      }
+    
 
     add(copyOfOtherTask);
   }

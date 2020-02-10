@@ -650,13 +650,6 @@ public:
   static bool checkBody(xmlNode* node, const char* tag,
                         const RcsGraph* graph, const char* taskName);
 
-  /*! \brief Returns true if the task is specified correctly, false
-   *         otherwise. The task is invalid if
-   *         - The effector body given in the xmlNode does not exist in the
-   *           given graph
-   */
-  static bool isValid(xmlNode* node, const RcsGraph* graph);
-
   ///@}
 
   /**

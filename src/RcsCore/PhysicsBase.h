@@ -125,7 +125,8 @@ public:
    */
   virtual void reset() = 0;
 
-  /*! \brief Resets all kinematic and dynamic rigid bodies to their initial state.
+  /*! \brief Resets all kinematic and dynamic rigid bodies to their initial
+   *         state.
    */
   virtual void resetRigidBodies();
 

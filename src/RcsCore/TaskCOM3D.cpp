@@ -39,7 +39,6 @@
 #include "Rcs_typedef.h"
 #include "Rcs_macros.h"
 #include "Rcs_body.h"
-#include "Rcs_parser.h"
 #include "Rcs_utils.h"
 #include "Rcs_kinematics.h"
 #include "Rcs_Vec3d.h"
@@ -208,7 +207,7 @@ void Rcs::TaskCOM3D::computeH(MatNd* H) const
 }
 
 /*******************************************************************************
- * See header
+ * \todo: Check mass > 0
  ******************************************************************************/
 bool Rcs::TaskCOM3D::isValid(xmlNode* node, const RcsGraph* graph)
 {

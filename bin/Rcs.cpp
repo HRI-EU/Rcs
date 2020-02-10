@@ -1080,6 +1080,8 @@ int main(int argc, char** argv)
                                          "of shapes dynamically");
       bool syncHard = argP.hasArgument("-syncHard", "Try to sync with wall "
                                        "clock time as hard as possible");
+      bool seqSim = argP.hasArgument("-sequentialPhysics", "Physics simulation "
+                                     "step alternating with viewer's frame()");
       argP.getArgument("-physics_config", physicsCfg, "Configuration file name"
                        " for physics (default is %s)", physicsCfg);
       argP.getArgument("-physicsEngine", physicsEngine,
@@ -1192,7 +1194,15 @@ int main(int argc, char** argv)
         viewer->add(hud);
         kc = new Rcs::KeyCatcher();
         viewer->add(kc);
+
+        if (seqSim==false)
+        {
         viewer->runInThread(mtx);
+        }
+        else
+        {
+          simNode->setDebugDrawer(true);
+        }
 
         if (skipGui==false)
         {
@@ -1618,6 +1628,11 @@ int main(int argc, char** argv)
 
         pthread_mutex_unlock(&graphLock);
 
+        if (seqSim==true)
+        {
+          viewer->frame();
+        }
+
         if (valgrind)
         {
           RLOG(1, "Step");
@@ -1712,7 +1727,7 @@ int main(int argc, char** argv)
       argP.getArgument("-f", xmlFileName);
       argP.getArgument("-dir", directory);
       argP.getArgument("-tmc", &tmc, "Filter time constant for sliders");
-      argP.getArgument("-dt", &dt, "Sampling time interval");
+      argP.getArgument("-dt", &dt, "Sampling time interval (default: %f)", dt);
       argP.getArgument("-clipLimit", &clipLimit, "Clip limit for dx (default"
                        "is %f)", clipLimit);
       argP.getArgument("-staticEffort", effortBdyName,
@@ -3055,6 +3070,36 @@ int main(int argc, char** argv)
       {
         RMSG("Bit %d is %s", i, Math_isBitSet(mask, i) ? "SET" : "CLEAR");
       }
+      break;
+    }
+
+    // ==============================================================
+    // Task from string test
+    // ==============================================================
+    case 17:
+    {
+      strcpy(xmlFileName, "gScenario.xml");
+      strcpy(directory, "config/xml/DexBot");
+      Rcs_addResourcePath(directory);
+
+      RcsGraph* graph = RcsGraph_create(xmlFileName);
+      RCHECK(graph);
+
+      const char* descr =
+        "<Task controlVariable=\"XYZ\" effector=\"PowerGrasp_L\" />";
+
+      Rcs::Task* task = Rcs::TaskFactory::createTask(descr, graph);
+
+      if (task == NULL)
+      {
+        RLOG(0, "Can't create task \n\n%s\n\n", descr);
+        RcsGraph_destroy(graph);
+        break;
+      }
+
+      task->print();
+      delete task;
+      RcsGraph_destroy(graph);
       break;
     }
 

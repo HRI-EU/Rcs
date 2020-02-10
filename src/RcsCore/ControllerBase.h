@@ -170,6 +170,15 @@ public:
    */
   virtual int getTaskArrayIndex(const char* name) const;
 
+  /*! \brief Returns the index of the task vector element. If the task is not
+   *         found, or is NULL, the function returns -1 and issues a warning on
+   *         debug level 4.
+   *
+   *  \param[in] task   Task
+   *  \return Task array index in the vector, or -1, if none found.
+   */
+  virtual int getTaskArrayIndex(const Task* task) const;
+
   /*! \brief Returns a pointer to the task id. If the id is out of range, the
    *         function will exit with a fatal error.
    */

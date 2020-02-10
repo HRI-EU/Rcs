@@ -65,11 +65,12 @@ public:
 
   /*! Constructor for tasks using the joint pointer directly.
    */
-  TaskJoint(RcsJoint* joint, xmlNode* node, RcsGraph* graph = NULL);
+  TaskJoint(const RcsJoint* joint, const RcsJoint* refJoint,
+            xmlNode* node, RcsGraph* graph = NULL);
 
   /*! Constructor for tasks using the joint pointer directly.
    */
-  TaskJoint(RcsGraph* graph, RcsJoint* joint);
+  TaskJoint(RcsGraph* graph, const RcsJoint* joint, const RcsJoint* refJoint=NULL);
 
   /*! Destructor
    */
@@ -100,9 +101,21 @@ public:
    */
   virtual void computeH(MatNd* hessian) const;
 
-  /*! \brief Returns the pointer to the RcsJoints
+  /*! \brief Returns the pointer to the joint
    */
-  RcsJoint* getJoint() const;
+  const RcsJoint* getJoint() const;
+
+  /*! \brief Returns the pointer to the reference joint
+   */
+  const RcsJoint* getRefJoint() const;
+
+  /*! \brief Assigns the joint member.
+   */
+  void setJoint(RcsJoint* jnt);
+
+  /*! \brief Assigns the refJoint member.
+   */
+  void setRefJoint(RcsJoint* jnt);
 
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise:
@@ -124,8 +137,14 @@ public:
                          const double kd,
                          const double ki) const;
 
+  /*! \brief Prints out joint names etc to the console.
+   */
+   virtual void print() const;
+
+
 protected:
-  RcsJoint* joint;         //!< Joint for single joint tasks
+  const RcsJoint* joint;    //!< Joint for single joint tasks
+  const RcsJoint* refJoint; //!< Relative joint
 };
 
 }

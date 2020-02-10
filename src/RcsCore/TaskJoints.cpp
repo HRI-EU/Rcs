@@ -55,23 +55,39 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
 {
   // If the attribute "jnts" is given, TaskJoints are only created
   // for the joints listed within the attribute
-  std::vector<std::string> jnts_vec;
-  getXMLNodePropertyVecSTLString(node, "jnts", jnts_vec);
+  std::vector<std::string> jntsVec;
+  getXMLNodePropertyVecSTLString(node, "jnts", jntsVec);
 
-  if (jnts_vec.size() > 0)
+  if (jntsVec.size() > 0)
   {
-    for (size_t idx = 0; idx < jnts_vec.size(); idx++)
+    std::vector<std::string> refJntsVec;
+    getXMLNodePropertyVecSTLString(node, "refJnts", refJntsVec);
+    if (!refJntsVec.empty())
     {
-      RcsJoint* jnt = RcsGraph_getJointByName(_graph, jnts_vec[idx].c_str());
-      RCHECK_MSG(jnt, "Not found: %s", jnts_vec[idx].c_str());
-      addTask(new TaskJoint(jnt, node, _graph));
+        RCHECK(refJntsVec.size()==jntsVec.size());
     }
+
+    for (size_t idx = 0; idx < jntsVec.size(); idx++)
+    {
+      RcsJoint* jnt = RcsGraph_getJointByName(_graph, jntsVec[idx].c_str());
+      RCHECK_MSG(jnt, "Not found: %s", jntsVec[idx].c_str());
+
+      RcsJoint* refJnt = NULL;
+      if (!refJntsVec.empty())
+        {
+          refJnt = RcsGraph_getJointByName(_graph, refJntsVec[idx].c_str());
+          RCHECK_MSG(refJnt, "Not found: %s", refJntsVec[idx].c_str());
+        }
+      
+      addTask(new TaskJoint(jnt, refJnt, node, _graph));
+    }
+
   }
   else
   {
     RCSGRAPH_TRAVERSE_JOINTS(getGraph())
     {
-      addTask(new TaskJoint(JNT, node, _graph));
+      addTask(new TaskJoint(JNT, NULL, node, _graph));
     }
   }
 }
@@ -106,7 +122,7 @@ bool Rcs::TaskJoints::isValid(xmlNode* node, const RcsGraph* graph)
   std::vector<std::string> jntVec;
   getXMLNodePropertyVecSTLString(node, "jnts", jntVec);
 
-  if (jntVec.size() > 0)
+  if (!jntVec.empty())
   {
     for (size_t idx = 0; idx < jntVec.size(); idx++)
     {
@@ -115,6 +131,31 @@ bool Rcs::TaskJoints::isValid(xmlNode* node, const RcsGraph* graph)
       {
         success = false;
         RLOG(4, "Joint not found: %s", jntVec[idx].c_str());
+      }
+    }
+  }
+
+  // If the attribute "refJnts" is given, TaskJoints are only created
+  // for the joints listed within the attribute
+  std::vector<std::string> refJntVec;
+  getXMLNodePropertyVecSTLString(node, "refJnts", refJntVec);
+
+  if (!refJntVec.empty())
+  {
+    if (refJntVec.size() != jntVec.size())
+      {
+        success = false;
+        RLOG(4, "Different number of entries in tag \"jnts\" and \"refJnts\":"
+             "%zu - %zu", jntVec.size(), refJntVec.size());
+      }
+
+    for (size_t idx = 0; idx < refJntVec.size(); idx++)
+    {
+      RcsJoint* jnt = RcsGraph_getJointByName(graph, refJntVec[idx].c_str());
+      if (jnt == NULL)
+      {
+        success = false;
+        RLOG(4, "Ref-joint not found: %s", refJntVec[idx].c_str());
       }
     }
   }

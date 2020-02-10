@@ -77,8 +77,6 @@ public:
 
   virtual void addTask(Task* subTask);
 
-  /*! \brief Returns the overall dimension of all sub-tasks.
-   */
   virtual void computeX(double* x_res) const;
   virtual void computeJ(MatNd* jacobian) const;
   virtual void computeH(MatNd* hessian) const;
@@ -103,8 +101,24 @@ public:
 
   virtual void setRefBody(const RcsBody* referenceBody);
   virtual void setRefFrame(const RcsBody* referenceFrame);
+
+  /*! \brief Returns the index-th task of the composite task. If index is out
+   *         of range, the default exception for accessing vector elements
+   *         out of range will be thrown.
+   */
   virtual const Task* getSubTask(size_t index) const;
+
+  /*! \brief See \ref const Task* getSubTask(size_t) const
+   */
+  virtual Task* getSubTask(size_t index);
+  
+  /*! \brief Calls the print function of all sub-tasks.
+   */
   virtual void print() const;
+
+  /*! \brief Returns the size of the subTask vector.
+   */
+  virtual size_t getNumberOfTasks() const;
 
 protected:
 

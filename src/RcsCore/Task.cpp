@@ -105,7 +105,7 @@ Rcs::Task::Task(const std::string& className_,
   className(className_)
 {
   RCHECK(node);
-  RCHECK(graph_);
+  RCHECK(graph);
 
   // parse the xml node
   // Task name
@@ -260,7 +260,23 @@ RcsGraph* Rcs::Task::getGraph() const
  ******************************************************************************/
 void Rcs::Task::print() const
 {
-  printf("Task %s: type %s\n", getName().c_str(), getClassName().c_str());
+  printf("Task \"%s\": type \"%s\" with %d dimensions\n",
+         getName().c_str(), getClassName().c_str(), getDim());
+
+  if (getEffector())
+  {
+    printf("Effector: \"%s\"\n", getEffector()->name);
+  }
+
+  if (getRefBody())
+  {
+    printf("Reference body: \"%s\"\n", getRefBody()->name);
+  }
+
+  if (getRefFrame())
+  {
+    printf("Reference frame: \"%s\"\n", getRefFrame()->name);
+  }
 }
 
 /*******************************************************************************

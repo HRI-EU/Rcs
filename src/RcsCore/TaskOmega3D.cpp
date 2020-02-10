@@ -64,12 +64,11 @@ Rcs::TaskOmega3D::TaskOmega3D(RcsGraph* graph, const RcsBody* effector,
   resetParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "Ad [deg/sec]"));
   addParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "Bd [deg/sec]"));
   addParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "Cd [deg/sec]"));
-
-  Vec3d_setZero(this->omega_des_temp);
 }
 
 /*******************************************************************************
- * Constructor based on xml parsing
+ * Constructor based on xml parsing. Other tasks inherit from this. Therefore
+ * we can't do any hard checking on classNames etc.
  ******************************************************************************/
 Rcs::TaskOmega3D::TaskOmega3D(const std::string& className_,
                               xmlNode* node,
@@ -83,11 +82,6 @@ Rcs::TaskOmega3D::TaskOmega3D(const std::string& className_,
     addParameter(Parameters(-M_PI, M_PI, 180.0/M_PI, "Cd [deg/sec]"));
   }
 
-  // Other tasks inherit from this. Therefore we can't do any hard checking
-  // on classNames etc.
-
-  // init temp vec
-  Vec3d_setZero(this->omega_des_temp);
 }
 
 /*******************************************************************************
@@ -97,7 +91,6 @@ Rcs::TaskOmega3D::TaskOmega3D(const TaskOmega3D& copyFromMe,
                               RcsGraph* newGraph):
   TaskGenericIK(copyFromMe, newGraph)
 {
-  Vec3d_copy(this->omega_des_temp, copyFromMe.omega_des_temp);
 }
 
 /*******************************************************************************
@@ -125,7 +118,7 @@ void Rcs::TaskOmega3D::computeJ(MatNd* jacobian) const
 }
 
 /*******************************************************************************
- * Omega Jacobian.
+ * Omega Hessian.
  ******************************************************************************/
 void Rcs::TaskOmega3D::computeH(MatNd* hessian) const
 {
@@ -149,20 +142,7 @@ void Rcs::TaskOmega3D::computeX(double* x_res) const
  ******************************************************************************/
 void Rcs::TaskOmega3D::computeDX(double* dx, const double* x_des) const
 {
-  //  Vec3d_copy(const_cast<TaskOmega3D*>(this)->omega_des_temp, x_des);
-  //  Vec3d_setZero(dx);
   Vec3d_copy(dx, x_des);
-}
-
-
-/*******************************************************************************
- * Computes the velocity error
- ******************************************************************************/
-void Rcs::TaskOmega3D::computeDXp(double* dxp_res,
-                                  const double* desired_vel) const
-{
-  //  Vec3d_copy(const_cast<double*>(desired_vel), this->omega_des_temp);
-  Rcs::TaskGenericIK::computeDXp(dxp_res, desired_vel);
 }
 
 /*******************************************************************************

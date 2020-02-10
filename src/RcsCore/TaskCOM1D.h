@@ -44,8 +44,8 @@ namespace Rcs
 {
 
 /*! \ingroup RcsTask
- *  \brief This tasks allows to set a 3D position (XYZ) of the overal center
- *         of mass.
+ *  \brief This tasks allows to set a 1D position (X, Y or Z) of the overal
+ *         center of mass.
  *
  *  The position can also be relative to another body and reference frame.
  */

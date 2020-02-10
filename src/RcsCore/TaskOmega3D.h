@@ -67,18 +67,17 @@ public:
 
   /*! Constructor based on xml parsing
    */
-  TaskOmega3D(const std::string& className, xmlNode* node, RcsGraph* _graph);
+  TaskOmega3D(const std::string& className, xmlNode* node, RcsGraph* graph);
 
   /*! \brief Copy constructor doing deep copying with optional new graph pointer
    */
   TaskOmega3D(const TaskOmega3D& copyFromMe, RcsGraph* newGraph=NULL);
 
-  /*! Destructor
+  /*! \brief Virtual destructor so that classes can properly inherit from this.
    */
   virtual ~TaskOmega3D();
 
-  /*!
-   * \brief Virtual copy constructor with optional new graph
+  /*! \brief Virtual copy constructor with optional new graph
    */
   virtual TaskOmega3D* clone(RcsGraph* newGraph=NULL) const;
 
@@ -96,18 +95,16 @@ public:
    */
   virtual void computeX(double* x_res) const;
 
+  /*!  \brief Copies x_des into dx. Both pointers must point to 3d-arrays (or
+   *          more)
+   */
   virtual void computeDX(double* dx, const double* x_des) const;
-
-  virtual void computeDXp(double* dxp_res, const double* desired_vel) const;
 
   /*! \brief Returns true if the task is specified correctly, false otherwise.
    *         The following chechs are carried out:
-   *         - tag "controlVariable" contains "Ad", "Bd" or "Cd"
+   *         - tag "controlVariable" contains "ABCd"
    */
   static bool isValid(xmlNode* node, const RcsGraph* graph);
-
-protected:
-  double omega_des_temp[3];
 };
 
 }
