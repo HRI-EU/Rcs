@@ -396,10 +396,11 @@ static char* String_expandMacros_(char* str)
         if ((*q)=='}')
         {
           int macroLen = macroEndIdx-macroStartIdx;
-          char* macro = RNSTALLOC(macroLen+1, char);
+          char* macro = RNALLOC(macroLen+1, char);
           memcpy(macro, &str[macroStartIdx], macroLen);
           macro[macroLen] = '\0';
           char* envStr = getenv(macro);
+          RFREE(macro);
           unsigned int macroStrLen = envStr ? strlen(envStr) : 0;
           char* before = String_clone(str);
           before[macroStartIdx-2] = '\0';

@@ -307,7 +307,6 @@ void Math_srand48(long int seed)
   srand48(seed);
 #endif
   randomNumberGeneratorInit = true;
-  NLOG(0, "seed: %ld", seed);
 }
 
 /*******************************************************************************

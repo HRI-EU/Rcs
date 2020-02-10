@@ -1268,7 +1268,7 @@ RcsMeshData* RcsMesh_createCylinderHull(double radiusBottom,
   mesh->nFaces = 2*radialSegments*heightSegments;
   mesh->faces = RNALLOC(3*mesh->nFaces, unsigned int);
 
-  unsigned int** indexArray = RNSTALLOC(heightSegments+1, unsigned int*);
+  unsigned int** indexArray = RNALLOC(heightSegments+1, unsigned int*);
   for (unsigned int i=0; i<=heightSegments; ++i)
   {
     indexArray[i] = RNALLOC(radialSegments+1, unsigned int);
@@ -1329,6 +1329,8 @@ RcsMeshData* RcsMesh_createCylinderHull(double radiusBottom,
     RFREE(indexArray[i]);
   }
 
+  RFREE(indexArray);
+
   return mesh;
 }
 
@@ -1380,7 +1382,7 @@ RcsMeshData* RcsMesh_createSphereSegment(double radius,
   mesh->nFaces = 2*heightSegments*widthSegments;
   mesh->faces = RNALLOC(3*mesh->nFaces, unsigned int);
 
-  unsigned int** grid = RNSTALLOC(heightSegments+1, unsigned int*);
+  unsigned int** grid = RNALLOC(heightSegments+1, unsigned int*);
   for (unsigned int i=0; i<=heightSegments; ++i)
   {
     grid[i] = RNALLOC(widthSegments+1, unsigned int);
@@ -1446,6 +1448,8 @@ RcsMeshData* RcsMesh_createSphereSegment(double radius,
   {
     RFREE(grid[i]);
   }
+
+  RFREE(grid);
 
   return mesh;
 }

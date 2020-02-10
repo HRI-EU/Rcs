@@ -596,8 +596,9 @@ void Rcs::RampFilterND::iterate(double* x_ddot)
 
 void Rcs::RampFilterND::iterate()
 {
-  double* x_ddot = RNSTALLOC(dim, double);
+  double* x_ddot = new double[dim];
   iterate(x_ddot);
+  delete [] x_ddot;
 }
 
 double Rcs::RampFilterND::getRamp(size_t index) const
@@ -766,4 +767,3 @@ void Rcs::MedianFilterND::getMedian(double* median) const
     median[i] = filter[i]->getMedian();
   }
 }
-

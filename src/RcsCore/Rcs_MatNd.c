@@ -5504,11 +5504,12 @@ double MatNd_interpolateArcLength(MatNd* res, const MatNd* s_, const MatNd* x,
 
   if (s1 - s0 > 0.0)
   {
-    double* dx = RNSTALLOC(cols, double);
+    double* dx = RNALLOC(cols, double);
     VecNd_sub(dx, x1, x0, cols);
     double ratio = (s_des - s0) / (s1 - s0);
     VecNd_constMulAndAddSelf(res->ele, dx, ratio, cols);
     t_s += ratio;
+    RFREE(dx);
   }
 
   // Clean up

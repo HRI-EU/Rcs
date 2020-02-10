@@ -886,10 +886,11 @@ RcsBody* RcsGraph_rootBodyFromURDFFile(const char* filename,
       if (suffix != NULL)
       {
         size_t nameLen = strlen(b->name) + strlen(suffix) + 1;
-        char* newName = RNSTALLOC(nameLen, char);
+        char* newName = RNALLOC(nameLen, char);
         strcpy(newName, b->name);
         strcat(newName, suffix);
         String_copyOrRecreate(&b->name, newName);
+        RFREE(newName);
       }
 
       RCHECK(bdyIdx<numLinks);
@@ -917,10 +918,11 @@ RcsBody* RcsGraph_rootBodyFromURDFFile(const char* filename,
       if (suffix != NULL)
       {
         size_t nameLen = strlen(j->name) + strlen(suffix) + 1;
-        char* newName = RNSTALLOC(nameLen, char);
+        char* newName = RNALLOC(nameLen, char);
         strcpy(newName, j->name);
         strcat(newName, suffix);
         String_copyOrRecreate(&j->name, newName);
+        RFREE(newName);
       }
       RCHECK(jntIdx<numJnts);
       jntVec[jntIdx++] = j;
