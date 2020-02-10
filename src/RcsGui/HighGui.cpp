@@ -294,7 +294,6 @@ void HighGui::showPlot(const std::string& name, unsigned int window,
 void HighGui::configurePlot(const std::string& name, unsigned int window,
                             unsigned int capacity, double min, double max)
 {
-
   // show or create window
   instance().showWindow(window);
 

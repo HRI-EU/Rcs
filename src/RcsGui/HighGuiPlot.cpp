@@ -107,8 +107,7 @@ HighGuiPlot::HighGuiPlot(const std::string& name, unsigned int capacity,
   _plot = new QwtPlot(QString::fromStdString(name), this);
   _plot->titleLabel()->setStyleSheet("font: bold 14px");
   _plot->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  _plot->axisScaleEngine(QwtPlot::xBottom)
-  ->setAttribute(QwtScaleEngine::Inverted);
+  _plot->axisScaleEngine(QwtPlot::xBottom)->setAttribute(QwtScaleEngine::Inverted);
 
   setCapacity(capacity);
 
@@ -256,7 +255,7 @@ void HighGuiPlot::update()
         _curves[it->first]->setRawData(_x.data(), _data[it->first].first.data(),
                                        _capacity);
 #else
-      _curves[it->first]->setSamples(_x.data(), _data[it->first].first.data(),
+        _curves[it->first]->setRawSamples(_x.data(), _data[it->first].first.data(),
         _capacity);
 #endif
       }
@@ -335,7 +334,7 @@ void HighGuiPlot::update()
           _curves[value_id]->setRawData(_x.data(), _data[value_id].first.data(),
                                         _capacity);
 #else
-      _curves[value_id]->setSamples(_x.data(), _data[value_id].first.data(),
+          _curves[value_id]->setRawSamples(_x.data(), _data[value_id].first.data(),
         _capacity);
 #endif
 
@@ -374,7 +373,7 @@ void HighGuiPlot::update()
 #if QWT_VERSION < 0x060103
         _curves[value_id]->setData(_x.data(), linearized_data.data(), _capacity);
 #else
-    RLOG(1, "Fixme");
+        RLOG(0, "Fixme");
 #endif
       }
       else
