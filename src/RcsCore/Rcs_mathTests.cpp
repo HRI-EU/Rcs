@@ -43,12 +43,55 @@
 #include "Rcs_cmdLine.h"
 #include "Rcs_utils.h"
 #include "Rcs_timer.h"
+#include "StackVec.h"
 
 #include <iostream>
 #include <limits>
 #include <cfloat>
 
 
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+
+typedef Rcs::StackVec<double, 16> TestVec;
+
+std::ostream& operator<< (std::ostream& out, const TestVec& vec)
+{
+  out << "Vec( " ;
+
+  for (size_t i = 0; i < vec.size(); ++i)
+  {
+    out << vec[i] << " ";
+  }
+
+  out << ")";
+
+  return out;
+}
+
+bool testStackVec(int argc, char** argv)
+{
+  Rcs::StackVec<double, 16> svec(16);
+  TestVec a(6);
+
+  RLOG(0, "TestVec: %f", a[3]);
+  a[3] = 5.0;
+  RLOG(0, "TestVec: %f", a[3]);
+  std::cout << "a " << a << std::endl;
+
+  TestVec b(a);
+  TestVec c = b;
+  // Rcs::StackVec b(tvec);  -> b(double*) or b(StackVec&)
+  std::cout << "b " << b << std::endl;
+  std::cout << "c " << c << std::endl;
+
+  VecNd_setElementsTo(c, 9.0, c.size());
+  std::cout << "c " << c << std::endl;
+
+  return true;
+}
 
 /*******************************************************************************
  * ABAt = A * B * A^T (Naiive implementation)

@@ -79,6 +79,7 @@ bool testQuaternionConversion(int argc, char** argv);
 bool testViaPointGradient(int argc, char** argv);
 bool testFunctionsEigen3(int argc, char** argv);
 bool testSlerp(int argc, char** argv);
+bool testStackVec(int argc, char** argv);
 
 
 #ifdef __cplusplus
