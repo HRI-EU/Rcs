@@ -46,8 +46,25 @@
 namespace Rcs
 {
 
-/*! \brief This class is inspired by the MPFactory and follows the same
- *         concepts.
+/*! \brief This class is a factory to create task instances. It works with a
+ *         registrar system: Each task that is intended to be constructible
+ *         with this factory needs to implement a registrar instance (examples
+ *         can be found in many of this libraries tasks). This templated
+ *         registrar class registers a task by name with this factory. It also
+ *         registers the task's constructor, and a check function that allows
+ *         verifying if the task's xml description is specified correctly. The
+ *         factory provides methods to then construct tasks by name / xml. In
+ *         addition, it provides a static convenience method to construct any
+ *         registered task with a string that holds a valid xml description.
+ *         For instance:
+ *
+ *         const char* descr =
+ *           "<Task controlVariable=\"XYZ\" effector=\"PowerGrasp_L\" />";
+ *
+ *         Task* task = TaskFactory::createTask(descr, graph);
+ *
+ *         This will construct a Position3d task with the given end effector.
+ *         How cool isn't it?
  */
 class TaskFactory
 {
@@ -64,19 +81,27 @@ public:
    */
   static TaskFactory* instance();
 
-  /*!
-   * \brief Creates a new Task by name using the appropriate registered
+  /*! \brief Creates a new Task by name using the appropriate registered
    *        construction function.
+   *
    * \param className The name with which the task is registered at the
    *        factory
-   * \param node The xml_node used for parsing the task
+   *  \param node The xml node used for parsing the task
    * \param graph The underlying graph for the kinematics
    * \return New task instance
    */
   Task* createTask(std::string className, xmlNode* node, RcsGraph* graph);
 
-  /*!
-   * \brief Registers a new function for creating tasks. You should not
+
+  /*! \brief Convenience method to create a task from a string.
+   *
+   *  \param xmlStr String with a valid task xml description
+   *  \param graph The underlying graph for the kinematics
+   *  \return New task instance, or NULL in case it can't be constructed.
+   */
+  static Task* createTask(const char* xmlStr, RcsGraph* graph);
+
+  /*! \brief Registers a new function for creating tasks. You should not
    *        need to call this function directly. Instead us the
    *        TaskFactoryRegistrar by adding the following line to your
    *        implementation:
@@ -86,13 +111,11 @@ public:
                              TaskCreateFunction createFunction,
                              TaskCheckFunction checkFunction);
 
-  /*!
-   * \brief Prints the list of all registered tasks to stdout.
+  /*! \brief Prints the list of all registered tasks to stdout.
    */
   void printRegisteredTasks() const;
 
-  /*!
-   * \brief Checks if the task described by the xml node and the
+  /*! \brief Checks if the task described by the xml node and the
    *        underlying graph is valid.
    * \return true for valid, false otherwise.
    */
@@ -103,9 +126,9 @@ private:
    */
   TaskFactory();
 
-  /*!
-   * \brief Checks if the task described by the xml node and the
+  /*! \brief Checks if the task described by the xml node and the
    *        underlying graph, along with the className, is valid.
+   *
    * \return true for valid, false otherwise.
    */
   bool checkTask(const std::string& className,
@@ -120,8 +143,7 @@ private:
 
 
 
-/*!
- * \brief This class is inspired by the MPFactoryRegistrar and follows the
+/*! \brief This class is inspired by the MPFactoryRegistrar and follows the
  *        same concepts.
  */
 template<class T>
@@ -129,8 +151,7 @@ class TaskFactoryRegistrar
 {
 public:
 
-  /*!
-   * \brief Registers a new task with a given name
+  /*! \brief Registers a new task with a given name
    * \param className The name that is used for instantiating a new task
    *        by name
    */
@@ -142,9 +163,9 @@ public:
                               &T::isValid);
   }
 
-  /*!
-   * \brief This function creates a new task of type T passing the given
+  /*! \brief This function creates a new task of type T passing the given
    *        variables to the respective constructor
+   *
    * \param className String identifier for task
    * \param node XML node for the task
    * \param graph Pointer to tasks's RcsGraph structure
@@ -155,6 +176,7 @@ public:
   {
     return new T(className, node, graph);
   }
+
 };
 
 }

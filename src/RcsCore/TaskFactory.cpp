@@ -68,11 +68,58 @@ Rcs::TaskFactory::TaskFactory()
 /*******************************************************************************
  * Creates the task for className and the given graph and xml content
  ******************************************************************************/
+Rcs::Task* Rcs::TaskFactory::createTask(const char* xmlStr, RcsGraph* graph)
+{
+  xmlDocPtr doc;
+  xmlNodePtr node = parseXMLMemory(xmlStr, strlen(xmlStr), &doc);
+
+  if (node == NULL)
+  {
+    RLOG(1, "Can't create task from NULL xmlStr");
+    return NULL;
+  }
+
+  if (getXMLNodeProperty(node, "controlVariable") == false)
+  {
+    RLOG(1, "Task \n\n\"%s\"\n\n has no control variable tag", xmlStr);
+    return NULL;
+  }
+
+  char className[256] = "";
+  getXMLNodePropertyStringN(node, "controlVariable", className, 256);
+
+  Rcs::Task* task = instance()->createTask(className, node, graph);
+
+  xmlFreeDoc(doc);
+
+  return task;
+}
+
+/*******************************************************************************
+ * Creates the task for className and the given graph and xml content
+ ******************************************************************************/
 Rcs::Task* Rcs::TaskFactory::createTask(std::string className,
                                         xmlNode* node,
                                         RcsGraph* graph)
 {
   Rcs::Task* task = NULL;
+
+
+  // find name in the registry and call factory method.
+  std::map<std::string, TaskCreateFunction>::iterator itCreate;
+  itCreate = createFunctionMap.find(className);
+
+  if (itCreate == createFunctionMap.end())
+  {
+    RLOG(1, "Unknown task type \"%s\" in TaskFactory::createTask",
+         className.c_str());
+    REXEC(4)
+    {
+      printRegisteredTasks();
+    }
+    return NULL;
+  }
+
 
   // First we check if the task is valid or not. If it is invalid, we
   // return NULL.
@@ -98,22 +145,9 @@ Rcs::Task* Rcs::TaskFactory::createTask(std::string className,
     }
   }
 
-
-  // find name in the registry and call factory method.
-  std::map<std::string, TaskCreateFunction>::iterator it;
-  it = createFunctionMap.find(className);
-
-  if (it == createFunctionMap.end())
-  {
-    RLOG(1, "Unknown task type \"%s\" in TaskFactory::createTask",
-         className.c_str());
-  }
-  else
-  {
     RLOG(5, "Creating task of type \"%s\" in TaskFactory::createTask",
          className.c_str());
-    task = it->second(className, node, graph);
-  }
+  task = itCreate->second(className, node, graph);
 
   return task;
 }
