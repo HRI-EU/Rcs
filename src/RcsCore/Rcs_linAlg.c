@@ -214,15 +214,17 @@ static inline void MatNd_inverseLowerTriangularMatrixSelf(MatNd* L_)
 {
   const int n = L_->m;
   double* L = L_->ele;
-  int k, i;
 
-  for (k=0; k<n; k++)                                                // 1
+  for (int k=0; k<n; k++)                                            // 1
   {
-    L[k*n+k] = 1.0/L[k*n+k];                                         // 2
+    const int knpk = k*n+k;
+    L[knpk] = 1.0/L[knpk];                                           // 2
 
-    for (i=k+1; i<n; i++)                                            // 3
+    for (int i=k+1; i<n; i++)                                        // 3
     {
-      L[i*n+k] = -dot(&L[i*n+k], 1, &L[k*n+k], n, i-0-k)/L[i*n+i];   // 4
+      const int in   = i*n;
+      const int inpk = in+k;
+      L[inpk] = -dot(&L[inpk], 1, &L[knpk], n, i-k)/L[in+i];         // 4
     }                                                                // 5
   }                                                                  // 6
 }
@@ -250,15 +252,17 @@ static inline void MatNd_inverseLowerTriangularMatrix(MatNd* X_,
   const int n = L_->m;
   double* L = L_->ele;
   double* X = X_->ele;
-  int k, i;
 
-  for (k=0; k<n; ++k)                                                // 1
+  for (int k=0; k<n; ++k)                                            // 1
   {
-    X[k*n+k] = 1.0/L[k*n+k];                                         // 2
+    const int knpk = k*n+k;
+    X[knpk] = 1.0/L[knpk];                                           // 2
 
-    for (i=k+1; i<n; i++)                                            // 3
+    for (int i=k+1; i<n; i++)                                        // 3
     {
-      X[i*n+k] = -dot(&L[i*n+k], 1, &X[k*n+k], n, i-0-k)/L[i*n+i];   // 4
+      const int in   = i*n;
+      const int inpk = in+k;
+      X[inpk] = -dot(&L[inpk], 1, &X[knpk], n, i-k)/L[in+i];         // 4
     }                                                                // 5
   }                                                                  // 6
 }
