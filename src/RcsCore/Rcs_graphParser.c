@@ -268,7 +268,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 
 
   // Compute type
-  bool distance = true, graphics = true, physics = true;
+  bool distance = true, graphics = true, physics = true, softPhysics = false;
 
   // Physics computation is not carried out for non-physics objects by default.
   if (body->physicsSim == RCSBODY_PHYSICS_NONE)
@@ -308,6 +308,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   getXMLNodePropertyBoolString(node, "distance", &distance);
   getXMLNodePropertyBoolString(node, "physics", &physics);
   getXMLNodePropertyBoolString(node, "graphics", &graphics);
+  getXMLNodePropertyBoolString(node, "softPhysics", &softPhysics);
 
   if (distance == true)
   {
@@ -320,6 +321,10 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   if (graphics == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
+  }
+  if (softPhysics == true)
+  {
+    shape->computeType |= RCSSHAPE_COMPUTE_SOFTPHYSICS;
   }
 
   // Marker id

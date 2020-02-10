@@ -233,12 +233,15 @@ bool getXMLNodePropertyUnsignedIntN(xmlNodePtr node, const char* tag,
                                     unsigned int* x, unsigned int n);
 
 /*! \ingroup RcsParserFunctions
- * \brief If the tag contains a string "false" or "FALSE", argument x
- *        will be set to false (=0). If the tag is "true" or "TRUE",
- *        argument x will be set to true (=1). If the tag contains none
- *        of the above, it will be false, a warning is issued on
- *        debug level 10, and "false" will be returned ("true" will be
- *        returned if the tag is valid).
+ *  \brief If the tag contains a string "true" (capitalization does not
+ *         matter), argument x will be set to true, otherwise to false. If
+ *         the tag does not exist, the function returns false, and x remains
+ *         unchanged.
+ *
+ *  \param[in] node Xml node to read from
+ *  \param[in] tag  String to be associated with the property
+ *  \param[out] x   Pointer to boolean that is to be queried from the Xml node
+ *  \return True if the tag has been found, false otherwise.
  */
 bool getXMLNodePropertyBoolString(xmlNodePtr node, const char* tag, bool* x);
 

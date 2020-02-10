@@ -1394,7 +1394,7 @@ void RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q)
   }
 
 
-  fprintf(out, "<model_state model=\"\" time_stamp=\"\">\n");
+  fprintf(out, "<model_state model=\"DefaultPose\" time_stamp=\"\">\n");
 
 
 
@@ -2793,7 +2793,7 @@ void RcsGraph_fprintXML(FILE* out, const RcsGraph* self)
   RCHECK(out);
   RCHECK(self);
 
-  fprintf(out, "<Graph>\n\n");
+  fprintf(out, "<Graph name=\"DefaultPose\" >\n\n");
 
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
@@ -2809,6 +2809,8 @@ void RcsGraph_fprintXML(FILE* out, const RcsGraph* self)
                SENSOR->name ? SENSOR->name : "NULL",
                SENSOR->body ? SENSOR->body->name : "NULL");
   }
+
+  RcsGraph_fprintModelState(out, self, self->q);
 
   fprintf(out, "</Graph>\n");
 }
