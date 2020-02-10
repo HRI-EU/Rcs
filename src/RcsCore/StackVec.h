@@ -144,7 +144,32 @@ namespace Rcs
       return ele;
     }
 
+    bool operator==(const StackVec& other)
+    {
+      if (size() != other.size())
+      {
+        return false;
+      }
+
+      for (size_t i=0;i<size(); ++i)
+      {
+        if (ele[i] != other.ele[i])
+        {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    bool operator!=(const StackVec& other)
+    {
+      return ! operator==(other);
+    }
+
+
   private:
+
     T* ele;
     T ssoStack[NVAL];
     size_t nEle;
