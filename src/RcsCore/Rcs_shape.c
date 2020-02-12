@@ -958,14 +958,8 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
 
   if (shapeType==RCSSHAPE_MESH)
   {
-    const char* sit = getenv("SIT");
-    if (sit!=NULL)
-    {
-      char a[256];
-      snprintf(a, 256, "%s\\Data\\RobotMeshes\\1.0\\data\\Schunk\\schunk_0306925_prl_12010_x.tri", sit);
-      shape->meshFile = String_clone(a);
-      shape->userData = (RcsMeshData*) RcsMesh_createFromFile(shape->meshFile);
-    }
+    shape->meshFile = String_clone("Cylinder");
+    shape->userData = (RcsMeshData*) RcsMesh_createCylinder(0.2, 1.0, 32);
   }
 
   if (shapeType==RCSSHAPE_OCTREE)

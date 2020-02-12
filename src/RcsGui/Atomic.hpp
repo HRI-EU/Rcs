@@ -103,6 +103,14 @@ public:
   }
 
   /*!
+   * \brief Destructor cleans up mutex
+   */
+  ~Atomic()
+  {
+    pthread_mutex_destroy(&_mutex);
+  }
+
+  /*!
    * \brief Get function in case the automatic casting does not work
    * \return Value
    */
