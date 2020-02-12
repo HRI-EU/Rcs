@@ -5006,11 +5006,10 @@ void MatNd_interpolateRowsEuler(MatNd* dst, const MatNd* src)
 
 void MatNd_reverseSelf(MatNd* mat)
 {
-  RCHECK(mat);
   MatNd* row = NULL;
   MatNd_create2(row, 1, mat->n);
 
-  for (unsigned int i = 0; i < mat->m / 2; i++)
+  for (unsigned int i = 0; i < mat->m / 2; ++i)
   {
     MatNd_getRow(row, i, mat);
     MatNd_setRow(mat, i, MatNd_getRowPtr(mat, mat->m - i - 1), mat->n);

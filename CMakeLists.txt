@@ -22,14 +22,16 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
+MESSAGE(STATUS "Using cmake ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
+
 IF("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-  MESSAGE("-- Compiler is: Clang")
+  MESSAGE(STATUS "Compiler is: Clang")
 ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-  MESSAGE("-- Compiler is: GNU")
+  MESSAGE(STATUS "Compiler is: GNU")
 ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-  MESSAGE("-- Compiler is: Intel")
+  MESSAGE(STATUS "Compiler is: Intel")
 ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-  MESSAGE("-- Compiler is: MSVC")
+  MESSAGE(STATUS "Compiler is: MSVC")
 ENDIF()
 
 ################################################################################
@@ -46,10 +48,10 @@ IF(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/config")
 
   IF(UNIX)
     SET(CONFIGDIR_COPY_COMMAND create_symlink)
-    MESSAGE("-- Linking config directory")
+    MESSAGE(STATUS "Linking config directory")
   ELSE()
     SET(CONFIGDIR_COPY_COMMAND copy_directory)
-    MESSAGE("-- Copying config directory")
+    MESSAGE(STATUS "Copying config directory")
   ENDIF()
 
   EXECUTE_PROCESS (COMMAND
@@ -59,7 +61,7 @@ IF(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/config")
 
 ELSE()
 
-  MESSAGE("-- Config directory already exists - skipping")
+  MESSAGE(STATUS "Config directory already exists - skipping")
 
 ENDIF()
 
@@ -71,7 +73,7 @@ ENDIF()
 #
 ################################################################################
 IF(UNIX)
-  MESSAGE("-- Creating dynamically linked libraries (.so) under Unix")
+  MESSAGE(STATUS "Creating dynamically linked libraries (.so) under Unix")
   SET(LIBRARY_LINKING_TYPE "SHARED")
 ENDIF()
 
@@ -124,7 +126,7 @@ SET(ARCH ${CMAKE_SYSTEM_NAME})
 
 IF(${CMAKE_BUILD_TYPE} STREQUAL "Release" AND NOT ENABLE_DEBUG_MACROS)
   ADD_DEFINITIONS(-DRCS_NO_DEBUG)
-  MESSAGE("-- Compiling in RELEASE mode, debug macros DISABLED")
+  MESSAGE(STATUS "Compiling in RELEASE mode, debug macros DISABLED")
 ENDIF()
 
 # Add the automatically determined parts of the RPATH which point to 
@@ -174,10 +176,10 @@ ENDFUNCTION()
 SET(USER_LIST "${PROJECT_SOURCE_DIR}/cmake/CMakeLists-$ENV{USER}.txt")
 
 IF(EXISTS ${USER_LIST})
-  MESSAGE("-- Including " ${USER_LIST})
+  MESSAGE(STATUS "Including " ${USER_LIST})
   INCLUDE(${USER_LIST})
 ELSE()
-  MESSAGE("-- Not found: " ${USER_LIST})
+  MESSAGE(STATUS "Not found: " ${USER_LIST})
 ENDIF()
 
 ################################################################################
@@ -191,7 +193,7 @@ ADD_SUBDIRECTORY (bin)
 ADD_SUBDIRECTORY (examples)
 
 IF(EXISTS "${PROJECT_SOURCE_DIR}/projects")
-  MESSAGE("-- Including projects directory" )
+  MESSAGE(STATUS "Including projects directory" )
   ADD_SUBDIRECTORY (projects)
 ENDIF()
 

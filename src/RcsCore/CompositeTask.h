@@ -61,15 +61,19 @@ public:
   CompositeTask(const std::string& className, xmlNode* node, RcsGraph* graph);
 
   /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
+   *         pointer.
+   *
+   *  \param[in] copyFromMe Task to be copied from.
+   *  \param[in] newGraph   If it is not NULL, all tasks's members refer to
+   *                        this graph.
    */
   CompositeTask(const CompositeTask& copyFromMe, RcsGraph* newGraph=NULL);
 
-  /*! \brief Constructor based on a graph reference
+  /*! \brief Constructor based on a graph reference.
    */
   CompositeTask(RcsGraph* graph);
 
-  /*! \brief Destructor
+  /*! \brief Deletes all subtasks.
    */
   virtual ~CompositeTask();
 
@@ -77,18 +81,52 @@ public:
 
   virtual void addTask(Task* subTask);
 
+  /*! \brief Calls \ref Task::computeX(double*) const on all subtasks and
+   *         stacks the results in vector x_res.
+   */
   virtual void computeX(double* x_res) const;
+
+  /*! \brief Calls \ref Task::computeJ(MatNd*) const on all subtasks and
+   *         stacks the Jacobians.
+   */
   virtual void computeJ(MatNd* jacobian) const;
+
+  /*! \brief Calls \ref Task::computeH(MatNd*) const on all subtasks and
+   *         stacks the Hessians.
+   */
   virtual void computeH(MatNd* hessian) const;
 
+  /*! \brief Calls \ref Task::computeDX(double*, double*) const on all
+   *         subtasks and stacks the results in vector dx. The current
+   *         state will be extracted from the task's graph.
+   */
   virtual void computeDX(double* dx, const double* x_des) const;
+
+  /*! \brief Calls \ref Task::computeDX(double*, double*) const on all
+   *         subtasks and stacks the results in vector dx. The current
+   *         state will be extracted from x_curr, and not from the
+   *         task's graph.
+   */
   virtual void computeDX(double* dx, const double* x_des,
                          const double* x_curr) const;
 
+  /*! \brief Calls \ref Task::computeXp(double*) const on all subtasks and
+   *         stacks the results in vector xp.
+   */
   virtual void computeXp(double* xp) const;
 
+  /*! \brief Calls \ref Task::computeDXp(double*, double*) const on all
+   *         subtasks and stacks the results in vector dxp. The current
+   *         state will be extracted from the task's graph.
+   */
   virtual void computeDXp(double* dxp, const double* xp_des) const;
+
+  /*! \brief Calls \ref Task::computeXpp(double*, const MatNd*) const on all
+   *         subtasks and stacks the results in vector dxpxpp. The current
+   *         state will be extracted from the task's graph.
+   */
   virtual void computeXpp(double* xpp, const MatNd* qpp) const;
+
   virtual void computeFfXpp(double* xpp_res, const double* xpp_des) const;
   virtual void integrateXp_ik(double* x_res, const double* x,
                               const double* x_dot, double dt) const;
@@ -99,7 +137,12 @@ public:
    */
   virtual void setEffector(const RcsBody* effector);
 
+  /*! \brief Sets the reference body to all sub-tasks.
+   */
   virtual void setRefBody(const RcsBody* referenceBody);
+
+  /*! \brief Sets the reference frame body to all sub-tasks.
+   */
   virtual void setRefFrame(const RcsBody* referenceFrame);
 
   /*! \brief Returns the index-th task of the composite task. If index is out
@@ -108,7 +151,7 @@ public:
    */
   virtual const Task* getSubTask(size_t index) const;
 
-  /*! \brief See \ref const Task* getSubTask(size_t) const
+  /*! \brief See \ref getSubTask(size_t) const
    */
   virtual Task* getSubTask(size_t index);
   
