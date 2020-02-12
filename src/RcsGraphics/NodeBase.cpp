@@ -107,7 +107,10 @@ Rcs::NodeBase::NodeBase() : showWireframe(false), posPtr(NULL),
 {
   setName("NodeBase");
   this->pat = new osg::PositionAttitudeTransform();
-  addChild(this->pat.get());
+
+  // We overwrite the addChild() method, therefore we explicitely call the
+  // base classes method in the constructor.
+  osg::Switch::addChild(this->pat.get());
 }
 
 /*******************************************************************************
@@ -169,6 +172,14 @@ void Rcs::NodeBase::setPosition(double x, double y, double z)
 {
   setPosition(osg::Vec3(x, y, z));
 }
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::NodeBase::addChild(osg::Node* child)
+{
+  return pat->addChild(child);
+}
+
 
 /*******************************************************************************
  *

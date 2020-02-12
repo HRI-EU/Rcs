@@ -94,6 +94,7 @@ Rcs::MeshNode::MeshNode(const double* vertices, unsigned int numVertices,
  ******************************************************************************/
 void Rcs::MeshNode::init()
 {
+  setName("MeshNode");
   this->shape = NULL;
   this->geode = new osg::Geode();
   this->patPtr()->addChild(this->geode);
