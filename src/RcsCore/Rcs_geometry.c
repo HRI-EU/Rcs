@@ -393,6 +393,36 @@ void Math_resamplePolygon2D(double polyOut[][2], unsigned int nvOut,
 }
 
 /*******************************************************************************
+ * Signed area of polygon. Negative: clockwise ordering. Adapted from
+ * https://openlayers.org/two (BSD-2 license)
+ ******************************************************************************/
+double Math_signedAreaPolygon2D(double polygon[][2],
+                                unsigned int nVertices)
+{
+  double area = 0.0;
+
+  for (unsigned int i = 0; i < nVertices; i++)
+    {
+      const unsigned int j = (i+1) % nVertices;
+      area += polygon[i][0]*polygon[j][1];
+      area -= polygon[j][0]*polygon[i][1];
+    }
+
+  return area;
+}
+
+/*******************************************************************************
+ * Signed area of polygon. Negative: clockwise ordering
+ ******************************************************************************/
+bool Math_isPolygonClockwise(double polygon[][2],
+                             unsigned int nVertices)
+{
+  double area = Math_signedAreaPolygon2D(polygon, nVertices);
+
+  return (area < 0);
+}
+
+/*******************************************************************************
  *
  ******************************************************************************/
 double Math_sqrDistPointConvexPolygon(const double I_pt[3],

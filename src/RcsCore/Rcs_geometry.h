@@ -140,6 +140,27 @@ void Math_resamplePolygon2D(double polyOut[][2], unsigned int nvOut,
                             double polyIn[][2], unsigned int nvIn);
 
 /*! \ingroup RcsBasicMathFunctions
+ *  \brief Computes the signed area of a 2d polygon. It does not need to 
+ *         be convex.
+ *
+ *  \param[in]  polygon    Polygon vertices
+ *  \param[in]  nVertices  Number of polygon vertices.
+ *  \return Signed area. Clockwise: negative value.
+ */
+double Math_signedAreaPolygon2D(double polygon[][2],
+                                unsigned int nVertices);
+  
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Computes the winding of a 2d polygon. It does not need to be convex.
+ *
+ *  \param[in]  polygon    Polygon vertices
+ *  \param[in]  nVertices  Number of polygon vertices.
+ *  \return True for clockwise, false for counter-clockwise winding order.
+ */
+bool Math_isPolygonClockwise(double polygon[][2],
+                             unsigned int nVertices);
+
+/*! \ingroup RcsBasicMathFunctions
  *  \brief This function computes the intersection between a ray and a line
  *         segment in 2 dimensions.
  *
