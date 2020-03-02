@@ -100,6 +100,16 @@ void HTr_transpose(HTr* A_12, const HTr* A_21)
 /*******************************************************************************
  *
  ******************************************************************************/
+void HTr_transposeSelf(HTr* A_12)
+{
+  HTr tmp;
+  HTr_copy(&tmp, A_12);
+  HTr_transpose(A_12, &tmp);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void HTr_setIdentity(HTr* self)
 {
   self->org[0] =  0.0;
@@ -107,6 +117,16 @@ void HTr_setIdentity(HTr* self)
   self->org[2] =  0.0;
 
   Mat3d_setIdentity(self->rot);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void HTr_setRandom(HTr* self)
+{
+  Vec3d_setRandom(self->org, -1.0, 1.0);
+  Mat3d_setRandomRotation(self->rot);
+  RCHECK(Mat3d_isValid(self->rot));
 }
 
 /*******************************************************************************
@@ -216,6 +236,19 @@ void HTr_print(const HTr* A)
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+void HTr_printComment(const char* text, const HTr* A)
+{
+  if (text != NULL)
+  {
+    fprintf(stdout, "%s\n", text);
+  }
+
+  HTr_fprint(stdout, A);
+}
+
+/*******************************************************************************
  * Transformation from body to world coordinates
  *
  * A_2I   = A_21 * A_1I
@@ -246,6 +279,16 @@ void HTr_invTransform(HTr* A_21, const HTr* A_1I, const HTr* A_2I)
   Mat3d_mulTranspose(A_21->rot, (double(*)[3]) A_2I->rot,
                      (double(*)[3]) A_1I->rot);
   Vec3d_invTransform(A_21->org, A_1I, A_2I->org);
+}
+
+/*******************************************************************************
+ * See HTr_invTransform()
+ ******************************************************************************/
+void HTr_invTransformSelf(HTr* A_21 /* in as A_2I */, const HTr* A_1I)
+{
+  HTr tmp;
+  HTr_copy(&tmp, A_21);
+  HTr_invTransform(A_21, A_1I, &tmp);
 }
 
 /*******************************************************************************

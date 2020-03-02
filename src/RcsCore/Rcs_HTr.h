@@ -102,6 +102,12 @@ void HTr_fprint(FILE* fd, const HTr* A);
 void HTr_print(const HTr* A);
 
 /*! \ingroup RcsHTrFunctions
+ *  \brief Prints the transform with a comment string. If comment is NULL,
+ *         it will be skipped.
+ */
+void HTr_printComment(const char* comment, const HTr* A);
+
+/*! \ingroup RcsHTrFunctions
  *  \brief Returns an identity HTr from the heap. You have to take care
  *         that it gets deleted. The function terminates if no memory could
  *         be allocated.
@@ -120,6 +126,12 @@ HTr* HTr_clone(const HTr* src);
  *         origin to [0 0 0].
  */
 void HTr_setIdentity(HTr* self);
+
+/*! \ingroup RcsHTrFunctions
+ *  \brief Sets the matrix part to a random rotation matrix (valid) and the
+ *         vector part to a random vector [-1 ... 1]
+ */
+void HTr_setRandom(HTr* self);
 
 /*! \ingroup RcsHTrFunctions
  *  \brief Sets all elements of the transformation to 0.
@@ -148,6 +160,11 @@ void HTr_copy(HTr* dst, const HTr* src);
 void HTr_transpose(HTr* A_12, const HTr* A_21);
 
 /*! \ingroup RcsHTrFunctions
+ *  \brief Invert transformation in place.
+ */
+void HTr_transposeSelf(HTr* A_12);
+
+/*! \ingroup RcsHTrFunctions
  *  \brief Transformation from body to world coordinates
  *
  *         A_2I  = A_21 * A_1I
@@ -166,6 +183,11 @@ void HTr_transformSelf(HTr* A_2I /* in as A_1I */, const HTr* A_21);
  *         Origin vector:   1_r_12 = A_1I * (I_r_2 - I_r_1)
  */
 void HTr_invTransform(HTr* A_21, const HTr* A_1I, const HTr* A_2I);
+
+/*! \ingroup RcsHTrFunctions
+ *  \brief See HTr_invTransform().
+ */
+void HTr_invTransformSelf(HTr* A_21 /* in as A_2I */, const HTr* A_1I);
 
 /*! \ingroup RcsHTrFunctions
  *  \brief Returns a pointer to an identity transform. This points to a
