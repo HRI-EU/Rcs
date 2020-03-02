@@ -667,15 +667,15 @@ void RcsSensor_fprintXML(FILE* out, const RcsSensor* self)
     Vec3d_constMulSelf(&trf[3], 180.0 / M_PI);
 
     if (VecNd_maxAbsEle(trf, 6) > 1.0e-8)
-      {
-        fprintf(out, "transform=\"%s ", String_fromDouble(buf, trf[0], 6));
-        fprintf(out, "%s ", String_fromDouble(buf, trf[1], 6));
-        fprintf(out, "%s ", String_fromDouble(buf, trf[2], 6));
-        fprintf(out, "%s ", String_fromDouble(buf, trf[3], 6));
-        fprintf(out, "%s ", String_fromDouble(buf, trf[4], 6));
-        fprintf(out, "%s\" ", String_fromDouble(buf, trf[5], 6));
-      }
+    {
+      fprintf(out, "transform=\"%s ", String_fromDouble(buf, trf[0], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[1], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[2], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[3], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, trf[4], 6));
+      fprintf(out, "%s\" ", String_fromDouble(buf, trf[5], 6));
     }
+  }
 
   // PPS parameter string
   if (self->extraInfo != NULL)

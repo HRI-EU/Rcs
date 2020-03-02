@@ -154,7 +154,7 @@ public:
   /*! \brief See \ref getSubTask(size_t) const
    */
   virtual Task* getSubTask(size_t index);
-  
+
   /*! \brief Calls the print function of all sub-tasks.
    */
   virtual void print() const;

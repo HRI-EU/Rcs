@@ -541,5 +541,5 @@ void Rcs::MotionControlLayer::stopThreads()
  ******************************************************************************/
 void Rcs::MotionControlLayer::setFKComputeVelocity(bool doit)
 {
-    fkComputeVelocity = doit;
+  fkComputeVelocity = doit;
 }

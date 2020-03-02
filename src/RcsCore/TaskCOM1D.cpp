@@ -143,7 +143,7 @@ void Rcs::TaskCOM1D::computeH(MatNd* hessian) const
 }
 
 /*******************************************************************************
- * 
+ *
  ******************************************************************************/
 bool Rcs::TaskCOM1D::isValid(xmlNode* node, const RcsGraph* graph)
 {

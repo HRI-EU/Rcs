@@ -593,7 +593,7 @@ void RcsGraph_addRandomGeometry(RcsGraph* self);
  *  \param[in] xyzMax     Maximum point of the box
  */
 void RcsGraph_computeAABB(const RcsGraph* self,
-                         double xyzMin[3], double xyzMax[3]);
+                          double xyzMin[3], double xyzMax[3]);
 
 
 /**

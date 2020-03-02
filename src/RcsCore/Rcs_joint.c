@@ -526,13 +526,13 @@ void RcsJoint_fprintXML(FILE* out, const RcsJoint* self)
 
   if (self->A_JP != NULL)
   {
-      double trf[6];
-      Vec3d_copy(&trf[0], self->A_JP->org);
-      Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->A_JP->rot);
-      Vec3d_constMulSelf(&trf[3], 180.0 / M_PI);
+    double trf[6];
+    Vec3d_copy(&trf[0], self->A_JP->org);
+    Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->A_JP->rot);
+    Vec3d_constMulSelf(&trf[3], 180.0 / M_PI);
 
-      if (VecNd_maxAbsEle(trf, 6) > 1.0e-8)
-        {
+    if (VecNd_maxAbsEle(trf, 6) > 1.0e-8)
+    {
       fprintf(out, "transform=\"%s ", String_fromDouble(buf, trf[0], 6));
       fprintf(out, "%s ", String_fromDouble(buf, trf[1], 6));
       fprintf(out, "%s ", String_fromDouble(buf, trf[2], 6));
@@ -656,18 +656,18 @@ int RcsJoint_getDirectionIndex(const RcsJoint* self)
 void RcsJoint_scale(RcsJoint* joint, double scale)
 {
   if (joint->A_JP)
-    {
-      Vec3d_constMulSelf(joint->A_JP->org, scale);
-    }
+  {
+    Vec3d_constMulSelf(joint->A_JP->org, scale);
+  }
 
-    if (RcsJoint_isTranslation(joint) == true)
-    {
-      const double upperRange = joint->q_max - joint->q0;
-      const double lowerRange = joint->q0 - joint->q_min;
-      joint->q0 *= scale;
-      joint->q_init *= scale;
-      joint->q_min = joint->q0 - scale*lowerRange;
-      joint->q_max = joint->q0 + scale*upperRange;
-    }
+  if (RcsJoint_isTranslation(joint) == true)
+  {
+    const double upperRange = joint->q_max - joint->q0;
+    const double lowerRange = joint->q0 - joint->q_min;
+    joint->q0 *= scale;
+    joint->q_init *= scale;
+    joint->q_min = joint->q0 - scale*lowerRange;
+    joint->q_max = joint->q0 + scale*upperRange;
+  }
 
 }

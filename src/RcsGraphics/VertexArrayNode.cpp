@@ -181,7 +181,7 @@ bool Rcs::VertexArrayNode::copyPoints(const MatNd* mat_)
     RLOG(4, "Matrix is NULL - skipping copyPoints()");
     return false;
   }
-  
+
   this->mat = mat_;
   return takePointsOwnership();
 }
@@ -359,11 +359,11 @@ void Rcs::VertexArrayNode::performUpdate()
 bool Rcs::VertexArrayNode::takePointsOwnership()
 {
   if (myMat == mat)
-    {
-      return true;   // already owner
-    }
+  {
+    return true;   // already owner
+  }
 
   myMat = MatNd_clone(mat);
-  
+
   return setPoints(myMat);
 }

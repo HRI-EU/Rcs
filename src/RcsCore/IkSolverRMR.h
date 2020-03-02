@@ -218,7 +218,7 @@ protected:
   unsigned int nx, nTasks, nq, nqr;
   double det;
   MatNd* A, *invA, *invWq, *J, *pinvJ, *N, *dHA, *dq, *dqr, *dxr, *NinvW,
-    *Wx, *dHr, *dH, *dH_jl, *dH_ca, *dx, *ax_curr;
+         *Wx, *dHr, *dH, *dH_jl, *dH_ca, *dx, *ax_curr;
 };
 
 

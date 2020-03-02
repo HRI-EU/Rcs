@@ -458,7 +458,7 @@ bool Rcs::PhysicsBase::check() const
  ******************************************************************************/
 void Rcs::PhysicsBase::resetRigidBodies()
 {
-    RCSGRAPH_TRAVERSE_BODIES(internalDesiredGraph)
+  RCSGRAPH_TRAVERSE_BODIES(internalDesiredGraph)
   {
     if (BODY->rigid_body_joints &&
         (BODY->physicsSim==RCSBODY_PHYSICS_KINEMATIC ||

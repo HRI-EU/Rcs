@@ -174,7 +174,7 @@ bool testEulerAnglesFunctions(int argc, char** argv)
   }
 
   RLOGS(1, "%s testing Euler angle functions ",
-      success ? "SUCCESS" : "FAILURE");
+        success ? "SUCCESS" : "FAILURE");
   RLOG(2, "Error is %g (<%g)", err, errMax);
 
   return success;
@@ -839,7 +839,7 @@ bool testLinearAlgebraFunctions(int argc, char** argv)
 
 
   RLOGS(1, "%s testing linear algebra functions",
-      success ? "SUCCESS" : "FAILURE");
+        success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -1047,57 +1047,57 @@ bool testHTr(int argc, char** argv)
   Mat3d_setRotMatZ(A_21->rot, 15.0 * (M_PI / 180.));
 
   REXEC(3)
-    {
-      fprintf(stderr, "\nA1I:\n");
-      HTr_fprint(stderr, A_1I);
-      fprintf(stderr, "\nA2I:\n");
-      HTr_fprint(stderr, A_2I);
-      fprintf(stderr, "\nA21:\n");
-      HTr_fprint(stderr, A_21);
-      fprintf(stderr, "\n");
-    }
+  {
+    fprintf(stderr, "\nA1I:\n");
+    HTr_fprint(stderr, A_1I);
+    fprintf(stderr, "\nA2I:\n");
+    HTr_fprint(stderr, A_2I);
+    fprintf(stderr, "\nA21:\n");
+    HTr_fprint(stderr, A_21);
+    fprintf(stderr, "\n");
+  }
 
   HTr A_2I_test, A_21_test;
   // transform
   HTr_transform(&A_2I_test, A_1I, A_21);
   REXEC(3)
-    {
-      fprintf(stderr, "\nTrans A_2I:\n");
-      HTr_fprint(stderr, &A_2I_test);
-    }
+  {
+    fprintf(stderr, "\nTrans A_2I:\n");
+    HTr_fprint(stderr, &A_2I_test);
+  }
 
   // inv_transform
   HTr_invTransform(&A_21_test, A_1I, A_2I);
   REXEC(3)
-    {
-      fprintf(stderr, "\nInvTrans A_21:\n");
-      HTr_fprint(stderr, &A_21_test);
-    }
+  {
+    fprintf(stderr, "\nInvTrans A_21:\n");
+    HTr_fprint(stderr, &A_21_test);
+  }
 
   VecNd_subSelf((double*) &A_21_test, (double*) A_21, 12);
   VecNd_subSelf((double*) &A_2I_test, (double*) A_2I, 12);
 
   double err1 = VecNd_maxAbsEle((double*) &A_21_test, 12);
   if (err1 > 1.0e-5)
+  {
+    REXEC(2)
     {
-      REXEC(2)
-        {
-          fprintf(stderr, "\nDiff A_21: Error is %g\n", err1);
-          HTr_fprint(stderr, &A_21_test);
-        }
-      success = false;
+      fprintf(stderr, "\nDiff A_21: Error is %g\n", err1);
+      HTr_fprint(stderr, &A_21_test);
     }
+    success = false;
+  }
 
   double err2 = VecNd_maxAbsEle((double*) &A_2I_test, 12);
   if (err2 > 1.0e-5)
+  {
+    REXEC(2)
     {
-      REXEC(2)
-        {
-          fprintf(stderr, "\nDiff A_2I: %g\n", err2);
-          HTr_fprint(stderr, &A_2I_test);
-        }
-      success = false;
+      fprintf(stderr, "\nDiff A_2I: %g\n", err2);
+      HTr_fprint(stderr, &A_2I_test);
     }
+    success = false;
+  }
 
   // cleanup
   RFREE(A_1I);
@@ -1119,36 +1119,36 @@ bool testBasicMath(int argc, char** argv)
   bool success = true;
 
   if (lround(2.3) != 2)
-    {
-      RLOG(2, "Error in lround(2.3)");
-      success = false;
-    }
+  {
+    RLOG(2, "Error in lround(2.3)");
+    success = false;
+  }
 
   if (lround(3.8) != 4)
-    {
-      RLOG(2, "Error in lround(3.8)");
-      success = false;
-    }
+  {
+    RLOG(2, "Error in lround(3.8)");
+    success = false;
+  }
 
   if (lround(-2.3) != -2)
-    {
-      RLOG(2, "Error in lround(-2.3)");
-      success = false;
-    }
+  {
+    RLOG(2, "Error in lround(-2.3)");
+    success = false;
+  }
 
   if (lround(-3.8) != -4)
-    {
-      RLOG(2, "Error in lround(-3.8)");
-      success = false;
-    }
+  {
+    RLOG(2, "Error in lround(-3.8)");
+    success = false;
+  }
 
   REXEC(3)
-    {
-      printf ( "lround (2.3) = %ld\n", lround(2.3));
-      printf ( "lround (3.8) = %ld\n", lround(3.8));
-      printf ( "lround (-2.3) = %ld\n", lround(-2.3));
-      printf ( "lround (-3.8) = %ld\n", lround(-3.8));
-    }
+  {
+    printf("lround (2.3) = %ld\n", lround(2.3));
+    printf("lround (3.8) = %ld\n", lround(3.8));
+    printf("lround (-2.3) = %ld\n", lround(-2.3));
+    printf("lround (-3.8) = %ld\n", lround(-3.8));
+  }
 
   MatNd* sqrMat  = MatNd_create(3, 6);
   MatNd* Mat     = MatNd_create(3, 3);
@@ -1161,64 +1161,64 @@ bool testBasicMath(int argc, char** argv)
   VecNd_copy((double*) invASelf, sqrMat->ele, 9);
 
   REXEC(3)
-    {
-      RMSGS("A:");
-      Mat3d_fprint(stderr, A);
-    }
+  {
+    RMSGS("A:");
+    Mat3d_fprint(stderr, A);
+  }
 
   Mat3d_inverse(invA, A);
   REXEC(3)
-    {
-      RMSGS("inv(A) after Mat3d_inverse():");
-      Mat3d_fprint(stderr, invA);
-    }
+  {
+    RMSGS("inv(A) after Mat3d_inverse():");
+    Mat3d_fprint(stderr, invA);
+  }
 
   Mat3d_mul(Identity, A, invA);
   REXEC(3)
-    {
-      RMSGS("Test: A*inv(A) = I");
-      Mat3d_fprint(stderr, Identity);
-    }
+  {
+    RMSGS("Test: A*inv(A) = I");
+    Mat3d_fprint(stderr, Identity);
+  }
 
   Mat3d_addConstToDiag(Identity, -1.0);
 
   double err1 = VecNd_maxAbsEle((double*) Identity, 9);
   if (err1 > 1.0e-5)
+  {
+    REXEC(2)
     {
-      REXEC(2)
-        {
-          fprintf(stderr, "\nA*inv(A) = I: Error is %g\n", err1);
-          Mat3d_fprint(stderr, Identity);
-        }
-      success = false;
+      fprintf(stderr, "\nA*inv(A) = I: Error is %g\n", err1);
+      Mat3d_fprint(stderr, Identity);
     }
+    success = false;
+  }
 
   Mat3d_inverseSelf(invASelf);
   REXEC(3)
-    {
-      RMSGS("inv(A) after Mat3d_inverseSelf():");
-      Mat3d_fprint(stderr, invASelf);
-    }
+  {
+    RMSGS("inv(A) after Mat3d_inverseSelf():");
+    Mat3d_fprint(stderr, invASelf);
+  }
 
   Mat3d_mul(Identity, A, invASelf);
   REXEC(3)
-    {
-      RMSGS("Test: A*inv(A) = I");
-      Mat3d_fprint(stderr, Identity);
-    }
+  {
+    RMSGS("Test: A*inv(A) = I");
+    Mat3d_fprint(stderr, Identity);
+  }
 
   Mat3d_addConstToDiag(Identity, -1.0);
 
   double err2 = VecNd_maxAbsEle((double*) Identity, 9);
   if (err2 > 1.0e-5)
+  {
+    REXEC(2)
     {
-      REXEC(2)
-        {
-          fprintf(stderr, "\nA*inv(A) = I: Error is %g\n", err2);
-          Mat3d_fprint(stderr, Identity);
-        }
-      success = false;
+      fprintf(stderr, "\nA*inv(A) = I: Error is %g\n", err2);
+      Mat3d_fprint(stderr, Identity);
     }
+    success = false;
+  }
 
   MatNd_destroy(sqrMat);
   MatNd_destroy(Mat);
@@ -1235,24 +1235,24 @@ bool testBasicMath(int argc, char** argv)
   }
 
   REXEC(3)
-    {
-      MatNd_printCommentDigits("limit", limit, 6);
-      MatNd_printCommentDigits("B before scaling", B, 6);
-    }
+  {
+    MatNd_printCommentDigits("limit", limit, 6);
+    MatNd_printCommentDigits("B before scaling", B, 6);
+  }
   double scale = MatNd_scaleSelf(B, limit);
   REXEC(3)
-    {
-      MatNd_printCommentDigits("B after scaling", B, 6);
-      RMSGS("scale factor is %f", scale);
-    }
+  {
+    MatNd_printCommentDigits("B after scaling", B, 6);
+    RMSGS("scale factor is %f", scale);
+  }
 
   double maxVal = MatNd_maxAbsEle(B);
 
   if (maxVal > 0.5)
-    {
-      RLOG(2, "Error in MatNd_scaleSelf()");
-      success = false;
-    }
+  {
+    RLOG(2, "Error in MatNd_scaleSelf()");
+    success = false;
+  }
 
   // Test VecNd sorting
   double vec_src[dim], vec_dst[dim];
@@ -1260,19 +1260,19 @@ bool testBasicMath(int argc, char** argv)
   VecNd_sort(vec_dst, vec_src, dim);
 
   for (int i=1; i<dim; ++i)
+  {
+    if (vec_dst[i-1] > vec_dst[i])
     {
-      if (vec_dst[i-1] > vec_dst[i])
-        {
-          RLOG(2, "Error in VecNd_sort() at index %d", i);
-          success = false;
-        }
+      RLOG(2, "Error in VecNd_sort() at index %d", i);
+      success = false;
     }
+  }
 
   REXEC(3)
-    {
-      VecNd_printComment("Vector before sorting", vec_src, dim);
-      VecNd_printComment("Vector after sorting", vec_dst, dim);
-    }
+  {
+    VecNd_printComment("Vector before sorting", vec_src, dim);
+    VecNd_printComment("Vector after sorting", vec_dst, dim);
+  }
 
   // Test VecNd reverting
   for (int i=0; i<dim; ++i)
@@ -1283,20 +1283,20 @@ bool testBasicMath(int argc, char** argv)
   VecNd_reverseSelf(vec_dst, dim);
 
   REXEC(3)
-    {
-      VecNd_printComment("Vector before reverting", vec_src, dim);
-      VecNd_printComment("Vector after reverting", vec_dst, dim);
-    }
+  {
+    VecNd_printComment("Vector before reverting", vec_src, dim);
+    VecNd_printComment("Vector after reverting", vec_dst, dim);
+  }
 
   for (int i=0; i<dim; ++i)
+  {
+    if (vec_dst[i] != vec_src[dim-1-i])
     {
-      if (vec_dst[i] != vec_src[dim-1-i])
-        {
-          RLOG(2, "Error in VecNd_reverseSelf() at index %d: %f != %f",
+      RLOG(2, "Error in VecNd_reverseSelf() at index %d: %f != %f",
            i, vec_dst[i], vec_src[dim-i-1]);
-          success = false;
-        }
+      success = false;
     }
+  }
 
 
   // Test cylinder coordinates conversion
@@ -1311,10 +1311,10 @@ bool testBasicMath(int argc, char** argv)
        p[0], p2[0], p[1], p2[1], err3);
 
   if (err3 > 1.0e-5)
-    {
-      RLOG(2, "Error in Cylinder coordinates conversion");
-      success = false;
-    }
+  {
+    RLOG(2, "Error in Cylinder coordinates conversion");
+    success = false;
+  }
 
   // cleanup
   MatNd_destroy(B);
@@ -1707,29 +1707,29 @@ bool testSlerp(int argc, char** argv)
   Mat3d_clip(A_clip, A_from, A_to, phiMax);
 
   REXEC(4)
-    {
-      Mat3d_printCommentDigits("A_slerp", A_slerp, 6);
-      Mat3d_printCommentDigits("A_clip", A_clip, 6);
-    }
+  {
+    Mat3d_printCommentDigits("A_slerp", A_slerp, 6);
+    Mat3d_printCommentDigits("A_clip", A_clip, 6);
+  }
 
   Mat3d_subSelf(A_clip, A_slerp);
 
   REXEC(2)
-    {
-      Mat3d_printCommentDigits("A_err", A_clip, 6);
-    }
+  {
+    Mat3d_printCommentDigits("A_err", A_clip, 6);
+  }
 
   double err = Mat3d_getFrobeniusnorm(A_clip);
 
   if (err > 1.0e-3)
-    {
-      RLOG(1, "err = %g - should be < 1.0e-3", err);
-      return false;
-    }
+  {
+    RLOG(1, "err = %g - should be < 1.0e-3", err);
+    return false;
+  }
   else
-    {
-      RLOG(1, "err = %g - is < 1.0e-3", err);
-    }
+  {
+    RLOG(1, "err = %g - is < 1.0e-3", err);
+  }
 
   return true;
 }
@@ -3987,12 +3987,12 @@ bool testFunctionsEigen3(int argc, char** argv)
     {
       success = false;
       REXEC(2)
-        {
-      RMSGS("FAILURE for SVD inverse: A*inv(A) != I");
-      MatNd_printCommentDigits("A", A, 5);
-      MatNd_printCommentDigits("inv(A)", A_inv, 5);
-      MatNd_printCommentDigits("A*inv(A) = I", A_invA, 5);
-    }
+      {
+        RMSGS("FAILURE for SVD inverse: A*inv(A) != I");
+        MatNd_printCommentDigits("A", A, 5);
+        MatNd_printCommentDigits("inv(A)", A_inv, 5);
+        MatNd_printCommentDigits("A*inv(A) = I", A_invA, 5);
+      }
     }
 
     MatNd_destroy(A);

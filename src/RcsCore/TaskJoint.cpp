@@ -71,16 +71,16 @@ Rcs::TaskJoint::TaskJoint(const std::string& className,
 
   // ref-joint
   if (getXMLNodeProperty(node, "refJnt"))
-    {
-      getXMLNodePropertyStringN(node, "refJnt", msg, 256);
-      this->refJoint = RcsGraph_getJointByName(this->graph, msg);
-      RCHECK_MSG(this->refJoint, "Joint \"%s\" doesn't exist!", msg);
+  {
+    getXMLNodePropertyStringN(node, "refJnt", msg, 256);
+    this->refJoint = RcsGraph_getJointByName(this->graph, msg);
+    RCHECK_MSG(this->refJoint, "Joint \"%s\" doesn't exist!", msg);
 
-      // We require the joint to be unconstrained. Otherwise, we'll have a zero
-      // Jacobian.
-      RCHECK_MSG(refJoint->constrained==false, "Ref-joint \"%s\" is "
-                 "constrained", msg);
-    }
+    // We require the joint to be unconstrained. Otherwise, we'll have a zero
+    // Jacobian.
+    RCHECK_MSG(refJoint->constrained==false, "Ref-joint \"%s\" is "
+               "constrained", msg);
+  }
 
   // re-initialize parameters
   if (RcsJoint_isTranslation(this->joint) == true)
@@ -116,18 +116,18 @@ Rcs::TaskJoint::TaskJoint(const RcsJoint* _joint,
   {
     std::string label = std::string(this->joint->name) + " [m]";
     resetParameter(Parameters(this->joint->q_min, this->joint->q_max,
-                            1.0, label));
+                              1.0, label));
   }
   else
   {
     std::string label = std::string(this->joint->name) + " [deg]";
     resetParameter(Parameters(this->joint->q_min, this->joint->q_max,
-                            (180. / M_PI), label));
+                              (180. / M_PI), label));
   }
 }
 
 /*******************************************************************************
- * 
+ *
 ******************************************************************************/
 Rcs::TaskJoint::TaskJoint(RcsGraph* graph_, const RcsJoint* jnt,
                           const RcsJoint* _refJoint) :
@@ -149,13 +149,13 @@ Rcs::TaskJoint::TaskJoint(RcsGraph* graph_, const RcsJoint* jnt,
   {
     std::string label = std::string(this->joint->name) + " [m]";
     resetParameter(Task::Parameters(this->joint->q_min, this->joint->q_max,
-                                  1.0, label));
+                                    1.0, label));
   }
   else
   {
     std::string label = std::string(this->joint->name) + " [deg]";
     resetParameter(Task::Parameters(this->joint->q_min, this->joint->q_max,
-                                  180.0/M_PI, label));
+                                    180.0/M_PI, label));
   }
 
 }
@@ -209,9 +209,9 @@ void Rcs::TaskJoint::computeX(double* x_res) const
   x_res[0] = MatNd_get(this->graph->q, this->joint->jointIndex, 0);
 
   if (this->refJoint)
-    {
-      x_res[0] += MatNd_get(this->graph->q, this->refJoint->jointIndex, 0);
-    }
+  {
+    x_res[0] += MatNd_get(this->graph->q, this->refJoint->jointIndex, 0);
+  }
 }
 
 /*******************************************************************************
@@ -223,9 +223,9 @@ void Rcs::TaskJoint::computeXp(double* x_dot_res) const
   x_dot_res[0] = MatNd_get(graph->q_dot, joint->jointIndex, 0);
 
   if (this->refJoint)
-    {
-      x_dot_res[0] += MatNd_get(graph->q_dot, refJoint->jointIndex, 0);
-    }
+  {
+    x_dot_res[0] += MatNd_get(graph->q_dot, refJoint->jointIndex, 0);
+  }
 }
 
 /*******************************************************************************
@@ -239,9 +239,9 @@ void Rcs::TaskJoint::computeJ(MatNd* jacobian) const
   MatNd_set(jacobian, 0, this->joint->jacobiIndex,  1.0);
 
   if (this->refJoint)
-    {
-      MatNd_set(jacobian, 0, this->refJoint->jacobiIndex, 1.0);
-    }
+  {
+    MatNd_set(jacobian, 0, this->refJoint->jacobiIndex, 1.0);
+  }
 }
 
 /*******************************************************************************
@@ -300,7 +300,7 @@ void Rcs::TaskJoint::print() const
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskJoint::setJoint(RcsJoint* jnt) 
+void Rcs::TaskJoint::setJoint(RcsJoint* jnt)
 {
   this->joint = jnt;
 }
@@ -308,7 +308,7 @@ void Rcs::TaskJoint::setJoint(RcsJoint* jnt)
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskJoint::setRefJoint(RcsJoint* jnt) 
+void Rcs::TaskJoint::setRefJoint(RcsJoint* jnt)
 {
   this->refJoint = jnt;
 }

@@ -221,7 +221,7 @@ static int pruneZeroFlagRows(MatNd* desc)
   int nRows = desc->m;
   int nDeleted = 0;
 
-  for (int i=0;i<nRows; ++i)
+  for (int i=0; i<nRows; ++i)
   {
     int bConstraint = lround(MatNd_get2(desc, i, 4));
     if (bConstraint==0)

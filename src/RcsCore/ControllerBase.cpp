@@ -1696,7 +1696,7 @@ static void thresholdFtSensor(double* S_ft_f,
  *
  ******************************************************************************/
 void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
-                                               const MatNd* activation) const
+                                           const MatNd* activation) const
 {
   size_t nx = activation ? getActiveTaskDim(activation) : getTaskDim();
 
@@ -1880,38 +1880,38 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
 
     // Rename joint names for TaskJoint
     if (dynamic_cast<TaskJoint*>(copyOfOtherTask))
+    {
+      TaskJoint* jntTask = dynamic_cast<TaskJoint*>(copyOfOtherTask);
+      std::string newName = std::string(jntTask->getJoint()->name);
+      if (suffix)
       {
-        TaskJoint* jntTask = dynamic_cast<TaskJoint*>(copyOfOtherTask);
-        std::string newName = std::string(jntTask->getJoint()->name);
-        if (suffix)
-          {
-            newName.append(suffix);
-          }
-        jntTask->setJoint(RcsGraph_getJointByName(getGraph(), newName.c_str()));
-        RCHECK_MSG(jntTask->getJoint(), "Not found: joint %s", newName.c_str());
+        newName.append(suffix);
       }
- 
+      jntTask->setJoint(RcsGraph_getJointByName(getGraph(), newName.c_str()));
+      RCHECK_MSG(jntTask->getJoint(), "Not found: joint %s", newName.c_str());
+    }
+
     // Rename joint names for TaskJoints
     if (dynamic_cast<TaskJoints*>(copyOfOtherTask))
+    {
+      RLOG(0, "Copying joints task %s", copyOfOtherTask->getName().c_str());
+      TaskJoints* jntsTask = dynamic_cast<TaskJoints*>(copyOfOtherTask);
+
+      for (size_t i=0; i<jntsTask->getNumberOfTasks(); ++i)
       {
-        RLOG(0, "Copying joints task %s", copyOfOtherTask->getName().c_str());
-        TaskJoints* jntsTask = dynamic_cast<TaskJoints*>(copyOfOtherTask);
+        TaskJoint* jntTask = dynamic_cast<TaskJoint*>(jntsTask->getSubTask(i));
+        RCHECK(jntTask);
+        std::string newName = std::string(jntTask->getJoint()->name);
+        if (suffix)
+        {
+          newName.append(suffix);
+        }
+        jntTask->setJoint(RcsGraph_getJointByName(getGraph(), newName.c_str()));
+        RCHECK_MSG(jntTask->getJoint(), "Not found: joint %s", newName.c_str());
 
-        for (size_t i=0;i<jntsTask->getNumberOfTasks(); ++i)
-          {
-            TaskJoint* jntTask = dynamic_cast<TaskJoint*>(jntsTask->getSubTask(i));
-            RCHECK(jntTask);
-            std::string newName = std::string(jntTask->getJoint()->name);
-            if (suffix)
-              {
-                newName.append(suffix);
-              }
-            jntTask->setJoint(RcsGraph_getJointByName(getGraph(), newName.c_str()));
-            RCHECK_MSG(jntTask->getJoint(), "Not found: joint %s", newName.c_str());
-
-          }
       }
-    
+    }
+
 
     add(copyOfOtherTask);
   }

@@ -1048,7 +1048,7 @@ void RcsMesh_computeAABB(const RcsMeshData* mesh,
  ******************************************************************************/
 void RcsMesh_scale(RcsMeshData* mesh, double scale)
 {
-  for (unsigned int i=0;i<mesh->nVertices*3; ++i)
+  for (unsigned int i=0; i<mesh->nVertices*3; ++i)
   {
     mesh->vertices[i] *= scale;
   }

@@ -140,7 +140,7 @@ void Math_resamplePolygon2D(double polyOut[][2], unsigned int nvOut,
                             double polyIn[][2], unsigned int nvIn);
 
 /*! \ingroup RcsBasicMathFunctions
- *  \brief Computes the signed area of a 2d polygon. It does not need to 
+ *  \brief Computes the signed area of a 2d polygon. It does not need to
  *         be convex.
  *
  *  \param[in]  polygon    Polygon vertices
@@ -149,7 +149,7 @@ void Math_resamplePolygon2D(double polyOut[][2], unsigned int nvOut,
  */
 double Math_signedAreaPolygon2D(double polygon[][2],
                                 unsigned int nVertices);
-  
+
 /*! \ingroup RcsBasicMathFunctions
  *  \brief Computes the winding of a 2d polygon. It does not need to be convex.
  *

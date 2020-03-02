@@ -70,7 +70,7 @@ void* RcsGuiFactory_thread(void*)
   char dummy[32] = "RcsGuiFactory_thread";
   char* argv[1];
   argv[0] = dummy;
-  
+
   QApplication* app = NULL;
   GuiFactory* guiFactory = NULL;
 

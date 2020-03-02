@@ -4525,7 +4525,7 @@ bool MatNd_lineFit2D(double* A, double* B, const MatNd* data)
   }
 
   // x = Ay +B => y = (x - B) / A = (1/A)*x -B/A
-  for (unsigned int i=0;i<dataTp->n; ++i)
+  for (unsigned int i=0; i<dataTp->n; ++i)
   {
     MatNd_swapElements(dataTp, 0, i, 1, i);
   }

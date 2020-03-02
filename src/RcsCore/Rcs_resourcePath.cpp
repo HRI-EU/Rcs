@@ -202,7 +202,7 @@ extern "C" {
 
       if (absFileName != NULL)
       {
-      strcpy(absFileName, fileName);
+        strcpy(absFileName, fileName);
       }
       return true;
     }
@@ -231,7 +231,7 @@ extern "C" {
 
         if (absFileName != NULL)
         {
-        strcpy(absFileName, fullName.c_str());
+          strcpy(absFileName, fullName.c_str());
         }
         return true;
       }

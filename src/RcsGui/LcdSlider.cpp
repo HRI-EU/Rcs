@@ -444,7 +444,7 @@ void LcdSlider::updateControls()
 #if QWT_VERSION < 0x060103
     double minDecrease = .02*fabs(this->slider->maxValue() - this->slider->minValue())/this->scaleFactor;
 #else
-  double minDecrease = .02*fabs(this->slider->upperBound() - this->slider->lowerBound()) / this->scaleFactor;
+    double minDecrease = .02*fabs(this->slider->upperBound() - this->slider->lowerBound()) / this->scaleFactor;
 #endif
     double step = .2*diff2Zero;
 

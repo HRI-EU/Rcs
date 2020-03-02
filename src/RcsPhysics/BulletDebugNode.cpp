@@ -80,7 +80,7 @@ bool Rcs::BulletDebugNode::eventCallback(const osgGA::GUIEventAdapter& ea,
       if (ea.getKey() == 'd')
       {
         toggle();
-        }
+      }
     }   // case (osgGA::GUIEventAdapter::KEYDOWN)
 
     default:

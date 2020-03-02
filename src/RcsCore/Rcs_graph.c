@@ -3027,22 +3027,22 @@ void RcsGraph_scale(RcsGraph* graph, double scale)
 
   RCSGRAPH_TRAVERSE_BODIES(graph)
   {
-      double k_org[3];
-      Vec3d_add(k_org, origin, BODY->A_BI->org);
-      Vec3d_rotateSelf(k_org, BODY->A_BI->rot);
-      RcsBody_scale(BODY, scale);
-    }
+    double k_org[3];
+    Vec3d_add(k_org, origin, BODY->A_BI->org);
+    Vec3d_rotateSelf(k_org, BODY->A_BI->rot);
+    RcsBody_scale(BODY, scale);
+  }
 
   RCSGRAPH_TRAVERSE_JOINTS(graph)
-    {
+  {
     if (RcsJoint_isTranslation(JNT) == true)
     {
       graph->q->ele[JNT->jointIndex] *= scale;
-  }
-
     }
 
   }
+
+}
 
 /*******************************************************************************
 * See header.
@@ -3263,7 +3263,7 @@ void RcsGraph_addRandomGeometry(RcsGraph* self)
  * See header.
  ******************************************************************************/
 void RcsGraph_computeAABB(const RcsGraph* self,
-                         double xyzMin[3], double xyzMax[3])
+                          double xyzMin[3], double xyzMax[3])
 {
   if (self == NULL || RcsGraph_numBodies(self)==0)
   {

@@ -344,10 +344,10 @@ void Math_interpolatePolygon2D(double res[2], double polygon[][2],
                                unsigned int nVertices, double s)
 {
   if ((s<=0.0) || (s>=1.0))
-    {
-      res[0] = polygon[0][0];
-      res[1] = polygon[0][1];
-    }
+  {
+    res[0] = polygon[0][0];
+    res[1] = polygon[0][1];
+  }
 
   const double len = Math_lengthPolygon2D(polygon, nVertices);
 
@@ -363,12 +363,12 @@ void Math_interpolatePolygon2D(double res[2], double polygon[][2],
     const double s1 = len_s/len;
 
     if ((s>s0) && (s<=s1))
-      {
-        const double ds = (s - s0)/(s1 - s0);
-        res[0] = polygon[i][0] + ds*dx;
-        res[1] = polygon[i][1] + ds*dy;
-        return;
-      }
+    {
+      const double ds = (s - s0)/(s1 - s0);
+      res[0] = polygon[i][0] + ds*dx;
+      res[1] = polygon[i][1] + ds*dy;
+      return;
+    }
   }
 
   // In case we get here, it's due to numerical issues and we are at the end.
@@ -402,11 +402,11 @@ double Math_signedAreaPolygon2D(double polygon[][2],
   double area = 0.0;
 
   for (unsigned int i = 0; i < nVertices; i++)
-    {
-      const unsigned int j = (i+1) % nVertices;
-      area += polygon[i][0]*polygon[j][1];
-      area -= polygon[j][0]*polygon[i][1];
-    }
+  {
+    const unsigned int j = (i+1) % nVertices;
+    area += polygon[i][0]*polygon[j][1];
+    area -= polygon[j][0]*polygon[i][1];
+  }
 
   return area;
 }
@@ -563,13 +563,13 @@ double Math_sqrDistLineLine(const double lp1[3],
  * See header.
  ******************************************************************************/
 double Math_sqrDistLinesegLineseg_old(const double segPt0[3],
-                                  const double segDir0[3],
-                                  const double segLength0,
-                                  const double segPt1[3],
-                                  const double segDir1[3],
-                                  const double segLength1,
-                                  double cp0_[3],
-                                  double cp1_[3])
+                                      const double segDir0[3],
+                                      const double segLength0,
+                                      const double segPt1[3],
+                                      const double segDir1[3],
+                                      const double segLength1,
+                                      double cp0_[3],
+                                      double cp1_[3])
 {
   // 0: Line0 - line1
   double s[2];

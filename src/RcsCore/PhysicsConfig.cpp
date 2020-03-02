@@ -283,7 +283,7 @@ void PhysicsConfig::init(const char* configFile)
   if (!fileExists)
   {
     RLOG(1, "Rcs physics configuration file \"%s\" not found",
-        configFile ? configFile : "NULL");
+         configFile ? configFile : "NULL");
     // Build backing doc manually
 
     // create empty configuration node

@@ -167,13 +167,13 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
 
     if ((RcsMeshData*) shape->userData)
     {
-    RcsMesh_scale((RcsMeshData*) shape->userData, shape->scale);
+      RcsMesh_scale((RcsMeshData*) shape->userData, shape->scale);
     }
   }
   else
   {
     RLOG(1, "URDF: Unsupported shape type: \"%s\" (parent: \"%s\")",
-         geometry_type_node ? (const char*)geometry_type_node->name : "NULL", 
+         geometry_type_node ? (const char*)geometry_type_node->name : "NULL",
          (const char*)geometry_node->name);
   }
 
@@ -379,7 +379,7 @@ static RcsBody* parseBodyURDF(xmlNode* node)
     if (numCollisionShapes == 0)
     {
       RLOG(1, "You specified a non-zero mass but no collision shapes for body \"%s\". "
-              "Body will not partake in physics simulation", body->name);
+           "Body will not partake in physics simulation", body->name);
       body->physicsSim = RCSBODY_PHYSICS_NONE;
     }
   }

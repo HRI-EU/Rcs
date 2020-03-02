@@ -1070,8 +1070,8 @@ void Rcs::VortexSimulation::reset()
  * Applies force F to the given body at location p (in world coordinates).
  ******************************************************************************/
 void Rcs::VortexSimulation::setForce(const RcsBody* body,
-                                       const double F[3],
-                                       const double p[3])
+                                     const double F[3],
+                                     const double p[3])
 {
   RCHECK_MSG(body != NULL, "Cannot set force on a NULL body!");
 
@@ -1099,8 +1099,8 @@ void Rcs::VortexSimulation::setForce(const RcsBody* body,
  * Applies impulse F to the given body at location p (in world coordinates).
  ******************************************************************************/
 void Rcs::VortexSimulation::applyImpulse(const RcsBody* body,
-                                     const double F[3],
-                                     const double p[3])
+                                         const double F[3],
+                                         const double p[3])
 {
   RCHECK_MSG(body != NULL, "Cannot set force on a NULL body!");
 

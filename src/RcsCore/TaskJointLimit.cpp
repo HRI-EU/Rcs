@@ -64,7 +64,7 @@ Rcs::TaskJointLimit::TaskJointLimit(const std::string& className_,
 
   // Border ratio (default is 0)
   getXMLNodePropertyDouble(node, "borderRatio", &this->borderRatio);
-    this->borderRatio = Math_clip(this->borderRatio, 0.0, 1.0);
+  this->borderRatio = Math_clip(this->borderRatio, 0.0, 1.0);
 }
 
 /*******************************************************************************

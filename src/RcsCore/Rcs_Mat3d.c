@@ -1454,15 +1454,15 @@ void Mat3d_slerp(double A[3][3], double A_1I[3][3], double A_2I[3][3],
  * See header.
  ******************************************************************************/
 double Mat3d_clip(double A_clipped[3][3], double A_from[3][3], double A_to[3][3],
-                double maxAngle)
+                  double maxAngle)
 {
   const double phi = Mat3d_diffAngle(A_from, A_to);
 
   if (phi <= maxAngle)
-    {
-      Mat3d_copy(A_clipped, A_to);
-      return 1.0;
-    }
+  {
+    Mat3d_copy(A_clipped, A_to);
+    return 1.0;
+  }
 
   // Compute orientation error e
   double e[3], A_err[3][3];

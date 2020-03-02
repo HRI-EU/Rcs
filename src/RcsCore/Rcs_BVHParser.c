@@ -639,8 +639,8 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
     isEOF = fscanf(fd, "%63s", buf);
     if (isEOF != EOF)
     {
-    data->ele[numValues] = String_toDouble_l(buf);
-    numValues++;
+      data->ele[numValues] = String_toDouble_l(buf);
+      numValues++;
     }
   }
   while (isEOF != EOF);
@@ -686,34 +686,34 @@ bool RcsGraph_beautifyHumanModelBVH(RcsGraph* graph,
   RcsBody* leftWrist = RcsGraph_getBodyByName(graph, "LeftWrist");
   linearScaleToSI=1;
   if (head==NULL)
-    {
-      RLOG(4, "No body with name \"Head\" found");
-      return false;
-    }
+  {
+    RLOG(4, "No body with name \"Head\" found");
+    return false;
+  }
 
   if (rightToe==NULL)
-    {
-      RLOG(4, "No body with name \"RightToe\" found");
-      return false;
-    }
+  {
+    RLOG(4, "No body with name \"RightToe\" found");
+    return false;
+  }
 
   if (leftToe==NULL)
-    {
-      RLOG(4, "No body with name \"LeftToe\" found");
-      return false;
-    }
+  {
+    RLOG(4, "No body with name \"LeftToe\" found");
+    return false;
+  }
 
   if (rightWrist==NULL)
-    {
-      RLOG(4, "No body with name \"RightWrist\" found");
-      return false;
-    }
+  {
+    RLOG(4, "No body with name \"RightWrist\" found");
+    return false;
+  }
 
   if (leftWrist==NULL)
-    {
-      RLOG(4, "No body with name \"LeftWrist\" found");
-      return false;
-    }
+  {
+    RLOG(4, "No body with name \"LeftWrist\" found");
+    return false;
+  }
 
   // Head
   RcsShape* shape = RALLOC(RcsShape);

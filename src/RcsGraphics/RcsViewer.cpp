@@ -545,7 +545,7 @@ bool Viewer::removeNode(osg::Node* node)
   osg::Node::ParentList parents = node->getParents();
   size_t nDeleted = 0;
 
-  for (size_t i=0;i<parents.size(); ++i)
+  for (size_t i=0; i<parents.size(); ++i)
   {
     nDeleted++;
     parents[i]->removeChild(node);
@@ -553,7 +553,7 @@ bool Viewer::removeNode(osg::Node* node)
 
   if (nDeleted == 0)
   {
-  RLOG(1, "Node can't be deleted - is not part of the scene graph");
+    RLOG(1, "Node can't be deleted - is not part of the scene graph");
     return false;
   }
 

@@ -219,12 +219,12 @@ std::vector<std::string> String_split(const std::string& toBeSplitted,
     while ((endIdx = toBeSplitted.find(delim, startIdx)) != std::string::npos)
     {
       if (startIdx < endIdx) // ignore zero-length substrings
-  {
-    std::string val = toBeSplitted.substr(startIdx, endIdx - startIdx);
-    splittedString.push_back(val);
+      {
+        std::string val = toBeSplitted.substr(startIdx, endIdx - startIdx);
+        splittedString.push_back(val);
       }
-    startIdx = endIdx + delim.size();
-  }
+      startIdx = endIdx + delim.size();
+    }
   }
   else
   {

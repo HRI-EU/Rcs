@@ -211,10 +211,10 @@ ControllerWidgetBase::ControllerWidgetBase(ControllerBase* cntrl,
       if (a_curr == NULL)
       {
         task_widget = new TaskWidget(tsk,
-                                               &a_des->ele[id],
-                                               &x_des->ele[rowIndex],
-                                               &x_curr->ele[rowIndex],
-                                               mutex_, showOnly);
+                                     &a_des->ele[id],
+                                     &x_des->ele[rowIndex],
+                                     &x_curr->ele[rowIndex],
+                                     mutex_, showOnly);
       }
       else
       {

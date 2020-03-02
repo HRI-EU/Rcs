@@ -148,8 +148,8 @@ public:
    *  \param[in] p      Force point in world coordinates. If NULL, force is
    *                    applied to object's COM.
    */
-    virtual void setForce(const RcsBody* body, const double F[3],
-                            const double p[3]) = 0;
+  virtual void setForce(const RcsBody* body, const double F[3],
+                        const double p[3]) = 0;
 
   /*! \brief Applies a force impulse to the body. Both force and point are
    *         in world coordinates.
@@ -159,8 +159,8 @@ public:
    *  \param[in] r      Force point in world coordinates. If NULL, force is
    *                    applied to object's COM.
    */
-    virtual void applyImpulse(const RcsBody* body, const double F[3],
-                              const double r[3]) = 0;
+  virtual void applyImpulse(const RcsBody* body, const double F[3],
+                            const double r[3]) = 0;
 
   /*! \brief Applies a force to the body. Both force and point are in world
    *         coordinates. The force will not be resetted after stepping the

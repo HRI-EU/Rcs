@@ -64,7 +64,7 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
     getXMLNodePropertyVecSTLString(node, "refJnts", refJntsVec);
     if (!refJntsVec.empty())
     {
-        RCHECK(refJntsVec.size()==jntsVec.size());
+      RCHECK(refJntsVec.size()==jntsVec.size());
     }
 
     for (size_t idx = 0; idx < jntsVec.size(); idx++)
@@ -74,11 +74,11 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
 
       RcsJoint* refJnt = NULL;
       if (!refJntsVec.empty())
-        {
-          refJnt = RcsGraph_getJointByName(_graph, refJntsVec[idx].c_str());
-          RCHECK_MSG(refJnt, "Not found: %s", refJntsVec[idx].c_str());
-        }
-      
+      {
+        refJnt = RcsGraph_getJointByName(_graph, refJntsVec[idx].c_str());
+        RCHECK_MSG(refJnt, "Not found: %s", refJntsVec[idx].c_str());
+      }
+
       addTask(new TaskJoint(jnt, refJnt, node, _graph));
     }
 
@@ -143,11 +143,11 @@ bool Rcs::TaskJoints::isValid(xmlNode* node, const RcsGraph* graph)
   if (!refJntVec.empty())
   {
     if (refJntVec.size() != jntVec.size())
-      {
-        success = false;
-        RLOG(4, "Different number of entries in tag \"jnts\" and \"refJnts\":"
-             "%zu - %zu", jntVec.size(), refJntVec.size());
-      }
+    {
+      success = false;
+      RLOG(4, "Different number of entries in tag \"jnts\" and \"refJnts\":"
+           "%zu - %zu", jntVec.size(), refJntVec.size());
+    }
 
     for (size_t idx = 0; idx < refJntVec.size(); idx++)
     {

@@ -1727,7 +1727,7 @@ RcsJoint* RcsBody_lastJointBeforeBody(const RcsBody* body)
 RcsJoint* RcsBody_createRBJ(RcsGraph* self, RcsBody* b, const double q_rbj[6])
 {
   int indexOrdering[6];
-  for (int i=0;i<6;++i)
+  for (int i=0; i<6; ++i)
   {
     indexOrdering[i] = i;
   }
@@ -2463,18 +2463,18 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
 void RcsBody_scale(RcsBody* bdy, double scale)
 {
   if (bdy->A_BP)
-    {
-      Vec3d_constMulSelf(bdy->A_BP->org, scale);
-    }
+  {
+    Vec3d_constMulSelf(bdy->A_BP->org, scale);
+  }
 
   RCSBODY_TRAVERSE_JOINTS(bdy)
-    {
-      RcsJoint_scale(JNT, scale);
-    }
+  {
+    RcsJoint_scale(JNT, scale);
+  }
 
   RCSBODY_TRAVERSE_SHAPES(bdy)
-    {
-      RcsShape_scale(SHAPE, scale);
-    }
+  {
+    RcsShape_scale(SHAPE, scale);
+  }
 
 }

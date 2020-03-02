@@ -145,8 +145,8 @@ Rcs::Task* Rcs::TaskFactory::createTask(std::string className,
     }
   }
 
-    RLOG(5, "Creating task of type \"%s\" in TaskFactory::createTask",
-         className.c_str());
+  RLOG(5, "Creating task of type \"%s\" in TaskFactory::createTask",
+       className.c_str());
   task = itCreate->second(className, node, graph);
 
   return task;

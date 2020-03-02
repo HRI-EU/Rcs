@@ -42,138 +42,138 @@
 
 namespace Rcs
 {
-  template <class T, int NVAL>
-    class StackVec
-  {
-  public:
+template <class T, int NVAL>
+class StackVec
+{
+public:
 
-    // Only the memory that is used upon construction is initialized with zero.
+  // Only the memory that is used upon construction is initialized with zero.
   StackVec(int numEle) : ele(ssoStack), nEle(numEle)
+  {
+    if (nEle > NVAL)
     {
-      if (nEle > NVAL)
-      {
-        ele = new T[nEle];
-      }
-
-      memset(ele, 0, nEle * sizeof(T));
+      ele = new T[nEle];
     }
 
-  StackVec(const StackVec& other) : ele(ssoStack), nEle(other.nEle)
-    {
+    memset(ele, 0, nEle * sizeof(T));
+  }
 
-      if (other.ele != other.ssoStack)
+  StackVec(const StackVec& other) : ele(ssoStack), nEle(other.nEle)
+  {
+
+    if (other.ele != other.ssoStack)
+    {
+      ele = new T[nEle];
+    }
+
+    memmove(ele, other.ele, other.size()*sizeof(T));
+  }
+
+  StackVec& operator= (const StackVec& other)
+  {
+    if (this == &other)
+    {
+      return *this;
+    }
+
+    // The class to be assigned has only stack memory
+    if (other.ele == other.ssoStack)
+    {
+      // If we have heap memory, we delete it and point to the stack
+      if (ele != ssoStack)
       {
-        ele = new T[nEle];
+        delete [] ele;
+        ele = ssoStack;
+      }
+      // Then do the copy
+      memmove(ele, other.ele, other.size()*sizeof(T));
+    }
+    // The class to be assigned has heap memory
+    else
+    {
+      // If we have stack memory, we create new heap memory
+      if (ele == ssoStack)
+      {
+        ele = new T[other.size()];
+      }
+      // If we have heap memory, we make sure it is large enough
+      else
+      {
+        if (nEle < other.size())
+        {
+          delete [] ele;
+          ele = new T[other.size()];
+        }
       }
 
       memmove(ele, other.ele, other.size()*sizeof(T));
     }
 
-  StackVec& operator= (const StackVec& other)
+    // This goes last, otherwise we can't check against this classes size
+    nEle = other.nEle;
+
+    return *this;
+  }
+
+  inline size_t size() const
+  {
+    return nEle;
+  }
+
+  inline bool isHeap() const
+  {
+    return (ele==ssoStack) ? false : true;
+  }
+
+  ~StackVec()
+  {
+    if (ele != ssoStack)
     {
-      if (this == &other)
-      {
-        return *this;
-      }
+      delete[] ele;
+    }
+  }
 
-      // The class to be assigned has only stack memory
-      if (other.ele == other.ssoStack)
-      {
-        // If we have heap memory, we delete it and point to the stack
-        if (ele != ssoStack)
-        {
-          delete [] ele;
-          ele = ssoStack;
-        }
-        // Then do the copy
-        memmove(ele, other.ele, other.size()*sizeof(T));
-      }
-      // The class to be assigned has heap memory
-      else
-      {
-        // If we have stack memory, we create new heap memory
-        if (ele == ssoStack)
-        {
-          ele = new T[other.size()];
-        }
-        // If we have heap memory, we make sure it is large enough
-        else
-        {
-          if (nEle < other.size())
-          {
-            delete [] ele;
-            ele = new T[other.size()];
-          }
-        }
+  // We don't need these since we have overloaded the cast operator
+  // T& operator [](size_t i) { return ele[i]; }
+  // T operator [](size_t i) const { return ele[i]; }
 
-        memmove(ele, other.ele, other.size()*sizeof(T));
-      }
+  // We make this class behave as if it was a pointer to T. Therefore we
+  // don't necessarily need to overload the brackets operator necessarily.
+  operator T* () const
+  {
+    return ele;
+  }
 
-      // This goes last, otherwise we can't check against this classes size
-      nEle = other.nEle;
-
-      return *this;
+  bool operator==(const StackVec& other)
+  {
+    if (size() != other.size())
+    {
+      return false;
     }
 
-    inline size_t size() const
+    for (size_t i=0; i<size(); ++i)
     {
-      return nEle;
-    }
-
-    inline bool isHeap() const
-    {
-      return (ele==ssoStack) ? false : true;
-    }
-
-    ~StackVec()
-    {
-      if (ele != ssoStack)
-      {
-        delete[] ele;
-      }
-    }
-
-    // We don't need these since we have overloaded the cast operator
-    // T& operator [](size_t i) { return ele[i]; }
-    // T operator [](size_t i) const { return ele[i]; }
-
-    // We make this class behave as if it was a pointer to T. Therefore we
-    // don't necessarily need to overload the brackets operator necessarily.
-    operator T* () const
-    {
-      return ele;
-    }
-
-    bool operator==(const StackVec& other)
-    {
-      if (size() != other.size())
+      if (ele[i] != other.ele[i])
       {
         return false;
       }
-
-      for (size_t i=0;i<size(); ++i)
-      {
-        if (ele[i] != other.ele[i])
-        {
-          return false;
-        }
-      }
-
-      return true;
     }
 
-    bool operator!=(const StackVec& other)
-    {
-      return ! operator==(other);
-    }
+    return true;
+  }
+
+  bool operator!=(const StackVec& other)
+  {
+    return ! operator==(other);
+  }
 
 
-  private:
+private:
 
-    T* ele;
-    T ssoStack[NVAL];
-    size_t nEle;
-  };
+  T* ele;
+  T ssoStack[NVAL];
+  size_t nEle;
+};
 
 }
 

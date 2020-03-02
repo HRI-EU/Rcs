@@ -59,7 +59,7 @@ protected:
    *        torus
    */
   osg::ref_ptr<osg::Geode> createGeometry(double start_angle=0.0,
-                             double end_angle=2.0*M_PI) const;
+                                          double end_angle=2.0*M_PI) const;
 
   double _radius;
   double _thickness;

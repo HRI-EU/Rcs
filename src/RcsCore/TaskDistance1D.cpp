@@ -101,7 +101,7 @@ Rcs::TaskDistance1D::TaskDistance1D(RcsGraph* graph_,
   TaskDistance3D(graph_, effector, refBdy), index(idx)
 {
   switch (idx)
-    {
+  {
     case 0:
       setClassName("DistanceX");
       break;
@@ -116,7 +116,7 @@ Rcs::TaskDistance1D::TaskDistance1D(RcsGraph* graph_,
 
     default:
       RFATAL("Unsupported index %d - should be 0, 1 or 2", idx);
-    }
+  }
 
   setName("Dist1D " + std::string(effector ? effector->name : "NULL") + "-"
           + std::string(refBdy ? refBdy->name : "NULL"));

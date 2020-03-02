@@ -139,7 +139,7 @@ public:
 
   /*! \brief Prints out joint names etc to the console.
    */
-   virtual void print() const;
+  virtual void print() const;
 
 
 protected:

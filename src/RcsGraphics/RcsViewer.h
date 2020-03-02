@@ -204,8 +204,8 @@ public:
    */
   void setBackgroundColor(const char* color);
 
-    /*! \brief Returns the viewer thread's update frequency.
-   */
+  /*! \brief Returns the viewer thread's update frequency.
+  */
   double updateFrequency() const;
 
   /*! \brief Does all rendering. If the viewer's thread has been started

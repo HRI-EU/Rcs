@@ -1235,22 +1235,22 @@ void getGeodes(osg::Node* node, std::vector<osg::Geode*>& geodes)
 class NodeFinder : public osg::NodeVisitor
 {
 public:
-    NodeFinder(std::string nodeName) :
-      osg::NodeVisitor(osg::NodeVisitor::TRAVERSE_ALL_CHILDREN),
-      searchName(nodeName)
+  NodeFinder(std::string nodeName) :
+    osg::NodeVisitor(osg::NodeVisitor::TRAVERSE_ALL_CHILDREN),
+    searchName(nodeName)
   {
   }
 
-    virtual void apply(osg::Node& tNnode)
+  virtual void apply(osg::Node& tNnode)
+  {
+    if (searchName == tNnode.getName())
     {
-        if (searchName == tNnode.getName())
-        {
-            node = &tNnode;
-        }
-
-        // Keep traversing the rest of the scene graph.
-        traverse(tNnode);
+      node = &tNnode;
     }
+
+    // Keep traversing the rest of the scene graph.
+    traverse(tNnode);
+  }
 
   osg::Node* getNode()
   {
@@ -1258,8 +1258,8 @@ public:
   }
 
 protected:
-    std::string searchName;
-    osg::ref_ptr<osg::Node> node;
+  std::string searchName;
+  osg::ref_ptr<osg::Node> node;
 };
 
 osg::Node* findNamedNodeRecursive(osg::Node* root, std::string nodeName)

@@ -48,8 +48,8 @@
 ******************************************************************************/
 
 Rcs::CylinderNode::CylinderNode(const double center[3], double A_BI[3][3],
-                              const double radius, const double length,
-                              bool resizeable) : NodeBase()
+                                const double radius, const double length,
+                                bool resizeable) : NodeBase()
 {
   this->cylinder = new osg::Cylinder();
   cylinder->setRadius(radius);
