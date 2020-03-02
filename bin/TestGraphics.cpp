@@ -51,6 +51,7 @@
 #include <KeyCatcher.h>
 #include <Rcs_utils.h>
 #include <MeshNode.h>
+#include <TextNode3D.h>
 
 #include <osgGA/TrackballManipulator>
 #include <osgDB/Registry>
@@ -389,7 +390,6 @@ static bool test_meshify()
   argP.getArgument("-computeType", &computeType, "Compute type: 1 distance, "
                    "2 physics, 4 graphics, default is %d", computeType);
 
-  Rcs_addResourcePath("config");
   Rcs_addResourcePath(directory);
   RcsGraph* graph = RcsGraph_create(xmlFileName);
   RcsMeshData* allMesh = RcsGraph_meshify(graph, scale, computeType);
@@ -687,7 +687,6 @@ static void testCameraTransform()
   pthread_mutex_t mtx;
   pthread_mutex_init(&mtx, NULL);
 
-  Rcs_addResourcePath("config");
   Rcs_addResourcePath(directory);
 
   RcsGraph* graph = RcsGraph_create(xmlFileName);
@@ -837,6 +836,37 @@ static void testArrowNode()
 }
 
 /*******************************************************************************
+ * Test for 3d text
+ ******************************************************************************/
+static void testText3D()
+{
+  double org[3], dir[3], radius = 0.1, length = 1.0;
+  Vec3d_setZero(org);
+  Vec3d_setUnitVector(dir, 2);
+
+
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-x", &org[0], "X-position of arrow origin");
+  argP.getArgument("-y", &org[1], "Y-position of arrow origin");
+  argP.getArgument("-z", &org[2], "Z-position of arrow origin");
+  argP.getArgument("-r", &radius, "Radius of arrow");
+  argP.getArgument("-l", &length, "Length of arrow");
+
+  osg::ref_ptr<Rcs::TextNode3D> textNd = new Rcs::TextNode3D("My text");
+  textNd->setMaterial("RED");
+
+
+  Rcs::Viewer* viewer = new Rcs::Viewer();
+  viewer->add(new Rcs::COSNode());
+  viewer->add(textNd.get());
+  viewer->runInThread();
+
+  RPAUSE();
+
+  delete viewer;
+}
+
+/*******************************************************************************
  * Select test modes
  ******************************************************************************/
 int main(int argc, char** argv)
@@ -850,6 +880,8 @@ int main(int argc, char** argv)
   Rcs::CmdLineParser argP(argc, argv);
   argP.getArgument("-dl", &RcsLogLevel, "Debug level (default is 0)");
   argP.getArgument("-m", &mode, "Test mode");
+
+  Rcs_addResourcePath("config");
 
   switch (mode)
   {
@@ -871,6 +903,7 @@ int main(int argc, char** argv)
       printf("\t\t11   Test torus mesh\n");
       printf("\t\t12   Test cone mesh\n");
       printf("\t\t13   Test sphere swept rectangle mesh\n");
+      printf("\t\t14   Test 3d text\n");
       break;
 
     case 0:
@@ -949,6 +982,12 @@ int main(int argc, char** argv)
     case 13:
     {
       test_ssrMesh();
+      break;
+    }
+
+    case 14:
+    {
+      testText3D();
       break;
     }
 

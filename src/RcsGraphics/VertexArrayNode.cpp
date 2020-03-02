@@ -52,7 +52,7 @@
  ******************************************************************************/
 Rcs::VertexArrayNode::VertexArrayNode(osg::PrimitiveSet::Mode mode_,
                                       const std::string& color) :
-  NodeBase(), mode(mode_), points(NULL), nPoints(0), mat(NULL)
+  NodeBase(), mode(mode_), points(NULL), nPoints(0), mat(NULL), myMat(NULL)
 {
   init(color);
 }
@@ -63,7 +63,8 @@ Rcs::VertexArrayNode::VertexArrayNode(osg::PrimitiveSet::Mode mode_,
 Rcs::VertexArrayNode::VertexArrayNode(const double* points_, size_t nPoints_,
                                       osg::PrimitiveSet::Mode mode_,
                                       const std::string& color) :
-  NodeBase(), mode(mode_), points(points_), nPoints(nPoints_), mat(NULL)
+  NodeBase(), mode(mode_), points(points_), nPoints(nPoints_),
+  mat(NULL), myMat(NULL)
 {
   init(color);
 }
@@ -75,9 +76,17 @@ Rcs::VertexArrayNode::VertexArrayNode(const MatNd* mat_,
                                       osg::PrimitiveSet::Mode mode_,
                                       const std::string& color)
   : NodeBase(), mode(mode_), points(mat_ ? mat_->ele : NULL),
-    nPoints(mat_ ? mat_->m : 0), mat(mat_)
+    nPoints(mat_ ? mat_->m : 0), mat(mat_), myMat(NULL)
 {
   init(color);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+Rcs::VertexArrayNode::~VertexArrayNode()
+{
+  MatNd_destroy(this->myMat);   // Accepts NULL arg
 }
 
 /*******************************************************************************
@@ -160,6 +169,21 @@ bool Rcs::VertexArrayNode::setPoints(const MatNd* mat_)
   }
   this->mat = mat_;
   return setPoints(mat_->ele, mat_->m);
+}
+
+/*******************************************************************************
+ * Copies and sets a point array.
+ ******************************************************************************/
+bool Rcs::VertexArrayNode::copyPoints(const MatNd* mat_)
+{
+  if (mat_==NULL)
+  {
+    RLOG(4, "Matrix is NULL - skipping copyPoints()");
+    return false;
+  }
+  
+  this->mat = mat_;
+  return takePointsOwnership();
 }
 
 /*******************************************************************************
@@ -327,4 +351,19 @@ void Rcs::VertexArrayNode::setManualUpdate(bool enabled)
 void Rcs::VertexArrayNode::performUpdate()
 {
   this->perform_update = true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::VertexArrayNode::takePointsOwnership()
+{
+  if (myMat == mat)
+    {
+      return true;   // already owner
+    }
+
+  myMat = MatNd_clone(mat);
+  
+  return setPoints(myMat);
 }

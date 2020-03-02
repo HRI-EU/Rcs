@@ -46,7 +46,7 @@
  ******************************************************************************/
 Rcs::BoxNode::BoxNode() : NodeBase()
 {
-  osg::Box* box = new osg::Box();
+  this->box = new osg::Box();
   osg::ShapeDrawable* shape = new osg::ShapeDrawable(box);
   osg::Geode* geode = new osg::Geode();
   geode->addDrawable(shape);

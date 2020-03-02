@@ -86,16 +86,19 @@ public:
   VertexArrayNode(const MatNd* points,
                   osg::PrimitiveSet::Mode mode=osg::PrimitiveSet::LINES,
                   const std::string& color = "RED");
+  virtual ~VertexArrayNode();
   bool setPoints(const double* points, size_t nPoints);
 
   /*! \brief Array mat must be shaped nPoints x 2 or nPoints x 3.
    */
   bool setPoints(const MatNd* mat);
+  bool copyPoints(const MatNd* mat);
   bool setColor(const std::string& color);
   bool setPointSize(float pointSize);
   void setLighting(bool enabled);
   void setManualUpdate(bool enabled);
   void performUpdate();
+  bool takePointsOwnership();
 
 protected:
 
@@ -112,6 +115,7 @@ protected:
   const double* points;
   size_t nPoints;
   const MatNd* mat;
+  MatNd* myMat;
   bool manual_update;
   bool perform_update;
 };
