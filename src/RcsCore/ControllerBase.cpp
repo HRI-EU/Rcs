@@ -63,7 +63,6 @@ Rcs::ControllerBase::ControllerBase(const std::string& xmlDescription,
   name("Unknown controller"),
   xmlFile(xmlDescription)
 {
-  // Copy the XML file name
   char txt[256];
   bool fileExists = Rcs_getAbsoluteFileName(xmlDescription.c_str(), txt);
 
@@ -1696,7 +1695,7 @@ static void thresholdFtSensor(double* S_ft_f,
  *    f_task = J_task (J_sensor1# f_sensor1 + J_sensor2# f_sensor2 ...)
  *
  ******************************************************************************/
-void Rcs::ControllerBase::computeTaskForce_org(MatNd* ft_task,
+void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
                                                const MatNd* activation) const
 {
   size_t nx = activation ? getActiveTaskDim(activation) : getTaskDim();
@@ -2021,74 +2020,6 @@ void Rcs::ControllerBase::computeAdmittance(MatNd* compliantFrame,
 
 }
 
-
-/*******************************************************************************
- * Computes the attractor control law to decay the Delta between compliant frame
-   and task frame.
- ******************************************************************************/
-void Rcs::ControllerBase::decayComplainceDelta(MatNd* dx_cmp,
-                                               const MatNd* dx_des_cmp,
-                                               const MatNd* K_att)
-{
-  // compute error between desired delta 'task' vector and current
-  MatNd* e_cmp = MatNd_create(getTaskDim(), 1);
-  MatNd_sub(e_cmp, dx_des_cmp, dx_cmp);
-
-
-  MatNd* temp_x_cmp = MatNd_create(getTaskDim(), 1);
-  // multiply error with attractor gain
-  MatNd_eleMul(temp_x_cmp, e_cmp, K_att);
-  // uddate Delta complaint 'task' vector
-  MatNd_addSelf(dx_cmp, temp_x_cmp);
-
-  MatNd_destroy(e_cmp);
-  MatNd_destroy(temp_x_cmp);
-}
-
-void Rcs::ControllerBase::genSecondOrderFilter4Sensors(std::vector<SecondOrderLPFND*>* SecOrderFilters_vec,
-                                                       double tmc, double dt)
-{
-  RCSGRAPH_TRAVERSE_SENSORS(this->graph)
-  {
-    if (SENSOR->type != RCSSENSOR_LOAD_CELL)
-    {
-      continue;
-    }
-    RcsSensor* loadCell = SENSOR;
-    // Here read the window size of the filter from the xml (PENDING!!!!)
-    SecondOrderLPFND* secOrderfilt = new SecondOrderLPFND(loadCell->rawData->ele,
-                                                          tmc, dt,
-                                                          loadCell->rawData->size);
-    SecOrderFilters_vec->push_back(secOrderfilt);
-
-  }
-
-}
-
-
-
-/******************************************************************************
- * initialiser of a vector of filters.
- * generates a filter for each LOAD_CELL sensor that the graph has
- *****************************************************************************/
-void Rcs::ControllerBase::genMedianFilter4Sensors(std::vector<MedianFilterND*>* MedFilters_vec)
-{
-
-  RCSGRAPH_TRAVERSE_SENSORS(this->graph)
-  {
-    if (SENSOR->type != RCSSENSOR_LOAD_CELL)
-    {
-      continue;
-    }
-    RcsSensor* loadCell = SENSOR;
-    // Here read the window size of the filter from the xml (PENDING!!!!)
-    MedianFilterND* meanfilt = new MedianFilterND(1, loadCell->rawData->ele, loadCell->rawData->size);
-    MedFilters_vec->push_back(meanfilt);
-
-  }
-
-}
-
 /*******************************************************************************
  *
  * Computes the current task forces. Here's what we do:
@@ -2100,6 +2031,7 @@ void Rcs::ControllerBase::genMedianFilter4Sensors(std::vector<MedianFilterND*>* 
  *    with J_task J_task# = I , we get f_task = J_task J_sensor# f_sensor
  *
  ******************************************************************************/
+#if 0
 void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
                                            const MatNd* activation,
                                            // std::vector<MedianFilterND*>* MedFilters_vec,
@@ -2277,6 +2209,7 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
   MatNd_destroy(pinvJ_sensor);
   MatNd_destroy(J_task);
 }
+#endif
 
 /*******************************************************************************
  *

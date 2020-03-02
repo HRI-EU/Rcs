@@ -1104,6 +1104,8 @@ bool testHTr(int argc, char** argv)
   RFREE(A_2I);
   RFREE(A_21);
 
+
+
   RLOGS(1, "%s testing HTr transforms", success ? "SUCCESS" : "FAILURE");
 
   return success;

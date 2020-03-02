@@ -47,8 +47,6 @@
 #include "Task.h"
 #include "Rcs_collisionModel.h"
 
-#include "Rcs_filters.h"
-
 
 
 namespace Rcs
@@ -70,15 +68,16 @@ class ControllerBase
 public:
 
   /*! \brief Constructor based on xml parsing. The file xmlDescription must
-   *         contain the controller definition. The flag xmlParsingFinished
-   *         indicates if the xml file should be closed in this class, or
-   *         left open. The latter is needed for derieved classes that have to
-   *         parse additional data from the xml file. If you are instantiating
-   *         this class directly, it should be set to true (the default).
+   *         contain the file name of the controller definition, or a string 
+   *         containing the xml description itself. The flag 
+   *         xmlParsingFinished indicates if the xml file should be closed in 
+   *         this class, or left open. The latter is needed for derieved classes
+   *         that have to parse additional data from the xml file. If you are 
+   *         instantiating this class directly, it should be set to true (the
+   *         default).
    */
   ControllerBase(const std::string& xmlDescription,
                  bool xmlParsingFinished=true);
-
 
   /*! \brief Constructor based on a graph. The new class takes ownership of the
    *         given graph. Use this if you only want to add tasks manually using
@@ -88,16 +87,16 @@ public:
   ControllerBase(RcsGraph* graph);
 
   /*! \brief Copy constructor doing deep copying. The new class owns a deep
-   *         copy of the graph.
+   *         copy of the graph and the collision model (if any).
    */
   ControllerBase(const ControllerBase& copyFromMe);
 
-
-  /*! \brief Assignment operator
+  /*! \brief Assignment operator. The new class owns a deep copy of the graph
+   *         and the collision model (if any).
    */
   ControllerBase& operator= (const ControllerBase& copyFromMe);
 
-  /*! \brief Destructor.
+  /*! \brief Deletes all tasks and frees all memory.
    */
   virtual ~ControllerBase();
 
@@ -600,38 +599,39 @@ public:
                                        const MatNd* a_des=NULL,
                                        const MatNd* W=NULL) const;
 
-  /*! \brief Inits the a vector of Median filters with the size, the number of sensors.
-  *          for each sensor a Median filter is initialised.
-  *          initialises a std::vector of MedianFilterND
+  /*! \brief Computes the current task forces based on the values of all FT sensors:
+   *         f_task = J_task (J_sensor1# f_sensor1 + J_sensor2# f_sensor2 ...
+   *
+   *  \param[in] ft_task   Force in task coordinates. 
+   *  \param[in] a_des  The activation vector is NULL, or of dimension
+   *                    [allTasks x 1]. If it is NULL, the function returns the
+   *                    ft_task vector for all tasks. If it is not NULL,
+   *                    only the dimensions of the tasks are counted that have
+   *                    a larger activation than 0.
   */
-  virtual void genMedianFilter4Sensors(std::vector<MedianFilterND*>* MedFilters_vec);
-  virtual void genSecondOrderFilter4Sensors(std::vector<SecondOrderLPFND*>* SecOrderFilters_vec,
-                                            double tmc, double dt);
-
   virtual void computeTaskForce(MatNd* ft_task,
-                                const MatNd* activation=NULL,
-                                // std::vector<MedianFilterND*>* MedFilters_vec=NULL,
-                                std::vector<SecondOrderLPFND*>* secOrderfilt=NULL,
-                                double* s_ftL=NULL, double* s_ft_fL=NULL,
-                                double* s_ftR=NULL, double* s_ft_fR=NULL) const;
-
-  virtual void computeTaskForce_org(MatNd* ft_task,
                                     const MatNd* activation=NULL) const;
 
-  // static void thresholdSensor(double* S_ft_f,
-  //                           const double* S_ft,
-  //                           const MatNd* f_treshold,
-  //                           const unsigned int ftDim) const;
-
-  virtual void computeAdmittance(MatNd* compliantFrame,
+  /*! \brief Computes the displacement of a compliant frame based on an
+   *         admittance control law.
+   *
+   *  \param[out] compliantVec Vector of compliant task coordinates. The 
+   *                           function adds a small displacement to it. 
+   *                           The caller has to make sure it is consistent
+   *                           over time. One can imagine this vector as the
+   *                           task space equivalent to a compliance frame.
+   *  \param[in] ft_task   Desired force in task coordinates. 
+   *  \param[in] Kp        Position gain for admittance 
+   *  \param[in] a_des  The activation vector is NULL, or of dimension
+   *                    [allTasks x 1]. If it is NULL, the function returns the
+   *                    compliant displacements for all tasks. If it is not NULL,
+   *                    only the dimensions of the tasks are counted that have
+   *                    a larger activation than 0.
+   */
+  virtual void computeAdmittance(MatNd* compliantVec,
                                  const MatNd* ft_task,
-                                 const MatNd* Kp_ext,
+                                 const MatNd* Kp,
                                  const MatNd* a_des);
-
-  // what about const function ?
-  virtual void decayComplainceDelta(MatNd* dx_cmp,
-                                    const MatNd* dx_des_cmp,
-                                    const MatNd* K_att);
 
   /*! \brief Returns the name of the controller as indicated in the xml
    *         file.

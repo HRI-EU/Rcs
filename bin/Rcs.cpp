@@ -91,6 +91,7 @@
 #include <Rcs_body.h>
 #include <Rcs_shape.h>
 #include <Rcs_utils.h>
+#include <Rcs_filters.h>
 #include <IkSolverConstraintRMR.h>
 #include <SolverRAC.h>
 #include <TaskFactory.h>

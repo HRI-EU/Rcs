@@ -22,17 +22,8 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
-MESSAGE(STATUS "Using cmake ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}")
-
-IF("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
-  MESSAGE(STATUS "Compiler is: Clang")
-ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-  MESSAGE(STATUS "Compiler is: GNU")
-ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-  MESSAGE(STATUS "Compiler is: Intel")
-ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-  MESSAGE(STATUS "Compiler is: MSVC")
-ENDIF()
+MESSAGE(STATUS "Using cmake ${CMAKE_VERSION}")
+MESSAGE(STATUS "Compiler is: ${CMAKE_CXX_COMPILER_ID}")
 
 ################################################################################
 #
@@ -43,31 +34,37 @@ ENDIF()
 # This needs to go before including the sub directories, since they 
 # partially create links /copies inside the config directory
 #
+# When unpacking the linux source under windows, symbolic links are
+# interpreted as files. In this case, we delete the file, otherwise there
+# will be no copying dones.
+#
 ################################################################################
-IF(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/config")
+SET(CFG_FROM ${CMAKE_CURRENT_SOURCE_DIR}/config)
+SET(CFG_TO ${PROJECT_BINARY_DIR}/config)
 
+IF (WIN32 AND (NOT IS_DIRECTORY "${CFG_TO}") AND (EXISTS "${CFG_TO}"))
+  MESSAGE(STATUS "Removing non-directory ${CONFIG_DST_DIR}")
+  FILE(REMOVE ${CONFIG_DST_DIR})
+ENDIF()
+
+IF(NOT EXISTS "${CFG_TO}")
   IF(UNIX)
     SET(CONFIGDIR_COPY_COMMAND create_symlink)
-    MESSAGE(STATUS "Linking config directory")
+    MESSAGE(STATUS "Linking config directory from ${CFG_FROM} to ${CFG_TO}")
   ELSE()
     SET(CONFIGDIR_COPY_COMMAND copy_directory)
-    MESSAGE(STATUS "Copying config directory")
+    MESSAGE(STATUS "Copying config directory from ${CFG_FROM} to ${CFG_TO}")
   ENDIF()
 
   EXECUTE_PROCESS (COMMAND
-   ${CMAKE_COMMAND} -E ${CONFIGDIR_COPY_COMMAND}
-   ${PROJECT_SOURCE_DIR}/config
-   ${CMAKE_CURRENT_BINARY_DIR}/config)
-
+   ${CMAKE_COMMAND} -E ${CONFIGDIR_COPY_COMMAND} ${CFG_FROM} ${CFG_TO})
 ELSE()
-
-  MESSAGE(STATUS "Config directory already exists - skipping")
-
+  MESSAGE(STATUS "Config directory ${CFG_TO} already exists - skipping")
 ENDIF()
 
 ################################################################################
 #
-# Create shared libraries for Linux, and static ones for Windows
+# Create shared libraries for Linux and Windows
 # For CMake 3.4 and higher, there is an easy way to create windows dlls. For
 # details, see http://www.kitware.com/blog/home/post/939
 #
@@ -79,15 +76,15 @@ ENDIF()
 
 IF(WIN32)
   MESSAGE("We are on a windows machine")
-  IF(CMAKE_MAJOR_VERSION STREQUAL "3" AND CMAKE_MINOR_VERSION STREQUAL "4")
-    MESSAGE("Found CMake version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}: Creating windows dlls")
+  IF (CMAKE_VERSION VERSION_LESS 3.4)
+    MESSAGE(FATAL_ERROR "CMake version too old, at least 3.4 is needed")
+  ELSE()
+    MESSAGE("Creating windows dlls")
     SET(LIBRARY_LINKING_TYPE "SHARED")
     SET(BUILD_SHARED_LIBS ON)
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     SET(CREATE_WIN_DLL TRUE)
     ADD_DEFINITIONS(-DWIN_DLL)
-  ELSE()
-    MESSAGE(FATAL_ERROR "Found CMake version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}, but at least 3.4 is needed")
   ENDIF()
 ENDIF(WIN32)
 
@@ -129,16 +126,26 @@ IF(${CMAKE_BUILD_TYPE} STREQUAL "Release" AND NOT ENABLE_DEBUG_MACROS)
   MESSAGE(STATUS "Compiling in RELEASE mode, debug macros DISABLED")
 ENDIF()
 
-# Add the automatically determined parts of the RPATH which point to 
-# directories outside the build tree to the install RPATH. Required for Vortex
-# and other stuff from the SIT.
+################################################################################
+#
+# Add the automatically determined parts of the RPATH which point to directories
+# outside the build tree to the install RPATH. Required for Vortex and other
+# dependencies from the SIT.
 # Note: This only works with CMake >= 3.0. With 2.8, the library directories of
 # the dependencies must be added to the LD_LIBRARY_PATH manually in oredr to
 # use the installed executables. This has no effect on using the package in
 # another CMake project.
+#
+################################################################################
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+################################################################################
+#
 # The RPATH to be used when installing, but only if it's not a system directory
-# Source: CMake wiki (https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/RPATH-handling)
+# See CMake wiki:
+# (https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/RPATH-handling)
+#
+################################################################################
 LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
 IF("${isSystemDir}" STREQUAL "-1")
    SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
@@ -170,7 +177,7 @@ ENDFUNCTION()
 
 ################################################################################
 #
-# If a user-file is in the cmake directory, it will be called
+# If a user-file is in the cmake directory, it will be included.
 #
 ################################################################################
 SET(USER_LIST "${PROJECT_SOURCE_DIR}/cmake/CMakeLists-$ENV{USER}.txt")
@@ -187,7 +194,6 @@ ENDIF()
 # Add source code directories
 #
 ################################################################################
-
 ADD_SUBDIRECTORY (src)
 ADD_SUBDIRECTORY (bin)
 ADD_SUBDIRECTORY (examples)
