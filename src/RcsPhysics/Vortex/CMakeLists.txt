@@ -19,6 +19,8 @@ IF(RCSVORTEX_MASTER_PROJECT)
   LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../../cmake)
   INCLUDE(Externals)
   INCLUDE(CompileSettings)
+  FIND_PACKAGE(Vortex REQUIRED)
+  FIND_PACKAGE(LibXml2 REQUIRED)
 
   SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
@@ -47,9 +49,10 @@ IF (WIN32)
   TARGET_LINK_LIBRARIES(RcsVortex RcsCore ${VORTEX_LIBRARIES})
 ENDIF()
 
-# We intentionally do not link against Vortex and RcsCore. This allows the resulting library to use the version available
-# at runtime. The linker needs us to specify vortex libraries explicitly anyways. Thus, a single prebuilt binary can be
-# used with any vortex installation.
+# We intentionally do not link against Vortex and RcsCore. This allows the
+# resulting library to use the version available at runtime. The linker
+# needs us to specify vortex libraries explicitly anyways. Thus, a single
+# prebuilt binary can be used with any vortex installation.
 IF(RCSVORTEX_MASTER_PROJECT)
   TARGET_LINK_LIBRARIES(RcsVortex ${VORTEX_LIBRARIES})
 ENDIF()
@@ -63,5 +66,7 @@ SET_TARGET_PROPERTIES(RcsVortex PROPERTIES CXX_VISIBILITY_PRESET "hidden")
 
 # The install command is used to put the library into Rcs' own library dir.
 IF(NOT RCSVORTEX_MASTER_PROJECT)
-INSTALL(TARGETS RcsVortex DESTINATION ${RCSVORTEX_INSTALL_LIBDIR})
+  #INSTALL(TARGETS RcsVortex DESTINATION ${RCSVORTEX_INSTALL_LIBDIR})
 ENDIF()
+
+INSTALL(FILES ${PROJECT_BINARY_DIR}/libRcsVortex.so DESTINATION ${RCSVORTEX_INSTALL_LIBDIR})

@@ -5,10 +5,11 @@ FIND_PACKAGE(Vortex)
 IF(USE_VORTEX AND VORTEX_FOUND)
   SET(RCSVORTEX_LIBRARY ${LIBRARY_OUTPUT_PATH}/libRcsVortex.so)
   IF(WIN32 OR CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5.0")
-    # GCC 4.8, we can simply include the vortex library. The same goes for any windows system.
+    # GCC 4.8, we can simply include the vortex library. The same goes for any
+    # windows system.
     ADD_SUBDIRECTORY(Vortex)
-    # Do not use RcsVortex as target dependency, to avoid export problems. The dependency must be added manually for
-    # the external project anyways.
+    # Do not use RcsVortex as target dependency, to avoid export problems. The
+    # dependency must be added manually for the external project anyways.
   ELSE()
     # We need to check if the right GCC is available
     FIND_PROGRAM(GCC_48 "gcc-4.8")
@@ -19,7 +20,10 @@ IF(USE_VORTEX AND VORTEX_FOUND)
 
       ExternalProject_Add(RcsVortex
           SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Vortex
+        INSTALL_DIR ${LIBRARY_OUTPUT_PATH}
+        #INSTALL_COMMAND cmake -E echo "Skipping install step."
           CMAKE_CACHE_ARGS
+            -DCMAKE_INSTALL_PREFIX:${INSTALL_DIR}
             -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
             -DCMAKE_C_COMPILER:PATH=${GCC_48}
             -DCMAKE_CXX_COMPILER:PATH=${GXX_48}
@@ -91,7 +95,7 @@ IF(USE_BULLET)
   TARGET_COMPILE_DEFINITIONS(RcsPhysics PRIVATE ${BULLET_DEFINITIONS})
 ENDIF(USE_BULLET)
 
-IF(USE_VORTEX)
+IF(USE_VORTEX AND VORTEX_FOUND)
   # Link RcsVortex library here, so RcsPhysics is still the goto dependency for it.
   # Use no-as-needed to make sure the library is loaded, only then will the physics engine be registered.
   IF (UNIX)
