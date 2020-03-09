@@ -52,9 +52,10 @@
 Rcs::IkSolverConstraintRMR::IkSolverConstraintRMR(Rcs::ControllerBase* ctrl) :
   IkSolverRMR(ctrl)
 {
+  // Store original tasks in activeSet
   this->activeSet = controller->getTasks();
 
-  // Active set constraints for collisions
+  // Append active set constraints for collisions
   if (controller->getCollisionMdl())
   {
     RCSPAIR_TRAVERSE(controller->getCollisionMdl()->pair)
@@ -64,10 +65,11 @@ Rcs::IkSolverConstraintRMR::IkSolverConstraintRMR(Rcs::ControllerBase* ctrl) :
       Task* ti = new TaskDistance(controller->getGraph(), PAIR->b1, PAIR->b2);
       RCHECK(ti->getDim() == 1);
       controller->add(ti);
+      augmentedTasks.push_back(ti);
     }
   }
 
-  // Active set constraints for joint limits
+  // Append active set constraints for joint limits
   RCSGRAPH_TRAVERSE_JOINTS(controller->getGraph())
   {
     if (JNT->constrained || JNT->coupledTo)
@@ -104,11 +106,12 @@ Rcs::IkSolverConstraintRMR::IkSolverConstraintRMR(Rcs::ControllerBase* ctrl) :
       Task* ti = new TaskJoint(controller->getGraph(), JNT);
       RCHECK(ti->getDim() == 1);
       controller->add(ti);
+      augmentedTasks.push_back(ti);
     }
   }
   RLOG_CPP(5, "Added " << activeSet.size() << " constraints");
 
-  // Update with added active set constraints
+  // Restore original tasks and store augmented ones in active set constraints
   controller->swapTaskVec(activeSet);
 
   RLOG(5, "activeSet: %zu   tasks: %zu",
@@ -127,9 +130,9 @@ Rcs::IkSolverConstraintRMR::IkSolverConstraintRMR(Rcs::ControllerBase* ctrl) :
  ******************************************************************************/
 Rcs::IkSolverConstraintRMR::~IkSolverConstraintRMR()
 {
-  for (size_t i=controller->getNumberOfTasks(); i<activeSet.size(); ++i)
+  for (size_t i=0; i<augmentedTasks.size(); ++i)
   {
-    delete activeSet[i];
+    delete augmentedTasks[i];
   }
 }
 

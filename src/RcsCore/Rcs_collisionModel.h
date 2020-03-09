@@ -138,6 +138,13 @@ bool RcsCollisionMdl_getPointers(const RcsCollisionMdl* self,
 double RcsCollisionMdl_getMinDist(const RcsCollisionMdl* self);
 
 /*! \ingroup RcsCollisionMdlFunctions
+ *  \brief Same as \ref RcsCollisionMdl_getMinDist(), but copies the pairs
+ *         index into pairIdx.
+ */
+double RcsCollisionMdl_getMinDistPair(const RcsCollisionMdl* self,
+                                      int* pairIdx);
+
+/*! \ingroup RcsCollisionMdlFunctions
  *  \brief Returns the collision cost, summed over all pairs. This function
  *         reads the values of distances etc. from the data structure. In
  *         order to be up to date, the RcsCollisionMdl_compute() function

@@ -19,7 +19,7 @@
 
   <Body name="knuck3" prev="sdh-base" physics="dynamic" mass="0.04" 
         inertia="0.00000993 0 0 0 0.0000045 0 0 0 0.00000993" >
-    <Joint name="knuck3-base" range="-90 45 90" xweightMetric="0.05" 
+    <Joint name="knuck3-base" range="0 45 90" xweightMetric="0.05" 
 	   type="RotZ" transform="0.019052 0.033 0.089 0 0 180" 
 	   speedLimit="210" coupledTo="knuck1-base" couplingFactor="1 "/>
     <Shape type="MESH" distance="false" physics="false" graphics="true" 

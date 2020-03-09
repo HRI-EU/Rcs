@@ -546,6 +546,14 @@ bool RcsCollisionMdl_getPointers(const RcsCollisionMdl* self,
  ******************************************************************************/
 double RcsCollisionMdl_getMinDist(const RcsCollisionMdl* self)
 {
+  return RcsCollisionMdl_getMinDistPair(self, NULL);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+double RcsCollisionMdl_getMinDistPair(const RcsCollisionMdl* self, int* pairIdx)
+{
   double d = DBL_MAX;
 
   if (self == NULL || self->pair == NULL)
@@ -553,13 +561,19 @@ double RcsCollisionMdl_getMinDist(const RcsCollisionMdl* self)
     return d;
   }
 
-
+  int count = 0;
   RCSPAIR_TRAVERSE(self->pair)
   {
     if (PAIR->distance < d)
     {
       d = PAIR->distance;
+      if (pairIdx)
+      {
+        *pairIdx = count;
     }
+    }
+
+    count++;
   }
 
   return d;

@@ -288,6 +288,9 @@ char* String_fromDouble(char* str, double value, unsigned int maxDigits)
   return String_fromDouble_old(str, value, maxDigits);
 #endif
 
+  // We can't use this, since the radix character (.) depends on the locale.
+  //return gcvt(value, maxDigits, str);
+
   int decpt, sign;
 
 #if defined (_MSC_VER)

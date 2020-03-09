@@ -672,7 +672,9 @@ public:
   bool getModelState(MatNd* q, const char* modelStateName, int timeStamp=0);
 
   bool checkLimits(bool checkJointLimits=true, bool checkCollisions=true,
-                   bool checkJointVelocities=true) const;
+                   bool checkJointVelocities=true,
+                   double jlMargin=0.0, double collMargin=0.0,
+                   double speedMargin=0.0) const;
 
   void swapTaskVec(std::vector<Task*>& newTasks,
                    bool recomputeArrayIndices=false);

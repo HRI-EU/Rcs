@@ -249,3 +249,14 @@ void Quat_fromEulerAngles(double q[4], const double ea[3])
   q[2] = -s1*s3*c2 + s2*c1*c3;
   q[3] =  s1*s2*c3 + s3*c1*c2;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Quat_toEulerAngles(double ea[3], const double q[4])
+{
+  double rm[3][3];
+
+  Quat_toRotationMatrix(rm, q);
+  Mat3d_toEulerAngles(ea, rm);
+}

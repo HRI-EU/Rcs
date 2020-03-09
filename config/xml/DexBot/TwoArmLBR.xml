@@ -42,7 +42,7 @@
 
 
 
-    <Shape type="BOX" extents="0.085 0.158 0.4" transform="-0.0725 0 0 0 0 0" physics="true" graphics="false" distance="false" textureFile="textures/StainedMetal.png" />
+    <Shape type="BOX" extents="0.085 0.158 0.4" transform="-0.0725 0 0 0 0 0" physics="true" graphics="false" distance="false" textureFile="textures/aluminium-profile.jpg" />
     <Shape type="BOX" extents="0.08 0.2 0.2"      distance="false" graphics="false"  physics="true" transform="0.01 0 0.1 0 0 0"    textureFile="textures/aluminium-profile.jpg" />
     <Shape type="BOX" extents="0.04 0.75 0.2"  transform="0.17 0 0.1 0 0 0"    graphics="false" physics="true" distance="false" textureFile="textures/aluminium-profile.jpg" />
     <xShape type="FRAME" scale="0.5" />

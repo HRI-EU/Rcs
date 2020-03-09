@@ -122,7 +122,8 @@ double Quat_normalizeSelf(double q[4]);
 
 /*! \ingroup RcsQuaternionFunctions
  *  \brief Converts the quaternion q [qw qx qy qz] to a rotation matrix in
- *         row-major form.
+ *         row-major form. This function always succeeds. It expects a
+ *         normalized quaternion as input. This is not checked.
  *
  *  \param[out]  A_BI   Rotation matrix in row-major form
  *  \param[in]   q      Quaternion in ordering [qw qx qy qz]
@@ -144,12 +145,22 @@ bool Quat_fromRotationMatrix(double q[4], double rm[3][3]);
 
 /*! \ingroup RcsQuaternionFunctions
  *  \brief Converts a set of Euler angles (x-y-z order) to a quaternion
- *         q [qw qx qy qz].
+ *         q [qw qx qy qz]. This function always succeeds.
  *
  *  \param[out]  q      Quaternion in ordering [qw qx qy qz]
  *  \param[in]   ea     Euler angles
  */
 void Quat_fromEulerAngles(double q[4], const double ea[3]);
+
+/*! \ingroup RcsQuaternionFunctions
+ *  \brief Converts a quaternion q [qw qx qy qz] to a set of Euler angles
+ *         (x-y-z order). This function always succeeds. It expects a
+ *         normalized quaternion as input. This is not checked.
+ *
+ *  \param[out] ea     Normalized quaternion in ordering [qw qx qy qz]
+ *  \param[in]  q      Euler angles
+ */
+void Quat_toEulerAngles(double ea[3], const double q[4]);
 
 
 

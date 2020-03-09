@@ -77,7 +77,8 @@ static void quit(int /*sig*/)
 /******************************************************************************
  *
  *****************************************************************************/
-static bool test_stringSplit(std::string src, std::string delim, size_t expectedSize)
+static bool test_stringSplit(std::string src, std::string delim,
+                             size_t expectedSize)
 {
   RMSG("Delimiter:       %s", delim.c_str());
   RMSG("Original string: \"%s\"", src.c_str());
@@ -196,7 +197,8 @@ static bool test_mesh()
   RLOG(0, "Merging meshes");
   RcsMesh_add(mesh1, mesh2);
   bool success = RcsMesh_toFile(mesh1, "MergedMesh.stl");
-  RLOG(0, "Merging mesh %s - see file MergedMesh.stl", success ? "succeeded" : "failed");
+  RLOG(0, "Merging mesh %s - see file MergedMesh.stl",
+       success ? "succeeded" : "failed");
   success = RcsMesh_toFile(mesh2, "ShiftedMesh.stl");
 
   RcsMesh_destroy(mesh1);
@@ -327,6 +329,23 @@ static bool test_countSubStrings()
 /******************************************************************************
  *
  *****************************************************************************/
+static bool test_DoubleToString()
+{
+  int digits = 8;
+  double value = M_PI;
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-digits", &digits, "Digits (default is %d)", digits);
+  argP.getArgument("-value", &value, "Value (default is %g)", value);
+
+  char buf[512];
+  RMSG("%f = \"%s\"", value, String_fromDouble(buf, value, digits));
+  RMSG("len: %d", strlen(buf));
+  return true;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
 int main(int argc, char** argv)
 {
   int mode = 0;
@@ -360,6 +379,7 @@ int main(int argc, char** argv)
       fprintf(stderr, "\t\t5   Locale-independent parsing test\n");
       fprintf(stderr, "\t\t6   Sub-strings in string counting test\n");
       fprintf(stderr, "\t\t7   Test string-splitting\n");
+      fprintf(stderr, "\t\t8   Test double to string conversion\n");
       fprintf(stderr, "\n\nResource path:\n");
       Rcs_printResourcePath();
       break;
@@ -431,6 +451,12 @@ int main(int argc, char** argv)
       RMSG("%s", (success ? "Pass" : "Fail"));
       success = test_stringSplit("$$$$$$$$$$$", "$$", 1);
       RMSG("%s", (success ? "Pass" : "Fail"));
+      break;
+    }
+
+    case 8:
+    {
+      success = test_DoubleToString();
       break;
     }
 

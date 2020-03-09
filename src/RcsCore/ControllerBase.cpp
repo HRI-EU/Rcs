@@ -2243,7 +2243,10 @@ bool Rcs::ControllerBase::getModelState(MatNd* q, const char* modelStateName,
  ******************************************************************************/
 bool Rcs::ControllerBase::checkLimits(bool checkJointLimits,
                                       bool checkCollisions,
-                                      bool checkJointVelocities) const
+                                      bool checkJointVelocities,
+                                      double jlMargin,
+                                      double collMargin,
+                                      double speedMargin) const
 {
   bool success = true;
 
@@ -2268,7 +2271,7 @@ bool Rcs::ControllerBase::checkLimits(bool checkJointLimits,
   // declared to be const.
   if (checkCollisions && getCollisionMdl())
   {
-    const double distLimit = 0.001;
+    const double distLimit = collMargin;
     double minDist = RcsCollisionMdl_getMinDist(getCollisionMdl());
     if (minDist < distLimit)
     {

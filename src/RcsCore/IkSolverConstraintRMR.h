@@ -64,6 +64,7 @@ public:
 protected:
 
   std::vector<Task*> activeSet;
+  std::vector<Task*> augmentedTasks;
 };
 
 

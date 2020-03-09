@@ -200,7 +200,7 @@ const HTr* HTr_identity();
  *  \brief Writes the contents of a given HTr into a given string(char*) as
  *         one line
  *
- *  Length of the string should be at least 30 * 12 = 360 chars to assure
+ *  Length of the string should be at least 15 * 12 = 180 chars to assure
  *  there no invalid write
  */
 void HTr_toString(char* str, const HTr* A);
