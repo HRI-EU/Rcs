@@ -617,7 +617,6 @@ int main(int argc, char** argv)
             printf("Enter scaling factor: ");
             double scaleFactor;
             std::cin >> scaleFactor;
-            pthread_mutex_lock(&graphLock);
 
             bool collisionVisible = gn->collisionModelVisible();
             bool graphicsVisible = gn->graphicsModelVisible();
@@ -628,6 +627,7 @@ int main(int argc, char** argv)
             viewer->removeNode(gn);
             gn = NULL;
 
+            pthread_mutex_lock(&graphLock);
             RcsGraph_scale(graph, scaleFactor);
             gn = new Rcs::GraphNode(graph);
             gn->toggleReferenceFrames();
@@ -774,8 +774,8 @@ int main(int argc, char** argv)
           else if (kc->getAndResetKey('b'))
           {
             RMSG("Boxifying graph ...");
-            pthread_mutex_lock(&graphLock);
             viewer->removeNode(gn);
+            pthread_mutex_lock(&graphLock);
             gn = NULL;
             RCSGRAPH_TRAVERSE_BODIES(graph)
             {
@@ -797,7 +797,6 @@ int main(int argc, char** argv)
               RLOG(0, "%s destroyed Gui", success ? "Successfully" : "Not");
             }
 
-            pthread_mutex_lock(&graphLock);
             bool collisionVisible = gn->collisionModelVisible();
             bool graphicsVisible = gn->graphicsModelVisible();
             bool physicsVisible = gn->physicsModelVisible();
@@ -805,6 +804,7 @@ int main(int argc, char** argv)
             bool ghostVisible = gn->getGhostMode();
             bool wireframeVisible = gn->getWireframe();
             viewer->removeNode(gn);
+            pthread_mutex_lock(&graphLock);
             gn = NULL;
             RcsGraph_destroy(graph);
             graph = RcsGraph_create(xmlFileName);
@@ -1489,10 +1489,10 @@ int main(int argc, char** argv)
         {
           RMSG("Reloading GraphNode from %s", xmlFileName);
           double t_reload = Timer_getSystemTime();
-          pthread_mutex_lock(&graphLock);
           int displayMode = simNode->getDisplayMode();
           viewer->removeNode(simNode);
           simNode = NULL;
+          pthread_mutex_lock(&graphLock);
           double t_reload2 = Timer_getSystemTime();
           RcsGraph_destroy(graph);
           graph = RcsGraph_create(xmlFileName);
@@ -1827,7 +1827,7 @@ int main(int argc, char** argv)
       Rcs::Viewer* v           = NULL;
       Rcs::KeyCatcher* kc      = NULL;
       Rcs::GraphNode* gn       = NULL;
-      Rcs::GraphNode* simNode  = NULL;
+      Rcs::PhysicsNode* simNode  = NULL;
       Rcs::HUD* hud            = NULL;
       Rcs::BodyPointDragger* dragger = NULL;
       Rcs::VertexArrayNode* cn = NULL;
@@ -1848,8 +1848,8 @@ int main(int argc, char** argv)
 
         if (sim)
         {
-          simNode = new Rcs::GraphNode(simGraph);
-          simNode->setGhostMode(true, "RED");
+          simNode = new Rcs::PhysicsNode(sim);
+          gn->setGhostMode(true, "RED");
           v->add(simNode);
         }
 
@@ -2020,6 +2020,20 @@ int main(int argc, char** argv)
           if (physicsFeedback)
           {
             RcsGraph_setState(controller.getGraph(), simGraph->q, simGraph->q_dot);
+          }
+          else
+          {
+            // Compute at least the sensor values
+            // Copy sensors
+            RcsSensor* dstSensorPtr = controller.getGraph()->sensor;
+            const RcsSensor* srcSensorPtr = sim->getGraph()->sensor;
+
+            while (dstSensorPtr != NULL)
+            {
+              MatNd_copy(dstSensorPtr->rawData, srcSensorPtr->rawData);
+              dstSensorPtr = dstSensorPtr->next;
+              srcSensorPtr = srcSensorPtr->next;
+            }
           }
         }
 

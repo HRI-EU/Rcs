@@ -145,13 +145,14 @@ public:
    *
    * \return True for success, false otherwise: node is NULL, or not found in
    *         the viewer's scenegraph. The scenegraph is searched through all
-   *         levels.
+   *         levels. The frame mutex is internally set around the scenegraph
+   *         modification so that threading issues can be avoided.
    */
   bool removeNode(osg::Node* node);
 
   /*! \brief Removes all osg::Node from the viewer's root node. The frame mutex
    *         is internally set around the scenegraph modification so that no
-   *         threading issues will occur.
+   *         threading issues can be avoided.
    *
    * \return Number of nodes removed.
    */
@@ -290,17 +291,25 @@ public:
    */
   void stopUpdateThread();
 
+  bool isThreadStopped() const;
+
   /*! \brief Returns a reference to the internal osgViewer instance.
    */
   osg::ref_ptr<osgViewer::Viewer> getOsgViewer() const;
   double getFieldOfView() const;
   void setFieldOfView(double fov);
+  void setFieldOfView(double fovWidth, double fovHeight);
   void getMouseTip(double I_tip[3]) const;
 
   void setCameraHomePosition(const osg::Vec3d& eye,
                              const osg::Vec3d& center,
                              const osg::Vec3d& up=osg::Vec3d(0.0, 0.0, 1.0));
   void setCameraHomePosition(const HTr* transformation);
+
+  /*! \brief Resets the camera to the parameters (field of view, near and far
+   *         planes) that the viewer has been initialized with.
+   */
+  void resetView();
 
 protected:
 
@@ -321,6 +330,7 @@ protected:
   bool isInitialized() const;
   bool isThreadRunning() const;
   bool isRealized() const;
+  bool addInternal(osg::Node* node);
 
   mutable pthread_mutex_t* mtxFrameUpdate;
   bool threadRunning;
@@ -331,6 +341,7 @@ protected:
 
   unsigned int llx, lly, sizeX, sizeY;
   bool cartoonEnabled;
+  bool threadStopped;
   pthread_t frameThread;
   osg::ref_ptr<osgViewer::Viewer> viewer;
   osg::ref_ptr<osgShadow::ShadowedScene> shadowScene;
@@ -338,9 +349,13 @@ protected:
   osg::ref_ptr<osg::Group> rootnode;
   osg::ref_ptr<osg::ClearNode> clearNode;
   std::vector<osg::ref_ptr<osg::Camera> > hud;
+  osg::Matrix startView;
 
-private:
+  // Queued elements that get added within the frame() call
+  std::vector<osg::ref_ptr<osg::Node>> addNodeQueue;
+
   mutable pthread_mutex_t mtxInternal;
+  mutable pthread_mutex_t mtxEventLoop;
   osg::ref_ptr<KeyHandler> keyHandler;
 };
 

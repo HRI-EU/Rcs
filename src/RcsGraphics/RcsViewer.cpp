@@ -224,12 +224,19 @@ public:
 
         RMSG("Start capturing: (%d, %d) %dx%d", x, y, w, h);
         std::stringstream cmd;
-        cmd << "avconv -y -f x11grab -r 25 -s "
+        cmd << "ffmpeg -y -f x11grab -r 25 -s "
             << w << "x" << h
             << " -i " << getenv("DISPLAY") << "+"
             << x << "," << y
             << " -crf 20 -r 25 -c:v libx264 -c:a n"
             << " /tmp/movie_" << movie_number++ << ".mp4";
+
+        // cmd << "avconv -y -f x11grab -r 25 -s "
+        //     << w << "x" << h
+        //     << " -i " << getenv("DISPLAY") << "+"
+        //     << x << "," << y
+        //     << " -crf 20 -r 25 -c:v libx264 -c:a n"
+        //     << " /tmp/movie_" << movie_number++ << ".mp4";
 
         _video_capture_process = forkProcess(cmd.str().c_str());
         captureRunning = true;
@@ -254,7 +261,8 @@ Viewer::Viewer() :
   fps(0.0), mouseX(0.0), mouseY(0.0), normalizedMouseX(0.0),
   normalizedMouseY(0.0), mtxFrameUpdate(NULL), threadRunning(false),
   updateFreq(25.0), initialized(false), wireFrame(false), shadowsEnabled(false),
-  llx(0), lly(0), sizeX(640), sizeY(480), cartoonEnabled(false)
+  llx(0), lly(0), sizeX(640), sizeY(480), cartoonEnabled(false),
+  threadStopped(true)
 {
   // Check if logged in remotely
   const char* sshClient = getenv("SSH_CLIENT");
@@ -281,7 +289,8 @@ Viewer::Viewer(bool fancy, bool startupWithShadow) :
   fps(0.0), mouseX(0.0), mouseY(0.0), normalizedMouseX(0.0),
   normalizedMouseY(0.0), mtxFrameUpdate(NULL), threadRunning(false),
   updateFreq(25.0), initialized(false), wireFrame(false), shadowsEnabled(false),
-  llx(0), lly(0), sizeX(640), sizeY(480)
+  llx(0), lly(0), sizeX(640), sizeY(480), cartoonEnabled(false),
+  threadStopped(true)
 {
   create(fancy, startupWithShadow);
 
@@ -295,6 +304,7 @@ Viewer::~Viewer()
 {
   stopUpdateThread();
   pthread_mutex_destroy(&this->mtxInternal);
+  pthread_mutex_destroy(&this->mtxEventLoop);
 }
 
 /*******************************************************************************
@@ -308,6 +318,7 @@ void Viewer::create(bool fancy, bool startupWithShadow)
 #endif
 
   pthread_mutex_init(&this->mtxInternal, NULL);
+  pthread_mutex_init(&this->mtxEventLoop, NULL);
   this->shadowsEnabled = startupWithShadow;
 
   // Rotate loaded file nodes to standard coordinate conventions
@@ -329,6 +340,7 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   // Root node (instead of a Group we create an Cartoon node for optional
   // cell shading)
   this->rootnode = new osgFX::Cartoon;
+  rootnode->setName("rootnode");
   dynamic_cast<osgFX::Effect*>(rootnode.get())->setEnabled(false);
 
   // Light grayish green universe
@@ -454,6 +466,18 @@ void Viewer::add(osgGA::GUIEventHandler* eventHandler)
  ******************************************************************************/
 bool Viewer::add(osg::Node* node)
 {
+  pthread_mutex_lock(&this->mtxEventLoop);
+  addNodeQueue.push_back(node);
+  pthread_mutex_unlock(&this->mtxEventLoop);
+
+  return true;
+}
+
+/*******************************************************************************
+ * Add a node to the root node.
+ ******************************************************************************/
+bool Viewer::addInternal(osg::Node* node)
+{
   osg::Camera* newHud = dynamic_cast<osg::Camera*>(node);
 
   // If it's a camera, it needs a graphics context. This doesn't exist right
@@ -471,12 +495,10 @@ bool Viewer::add(osg::Node* node)
     }
     else
     {
-      lock();
       newHud->setGraphicsContext(windows[0]);
       newHud->setViewport(0, 0, windows[0]->getTraits()->width,
                           windows[0]->getTraits()->height);
       viewer->addSlave(newHud, false);
-      unlock();
     }
 
     return true;
@@ -486,9 +508,7 @@ bool Viewer::add(osg::Node* node)
 
   if (node != NULL)
   {
-    lock();
     success = this->rootnode->addChild(node);
-    unlock();
   }
   else
   {
@@ -539,8 +559,6 @@ bool Viewer::removeNode(osg::Node* node)
 
     return true;
   }
-
-
 
   osg::Node::ParentList parents = node->getParents();
   size_t nDeleted = 0;
@@ -606,6 +624,14 @@ void Viewer::setCameraHomePosition(const osg::Vec3d& eye,
 /*******************************************************************************
  *
  ******************************************************************************/
+void Viewer::resetView()
+{
+  viewer->getCamera()->setProjectionMatrix(this->startView);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void Viewer::setCameraHomePosition(const HTr* A_CI)
 {
   osg::Vec3d eye(A_CI->org[0], A_CI->org[1], A_CI->org[2]);
@@ -633,6 +659,7 @@ void Viewer::getCameraTransform(HTr* A_CI) const
  ******************************************************************************/
 void Viewer::setCameraTransform(const HTr* A_CI)
 {
+  //RLOG(0, "Camera transform is %s", HTr_isValid(A_CI) ? "VALID" : "INVALID");
   osg::Matrix vm = viewMatrixFromHTr(A_CI);
   viewer->getCameraManipulator()->setByInverseMatrix(vm);
 }
@@ -690,6 +717,18 @@ void Viewer::setFieldOfView(double fovy)
 }
 
 /*******************************************************************************
+ * Defaults are:
+ * fov_org = 29.148431   aspectRatio_org = 1.333333
+ * znear=1.869018   zfar=10.042613
+ ******************************************************************************/
+void Viewer::setFieldOfView(double fovWidth, double fovHeight)
+{
+  double fovy_old, aspectRatio, zNear, zFar;
+  viewer->getCamera()->getProjectionMatrixAsPerspective(fovy_old, aspectRatio, zNear, zFar);
+  viewer->getCamera()->setProjectionMatrixAsPerspective(fovWidth, fovWidth/fovHeight, zNear, zFar);
+}
+
+/*******************************************************************************
  * Runs the viewer in its own thread.
  ******************************************************************************/
 void* Viewer::ViewerThread(void* arg)
@@ -723,6 +762,7 @@ void* Viewer::ViewerThread(void* arg)
 void Viewer::runInThread(pthread_mutex_t* mutex)
 {
   this->mtxFrameUpdate = mutex;
+  threadStopped = false;
   pthread_create(&frameThread, NULL, ViewerThread, (void*) this);
 
   // Wait until the class has been initialized
@@ -830,9 +870,20 @@ void Viewer::frame()
     init();
   }
 
+  // Work on queued requests
+  pthread_mutex_lock(&this->mtxEventLoop);
+  std::vector<osg::ref_ptr<osg::Node>> nodesToAdd = this->addNodeQueue;
+  addNodeQueue.clear();
+  pthread_mutex_unlock(&this->mtxEventLoop);
+
   double dtFrame = Timer_getSystemTime();
 
   lock();
+
+  for (size_t i=0;i<nodesToAdd.size(); ++i)
+  {
+    addInternal(nodesToAdd[i].get());
+  }
   viewer->frame();
   unlock();
 
@@ -879,6 +930,7 @@ void Viewer::init()
     hud.clear();
   }
 
+  this->startView = viewer->getCamera()->getProjectionMatrix();
   this->initialized = true;
 }
 
@@ -935,6 +987,7 @@ void Viewer::stopUpdateThread()
 
   this->threadRunning = false;
   pthread_join(frameThread, NULL);
+  threadStopped = true;
 }
 
 /*******************************************************************************
@@ -1130,3 +1183,40 @@ bool Viewer::getTrackballCenter(double pos[3]) const
 
   return false;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Viewer::isThreadStopped() const
+{
+  return this->threadStopped;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+// bool Viewer::handleIntersection(const osgGA::GUIEventAdapter& ea,
+//                                 osgGA::GUIActionAdapter& aa)
+// {
+//   osgViewer::Viewer* viewer = dynamic_cast<osgViewer::Viewer*>(&aa);
+
+//   if (viewer)
+//   {
+//     osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector;
+//     intersector = new osgUtil::LineSegmentIntersector(osgUtil::Intersector::WINDOW, ea.getX(), ea.getY());
+//     osgUtil::IntersectionVisitor iv(intersector.get());
+//     //iv.setTraversalMask(~0x1);
+//     viewer->getCamera()->accept(iv);
+//     if (intersector->containsIntersections())
+//     {
+//       osgUtil::LineSegmentIntersector::Intersection& result = *(intersector->getIntersections().begin());
+//       osg::BoundingBox bb = result.drawable->getBound();
+//       osg::Vec3 worldCenter = bb.center()*osg::computeLocalToWorld(result.nodePath);
+//       _selectionBox->setMatrix(osg::Matrix::scale(bb.xMax()-bb.xMin(),
+//                                                   bb.yMax()-bb.yMin(),
+//                                                   bb.zMax()-bb.zMin()) *
+//                                osg::Matrix::translate(worldCenter));
+//     }
+//   }
+//   return false;
+// }
