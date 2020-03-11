@@ -613,8 +613,18 @@ bool RcsGraph_limitJoints(const RcsGraph* self, MatNd* q, RcsStateType type);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Returns the number of joints whose limits are violated.
+ *
+ *  \param[in] self   Pointer to graph, must not be NULL.
+ *  \param[in] angularMargin  Distance to joint limit that is considered a
+ *                            violation, for angular joints.
+ *  \param[in] linearMargin   Distance to joint limit that is considered a
+ *                            violation, for translational joints.
+ *  \param[in] verbose        If true, console information on violations will
+ *                            be printed to stderr.
  */
 unsigned int RcsGraph_numJointLimitsViolated(const RcsGraph* self,
+                                             double angularMargin,
+                                             double linearMargin,
                                              bool verbose);
 
 /*! \ingroup RcsGraphFunctions

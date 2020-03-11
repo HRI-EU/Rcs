@@ -536,7 +536,6 @@ std::vector<Rcs::Task*> Rcs::ControllerBase::getTasks(const MatNd* a) const
 std::string Rcs::ControllerBase::getTaskType(size_t id) const
 {
   RCHECK(id < this->tasks.size());
-
   return this->tasks[id]->getClassName();
 }
 
@@ -2218,12 +2217,14 @@ void Rcs::ControllerBase::printX(const MatNd* x, const MatNd* a_des) const
 {
   for (size_t i = 0; i < getNumberOfTasks(); i++)
   {
-    size_t row = this->taskArrayIdx[i];
-
+    if ((a_des==NULL) || (MatNd_get(a_des, i, 0)>0.0))
+    {
+      const size_t row = this->taskArrayIdx[i];
     for (size_t j = 0; j < getTaskDim(i); j++)
     {
       printf("Task \"%s\"[%d]: %f\n", getTaskName(i).c_str(), (int) j,
              MatNd_get(x, row+j, 0));
+      }
     }
   }
 }
@@ -2244,9 +2245,11 @@ bool Rcs::ControllerBase::getModelState(MatNd* q, const char* modelStateName,
 bool Rcs::ControllerBase::checkLimits(bool checkJointLimits,
                                       bool checkCollisions,
                                       bool checkJointVelocities,
-                                      double jlMargin,
+                                      double jlMarginAngular,
+                                      double jlMarginLinear,
                                       double collMargin,
-                                      double speedMargin) const
+                                      double speedMarginAngular,
+                                      double speedMarginLinear) const
 {
   bool success = true;
 
@@ -2254,7 +2257,10 @@ bool Rcs::ControllerBase::checkLimits(bool checkJointLimits,
   if (checkJointLimits)
   {
     bool verbose = (RcsLogLevel >= 3) ? true : false;
-    unsigned int aor = RcsGraph_numJointLimitsViolated(getGraph(), verbose);
+    unsigned int aor = RcsGraph_numJointLimitsViolated(getGraph(),
+                                                       jlMarginAngular,
+                                                       jlMarginLinear,
+                                                       verbose);
     if (aor > 0)
     {
       success = false;

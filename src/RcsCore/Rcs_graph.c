@@ -968,6 +968,8 @@ bool RcsGraph_limitJoints(const RcsGraph* self, MatNd* q, RcsStateType type)
  * See header.
  ******************************************************************************/
 unsigned int RcsGraph_numJointLimitsViolated(const RcsGraph* self,
+                                             double angularMargin,
+                                             double linearMargin,
                                              bool verbose)
 {
   unsigned int violations = 0;
@@ -981,13 +983,14 @@ unsigned int RcsGraph_numJointLimitsViolated(const RcsGraph* self,
     }
 
     double qi = MatNd_get2(self->q, JNT->jointIndex, 0);
+    double margin = RcsJoint_isRotation(JNT) ? angularMargin : linearMargin;
 
-    if ((qi < JNT->q_min) || (qi > JNT->q_max))
+    if ((qi < JNT->q_min+margin) || (qi > JNT->q_max-margin))
     {
       if (verbose)
       {
-        RMSG("Joint limit of \"%s\" violated: %f [%f %f]",
-             JNT->name, qi, JNT->q_min, JNT->q_max);
+        RMSG("Joint limit of \"%s\" violated: %f [%f %f] margin: %f",
+             JNT->name, qi, JNT->q_min, JNT->q_max, margin);
       }
       violations++;
     }

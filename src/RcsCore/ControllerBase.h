@@ -599,7 +599,8 @@ public:
                                        const MatNd* a_des=NULL,
                                        const MatNd* W=NULL) const;
 
-  /*! \brief Computes the current task forces based on the values of all FT sensors:
+  /*! \brief Computes the current task forces based on the values of all
+   *         FT sensors:
    *         f_task = J_task (J_sensor1# f_sensor1 + J_sensor2# f_sensor2 ...
    *
    *  \param[in] ft_task   Force in task coordinates.
@@ -624,9 +625,9 @@ public:
    *  \param[in] Kp        Position gain for admittance
    *  \param[in] a_des  The activation vector is NULL, or of dimension
    *                    [allTasks x 1]. If it is NULL, the function returns the
-   *                    compliant displacements for all tasks. If it is not NULL,
-   *                    only the dimensions of the tasks are counted that have
-   *                    a larger activation than 0.
+   *                    compliant displacements for all tasks. If it is not
+   *                    NULL, only the dimensions of the tasks are counted
+   *                    that have a larger activation than 0.
    */
   virtual void computeAdmittance(MatNd* compliantVec,
                                  const MatNd* ft_task,
@@ -665,16 +666,48 @@ public:
   virtual bool add(const ControllerBase& other, const char* suffix,
                    const HTr* A_BP);
 
+  /*! \brief Adds the task to the controller's task vector and updates the
+   *         task array indices. If other is NULL, the function returns without
+   *         doing anything (just complains on debug level 4).
+   */
   virtual void add(Task* other);
 
+  /*! \brief Prints out a task vector x with task names and additional
+   *         information. Only active tasks (a_des of the corresponding
+   *         task > 0) are printed.
+   *
+   *  \param[in] x       Task vector to be printed. Must be of size
+   *                     getTaskDim() x 1 (larger is ok).
+   *  \param[in] a_des   Activation. Only task vector elements with the task
+   *                     activation >0 are considered. If a_des is NULL, all
+   *                     tasks are printed.
+   */
   virtual void printX(const MatNd* x, const MatNd* a_des = NULL) const;
 
+  /*! \brief See \ref RcsGraph_getModelStateFromXML();
+   */
   bool getModelState(MatNd* q, const char* modelStateName, int timeStamp=0);
 
-  bool checkLimits(bool checkJointLimits=true, bool checkCollisions=true,
+  /*! \brief Performs various checks on the controller.
+   *
+   *  \param checkJointLimits     Perform joint limit check for all joints.
+   *  \param checkCollisions      Perform collision checks for collision model.
+   *  \param checkJointVelocities Check if joint velocities are within range.
+   *  \param jlMarginAngular      Joint limit safety margin for angular joints.
+   *  \param jlMarginLinear       Joint limit safety margin for linear joints.
+   *  \param collMargin           Safety margin for collision check.
+   *  \param speedMarginAngular   Speed limit safety margin for angular joints.
+   *  \param speedMarginLinear    Speed limit safety margin for linear joints.
+   *  \return True for no violation, false otherwise.
+   */
+  bool checkLimits(bool checkJointLimits=true,
+                   bool checkCollisions=true,
                    bool checkJointVelocities=true,
-                   double jlMargin=0.0, double collMargin=0.0,
-                   double speedMargin=0.0) const;
+                   double jlMarginAngular=0.0,
+                   double jlMarginLinear=0.0,
+                   double collMargin=0.0,
+                   double speedMarginAngular=0.0,
+                   double speedMarginLinear=0.0) const;
 
   void swapTaskVec(std::vector<Task*>& newTasks,
                    bool recomputeArrayIndices=false);
