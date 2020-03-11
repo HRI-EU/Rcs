@@ -47,9 +47,6 @@
 
 #include <pthread.h>
 
-// forward declarations
-typedef unsigned long Window;
-
 
 namespace Rcs
 {
@@ -70,8 +67,18 @@ static const int CastsShadowTraversalMask = 0x2;
  * \ingroup RcsGraphics
  * \brief The Viewer main class. It is based on the osg::Viewer.
  *
+ *        The public API to add and remove nodes etc. is implemented using the
+ *        osg event queue. It means that the function call does not directly
+ *        take effect, but defers the command to the next event update. This is
+ *        for instance important when a removed node has some internal data. You
+ *        should not delete this internal data right after removing the node,
+ *        since it might still be accessed before the next event traversal is
+ *        happening.
+ *
  *        A number of keys are associatde with a function if pressed in the
- *        viewer window:
+ *        viewer window. These are documented in the KeyCatcherBase and can
+ *        be displayed with KeyCatcherBase::printRegisteredKeys():
+ *
  *        - Pressing keys 0 - 9 in the viewer window will set the Rcs log
  *          level to the corresponding level
  *        - Pressing F12 will print out to the console all keys that have been
@@ -81,7 +88,10 @@ static const int CastsShadowTraversalMask = 0x2;
  *        - Key F10 will toggle full screen mode
  *        - Key F8 will take a screenshot
  *        - Key F9 will start / stop taking screenshort in each frame
+ *        - Key M will toggle movie recording (Linux only)
  *        - Key R will toggle the cartoon mode
+ *        - LBM while right mouse button is pressed will select the mouse point
+ *          as the new rotation center of the mouse manipulator
  */
 class Viewer
 {
@@ -96,8 +106,15 @@ public:
    */
   Viewer();
 
-  Viewer(bool fancy,              // Shadows and anti-aliasing on
-         bool startupWithShadow); // Shadows on
+  /*! \brief Creates an empty viewer window.
+   *
+   *  \brief fancy               Enable anti-aliasing and some other features.
+   *                             In case your graphics card has issues, this
+   *                             should be set to false.
+   *  \brief startupWithShadow   Enable shadow casting. Shadow casting can be
+   *                             toggled with the s key
+   */
+  Viewer(bool fancy, bool startupWithShadow);
 
   /*! \brief Virtual destructor to allow polymorphism.
    */
@@ -108,7 +125,9 @@ public:
    */
   virtual void optimize();
 
-  /*! \brief Locks all mutexes around the frame() call.
+  /*! \brief Locks all mutexes around the frame() call. Depending on the
+   *         complexity of the scene graph, the lock() function can block for
+   *         a while (worst case: rendering framerate)
    */
   virtual bool lock() const;
 
@@ -133,11 +152,20 @@ public:
                      unsigned int sizeY);  // size in y-direction
 
   /*! \brief Adds the osg::Node to the root node of the viewer's scene graph.
+   *         This function does not directly add the node, but defers it to
+   *         the next update traversal.
    */
-  bool add(osg::Node* node);
+  void add(osg::Node* node);
+
+  /*! \brief Adds the osg::Node to the given parent node. This function does
+   *         not directly add the node, but defers it to the next update
+   *         traversal.
+   */
+  void add(osg::Node* parent, osg::Node* child);
 
   /*! \brief Adds the event handler to the root node of the viewer's scene
-   *         graph.
+   *         graph. This function does not directly add the node, but defers
+   *         it to the next update traversal.
    */
   void add(osgGA::GUIEventHandler* eventHandler);
 
@@ -145,18 +173,28 @@ public:
    *
    * \return True for success, false otherwise: node is NULL, or not found in
    *         the viewer's scenegraph. The scenegraph is searched through all
-   *         levels. The frame mutex is internally set around the scenegraph
-   *         modification so that threading issues can be avoided.
+   *         levels. This function does not directly add the node, but defers
+   *         it to the next update traversal.
    */
-  bool removeNode(osg::Node* node);
+  void removeNode(osg::Node* node);
 
-  /*! \brief Removes all osg::Node from the viewer's root node. The frame mutex
-   *         is internally set around the scenegraph modification so that no
-   *         threading issues can be avoided.
-   *
-   * \return Number of nodes removed.
+  /*! \brief Removes all nodes with the given name from the viewer's
+   *         scene graph. This function does not directly add the node, but
+   *         defers it to the next update traversal.
    */
-  unsigned int removeNodes();
+  void removeNode(std::string nodeName);
+
+  /*! \brief Removes all child nodes of parent with the given nodeName from
+   *         the parent node. This function does not directly add the node,
+   *         but defers it to the next update traversal.
+   */
+  void removeNode(osg::Node* parent, std::string nodeName);
+
+  /*! \brief Removes all osg::Node from the viewer's root node, but leaves the
+   *         background clear node. This function does not directly add the
+   *         node, but defers it to the next update traversal.
+   */
+  void removeNodes();
 
   /*! \brief Starts a thread that periodically calls the frame() call. The
    *         thread will try to achieve the given updateFrequency. Changing the
@@ -291,6 +329,9 @@ public:
    */
   void stopUpdateThread();
 
+  /*! \brief Returns true after the viewer thread has been joined, false
+   *         otherwise.
+   */
   bool isThreadStopped() const;
 
   /*! \brief Returns a reference to the internal osgViewer instance.
@@ -320,8 +361,12 @@ protected:
   float normalizedMouseX;
   float normalizedMouseY;
 
+  /*! \brief Called from the KeyHandler's update function.
+   */
   bool handle(const osgGA::GUIEventAdapter& ea,
               osgGA::GUIActionAdapter& aa);
+
+  void handleUserEvents(const osg::Referenced* userEvent);
 
   static void* ViewerThread(void* arg);
   void create(bool fancy, bool startupWithShadow);
@@ -330,7 +375,49 @@ protected:
   bool isInitialized() const;
   bool isThreadRunning() const;
   bool isRealized() const;
+
+
+
+  /*! \brief Adds a node to the rootNode. This function must not be called
+   *         concurrently with the viewer's frame update.
+   *
+   * \return node   Node to be added. Can also be of certain derived types
+   *                such as camera etc.
+   */
   bool addInternal(osg::Node* node);
+  bool addInternal(osg::Node* parent, osg::Node* child);
+  void addInternal(osgGA::GUIEventHandler* eventHandler);
+
+  /*! \brief Removes the node from the viewer's scene graph. This is called
+   *         from inside the locked frame() call so that there is no
+   *         concurrency issue.
+   *
+   * \return True for success, false otherwise: node is NULL, or not found in
+   *         the viewer's scenegraph. The scenegraph is searched through all
+   *         levels. The frame mutex is internally set around the scenegraph
+   *         modification so that threading issues can be avoided.
+   */
+  bool removeInternal(osg::Node* node);
+
+  /*! \brief Removes all nodes with the given name from the viewer's scene
+   *         graph. This is called from inside the locked frame() call so that
+   *         there is no concurrency issue.
+   *
+   * \return Number of nodes removed.
+   */
+  int removeInternal(std::string nodeName);
+
+  /*! \brief Removes all nodes with the given name from the parent node.
+   *
+   * \return Number of nodes removed.
+   */
+  int removeInternal(osg::Node* parent, std::string nodeName);
+
+  /*! \brief Removes all nodes from the rootNode.
+   *
+   * \return Number of nodes removed.
+   */
+  int removeAllNodesInternal();
 
   mutable pthread_mutex_t* mtxFrameUpdate;
   bool threadRunning;
@@ -342,21 +429,22 @@ protected:
   unsigned int llx, lly, sizeX, sizeY;
   bool cartoonEnabled;
   bool threadStopped;
+  bool leftMouseButtonPressed;
+  bool rightMouseButtonPressed;
   pthread_t frameThread;
+
+  // osg node members
   osg::ref_ptr<osgViewer::Viewer> viewer;
   osg::ref_ptr<osgShadow::ShadowedScene> shadowScene;
   osg::ref_ptr<osg::LightSource> cameraLight;
   osg::ref_ptr<osg::Group> rootnode;
   osg::ref_ptr<osg::ClearNode> clearNode;
   std::vector<osg::ref_ptr<osg::Camera> > hud;
+  osg::ref_ptr<KeyHandler> keyHandler;
   osg::Matrix startView;
 
-  // Queued elements that get added within the frame() call
-  std::vector<osg::ref_ptr<osg::Node>> addNodeQueue;
-
-  mutable pthread_mutex_t mtxInternal;
+  // Concurrency mutexes
   mutable pthread_mutex_t mtxEventLoop;
-  osg::ref_ptr<KeyHandler> keyHandler;
 };
 
 
