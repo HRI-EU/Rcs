@@ -53,9 +53,10 @@ RCS_INSTALL_ERRORHANDLERS
 /******************************************************************************
  *
  *****************************************************************************/
-static bool test_mesh(int argc, char** argv)
+static void test_mesh(int argc, char** argv)
 {
   std::string meshFile;
+  std::string outFile = "reducedMesh.tri";
 
   const char* hgr = getenv("SIT");
 
@@ -68,10 +69,17 @@ static bool test_mesh(int argc, char** argv)
   Rcs::CmdLineParser argP;
   argP.getArgument("-f", &meshFile, "Name of mesh file (default is %s)",
                    meshFile.c_str());
+  argP.getArgument("-o", &outFile, "Name of output file (default is %s)",
+                   outFile.c_str());
 
-  Rcs::convertMesh("reducedMesh.tri", meshFile.c_str());
+  if (argP.hasArgument("-h", "Show help message"))
+  {
+    Rcs_printResourcePath();
+    argP.print();
+    return;
+  }
 
-  return true;
+  Rcs::convertMesh(outFile.c_str(), meshFile.c_str());
 }
 
 /*******************************************************************************
@@ -82,7 +90,6 @@ int main(int argc, char** argv)
   RMSG("Starting Rcs...");
   int mode = 0;
   char xmlFileName[128] = "", directory[128] = "";
-  char physicsCfg[128] = "config/physics/vortex.xml";
 
   // This initialize the xml library and check potential mismatches between
   // the version it was compiled for and the actual shared library used.
@@ -93,9 +100,6 @@ int main(int argc, char** argv)
   argP.getArgument("-dl", &RcsLogLevel, "Debug level (default is 0)");
   argP.getArgument("-m", &mode, "Test mode");
   argP.getArgument("-f", xmlFileName, "Configuration file name");
-  argP.getArgument("-physics_config", physicsCfg,
-                   "Configuration file name for physics (default is %s)",
-                   physicsCfg);
   argP.getArgument("-dir", directory, "Configuration file directory");
 
   const char* hgr = getenv("SIT");
@@ -161,4 +165,3 @@ int main(int argc, char** argv)
 
   return 0;
 }
-
