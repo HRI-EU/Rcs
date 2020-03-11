@@ -111,6 +111,7 @@ GraphNode::GraphNode() :
   wireframe(false),
   ghostMode(false)
 {
+  setName("GraphNode");
   this->switchNode = new osg::Switch;
   addChild(switchNode.get());
 }
@@ -124,6 +125,7 @@ GraphNode::GraphNode(const RcsGraph* g, bool resizeable, bool addSetters) :
   wireframe(false),
   ghostMode(false)
 {
+  setName("GraphNode");
   this->switchNode = new osg::Switch;
   addChild(switchNode.get());
 
@@ -135,8 +137,6 @@ GraphNode::GraphNode(const RcsGraph* g, bool resizeable, bool addSetters) :
  ******************************************************************************/
 GraphNode::~GraphNode()
 {
-  RLOG(5, "Removing event callbacks");
-  removeEventCallback(this->frameHandler.get());
   RLOG(5, "Destroying GraphNode");
 }
 

@@ -49,6 +49,7 @@ Rcs::ForceDragger::ForceDragger(PhysicsBase* physics_) : BodyPointDragger(),
   physics(physics_)
 {
   RCHECK(this->physics);
+  setName("ForceDragger");
 
   KeyCatcherBase::registerKey("Left", "Move body under mouse -Y",
                               "Force dragger");

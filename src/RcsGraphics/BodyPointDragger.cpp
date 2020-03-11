@@ -50,6 +50,7 @@
 Rcs::BodyPointDragger::BodyPointDragger() : MouseDragger(),
   _forceScaleFactor(1.0)
 {
+  setName("BodyPointDragger");
 }
 
 /******************************************************************************

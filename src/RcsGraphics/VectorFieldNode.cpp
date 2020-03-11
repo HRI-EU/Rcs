@@ -82,6 +82,7 @@ protected:
 
 VectorFieldNode::VectorFieldNode(const MatNd* xdx, const HTr* refFrame, double scale, bool withPoints, const char* color)
 {
+  setName("VectorFieldNode");
   this->refFrame = refFrame;
   this->points = new osg::Vec3Array;
   this->lines = new osg::Vec3Array;
@@ -104,6 +105,7 @@ VectorFieldNode::VectorFieldNode(const MatNd* xdx, const HTr* refFrame, double s
 
 VectorFieldNode::VectorFieldNode(const MatNd* x, const MatNd* dx, const HTr* refFrame, double scale, bool withPoints, const char* color)
 {
+  setName("VectorFieldNode");
   this->refFrame = refFrame;
   this->points = new osg::Vec3Array;
   this->lines = new osg::Vec3Array;

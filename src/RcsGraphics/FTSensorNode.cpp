@@ -50,6 +50,7 @@ Rcs::FTSensorNode::FTSensorNode(const RcsSensor* fts) :
   loadCell(fts),
   A_BI(fts->body->A_BI)
 {
+  setName("FTSensorNode");
   makeDynamic();
 }
 

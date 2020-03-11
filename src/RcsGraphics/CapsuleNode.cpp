@@ -51,6 +51,7 @@ Rcs::CapsuleNode::CapsuleNode(const double ballPoint[3], double A_KI[3][3],
                               const double radius, const double length,
                               bool resizeable) : NodeBase()
 {
+  setName("CapsuleNode");
   this->capsule = new osg::Capsule();
   capsule->setRadius(radius);
   capsule->setHeight(length);
@@ -81,6 +82,7 @@ Rcs::CapsuleNode::CapsuleNode(const double ballPoint[3], double A_KI[3][3],
 
 Rcs::CapsuleNode::CapsuleNode() : NodeBase()
 {
+  setName("CapsuleNode");
   this->capsule = new osg::Capsule();
   capsule->setRadius(0.5);
   capsule->setHeight(1.0);

@@ -79,6 +79,7 @@ Rcs::BoxNode::BoxNode(const double center[3], double A_KI[3][3],
 void Rcs::BoxNode::init(const double center[3], double A_KI[3][3],
                         double lx, double ly, double lz, bool resizeable)
 {
+  setName("BoxNode");
   this->box = new osg::Box();
   box->setHalfLengths(osg::Vec3(0.5*lx, 0.5*ly, 0.5*lz));
 

@@ -109,6 +109,7 @@ Rcs::MouseDragger::MouseDragger() : osg::Switch(),
   _LMBPressed(false),
   _RMBPressed(false)
 {
+  setName("MouseDragger");
   KeyCatcherBase::registerKey("Left Shift", "Enable body dragging", "MouseDragger");
   KeyCatcherBase::registerKey("Left Cntrl", "Amplify force dragging", "MouseDragger");
 

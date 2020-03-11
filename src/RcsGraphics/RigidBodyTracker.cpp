@@ -46,6 +46,8 @@
  ******************************************************************************/
 Rcs::RigidBodyTracker::RigidBodyTracker(bool withSphericalTracker)
 {
+  setName("RigidBodyTracker");
+
   if (withSphericalTracker==true)
   {
     osg::ref_ptr<osgManipulator::TrackballDragger> oriDragger =

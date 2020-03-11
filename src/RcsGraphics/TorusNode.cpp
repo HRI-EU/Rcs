@@ -50,6 +50,7 @@ TorusNode::TorusNode(double radius, double thickness, double start_angle,
                      double end_angle) :
   _radius(radius), _thickness(thickness)
 {
+  setName("TorusNode");
   osg::ref_ptr<osg::Geode> torus = createGeometry(start_angle, end_angle);
   patPtr()->addChild(torus.get());
 }

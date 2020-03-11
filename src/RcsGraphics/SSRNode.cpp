@@ -51,6 +51,7 @@ Rcs::SSRNode::SSRNode(const double center[3], double A_KI[3][3],
                       const double extent[2], const double r,
                       bool resizeable) : NodeBase()
 {
+  setName("SSRNode");
   osg::Geode* geode = new osg::Geode();
   osg::ref_ptr<osg::TessellationHints> hints = new osg::TessellationHints;
   hints->setDetailRatio(0.5f);

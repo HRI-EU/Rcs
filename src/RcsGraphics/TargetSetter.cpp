@@ -304,6 +304,7 @@ void TargetSetter::setReferenceFrame(double pos[3], double rot[3][3])
  ******************************************************************************/
 void TargetSetter::initGraphics()
 {
+  setName("TargetSetter");
   this->refFrame = new osg::PositionAttitudeTransform();
 
   // draw info text
@@ -479,4 +480,3 @@ osg::Matrixd TargetSetter::getTransform() const
 
 
 }   // namespace Rcs
-

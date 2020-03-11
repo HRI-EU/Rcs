@@ -51,6 +51,7 @@ Rcs::SphereNode::SphereNode(const double pos[3],
                             const double radius,
                             bool resizeable) : NodeBase()
 {
+  setName("SphereNode");
   this->sphere = new osg::Sphere();
   sphere->setRadius(radius);
   //sphere->setCenter(osg::Vec3(pos[0], pos[1], pos[2]);
@@ -74,6 +75,7 @@ Rcs::SphereNode::SphereNode(const double pos[3],
 
 Rcs::SphereNode::SphereNode() : NodeBase()
 {
+  setName("SphereNode");
   this->sphere = new osg::Sphere();
   sphere->setRadius(0.5);
   sphere->setCenter(osg::Vec3(0.0, 0.0, 0.0));

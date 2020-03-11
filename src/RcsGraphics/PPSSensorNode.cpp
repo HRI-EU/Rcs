@@ -56,6 +56,7 @@
  ******************************************************************************/
 Rcs::PPSSensorNode::PPSSensorNode(const RcsSensor* pps, bool debug)
 {
+  setName("PPSSensorNode");
   RCHECK(pps->type==RCSSENSOR_PPS);
 
   char fontFile[256]="";

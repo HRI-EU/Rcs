@@ -61,6 +61,7 @@ KeyCatcher::KeyCatcher()
 
   KeyCatcherBase::registerKey("F12", "Print all available keys to console" ,
                               "KeyCatcher");
+  setName("KeyCatcher");
 }
 
 

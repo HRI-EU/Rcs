@@ -115,8 +115,11 @@ Rcs::COSNode::COSNode(const HTr* A_CI, float scale, float lengthX,
 
 ******************************************************************************/
 
-void Rcs::COSNode::init(float scale, float lengthX, float lengthY, float lengthZ)
+void Rcs::COSNode::init(float scale, float lengthX, float lengthY,
+                        float lengthZ)
 {
+  setName("COSNode");
+
   float radius = 0.015f;
   float coneHeight = 0.1f;
   HTr A_KI;

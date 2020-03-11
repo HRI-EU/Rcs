@@ -193,6 +193,7 @@ protected:
 TransformTrace::TransformTrace(const double* pos, unsigned int nPts) :
   osg::Switch()
 {
+  setName("TransformTrace");
   TransformTraceEventHandler* cHandler =
     new TransformTraceEventHandler(pos, NULL, nPts);
   addChild(cHandler->geode.get());

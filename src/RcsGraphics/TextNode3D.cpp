@@ -57,6 +57,7 @@ Rcs::TextNode3D::TextNode3D(std::string text, const double pos[3]) : NodeBase()
 
 void Rcs::TextNode3D::init(std::string text)
 {
+  setName("TextNode3D");
   osg::ref_ptr<osg::Geode> textGeode = new osg::Geode();
   addChild(textGeode.get());
 
