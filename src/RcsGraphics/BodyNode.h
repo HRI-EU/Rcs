@@ -93,6 +93,7 @@ public:
 
 protected:
 
+  void updateDynamicMeshes();
   virtual ~BodyNode();
   osg::Switch* addShapes(int mask);
   osg::Switch* addDebugInformation();
@@ -125,4 +126,3 @@ protected:
 
 
 #endif // RCS_BODYNODE_H
-

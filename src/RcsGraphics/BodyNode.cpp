@@ -40,6 +40,7 @@
 #include <Rcs_resourcePath.h>
 #include <Rcs_Vec3d.h>
 #include <Rcs_typedef.h>
+#include <Rcs_joint.h>
 #include <Rcs_macros.h>
 #include <Rcs_timer.h>
 #include <Rcs_utils.h>
@@ -170,6 +171,9 @@ public:
     // Change the geometry according to the bodies shapes
     _bdyNode->updateDynamicShapes();
 
+    // HACK: Mesh dynamic update
+    //_bdyNode->updateDynamicMeshes();
+
     // Traverse subtree
     traverse(node, nv);
   }
@@ -208,7 +212,8 @@ BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
 
   _collisionNode = addShapes(RCSSHAPE_COMPUTE_DISTANCE);
   _graphicsNode  = addShapes(RCSSHAPE_COMPUTE_GRAPHICS);
-  _physicsNode   = addShapes(RCSSHAPE_COMPUTE_PHYSICS);
+  _physicsNode   = addShapes(RCSSHAPE_COMPUTE_PHYSICS+
+                             RCSSHAPE_COMPUTE_SOFTPHYSICS);
 
   _refNode->setAllChildrenOff();
   _collisionNode->setAllChildrenOff();
@@ -997,10 +1002,11 @@ osg::Switch* BodyNode::addDebugInformation()
   // Add a small cylinder for each joint
   RCSBODY_TRAVERSE_JOINTS(this->bdy)
   {
-    if (JNT->type == RCSJOINT_ROT_X ||
-        JNT->type == RCSJOINT_ROT_Y ||
-        JNT->type == RCSJOINT_ROT_Z)
+    if (!RcsJoint_isRotation(JNT))
     {
+      continue;
+    }
+
       // Transfomation of Joint
       osg::PositionAttitudeTransform* joint_transform =
         new osg::PositionAttitudeTransform;
@@ -1033,8 +1039,8 @@ osg::Switch* BodyNode::addDebugInformation()
 
       joint_geode->addDrawable(shape);
       setNodeMaterial("GREEN", joint_geode);
-    }
-  }
+
+  }   // RCSBODY_TRAVERSE_JOINTS(this->bdy)
 
   if (this->bdy->parent)
   {
@@ -1477,7 +1483,8 @@ void BodyNode::setGhostMode(bool enabled, const std::string& matname)
         material->setAmbient(osg::Material::FRONT_AND_BACK, matDataPtr->amb);
         material->setDiffuse(osg::Material::FRONT_AND_BACK, matDataPtr->diff);
         material->setSpecular(osg::Material::FRONT_AND_BACK, matDataPtr->spec);
-        material->setShininess(osg::Material::FRONT_AND_BACK, matDataPtr->shininess);
+        material->setShininess(osg::Material::FRONT_AND_BACK,
+                               matDataPtr->shininess);
       }
       else
       {
@@ -1702,6 +1709,56 @@ void BodyNode::updateDynamicShapes()
 
 }
 
+void BodyNode::updateDynamicMeshes()
+{
+  RCSBODY_TRAVERSE_SHAPES(body())
+  {
+    if ((SHAPE->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) == 0)
+    {
+      continue;
+    }
+
+    unsigned int nCh = _physicsNode->getNumChildren();
+    RLOG(1, "Found soft body %s with %d children", body()->name, nCh);
+
+    for (unsigned int i=0; i<nCh; ++i)
+    {
+
+      osg::PositionAttitudeTransform* pat = dynamic_cast<osg::PositionAttitudeTransform*>(_physicsNode->getChild(i));
+
+      if (!pat)
+      {
+        continue;
+      }
+
+      RLOG(1, "Class \"%s\": \"%s\"",
+           pat->getChild(0)->className(),
+           pat->getChild(0)->getName().c_str());
+
+      RLOG(1, "Found PAT with %d children", pat->getNumChildren());
+
+      osg::Geode* geode = dynamic_cast<osg::Geode*>(pat->getChild(0));
+
+      if (!geode)
+      {
+        continue;
+      }
+
+      RLOG(1, "Class \"%s\"", geode->className());
+
+      MeshNode* mn = dynamic_cast<MeshNode*>(pat->getChild(1));
+      if (mn)
+      {
+        RcsMeshData* meshDat = (RcsMeshData*) SHAPE->userData;
+        RCHECK(meshDat);
+        RLOG(1, "UPDATING MESH with %d vertices and %d faces",
+             meshDat->nVertices, meshDat->nFaces);
+        mn->setMesh(meshDat->vertices, meshDat->nVertices,
+                    meshDat->faces, meshDat->nFaces);
+      }
+    }
+  }
+}
 
 
 }   // namespace Rcs
