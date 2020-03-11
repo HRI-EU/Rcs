@@ -1542,7 +1542,8 @@ bool RcsGraph_setModelStateFromXML(RcsGraph* self, const char* modelStateName,
 }
 
 /*******************************************************************************
- *
+ * We make a copy, since the RcsGraph_parseModelState() function changes the
+ * graph.
  ******************************************************************************/
 bool RcsGraph_getModelStateFromXML(MatNd* q, const RcsGraph* self,
                                    const char* modelStateName, int timeStamp)
@@ -1565,6 +1566,7 @@ bool RcsGraph_getModelStateFromXML(MatNd* q, const RcsGraph* self,
 
   if (node == NULL)
   {
+    RcsGraph_destroy(copyOfGraph);
     xmlFreeDoc(doc);
     return false;
   }
