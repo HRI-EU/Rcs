@@ -62,12 +62,12 @@ PhysicsMaterial PhysicsMaterial::next() const
     if (isXMLNodeName(node, "material"))
     {
       // found it
-      return {node, defaultMaterialNode};
+      return PhysicsMaterial(node, defaultMaterialNode);
     }
     node = node->next;
   }
   // we were the last
-  return {NULL, NULL};
+  return PhysicsMaterial();
 }
 
 PhysicsMaterial::operator bool() const
@@ -357,16 +357,16 @@ PhysicsMaterial PhysicsConfig::getFirstMaterial() const
   {
     if (isXMLNodeName(node, "material"))
     {
-      return {node, defaultMaterial};
+      return PhysicsMaterial(node, defaultMaterial);
     }
     node = node->next;
   }
-  return { NULL, NULL };
+  return PhysicsMaterial();
 }
 
 PhysicsMaterial PhysicsConfig::getDefaultMaterial() const
 {
-  return { defaultMaterial, defaultMaterial };
+  return PhysicsMaterial(defaultMaterial, defaultMaterial);
 }
 
 PhysicsMaterial PhysicsConfig::getOrCreateMaterial(const char* materialName)
@@ -374,7 +374,7 @@ PhysicsMaterial PhysicsConfig::getOrCreateMaterial(const char* materialName)
   if (STREQ(materialName, DEFAULT_MATERIAL_NAME))
   {
     // the default material can be found quickly
-    return { defaultMaterial, defaultMaterial };
+    return PhysicsMaterial(defaultMaterial, defaultMaterial);
   }
 
   // search list
@@ -391,7 +391,7 @@ PhysicsMaterial PhysicsConfig::getOrCreateMaterial(const char* materialName)
   xmlNodePtr newMat = xmlNewDocNode(doc, NULL, BAD_CAST "material", NULL);
   xmlSetProp(newMat, BAD_CAST "name", BAD_CAST materialName);
   xmlAddChild(root, newMat);
-  return { newMat, defaultMaterial };
+  return PhysicsMaterial(newMat, defaultMaterial);
 }
 
 PhysicsMaterial PhysicsConfig::getMaterial(const char* materialName) const
@@ -399,7 +399,7 @@ PhysicsMaterial PhysicsConfig::getMaterial(const char* materialName) const
   if (STREQ(materialName, DEFAULT_MATERIAL_NAME))
   {
     // the default material can be found quickly
-    return { defaultMaterial, defaultMaterial };
+    return PhysicsMaterial(defaultMaterial, defaultMaterial);
   }
   // search list
   PhysicsMaterial mat = getFirstMaterial();
@@ -412,7 +412,7 @@ PhysicsMaterial PhysicsConfig::getMaterial(const char* materialName) const
     mat = mat.next();
   }
   // return default material since it wasn't found
-  return { defaultMaterial, defaultMaterial };
+  return PhysicsMaterial(defaultMaterial, defaultMaterial);
 }
 
 const char* PhysicsConfig::getConfigFileName() const
