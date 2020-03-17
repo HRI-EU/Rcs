@@ -90,18 +90,21 @@ public:
   void show();
   void setVisibility(bool visible);
   void setGhostMode(bool enabled, const std::string& matname="");
+  void setDynamicMeshUpdate(bool enabled);
+  bool getDynamicMeshUpdate() const;
 
 protected:
 
+  void updateCallback(osg::Node* node, osg::NodeVisitor* nv);
   void updateDynamicMeshes();
   virtual ~BodyNode();
-  osg::Switch* addShapes(int mask);
+  osg::Switch* addShapes(int mask, bool resizeable);
   osg::Switch* addDebugInformation();
 
   const RcsBody* bdy;
   const HTr* A_BI;
-  bool _resizeable;
   bool ghostMode;
+  bool dynamicMeshUpdate;
   osg::ref_ptr<osg::Switch> _collisionNode;
   osg::ref_ptr<osg::Switch> _graphicsNode;
   osg::ref_ptr<osg::Switch> _physicsNode;

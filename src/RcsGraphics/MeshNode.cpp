@@ -95,66 +95,9 @@ Rcs::MeshNode::MeshNode(const double* vertices, unsigned int numVertices,
 void Rcs::MeshNode::init()
 {
   setName("MeshNode");
-  this->shape = NULL;
   this->geode = new osg::Geode();
-  this->patPtr()->addChild(this->geode);
-
-  // Assign some material properties (PEWTER)
-  osg::Vec4d amb  = osg::Vec4d(0.105882, 0.058824, 0.113725, 1.0);
-  osg::Vec4d diff = osg::Vec4d(0.427451, 0.470588, 0.541176, 1.0);
-  osg::Vec4d spec = osg::Vec4d(0.333333, 0.333333, 0.521569, 1.0);
-  double shininess = 9.84615;
-
-  osg::ref_ptr<osg::Material> material = new osg::Material;
-  material->setAmbient(osg::Material::FRONT_AND_BACK, amb);
-  material->setDiffuse(osg::Material::FRONT_AND_BACK, diff);
-  material->setSpecular(osg::Material::FRONT_AND_BACK, spec);
-  material->setShininess(osg::Material::FRONT_AND_BACK, shininess);
-
-  osg::ref_ptr<osg::StateSet> stateset = getOrCreateStateSet();
-  stateset->setAttributeAndModes(material.get(),
-                                 osg::StateAttribute::OVERRIDE |
-                                 osg::StateAttribute::ON);
-  // Makes material scale-invariant
-  stateset->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-void Rcs::MeshNode::setColor(const char* color)
-{
-  RcsMaterialData* matDataPtr = getMaterial(color);
-
-  if (matDataPtr == NULL)
-  {
-    RLOG(1, "Can't set material \"%s\" - not in xml file!", color);
-    return;
-  }
-
-  osg::ref_ptr<osg::Material> material = new osg::Material;
-  material->setAmbient(osg::Material::FRONT_AND_BACK, matDataPtr->amb);
-  material->setDiffuse(osg::Material::FRONT_AND_BACK, matDataPtr->diff);
-  material->setSpecular(osg::Material::FRONT_AND_BACK, matDataPtr->spec);
-  material->setShininess(osg::Material::FRONT_AND_BACK, matDataPtr->shininess);
-
-  osg::ref_ptr<osg::StateSet> stateset = getOrCreateStateSet();
-
-  stateset->setMode(GL_BLEND, osg::StateAttribute::OVERRIDE |
-                    osg::StateAttribute::ON);
-  stateset->setMode(GL_LIGHTING, osg::StateAttribute::OVERRIDE |
-                    osg::StateAttribute::ON);
-  stateset->setMode(GL_ALPHA_TEST, osg::StateAttribute::ON);
-
-  // removes artifacts inside of transparent objects
-  stateset->setMode(GL_CULL_FACE, osg::StateAttribute::ON);
-
-  stateset->setAttributeAndModes(material.get(),
-                                 osg::StateAttribute::OVERRIDE |
-                                 osg::StateAttribute::ON);
-
-  // Makes material scale-invariant
-  stateset->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
+  this->patPtr()->addChild(this->geode.get());
+  setMaterial("PEWTER");
 }
 
 /*******************************************************************************
@@ -185,8 +128,8 @@ void Rcs::MeshNode::setMesh(const double* vertices, unsigned int numVertices,
   mesh->setVertices(v.get());
   mesh->setIndices(f.get());
 
-  this->shape = new osg::ShapeDrawable(mesh.get());
-  this->geode->addDrawable(this->shape);
+  osg::ref_ptr<osg::ShapeDrawable> shape = new osg::ShapeDrawable(mesh.get());
+  this->geode->addDrawable(shape.get());
 }
 
 /*******************************************************************************
@@ -194,9 +137,5 @@ void Rcs::MeshNode::setMesh(const double* vertices, unsigned int numVertices,
  ******************************************************************************/
 void Rcs::MeshNode::clear()
 {
-  if (this->shape)
-  {
-    this->geode->removeDrawable(this->shape);
-    shape = NULL;
-  }
+  geode->removeDrawables(0, geode->getNumDrawables());
 }

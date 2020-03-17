@@ -249,6 +249,7 @@ public:
   void setBodyTransformPtr(const RcsBody* body, const HTr* A_BI);
 
 
+  void setDynamicMeshUpdate(bool enabled);
 
 protected:
   virtual bool callback(const osgGA::GUIEventAdapter& ea,

@@ -889,6 +889,27 @@ void GraphNode::setBodyTransformPtr(const RcsBody* body, const HTr* A_BI)
 
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void GraphNode::setDynamicMeshUpdate(bool enabled)
+{
+  GraphNodeList::iterator li;
+  BodyNodeVisitor bnv;
+  this->accept(bnv);
+
+  for (li = bnv.nodes.begin(); li != bnv.nodes.end(); ++li)
+  {
+    osg::ref_ptr<Rcs::BodyNode> nd = *li;
+
+    if ((nd.valid()))
+    {
+      nd->setDynamicMeshUpdate(enabled);
+    }
+  }
+
+}
+
 /******************************************************************************
  * Add a node after the switch
  *****************************************************************************/
@@ -1015,4 +1036,3 @@ std::vector<const BodyNode*> GraphNode::getBodyNodes() const
 
 
 }   // namespace Rcs
-

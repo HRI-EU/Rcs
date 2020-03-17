@@ -368,6 +368,45 @@ void getGeodes(osg::Node* node, std::vector<osg::Geode*>& geodes);
 
 osg::Node* findNamedNodeRecursive(osg::Node* root, std::string nodeName);
 
+
+template <typename T>
+class ChildNodeCollector : public osg::NodeVisitor
+{
+public:
+  ChildNodeCollector() :
+    osg::NodeVisitor(osg::NodeVisitor::TRAVERSE_ALL_CHILDREN)
+  {
+  }
+
+  virtual void apply(osg::Node& node)
+  {
+    T* ndPtr = dynamic_cast<T*>(&node);
+
+    if (ndPtr)
+    {
+      collectedNodes.push_back(ndPtr);
+    }
+
+    // Keep traversing the rest of the scene graph.
+    traverse(node);
+  }
+
+  std::vector<T*> getNodes()
+  {
+    return collectedNodes;
+  }
+
+protected:
+  std::vector<T*> collectedNodes;
+};
+
+template <typename T>
+std::vector<T*> findChildrenOfType(osg::Group* root)
+{
+  ChildNodeCollector<T> nf;
+  root->accept(nf);
+  return nf.getNodes();
+}
 }   // namespace Rcs
 
 

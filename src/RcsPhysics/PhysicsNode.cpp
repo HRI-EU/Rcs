@@ -69,19 +69,32 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   KeyCatcherBase::registerKey("T", "Toggle physics or graph transform display",
                               "PhysicsNode");
 
+  // This node shows the simulation result mapped to the minimal coordinate
+  // description used in the graph. We acquire all joint angles and use the
+  // results from the forward kinematics. This may not reflect the phyics
+  // simulation result, since there is no joint separation etc. visible. For
+  // this, the below instantiated physicsNd is responsible.
+  // \todo: Maybe only use one node, and make it toggleable?
   this->modelNd = new GraphNode(sim_->getGraph(), resizeable, false);
   modelNd->displayGraphicsModel(false);
   modelNd->displayPhysicsModel(true);
   modelNd->setGhostMode(true, "RED");
+  modelNd->setName("PhysicsNode::modelNd");
   pat->addChild(modelNd);
 
   osg::ref_ptr<ContactsNode> cn = new ContactsNode(sim, 0.1, "RUBY");
   cn->toggle();   // Start with contacts
   pat->addChild(cn.get());
 
+  // This node displays the bodies at the transformations coming natively
+  // from the phyics engine. Since these in some cases don't use minimal
+  // coordinates, one might see separation of objects in case of large
+  // forces or other effects. This node also updates soft body meshes if any.
   this->physicsNd = new GraphNode(sim_->getGraph(), resizeable, false);
   physicsNd->displayGraphicsModel(false);
   physicsNd->displayPhysicsModel(true);
+  physicsNd->setDynamicMeshUpdate(true);
+  physicsNd->setName("PhysicsNode::physicsNd");
   pat->addChild(physicsNd);
 
   updateTransformPointers();
@@ -192,7 +205,7 @@ void Rcs::PhysicsNode::setPhysicsTransform(bool enable)
 bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
                                      osgGA::GUIActionAdapter& aa)
 {
-  // In case the graph is resizeable, bodies might be repalced on the fly. To
+  // In case the graph is resizeable, bodies might be replaced on the fly. To
   // make sure we always point to the correct ones, we update the transformation
   // pointers before each iteration.
   if (resizeable==true && modelNd->isVisible())

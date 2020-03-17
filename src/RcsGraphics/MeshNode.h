@@ -66,13 +66,11 @@ public:
            const unsigned int* faces, unsigned int numFaces);
   void setMesh(const double* vertices, unsigned int numVertices,
                const unsigned int* faces, unsigned int numFaces);
-  void setColor(const char* color);
   void clear();
 
 protected:
 
-  osg::ShapeDrawable* shape;
-  osg::Geode* geode;
+  osg::ref_ptr<osg::Geode> geode;
   void init();
 };
 

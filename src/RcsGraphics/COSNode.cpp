@@ -51,7 +51,8 @@
 
 ******************************************************************************/
 
-Rcs::COSNode::COSNode(float scale, float lengthX, float lengthY, float lengthZ) :
+Rcs::COSNode::COSNode(float scale, float lengthX, float lengthY,
+                      float lengthZ) :
   NodeBase(), angMode(None)
 {
   init(scale, lengthX, lengthY, lengthZ);
@@ -64,7 +65,8 @@ Rcs::COSNode::COSNode(float scale, float lengthX, float lengthY, float lengthZ) 
 
 ******************************************************************************/
 
-Rcs::COSNode::COSNode(const double* pos, float scale, float lengthX, float lengthY,
+Rcs::COSNode::COSNode(const double* pos, float scale, float lengthX,
+                      float lengthY,
                       float lengthZ) :
   NodeBase(), angMode(None)
 {
