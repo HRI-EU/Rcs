@@ -64,6 +64,12 @@ protected:
    */
   virtual void update();
 
+  /*! \brief Updates the world mouse point based on the bodie's transformation.
+   *         This function uses the physics transformation to account for the
+   *         object moving through force interaction etc.
+   */
+  virtual void updateWorldAnchor();
+
   /*! \brief Handles the Gui events.
    */
   virtual bool callback(const osgGA::GUIEventAdapter& ea,

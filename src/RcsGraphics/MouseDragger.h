@@ -188,6 +188,11 @@ protected:
    */
   virtual void update();
 
+  /*! \brief Updates the world mouse point based on the bodie's transformation.
+   *         This function uses the graph's transformation.
+   */
+  virtual void updateWorldAnchor();
+
   /*! \brief Handles the Gui events, e.g. memorizes which button has been
    *         pressed, and which body is currently being tracked.
    */

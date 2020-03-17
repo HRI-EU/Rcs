@@ -73,6 +73,17 @@ void Rcs::ForceDragger::update()
 }
 
 /******************************************************************************
+ * Computes the world anchor point of the mouse tip. Called by MouseDragger
+ * in the event update traversal.
+ *****************************************************************************/
+void Rcs::ForceDragger::updateWorldAnchor()
+{
+  HTr physicsTrf;
+  physics->getPhysicsTransform(&physicsTrf, _draggedBody);
+  Vec3d_transform(_I_anchor, &physicsTrf, _k_anchor);
+}
+
+/******************************************************************************
  * The function returns false so that during dragging, no other events are
  * processed. This includes the mouse manipulator.
  *****************************************************************************/
