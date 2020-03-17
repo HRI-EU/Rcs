@@ -339,7 +339,7 @@ static bool test_DoubleToString()
 
   char buf[512];
   RMSG("%f = \"%s\"", value, String_fromDouble(buf, value, digits));
-  RMSG("len: %d", strlen(buf));
+  RMSG_CPP("len: " << strlen(buf));
   return true;
 }
 

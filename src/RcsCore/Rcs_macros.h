@@ -217,7 +217,6 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 /*! \ingroup RcsMacros
  *  \brief Print macro.
  */
-#if !defined(_MSC_VER)
 #define RMSG(...) \
   do { \
     fprintf(stderr, "[%s: %s(%d)]: ", __FILENAME__, __FUNCTION__, __LINE__); \
@@ -225,15 +224,6 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
     fprintf(stderr, "\n"); \
     fflush(stderr); \
   } while (0)
-#else
-#define RMSG(...) \
-  do { \
-    fprintf(stderr, "[%s: %s(%d)]: ", __FILENAME__, __FUNCTION__, __LINE__); \
-    fprintf(stderr, __VA_ARGS__); \
-    fprintf(stderr, "\n"); \
-    fflush(stderr); \
-  } while (0)
-#endif
 
 /*! \ingroup RcsMacros
  *  \brief Print macro (short form)
@@ -386,6 +376,11 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
   do { \
     if (debugLevel <= RcsLogLevel) { \
       std::cerr << "[" << __FILENAME__ << ": " << __FUNCTION__ << "(" << __LINE__ << ")]: " << msg << std::endl; } \
+  } while (0)
+
+#define RMSG_CPP(msg)               \
+  do { \
+    std::cerr << "[" << __FILENAME__ << ": " << __FUNCTION__ << "(" << __LINE__ << ")]: " << msg << std::endl; \
   } while (0)
 #endif
 
