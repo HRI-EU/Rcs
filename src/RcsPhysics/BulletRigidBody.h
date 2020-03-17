@@ -66,7 +66,8 @@ public:
   const char* getBodyName() const;
   static btCollisionShape* createShape(RcsShape* sh,
                                        btTransform& relTrans,
-                                       const RcsBody* body);
+                                       const RcsBody* body,
+                                       unsigned int convexHullVertexLimit);
   btCollisionShape* getShape(const RcsShape* shape);
 
   BulletRigidBody(const btRigidBody::btRigidBodyConstructionInfo& rbInfo,

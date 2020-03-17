@@ -45,6 +45,7 @@
 #include <Rcs_body.h>
 #include <Rcs_shape.h>
 #include <Rcs_utils.h>
+#include <Rcs_parser.h>
 
 #include <BulletCollision/CollisionShapes/btShapeHull.h>
 #include <LinearMath/btGeometryUtil.h>
@@ -70,7 +71,8 @@ static void setMargin(btCollisionShape* shape)
 //! \todo Check margins
 btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
                                                     btTransform& relTrans,
-                                                    const RcsBody* body)
+                                                    const RcsBody* body,
+                                                    unsigned int convexHullVertexLimit)
 {
   btCollisionShape* bShape = NULL;
 
@@ -236,10 +238,10 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
       }
 
       // If the mesh is large, we compress it.
-      if (mesh->nVertices>MAX_VERTICES_WITHOUT_COMPRESSION)
+      if (mesh->nVertices>convexHullVertexLimit)
       {
-        RLOG(5, "[%s]: Compressing mesh with %u vertices",
-             body->name, mesh->nVertices);
+        RLOG(5, "[%s]: Compressing mesh with %u vertices (limit: %u)",
+             body->name, mesh->nVertices, convexHullVertexLimit);
         btConvexHullShape* hull = meshToCompressedHull(mesh);
         sh->userData = hullToMesh(hull);   // and link the compressed one
 
@@ -253,7 +255,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
         }
         bShape = hull;
       }
-      else // If the mesh has 100 vertices or less, use it like it is
+      else // If convexHullVertexLimit vertices or less, use it like it is
       {
         bShape = meshToHull(mesh);
       }
@@ -297,6 +299,25 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
     return NULL;
   }
 
+  // Read number of vertices limit to be compressed into convex hull
+  RCHECK(config);
+  unsigned int convexHullVertexLimit = MAX_VERTICES_WITHOUT_COMPRESSION;
+  xmlNodePtr bulletParams = getXMLChildByName(config->getXMLRootNode(),
+                                              "bullet_parameters");
+  if (bulletParams == NULL)
+  {
+    RLOG(1, "Physics configuration file %s did not contain a "
+         "\"bullet parameters\" node!", config->getConfigFileName());
+  }
+  else
+  {
+    getXMLNodePropertyUnsignedInt(bulletParams, "convex_hull_vertex_limit",
+                                  &convexHullVertexLimit);
+  }
+
+
+
+
 
   // Traverse through shapes
   RcsShape** sPtr = &bdy->shape[0];
@@ -315,7 +336,8 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
     RLOG(5, "Creating shape %s", RcsShape_name((*sPtr)->type));
 
     btTransform relTrans;
-    btCollisionShape* shape = createShape(*sPtr, relTrans, bdy);
+    btCollisionShape* shape = createShape(*sPtr, relTrans, bdy,
+                                          convexHullVertexLimit);
 
     if (shape != NULL)
     {
@@ -427,7 +449,6 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
   }
 
   // apply material properties
-  RCHECK(config);
   RCHECK(materialName);
   const PhysicsMaterial material = config->getMaterial(materialName);
   RCHECK(material);
