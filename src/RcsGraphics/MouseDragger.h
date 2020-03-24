@@ -176,7 +176,7 @@ public:
   *          in the bodies frame of reference. If no body is found under the
   *          mouse pointer, the mouse coordinates are left unchanged.
   */
-  static const RcsBody* getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
+  virtual const RcsBody* getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
                                           osgGA::GUIActionAdapter& aa,
                                           double I_pt[3]=NULL,
                                           double k_pt[3]=NULL);
