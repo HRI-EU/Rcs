@@ -313,12 +313,14 @@ void Rcs::PhysicsBase::setControlInput(const MatNd* q_des_,
     }
     else if (q_des_->m==this->internalDesiredGraph->nJ)
     {
-      RcsGraph_stateVectorFromIK(this->internalDesiredGraph, q_des_, this->q_des);
+      RcsGraph_stateVectorFromIK(this->internalDesiredGraph, q_des_,
+                                 this->q_des);
     }
     else
     {
       RFATAL("Dimension mismatch: q_des_->m=%d, but dof=%d and nJ=%d",
-             q_des_->m, this->internalDesiredGraph->dof, this->internalDesiredGraph->nJ);
+             q_des_->m, this->internalDesiredGraph->dof,
+             this->internalDesiredGraph->nJ);
     }
 
     // Forward kinematics based on the desired state. This is needed in order
@@ -337,12 +339,14 @@ void Rcs::PhysicsBase::setControlInput(const MatNd* q_des_,
     }
     else if (q_dot_des_->m==this->internalDesiredGraph->nJ)
     {
-      RcsGraph_stateVectorFromIK(this->internalDesiredGraph, q_dot_des_, this->q_dot_des);
+      RcsGraph_stateVectorFromIK(this->internalDesiredGraph, q_dot_des_,
+                                 this->q_dot_des);
     }
     else
     {
       RFATAL("Dimension mismatch: q_dot_des_->m=%d, but dof=%d and nJ=%d",
-             q_dot_des_->m, this->internalDesiredGraph->dof, this->internalDesiredGraph->nJ);
+             q_dot_des_->m, this->internalDesiredGraph->dof,
+             this->internalDesiredGraph->nJ);
     }
   }
 
@@ -357,12 +361,14 @@ void Rcs::PhysicsBase::setControlInput(const MatNd* q_des_,
     }
     else if (T_des_->m==this->internalDesiredGraph->nJ)
     {
-      RcsGraph_stateVectorFromIK(this->internalDesiredGraph, T_des_, this->T_des);
+      RcsGraph_stateVectorFromIK(this->internalDesiredGraph, T_des_,
+                                 this->T_des);
     }
     else
     {
       RFATAL("Dimension mismatch: T_des_->m=%d, but dof=%d and nJ=%d",
-             T_des_->m, this->internalDesiredGraph->dof, this->internalDesiredGraph->nJ);
+             T_des_->m, this->internalDesiredGraph->dof,
+             this->internalDesiredGraph->nJ);
     }
   }
 }
@@ -451,6 +457,15 @@ bool Rcs::PhysicsBase::activateBody(const char* name, const HTr* A_BI)
 bool Rcs::PhysicsBase::check() const
 {
   return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::PhysicsBase::reset(const MatNd* q)
+{
+  RcsGraph_setState(internalDesiredGraph, q, NULL);// reset() will zero q_dot
+  reset();
 }
 
 /*******************************************************************************

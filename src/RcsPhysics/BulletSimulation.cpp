@@ -73,7 +73,7 @@ typedef std::map<const RcsBody*, Rcs::BulletRigidBody*>::iterator body_it;
 /*******************************************************************************
  * Callback for collision filtering. Do your collision logic here
  ******************************************************************************/
-static inline void MyNearCallbackDisabled(btBroadphasePair& collisionPair,
+void Rcs::BulletSimulation::MyNearCallbackDisabled(btBroadphasePair& collisionPair,
                                           btCollisionDispatcher& dispatcher,
                                           const btDispatcherInfo& dispatchInfo)
 {
@@ -83,7 +83,7 @@ static inline void MyNearCallbackDisabled(btBroadphasePair& collisionPair,
 /*******************************************************************************
  * Callback for collision filtering. Do your collision logic here
  ******************************************************************************/
-static inline void MyNearCallbackEnabled(btBroadphasePair& collisionPair,
+void Rcs::BulletSimulation::MyNearCallbackEnabled(btBroadphasePair& collisionPair,
                                          btCollisionDispatcher& dispatcher,
                                          const btDispatcherInfo& dispatchInfo)
 {
@@ -265,20 +265,33 @@ Rcs::BulletSimulation::~BulletSimulation()
       delete body->getMotionState();
     }
     dynamicsWorld->removeCollisionObject(obj);
-#if !defined (_MSC_VER)
-    if (dynamic_cast<BulletRigidBody*>(body))
-    {
-      // BulletRigidBody takes care of recursively deleting all shapes
-      delete obj;
+    // #if !defined (_MSC_VER)
+    //     if (dynamic_cast<BulletRigidBody*>(body))
+    //     {
+    //       // BulletRigidBody takes care of recursively deleting all shapes
+    //       delete obj;
+    //     }
+    //     else
+    //     {
+    //       // Other shapes such as ground plane need explicit destruction of shapes
+    //       delete obj->getCollisionShape();
+    //       delete obj;
+    //     }
+    // #endif
     }
-    else
-    {
-      // Other shapes such as ground plane need explicit destruction of shapes
-      delete obj->getCollisionShape();
-      delete obj;
-    }
-#endif
-  }
+
+  // btSoftRigidDynamicsWorld* softWorld = dynamic_cast<btSoftRigidDynamicsWorld*>(this->dynamicsWorld);
+
+  // if (softWorld)
+  // {
+  //   btSoftBodyArray& arr = softWorld->getSoftBodyArray();
+
+  //   for (int i=0;i<arr.size(); ++i)
+  //   {
+  //     softWorld->removeSoftBody(arr[i]);
+  //     //delete arr[i];
+  //   }
+  // }
 
   delete this->dynamicsWorld;
   delete this->solver;
@@ -326,6 +339,14 @@ void Rcs::BulletSimulation::unlock() const
 /*******************************************************************************
  *
  ******************************************************************************/
+void Rcs::BulletSimulation::setNearCallback(btNearCallback nearCallback)
+{
+  dispatcher->setNearCallback(nearCallback);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
 {
   this->physicsConfigFile = String_clone(config->getConfigFileName());
@@ -339,42 +360,20 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
          "\"bullet parameters\" node!", this->physicsConfigFile);
   }
 
-  this->collisionConfiguration = new btDefaultCollisionConfiguration();
-  this->dispatcher = new btCollisionDispatcher(collisionConfiguration);
-  dispatcher->setNearCallback(MyNearCallbackEnabled);
-
-  btVector3 worldAabbMin(-10.0, -10.0, -10.0);
-  btVector3 worldAabbMax(10.0, 10.0, 10.0);
-  if (bulletParams)
-  {
-    // load axis sweep params from xml
-    double vec[3];
-
-    if (getXMLNodePropertyVec3(bulletParams, "world_aabb_min", vec))
-    {
-      worldAabbMin[0] = vec[0];
-      worldAabbMin[1] = vec[1];
-      worldAabbMin[2] = vec[2];
-    }
-    if (getXMLNodePropertyVec3(bulletParams, "world_aabb_max", vec))
-    {
-      worldAabbMax[0] = vec[0];
-      worldAabbMax[1] = vec[1];
-      worldAabbMax[2] = vec[2];
-    }
-  }
-  broadPhase = new btAxisSweep3(worldAabbMin, worldAabbMax);
-
   bool useMCLPSolver = false;
 
-#if BT_BULLET_VERSION > 281
-  //useMCLPSolver = true;
   if (bulletParams)
   {
     // load solver type from xml
     getXMLNodePropertyBoolString(bulletParams, "use_mclp_solver",
                                  &useMCLPSolver);
   }
+
+  this->collisionConfiguration = new btDefaultCollisionConfiguration();
+  this->dispatcher = new btCollisionDispatcher(collisionConfiguration);
+  dispatcher->setNearCallback(MyNearCallbackEnabled);
+  broadPhase = new btDbvtBroadphase();
+
   if (useMCLPSolver)
   {
     this->mlcpSolver = new btDantzigSolver();
@@ -383,7 +382,6 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
     RLOG(5, "Using MCLP solver");
   }
   else
-#endif
   {
     solver = new btSequentialImpulseConstraintSolver;
     RLOG(5, "Using sequential impulse solver");
@@ -573,6 +571,9 @@ void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
   }
 
   lock();
+
+
+
 #ifndef HEADLESS_BUILD
   if (this->debugDrawer != NULL)
   {
@@ -669,7 +670,7 @@ void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
 }
 
 /*******************************************************************************
- * Adapted from bullet/Demos/OpenGL/DemoApplication.cpp
+ *
  ******************************************************************************/
 void Rcs::BulletSimulation::reset()
 {
@@ -746,7 +747,8 @@ void Rcs::BulletSimulation::setForce(const RcsBody* body, const double F[3],
       double relPos[3];
       Vec3d_sub(relPos, p, body->A_BI->org);
 
-      rigidBody->applyForce(btVector3(F[0], F[1], F[2]), btVector3(relPos[0], relPos[1], relPos[2]));
+      rigidBody->applyForce(btVector3(F[0], F[1], F[2]),
+                            btVector3(relPos[0], relPos[1], relPos[2]));
     }
     else
     {
@@ -964,7 +966,6 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
   for (it=bdyMap.begin(); it!=bdyMap.end(); ++it)
   {
     const RcsBody* rb = it->first;
-    RCHECK(rb);
 
     if (rb->rigid_body_joints == true)
       //if (RcsBody_isFloatingBase(rb) == true)
@@ -973,9 +974,10 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
       RCHECK_MSG(btBdy, "%s", rb->name);
       HTr A_BI;
       btBdy->getBodyTransform(&A_BI);
-      int idx = (type==RcsStateFull) ? rb->jnt->jointIndex : rb->jnt->jacobiIndex;
+      const RcsJoint* jnt = rb->jnt;
+      int idx = (type==RcsStateFull) ? jnt->jointIndex : jnt->jacobiIndex;
       RCHECK_MSG(idx>=0 && idx<(int)getGraph()->dof, "Joint \"%s\": idx = %d",
-                 rb->jnt ? rb->jnt->name : "NULL", idx);
+                 jnt ? jnt->name : "NULL", idx);
 
       // Transformation update: Here we compute the rigid body degrees of
       // freedom so that the state vector matches the results from physics.
@@ -1368,7 +1370,12 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
   btFixedConstraint* jnt =
     static_cast<btFixedConstraint*>(rb->getUserPointer());
 
-  RCHECK(jnt);
+  if (jnt == NULL)
+  {
+    RLOG(1, "Load cell of body \"%s\" is not attached to joint",
+         fts->body->name);
+    return false;
+  }
 
   const btJointFeedback* jf = jnt->getJointFeedback();
 

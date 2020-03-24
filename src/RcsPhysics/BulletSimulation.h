@@ -56,7 +56,10 @@ class btDefaultCollisionConfiguration;
 class btDynamicsWorld;
 class btMLCPSolverInterface;
 class btVector3;
-
+class btBroadphasePair;
+class btDispatcherInfo;
+class btSoftBodyWorldInfo;
+typedef void(*btNearCallback)(btBroadphasePair&, btCollisionDispatcher&, const btDispatcherInfo&);
 
 namespace Rcs
 {
@@ -180,11 +183,22 @@ public:
 
   virtual bool check() const;
 
+  void setNearCallback(btNearCallback nearCallback);
+
   btDynamicsWorld* dynamicsWorld;
 
-private:
+protected:
 
-  void initPhysics(const PhysicsConfig* config);
+  static void MyNearCallbackEnabled(btBroadphasePair& collisionPair,
+                                    btCollisionDispatcher& dispatcher,
+                                    const btDispatcherInfo& dispatchInfo);
+
+  static void MyNearCallbackDisabled(btBroadphasePair& collisionPair,
+                                     btCollisionDispatcher& dispatcher,
+                                     const btDispatcherInfo& dispatchInfo);
+
+
+  virtual void initPhysics(const PhysicsConfig* config);
   void applyControl(double dt);
   void updateSensors();
   bool updatePPSSensor(RcsSensor* sensor);
@@ -214,6 +228,8 @@ private:
 
   double rigidBodyLinearDamping;
   double rigidBodyAngularDamping;
+
+private:
 
   /*! \brief Private assignment operator to avoid it from being used
    */
