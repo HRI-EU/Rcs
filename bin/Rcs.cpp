@@ -804,6 +804,7 @@ int main(int argc, char** argv)
             bool ghostVisible = gn->getGhostMode();
             bool wireframeVisible = gn->getWireframe();
             viewer->removeNode(gn);
+            viewer->removeNode("PPSSensorNode");
             pthread_mutex_lock(&graphLock);
             gn = NULL;
             RcsGraph_destroy(graph);
@@ -1140,6 +1141,11 @@ int main(int argc, char** argv)
       {
         Rcs::PhysicsFactory::print();
         RFATAL("Couldn't create physics engine \"%s\"", physicsEngine);
+      }
+
+      REXEC(1)
+      {
+        sim->print();
       }
 
 

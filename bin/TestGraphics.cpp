@@ -52,6 +52,7 @@
 #include <Rcs_utils.h>
 #include <MeshNode.h>
 #include <TextNode3D.h>
+#include <Rcs_graphicsUtils.h>
 
 #include <osgGA/TrackballManipulator>
 #include <osgDB/Registry>
@@ -867,6 +868,42 @@ static void testText3D()
 }
 
 /*******************************************************************************
+ * FindChildrenOfType
+ ******************************************************************************/
+bool testFindChildrenOfType()
+{
+  Rcs::CmdLineParser argP;
+  char xmlFileName[256] = "gScenario.xml";
+  char directory[256] = "config/xml/DexBot";
+  argP.getArgument("-f", xmlFileName, "Configuration file name (default"
+                   " is \"%s\")", xmlFileName);
+  argP.getArgument("-dir", directory, "Configuration file directory "
+                   "(default is \"%s\")", directory);
+  Rcs_addResourcePath(directory);
+  Rcs_addResourcePath("config");
+
+  RcsGraph* graph = RcsGraph_create(xmlFileName);
+
+  if (graph == NULL)
+  {
+    RMSG("Failed to create graph from file \"%s\" - exiting",
+         xmlFileName);
+    return false;
+  }
+
+  osg::ref_ptr<Rcs::GraphNode> gn = new Rcs::GraphNode(graph);
+  std::vector<Rcs::BodyNode*> bodyNodes;
+  bodyNodes = Rcs::findChildrenOfType<Rcs::BodyNode>(gn.get());
+
+  for (size_t i=0; i<bodyNodes.size(); ++i)
+  {
+    RLOG_CPP(0, "BodyNode[" << i << "] = " << bodyNodes[i]->getName());
+  }
+
+  return true;
+}
+
+/*******************************************************************************
  * Select test modes
  ******************************************************************************/
 int main(int argc, char** argv)
@@ -904,6 +941,7 @@ int main(int argc, char** argv)
       printf("\t\t12   Test cone mesh\n");
       printf("\t\t13   Test sphere swept rectangle mesh\n");
       printf("\t\t14   Test 3d text\n");
+      printf("\t\t14   Test findChildrenOfType() function\n");
       break;
 
     case 0:
@@ -988,6 +1026,12 @@ int main(int argc, char** argv)
     case 14:
     {
       testText3D();
+      break;
+    }
+
+    case 15:
+    {
+      testFindChildrenOfType();
       break;
     }
 
