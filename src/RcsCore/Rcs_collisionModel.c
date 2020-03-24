@@ -570,7 +570,7 @@ double RcsCollisionMdl_getMinDistPair(const RcsCollisionMdl* self, int* pairIdx)
       if (pairIdx)
       {
         *pairIdx = count;
-    }
+      }
     }
 
     count++;

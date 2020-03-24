@@ -237,7 +237,7 @@ void RcsShape_computeLocalCOM(const RcsShape* self, double r_com[3])
     case RCSSHAPE_SSL:
     {
       double c_offs[3], b_offs[3];
-      Vec3d_set(c_offs, 0.0 , 0.0 , 0.5*self->extents[2]);
+      Vec3d_set(c_offs, 0.0, 0.0, 0.5*self->extents[2]);
       Vec3d_transRotate(b_offs, (double(*)[3]) self->A_CB.rot, c_offs);
       Vec3d_add(r_com, self->A_CB.org, b_offs);
       break;
@@ -247,7 +247,7 @@ void RcsShape_computeLocalCOM(const RcsShape* self, double r_com[3])
     case RCSSHAPE_CONE:
     {
       double c_offs[3], b_offs[3];
-      Vec3d_set(c_offs, 0.0 , 0.0 , 0.25*self->extents[2]);
+      Vec3d_set(c_offs, 0.0, 0.0, 0.25*self->extents[2]);
       Vec3d_transRotate(b_offs, (double(*)[3]) self->A_CB.rot, c_offs);
       Vec3d_add(r_com, self->A_CB.org, b_offs);
       break;

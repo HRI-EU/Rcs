@@ -587,7 +587,7 @@ void RcsGraph_computeGravityTorque(const RcsGraph* graph,
   RcsGraph_COGJacobian(graph, J_cog_tp);
   MatNd_transposeSelf(J_cog_tp);
   MatNd* F_g = NULL;
-  MatNd_create2(F_g, 3 ,1);
+  MatNd_create2(F_g, 3,1);
   MatNd_set(F_g, 2, 0, -RcsGraph_mass(graph)*RCS_GRAVITY);
   MatNd_mul(T_gravity, J_cog_tp, F_g);
 

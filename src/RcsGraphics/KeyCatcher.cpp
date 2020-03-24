@@ -59,7 +59,7 @@ KeyCatcher::KeyCatcher()
     _charPressed[i] = false;
   }
 
-  KeyCatcherBase::registerKey("F12", "Print all available keys to console" ,
+  KeyCatcherBase::registerKey("F12", "Print all available keys to console",
                               "KeyCatcher");
   setName("KeyCatcher");
 }

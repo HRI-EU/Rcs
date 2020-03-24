@@ -239,7 +239,7 @@ Rcs::ControllerBase& Rcs::ControllerBase::operator= (const Rcs::ControllerBase& 
 
   for (size_t i = 0; i < this->tasks.size(); i++)
   {
-    delete(this->tasks[i]);
+    delete (this->tasks[i]);
   }
 
   this->tasks.clear();
@@ -274,7 +274,7 @@ Rcs::ControllerBase::~ControllerBase()
 
   for (size_t i = 0; i < this->tasks.size(); i++)
   {
-    delete(this->tasks[i]);
+    delete (this->tasks[i]);
   }
 
   if (this->ownsGraph == true)
@@ -2220,10 +2220,10 @@ void Rcs::ControllerBase::printX(const MatNd* x, const MatNd* a_des) const
     if ((a_des==NULL) || (MatNd_get(a_des, i, 0)>0.0))
     {
       const size_t row = this->taskArrayIdx[i];
-    for (size_t j = 0; j < getTaskDim(i); j++)
-    {
-      printf("Task \"%s\"[%d]: %f\n", getTaskName(i).c_str(), (int) j,
-             MatNd_get(x, row+j, 0));
+      for (size_t j = 0; j < getTaskDim(i); j++)
+      {
+        printf("Task \"%s\"[%d]: %f\n", getTaskName(i).c_str(), (int) j,
+               MatNd_get(x, row+j, 0));
       }
     }
   }

@@ -968,38 +968,38 @@ osg::Switch* BodyNode::addDebugInformation()
       continue;
     }
 
-      // Transfomation of Joint
-      osg::PositionAttitudeTransform* joint_transform =
-        new osg::PositionAttitudeTransform;
-      osg::Geode* joint_geode = new osg::Geode();
+    // Transfomation of Joint
+    osg::PositionAttitudeTransform* joint_transform =
+      new osg::PositionAttitudeTransform;
+    osg::Geode* joint_geode = new osg::Geode();
 
-      switch (JNT->type)
+    switch (JNT->type)
+    {
+      case RCSJOINT_ROT_X:
       {
-        case RCSJOINT_ROT_X:
-        {
-          osg::Quat qA(M_PI_2, osg::Vec3d(0.0, 1.0, 0.0));
-          joint_transform->setAttitude(qA);
-          break;
-        }
-        case RCSJOINT_ROT_Y:
-        {
-          osg::Quat qA(M_PI_2, osg::Vec3d(1.0, 0.0, 0.0));
-          joint_transform->setAttitude(qA);
-          break;
-        }
+        osg::Quat qA(M_PI_2, osg::Vec3d(0.0, 1.0, 0.0));
+        joint_transform->setAttitude(qA);
+        break;
       }
+      case RCSJOINT_ROT_Y:
+      {
+        osg::Quat qA(M_PI_2, osg::Vec3d(1.0, 0.0, 0.0));
+        joint_transform->setAttitude(qA);
+        break;
+      }
+    }
 
-      debugNode->addChild(joint_transform);
-      joint_transform->addChild(joint_geode);
+    debugNode->addChild(joint_transform);
+    joint_transform->addChild(joint_geode);
 
-      // Cylinder for joint
-      osg::Cylinder* cylinder =
-        new osg::Cylinder(osg::Vec3(0.0, 0.0, 0.0), 0.005, 0.04);
+    // Cylinder for joint
+    osg::Cylinder* cylinder =
+      new osg::Cylinder(osg::Vec3(0.0, 0.0, 0.0), 0.005, 0.04);
 
-      osg::ShapeDrawable* shape = new osg::ShapeDrawable(cylinder, hints.get());
+    osg::ShapeDrawable* shape = new osg::ShapeDrawable(cylinder, hints.get());
 
-      joint_geode->addDrawable(shape);
-      setNodeMaterial("GREEN", joint_geode);
+    joint_geode->addDrawable(shape);
+    setNodeMaterial("GREEN", joint_geode);
 
   }   // RCSBODY_TRAVERSE_JOINTS(this->bdy)
 
@@ -1706,13 +1706,13 @@ void BodyNode::updateDynamicMeshes()
     std::vector<MeshNode*> m = findChildrenOfType<MeshNode>(_physicsNode.get());
 
     for (size_t i=0; i<m.size(); ++i)
-      {
+    {
       RLOG_CPP(1, "Updating mesh " << i+1 << " from " << m.size() << " with "
                << meshDat->nVertices << " vertices and " << meshDat->nFaces
                << " faces");
       m[i]->setMesh(meshDat->vertices, meshDat->nVertices,
                     meshDat->faces, meshDat->nFaces);
-      }
+    }
 
   }   // RCSBODY_TRAVERSE_SHAPES(body())
 }
@@ -1740,7 +1740,7 @@ void BodyNode::updateCallback(osg::Node* node, osg::NodeVisitor* nv)
 
   // Update debug lines
   if ((body()->parent) && (_debugLine.valid()))
-      {
+  {
     _debugLine->clear();
 
     // Add the two body positions in local reference
@@ -1755,14 +1755,14 @@ void BodyNode::updateCallback(osg::Node* node, osg::NodeVisitor* nv)
     ps->setCount(_debugLine->size());
     _debugLineGeometry->setVertexArray(_debugLine.get());
     _debugLineGeometry->setPrimitiveSet(0, ps);
-      }
+  }
 
   // Change the geometry according to the bodies shapes
   updateDynamicShapes();
 
   // Mesh dynamic update
   if (getDynamicMeshUpdate())
-      {
+  {
     updateDynamicMeshes();
   }
 }

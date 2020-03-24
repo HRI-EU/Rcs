@@ -181,7 +181,7 @@ double Timer_getSystemTime()
   seconds = ((double)(tCurr) / (double)ldFreq);
 #else
   struct timeval  tv1;
-  gettimeofday(&tv1 , NULL);
+  gettimeofday(&tv1, NULL);
   seconds = tv1.tv_sec + 1.0e-6*tv1.tv_usec;
 #endif
 

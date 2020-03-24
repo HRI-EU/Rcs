@@ -74,8 +74,8 @@ typedef std::map<const RcsBody*, Rcs::BulletRigidBody*>::iterator body_it;
  * Callback for collision filtering. Do your collision logic here
  ******************************************************************************/
 void Rcs::BulletSimulation::MyNearCallbackDisabled(btBroadphasePair& collisionPair,
-                                          btCollisionDispatcher& dispatcher,
-                                          const btDispatcherInfo& dispatchInfo)
+                                                   btCollisionDispatcher& dispatcher,
+                                                   const btDispatcherInfo& dispatchInfo)
 {
   return;
 }
@@ -84,8 +84,8 @@ void Rcs::BulletSimulation::MyNearCallbackDisabled(btBroadphasePair& collisionPa
  * Callback for collision filtering. Do your collision logic here
  ******************************************************************************/
 void Rcs::BulletSimulation::MyNearCallbackEnabled(btBroadphasePair& collisionPair,
-                                         btCollisionDispatcher& dispatcher,
-                                         const btDispatcherInfo& dispatchInfo)
+                                                  btCollisionDispatcher& dispatcher,
+                                                  const btDispatcherInfo& dispatchInfo)
 {
   // Do your collision logic here
   btBroadphaseProxy* p0 = collisionPair.m_pProxy0;
@@ -278,7 +278,7 @@ Rcs::BulletSimulation::~BulletSimulation()
     //       delete obj;
     //     }
     // #endif
-    }
+  }
 
   // btSoftRigidDynamicsWorld* softWorld = dynamic_cast<btSoftRigidDynamicsWorld*>(this->dynamicsWorld);
 

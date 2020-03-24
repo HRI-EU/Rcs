@@ -538,7 +538,7 @@ void Viewer::add(osgGA::GUIEventHandler* eventHandler)
   }
   else
   {
-  viewer->addEventHandler(eventHandler);
+    viewer->addEventHandler(eventHandler);
   }
 }
 
@@ -782,7 +782,7 @@ int Viewer::removeInternal(std::string nodeName)
   while (ndi);
 
   RLOG(5, "Removed %d nodes with name %s from the viewer",
-         nnd, nodeName.c_str());
+       nnd, nodeName.c_str());
 
   return nnd;
 }

@@ -1652,7 +1652,7 @@ double RcsGraph_limitJointSpeeds(const RcsGraph* self, MatNd* dq, double dt,
 
   RCHECK_MSG((dq->m==dimension && dq->n==1) || (dq->m==1 &&  dq->n==dimension),
              "dq is of size %d x %d - should be %d x 1 or 1 x %d",
-             dq->m , dq->n, dimension, dimension);
+             dq->m, dq->n, dimension, dimension);
 
   int theEvilIndex = 0;
   double sc_i = 1.0, sc = 1.0;

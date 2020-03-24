@@ -95,7 +95,7 @@ static void initQProp(void)
 
 *******************************************************************************/
 
-static void f_jlBorderIK(double* y , const double* x, void* params)
+static void f_jlBorderIK(double* y, const double* x, void* params)
 {
   RcsGraph* graph = (RcsGraph*) params;
   MatNd q = MatNd_fromPtr(graph->nJ, 1, (double*) x);
@@ -122,7 +122,7 @@ static void df_jlBorderIK(double* dy, const double* x, void* params)
 
 *******************************************************************************/
 
-static void f_jlBorderFull(double* y , const double* x, void* params)
+static void f_jlBorderFull(double* y, const double* x, void* params)
 {
   RcsGraph* graph = (RcsGraph*) params;
   MatNd q = MatNd_fromPtr(graph->dof, 1, (double*) x);

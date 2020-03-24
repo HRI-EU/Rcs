@@ -453,7 +453,7 @@ static inline const char* IntersectReturnStr(unsigned int iType)
                            "intersection with second vertex point",
                            "co-linear line segment and ray",
                            "Wrong argument"
-  };
+                          };
 
   iType = Math_iClip(iType, 0, 5);
   return res[iType];
@@ -465,7 +465,7 @@ static void testRayLinesegIntersection2D(int argc, char** argv)
   bool simpleGraphics = argP.hasArgument("-simpleGraphics", "OpenGL without fan"
                                          "cy stuff (shadows, anti-aliasing)");
 
- // Initialize GUI and OSG mutex
+  // Initialize GUI and OSG mutex
   pthread_mutex_t graphLock;
   pthread_mutex_init(&graphLock, NULL);
 
@@ -540,13 +540,13 @@ static void testRayLinesegIntersection2D(int argc, char** argv)
   char hudText[512] = "";
 
   while (runLoop)
-    {
+  {
 
-      pthread_mutex_lock(&graphLock);
-      double rayDir[3];
-      Vec3d_sub(rayDir, rayPt1, rayPt0);
-      Vec3d_normalizeSelf(rayDir);
-      int res = Math_intersectRayLineseg2D(rayPt0, rayDir, segPt0, segPt1, intersectPt);
+    pthread_mutex_lock(&graphLock);
+    double rayDir[3];
+    Vec3d_sub(rayDir, rayPt1, rayPt0);
+    Vec3d_normalizeSelf(rayDir);
+    int res = Math_intersectRayLineseg2D(rayPt0, rayDir, segPt0, segPt1, intersectPt);
     if (res==0)
     {
       intrsctNd->hide();
@@ -557,27 +557,27 @@ static void testRayLinesegIntersection2D(int argc, char** argv)
     }
 
 
-      pthread_mutex_unlock(&graphLock);
+    pthread_mutex_unlock(&graphLock);
 
-      sprintf(hudText, "res = %s (%d)\n", IntersectReturnStr(res), res);
+    sprintf(hudText, "res = %s (%d)\n", IntersectReturnStr(res), res);
 
-      if (res>0)
-        {
-          char tmp[256];
-          sprintf(tmp, "intersect = %.3f %.3f\n",
-                  intersectPt[0], intersectPt[1]);
-          strcat(hudText, tmp);
-        }
-
-      hud->setText(hudText);
-
-      if (kc->getAndResetKey('q'))
-        {
-          runLoop = false;
-        }
-      Timer_waitDT(0.01);
-
+    if (res>0)
+    {
+      char tmp[256];
+      sprintf(tmp, "intersect = %.3f %.3f\n",
+              intersectPt[0], intersectPt[1]);
+      strcat(hudText, tmp);
     }
+
+    hud->setText(hudText);
+
+    if (kc->getAndResetKey('q'))
+    {
+      runLoop = false;
+    }
+    Timer_waitDT(0.01);
+
+  }
 
   delete viewer;
   pthread_mutex_destroy(&graphLock);

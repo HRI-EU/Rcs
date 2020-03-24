@@ -147,7 +147,7 @@ Rcs::RampND::~RampND()
 {
   for (size_t i=0; i<dim; i++)
   {
-    delete(filt[i]);
+    delete (filt[i]);
   }
 
   delete [] filt;
@@ -403,7 +403,7 @@ Rcs::SecondOrderLPFND::~SecondOrderLPFND()
 {
   for (size_t i=0; i<dim; i++)
   {
-    delete(filt[i]);
+    delete (filt[i]);
   }
 
   delete [] filt;
@@ -714,7 +714,7 @@ Rcs::MedianFilterND::~MedianFilterND()
 {
   for (size_t i=0; i<dim; i++)
   {
-    delete(filter[i]);
+    delete (filter[i]);
   }
 
   delete [] filter;

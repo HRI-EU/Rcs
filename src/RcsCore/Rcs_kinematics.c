@@ -1164,7 +1164,7 @@ double RcsGraph_jointLimitCost(const RcsGraph* self, RcsStateType type)
     if ((range>0.0) && (JNT->constrained==false))
     {
       double qi = MatNd_get(self->q, JNT->jointIndex, 0);
-      cost += JNT->weightJL * pow((qi - JNT->q0) / range , 2);
+      cost += JNT->weightJL * pow((qi - JNT->q0) / range, 2);
     }
   }
 
@@ -1522,7 +1522,7 @@ double RcsGraph_jointLimitGradient(const RcsGraph* self,
     if ((range > 0.0) && (JNT->jacobiIndex != -1))
     {
       dH->ele[index] = JNT->weightJL * delta / (range * range);
-      cost += JNT->weightJL * pow(delta / range , 2);
+      cost += JNT->weightJL * pow(delta / range, 2);
     }
   }
 
@@ -1575,12 +1575,12 @@ double RcsGraph_jointLimitGradientPlateau(const RcsGraph* self,
       if (qi < lower_threshold)
       {
         dH->ele[index] = JNT->weightJL * (qi - lower_threshold) / (border_size * border_size);
-        cost += JNT->weightJL * pow((qi - lower_threshold) / border_size , 2);
+        cost += JNT->weightJL * pow((qi - lower_threshold) / border_size, 2);
       }
       else if (qi > upper_threshold)
       {
         dH->ele[index] = JNT->weightJL * (qi - upper_threshold) / (border_size * border_size);
-        cost += JNT->weightJL * pow((qi - upper_threshold) / border_size , 2);
+        cost += JNT->weightJL * pow((qi - upper_threshold) / border_size, 2);
       }
     }
   }

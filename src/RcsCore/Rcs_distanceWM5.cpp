@@ -184,7 +184,7 @@ static double Rcs_distancePointCircle(const double p[3],
     double pt_t[3];
     Vec3d_transform(pt_t, A_c, pt);
 
-    vcp1 = Vec3(pt_t[0], pt_t[1] ,pt_t[2]);
+    vcp1 = Vec3(pt_t[0], pt_t[1],pt_t[2]);
   }
 
 

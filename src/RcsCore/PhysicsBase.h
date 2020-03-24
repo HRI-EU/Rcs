@@ -127,7 +127,7 @@ public:
    *                     All simulated joint positions and velocities will be
    *                     copied into RcsGraph::q and RcsGraph::q_dot. Further,
    *                     all sensor data of the graph will be updated. It is
-   *                     assumed that the graph has the same structure as the 
+   *                     assumed that the graph has the same structure as the
    *                     one underlying the simulation.
    *  \param[out] q_ddot Vector holding the value for each degree of freedom
    *                     acceleration. If the vector is on input of dimension
@@ -138,7 +138,7 @@ public:
    *                     nor RcsGraph::nJ, the function exits with a fatal
    *                     error.
    *  \param[out] T      Vector holding the value for each degree of freedom
-   *                     torque. It is treated similarly as input parameter 
+   *                     torque. It is treated similarly as input parameter
    *                     q_ddot.
    *  \param[in] control If true, the function applies the previously set
    *                     control command (see \ref setControlInput()).
@@ -156,7 +156,7 @@ public:
    *
    *  \param[out] q      Vector holding the value for each degree of freedom.
    *                     Must be of dimension RcsGraph::dof x 1 or
-   *                     RcsGraph::nJ x 1, otherwise the function exits with 
+   *                     RcsGraph::nJ x 1, otherwise the function exits with
    *                     a fatal error.
    */
   virtual void reset(const MatNd* q);

@@ -293,7 +293,7 @@ static bool test_localeFreeParsing()
     argP.getArgument("-digits", &ndigits);
     char sir[64];
     String_fromDouble(sir, num, ndigits);
-    RLOG(1, "str=%s" , sir);
+    RLOG(1, "str=%s", sir);
   }
 
   return true;

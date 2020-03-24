@@ -848,7 +848,7 @@ int main(int argc, char** argv)
         }
 
         dt = Timer_getTime() - dt;
-        RMSGS("map: %.3f usec per body (%.3f whole graph), %d misses", 
+        RMSGS("map: %.3f usec per body (%.3f whole graph), %d misses",
               1.0e6*dt / (nameVec.size()*nIter), 1.0e6*dt / (nIter), misses);
       }
 
@@ -871,7 +871,7 @@ int main(int argc, char** argv)
         }
 
         dt = Timer_getTime() - dt;
-        RMSGS("linear: %.3f usec per body (%.3f whole graph), %d misses", 
+        RMSGS("linear: %.3f usec per body (%.3f whole graph), %d misses",
               1.0e6*dt / (nameVec.size()*nIter), 1.0e6*dt / (nIter), misses);
       }
 

@@ -235,7 +235,7 @@ static double* RcsMesh_readAsciiSTLFile(FILE* fd, unsigned int* numVertices)
 
   double* vPtr = &vertices[0];
 
-  while (fscanf(fd ,"%255s", buf) != EOF)
+  while (fscanf(fd,"%255s", buf) != EOF)
   {
     if (STRCASEEQ(buf, "vertex"))
     {
@@ -1144,14 +1144,14 @@ RcsMeshData* RcsMesh_createBox(const double extents[3])
   const double verts[24] =
   {
     -0.5, -0.5, -0.5,
-    0.5, -0.5, -0.5,
-    0.5,  0.5, -0.5,
-    -0.5,  0.5, -0.5,
-    -0.5,  0.5,  0.5,
-    0.5,  0.5,  0.5,
-    0.5, -0.5,  0.5,
-    -0.5, -0.5,  0.5,
-  };
+      0.5, -0.5, -0.5,
+      0.5,  0.5, -0.5,
+      -0.5,  0.5, -0.5,
+      -0.5,  0.5,  0.5,
+      0.5,  0.5,  0.5,
+      0.5, -0.5,  0.5,
+      -0.5, -0.5,  0.5,
+    };
 
   memcpy(mesh->faces, vertexIndex, 3*mesh->nFaces*sizeof(unsigned int));
 
@@ -1580,10 +1580,10 @@ static RcsMeshData* RcsMesh_createRectangle(double x, double y)
   const double verts[12] =
   {
     -0.5, -0.5, 0.0,
-    0.5, -0.5, 0.0,
-    0.5,  0.5, 0.0,
-    -0.5,  0.5, 0.0,
-  };
+      0.5, -0.5, 0.0,
+      0.5,  0.5, 0.0,
+      -0.5,  0.5, 0.0,
+    };
 
   memcpy(mesh->faces, vertexIndex, 3*mesh->nFaces*sizeof(unsigned int));
 

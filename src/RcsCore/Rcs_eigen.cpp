@@ -95,7 +95,7 @@ using namespace Eigen;
 // major, so that the Eigen's Map class can be used to cast them over a MatNd
 // type without any additional memory allocation.
 typedef Matrix<double, Dynamic, Dynamic, RowMajor> HeapMat;
-typedef Matrix<double , Dynamic, 1, ColMajor> HeapVec;
+typedef Matrix<double, Dynamic, 1, ColMajor> HeapVec;
 
 
 
@@ -106,8 +106,8 @@ typedef Matrix<double , Dynamic, 1, ColMajor> HeapVec;
 typedef Matrix<double, Dynamic, Dynamic, RowMajor,
         MATND_MAX_STACK_VECTOR_SIZE,
         MATND_MAX_STACK_VECTOR_SIZE> StackMat;
-typedef Matrix<double , Dynamic, 1, ColMajor,
-        MATND_MAX_STACK_VECTOR_SIZE , 1> StackVec;
+typedef Matrix<double, Dynamic, 1, ColMajor,
+        MATND_MAX_STACK_VECTOR_SIZE, 1> StackVec;
 
 
 

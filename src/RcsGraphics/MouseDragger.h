@@ -177,9 +177,9 @@ public:
   *          mouse pointer, the mouse coordinates are left unchanged.
   */
   virtual const RcsBody* getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
-                                          osgGA::GUIActionAdapter& aa,
-                                          double I_pt[3]=NULL,
-                                          double k_pt[3]=NULL);
+                                           osgGA::GUIActionAdapter& aa,
+                                           double I_pt[3]=NULL,
+                                           double k_pt[3]=NULL);
 
 protected:
 

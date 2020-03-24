@@ -1204,7 +1204,7 @@ int main(int argc, char** argv)
 
         if (seqSim==false)
         {
-        viewer->runInThread(mtx);
+          viewer->runInThread(mtx);
         }
         else
         {

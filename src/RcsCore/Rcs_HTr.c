@@ -44,7 +44,7 @@
 #define HTR_TOSTRING_MAXSIZE (12 * 16)
 
 
-static HTr Identity = { {0., 0., 0.} ,
+static HTr Identity = { {0., 0., 0.},
   { {1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.} }
 };
 
@@ -403,7 +403,7 @@ void HTr_from2Points(HTr* A_KI, const double p1[3], const double p2[3])
   if ((fabs(Vec3d_diffAngle(ez,tmp))<1.0e-5) ||
       (fabs(Vec3d_diffAngle(ez,tmp)-M_PI)<1.0e-5))
   {
-    Vec3d_set(tmp, 1.0 , 0.0 , 0.0);
+    Vec3d_set(tmp, 1.0, 0.0, 0.0);
   }
 
   Vec3d_crossProduct(ey, ez, tmp);

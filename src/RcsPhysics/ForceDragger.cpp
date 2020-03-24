@@ -160,11 +160,11 @@ const RcsBody* Rcs::ForceDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter
   const RcsBody* bdy = nd->body();
 
   if (k_pt && I_pt)
-    {
-      HTr physicsTrf;
-      physics->getPhysicsTransform(&physicsTrf, bdy);
-      Vec3d_invTransform(k_pt, &physicsTrf, I_pt);
-    }
+  {
+    HTr physicsTrf;
+    physics->getPhysicsTransform(&physicsTrf, bdy);
+    Vec3d_invTransform(k_pt, &physicsTrf, I_pt);
+  }
 
   return bdy;
 }

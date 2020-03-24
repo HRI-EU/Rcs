@@ -325,20 +325,20 @@ int main(int argc, char** argv)
             VecNd_copy(z->ele, graph->q->ele, n);
           }
           else if (kc && kc->getAndResetKey('p'))
-            {
-              pause = !pause;
-              RLOGS(1, "Pause modus is %s", pause ? "ON" : "OFF");
-            }
+          {
+            pause = !pause;
+            RLOGS(1, "Pause modus is %s", pause ? "ON" : "OFF");
+          }
           else if (kc->getAndResetKey('e'))
           {
             if (STREQ(integrator, "Euler"))
-              {
-                strcpy(integrator, "Fehlberg");
-              }
+            {
+              strcpy(integrator, "Fehlberg");
+            }
             else
-              {
-                strcpy(integrator, "Euler");
-              }
+            {
+              strcpy(integrator, "Euler");
+            }
             RLOGS(1, "Integrator is %s", integrator);
           }
         } // if(kc)
@@ -353,8 +353,8 @@ int main(int argc, char** argv)
 
           if (hud.valid())
           {
-          hud->setText(hudText);
-        }
+            hud->setText(hudText);
+          }
         }
         else
         {
@@ -364,9 +364,9 @@ int main(int argc, char** argv)
         Timer_wait(timer);
 
         if ((valgrind==true) && (time>10.0*dt))
-          {
-            runLoop = false;
-          }
+        {
+          runLoop = false;
+        }
       }
 
       MatNd_destroy(err);
@@ -393,7 +393,7 @@ int main(int argc, char** argv)
       char pCfg[128] = "config/physics/vortex.xml";
       char hudText[2048] = "";
       double dt = 0.001, tmc = 0.1, vmax = 1.0;
- 
+
       argP.getArgument("-dt", &dt, "Integration step (default is %f sec)", dt);
       argP.getArgument("-tmc", &tmc, "Slider filter time constant (default is"
                        " %f)", tmc);
@@ -442,11 +442,11 @@ int main(int argc, char** argv)
       RcsGraph_getTorqueLimits(graph, T_limit, RcsStateFull);
 
       if (plot==true)
-        {
-          const double maxTorqueOfAll = MatNd_maxAbsEle(T_limit);
-          Rcs::HighGui::configurePlot("Plot 1", 1, 5.0/dt, 
-                                      -maxTorqueOfAll, maxTorqueOfAll);
-        }
+      {
+        const double maxTorqueOfAll = MatNd_maxAbsEle(T_limit);
+        Rcs::HighGui::configurePlot("Plot 1", 1, 5.0/dt,
+                                    -maxTorqueOfAll, maxTorqueOfAll);
+      }
 
       MatNd* q_curr = graph->q;
       MatNd* qp_curr = graph->q_dot;
@@ -456,7 +456,7 @@ int main(int argc, char** argv)
 
 
       // Create physics simulation
-      Rcs::PhysicsBase* sim = Rcs::PhysicsFactory::create(physicsEngine, 
+      Rcs::PhysicsBase* sim = Rcs::PhysicsFactory::create(physicsEngine,
                                                           graph, pCfg);
       RCHECK(sim);
 
@@ -493,9 +493,9 @@ int main(int argc, char** argv)
         viewer->add(kc.get());
         viewer->runInThread(&graphLock);
 
-        gui = MatNdWidget::create(q_gui, q_curr, -3.0, 3.0, 
-                                        "Joint angles", &graphLock);
-       }
+        gui = MatNdWidget::create(q_gui, q_curr, -3.0, 3.0,
+                                  "Joint angles", &graphLock);
+      }
 
 
 
@@ -504,157 +504,157 @@ int main(int argc, char** argv)
 
       // Endless loop
       while (runLoop)
+      {
+        if (pause==true)
         {
-          if (pause==true)
-            {
-              RPAUSE();
-            }
+          RPAUSE();
+        }
 
-          double t_start = Timer_getSystemTime();
+        double t_start = Timer_getSystemTime();
 
-          pthread_mutex_lock(&graphLock);
+        pthread_mutex_lock(&graphLock);
 
-          ////////////////////////////////////////////////////////////
-          // Compute desired reference motion
-          ////////////////////////////////////////////////////////////
-          MatNd_reshape(qp_des, graph->dof, 1);
-          MatNd_reshape(qpp_des, graph->dof, 1);
-          filt.setTarget(q_gui->ele);
-          filt.iterate(qpp_des->ele);
-          filt.getPosition(q_des->ele);
-          filt.getVelocity(qp_des->ele);
+        ////////////////////////////////////////////////////////////
+        // Compute desired reference motion
+        ////////////////////////////////////////////////////////////
+        MatNd_reshape(qp_des, graph->dof, 1);
+        MatNd_reshape(qpp_des, graph->dof, 1);
+        filt.setTarget(q_gui->ele);
+        filt.iterate(qpp_des->ele);
+        filt.getPosition(q_des->ele);
+        filt.getVelocity(qp_des->ele);
 
-          ////////////////////////////////////////////////////////////
-          // Compute inverse dynamics
-          ////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////
+        // Compute inverse dynamics
+        ////////////////////////////////////////////////////////////
 #if 0
-          // Mass matrix, gravity load and h-vector
-          RcsGraph_computeKineticTerms(graph, M, h, g);
+        // Mass matrix, gravity load and h-vector
+        RcsGraph_computeKineticTerms(graph, M, h, g);
 
-          // aq = -kp*(q-q_des)
-          MatNd_reshape(aq, graph->dof, 1);
-          MatNd_sub(aq, q_curr, q_des);
-          RcsGraph_stateVectorToIKSelf(graph, aq);
-          MatNd_constMulSelf(aq, -kp);
+        // aq = -kp*(q-q_des)
+        MatNd_reshape(aq, graph->dof, 1);
+        MatNd_sub(aq, q_curr, q_des);
+        RcsGraph_stateVectorToIKSelf(graph, aq);
+        MatNd_constMulSelf(aq, -kp);
 
-          // aq = aq  -kd*qp_curr + kd*qp_des
-          RcsGraph_stateVectorToIK(graph, graph->q_dot, qp_ik);
-          RcsGraph_stateVectorToIKSelf(graph, qp_des);
-          RcsGraph_stateVectorToIKSelf(graph, qpp_des);
-          MatNd_constMulAndAddSelf(aq, qp_ik, -kd);
-          MatNd_constMulAndAddSelf(aq, qp_des, kd);
+        // aq = aq  -kd*qp_curr + kd*qp_des
+        RcsGraph_stateVectorToIK(graph, graph->q_dot, qp_ik);
+        RcsGraph_stateVectorToIKSelf(graph, qp_des);
+        RcsGraph_stateVectorToIKSelf(graph, qpp_des);
+        MatNd_constMulAndAddSelf(aq, qp_ik, -kd);
+        MatNd_constMulAndAddSelf(aq, qp_des, kd);
 
-          // aq = aq + qpp_des
-          MatNd_addSelf(aq, qpp_des);
+        // aq = aq + qpp_des
+        MatNd_addSelf(aq, qpp_des);
 
-          // Set the speed of the kinematic and constrained joints to zero
-          RCSGRAPH_TRAVERSE_JOINTS(graph)
+        // Set the speed of the kinematic and constrained joints to zero
+        RCSGRAPH_TRAVERSE_JOINTS(graph)
+        {
+          if ((JNT->ctrlType!=RCSJOINT_CTRL_TORQUE) ||
+              (JNT->constrained==true))
           {
-            if ((JNT->ctrlType!=RCSJOINT_CTRL_TORQUE) ||
-                (JNT->constrained==true))
-              {
-                MatNd_set(aq, JNT->jacobiIndex, 0, 0.0);
-              }
+            MatNd_set(aq, JNT->jacobiIndex, 0, 0.0);
           }
+        }
 
-          // Add gravity and coriolis compensation: u += h + Fg
-          // u = M*aq + h + g
-          MatNd_reshape(T_des, graph->nJ, 1);
-          MatNd_mul(T_des, M, aq);   // Tracking error
-          MatNd_subSelf(T_des, h);   // Cancellation of coriolis forces
-          MatNd_subSelf(T_des, g);   // Cancellation of gravity forces
+        // Add gravity and coriolis compensation: u += h + Fg
+        // u = M*aq + h + g
+        MatNd_reshape(T_des, graph->nJ, 1);
+        MatNd_mul(T_des, M, aq);   // Tracking error
+        MatNd_subSelf(T_des, h);   // Cancellation of coriolis forces
+        MatNd_subSelf(T_des, g);   // Cancellation of gravity forces
 #else
         Rcs::ControllerBase::computeInvDynJointSpace(T_des, graph, q_des, kp);
 #endif
 
-          // Check for torque limit violations
-          unsigned int torqueLimitsViolated = 0;
-          RcsGraph_stateVectorFromIKSelf(graph, T_des);
-          for (unsigned int i=0;i<T_des->m; ++i)
-            {
-              if (fabs(T_des->ele[i]) > T_limit->ele[i])
-                {
-                  torqueLimitsViolated++;
-                  RcsJoint* jidx = RcsGraph_getJointByIndex(graph, i,
-                                                            RcsStateFull);
-                  RLOG(1, "Torque limit violation at index %d (%s): %f > %f", 
-                       i, jidx ? jidx->name : "NULL",
-                       fabs(T_des->ele[i]), T_limit->ele[i]);
-                }
-            }
-          double t_dyn = Timer_getSystemTime();
-          
-          ////////////////////////////////////////////////////////////
-          // Simulate
-          ////////////////////////////////////////////////////////////
-          sim->setControlInput(q_des, qp_des, T_des);
-          sim->simulate(dt, q_curr, qp_curr, NULL, NULL, true);
-          RcsGraph_setState(graph, q_curr, qp_curr);
+        // Check for torque limit violations
+        unsigned int torqueLimitsViolated = 0;
+        RcsGraph_stateVectorFromIKSelf(graph, T_des);
+        for (unsigned int i=0; i<T_des->m; ++i)
+        {
+          if (fabs(T_des->ele[i]) > T_limit->ele[i])
+          {
+            torqueLimitsViolated++;
+            RcsJoint* jidx = RcsGraph_getJointByIndex(graph, i,
+                                                      RcsStateFull);
+            RLOG(1, "Torque limit violation at index %d (%s): %f > %f",
+                 i, jidx ? jidx->name : "NULL",
+                 fabs(T_des->ele[i]), T_limit->ele[i]);
+          }
+        }
+        double t_dyn = Timer_getSystemTime();
 
-          pthread_mutex_unlock(&graphLock);
-          double t_sim = Timer_getSystemTime();
-          
-          ////////////////////////////////////////////////////////////
-          // Show some data in plots
-          ////////////////////////////////////////////////////////////
-          if (plot==true)
-            {
-              Rcs::HighGui::showPlot("Plot 1", 1, T_des->ele, graph->dof);
-            }
+        ////////////////////////////////////////////////////////////
+        // Simulate
+        ////////////////////////////////////////////////////////////
+        sim->setControlInput(q_des, qp_des, T_des);
+        sim->simulate(dt, q_curr, qp_curr, NULL, NULL, true);
+        RcsGraph_setState(graph, q_curr, qp_curr);
 
-          //////////////////////////////////////////////////////////////
-          // Keycatcher and hud output
-          /////////////////////////////////////////////////////////////////
+        pthread_mutex_unlock(&graphLock);
+        double t_sim = Timer_getSystemTime();
+
+        ////////////////////////////////////////////////////////////
+        // Show some data in plots
+        ////////////////////////////////////////////////////////////
+        if (plot==true)
+        {
+          Rcs::HighGui::showPlot("Plot 1", 1, T_des->ele, graph->dof);
+        }
+
+        //////////////////////////////////////////////////////////////
+        // Keycatcher and hud output
+        /////////////////////////////////////////////////////////////////
         if (kc.valid())
         {
           if (kc->getAndResetKey('q'))
-            {
-              RMSGS("Quitting run loop");
-              runLoop = false;
-            }
-          else if (kc->getAndResetKey('p'))
-            {
-              pause = !pause;
-              RLOGS(1, "Pause modus is %s", pause ? "ON" : "OFF");
-            }
-          else if (kc->getAndResetKey('o'))
-            {
-              RMSGS("Resetting physics");
-              pthread_mutex_lock(&graphLock);
-              RcsGraph_setDefaultState(graph);
-              sim->reset();
-              gui->reset(graph->q);
-              MatNd_copy(q_gui, graph->q);
-              MatNd_copy(q_des, graph->q);
-              filt.init(graph->q->ele);
-              pthread_mutex_unlock(&graphLock);
+          {
+            RMSGS("Quitting run loop");
+            runLoop = false;
           }
-            }
+          else if (kc->getAndResetKey('p'))
+          {
+            pause = !pause;
+            RLOGS(1, "Pause modus is %s", pause ? "ON" : "OFF");
+          }
+          else if (kc->getAndResetKey('o'))
+          {
+            RMSGS("Resetting physics");
+            pthread_mutex_lock(&graphLock);
+            RcsGraph_setDefaultState(graph);
+            sim->reset();
+            gui->reset(graph->q);
+            MatNd_copy(q_gui, graph->q);
+            MatNd_copy(q_des, graph->q);
+            filt.init(graph->q->ele);
+            pthread_mutex_unlock(&graphLock);
+          }
+        }
 
-          sprintf(hudText, "Time: %.3f (real: %.3f) dt: %.1f msec\ndt_dyn: "
-                  "%.3f msec "
-                  "dt_sim: %.3f msec\n%u torque limits violated\n", 
-                  sim->time(), Timer_get(rtClock), 1000.0*dt,
-                  1000.0*(t_dyn-t_start), 1000.0*(t_sim-t_start),
-                  torqueLimitsViolated);
+        sprintf(hudText, "Time: %.3f (real: %.3f) dt: %.1f msec\ndt_dyn: "
+                "%.3f msec "
+                "dt_sim: %.3f msec\n%u torque limits violated\n",
+                sim->time(), Timer_get(rtClock), 1000.0*dt,
+                1000.0*(t_dyn-t_start), 1000.0*(t_sim-t_start),
+                torqueLimitsViolated);
 
         if (hud.valid())
-            {
-              hud->setText(hudText);
-            }
-          else
-            {
-              std::cout << hudText;
-              if (sim->time() > 10.0*dt)
-                {
-                  runLoop = false;
-                }
-            }
+        {
+          hud->setText(hudText);
+        }
+        else
+        {
+          std::cout << hudText;
+          if (sim->time() > 10.0*dt)
+          {
+            runLoop = false;
+          }
+        }
 
 
-          Timer_wait(rtClock);
+        Timer_wait(rtClock);
 
-        }   // while(runLoop)
+      }   // while(runLoop)
 
       RcsGuiFactory_shutdown();
       delete sim;
@@ -685,10 +685,10 @@ int main(int argc, char** argv)
   } // switch(mode)
 
   if (argP.hasArgument("-h"))
-    {
-      Rcs_printResourcePath();
-      argP.print();
-    }
+  {
+    Rcs_printResourcePath();
+    argP.print();
+  }
 
   // Clean up global stuff. From the libxml2 documentation:
   // WARNING: if your application is multithreaded or has plugin support

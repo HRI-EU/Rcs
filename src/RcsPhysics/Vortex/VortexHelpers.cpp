@@ -629,7 +629,7 @@ Vx::VxConstraint* Rcs::createFixedJoint(Vx::VxPart* vxParent,
   {
     RLOG(1, "Creation of joint between \"%s\" and \"%s\" failed: "
          "no body attached to \"%s\"",
-         vxParent->getName(), vxChild->getName() , vxChild->getName());
+         vxParent->getName(), vxChild->getName(), vxChild->getName());
     return NULL;
   }
 

@@ -81,7 +81,7 @@ extern "C" {
       return;
     }
     RCSRESOURCEPATH->clear();
-    delete(RCSRESOURCEPATH);
+    delete (RCSRESOURCEPATH);
     RCSRESOURCEPATH = NULL;
   }
 
