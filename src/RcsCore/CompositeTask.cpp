@@ -63,7 +63,10 @@ Rcs::CompositeTask::CompositeTask(const Rcs::CompositeTask& copyFromMe,
                                   RcsGraph* newGraph):
   Task(copyFromMe, newGraph)
 {
-
+  // The addTask method assigns the parameter list, so we need to delete it
+  // before going trough te sub tasks.
+  clearParameters();
+  
   for (size_t i=0; i<copyFromMe.subTask.size(); ++i)
   {
     addTask(copyFromMe.subTask[i]->clone(newGraph));
