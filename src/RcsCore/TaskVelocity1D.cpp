@@ -166,3 +166,14 @@ bool Rcs::TaskVelocity1D::isValid(xmlNode* node, const RcsGraph* graph)
 
   return success;
 }
+
+/*******************************************************************************
+ * No good test yet.
+ ******************************************************************************/
+bool Rcs::TaskVelocity1D::testJacobian(double errorLimit,
+                                       double delta,
+                                       bool relativeError,
+                                       bool verbose)
+{
+  return true;
+}

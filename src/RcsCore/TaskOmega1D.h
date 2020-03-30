@@ -98,7 +98,16 @@ public:
    */
   virtual void computeX(double* x_res) const;
 
+  /*! \brief In this particular task, the x_des command corresponds to the
+   *         desired velocity. Therefore it is just copied into dx.
+   */
   virtual void computeDX(double* dx, const double* x_des) const;
+
+  /*! \brief Returns true, since this class has no good finite difference
+   *         Jacobian test.
+   */
+  virtual bool testJacobian(double errorLimit=1.0e-4, double delta=1.0e-6,
+                            bool relativeError=false, bool verbose=false);
 
   /*! \brief Returns true if the task is specified correctly, false otherwise.
    *         The following chechs are carried out:

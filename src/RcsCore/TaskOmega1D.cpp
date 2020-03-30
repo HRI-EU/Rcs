@@ -216,3 +216,14 @@ bool Rcs::TaskOmega1D::isValid(xmlNode* node, const RcsGraph* graph)
 
   return success;
 }
+
+/*******************************************************************************
+ * No good test yet.
+ ******************************************************************************/
+bool Rcs::TaskOmega1D::testJacobian(double errorLimit,
+                                    double delta,
+                                    bool relativeError,
+                                    bool verbose)
+{
+  return true;
+}

@@ -78,8 +78,7 @@ public:
    */
   virtual ~TaskVelocity1D();
 
-  /*!
-   * \brief Returns a deep copy of a task.
+  /*! \brief Returns a deep copy of a task.
    */
   virtual TaskVelocity1D* clone(RcsGraph* newGraph=NULL) const;
 
@@ -89,6 +88,12 @@ public:
    *         desired velocity. Therefore it is just copied into dx.
    */
   virtual void computeDX(double* dx, const double* x_des) const;
+
+  /*! \brief Returns true, since this class has no good finite difference
+   *         Jacobian test.
+   */
+  virtual bool testJacobian(double errorLimit=1.0e-4, double delta=1.0e-6,
+                            bool relativeError=false, bool verbose=false);
 
   /*! \brief Returns true for success, false otherwise:
    *         - Xml tag "controlVariable" is not "Xd", "Yd" or "Zd".

@@ -2211,10 +2211,13 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("q", "Quit");
       Rcs::KeyCatcherBase::registerKey("p", "Toggle pause");
 
+      int nTests = 1, loopCount = 0;
       strcpy(xmlFileName, "cAction.xml");
       strcpy(directory, "config/xml/GenericHumanoid");
       argP.getArgument("-f", xmlFileName);
       argP.getArgument("-dir", directory);
+      argP.getArgument("-nTests", &nTests, "Number of test iterations (default"
+                       " is %d)", nTests);
       bool pause = argP.hasArgument("-pause", "Pause after each iteration");
       bool skipGraphics = valgrind ||
                           argP.hasArgument("-noGraphics",
@@ -2270,7 +2273,8 @@ int main(int argc, char** argv)
 
         if (success == false)
         {
-          RPAUSE_MSG("Test failed");
+          //RPAUSE_MSG("Test failed");
+          result++;
         }
 
         if (kc && kc->getAndResetKey('q'))
@@ -2282,7 +2286,7 @@ int main(int argc, char** argv)
           pause = !pause;
         }
 
-        if (valgrind==true)
+        if ((valgrind==true) && (loopCount>=nTests))
         {
           runLoop = false;
         }
@@ -2296,6 +2300,7 @@ int main(int argc, char** argv)
           Timer_waitDT(0.01);
         }
 
+        loopCount++;
       }
 
       MatNd_destroy(q);
