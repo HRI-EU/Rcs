@@ -44,7 +44,7 @@ function testGraph()
 
 function testController()
 {
-    @EXECUTABLE_OUTPUT_PATH@/Rcs -m 6 -valgrind -nTests 2 -dl -1 > /dev/null
+    @EXECUTABLE_OUTPUT_PATH@/Rcs -m 6 -valgrind -nTests 20 -dl -1 > /dev/null
     testControllerResult=$?
 }
 
