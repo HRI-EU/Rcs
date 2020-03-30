@@ -50,7 +50,7 @@
 RCS_INSTALL_ERRORHANDLERS
 
 
-bool testMode(int mode, int argc, char** argv)
+static bool testMode(int mode, int argc, char** argv)
 {
   int numTests = 1;
   bool success = true;
@@ -239,11 +239,12 @@ bool testMode(int mode, int argc, char** argv)
  ******************************************************************************/
 int main(int argc, char** argv)
 {
-  int mode = 0;
+  int result = 0, mode = 0;
 
   // Parse command line arguments
   Rcs::CmdLineParser argP(argc, argv);
-  argP.getArgument("-dl", &RcsLogLevel, "Set debug level (default is %d)", RcsLogLevel);
+  argP.getArgument("-dl", &RcsLogLevel, "Set debug level (default is %d)",
+                   RcsLogLevel);
   argP.getArgument("-m", &mode, "Set test mode (default is %d)", mode);
 
   bool success = true;
@@ -252,7 +253,13 @@ int main(int argc, char** argv)
   {
     for (int i=1; i<=6; ++i)
     {
-      success = testMode(i, argc, argv) | success;
+      bool success_i = testMode(i, argc, argv);
+      if (!success_i)
+      {
+        result++;
+      }
+
+      success = success_i | success;
     }
   }
   else
@@ -269,5 +276,5 @@ int main(int argc, char** argv)
     printf("Test %s\n", success ? "SUCCEEDED" : "FAILED");
   }
 
-  return 0;
+  return Math_iClip(result, 0, 255);
 }

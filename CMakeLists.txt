@@ -19,6 +19,7 @@ ENDIF()
 
 SET(RCS_THIRDPARTY_DIR ${PROJECT_SOURCE_DIR}/external)
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
@@ -204,6 +205,13 @@ IF(EXISTS "${PROJECT_SOURCE_DIR}/projects")
 ENDIF()
 
 ADD_SUBDIRECTORY (doc)
+
+################################################################################
+#
+# Configure unit test script
+#
+################################################################################
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/unittest.in ${CMAKE_CURRENT_BINARY_DIR}/unittest.sh @ONLY)
 
 ################################################################################
 #

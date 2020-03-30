@@ -154,6 +154,7 @@ int main(int argc, char** argv)
       fprintf(stderr, "\t\t6   Test all graphs in directory\n");
       fprintf(stderr, "\t\t7   Test BVH parsing\n");
       fprintf(stderr, "\t\t8   Test body lookup by name\n");
+      fprintf(stderr, "\t\t9   Test body traversals\n");
       fprintf(stderr, "\n\nResource path:\n");
       Rcs_printResourcePath();
       break;
@@ -762,6 +763,7 @@ int main(int argc, char** argv)
       }
       break;
     }
+
     // ==============================================================
     // Body lookup test
     // ==============================================================
@@ -874,6 +876,61 @@ int main(int argc, char** argv)
         RMSGS("linear: %.3f usec per body (%.3f whole graph), %d misses",
               1.0e6*dt / (nameVec.size()*nIter), 1.0e6*dt / (nIter), misses);
       }
+
+      RcsGraph_destroy(graph);
+      break;
+    }
+
+    // ==============================================================
+    // Body traversal test
+    // ==============================================================
+    case 9:
+    {
+      char rootBdy[256];
+      strcpy(xmlFileName, "gScenario.xml");
+      strcpy(directory, "config/xml/PPStest");
+      argP.getArgument("-f", xmlFileName, "RcsGraph's configuration file name"
+                       " (default is %s)", xmlFileName);
+      argP.getArgument("-dir", directory, "Configuration file directory ("
+                       "default is %s)", directory);
+      Rcs_addResourcePath(directory);
+
+      RcsGraph* graph = RcsGraph_create(xmlFileName);
+      RCHECK(graph);
+      strcpy(rootBdy, graph->root->name);
+      argP.getArgument("-root", rootBdy, "Name of body to start traversals ("
+                       "default is %s)", rootBdy);
+
+      if (argP.hasArgument("-h"))
+      {
+        argP.print();
+        break;
+      }
+
+      RcsBody* traversalRoot = RcsGraph_getBodyByName(graph, rootBdy);
+      RCHECK_MSG(traversalRoot, "Not found in graph: %s", rootBdy);
+
+      size_t bdyCount = 0;
+      RMSG("RCSGRAPH_TRAVERSE_BODIES");
+      RCSGRAPH_TRAVERSE_BODIES(graph)
+      {
+        std::cout << bdyCount++ << " " << BODY->name << std::endl;
+      }
+
+      bdyCount = 0;
+      RMSG("RCSBODY_TRAVERSE_BODIES");
+      RCSBODY_TRAVERSE_BODIES(traversalRoot)
+      {
+        std::cout << bdyCount++ << " " << BODY->name << std::endl;
+      }
+
+      bdyCount = 0;
+      RMSG("RCSBODY_TRAVERSE_CHILD_BODIES");
+      RCSBODY_TRAVERSE_CHILD_BODIES(traversalRoot)
+      {
+        std::cout << bdyCount++ << " " << BODY->name << std::endl;
+      }
+
 
       RcsGraph_destroy(graph);
       break;

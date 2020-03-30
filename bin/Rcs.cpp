@@ -193,8 +193,7 @@ static bool getModel(char* directory, char* xmlFileName)
  ******************************************************************************/
 int main(int argc, char** argv)
 {
-  RMSG("Starting Rcs...");
-  int mode = 0;
+  int result = 0, mode = 0;
   char xmlFileName[128] = "", directory[128] = "";
 
   // Ctrl-C callback handler
@@ -207,7 +206,7 @@ int main(int argc, char** argv)
   // Parse command line arguments
   Rcs::CmdLineParser argP(argc, argv);
   argP.getArgument("-dl", &RcsLogLevel, "Debug level (default is 0)");
-  argP.getArgument("-m", &mode, "Test mode");
+  argP.getArgument("-m", &mode, "Test mode (default is 0)");
   argP.getArgument("-f", xmlFileName, "Configuration file name");
   argP.getArgument("-dir", directory, "Configuration file directory");
   bool valgrind = argP.hasArgument("-valgrind",
@@ -1018,7 +1017,12 @@ int main(int argc, char** argv)
         }
 
         MatNd_copy(q_test, graph->q);
-        Rcs_gradientTestGraph(graph, q_test, true);
+        bool success = Rcs_gradientTestGraph(graph, q_test,
+                                             RcsLogLevel>0?true:false);
+        if (!success)
+        {
+          result++;
+        }
 
         if (loopCount > nIter)
         {
@@ -3151,7 +3155,7 @@ int main(int argc, char** argv)
   // before calling exit() to avoid leak reports from valgrind !
   xmlCleanupParser();
 
-  fprintf(stderr, "Thanks for using the Rcs libraries\n");
+  RLOG(0, "Thanks for using the Rcs libraries\n");
 
 #if defined (_MSC_VER)
   if ((mode==0) || argP.hasArgument("-h"))
@@ -3160,5 +3164,5 @@ int main(int argc, char** argv)
   }
 #endif
 
-  return 0;
+  return Math_iClip(result, 0, 255);
 }
