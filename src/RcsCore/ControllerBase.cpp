@@ -2349,7 +2349,7 @@ bool Rcs::ControllerBase::checkLimits(bool checkJointLimits,
     }
   }
 
-  // Speed limit check
+  // Speed limit check.
   if (checkJointVelocities)
   {
     RCSGRAPH_TRAVERSE_JOINTS(getGraph())
@@ -2373,44 +2373,6 @@ bool Rcs::ControllerBase::checkLimits(bool checkJointLimits,
     }
 
   }
-
-
-
-
-
-
-
-
-  // // Speed limit check
-  // if (checkJointVelocities)
-  // {
-  //   MatNd* q_dot = MatNd_clone(getGraph()->q_dot);
-  //   double scaling = RcsGraph_limitJointSpeeds(getGraph(), q_dot,
-  //                                              1.0, RcsStateFull);
-  //   if (scaling < 1.0)
-  //   {
-  //     success = false;
-  //     RLOG(3, "Joint speed limit violation");
-  //     RCSGRAPH_TRAVERSE_JOINTS(getGraph())
-  //     {
-  //       if ((!JNT->constrained) &&
-  //           (fabs(q_dot->ele[JNT->jointIndex]) >= JNT->speedLimit))
-  //       {
-  //         double sf = RcsJoint_isRotation(JNT) ? 180.0 / M_PI : 1.0;
-  //         RLOG(4, "%s: q_dot=%f   limit=%f [%s]", JNT->name,
-  //              sf*q_dot->ele[JNT->jointIndex],
-  //              sf*JNT->speedLimit, sf == 1.0 ? "m/sec" : "deg/sec");
-  //       }
-  //     }
-  //   }
-  //   MatNd_destroy(q_dot);
-  // }
-
-
-
-
-
-
 
   return success;
 }

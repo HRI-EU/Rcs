@@ -688,7 +688,8 @@ public:
    */
   bool getModelState(MatNd* q, const char* modelStateName, int timeStamp=0);
 
-  /*! \brief Performs various checks on the controller.
+  /*! \brief Performs various checks on the controller. All margins are in
+   *         SI units.
    *
    *  \param checkJointLimits     Perform joint limit check for all joints.
    *  \param checkCollisions      Perform collision checks for collision model.
@@ -709,6 +710,13 @@ public:
                    double speedMarginAngular=0.0,
                    double speedMarginLinear=0.0) const;
 
+  /*! \brief Swaps the task vector newTasks with the one of the class.
+   *
+   *  \param[in] newTasks   Tasks to be swapped. The vector newTasks will
+   *                        contain the class's task vector afterwards.
+   *  \param[in] recomputeArrayIndices   The class's array indices will be
+   *                                     recomputed if this argument is true.
+   */
   void swapTaskVec(std::vector<Task*>& newTasks,
                    bool recomputeArrayIndices=false);
 
