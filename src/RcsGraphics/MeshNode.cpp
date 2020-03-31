@@ -109,13 +109,13 @@ void Rcs::MeshNode::setMesh(const double* vertices, unsigned int numVertices,
   clear();
 
   osg::ref_ptr<osg::TriangleMesh> mesh = new osg::TriangleMesh;
-
+ 
   // Assign vertices
   osg::ref_ptr<osg::Vec3Array> v = new osg::Vec3Array;
   for (unsigned int i = 0; i < numVertices; i++)
   {
-    const unsigned i3 = i * 3;
-    v->push_back(osg::Vec3(vertices[i3 + 0], vertices[i3 + 1], vertices[i3 + 2]));
+    const double* vi = &vertices[3*i];
+    v->push_back(osg::Vec3(vi[0], vi[1], vi[2]));
   }
 
   // Assign index array
@@ -129,6 +129,7 @@ void Rcs::MeshNode::setMesh(const double* vertices, unsigned int numVertices,
   mesh->setIndices(f.get());
 
   osg::ref_ptr<osg::ShapeDrawable> shape = new osg::ShapeDrawable(mesh.get());
+
   this->geode->addDrawable(shape.get());
 }
 
