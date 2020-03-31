@@ -36,12 +36,10 @@
 
 #include "RcsViewer.h"
 #include "Rcs_graphicsUtils.h"
-#include "BodyNode.h"
 
 #include <Rcs_macros.h>
 #include <Rcs_timer.h>
 #include <KeyCatcherBase.h>
-#include <Rcs_utils.h>
 #include <Rcs_Vec3d.h>
 #include <Rcs_VecNd.h>
 
@@ -194,7 +192,8 @@ struct ViewerEventData : public osg::Referenced
     init(type, node->getName());
   }
 
-  ViewerEventData(osg::ref_ptr<osgGA::GUIEventHandler> eHandler, EventType type) :
+  ViewerEventData(osg::ref_ptr<osgGA::GUIEventHandler> eHandler,
+                  EventType type) :
     eventHandler(eHandler), eType(type)
   {
     init(type, "osgGA::GUIEventHandler");
@@ -389,12 +388,21 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   lly = 31;
 #endif
 
+  const char* forceSimple = getenv("RCSVIEWER_SIMPLEGRAPHICS");
+
+  if (forceSimple)
+    {
+      fancy = false;
+      startupWithShadow = false;
+    }
+  
   pthread_mutex_init(&this->mtxEventLoop, NULL);
   this->shadowsEnabled = startupWithShadow;
 
   // Rotate loaded file nodes to standard coordinate conventions
   // (z: up, x: forward)
-  osg::ref_ptr<osgDB::ReaderWriter::Options> options = new osgDB::ReaderWriter::Options;
+  osg::ref_ptr<osgDB::ReaderWriter::Options> options;
+  options = new osgDB::ReaderWriter::Options;
   options->setOptionString("noRotation");
   osgDB::Registry::instance()->setOptions(options.get());
 
@@ -410,9 +418,17 @@ void Viewer::create(bool fancy, bool startupWithShadow)
 
   // Root node (instead of a Group we create an Cartoon node for optional
   // cell shading)
-  this->rootnode = new osgFX::Cartoon;
+  if (fancy)
+    {
+      this->rootnode = new osgFX::Cartoon;
+      dynamic_cast<osgFX::Effect*>(rootnode.get())->setEnabled(false);
+    }
+  else
+    {
+      this->rootnode = new osg::Group;
+    }
+  
   rootnode->setName("rootnode");
-  dynamic_cast<osgFX::Effect*>(rootnode.get())->setEnabled(false);
 
   // Light grayish green universe
   this->clearNode = new osg::ClearNode;
@@ -472,7 +488,7 @@ void Viewer::create(bool fancy, bool startupWithShadow)
     osg::ref_ptr<osg::DisplaySettings> ds = new osg::DisplaySettings;
     ds->setNumMultiSamples(4);
     viewer->setDisplaySettings(ds.get());
-    viewer->setSceneData(startupWithShadow ? shadowScene.get() : rootnode.get());
+    viewer->setSceneData(startupWithShadow?shadowScene.get():rootnode.get());
   }
 
   // Disable small feature culling to avoid problems with drawing single points
@@ -485,17 +501,22 @@ void Viewer::create(bool fancy, bool startupWithShadow)
                         osg::Vec3d(0.0, 0.05, 1.0));
 
   KeyCatcherBase::registerKey("F10", "Toggle full screen", "Viewer");
-  osg::ref_ptr<osgViewer::WindowSizeHandler> wsh = new osgViewer::WindowSizeHandler;
+  osg::ref_ptr<osgViewer::WindowSizeHandler> wsh;
+  wsh = new osgViewer::WindowSizeHandler;
   wsh->setKeyEventToggleFullscreen(osgGA::GUIEventAdapter::KEY_F10);
   viewer->addEventHandler(wsh.get());
 
   KeyCatcherBase::registerKey("F9", "Toggle continuous screenshots", "Viewer");
   KeyCatcherBase::registerKey("F8", "Take screenshot(s)", "Viewer");
-  osg::ref_ptr<osgViewer::ScreenCaptureHandler> captureHandler = new osgViewer::ScreenCaptureHandler(new osgViewer::ScreenCaptureHandler::WriteToFile("screenshot", "png", osgViewer::ScreenCaptureHandler::WriteToFile::SEQUENTIAL_NUMBER), -1);
-  captureHandler->setKeyEventToggleContinuousCapture(osgGA::GUIEventAdapter::KEY_F9);
-  captureHandler->setKeyEventTakeScreenShot(osgGA::GUIEventAdapter::KEY_F8);
-  captureHandler->setFramesToCapture(1);
-  viewer->addEventHandler(captureHandler.get());
+  
+  osg::ref_ptr<osgViewer::ScreenCaptureHandler::WriteToFile> scrw;
+  scrw = new osgViewer::ScreenCaptureHandler::WriteToFile("screenshot", "png");
+
+  osg::ref_ptr<osgViewer::ScreenCaptureHandler> capture;
+  capture = new osgViewer::ScreenCaptureHandler(scrw.get());
+  capture->setKeyEventToggleContinuousCapture(osgGA::GUIEventAdapter::KEY_F9);
+  capture->setKeyEventTakeScreenShot(osgGA::GUIEventAdapter::KEY_F8);
+  viewer->addEventHandler(capture.get());
 }
 
 /*******************************************************************************
@@ -699,8 +720,8 @@ void Viewer::removeNode(osg::Node* parent, std::string child)
   else
   {
     int numNodes = removeInternal(parent, child);
-    RLOG(5, "Removed %d children with name from parent %s",
-         numNodes, child, parent->getName().c_str());
+    RLOG_CPP(5, "Removed " << numNodes << " children with name " << child
+             << " from parent " << parent->getName());
   }
 }
 
@@ -976,8 +997,10 @@ double Viewer::getFieldOfView() const
 void Viewer::setFieldOfView(double fovy)
 {
   double fovy_old, aspectRatio, zNear, zFar;
-  viewer->getCamera()->getProjectionMatrixAsPerspective(fovy_old, aspectRatio, zNear, zFar);
-  viewer->getCamera()->setProjectionMatrixAsPerspective(fovy, aspectRatio, zNear, zFar);
+  viewer->getCamera()->getProjectionMatrixAsPerspective(fovy_old, aspectRatio,
+                                                        zNear, zFar);
+  viewer->getCamera()->setProjectionMatrixAsPerspective(fovy, aspectRatio,
+                                                        zNear, zFar);
 }
 
 /*******************************************************************************
@@ -988,8 +1011,11 @@ void Viewer::setFieldOfView(double fovy)
 void Viewer::setFieldOfView(double fovWidth, double fovHeight)
 {
   double fovy_old, aspectRatio, zNear, zFar;
-  viewer->getCamera()->getProjectionMatrixAsPerspective(fovy_old, aspectRatio, zNear, zFar);
-  viewer->getCamera()->setProjectionMatrixAsPerspective(fovWidth, fovWidth/fovHeight, zNear, zFar);
+  viewer->getCamera()->getProjectionMatrixAsPerspective(fovy_old, aspectRatio,
+                                                        zNear, zFar);
+  viewer->getCamera()->setProjectionMatrixAsPerspective(fovWidth,
+                                                        fovWidth/fovHeight,
+                                                        zNear, zFar);
 }
 
 /*******************************************************************************
@@ -1108,12 +1134,19 @@ void Viewer::setShadowEnabled(bool enable)
  ******************************************************************************/
 void Viewer::setCartoonEnabled(bool enabled)
 {
-  if (enabled == true)
-  {
-    setShadowEnabled(false);
-  }
+  osgFX::Effect* cartoon = dynamic_cast<osgFX::Effect*>(rootnode.get());
 
-  dynamic_cast<osgFX::Effect*>(rootnode.get())->setEnabled(enabled);
+  if (!cartoon)
+    {
+      return;
+    }
+
+  if (enabled == true)
+    {
+      setShadowEnabled(false);
+    }
+  
+  cartoon->setEnabled(enabled);
 }
 
 /*******************************************************************************
@@ -1587,34 +1620,5 @@ bool Viewer::isThreadStopped() const
 {
   return this->threadStopped;
 }
-
-/*******************************************************************************
- *
- ******************************************************************************/
-// bool Viewer::handleIntersection(const osgGA::GUIEventAdapter& ea,
-//                                 osgGA::GUIActionAdapter& aa)
-// {
-//   osgViewer::Viewer* viewer = dynamic_cast<osgViewer::Viewer*>(&aa);
-
-//   if (viewer)
-//   {
-//     osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector;
-//     intersector = new osgUtil::LineSegmentIntersector(osgUtil::Intersector::WINDOW, ea.getX(), ea.getY());
-//     osgUtil::IntersectionVisitor iv(intersector.get());
-//     //iv.setTraversalMask(~0x1);
-//     viewer->getCamera()->accept(iv);
-//     if (intersector->containsIntersections())
-//     {
-//       osgUtil::LineSegmentIntersector::Intersection& result = *(intersector->getIntersections().begin());
-//       osg::BoundingBox bb = result.drawable->getBound();
-//       osg::Vec3 worldCenter = bb.center()*osg::computeLocalToWorld(result.nodePath);
-//       _selectionBox->setMatrix(osg::Matrix::scale(bb.xMax()-bb.xMin(),
-//                                                   bb.yMax()-bb.yMin(),
-//                                                   bb.zMax()-bb.zMin()) *
-//                                osg::Matrix::translate(worldCenter));
-//     }
-//   }
-//   return false;
-// }
 
 }   // namespace Rcs

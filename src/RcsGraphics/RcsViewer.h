@@ -92,6 +92,13 @@ static const int CastsShadowTraversalMask = 0x2;
  *        - Key R will toggle the cartoon mode
  *        - LBM while right mouse button is pressed will select the mouse point
  *          as the new rotation center of the mouse manipulator
+ *
+ *        With some older grapics cards, some features such as anti aliasing are
+ *        not available. To disable these, there is a constructor with the
+ *        options fancy and startupWithShadow that can be set explicitely.
+ *        Alternatively, the create function looks for an environment variable
+ *        RCSVIEWER_SIMPLEGRAPHICS. If tis is set, the viewer starts without
+ *        anti aliasing and shadows.
  */
 class Viewer
 {
