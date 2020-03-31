@@ -3161,9 +3161,9 @@ int main(int argc, char** argv)
   xmlCleanupParser();
 
   if (!valgrind)
-    {
-      RLOG(0, "Thanks for using the Rcs libraries\n");
-    }
+  {
+    RLOG(0, "Thanks for using the Rcs libraries\n");
+  }
 
 #if defined (_MSC_VER)
   if ((mode==0) || argP.hasArgument("-h"))

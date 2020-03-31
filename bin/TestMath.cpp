@@ -95,15 +95,15 @@ static bool testMode(int mode, int argc, char** argv)
         fprintf(stderr, "\t\t14  Tests Axis Angle conversion\n");
         fprintf(stderr, "\t\t15  Tests Axis Angle interpolation\n");
         fprintf(stderr, "\t\t16  Tests Miller inversion algorithm\n");
-        fprintf(stderr, "\t\t17  Tests interpolation algorithms\n");
-        fprintf(stderr, "\t\t18  Tests moving man filter\n");
+        fprintf(stderr, "\t\t17  Tests minimum rotation angle\n");
+        fprintf(stderr, "\t\t18  Test line search\n");
         fprintf(stderr, "\t\t19  Tests minimum jerk trajectory\n");
         fprintf(stderr, "\t\t20  Tests 5th order poly min. jerk trajectory\n");
         fprintf(stderr, "\t\t21  Tests minimum jerk interpolation\n");
         fprintf(stderr, "\t\t22  Test numerical issues\n");
         fprintf(stderr, "\t\t23  Test 1-dimensional filters\n");
         fprintf(stderr, "\t\t24  Test n-dimensional filters\n");
-        fprintf(stderr, "\t\t25  Test line search\n");
+        fprintf(stderr, "\t\t25  Tests moving man filter\n");
         fprintf(stderr, "\t\t26  Test Dynamic Time Warping\n");
         fprintf(stderr, "\t\t27  Test Mat3d functions\n");
         fprintf(stderr, "\t\t28  Test ViaPointSequence\n");
@@ -114,6 +114,7 @@ static bool testMode(int mode, int argc, char** argv)
         fprintf(stderr, "\t\t33  Test Eigen3 linear algebra functions\n");
         fprintf(stderr, "\t\t34  Test SLERP against matrix clip\n");
         fprintf(stderr, "\t\t35  Test StackVec class\n");
+        fprintf(stderr, "\t\t36  Tests interpolation algorithms\n");
         break;
       }
 
@@ -166,10 +167,10 @@ static bool testMode(int mode, int argc, char** argv)
         success = testMillerInversion(argc, argv) && success;
         break;
       case 17:
-        success = testInterpolation(argc, argv) && success;
+        success = testMinimumRotationAngle(argc, argv) && success;
         break;
       case 18:
-        success = testMovingMeanFilter(argc, argv) && success;
+        success = testLinesearch(argc, argv) && success;
         break;
       case 19:
         success = testMinJerkTrj(argc, argv) && success;
@@ -190,7 +191,7 @@ static bool testMode(int mode, int argc, char** argv)
         success = testFiltersND(argc, argv) && success;
         break;
       case 25:
-        success = testLinesearch(argc, argv) && success;
+        success = testMovingMeanFilter(argc, argv) && success;
         break;
       case 26:
         success = testDTW(argc, argv) && success;
@@ -222,6 +223,9 @@ static bool testMode(int mode, int argc, char** argv)
       case 35:
         success = testStackVec(argc, argv) && success;
         break;
+      case 36:
+        success = testInterpolation(argc, argv) && success;
+        break;
       default:
         RMSGS("there is no mode %d", mode);
 
@@ -251,7 +255,7 @@ int main(int argc, char** argv)
 
   if (mode==-1)
   {
-    for (int i=1; i<=10; ++i)
+    for (int i=1; i<=18; ++i)
     {
       bool success_i = testMode(i, argc, argv);
       if (!success_i)
@@ -259,7 +263,7 @@ int main(int argc, char** argv)
         result++;
       }
 
-      success = success_i | success;
+      success = success_i && success;
     }
   }
   else
@@ -273,7 +277,7 @@ int main(int argc, char** argv)
   }
   else
   {
-    printf("Test %s\n", success ? "SUCCEEDED" : "FAILED");
+    RLOGS(1, "Math tests %s", success ? "SUCCEEDED" : "FAILED");
   }
 
   return Math_iClip(result, 0, 255);

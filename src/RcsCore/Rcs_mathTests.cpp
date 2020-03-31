@@ -1654,14 +1654,15 @@ bool testFiniteNan()
  ******************************************************************************/
 bool testWoodburyIdenity(int argc, char** argv)
 {
-  RMSGS("\n\n**************************************************************"
-        "\n  Test for Woodbury Matrix Idenity\n"
-        "  Options:\n"
-        "    -rows   <number of Jacobian rows>\n"
-        "    -cols   <number of Jacobian columns>\n"
-        "    -digits <Digits after the dot in the matrix console output>\n"
-        "**************************************************************\n");
+  RLOG(2, "\n\n**************************************************************"
+       "\n  Test for Woodbury Matrix Idenity\n"
+       "  Options:\n"
+       "    -rows   <number of Jacobian rows>\n"
+       "    -cols   <number of Jacobian columns>\n"
+       "    -digits <Digits after the dot in the matrix console output>\n"
+       "**************************************************************\n");
 
+  bool success = true;
   int m = 4, n = 20, digits = 6;
   unsigned int i;
 
@@ -1699,10 +1700,20 @@ bool testWoodburyIdenity(int argc, char** argv)
   MatNd* pinvJ2 = MatNd_create(n, m);
   double det2 = MatNd_rwPinv2(pinvJ2, J, Wx, lambda);
 
-  RMSGS("\n\nJ1# = invLambda J^T (J invLambda J^T + invWx)^-1\t"
-        "J2# = (J^T Wx J + lambda)^-1 J^T Wx\t diff\n");
-  MatNd_printTwoArraysDiff(pinvJ1, pinvJ2, digits);
-  RMSGS("det1 = %g   det2 = %g", det1, det2);
+  double err = MatNd_sqrDistance(pinvJ1, pinvJ2);
+
+  if (err > 1.0e-8)
+  {
+    success = false;
+  }
+
+  REXEC(2)
+  {
+    RMSGS("\n\nJ1# = invLambda J^T (J invLambda J^T + invWx)^-1\t"
+          "J2# = (J^T Wx J + lambda)^-1 J^T Wx\t diff\n");
+    MatNd_printTwoArraysDiff(pinvJ1, pinvJ2, digits);
+    RMSGS("det1 = %g   det2 = %g", det1, det2);
+  }
 
   MatNd_destroy(J);
   MatNd_destroy(Jt);
@@ -1713,7 +1724,9 @@ bool testWoodburyIdenity(int argc, char** argv)
   MatNd_destroy(pinvJ1);
   MatNd_destroy(pinvJ2);
 
-  return true;
+  RLOGS(1, "%s: err = %g (< 1.0e-8)", success ? "SUCCESS" : "FAILURE", err);
+
+  return success;
 }
 
 /*******************************************************************************
@@ -1724,12 +1737,12 @@ bool testRnd(int argc, char** argv)
   bool success = true;
   int iLower = -10, iUpper = 10;
 
-  RMSGS("\n\n****************************************************************"
+  RLOGS(2, "\n\n**************************************************************"
         "\n  Test for random number functions\n"
         "  Options:\n"
         "    -lower   <lower limit=%d>\n"
         "    -upper   <upper limit=%d>\n"
-        "****************************************************************\n",
+        "**************************************************************\n",
         iLower, iUpper);
 
   // Parse command line arguments
@@ -1737,24 +1750,28 @@ bool testRnd(int argc, char** argv)
   argP.getArgument("-lower", &iLower);
   argP.getArgument("-upper", &iUpper);
 
-  fprintf(stderr, "Lower integer value: %d\n", iLower);
-  fprintf(stderr, "Upper integer value: %d\n\n", iUpper);
+  RLOGS(2, "Lower integer value: %d", iLower);
+  RLOGS(2, "Upper integer value: %d\n", iUpper);
 
   for (int i=0; i<10; i++)
   {
-    fprintf(stderr, "Random integer[%d] = %d\n",
-            i, Math_getRandomInteger(iLower, iUpper));
+    int rndVal = Math_getRandomInteger(iLower, iUpper);
+    RLOGS(2, "Random integer[%d] = %d",i, rndVal);
+    if ((rndVal<iLower) || (rndVal>iUpper))
+    {
+      success = false;
+    }
   }
-
-  fprintf(stderr, "\n");
 
   for (int i=0; i<10; i++)
   {
-    fprintf(stderr, "Random double[%d] = %.12f\n",
-            i, Math_getRandomNumber(iLower, iUpper));
+    double rndVal = Math_getRandomNumber(iLower, iUpper);
+    RLOGS(2, "Random double[%d] = %.12f", i, rndVal);
+    if ((rndVal<iLower) || (rndVal>iUpper))
+    {
+      success = false;
+    }
   }
-
-  fprintf(stderr, "\n");
 
   // Test random bool answer distribution
   int trueCount=0, falseCount=0;
@@ -1777,7 +1794,7 @@ bool testRnd(int argc, char** argv)
     RLOG(1, "True: %d   false: %d", trueCount, falseCount);
   }
 
-
+  RLOGS(1, "%s", success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -1878,21 +1895,24 @@ bool testAxisAngleConversion(int argc, char** argv)
 
     if (err > errLimit)
     {
-      RLOG(1, "Err: %g", err);
-      Mat3d_printCommentDigits("A1", A1, 5);
-      Mat3d_printCommentDigits("A2", A2, 5);
-      Mat3d_printCommentDigits("Diff", A2, 5);
       success = false;
+      REXEC(1)
+      {
+        RLOG(1, "Err: %g", err);
+        Mat3d_printCommentDigits("A1", A1, 5);
+        Mat3d_printCommentDigits("A2", A2, 5);
+        Mat3d_printCommentDigits("Diff", A2, 5);
+      }
     }
     else
     {
-      RLOG(1, "Axis: %.2f %.2f %.2f angle: %.1f err: %g",
+      RLOG(2, "Axis: %.2f %.2f %.2f angle: %.1f err: %g",
            ax[0], ax[1], ax[2], ang*180.0/M_PI, err);
     }
 
   }
 
-  RMSGS("Test 1: %s for %d axis angle tests: Max. error = %g < %g",
+  RLOGS(2, "Test 1: %s for %d axis angle tests: Max. error = %g < %g",
         maxErr>errLimit ? "FAILURE" : "SUCCESS", its, maxErr, errLimit);
 
 
@@ -1918,21 +1938,24 @@ bool testAxisAngleConversion(int argc, char** argv)
 
     if (err > errLimit)
     {
-      RLOG(1, "Err: %g", err);
-      Mat3d_printCommentDigits("A1", A1, 5);
-      Mat3d_printCommentDigits("A2", A2, 5);
-      Mat3d_printCommentDigits("Diff", A2, 5);
       success = false;
+      REXEC(1)
+      {
+        RLOG(1, "Err: %g", err);
+        Mat3d_printCommentDigits("A1", A1, 5);
+        Mat3d_printCommentDigits("A2", A2, 5);
+        Mat3d_printCommentDigits("Diff", A2, 5);
+      }
     }
     else
     {
-      RLOG(1, "Axis: %.2f %.2f %.2f angle: %.1f err: %g",
-           ax[0], ax[1], ax[2], ang*180.0/M_PI, err);
+      RLOGS(2, "Axis: %.2f %.2f %.2f angle: %.1f err: %g",
+            ax[0], ax[1], ax[2], ang*180.0/M_PI, err);
     }
 
   }
 
-  RMSGS("Test 2: %s for %d axis angle tests: Max. error = %g < %g",
+  RLOGS(2, "Test 2: %s for %d axis angle tests: Max. error = %g < %g",
         maxErr>errLimit ? "FAILURE" : "SUCCESS", its, maxErr, errLimit);
 
 
@@ -1959,21 +1982,24 @@ bool testAxisAngleConversion(int argc, char** argv)
 
     if (err > errLimit)
     {
-      RLOG(1, "Err: %g", err);
-      Mat3d_printCommentDigits("A1", A1, 5);
-      Mat3d_printCommentDigits("A2", A2, 5);
-      Mat3d_printCommentDigits("Diff", A2, 5);
       success = false;
+      REXEC(1)
+      {
+        RLOG(1, "Err: %g", err);
+        Mat3d_printCommentDigits("A1", A1, 5);
+        Mat3d_printCommentDigits("A2", A2, 5);
+        Mat3d_printCommentDigits("Diff", A2, 5);
+      }
     }
     else
     {
-      RLOG(1, "Axis: %.2f %.2f %.2f angle: %.1f err: %g",
-           ax[0], ax[1], ax[2], ang*180.0/M_PI, err);
+      RLOGS(2, "Axis: %.2f %.2f %.2f angle: %.1f err: %g",
+            ax[0], ax[1], ax[2], ang*180.0/M_PI, err);
     }
 
   }
 
-  RMSGS("Test 3: %s for %d axis angle tests: Max. error = %g < %g",
+  RLOGS(2, "Test 3: %s for %d axis angle tests: Max. error = %g < %g",
         maxErr>errLimit ? "FAILURE" : "SUCCESS", its, maxErr, errLimit);
 
 
@@ -2007,21 +2033,24 @@ bool testAxisAngleConversion(int argc, char** argv)
 
     if (err > errLimit)
     {
-      RLOG(1, "Err: %g", err);
-      Mat3d_printCommentDigits("A1", A1, 5);
-      Mat3d_printCommentDigits("A2", A2, 5);
-      Mat3d_printCommentDigits("Diff", A2, 5);
       success = false;
+      REXEC(1)
+      {
+        RLOG(1, "Err: %g", err);
+        Mat3d_printCommentDigits("A1", A1, 5);
+        Mat3d_printCommentDigits("A2", A2, 5);
+        Mat3d_printCommentDigits("Diff", A2, 5);
+      }
     }
     else
     {
-      RLOG(1, "Axis: %.2f %.2f %.2f angle: %.1f err: %g",
-           ax[0], ax[1], ax[2], ang*180.0/M_PI, err);
+      RLOGS(2, "Axis: %.2f %.2f %.2f angle: %.1f err: %g",
+            ax[0], ax[1], ax[2], ang*180.0/M_PI, err);
     }
 
   }
 
-  RMSGS("Test 4: %s for %d axis angle tests: Max. error = %g < %g",
+  RLOGS(2, "Test 4: %s for %d axis angle tests: Max. error = %g < %g",
         maxErr>errLimit ? "FAILURE" : "SUCCESS", its, maxErr, errLimit);
 
 
@@ -2062,23 +2091,28 @@ bool testAxisAngleConversion(int argc, char** argv)
 
     if (err > errLimit)
     {
-      RLOG(1, "Err: %g", err);
-      Mat3d_printCommentDigits("A1", A1, 5);
-      Mat3d_printCommentDigits("A2", A2, 5);
-      Mat3d_printCommentDigits("Diff", A2, 5);
       success = false;
+      REXEC(1)
+      {
+        RLOG(1, "Err: %g", err);
+        Mat3d_printCommentDigits("A1", A1, 5);
+        Mat3d_printCommentDigits("A2", A2, 5);
+        Mat3d_printCommentDigits("Diff", A2, 5);
+      }
     }
     else
     {
-      RLOG(1, "Axis: %.2f %.2f %.2f angle: %.1f err: %g",
-           ax[0], ax[1], ax[2], ang*180.0/M_PI, err);
+      RLOGS(2, "Axis: %.2f %.2f %.2f angle: %.1f err: %g",
+            ax[0], ax[1], ax[2], ang*180.0/M_PI, err);
     }
 
   }
 
-  RMSGS("Test 5: %s for %d axis angle tests: Max. error = %g < %g",
+  RLOGS(2, "Test 5: %s for %d axis angle tests: Max. error = %g < %g",
         maxErr>errLimit ? "FAILURE" : "SUCCESS", its, maxErr, errLimit);
 
+
+  RLOGS(1, "%s", success ? "SUCCESS" : "FAILURE");
 
 
   return success;
@@ -2171,18 +2205,23 @@ bool testAxisAngleInterpolation(int argc, char** argv)
 
   if (errNorm > 1.0e-8)
   {
-    Mat3d_printCommentDigits("A_des", A_des, 4);
-    Mat3d_printCommentDigits("A_last", A[T], 4);
-    Mat3d_printCommentDigits("A_diff", A_diff, 8);
-    RFATAL("Error norm is %g", errNorm);
+    success = false;
+    REXEC(1)
+    {
+      Mat3d_printCommentDigits("A_des", A_des, 4);
+      Mat3d_printCommentDigits("A_last", A[T], 4);
+      Mat3d_printCommentDigits("A_diff", A_diff, 8);
+      RLOGS(1, "Error norm is %g", errNorm);
+    }
   }
   else
   {
-    RLOG(1, "Success for angles [%.1f %.1f %.1f] deg! Error norm is %g",
-         phi_des[0]*180.0/M_PI, phi_des[1]*180.0/M_PI,
-         phi_des[2]*180.0/M_PI, errNorm);
+    RLOGS(2, "Success for angles [%.1f %.1f %.1f] deg! Error norm is %g",
+          phi_des[0]*180.0/M_PI, phi_des[1]*180.0/M_PI,
+          phi_des[2]*180.0/M_PI, errNorm);
   }
 
+  RLOGS(1, "%s", success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -2196,14 +2235,14 @@ bool testAxisAngleInterpolation(int argc, char** argv)
  ******************************************************************************/
 bool testMillerInversion(int argc, char** argv)
 {
-  RMSGS("\n\n**************************************************************\n"
+  RLOGS(2, "\n\n************************************************************\n"
         "  Test for Miller Matrix inversion\n"
         "  Options:\n"
         "    -rows   <number of Jacobian rows>\n"
         "    -cols   <number of Jacobian columns>\n"
         "    -lambda <Ridge factor>\n"
         "    -digits <Digits after the dot in the matrix console output>\n"
-        "**************************************************************\n");
+        "************************************************************\n");
 
   int m = 4, n = 20, digits = 6;
   const double errMax = 1.0e-8;
@@ -2237,13 +2276,15 @@ bool testMillerInversion(int argc, char** argv)
 
   double err = MatNd_sqrDistance(pinvJ1, pinvJ2);
 
-  RMSGS("\n\nJ1# = invLambda J^T (J invLambda J^T + invWx)^-1\t"
-        "J2# = (J^T Wx J + lambda)^-1 J^T Wx\t diff\n");
-  MatNd_printTwoArraysDiff(pinvJ1, pinvJ2, digits);
-  printf("Miller inversion took %.3f usec, Cholesky inversion took %.3f "
-         "usec\n", 1.0e6*dt1, 1.0e6*dt2);
-  printf("%s: Error is %g\n", err < errMax ? "SUCCESS" : "FAILURE", err);
-
+  REXEC(2)
+  {
+    RMSGS("\n\nJ1# = invLambda J^T (J invLambda J^T + invWx)^-1\t"
+          "J2# = (J^T Wx J + lambda)^-1 J^T Wx\t diff\n");
+    MatNd_printTwoArraysDiff(pinvJ1, pinvJ2, digits);
+    printf("Miller inversion took %.3f usec, Cholesky inversion took %.3f "
+           "usec\n", 1.0e6*dt1, 1.0e6*dt2);
+    printf("%s: Error is %g\n", err < errMax ? "SUCCESS" : "FAILURE", err);
+  }
 
   if (err>errMax)
   {
@@ -2255,6 +2296,8 @@ bool testMillerInversion(int argc, char** argv)
   MatNd_destroy(Wx);
   MatNd_destroy(pinvJ1);
   MatNd_destroy(pinvJ2);
+
+  RLOGS(1, "%s", success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -2929,6 +2972,8 @@ bool testFiltersND(int argc, char** argv)
  ******************************************************************************/
 bool testMinimumRotationAngle(int argc, char** argv)
 {
+  bool success = true;
+
   // Start orientation
   double A_SI[3][3];
   Mat3d_setRandomRotation(A_SI);
@@ -2946,30 +2991,23 @@ bool testMinimumRotationAngle(int argc, char** argv)
   double angle = Mat3d_getAxisAngleSelf(axis, A_TS);
 
   // Now we want to find the minimum angle of rotation for the axis of the
-  // relative transformation. If the method works correctly, the estimated angle should
-  // be equal to the angle of the relative transformation.
+  // relative transformation. If the method works correctly, the estimated
+  // angle should be equal to the angle of the relative transformation.
   double angle_min = Mat3d_getMinimumRotationAngle(A_SI, A_TI, axis);
-  if (fabs(angle_min - angle) < 1e-5)
+
+  if (fabs(angle_min - angle) >= 1.0e-5)
   {
-    return true;
+    success = false;
   }
 
-  return false;
+  RLOGS(1, "%s", success ? "SUCCESS" : "FAILURE");
+
+  return success;
 }
 
 /*******************************************************************************
  * Test of line search functions
  ******************************************************************************/
-static double lineSearch_func(double* x, void* data)
-{
-  return 3. + .5 * pow(x[0] - 2., 4);
-}
-
-static double lineSearch_dfunc(double* x, void* data)
-{
-  return 4.*.5 * (x[0] - 2.);
-}
-
 // f(1) = 3.0 + 0.5 * pow(-11, 4);
 // f(3) = 3.0 + 0.5 * pow(1, 4);
 // Minimum is f(2) = 3
@@ -2980,17 +3018,17 @@ static double lineSearch_cost(double* x, void* data)
 
 static void lineSearch_grad(double* dfdx, const double* x)
 {
-  dfdx[0] = 4.0*0.5*(x[0] - 2.0);
+  dfdx[0] = 2.0*pow(x[0] - 2.0, 3);
 }
 
-bool testLinesearch2(int argc, char** argv)
+bool testLinesearch(int argc, char** argv)
 {
-  RLOG(1, "**************************************");
-  RLOG(1, "Test for MatNd_lineSearch");
-  RLOG(1, "**************************************");
+  RLOG(2, "**************************************");
+  RLOG(2, "Test for MatNd_lineSearch");
+  RLOG(2, "**************************************");
 
   Rcs::CmdLineParser argP(argc, argv);
-  int nIter = 1;
+  int nIter = 10;
   double alpha = 0.9;
   argP.getArgument("-iter", &nIter, "Max. number of iterations");
   argP.getArgument("-alpha", &alpha, "Initial alpha");
@@ -2998,88 +3036,41 @@ bool testLinesearch2(int argc, char** argv)
   bool success = true;
   MatNd* x    = MatNd_create(1, 1);
   MatNd* dfdx = MatNd_create(1, 1);
-  MatNd_setRandom(x, -100.0, 100.0);
-  x->ele[0] = 1.0;
+  MatNd_setRandom(x, -1.0, 1.0);
 
   double cost0 = lineSearch_cost(x->ele, NULL);
   double cost = cost0;
   lineSearch_grad(dfdx->ele, x->ele);
 
-  RLOG(1, "Initial cost is %g, initial x is %g", cost0, x->ele[0]);
+  RLOG(2, "Initial cost is %g, initial x is %g", cost0, x->ele[0]);
 
 
 
   for (int i=0; i<nIter; i++)
   {
     cost = MatNd_lineSearchArmijo(x, dfdx, lineSearch_cost, NULL, &alpha);
-    RLOG(1, "Min. cost is %.12f, min. x is %.12f, alpha is %g", cost, x->ele[0], alpha);
+    RLOG(2, "Min. cost is %.12f, min. x is %.12f, alpha is %g",
+         cost, x->ele[0], alpha);
     lineSearch_grad(dfdx->ele, x->ele);
   }
 
   if (cost > cost0)
   {
-    RMSGS("FAILURE for line search: cost > cost0: %g > %g",
+    RLOGS(1, "FAILURE for line search: cost > cost0: %g > %g",
           cost, cost0);
     success = false;
   }
   else
   {
-    RLOG(1, "SUCCESS for line search: cost < cost0: %g <= %g",
+    RLOG(2, "SUCCESS for line search: cost < cost0: %g <= %g",
          cost, cost0);
   }
 
   MatNd_destroy(x);
   MatNd_destroy(dfdx);
 
-  return success;
-}
-
-bool testLinesearch(int argc, char** argv)
-{
-  Rcs::CmdLineParser argP(argc, argv);
-  double maxStep = 1.0;
-  argP.getArgument("-maxStep", &maxStep, "Max. step size");
-  if (argP.hasArgument("-new"))
-  {
-    return testLinesearch2(argc, argv);
-  }
-
-  RLOG(1, "**************************************");
-  RLOG(1, "Test for MatNd_lineSearch");
-  RLOG(1, "**************************************");
-
-  bool success = true;
-  MatNd* x    = MatNd_create(1, 1);
-  MatNd* dfdx = MatNd_create(1, 1);
-  MatNd_setRandom(x, -100.0, 100.0);
-  x->ele[0] = 1.0;
-  dfdx->ele[0] = lineSearch_dfunc(&x->ele[0], NULL);
-  double cost0 = lineSearch_func(x->ele, NULL);
-
-  RLOG(1, "Initial x is %g", x->ele[0]);
-  RLOG(1, "Initial cost is %g", cost0);
-
-  int nEval = 0;
-  double cost = MatNd_lineSearchSelf(x, dfdx, lineSearch_func, NULL,
-                                     &nEval, maxStep, NULL);
-
-  RLOG(1, "Did %d evaluations", nEval);
-  RLOG(1, "Min. cost is %g, min. x is %g", cost, x->ele[0]);
-
-  if (cost > cost0)
-  {
-    RMSGS("FAILURE for line search: cost > cost0: %g > %g",
-          cost, cost0);
-    success = false;
-  }
-  else
-  {
-    RLOG(1, "SUCCESS for line search: cost < cost0: %g < %g",
-         cost, cost0);
-  }
-
-  MatNd_destroy(x);
-  MatNd_destroy(dfdx);
+  RLOGS(1, "%s: cost < cost0: %g <= %g", success ? "SUCCESS" : "FAILURE",
+        cost, cost0);
 
   return success;
 }
