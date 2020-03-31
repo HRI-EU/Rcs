@@ -377,6 +377,11 @@ double Math_getRandomNumber(double lower, double upper);
 int Math_getRandomInteger(int lower, int upper);
 
 /*! \ingroup RcsBasicMathFunctions
+ *  \brief Returns a random true or false.
+ */
+bool Math_getRandomBool();
+
+/*! \ingroup RcsBasicMathFunctions
  *  \brief Calls \ref Math_srand48 using a double, which is assumed to be
  *  a time in seconds, as a seed.
  */

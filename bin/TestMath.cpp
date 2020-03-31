@@ -118,109 +118,109 @@ static bool testMode(int mode, int argc, char** argv)
       }
 
       case 1:
-        success = testEulerAnglesFunctions(argc, argv);
+        success = testEulerAnglesFunctions(argc, argv) && success;
         break;
       case 2:
-        success = testSimpleMatrixFunctions(argc, argv);
+        success = testSimpleMatrixFunctions(argc, argv) && success;
         break;
       case 3:
-        success = testLinearAlgebraFunctions(argc, argv);
+        success = testLinearAlgebraFunctions(argc, argv) && success;
         break;
       case 4:
-        success = testDerivatives(argc, argv);
+        success = testDerivatives(argc, argv) && success;
         break;
       case 5:
-        success = testHTr(argc, argv);
+        success = testHTr(argc, argv) && success;
         break;
       case 6:
-        success = testBasicMath(argc, argv);
+        success = testBasicMath(argc, argv) && success;
         break;
       case 7:
-        success = testCurveFitting(argc, argv);
+        success = testCurveFitting(argc, argv) && success;
         break;
       case 8:
-        success = testVectorProjection(argc, argv);
+        success = testVectorProjection(argc, argv) && success;
         break;
       case 9:
-        success = testOrthogonalization3x3(argc, argv);
+        success = testOrthogonalization3x3(argc, argv) && success;
         break;
       case 10:
-        success = testEigenvalues3x3(argc, argv);
+        success = testEigenvalues3x3(argc, argv) && success;
         break;
       case 11:
-        success = testFiniteNan();
+        success = testFiniteNan() && success;
         break;
       case 12:
-        success = testWoodburyIdenity(argc, argv);
+        success = testWoodburyIdenity(argc, argv) && success;
         break;
       case 13:
-        success = testRnd(argc, argv);
+        success = testRnd(argc, argv) && success;
         break;
       case 14:
-        success = testAxisAngleConversion(argc, argv);
+        success = testAxisAngleConversion(argc, argv) && success;
         break;
       case 15:
-        success = testAxisAngleInterpolation(argc, argv);
+        success = testAxisAngleInterpolation(argc, argv) && success;
         break;
       case 16:
-        success = testMillerInversion(argc, argv);
+        success = testMillerInversion(argc, argv) && success;
         break;
       case 17:
-        success = testInterpolation(argc, argv);
+        success = testInterpolation(argc, argv) && success;
         break;
       case 18:
-        success = testMovingMeanFilter(argc, argv);
+        success = testMovingMeanFilter(argc, argv) && success;
         break;
       case 19:
-        success = testMinJerkTrj(argc, argv);
+        success = testMinJerkTrj(argc, argv) && success;
         break;
       case 20:
-        success = testMinJerkTrjPoly(argc, argv);
+        success = testMinJerkTrjPoly(argc, argv) && success;
         break;
       case 21:
-        success = testArcLengthInterpolation(argc, argv);
+        success = testArcLengthInterpolation(argc, argv) && success;
         break;
       case 22:
-        success = testNumerics(argc, argv);
+        success = testNumerics(argc, argv) && success;
         break;
       case 23:
-        success = testFilters1D(argc, argv);
+        success = testFilters1D(argc, argv) && success;
         break;
       case 24:
-        success = testFiltersND(argc, argv);
+        success = testFiltersND(argc, argv) && success;
         break;
       case 25:
-        success = testLinesearch(argc, argv);
+        success = testLinesearch(argc, argv) && success;
         break;
       case 26:
-        success = testDTW(argc, argv);
+        success = testDTW(argc, argv) && success;
         break;
       case 27:
-        success = testMat3dFunctions(argc, argv);
+        success = testMat3dFunctions(argc, argv) && success;
         break;
       case 28:
-        success = testViaPointSequence(argc, argv);
+        success = testViaPointSequence(argc, argv) && success;
         break;
       case 29:
-        success = testPolynomialRootFinding(argc, argv);
+        success = testPolynomialRootFinding(argc, argv) && success;
         break;
       case 30:
-        success = testViaPointSequencePlotter(argc, argv);
+        success = testViaPointSequencePlotter(argc, argv) && success;
         break;
       case 31:
-        success = testViaPointTrajectory1D(argc, argv);
+        success = testViaPointTrajectory1D(argc, argv) && success;
         break;
       case 32:
-        success = testQuaternionConversion(argc, argv);
+        success = testQuaternionConversion(argc, argv) && success;
         break;
       case 33:
-        success = testFunctionsEigen3(argc, argv);
+        success = testFunctionsEigen3(argc, argv) && success;
         break;
       case 34:
-        success = testSlerp(argc, argv);
+        success = testSlerp(argc, argv) && success;
         break;
       case 35:
-        success = testStackVec(argc, argv);
+        success = testStackVec(argc, argv) && success;
         break;
       default:
         RMSGS("there is no mode %d", mode);
@@ -251,7 +251,7 @@ int main(int argc, char** argv)
 
   if (mode==-1)
   {
-    for (int i=1; i<=6; ++i)
+    for (int i=1; i<=10; ++i)
     {
       bool success_i = testMode(i, argc, argv);
       if (!success_i)

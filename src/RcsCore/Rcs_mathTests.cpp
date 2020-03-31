@@ -947,16 +947,14 @@ static void test_dAxisAngleDEuler(double* f, const double* x, void* params)
  ******************************************************************************/
 bool testDerivatives(int argc, char** argv)
 {
-  // Parse command line arguments
-  int iter = 10;
-  Rcs::CmdLineParser argP(argc, argv);
-  argP.getArgument("-iter", &iter, "Number of iterations");
-
   bool success = true;
   bool verbose = (RcsLogLevel>1) ? true : false;
-  double eps = 1.0e-2;
+  int iter = 10;
+  double eps = 0.05;
+  Rcs::CmdLineParser argP(argc, argv);
+  argP.getArgument("-iter", &iter, "Number of iterations (default: %d)", iter);
   argP.getArgument("-eps", &eps, "Permissable gradient error (Default is"
-                   " 0.01, which is 1 percent)");
+                   " %g [*100 = percent])", eps);
 
   RLOG(2, "Testing gradients");
 
@@ -1320,7 +1318,7 @@ bool testBasicMath(int argc, char** argv)
   MatNd_destroy(B);
   MatNd_destroy(limit);
 
-  RLOGS(1, "%s testing basic math functions:", success ? "SUCCESS" : "FAILURE");
+  RLOGS(1, "%s testing basic math functions", success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -1330,20 +1328,23 @@ bool testBasicMath(int argc, char** argv)
  ******************************************************************************/
 bool testCurveFitting(int argc, char** argv)
 {
-  RMSGS("Testing linear fit");
   Rcs::CmdLineParser argP(argc, argv);
+  bool success = true;
   int n = 100;
+  double noise = 1.0;
   argP.getArgument("-n", &n);
+  argP.getArgument("-noise", &noise);
 
+  MatNd* groundTruth = MatNd_create(n, 1);
   MatNd* data = MatNd_create(n, 2);
-  MatNd_setRandom(data, -1.0, 1.0);
+
   for (unsigned int i=0; i<data->m; i++)
   {
+    const double trueVal = 20.0 + 10.0*sin(i/25.0);
     MatNd_set(data, i, 0, i);
-    MatNd_set(data, i, 1, 20.0 +
-              Math_getRandomNumber(-1.0, 1.0) + 10.0*sin(i/50.0));
+    MatNd_set(data, i, 1, trueVal + Math_getRandomNumber(-noise, noise));
+    MatNd_set(groundTruth, i, 0, trueVal);
   }
-  // MatNd_printCommentDigits("data", data, 6);
 
   double A, B;
   MatNd_lineFit2D(&A, &B, data);
@@ -1351,9 +1352,8 @@ bool testCurveFitting(int argc, char** argv)
   double A2, B2, C2;
   MatNd_parabolicFit2D(&A2, &B2, &C2, data);
 
-  RMSGS("A=%f   B=%f", A, B);
-  RMSGS("A2=%f   B2=%f   C2=%f", A2, B2, C2);
-  MatNd_toFile(data, "data.dat");
+  RLOG(3, "A=%f   B=%f", A, B);
+  RLOG(3, "A2=%f   B2=%f   C2=%f", A2, B2, C2);
 
   MatNd* fitLine = MatNd_create(n,4);
   for (int i=0; i<n; i++)
@@ -1363,17 +1363,51 @@ bool testCurveFitting(int argc, char** argv)
     MatNd_set(fitLine, i, 2, A*i+B);
     MatNd_set(fitLine, i, 3, A2*i*i+B2*i+C2);
   }
-  MatNd_toFile(fitLine, "/tmp/fitLine.dat");
 
-  RMSGS("To show the results: Start gnuplot and type:\n"
-        "plot \"/tmp/fitLine.dat\" u 1:2 title \"data\" w lp,"
-        " \"/tmp/fitLine.dat\" u 1:3 title \"line fit\" w l, "
-        "\"/tmp/fitLine.dat\" u 1:4 title \"parabolic fit\"  w l\n");
+  REXEC(2)
+  {
+    MatNd_toFile(data, "data.dat");
+    MatNd_toFile(fitLine, "fitLine.dat");
+
+    const char* gpCmd = "plot \"fitLine.dat\" u 1:2 title \"data\" w lp,"
+                        " \"fitLine.dat\" u 1:3 title \"line fit\" w l, "
+                        "\"fitLine.dat\" u 1:4 title \"parabolic fit\"  w l\n";
+    FILE* outDat = fopen("postpro.gnu", "w+");
+    RCHECK(outDat);
+    fprintf(outDat, gpCmd);
+    fflush(outDat);
+    fclose(outDat);
+
+    int err = system("/usr/bin/gnuplot -persist postpro.gnu");
+
+    if (err == -1)
+    {
+      RMSGS("Couldn't start gnuplot");
+    }
+    else
+    {
+      RMSGS("/usr/bin/gnuplot -persist /tmp/postpro.gnu");
+    }
+  }
+
+  MatNd_transposeSelf(fitLine);
+  double err0 = VecNd_sqrLength(groundTruth->ele, n);
+  double err1 = VecNd_sqrDiff(MatNd_getRowPtr(fitLine, 2), groundTruth->ele, n);
+  double err2 = VecNd_sqrDiff(MatNd_getRowPtr(fitLine, 3), groundTruth->ele, n);
+
+  if (err2>=err1 || err1>=err0)
+  {
+    RLOG(1, "err0=%f err1=%f err2=%f", err0, err1, err2);
+    success = false;
+  }
 
   MatNd_destroy(data);
+  MatNd_destroy(groundTruth);
   MatNd_destroy(fitLine);
 
-  return true;
+  RLOGS(1, "%s testing curve fitting", success ? "SUCCESS" : "FAILURE");
+
+  return success;
 }
 
 /*******************************************************************************
@@ -1381,7 +1415,7 @@ bool testCurveFitting(int argc, char** argv)
  ******************************************************************************/
 bool testVectorProjection(int argc, char** argv)
 {
-  // Parse command line arguments
+  bool success = true;
   int nq = 5;
   Rcs::CmdLineParser argP(argc, argv);
   argP.getArgument("-dim", &nq, "Set default dimansionality");
@@ -1393,20 +1427,50 @@ bool testVectorProjection(int argc, char** argv)
   MatNd_setRandom(a, -1.0, 1.0);
   MatNd_setRandom(b, -1.0, 1.0);
 
-  MatNd_printCommentDigits("a", a, 6);
-  MatNd_printCommentDigits("b", b, 6);
-  RMSGS("diff-angle is %f", (180./M_PI)*MatNd_diffAngle(a,b));
+  REXEC(3)
+  {
+    MatNd_printCommentDigits("a", a, 6);
+    MatNd_printCommentDigits("b", b, 6);
+    RLOG(3, "diff-angle is %f", (180./M_PI)*MatNd_diffAngle(a,b));
+  }
 
   MatNd_vectorProjection(c, a, b);
-  MatNd_printCommentDigits("c", c, 6);
-  RMSGS("diff-angle c to a is %f", (180./M_PI)*MatNd_diffAngle(c,a));
-  RMSGS("diff-angle c to b is %f", (180./M_PI)*MatNd_diffAngle(c,b));
+
+
+  REXEC(3)
+  {
+    MatNd_printCommentDigits("c", c, 6);
+    RLOG(3, "diff-angle c to a is %f", (180./M_PI)*MatNd_diffAngle(c,a));
+    RLOG(3, "diff-angle c to b is %f", (180./M_PI)*MatNd_diffAngle(c,b));
+  }
+
+  if (VecNd_sqrLength(c->ele, nq) > VecNd_sqrLength(b->ele, nq))
+  {
+    RLOG(1, "Projected length larger than source vector: %g > %g",
+         VecNd_sqrLength(c->ele, nq), VecNd_sqrLength(a->ele, nq));
+    success = false;
+  }
+
+  const double eps = 1.0e-7;
+  double angErr = MatNd_diffAngle(c,a);
+  if (angErr > M_PI_2)
+  {
+    angErr -= M_PI;
+  }
+
+  if (fabs(angErr) > eps)
+  {
+    RLOG(1, "Projected angle above limit: %g > %g", fabs(angErr), eps);
+    success = false;
+  }
 
   MatNd_destroy(a);
   MatNd_destroy(b);
   MatNd_destroy(c);
 
-  return true;
+  RLOGS(1, "%s testing vector projection", success ? "SUCCESS" : "FAILURE");
+
+  return success;
 }
 
 /*******************************************************************************
@@ -1414,39 +1478,46 @@ bool testVectorProjection(int argc, char** argv)
  ******************************************************************************/
 static bool testGramSchmidt(double M[3][3])
 {
-  RMSGS("\n\n\nPertubed matrix:");
-  Mat3d_fprint(stdout, M);
+  REXEC(2)
+  {
+    RMSGS("\n\n\nPertubed matrix:");
+    Mat3d_fprint(stdout, M);
 
-  RMSGS("Angle x-y: %f", Vec3d_diffAngle(M[0], M[1])*180.0/M_PI);
-  RMSGS("Angle x-z: %f", Vec3d_diffAngle(M[0], M[2])*180.0/M_PI);
-  RMSGS("Angle y-z: %f", Vec3d_diffAngle(M[1], M[2])*180.0/M_PI);
+    RMSGS("Angle x-y: %f", Vec3d_diffAngle(M[0], M[1])*180.0/M_PI);
+    RMSGS("Angle x-z: %f", Vec3d_diffAngle(M[0], M[2])*180.0/M_PI);
+    RMSGS("Angle y-z: %f", Vec3d_diffAngle(M[1], M[2])*180.0/M_PI);
 
-  RMSGS("Length x: %f", Vec3d_getLength(M[0]));
-  RMSGS("Length y: %f", Vec3d_getLength(M[1]));
-  RMSGS("Length z: %f", Vec3d_getLength(M[2]));
+    RMSGS("Length x: %f", Vec3d_getLength(M[0]));
+    RMSGS("Length y: %f", Vec3d_getLength(M[1]));
+    RMSGS("Length z: %f", Vec3d_getLength(M[2]));
 
-  RMSGS("\n\n\nNormalized matrix:");
-  Timer_setZero();
+    RMSGS("\n\n\nNormalized matrix:");
+  }
+
+  double dt = Timer_getSystemTime();
   bool success = Mat3d_orthonormalizeSelf(M);
-  double dt = Timer_getTime();
+  dt = Timer_getSystemTime() - dt;
 
   if (success==false)
   {
-    RMSGS("\n\n\n***** Failed to orthonormalize matrix !!!\n\n\n");
+    RLOG(1, "\n\n\n***** Failed to orthonormalize matrix !!!\n\n\n");
   }
 
-  Mat3d_fprint(stdout, M);
+  REXEC(2)
+  {
+    Mat3d_fprint(stdout, M);
 
-  double det = Mat3d_determinant(M);
-  RMSGS("Took %f usec, determinant: %g", dt*1.0e6, det);
+    double det = Mat3d_determinant(M);
+    RMSGS("Took %f usec, determinant: %g", dt*1.0e6, det);
 
-  RMSGS("Angle x-y: %f", Vec3d_diffAngle(M[0], M[1])*180.0/M_PI);
-  RMSGS("Angle x-z: %f", Vec3d_diffAngle(M[0], M[2])*180.0/M_PI);
-  RMSGS("Angle y-z: %f", Vec3d_diffAngle(M[1], M[2])*180.0/M_PI);
+    RMSGS("Angle x-y: %f", Vec3d_diffAngle(M[0], M[1])*180.0/M_PI);
+    RMSGS("Angle x-z: %f", Vec3d_diffAngle(M[0], M[2])*180.0/M_PI);
+    RMSGS("Angle y-z: %f", Vec3d_diffAngle(M[1], M[2])*180.0/M_PI);
 
-  RMSGS("Length x: %f", Vec3d_getLength(M[0]));
-  RMSGS("Length y: %f", Vec3d_getLength(M[1]));
-  RMSGS("Length z: %f", Vec3d_getLength(M[2]));
+    RMSGS("Length x: %f", Vec3d_getLength(M[0]));
+    RMSGS("Length y: %f", Vec3d_getLength(M[1]));
+    RMSGS("Length z: %f", Vec3d_getLength(M[2]));
+  }
 
   return success;
 }
@@ -1468,6 +1539,8 @@ bool testOrthogonalization3x3(int argc, char** argv)
     success = false;
   }
 
+  RLOGS(1, "%s testing Gram Schmidt", success ? "SUCCESS" : "FAILURE");
+
   return success;
 }
 
@@ -1485,7 +1558,7 @@ bool testFiniteNan()
   double infVal = std::numeric_limits<double>::infinity();
 #endif
 
-  RLOG(1, "Vec3d functions");
+  RLOG(2, "Vec3d functions");
 
   Vec3d_set(vec, 1.0, 2.0, 3.0);
   isFin = Vec3d_isFinite(vec);
@@ -1495,7 +1568,7 @@ bool testFiniteNan()
     success = false;
   }
 
-  RLOG(1, "Vector: %.1f   %.1f   %.1f\tisfinite: %s",
+  RLOG(2, "Vector: %.1f   %.1f   %.1f\tisfinite: %s",
        vec[0], vec[1], vec[2], isFin==true?"true":"false");
 
   Vec3d_set(vec, 1.0, 2.0, infVal);
@@ -1506,13 +1579,13 @@ bool testFiniteNan()
     success = false;
   }
 
-  RLOG(1, "Vector: %.1f   %.1f   %.1f\tisfinite: %s",
+  RLOG(2, "Vector: %.1f   %.1f   %.1f\tisfinite: %s",
        vec[0], vec[1], vec[2], isFin==true?"true":"false");
 
 
 
 
-  RLOG(1, "VecNd functions");
+  RLOG(2, "VecNd functions");
 
   Vec3d_set(vec, 1.0, 2.0, 3.0);
   isFin = Vec3d_isFinite(vec);
@@ -1522,7 +1595,7 @@ bool testFiniteNan()
     success = false;
   }
 
-  RLOG(1, "Vector: %.1f   %.1f   %.1f\tisfinite: %s",
+  RLOG(2, "Vector: %.1f   %.1f   %.1f\tisfinite: %s",
        vec[0], vec[1], vec[2], isFin==true?"true":"false");
 
   Vec3d_set(vec, 1.0, 2.0, infVal);
@@ -1533,13 +1606,13 @@ bool testFiniteNan()
     success = false;
   }
 
-  RLOG(1, "Vector: %.1f   %.1f   %.1f\tisfinite: %s",
+  RLOG(2, "Vector: %.1f   %.1f   %.1f\tisfinite: %s",
        vec[0], vec[1], vec[2], isFin==true?"true":"false");
 
 
 
 
-  RMSGS("Mat3d functions");
+  RLOG(2, "Mat3d functions");
   Mat3d_setIdentity(mat);
 
   isFin = Mat3d_isFinite(mat);
@@ -1549,7 +1622,7 @@ bool testFiniteNan()
     success = false;
   }
 
-  REXEC(1)
+  REXEC(2)
   {
     Mat3d_fprint(stderr, mat);
     RMSGS("Matrix - isfinite: %s", isFin==true?"true":"false");
@@ -1564,11 +1637,13 @@ bool testFiniteNan()
     success = false;
   }
 
-  REXEC(1)
+  REXEC(2)
   {
     Mat3d_fprint(stderr, mat);
     RMSGS("Matrix - isfinite: %s", isFin==true?"true":"false");
   }
+
+  RLOGS(1, "%s testing finite value checks", success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -1646,6 +1721,7 @@ bool testWoodburyIdenity(int argc, char** argv)
  ******************************************************************************/
 bool testRnd(int argc, char** argv)
 {
+  bool success = true;
   int iLower = -10, iUpper = 10;
 
   RMSGS("\n\n****************************************************************"
@@ -1680,7 +1756,30 @@ bool testRnd(int argc, char** argv)
 
   fprintf(stderr, "\n");
 
-  return true;
+  // Test random bool answer distribution
+  int trueCount=0, falseCount=0;
+  for (int i=0; i<10000; ++i)
+  {
+    bool res = Math_getRandomBool();
+    if (res==true)
+    {
+      trueCount++;
+    }
+    else
+    {
+      falseCount++;
+    }
+  }
+
+  if (trueCount < 4500 || trueCount > 5500)
+  {
+    success = false;
+    RLOG(1, "True: %d   false: %d", trueCount, falseCount);
+  }
+
+
+
+  return success;
 }
 
 /*******************************************************************************
@@ -3503,7 +3602,7 @@ bool testEigenvalues3x3(int argc, char** argv)
     success = false;
   }
 
-  RLOG(1, "%s: Error is %g", success ? "SUCCESS" : "FAILURE", err);
+  RLOGS(1, "%s: Error is %g", success ? "SUCCESS" : "FAILURE", err);
 
   return success;
 }

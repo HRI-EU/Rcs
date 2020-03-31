@@ -915,12 +915,12 @@ bool Rcs::Task::testVelocity(double maxErr) const
   double err = MatNd_rmsqError(x1, x2);
   bool success = err < maxErr;
 
-  RLOG(1, "Task %s: velocity test %s: rms error = %g",
+  RLOG(2, "Task %s: velocity test %s: rms error = %g",
        getName().c_str(), success ? "SUCCESS" : "FAILURE", err);
 
-  REXEC(2)
+  REXEC(3)
   {
-    RLOG(2, "\nJ*q_dot   computeXp_ik()   diff");
+    RLOG(3, "\nJ*q_dot   computeXp_ik()   diff");
     MatNd_printTwoArraysDiff(x1, x2, 6);
   }
 

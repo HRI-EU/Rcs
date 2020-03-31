@@ -32,19 +32,19 @@
 
 function testMath()
 {
-    @EXECUTABLE_OUTPUT_PATH@/TestMath  -m -1 > /dev/null
+    @EXECUTABLE_OUTPUT_PATH@/TestMath -m -1 -numTests 10 -dl 1 &> UnitTestResults.txt
     testMathResult=$?
 }
 
 function testGraph()
 {
-    @EXECUTABLE_OUTPUT_PATH@/Rcs -m 3 -dl -1 > /dev/null
+    @EXECUTABLE_OUTPUT_PATH@/Rcs -m 3 -iter 10 -dl 1 -valgrind &>> UnitTestResults.txt
     testGraphResult=$?
 }
 
 function testController()
 {
-    @EXECUTABLE_OUTPUT_PATH@/Rcs -m 6 -valgrind -nTests 20 -dl -1 > /dev/null
+    @EXECUTABLE_OUTPUT_PATH@/Rcs -m 6 -valgrind -nTests 10 -dl 1 &>> UnitTestResults.txt
     testControllerResult=$?
 }
 

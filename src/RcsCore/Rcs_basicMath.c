@@ -286,6 +286,14 @@ int Math_getRandomInteger(int lower, int upper)
 }
 
 /*******************************************************************************
+ * See header
+ ******************************************************************************/
+bool Math_getRandomBool()
+{
+  return Math_getRandomInteger(0, 1) == 0 ? true : false;
+}
+
+/*******************************************************************************
  * Since the srand function requres a long unsigned int, it happens for large
  * system times that the seed is always the same. Therefore, here we just
  * consider the values after the comma, and multiply it by 1000.

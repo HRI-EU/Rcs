@@ -1024,12 +1024,12 @@ int main(int argc, char** argv)
           result++;
         }
 
-        if (loopCount > nIter)
+        loopCount++;
+
+        if (loopCount >= nIter)
         {
           runLoop = false;
         }
-
-        loopCount++;
       }
 
       RcsGraph_destroy(graph);
@@ -3160,7 +3160,10 @@ int main(int argc, char** argv)
   // before calling exit() to avoid leak reports from valgrind !
   xmlCleanupParser();
 
-  RLOG(0, "Thanks for using the Rcs libraries\n");
+  if (!valgrind)
+    {
+      RLOG(0, "Thanks for using the Rcs libraries\n");
+    }
 
 #if defined (_MSC_VER)
   if ((mode==0) || argP.hasArgument("-h"))

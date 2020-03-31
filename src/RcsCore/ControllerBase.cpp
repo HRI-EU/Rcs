@@ -1482,6 +1482,8 @@ bool Rcs::ControllerBase::test(bool verbose)
 {
   bool success = true;
 
+  // Check for individual tasks. We traverse the task vector and call each
+  // tasks's check function.
   for (size_t id = 0; id < getNumberOfTasks(); id++)
   {
     bool success_i = this->tasks[id]->test(verbose);
@@ -1501,6 +1503,61 @@ bool Rcs::ControllerBase::test(bool verbose)
     RMSG("%d task tests %s",
          (int) getNumberOfTasks(), success ? "succeeded" : "failed");
   }
+
+  // Test speed limit check. We go through all joints that have a speedLimit
+  // and are not constrained. We roll a dice and violate it or not. The
+  // violation is checked with the checkLimits() function and must return the
+  // consistent result.
+  for (int i=0; i<(int)getGraph()->dof; ++i)
+  {
+    const RcsJoint* queryJnt = NULL;
+
+    RCSGRAPH_TRAVERSE_JOINTS(getGraph())
+    {
+      if (JNT->speedLimit == DBL_MAX || JNT->constrained)
+      {
+        continue;
+      }
+
+      getGraph()->q_dot->ele[JNT->jointIndex] =
+        Math_getRandomNumber(-JNT->speedLimit, JNT->speedLimit);
+
+      if (i == JNT->jointIndex)
+      {
+        queryJnt = JNT;
+      }
+    }
+
+    if (queryJnt)
+    {
+      bool violates = Math_getRandomBool();
+
+      if (violates)
+      {
+        getGraph()->q_dot->ele[i] =
+          Math_getRandomNumber(1.01, 1.5)*queryJnt->speedLimit;
+      }
+
+      bool checkResult = checkLimits(false, false, true,
+                                     0.0, 0.0, 0.0, 0.0, 0.0);
+
+      if (checkResult == violates)
+      {
+        success = false;
+        if (verbose)
+        {
+          RMSG("%s: FAILURE: %g %g", queryJnt->name,
+               getGraph()->q_dot->ele[queryJnt->jointIndex],
+               queryJnt->speedLimit);
+        }
+
+      }
+    }
+
+  }
+
+
+
 
   return success;
 }
@@ -2295,27 +2352,65 @@ bool Rcs::ControllerBase::checkLimits(bool checkJointLimits,
   // Speed limit check
   if (checkJointVelocities)
   {
-    MatNd* q_dot = MatNd_clone(getGraph()->q_dot);
-    double scaling = RcsGraph_limitJointSpeeds(getGraph(), q_dot,
-                                               1.0, RcsStateFull);
-    if (scaling < 1.0)
+    RCSGRAPH_TRAVERSE_JOINTS(getGraph())
     {
-      success = false;
-      RLOG(3, "Joint speed limit violation");
-      RCSGRAPH_TRAVERSE_JOINTS(getGraph())
+      if (JNT->constrained)
       {
-        if ((!JNT->constrained) &&
-            (fabs(q_dot->ele[JNT->jointIndex]) >= JNT->speedLimit))
-        {
-          double sf = RcsJoint_isRotation(JNT) ? 180.0 / M_PI : 1.0;
-          RLOG(4, "%s: q_dot=%f   limit=%f [%s]", JNT->name,
-               sf*q_dot->ele[JNT->jointIndex],
-               sf*JNT->speedLimit, sf == 1.0 ? "m/sec" : "deg/sec");
-        }
+        continue;
+      }
+
+      const bool isRot = RcsJoint_isRotation(JNT);
+      const double margin = isRot ? speedMarginAngular : speedMarginLinear;
+      const double q_dot = getGraph()->q_dot->ele[JNT->jointIndex];
+
+      if ((q_dot<-JNT->speedLimit+margin) || (q_dot>JNT->speedLimit-margin))
+      {
+        success = false;
+        const double sf = isRot ? 180.0 / M_PI : 1.0;
+        RLOG(4, "%s: q_dot=%f   limit=%f [%s]", JNT->name, sf*q_dot,
+             sf*(JNT->speedLimit-margin), isRot ? "deg/sec" : "m/sec");
       }
     }
-    MatNd_destroy(q_dot);
+
   }
+
+
+
+
+
+
+
+
+  // // Speed limit check
+  // if (checkJointVelocities)
+  // {
+  //   MatNd* q_dot = MatNd_clone(getGraph()->q_dot);
+  //   double scaling = RcsGraph_limitJointSpeeds(getGraph(), q_dot,
+  //                                              1.0, RcsStateFull);
+  //   if (scaling < 1.0)
+  //   {
+  //     success = false;
+  //     RLOG(3, "Joint speed limit violation");
+  //     RCSGRAPH_TRAVERSE_JOINTS(getGraph())
+  //     {
+  //       if ((!JNT->constrained) &&
+  //           (fabs(q_dot->ele[JNT->jointIndex]) >= JNT->speedLimit))
+  //       {
+  //         double sf = RcsJoint_isRotation(JNT) ? 180.0 / M_PI : 1.0;
+  //         RLOG(4, "%s: q_dot=%f   limit=%f [%s]", JNT->name,
+  //              sf*q_dot->ele[JNT->jointIndex],
+  //              sf*JNT->speedLimit, sf == 1.0 ? "m/sec" : "deg/sec");
+  //       }
+  //     }
+  //   }
+  //   MatNd_destroy(q_dot);
+  // }
+
+
+
+
+
+
 
   return success;
 }

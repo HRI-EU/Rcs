@@ -859,7 +859,7 @@ static bool Rcs_testGradient2(void (*f)(double*, const double*, void*),
 
     if (verbose==true)
     {
-      REXEC(1)
+      REXEC(2)
       {
         fprintf(stderr, "max diff = %g\n analytic \t numeric\n", md);
 
