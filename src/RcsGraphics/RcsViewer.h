@@ -92,12 +92,15 @@ static const int CastsShadowTraversalMask = 0x2;
  *        - Key R will toggle the cartoon mode
  *        - LBM while right mouse button is pressed will select the mouse point
  *          as the new rotation center of the mouse manipulator
+ *        - Key z will toggle the OpenScenegraph StatsHandler information
+ *        - Key Z will print the OpenScenegraph StatsHandler information to 
+ *          the console
  *
  *        With some older grapics cards, some features such as anti aliasing are
  *        not available. To disable these, there is a constructor with the
  *        options fancy and startupWithShadow that can be set explicitely.
  *        Alternatively, the create function looks for an environment variable
- *        RCSVIEWER_SIMPLEGRAPHICS. If tis is set, the viewer starts without
+ *        RCSVIEWER_SIMPLEGRAPHICS. If this is set, the viewer starts without
  *        anti aliasing and shadows.
  */
 class Viewer
@@ -149,6 +152,7 @@ public:
    *  \param[in] lly     Lower left y screen coordinate
    *  \param[in] sizeX   Screen size in x-direction
    *  \param[in] sizeY   Screen size in y-direction
+   *
    *  \return True for success, false otherwise: View has already been set
    *          up (frame() has been called). In case of failure, there will be a
    *          log message on debug level 1.
@@ -177,11 +181,6 @@ public:
   void add(osgGA::GUIEventHandler* eventHandler);
 
   /*! \brief Removes the given node from the viewer's scene graph.
-   *
-   * \return True for success, false otherwise: node is NULL, or not found in
-   *         the viewer's scenegraph. The scenegraph is searched through all
-   *         levels. This function does not directly add the node, but defers
-   *         it to the next update traversal.
    */
   void removeNode(osg::Node* node);
 

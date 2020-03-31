@@ -517,6 +517,11 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   capture->setKeyEventToggleContinuousCapture(osgGA::GUIEventAdapter::KEY_F9);
   capture->setKeyEventTakeScreenShot(osgGA::GUIEventAdapter::KEY_F8);
   viewer->addEventHandler(capture.get());
+
+  osg::ref_ptr<osgViewer::StatsHandler> stats = new osgViewer::StatsHandler;
+  stats->setKeyEventTogglesOnScreenStats('z');
+  stats->setKeyEventPrintsOutStats('Z');
+  viewer->addEventHandler(stats.get());
 }
 
 /*******************************************************************************
