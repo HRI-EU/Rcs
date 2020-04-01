@@ -211,7 +211,13 @@ ADD_SUBDIRECTORY (doc)
 # Configure unit test script
 #
 ################################################################################
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/unittest.in ${CMAKE_CURRENT_BINARY_DIR}/unittest.sh @ONLY)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/unittest.in
+  ${CMAKE_CURRENT_BINARY_DIR}/unittest.sh @ONLY)
+
+ADD_CUSTOM_TARGET(unittest 
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/unittest.sh
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Performing unittests" VERBATIM)
 
 ################################################################################
 #

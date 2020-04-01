@@ -1860,7 +1860,7 @@ bool testAxisAngleConversion(int argc, char** argv)
   int its = 100;
   double err, ang, ax[3], A1[3][3], A2[3][3];
   double maxErr = 0.0;
-  double errLimit = 1.0e-8;
+  double errLimit = 1.0e-6;
 
   // Parse command line arguments
   Rcs::CmdLineParser argP(argc, argv);
@@ -2096,8 +2096,7 @@ bool testAxisAngleConversion(int argc, char** argv)
       {
         RLOG(1, "Err: %g", err);
         Mat3d_printCommentDigits("A1", A1, 5);
-        Mat3d_printCommentDigits("A2", A2, 5);
-        Mat3d_printCommentDigits("Diff", A2, 5);
+        Mat3d_printCommentDigits("Diff", A2, 12);
       }
     }
     else
