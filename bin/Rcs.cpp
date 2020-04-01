@@ -36,8 +36,7 @@
 
 
 
-/*!
- * \page RcsExamples Example program
+/*! \page RcsExamples Rcs.cpp example program
  *
  *  The Rcs.cpp example program implements a number of different modes that
  *  show how to use the functionality of the libraries. The following command

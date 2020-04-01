@@ -47,6 +47,9 @@
 
 
 
+namespace Rcs
+{
+
 /*! \ingroup RcsGraphics
  * \brief Mouse spring: When the shift-key is pressed, clicking the left
  *        mouse button will make the 3d point of the BodyNode under the mouse
@@ -57,17 +60,12 @@
  *
  *        All public functions are thread-safe, protected by the mutex _mtx.
  */
-
-namespace Rcs
-{
-
 class MouseDragger: public osg::Switch
 {
   friend class MouseDraggerHandler;
 public:
 
-  /*!
-   *  \brief Default constructor.
+  /*! \brief Default constructor.
    */
   MouseDragger();
 
