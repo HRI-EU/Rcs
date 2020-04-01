@@ -212,7 +212,7 @@ public:
 
   /*! \brief Return the graph file name (e.g., gScenario.xml)
    */
-  const std::string& getGraphFileName() const;
+  std::string getGraphFileName() const;
 
   /*! \brief Return a pointer to the underlying collision model.
    */
@@ -224,9 +224,16 @@ public:
    *         "activation", the activation of the task will be set to the
    *         value of this tag. The tag "activation" overwrites the value
    *         of the tag "active", if both exist. If none of the tags
-   *         exists, the activation value in a_init remains unchanged.
+   *         exists, the activation value in a_init is set to 0. Vector 
+   *         activation is reshaped to nTasks x 1.
    */
-  void readActivationsFromXML(MatNd* a_init) const;
+  void readActivationsFromXML(MatNd* activation) const;
+
+  /*! \brief Reads the activation vector from the xml file. If the xml field
+   *         of the task has the given tag, the activation will be set to
+   *         the corresponding value. Otherwise, the corresponding element of
+   *         vector x remains unchanged. Vector x is reshaped to nTasks x 1.
+   */
   void readActivationVectorFromXML(MatNd* x, const char* tag) const;
 
   /*! \brief Reads the task vector from the xml file. If the xml field
@@ -610,8 +617,7 @@ public:
    *                    only the dimensions of the tasks are counted that have
    *                    a larger activation than 0.
   */
-  virtual void computeTaskForce(MatNd* ft_task,
-                                const MatNd* activation=NULL) const;
+  virtual void computeTaskForce(MatNd* ft_task, const MatNd* a_des=NULL) const;
 
   /*! \brief Computes the displacement of a compliant frame based on an
    *         admittance control law.
@@ -797,7 +803,6 @@ private:
   RcsCollisionMdl* cMdl;             //!< Collision model
   std::string name;                  //!< Name of the controller
   std::string xmlFile;               //!< Configuration file name
-  std::string xmlGraphFile;          //!< Graph file name
   std::vector<size_t> taskArrayIdx;  //!< List of indices in task vector
 };
 

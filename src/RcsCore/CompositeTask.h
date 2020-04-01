@@ -96,13 +96,13 @@ public:
    */
   virtual void computeH(MatNd* hessian) const;
 
-  /*! \brief Calls \ref Task::computeDX(double*, double*) const on all
+  /*! \brief Calls \ref Task::computeDX(double*, const double*) const on all
    *         subtasks and stacks the results in vector dx. The current
    *         state will be extracted from the task's graph.
    */
   virtual void computeDX(double* dx, const double* x_des) const;
 
-  /*! \brief Calls \ref Task::computeDX(double*, double*) const on all
+  /*! \brief Calls \ref Task::computeDX(double*, const double*) const on all
    *         subtasks and stacks the results in vector dx. The current
    *         state will be extracted from x_curr, and not from the
    *         task's graph.
@@ -115,7 +115,7 @@ public:
    */
   virtual void computeXp(double* xp) const;
 
-  /*! \brief Calls \ref Task::computeDXp(double*, double*) const on all
+  /*! \brief Calls \ref Task::computeDXp(double*, const double*) const on all
    *         subtasks and stacks the results in vector dxp. The current
    *         state will be extracted from the task's graph.
    */

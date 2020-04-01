@@ -130,7 +130,6 @@ void Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
   // if we don't find it here.
   if (getXMLNodePropertyStringN(xmlNodeController, "graph", txt, 256))
   {
-    this->xmlGraphFile = std::string(txt);
     this->graph = RcsGraph_create(txt);
     RCHECK_MSG(this->graph, "Failed to create graph \"%s\"", txt);
   }
@@ -166,7 +165,7 @@ void Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
     else if (isXMLNodeName(node, "Graph"))
     {
       RCHECK_MSG(this->graph==NULL, "Found xml tag <Graph>, but already graph"
-                 " loaded graph from file \"%s\"", this->xmlGraphFile.c_str());
+                 " loaded graph from file \"%s\"", graph->xmlFile);
       this->graph = RcsGraph_createFromXmlNode(node);
     }
 
@@ -550,9 +549,9 @@ RcsGraph* Rcs::ControllerBase::getGraph() const
 /*******************************************************************************
  * Return the graph file name (e.g., gScenario.xml).
  ******************************************************************************/
-const std::string& Rcs::ControllerBase::getGraphFileName() const
+std::string Rcs::ControllerBase::getGraphFileName() const
 {
-  return xmlGraphFile;
+  return std::string(graph->xmlFile);
 }
 
 /*******************************************************************************
