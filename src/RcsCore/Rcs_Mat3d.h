@@ -380,11 +380,11 @@ void Mat3d_rotateOmegaSelf(double A_BI[3][3], const double omega[3],
  *
  *  \param[in] A_SI     Start orientation
  *  \param[in] A_TI     Target orientation
- *  \param[in] axis     Rotation axis
+ *  \param[in] axis     Unit-length rotation axis (Unit length is not checked)
  *  \return             Resulting minimum angle
  */
 double Mat3d_getMinimumRotationAngle(double A_SI[3][3], double A_TI[3][3],
-                                     double axis[3]);
+                                     const double axis[3]);
 
 /*! \ingroup RcsMat3dFunctions
  *  \brief From a given set of Euler angles, this function returns the

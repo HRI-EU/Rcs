@@ -907,9 +907,8 @@ void Mat3d_rotateOmegaSelf(double A_KI[3][3], const double omega[3],
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-//! \todo Really exit hard?
 double Mat3d_getMinimumRotationAngle(double A_SI[3][3], double A_TI[3][3],
-                                     double axis[3])
+                                     const double axis[3])
 {
   // Compute relative transformation from x to mean of distribution
   double A_TS[3][3];
@@ -931,7 +930,7 @@ double Mat3d_getMinimumRotationAngle(double A_SI[3][3], double A_TI[3][3],
 
   // Compute minimum angle
   double t = atan2(t1, t0);
-  RCHECK(Math_isFinite(t));
+
   return t;
 }
 
