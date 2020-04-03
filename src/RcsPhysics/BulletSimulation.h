@@ -64,7 +64,7 @@ typedef void(*btNearCallback)(btBroadphasePair&, btCollisionDispatcher&, const b
 namespace Rcs
 {
 class BulletRigidBody;
-class BulletHingeJoint;
+class BulletJointBase;
 class BulletDebugDrawer;
 
 /*! \ingroup RcsPhysics
@@ -205,7 +205,7 @@ protected:
   bool updateLoadcell(const RcsSensor* loadCell);
   void setJointTorque(const RcsJoint* jnt, double torque);
   bool setJointAngle(const RcsJoint* jnt, double angle, double dt);
-  BulletHingeJoint* getHinge(const RcsJoint* jnt) const;
+  BulletJointBase* getHinge(const RcsJoint* jnt) const;
 
   btBroadphaseInterface* broadPhase;
   btCollisionDispatcher* dispatcher;
@@ -215,7 +215,7 @@ protected:
   mutable pthread_mutex_t mtx;
   double lastDt;
   std::map<const RcsBody*, BulletRigidBody*> bdyMap;
-  std::map<const RcsJoint*, BulletHingeJoint*> hingeMap;
+  std::map<const RcsJoint*, BulletJointBase*> jntMap;
   std::map<std::string, BulletRigidBody*> deactivatedBodies;
 
 

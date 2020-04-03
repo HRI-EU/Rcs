@@ -1626,8 +1626,8 @@ int main(int argc, char** argv)
         //////////////////////////////////////////////////////////////
 
         double dtSim = Timer_getTime();
-        // sim->simulate(dt, q_curr, q_dot_curr, NULL, NULL, !skipControl);
         sim->simulate(dt, graph, NULL, NULL, !skipControl);
+        sim->getJointAngles(q_curr);
         dtSim = Timer_getTime() - dtSim;
 
 

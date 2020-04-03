@@ -55,19 +55,21 @@ Rcs::BulletHingeJoint::BulletHingeJoint(RcsJoint* jnt, double q0,
                                         const btVector3& axisInA,
                                         const btVector3& axisInB,
                                         bool useReferenceFrameA):
+  BulletJointBase(),
   btHingeConstraint(rbA, rbB, pivotInA, pivotInB, axisInA, axisInB,
                     useReferenceFrameA),
   rcsJoint(jnt), hingeAngleCurr(0.0), hingeAnglePrev(0.0),
   jointAngleCurr(0.0), jointAnglePrev(0.0), jointVelocity(0.0),
-  jointVelocityPrev(0.0), jointAcceleration(0.0), flipAngle(0.0), jf()
+  jointVelocityPrev(0.0), jointAcceleration(0.0), flipAngle(0.0), offset(0.0),
+  jf()
 {
-  RCHECK(rcsJoint);
+  RCHECK(RcsJoint_isRotation(rcsJoint));
 
-  this->offset = getHingeAngle() - q0;
-  this->hingeAngleCurr = btHingeConstraint::getHingeAngle();
+  this->offset = getConstraintPos() - q0;
+  this->hingeAngleCurr = getConstraintPos();
   this->hingeAnglePrev = hingeAngleCurr;
 
-  this->jointAngleCurr = getHingeAngle() - this->offset + this->flipAngle;
+  this->jointAngleCurr = getConstraintPos() - this->offset + this->flipAngle;
   this->jointAnglePrev = this->jointAngleCurr;
 
   if ((jnt->ctrlType == RCSJOINT_CTRL_POSITION) ||
@@ -86,13 +88,20 @@ Rcs::BulletHingeJoint::BulletHingeJoint(RcsJoint* jnt, double q0,
   enableFeedback(true);
 
   // Initialize with given joint angle q0
-  setJointAngle(q0, 1.0);
+  setJointPosition(q0, 1.0);
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-double Rcs::BulletHingeJoint::getJointAngle() const
+Rcs::BulletHingeJoint::~BulletHingeJoint()
+{
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+double Rcs::BulletHingeJoint::getJointPosition() const
 {
   return this->jointAngleCurr;
 }
@@ -100,7 +109,7 @@ double Rcs::BulletHingeJoint::getJointAngle() const
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::BulletHingeJoint::setJointAngle(double angle, double dt)
+void Rcs::BulletHingeJoint::setJointPosition(double angle, double dt)
 {
   enableMotor(true);
   double maxImpulse = Math_clip(rcsJoint->maxTorque*dt, 0.0, 1.0);
@@ -193,7 +202,7 @@ void Rcs::BulletHingeJoint::update(double dt)
   RCHECK(dt>0.0);
 
   this->hingeAnglePrev = this->hingeAngleCurr;
-  this->hingeAngleCurr = btHingeConstraint::getHingeAngle();
+  this->hingeAngleCurr = getConstraintPos();
 
   // positive flip +179 -> -179
   if ((hingeAnglePrev>M_PI_2) && (hingeAngleCurr<-M_PI_2))
@@ -209,7 +218,7 @@ void Rcs::BulletHingeJoint::update(double dt)
   }
 
   this->jointAnglePrev = this->jointAngleCurr;
-  this->jointAngleCurr = getHingeAngle() - this->offset + this->flipAngle;
+  this->jointAngleCurr = getConstraintPos() - this->offset + this->flipAngle;
 
   this->jointVelocityPrev = this->jointVelocity;
   this->jointVelocity = (this->jointAngleCurr-this->jointAnglePrev)/dt;
@@ -307,7 +316,28 @@ void Rcs::BulletHingeJoint::reset(double q)
   this->jointVelocityPrev = 0.0;
   this->jointAcceleration = 0.0;
   this->flipAngle = 0.0;
+}
 
-  // setMaxMotorImpulse(1.0e8);
-  // setMotorTarget(hingeAngleCurr, 0.01);
+/*******************************************************************************
+ *
+ ******************************************************************************/
+double Rcs::BulletHingeJoint::getConstraintPos()
+{
+  return btHingeConstraint::getHingeAngle();
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::BulletHingeJoint::isHinge() const
+{
+  return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::BulletHingeJoint::isSlider() const
+{
+  return false;
 }

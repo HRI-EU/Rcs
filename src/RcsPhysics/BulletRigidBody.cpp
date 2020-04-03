@@ -36,6 +36,7 @@
 
 #include "BulletRigidBody.h"
 #include "BulletHingeJoint.h"
+#include "BulletSliderJoint.h"
 #include "BulletHelpers.h"
 
 #include <Rcs_typedef.h>
@@ -517,7 +518,7 @@ const char* Rcs::BulletRigidBody::getBodyName() const
 void Rcs::BulletRigidBody::calcHingeTrans(const RcsJoint* jnt,
                                           btVector3& pivot, btVector3& axis)
 {
-  HTr A_PI;   // Rotation from COM to world: A_PI = A_PB*A_BI
+  HTr A_PI;   // Rotation from world to COM: A_PI = A_PB*A_BI
   Mat3d_mul(A_PI.rot, this->A_PB_.rot, body->A_BI->rot);
 
   double I_r_com[3];
@@ -539,6 +540,44 @@ void Rcs::BulletRigidBody::calcHingeTrans(const RcsJoint* jnt,
     axis[i] = A_JP.rot[jnt->dirIdx][i];
   }
 
+}
+
+/*******************************************************************************
+ * Calculate slider transformation in Bullet body coordinates. We calculate it
+ * using the absoulte transforms of the bodies. They must be consistent, which
+ * means that the forward kinematics must have been calculated at least once
+ * before calling this function.
+ ******************************************************************************/
+btTransform Rcs::BulletRigidBody::calcSliderTrans(const RcsJoint* jnt)
+{
+  HTr A_PI;   // Rotation from world to COM: A_PI = A_PB*A_BI
+  Mat3d_mul(A_PI.rot, this->A_PB_.rot, body->A_BI->rot);
+
+  double I_r_com[3];
+  Vec3d_transRotate(I_r_com, body->A_BI->rot, body->Inertia->org);
+  Vec3d_add(A_PI.org, body->A_BI->org, I_r_com);
+
+  // Transformation from physics body to joint in physics coordinates
+  HTr A_JP;   // A_JP = A_JI*A_IP
+  RcsJoint* seppl = (RcsJoint*) jnt;
+  Mat3d_mulTranspose(A_JP.rot, seppl->A_JI.rot, A_PI.rot);
+
+  Vec3d_sub(A_JP.org, jnt->A_JI.org, A_PI.org);
+  Vec3d_rotateSelf(A_JP.org, A_PI.rot);
+
+
+  int dirIdx = RcsJoint_getDirectionIndex(jnt);
+
+  if (dirIdx==1)
+    {
+      Mat3d_rotateSelfAboutXYZAxis(A_JP.rot, 2, M_PI_2);
+    }
+  else if(dirIdx==2)
+    {
+      Mat3d_rotateSelfAboutXYZAxis(A_JP.rot, 1, -M_PI_2);
+    }
+  
+  return btTransformFromHTr(&A_JP);
 }
 
 /*******************************************************************************
@@ -635,31 +674,37 @@ btTypedConstraint* Rcs::BulletRigidBody::createJoint(const RcsGraph* graph)
     return NULL;
   }
 
-  if (RcsJoint_isRotation(body->jnt)==false)
-  {
-    RLOG(1, "Skipping joint: found 1 non-revolute joint in body %s",
-         getBodyName());
-
-    // std::vector<bool> cMask = rbjMask(body);
-    // setLinearFactor(btVector3(cMask[0], cMask[1], cMask[2]));
-    // setAngularFactor(btVector3(cMask[3], cMask[4], cMask[5]));
-
-    return NULL;
-  }
-
+  btTypedConstraint* joint = NULL;
+  
   // Create hinge joint
-  btVector3 pivotInA, pivotInB, axisInA, axisInB;
-  bool useReferenceFrameA = false;
+  if (RcsJoint_isRotation(body->jnt))
+    {
+      btVector3 pivotInA, pivotInB, axisInA, axisInB;
+      bool useReferenceFrameA = false;
 
-  calcHingeTrans(body->jnt, pivotInA, axisInA);
-  parent->calcHingeTrans(body->jnt, pivotInB, axisInB);
+      calcHingeTrans(body->jnt, pivotInA, axisInA);
+      parent->calcHingeTrans(body->jnt, pivotInB, axisInB);
 
-  BulletHingeJoint* hinge =
-    new BulletHingeJoint(body->jnt, graph->q->ele[body->jnt->jointIndex],
-                         *this, *parent, pivotInA, pivotInB,
-                         axisInA, axisInB, useReferenceFrameA);
-
-  return hinge;
+      joint = new BulletHingeJoint(body->jnt,
+                                   graph->q->ele[body->jnt->jointIndex],
+                                   *this, *parent, pivotInA, pivotInB,
+                                   axisInA, axisInB, useReferenceFrameA);
+    }
+  // Create slider joint 
+  else
+    {
+      bool useReferenceFrameA = false;
+      btTransform frameInA = calcSliderTrans(body->jnt);
+      btTransform frameInB = parent->calcSliderTrans(body->jnt);
+      
+      joint = new BulletSliderJoint(body->jnt, 
+                                    graph->q->ele[body->jnt->jointIndex],
+                                    *this, *parent,
+                                    frameInA, frameInB,  
+                                    useReferenceFrameA);
+    }
+  
+  return joint;
 }
 
 /*******************************************************************************

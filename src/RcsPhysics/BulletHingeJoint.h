@@ -37,6 +37,8 @@
 #ifndef RCS_BULLETHINGEJOINT_H
 #define RCS_BULLETHINGEJOINT_H
 
+#include "BulletJointBase.h"
+
 #include <Rcs_graph.h>
 
 #include <btBulletDynamicsCommon.h>
@@ -45,7 +47,7 @@
 
 namespace Rcs
 {
-class BulletHingeJoint : public btHingeConstraint
+class BulletHingeJoint : public BulletJointBase, public btHingeConstraint
 {
 public:
 
@@ -54,17 +56,21 @@ public:
                    const btVector3& pivotInA, const btVector3& pivotInB,
                    const btVector3& axisInA, const btVector3& axisInB,
                    bool useReferenceFrameA);
-  double getJointAngle() const;
+  virtual ~BulletHingeJoint();
+
+  double getJointPosition() const;
   double getJointVelocity() const;
   double getJointAcceleration() const;
   double getJointTorque() const;
   unsigned int getJointIndex() const;
   void update(double dt);
-  void setJointAngle(double angle, double dt);
+  void setJointPosition(double angle, double dt);
   void setJointTorque(double torque, double dt);
   void setJointLimit(bool enable, double q_min, double q_max);
   void reset(double hingeAngle);
-
+  double getConstraintPos();
+  bool isHinge() const;
+  bool isSlider() const;
 
 private:
 

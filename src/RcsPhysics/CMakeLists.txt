@@ -63,6 +63,7 @@ IF(USE_BULLET)
     BulletDistance.cpp
     BulletHelpers.cpp
     BulletHingeJoint.cpp
+    BulletSliderJoint.cpp
     BulletRigidBody.cpp
     BulletSimulation.cpp)
   IF(NOT HEADLESS_BUILD)

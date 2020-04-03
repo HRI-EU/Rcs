@@ -66,7 +66,7 @@ static const char className[] = "Bullet";
 static Rcs::PhysicsFactoryRegistrar<Rcs::BulletSimulation> physics(className);
 
 
-typedef std::map<const RcsJoint*, Rcs::BulletHingeJoint*>::iterator hinge_it;
+typedef std::map<const RcsJoint*, Rcs::BulletJointBase*>::iterator hinge_it;
 typedef std::map<const RcsBody*, Rcs::BulletRigidBody*>::iterator body_it;
 
 
@@ -265,19 +265,19 @@ Rcs::BulletSimulation::~BulletSimulation()
       delete body->getMotionState();
     }
     dynamicsWorld->removeCollisionObject(obj);
-    // #if !defined (_MSC_VER)
-    //     if (dynamic_cast<BulletRigidBody*>(body))
-    //     {
-    //       // BulletRigidBody takes care of recursively deleting all shapes
-    //       delete obj;
-    //     }
+#if !defined (_MSC_VER)
+    if (dynamic_cast<BulletRigidBody*>(body))
+    {
+      // BulletRigidBody takes care of recursively deleting all shapes
+      delete obj;
+    }
     //     else
     //     {
     //       // Other shapes such as ground plane need explicit destruction of shapes
     //       delete obj->getCollisionShape();
     //       delete obj;
     //     }
-    // #endif
+#endif
   }
 
   // btSoftRigidDynamicsWorld* softWorld = dynamic_cast<btSoftRigidDynamicsWorld*>(this->dynamicsWorld);
@@ -457,13 +457,13 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
         // before applying the offset
         if (BODY->jnt!=NULL)
         {
-          BulletHingeJoint* hinge = dynamic_cast<BulletHingeJoint*>(jnt);
+          BulletJointBase* jBase = dynamic_cast<BulletJointBase*>(jnt);
 
-          if (hinge != NULL)
+          if (jBase != NULL)
           {
-            hingeMap[BODY->jnt] = hinge;
+            jntMap[BODY->jnt] = jBase;
             RLOGS(5, "Joint %s has value %f (%f)",
-                  BODY->jnt->name, hinge->getHingeAngle(),
+                  BODY->jnt->name, jBase->getConstraintPos(),
                   getGraph()->q->ele[BODY->jnt->jointIndex]);
           }
         }
@@ -500,6 +500,14 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
   this->dragBody = NULL;
   Vec3d_setZero(this->dragForce);
   Vec3d_setZero(this->dragAnchor);
+
+  // Update all transforms of the BulletRigidBody instance so that they show
+  // the correct transformations before the first simulate() call.
+  for (body_it it=bdyMap.begin(); it!=bdyMap.end(); ++it)
+  {
+    Rcs::BulletRigidBody* btBdy = it->second;
+    btBdy->updateBodyTransformFromPhysics();
+  }
 
   RCHECK(check());
 }
@@ -604,9 +612,9 @@ void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
 
 
 
-  for (hinge_it it = hingeMap.begin(); it != hingeMap.end(); ++it)
+  for (hinge_it it = jntMap.begin(); it != jntMap.end(); ++it)
   {
-    Rcs::BulletHingeJoint* hinge = it->second;
+    Rcs::BulletJointBase* hinge = it->second;
     hinge->update(dt);
   }
 
@@ -685,9 +693,9 @@ void Rcs::BulletSimulation::reset()
   btBroadphaseInterface* bi = dynamicsWorld->getBroadphase();
   btOverlappingPairCache* opc = bi->getOverlappingPairCache();
 
-  for (hinge_it it = hingeMap.begin(); it != hingeMap.end(); ++it)
+  for (hinge_it it = jntMap.begin(); it != jntMap.end(); ++it)
   {
-    Rcs::BulletHingeJoint* hinge = it->second;
+    Rcs::BulletJointBase* hinge = it->second;
     hinge->reset(this->q_des->ele[hinge->getJointIndex()]);
   }
 
@@ -914,13 +922,13 @@ void Rcs::BulletSimulation::getAngularVelocity(const RcsBody* body,
  ******************************************************************************/
 void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
 {
-  MatNd_reshape(q, (type == RcsStateFull) ? getGraph()->dof : getGraph()->nJ, 1);
+  MatNd_reshape(q, (type==RcsStateFull) ? getGraph()->dof : getGraph()->nJ, 1);
 
 #if 0
   // Update all hinge joints
   std::map<const RcsJoint*, Rcs::BulletHingeJoint*>::const_iterator jit;
 
-  for (jit = hingeMap.begin(); jit != hingeMap.end(); ++jit)
+  for (jit = jntMap.begin(); jit != jntMap.end(); ++jit)
   {
     const RcsJoint* rj = jit->first;
     Rcs::BulletHingeJoint* hinge = jit->second;
@@ -930,7 +938,7 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
       int idx = (type==RcsStateFull) ? rj->jointIndex : rj->jacobiIndex;
       RCHECK_MSG(idx>=0 && idx<(int)getGraph()->dof, "Joint \"%s\": idx = %d",
                  rj ? rj->name : "NULL", idx);
-      q->ele[idx] = hinge->getJointAngle();
+      q->ele[idx] = hinge->getJointPosition();
     }
     else
     {
@@ -945,11 +953,11 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
     RCHECK_MSG(idx>=0 && idx<(int)getGraph()->dof, "Joint \"%s\": idx = %d",
                JNT->name, idx);
 
-    Rcs::BulletHingeJoint* hinge = getHinge(JNT);
+    Rcs::BulletJointBase* hinge = getHinge(JNT);
 
     if (hinge != NULL)
     {
-      q->ele[idx] = hinge->getJointAngle();
+      q->ele[idx] = hinge->getJointPosition();
     }
     else
     {
@@ -1023,12 +1031,12 @@ void Rcs::BulletSimulation::getJointVelocities(MatNd* q_dot,
   MatNd_reshape(q_dot, (type==RcsStateFull) ? getGraph()->dof : getGraph()->nJ, 1);
 
   // First update all hinge joints
-  std::map<const RcsJoint*, Rcs::BulletHingeJoint*>::const_iterator it;
+  std::map<const RcsJoint*, Rcs::BulletJointBase*>::const_iterator it;
 
-  for (it = hingeMap.begin(); it != hingeMap.end(); ++it)
+  for (it = jntMap.begin(); it != jntMap.end(); ++it)
   {
     const RcsJoint* rj = it->first;
-    Rcs::BulletHingeJoint* hinge = it->second;
+    Rcs::BulletJointBase* hinge = it->second;
 
     if (hinge != NULL)
     {
@@ -1093,7 +1101,7 @@ void Rcs::BulletSimulation::getJointVelocities(MatNd* q_dot,
  ******************************************************************************/
 void Rcs::BulletSimulation::setJointTorque(const RcsJoint* jnt, double torque)
 {
-  Rcs::BulletHingeJoint* hinge = getHinge(jnt);
+  Rcs::BulletJointBase* hinge = getHinge(jnt);
 
   if (hinge == NULL)
   {
@@ -1111,7 +1119,7 @@ void Rcs::BulletSimulation::setJointTorque(const RcsJoint* jnt, double torque)
 bool Rcs::BulletSimulation::setJointAngle(const RcsJoint* jnt, double angle,
                                           double dt)
 {
-  Rcs::BulletHingeJoint* hinge = getHinge(jnt);
+  Rcs::BulletJointBase* hinge = getHinge(jnt);
 
   if (hinge == NULL)
   {
@@ -1120,7 +1128,7 @@ bool Rcs::BulletSimulation::setJointAngle(const RcsJoint* jnt, double angle,
     return false;
   }
 
-  hinge->setJointAngle(angle, dt);
+  hinge->setJointPosition(angle, dt);
 
   return true;
 }
@@ -1196,10 +1204,10 @@ void Rcs::BulletSimulation::disableCollision(const RcsBody* b0,
 //! \todo Prismatic joints are missing.
 void Rcs::BulletSimulation::setJointLimits(bool enable)
 {
-  for (hinge_it it = hingeMap.begin(); it != hingeMap.end(); ++it)
+  for (hinge_it it = jntMap.begin(); it != jntMap.end(); ++it)
   {
     const RcsJoint* jnt = it->first;
-    Rcs::BulletHingeJoint* hinge = it->second;
+    Rcs::BulletJointBase* hinge = it->second;
     RCHECK(jnt);
     RCHECK(hinge);
     if (enable==true)
@@ -1328,10 +1336,10 @@ void Rcs::BulletSimulation::applyControl(double dt)
 
 
   // Set desired joint controls
-  for (hinge_it it = hingeMap.begin(); it != hingeMap.end(); ++it)
+  for (hinge_it it = jntMap.begin(); it != jntMap.end(); ++it)
   {
     const RcsJoint* JNT = it->first;
-    Rcs::BulletHingeJoint* hinge = it->second;
+    Rcs::BulletJointBase* hinge = it->second;
 
     if (JNT->ctrlType==RCSJOINT_CTRL_TORQUE)
     {
@@ -1341,14 +1349,14 @@ void Rcs::BulletSimulation::applyControl(double dt)
     else if (JNT->ctrlType==RCSJOINT_CTRL_POSITION)
     {
       double q_cmd = MatNd_get(this->q_des, JNT->jointIndex, 0);
-      hinge->setJointAngle(q_cmd, dt);
+      hinge->setJointPosition(q_cmd, dt);
     }
     else   // RCSJOINT_CTRL_VELOCITY
     {
-      double q_curr_i = hinge->getJointAngle();
+      double q_curr_i = hinge->getJointPosition();
       double q_dot_des_i = MatNd_get(this->q_dot_des, JNT->jointIndex, 0);
       double q_des_i  = q_curr_i + q_dot_des_i*dt;
-      hinge->setJointAngle(q_des_i, dt);
+      hinge->setJointPosition(q_des_i, dt);
     }
   }
 
@@ -1496,18 +1504,18 @@ Rcs::BulletRigidBody* Rcs::BulletSimulation::getRigidBody(const RcsBody* bdy) co
 /*******************************************************************************
  *
  ******************************************************************************/
-Rcs::BulletHingeJoint* Rcs::BulletSimulation::getHinge(const RcsJoint* jnt) const
+Rcs::BulletJointBase* Rcs::BulletSimulation::getHinge(const RcsJoint* jnt) const
 {
   if (jnt == NULL)
   {
     return NULL;
   }
 
-  std::map<const RcsJoint*, Rcs::BulletHingeJoint*>::const_iterator it;
+  std::map<const RcsJoint*, Rcs::BulletJointBase*>::const_iterator it;
 
-  it = hingeMap.find(jnt);
+  it = jntMap.find(jnt);
 
-  if (it!=hingeMap.end())
+  if (it!=jntMap.end())
   {
     return it->second;
   }
@@ -1929,13 +1937,13 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
       // before applying the offset
       if (body->jnt != NULL)
       {
-        BulletHingeJoint* hinge = dynamic_cast<BulletHingeJoint*>(jnt);
+        BulletJointBase* jBase = dynamic_cast<BulletJointBase*>(jnt);
 
-        if (hinge != NULL)
+        if (jBase != NULL)
         {
-          hingeMap[body->jnt] = hinge;
+          jntMap[body->jnt] = jBase;
           RLOGS(5, "Joint %s has value %f (%f)",
-                body->jnt->name, hinge->getHingeAngle(),
+                body->jnt->name, jBase->getConstraintPos(),
                 MatNd_get(getGraph()->q, body->jnt->jointIndex, 0));
         }
       }

@@ -460,11 +460,11 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
     if (shape->type == RCSSHAPE_SPHERE)
     {
       bool success = !getXMLNodeProperty(node, "length");
-      RCHECK_MSG(success, "%s", body->name);
+      RCHECK_MSG(success, "Found length specifier in sphere: %s", body->name);
       success = getXMLNodeProperty(node, "radius");
       RCHECK_MSG(success, "%s", body->name);
       success = !getXMLNodeProperty(node, "extents");
-      RCHECK_MSG(success, "%s", body->name);
+      RCHECK_MSG(success, "Found extents specifier in sphere: %s", body->name);
     }
 
     // Lets be pedantic with the configuration file: Disallow "radius"
@@ -472,11 +472,9 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
     if (shape->type == RCSSHAPE_SSR)
     {
       bool success = !getXMLNodeProperty(node, "length");
-      RCHECK_MSG(success,
-                 "SSR of body \"%s\" has length tag!", body->name);
+      RCHECK_MSG(success, "SSR of body \"%s\" has length tag!", body->name);
       success = !getXMLNodeProperty(node, "radius");
-      RCHECK_MSG(success,
-                 "SSR of body \"%s\" has radius tag!", body->name);
+      RCHECK_MSG(success, "SSR of body \"%s\" has radius tag!", body->name);
     }
 
     // Lets be pedantic with the configuration file: Disallow "extents"
@@ -489,8 +487,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
       RCHECK_MSG(success, "TORUS of body \"%s\" has no radius tag!",
                  body->name);
       success = !getXMLNodeProperty(node, "extents");
-      RCHECK_MSG(success, "TORUS of body \"%s\" has extents tag, remove it!",
-                 body->name);
+      RCHECK_MSG(success, "TORUS of body \"%s\" has extents tag", body->name);
     }
 
   }   // REXEC(1)

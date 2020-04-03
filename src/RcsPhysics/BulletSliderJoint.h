@@ -34,67 +34,58 @@
 
 *******************************************************************************/
 
-#ifndef RCS_BULLETRIGIDBODY_H
-#define RCS_BULLETRIGIDBODY_H
+#ifndef RCS_BULLETSLIDERJOINT_H
+#define RCS_BULLETSLIDERJOINT_H
 
-#include "PhysicsConfig.h"
+#include "BulletJointBase.h"
 
 #include <Rcs_graph.h>
 
 #include <btBulletDynamicsCommon.h>
 
 
+
 namespace Rcs
 {
-
-class BulletRigidBody : public btRigidBody
+class BulletSliderJoint : public BulletJointBase, public btSliderConstraint
 {
-  friend class BulletSimulation;
-
 public:
-  void getBodyTransform(HTr* A_BI) const;
-  const HTr* getCOMTransformPtr() const;
+
+  BulletSliderJoint(RcsJoint* jnt, double q0,
+                    btRigidBody& rbA, btRigidBody& rbB,
+                    const btTransform& frameInA, const btTransform& frameInB,
+                    bool useReferenceFrameA);
+  virtual ~BulletSliderJoint();
+
+  double getJointPosition() const;
+  double getJointVelocity() const;
+  double getJointAcceleration() const;
+  double getJointTorque() const;
+  unsigned int getJointIndex() const;
+  void update(double dt);
+  void setJointPosition(double angle, double dt);
+  void setJointTorque(double torque, double dt);
+  void setJointLimit(bool enable, double q_min, double q_max);
+  void reset(double hingeAngle);
+  double getConstraintPos();
+  bool isHinge() const;
+  bool isSlider() const;
 
 private:
-  const HTr* getBodyTransformPtr() const;
-  static BulletRigidBody* create(const RcsBody* body,
-                                 const PhysicsConfig* config);
-  BulletRigidBody(const btRigidBody::btRigidBodyConstructionInfo& rbInfo,
-                  const RcsBody* body);
-  virtual ~BulletRigidBody();
 
-  void clearShapes();
-  void calcHingeTrans(const RcsJoint* jnt, btVector3& pivot, btVector3& axis);
-  btTransform calcSliderTrans(const RcsJoint* jnt);
-  btTypedConstraint* createFixedJoint(const RcsGraph* graph);
-  btTypedConstraint* createJoint(const RcsGraph* graph);
-  void updateBodyTransformFromPhysics();
-  void setParentBody(BulletRigidBody* parent);
-  void getPhysicsTransform(HTr* A_PI) const;
-  void reset(const HTr* A_BI=NULL);
-  static btCollisionShape* createShape(RcsShape* sh,
-                                       btTransform& relTrans,
-                                       const RcsBody* body,
-                                       unsigned int convexHullVertexLimit);
-  btCollisionShape* getShape(const RcsShape* shape);
-  const RcsBody* getBodyPtr() const;
-  void setBodyTransform(const HTr* A_BI);
-  void setBodyTransform(const HTr* A_BI, double dt);
-  const char* getBodyName() const;
-
-  // Obsolete
-  void getLocalBodyTransform(HTr* A_PB) const;
-
-  const RcsBody* body;     // Pointer to corresponding graph's body
-  BulletRigidBody* parent; // Depth-first parent body
-  HTr A_PB_;               // From body frame to physics frame
-  HTr A_BI_;               // From world frame to body frame
-  HTr A_PI_;               // From world frame to COM frame
-  double x_dot[3];
-  double omega[3];
+  RcsJoint* rcsJoint;
+  double constraintPosCurr;
+  double constraintPosPrev;
+  double jointPosCurr;
+  double jointPosPrev;
+  double jointVelocity;
+  double jointVelocityPrev;
+  double jointAcceleration;
+  double offset;
   btJointFeedback jf;
+
 };
 
 }   // namespace Rcs
 
-#endif   // RCS_BULLETRIGIDBODY_H
+#endif   // RCS_BULLETSLIDERJOINT_H
