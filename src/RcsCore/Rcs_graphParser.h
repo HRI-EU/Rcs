@@ -92,6 +92,12 @@ extern "C" {
  *         rotation in the respective direction.
  *
  * - range: Lower limit, center position and upper limit values of the joint.
+ *          If range contains one value, it will be set to "-value 0 +value".
+ *          If range contains two values, it will be set to 
+ *          "value_1 0.5*(value_1+value_2) value_2", essentially setting the
+ *          center position to the middle between lower and upper range. If
+ *          range contains three values, it will be set to 
+ *          "value_1 value_2 value_3"
  *
  * - weightJL: Pre-scaler for the joint's joint limit cost and gradient
  *             contribution. Default is 1.

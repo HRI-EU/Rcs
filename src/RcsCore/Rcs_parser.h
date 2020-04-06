@@ -108,8 +108,8 @@ bool isXMLNodeName(xmlNodePtr node, const char* name);
 bool isXMLNodeNameNoCase(xmlNodePtr node, const char* name);
 
 /*! \ingroup RcsParserFunctions
- * \brief Returns "true" if a XML node with name "tag" exists in the
- *        XML node "node".
+ * \brief Returns the number of XML nodes with the name given in "tag"
+ *        that are found witin the given node.
  */
 unsigned int getNumXMLNodes(xmlNodePtr node, const char* tag);
 

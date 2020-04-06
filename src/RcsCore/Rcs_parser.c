@@ -364,8 +364,6 @@ unsigned int getXMLNodeBytes(xmlNodePtr node, const char* tag)
 unsigned int getXMLNodePropertyStringN(xmlNodePtr node, const char* tag,
                                        char* str, unsigned int n)
 {
-  RCHECK(tag);
-
   xmlChar* txt = xmlGetProp(node, (const xmlChar*) tag);
 
   if (txt == NULL)

@@ -640,14 +640,38 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
   }
 
   // Joint range (must go after joint type)
-  if (getXMLNodePropertyVec3(node, "range", ka))
-  {
-    jnt->q_min = ka[0];
-    jnt->q0 = ka[1];
-    jnt->q_max = ka[2];
 
-    RCHECK(jnt->q_min <= jnt->q_max);
-    RCHECK((jnt->q0 >= jnt->q_min) && (jnt->q0 <= jnt->q_max));
+  unsigned int rangeEle = getXMLNodeNumStrings(node, "range");
+  
+  //if (getXMLNodePrope(rtyVec3(node, "range", ka))
+  if ((rangeEle==1) || (rangeEle==2) || (rangeEle==3))
+  {
+    bool hasRange23 = getXMLNodePropertyVecN(node, "range", ka, rangeEle);
+    RCHECK(hasRange23);
+    
+    jnt->q_min = ka[0];
+
+    if (rangeEle==3)
+      {
+        jnt->q0 = ka[1];
+        jnt->q_max = ka[2];
+      }
+    else if (rangeEle==2)
+      {
+        jnt->q0 = 0.5*(ka[1]+ka[0]);
+        jnt->q_max = ka[1];
+      }
+    else if (rangeEle==1)
+      {
+        jnt->q_min = -ka[0];
+        jnt->q0 = 0.0;
+        jnt->q_max = ka[0];
+      }
+
+    RCHECK_MSG(jnt->q_min <= jnt->q_max, "q_min=%f q_max=%f",
+               jnt->q_min, jnt->q_max);
+    RCHECK_MSG((jnt->q0 >= jnt->q_min) && (jnt->q0 <= jnt->q_max),
+               "q_min=%f q0=%f q_max=%f", jnt->q_min, jnt->q0, jnt->q_max);
 
     if (RcsJoint_isRotation(jnt) == true)
     {
