@@ -1,0 +1,121 @@
+<!-- 
+  Copyright (c) 2020, Honda Research Institute Europe GmbH.
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  3. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  4. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER "AS IS" AND ANY EXPRESS OR
+  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT, INDIRECT,
+  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+  <Graph name="Default" >
+    
+    <Body name="GroundPlane" physics="kinematic" >
+      <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0" 
+             color="PEWTER" graphics="true" />
+      <Shape type="FRAME" scale="0.3" />
+    </Body>
+
+    <Body name="b1" prev="GroundPlane" mass="1" physics="dynamic" >
+      <Joint name="j1" type="RotY" range="-360 0 360" speedLimit="90"
+	     transform="0 0 0.1 0 0 0" ctrlType="Torque" torqueLimit="1000" />
+      <Shape type="SSL" radius="0.05" length="0.3" 
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b2" prev="b1" mass="1" physics="dynamic" >
+      <Joint name="j2" type="RotY" range="-360 0 360" torqueLimit="1000" 
+	     transform="0 0 0.3 0 0 0" speedLimit="90" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b3" prev="b2" mass="1" physics="dynamic" >
+      <Joint name="j3" type="RotY" range="-360 0 360" torqueLimit="1000"
+	     transform="0 0 0.3 0 0 0" speedLimit="90" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b4" prev="b3" mass="1" physics="dynamic" >
+      <Joint name="j4" type="RotY" range="-360 0 360" ctrlType="Torque"
+	     transform="0 0 0.3 0 0 0" speedLimit="90" torqueLimit="1000" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b5" prev="b4" mass="1" physics="dynamic" >
+      <Joint name="j5" type="RotY" range="-360 0 360" torqueLimit="1000"
+	     transform="0 0 0.3 0 0 0" speedLimit="90" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b6" prev="b5" mass="1" physics="dynamic" >
+      <Joint name="j6" type="RotY" range="-360 0 360" torqueLimit="1000"
+	     speedLimit="90" transform="0 0 0.35 0 0 0" ctrlType="Torque" />
+      <Shape type="SPHERE" radius="0.05"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="FTS" prev="b6" transform="0 0 0.1 0 0 0" mass="1"
+	  physics="fixed" >
+      <Sensor type="LOADCELL" name="FTS" />
+      <Shape type="BOX" extents="0.1 0.1 0.1"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+      <Shape type="FRAME" scale="0.3" />
+    </Body>
+
+    <Body name="Effector" prev="FTS" transform="0 0 0.3 0 -90 0" mass="1"
+	  physics="fixed" >
+      <Shape type="BOX" extents="0.5 0.3 0.15"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+      <Shape type="FRAME" scale="0.3" />
+    </Body>
+
+    <Body name="Goal" prev="GroundPlane" >
+      <Joint name="goalX" type="TransX" range="-10 0.8 10" constraint="true" />
+      <Joint name="goalZ" type="TransZ" range="-10 0.8 10" constraint="true" />
+      <Joint name="goalPhi" type="RotY" range="-360 0 360" constraint="true" />
+      <Shape type="BOX" extents="0.5 0.3 0.15"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+      <Shape type="FRAME" scale="0.3" />
+    </Body>
+
+
+    
+    <model_state model="Default" time_stamp="0">
+      <joint_state joint="j1" position="-60" />
+      <joint_state joint="j2" position="-20" />
+      <joint_state joint="j3" position="50" />
+      <joint_state joint="j4" position="60" />
+      <joint_state joint="j5" position="60" />
+      <joint_state joint="j6" position="-10" />
+    </model_state>
+
+  </Graph>
+

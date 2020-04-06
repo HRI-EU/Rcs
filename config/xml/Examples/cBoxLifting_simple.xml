@@ -1,0 +1,115 @@
+<!-- 
+  Copyright (c) 2020, Honda Research Institute Europe GmbH.
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  3. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  4. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER "AS IS" AND ANY EXPRESS OR
+  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT, INDIRECT,
+  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<Controller >
+
+  <Graph xmlns:xi="http://www.w3.org/2003/XInclude" name="BoxLifting">
+
+    <Body name="GroundPlane" physics="kinematic" >
+      <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0" color="PEWTER" graphics="true" />
+      <Shape type="FRAME" scale="1"/>
+    </Body>
+
+    <Body name="Wrist1" prev="GroundPlane" mass="1" physics="dynamic" color="BRONZE" >
+      <Joint name="plx" type="TransX" range="2" ctrlType="Torque" torqueLimit="1000" />
+      <Shape type="SPHERE" radius="0.005" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="Wrist2" prev="Wrist1" mass="1" physics="dynamic" color="BRONZE" >
+      <Joint name="ply" type="TransY" range="2" ctrlType="Torque" torqueLimit="1000" />
+      <Shape type="SPHERE" radius="0.005" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="Wrist3" prev="Wrist2" mass="1" physics="dynamic" color="BRONZE" >
+      <Joint name="plz" type="TransZ" range="2" ctrlType="Torque" torqueLimit="1000" />
+      <Shape type="CYLINDER" radius="0.05" length="0.04" transform="0 0 0.02 0 0 0"
+             graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="Hand" prev="Wrist3" transform="0 0 -0.02 0 0 0" physics="fixed" mass="1" color="PEWTER" >
+      <Shape type="CYLINDER" radius="0.05" length="0.02" transform="0 0 0.01 0 0 0"
+             graphics="true" physics="true" distance="true" />
+      <Shape type="CYLINDER" radius="0.01" length="0.1"  transform="0 0 -0.03 0 0 0"
+             graphics="true" physics="true" distance="true" />
+      <Shape type="SPHERE" radius="0.02" graphics="true" physics="true" distance="true"
+             transform="0 0 -0.08 0 0 0" />
+      <Sensor type="LOADCELL" name="WristLoadCellLBR" />
+    </Body>
+
+    <Body name="PowerGrasp_L" prev="Hand" transform="0 0 -0.1 0 0 0" color="RED" >
+      <Shape type="FRAME" scale="0.1" />
+    </Body>
+
+    
+    <Body name="Table" transform="1.5 0 0.76 0 0 0" physics="kinematic" color="ORANGE">
+      <Shape type="BOX" extents="1.2 1.6 0.04" graphics="true" physics="true" material="table_mat" />
+      <Shape type="FRAME" scale="0.8"/>
+    </Body>
+
+    <Body name="Basket" rigid_body_joints="1.25 0 0.78 0 0 0" physics="dynamic" color="WHITE" mass="5.">
+      <Shape type="BOX" extents="0.5 0.7 0.02"  transform="0 0 0.01 0 0 0"     graphics="true" physics="true" material="basket_mat" />
+      <Shape type="BOX" extents="0.02 0.7 0.1"  transform="0.26 0 0.05 0 0 0"  graphics="true" physics="true" material="basket_mat" />
+      <Shape type="BOX" extents="0.02 0.7 0.1"  transform="-0.26 0 0.05 0 0 0" graphics="true" physics="true" material="basket_mat" />
+      <Shape type="BOX" extents="0.54 0.02 0.1" transform="0 0.36 0.05 0 0 0"  graphics="true" physics="true" material="basket_mat" />
+      <Shape type="BOX" extents="0.54 0.02 0.1" transform="0 -0.36 0.05 0 0 0" graphics="true" physics="true" material="basket_mat" />
+    </Body>
+
+    <Body name="Box" rigid_body_joints="1.25 0 0.83 0 0 0" physics="dynamic" mass="0.6" color="BLUE"> 
+      <Shape type="BOX" extents="0.14 0.18 0.06" graphics="true" physics="true" material="box_mat" textureFile="textures/fMRT_bavaria.jpg"/>
+      <Shape type="FRAME" scale="0.20"/>
+    </Body>
+
+    <model_state model="BoxLifting" time_stamp="0">
+      <joint_state joint="plx" position="1.100" />
+      <joint_state joint="ply" position="0.004" />
+      <joint_state joint="plz" position="0.951" />
+      <joint_state joint="Basket_rigidBodyJnt0" position="1.250" />
+      <joint_state joint="Basket_rigidBodyJnt1" position="0.000" />
+      <joint_state joint="Basket_rigidBodyJnt2" position="0.780" />
+      <joint_state joint="Basket_rigidBodyJnt3" position="0.000" />
+      <joint_state joint="Basket_rigidBodyJnt4" position="0.000" />
+      <joint_state joint="Basket_rigidBodyJnt5" position="0.000" />
+      <joint_state joint="Box_rigidBodyJnt0" position="1.250" />
+      <joint_state joint="Box_rigidBodyJnt1" position="0.000" />
+      <joint_state joint="Box_rigidBodyJnt2" position="0.830" />
+      <joint_state joint="Box_rigidBodyJnt3" position="0.000" />
+      <joint_state joint="Box_rigidBodyJnt4" position="0.000" />
+      <joint_state joint="Box_rigidBodyJnt5" position="0.000" />
+    </model_state>
+
+  </Graph>
+
+  <Task name="Hand L XYZ" effector="PowerGrasp_L" controlVariable="XYZ" active="true"/>
+
+</Controller>
