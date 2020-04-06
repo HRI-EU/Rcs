@@ -37,10 +37,6 @@
 #ifndef RCS_BULLETJOINTBASE_H
 #define RCS_BULLETJOINTBASE_H
 
-#include <Rcs_graph.h>
-
-#include <btBulletDynamicsCommon.h>
-
 
 
 namespace Rcs
@@ -48,9 +44,6 @@ namespace Rcs
 class BulletJointBase
 {
 public:
-
-  //BulletJointBase(RcsJoint* jnt);
-  //virtual ~BulletJointBase();
 
   virtual double getJointPosition() const = 0;
   virtual double getJointVelocity() const = 0;
@@ -62,9 +55,12 @@ public:
   virtual void setJointTorque(double torque, double dt) = 0;
   virtual void setJointLimit(bool enable, double q_min, double q_max) = 0;
   virtual void reset(double hingeAngle) = 0;
-  virtual double getConstraintPos() = 0;
   virtual bool isHinge() const = 0;
   virtual bool isSlider() const = 0;
+
+protected:
+  
+  virtual double getConstraintPos() = 0;
 };
 
 }   // namespace Rcs

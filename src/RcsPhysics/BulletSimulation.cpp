@@ -463,7 +463,7 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
           {
             jntMap[BODY->jnt] = jBase;
             RLOGS(5, "Joint %s has value %f (%f)",
-                  BODY->jnt->name, jBase->getConstraintPos(),
+                  BODY->jnt->name, jBase->getJointPosition(),
                   getGraph()->q->ele[BODY->jnt->jointIndex]);
           }
         }
@@ -1943,7 +1943,7 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
         {
           jntMap[body->jnt] = jBase;
           RLOGS(5, "Joint %s has value %f (%f)",
-                body->jnt->name, jBase->getConstraintPos(),
+                body->jnt->name, jBase->getJointPosition(),
                 MatNd_get(getGraph()->q, body->jnt->jointIndex, 0));
         }
       }

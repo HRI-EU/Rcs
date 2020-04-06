@@ -68,9 +68,12 @@ public:
   void setJointTorque(double torque, double dt);
   void setJointLimit(bool enable, double q_min, double q_max);
   void reset(double hingeAngle);
-  double getConstraintPos();
   bool isHinge() const;
   bool isSlider() const;
+
+protected:
+  
+  double getConstraintPos();
 
 private:
 

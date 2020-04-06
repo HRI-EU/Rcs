@@ -84,13 +84,9 @@ Rcs::BulletSliderJoint::BulletSliderJoint(RcsJoint* jnt, double q0,
     setJointLimit(false, 0.0, 0.0);
   }
 
-  // Increase the constraint error correction, since we set a tiny global
-  // cfm value to increase contact stability
-  // setParam(BT_CONSTRAINT_ERP, 0.8);
-
+  // Disallow the rotation around the slider axis
   setLowerAngLimit(0.0);
   setUpperAngLimit(0.0);
-
 
   // This allows us to query inter-body reaction forces and moments
   setJointFeedback(&this->jf);
@@ -167,7 +163,9 @@ void Rcs::BulletSliderJoint::update(double dt)
 }
 
 /*******************************************************************************
- *
+ * There's two options for setting the joint position. Using a linear motor,
+ * or modifying the joint limits. It turned out to be a bit more stable to do
+ * the latter one.
  ******************************************************************************/
 void Rcs::BulletSliderJoint::setJointPosition(double angle, double dt)
 {
@@ -176,10 +174,6 @@ void Rcs::BulletSliderJoint::setJointPosition(double angle, double dt)
   // double vel = (angle-getJointPosition())/dt;
   // vel = Math_clip(vel, -0.5, 0.5);
   // setTargetLinMotorVelocity(vel);
-
-
-  setLowerLinLimit(btScalar(angle+this->offset));
-  setUpperLinLimit(btScalar(angle+this->offset));
 
   setJointLimit(true, angle, angle);
 }
@@ -234,6 +228,7 @@ void Rcs::BulletSliderJoint::setJointLimit(bool enable,
   }
   else
   {
+    // Joint limits are automatically disabled if lower kimit > upper limit
     setLowerLinLimit(1.0);
     setUpperLinLimit(-1.0);
   }
