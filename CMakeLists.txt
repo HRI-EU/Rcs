@@ -110,7 +110,7 @@ SET(USE_VORTEX OFF CACHE STRING "Vortex version to use")
 SET_PROPERTY(CACHE USE_VORTEX PROPERTY STRINGS OFF ESSENTIALS)
 
 SET(USE_BULLET OFF CACHE STRING "Bullet version to use")
-SET_PROPERTY(CACHE USE_BULLET PROPERTY STRINGS OFF 2.83_double 2.83_float)
+SET_PROPERTY(CACHE USE_BULLET PROPERTY STRINGS latest 2.83_float 2.83_double OFF)
 
 ################################################################################
 #

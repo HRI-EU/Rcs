@@ -67,6 +67,27 @@ ELSEIF(USE_BULLET STREQUAL 2.83_float)
 
   FIND_PACKAGE(Bullet REQUIRED)
   SET(BULLET_DEFINITIONS -DUSE_BULLET)
+  
+ELSEIF(USE_BULLET STREQUAL latest)
+
+  IF(DEFINED ENV{SIT})
+    # SIT available, use that version by default
+    SET(BT_LIB_DIR ${HGR}/External/bullet3/lib)
+    SET(BULLET_INCLUDE_DIRS ${HGR}/External/bullet3/include/bullet)
+  ELSE()
+    # SIT not available, path must be set
+    SET(BT_LIB_DIR "" CACHE PATH "Bullet library directory")
+    SET(BULLET_INCLUDE_DIRS "" CACHE PATH "Bullet include directory")
+  ENDIF()
+
+  SET(BULLET_DEFINITIONS -DUSE_BULLET -DBT_USE_DOUBLE_PRECISION)
+
+  SET(BULLET_LIBRARIES
+    ${BT_LIB_DIR}/libLinearMath.so 
+    ${BT_LIB_DIR}/libBulletCollision.so
+    ${BT_LIB_DIR}/libBulletDynamics.so 
+    ${BT_LIB_DIR}/libBulletSoftBody.so 
+    )
 
 ENDIF()
 

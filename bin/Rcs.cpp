@@ -1057,6 +1057,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("D", "Show dot file of graph");
       Rcs::KeyCatcherBase::registerKey("a", "Deactivate body under mouse");
       Rcs::KeyCatcherBase::registerKey("A", "Activate body under mouse");
+      Rcs::KeyCatcherBase::registerKey("Q", "Write current q to model_state");
 
       double dt = 0.005, tmc = 0.01, damping = 2.0, shootMass = 1.0;
       char hudText[2056] = "";
@@ -1284,6 +1285,10 @@ int main(int argc, char** argv)
           int guiHandle = Rcs::JointWidget::create(graph, mtx, q_des, q_curr);
           void* ptr = RcsGuiFactory_getPointer(guiHandle);
           jw = static_cast<Rcs::JointWidget*>(ptr);
+        }
+        else if (kc && kc->getAndResetKey('Q'))
+        {
+          RcsGraph_fprintModelState(stdout, graph, graph->q);
         }
         else if (kc && kc->getAndResetKey('k'))
         {

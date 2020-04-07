@@ -75,7 +75,6 @@ Rcs::BulletHingeJoint::BulletHingeJoint(RcsJoint* jnt, double q0,
   if ((jnt->ctrlType == RCSJOINT_CTRL_POSITION) ||
       (jnt->ctrlType == RCSJOINT_CTRL_VELOCITY))
   {
-    RLOG(5, "Enabling motor for joint %s", jnt->name);
     enableMotor(true);
   }
 
@@ -89,6 +88,9 @@ Rcs::BulletHingeJoint::BulletHingeJoint(RcsJoint* jnt, double q0,
 
   // Initialize with given joint angle q0
   setJointPosition(q0, 1.0);
+  
+  // Limit joint movement to RsJoint range
+  setJointLimit(true, jnt->q_min, jnt->q_max);
 }
 
 /*******************************************************************************
