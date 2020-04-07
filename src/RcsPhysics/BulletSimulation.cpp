@@ -55,7 +55,6 @@
 
 #include <BulletDynamics/MLCPSolvers/btDantzigSolver.h>
 #include <BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h>
-#include <BulletDynamics/MLCPSolvers/btMLCPSolver.h>
 
 #include <iostream>
 #include <climits>
@@ -138,10 +137,28 @@ void Rcs::BulletSimulation::MyNearCallbackEnabled(btBroadphasePair& collisionPai
   dispatcher.defaultNearCallback(collisionPair, dispatcher, dispatchInfo);
 }
 
-
-
-
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
+Rcs::BulletSimulation::BulletSimulation() :
+  Rcs::PhysicsBase(),
+  dynamicsWorld(NULL),
+  broadPhase(NULL),
+  dispatcher(NULL),
+  solver(NULL),
+  mlcpSolver(NULL),
+  collisionConfiguration(NULL),
+  lastDt(0.001),
+  dragBody(NULL),
+  debugDrawer(NULL),
+  physicsConfigFile(NULL),
+  rigidBodyLinearDamping(0.1),
+  rigidBodyAngularDamping(0.9),
+  jointedBodyLinearDamping(0.0),
+  jointedBodyAngularDamping(0.0)
+{
+  pthread_mutex_init(&this->mtx, NULL);
+}
 
 /*******************************************************************************
  *
@@ -168,12 +185,6 @@ Rcs::BulletSimulation::BulletSimulation(const RcsGraph* graph_,
 
   PhysicsConfig config(cfgFile);
   initPhysics(&config);
-
-  REXEC(5)
-  {
-    print();
-    RLOG(5, "Done BulletSimulation constructor");
-  }
 }
 
 /*******************************************************************************
@@ -199,12 +210,6 @@ Rcs::BulletSimulation::BulletSimulation(const RcsGraph* graph_,
 {
   pthread_mutex_init(&this->mtx, NULL);
   initPhysics(config);
-
-  REXEC(5)
-  {
-    print();
-    RLOG(5, "Done BulletSimulation constructor");
-  }
 }
 
 /*******************************************************************************
@@ -228,7 +233,6 @@ Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe):
   jointedBodyAngularDamping(copyFromMe.jointedBodyAngularDamping)
 {
   pthread_mutex_init(&this->mtx, NULL);
-
   PhysicsConfig config(copyFromMe.physicsConfigFile);
   initPhysics(&config);
 }
@@ -339,6 +343,18 @@ Rcs::BulletSimulation* Rcs::BulletSimulation::clone(RcsGraph* newGraph) const
 }
 
 /*******************************************************************************
+ * Physics initialization
+ ******************************************************************************/
+bool Rcs::BulletSimulation::initialize(const RcsGraph* g,
+                                       const PhysicsConfig* config)
+{
+  RCHECK(getGraph()==NULL);
+  initGraph(g);
+  initPhysics(config);
+  return true;
+}
+
+/*******************************************************************************
  *
  ******************************************************************************/
 void Rcs::BulletSimulation::lock() const
@@ -367,6 +383,8 @@ void Rcs::BulletSimulation::setNearCallback(btNearCallback nearCallback)
  ******************************************************************************/
 void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
 {
+  RCHECK_MSG(getGraph(), "Graph not yet created. Did you call init()?");
+
   this->physicsConfigFile = String_clone(config->getConfigFileName());
 
   // lookup bullet config node
@@ -378,57 +396,9 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
          "\"bullet parameters\" node!", this->physicsConfigFile);
   }
 
-  bool useMCLPSolver = false;
-
-  if (bulletParams)
-  {
-    // load solver type from xml
-    getXMLNodePropertyBoolString(bulletParams, "use_mclp_solver",
-                                 &useMCLPSolver);
-  }
-
-  this->collisionConfiguration = new btDefaultCollisionConfiguration();
-  this->dispatcher = new btCollisionDispatcher(collisionConfiguration);
-  dispatcher->setNearCallback(MyNearCallbackEnabled);
-  broadPhase = new btDbvtBroadphase();
-
-  if (useMCLPSolver)
-  {
-    this->mlcpSolver = new btDantzigSolver();
-    //this->mlcpSolver = new btSolveProjectedGaussSeidel;
-    solver = new btMLCPSolver(this->mlcpSolver);
-    RLOG(5, "Using MCLP solver");
-  }
-  else
-  {
-    solver = new btSequentialImpulseConstraintSolver;
-    RLOG(5, "Using sequential impulse solver");
-  }
-
-
-
-  this->dynamicsWorld =
-    new btDiscreteDynamicsWorld(dispatcher, broadPhase, solver,
-                                collisionConfiguration);
-  dynamicsWorld->setGravity(btVector3(0.0, 0.0, -RCS_GRAVITY));
-
-  btDispatcherInfo& di = dynamicsWorld->getDispatchInfo();
-  di.m_useConvexConservativeDistanceUtil = true;
-  di.m_convexConservativeDistanceThreshold = 0.01f;
-
-  btContactSolverInfo& si = dynamicsWorld->getSolverInfo();
-  si.m_numIterations = 200;//20;
-  // ERP: 0: no joint error correction (Recommended: 0.1-0.8, default 0.2)
-  si.m_erp = 0.2;
-  si.m_globalCfm = 1.0e-4; // 0: hard constraint (Default)
-  si.m_restingContactRestitutionThreshold = INT_MAX;
-  si.m_splitImpulse = 1;
-  si.m_solverMode = SOLVER_RANDMIZE_ORDER |
-                    SOLVER_FRICTION_SEPARATE |
-                    SOLVER_USE_2_FRICTION_DIRECTIONS |
-                    SOLVER_USE_WARMSTARTING;
-  si.m_minimumSolverBatchSize = useMCLPSolver ? 1 : 128;
-
+  // Create discrete dynamics world etc. This function is overwritten in the
+  // BulletSoftBody class.
+  createWorld(bulletParams);
 
   if (bulletParams)
   {
@@ -470,8 +440,6 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
       {
         btBody->setParentBody(it->second);
       }
-
-
 
       dynamicsWorld->addRigidBody(btBody);
       //dynamicsWorld->addCollisionObject(btBdy);
@@ -625,8 +593,18 @@ void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
     debugDrawer->apply();
   }
 #endif
+
+  // This call only exists for compatibility with the BulletSoftSimulation
+  // class, where mesh vertices are updated according to the soft physics
+  // simulation. In this class, the function does nothing. It needs to be
+  // called with a locked mutex, since otherwise, the viewer update will
+  // be concurrent with the physics updates.
+  // \todo: Rethink this with efficiency in mind.
+  updateSoftMeshes();
+
   unlock();
 
+  // \todo: Check if we ave some concurrency issue here for the FTSensorNode
   updateSensors();
 
 
@@ -1086,37 +1064,21 @@ void Rcs::BulletSimulation::getJointVelocities(MatNd* q_dot,
   for (it2=bdyMap.begin(); it2!=bdyMap.end(); ++it2)
   {
     const RcsBody* rb = it2->first;
-    RCHECK(rb);
 
     if (rb->rigid_body_joints == true)
     {
       Rcs::BulletRigidBody* btBdy = it2->second;
-      RCHECK_MSG(btBdy, "%s", rb->name);
-
-      // btVector3 linearVelocity = btBdy->getLinearVelocity();
-      // btVector3 angularVelocity = btBdy->getAngularVelocity();
-
-      // NLOG(0, "Updating body %s: %f %f %f %f %f %f", rb->name,
-      //      linearVelocity[0], linearVelocity[1], linearVelocity[2],
-      //      angularVelocity[0], angularVelocity[1], angularVelocity[2]);
-
       RcsJoint* jnt = rb->jnt;
-      RCHECK(jnt);
       MatNd_set(q_dot, jnt->jointIndex, 0, btBdy->x_dot[0]);
       jnt = jnt->next;
-      RCHECK(jnt);
       MatNd_set(q_dot, jnt->jointIndex, 0, btBdy->x_dot[1]);
       jnt = jnt->next;
-      RCHECK(jnt);
       MatNd_set(q_dot, jnt->jointIndex, 0, btBdy->x_dot[2]);
       jnt = jnt->next;
-      RCHECK(jnt);
       MatNd_set(q_dot, jnt->jointIndex, 0, btBdy->omega[0]);
       jnt = jnt->next;
-      RCHECK(jnt);
       MatNd_set(q_dot, jnt->jointIndex, 0, btBdy->omega[1]);
       jnt = jnt->next;
-      RCHECK(jnt);
       MatNd_set(q_dot, jnt->jointIndex, 0, btBdy->omega[2]);
     }
   }
@@ -2080,8 +2042,8 @@ bool Rcs::BulletSimulation::activateBody(const char* name, const HTr* A_BI)
 }
 
 /*******************************************************************************
-*
-******************************************************************************/
+ *
+ ******************************************************************************/
 bool Rcs::BulletSimulation::check() const
 {
   bool success = true;
@@ -2125,4 +2087,65 @@ bool Rcs::BulletSimulation::check() const
   success = PhysicsBase::check() && success;
 
   return success;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::BulletSimulation::createWorld(xmlNodePtr bulletParams)
+{
+  bool useMCLPSolver = false;
+
+  if (bulletParams)
+  {
+    // load solver type from xml
+    getXMLNodePropertyBoolString(bulletParams, "use_mclp_solver",
+                                 &useMCLPSolver);
+  }
+
+  this->collisionConfiguration = new btDefaultCollisionConfiguration();
+  this->dispatcher = new btCollisionDispatcher(collisionConfiguration);
+  dispatcher->setNearCallback(MyNearCallbackEnabled);
+  broadPhase = new btDbvtBroadphase();
+
+  if (useMCLPSolver)
+  {
+    this->mlcpSolver = new btDantzigSolver();
+    //this->mlcpSolver = new btSolveProjectedGaussSeidel;
+    solver = new btMLCPSolver(this->mlcpSolver);
+    RLOG(5, "Using MCLP solver");
+  }
+  else
+  {
+    solver = new btSequentialImpulseConstraintSolver;
+    RLOG(5, "Using sequential impulse solver");
+  }
+
+  this->dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadPhase, solver,
+                                                    collisionConfiguration);
+  dynamicsWorld->setGravity(btVector3(0.0, 0.0, -RCS_GRAVITY));
+
+  btDispatcherInfo& di = dynamicsWorld->getDispatchInfo();
+  di.m_useConvexConservativeDistanceUtil = true;
+  di.m_convexConservativeDistanceThreshold = 0.01f;
+
+  btContactSolverInfo& si = dynamicsWorld->getSolverInfo();
+  si.m_numIterations = 200;//20;
+  // ERP: 0: no joint error correction (Recommended: 0.1-0.8, default 0.2)
+  si.m_erp = 0.2;
+  si.m_globalCfm = 1.0e-4; // 0: hard constraint (Default)
+  si.m_restingContactRestitutionThreshold = INT_MAX;
+  si.m_splitImpulse = 1;
+  si.m_solverMode = SOLVER_RANDMIZE_ORDER |
+                    SOLVER_FRICTION_SEPARATE |
+                    SOLVER_USE_2_FRICTION_DIRECTIONS |
+                    SOLVER_USE_WARMSTARTING;
+  si.m_minimumSolverBatchSize = useMCLPSolver ? 1 : 128;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::BulletSimulation::updateSoftMeshes()
+{
 }

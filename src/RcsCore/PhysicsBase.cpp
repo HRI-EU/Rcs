@@ -42,6 +42,19 @@
 /*******************************************************************************
  * Constructor.
  ******************************************************************************/
+Rcs::PhysicsBase::PhysicsBase() :
+  T_des(NULL),
+  q_des(NULL),
+  q_dot_des(NULL),
+  simTime(0.0),
+  enablePPS(false),
+  internalDesiredGraph(NULL)
+{
+}
+
+/*******************************************************************************
+ * Constructor.
+ ******************************************************************************/
 Rcs::PhysicsBase::PhysicsBase(const RcsGraph* graph_) :
   T_des(NULL),
   q_des(NULL),
@@ -50,14 +63,7 @@ Rcs::PhysicsBase::PhysicsBase(const RcsGraph* graph_) :
   enablePPS(false),
   internalDesiredGraph(NULL)
 {
-  RCHECK(graph_);
-
-  // create arrays for joint positions, velocities and torque
-  this->T_des = MatNd_create(graph_->dof, 1);
-  this->q_des = MatNd_clone(graph_->q);
-  this->q_dot_des = MatNd_create(graph_->dof, 1);
-
-  this->internalDesiredGraph = RcsGraph_clone(graph_);
+  initGraph(graph_);
 }
 
 /*******************************************************************************
@@ -134,6 +140,31 @@ Rcs::PhysicsBase::~PhysicsBase()
   MatNd_destroy(this->q_dot_des);
 
   RcsGraph_destroy(this->internalDesiredGraph);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::PhysicsBase::initialize(const RcsGraph* g, const char* physicsCfg)
+{
+  PhysicsConfig config(physicsCfg);
+  return initialize(g, &config);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::PhysicsBase::initGraph(const RcsGraph* graph_)
+{
+  RCHECK(graph_);
+  RCHECK(this->internalDesiredGraph==NULL);
+
+  // create arrays for joint positions, velocities and torque
+  this->T_des = MatNd_create(graph_->dof, 1);
+  this->q_des = MatNd_clone(graph_->q);
+  this->q_dot_des = MatNd_create(graph_->dof, 1);
+
+  this->internalDesiredGraph = RcsGraph_clone(graph_);
 }
 
 /*******************************************************************************

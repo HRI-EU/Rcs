@@ -93,7 +93,10 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   this->physicsNd = new GraphNode(sim_->getGraph(), resizeable, false);
   physicsNd->displayGraphicsModel(false);
   physicsNd->displayPhysicsModel(true);
-  physicsNd->setDynamicMeshUpdate(true);
+  if (std::string(sim->getClassName())=="SoftBullet")
+  {
+    physicsNd->setDynamicMeshUpdate(true);
+  }
   physicsNd->setName("PhysicsNode::physicsNd");
   pat->addChild(physicsNd);
 

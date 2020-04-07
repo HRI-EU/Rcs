@@ -88,9 +88,27 @@ static Rcs::PhysicsFactoryRegistrar<Rcs::VortexSimulation> physics(className);
 /*******************************************************************************
  * Constructor from Graph & Config file
  ******************************************************************************/
+Rcs::VortexSimulation::VortexSimulation() :
+  trafoUpdateLock(NULL),
+  integratorDt(RCSVORTEX_DEFAULT_INTEGRATOR_DT),
+  bodyLinearDamping(-1.0),
+  bodyAngularDamping(-1.0),
+  jointLockStiffness(RCSVORTEX_DEFAULT_JOINT_LOCK_STIFFNESS),
+  jointLockDamping(RCSVORTEX_DEFAULT_JOINT_LOCK_DAMPING),
+  jointMotorLoss(RCSVORTEX_DEFAULT_JOINT_MOTOR_LOSS),
+  jointLimitsActive(true),
+  b_ext(NULL),
+  groundPlane(NULL),
+  universe(NULL),
+  materialFileName(NULL)
+{
+}
+
+/*******************************************************************************
+ * Constructor from Graph & Config file
+ ******************************************************************************/
 Rcs::VortexSimulation::VortexSimulation(const RcsGraph* g,
-                                        const char* physicsConfigFile,
-                                        bool withGroundPlane) :
+                                        const char* physicsConfigFile) :
   PhysicsBase(g),
   trafoUpdateLock(NULL),
   integratorDt(RCSVORTEX_DEFAULT_INTEGRATOR_DT),
@@ -108,15 +126,14 @@ Rcs::VortexSimulation::VortexSimulation(const RcsGraph* g,
   this->materialFileName = String_clone(physicsConfigFile);
 
   PhysicsConfig config(materialFileName);
-  initPhysics(&config, withGroundPlane);
+  initPhysics(&config);
 }
 
 /*******************************************************************************
  * Constructor from Graph & Config object
  ******************************************************************************/
 Rcs::VortexSimulation::VortexSimulation(const RcsGraph* g,
-                                        const Rcs::PhysicsConfig* config,
-                                        bool withGroundPlane):
+                                        const Rcs::PhysicsConfig* config):
   PhysicsBase(g),
   trafoUpdateLock(NULL),
   integratorDt(RCSVORTEX_DEFAULT_INTEGRATOR_DT),
@@ -132,7 +149,7 @@ Rcs::VortexSimulation::VortexSimulation(const RcsGraph* g,
   materialFileName(NULL)
 {
   this->materialFileName = String_clone(config->getConfigFileName());
-  initPhysics(config, withGroundPlane);
+  initPhysics(config);
 }
 
 /*******************************************************************************
@@ -155,17 +172,27 @@ Rcs::VortexSimulation::VortexSimulation(const VortexSimulation& copyFromMe,
   materialFileName(NULL)
 {
   this->materialFileName = String_clone(copyFromMe.materialFileName);
-  bool withGroundPlane = copyFromMe.groundPlane ? true : false;
-
   PhysicsConfig config(materialFileName);
-  initPhysics(&config, withGroundPlane);
+  initPhysics(&config); 
 }
 
 /*******************************************************************************
  * Physics initialization
  ******************************************************************************/
-void Rcs::VortexSimulation::initPhysics(const PhysicsConfig* physicsConfig,
-                                        bool withGroundPlane)
+bool Rcs::VortexSimulation::initialize(const RcsGraph* g,
+                                       const PhysicsConfig* config)
+{
+  RCHECK(getGraph()==NULL);
+  initGraph(g);
+  this->materialFileName = String_clone(config->getConfigFileName());
+  initPhysics(config);
+  return true;
+}
+
+/*******************************************************************************
+ * Physics initialization
+ ******************************************************************************/
+void Rcs::VortexSimulation::initPhysics(const PhysicsConfig* physicsConfig)
 {
   Vec3d_setZero(this->F_ext);
   Vec3d_setZero(this->r_ext);
@@ -206,24 +233,12 @@ void Rcs::VortexSimulation::initPhysics(const PhysicsConfig* physicsConfig,
   this->jointLockDamping = RCSVORTEX_DEFAULT_JOINT_LOCK_DAMPING;
   this->jointMotorLoss = RCSVORTEX_DEFAULT_JOINT_MOTOR_LOSS;
 
-  // load settings and materials from config
+  // load settings and materials from config and create optional ground plane
   initSettings(physicsConfig);
   RLOG(5, "Physics initialized");
 
   initMaterial(physicsConfig);
   RLOG(5, "Materials initialized");
-
-
-  // Ground plane
-  if (withGroundPlane)
-  {
-    Vx::VxPart* groundPlane = new Vx::VxPart();
-    groundPlane->setName("GroundPlane");
-    Vx::VxCollisionGeometry* g = new Vx::VxCollisionGeometry(new Vx::VxPlane());
-    groundPlane->addCollisionGeometry(g);
-    universe->addPart(groundPlane);
-    RLOG(5, "Created ground plane");
-  }
 
   // Create all Vortex VxParts from the RcsGraph's bodies
   RLOG(5, "Creating bodies");
@@ -440,6 +455,23 @@ bool Rcs::VortexSimulation::initSettings(const PhysicsConfig* config)
         sParam->setConstraintAngularCompliance(value);
         universe->setCriticalConstraintParameters(grpIdx, halflife);
       }
+
+      bool useGroundPlane = true;
+      getXMLNodePropertyBoolString(node, "use_ground_plane",
+                                   &useGroundPlane);
+
+      if (useGroundPlane)
+        {
+          Vx::VxPart* groundPlane = new Vx::VxPart();
+          groundPlane->setName("GroundPlane");
+          Vx::VxCollisionGeometry* g;
+          g = new Vx::VxCollisionGeometry(new Vx::VxPlane());
+          groundPlane->addCollisionGeometry(g);
+          universe->addPart(groundPlane);
+          RLOG(5, "Created ground plane");
+        }
+
+      
     }
 
     node = node->next;

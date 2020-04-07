@@ -36,7 +36,8 @@
 
 <content>
 
-<vortex_parameters integrator_dt="0.005"
+<vortex_parameters use_ground_plane="false"
+                   integrator_dt="0.005"
                    constraint_linear_compliance="1.0e-9"
                    constraint_angular_compliance="1.0e-9"
                    body_linear_damping="0.0002"
@@ -51,6 +52,7 @@
                    use_mclp_solver="true"
                    body_linear_damping="0.0"
                    body_angular_damping="0.0"
+		   convex_hull_vertex_limit="140"
                    jointed_body_linear_damping="0"
                    jointed_body_angular_damping="0"
 />

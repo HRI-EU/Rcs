@@ -20,7 +20,8 @@ IF(USE_VORTEX AND VORTEX_FOUND)
 
       ExternalProject_Add(RcsVortex
           SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Vortex
-        INSTALL_DIR ${LIBRARY_OUTPUT_PATH}
+          INSTALL_DIR ${LIBRARY_OUTPUT_PATH}
+          BUILD_ALWAYS TRUE
         #INSTALL_COMMAND cmake -E echo "Skipping install step."
           CMAKE_CACHE_ARGS
             -DCMAKE_INSTALL_PREFIX:${INSTALL_DIR}
@@ -65,7 +66,8 @@ IF(USE_BULLET)
     BulletHingeJoint.cpp
     BulletSliderJoint.cpp
     BulletRigidBody.cpp
-    BulletSimulation.cpp)
+    BulletSimulation.cpp
+    BulletSoftSimulation.cpp)
   IF(NOT HEADLESS_BUILD)
     LIST(APPEND RCS_PHYSICS_SRCS
       BulletDebugNode.cpp

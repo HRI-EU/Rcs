@@ -38,7 +38,6 @@
 #define RCS_PHYSICSFACTORY_H
 
 #include "PhysicsBase.h"
-#include "PhysicsConfig.h"
 
 
 namespace Rcs
@@ -140,11 +139,17 @@ public:
   PhysicsFactoryRegistrar(const char* className)
   {
     // Register the function to create and check the physics simulation
-    PhysicsFactory::registerPhysics(className, &PhysicsFactoryRegistrar::create);
+    PhysicsFactory::registerPhysics(className,
+                                    &PhysicsFactoryRegistrar::create);
   }
 
   /*! \brief This function creates a new physics simulation instance of type T
-   *        passing the given variables to the respective constructor
+   *         passing the given variables to the respective constructor. We call
+   *         the empty constructor and the intialize() function separately,
+   *         since we use polymorphism during the initialization (for instance
+   *         during the construction of the bullet soft physics). This cannot
+   *         be done inside the constructor, since it always will call the
+   *         methods of the base class.
    *
    * \param className String identifier for task
    * \param graph     Pointer to tasks's RcsGraph structure
@@ -154,7 +159,10 @@ public:
   static PhysicsBase* create(const char* className, RcsGraph* graph,
                              const PhysicsConfig* config)
   {
-    return new T(graph, config);
+    PhysicsBase* sim = new T();
+    sim->initialize(graph, config);
+    return sim;
+    //return new T(graph, config);
   }
 };
 

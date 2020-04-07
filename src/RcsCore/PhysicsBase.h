@@ -37,6 +37,7 @@
 #ifndef RCS_PHYSICSBASE_H
 #define RCS_PHYSICSBASE_H
 
+#include "PhysicsConfig.h"
 #include "Rcs_graph.h"
 
 #include <vector>
@@ -395,7 +396,8 @@ public:
   virtual void getJointCompliance(MatNd* stiffness,
                                   MatNd* damping=NULL) const = 0;
 
-
+  virtual bool initialize(const RcsGraph* g, const PhysicsConfig* config) = 0;
+  virtual bool initialize(const RcsGraph* g, const char* physicsConfigFile);
 
 
 
@@ -416,6 +418,12 @@ public:
    */
   virtual bool setParameter(ParameterCategory category,
                             const char* name, const char* type, double value);
+
+  /*! \brief Empty default constructor. All members are initialized to NULL.
+   *         The init() function needs to be called to properly initialize the
+   *         class.
+   */
+  PhysicsBase();
 
   /*! \brief Base class constructor.
    *
@@ -549,6 +557,10 @@ public:
 
 
 protected:
+
+  /*! \brief Clones the graph and creates the classes internal arrays.
+   */
+  virtual void initGraph(const RcsGraph* graph);
 
   /*! \brief Sets the internal simulation time.
    */

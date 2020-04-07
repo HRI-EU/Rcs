@@ -69,6 +69,11 @@ class VortexSimulation : public PhysicsBase
 {
 public:
 
+  /*! \brief Constructs an empty simlation instance that needs to be 
+   *         initialized.
+   */
+  VortexSimulation();
+
   /*! \brief Constructs an instance of a physics simulation.
    *
    *  \param[in] graph         Pointer to the RcsGraph structure that the
@@ -76,12 +81,8 @@ public:
    *  \param[in] cfgFile       Config file with the default parameters of the
    *                           simulation. For details, see \ref initPhysics
    *                           and \ref initMaterial.
-   *  \param[in] groundPlane   If true, a ground plane in the x-y plane on
-   *                           height z=0 is created.
    */
-  VortexSimulation(const RcsGraph* graph,
-                   const char* cfgFile="config/physics/vortex.xml",
-                   bool groundPlane=true);
+  VortexSimulation(const RcsGraph* graph, const char* cfgFile);
 
   /*! \brief Constructs an instance of a physics simulation.
    *
@@ -90,12 +91,9 @@ public:
    *  \param[in] config        Config with the default parameters of the
    *                           simulation. For details, see \ref initPhysics
    *                           and \ref initMaterial.
-   *  \param[in] groundPlane   If true, a ground plane in the x-y plane on
-   *                           height z=0 is created.
    */
   VortexSimulation(const RcsGraph* graph,
-                   const PhysicsConfig* config,
-                   bool groundPlane=true);
+                   const PhysicsConfig* config);
   VortexSimulation(const VortexSimulation& copyFromMe,
                    const RcsGraph* newGraph);
 
@@ -289,6 +287,8 @@ public:
   virtual bool setParameter(ParameterCategory category,
                             const char* name, const char* type, double value);
 
+  bool initialize(const RcsGraph* g, const PhysicsConfig* config);
+
   Vx::VxMaterialTable* getMaterialTable() const;
   Vx::VxMaterial* getMaterial(const char* name) const;
   Vx::VxUniverse* getUniverse();
@@ -322,7 +322,7 @@ private:
 
   void updateTransformations();
   void applyControl(double dt);
-  void initPhysics(const PhysicsConfig* physicsConfig, bool groundPlane);
+  void initPhysics(const PhysicsConfig* physicsConfig);
   bool updateFTS(RcsSensor* sensor);
   bool updateJointTorqueSensor(RcsSensor* sensor);
   bool updateContactForceSensor(RcsSensor* sensor);
@@ -354,7 +354,7 @@ private:
   /*! \brief Assignment operator. Ideally, this should be implemented, rather
    *         than being made private.
    */
-  VortexSimulation& operator=(const VortexSimulation&);
+  VortexSimulation& operator=(const VortexSimulation&); 
 
 
 
