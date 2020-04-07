@@ -97,8 +97,9 @@ IF(USE_BULLET)
 ENDIF(USE_BULLET)
 
 IF(USE_VORTEX AND VORTEX_FOUND)
-  # Link RcsVortex library here, so RcsPhysics is still the goto dependency for it.
-  # Use no-as-needed to make sure the library is loaded, only then will the physics engine be registered.
+  # Link RcsVortex library here, so RcsPhysics is still the goto dependency for
+  # it. Use no-as-needed to make sure the library is loaded, only then will the
+  # physics engine be registered.
   IF (UNIX)
   TARGET_LINK_LIBRARIES(RcsPhysics -Wl,--no-as-needed ${RCSVORTEX_LIBRARY} -Wl,--as-needed ${VORTEX_LIBRARIES})
   ENDIF(UNIX)

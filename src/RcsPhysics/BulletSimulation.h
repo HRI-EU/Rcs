@@ -189,6 +189,10 @@ public:
 
 protected:
 
+  static void NearCallbackAllToAll(btBroadphasePair& collisionPair,
+                                   btCollisionDispatcher& dispatcher,
+                                   const btDispatcherInfo& dispatchInfo);
+
   static void MyNearCallbackEnabled(btBroadphasePair& collisionPair,
                                     btCollisionDispatcher& dispatcher,
                                     const btDispatcherInfo& dispatchInfo);
@@ -228,6 +232,8 @@ protected:
 
   double rigidBodyLinearDamping;
   double rigidBodyAngularDamping;
+  double jointedBodyLinearDamping;
+  double jointedBodyAngularDamping;
 
 private:
 

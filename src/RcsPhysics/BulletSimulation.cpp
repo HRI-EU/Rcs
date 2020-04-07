@@ -73,6 +73,16 @@ typedef std::map<const RcsBody*, Rcs::BulletRigidBody*>::iterator body_it;
 /*******************************************************************************
  * Callback for collision filtering. Do your collision logic here
  ******************************************************************************/
+void Rcs::BulletSimulation::NearCallbackAllToAll(btBroadphasePair& collisionPair,
+                                                 btCollisionDispatcher& dispatcher,
+                                                 const btDispatcherInfo& dispatchInfo)
+{
+  dispatcher.defaultNearCallback(collisionPair, dispatcher, dispatchInfo);
+}
+
+/*******************************************************************************
+ * Callback for collision filtering. Do your collision logic here
+ ******************************************************************************/
 void Rcs::BulletSimulation::MyNearCallbackDisabled(btBroadphasePair& collisionPair,
                                                    btCollisionDispatcher& dispatcher,
                                                    const btDispatcherInfo& dispatchInfo)
@@ -108,6 +118,7 @@ void Rcs::BulletSimulation::MyNearCallbackEnabled(btBroadphasePair& collisionPai
       if ((RcsBody_isChild(rb0->getBodyPtr(), rb1->getBodyPtr())) ||
           (RcsBody_isChild(rb1->getBodyPtr(), rb0->getBodyPtr())))
       {
+        NLOG(1, "Skipping %s - %s", rb0->getBodyName(), rb1->getBodyName());
         return;
       }
 
@@ -149,7 +160,9 @@ Rcs::BulletSimulation::BulletSimulation(const RcsGraph* graph_,
   debugDrawer(NULL),
   physicsConfigFile(NULL),
   rigidBodyLinearDamping(0.1),
-  rigidBodyAngularDamping(0.9)
+  rigidBodyAngularDamping(0.9),
+  jointedBodyLinearDamping(0.0),
+  jointedBodyAngularDamping(0.0)
 {
   pthread_mutex_init(&this->mtx, NULL);
 
@@ -180,7 +193,9 @@ Rcs::BulletSimulation::BulletSimulation(const RcsGraph* graph_,
   debugDrawer(NULL),
   physicsConfigFile(NULL),
   rigidBodyLinearDamping(0.1),
-  rigidBodyAngularDamping(0.9)
+  rigidBodyAngularDamping(0.9),
+  jointedBodyLinearDamping(0.0),
+  jointedBodyAngularDamping(0.0)
 {
   pthread_mutex_init(&this->mtx, NULL);
   initPhysics(config);
@@ -208,7 +223,9 @@ Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe):
   debugDrawer(NULL),
   physicsConfigFile(NULL),
   rigidBodyLinearDamping(copyFromMe.rigidBodyLinearDamping),
-  rigidBodyAngularDamping(copyFromMe.rigidBodyAngularDamping)
+  rigidBodyAngularDamping(copyFromMe.rigidBodyAngularDamping),
+  jointedBodyLinearDamping(copyFromMe.jointedBodyLinearDamping),
+  jointedBodyAngularDamping(copyFromMe.jointedBodyAngularDamping)  
 {
   pthread_mutex_init(&this->mtx, NULL);
 
@@ -233,10 +250,11 @@ Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe,
   debugDrawer(NULL),
   physicsConfigFile(NULL),
   rigidBodyLinearDamping(copyFromMe.rigidBodyLinearDamping),
-  rigidBodyAngularDamping(copyFromMe.rigidBodyAngularDamping)
+  rigidBodyAngularDamping(copyFromMe.rigidBodyAngularDamping),
+  jointedBodyLinearDamping(copyFromMe.jointedBodyLinearDamping),
+  jointedBodyAngularDamping(copyFromMe.jointedBodyAngularDamping)
 {
   pthread_mutex_init(&this->mtx, NULL);
-
   PhysicsConfig config(copyFromMe.physicsConfigFile);
   initPhysics(&config);
 }
@@ -419,7 +437,12 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
                              &this->rigidBodyAngularDamping);
     getXMLNodePropertyDouble(bulletParams, "body_angular_damping",
                              &this->rigidBodyAngularDamping);
+    getXMLNodePropertyDouble(bulletParams, "jointed_body_linear_damping",
+                             &this->jointedBodyLinearDamping);
+    getXMLNodePropertyDouble(bulletParams, "jointed_body_angular_damping",
+                             &this->jointedBodyAngularDamping);
   }
+  
   // Create physics for RcsGraph
   RCSGRAPH_TRAVERSE_BODIES(getGraph())
   {
@@ -433,6 +456,10 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
       if (BODY->rigid_body_joints)
       {
         btBody->setDamping(rigidBodyLinearDamping, rigidBodyAngularDamping);
+      }
+      else
+      {
+        btBody->setDamping(jointedBodyLinearDamping, jointedBodyAngularDamping);
       }
 
       bdyMap[BODY] = btBody;
@@ -1201,17 +1228,15 @@ void Rcs::BulletSimulation::disableCollision(const RcsBody* b0,
  * Lock axis: lower limit = upper limit
  * Disable limits: lower limit > upper limit
  ******************************************************************************/
-//! \todo Prismatic joints are missing.
 void Rcs::BulletSimulation::setJointLimits(bool enable)
 {
   for (hinge_it it = jntMap.begin(); it != jntMap.end(); ++it)
   {
-    const RcsJoint* jnt = it->first;
     Rcs::BulletJointBase* hinge = it->second;
-    RCHECK(jnt);
-    RCHECK(hinge);
+
     if (enable==true)
     {
+      const RcsJoint* jnt = it->first;
       hinge->setJointLimit(enable, jnt->q_min, jnt->q_max);
     }
     else
@@ -1916,6 +1941,10 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
     if (body->rigid_body_joints)
     {
       btBody->setDamping(rigidBodyLinearDamping, rigidBodyAngularDamping);
+    }
+    else
+    {
+      btBody->setDamping(jointedBodyLinearDamping, jointedBodyAngularDamping);
     }
 
     bdyMap[body] = btBody;

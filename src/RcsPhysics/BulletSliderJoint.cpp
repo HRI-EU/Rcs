@@ -77,11 +77,11 @@ Rcs::BulletSliderJoint::BulletSliderJoint(RcsJoint* jnt, double q0,
       (jnt->ctrlType == RCSJOINT_CTRL_VELOCITY))
   {
     RLOG(5, "Enabling motor for joint %s", jnt->name);
-    setJointPosition(q0, 1.0);
+    setJointLimit(true, q0, q0);
   }
   else
   {
-    setJointLimit(false, 0.0, 0.0);
+    setJointLimit(true, jnt->q_min, jnt->q_max);
   }
 
   // Disallow the rotation around the slider axis
@@ -91,9 +91,6 @@ Rcs::BulletSliderJoint::BulletSliderJoint(RcsJoint* jnt, double q0,
   // This allows us to query inter-body reaction forces and moments
   setJointFeedback(&this->jf);
   enableFeedback(true);
-
-  // Initialize with given joint angle q0
-  //setJointPosition(q0, 1.0);
 }
 
 /*******************************************************************************
