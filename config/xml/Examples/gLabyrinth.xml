@@ -1,0 +1,221 @@
+<Controller >
+
+<Graph>
+
+  <Body name="Lab Frame" physics="kinematic" transform="0 0 0 0 0 0" >
+    <Shape type="BOX" extents="15.0 15.0 0.04" transform="0 0 -0.02 0 0 0"
+           color="PEWTER" graphics="true" physics="true" distance="true" material="low_friction"/>
+    <Shape type="FRAME" scale="0.5" />
+  </Body>
+
+  <Body name="w1" prev="Lab Frame" color="RED" transform="-2 -2.2 0 0 0 0" physics="kinematic" >
+    <Shape type="BOX" extents="1.55 0.05 0.5" transform="0.275 -0.275 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction"/>
+  </Body>
+  <Body name="w2" prev="w1" color="RED" physics="kinematic" >
+    <Shape type="BOX" extents="1.55 0.05 0.5" transform="-0.275 0.275 0.25 0 0 0" graphics="true" physics="true" distance="true"/>
+  </Body>
+
+  <Body name="w3" prev="Lab Frame" color="RED" transform="-1.25 -1.45 0.5 180 0 90" physics="kinematic" >
+    <Shape type="BOX" extents="1.55 0.05 0.5" transform="0.275 -0.275 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction"/>
+  </Body>
+  <Body name="w4" prev="w3" color="RED" physics="kinematic" >
+    <Shape type="BOX" extents="1.55 0.05 0.5" transform="-0.275 0.275 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction"/>
+  </Body>
+
+  <Body name="w5" prev="Lab Frame" color="RED" transform="-0.5 -0.7 0 0 0 0" physics="kinematic" >
+    <Shape type="BOX" extents="1.55 0.05 0.5" transform="0.275 -0.275 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction"/>
+  </Body>
+  <Body name="w6" prev="w5" color="RED" physics="kinematic" >
+    <Shape type="BOX" extents="1.55 0.05 0.5" transform="-0.275 0.275 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction"/>
+  </Body>
+
+  <Body name="w7" prev="Lab Frame" color="RED" transform="0.25 0.05 0.5 180 0 90" physics="kinematic" >
+    <Shape type="BOX" extents="1.55 0.05 0.5" transform="0.275 -0.275 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction"/>
+  </Body>
+  <Body name="w8" prev="w7" color="RED" physics="kinematic" >
+    <Shape type="BOX" extents="1.55 0.05 0.5" transform="-0.275 0.275 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction"/>
+  </Body>
+
+  <Body name="w9" prev="Lab Frame" color="RED" transform="1 0.8 0 0 0 0" physics="kinematic" >
+    <Shape type="BOX" extents="1.55 0.05 0.5" transform="0.275 -0.275 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction"/>
+  </Body>
+  <Body name="w10" prev="w9" color="RED" physics="kinematic" >
+    <Shape type="BOX" extents="1.55 0.05 0.5" transform="-0.275 0.275 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction"/>
+  </Body>
+
+  <Body name="w11" prev="Lab Frame" color="RED" transform="1.75 1.55 0.5 180 0 90" physics="kinematic" >
+    <Shape type="BOX" extents="1.55 0.05 0.5" transform="0.275 -0.275 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction"/>
+  </Body>
+  <Body name="w12" prev="w11" color="RED" physics="kinematic" >
+    <Shape type="BOX" extents="1.55 0.05 0.5" transform="-0.275 0.275 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction"/>
+  </Body>
+
+
+
+  <Body name="b1" prev="Lab Frame" color="RED" mass="1" physics="dynamic" no_rigid_body_joints="-2.2 -2.2 0 0 0 0" >
+    <Joint type="TransX" range="-100 0 100" weightJL="0" transform="-2.2 -2.2 0 0 0 0" speedLimit="0.1" />
+    <Joint type="TransY" range="-100 0 100" weightJL="0" speedLimit="0.1" />
+    <Shape type="SPHERE" radius="0.16" transform="0 0 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction" />
+  </Body>
+  <Body name="b2" prev="b1" color="RANDOM" mass="1" physics="dynamic" >
+    <Joint type="RotZ" range="-360 0 360" weightJL="0" transform="0 0 0 0 0 0" speedLimit="30" ctrlType="Torque" torqueLimit="0" />
+    <Shape type="SPHERE" radius="0.16" transform="-0.5 0 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction" />
+    <Shape type="FRAME" scale="0.5" />
+  </Body>
+  <Body name="b3" prev="b2" color="RANDOM" mass="1" physics="dynamic" >
+    <Joint type="RotZ" range="-360 0 360" weightJL="0" transform="-0.5 0 0 0 0 0" speedLimit="30" ctrlType="Torque" torqueLimit="0" />
+    <Shape type="SPHERE" radius="0.16" transform="-0.5 0 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction" />
+	<Shape type="FRAME" scale="0.5" />
+  </Body>
+  <Body name="b4" prev="b3" color="RANDOM" mass="1" physics="dynamic" >
+    <Joint type="RotZ" range="-360 0 360" weightJL="0" transform="-0.5 0 0 0 0 0" speedLimit="30" ctrlType="Torque" torqueLimit="0" />
+    <Shape type="SPHERE" radius="0.16" transform="-0.5 0 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction" />
+	<Shape type="FRAME" scale="0.5" />
+  </Body>
+  <Body name="b5" prev="b4" color="RANDOM" mass="1" physics="dynamic" >
+    <Joint type="RotZ" range="-360 0 360" weightJL="0" transform="-0.5 0 0 0 0 0" speedLimit="30" ctrlType="Torque" torqueLimit="0" />
+    <Shape type="SPHERE" radius="0.16" transform="-0.5 0 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction" />
+	<Shape type="FRAME" scale="0.5" />
+  </Body>
+  <Body name="b6" prev="b5" color="RANDOM" mass="1" physics="dynamic" >
+    <Joint type="RotZ" range="-360 0 360" weightJL="0" transform="-0.5 0 0 0 0 0" speedLimit="30" ctrlType="Torque" torqueLimit="0" />
+    <Shape type="SPHERE" radius="0.16" transform="-0.5 0 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction" />
+	<Shape type="FRAME" scale="0.5" />
+  </Body>
+  <Body name="b7" prev="b6" color="RANDOM" mass="1" physics="dynamic" >
+    <Joint type="RotZ" range="-360 0 360" weightJL="0" transform="-0.5 0 0 0 0 0" speedLimit="30" ctrlType="Torque" torqueLimit="0" />
+    <Shape type="SPHERE" radius="0.16" transform="-0.5 0 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction" />
+	<Shape type="FRAME" scale="0.5" />
+  </Body>
+  <Body name="b8" prev="b7" color="RANDOM" mass="1" physics="dynamic" >
+    <Joint type="RotZ" range="-360 0 360" weightJL="0" transform="-0.5 0 0 0 0 0" speedLimit="30" ctrlType="Torque" torqueLimit="0" />
+    <Shape type="SPHERE" radius="0.16" transform="-0.5 0 0.25 0 0 0" graphics="true" physics="true" distance="true" material="low_friction" />
+	<Shape type="FRAME" scale="0.5" />
+  </Body>
+
+
+
+  <Body name="goal" prev="Lab Frame" color="GREEN" transform="3.75 5 0 0 0 0" >
+    <Shape type="SPHERE" radius="0.16" transform="0 0 0.25 0 0 0" graphics="true" distance="true"/>
+  </Body>
+
+
+</Graph>
+
+  <Task name="Distance" controlVariable="Distance" effector="goal" refBdy="b1" active="true" />
+
+
+  <CollisionModel  DistanceThreshold="0.05" >
+
+    <CollisionPair body1="goal"       body2="b1" />
+
+    <CollisionPair body1="w1"         body2="b1" />
+    <CollisionPair body1="w2"         body2="b1" />
+    <CollisionPair body1="w3"         body2="b1" />
+    <CollisionPair body1="w4"         body2="b1" />
+    <CollisionPair body1="w5"         body2="b1" />
+    <CollisionPair body1="w6"         body2="b1" />
+    <CollisionPair body1="w7"         body2="b1" />
+    <CollisionPair body1="w8"         body2="b1" />
+    <CollisionPair body1="w9"         body2="b1" />
+    <CollisionPair body1="w10"        body2="b1" />
+    <CollisionPair body1="w11"        body2="b1" />
+    <CollisionPair body1="w12"        body2="b1" />
+
+    <CollisionPair body1="w1"         body2="b2" />
+    <CollisionPair body1="w2"         body2="b2" />
+    <CollisionPair body1="w3"         body2="b2" />
+    <CollisionPair body1="w4"         body2="b2" />
+    <CollisionPair body1="w5"         body2="b2" />
+    <CollisionPair body1="w6"         body2="b2" />
+    <CollisionPair body1="w7"         body2="b2" />
+    <CollisionPair body1="w8"         body2="b2" />
+    <CollisionPair body1="w9"         body2="b2" />
+    <CollisionPair body1="w10"        body2="b2" />
+    <CollisionPair body1="w11"        body2="b2" />
+    <CollisionPair body1="w12"        body2="b2" />
+
+    <CollisionPair body1="w1"         body2="b3" />
+    <CollisionPair body1="w2"         body2="b3" />
+    <CollisionPair body1="w3"         body2="b3" />
+    <CollisionPair body1="w4"         body2="b3" />
+    <CollisionPair body1="w5"         body2="b3" />
+    <CollisionPair body1="w6"         body2="b3" />
+    <CollisionPair body1="w7"         body2="b3" />
+    <CollisionPair body1="w8"         body2="b3" />
+    <CollisionPair body1="w9"         body2="b3" />
+    <CollisionPair body1="w10"        body2="b3" />
+    <CollisionPair body1="w11"        body2="b3" />
+    <CollisionPair body1="w12"        body2="b3" />
+
+    <CollisionPair body1="w1"         body2="b4" />
+    <CollisionPair body1="w2"         body2="b4" />
+    <CollisionPair body1="w3"         body2="b4" />
+    <CollisionPair body1="w4"         body2="b4" />
+    <CollisionPair body1="w5"         body2="b4" />
+    <CollisionPair body1="w6"         body2="b4" />
+    <CollisionPair body1="w7"         body2="b4" />
+    <CollisionPair body1="w8"         body2="b4" />
+    <CollisionPair body1="w9"         body2="b4" />
+    <CollisionPair body1="w10"        body2="b4" />
+    <CollisionPair body1="w11"        body2="b4" />
+    <CollisionPair body1="w12"        body2="b4" />
+
+    <CollisionPair body1="w1"         body2="b5" />
+    <CollisionPair body1="w2"         body2="b5" />
+    <CollisionPair body1="w3"         body2="b5" />
+    <CollisionPair body1="w4"         body2="b5" />
+    <CollisionPair body1="w5"         body2="b5" />
+    <CollisionPair body1="w6"         body2="b5" />
+    <CollisionPair body1="w7"         body2="b5" />
+    <CollisionPair body1="w8"         body2="b5" />
+    <CollisionPair body1="w9"         body2="b5" />
+    <CollisionPair body1="w10"        body2="b5" />
+    <CollisionPair body1="w11"        body2="b5" />
+    <CollisionPair body1="w12"        body2="b5" />
+
+    <CollisionPair body1="w1"         body2="b6" />
+    <CollisionPair body1="w2"         body2="b6" />
+    <CollisionPair body1="w3"         body2="b6" />
+    <CollisionPair body1="w4"         body2="b6" />
+    <CollisionPair body1="w5"         body2="b6" />
+    <CollisionPair body1="w6"         body2="b6" />
+    <CollisionPair body1="w7"         body2="b6" />
+    <CollisionPair body1="w8"         body2="b6" />
+    <CollisionPair body1="w9"         body2="b6" />
+    <CollisionPair body1="w10"        body2="b6" />
+    <CollisionPair body1="w11"        body2="b6" />
+    <CollisionPair body1="w12"        body2="b6" />
+
+    <CollisionPair body1="w1"         body2="b7" />
+    <CollisionPair body1="w2"         body2="b7" />
+    <CollisionPair body1="w3"         body2="b7" />
+    <CollisionPair body1="w4"         body2="b7" />
+    <CollisionPair body1="w5"         body2="b7" />
+    <CollisionPair body1="w6"         body2="b7" />
+    <CollisionPair body1="w7"         body2="b7" />
+    <CollisionPair body1="w8"         body2="b7" />
+    <CollisionPair body1="w9"         body2="b7" />
+    <CollisionPair body1="w10"        body2="b7" />
+    <CollisionPair body1="w11"        body2="b7" />
+    <CollisionPair body1="w12"        body2="b7" />
+
+    <CollisionPair body1="w1"         body2="b8" />
+    <CollisionPair body1="w2"         body2="b8" />
+    <CollisionPair body1="w3"         body2="b8" />
+    <CollisionPair body1="w4"         body2="b8" />
+    <CollisionPair body1="w5"         body2="b8" />
+    <CollisionPair body1="w6"         body2="b8" />
+    <CollisionPair body1="w7"         body2="b8" />
+    <CollisionPair body1="w8"         body2="b8" />
+    <CollisionPair body1="w9"         body2="b8" />
+    <CollisionPair body1="w10"        body2="b8" />
+    <CollisionPair body1="w11"        body2="b8" />
+    <CollisionPair body1="w12"        body2="b8" />
+
+  </CollisionModel>
+
+
+
+
+</Controller>
