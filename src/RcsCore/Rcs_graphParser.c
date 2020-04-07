@@ -536,10 +536,16 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
   }
   else
   {
-    jnt->name = RNALLOC(strlen("unnamed joint") + strlen(suffix) + 1, char);
+    jnt->name = RNALLOC(strlen("unnamed joint") + strlen(suffix) + 8 + 1, char);
     strcpy(jnt->name, "unnamed joint");
     strcat(jnt->name, suffix);
-    RLOG(4, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
+
+    static int uniqueId = 0;
+    char uniqueIdStr[8];
+    snprintf(uniqueIdStr, 8, " %d", uniqueId++);
+    strcat(jnt->name, uniqueIdStr);
+
+    RLOG(5, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
          "unnamed joint\"", b->name, b->parent ? b->parent->name : "NULL");
   }
 
