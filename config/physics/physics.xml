@@ -1,4 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<!-- 
+  Copyright (c) 2020, Honda Research Institute Europe GmbH.
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  3. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  4. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER "AS IS" AND ANY EXPRESS OR
+  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT, INDIRECT,
+  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
 <content>
 
 <vortex_parameters integrator_dt="0.005"
@@ -16,28 +51,34 @@
                    use_mclp_solver="true"
                    body_linear_damping="0.0"
                    body_angular_damping="0.0"
+                   jointed_body_linear_damping="0"
+                   jointed_body_angular_damping="0"
 />
 
 
-<!-- definition of available materials (in addition to "default") -->
-<!-- =============================================================-->
-<!-- possible friction models are "Box", "ScaledBox", and "ScaledBoxFast" -->
+<!--
+definition of available materials (in addition to "default")
+=============================================================
+possible friction models are "Box", "ScaledBox", and "ScaledBoxFast"
 
-<!-- here is what you can set: -->
-<!--<material name="default" -->
-<!--          friction_model="ScaledBox" -->
-<!--          friction_coefficient="0.8" -->
-<!--          static_friction_scale="1.5"-->
-<!--          slip="0.01" -->
-<!--          integrated_slip_displacement="true"  actually its set to neural -->
-<!--          compliance="0.0"-->
-<!--          damping="0.0"-->
-<!--          restitution_threshold="0.0"-->
-<!--          adhesive_force="0.0"-->
-<!--/>-->
+here is what you can set: 
+<material name="default"
+         friction_model="ScaledBox"
+         friction_coefficient="0.8"
+         rolling_friction_coefficient="0"
+         static_friction_scale="1.5"
+         slip="0.01"
+         integrated_slip_displacement="true"  actually its set to neural
+         compliance="0.0"
+         damping="0.0"
+         restitution_threshold="0.0"
+         adhesive_force="0.0"
+-->
+
 <material name="default"
           friction_model="ScaledBoxFast"
           friction_coefficient="0.8"
+          rolling_friction_coefficient="0"
           static_friction_scale="1.5"
           slip="0.0001"
           integrated_slip_displacement="true"
@@ -46,6 +87,7 @@
 <material name="wood"
           friction_model="ScaledBoxFast"
           friction_coefficient="0.8"
+          rolling_friction_coefficient="0"
           static_friction_scale="1.5"
           slip="0.0001"
           integrated_slip_displacement="true"
@@ -54,6 +96,7 @@
 <material name="low_friction_wood"
           friction_model="ScaledBoxFast"
           friction_coefficient="0.4"
+          rolling_friction_coefficient="0"
           static_friction_scale="1.1"
           slip="0.0001"
           integrated_slip_displacement="true"
@@ -62,6 +105,7 @@
 <material name="extremely_low_friction_wood"
           friction_model="ScaledBoxFast"
           friction_coefficient="0.1"
+          rolling_friction_coefficient="0"
           static_friction_scale="1"
           slip="0.0001"
           integrated_slip_displacement="true"
@@ -70,6 +114,7 @@
 <material name="robot_hand"
           friction_model="ScaledBoxFast"
           friction_coefficient="0.8"
+          rolling_friction_coefficient="0"
           static_friction_scale="1.5"
           slip="0.0001"
           integrated_slip_displacement="true"
@@ -79,6 +124,7 @@
 <material name="low_friction_robot_hand"
           friction_model="ScaledBoxFast"
           friction_coefficient="0.01"
+          rolling_friction_coefficient="0"
           static_friction_scale="1.1"
           slip="0.0001"
           integrated_slip_displacement="false"
@@ -88,6 +134,7 @@
 <material name="object"
           friction_model="ScaledBoxFast"
           friction_coefficient="0.8"
+          rolling_friction_coefficient="0"
           static_friction_scale="1.1"
           slip="0.0001"
           integrated_slip_displacement="true"
@@ -97,6 +144,7 @@
 <material name="semisoft_object"
           friction_model="ScaledBoxFast"
           friction_coefficient="0.4"
+          rolling_friction_coefficient="0"
           static_friction_scale="1.1"
           slip="0.005"
           integrated_slip_displacement="false"
@@ -106,6 +154,7 @@
 <material name="soft_object"
           friction_model="ScaledBoxFast"
           friction_coefficient="10"
+          rolling_friction_coefficient="0"
           static_friction_scale="1.1"
           xxslip="0.00"
           slip="0.005"
@@ -113,18 +162,11 @@
           compliance="0.001"
           damping="1000"
 />
-<!-- <material name="soft_object" -->
-<!--           friction_model="ScaledBoxFast" -->
-<!--           friction_coefficient="0.4" -->
-<!--           static_friction_scale="1.1" -->
-<!--           slip="0.005" -->
-<!--           integrated_slip_displacement="false" -->
-<!--           compliance="0.01" -->
-<!--           damping="1000" -->
-<!-- /> -->
+
 <material name="low_friction"
           friction_model="ScaledBoxFast"
           friction_coefficient="0.001"
+          rolling_friction_coefficient="0"
           static_friction_scale="0.2"
           slip="0.01"
           integrated_slip_displacement="true"
@@ -133,6 +175,7 @@
 <material name="high_friction"
           friction_model="ScaledBoxFast"
           friction_coefficient="10"
+          rolling_friction_coefficient="0"
           static_friction_scale="1.1"
           slip="0.00"
           integrated_slip_displacement="true"

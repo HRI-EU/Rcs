@@ -225,7 +225,7 @@ Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe):
   rigidBodyLinearDamping(copyFromMe.rigidBodyLinearDamping),
   rigidBodyAngularDamping(copyFromMe.rigidBodyAngularDamping),
   jointedBodyLinearDamping(copyFromMe.jointedBodyLinearDamping),
-  jointedBodyAngularDamping(copyFromMe.jointedBodyAngularDamping)  
+  jointedBodyAngularDamping(copyFromMe.jointedBodyAngularDamping)
 {
   pthread_mutex_init(&this->mtx, NULL);
 
@@ -442,7 +442,7 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
     getXMLNodePropertyDouble(bulletParams, "jointed_body_angular_damping",
                              &this->jointedBodyAngularDamping);
   }
-  
+
   // Create physics for RcsGraph
   RCSGRAPH_TRAVERSE_BODIES(getGraph())
   {

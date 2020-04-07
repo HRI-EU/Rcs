@@ -3255,7 +3255,7 @@ bool testViaPointSequence(int argc, char** argv)
   char viaFileName[256] = "";
   double beyondRange = 0.0, dt = 0.01;
   int flag = 7;
-  
+
   // Parse command line arguments
   Rcs::CmdLineParser argP(argc, argv);
   argP.getArgument("-f", viaFileName, "Via point file name (default none)");

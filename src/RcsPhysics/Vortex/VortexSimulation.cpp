@@ -472,7 +472,8 @@ void Rcs::VortexSimulation::initMaterial(const PhysicsConfig* config)
     Vx::VxMaterial* material = getMaterialTable()->registerMaterial(name);
 
     // set common properties
-    material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisLinear, matDef.getFrictionCoefficient());
+    material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisLinear,
+                                     matDef.getFrictionCoefficient());
 
     material->setFrictionCoefficient(Vx::VxMaterialBase::kFrictionAxisAngularPrimary,
                                      matDef.getRollingFrictionCoefficient());

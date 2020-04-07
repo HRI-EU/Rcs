@@ -452,7 +452,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
   // apply material properties
   RCHECK(materialName);
   const PhysicsMaterial material = config->getMaterial(materialName);
-  RCHECK(material);
+
   btBody->setFriction(material.getFrictionCoefficient());
   btBody->setRollingFriction(material.getRollingFrictionCoefficient());
   //btBody->setSpinningFriction(0.1);
@@ -569,14 +569,14 @@ btTransform Rcs::BulletRigidBody::calcSliderTrans(const RcsJoint* jnt)
   int dirIdx = RcsJoint_getDirectionIndex(jnt);
 
   if (dirIdx==1)
-    {
-      Mat3d_rotateSelfAboutXYZAxis(A_JP.rot, 2, M_PI_2);
-    }
-  else if(dirIdx==2)
-    {
-      Mat3d_rotateSelfAboutXYZAxis(A_JP.rot, 1, -M_PI_2);
-    }
-  
+  {
+    Mat3d_rotateSelfAboutXYZAxis(A_JP.rot, 2, M_PI_2);
+  }
+  else if (dirIdx==2)
+  {
+    Mat3d_rotateSelfAboutXYZAxis(A_JP.rot, 1, -M_PI_2);
+  }
+
   return btTransformFromHTr(&A_JP);
 }
 
@@ -675,35 +675,35 @@ btTypedConstraint* Rcs::BulletRigidBody::createJoint(const RcsGraph* graph)
   }
 
   btTypedConstraint* joint = NULL;
-  
+
   // Create hinge joint
   if (RcsJoint_isRotation(body->jnt))
-    {
-      btVector3 pivotInA, pivotInB, axisInA, axisInB;
-      bool useReferenceFrameA = false;
+  {
+    btVector3 pivotInA, pivotInB, axisInA, axisInB;
+    bool useReferenceFrameA = false;
 
-      calcHingeTrans(body->jnt, pivotInA, axisInA);
-      parent->calcHingeTrans(body->jnt, pivotInB, axisInB);
+    calcHingeTrans(body->jnt, pivotInA, axisInA);
+    parent->calcHingeTrans(body->jnt, pivotInB, axisInB);
 
-      joint = new BulletHingeJoint(body->jnt,
-                                   graph->q->ele[body->jnt->jointIndex],
-                                   *this, *parent, pivotInA, pivotInB,
-                                   axisInA, axisInB, useReferenceFrameA);
-    }
-  // Create slider joint 
+    joint = new BulletHingeJoint(body->jnt,
+                                 graph->q->ele[body->jnt->jointIndex],
+                                 *this, *parent, pivotInA, pivotInB,
+                                 axisInA, axisInB, useReferenceFrameA);
+  }
+  // Create slider joint
   else
-    {
-      bool useReferenceFrameA = false;
-      btTransform frameInA = calcSliderTrans(body->jnt);
-      btTransform frameInB = parent->calcSliderTrans(body->jnt);
-      
-      joint = new BulletSliderJoint(body->jnt, 
-                                    graph->q->ele[body->jnt->jointIndex],
-                                    *this, *parent,
-                                    frameInA, frameInB,  
-                                    useReferenceFrameA);
-    }
-  
+  {
+    bool useReferenceFrameA = false;
+    btTransform frameInA = calcSliderTrans(body->jnt);
+    btTransform frameInB = parent->calcSliderTrans(body->jnt);
+
+    joint = new BulletSliderJoint(body->jnt,
+                                  graph->q->ele[body->jnt->jointIndex],
+                                  *this, *parent,
+                                  frameInA, frameInB,
+                                  useReferenceFrameA);
+  }
+
   return joint;
 }
 

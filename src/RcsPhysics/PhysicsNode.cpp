@@ -418,7 +418,7 @@ void Rcs::PhysicsNode::setDisplayMode(int mode)
       {
         cnd->show();
       }
-      RLOG(4, "Showing both transforms");
+      RLOG(5, "Showing both transforms");
       break;
     case 1:   // Graph only
       setPhysicsTransform(false);
@@ -428,7 +428,7 @@ void Rcs::PhysicsNode::setDisplayMode(int mode)
       {
         cnd->hide();
       }
-      RLOG(4, "Showing graph transform only");
+      RLOG(5, "Showing graph transform only");
       break;
     case 2:   // Physics only
       setPhysicsTransform(true);
@@ -437,7 +437,7 @@ void Rcs::PhysicsNode::setDisplayMode(int mode)
       {
         cnd->show();
       }
-      RLOG(4, "Showing physics transform only");
+      RLOG(5, "Showing physics transform only");
       break;
     default:
       RLOG(1, "Unhandled display mode %d", displayMode);

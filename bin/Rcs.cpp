@@ -1147,14 +1147,6 @@ int main(int argc, char** argv)
         RFATAL("Couldn't create physics engine \"%s\"", physicsEngine);
       }
 
-      REXEC(1)
-      {
-        sim->print();
-      }
-
-
-
-
       if (testCopy==true)
       {
         RcsGraph* graph2 = graph;
@@ -1167,15 +1159,9 @@ int main(int argc, char** argv)
         RcsGraph_destroy(graph2);
       }
 
-
       if (disableCollisions==true)
       {
         sim->disableCollisions();
-      }
-
-      REXEC(5)
-      {
-        sim->print();
       }
 
       // remember initial state for resetting simulation

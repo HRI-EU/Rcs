@@ -78,7 +78,7 @@ public:
   BulletSimulation(const RcsGraph* graph, const PhysicsConfig* config);
   BulletSimulation(const BulletSimulation& copyFromMe);
   BulletSimulation(const BulletSimulation& copyFromMe, const RcsGraph* newGraph);
-  ~BulletSimulation();
+  virtual ~BulletSimulation();
 
   /**
   * @name InheritanceInterface

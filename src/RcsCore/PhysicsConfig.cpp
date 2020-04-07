@@ -193,25 +193,37 @@ void PhysicsMaterial::getMaterialName(char name[256]) const
 double PhysicsMaterial::getFrictionCoefficient() const
 {
   double value = 0.8;
-  getDouble("frictionCoefficient", value);
+  bool success = getDouble("friction_coefficient", value);
+  if (!success)
+  {
+    char a[256] = "unnamed material";
+    getMaterialName(a);
+    RLOG(1, "friction_coefficient not found in material \"%s\"", a);
+  }
   return value;
 }
 
 void PhysicsMaterial::setFrictionCoefficient(double value)
 {
-  setDouble("frictionCoefficient", value);
+  setDouble("friction_coefficient", value);
 }
 
 double PhysicsMaterial::getRollingFrictionCoefficient() const
 {
   double value = 0.0;
-  getDouble("rollingFrictionCoefficient", value);
+  bool success = getDouble("rolling_friction_coefficient", value);
+  if (!success)
+  {
+    char a[256] = "unnamed material";
+    getMaterialName(a);
+    RLOG(1, "rolling_friction_coefficient not found in material \"%s\"", a);
+  }
   return value;
 }
 
 void PhysicsMaterial::setRollingFrictionCoefficient(double value)
 {
-  setDouble("rollingFrictionCoefficient", value);
+  setDouble("rolling_friction_coefficient", value);
 }
 
 double PhysicsMaterial::getRestitution() const
@@ -411,6 +423,10 @@ PhysicsMaterial PhysicsConfig::getMaterial(const char* materialName) const
     }
     mat = mat.next();
   }
+
+  RLOG(4, "Material \"%s\" not found - returning default material",
+       materialName);
+
   // return default material since it wasn't found
   return PhysicsMaterial(defaultMaterial, defaultMaterial);
 }

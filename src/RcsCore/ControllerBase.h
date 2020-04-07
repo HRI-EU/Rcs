@@ -224,7 +224,7 @@ public:
    *         "activation", the activation of the task will be set to the
    *         value of this tag. The tag "activation" overwrites the value
    *         of the tag "active", if both exist. If none of the tags
-   *         exists, the activation value in a_init is set to 0. Vector 
+   *         exists, the activation value in a_init is set to 0. Vector
    *         activation is reshaped to nTasks x 1.
    */
   void readActivationsFromXML(MatNd* activation) const;

@@ -59,7 +59,7 @@ public:
   virtual bool isSlider() const = 0;
 
 protected:
-  
+
   virtual double getConstraintPos() = 0;
 };
 

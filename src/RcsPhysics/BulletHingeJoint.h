@@ -72,7 +72,7 @@ public:
   bool isSlider() const;
 
 protected:
-  
+
   double getConstraintPos();
 
 private:
