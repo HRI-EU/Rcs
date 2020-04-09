@@ -618,9 +618,10 @@ int main(int argc, char** argv)
 
       printf("\nHere's some useful testing modes:\n\n");
       printf("\t-m");
-      printf("\t0   Distance function test\n");
-      printf("\t\t1   2D polygon test\n");
-      printf("\t\t2   2D ray - line segment intersection test\n");
+      printf("\t0   Print this message\n");
+      printf("\t1   Distance function test\n");
+      printf("\t\t2   2D polygon test\n");
+      printf("\t\t3   2D ray - line segment intersection test\n");
       break;
     }
 
