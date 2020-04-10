@@ -44,13 +44,19 @@
 
 namespace Rcs
 {
+/*! \ingroup RcsPhysics
+ * \brief Construct with:
+ *        BulletSoftSimulation* sim = new BulletSoftSimulation();
+ *        sim->PhysicsBase::initialize(graph, cfg);
+ *
+ *        That's needed due to some polymorphism going on during intialisation. 
+ *        This is not considered in the constructors.
+ */
 class BulletSoftSimulation : public BulletSimulation
 {
 public:
 
   BulletSoftSimulation();
-  BulletSoftSimulation(const RcsGraph* graph, const char* configFile=NULL);
-  BulletSoftSimulation(const RcsGraph* graph, const PhysicsConfig* config);
   BulletSoftSimulation(const BulletSoftSimulation& copyFromMe);
   BulletSoftSimulation(const BulletSoftSimulation& copyFromMe,
                        const RcsGraph* newGraph);
@@ -59,9 +65,10 @@ public:
 
 protected:
 
-  virtual bool initialize(const RcsGraph* g, const PhysicsConfig* config);
-  virtual void createWorld(xmlNodePtr bulletParams);
-  virtual void updateSoftMeshes();
+  bool initialize(const RcsGraph* g, const PhysicsConfig* config);
+  void createWorld(xmlNodePtr bulletParams);
+  void convertShapesToMesh();
+  void updateSoftMeshes();
   void createSoftBodies();
   btSoftBodyWorldInfo* softBodyWorldInfo;
 };

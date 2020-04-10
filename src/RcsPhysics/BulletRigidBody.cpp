@@ -329,12 +329,21 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
 
     if (((*sPtr)->computeType & RCSSHAPE_COMPUTE_PHYSICS) == 0)
     {
-      RLOG(5, "Skipping shape %s", RcsShape_name((*sPtr)->type));
+      RLOG(0, "Skipping shape %s", RcsShape_name((*sPtr)->type));
       sPtr++;
       continue;
     }
 
-    RLOG(5, "Creating shape %s", RcsShape_name((*sPtr)->type));
+    if (((*sPtr)->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) != 0)
+    {
+      RLOG(0, "Skipping soft shape %s", RcsShape_name((*sPtr)->type));
+      sPtr++;
+      continue;
+    }
+
+    
+
+    RLOG(0, "Creating shape %s", RcsShape_name((*sPtr)->type));
 
     btTransform relTrans;
     btCollisionShape* shape = createShape(*sPtr, relTrans, bdy,
@@ -487,7 +496,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
     btBody->setAngularFactor(angFac);
   }
 
-  RLOG(5, "Successfully created BulletRigidBody for \"%s\"",
+  RLOG(0, "Successfully created BulletRigidBody for \"%s\"",
        btBody->getBodyName());
 
   return btBody;
