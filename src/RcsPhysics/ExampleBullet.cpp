@@ -34,21 +34,159 @@
 
 *******************************************************************************/
 
+#include <BulletSoftSimulation.h>
 #include <BulletHelpers.h>
+#include <BulletDebugDrawer.h>
 #include <Rcs_macros.h>
 #include <Rcs_cmdLine.h>
 #include <Rcs_math.h>
 #include <Rcs_resourcePath.h>
 #include <Rcs_timer.h>
+#include <Rcs_typedef.h>
+#include <RcsViewer.h>
+#include <MeshNode.h>
 #include <SegFaultHandler.h>
 
 #include <libxml/tree.h>
 
 #include <iostream>
+#include <csignal>
+#include <map>
 
 RCS_INSTALL_ERRORHANDLERS
 
+bool runLoop = true;
 
+
+
+/*******************************************************************************
+ * Ctrl-C destructor. Tries to quit gracefully with the first Ctrl-C
+ * press, then just exits.
+ ******************************************************************************/
+void quit(int /*sig*/)
+{
+  static int kHit = 0;
+  runLoop = false;
+  fprintf(stderr, "Trying to exit gracefully - %dst attempt\n", kHit + 1);
+  kHit++;
+
+  if (kHit == 2)
+  {
+    fprintf(stderr, "Exiting without cleanup\n");
+    exit(0);
+  }
+}
+
+
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static void test_softBody(int argc, char** argv)
+{
+  double dt = 0.005;
+  char xmlFileName[128] = "gSoftBody.xml";
+  char directory[128] = "config/xml/Examples";
+  char cfg[128] = "config/physics/physics.xml";
+  Rcs::CmdLineParser argP(argc, argv);
+  argP.getArgument("-f", xmlFileName, "Configuration file name");
+  argP.getArgument("-dir", directory, "Configuration file directory");
+  argP.getArgument("-physics_config", cfg, "Configuration file name for "
+                   "physics (default is %s)", cfg);
+  argP.getArgument("-dt", &dt, "Simulation time step (default is %f)", dt);
+
+  Rcs_addResourcePath(directory);
+
+  RcsGraph* graph = RcsGraph_create(xmlFileName);
+  RCHECK(graph);
+
+  Rcs::BulletSoftSimulation* sim = new Rcs::BulletSoftSimulation();
+  sim->Rcs::PhysicsBase::initialize(graph, cfg);
+
+  Rcs::Viewer* viewer = new Rcs::Viewer();
+
+  Rcs::BulletDebugDrawer* debugDrawer = new Rcs::BulletDebugDrawer();
+  debugDrawer->setDebugMode(btIDebugDraw::DBG_DrawWireframe//  |
+                            // btIDebugDraw::DBG_DrawContactPoints
+                            );
+  viewer->add(debugDrawer);
+  sim->setDebugDrawer(debugDrawer);
+
+  std::map<osg::ref_ptr<Rcs::MeshNode>, RcsMeshData*> meshMap;
+  RCSGRAPH_TRAVERSE_BODIES(sim->getGraph())
+  {
+    RCSBODY_TRAVERSE_SHAPES(BODY)
+    {
+      if ((SHAPE->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) == 0)
+      {
+        continue;
+      }
+
+      RcsMeshData* mesh = (RcsMeshData*)SHAPE->userData;
+      RCHECK(mesh);
+      osg::ref_ptr<Rcs::MeshNode> mn;
+      mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
+                             mesh->faces, mesh->nFaces);
+      RcsMesh_print(mesh);
+      viewer->add(mn.get());
+      meshMap[mn] = mesh;
+    }
+  }
+  RPAUSE_DL(1);
+  
+  while (runLoop)
+    {
+      sim->step(dt);
+
+      std::map<osg::ref_ptr<Rcs::MeshNode>, RcsMeshData*>::iterator it;
+       for (it = meshMap.begin(); it != meshMap.end(); it++)
+       {
+         osg::ref_ptr<Rcs::MeshNode> mn = it->first;
+         RcsMeshData* mesh = it->second;
+         //RcsMesh_print(mesh);
+         //RcsMesh_toFile(mesh, "second.stl");
+         mn->setMesh(mesh->vertices, mesh->nVertices,
+                             mesh->faces, mesh->nFaces);
+       }
+
+
+
+
+  //     // RPAUSE_MSG("Hit enter to remove all MeshNode instances");
+  //     viewer->removeInternal("MeshNode");
+  //     // viewer->frame();
+  //     // RPAUSE_MSG("Hit enter to add them again");
+  // RCSGRAPH_TRAVERSE_BODIES(sim->getGraph())
+  // {
+  //   RCSBODY_TRAVERSE_SHAPES(BODY)
+  //   {
+  //     if ((SHAPE->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) == 0)
+  //     {
+  //       continue;
+  //     }
+
+  //     RcsMeshData* mesh = (RcsMeshData*)SHAPE->userData;
+  //     RCHECK(mesh);
+  //     //RcsMesh_print(mesh);
+  //     osg::ref_ptr<Rcs::MeshNode> mn;
+  //     mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
+  //                            mesh->faces, mesh->nFaces);
+  //     viewer->addInternal(mn.get());
+  //   }
+  // }
+
+      
+      viewer->frame();
+      Timer_usleep(1000);
+      RPAUSE_DL(1);
+    }        
+
+
+  
+
+  RcsGraph_destroy(graph);
+  delete sim;
+}
 
 /******************************************************************************
  *
@@ -87,32 +225,20 @@ static void test_mesh(int argc, char** argv)
  ******************************************************************************/
 int main(int argc, char** argv)
 {
-  RMSG("Starting Rcs...");
-  int mode = 0;
-  char xmlFileName[128] = "", directory[128] = "";
+  // Ctrl-C callback handler
+  signal(SIGINT, quit);
 
   // This initialize the xml library and check potential mismatches between
   // the version it was compiled for and the actual shared library used.
   LIBXML_TEST_VERSION;
 
   // Parse command line arguments
+  int mode = 0;
   Rcs::CmdLineParser argP(argc, argv);
   argP.getArgument("-dl", &RcsLogLevel, "Debug level (default is 0)");
   argP.getArgument("-m", &mode, "Test mode");
-  argP.getArgument("-f", xmlFileName, "Configuration file name");
-  argP.getArgument("-dir", directory, "Configuration file directory");
-
-  const char* hgr = getenv("SIT");
-  if (hgr != NULL)
-  {
-    std::string meshDir = std::string(hgr) +
-                          std::string("/Data/RobotMeshes/1.0/data");
-    Rcs_addResourcePath(meshDir.c_str());
-  }
-
   Rcs_addResourcePath("config");
 
-  RPAUSE_DL(5);
 
   switch (mode)
   {
@@ -123,28 +249,26 @@ int main(int argc, char** argv)
     case 0:
     {
       argP.print();
-
       printf("\nHere's some useful testing modes:\n\n");
       printf("\t-m");
       printf("\t0   Prints this message (default)\n");
       printf("\t\t1   Mesh conversion to convex hull\n");
+      printf("\t\t2   Soft body meshes\n");
       break;
     }
 
-
-
-    // ==============================================================
-    // Run Scenario file with physics
-    // ==============================================================
     case 1:
     {
       test_mesh(argc, argv);
       break;
     }
 
-    // ==============================================================
-    // That's it.
-    // ==============================================================
+    case 2:
+    {
+      test_softBody(argc, argv);
+      break;
+    }
+
     default:
     {
       RMSG("there is no mode %d", mode);
