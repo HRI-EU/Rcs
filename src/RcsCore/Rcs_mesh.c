@@ -1107,6 +1107,28 @@ void RcsMesh_add(RcsMeshData* mesh, const RcsMeshData* other)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+bool RcsMesh_check(const RcsMeshData* mesh)
+{
+  if (mesh==NULL)
+    {
+      RLOG(4, "NULL mesh didn't pass test");
+      return false;
+    }
+
+  const unsigned int maxFaceIdx = getLargestFaceIdx(mesh);
+  
+  if (maxFaceIdx > mesh->nVertices-1)
+    {
+      RLOG(4, "Largest face index is %d, but %d vertices",
+           maxFaceIdx, mesh->nVertices);
+      return false;
+    }
+  return true;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void RcsMesh_transform(RcsMeshData* mesh, const double pos[3],
                        double A_MI[3][3])
 {

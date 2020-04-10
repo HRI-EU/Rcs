@@ -88,6 +88,15 @@ RcsMeshData* RcsMesh_createFromFile(const char* fileName);
 void RcsMesh_print(const RcsMeshData* mesh);
 
 /*! \ingroup RcsUtilsFunctions
+ *  \brief Performs some checks on the mesh.
+ *
+ *  \param[in] mesh Mesh data to be checked
+ *  \return true for passed, false for something is wrong. The reason is 
+ *          printed on debug level 4.
+ */
+bool RcsMesh_check(const RcsMeshData* mesh);
+
+/*! \ingroup RcsUtilsFunctions
  *  \brief Creates a deep copy of the argument mesh. If mesh is NULL, the
  *         function returns NULL and a warning is emitted on debug level 4.
  *
@@ -98,8 +107,7 @@ RcsMeshData* RcsMesh_clone(const RcsMeshData* mesh);
 /*! \ingroup RcsUtilsFunctions
  *  \brief Deletes all created memory.
  *
- *  \param[in] mesh Mesh data. If mesh is NULL, nothing is done and a warning
- *                  is emitted on debug level 4.
+ *  \param[in] mesh Mesh data. If mesh is NULL, nothing is done.
  */
 void RcsMesh_destroy(RcsMeshData* mesh);
 
