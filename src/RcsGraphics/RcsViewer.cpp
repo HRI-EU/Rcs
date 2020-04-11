@@ -475,8 +475,16 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   // Change the threading model. The default threading model is
   // osgViewer::Viewer::CullThreadPerCameraDrawThreadPerContext.
   // This leads to problems with multi-threaded updates (HUD).
-  viewer->setThreadingModel(osgViewer::Viewer::CullDrawThreadPerContext);
 
+  if (forceSimple)
+    {
+      viewer->setThreadingModel(osgViewer::Viewer::SingleThreaded);
+    }
+  else
+    {
+      viewer->setThreadingModel(osgViewer::Viewer::CullDrawThreadPerContext);
+    }
+  
   // Create viewer in a window
   if (fancy == false)
   {
@@ -518,6 +526,8 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   capture->setKeyEventTakeScreenShot(osgGA::GUIEventAdapter::KEY_F8);
   viewer->addEventHandler(capture.get());
 
+  KeyCatcherBase::registerKey("z", "Toggle on-screen stats", "Viewer");
+  KeyCatcherBase::registerKey("Z", "Print viewer stats to console", "Viewer");
   osg::ref_ptr<osgViewer::StatsHandler> stats = new osgViewer::StatsHandler;
   stats->setKeyEventTogglesOnScreenStats('z');
   stats->setKeyEventPrintsOutStats('Z');
