@@ -1661,6 +1661,7 @@ int main(int argc, char** argv)
         else
         {
           Timer_waitNoCatchUp(timer);
+          Timer_usleep(1);
         }
 
         loopCount++;
