@@ -36,7 +36,7 @@
 
 <content>
 
-<vortex_parameters use_ground_plane="false"
+<vortex_parameters use_ground_plane="true"
                    integrator_dt="0.005"
                    constraint_linear_compliance="1.0e-9"
                    constraint_angular_compliance="1.0e-9"
@@ -48,7 +48,7 @@
                    joint_lock_damping="5000000.0"
 />
 
-<bullet_parameters use_ground_plane="false"
+<bullet_parameters use_ground_plane="true"
                    use_mclp_solver="true"
                    body_linear_damping="0.0"
                    body_angular_damping="0.0"
