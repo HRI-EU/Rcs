@@ -175,12 +175,13 @@ RcsMeshData* RcsShape_createMesh(const RcsShape* self)
   {
     case RCSSHAPE_SSL:
     {
-      mesh = RcsMesh_createCapsule(self->extents[0], self->extents[2], segments);
+      mesh = RcsMesh_createCapsule(self->extents[0], self->extents[2],
+                                   segments/2);
       break;
     }
     case RCSSHAPE_SSR:
     {
-      mesh = RcsMesh_createSSR(self->extents, segments);
+      mesh = RcsMesh_createSSR(self->extents, segments/4);
       break;
     }
     case RCSSHAPE_MESH:
@@ -195,12 +196,13 @@ RcsMeshData* RcsShape_createMesh(const RcsShape* self)
     }
     case RCSSHAPE_CYLINDER:
     {
-      mesh = RcsMesh_createCylinder(self->extents[0], self->extents[2], segments);
+      mesh = RcsMesh_createCylinder(self->extents[0], self->extents[2],
+                                    segments);
       break;
     }
     case RCSSHAPE_SPHERE:
     {
-      mesh = RcsMesh_createSphere(self->extents[0], segments);
+      mesh = RcsMesh_createSphere(self->extents[0], segments/2);
       break;
     }
     case RCSSHAPE_CONE:
@@ -210,7 +212,8 @@ RcsMeshData* RcsShape_createMesh(const RcsShape* self)
     }
     case RCSSHAPE_TORUS:
     {
-      mesh = RcsMesh_createTorus(self->extents[0], self->extents[2], segments, segments);
+      mesh = RcsMesh_createTorus(self->extents[0], self->extents[2],
+                                 segments, segments);
       break;
     }
     default:
@@ -475,7 +478,9 @@ double RcsShape_boundingSphereDistance(const double Pt[3],
     }
     case RCSSHAPE_CYLINDER:
     {
-      return Vec3d_distance(com, Pt) - sqrt(shape->extents[2]*shape->extents[2]/4. + shape->extents[0]*shape->extents[0]);
+      return Vec3d_distance(com, Pt) -
+             sqrt(shape->extents[2]*shape->extents[2]/4.0 +
+                  shape->extents[0]*shape->extents[0]);
     }
     case RCSSHAPE_SPHERE:
     {
@@ -483,11 +488,16 @@ double RcsShape_boundingSphereDistance(const double Pt[3],
     }
     case RCSSHAPE_CONE:
     {
-      return Vec3d_distance(com, Pt) - fmax(0.75*shape->extents[2], sqrt(shape->extents[2]*shape->extents[2]/16.0 + shape->extents[0]*shape->extents[0]));
+      return Vec3d_distance(com, Pt) -
+             fmax(0.75*shape->extents[2],
+                  sqrt(shape->extents[2]*shape->extents[2]/16.0 +
+                       shape->extents[0]*shape->extents[0]));
     }
     case RCSSHAPE_SSR:
     {
-      return Vec3d_distance(com, Pt) - sqrt(shape->extents[0]*shape->extents[0] + shape->extents[1]*shape->extents[1])/2.0 - shape->extents[2]/2.0;
+      return Vec3d_distance(com, Pt) -
+             sqrt(shape->extents[0]*shape->extents[0] +
+                  shape->extents[1]*shape->extents[1])/2.0 - shape->extents[2]/2.0;
     }
     case RCSSHAPE_TORUS:
     {
@@ -745,7 +755,8 @@ void RcsShape_fprint(FILE* out, const RcsShape* s)
 
   // File names
   fprintf(out, "\tmeshFile   : \"%s\"\n", s->meshFile ? s->meshFile : "NULL");
-  fprintf(out, "\ttextureFile: \"%s\"\n", s->textureFile ? s->textureFile : "NULL");
+  fprintf(out, "\ttextureFile: \"%s\"\n",
+          s->textureFile ? s->textureFile : "NULL");
   fprintf(out, "\tcolor      : \"%s\"\n", s->color ? s->color : "NULL");
   fprintf(out, "\tmaterial   : \"%s\"\n", s->material ? s->material : "NULL");
 
@@ -830,17 +841,21 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
     case RCSSHAPE_CYLINDER:
     case RCSSHAPE_TORUS:
     case RCSSHAPE_CONE:
-      fprintf(out, "length=\"%s\" ", String_fromDouble(buf, self->extents[2], 6));
-      fprintf(out, "radius=\"%s\" ", String_fromDouble(buf, self->extents[0], 6));
+      fprintf(out, "length=\"%s\" ",
+              String_fromDouble(buf, self->extents[2], 6));
+      fprintf(out, "radius=\"%s\" ",
+              String_fromDouble(buf, self->extents[0], 6));
       break;
 
     case RCSSHAPE_SPHERE:
-      fprintf(out, "radius=\"%s\" ", String_fromDouble(buf, self->extents[0], 6));
+      fprintf(out, "radius=\"%s\" ",
+              String_fromDouble(buf, self->extents[0], 6));
       break;
 
     case RCSSHAPE_SSR:
     case RCSSHAPE_BOX:
-      fprintf(out, "extents=\"%s ", String_fromDouble(buf, self->extents[0], 6));
+      fprintf(out, "extents=\"%s ",
+              String_fromDouble(buf, self->extents[0], 6));
       fprintf(out, "%s ",   String_fromDouble(buf, self->extents[1], 6));
       fprintf(out, "%s\" ", String_fromDouble(buf, self->extents[2], 6));
       break;
@@ -968,7 +983,8 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
     if (sit!=NULL)
     {
       char a[256];
-      snprintf(a, 256, "%s\\Data\\RobotMeshes\\1.0\\data\\Octrees\\octree.bt", sit);
+      snprintf(a, 256, "%s\\Data\\RobotMeshes\\1.0\\data\\Octrees\\octree.bt",
+               sit);
       shape->meshFile = String_clone(a);
       shape->userData = Rcs_loadOctree(shape->meshFile);
     }
@@ -1098,7 +1114,8 @@ static double RcsShape_closestSphereToPoint(const RcsShape* sphere,
                                             double I_nSpherePoint[3])
 {
   double dist = RcsShape_closestPointToSphere(point, sphere, A_point, A_sphere,
-                                              I_cpPoint, I_cpSphere, I_nSpherePoint);
+                                              I_cpPoint, I_cpSphere,
+                                              I_nSpherePoint);
 
   // Revert the normal, because we are calling the reverse method
   Vec3d_constMulSelf(I_nSpherePoint, -1.0);

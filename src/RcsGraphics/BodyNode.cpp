@@ -567,9 +567,9 @@ osg::Switch* BodyNode::addShapes(int mask, bool resizeable)
             NLOG(0, "Creating MeshNode from shape (%s)",
                  shape->meshFile ? shape->meshFile : "NULL");
 
-            meshNode = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
-                                         mesh->faces, mesh->nFaces);
-            Rcs::MeshNode* mn = static_cast<Rcs::MeshNode*>(meshNode.get());
+            Rcs::MeshNode* mn = new Rcs::MeshNode(mesh->vertices,
+                                                  mesh->nVertices,
+                                                  mesh->faces, mesh->nFaces);
 
             if (shape->color != NULL)
             {
@@ -577,6 +577,8 @@ osg::Switch* BodyNode::addShapes(int mask, bool resizeable)
                    getName().c_str(), shape->meshFile, shape->color);
               mn->setMaterial(shape->color);
             }
+            
+            meshNode = mn;
           }   // (mesh && mesh->nFaces>0)
           // Otherwise, we use the OpenSceneGraph classes
           else
@@ -1707,9 +1709,9 @@ void BodyNode::updateDynamicMeshes()
 
     for (size_t i=0; i<m.size(); ++i)
     {
-      RLOG_CPP(1, "Updating mesh " << i+1 << " from " << m.size() << " with "
+      RLOG_CPP(6, "Updating mesh " << i+1 << " from " << m.size() << " with "
                << meshDat->nVertices << " vertices and " << meshDat->nFaces
-               << " faces");
+               << " faces : " << getName());
       m[i]->setMesh(meshDat->vertices, meshDat->nVertices,
                     meshDat->faces, meshDat->nFaces);
     }

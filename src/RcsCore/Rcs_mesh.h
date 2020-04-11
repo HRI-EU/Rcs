@@ -91,7 +91,7 @@ void RcsMesh_print(const RcsMeshData* mesh);
  *  \brief Performs some checks on the mesh.
  *
  *  \param[in] mesh Mesh data to be checked
- *  \return true for passed, false for something is wrong. The reason is 
+ *  \return true for passed, false for something is wrong. The reason is
  *          printed on debug level 4.
  */
 bool RcsMesh_check(const RcsMeshData* mesh);
