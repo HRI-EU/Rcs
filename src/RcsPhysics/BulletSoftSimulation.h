@@ -49,7 +49,7 @@ namespace Rcs
  *        BulletSoftSimulation* sim = new BulletSoftSimulation();
  *        sim->PhysicsBase::initialize(graph, cfg);
  *
- *        That's needed due to some polymorphism going on during intialisation. 
+ *        That's needed due to some polymorphism going on during intialisation.
  *        This is not considered in the constructors.
  */
 class BulletSoftSimulation : public BulletSimulation
@@ -71,6 +71,7 @@ protected:
   void updateSoftMeshes();
   void createSoftBodies();
   btSoftBodyWorldInfo* softBodyWorldInfo;
+  btSoftRigidDynamicsWorld* softWorld;
 };
 
 }   // namespace Rcs

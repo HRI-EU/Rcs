@@ -99,6 +99,14 @@ void Rcs::BulletSimulation::MyNearCallbackEnabled(btBroadphasePair& collisionPai
   // Do your collision logic here
   btBroadphaseProxy* p0 = collisionPair.m_pProxy0;
   btBroadphaseProxy* p1 = collisionPair.m_pProxy1;
+
+  if (p0->isSoftBody(SOFTBODY_SHAPE_PROXYTYPE) ||
+      p1->isSoftBody(SOFTBODY_SHAPE_PROXYTYPE))
+  {
+    dispatcher.defaultNearCallback(collisionPair, dispatcher, dispatchInfo);
+    return;
+  }
+
   btCollisionObject* co0 = static_cast<btCollisionObject*>(p0->m_clientObject);
   btCollisionObject* co1 = static_cast<btCollisionObject*>(p1->m_clientObject);
 

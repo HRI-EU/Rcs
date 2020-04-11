@@ -324,26 +324,27 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
   RcsShape** sPtr = &bdy->shape[0];
   btCompoundShape* cSh = new btCompoundShape();
   const char* materialName = NULL;
+  bool hasSoftShape = false;
+
   while (*sPtr)
   {
 
-    if (((*sPtr)->computeType & RCSSHAPE_COMPUTE_PHYSICS) == 0)
-    {
-      RLOG(0, "Skipping shape %s", RcsShape_name((*sPtr)->type));
-      sPtr++;
-      continue;
-    }
-
     if (((*sPtr)->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) != 0)
     {
-      RLOG(0, "Skipping soft shape %s", RcsShape_name((*sPtr)->type));
+      RLOG(5, "Skipping soft shape %s", RcsShape_name((*sPtr)->type));
+      hasSoftShape = true;
       sPtr++;
       continue;
     }
 
-    
+    if (((*sPtr)->computeType & RCSSHAPE_COMPUTE_PHYSICS) == 0)
+    {
+      RLOG(5, "Skipping shape %s", RcsShape_name((*sPtr)->type));
+      sPtr++;
+      continue;
+    }
 
-    RLOG(0, "Creating shape %s", RcsShape_name((*sPtr)->type));
+    RLOG(5, "Creating shape %s", RcsShape_name((*sPtr)->type));
 
     btTransform relTrans;
     btCollisionShape* shape = createShape(*sPtr, relTrans, bdy,
@@ -373,7 +374,11 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
 
   if (cSh->getNumChildShapes() == 0)
   {
-    RLOG(1, "Body %s: Compound shape has 0 bodies", bdy->name);
+    if (!hasSoftShape)
+    {
+      RLOG(1, "Body %s: Compound shape has 0 bodies", bdy->name);
+    }
+
     delete cSh;
     return NULL;
   }
@@ -496,7 +501,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
     btBody->setAngularFactor(angFac);
   }
 
-  RLOG(0, "Successfully created BulletRigidBody for \"%s\"",
+  RLOG(5, "Successfully created BulletRigidBody for \"%s\"",
        btBody->getBodyName());
 
   return btBody;

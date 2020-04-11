@@ -50,6 +50,7 @@ namespace Rcs
 class BulletRigidBody : public btRigidBody
 {
   friend class BulletSimulation;
+  friend class BulletSoftSimulation;
 
 public:
   void getBodyTransform(HTr* A_BI) const;

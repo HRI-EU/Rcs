@@ -55,23 +55,23 @@
 static const char className[] = "SoftBullet";
 static Rcs::PhysicsFactoryRegistrar<Rcs::BulletSoftSimulation> physics(className);
 
-static inline btSoftRigidDynamicsWorld* softCast(btDynamicsWorld* world)
-{
-  btSoftRigidDynamicsWorld* sw = dynamic_cast<btSoftRigidDynamicsWorld*>(world);
-  RCHECK(sw);
-  return sw;
-}
+//static inline btSoftRigidDynamicsWorld* softCast(btDynamicsWorld* world)
+//{
+//  btSoftRigidDynamicsWorld* sw = dynamic_cast<btSoftRigidDynamicsWorld*>(world);
+//  RCHECK(sw);
+//  return softWorld;
+//}
 
 namespace Rcs
 {
 
 BulletSoftSimulation::BulletSoftSimulation() :
-  BulletSimulation(), softBodyWorldInfo(NULL)
+  BulletSimulation(), softBodyWorldInfo(NULL), softWorld(NULL)
 {
 }
 
 BulletSoftSimulation::BulletSoftSimulation(const BulletSoftSimulation& copyFromMe):
-  BulletSimulation(copyFromMe), softBodyWorldInfo(NULL)
+  BulletSimulation(copyFromMe), softBodyWorldInfo(NULL), softWorld(NULL)
 {
   RFATAL("Can't copy soft bodies yet");
 }
@@ -79,7 +79,7 @@ BulletSoftSimulation::BulletSoftSimulation(const BulletSoftSimulation& copyFromM
 BulletSoftSimulation::BulletSoftSimulation(const BulletSoftSimulation& copyFromMe,
                                            const RcsGraph* newGraph):
 
-  BulletSimulation(copyFromMe, newGraph), softBodyWorldInfo(NULL)
+  BulletSimulation(copyFromMe, newGraph), softBodyWorldInfo(NULL), softWorld(NULL)
 {
   RFATAL("Can't copy soft bodies yet");
 }
@@ -105,7 +105,7 @@ bool BulletSoftSimulation::initialize(const RcsGraph* g,
 
 void BulletSoftSimulation::updateSoftMeshes()
 {
-  btSoftRigidDynamicsWorld* softWorld = softCast(this->dynamicsWorld);
+  //btSoftRigidDynamicsWorld* softWorld = softCast(this->dynamicsWorld);
 
   btSoftBodyArray& arr = softWorld->getSoftBodyArray();
 
@@ -126,106 +126,55 @@ void BulletSoftSimulation::updateSoftMeshes()
     dstMesh->nFaces = sbi->m_faces.size();
 
     RCHECK(RcsMesh_check(dstMesh));
-    
 
-    for (i=0; i<sbi->m_faces.size(); ++i)
+    // Transformation from world into shape's frame
+    HTr A_CI;
+    HTr_transform(&A_CI, rcsSoftBdy->A_BI, &softShape->A_CB);
+
+    for (int j=0; j<sbi->m_faces.size(); ++j)
     {
-      const btSoftBody::Face& f = sbi->m_faces[i];
+      const btSoftBody::Face& f = sbi->m_faces[j];
       const btScalar  scl=(btScalar)0.9;
-      const btVector3 x[]= {f.m_n[0]->m_x,f.m_n[1]->m_x,f.m_n[2]->m_x};
+      const btVector3 x[]= {f.m_n[0]->m_x, f.m_n[1]->m_x, f.m_n[2]->m_x};
+
+      RCHECK_MSG(Math_isFinite(f.m_n[0]->m_x.x()), "f.m_n[0]->m_x.x()");
+
+
+      RCHECK_MSG(Math_isFinite(x[0].x()), "x[0].x()");
+
+
+
       const btVector3 c=(x[0]+x[1]+x[2])/3.0;
 
-      const int i3 = 3*i;
-      dstMesh->faces[i3+0] = i3+0;
-      dstMesh->faces[i3+1] = i3+1;
-      dstMesh->faces[i3+2] = i3+2;
+      const int j3 = 3*j;
+      dstMesh->faces[j3+0] = j3+0;
+      dstMesh->faces[j3+1] = j3+1;
+      dstMesh->faces[j3+2] = j3+2;
 
       btVector3 v0 = (x[0]-c)*scl+c;
       btVector3 v1 = (x[1]-c)*scl+c;
       btVector3 v2 = (x[2]-c)*scl+c;
 
-      double* vtx0 = &dstMesh->vertices[3*(i3)];
-      double* vtx1 = &dstMesh->vertices[3*(i3+1)];
-      double* vtx2 = &dstMesh->vertices[3*(i3+2)];
+      double* vtx0 = &dstMesh->vertices[3*(j3)];
+      double* vtx1 = &dstMesh->vertices[3*(j3+1)];
+      double* vtx2 = &dstMesh->vertices[3*(j3+2)];
 
       Vec3d_set(vtx0, v0[0], v0[1], v0[2]);
       Vec3d_set(vtx1, v1[0], v1[1], v1[2]);
       Vec3d_set(vtx2, v2[0], v2[1], v2[2]);
 
-      Vec3d_invTransformSelf(vtx0, rcsSoftBdy->A_BI);
-      Vec3d_invTransformSelf(vtx1, rcsSoftBdy->A_BI);
-      Vec3d_invTransformSelf(vtx2, rcsSoftBdy->A_BI);
+      RCHECK_MSG(Vec3d_isFinite(vtx0), "%s", rcsSoftBdy->name);
+      RCHECK_MSG(Vec3d_isFinite(vtx1), "%s", rcsSoftBdy->name);
+      RCHECK_MSG(Vec3d_isFinite(vtx2), "%s", rcsSoftBdy->name);
+
+      Vec3d_invTransformSelf(vtx0, &A_CI);
+      Vec3d_invTransformSelf(vtx1, &A_CI);
+      Vec3d_invTransformSelf(vtx2, &A_CI);
     }
 
-    // if (fabs(time() - 1.0)<1.0e-5)
-
-    REXEC(1)
-      {
-    // RcsMesh_toFile(dstMesh, "deformed.stl");
-    RLOG(0, "nFaces=%d nVertices=%d", dstMesh->nFaces, dstMesh->nVertices);
-    RcsMesh_print(dstMesh);
-      }
   }
 
-
 }
-
-// void BulletSoftSimulation::updateSoftMeshes()
-// {
-//   btSoftRigidDynamicsWorld* softWorld = softCast(this->dynamicsWorld);
-
-//   btSoftBodyArray& arr = softWorld->getSoftBodyArray();
-
-//   for (int i=0; i<arr.size(); ++i)
-//   {
-//     btSoftBody* sbi = arr[i];
-//     RcsBody* rcsSoftBdy = (RcsBody*) sbi->getUserPointer();
-//     RcsShape* softShape = rcsSoftBdy->shape[0];
-//     RCHECK(softShape->type==RCSSHAPE_MESH);
-//     RcsMeshData* dstMesh = (RcsMeshData*) softShape->userData;
-
-//     const size_t nValues = 3*sbi->m_faces.size();
-//     dstMesh->vertices = (double*) realloc(dstMesh->vertices,
-//                                           3*nValues*sizeof(double));
-//     dstMesh->faces = (unsigned int*) realloc(dstMesh->faces,
-//                                              nValues*sizeof(unsigned int));
-
-//     for (i=0; i<sbi->m_faces.size(); ++i)
-//     {
-//       const btSoftBody::Face& f = sbi->m_faces[i];
-//       const btScalar  scl=(btScalar)0.9;
-//       const btVector3 x[]= {f.m_n[0]->m_x,f.m_n[1]->m_x,f.m_n[2]->m_x};
-//       const btVector3 c=(x[0]+x[1]+x[2])/3.0;
-
-//       const int i3 = 3*i;
-//       dstMesh->faces[i3+0] = i3+0;
-//       dstMesh->faces[i3+1] = i3+1;
-//       dstMesh->faces[i3+2] = i3+2;
-
-//       btVector3 v0 = (x[0]-c)*scl+c;
-//       btVector3 v1 = (x[1]-c)*scl+c;
-//       btVector3 v2 = (x[2]-c)*scl+c;
-
-//       double* vtx0 = &dstMesh->vertices[3*(i3)];
-//       double* vtx1 = &dstMesh->vertices[3*(i3+1)];
-//       double* vtx2 = &dstMesh->vertices[3*(i3+2)];
-
-//       Vec3d_set(vtx0, v0[0], v0[1], v0[2]);
-//       Vec3d_set(vtx1, v1[0], v1[1], v1[2]);
-//       Vec3d_set(vtx2, v2[0], v2[1], v2[2]);
-
-//       Vec3d_invTransformSelf(vtx0, rcsSoftBdy->A_BI);
-//       Vec3d_invTransformSelf(vtx1, rcsSoftBdy->A_BI);
-//       Vec3d_invTransformSelf(vtx2, rcsSoftBdy->A_BI);
-//     }
-
-//     // if (fabs(time() - 1.0)<1.0e-5)
-//     // RcsMesh_toFile(dstMesh, "deformed.stl");
-//     // RcsMesh_print(dstMesh);
-//   }
-
-
-// }
 
 void BulletSoftSimulation::createWorld(xmlNodePtr bulletParams)
 {
@@ -256,21 +205,23 @@ void BulletSoftSimulation::createWorld(xmlNodePtr bulletParams)
     RLOG(5, "Using sequential impulse solver");
   }
 
-  this->dynamicsWorld = new btSoftRigidDynamicsWorld(dispatcher, broadPhase,
-                                                     solver,
-                                                     collisionConfiguration);
-  dynamicsWorld->setGravity(btVector3(0.0, 0.0, -RCS_GRAVITY));
+  this->softWorld = new btSoftRigidDynamicsWorld(dispatcher, broadPhase,
+                                                 solver,
+                                                 collisionConfiguration, NULL);
+  this->dynamicsWorld = softWorld;
+
+  softWorld->setGravity(btVector3(0.0, 0.0, -RCS_GRAVITY));
   this->softBodyWorldInfo = new btSoftBodyWorldInfo();
   this->softBodyWorldInfo->m_broadphase = broadPhase;
   this->softBodyWorldInfo->m_dispatcher = dispatcher;
-  this->softBodyWorldInfo->m_gravity = dynamicsWorld->getGravity();
+  this->softBodyWorldInfo->m_gravity = softWorld->getGravity();
   this->softBodyWorldInfo->m_sparsesdf.Initialize();
 
-  btDispatcherInfo& di = dynamicsWorld->getDispatchInfo();
+  btDispatcherInfo& di = softWorld->getDispatchInfo();
   di.m_useConvexConservativeDistanceUtil = true;
   di.m_convexConservativeDistanceThreshold = 0.01f;
 
-  btContactSolverInfo& si = dynamicsWorld->getSolverInfo();
+  btContactSolverInfo& si = softWorld->getSolverInfo();
   si.m_numIterations = 200;//20;
   // ERP: 0: no joint error correction (Recommended: 0.1-0.8, default 0.2)
   si.m_erp = 0.2;
@@ -288,8 +239,6 @@ void BulletSoftSimulation::createSoftBodies()
 {
   convertShapesToMesh();
 
-  btSoftRigidDynamicsWorld* softWorld = softCast(this->dynamicsWorld);
-
   RCSGRAPH_TRAVERSE_BODIES(getGraph())
   {
     RCSBODY_TRAVERSE_SHAPES(BODY)
@@ -299,7 +248,7 @@ void BulletSoftSimulation::createSoftBodies()
         continue;
       }
 
-      RLOG(0, "Creating soft body for %s", BODY->name);
+      RLOG(5, "Creating soft body for %s", BODY->name);
       RcsMeshData* softMesh = (RcsMeshData*)SHAPE->userData;
       RCHECK_MSG(softMesh, "Could not create mesh from file %s",
                  SHAPE->meshFile ? SHAPE->meshFile : NULL);
@@ -322,9 +271,15 @@ void BulletSoftSimulation::createSoftBodies()
                                                      softMesh->nFaces);
 
       // For all parameters, see btSoftBody.h (struct Config)
-      softBdy->m_cfg.kDF = 0.5;
-      softBdy->m_cfg.kMT = 0.05;// was 0.05
+#if 1
+      softBdy->m_cfg.kDF = 0.9;
+      softBdy->m_cfg.kDP = 0.01;// damping
+      softBdy->m_cfg.kMT = 0.5;// was 0.05
       softBdy->m_cfg.piterations = 25;
+      //softBdy->m_cfg.viterations = 25;
+      //softBdy->m_cfg.diterations = 25;
+      softBdy->m_cfg.kVCF = 0.1;
+#endif
 
       // softBdy->m_cfg.kSRHR_CL = 1.0;
       // softBdy->m_cfg.kCHR = 1.0;
@@ -333,14 +288,16 @@ void BulletSoftSimulation::createSoftBodies()
 
       softBdy->randomizeConstraints();
       softBdy->setTotalMass(BODY->m, true);
-      softBdy->setPose(false, true);
-      softBdy->getCollisionShape()->setMargin(0.01);
+      //softBdy->setPose(false, true);
+      softBdy->setPose(true, true);
+      softBdy->getCollisionShape()->setMargin(0.0);
       softBdy->setUserPointer((void*) BODY);
 
       softWorld->addSoftBody(softBdy);
     }
   }
 
+  RLOG(5, "Done creating soft bodies");
 }
 
 void BulletSoftSimulation::convertShapesToMesh()
@@ -362,26 +319,21 @@ void BulletSoftSimulation::convertShapesToMesh()
       RcsMeshData* shapeMesh = RcsShape_createMesh(SHAPE);
 
       if (shapeMesh)
-        {
-          SHAPE->userData = (void*) shapeMesh;
-          SHAPE->type = RCSSHAPE_MESH;
-          SHAPE->computeType = RCSSHAPE_COMPUTE_SOFTPHYSICS;
-          SHAPE->meshFile = String_clone(RcsShape_name(SHAPE->type));
-          RLOG(0, "Successfully converted shape %s of body %s",
-               RcsShape_name(SHAPE->type), BODY->name);
-          Math_printBinaryVector(SHAPE->computeType);
-          // RcsMesh_print(shapeMesh);
-        }
+      {
+        SHAPE->userData = (void*) shapeMesh;
+        SHAPE->type = RCSSHAPE_MESH;
+        SHAPE->computeType = RCSSHAPE_COMPUTE_SOFTPHYSICS;
+        SHAPE->meshFile = String_clone(RcsShape_name(SHAPE->type));
+      }
       else
-        {
-          RLOG(0, "Failed to convert shape %s of body %s",
-               RcsShape_name(SHAPE->type), BODY->name);
-        }
+      {
+        RLOG(0, "Failed to convert shape %s of body %s",
+             RcsShape_name(SHAPE->type), BODY->name);
+      }
 
-      
     }   // RCSBODY_TRAVERSE_SHAPES
 
   }   // RCSGRAPH_TRAVERSE_BODIES
 }
 
-}  // namespace Rcs 
+}  // namespace Rcs

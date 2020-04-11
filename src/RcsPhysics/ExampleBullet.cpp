@@ -85,7 +85,7 @@ void quit(int /*sig*/)
 static void test_softBody(int argc, char** argv)
 {
   double dt = 0.005;
-  char xmlFileName[128] = "gSoftBody.xml";
+  char xmlFileName[128] = "gSoftPhysics.xml";
   char directory[128] = "config/xml/Examples";
   char cfg[128] = "config/physics/physics.xml";
   Rcs::CmdLineParser argP(argc, argv);
@@ -94,7 +94,7 @@ static void test_softBody(int argc, char** argv)
   argP.getArgument("-physics_config", cfg, "Configuration file name for "
                    "physics (default is %s)", cfg);
   argP.getArgument("-dt", &dt, "Simulation time step (default is %f)", dt);
-
+  bool valgrind = argP.hasArgument("-valgrind", "Skip graphics and guis");
   Rcs_addResourcePath(directory);
 
   RcsGraph* graph = RcsGraph_create(xmlFileName);
@@ -103,86 +103,101 @@ static void test_softBody(int argc, char** argv)
   Rcs::BulletSoftSimulation* sim = new Rcs::BulletSoftSimulation();
   sim->Rcs::PhysicsBase::initialize(graph, cfg);
 
-  Rcs::Viewer* viewer = new Rcs::Viewer();
-
-  Rcs::BulletDebugDrawer* debugDrawer = new Rcs::BulletDebugDrawer();
-  debugDrawer->setDebugMode(btIDebugDraw::DBG_DrawWireframe//  |
-                            // btIDebugDraw::DBG_DrawContactPoints
-                            );
-  viewer->add(debugDrawer);
-  sim->setDebugDrawer(debugDrawer);
-
+  Rcs::Viewer* viewer = NULL;
   std::map<osg::ref_ptr<Rcs::MeshNode>, RcsMeshData*> meshMap;
-  RCSGRAPH_TRAVERSE_BODIES(sim->getGraph())
+
+  if (!valgrind)
   {
-    RCSBODY_TRAVERSE_SHAPES(BODY)
+    viewer = new Rcs::Viewer();
+
+    Rcs::BulletDebugDrawer* debugDrawer = new Rcs::BulletDebugDrawer();
+    debugDrawer->setDebugMode(btIDebugDraw::DBG_DrawWireframe//  |
+                              // btIDebugDraw::DBG_DrawContactPoints
+                             );
+    viewer->add(debugDrawer);
+    sim->setDebugDrawer(debugDrawer);
+
+    RCSGRAPH_TRAVERSE_BODIES(sim->getGraph())
     {
-      if ((SHAPE->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) == 0)
+      RCSBODY_TRAVERSE_SHAPES(BODY)
       {
-        continue;
+        if ((SHAPE->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) == 0)
+        {
+          continue;
+        }
+
+        RcsMeshData* mesh = (RcsMeshData*)SHAPE->userData;
+        RLOG(0, "Found mesh for body %s", BODY->name);
+        if (mesh)
+        {
+          osg::ref_ptr<Rcs::MeshNode> mn;
+          mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
+                                 mesh->faces, mesh->nFaces);
+          //RcsMesh_print(mesh);
+          viewer->add(mn.get());
+          RLOG(0, "Adding to meshMap");
+          meshMap[mn] = mesh;
+        }
       }
-
-      RcsMeshData* mesh = (RcsMeshData*)SHAPE->userData;
-      RCHECK(mesh);
-      osg::ref_ptr<Rcs::MeshNode> mn;
-      mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
-                             mesh->faces, mesh->nFaces);
-      RcsMesh_print(mesh);
-      viewer->add(mn.get());
-      meshMap[mn] = mesh;
     }
-  }
+  }   // (!valgrind)
+
+  RLOG(0, "MeshMap has %zu entries", meshMap.size());
+
   RPAUSE_DL(1);
-  
+
   while (runLoop)
+  {
+    sim->step(dt);
+
+    std::map<osg::ref_ptr<Rcs::MeshNode>, RcsMeshData*>::iterator it;
+    for (it = meshMap.begin(); it != meshMap.end(); it++)
     {
-      sim->step(dt);
-
-      std::map<osg::ref_ptr<Rcs::MeshNode>, RcsMeshData*>::iterator it;
-       for (it = meshMap.begin(); it != meshMap.end(); it++)
-       {
-         osg::ref_ptr<Rcs::MeshNode> mn = it->first;
-         RcsMeshData* mesh = it->second;
-         //RcsMesh_print(mesh);
-         //RcsMesh_toFile(mesh, "second.stl");
-         mn->setMesh(mesh->vertices, mesh->nVertices,
-                             mesh->faces, mesh->nFaces);
-       }
+      osg::ref_ptr<Rcs::MeshNode> mn = it->first;
+      RcsMeshData* mesh = it->second;
+      //RcsMesh_print(mesh);
+      //RcsMesh_toFile(mesh, "second.stl");
+      mn->setMesh(mesh->vertices, mesh->nVertices,
+                  mesh->faces, mesh->nFaces);
+    }
 
 
 
 
-  //     // RPAUSE_MSG("Hit enter to remove all MeshNode instances");
-  //     viewer->removeInternal("MeshNode");
-  //     // viewer->frame();
-  //     // RPAUSE_MSG("Hit enter to add them again");
-  // RCSGRAPH_TRAVERSE_BODIES(sim->getGraph())
-  // {
-  //   RCSBODY_TRAVERSE_SHAPES(BODY)
-  //   {
-  //     if ((SHAPE->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) == 0)
-  //     {
-  //       continue;
-  //     }
+    //     // RPAUSE_MSG("Hit enter to remove all MeshNode instances");
+    //     viewer->removeInternal("MeshNode");
+    //     // viewer->frame();
+    //     // RPAUSE_MSG("Hit enter to add them again");
+    // RCSGRAPH_TRAVERSE_BODIES(sim->getGraph())
+    // {
+    //   RCSBODY_TRAVERSE_SHAPES(BODY)
+    //   {
+    //     if ((SHAPE->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) == 0)
+    //     {
+    //       continue;
+    //     }
 
-  //     RcsMeshData* mesh = (RcsMeshData*)SHAPE->userData;
-  //     RCHECK(mesh);
-  //     //RcsMesh_print(mesh);
-  //     osg::ref_ptr<Rcs::MeshNode> mn;
-  //     mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
-  //                            mesh->faces, mesh->nFaces);
-  //     viewer->addInternal(mn.get());
-  //   }
-  // }
+    //     RcsMeshData* mesh = (RcsMeshData*)SHAPE->userData;
+    //     RCHECK(mesh);
+    //     //RcsMesh_print(mesh);
+    //     osg::ref_ptr<Rcs::MeshNode> mn;
+    //     mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
+    //                            mesh->faces, mesh->nFaces);
+    //     viewer->addInternal(mn.get());
+    //   }
+    // }
 
-      
+
+    if (viewer)
+    {
       viewer->frame();
-      Timer_usleep(1000);
-      RPAUSE_DL(1);
-    }        
+    }
+    Timer_usleep(1000);
+    RPAUSE_DL(5);
+  }
 
 
-  
+
 
   RcsGraph_destroy(graph);
   delete sim;
