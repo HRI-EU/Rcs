@@ -1893,7 +1893,7 @@ bool Rcs::BulletSimulation::removeBody(const char* name)
  ******************************************************************************/
 bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
 {
-  RLOG(1, "Creating bullet body for \"%s\"", body_->name);
+  RLOG(5, "Creating bullet body for \"%s\"", body_->name);
 
   PhysicsConfig config(this->physicsConfigFile);
 
@@ -1904,6 +1904,10 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
 
   BulletRigidBody* btBody = BulletRigidBody::create(body, &config);
   RCHECK(btBody);
+
+  // Continuous collision detection
+  // btBody->setCcdSweptSphereRadius(0.05);
+  // btBody->setCcdMotionThreshold(0.0);
 
   if (btBody != NULL)
   {

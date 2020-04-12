@@ -1,7 +1,6 @@
 <Graph name="touch1" xmlns:xi="http://www.w3.org/2003/XInclude" >
 
 
-<!-- Surface height 0.8m -->
 <Body name="Table_table" transform="0.9 0 0.58 0 0 0" physics="kinematic" color="RUBY_S" >
   <Shape type="FRAME" scale="0.2" />
   <Shape type="BOX" extents="1.2 1.2 0.04" graphics="true" material="low_friction_wood"/>
@@ -12,25 +11,29 @@
 </Body>
 
 
-<!-- <Body name="SSR" rigid_body_joints="0.8 0 0.8 0 0 0" physics="dynamic" mass="0.1" > -->
-<!--   <Shape type="SSR" color="BLUE" extents="0.25 0.25 0.05" transform="0 0 0.025 0 0 0" graphics="true" physics="true" material="object" softPhysics="true"/> -->
-<!-- </Body> -->
+<Body name="SSR" rigid_body_joints="0.8 0 0.8 0 0 0" physics="dynamic" mass="0.1" >
+  <Shape type="SSR" color="BLUE" extents="0.25 0.25 0.05" transform="0 0 0.025 0 0 0" graphics="true" physics="true" material="object" softPhysics="true"/>
+</Body>
 
-<!-- <Body name="Box" rigid_body_joints="0.53 0 0.58 0 0 0" physics="kinematic" > -->
-<!--   <Shape type="BOX" color="RUBY_S" extents="0.06 0.8 0.08" transform="0 0 0.04 0 0 0" graphics="true" material="object" softPhysics="true"/> -->
-<!-- </Body> -->
+<Body name="Box" rigid_body_joints="0.53 0 0.58 0 0 0" physics="kinematic" >
+  <Shape type="BOX" color="RUBY_S" extents="0.06 0.8 0.08" transform="0 0 0.04 0 0 0" graphics="true" material="object" />
+</Body>
 
-<!-- <Body name="Sphere" rigid_body_joints="1.1 0.3 0.8 0 0 0" physics="dynamic" mass="1" > -->
-<!--   <Shape type="SPHERE" color="GREEN" radius="0.1" transform="0 0 0.1 0 0 0" graphics="true" material="object" softPhysics="true"/> -->
-<!-- </Body> -->
+<Body name="Box2" rigid_body_joints="0.53 0 0.88 0 0 0" physics="dynamic" mass="1" >
+  <Shape type="BOX" color="RUBY_S" extents="0.2 0.2 0.2" graphics="true" material="object" softPhysics="true"/>
+</Body>
+
+<Body name="Sphere" rigid_body_joints="1.1 0.3 0.8 0 0 0" physics="dynamic" mass="1" >
+  <Shape type="SPHERE" color="GREEN" radius="0.1" transform="0 0 0.1 0 0 0" graphics="true" material="object" softPhysics="true"/>
+</Body>
 
 <Body name="Cylinder" rigid_body_joints="1.15 -.28 0.8 0 0 0" physics="dynamic" mass="0.1" >
   <Shape type="CYLINDER" color="YELLOW" length="0.2" radius="0.1" transform="0 0 0.1 0 0 0" graphics="true" material="object" softPhysics="true"/>
 </Body>
 
-<!-- <Body name="SSL" rigid_body_joints="0.95 -0.25 0.8 90 0 0" physics="dynamic" mass="0.1" > -->
-<!--   <Shape type="SSL" color="CYAN" length="0.2" radius="0.05" transform="0 0.05 0 0 0 0" graphics="true" material="object" softPhysics="true"/> -->
-<!-- </Body> -->
+<Body name="SSL" rigid_body_joints="0.95 -0.25 0.8 90 0 0" physics="dynamic" mass="0.1" >
+  <Shape type="SSL" color="CYAN" length="0.2" radius="0.05" transform="0 0.05 0 0 0 0" graphics="true" material="object" softPhysics="true"/>
+</Body>
 
 <Body name="Cone" rigid_body_joints="1.17 .05 0.8 0 0 0" physics="dynamic" mass="0.1" >
   <Shape type="CONE" color="MAGENTA" length="0.12" radius="0.1" graphics="true" material="object" softPhysics="true"/>

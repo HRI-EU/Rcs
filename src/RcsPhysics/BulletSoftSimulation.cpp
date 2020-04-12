@@ -55,12 +55,7 @@
 static const char className[] = "SoftBullet";
 static Rcs::PhysicsFactoryRegistrar<Rcs::BulletSoftSimulation> physics(className);
 
-//static inline btSoftRigidDynamicsWorld* softCast(btDynamicsWorld* world)
-//{
-//  btSoftRigidDynamicsWorld* sw = dynamic_cast<btSoftRigidDynamicsWorld*>(world);
-//  RCHECK(sw);
-//  return softWorld;
-//}
+
 
 namespace Rcs
 {
@@ -105,8 +100,6 @@ bool BulletSoftSimulation::initialize(const RcsGraph* g,
 
 void BulletSoftSimulation::updateSoftMeshes()
 {
-  //btSoftRigidDynamicsWorld* softWorld = softCast(this->dynamicsWorld);
-
   btSoftBodyArray& arr = softWorld->getSoftBodyArray();
 
   for (int i=0; i<arr.size(); ++i)
@@ -125,7 +118,6 @@ void BulletSoftSimulation::updateSoftMeshes()
                                              nValues*sizeof(unsigned int));
     dstMesh->nFaces = sbi->m_faces.size();
 
-    RCHECK(RcsMesh_check(dstMesh));
 
     // Transformation from world into shape's frame
     HTr A_CI;
@@ -134,19 +126,11 @@ void BulletSoftSimulation::updateSoftMeshes()
     for (int j=0; j<sbi->m_faces.size(); ++j)
     {
       const btSoftBody::Face& f = sbi->m_faces[j];
-      const btScalar  scl=(btScalar)0.9;
+      const btScalar  scl=(btScalar)0.99;
       const btVector3 x[]= {f.m_n[0]->m_x, f.m_n[1]->m_x, f.m_n[2]->m_x};
-
-      RCHECK_MSG(Math_isFinite(f.m_n[0]->m_x.x()), "f.m_n[0]->m_x.x()");
-
-
-      RCHECK_MSG(Math_isFinite(x[0].x()), "x[0].x()");
-
-
-
       const btVector3 c=(x[0]+x[1]+x[2])/3.0;
-
       const int j3 = 3*j;
+
       dstMesh->faces[j3+0] = j3+0;
       dstMesh->faces[j3+1] = j3+1;
       dstMesh->faces[j3+2] = j3+2;
@@ -253,24 +237,59 @@ void BulletSoftSimulation::createSoftBodies()
       RCHECK_MSG(softMesh, "Could not create mesh from file %s",
                  SHAPE->meshFile ? SHAPE->meshFile : NULL);
 
-      // Here we need to transform all vertices with the body transform.
-      RcsMesh_transform(softMesh, BODY->A_BI->org, BODY->A_BI->rot);
+      // Here we need to transform all vertices with the shape's transform.
+      HTr A_CI;
+      HTr_transform(&A_CI, BODY->A_BI, &SHAPE->A_CB);
+      RcsMesh_transform(softMesh, A_CI.org, A_CI.rot);
+      btSoftBody* softBdy = NULL;
 
-      // We create an array of btScalar, since this can be of type float.
-      // That's incompatible with our double representation.
-      btScalar* btVerts = RNALLOC(3*softMesh->nVertices, btScalar);
-      for (unsigned int i=0; i<3*softMesh->nVertices; ++i)
+      if (STREQ(SHAPE->meshFile, "RCSSHAPE_SSL") ||
+          STREQ(SHAPE->meshFile, "RCSSHAPE_SSR") ||
+          STREQ(SHAPE->meshFile, "RCSSHAPE_BOX") ||
+          STREQ(SHAPE->meshFile, "RCSSHAPE_CYLINDER") ||
+          STREQ(SHAPE->meshFile, "RCSSHAPE_CONE"))
       {
-        btVerts[i] = softMesh->vertices[i];
+        btVector3* hull = new btVector3[softMesh->nVertices];
+        for (unsigned int i=0; i<softMesh->nVertices; ++i)
+        {
+          const double* v = &softMesh->vertices[3*i];
+          hull[i] = btVector3(v[0], v[1], v[2]);
+        }
+
+        softBdy = btSoftBodyHelpers::CreateFromConvexHull(*softBodyWorldInfo,
+                                                          hull,
+                                                          softMesh->nVertices);
+        delete [] hull;
+      }
+      else if (STREQ(SHAPE->meshFile, "RCSSHAPE_SPHERE"))
+      {
+        const int res = 256;
+        const double r = SHAPE->extents[0];
+        btVector3 center(A_CI.org[0], A_CI.org[1], A_CI.org[2]);
+        btVector3 radius(r, r, r);
+        softBdy = btSoftBodyHelpers::CreateEllipsoid(*softBodyWorldInfo,
+                                                     center, radius, res);
+      }
+      else
+      {
+        // We create an array of btScalar, since this can be of type float.
+        // That's incompatible with our double representation.
+        btScalar* btVerts = RNALLOC(3*softMesh->nVertices, btScalar);
+        for (unsigned int i=0; i<3*softMesh->nVertices; ++i)
+        {
+          btVerts[i] = softMesh->vertices[i];
+        }
+
+        softBdy = btSoftBodyHelpers::CreateFromTriMesh(*softBodyWorldInfo,
+                                                       btVerts,
+                                                       (int*)softMesh->faces,
+                                                       softMesh->nFaces);
+        RFREE(btVerts);
       }
 
-      btSoftBody* softBdy;
-      softBdy = btSoftBodyHelpers::CreateFromTriMesh(*softBodyWorldInfo,
-                                                     btVerts,
-                                                     (int*)softMesh->faces,
-                                                     softMesh->nFaces);
-
       // For all parameters, see btSoftBody.h (struct Config)
+      RCHECK_MSG(softBdy, "Failed to create soft body for %s", BODY->name);
+      RCHECK_MSG(BODY->m>0.0, "Soft body %s has zero mass", BODY->name);
 #if 1
       softBdy->m_cfg.kDF = 0.9;
       softBdy->m_cfg.kDP = 0.01;// damping
@@ -321,9 +340,9 @@ void BulletSoftSimulation::convertShapesToMesh()
       if (shapeMesh)
       {
         SHAPE->userData = (void*) shapeMesh;
+        SHAPE->meshFile = String_clone(RcsShape_name(SHAPE->type));
         SHAPE->type = RCSSHAPE_MESH;
         SHAPE->computeType = RCSSHAPE_COMPUTE_SOFTPHYSICS;
-        SHAPE->meshFile = String_clone(RcsShape_name(SHAPE->type));
       }
       else
       {
