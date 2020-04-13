@@ -70,6 +70,7 @@ protected:
   void convertShapesToMesh();
   void updateSoftMeshes();
   void createSoftBodies();
+  int connectSoftToRigidBody(btSoftBody* softBdy, BulletRigidBody* rigidBdy);
   btSoftBodyWorldInfo* softBodyWorldInfo;
   btSoftRigidDynamicsWorld* softWorld;
 };

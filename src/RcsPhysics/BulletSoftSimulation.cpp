@@ -35,6 +35,7 @@
 *******************************************************************************/
 
 #include "BulletSoftSimulation.h"
+#include "BulletRigidBody.h"
 #include "PhysicsFactory.h"
 
 #include <Rcs_typedef.h>
@@ -43,6 +44,7 @@
 #include <Rcs_parser.h>
 #include <Rcs_shape.h>
 #include <Rcs_utils.h>
+#include <Rcs_body.h>
 
 #include <BulletDynamics/MLCPSolvers/btDantzigSolver.h>
 #include <BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h>
@@ -156,7 +158,7 @@ void BulletSoftSimulation::updateSoftMeshes()
       Vec3d_invTransformSelf(vtx2, &A_CI);
     }
 
-  }
+  }   // arr.size()
 
 }
 
@@ -312,6 +314,60 @@ void BulletSoftSimulation::createSoftBodies()
       softBdy->getCollisionShape()->setMargin(0.0);
       softBdy->setUserPointer((void*) BODY);
 
+      // softBdy->m_cfg.collisions = btSoftBody::fCollision::CL_SS +
+      // btSoftBody::fCollision::CL_RS;
+      // softBdy->generateClusters(8);
+
+
+
+
+
+      // Link soft body to parent if it exists and the body physics type is
+      // fixed
+      if (BODY->parent)
+      {
+        RLOG(0, "Body %s has %zu nodes (%zu faces %zu vertices) ",
+             BODY->name, softBdy->m_nodes.size(),
+             softMesh->nFaces, softMesh->nVertices);
+
+        RCHECK(BODY->physicsSim==RCSBODY_PHYSICS_FIXED);
+        std::map<const RcsBody*, Rcs::BulletRigidBody*>::iterator it;
+        it = bdyMap.find(BODY->parent);
+        RCHECK(it!=bdyMap.end());
+        BulletRigidBody* bParent = it->second;
+
+        int anchoredVertices = connectSoftToRigidBody(softBdy, bParent);
+        RLOG(0, "Anchored %d vertices to parent", anchoredVertices);
+      }
+
+      // End link soft body to parent
+
+
+      // Link rigid child bodies to soft parent
+      RcsBody* child = BODY->firstChild;
+
+      while (child)
+      {
+        RCHECK(child->physicsSim==RCSBODY_PHYSICS_FIXED);
+        std::map<const RcsBody*, Rcs::BulletRigidBody*>::iterator it;
+        it = bdyMap.find(child);
+        RCHECK(it!=bdyMap.end());
+        BulletRigidBody* bChild = it->second;
+
+        int anchoredVertices = connectSoftToRigidBody(softBdy, bChild);
+        RLOG(0, "Anchored %d vertices to child %s",
+             anchoredVertices, child->name);
+
+        child = child->next;
+      }
+
+
+
+
+
+
+
+
       softWorld->addSoftBody(softBdy);
     }
   }
@@ -354,5 +410,34 @@ void BulletSoftSimulation::convertShapesToMesh()
 
   }   // RCSGRAPH_TRAVERSE_BODIES
 }
+
+int BulletSoftSimulation::connectSoftToRigidBody(btSoftBody* softBdy,
+                                                 BulletRigidBody* rigidBdy)
+{
+  int anchoredVertices = 0;
+
+  for (int j=0; j<softBdy->m_nodes.size(); ++j)
+  {
+    double vtx[3];
+    vtx[0] = softBdy->m_nodes[j].m_x.x();
+    vtx[1] = softBdy->m_nodes[j].m_x.y();
+    vtx[2] = softBdy->m_nodes[j].m_x.z();
+
+    double dParent = RcsBody_distanceToPoint(rigidBdy->getBodyPtr(), vtx,
+                                             NULL, NULL);
+
+    if (dParent < 0.0)
+    {
+      anchoredVertices++;
+      softBdy->appendAnchor(j, rigidBdy);
+    }
+
+  }
+  RLOG(0, "Anchored %d vertices to parent", anchoredVertices);
+
+  return anchoredVertices;
+}
+
+
 
 }  // namespace Rcs
