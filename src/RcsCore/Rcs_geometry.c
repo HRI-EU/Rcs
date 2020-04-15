@@ -463,8 +463,20 @@ double Math_sqrDistPointConvexPolygon(const double I_pt[3],
     P_cp[0] = P_pt[0];
     P_cp[1] = P_pt[1];
     Vec3d_transform(I_cpPoly, A_PI, P_cp);
-    Vec3d_sub(I_nPoly, I_pt, I_cpPoly);
-    Vec3d_normalizeSelf(I_nPoly);
+    //Vec3d_sub(I_nPoly, I_pt, I_cpPoly);
+    //Vec3d_normalizeSelf(I_nPoly);
+
+    // If the point lies inside the filled rectangle, the normal is
+    // perpendicular to the rectangle. In world coordinates, this is the
+    // z-component of the rotation matrix from I to B.
+    if (P_pt[2]>=0.0)
+    {
+      Vec3d_copy(I_nPoly, A_PI->rot[2]);
+    }
+    else
+    {
+      Vec3d_constMul(I_nPoly, A_PI->rot[2], -1.0);
+    }
   }
 
   // Project the normal back to the "world" coordinates
