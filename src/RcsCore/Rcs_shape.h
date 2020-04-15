@@ -73,6 +73,21 @@ bool RcsShape_setDistanceFunction(unsigned int shapeTypeIdx1,
                                   unsigned int shapeTypeIdx2,
                                   RcsDistanceFunction func);
 
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Returns a function poiter of the distance function that computes
+ *         the shape distance with the corresponding indices.
+ *
+ *  \param[in] shapeTypeIdx1   First shape's index (see RCSSHAPE_TYPE)
+ *  \param[in] shapeTypeIdx2   Second shape's index (see RCSSHAPE_TYPE)
+ *  \return Function pointer to distance function or NULL if it doesn't exist.
+ *          The function also returns NULL if either index is equal or larger
+ *          than RCSSHAPE_SHAPE_MAX. In this case, a warning is issued on
+ *          debug level 4.
+ */
+RcsDistanceFunction RcsShape_getDistanceFunction(unsigned int shapeTypeIdx1,
+                                                 unsigned int shapeTypeIdx2);
+
 /*! \ingroup RcsShapeFunctions
  *  \brief Returns the distance of s1 and s2. The closest points (in world
  *         coordinates) will be copied to I_cp1 and I_cp2. The unit normal

@@ -1210,6 +1210,28 @@ static double RcsShape_closestSphereToSSL(const RcsShape* sphere,
 }
 
 /*******************************************************************************
+ * Computes the distance between two SSL shape primitives.
+ ******************************************************************************/
+static double RcsShape_closestSSLToSSL(const RcsShape* ssl1,
+                                       const RcsShape* ssl2,
+                                       const HTr* A_ssl1I,
+                                       const HTr* A_ssl2I,
+                                       double I_cp1[3],
+                                       double I_cp2[3],
+                                       double I_n[3])
+{
+  return Math_distCapsuleCapsule(A_ssl1I->org,
+                                 A_ssl1I->rot[2],
+                                 ssl1->extents[2],
+                                 ssl1->extents[0],
+                                 A_ssl2I->org,
+                                 A_ssl2I->rot[2],
+                                 ssl2->extents[2],
+                                 ssl2->extents[0],
+                                 I_cp1, I_cp2, I_n);
+}
+
+/*******************************************************************************
  *
  ******************************************************************************/
 static double RcsShape_closestPointToCone(const RcsShape* point,
@@ -1376,6 +1398,65 @@ static double RcsShape_closestBoxToSphere(const RcsShape* box,
 }
 
 /*******************************************************************************
+ * Computes the distance between a point and a SSR.
+ ******************************************************************************/
+static double RcsShape_closestPointToSSR(const RcsShape* pt,
+                                         const RcsShape* ssr,
+                                         const HTr* A_ptI,
+                                         const HTr* A_ssrI,
+                                         double I_cpPt[3],
+                                         double I_cpSSR[3],
+                                         double I_nPtSSR[3])
+{
+  double poly[4][2];
+  const double x = 0.5*ssr->extents[0];
+  const double y = 0.5*ssr->extents[1];
+  const double z = 0.5*ssr->extents[2];
+  poly[0][0] =  x;
+  poly[0][1] =  y;
+  poly[1][0] = -x;
+  poly[1][1] =  y;
+  poly[2][0] = -x;
+  poly[2][1] = -y;
+  poly[3][0] =  x;
+  poly[3][1] = -y;
+
+  double d = Math_sqrDistPointConvexPolygon(A_ptI->org, A_ssrI, poly, 4,
+                                            I_cpSSR, I_nPtSSR);
+  Vec3d_constMulSelf(I_nPtSSR, -1.0);
+
+  // Surface point
+  for (int i = 0; i < 3; i++)
+  {
+    I_cpSSR[i] -= z*I_nPtSSR[i];
+  }
+
+  Vec3d_copy(I_cpPt, A_ptI->org);
+
+  return sqrt(d) - z;
+}
+
+/*******************************************************************************
+ * SSR to Point distance computation.
+ ******************************************************************************/
+static double RcsShape_closestSSRToPoint(const RcsShape* ssr,
+                                         const RcsShape* pt,
+                                         const HTr* A_ssrI,
+                                         const HTr* A_ptI,
+                                         double cpSSR[3],
+                                         double cpPt[3],
+                                         double I_n[3])
+{
+  double dist = RcsShape_closestPointToSSR(pt, ssr, A_ptI, A_ssrI,
+                                           cpPt, cpSSR, I_n);
+
+  // revert the normal, because we are calling the reverse method
+  Vec3d_constMulSelf(I_n, -1.0);
+
+  return dist;
+}
+
+/*******************************************************************************
  * Look-up array for distance functions.
  ******************************************************************************/
 static RcsDistanceFunction
@@ -1393,7 +1474,7 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
   // RCSSHAPE_SSL
   {
     RcsShape_noDistance,                // RCSSHAPE_NONE
-    RcsShape_noDistance,                // RCSSHAPE_SSL
+    RcsShape_closestSSLToSSL,           // RCSSHAPE_SSL
     RcsShape_noDistance,                // RCSSHAPE_SSR
     RcsShape_noDistance,                // RCSSHAPE_MESH
     RcsShape_noDistance,                // RCSSHAPE_BOX
@@ -1422,7 +1503,7 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
     RcsShape_noDistance,                // RCSSHAPE_GPISF
     RcsShape_noDistance,                // RCSSHAPE_TORUS
     RcsShape_noDistance,                // RCSSHAPE_OCTREE
-    RcsShape_noDistance,                // RCSSHAPE_POINT
+    RcsShape_closestSSRToPoint,         // RCSSHAPE_POINT
     RcsShape_noDistance                 // RCSSHAPE_MARKER
   },
 
@@ -1565,7 +1646,7 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
   {
     RcsShape_noDistance,                // RCSSHAPE_NONE
     RcsShape_closestPointToSSL,         // RCSSHAPE_SSL
-    RcsShape_noDistance,                // RCSSHAPE_SSR
+    RcsShape_closestPointToSSR,         // RCSSHAPE_SSR
     RcsShape_noDistance,                // RCSSHAPE_MESH
     RcsShape_closestPointToBox,         // RCSSHAPE_BOX
     RcsShape_closestPointToCylinder,    // RCSSHAPE_CYLINDER
@@ -1589,6 +1670,30 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
   }
 
 };
+
+/*******************************************************************************
+ * Distance function pointer access.
+ ******************************************************************************/
+RcsDistanceFunction RcsShape_getDistanceFunction(unsigned int shapeTypeIdx1,
+                                                 unsigned int shapeTypeIdx2)
+{
+  if ((shapeTypeIdx1>=RCSSHAPE_SHAPE_MAX) ||
+      (shapeTypeIdx2>=RCSSHAPE_SHAPE_MAX))
+  {
+    RLOG(4, "Shape index out of range: %d %d must be less than %d",
+         shapeTypeIdx1, shapeTypeIdx2, RCSSHAPE_SHAPE_MAX);
+    return NULL;
+  }
+
+  RcsDistanceFunction fnc = RcsShapeDistFunc[shapeTypeIdx1][shapeTypeIdx2];
+
+  if (fnc==RcsShape_noDistance)
+  {
+    return NULL;
+  }
+
+  return RcsShapeDistFunc[shapeTypeIdx1][shapeTypeIdx2];
+}
 
 /*******************************************************************************
  * Compute the closest distance via function table lookup.
@@ -1695,7 +1800,8 @@ void RcsShape_fprintDistanceFunctions(FILE* out)
 
   for (int i=0; i<RCSSHAPE_SHAPE_MAX; ++i)
   {
-    if ((i==RCSSHAPE_NONE) || (i==RCSSHAPE_REFFRAME) || (i==RCSSHAPE_GPISF) || (i==RCSSHAPE_MARKER))
+    if ((i==RCSSHAPE_NONE) || (i==RCSSHAPE_REFFRAME) || (i==RCSSHAPE_GPISF) ||
+        (i==RCSSHAPE_MARKER))
     {
       continue;
     }
@@ -1706,7 +1812,8 @@ void RcsShape_fprintDistanceFunctions(FILE* out)
 
   for (int i=0; i<RCSSHAPE_SHAPE_MAX; ++i)
   {
-    if ((i==RCSSHAPE_NONE) || (i==RCSSHAPE_REFFRAME) || (i==RCSSHAPE_GPISF) || (i==RCSSHAPE_MARKER))
+    if ((i==RCSSHAPE_NONE) || (i==RCSSHAPE_REFFRAME) || (i==RCSSHAPE_GPISF) ||
+        (i==RCSSHAPE_MARKER))
     {
       continue;
     }
@@ -1719,7 +1826,8 @@ void RcsShape_fprintDistanceFunctions(FILE* out)
 
     for (int j=0; j<RCSSHAPE_SHAPE_MAX; ++j)
     {
-      if ((j==RCSSHAPE_NONE) || (j==RCSSHAPE_REFFRAME) || (j==RCSSHAPE_GPISF) || (j==RCSSHAPE_MARKER))
+      if ((j==RCSSHAPE_NONE) || (j==RCSSHAPE_REFFRAME) || (j==RCSSHAPE_GPISF)
+          || (j==RCSSHAPE_MARKER))
       {
         continue;
       }
@@ -1733,27 +1841,29 @@ void RcsShape_fprintDistanceFunctions(FILE* out)
 
 
 
+  /*
+  for (int i=0; i<RCSSHAPE_SHAPE_MAX; ++i)
+  {
+   if ((i==RCSSHAPE_NONE) || (i==RCSSHAPE_REFFRAME) || (i==RCSSHAPE_GPISF) ||
+       (i==RCSSHAPE_MARKER))
+   {
+     continue;
+   }
 
-  //for (int i=0; i<RCSSHAPE_SHAPE_MAX; ++i)
-  //{
-  //  if ((i==RCSSHAPE_NONE) || (i==RCSSHAPE_REFFRAME) || (i==RCSSHAPE_GPISF) || (i==RCSSHAPE_MARKER))
-  //  {
-  //    continue;
-  //  }
-
-  //  for (int j=0; j<RCSSHAPE_SHAPE_MAX; ++j)
-  //  {
-  //    if ((j==RCSSHAPE_NONE) || (j==RCSSHAPE_REFFRAME) || (j==RCSSHAPE_GPISF) || (j==RCSSHAPE_MARKER))
-  //    {
-  //      continue;
-  //    }
-  //    unsigned int baseAddr = (unsigned int) RcsShapeDistFunc[0][0];
-  //    unsigned int fcnAddr = (unsigned int) RcsShapeDistFunc[i][j];
-  //    fprintf(out, "%d-%d: %u\n", i, j, fcnAddr-baseAddr);
-  //  }
-  //  fprintf(out, "\n");
-  //}
-
+   for (int j=0; j<RCSSHAPE_SHAPE_MAX; ++j)
+   {
+     if ((j==RCSSHAPE_NONE) || (j==RCSSHAPE_REFFRAME) || (j==RCSSHAPE_GPISF) ||
+         (j==RCSSHAPE_MARKER))
+     {
+       continue;
+     }
+     unsigned int baseAddr = (unsigned int) RcsShapeDistFunc[0][0];
+     unsigned int fcnAddr = (unsigned int) RcsShapeDistFunc[i][j];
+     fprintf(out, "%d-%d: %u\n", i, j, fcnAddr-baseAddr);
+   }
+   fprintf(out, "\n");
+  }
+  */
 
 }
 

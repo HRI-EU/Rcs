@@ -2893,8 +2893,12 @@ static bool setWildMagicDistanceFunctions()
   bool success = true;
 
   // SSL
-  success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_SSL,
-                                         RcsShape_closestSSLToSSL) && success;
+  if (RcsShape_getDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_SSL)==NULL)
+  {
+    success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_SSL,
+                                           RcsShape_closestSSLToSSL) && success;
+  }
+
   success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_SSR,
                                          RcsShape_closestSSLToSSR) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_BOX,
@@ -2914,8 +2918,11 @@ static bool setWildMagicDistanceFunctions()
                                          RcsShape_closestSSRToSSR) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_SSR, RCSSHAPE_BOX,
                                          RcsShape_closestSSRToBox) && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_SSR, RCSSHAPE_POINT,
-                                         RcsShape_closestSSRToPoint) && success;
+  if (RcsShape_getDistanceFunction(RCSSHAPE_SSR, RCSSHAPE_POINT)==NULL)
+  {
+    success = RcsShape_setDistanceFunction(RCSSHAPE_SSR, RCSSHAPE_POINT,
+                                           RcsShape_closestSSRToPoint) && success;
+  }
 
   // BOX
   success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_SSL,
@@ -2971,8 +2978,12 @@ static bool setWildMagicDistanceFunctions()
                                          RcsShape_closestTorusToPoint) && success;
 
   // Point
-  success = RcsShape_setDistanceFunction(RCSSHAPE_POINT, RCSSHAPE_SSR,
-                                         RcsShape_closestPointToSSR) && success;
+  if (RcsShape_getDistanceFunction(RCSSHAPE_POINT, RCSSHAPE_SSR)==NULL)
+  {
+    success = RcsShape_setDistanceFunction(RCSSHAPE_POINT, RCSSHAPE_SSR,
+                                           RcsShape_closestPointToSSR) && success;
+  }
+
   success = RcsShape_setDistanceFunction(RCSSHAPE_POINT, RCSSHAPE_CYLINDER,
                                          RcsShape_closestSphereToCylinder)
             && success;
