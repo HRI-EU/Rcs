@@ -93,7 +93,7 @@ static const int CastsShadowTraversalMask = 0x2;
  *        - LBM while right mouse button is pressed will select the mouse point
  *          as the new rotation center of the mouse manipulator
  *        - Key z will toggle the OpenScenegraph StatsHandler information
- *        - Key Z will print the OpenScenegraph StatsHandler information to 
+ *        - Key Z will print the OpenScenegraph StatsHandler information to
  *          the console
  *
  *        With some older grapics cards, some features such as anti aliasing are

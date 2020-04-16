@@ -391,11 +391,11 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   const char* forceSimple = getenv("RCSVIEWER_SIMPLEGRAPHICS");
 
   if (forceSimple)
-    {
-      fancy = false;
-      startupWithShadow = false;
-    }
-  
+  {
+    fancy = false;
+    startupWithShadow = false;
+  }
+
   pthread_mutex_init(&this->mtxEventLoop, NULL);
   this->shadowsEnabled = startupWithShadow;
 
@@ -419,15 +419,15 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   // Root node (instead of a Group we create an Cartoon node for optional
   // cell shading)
   if (fancy)
-    {
-      this->rootnode = new osgFX::Cartoon;
-      dynamic_cast<osgFX::Effect*>(rootnode.get())->setEnabled(false);
-    }
+  {
+    this->rootnode = new osgFX::Cartoon;
+    dynamic_cast<osgFX::Effect*>(rootnode.get())->setEnabled(false);
+  }
   else
-    {
-      this->rootnode = new osg::Group;
-    }
-  
+  {
+    this->rootnode = new osg::Group;
+  }
+
   rootnode->setName("rootnode");
 
   // Light grayish green universe
@@ -477,14 +477,14 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   // This leads to problems with multi-threaded updates (HUD).
 
   if (forceSimple)
-    {
-      viewer->setThreadingModel(osgViewer::Viewer::SingleThreaded);
-    }
+  {
+    viewer->setThreadingModel(osgViewer::Viewer::SingleThreaded);
+  }
   else
-    {
-      viewer->setThreadingModel(osgViewer::Viewer::CullDrawThreadPerContext);
-    }
-  
+  {
+    viewer->setThreadingModel(osgViewer::Viewer::CullDrawThreadPerContext);
+  }
+
   // Create viewer in a window
   if (fancy == false)
   {
@@ -516,7 +516,7 @@ void Viewer::create(bool fancy, bool startupWithShadow)
 
   KeyCatcherBase::registerKey("F9", "Toggle continuous screenshots", "Viewer");
   KeyCatcherBase::registerKey("F8", "Take screenshot(s)", "Viewer");
-  
+
   osg::ref_ptr<osgViewer::ScreenCaptureHandler::WriteToFile> scrw;
   scrw = new osgViewer::ScreenCaptureHandler::WriteToFile("screenshot", "png");
 
@@ -1152,15 +1152,15 @@ void Viewer::setCartoonEnabled(bool enabled)
   osgFX::Effect* cartoon = dynamic_cast<osgFX::Effect*>(rootnode.get());
 
   if (!cartoon)
-    {
-      return;
-    }
+  {
+    return;
+  }
 
   if (enabled == true)
-    {
-      setShadowEnabled(false);
-    }
-  
+  {
+    setShadowEnabled(false);
+  }
+
   cartoon->setEnabled(enabled);
 }
 

@@ -49,6 +49,7 @@
 #include <COSNode.h>
 #include <MeshNode.h>
 #include <TorusNode.h>
+#include <SSRNode.h>
 
 #ifdef USE_OCTOMAP
 #include "OctomapNode.h"
@@ -367,86 +368,112 @@ osg::Switch* BodyNode::addShapes(int mask, bool resizeable)
 
     else if (shape->type == RCSSHAPE_SSR)
     {
-      double r  = shape->extents[2] / 2.0;
-      double lx = shape->extents[0];
-      double ly = shape->extents[1];
-      NLOG(5, "Adding SSR %d of \"%s\" with dimension %f %f %f",
-           shapeCount, getName().c_str(), lx, ly, 2.0 * r);
-
-      // Side 1: Front y-direction
-      osg::Capsule* cSSR1 =
-        new osg::Capsule(osg::Vec3(-lx / 2.0, 0.0, 0.0), r, ly);
-      cSSR1->setRotation(osg::Quat(osg::inDegrees(90.0f),
-                                   osg::Vec3(1.0f, 0.0f, 0.0f)));
-      osg::ShapeDrawable* sdrC1 = new osg::ShapeDrawable(cSSR1, hints.get());
-      if (resizeable)
+      // If the shape is not resizeable, we create a nice mesh, which in
+      // wireframe mode looks a lot better than the capsule composite.
+      if (resizeable==false)
       {
+        RcsMeshData* mesh = RcsMesh_createSSR(shape->extents, 64);
+
+        // Assign vertices
+        osg::ref_ptr<osg::Vec3Array> v = new osg::Vec3Array;
+        for (unsigned int i = 0; i < mesh->nVertices; i++)
+        {
+          const double* vi = &mesh->vertices[3*i];
+          v->push_back(osg::Vec3(vi[0], vi[1], vi[2]));
+        }
+
+        // Assign index array
+        osg::ref_ptr<osg::UIntArray> f = new osg::UIntArray;
+        for (unsigned int i = 0; i < 3 * mesh->nFaces; i++)
+        {
+          f->push_back(mesh->faces[i]);
+        }
+
+        osg::ref_ptr<osg::TriangleMesh> triMesh = new osg::TriangleMesh;
+        triMesh->setDataVariance(osg::Object::DYNAMIC);
+        triMesh->setVertices(v.get());
+        triMesh->setIndices(f.get());
+
+        geode->addDrawable(new osg::ShapeDrawable(triMesh.get()));
+
+        if (shape->color != NULL)
+        {
+          setNodeMaterial(shape->color, geode.get());
+        }
+
+        RcsMesh_destroy(mesh);
+      }
+      // If the shape is resizeable, we create a capsule box composite, 
+      // which we can conveniently resize if needed.
+      else
+      {
+        double r  = shape->extents[2] / 2.0;
+        double lx = shape->extents[0];
+        double ly = shape->extents[1];
+        NLOG(5, "Adding SSR %d of \"%s\" with dimension %f %f %f",
+             shapeCount, getName().c_str(), lx, ly, 2.0 * r);
+
+        // Side 1: Front y-direction
+        osg::Capsule* cSSR1 =
+          new osg::Capsule(osg::Vec3(-lx / 2.0, 0.0, 0.0), r, ly);
+        cSSR1->setRotation(osg::Quat(osg::inDegrees(90.0f),
+                                     osg::Vec3(1.0f, 0.0f, 0.0f)));
+        osg::ShapeDrawable* sdrC1 = new osg::ShapeDrawable(cSSR1, hints.get());
         sdrC1->setUseDisplayList(false);
-      }
-      geode->addDrawable(sdrC1);
+        geode->addDrawable(sdrC1);
 
-      // Side 2: Back y-direction
-      osg::Capsule* cSSR2 =
-        new osg::Capsule(osg::Vec3(lx / 2.0, 0.0, 0.0), r, ly);
-      cSSR2->setRotation(osg::Quat(osg::inDegrees(90.0f),
-                                   osg::Vec3(1.0f, 0.0f, 0.0f)));
-      osg::ShapeDrawable* sdrC2 = new osg::ShapeDrawable(cSSR2, hints.get());
-      if (resizeable)
-      {
+        // Side 2: Back y-direction
+        osg::Capsule* cSSR2 =
+          new osg::Capsule(osg::Vec3(lx / 2.0, 0.0, 0.0), r, ly);
+        cSSR2->setRotation(osg::Quat(osg::inDegrees(90.0f),
+                                     osg::Vec3(1.0f, 0.0f, 0.0f)));
+        osg::ShapeDrawable* sdrC2 = new osg::ShapeDrawable(cSSR2, hints.get());
         sdrC2->setUseDisplayList(false);
-      }
-      geode->addDrawable(sdrC2);
+        geode->addDrawable(sdrC2);
 
-      // Side 3: Right x-direction
-      osg::Capsule* cSSR3 =
-        new osg::Capsule(osg::Vec3(0.0, ly / 2.0, 0.0), r, lx);
-      cSSR3->setRotation(osg::Quat(osg::inDegrees(90.0f),
-                                   osg::Vec3(0.0f, 1.0f, 0.0f)));
-      osg::ShapeDrawable* sdrC3 = new osg::ShapeDrawable(cSSR3, hints.get());
-      if (resizeable)
-      {
+        // Side 3: Right x-direction
+        osg::Capsule* cSSR3 =
+          new osg::Capsule(osg::Vec3(0.0, ly / 2.0, 0.0), r, lx);
+        cSSR3->setRotation(osg::Quat(osg::inDegrees(90.0f),
+                                     osg::Vec3(0.0f, 1.0f, 0.0f)));
+        osg::ShapeDrawable* sdrC3 = new osg::ShapeDrawable(cSSR3, hints.get());
         sdrC3->setUseDisplayList(false);
-      }
-      geode->addDrawable(sdrC3);
+        geode->addDrawable(sdrC3);
 
-      // Side 4: Left x-direction
-      osg::Capsule* cSSR4 =
-        new osg::Capsule(osg::Vec3(0.0, -ly / 2.0, 0.0), r, lx);
-      cSSR4->setRotation(osg::Quat(osg::inDegrees(90.0f),
-                                   osg::Vec3(0.0f, 1.0f, 0.0f)));
-      osg::ShapeDrawable* sdrC4 = new osg::ShapeDrawable(cSSR4, hints.get());
-      if (resizeable)
-      {
+        // Side 4: Left x-direction
+        osg::Capsule* cSSR4 =
+          new osg::Capsule(osg::Vec3(0.0, -ly / 2.0, 0.0), r, lx);
+        cSSR4->setRotation(osg::Quat(osg::inDegrees(90.0f),
+                                     osg::Vec3(0.0f, 1.0f, 0.0f)));
+        osg::ShapeDrawable* sdrC4 = new osg::ShapeDrawable(cSSR4, hints.get());
         sdrC4->setUseDisplayList(false);
-      }
-      geode->addDrawable(sdrC4);
+        geode->addDrawable(sdrC4);
 
-      // Box part
-      osg::Box* bSSR =
-        new osg::Box(osg::Vec3(0.0, 0.0, 0.0), lx, ly, 2.0 * r);
-      osg::ShapeDrawable* sdrBox = new osg::ShapeDrawable(bSSR, hints.get());
-      if (resizeable)
-      {
+        // Box part
+        osg::Box* bSSR =
+          new osg::Box(osg::Vec3(0.0, 0.0, 0.0), lx, ly, 2.0 * r);
+        osg::ShapeDrawable* sdrBox = new osg::ShapeDrawable(bSSR, hints.get());
         sdrBox->setUseDisplayList(false);
-      }
-      geode->addDrawable(sdrBox);
+        geode->addDrawable(sdrBox);
 
-      if (shape->color != NULL)
-      {
-        setNodeMaterial(shape->color, geode.get());
-      }
+        if (shape->color != NULL)
+        {
+          setNodeMaterial(shape->color, geode.get());
+        }
 
-      // Add the information for dynamic resizing
-      dnmData->addGeometry(cSSR1);
-      dnmData->addGeometry(cSSR2);
-      dnmData->addGeometry(cSSR3);
-      dnmData->addGeometry(cSSR4);
-      dnmData->addGeometry(bSSR);
-      dnmData->addDrawable(sdrC1);
-      dnmData->addDrawable(sdrC2);
-      dnmData->addDrawable(sdrC3);
-      dnmData->addDrawable(sdrC4);
-      dnmData->addDrawable(sdrBox);
+        // Add the information for dynamic resizing
+        dnmData->addGeometry(cSSR1);
+        dnmData->addGeometry(cSSR2);
+        dnmData->addGeometry(cSSR3);
+        dnmData->addGeometry(cSSR4);
+        dnmData->addGeometry(bSSR);
+        dnmData->addDrawable(sdrC1);
+        dnmData->addDrawable(sdrC2);
+        dnmData->addDrawable(sdrC3);
+        dnmData->addDrawable(sdrC4);
+        dnmData->addDrawable(sdrBox);
+      }   // resizeable
+
     }
 
 
@@ -577,7 +604,7 @@ osg::Switch* BodyNode::addShapes(int mask, bool resizeable)
                    getName().c_str(), shape->meshFile, shape->color);
               mn->setMaterial(shape->color);
             }
-            
+
             meshNode = mn;
           }   // (mesh && mesh->nFaces>0)
           // Otherwise, we use the OpenSceneGraph classes

@@ -36,20 +36,75 @@
 
 #include "SSRNode.h"
 
+#include <Rcs_mesh.h>
+
 #include <osg/Geode>
 #include <osg/ShapeDrawable>
 
 
 
-/******************************************************************************
-
-  \brief Constructors.
-
-******************************************************************************/
-
 Rcs::SSRNode::SSRNode(const double center[3], double A_KI[3][3],
                       const double extent[2], const double r,
                       bool resizeable) : NodeBase()
+{
+  init(center, A_KI, extent, r, resizeable);
+}
+
+void Rcs::SSRNode::initMesh(const double center[3], double A_KI[3][3],
+                            const double extent[2], const double r,
+                            bool resizeable)
+{
+  setName("SSRNode");
+
+  // Create the triangle mesh
+  double xyz[3];
+  xyz[0] = extent[0];
+  xyz[1] = extent[1];
+  xyz[2] = 2.0*r;
+  RcsMeshData* mesh = RcsMesh_createSSR(xyz, 32);
+
+
+  // Assign vertices
+  osg::ref_ptr<osg::Vec3Array> v = new osg::Vec3Array;
+  for (unsigned int i = 0; i < mesh->nVertices; i++)
+  {
+    const double* vi = &mesh->vertices[3*i];
+    v->push_back(osg::Vec3(vi[0], vi[1], vi[2]));
+  }
+
+  // Assign index array
+  osg::ref_ptr<osg::UIntArray> f = new osg::UIntArray;
+  for (unsigned int i = 0; i < 3 * mesh->nFaces; i++)
+  {
+    f->push_back(mesh->faces[i]);
+  }
+
+  osg::ref_ptr<osg::TriangleMesh> triMesh = new osg::TriangleMesh;
+  triMesh->setDataVariance(osg::Object::DYNAMIC);
+  triMesh->setVertices(v.get());
+  triMesh->setIndices(f.get());
+
+  osg::ref_ptr<osg::ShapeDrawable> sh = new osg::ShapeDrawable(triMesh.get());
+  osg::ref_ptr<osg::Geode> geode = new osg::Geode();
+  geode->addDrawable(sh.get());
+  this->patPtr()->addChild(geode.get());
+
+  RcsMesh_destroy(mesh);
+
+  if (center != NULL)
+  {
+    setPosition(center);
+  }
+
+  if (A_KI != NULL)
+  {
+    setRotation(A_KI);
+  }
+}
+
+void Rcs::SSRNode::init(const double center[3], double A_KI[3][3],
+                        const double extent[2], const double r,
+                        bool resizeable)
 {
   setName("SSRNode");
   osg::Geode* geode = new osg::Geode();

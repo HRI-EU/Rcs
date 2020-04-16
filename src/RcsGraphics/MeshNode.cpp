@@ -110,7 +110,7 @@ void Rcs::MeshNode::setMesh(const double* vertices, unsigned int numVertices,
 
   osg::ref_ptr<osg::TriangleMesh> mesh = new osg::TriangleMesh;
   mesh->setDataVariance(osg::Object::DYNAMIC);
- 
+
   // Assign vertices
   osg::ref_ptr<osg::Vec3Array> v = new osg::Vec3Array;
   for (unsigned int i = 0; i < numVertices; i++)

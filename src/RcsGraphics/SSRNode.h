@@ -55,6 +55,16 @@ public:
           const double extent[2],
           const double radius,
           bool resizeable=false);
+
+private:
+
+  void init(const double center[3], double A_KI[3][3],
+            const double extent[2], const double r,
+            bool resizeable);
+
+  void initMesh(const double center[3], double A_KI[3][3],
+                const double extent[2], const double r,
+                bool resizeable);
 };
 
 }   // namespace Rcs
