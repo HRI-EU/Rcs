@@ -211,15 +211,9 @@ void RcsBody_computeInertiaTensor(const RcsBody* self, HTr* InertiaTensor);
  *         the object. Vectors cp1 and cp2 hold the closest points of the
  *         respective object in world coordinates. Vector n holds the
  *         normal on body b1. The arguments cp1, cp2 and n may be NULL.
- *         In this case, only the distance is returned. The following
- *         proximity pair computations are supported, also in
- *         reverse order:
- *         - SSL - SSL
- *         - SSL - SSR
- *         - SSR - SSR
- *         - SSL - BOX
- *         - SSR - BOX
- *         - BOX - BOX
+ *         In this case, only the distance is returned. The proximity pair
+ *         computations that are are supported can be seen with the function
+ *         \ref RcsShape_fprintDistanceFunctions(FILE*).
  */
 double RcsBody_distance(const RcsBody* b1, const RcsBody* b2,
                         double cp1[3], double cp2[3], double n12[3]);
@@ -227,10 +221,12 @@ double RcsBody_distance(const RcsBody* b1, const RcsBody* b2,
 /*! \ingroup RcsBodyFunctions
  *  \brief Computes the distance between a body and a 3d point.
  *
- *  \param[in]  body    RcsBody to which distance is to be computed
- *  \param[in]  I_pt    Point in world coordinates
- *  \param[out] I_cpBdy Closest point on the body in world coordinates
- *  \param[out] I_nBdyPt Unit normal vector from body towards point
+ *  \param[in]  body     RcsBody to which distance is to be computed
+ *  \param[in]  I_pt     Point in world coordinates
+ *  \param[out] I_cpBdy  Closest point on the body in world coordinates. If it 
+ *                       is NULL, it will be ignored.
+ *  \param[out] I_nBdyPt Unit normal vector from body towards point. If it is
+ *                       NULL, it will be ignored.
  */
 double RcsBody_distanceToPoint(const RcsBody* body, const double I_pt[3],
                                double I_cpBdy[3], double I_nBdyPt[3]);
@@ -254,7 +250,7 @@ double RcsBody_centerDistance(const RcsBody* b1, const RcsBody* b2,
  *         a relative point wrt. body b1, I_p2 wrt. body 2. Vectors I_p1 and
  *         I_p2 are represented in world coordinates. If they are NULL, the
  *         origin of the respective body is used. The distance gradient
- *         is copied into dDdq.
+ *         is copied into dDdq. It is reshaped to dimensions 1 x RcsGraph::nJ.
  */
 void RcsBody_distanceGradient(const RcsGraph* self, const RcsBody* b1,
                               const RcsBody* b2, bool repelling,

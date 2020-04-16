@@ -121,7 +121,6 @@ void Rcs::TaskDistance::computeJ(MatNd* jacobian) const
   RcsBody_distance(this->refBody, this->ef, cpRef, cpEf, nRE);
   RcsBody_distanceGradient(graph, this->refBody, this->ef, true,
                            cpRef, cpEf, nRE, jacobian);
-  MatNd_reshape(jacobian, 1, graph->nJ); // \todo(MG): Fix in RcsBody_distanceGradient() function
 }
 
 /*******************************************************************************

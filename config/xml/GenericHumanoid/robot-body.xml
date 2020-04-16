@@ -24,7 +24,7 @@
 
   <Body name="Helmet" prev="HeadPan" color="RUBY_S" mass="2" >
     <Joint name="DofTilt" type="RotY" transform="0 0 0.075 0 0 0" range="-30 0 30" speedLimit="100" />
-    <Shape type="SPHERE" radius="0.12" transform="0 0 0 0 0 0" graphics="true" />
+    <Shape type="SPHERE" radius="0.12" transform="0 0 0 0 0 0" graphics="true" distance="true" />
     <Shape type="BOX" extents="0.1 0.16 0.08" transform="0.04 0 0.05 0 0 0" graphics="true" />
     <Shape type="FRAME" scale="0.25" />
   </Body>

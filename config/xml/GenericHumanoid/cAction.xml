@@ -28,6 +28,8 @@
   <Task name="Left Hand omega Y (Body frame)"    controlVariable="Bd"   effector="LeftHandTip" refFrame="LeftHandTip" />
   <Task name="Left Hand omega Z (Body frame)"    controlVariable="Cd"   effector="LeftHandTip" refFrame="LeftHandTip" />
 
+  <Task name="Distance"  controlVariable="Distance" effector="LeftIndex2" refBdy="Helmet" />
+
 
   <CollisionModel  DistanceThreshold="0.025" >
     <CollisionPair body1="RightForeArm"    body2="UpperBody"   />

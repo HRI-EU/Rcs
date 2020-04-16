@@ -1194,7 +1194,7 @@ void RcsBody_distanceGradient(const RcsGraph* self,
     RLOG(4, "Closest points of bodies \"%s\" and \"%s\" coincide - assuming "
          "distance gradient to be zero", b1 ? b1->name : "NULL",
          b2 ? b2->name : "NULL");
-    MatNd_reshapeAndSetZero(dDdq, self->nJ, 1);
+    MatNd_reshapeAndSetZero(dDdq, 1, self->nJ);
     MatNd_destroy(J1);
     MatNd_destroy(J2);
     return;
@@ -1204,6 +1204,7 @@ void RcsBody_distanceGradient(const RcsGraph* self,
   MatNd arr_dp = MatNd_fromPtr(3, 1, dp);
   MatNd_reshape(dDdq, self->nJ, 1);
   MatNd_mul(dDdq, J1, &arr_dp);
+  MatNd_reshape(dDdq, 1, self->nJ);
 
   // Apply individual weighting factors per joint
   RCSGRAPH_TRAVERSE_JOINTS(self)

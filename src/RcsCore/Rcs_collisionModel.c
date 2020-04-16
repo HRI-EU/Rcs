@@ -656,10 +656,7 @@ void RcsCollisionMdl_gradient(const RcsCollisionMdl* self, MatNd* grad)
   MatNd_create2(dDpdq, grad->m, grad->n);
   MatNd* dDcdq = NULL;
   MatNd_create2(dDcdq, grad->m, grad->n);
-
-  /// \todo: Currently the gradient is reshaped here, but it would be better if RcsBody_distance methods use a row-vector
-  // Reshape to column vector (because RcsBody_distance methods assume that)
-  MatNd_reshapeAndSetZero(grad, self->graph->nJ, 1);
+  MatNd_reshapeAndSetZero(grad, 1, self->graph->nJ);
 
   RCSPAIR_TRAVERSE(self->pair)
   {
@@ -731,12 +728,6 @@ void RcsCollisionMdl_gradient(const RcsCollisionMdl* self, MatNd* grad)
     }   // if(self->sMixtureCost > 0.0)
 
   }   // RCSPAIR_TRAVERSE(self->pair)
-
-
-
-  // reshape back to row-vector
-  /// \todo: remove once the above todo is handled correctly and RcsBody_distance methods use row vectors
-  MatNd_reshape(grad, grad->n, grad->m);
 
   MatNd_destroy(dDpdq);
   MatNd_destroy(dDcdq);
