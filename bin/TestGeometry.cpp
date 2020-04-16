@@ -159,8 +159,8 @@ static void testDistance(int argc, char** argv)
     viewer->add(hud.get());
 
     // BodyNodes
-    Rcs::BodyNode* bNd1 = new Rcs::BodyNode(b1);
-    Rcs::BodyNode* bNd2 = new Rcs::BodyNode(b2);
+    Rcs::BodyNode* bNd1 = new Rcs::BodyNode(b1, 1.0, false);
+    Rcs::BodyNode* bNd2 = new Rcs::BodyNode(b2, 1.0, false);
     bNd1->setGhostMode(true, "RED");
     bNd2->setGhostMode(true, "GREEN");
     viewer->add(bNd1);
