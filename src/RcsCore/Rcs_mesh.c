@@ -437,6 +437,12 @@ bool RcsMesh_toFile(const RcsMeshData* mesh, const char* fileName)
     return false;
   }
 
+  if (mesh == NULL)
+  {
+    RLOG(1, "Mesh is NULL");
+    return false;
+  }
+
   if (fileName == NULL)
   {
     RLOG(1, "Mesh file name is NULL");

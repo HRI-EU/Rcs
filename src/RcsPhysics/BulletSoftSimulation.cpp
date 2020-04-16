@@ -300,6 +300,7 @@ void BulletSoftSimulation::createSoftBodies()
       //softBdy->m_cfg.viterations = 25;
       //softBdy->m_cfg.diterations = 25;
       softBdy->m_cfg.kVCF = 0.1;
+      //softBdy->m_cfg.kVC = 0.01;
 #endif
 
       // softBdy->m_cfg.kSRHR_CL = 1.0;
@@ -309,8 +310,22 @@ void BulletSoftSimulation::createSoftBodies()
 
       softBdy->randomizeConstraints();
       softBdy->setTotalMass(BODY->m, true);
-      //softBdy->setPose(false, true);
+      softBdy->generateBendingConstraints(2, softBdy->appendMaterial());
+
+#if 0
       softBdy->setPose(true, true);
+
+      // for (int i=0; i<softBdy->m_links.size(); ++i)
+      //   for (int j=0; j<softBdy->m_nodes.size(); ++j)
+      //   {
+      // softBdy->setMass(j, 0.001);
+      //   }
+
+
+#else
+      softBdy->setPose(true, true);
+#endif
+
       softBdy->getCollisionShape()->setMargin(0.0);
       softBdy->setUserPointer((void*) BODY);
 
@@ -395,6 +410,12 @@ void BulletSoftSimulation::convertShapesToMesh()
 
       if (shapeMesh)
       {
+        RLOG(5, "Mesh %s has %d vertices and %d facecs",
+             BODY->name, shapeMesh->nVertices, shapeMesh->nFaces);
+        int nDuplicates = RcsMesh_compressVertices(shapeMesh, 1.0e-8);
+        RLOG(5, "Reduced mesh by %d duplicates - now has %d vertices and %d facecs",
+             nDuplicates, shapeMesh->nVertices, shapeMesh->nFaces);
+
         SHAPE->userData = (void*) shapeMesh;
         SHAPE->meshFile = String_clone(RcsShape_name(SHAPE->type));
         SHAPE->type = RCSSHAPE_MESH;

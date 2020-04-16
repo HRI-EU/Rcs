@@ -58,7 +58,7 @@
  
 
 <Body name="Bunny" xrigid_body_joints="0.45 0 0 0 0 0" rigid_body_joints=".75 -0.35 0.81 0 0 -90" physics="dynamic" mass="1" >
-  <Shape type="MESH" meshFile="Bunny/bunny.stl" softPhysics="true" />
+  <Shape type="MESH" meshFile="Bunny/bunny-coarse.stl" softPhysics="true" />
 </Body>
 
 <!--
