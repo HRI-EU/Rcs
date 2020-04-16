@@ -197,6 +197,13 @@ void Rcs::COSNode::init(float scale, float lengthX, float lengthY,
 
   // Apply scaling factor
   this->patPtr()->setScale(osg::Vec3(scale, scale, scale));
+
+  // Make node ignore material changes to avoid weird colouring when forced
+  // parent's material.
+  osg::ref_ptr<osg::StateSet> stateset = getOrCreateStateSet();
+  stateset->setMode(GL_LIGHTING,
+                    osg::StateAttribute::PROTECTED |
+                    osg::StateAttribute::OFF);
 }
 
 
