@@ -16,7 +16,7 @@ IF(NOT HEADLESS_BUILD)
   TARGET_LINK_LIBRARIES(Rcs RcsCore RcsGui RcsGraphics RcsPhysics)
 
   ADD_EXECUTABLE(TestGraphics TestGraphics.cpp)
-  TARGET_LINK_LIBRARIES(TestGraphics RcsGraphics)
+  TARGET_LINK_LIBRARIES(TestGraphics RcsGraphics RcsGui)
 
   ADD_EXECUTABLE(TestGui TestGui.cpp)
   TARGET_LINK_LIBRARIES(TestGui RcsGui)

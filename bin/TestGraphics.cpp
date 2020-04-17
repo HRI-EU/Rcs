@@ -35,15 +35,6 @@
 *******************************************************************************/
 
 #include <RcsViewer.h>
-#include <Rcs_cmdLine.h>
-#include <Rcs_macros.h>
-#include <Rcs_timer.h>
-#include <Rcs_resourcePath.h>
-#include <Rcs_math.h>
-#include <Rcs_mesh.h>
-#include <Rcs_parser.h>
-#include <Rcs_typedef.h>
-
 #include <COSNode.h>
 #include <ArrowNode.h>
 #include <VertexArrayNode.h>
@@ -53,6 +44,19 @@
 #include <MeshNode.h>
 #include <TextNode3D.h>
 #include <Rcs_graphicsUtils.h>
+#include <DepthRenderer.h>
+
+#include <MatNdWidget.h>
+#include <Rcs_guiFactory.h>
+
+#include <Rcs_cmdLine.h>
+#include <Rcs_macros.h>
+#include <Rcs_timer.h>
+#include <Rcs_resourcePath.h>
+#include <Rcs_math.h>
+#include <Rcs_mesh.h>
+#include <Rcs_parser.h>
+#include <Rcs_typedef.h>
 
 #include <osgGA/TrackballManipulator>
 #include <osgDB/Registry>
@@ -342,14 +346,17 @@ static bool test_cylinderMesh()
  *****************************************************************************/
 static bool test_cylinderHullMesh()
 {
-  double radius = 0.5;
+  double radiusBottom = 0.5;
+  double radiusTop = 0.25;
   double height = 1.0;
   unsigned int radialSegments = 16;
   unsigned int heightSegments = 4;
   double angleAround = 360.0;
 
   Rcs::CmdLineParser argP;
-  argP.getArgument("-r", &radius, "Radius (default is %f)", radius);
+  argP.getArgument("-r1", &radiusBottom, "Radius bottom (default is %f)",
+                   radiusBottom);
+  argP.getArgument("-r2", &radiusTop, "Radius top (default is %f)", radiusTop);
   argP.getArgument("-h", &height, "Height (default is %f)", height);
   argP.getArgument("-angleAround", &angleAround, "Angle around [deg](default "
                    "is %f)", angleAround);
@@ -365,10 +372,25 @@ static bool test_cylinderHullMesh()
 
   angleAround *= M_PI/180.0;
 
-  RcsMeshData* mesh = RcsMesh_createCylinderHull(radius, 0.5*radius, height,
-                                                 radialSegments, heightSegments,
-                                                 angleAround);
+  RcsMeshData* mesh = RcsMesh_createCylinderHull(radiusBottom, radiusTop,
+                                                 height, radialSegments,
+                                                 heightSegments, angleAround);
+  RMSGS("Mesh has %d vertices and %d facecs", mesh->nVertices, mesh->nFaces);
+  int nDuplicates = RcsMesh_compressVertices(mesh, 1.0e-8);
+  RLOG(0, "Reduced mesh by %d duplicates", nDuplicates);
+  RMSGS("Reduced mesh has %d vertices and %d facecs",
+        mesh->nVertices, mesh->nFaces);
 
+  RcsMeshData* delauny = RcsMesh_fromVertices(mesh->vertices, mesh->nVertices);
+
+  if (delauny)
+    {
+      nDuplicates = RcsMesh_compressVertices(delauny, 1.0e-8);
+      RLOG(0, "Delaunay mesh has now less %d duplicates", nDuplicates);
+      RcsMesh_toFile(delauny, "CylinderHullDelaunay.stl");
+      RcsMesh_destroy(delauny);
+    }
+  
   showMesh(mesh);
   RcsMesh_destroy(mesh);
 
@@ -632,34 +654,57 @@ static void testMeshNode()
   char meshFile[256] = "";
   Rcs::CmdLineParser argP;
   argP.getArgument("-f", meshFile, "Mesh file (default is %s)", meshFile);
+  bool withScaling = argP.hasArgument("-scaling", "Slider for dynamic scaling");
 
   if (argP.hasArgument("-h"))
   {
     return;
   }
 
-  Rcs::MeshNode* mn = NULL;
+  osg::ref_ptr<Rcs::MeshNode> mn;
+  RcsMeshData* mesh = NULL;
 
   if (strlen(meshFile)>0)
   {
+    RMSG("Loading mesh file \"%s\"", meshFile);
     mn = new Rcs::MeshNode(meshFile);
   }
   else
   {
-    RcsMeshData* mesh = RcsMesh_createTorus(0.5, 0.25, 32, 32);
+    mesh = RcsMesh_createTorus(0.5, 0.25, 32, 32);
     mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
                            mesh->faces, mesh->nFaces);
-    RcsMesh_destroy(mesh);
   }
 
 
   Rcs::Viewer* viewer = new Rcs::Viewer();
-  viewer->add(mn);
+  viewer->add(mn.get());
   viewer->add(new Rcs::COSNode());
-  viewer->runInThread();
 
-  RPAUSE();
+  double scale = 1.0;
+  MatNd scaleArr = MatNd_fromPtr(1, 1, &scale);
 
+  if (withScaling)
+  {
+    MatNdWidget::create(&scaleArr, -2.0, 2.0, "Scale");
+  }
+
+  while (runLoop)
+  {
+    if (withScaling)
+    {
+      RcsMeshData* cpyOfMesh = RcsMesh_clone(mesh);
+      RcsMesh_scale(cpyOfMesh, scale);
+      mn->setMesh(cpyOfMesh->vertices, cpyOfMesh->nVertices,
+                  cpyOfMesh->faces, cpyOfMesh->nFaces);
+      RcsMesh_destroy(cpyOfMesh);
+    }
+
+    viewer->frame();
+    Timer_usleep(1000);
+  }
+
+  RcsMesh_destroy(mesh);
   delete viewer;
 }
 
@@ -904,6 +949,59 @@ bool testFindChildrenOfType()
 }
 
 /*******************************************************************************
+ * Depth rendering test
+ ******************************************************************************/
+void testDepthRenderer()
+{
+  char xmlFileName[128] = "gDepth.xml";
+  char directory[128] = "config/xml/Examples";
+  unsigned int width = 32, height = 24;
+
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-f", xmlFileName, "Configuration file name "
+                   "(default is %s)", xmlFileName);
+  argP.getArgument("-dir", directory, "Configuration file directory "
+                   "(default is %s)", directory);
+  argP.getArgument("-width", &width, "Image width (default is %d)", width);
+  argP.getArgument("-height", &height, "Image height (default is %d)", height);
+  Rcs_addResourcePath(directory);
+
+  if (argP.hasArgument("-h"))
+  {
+    return;
+  }
+
+  RcsGraph* graph = RcsGraph_create(xmlFileName);
+  osg::ref_ptr<Rcs::GraphNode> gn = new Rcs::GraphNode(graph);
+  Rcs::Viewer* viewer = new Rcs::Viewer();
+  viewer->setCameraTransform(HTr_identity());
+  viewer->add(gn.get());
+
+  osg::ref_ptr<Rcs::DepthRenderer> zRenderer;
+  zRenderer = new Rcs::DepthRenderer(width, height);
+  zRenderer->setCameraTransform(HTr_identity());
+  zRenderer->addNode(gn.get());
+
+  MatNdWidget::create(graph->q, -10.0, 10.0, "q");
+
+  while (runLoop)
+  {
+    RcsGraph_setState(graph, NULL, NULL);
+    viewer->frame();
+    HTr camTrf;
+    viewer->getCameraTransform(&camTrf);
+    zRenderer->setCameraTransform(&camTrf);
+    zRenderer->frame();
+
+    Timer_waitDT(0.1);
+  }
+
+  delete viewer;
+  RcsGuiFactory_shutdown();
+  RcsGraph_destroy(graph);
+}
+
+/*******************************************************************************
  * Select test modes
  ******************************************************************************/
 int main(int argc, char** argv)
@@ -941,7 +1039,8 @@ int main(int argc, char** argv)
       printf("\t\t12   Test cone mesh\n");
       printf("\t\t13   Test sphere swept rectangle mesh\n");
       printf("\t\t14   Test 3d text\n");
-      printf("\t\t14   Test findChildrenOfType() function\n");
+      printf("\t\t15   Test findChildrenOfType() function\n");
+      printf("\t\t16   Test depth rendering\n");
       break;
 
     case 0:
@@ -1032,6 +1131,12 @@ int main(int argc, char** argv)
     case 15:
     {
       testFindChildrenOfType();
+      break;
+    }
+
+    case 16:
+    {
+      testDepthRenderer();
       break;
     }
 
