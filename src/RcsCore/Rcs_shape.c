@@ -1064,15 +1064,15 @@ static double RcsShape_closestPointToSphere(const RcsShape* pt,
   Vec3d_copy(I_cp1, A_pt->org);
 
   Vec3d_sub(I_n12, A_sp->org, A_pt->org);
-  double sqrDist = Vec3d_normalizeSelf(I_n12);
-  if (sqrDist==0.0)
+  double d = Vec3d_normalizeSelf(I_n12);
+  if (d==0.0)
   {
     Vec3d_setUnitVector(I_n12, 2);
   }
 
   Vec3d_constMulAndAdd(I_cp2, A_sp->org, I_n12, -sp->extents[0]);
 
-  return sqrt(sqrDist)-sp->extents[0];
+  return d-sp->extents[0];
 }
 
 /*******************************************************************************
