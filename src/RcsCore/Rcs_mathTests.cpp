@@ -942,6 +942,26 @@ static void test_dAxisAngleDEuler(double* f, const double* x, void* params)
   Mat3d_dDiffAngleDEuler(f, x);
 }
 
+/******************************************************************************
+
+  \brief Test for cylinder coordinates:
+         f = [radialDist, azimuth, height] as a function of [x y z]
+
+******************************************************************************/
+static void test_Cyl(double* f, const double* x, void* params)
+{
+  double radialDist, azimuth, height;
+  Math_Cart2Cyl(x, &radialDist, &azimuth, &height);
+  Vec3d_set(f, radialDist, azimuth, height);
+}
+
+static void test_dCyl(double* f, const double* x, void* params)
+{
+  double dCyldCart[3][3];
+  Math_dCyldCart(dCyldCart, x);
+  Mat3d_toArray(f, dCyldCart);
+}
+
 /*******************************************************************************
  * Gradient test function.
  ******************************************************************************/
@@ -997,6 +1017,14 @@ bool testDerivatives(int argc, char** argv)
     success = success && Rcs_testGradient(test_AxisAngle,
                                           test_dAxisAngleDEuler,
                                           NULL, x->ele, 3, 1, eps, verbose);
+
+    REXEC(2)
+    {
+      fprintf(stderr, "Cylinder coordinates:    ");
+    }
+    success = success && Rcs_testGradient(test_Cyl,
+                                          test_dCyl,
+                                          NULL, x->ele, 3, 3, eps, verbose);
 
     REXEC(2)
     {

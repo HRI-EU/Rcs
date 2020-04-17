@@ -265,11 +265,49 @@ void Math_finiteDifferenceDerivative(MatNd* dfdq,
                                      const MatNd* q,
                                      double eps);
 
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Converts cylinder to cartesian coordinates:
+ *
+ *   / x \       / r      \
+ *   | y |  = f  | phi    |
+ *   \ z /       \ height /
+ *
+ *  \param[in]  radialDist   Radial distance from cylinder axis
+ *  \param[in]  azimuth      Azimuth angle (between x-axis and p)
+ *  \param[in]  height       Cylinder height coordinate (equals p[2])
+ *  \param[out] p            Cartesian coordinates.
+ */
 void Math_Cyl2Cart(const double radialDist, const double azimuth,
                    const double height, double p[3]);
 
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Converts cartesian to cylinder coordinates:
+ *
+ *   / r      \     / x \
+ *   | phi    | = f | y |
+ *   \ height /     \ z /
+ *
+ *  \param[in] p              Cartesian coordinates. The length of the vector
+ *                            must not be zero. It is not checked.
+ *  \param[out]  radialDist   Radial distance from cylinder axis
+ *  \param[out]  azimuth      Azimuth angle (between x-axis and p)
+ *  \param[out]  height       Cylinder height coordinate (equals p[2])
+ */
 void Math_Cart2Cyl(const double p[3], double* radialDist, double* azimuth,
                    double* height);
+
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Gradient of cylinder coordinates wrt. to cartesian coordinates:
+ *
+ *              / dr/dx        dr/dy         dr/dz     \
+ *  dCyldCart = | dphi/dx      dpi/dy       dpi/dz     |
+ *              \ dheight/dx   dheight/dy   dheight/dz /
+ *
+ *  \param[out] dCyldCart   Gradient as above
+ *  \param[in]  cart        Cartesian coordinates. The length of the vector
+ *                          must not be zero. It is not checked.
+ */
+void Math_dCyldCart(double dCyldCart[3][3], const double cart[3]);
 
 ///@}
 

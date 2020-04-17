@@ -1059,40 +1059,6 @@ double Math_distCapsuleCapsule(const double linePt0[3],
 }
 
 /*******************************************************************************
- *
-******************************************************************************/
-void Math_Cart2Cyl(const double p[3], double* radialDist, double* azimuth,
-                   double* height)
-{
-  *radialDist = sqrt(p[0]*p[0]+p[1]*p[1]);
-  *height = p[2];
-
-  if ((p[0]==0.0) && (p[1]==0.0))
-  {
-    *azimuth = 0.0;
-  }
-  else if (p[0]>=0.0)
-  {
-    *azimuth = asin(p[1]/(*radialDist));
-  }
-  else
-  {
-    *azimuth = M_PI - asin(p[1]/(*radialDist));
-  }
-}
-
-/*******************************************************************************
- *
-******************************************************************************/
-void Math_Cyl2Cart(const double radialDist, const double azimuth,
-                   const double height, double p[3])
-{
-  p[0] = radialDist*cos(azimuth);
-  p[1] = radialDist*sin(azimuth);
-  p[2] = height;
-}
-
-/*******************************************************************************
  * Computes the distance between a point and a spinning polygon. The polygon's
  * transformation is given by A_PI. Vector I_cp holds the closest point of the
  * distance query. It may be NULL.

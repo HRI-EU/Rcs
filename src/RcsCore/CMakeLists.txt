@@ -60,6 +60,7 @@ TaskCOM3D.cpp
 Task.cpp
 TaskCylindrical1D.cpp
 TaskCylindrical3D.cpp
+TaskCylindricalPos3D.cpp
 TaskCylindricalForce1D.cpp
 TaskDifferentialConstraint1D.cpp
 TaskDistance.cpp

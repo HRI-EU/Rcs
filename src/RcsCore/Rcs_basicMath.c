@@ -318,6 +318,46 @@ void Math_srand48(long int seed)
 }
 
 /*******************************************************************************
+ *
+******************************************************************************/
+void Math_Cart2Cyl(const double p[3], double* radialDist, double* azimuth,
+                   double* height)
+{
+  *radialDist = sqrt(p[0]*p[0]+p[1]*p[1]);
+  *height = p[2];
+  *azimuth = atan2(p[1],p[0]);
+}
+
+/*******************************************************************************
+ *
+******************************************************************************/
+void Math_Cyl2Cart(const double radialDist, const double azimuth,
+                   const double height, double p[3])
+{
+  p[0] = radialDist*cos(azimuth);
+  p[1] = radialDist*sin(azimuth);
+  p[2] = height;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Math_dCyldCart(double dCyldCart[3][3], const double cart[3])
+{
+  const double r = sqrt(cart[0]*cart[0]+cart[1]*cart[1]);
+  const double r2 = r*r;
+  dCyldCart[0][0] =  cart[0]/r;
+  dCyldCart[0][1] =  cart[1]/r;
+  dCyldCart[0][2] =  0.0;
+  dCyldCart[1][0] = -cart[1]/r2;
+  dCyldCart[1][1] =  cart[0]/r2;
+  dCyldCart[1][2] =  0.0;
+  dCyldCart[2][0] =  0.0;
+  dCyldCart[2][1] =  0.0;
+  dCyldCart[2][2] =  1.0;
+}
+
+/*******************************************************************************
  * See header
  ******************************************************************************/
 double Math_interpolateLinear(double x, const double* data, unsigned int n)
