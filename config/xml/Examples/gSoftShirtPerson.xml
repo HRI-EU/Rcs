@@ -79,13 +79,13 @@
     <Shape type="SPHERE" radius="0.04" distance="false" physics="true" graphics="true" color="#f44664ff" />
   </Body>
 
-  <Body name="Neck" prev="Chest4" mass="5" >
+  <Body name="Neck" prev="Chest4" mass="5" physics="kinematic" >
     <Joint name="Neck_jnt_Yrotation" range="-180 0 180" weightCA="0" type="RotY" transform="0 0.113766 0 0 0 0" torqueLimit="0" speedLimit="0" />
     <Joint name="Neck_jnt_Xrotation" range="-180 0 180" weightCA="0" type="RotX" torqueLimit="0" speedLimit="0" />
     <Joint name="Neck_jnt_Zrotation" range="-180 0 180" weightCA="0" type="RotZ" torqueLimit="0" speedLimit="0" />
     <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.1" />
-    <Shape type="BOX" extents="0.04 0.04 0.081992" distance="false" physics="false" graphics="true" transform="0 0.051245 0.000039 -89.956954 0 -90" color="#93356dff" />
-    <Shape type="SPHERE" radius="0.04" distance="false" physics="false" graphics="true" color="#93356dff" />
+    <Shape type="BOX" extents="0.04 0.04 0.081992" distance="false" physics="true" graphics="true" transform="0 0.051245 0.000039 -89.956954 0 -90" color="#93356dff" />
+    <Shape type="SPHERE" radius="0.04" distance="false" physics="true" graphics="true" color="#93356dff" />
   </Body>
 
   <Body name="Head" prev="Neck" mass="7" >
