@@ -1,15 +1,16 @@
-<Graph name="touch1" xmlns:xi="http://www.w3.org/2003/XInclude" >
+<Graph resourcePath="${SIT}/Data/RobotMeshes/1.0/data">
 
+
+<Body name="Ground Plane" physics="kinematic" >
+  <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0" 
+         color="PEWTER" graphics="true" physics="true" />
+  <Shape type="FRAME" scale="1" />
+</Body>
 
 <Body name="Table_table" transform="0.9 0 0.58 0 0 0" physics="kinematic" color="RUBY_S" >
   <Shape type="FRAME" scale="0.2" />
   <Shape type="BOX" extents="1.2 1.2 0.04" graphics="true" material="low_friction_wood"/>
-  <Shape type="CYLINDER" length="0.72" radius="0.04" transform=" 0.36  0.45 -0.38 0 0 0" graphics="true" material="wood"/>
-  <Shape type="CYLINDER" length="0.72" radius="0.04" transform="-0.36  0.45 -0.38 0 0 0" graphics="true" material="wood"/>
-  <Shape type="CYLINDER" length="0.72" radius="0.04" transform=" 0.36 -0.45 -0.38 0 0 0" graphics="true" material="wood"/>
-  <Shape type="CYLINDER" length="0.72" radius="0.04" transform="-0.36 -0.45 -0.38 0 0 0" graphics="true" material="wood"/>
 </Body>
-
 
 <Body name="SSR" rigid_body_joints="0.8 0 0.8 0 0 0" physics="dynamic" mass="0.1" >
   <Shape type="SSR" color="BLUE" extents="0.25 0.25 0.05" transform="0 0 0.025 0 0 0" graphics="true" physics="true" material="object" softPhysics="true"/>

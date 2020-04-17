@@ -767,6 +767,7 @@ int main(int argc, char** argv)
               RcsGraph_fprint(stderr, graph);
               RLOGS(0, "m=%f   r_com=%f %f %f",
                     mass, r_com[0], r_com[1], r_com[2]);
+              RcsGraph_fprintModelState(stdout, graph, graph->q);
             }
           }
           else if (kc->getAndResetKey('b'))

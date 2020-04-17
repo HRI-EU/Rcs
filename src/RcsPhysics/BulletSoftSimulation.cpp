@@ -59,6 +59,62 @@ static Rcs::PhysicsFactoryRegistrar<Rcs::BulletSoftSimulation> physics(className
 
 
 
+static void setSoftMaterial(btSoftBody* softBdy, int materialId)
+{
+  switch (materialId)
+    {
+    case 0:   // "Spongy" solid objects
+      {
+        softBdy->m_cfg.kDF = 0.9;
+        softBdy->m_cfg.kDP = 0.01;// damping
+        softBdy->m_cfg.kMT = 0.5;// Pose matching coefficient [0,1]  was 0.05
+        softBdy->m_cfg.piterations = 25;
+        //softBdy->m_cfg.viterations = 25;
+        //softBdy->m_cfg.diterations = 25;
+        softBdy->m_cfg.kVCF = 0.1;
+        //softBdy->m_cfg.kVC = 0.01;
+        // softBdy->m_cfg.kSRHR_CL = 1.0;
+        // softBdy->m_cfg.kCHR = 1.0;
+        // softBdy->m_cfg.kKHR = 1.0;
+        // softBdy->m_cfg.kSHR = 1.0;
+
+        //      softBdy->generateBendingConstraints(2, softBdy->appendMaterial());
+        softBdy->setPose(true, true);
+      }
+      break;
+
+    case 1:
+      {
+        softBdy->m_cfg.kDF = 0.9; // dynamic friction
+        softBdy->m_cfg.kDP = 0.01;// damping
+        softBdy->m_cfg.kMT = 0.00;// Pose matching coefficient [0,1]  was 0.05
+        softBdy->m_cfg.kVCF = 0.1;// Velocities correction factor (Baumgarte)
+        softBdy->m_cfg.kVC = 0.0;// Volume conversation coefficient [0,+inf]
+        softBdy->m_cfg.piterations = 250;
+        softBdy->m_cfg.citerations = 10;
+        softBdy->m_cfg.diterations = 10;
+
+        softBdy->m_cfg.kCHR = 1.0;   // Rigid contacts hardness [0,1]
+        softBdy->m_cfg.kKHR = 1.0;   // Kinetic contacts hardness [0,1]
+        softBdy->m_cfg.kSHR = 1.0;   // Soft contacts hardness [0,1]
+
+
+        //softBdy->m_cfg.collisions = btSoftBody::fCollision::SDF_RS;// + btSoftBody::fCollision::SDF_RDF;
+          // btSoftBody::fCollision::CL_SS +
+          // btSoftBody::fCollision::CL_RS;
+      
+      softBdy->m_cfg.collisions = btSoftBody::fCollision::CL_SS +
+      btSoftBody::fCollision::CL_RS;
+      softBdy->generateClusters(1200);
+      }
+      break;
+
+    default:
+      break;
+    }
+  
+}
+
 namespace Rcs
 {
 
@@ -292,43 +348,22 @@ void BulletSoftSimulation::createSoftBodies()
       // For all parameters, see btSoftBody.h (struct Config)
       RCHECK_MSG(softBdy, "Failed to create soft body for %s", BODY->name);
       RCHECK_MSG(BODY->m>0.0, "Soft body %s has zero mass", BODY->name);
-#if 1
-      softBdy->m_cfg.kDF = 0.9;
-      softBdy->m_cfg.kDP = 0.01;// damping
-      softBdy->m_cfg.kMT = 0.5;// was 0.05
-      softBdy->m_cfg.piterations = 25;
-      //softBdy->m_cfg.viterations = 25;
-      //softBdy->m_cfg.diterations = 25;
-      softBdy->m_cfg.kVCF = 0.1;
-      //softBdy->m_cfg.kVC = 0.01;
-#endif
 
-      // softBdy->m_cfg.kSRHR_CL = 1.0;
-      // softBdy->m_cfg.kCHR = 1.0;
-      // softBdy->m_cfg.kKHR = 1.0;
-      // softBdy->m_cfg.kSHR = 1.0;
+      int materialId = 0;
+      if (STRCASEEQ(SHAPE->material, "cloth"))
+        {
+          materialId = 1;
+        }
+      
+      setSoftMaterial(softBdy, materialId);
+
 
       softBdy->randomizeConstraints();
       softBdy->setTotalMass(BODY->m, true);
-      softBdy->generateBendingConstraints(2, softBdy->appendMaterial());
-
-#if 0
-      softBdy->setPose(true, true);
-
-      // for (int i=0; i<softBdy->m_links.size(); ++i)
-      //   for (int j=0; j<softBdy->m_nodes.size(); ++j)
-      //   {
-      // softBdy->setMass(j, 0.001);
-      //   }
-
-
-#else
-      softBdy->setPose(true, true);
-#endif
-
-      softBdy->getCollisionShape()->setMargin(0.0);
+      softBdy->getCollisionShape()->setMargin(0.00);
       softBdy->setUserPointer((void*) BODY);
-
+      btSoftBodyHelpers::ReoptimizeLinkOrder(softBdy);
+      
       // softBdy->m_cfg.collisions = btSoftBody::fCollision::CL_SS +
       // btSoftBody::fCollision::CL_RS;
       // softBdy->generateClusters(8);
@@ -341,7 +376,7 @@ void BulletSoftSimulation::createSoftBodies()
       // fixed
       if (BODY->parent)
       {
-        RLOG(0, "Body %s has %zu nodes (%zu faces %zu vertices) ",
+        RLOG(5, "Body %s has %zu nodes (%zu faces %zu vertices) ",
              BODY->name, softBdy->m_nodes.size(),
              softMesh->nFaces, softMesh->nVertices);
 
@@ -352,7 +387,7 @@ void BulletSoftSimulation::createSoftBodies()
         BulletRigidBody* bParent = it->second;
 
         int anchoredVertices = connectSoftToRigidBody(softBdy, bParent);
-        RLOG(0, "Anchored %d vertices to parent", anchoredVertices);
+        RLOG(5, "Anchored %d vertices to parent", anchoredVertices);
       }
 
       // End link soft body to parent
@@ -370,7 +405,7 @@ void BulletSoftSimulation::createSoftBodies()
         BulletRigidBody* bChild = it->second;
 
         int anchoredVertices = connectSoftToRigidBody(softBdy, bChild);
-        RLOG(0, "Anchored %d vertices to child %s",
+        RLOG(5, "Anchored %d vertices to child %s",
              anchoredVertices, child->name);
 
         child = child->next;
@@ -403,6 +438,13 @@ void BulletSoftSimulation::convertShapesToMesh()
 
       if (SHAPE->type == RCSSHAPE_MESH)
       {
+        RcsMeshData* shapeMesh = (RcsMeshData*) SHAPE->userData;
+        RLOG(5, "Mesh %s has %d vertices and %d facecs",
+             BODY->name, shapeMesh->nVertices, shapeMesh->nFaces);
+        int nDuplicates = RcsMesh_compressVertices(shapeMesh, 1.0e-8);
+        RLOG(5, "Reduced mesh by %d duplicates - now %d vertices and %d facecs",
+             nDuplicates, shapeMesh->nVertices, shapeMesh->nFaces);
+
         continue;
       }
 
@@ -413,7 +455,7 @@ void BulletSoftSimulation::convertShapesToMesh()
         RLOG(5, "Mesh %s has %d vertices and %d facecs",
              BODY->name, shapeMesh->nVertices, shapeMesh->nFaces);
         int nDuplicates = RcsMesh_compressVertices(shapeMesh, 1.0e-8);
-        RLOG(5, "Reduced mesh by %d duplicates - now has %d vertices and %d facecs",
+        RLOG(5, "Reduced mesh by %d duplicates - now %d vertices and %d facecs",
              nDuplicates, shapeMesh->nVertices, shapeMesh->nFaces);
 
         SHAPE->userData = (void*) shapeMesh;
@@ -454,7 +496,7 @@ int BulletSoftSimulation::connectSoftToRigidBody(btSoftBody* softBdy,
     }
 
   }
-  RLOG(0, "Anchored %d vertices to parent", anchoredVertices);
+  RLOG(5, "Anchored %d vertices to parent", anchoredVertices);
 
   return anchoredVertices;
 }
