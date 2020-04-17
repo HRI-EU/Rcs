@@ -81,7 +81,6 @@ static inline unsigned int getLargestFaceIdx(const RcsMeshData* mesh)
 int RcsMesh_compressVertices(RcsMeshData* mesh, double eps)
 {
   unsigned int vertexCount = 0, indexCount = 0;
-  int nDuplicates = 0;
   unsigned int* faces = RNALLOC(mesh->nFaces*3, unsigned int);
 
   if (faces==NULL)
@@ -123,7 +122,6 @@ int RcsMesh_compressVertices(RcsMeshData* mesh, double eps)
       {
         faces[indexCount] = j;
         foundDuplicate = true;
-        nDuplicates++;
         break;
       }
 
@@ -142,6 +140,7 @@ int RcsMesh_compressVertices(RcsMeshData* mesh, double eps)
 
   }   // for (unsigned int i=0;i<mesh->nVertices;++i)
 
+  int nDuplicates = mesh->nVertices - vertexCount;
   RFREE(mesh->vertices);
   RFREE(mesh->faces);
   mesh->nVertices = vertexCount;

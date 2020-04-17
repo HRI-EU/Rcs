@@ -223,7 +223,7 @@ double RcsBody_distance(const RcsBody* b1, const RcsBody* b2,
  *
  *  \param[in]  body     RcsBody to which distance is to be computed
  *  \param[in]  I_pt     Point in world coordinates
- *  \param[out] I_cpBdy  Closest point on the body in world coordinates. If it 
+ *  \param[out] I_cpBdy  Closest point on the body in world coordinates. If it
  *                       is NULL, it will be ignored.
  *  \param[out] I_nBdyPt Unit normal vector from body towards point. If it is
  *                       NULL, it will be ignored.
