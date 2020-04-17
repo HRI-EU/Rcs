@@ -45,7 +45,14 @@ namespace Rcs
 /*! \ingroup RcsTask
  * \brief This tasks allows to set a 3D position (cylindrical coordinates) of
  *        an effector. The position can also be relative to another body and
- *        reference frame.
+ *        reference frame. This class calculates purely on cylinder coordinates.
+ *        This allows to decompose the motion into cylinder coordinate elements,
+ *        for instance when performing hybrid position-force control: A radial
+ *        force is independent of an angular velocity. This is very general,
+ *        has however some drawbacks, for instance singularities for a radius
+ *        of zero. If you don't need this component-wise orthogonal
+ *        decomposition, the task  TaskCylindricalPos3D might be the better
+ *        and more robust choice.
  */
 class TaskCylindrical3D : public Rcs::TaskPosition3D
 {
@@ -107,7 +114,7 @@ public:
    *         coordinates
    */
   virtual void computeJdot(MatNd* Jdot) const;
-
+  virtual bool testHessian(bool verbose=false);
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise:
    *         - XML tag "effector" corresponds to body in graph

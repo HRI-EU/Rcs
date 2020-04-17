@@ -11,6 +11,7 @@ BoxNode.cpp
 CapsuleNode.cpp
 COSNode.cpp
 CylinderNode.cpp
+DepthRenderer.cpp
 FTSensorNode.cpp
 GraphNode.cpp
 HUD.cpp

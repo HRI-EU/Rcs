@@ -39,6 +39,7 @@
 #include "Rcs_typedef.h"
 #include "Rcs_macros.h"
 #include "Rcs_Vec3d.h"
+#include "Rcs_basicMath.h"
 #include "Rcs_parser.h"
 
 
@@ -94,11 +95,9 @@ Rcs::TaskCylindrical3D* Rcs::TaskCylindrical3D::clone(RcsGraph* newGraph) const
  ******************************************************************************/
 void Rcs::TaskCylindrical3D::computeX(double* x_res) const
 {
-  double XYZ[3];
-  Rcs::TaskPosition3D::computeX(XYZ);
-  x_res[0] = sqrt(XYZ[0]*XYZ[0]+XYZ[1]*XYZ[1]);
-  x_res[1] = atan2(XYZ[1],XYZ[0]);
-  x_res[2] = XYZ[2];
+  double pos[3];
+  Rcs::TaskPosition3D::computeX(pos);
+  Math_Cart2Cyl(pos, &x_res[0], &x_res[1], &x_res[2]);
 }
 
 /*******************************************************************************
@@ -132,20 +131,10 @@ void Rcs::TaskCylindrical3D::computeJ(MatNd* jacobian) const
   double XYZ[3];
   Rcs::TaskPosition3D::computeX(XYZ);
 
-  double r = sqrt(XYZ[0]*XYZ[0]+XYZ[1]*XYZ[1]);
-  double rr = r*r;
-
-  MatNd* trafo = NULL;
-  MatNd_create2(trafo, 3, 3);
-  MatNd_setIdentity(trafo);
-
-  MatNd_set2(trafo, 0, 0, XYZ[0]/r);
-  MatNd_set2(trafo, 0, 1, XYZ[1]/r);
-  MatNd_set2(trafo, 1, 0, -XYZ[1]/rr);
-  MatNd_set2(trafo, 1, 1, XYZ[0]/rr);
-
-  MatNd_preMulSelf(jacobian, trafo);
-  MatNd_destroy(trafo);
+  double dCyldCart[3][3];
+  MatNd trafo = MatNd_fromPtr(3, 3, &dCyldCart[0][0]);
+  Math_dCyldCart(dCyldCart, XYZ);
+  MatNd_preMulSelf(jacobian, &trafo);
 }
 
 /*******************************************************************************
@@ -170,8 +159,9 @@ void Rcs::TaskCylindrical3D::computeDX(double* dx, const double* x_des) const
 }
 
 /*******************************************************************************
- * Computes current task Hessian to parameter \e hessian
- * Not implemented!
+ * Computes the Hessian for the cylinder coordinates by applying the chain rule
+ * to the
+ * J_cyl = A J_pos   =>   H_cyl = A H_pos + dA J_pos
  ******************************************************************************/
 void Rcs::TaskCylindrical3D::computeH(MatNd* hessian) const
 {
@@ -260,4 +250,12 @@ bool Rcs::TaskCylindrical3D::isValid(xmlNode* node, const RcsGraph* graph)
   bool success = Rcs::Task::isValid(node, graph, "CylRPZ");
 
   return success;
+}
+
+/*******************************************************************************
+ * Remove this once we have an implementation for the Hessian.
+ ******************************************************************************/
+bool Rcs::TaskCylindrical3D::testHessian(bool verbose)
+{
+  return true;
 }
