@@ -78,7 +78,7 @@ static void setSoftMaterial(btSoftBody* softBdy, int materialId)
       // softBdy->m_cfg.kKHR = 1.0;
       // softBdy->m_cfg.kSHR = 1.0;
 
-      //      softBdy->generateBendingConstraints(2, softBdy->appendMaterial());
+      // softBdy->generateBendingConstraints(2, softBdy->appendMaterial());
       softBdy->setPose(true, true);
     }
     break;
@@ -177,7 +177,15 @@ void BulletSoftSimulation::updateSoftMeshes()
     dstMesh->nFaces = sbi->m_faces.size();
 
 
-    // Transformation from world into shape's frame
+    // Transformation from world into shape's frame. We currently project all
+    // vertices into the world frame. There is no updating on any soft body
+    // transform. If there is a good answer why and how to do this, it should
+    // probably be done here. For instance: Compute the initial vertex centroid
+    // and store it in a relative body transform. During simulation, propagate
+    // A_BI through the centroid. Probably we need to get a notion of the
+    // rotations as well, for instance through the Eigenvectors of the vertices.
+    // But these might make the body flip around and not keep consistent
+    // rotations if the Eigenvalues change their order.
     HTr A_CI;
     HTr_transform(&A_CI, rcsSoftBdy->A_BI, &softShape->A_CB);
 
@@ -386,9 +394,6 @@ void BulletSoftSimulation::createSoftBodies()
         RLOG(5, "Anchored %d vertices to parent", anchoredVertices);
       }
 
-      // End link soft body to parent
-
-
       // Link rigid child bodies to soft parent
       RcsBody* child = BODY->firstChild;
 
@@ -406,13 +411,6 @@ void BulletSoftSimulation::createSoftBodies()
 
         child = child->next;
       }
-
-
-
-
-
-
-
 
       softWorld->addSoftBody(softBdy);
     }
@@ -432,9 +430,11 @@ void BulletSoftSimulation::convertShapesToMesh()
         continue;
       }
 
+      // If the shape is already a mesh, we only remove the duplicate vertices
+      // and continue.
       if (SHAPE->type == RCSSHAPE_MESH)
       {
-        RcsMeshData* shapeMesh = (RcsMeshData*) SHAPE->userData;
+        RcsMeshData* shapeMesh = (RcsMeshData*)SHAPE->userData;
 
         if (shapeMesh)
         {
@@ -447,6 +447,8 @@ void BulletSoftSimulation::convertShapesToMesh()
         continue;
       }
 
+      // Otherwise, we convert the shape into a mesh using the shape's mesh
+      // creation functionality
       RcsMeshData* shapeMesh = RcsShape_createMesh(SHAPE);
 
       if (shapeMesh)
@@ -473,6 +475,13 @@ void BulletSoftSimulation::convertShapesToMesh()
   }   // RCSGRAPH_TRAVERSE_BODIES
 }
 
+// This function walks through all vertices of a softbody mesh and checks if
+// a vertex lies inside the rigid body. If it is the case, a rigid link between
+// soft and rigid body is created. This will "meld" the bodies togehter. The
+// checking of the overlap relies on the distance function between point and
+// rigid body shapes. Currently there is no good function for non-convex meshes,
+// therefore this might not work perfectly (it will assume the mesh being
+// convex).
 int BulletSoftSimulation::connectSoftToRigidBody(btSoftBody* softBdy,
                                                  BulletRigidBody* rigidBdy)
 {
