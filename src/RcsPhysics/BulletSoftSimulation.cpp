@@ -62,57 +62,57 @@ static Rcs::PhysicsFactoryRegistrar<Rcs::BulletSoftSimulation> physics(className
 static void setSoftMaterial(btSoftBody* softBdy, int materialId)
 {
   switch (materialId)
-    {
+  {
     case 0:   // "Spongy" solid objects
-      {
-        softBdy->m_cfg.kDF = 0.9;
-        softBdy->m_cfg.kDP = 0.01;// damping
-        softBdy->m_cfg.kMT = 0.5;// Pose matching coefficient [0,1]  was 0.05
-        softBdy->m_cfg.piterations = 25;
-        //softBdy->m_cfg.viterations = 25;
-        //softBdy->m_cfg.diterations = 25;
-        softBdy->m_cfg.kVCF = 0.1;
-        //softBdy->m_cfg.kVC = 0.01;
-        // softBdy->m_cfg.kSRHR_CL = 1.0;
-        // softBdy->m_cfg.kCHR = 1.0;
-        // softBdy->m_cfg.kKHR = 1.0;
-        // softBdy->m_cfg.kSHR = 1.0;
+    {
+      softBdy->m_cfg.kDF = 0.9;
+      softBdy->m_cfg.kDP = 0.01;// damping
+      softBdy->m_cfg.kMT = 0.5;// Pose matching coefficient [0,1]  was 0.05
+      softBdy->m_cfg.piterations = 25;
+      //softBdy->m_cfg.viterations = 25;
+      //softBdy->m_cfg.diterations = 25;
+      softBdy->m_cfg.kVCF = 0.1;
+      //softBdy->m_cfg.kVC = 0.01;
+      // softBdy->m_cfg.kSRHR_CL = 1.0;
+      // softBdy->m_cfg.kCHR = 1.0;
+      // softBdy->m_cfg.kKHR = 1.0;
+      // softBdy->m_cfg.kSHR = 1.0;
 
-        //      softBdy->generateBendingConstraints(2, softBdy->appendMaterial());
-        softBdy->setPose(true, true);
-      }
-      break;
+      //      softBdy->generateBendingConstraints(2, softBdy->appendMaterial());
+      softBdy->setPose(true, true);
+    }
+    break;
 
     case 1:
-      {
-        softBdy->m_cfg.kDF = 0.9; // dynamic friction
-        softBdy->m_cfg.kDP = 0.01;// damping
-        softBdy->m_cfg.kMT = 0.00;// Pose matching coefficient [0,1]  was 0.05
-        softBdy->m_cfg.kVCF = 0.1;// Velocities correction factor (Baumgarte)
-        softBdy->m_cfg.kVC = 0.0;// Volume conversation coefficient [0,+inf]
-        softBdy->m_cfg.piterations = 250;
-        softBdy->m_cfg.citerations = 10;
-        softBdy->m_cfg.diterations = 10;
+    {
+      softBdy->m_cfg.kDF = 0.9; // dynamic friction
+      softBdy->m_cfg.kDP = 0.01;// damping
+      softBdy->m_cfg.kMT = 0.00;// Pose matching coefficient [0,1]  was 0.05
+      softBdy->m_cfg.kVCF = 0.1;// Velocities correction factor (Baumgarte)
+      softBdy->m_cfg.kVC = 0.0;// Volume conversation coefficient [0,+inf]
+      softBdy->m_cfg.piterations = 250;
+      softBdy->m_cfg.citerations = 10;
+      softBdy->m_cfg.diterations = 10;
 
-        softBdy->m_cfg.kCHR = 1.0;   // Rigid contacts hardness [0,1]
-        softBdy->m_cfg.kKHR = 1.0;   // Kinetic contacts hardness [0,1]
-        softBdy->m_cfg.kSHR = 1.0;   // Soft contacts hardness [0,1]
+      softBdy->m_cfg.kCHR = 1.0;   // Rigid contacts hardness [0,1]
+      softBdy->m_cfg.kKHR = 1.0;   // Kinetic contacts hardness [0,1]
+      softBdy->m_cfg.kSHR = 1.0;   // Soft contacts hardness [0,1]
 
 
-        //softBdy->m_cfg.collisions = btSoftBody::fCollision::SDF_RS;// + btSoftBody::fCollision::SDF_RDF;
-          // btSoftBody::fCollision::CL_SS +
-          // btSoftBody::fCollision::CL_RS;
-      
+      //softBdy->m_cfg.collisions = btSoftBody::fCollision::SDF_RS;// + btSoftBody::fCollision::SDF_RDF;
+      // btSoftBody::fCollision::CL_SS +
+      // btSoftBody::fCollision::CL_RS;
+
       softBdy->m_cfg.collisions = btSoftBody::fCollision::CL_SS +
-      btSoftBody::fCollision::CL_RS;
+                                  btSoftBody::fCollision::CL_RS;
       softBdy->generateClusters(1200);
-      }
-      break;
+    }
+    break;
 
     default:
       break;
-    }
-  
+  }
+
 }
 
 namespace Rcs
@@ -292,8 +292,13 @@ void BulletSoftSimulation::createSoftBodies()
 
       RLOG(5, "Creating soft body for %s", BODY->name);
       RcsMeshData* softMesh = (RcsMeshData*)SHAPE->userData;
-      RCHECK_MSG(softMesh, "Could not create mesh from file %s",
-                 SHAPE->meshFile ? SHAPE->meshFile : NULL);
+
+      if (softMesh == NULL)
+      {
+        RLOG(1, "Could not create mesh from file %s - skipping soft body",
+             SHAPE->meshFile ? SHAPE->meshFile : NULL);
+        continue;
+      }
 
       // Here we need to transform all vertices with the shape's transform.
       HTr A_CI;
@@ -351,34 +356,25 @@ void BulletSoftSimulation::createSoftBodies()
 
       int materialId = 0;
       if (STRCASEEQ(SHAPE->material, "cloth"))
-        {
-          materialId = 1;
-        }
-      
-      setSoftMaterial(softBdy, materialId);
+      {
+        materialId = 1;
+      }
 
+      setSoftMaterial(softBdy, materialId);
 
       softBdy->randomizeConstraints();
       softBdy->setTotalMass(BODY->m, true);
       softBdy->getCollisionShape()->setMargin(0.00);
       softBdy->setUserPointer((void*) BODY);
       btSoftBodyHelpers::ReoptimizeLinkOrder(softBdy);
-      
-      // softBdy->m_cfg.collisions = btSoftBody::fCollision::CL_SS +
-      // btSoftBody::fCollision::CL_RS;
-      // softBdy->generateClusters(8);
-
-
-
-
 
       // Link soft body to parent if it exists and the body physics type is
       // fixed
       if (BODY->parent)
       {
-        RLOG(5, "Body %s has %zu nodes (%zu faces %zu vertices) ",
-             BODY->name, softBdy->m_nodes.size(),
-             softMesh->nFaces, softMesh->nVertices);
+        RLOG_CPP(5, "Body " << BODY->name << " has "
+                 << softBdy->m_nodes.size() << " nodes (" << softMesh->nFaces
+                 << " faces " << softMesh->nVertices << " vertices) ");
 
         RCHECK(BODY->physicsSim==RCSBODY_PHYSICS_FIXED);
         std::map<const RcsBody*, Rcs::BulletRigidBody*>::iterator it;
@@ -439,12 +435,15 @@ void BulletSoftSimulation::convertShapesToMesh()
       if (SHAPE->type == RCSSHAPE_MESH)
       {
         RcsMeshData* shapeMesh = (RcsMeshData*) SHAPE->userData;
-        RLOG(5, "Mesh %s has %d vertices and %d facecs",
-             BODY->name, shapeMesh->nVertices, shapeMesh->nFaces);
-        int nDuplicates = RcsMesh_compressVertices(shapeMesh, 1.0e-8);
-        RLOG(5, "Reduced mesh by %d duplicates - now %d vertices and %d facecs",
-             nDuplicates, shapeMesh->nVertices, shapeMesh->nFaces);
 
+        if (shapeMesh)
+        {
+          RLOG(5, "Mesh %s has %d vertices and %d facecs",
+               BODY->name, shapeMesh->nVertices, shapeMesh->nFaces);
+          int nDuplicates = RcsMesh_compressVertices(shapeMesh, 1.0e-8);
+          RLOG(5, "Reduced mesh by %d duplicates - now %d vertices and %d facecs",
+               nDuplicates, shapeMesh->nVertices, shapeMesh->nFaces);
+        }
         continue;
       }
 
