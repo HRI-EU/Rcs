@@ -721,7 +721,9 @@ protected:
    */
   virtual void setDim(unsigned int taskDim);
 
-  /*! \brief Graph on which the task operates
+  /*! \brief Graph on which the task operates. It is not a const pointer,
+   *         since it is modified in some test functions. However, it is safe
+   *         to assume that it is not modified during "normal" processing.
    */
   RcsGraph* graph;          //!< Underlying graph representation
   const RcsBody* ef;        //!< Effector

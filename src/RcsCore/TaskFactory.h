@@ -69,6 +69,7 @@ namespace Rcs
 class TaskFactory
 {
 public:
+
   typedef Task* (*TaskCreateFunction)(std::string className,
                                       xmlNode* node,
                                       RcsGraph* graph);
@@ -86,12 +87,11 @@ public:
    *
    * \param className The name with which the task is registered at the
    *        factory
-   *  \param node The xml node used for parsing the task
+   * \param node The xml node used for parsing the task
    * \param graph The underlying graph for the kinematics
    * \return New task instance
    */
   Task* createTask(std::string className, xmlNode* node, RcsGraph* graph);
-
 
   /*! \brief Convenience method to create a task from a string.
    *
@@ -122,6 +122,7 @@ public:
   static bool isValid(xmlNode* node, const RcsGraph* graph);
 
 private:
+
   /*! \brief Private constructor because TaskFactory is a singleton
    */
   TaskFactory();

@@ -58,6 +58,7 @@ TaskCollision.cpp
 TaskCOM1D.cpp
 TaskCOM3D.cpp
 Task.cpp
+TaskCompositeXml.cpp
 TaskCylindrical1D.cpp
 TaskCylindrical3D.cpp
 TaskCylindricalPos3D.cpp
