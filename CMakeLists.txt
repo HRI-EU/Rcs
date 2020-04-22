@@ -3,6 +3,17 @@ SET(BST_INSTALL_CATEGORY Libraries)
 
 PROJECT(Rcs)
 
+################################################################################
+# Check if project is stand-alone or inside tree with dependencies
+################################################################################
+SET(RCS_STANDALONE_PROJECT OFF)
+IF(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  SET(RCS_STANDALONE_PROJECT ON)
+  MESSAGE(STATUS "Compiling Rcs as stand-alone project")
+  SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+  SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
+ENDIF()
+
 IF (NOT CMAKE_BUILD_TYPE)
   IF (WIN32)
     SET(CMAKE_BUILD_TYPE "Release" CACHE STRING
@@ -20,8 +31,6 @@ ENDIF()
 SET(RCS_THIRDPARTY_DIR ${PROJECT_SOURCE_DIR}/external)
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
-SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
-SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 
 MESSAGE(STATUS "Using cmake ${CMAKE_VERSION}")
 MESSAGE(STATUS "Compiler is: ${CMAKE_CXX_COMPILER_ID}")
