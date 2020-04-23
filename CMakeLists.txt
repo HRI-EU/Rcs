@@ -7,11 +7,21 @@ PROJECT(Rcs)
 # Check if project is stand-alone or inside tree with dependencies
 ################################################################################
 SET(RCS_STANDALONE_PROJECT OFF)
+
 IF(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   SET(RCS_STANDALONE_PROJECT ON)
   MESSAGE(STATUS "Compiling Rcs as stand-alone project")
-  SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
-  SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
+
+  # Adjust paths to match ToolBOS install conventions. 
+  IF (CMAKE_MODULE_PATH MATCHES "ToolBOSCore")
+    SET(CMAKE_INSTALL_PREFIX $ENV{SIT}/${BST_INSTALL_CATEGORY}/Rcs CACHE PATH "Cmake prefix" FORCE)
+    MESSAGE(STATUS "Setting CMAKE_INSTALL_PREFIX to ${CMAKE_INSTALL_PREFIX}")
+    MESSAGE(STATUS "Setting output paths to comply with BST")
+    SET(PLATFORM_INSTALL_DIR $ENV{MAKEFILE_PLATFORM})
+  ENDIF()
+
+  SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin/${PLATFORM_INSTALL_DIR})
+  SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib/${PLATFORM_INSTALL_DIR})
 ENDIF()
 
 IF (NOT CMAKE_BUILD_TYPE)
@@ -106,7 +116,7 @@ SITE_NAME(HOSTNAME)
 #
 ################################################################################
 OPTION(HEADLESS_BUILD "Build without graphics and Guis" OFF)
-OPTION(USE_WM5 "Use Wildmagic library" OFF)
+#OPTION(USE_WM5 "Use Wildmagic library" OFF)
 # OPTION(USE_OCTOMAP "Use Octomap library" OFF)
 OPTION(USE_EIGEN3 "Use Eigen3 library" OFF)
 OPTION(ENABLE_DEBUG_MACROS "Enable debug macros also in release mode" ON)
@@ -115,10 +125,27 @@ IF(UNIX)
   OPTION(ENABLE_C++11 "Compile with C++11 support enabled" OFF)
 ENDIF()
 
-SET(USE_VORTEX OFF CACHE STRING "Vortex version to use")
+FIND_PACKAGE(WM5 QUIET)
+IF (WM5_FOUND)
+  OPTION(USE_WM5 "Use Wildmagic library" ON)
+ELSE()
+  OPTION(USE_WM5 "Use Wildmagic library" OFF)
+ENDIF()
+
+FIND_PACKAGE(Vortex QUIET)
+IF (VORTEX_FOUND)
+  SET(USE_VORTEX ESSENTIALS CACHE STRING "Vortex version to use")
+ELSE()
+  SET(USE_VORTEX OFF CACHE STRING "Vortex version to use")
+ENDIF()
 SET_PROPERTY(CACHE USE_VORTEX PROPERTY STRINGS OFF ESSENTIALS)
 
-SET(USE_BULLET OFF CACHE STRING "Bullet version to use")
+FIND_PACKAGE(Bullet QUIET)
+IF(BULLET_FOUND)
+  SET(USE_BULLET 2.83_float CACHE STRING "Bullet version to use")
+ELSE()
+  SET(USE_BULLET OFF CACHE STRING "Bullet version to use")
+ENDIF()
 SET_PROPERTY(CACHE USE_BULLET PROPERTY STRINGS latest 2.83_float 2.83_double OFF)
 
 ################################################################################
@@ -156,9 +183,9 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 # (https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/RPATH-handling)
 #
 ################################################################################
-LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib/${PLATFORM_INSTALL_DIR}" isSystemDir)
 IF("${isSystemDir}" STREQUAL "-1")
-   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/${PLATFORM_INSTALL_DIR}")
 ENDIF("${isSystemDir}" STREQUAL "-1")
 
 
