@@ -15,4 +15,7 @@ IF(NOT HEADLESS_BUILD)
   ADD_EXECUTABLE(ExampleKinetics ExampleKinetics.cpp)
   TARGET_LINK_LIBRARIES(ExampleKinetics RcsCore RcsGui RcsGraphics RcsPhysics)
 
+  # Install the binaries
+  INSTALL(TARGETS ExampleHighGui ExamplePrioritizedIK ExampleForwardKinematics ExampleKinetics RUNTIME DESTINATION bin/${PLATFORM_INSTALL_DIR} LIBRARY DESTINATION lib/${PLATFORM_INSTALL_DIR})
+
 ENDIF(NOT HEADLESS_BUILD)
