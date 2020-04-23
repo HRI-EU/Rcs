@@ -1,8 +1,6 @@
-#!/bin/sh
-
+#!/bin/bash
 #
-#
-#  Copyright (c) 2017, Honda Research Institute Europe GmbH.
+#  Copyright (c) 2020, Honda Research Institute Europe GmbH.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -30,7 +28,65 @@
 #  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 #  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-#
 
-build/trusty64/bin/TestMath -m -1
-build/trusty64/bin/Rcs -m 3
+function testMath()
+{
+    build/bionic64/bin/bionic64/TestMath -m -1 -numTests 10 -dl 1 &> UnitTestResults.txt
+    testMathResult=$?
+}
+
+function testGraph()
+{
+    build/bionic64/bin/bionic64/Rcs -m 3 -iter 10 -dl 1 -valgrind &>> UnitTestResults.txt
+    testGraphResult=$?
+}
+
+function testController()
+{
+    build/bionic64/bin/bionic64/Rcs -m 6 -valgrind -nTests 10 -dl 1 &>> UnitTestResults.txt
+    testControllerResult=$?
+}
+
+echo -n "Testing mathematics functions ... "
+testMath
+
+if [ $testMathResult -eq 0 ]
+then
+  echo "succeeded"
+elif [ $testMathResult -eq 255 ]
+then
+  echo "failed with more than 255 errors"
+else
+  echo "failed with $testMathResult errors" 
+fi
+
+
+
+echo -n "Testing graph functions       ... "
+testGraph
+
+if [ $testGraphResult -eq 0 ]
+then
+  echo "succeeded"
+elif [ $testGraphResult -eq 255 ]
+then
+  echo "failed with more than 255 errors"
+else
+  echo "failed with $testGraphResult errors" 
+fi
+
+
+
+echo -n "Testing controller functions  ... "
+testController
+
+if [ $testControllerResult -eq 0 ]
+then
+  echo "succeeded"
+elif [ $testControllerResult -eq 255 ]
+then
+  echo "failed with more than 255 errors"
+else
+  echo "failed with $testControllerResult errors" 
+fi
+
