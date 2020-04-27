@@ -20,6 +20,20 @@ IF(WIN32)
   ELSE()
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
   ENDIF()
+  
+  # Create shared libraries for Linux and Windows
+  # For CMake 3.4 and higher, there is an easy way to create windows dlls. For
+  # details, see http://www.kitware.com/blog/home/post/939
+  IF (CMAKE_VERSION VERSION_LESS 3.4)
+    MESSAGE(FATAL_ERROR "CMake version too old, at least 3.4 is needed")
+  ELSE()
+    MESSAGE(STATUS "Creating windows dlls")
+    SET(BUILD_SHARED_LIBS ON)
+    SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    SET(CREATE_WIN_DLL TRUE)
+    ADD_DEFINITIONS(-DWIN_DLL)
+  ENDIF()
+
 
 ELSEIF(UNIX)
 

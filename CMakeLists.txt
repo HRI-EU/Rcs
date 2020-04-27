@@ -40,7 +40,8 @@ ENDIF()
 
 SET(RCS_THIRDPARTY_DIR ${PROJECT_SOURCE_DIR}/external)
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-
+SET(LIBRARY_LINKING_TYPE "SHARED")
+SITE_NAME(HOSTNAME)
 
 MESSAGE(STATUS "Using cmake ${CMAKE_VERSION}")
 MESSAGE(STATUS "Compiler is: ${CMAKE_CXX_COMPILER_ID}")
@@ -81,34 +82,6 @@ IF(NOT EXISTS "${CFG_TO}")
 ELSE()
   MESSAGE(STATUS "Config directory ${CFG_TO} already exists - skipping")
 ENDIF()
-
-################################################################################
-#
-# Create shared libraries for Linux and Windows
-# For CMake 3.4 and higher, there is an easy way to create windows dlls. For
-# details, see http://www.kitware.com/blog/home/post/939
-#
-################################################################################
-IF(UNIX)
-  MESSAGE(STATUS "Creating dynamically linked libraries (.so) under Unix")
-  SET(LIBRARY_LINKING_TYPE "SHARED")
-ENDIF()
-
-IF(WIN32)
-  MESSAGE("We are on a windows machine")
-  IF (CMAKE_VERSION VERSION_LESS 3.4)
-    MESSAGE(FATAL_ERROR "CMake version too old, at least 3.4 is needed")
-  ELSE()
-    MESSAGE("Creating windows dlls")
-    SET(LIBRARY_LINKING_TYPE "SHARED")
-    SET(BUILD_SHARED_LIBS ON)
-    SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-    SET(CREATE_WIN_DLL TRUE)
-    ADD_DEFINITIONS(-DWIN_DLL)
-  ENDIF()
-ENDIF(WIN32)
-
-SITE_NAME(HOSTNAME)
 
 ################################################################################
 #

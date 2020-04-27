@@ -115,6 +115,15 @@ IF(USE_BULLET)
   TARGET_COMPILE_DEFINITIONS(RcsPhysics PRIVATE ${BULLET_DEFINITIONS})
 ENDIF(USE_BULLET)
 
+# copy the .dll file to the same folder as the executable
+IF (WIN32)
+ADD_CUSTOM_COMMAND(
+    TARGET RcsPhysics POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+    ${LIBRARY_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsPhysics.dll
+    ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsPhysics.dll)
+ENDIF()
+
 # Mark for export
 RCS_ADD_EXPORT_LIBRARY(RcsPhysics)
 
