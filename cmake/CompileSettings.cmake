@@ -38,7 +38,7 @@ IF(WIN32)
 ELSEIF(UNIX)
 
   IF(ENABLE_C++11) # note: this is not checked on WIN32 as language version flags only exist since C++14 there
-    MESSAGE("-- Compiling with C++11 support!")
+    MESSAGE(STATUS "Compiling with C++11 support!")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
   ENDIF()
 
@@ -51,7 +51,7 @@ ELSEIF(UNIX)
   ENDIF()
 
   IF(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    MESSAGE("-- Low level optimization for debug mode")
+    MESSAGE(STATUS "Low level optimization for debug mode")
 
     # setting march to core2 to enable valgrind debugging (also good for Xeon)
     SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -march=core2")
@@ -63,7 +63,7 @@ ELSEIF(UNIX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -fstack-protector-all")
 
   ELSE()
-    MESSAGE("-- Strong optimization for release mode")
+    MESSAGE(STATUS "Strong optimization for release mode")
 
     # setting march to native for optimal performance on local machine
     SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -march=native")
