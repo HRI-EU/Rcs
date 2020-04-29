@@ -42,8 +42,8 @@
 namespace Rcs
 {
 
-/**
- * \ingroup RcsGraphics
+/*! \ingroup RcsGraphics
+ *  \brief Class to display a 3d box.
  */
 class BoxNode: public NodeBase
 {
@@ -51,16 +51,18 @@ class BoxNode: public NodeBase
 public:
 
   BoxNode();
-  BoxNode(const double center[3], double A_KI[3][3], double lx, double ly,
-          double lz, bool resizeable=false);
-  BoxNode(const double center[3], double A_KI[3][3], const double extents[3],
+  BoxNode(const double center[3], double A_BI[3][3], double lx, double ly,
+          double lz, bool resizeable = false);
+  BoxNode(const double center[3], double lx, double ly,
+          double lz, bool resizeable = false);
+  BoxNode(const double center[3], double A_BI[3][3], const double extents[3],
           bool resizeable=false);
   void resize(double lx, double ly, double lz);
   void resize(const double extents[3]);
 
 protected:
 
-  void init(const double center[3], double A_KI[3][3], double lx, double ly,
+  void init(const double center[3], double A_BI[3][3], double lx, double ly,
             double lz, bool resizeable);
 
   osg::ref_ptr<osg::Box> box;

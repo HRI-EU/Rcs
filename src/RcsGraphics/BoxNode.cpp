@@ -36,6 +36,8 @@
 
 #include "BoxNode.h"
 
+#include <Rcs_Mat3d.h>
+
 #include <osg/Geode>
 #include <osg/ShapeDrawable>
 
@@ -57,26 +59,37 @@ Rcs::BoxNode::BoxNode() : NodeBase()
 /*******************************************************************************
  *
  ******************************************************************************/
-Rcs::BoxNode::BoxNode(const double center[3], double A_KI[3][3],
+Rcs::BoxNode::BoxNode(const double center[3], double A_BI[3][3],
                       double lx, double ly, double lz,
                       bool resizeable) : NodeBase()
 {
-  init(center, A_KI, lx, ly, lz, resizeable);
+  init(center, A_BI, lx, ly, lz, resizeable);
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-Rcs::BoxNode::BoxNode(const double center[3], double A_KI[3][3],
+Rcs::BoxNode::BoxNode(const double center[3], double lx, double ly, double lz,
+                      bool resizeable) : NodeBase()
+{
+  double Id[3][3];
+  Mat3d_setIdentity(Id);
+  init(center, Id, lx, ly, lz, resizeable);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+Rcs::BoxNode::BoxNode(const double center[3], double A_BI[3][3],
                       const double ext[3], bool resizeable) : NodeBase()
 {
-  init(center, A_KI, ext[0], ext[1], ext[2], resizeable);
+  init(center, A_BI, ext[0], ext[1], ext[2], resizeable);
 }
 
 /*******************************************************************************
  * Initialization of graphics
  ******************************************************************************/
-void Rcs::BoxNode::init(const double center[3], double A_KI[3][3],
+void Rcs::BoxNode::init(const double center[3], double A_BI[3][3],
                         double lx, double ly, double lz, bool resizeable)
 {
   setName("BoxNode");
@@ -95,7 +108,7 @@ void Rcs::BoxNode::init(const double center[3], double A_KI[3][3],
   geode->addDrawable(shape);
   this->patPtr()->addChild(geode);
   setPosition(center);
-  setRotation(A_KI);
+  setRotation(A_BI);
   setWireframe(true);
 }
 
