@@ -49,9 +49,9 @@ It is also possible to compile it on Microsoft Visual Studio, however with some 
 
 ## Build options
 
- - USE_BULLET: Enable bullet physics. With this option, a PhysicsSimulation class that uses Bullet Physics will be built. It can be instantiated through the PhysicsFactory class. Please refer to the documentation. Rcs requires a version equal or higher than 2.83, compiled for double precision, and with shared libraries. Please refer to the Bullet Physics instructions. The default is OFF.
- - USE_WM5: Use the GemoetricTools library (WildMagic5). This will enable a number of functions related to computational geometry, e.g. distance calculation of shape primitives, and ray casts. The default is OFF.
- - USE_VORTEX: Enable Vortex physics. With this option, a PhysicsSimulation class that uses Vortex Essentials (CmLabs) or Vortex with version 6.8 will be built. It can be instantiated through the PhysicsFactory class. Please refer to the documentation. To obtain Vortex Essentials, please refer to the CmLabs web-site. The default is OFF.
+ - USE_BULLET: Enable bullet physics. With this option, a PhysicsSimulation class that uses Bullet Physics will be built. It can be instantiated through the PhysicsFactory class. Please refer to the documentation. Rcs requires a version equal or higher than 2.83, compiled with shared libraries. Please refer to the Bullet Physics instructions. In case cmake can find a bullet library, the option is ON, otherwise it is OFF.
+ - USE_WM5: Use the GemoetricTools library (WildMagic5). This will enable a number of functions related to computational geometry, e.g. distance calculation of shape primitives, and ray casts. In case cmake can find the library, the option is ON, otherwise it is OFF.
+ - USE_VORTEX: Enable Vortex physics. With this option, a PhysicsSimulation class that uses Vortex Essentials (CmLabs) or Vortex with version 6.8 will be built. It can be instantiated through the PhysicsFactory class. Please refer to the documentation. To obtain Vortex, please refer to the CmLabs web-site. The default is OFF.
  - VORTEX_ESSENTIALS_DIR: Installation directory of Vortex Essentials. Required since there is no standard location for this.
  - USE_EIGEN3: Use the Eigen3 library. This will compile in a number of additional linear algebra functions (See Rcs_eigen3.h for details)
  - ENABLE_DEBUG_MACROS: This option enables logging macros that allow to log information on different debug levels (such as RLOG). If disabled, all these conditional logs are not compiled into the binaries. This usually leads to faster programs, however with the drawback of loosing the information if something goes wrong. The default is ON.
@@ -83,12 +83,16 @@ Rcs has been designed carefully to have only little dependencies. The ones that 
 
 Optionally (please use the ccmake tool to manage the compile options), additional functionality can be compiled in when activating
 
- - GeometricTools (Boost Software License 1.0)
- - Bullet Physics (Zlib)
+ - GeometricTools (Wild Magic Engine 5.17, Boost Software License 1.0). Web-site: [https://www.geometrictools.com](https://www.geometrictools.com)
+ - Bullet Physics (Zlib, Ubuntu-package libbullet-dev)
  - Vortex Studio Essentials
  - Eigen3 (Mozilla Public License Version 2.0)
 
-Vortex Studio Essentials is a free version of the dynamics simulation framework by CmLabs. It can be obtained from this web-site: [https://www.cm-labs.com/vortex-studio/vortex-studio-essentials](https://www.cm-labs.com/vortex-studio/vortex-studio-essentials)
+In case you don't have a Vortex license, you can in certain cases apply for the Adademic Access Program that allows to get a free license. Please check: [https://www.cm-labs.com](https://www.cm-labs.com)
+
+## Troubleshooting
+
+  - Bullet library linking errors: In case you use a bullet version compiled with double precision, please make sure the define BT_USE_DOUBLE_PRECISION is used during compilation (see cmake/Externals.cmake for details). Likewise, in case you are using a bullet library compiled with float values, make sure that the above define is not set.
 
 ## License
 
