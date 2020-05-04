@@ -56,45 +56,12 @@
 #    endif
 #endif
 
-// http://stackoverflow.com/questions/8487986/file-macro-shows-full-path :
-// According to the donator of this snipplet (I modified it to search from
-// back to front), this expression is evaluated at compile time. The limit
-// of the file name length is 26 characters. If there's no separator, the
-// original __FILE__ macro is used. Printing out the expression can be done
-// using the below three lines:
-// #define STRING2(x) #x
-// #define STRING(x) STRING2(x)
-// #pragma message(STRING(__FILENAME__))
-
-#define STRIPPATH(p)                                                     \
-  (                                                                      \
-      sizeof (p) > 2 && (p)[sizeof(p)-3] == '\\' ? (p) + sizeof(p) - 2 :    \
-      sizeof (p) > 3 && (p)[sizeof(p)-4] == '\\' ? (p) + sizeof(p) - 3 :    \
-      sizeof (p) > 4 && (p)[sizeof(p)-5] == '\\' ? (p) + sizeof(p) - 4 :    \
-      sizeof (p) > 5 && (p)[sizeof(p)-6] == '\\' ? (p) + sizeof(p) - 5 :    \
-      sizeof (p) > 6 && (p)[sizeof(p)-7] == '\\' ? (p) + sizeof(p) - 6 :    \
-      sizeof (p) > 7 && (p)[sizeof(p)-8] == '\\' ? (p) + sizeof(p) - 7 :    \
-      sizeof (p) > 8 && (p)[sizeof(p)-9] == '\\' ? (p) + sizeof(p) - 8 :    \
-      sizeof (p) > 9 && (p)[sizeof(p)-10] == '\\' ? (p) + sizeof(p) - 9 :   \
-      sizeof (p) > 10 && (p)[sizeof(p)-11] == '\\' ? (p) + sizeof(p) - 10 : \
-      sizeof (p) > 11 && (p)[sizeof(p)-12] == '\\' ? (p) + sizeof(p) - 11 : \
-      sizeof (p) > 12 && (p)[sizeof(p)-13] == '\\' ? (p) + sizeof(p) - 12 : \
-      sizeof (p) > 13 && (p)[sizeof(p)-14] == '\\' ? (p) + sizeof(p) - 13 : \
-      sizeof (p) > 14 && (p)[sizeof(p)-15] == '\\' ? (p) + sizeof(p) - 14 : \
-      sizeof (p) > 15 && (p)[sizeof(p)-16] == '\\' ? (p) + sizeof(p) - 15 : \
-      sizeof (p) > 16 && (p)[sizeof(p)-17] == '\\' ? (p) + sizeof(p) - 16 : \
-      sizeof (p) > 17 && (p)[sizeof(p)-18] == '\\' ? (p) + sizeof(p) - 17 : \
-      sizeof (p) > 18 && (p)[sizeof(p)-19] == '\\' ? (p) + sizeof(p) - 18 : \
-      sizeof (p) > 19 && (p)[sizeof(p)-20] == '\\' ? (p) + sizeof(p) - 19 : \
-      sizeof (p) > 20 && (p)[sizeof(p)-21] == '\\' ? (p) + sizeof(p) - 20 : \
-      sizeof (p) > 21 && (p)[sizeof(p)-22] == '\\' ? (p) + sizeof(p) - 21 : \
-      sizeof (p) > 22 && (p)[sizeof(p)-23] == '\\' ? (p) + sizeof(p) - 22 : \
-      sizeof (p) > 23 && (p)[sizeof(p)-24] == '\\' ? (p) + sizeof(p) - 23 : \
-      sizeof (p) > 24 && (p)[sizeof(p)-25] == '\\' ? (p) + sizeof(p) - 24 : \
-      sizeof (p) > 25 && (p)[sizeof(p)-26] == '\\' ? (p) + sizeof(p) - 25 : \
-      sizeof (p) > 26 && (p)[sizeof(p)-27] == '\\' ? (p) + sizeof(p) - 26 : p)
-
-#define __FILENAME__ STRIPPATH(__FILE__)
+// See top-level CMakeLists.txt how RCS_BASE_PATH_LENGTH is defined
+#if defined (RCS_BASE_PATH_LENGTH)
+#define __FILENAME__ (__FILE__ + RCS_BASE_PATH_LENGTH)
+#else
+#define __FILENAME__ (__FILE__)
+#endif
 
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
@@ -112,16 +79,12 @@
 #endif
 
 void srand48(unsigned int seed);
-
 double drand48();
 
 #if (_MSC_VER < 1900)
 int round(double x);
-
 double fmin(double x, double y);
-
 double fmax(double x, double y);
-
 double cbrt(double x);
 #endif
 

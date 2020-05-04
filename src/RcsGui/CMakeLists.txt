@@ -29,7 +29,6 @@ DblSlider.cpp
 ${RCS_HIGHGUI_SRCS}
 )
 
-
 IF(WIN32)
   SET_SOURCE_FILES_PROPERTIES( ${RCS_GUI_SRCS} PROPERTIES LANGUAGE CXX )
   
@@ -66,13 +65,21 @@ DblSlider.h
 ${RCS_HIGHGUI_HEADERS}
 )
 
-IF (NOT MSVC_VERSION VERSION_LESS 1900 OR NOT QWT_MAJOR_VERSION VERSION_LESS 6)
-  MESSAGE("-- Compiling RcsGui with Qt5 libraries")
+# We first look if Qt5 is vailable. If it isn't, we fall back to Qt4
+FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets QUIET)
+IF (NOT Qt5_FOUND)
+  MESSAGE(STATUS "Couldn't find Qt5 - trying Qt4")
+  FIND_PACKAGE(Qt4 REQUIRED)
+  INCLUDE(${QT_USE_FILE})
+ENDIF(NOT Qt5_FOUND)
+
+IF (Qt5_FOUND)
+  MESSAGE(STATUS "Compiling RcsGui with Qt5 libraries")
   ADD_LIBRARY(RcsGui ${LIBRARY_LINKING_TYPE} ${RCS_GUI_SRCS} )
   TARGET_LINK_LIBRARIES(RcsGui RcsCore Qt5::Core Qt5::Gui Qt5::Widgets ${QWT_LIBRARIES})
   SET_TARGET_PROPERTIES(RcsGui PROPERTIES AUTOMOC TRUE)
 ELSE()
-  MESSAGE("-- Compiling RcsGui with Qt4 libraries")
+  MESSAGE(STATUS "Compiling RcsGui with Qt4 libraries")
   SET_PROPERTY(SOURCE HighGui.cpp HighGuiWindow.cpp PROPERTY COMPILE_DEFINITIONS WITH_X11_SUPPORT)
   SET(RCS_Qt4_RES )
   QT4_ADD_RESOURCES(RCS_RES_H ${RCS_Qt4_RES})

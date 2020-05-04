@@ -12,13 +12,11 @@ IF(WIN32)
   # /Gy: Pre-compile individual functions into library
   # /fp:precise
   # /arch:SSE2
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /GF /MD /W3 /GS- /Gd /Gy /fp:precise")
+  #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /GF /MD /W3 /GS- /Gd /Gy /fp:precise")
   ADD_DEFINITIONS(-D_USE_MATH_DEFINES)   # M_PI etc. for windows
   ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE)
   IF (NOT (MSVC_VERSION LESS 1900))
     ADD_DEFINITIONS(-DHAVE_STRUCT_TIMESPEC)
-  ELSE()
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:SSE2")
   ENDIF()
   
   # Create shared libraries for Linux and Windows
@@ -27,7 +25,6 @@ IF(WIN32)
   IF (CMAKE_VERSION VERSION_LESS 3.4)
     MESSAGE(FATAL_ERROR "CMake version too old, at least 3.4 is needed")
   ELSE()
-    MESSAGE(STATUS "Creating windows dlls")
     SET(BUILD_SHARED_LIBS ON)
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     SET(CREATE_WIN_DLL TRUE)
@@ -38,7 +35,7 @@ IF(WIN32)
 ELSEIF(UNIX)
 
   IF(ENABLE_C++11) # note: this is not checked on WIN32 as language version flags only exist since C++14 there
-    MESSAGE(STATUS "Compiling with C++11 support!")
+    #MESSAGE(STATUS "Compiling with C++11 support!")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
   ENDIF()
 
@@ -51,7 +48,7 @@ ELSEIF(UNIX)
   ENDIF()
 
   IF(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    MESSAGE(STATUS "Low level optimization for debug mode")
+    #MESSAGE(STATUS "Low level optimization for debug mode")
 
     # setting march to core2 to enable valgrind debugging (also good for Xeon)
     SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -march=core2")
@@ -63,7 +60,7 @@ ELSEIF(UNIX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -fstack-protector-all")
 
   ELSE()
-    MESSAGE(STATUS "Strong optimization for release mode")
+    #MESSAGE(STATUS "Strong optimization for release mode")
 
     # setting march to native for optimal performance on local machine
     SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -march=native")

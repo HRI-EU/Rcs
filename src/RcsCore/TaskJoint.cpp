@@ -342,5 +342,14 @@ bool Rcs::TaskJoint::isValid(xmlNode* node, const RcsGraph* graph)
     success = false;
   }
 
+  // We require the joint to be unconstrained. Otherwise, we'll have a zero
+  // Jacobian.
+  if (joint->constrained==true)
+  {
+    RLOG(3, "Task \"%s\": Joint \"%s\" is constrained",
+         taskName, joint->name);
+    success = false;
+  }
+
   return success;
 }

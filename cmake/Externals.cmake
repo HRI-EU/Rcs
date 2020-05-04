@@ -145,18 +145,6 @@ ENDIF(NOT HEADLESS_BUILD)
 
 ################################################################################
 #
-# Settings for pthreads. 
-#
-################################################################################
-IF(WIN32)
-  SET(PTHREAD_LIBRARIES ${HGR}/External/pthreads-win/2.91/lib/${MKPLT}/RcsPthreadsVC2.lib)
-  SET(PTHREAD_INCLUDE_DIR ${HGR}/External/pthreads-win/2.91/include)
-ELSE(WIN32)
-  SET(PTHREAD_LIBRARIES pthread)
-ENDIF()
-
-################################################################################
-#
 # Settings for qwt
 #
 ################################################################################
@@ -165,29 +153,29 @@ IF(NOT HEADLESS_BUILD)
   IF(WIN32)
 
     IF (NOT MSVC_VERSION VERSION_LESS 1900)
-	
+      
       SET(QWT_INCLUDE_DIRS ${HGR}/External/qwt/6.1.3/include)
       SET(QWT_LIBRARY_DIR ${HGR}/External/qwt/6.1.3/lib/${MKPLT})
       SET(QWT_MAJOR_VERSION 6)
-  
+      
       ADD_LIBRARY(libqwt STATIC IMPORTED)
       SET_PROPERTY(TARGET libqwt PROPERTY IMPORTED_LOCATION ${QWT_LIBRARY_DIR}/qwt.lib)
       SET_PROPERTY(TARGET libqwt PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${QWT_INCLUDE_DIRS})
       SET(QWT_LIBRARIES libqwt)
 
-	ELSE()
-	
-    SET(QWT_INCLUDE_DIRS ${HGR}/External/qwt/5.2/include)
-    SET(QWT_INCLUDE_DIR ${HGR}/External/qwt/5.2/include)
-    SET(QWT_LIBRARY_DIR ${HGR}/External/qwt/5.2/lib/${MKPLT})
-    SET(QWT_MAJOR_VERSION 5)
-  
-    ADD_LIBRARY(libqwt STATIC IMPORTED)
-    SET_PROPERTY(TARGET libqwt PROPERTY IMPORTED_LOCATION ${QWT_LIBRARY_DIR}/qwt5${RCS_DEBUG_SUFFIX}.lib)
-    SET_PROPERTY(TARGET libqwt PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${HGR}/External/qwt/5.2/include)
-    SET(QWT_LIBRARIES libqwt)
-	
-	ENDIF()
+    ELSE()
+      
+      SET(QWT_INCLUDE_DIRS ${HGR}/External/qwt/5.2/include)
+      SET(QWT_INCLUDE_DIR ${HGR}/External/qwt/5.2/include)
+      SET(QWT_LIBRARY_DIR ${HGR}/External/qwt/5.2/lib/${MKPLT})
+      SET(QWT_MAJOR_VERSION 5)
+      
+      ADD_LIBRARY(libqwt STATIC IMPORTED)
+      SET_PROPERTY(TARGET libqwt PROPERTY IMPORTED_LOCATION ${QWT_LIBRARY_DIR}/qwt5${RCS_DEBUG_SUFFIX}.lib)
+      SET_PROPERTY(TARGET libqwt PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${HGR}/External/qwt/5.2/include)
+      SET(QWT_LIBRARIES libqwt)
+      
+    ENDIF()
 
   ELSE(WIN32)
 
@@ -196,42 +184,3 @@ IF(NOT HEADLESS_BUILD)
   ENDIF(WIN32)
 
 ENDIF(NOT HEADLESS_BUILD)
-
-################################################################################
-#
-# Settings for Qt
-#
-################################################################################
-IF(NOT HEADLESS_BUILD)
-
-  IF (NOT MSVC_VERSION VERSION_LESS 1900)
-    MESSAGE("Configuring for Qt5")
-	#SET(CMAKE_AUTOMOC ON)
-    FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets)
-  ELSE()
-
-  IF (QWT_MAJOR_VERSION VERSION_LESS 6)
-    FIND_PACKAGE(Qt4 REQUIRED)
-    INCLUDE(${QT_USE_FILE})
-  ELSE()
-    FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
-  ENDIF()
-
-  ENDIF()
-
-ENDIF(NOT HEADLESS_BUILD)
-
-################################################################################
-#
-# Eigen3 math library
-# 
-################################################################################
-IF(USE_EIGEN3)
-  FIND_PACKAGE (Eigen3 3.2.0 QUIET)
-
-  IF(NOT Eigen3_FOUND)
-    MESSAGE("-- Using Eigen3 from Rcs external directory")
-    SET(EIGEN3_INCLUDE_DIR ${RCS_THIRDPARTY_DIR}/Eigen)
-  ENDIF()
-
-ENDIF()
