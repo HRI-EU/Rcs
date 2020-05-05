@@ -403,7 +403,7 @@ osg::Switch* BodyNode::addShapes(int mask, bool resizeable)
 
         RcsMesh_destroy(mesh);
       }
-      // If the shape is resizeable, we create a capsule box composite, 
+      // If the shape is resizeable, we create a capsule box composite,
       // which we can conveniently resize if needed.
       else
       {

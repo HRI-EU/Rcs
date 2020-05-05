@@ -48,7 +48,7 @@
  *
  ******************************************************************************/
 Rcs::BulletDebugNode::BulletDebugNode(PhysicsBase* sim_, pthread_mutex_t* mtx):
-  NodeBase(), sim(sim_), viewerLock(NULL)
+  NodeBase(), sim(sim_), viewerLock(mtx)
 {
   KeyCatcherBase::registerKey("d", "Toggle debug viewer", "PhysicsNode");
   BulletDebugDrawer* debugDrawer = new BulletDebugDrawer();

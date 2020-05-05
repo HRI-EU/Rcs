@@ -133,9 +133,7 @@ static void test_softBody(int argc, char** argv)
           osg::ref_ptr<Rcs::MeshNode> mn;
           mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
                                  mesh->faces, mesh->nFaces);
-          //RcsMesh_print(mesh);
           viewer->add(mn.get());
-          RLOG(0, "Adding to meshMap");
           meshMap[mn] = mesh;
         }
       }
@@ -155,38 +153,9 @@ static void test_softBody(int argc, char** argv)
     {
       osg::ref_ptr<Rcs::MeshNode> mn = it->first;
       RcsMeshData* mesh = it->second;
-      //RcsMesh_print(mesh);
-      //RcsMesh_toFile(mesh, "second.stl");
       mn->setMesh(mesh->vertices, mesh->nVertices,
                   mesh->faces, mesh->nFaces);
     }
-
-
-
-
-    //     // RPAUSE_MSG("Hit enter to remove all MeshNode instances");
-    //     viewer->removeInternal("MeshNode");
-    //     // viewer->frame();
-    //     // RPAUSE_MSG("Hit enter to add them again");
-    // RCSGRAPH_TRAVERSE_BODIES(sim->getGraph())
-    // {
-    //   RCSBODY_TRAVERSE_SHAPES(BODY)
-    //   {
-    //     if ((SHAPE->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) == 0)
-    //     {
-    //       continue;
-    //     }
-
-    //     RcsMeshData* mesh = (RcsMeshData*)SHAPE->userData;
-    //     RCHECK(mesh);
-    //     //RcsMesh_print(mesh);
-    //     osg::ref_ptr<Rcs::MeshNode> mn;
-    //     mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
-    //                            mesh->faces, mesh->nFaces);
-    //     viewer->addInternal(mn.get());
-    //   }
-    // }
-
 
     if (viewer)
     {
