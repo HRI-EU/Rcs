@@ -119,7 +119,8 @@ namespace Rcs
 {
 
 BulletSoftSimulation::BulletSoftSimulation() :
-  BulletSimulation(), softBodyWorldInfo(NULL), softWorld(NULL)
+  BulletSimulation(), softBodyWorldInfo(NULL), softWorld(NULL),
+  transformVerticesToShapeFrame(true)
 {
 }
 
@@ -145,6 +146,12 @@ BulletSoftSimulation::~BulletSoftSimulation()
 const char* BulletSoftSimulation::getClassName() const
 {
   return className;
+}
+
+bool BulletSoftSimulation::initialize(const RcsGraph* graph,
+                                      const char* physicsCfg)
+{
+  return PhysicsBase::initialize(graph, physicsCfg);
 }
 
 bool BulletSoftSimulation::initialize(const RcsGraph* g,
@@ -176,16 +183,15 @@ void BulletSoftSimulation::updateSoftMeshes()
                                              nValues*sizeof(unsigned int));
     dstMesh->nFaces = sbi->m_faces.size();
 
-
-    // Transformation from world into shape's frame. We currently project all
-    // vertices into the world frame. There is no updating on any soft body
-    // transform. If there is a good answer why and how to do this, it should
-    // probably be done here. For instance: Compute the initial vertex centroid
-    // and store it in a relative body transform. During simulation, propagate
-    // A_BI through the centroid. Probably we need to get a notion of the
-    // rotations as well, for instance through the Eigenvectors of the vertices.
-    // But these might make the body flip around and not keep consistent
-    // rotations if the Eigenvalues change their order.
+    // The vertices of all soft objects are represented in the world frame.
+    // There is no equivalent to a rigid body transform. If there is a good
+    // answer why and how to do this, it should probably be done here. For
+    // instance: Compute the initial vertex centroid and store it in a
+    // relative body transform. During simulation, propagate A_BI through the
+    // centroid. Probably we need to get a notion of the rotations as well,
+    // for instance through the Eigenvectors of the vertices. But these might
+    // make the body flip around and not keep consistent rotations if the
+    // Eigenvalues change their order.
     HTr A_CI;
     HTr_transform(&A_CI, rcsSoftBdy->A_BI, &softShape->A_CB);
 
@@ -217,9 +223,16 @@ void BulletSoftSimulation::updateSoftMeshes()
       RCHECK_MSG(Vec3d_isFinite(vtx1), "%s", rcsSoftBdy->name);
       RCHECK_MSG(Vec3d_isFinite(vtx2), "%s", rcsSoftBdy->name);
 
-      Vec3d_invTransformSelf(vtx0, &A_CI);
-      Vec3d_invTransformSelf(vtx1, &A_CI);
-      Vec3d_invTransformSelf(vtx2, &A_CI);
+      // Transformation from world into shape's frame so that parent-child
+      // relations in the graphics scene graph are preserved. The vertices
+      // become a child of the shape, same as any other shape. Note that the
+      // shape transform in this case is not moving.
+      if (transformVerticesToShapeFrame == true)
+      {
+        Vec3d_invTransformSelf(vtx0, &A_CI);
+        Vec3d_invTransformSelf(vtx1, &A_CI);
+        Vec3d_invTransformSelf(vtx2, &A_CI);
+      }
     }
 
   }   // arr.size()
@@ -509,6 +522,14 @@ int BulletSoftSimulation::connectSoftToRigidBody(btSoftBody* softBdy,
   return anchoredVertices;
 }
 
+void BulletSoftSimulation::transformVerticesToWorld()
+{
+  transformVerticesToShapeFrame = false;
+}
 
+void BulletSoftSimulation::transformVerticesToShape()
+{
+  transformVerticesToShapeFrame = true;
+}
 
 }  // namespace Rcs

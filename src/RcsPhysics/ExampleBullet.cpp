@@ -78,9 +78,8 @@ void quit(int /*sig*/)
 }
 
 
-
 /******************************************************************************
- *
+ * SoftBullet simulation and graphics update example
  *****************************************************************************/
 static void test_softBody(int argc, char** argv)
 {
@@ -94,82 +93,109 @@ static void test_softBody(int argc, char** argv)
   argP.getArgument("-physics_config", cfg, "Configuration file name for "
                    "physics (default is %s)", cfg);
   argP.getArgument("-dt", &dt, "Simulation time step (default is %f)", dt);
-  bool valgrind = argP.hasArgument("-valgrind", "Skip graphics and guis");
   Rcs_addResourcePath(directory);
 
+  // Create a kinematic graph from the given xml file.
   RcsGraph* graph = RcsGraph_create(xmlFileName);
-  RCHECK(graph);
 
-  Rcs::BulletSoftSimulation* sim = new Rcs::BulletSoftSimulation();
-  sim->Rcs::PhysicsBase::initialize(graph, cfg);
+  // Create a soft bullet simulation of the graph. Since in this example, we
+  // keep things very basic, we don't use the visualization classes based on
+  // the graph. These assume that all geometries are parented by the shapes.
+  // Here instead we use the simulated soft vertices which we convert into
+  // world coordinates. That's why we use sim->transformVerticesToWorld().
+  Rcs::BulletSoftSimulation sim;
+  sim.initialize(graph, cfg);
+  sim.transformVerticesToWorld();
 
-  Rcs::Viewer* viewer = NULL;
+  // Create visualizations for OpenSceneGraph graphics. The viewer is the top-
+  // level window. We add a few visualization nodes to it.
+  Rcs::Viewer viewer;
+
+  // The debug drawer draws a set of lines that make up the geometries of all
+  // physics entities. It is computed inside Bullet. Therefore we need to add
+  // it also to the simulator. The debug drawer also shows all Bullet rigid
+  // bodies. You can spot them as wire frame objects only, since we don't
+  // add a MeshNode for them.
+  Rcs::BulletDebugDrawer* debugDrawer = new Rcs::BulletDebugDrawer();
+  debugDrawer->setDebugMode(btIDebugDraw::DBG_DrawWireframe);
+  viewer.add(debugDrawer);
+  sim.setDebugDrawer(debugDrawer);
+
+  // In the following, we create a MeshNode for each soft body, and add it
+  // to the viewer. Since later, we update all meshes from the simulation,
+  // we create a simple convenience map that maps the MeshNode to the mesh
+  // data that has been updated inside Bullet.
   std::map<osg::ref_ptr<Rcs::MeshNode>, RcsMeshData*> meshMap;
 
-  if (!valgrind)
+  // Walk through all bodies of the graph. Each traversed body can be
+  // referenced by the variable BODY.
+  RCSGRAPH_TRAVERSE_BODIES(sim.getGraph())
   {
-    viewer = new Rcs::Viewer();
-
-    Rcs::BulletDebugDrawer* debugDrawer = new Rcs::BulletDebugDrawer();
-    debugDrawer->setDebugMode(btIDebugDraw::DBG_DrawWireframe//  |
-                              // btIDebugDraw::DBG_DrawContactPoints
-                             );
-    viewer->add(debugDrawer);
-    sim->setDebugDrawer(debugDrawer);
-
-    RCSGRAPH_TRAVERSE_BODIES(sim->getGraph())
+    // Walk through all shapes of the body. Each traversed shape can be
+    // referenced by the variable SHAPE.
+    RCSBODY_TRAVERSE_SHAPES(BODY)
     {
-      RCSBODY_TRAVERSE_SHAPES(BODY)
+      // We skip the shape if it is not labelled as a soft physics shape. In
+      // the xml file, there must be a softPhysics="true" to make the shape
+      // being simulated in the soft body simulation.
+      if ((SHAPE->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) == 0)
       {
-        if ((SHAPE->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) == 0)
-        {
-          continue;
-        }
+        continue;
+      }
 
-        RcsMeshData* mesh = (RcsMeshData*)SHAPE->userData;
+      // If we found a mesh for the shape, we create a MeshNode and add it
+      // to the map. Otherwise, we emit a warning on the default debug level.
+      RcsMeshData* mesh = (RcsMeshData*)SHAPE->userData;
+      if (mesh)
+      {
         RLOG(0, "Found mesh for body %s", BODY->name);
-        if (mesh)
-        {
-          osg::ref_ptr<Rcs::MeshNode> mn;
-          mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
-                                 mesh->faces, mesh->nFaces);
-          viewer->add(mn.get());
-          meshMap[mn] = mesh;
-        }
+        osg::ref_ptr<Rcs::MeshNode> mn;
+        mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
+                               mesh->faces, mesh->nFaces);
+        viewer.add(mn.get());
+        meshMap[mn] = mesh;
+      }
+      else
+      {
+        RLOG(0, "Failed to add mesh for body %s", BODY->name);
       }
     }
-  }   // (!valgrind)
+  }
 
-  RLOG(0, "MeshMap has %zu entries", meshMap.size());
 
-  RPAUSE_DL(1);
-
+  // End-less loop that simulates and updates the visualization. Can be
+  // stopped with Ctrl-C: The signal is caught by quit() which sets
+  // runLoop to false.
   while (runLoop)
   {
-    sim->step(dt);
+    // Performs one simulation step for the given time increment
+    sim.step(dt);
 
+    // Traverse all mesh nodes and update the vertices from the
+    // simulator.
     std::map<osg::ref_ptr<Rcs::MeshNode>, RcsMeshData*>::iterator it;
     for (it = meshMap.begin(); it != meshMap.end(); it++)
     {
       osg::ref_ptr<Rcs::MeshNode> mn = it->first;
-      RcsMeshData* mesh = it->second;
-      mn->setMesh(mesh->vertices, mesh->nVertices,
-                  mesh->faces, mesh->nFaces);
+      RcsMeshData* msh = it->second;
+      mn->setMesh(msh->vertices, msh->nVertices, msh->faces, msh->nFaces);
     }
 
-    if (viewer)
-    {
-      viewer->frame();
-    }
+    // Update graphics
+    viewer.frame();
+
+    // Wait a little bit to let the CPU breathe
     Timer_usleep(1000);
+
+    // On debug level 5, we wait for an enter key here. The debug level can be
+    // set through the command line argument "-dl 5", or by pressing the number
+    // key 5 in the viewer window.
     RPAUSE_DL(5);
   }
 
 
-
-
+  // Clean up heap memory.
   RcsGraph_destroy(graph);
-  delete sim;
 }
 
 /******************************************************************************
@@ -237,7 +263,7 @@ int main(int argc, char** argv)
       printf("\t-m");
       printf("\t0   Prints this message (default)\n");
       printf("\t\t1   Mesh conversion to convex hull\n");
-      printf("\t\t2   Soft body meshes\n");
+      printf("\t\t2   Bullet soft body simulation with native meshes\n");
       break;
     }
 
@@ -260,16 +286,10 @@ int main(int argc, char** argv)
 
   } // switch(mode)
 
-  // Clean up global stuff. From the libxml2 documentation:
-  // WARNING: if your application is multithreaded or has plugin support
-  // calling this may crash the application if another thread or a plugin is
-  // still using libxml2. It's sometimes very hard to guess if libxml2 is in
-  // use in the application, some libraries or plugins may use it without
-  // notice. In case of doubt abstain from calling this function or do it just
-  // before calling exit() to avoid leak reports from valgrind !
+  // Clean up global stuff
   xmlCleanupParser();
 
-  fprintf(stderr, "Thanks for using the Bullet example\n");
+  fprintf(stderr, "Thanks for using the ExampleBullet app\n");
 
   return 0;
 }

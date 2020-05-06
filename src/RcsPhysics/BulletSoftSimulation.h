@@ -62,6 +62,9 @@ public:
                        const RcsGraph* newGraph);
   virtual ~BulletSoftSimulation();
   virtual const char* getClassName() const;
+  void transformVerticesToWorld();
+  void transformVerticesToShape();
+  bool initialize(const RcsGraph* g, const char* physicsConfigFile);
 
 protected:
 
@@ -73,6 +76,7 @@ protected:
   int connectSoftToRigidBody(btSoftBody* softBdy, BulletRigidBody* rigidBdy);
   btSoftBodyWorldInfo* softBodyWorldInfo;
   btSoftRigidDynamicsWorld* softWorld;
+  bool transformVerticesToShapeFrame;
 };
 
 }   // namespace Rcs
