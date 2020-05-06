@@ -38,7 +38,7 @@ To build the doxygen documentation, just type:
 
     make doc
 
-Compilation has also been tested on Ubuntu 16.04 with GCC 5 and Ubuntu 18.04 with GCC 7 and clang.
+Compilation has successfully been tested on Ubuntu 14.04, Ubuntu 16.04 with GCC 5 and Ubuntu 18.04 with GCC 7 and clang, and Ubuntu 20.
 
 Note that using Vortex Essentials on newer operating systems requires extra care. The official distribution is compiled with GCC 4.8, and will not work with newer compiler versions. To work around this limitation, Rcs compiles the Vortex integration module separately. If GCC 4.8 is available (by installing the `g++-4.8` package), the integration module is built automatically. If it isn't, you need to provide a pre-built version of libRcsVortex.so.
 
@@ -77,8 +77,8 @@ It is also possible to compile it on Microsoft Visual Studio, however with some 
 Rcs has been designed carefully to have only little dependencies. The ones that have been selected are in our opinion very matured libraries:
 
  - Libxml2 (MIT License, Ubuntu-package libxml2-dev)
- - Qt: LGPL (Also dual commercial license available, Ubuntu-package libqt4-dev)
- - qwt (LGPL with additions, Ubuntu-package libqwt5-qt4-dev)
+ - Qt4 or Qt5: LGPL (Also dual commercial license available, Ubuntu-package libqt4-dev or whatever is needed for Qt5)
+ - qwt (LGPL with additions, Ubuntu-package libqwt5-qt4-dev in case you use Qt4, otherwise libqwt-qt5-dev)
  - OpenSceneGraph (OSGPL, Ubuntu-package libopenscenegraph-dev)
 
 Optionally (please use the ccmake tool to manage the compile options), additional functionality can be compiled in when activating
