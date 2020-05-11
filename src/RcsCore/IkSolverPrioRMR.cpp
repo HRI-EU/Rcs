@@ -131,7 +131,8 @@ Rcs::IkSolverPrioRMR::IkSolverPrioRMR(const Rcs::ControllerBase* controller_) :
     {
       int prioLevel = 0;
 
-      if (getXMLNodePropertyInt(node, "prio", &prioLevel))
+      if (getXMLNodePropertyInt(node, "prio", &prioLevel) ||
+          getXMLNodePropertyInt(node, "priority", &prioLevel))
       {
         this->priorityLevel[taskCount] = prioLevel;
         RLOG(5, "Setting task %d to level %d", taskCount, prioLevel);
@@ -498,4 +499,31 @@ size_t Rcs::IkSolverPrioRMR::getTaskDimForPriority(int prioLevel,
 void Rcs::IkSolverPrioRMR::setTaskPriority(size_t taskIdx, int prioLevel)
 {
   priorityLevel[taskIdx] = prioLevel;
+}
+
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+int Rcs::IkSolverPrioRMR::getTaskPriority(size_t taskIdx) const
+{
+  return priorityLevel[taskIdx];
+}
+
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::IkSolverPrioRMR::print() const
+{
+  RMSG("IkSolverPrioRMR::print()");
+  for (size_t i=0; i<priorityLevel.size(); ++i)
+  {
+    std::cout << "Task " << controller->getTaskName(i) << " (" << i
+              << "): Priority is " << priorityLevel[i] << std::endl;
+  }
+
+  std::cout << "nx: " << nx << std::endl;
+  std::cout << "nx1: " << nx1 << std::endl;
+  std::cout << "nx2: " << nx2 << std::endl;
 }

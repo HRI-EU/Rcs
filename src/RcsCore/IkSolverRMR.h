@@ -207,7 +207,9 @@ public:
    */
   virtual unsigned int getInternalDof() const;
 
-
+  /*! \brief Returns the pointer to the internal pseudo-inverse pinvJ.
+   */
+  const MatNd* getPseudoInverse() const;
 
 protected:
 

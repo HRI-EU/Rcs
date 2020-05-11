@@ -119,6 +119,8 @@ public:
   size_t getTaskDimForPriority(int prioLevel,
                                const MatNd* activation) const;
   void setTaskPriority(size_t taskIdx, int prioLevel);
+  int getTaskPriority(size_t taskIdx) const;
+  void print() const;
 
   const Rcs::ControllerBase* controller;
   unsigned int nx, nx1, nx2, nTasks, nTasks1, nTasks2, nq, nqr;

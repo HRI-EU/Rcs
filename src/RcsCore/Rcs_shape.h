@@ -73,7 +73,6 @@ bool RcsShape_setDistanceFunction(unsigned int shapeTypeIdx1,
                                   unsigned int shapeTypeIdx2,
                                   RcsDistanceFunction func);
 
-
 /*! \ingroup RcsShapeFunctions
  *  \brief Returns a function poiter of the distance function that computes
  *         the shape distance with the corresponding indices.

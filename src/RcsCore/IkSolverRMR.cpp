@@ -596,3 +596,11 @@ unsigned int Rcs::IkSolverRMR::getInternalDof() const
 {
   return this->nqr;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+const MatNd* Rcs::IkSolverRMR::getPseudoInverse() const
+{
+  return pinvJ;
+}
