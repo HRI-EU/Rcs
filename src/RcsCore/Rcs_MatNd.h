@@ -1219,12 +1219,14 @@ double MatNd_rmsqError(const MatNd* a1, const MatNd* a2);
 double* MatNd_getRowPtr(const MatNd* self, int row);
 
 /*! \ingroup MatNdFunctions
- *  \brief Rotates a 3xn array about the rotation matrix of A_KI.
+ *  \brief Rotates a 3xn array about the rotation matrix of A_KI:
+ *         self = A_KI*self
  */
 void MatNd_rotateSelf(MatNd* self, double A_KI[3][3]);
 
 /*! \ingroup MatNdFunctions
- *  \brief Rotates a 3xn array about the transpose rotation matrix of A_KI.
+ *  \brief Rotates a 3xn array about the transpose rotation matrix of A_KI:
+ *         self = transpose(A_KI)*self
  */
 void MatNd_invRotateSelf(MatNd* self, double A_KI[3][3]);
 

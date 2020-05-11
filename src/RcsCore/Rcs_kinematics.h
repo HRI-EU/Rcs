@@ -189,8 +189,8 @@ void RcsGraph_bodyPointDotJacobian(const RcsGraph* graph, const RcsBody* body,
  *  \param[in]   graph   Pointer to RcsGraph that contains the body.
  *  \param[in]   body    Pointer to body. If body is  NULL, the result is a
  *                       zero-Jacobian.
- *  \param[in]   A_BI    Optional rotation  matrix from world (I) to body (B)
- *                       frame (row-major). If it is not NULL, the  Jacobian
+ *  \param[in]   A_BI    Optional rotation matrix from world (I) to body (B)
+ *                       frame (row-major). If it is not NULL, the Jacobian
  *                       is rotated into the B-frame.
  *  \param[out]  I_J_rot Rotation Jacobian in world coordinates. It will be
  *                       reshaped to 3 x RcsGraph::nJ.

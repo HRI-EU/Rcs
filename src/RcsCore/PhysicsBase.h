@@ -47,7 +47,7 @@
 /*!
  *  \defgroup RcsPhysics Physics simulation
  *
- *  A library for rigid body physics simulation.
+ *  A library for rigid and soft body physics simulation.
  *
  */
 
@@ -385,8 +385,8 @@ public:
 
   /*! \brief Cloning function with optional graph.
    *
-   *  \param[in] newGraph     RcsGraph to refer to. If it is NULL, the graph
-   *                          of the copy points to the one it is copied from.
+   *  \param[in] newGraph  RcsGraph to refer to. If it is NULL, the graph
+   *                       of the copy points to the one it is copied from.
    */
   virtual PhysicsBase* clone(RcsGraph* newGraph=NULL) const = 0;
 
@@ -397,7 +397,14 @@ public:
                                   MatNd* damping=NULL) const = 0;
 
   virtual bool initialize(const RcsGraph* g, const PhysicsConfig* config) = 0;
-  virtual bool initialize(const RcsGraph* g, const char* physicsConfigFile);
+
+  /*! \brief Creates a physicsConfig class instance and calls
+   *         \ref initialize(const RcsGraph*, const PhysicsConfig*)
+   *
+   *  \param[in] graph          Underlying RcsGraph structure
+   *  \param[in] physicsCfgFile Physics configuration file or NULL
+   */
+  virtual bool initialize(const RcsGraph* graph, const char* physicsCfgFile);
 
 
 
@@ -420,8 +427,8 @@ public:
                             const char* name, const char* type, double value);
 
   /*! \brief Empty default constructor. All members are initialized to NULL.
-   *         The init() function needs to be called to properly initialize the
-   *         class.
+   *         The initialize() function needs to be called to properly
+   *         initialize the class.
    */
   PhysicsBase();
 

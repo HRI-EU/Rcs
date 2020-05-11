@@ -3082,15 +3082,8 @@ void MatNd_rotateSelf(MatNd* self, double A_KI[3][3])
 
 void MatNd_invRotateSelf(MatNd* self, double A_KI[3][3])
 {
-  int i, j;
   double A_IK[3][3];
-
-  for (i = 0; i < 3; i++)
-    for (j = 0; j < 3; j++)
-    {
-      A_IK[i][j] = A_KI[j][i];
-    }
-
+  Mat3d_transpose(A_IK, A_KI);
   MatNd_rotateSelf(self, A_IK);
 }
 

@@ -422,8 +422,7 @@ void RcsGraph_rotationJacobian(const RcsGraph* self,
                                MatNd* J)
 {
   // Reset the Jacobian
-  MatNd_reshape(J, 3, self->nJ);
-  MatNd_setZero(J);
+  MatNd_reshapeAndSetZero(J, 3, self->nJ);
 
   // If body is NULL, return a zero-Jacobian
   if (b == NULL)
@@ -484,7 +483,7 @@ void RcsGraph_rotationHessian(const RcsGraph* self,
   // Find last joint of previous body (which has joints)
   RcsJoint* jnt_j = RcsBody_lastJointBeforeBody(b);
 
-  if (!jnt_j)
+  if (jnt_j == NULL)
   {
     return;
   }

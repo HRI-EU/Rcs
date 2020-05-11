@@ -1462,7 +1462,12 @@ int Math_pointInsideOrOnPolygon2D(const double pt[2],
     // unlikely) get a zero vector.
     VecNd_setRandom(rayDir, 0.1, 1.0, 2);
     VecNd_normalizeSelf(rayDir, 2);
-    RLOG(0, "Iteration %d failed", iter);
+
+    // \todo: No logging on dl 0
+    if (iter >= maxIter / 2)
+    {
+      RLOG(0, "Iteration %d failed", iter);
+    }
 
   }   // for (unsigned int iter=0;iter<maxIter; ++iter)
 
