@@ -35,6 +35,7 @@
 *******************************************************************************/
 
 #include "TaskDistance1D.h"
+#include "TaskDistance.h"
 #include "TaskFactory.h"
 #include "Rcs_typedef.h"
 #include "Rcs_macros.h"
@@ -192,24 +193,7 @@ bool Rcs::TaskDistance1D::isValid(xmlNode* node, const RcsGraph* graph)
   classNameVec.push_back(std::string("DistanceZ"));
 
   bool success = Rcs::Task::isValid(node, graph, classNameVec);
-
-  char taskName[256] = "Unnamed task";
-  getXMLNodePropertyStringN(node, "name", taskName, 256);
-
-  // This task requires an effector and a reference body
-  if (getXMLNodeProperty(node, "effector")==false)
-  {
-    RLOG(3, "Task \"%s\" requires \"effector\", none found", taskName);
-    success = false;
-  }
-
-  if ((getXMLNodeProperty(node, "refBdy")==false) &&
-      (getXMLNodeProperty(node, "refBody")==false))
-  {
-    RLOG(3, "Task \"%s\" requires \"refBdy\" or \"refBody\", none found",
-         taskName);
-    success = false;
-  }
+  success = Rcs::TaskDistance::hasDistanceFunction(node, graph) && success;
 
   return success;
 }

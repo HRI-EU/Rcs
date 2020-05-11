@@ -2399,14 +2399,54 @@ void Rcs::ControllerBase::swapTaskVec(std::vector<Task*>& newTasks,
 }
 
 /*******************************************************************************
+ * Print the usage description if any
+ ******************************************************************************/
+void Rcs::ControllerBase::printUsage(const std::string& xmlFile)
+{
+  char cfgFile[256];
+  bool fileExists = Rcs_getAbsoluteFileName(xmlFile.c_str(), cfgFile);
+
+  if (!fileExists)
+  {
+    RLOG(1, "XML file \"%s\" not found in resource paths", xmlFile.c_str());
+    return;
+  }
+
+  xmlDocPtr docPtr;
+  xmlNodePtr node = parseXMLFile(cfgFile, "Controller", &docPtr);
+
+  if (node==NULL)
+  {
+    RLOG(1, "Node \"Controller\" not found in \"%s\"", cfgFile);
+    return;
+  }
+
+  xmlChar* usage = xmlGetProp(node, (const xmlChar*) "usage");
+
+  if (usage)
+  {
+    std::cout << "Usage: " << std::endl << usage << std::endl;
+  }
+  else
+  {
+    std::cout << "No usage description" << std::endl;
+  }
+
+  xmlFreeDoc(docPtr);
+}
+
+/*******************************************************************************
  *
  ******************************************************************************/
 void Rcs::ControllerBase::print() const
 {
+  // Print information for each task
   for (size_t i = 0; i < getNumberOfTasks(); i++)
   {
     tasks[i]->print();
   }
+
+  printUsage(this->xmlFile);
 }
 
 /*******************************************************************************

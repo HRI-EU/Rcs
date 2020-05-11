@@ -149,26 +149,44 @@ bool Rcs::TaskDistance::testHessian(bool verbose)
  ******************************************************************************/
 bool Rcs::TaskDistance::isValid(xmlNode* node, const RcsGraph* graph)
 {
-  std::vector<std::string> classNameVec;
-  classNameVec.push_back(std::string("Distance"));
+  bool success = Rcs::Task::isValid(node, graph, "Distance");
+  success = Rcs::TaskDistance::hasDistanceFunction(node, graph) && success;
 
-  bool success = Rcs::Task::isValid(node, graph, classNameVec);
+  return success;
+}
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::TaskDistance::hasDistanceFunction(xmlNode* node,
+                                            const RcsGraph* graph)
+{
+  bool success = true;
   char taskName[256] = "Unnamed task";
   getXMLNodePropertyStringN(node, "name", taskName, 256);
 
-  // This task requires an effector and a reference body
-  if (getXMLNodeProperty(node, "effector")==false)
+  // Check if there is a distance function called between effector and refBdy
+  char name1[265] = "", name2[265] = "";
+  getXMLNodePropertyStringN(node, "effector", name1, 256);
+  getXMLNodePropertyStringN(node, "refBdy", name2, 256);
+  getXMLNodePropertyStringN(node, "refBody", name2, 256);
+  const RcsBody* b1 = RcsGraph_getBodyByName(graph, name1);
+  const RcsBody* b2 = RcsGraph_getBodyByName(graph, name2);
+
+  if (b1 == NULL)
   {
-    RLOG(3, "Task \"%s\" requires \"effector\", none found", taskName);
+    RLOG(1, "Effector \"%s\" of task \"%s\" doesn't exist!", name1, taskName);
     success = false;
   }
-
-  if ((getXMLNodeProperty(node, "refBdy")==false) &&
-      (getXMLNodeProperty(node, "refBody")==false))
+  else if (b2 == NULL)
   {
-    RLOG(3, "Task \"%s\" requires \"refBdy\" or \"refBody\", none found",
-         taskName);
+    RLOG(1, "Ref-body \"%s\" of task \"%s\" doesn't exist!", name2, taskName);
+    success = false;
+  }
+  else if (RcsBody_getNumDistanceQueries(b1, b2) == 0)
+  {
+    RLOG(1, "Task \"%s\": No distance function between \"%s\" and \"%s\"!",
+         taskName, name1, name2);
     success = false;
   }
 

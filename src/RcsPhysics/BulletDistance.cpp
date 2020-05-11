@@ -356,6 +356,8 @@ static bool setBulletDistanceFunctions()
   // SSL
   success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_MESH,
                                          RcsShape_distanceBullet) && success;
+  success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_CYLINDER,
+                                         RcsShape_distanceBullet) && success;
 
   // SSR
   success = RcsShape_setDistanceFunction(RCSSHAPE_SSR, RCSSHAPE_SSL,
@@ -424,6 +426,8 @@ static bool setBulletDistanceFunctions()
                                          RcsShape_distanceBullet) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_CYLINDER, RCSSHAPE_TORUS,
                                          RcsShape_distanceBullet) && success;
+  success = RcsShape_setDistanceFunction(RCSSHAPE_CYLINDER, RCSSHAPE_SSL,
+                                         RcsShape_distanceBullet) && success;
 
   // SPHERE
   success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_SSR,
@@ -469,6 +473,8 @@ static bool setBulletDistanceFunctions()
 
   return success;
 }
+
+
 
 // This is being called before main()
 static bool distanceInitialized = setBulletDistanceFunctions();

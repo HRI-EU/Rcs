@@ -38,6 +38,7 @@ Rcs_Mat3d.c
 Rcs_mathTests.cpp
 Rcs_MatNd.c
 Rcs_mesh.c
+Rcs_graphOpenRAVEParser.c
 Rcs_parser.c
 Rcs_quaternion.c
 Rcs_resourcePath.cpp
@@ -81,6 +82,7 @@ TaskOmega1D.cpp
 TaskOmega3D.cpp
 TaskPolar2D.cpp
 TaskPolarTarget2D.cpp
+TaskPolarSurfaceNormal.cpp
 TaskPose5D.cpp
 TaskPose6D.cpp
 TaskPosition1D.cpp

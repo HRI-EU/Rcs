@@ -295,6 +295,7 @@ int main(int argc, char** argv)
       {
         Rcs::TaskFactory::instance()->printRegisteredTasks();
         Rcs::PhysicsFactory::print();
+        RcsShape_fprintDistanceFunctions(stdout);
       }
 
       break;
@@ -1699,7 +1700,7 @@ int main(int argc, char** argv)
     {
       Rcs::KeyCatcherBase::registerKey("q", "Quit");
       Rcs::KeyCatcherBase::registerKey("T", "Run controller test");
-      Rcs::KeyCatcherBase::registerKey("p", "Toggle pause");
+      Rcs::KeyCatcherBase::registerKey(" ", "Toggle pause");
       Rcs::KeyCatcherBase::registerKey("a", "Change IK algorithm");
       Rcs::KeyCatcherBase::registerKey("d", "Write q-vector to q.dat");
       Rcs::KeyCatcherBase::registerKey("D", "Set q-vector from file q.dat");
@@ -1710,10 +1711,11 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("e", "Link generic body");
       Rcs::KeyCatcherBase::registerKey("v", "Write current q to model_state");
       Rcs::KeyCatcherBase::registerKey("f", "Toggle physics feedback");
+      Rcs::KeyCatcherBase::registerKey("p", "Print controller info on console");
 
       int algo = 0;
       double alpha = 0.05, lambda = 1.0e-8, tmc = 0.1, dt = 0.01, dt_calc = 0.0;
-      double jlCost = 0.0, dJlCost = 0.0, clipLimit = 0.1;
+      double jlCost = 0.0, dJlCost = 0.0, clipLimit = 0.1, scaleDragForce = 0.01;
       bool calcDistance = true;
       strcpy(xmlFileName, "cAction.xml");
       strcpy(directory, "config/xml/DexBot");
@@ -1739,6 +1741,8 @@ int main(int argc, char** argv)
                        " for physics (default is %s)", physicsCfg);
       argP.getArgument("-physicsEngine", physicsEngine,
                        "Physics engine (default is \"%s\")", physicsEngine);
+      argP.getArgument("-scaleDragForce", &scaleDragForce, "Scale factor for"
+                       " mouse dragger (default is \"%f\")", scaleDragForce);
       bool ffwd = argP.hasArgument("-ffwd", "Feed-forward dx only");
       bool pause = argP.hasArgument("-pause", "Pause after each iteration");
       bool launchJointWidget = argP.hasArgument("-jointWidget",
@@ -1752,13 +1756,14 @@ int main(int argc, char** argv)
                                            " solver");
       bool physics = argP.hasArgument("-physics", "Use physics simulation");
 
+      Rcs_addResourcePath(directory);
+
       if (argP.hasArgument("-h"))
       {
         printf("Resolved motion rate control test\n\n");
+        Rcs::ControllerBase::printUsage(xmlFileName);
         break;
       }
-
-      Rcs_addResourcePath(directory);
 
       // Create controller
       Rcs::ControllerBase controller(xmlFileName, true);
@@ -1842,7 +1847,7 @@ int main(int argc, char** argv)
         gn      = new Rcs::GraphNode(controller.getGraph());
         hud     = new Rcs::HUD();
         dragger = new Rcs::BodyPointDragger();
-        dragger->scaleDragForce(0.01);
+        dragger->scaleDragForce(scaleDragForce);
         v->add(gn);
         v->add(hud);
         v->add(kc);
@@ -2066,7 +2071,7 @@ int main(int argc, char** argv)
           RLOGS(0, "Running controller test");
           controller.test(true);
         }
-        else if (kc && kc->getAndResetKey('p'))
+        else if (kc && kc->getAndResetKey(' '))
         {
           pause = !pause;
           RMSG("Pause modus is %s", pause ? "ON" : "OFF");
@@ -2123,6 +2128,11 @@ int main(int argc, char** argv)
           RcsGraph_fprintModelState(stdout, controller.getGraph(),
                                     controller.getGraph()->q);
         }
+        else if (kc && kc->getAndResetKey('p'))
+        {
+          controller.print();
+        }
+
         else if (kc && kc->getAndResetKey('f'))
         {
           physicsFeedback = !physicsFeedback;
@@ -3156,13 +3166,6 @@ int main(int argc, char** argv)
   {
     RLOG(0, "Thanks for using the Rcs libraries\n");
   }
-
-#if defined (_MSC_VER)
-  if ((mode==0) || argP.hasArgument("-h"))
-  {
-    RPAUSE();
-  }
-#endif
 
   return Math_iClip(result, 0, 255);
 }

@@ -1284,6 +1284,10 @@ static double RcsShape_closestPointToCylinder(const RcsShape* point,
 {
   double dist = Math_distPointCylinder(A_point->org, A_cyl, cyl->extents[2],
                                        cyl->extents[0], I_cp2);
+  REXEC(1)
+  {
+    RLOG(0, "Point: %f %f %f", A_point->org[0], A_point->org[1], A_point->org[2]);
+  }
   Vec3d_copy(I_cp1, A_point->org);
   Vec3d_sub(I_n, I_cp2, I_cp1);
   Vec3d_normalizeSelf(I_n);
@@ -1366,15 +1370,24 @@ static double RcsShape_closestSphereToBox(const RcsShape* sphere,
                                           double I_cpBox[3],
                                           double I_nSphBox[3])
 {
-  double dist = Math_distPointBox(A_sphere->org, A_box, box->extents,
-                                  I_cpBox, I_nSphBox);
+  double distBox = Math_distPointBox(A_sphere->org, A_box, box->extents,
+                                     I_cpBox, I_nSphBox);
   Vec3d_constMulSelf(I_nSphBox, -1.0);
   Vec3d_copy(I_cpSph, A_sphere->org);
 
   // Point on sphere surface: cp_sphere = cp_point + radius_sphere*n
   Vec3d_constMulAndAddSelf(I_cpSph, I_nSphBox, sphere->extents[0]);
 
-  return dist - sphere->extents[0];
+  double distSphere = distBox - sphere->extents[0];
+
+  // In case the sphere radius leads to a penetration, we need to revert the
+  // normal direction
+  if ((distSphere < 0.0) && (distBox >= 0.0))
+  {
+    Vec3d_constMulSelf(I_nSphBox, -1.0);
+  }
+
+  return distSphere;
 }
 
 /*******************************************************************************

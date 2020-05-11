@@ -36,6 +36,7 @@
 
 #include "Rcs_graphParser.h"
 #include "Rcs_URDFParser.h"
+#include "Rcs_graphOpenRAVEParser.h"
 #include "Rcs_typedef.h"
 #include "Rcs_body.h"
 #include "Rcs_shape.h"
@@ -1342,6 +1343,76 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     RcsGraph_parseBodies(node->next, self, gCol, ndExt,
                          parentGroup, A, firstInGroup, level, root, verbose);
   }
+
+
+
+
+
+
+
+
+
+  else if (isXMLNodeName(node, "OpenRave"))
+  {
+    // The node points to an OpenRave file
+
+    char tmp[256];
+    strcpy(tmp, "");
+
+    // check if prev tag is provided --> first body of openrave graph will be
+    // attached to it
+    RcsBody* pB = NULL;
+    if (getXMLNodePropertyStringN(node, "prev", tmp, 64) > 0)
+    {
+      pB = RcsGraph_getBodyByName(self, tmp);
+      RCHECK_MSG(pB, "Body \"%s\" not found, which was specified as prev for an OpenRave node", tmp);
+    }
+
+    // Get filename
+    strcpy(tmp, "");
+    getXMLNodePropertyStringN(node, "file", tmp, 64);
+
+    // check if q0 is provided and read it
+    double* q0 = NULL;
+    unsigned int nq = 0;
+    if (getXMLNodeProperty(node, "q0"))
+    {
+      RLOGS(1, "Found q0 tag --> overriding initial values of OpenRave file");
+
+      // get number of provided q0 values
+      char q_str[512];
+      getXMLNodePropertyStringN(node, "q0", q_str, 512);
+      nq = String_countSubStrings(q_str, " ");
+
+      // read q0 values
+      q0 = RNALLOC(nq, double);
+      getXMLNodePropertyVecN(node, "q0", q0, nq);
+
+      // convert to radian
+      VecNd_constMulSelf(q0, M_PI / 180.0, nq);
+    }
+
+    // parse OpenRave file
+    RcsGraph_createBodiesFromOpenRAVEFile(self, pB, tmp, q0, nq);
+
+    // cleanup
+    RFREE(q0);
+
+    RcsGraph_parseBodies(node->next, self, gCol, suffix,
+                         parentGroup, A, firstInGroup, level, root, verbose);
+  }
+
+
+
+
+
+
+
+
+
+
+
+
   else if (isXMLNodeName(node, "URDF"))
   {
     // check if prev tag is provided --> first body of URDF graph will be

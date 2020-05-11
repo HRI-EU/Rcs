@@ -109,6 +109,13 @@ public:
    *         - XML tag "controlVariable" is "Distance3D"
    */
   static bool isValid(xmlNode* xml_node, const RcsGraph* graph);
+
+  /*! \brief Returns true if the task's effector and refBody have one or more
+   *         distance queried that are called in RcsBody_distance(). In case
+   *         there is no effector, refBody, or distance function, the function
+   *         will warn on debug level 1.
+   */
+  static bool hasDistanceFunction(xmlNode* node, const RcsGraph* graph);
 };
 }
 

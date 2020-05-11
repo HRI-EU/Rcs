@@ -2479,3 +2479,43 @@ void RcsBody_scale(RcsBody* bdy, double scale)
   }
 
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+int RcsBody_getNumDistanceQueries(const RcsBody* b1, const RcsBody* b2)
+{
+  int fcnCount = 0;
+  RcsShape** sh1Ptr = &b1->shape[0];
+  RcsShape** sh2Ptr = &b2->shape[0];
+
+  // Traverse all shapes of the 1st body
+  while (*sh1Ptr)
+  {
+    if (((*sh1Ptr)->computeType & RCSSHAPE_COMPUTE_DISTANCE) == 0)
+    {
+      sh1Ptr++;
+      continue;
+    }
+
+    // Traverse all shapes of the 2nd body
+    while (*sh2Ptr)
+    {
+      if (((*sh2Ptr)->computeType & RCSSHAPE_COMPUTE_DISTANCE) == 0)
+      {
+        sh2Ptr++;
+        continue;
+      }
+
+      // Compute the closest distance via function table lookup
+      fcnCount++;
+      sh2Ptr++;
+    }   // while(*sh2Ptr)
+
+    sh1Ptr++;
+    sh2Ptr = &b2->shape[0];   // Reset the 2nd shape pointer
+
+  }   // while(*sh1Ptr)
+
+  return fcnCount;
+}

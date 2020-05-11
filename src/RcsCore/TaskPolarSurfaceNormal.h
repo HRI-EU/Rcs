@@ -34,8 +34,8 @@
 
 *******************************************************************************/
 
-#ifndef RCS_TASKPOLARTARGET2D_H
-#define RCS_TASKPOLARTARGET2D_H
+#ifndef RCS_TASKPOLARSURFACENORMAL_H
+#define RCS_TASKPOLARSURFACENORMAL_H
 
 #include "Task.h"
 
@@ -57,81 +57,55 @@ namespace Rcs
  *        calculated in the effector's angular velocity (with respect to the
  *        reference body, which is the world rfame if none is given).
  */
-class TaskPolarTarget2D: public Task
+class TaskPolarSurfaceNormal: public Task
 {
 public:
 
   /*! Constructor based on xml parsing
    */
-  TaskPolarTarget2D(const std::string& className, xmlNode* node,
-                    RcsGraph* graph, int dim=2);
+  TaskPolarSurfaceNormal(const std::string& className, xmlNode* node,
+                         RcsGraph* graph, int dim=2);
 
   /*! \brief Copy constructor doing deep copying with optional new graph
    *         pointer
    */
-  TaskPolarTarget2D(const TaskPolarTarget2D& copyFromMe,
-                    RcsGraph* newGraph=NULL);
+  TaskPolarSurfaceNormal(const TaskPolarSurfaceNormal& copyFromMe,
+                         RcsGraph* newGraph=NULL);
 
   /*! Destructor
    */
-  virtual ~TaskPolarTarget2D();
+  virtual ~TaskPolarSurfaceNormal();
 
   /*!
    * \brief Virtual copy constructor with optional new graph.
    */
-  virtual TaskPolarTarget2D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskPolarSurfaceNormal* clone(RcsGraph* newGraph=NULL) const;
 
-  /*! \brief Computes the Polar Angles between reference body and effector.
+  /*! \brief The first component of the 2-dimensional polarAngles is the angle
+  *          between current Polar axis and the distance normal between
+  *          refBody and effector. It will always be within the angular
+  *          range [0 ... PI]. The second component is zero.
    */
   virtual void computeX(double* polarAngles) const;
 
-  /*! \brief TODO
-   */
-  virtual void computeXp(double* polarVelocity) const;
-
-  /*! \brief TODO
-   */
-  virtual void computeXp_ik(double* omega) const;
-
-  virtual void forceTrafo(double* ft_task) const;
-
-  virtual void selectionTrafo(double* S_des_trafo, const double* S_des) const;
-
-  /*! \brief TODO
-   */
-  virtual void integrateXp_ik(double* x_res, const double* x,
-                              const double* x_dot, double dt) const;
-
-  /*! \brief TODO
-   */
-  virtual void computeXpp(double* polarAcceleration, const MatNd* qpp) const;
-
-  /*! \brief TODO
+  /*! \brief Angular velocity Jacobian, projected into the directions as
+   *         described in \ref computeX(double*)
    */
   virtual void computeJ(MatNd* jacobian) const;
 
-  /*! \brief TODO
-   */
-  virtual void computeH(MatNd* hessian) const;
-
-  /*! \brief TODO
-   */
-  virtual void computeFfXpp(double* xpp_res, const double* xpp_des) const;
-
-  /*! \brief TODO
-   */
-  virtual void computeDXp(double* dOmega,
-                          const double* phip_des) const;
-
-  /*! \brief Calculates the angular error as the angle between the
-   *         current and desired Polar axes (omega[0]). The second
-   *         component (omega[1]) is set to zero.
+  /*! \brief Calculates the angular error as the angle between the current and
+   *         desired Polar axes (omega[0]). The first component of polar_des
+   *         is the desired angle between current and desired polar axes. The
+   *         desired Polar axis is the distance normal between refBody and
+   *         effector. It is be clipped to the range [0 ... PI]. The second
+   *         component is ignored. The corresponding component (omega[1]) is
+   *         always set to zero.
    *
-   *  \param[out] omega 2-dimensional angular error as described above
-   *  \param[in] polar_des desired polar angles (represented in the
-   *                       coordinates of the task's refBdy)
-   *  \param[in] polar_curr current polar angles (represented in the
-   *                        coordinates of the task's refBdy)
+   *  \param[out] omega Two-dimensional angular error as described above
+   *  \param[in] polar_des First element: Angle between desired and current
+   *                       Polar axes. Second element: ignored.
+   *  \param[in] polar_curr current polar angles (represented in world
+   *                        coordinates)
    */
   virtual void computeDX(double* omega, const double* polar_des,
                          const double* polar_curr) const;
@@ -140,43 +114,28 @@ public:
    *         otherwise. The task is invalid if
    *         - The direction index in tag "axisDirection" exists, but
    *           is not "x", "y", "z", "X", "Y or "Z"
+   *         - The check hasDistanceFunction() of TaskDistance fails
    */
   static bool isValid(xmlNode* node, const RcsGraph* graph);
 
-  /*! \brief Assigns the given Polar angles to the class member polarDes.
-   */
-  void setTarget(const double polarTarget[2]);
-
-  /*! \brief Assigns the given Polar angles to the class member polarDes.
-   */
-  void setTarget(double phi, double theta);
-
+  void computeXp(double* polarVelocity) const {}
+  void computeDXp(double* dOmega, const double* phip_des) const {}
+  void computeXp_ik(double* omega) const {}
+  void computeXpp(double* polarAcceleration, const MatNd* qpp) const {}
+  void computeFfXpp(double* xpp_res, const double* xpp_des) const {}
+  void computeH(MatNd* hessian) const {}
+  void forceTrafo(double* ft_task) const {}
+  void selectionTrafo(double* S_trans, const double* S) const {}
+  void integrateXp_ik(double* x_res, const double* x,
+                      const double* x_dot, double dt) const {}
 
 protected:
 
-  /*! \brief Constructs a rotation matrix A_SR with the z-axis being the
-   *         current Polar axis. It is determined based on the tasks's bodies
-   *         and the state of the graph. The y-axis is the rotation axis that
-   *         is perpendicular to the plane spanned by current and desired
-   *         Polar axis. Rotating about it will move the current to the
-   *         axis on the shortest possible path. The x-axis completes a
-   *         right hand frame. All axes are normalized. In case the angle
-   *         between current and desired axis is zero, there are infinity
-   *         solutions to determine the y-axis. We then just pick any of
-   *         these.
-   */
-  void computeSlerpFrame(double A_SR[3][3],
-                         const double polarDes[2]) const;
-
-  /*! \brief Calls \ref computeSlerpFrame(double[3][3], const double[2]) const
-  *          with the polarDes member variable.
-   */
-  void computeSlerpFrame(double A_SR[3][3]) const;
-
+  void computePolarNormal(double polarAngs[2]) const;
   int direction;
-  double polarDes[2];
+  double gainDX;
 };
 
 }
 
-#endif // RCS_TASKPOLARTARGET2D_H
+#endif // RCS_TASKPOLARSURFACENORMAL_H

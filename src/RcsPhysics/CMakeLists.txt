@@ -77,6 +77,14 @@ ENDIF(USE_BULLET)
 
 
 ADD_LIBRARY(RcsPhysics ${LIBRARY_LINKING_TYPE} ${RCS_PHYSICS_SRCS})
+
+# We add this option to force the linker to export this symbol. This
+# solves the issue that it will not be exposed, since all initialization 
+# happens inside statically. 
+IF(WIN32)
+  TARGET_LINK_OPTIONS(RcsPhysics PUBLIC /include:RcsShape_distanceBullet)
+ENDIF()
+
 TARGET_INCLUDE_DIRECTORIES(RcsPhysics PUBLIC 
     # Header source location
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>

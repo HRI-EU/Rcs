@@ -438,6 +438,21 @@ bool RcsBody_boxify(RcsBody* self, int computeType);
  */
 void RcsBody_scale(RcsBody* self, double scale);
 
+/*! \ingroup RcsBodyFunctions
+ *  \brief Determines the number of distance calculations carried out between
+ *         the bodies when using the function
+ *         \ref RcsBody_distance(const RcsBody*, const RcsBody*). The result
+ *         depends on the shapes that are considered for distance calculation
+ *         (see enum RCSSHAPE_COMPUTE_TYPE), and the libraries that provide
+ *         their distance function implementation.
+ *
+ *  \param[in] b1     First body
+ *  \param[in] b2     Second body
+ *  \return Number of distance function calls between the bodies. If either
+ *          b1 or b2 is NULL, the function returns 0.
+ */
+int RcsBody_getNumDistanceQueries(const RcsBody* b1, const RcsBody* b2);
+
 
 #ifdef __cplusplus
 }
