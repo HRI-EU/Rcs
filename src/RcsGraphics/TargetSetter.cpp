@@ -223,13 +223,15 @@ public:
  * Constructor for Euler angle tracking.
  ******************************************************************************/
 TargetSetter::TargetSetter(double posPtr_[3], double angPtr_[3],
-                           double size, bool withSphericalTracker_) :
+                           double size, bool withSphericalTracker_,
+                           bool withText_) :
   osg::Switch(),
   posPtr(posPtr_),
   angPtr(angPtr_),
   rmPtr(NULL),
   scale(size),
-  withSphericalTracker(withSphericalTracker_)
+  withSphericalTracker(withSphericalTracker_),
+  withText(withSphericalTracker_)
 {
   RLOG(5, "Creating Euler angle tracker");
   initGraphics();
@@ -239,13 +241,15 @@ TargetSetter::TargetSetter(double posPtr_[3], double angPtr_[3],
  * Constructor for rotation matrix tracking.
  ******************************************************************************/
 TargetSetter::TargetSetter(double posPtr_[3], double rmPtr_[3][3],
-                           double size, bool withSphericalTracker_) :
+                           double size, bool withSphericalTracker_,
+                           bool withText_) :
   osg::Switch(),
   posPtr(posPtr_),
   angPtr(NULL),
   rmPtr((double*) rmPtr_),
   scale(size),
-  withSphericalTracker(withSphericalTracker_)
+  withSphericalTracker(withSphericalTracker_),
+  withText(withSphericalTracker_)
 {
   RLOG(5, "Creating rotation matrix tracker");
   initGraphics();
@@ -260,7 +264,8 @@ TargetSetter::TargetSetter(double posPtr_[3], double size) :
   angPtr(NULL),
   rmPtr(NULL),
   scale(size),
-  withSphericalTracker(false)
+  withSphericalTracker(false),
+  withText(false)
 {
   RLOG(5, "Creating position only tracker");
   initGraphics();
@@ -341,24 +346,6 @@ void TargetSetter::initGraphics()
 
   updateText();
 
-  // Geode holds text
-  osg::ref_ptr<osg::Geode> geode = new osg::Geode;
-
-  // Settings for always drawing text on top
-  osg::ref_ptr<osg::StateSet> stateSet = new osg::StateSet();
-  geode->setStateSet(stateSet.get());
-
-  // Disable depth testing so geometry is drawn regardless of depth values
-  // of geometry already drawn.
-  stateSet->setMode(GL_DEPTH_TEST,osg::StateAttribute::OFF);
-  stateSet->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
-
-  // Need to make sure this geometry is drawn at last. RenderBins are handled
-  // in numerical order so set bin number to 11
-  stateSet->setRenderBinDetails(11, "RenderBin");
-
-  geode->addDrawable(_coord_text.get());
-
   // Add dragger
   this->cmdMgr = new osgManipulator::CommandManager;
   osg::ref_ptr<osgManipulator::Selection> selection =
@@ -367,7 +354,31 @@ void TargetSetter::initGraphics()
   dragger = new Rcs::RigidBodyTracker(withSphericalTracker);
   dragger->setupDefaultGeometry();
   dragger->setMatrix(getTransform());
-  dragger->addChild(geode.get());
+
+
+  if (withText)
+  {
+    // Geode holds text
+    osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+
+    // Settings for always drawing text on top
+    osg::ref_ptr<osg::StateSet> stateSet = new osg::StateSet();
+    geode->setStateSet(stateSet.get());
+
+    // Disable depth testing so geometry is drawn regardless of depth values
+    // of geometry already drawn.
+    stateSet->setMode(GL_DEPTH_TEST, osg::StateAttribute::OFF);
+    stateSet->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+
+    // Need to make sure this geometry is drawn at last. RenderBins are handled
+    // in numerical order so set bin number to 11
+    stateSet->setRenderBinDetails(11, "RenderBin");
+
+    geode->addDrawable(_coord_text.get());
+    dragger->addChild(geode.get());
+  }
+
+
 
   // create reference transformation and add childs
   refFrame->addChild(dragger.get());

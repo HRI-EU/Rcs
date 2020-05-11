@@ -70,13 +70,13 @@ public:
    *  \brief Constructor for rotation matrix tracking.
    */
   TargetSetter(double posPtr[3], double rmPtr[3][3], double size=0.25,
-               bool withSphericalTracker=true);
+               bool withSphericalTracker=true, bool withText=true);
 
   /*!
    *  \brief Constructor for Euler angles tracking.
    */
   TargetSetter(double posPtr[3], double angPtr[3], double size=0.25,
-               bool withSphericalTracker=true);
+               bool withSphericalTracker=true, bool withText = true);
 
   /*!
    *  \brief Constructor for Euler angles tracking.
@@ -113,6 +113,7 @@ protected:
   double* rmPtr;
   double scale;
   bool withSphericalTracker;
+  bool withText;
   char textBuf[256];
   osg::ref_ptr<osgGA::GUIEventHandler> pickHandler;
   osg::ref_ptr<RigidBodyTracker> dragger;
