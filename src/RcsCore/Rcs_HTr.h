@@ -61,11 +61,6 @@ extern "C" {
  *         frame 1 into frame 2. It also means that the rows of matrix A_21
  *         correspond to the unit vectors of frame 2, represented in frame 1.
  *
- *         Warning: Because of the row-major form, the transpose of the
- *         rotation matrix is used. So when reading out a normal homogeneous
- *         transformation matrix (for example for debugging), the rotation
- *         matrix needs to be transposed.
- *
  */
 typedef struct
 {
