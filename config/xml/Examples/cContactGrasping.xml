@@ -1,0 +1,231 @@
+<!-- 
+  Copyright (c) 2020, Honda Research Institute Europe GmbH.
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  3. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  4. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER "AS IS" AND ANY EXPRESS OR
+  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT, INDIRECT,
+  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+
+<Controller
+usage="
+&#xA;  Configuration file to illustrate the Distance tasks. Each of the fingers
+&#xA;  as well as the HandBase body will keep its closest distance to the object. 
+&#xA;  The hand is additionally constrained to align its grasp axis with the
+&#xA;  object's symetry axis. The hand can be moved along the object with the
+&#xA;  Sideways task. Using the mouse dragger allows to rotate the hand around
+&#xA;  the object's symmetry axis. All tasks with no name assigned in the xml file
+&#xA;  will not show up in the Gui. In order to see one of them, simply assign
+&#xA;  a name to it.
+&#xA; 
+&#xA;  Here is how to start an example:
+&#xA;  
+&#xA;  bin/Rcs -m 5 -f config\xml\Examples\cContactGrasping.xml -algo 1 -lambda 0.001 -alpha 0
+" >
+
+  <Graph name="Default" >
+  
+  <Body name="Ground Plane" >
+    <Shape type="BOX" extents="5 5 0.04" transform="0 0 -0.02 0 0 0" 
+           color="PEWTER" graphics="true" />
+    <Shape type="FRAME" scale="0.3" />
+  </Body>
+	
+  <Body name="HandBase" physics="kinematic" mass="1" color="RANDOM" >
+    <Joint name="plx"  type="TransX" range="2"  />
+    <Joint name="ply"  type="TransY" range="2"    />
+    <Joint name="plz"  type="TransZ" range="0 1"  />
+    <Joint name="pla"  type="RotX"   range="-400 30 400" />
+    <Joint name="pla2" type="RotX"   range="-400 -30  400" />
+    <Joint name="plb"  type="RotY"   range="-400 30 400" />
+    <Joint name="plb2" type="RotY"   range="-400 -30  400" />
+    <Joint name="plc"  type="RotZ"   range="-400 30 400"  />
+    <Joint name="plc2" type="RotZ"   range="-400 -30  400"  />
+    <Shape type="BOX" extents="0.01 0.22 0.1" transform="0 -0.07 0 0 0 0" graphics="true" distance="false" />
+    <Shape type="POINT" transform="0 -0.07 0 0 0 0" graphics="true" distance="true" />
+  </Body>
+
+  <Body name="Finger_1a" prev="HandBase" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f1a" range="-180 60 180" type="RotY" transform="0 0 0.05 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="1" graphics="false" distance="true" transform="0 0 0 0 0 0" />
+     <Shape type="SSL" radius="0.02" length="0.14" graphics="true" distance="false" transform="0 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+
+  <Body name="Finger_1b" prev="Finger_1a" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f1b" range="-180 60 180" type="RotY" transform="0 0 0.16 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="1" graphics="false" distance="true" transform="-0.01 0 -0.4 0 0 0" />
+     <Shape type="SSL" radius="0.02" length="0.12" graphics="true" distance="false" transform="-0.01 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+
+
+  <Body name="Thumb" prev="HandBase" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f2a" range="-180 120 180" type="RotY" transform="0 0 -0.05 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="1" graphics="false" distance="true" transform="0 0 -0.40 0 0 0" />
+     <Shape type="SSL" radius="0.02" length="0.14" graphics="true" distance="false"  />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+  <Body name="Thumb_b" prev="Thumb" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f2b" range="-180 -60 180" type="RotY" transform="0 0 0.16 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="1" graphics="false" distance="true" transform="0.01 0 -0.2 0 0 0" />
+     <Shape type="SSL" radius="0.02" length="0.1" graphics="true" distance="false" transform="0.01 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+
+  <Body name="Finger_3a" prev="HandBase" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f3a" range="-180 60 180" type="RotY" transform="0 -0.05 0.05 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="1" graphics="false" distance="true" transform="0 0 0 0 0 0" />
+     <Shape type="SSL" radius="0.02" length="0.14" graphics="true" distance="false" transform="0 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+  <Body name="Finger_3b" prev="Finger_3a" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f3b" range="-180 60 180" type="RotY" transform="0 0 0.16 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="1" graphics="false" distance="true" transform="-0.01 0 -0.2 0 0 0" />
+     <Shape type="SSL" radius="0.02" length="0.15" graphics="true" distance="false" transform="-0.01 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+
+  <Body name="Finger_4a" prev="HandBase" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f4a" range="-180 60 180" type="RotY" transform="0 -0.1 0.05 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="1" graphics="false" distance="true" transform="0 0 0 0 0 0" />
+     <Shape type="SSL" radius="0.02" length="0.14" graphics="true" distance="false" transform="0 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+  <Body name="Finger_4b" prev="Finger_4a" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f4b" range="-180 60 180" type="RotY" transform="0 0 0.16 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="1" graphics="false" distance="true" transform="-0.01 0 -0.2 0 0 0" />
+     <Shape type="SSL" radius="0.02" length="0.13" graphics="true" distance="false" transform="-0.01 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+
+  <Body name="Finger_5a" prev="HandBase" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f5a" range="-180 60 180" type="RotY" transform="0 -0.15 0.05 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="1" graphics="false" distance="true" transform="0 0 0 0 0 0" />
+     <Shape type="SSL" radius="0.02" length="0.14" graphics="true" distance="false" transform="0 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+  <Body name="Finger_5b" prev="Finger_5a" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f5b" range="-180 60 180" type="RotY" transform="0 0 0.16 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="1" graphics="false" distance="true" transform="-0.01 0 -0.2 0 0 0" />
+     <Shape type="SSL" radius="0.02" length="0.11" graphics="true" distance="false" transform="-0.01 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+
+    <Body name="Object_1" rigid_body_joints="0.2 0 0.5 90 0 0" color="BRONZE" >
+      <Shape type="SSL" radius="0.06" length="2.8" graphics="true" physics="true" distance="true" transform="0 0 -1 0 0 0" />
+      <Shape type="SSL" radius="0.08" length="0.5" graphics="true" physics="true" distance="true" transform="0 0 -0.25 0 0 0" />
+      <Shape type="SSL" radius="0.1" length="0.2" graphics="true" physics="true" distance="true" transform="0 0 -0.1 0 0 0" />
+      <Shape type="SPHERE" radius="0.15" graphics="true" physics="true" distance="true" transform="0 0 -0.4 0 0 0" />
+      <Shape type="CONE" radius="0.25" length="0.4" graphics="true" physics="true" distance="true" transform="0 0 0.8 0 180 0" />
+      <Shape type="CYLINDER" radius="0.25" length="0.2" graphics="true" physics="true" distance="true" transform="0 0 0.9 0 180 0" />
+      <Shape type="CONE" radius="0.25" length="0.4" graphics="true" physics="true" distance="true" transform="0 0 1 0 0 0" />
+	 <Shape type="FRAME" scale="1" />
+    </Body>
+
+
+<model_state model="Default">
+  <joint_state joint="plx" position="0.040" />
+  <joint_state joint="ply" position="0.060" />
+  <joint_state joint="plz" position="0.492" />
+  <joint_state joint="pla" position="30.000" />
+  <joint_state joint="pla2" position="-30.000" />
+  <joint_state joint="plb" position="29.981" />
+  <joint_state joint="plb2" position="-30.019" />
+  <joint_state joint="plc" position="30.000" />
+  <joint_state joint="plc2" position="-30.000" />
+  <joint_state joint="f1a" position="58.010" />
+  <joint_state joint="f1b" position="52.493" />
+  <joint_state joint="f2a" position="114.818" />
+  <joint_state joint="f2b" position="-47.645" />
+  <joint_state joint="f3a" position="58.010" />
+  <joint_state joint="f3b" position="52.493" />
+  <joint_state joint="f4a" position="58.010" />
+  <joint_state joint="f4b" position="52.493" />
+  <joint_state joint="f5a" position="58.010" />
+  <joint_state joint="f5b" position="52.493" />
+  <joint_state joint="Object_1_rigidBodyJnt0" position="0.200" />
+  <joint_state joint="Object_1_rigidBodyJnt1" position="0.000" />
+  <joint_state joint="Object_1_rigidBodyJnt2" position="0.500" />
+  <joint_state joint="Object_1_rigidBodyJnt3" position="90.000" />
+  <joint_state joint="Object_1_rigidBodyJnt4" position="0.000" />
+  <joint_state joint="Object_1_rigidBodyJnt5" position="0.000" />
+</model_state>
+
+  </Graph>
+
+
+  <Task controlVariable="Distance" effector="Thumb"     refBdy="Object_1" gainDX="0.1" active="true" />
+  <Task controlVariable="Distance" effector="Thumb_b"   refBdy="Object_1" gainDX="0.1" active="true" />
+  <Task controlVariable="Distance" effector="Finger_1a" refBdy="Object_1" gainDX="0.1" active="true" />
+  <Task controlVariable="Distance" effector="Finger_1b" refBdy="Object_1" gainDX="0.1" active="true" />
+  <Task controlVariable="Distance" effector="Finger_3a" refBdy="Object_1" gainDX="0.1" active="true" />
+  <Task controlVariable="Distance" effector="Finger_3b" refBdy="Object_1" gainDX="0.1" active="true" />
+  <Task controlVariable="Distance" effector="Finger_4a" refBdy="Object_1" gainDX="0.1" active="true" />
+  <Task controlVariable="Distance" effector="Finger_4b" refBdy="Object_1" gainDX="0.1" active="true" />
+  <Task controlVariable="Distance" effector="Finger_5a" refBdy="Object_1" gainDX="0.1" active="true" />
+  <Task controlVariable="Distance" effector="Finger_5b" refBdy="Object_1" gainDX="0.1" active="true" />
+  <Task name="Frontal" controlVariable="Distance" effector="HandBase"  refBdy="Object_1" gainDX="0.1" active="true" />
+  <Task controlVariable="POLAR"    effector="HandBase"  refBdy="Object_1" axisDirection="Y" active="true" />
+  
+  <Task name="Sideways" controlVariable="Z" effector="HandBase" refBdy="Object_1" active="true" guiMin="-1" guiMax="1.7" />
+
+  <Task controlVariable="POLAR_SURFACE" gainDX="0.1" effector="HandBase" refBdy="Object_1" axisDirection="X" active="false" />
+
+  
+  <CollisionModel  DistanceThreshold="0.01" >
+    <CollisionPair body1="Finger_1a" body2="Object_1" />
+    <CollisionPair body1="Finger_1b" body2="Object_1" />
+    <CollisionPair body1="Thumb" body2="Object_1" />
+    <CollisionPair body1="Thumb_b" body2="Object_1" />
+    <CollisionPair body1="HandBase" body2="Object_1" />
+  </CollisionModel>
+
+  
+</Controller>

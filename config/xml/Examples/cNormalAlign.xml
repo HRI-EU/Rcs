@@ -224,22 +224,73 @@ usage="
 	
 	
   <model_state model="Default" time_stamp="0">
-    <joint_state joint="j1" position="-20" />
-    <joint_state joint="j2" position="-20" />
-    <joint_state joint="j3" position="20" />
-    <joint_state joint="j4" position="0" />
-    <joint_state joint="j5" position="20" />
-    <joint_state joint="j6" position="20" />
-    <joint_state joint="j7" position="20" />
-    <joint_state joint="j8" position="20" />
-    <joint_state joint="j9" position="20" />
-    <joint_state joint="j10" position="20" />
-    <joint_state joint="j11" position="20" />
-    <joint_state joint="j12" position="20" />
-    <joint_state joint="j13" position="20" />
-    <joint_state joint="j14" position="20" />
-    <joint_state joint="j15" position="20" />
-  </model_state>
+  <joint_state joint="j1" position="-20.841" />
+  <joint_state joint="unnamed joint 0" position="-0.420" />
+  <joint_state joint="unnamed joint 1" position="-0.123" />
+  <joint_state joint="j2" position="-20.699" />
+  <joint_state joint="unnamed joint 2" position="-0.473" />
+  <joint_state joint="unnamed joint 3" position="-0.306" />
+  <joint_state joint="j3" position="19.633" />
+  <joint_state joint="unnamed joint 4" position="-0.670" />
+  <joint_state joint="unnamed joint 5" position="-0.085" />
+  <joint_state joint="j4" position="-0.001" />
+  <joint_state joint="unnamed joint 6" position="-0.794" />
+  <joint_state joint="unnamed joint 7" position="-0.084" />
+  <joint_state joint="j5" position="19.934" />
+  <joint_state joint="unnamed joint 8" position="-0.889" />
+  <joint_state joint="unnamed joint 9" position="0.229" />
+  <joint_state joint="j6" position="19.883" />
+  <joint_state joint="unnamed joint 10" position="-0.867" />
+  <joint_state joint="unnamed joint 11" position="0.553" />
+  <joint_state joint="j7" position="19.635" />
+  <joint_state joint="unnamed joint 12" position="-0.734" />
+  <joint_state joint="unnamed joint 13" position="0.848" />
+  <joint_state joint="j8" position="19.221" />
+  <joint_state joint="unnamed joint 14" position="-0.507" />
+  <joint_state joint="unnamed joint 15" position="1.074" />
+  <joint_state joint="j9" position="18.688" />
+  <joint_state joint="unnamed joint 16" position="-0.215" />
+  <joint_state joint="unnamed joint 17" position="1.206" />
+  <joint_state joint="j10" position="18.096" />
+  <joint_state joint="unnamed joint 18" position="0.107" />
+  <joint_state joint="unnamed joint 19" position="1.227" />
+  <joint_state joint="j11" position="17.507" />
+  <joint_state joint="unnamed joint 20" position="0.426" />
+  <joint_state joint="unnamed joint 21" position="1.136" />
+  <joint_state joint="j12" position="16.977" />
+  <joint_state joint="unnamed joint 22" position="0.707" />
+  <joint_state joint="unnamed joint 23" position="0.944" />
+  <joint_state joint="j13" position="16.554" />
+  <joint_state joint="unnamed joint 24" position="0.923" />
+  <joint_state joint="unnamed joint 25" position="0.672" />
+  <joint_state joint="j14" position="16.274" />
+  <joint_state joint="unnamed joint 26" position="1.052" />
+  <joint_state joint="unnamed joint 27" position="0.347" />
+  <joint_state joint="j15" position="16.159" />
+  <joint_state joint="j15y" position="1.082" />
+  <joint_state joint="j15z" position="0.000" />
+  <joint_state joint="object1_rigidBodyJnt0" position="-0.500" />
+  <joint_state joint="object1_rigidBodyJnt1" position="-1.000" />
+  <joint_state joint="object1_rigidBodyJnt2" position="0.400" />
+  <joint_state joint="object1_rigidBodyJnt3" position="60.000" />
+  <joint_state joint="object1_rigidBodyJnt4" position="60.000" />
+  <joint_state joint="object1_rigidBodyJnt5" position="0.000" />
+  <joint_state joint="plx" position="0.000" />
+  <joint_state joint="ply" position="1.500" />
+  <joint_state joint="plz" position="0.550" />
+  <joint_state joint="pla" position="-6.413" />
+  <joint_state joint="plb" position="-13.391" />
+  <joint_state joint="plc" position="11.645" />
+  <joint_state joint="pla2" position="9.158" />
+  <joint_state joint="plb2" position="11.704" />
+  <joint_state joint="plc2" position="30.000" />
+  <joint_state joint="object2_rigidBodyJnt0" position="0.000" />
+  <joint_state joint="object2_rigidBodyJnt1" position="1.500" />
+  <joint_state joint="object2_rigidBodyJnt2" position="0.400" />
+  <joint_state joint="object2_rigidBodyJnt3" position="0.000" />
+  <joint_state joint="object2_rigidBodyJnt4" position="0.000" />
+  <joint_state joint="object2_rigidBodyJnt5" position="180.000" />
+</model_state>
 
   
   </Graph>
