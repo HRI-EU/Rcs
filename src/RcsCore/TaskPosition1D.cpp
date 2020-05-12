@@ -54,11 +54,11 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskPosition1D> registrar4("CylZ");
 /*******************************************************************************
  * Constructor based on xml parsing
  ******************************************************************************/
-Rcs::TaskPosition1D::TaskPosition1D(const std::string& className_,
+Rcs::TaskPosition1D::TaskPosition1D(const std::string& className,
                                     xmlNode* node,
-                                    RcsGraph* _graph,
-                                    int _dim):
-  TaskPosition3D(className_, node, _graph, _dim), index(-1)
+                                    RcsGraph* graph_,
+                                    int dim):
+  TaskPosition3D(className, node, graph_, dim), index(-1)
 {
   double guiMax = 1.0, guiMin = -1.0;
 
@@ -84,8 +84,6 @@ Rcs::TaskPosition1D::TaskPosition1D(const std::string& className_,
     resetParameter(Parameters(guiMin, guiMax, 1.0, "Z [m]"));
   }
 
-  // Other tasks inherit from this. Therefore we can't do any hard checking
-  // on classNames etc.
 }
 
 /*******************************************************************************

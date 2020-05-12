@@ -2906,8 +2906,8 @@ static bool setWildMagicDistanceFunctions()
   //success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_CYLINDER,
   //                                       RcsShape_closestSSLToCylinder)
   //          && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_CONE,
-                                         RcsShape_closestSSLToCone) && success;
+  //success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_CONE,
+  //                                       RcsShape_closestSSLToCone) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_TORUS,
                                          RcsShape_closestSSLToTorus) && success;
 
@@ -2958,8 +2958,8 @@ static bool setWildMagicDistanceFunctions()
                                          RcsShape_closestSphereToTorus) && success;
 
   // CONE
-  success = RcsShape_setDistanceFunction(RCSSHAPE_CONE, RCSSHAPE_SSL,
-                                         RcsShape_closestConeToSSL) && success;
+  //success = RcsShape_setDistanceFunction(RCSSHAPE_CONE, RCSSHAPE_SSL,
+  //                                       RcsShape_closestConeToSSL) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_CONE, RCSSHAPE_SPHERE,
                                          RcsShape_closestConeToSphere)
             && success;

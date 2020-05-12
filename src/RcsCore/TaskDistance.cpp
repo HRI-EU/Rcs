@@ -54,12 +54,20 @@ Rcs::TaskDistance::TaskDistance(const std::string& className_,
                                 xmlNode* node,
                                 RcsGraph* _graph,
                                 int dim):
-  TaskGenericIK(className_, node, _graph, dim)
+  TaskGenericIK(className_, node, _graph, dim), gainDX(1.0)
 {
   if (getClassName()=="Distance")
   {
-    resetParameter(Parameters(-1.0, 1.0, 1.0, "Distance [m]"));
+    double guiMax = 1.0, guiMin = -1.0;
+    getXMLNodePropertyDouble(node, "guiMax", &guiMax);
+    getXMLNodePropertyDouble(node, "guiMin", &guiMin);
+    resetParameter(Parameters(guiMin, guiMax, 1.0, "Distance [m]"));
   }
+
+  // The gainDX scales the position error coming out of computeDX. It is
+  // sometimes needed to scale it down to avoid jitter due to the contact
+  // normal updates.
+  getXMLNodePropertyDouble(node, "gainDX", &this->gainDX);
 }
 
 /*******************************************************************************
@@ -67,7 +75,8 @@ Rcs::TaskDistance::TaskDistance(const std::string& className_,
  ******************************************************************************/
 Rcs::TaskDistance::TaskDistance(const TaskDistance& copyFromMe,
                                 RcsGraph* newGraph):
-  TaskGenericIK(copyFromMe, newGraph)
+  TaskGenericIK(copyFromMe, newGraph),
+  gainDX(copyFromMe.gainDX)
 {
 }
 
@@ -76,7 +85,9 @@ Rcs::TaskDistance::TaskDistance(const TaskDistance& copyFromMe,
  ******************************************************************************/
 Rcs::TaskDistance::TaskDistance(RcsGraph* graph_,
                                 const RcsBody* effector,
-                                const RcsBody* refBdy) : TaskGenericIK()
+                                const RcsBody* refBdy) :
+  TaskGenericIK(), gainDX(1.0)
+
 {
   this->graph = graph_;
   setClassName("Distance");
@@ -110,6 +121,17 @@ Rcs::TaskDistance* Rcs::TaskDistance::clone(RcsGraph* newGraph) const
 void Rcs::TaskDistance::computeX(double* x_res) const
 {
   x_res[0] = RcsBody_distance(this->refBody, this->ef, NULL, NULL, NULL);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::TaskDistance::computeDX(double* dx_ik,
+                                  const double* x_des,
+                                  const double* x_curr) const
+{
+  TaskGenericIK::computeDX(dx_ik, x_des, x_curr);
+  dx_ik[0] *= gainDX;
 }
 
 /*******************************************************************************

@@ -39,6 +39,8 @@
 #include "TaskEuler3D.h"
 #include "TaskFactory.h"
 #include "Rcs_typedef.h"
+#include "Rcs_parser.h"
+#include "Rcs_VecNd.h"
 
 static Rcs::TaskFactoryRegistrar<Rcs::TaskPose6D> registrar("XYZABC");
 
@@ -58,6 +60,23 @@ Rcs::TaskPose6D::TaskPose6D(const std::string& className_,
   abc->setRefFrame(abc->getRefBody());
 
   addTask(abc);
+
+  if (getClassName() == "XYZABC")
+  {
+    double guiMax[6], guiMin[6];
+    VecNd_set6(guiMin, -2.5, -2.5, -2.5, -M_PI, -M_PI, -M_PI);
+    VecNd_set6(guiMax, 2.5, 2.5, 2.5, M_PI, M_PI, M_PI);
+    getXMLNodePropertyVecN(node, "guiMax", guiMax, 6);
+    getXMLNodePropertyVecN(node, "guiMin", guiMin, 6);
+
+    resetParameter(Parameters(guiMin[0], guiMax[0], 1.0, "X [m]"));
+    addParameter(Parameters(guiMin[1], guiMax[1], 1.0, "Y [m]"));
+    addParameter(Parameters(guiMin[2], guiMax[2], 1.0, "Z [m]"));
+    addParameter(Parameters(guiMin[3], guiMax[3], (180.0 / M_PI), "A [deg]"));
+    addParameter(Parameters(guiMin[4], guiMax[4], (180.0 / M_PI), "B [deg]"));
+    addParameter(Parameters(guiMin[5], guiMax[5], (180.0 / M_PI), "C [deg]"));
+  }
+
 }
 
 /*******************************************************************************

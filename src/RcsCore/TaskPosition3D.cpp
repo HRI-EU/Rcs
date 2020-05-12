@@ -51,11 +51,11 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskPosition3D> registrar("XYZ");
 /*******************************************************************************
  * Constructor based on xml parsing
  ******************************************************************************/
-Rcs::TaskPosition3D::TaskPosition3D(const std::string& className_,
+Rcs::TaskPosition3D::TaskPosition3D(const std::string& className,
                                     xmlNode* node,
-                                    RcsGraph* _graph,
+                                    RcsGraph* graph_,
                                     int dim):
-  TaskGenericIK(className_, node, _graph, dim)
+  TaskGenericIK(className, node, graph_, dim)
 {
   if (getClassName()=="XYZ")
   {

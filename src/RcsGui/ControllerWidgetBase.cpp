@@ -152,16 +152,9 @@ bool ControllerWidgetBase::destroy(int handle)
 }
 
 /*****************************************************************************
-  \brief Default constructor
-*****************************************************************************/
-ControllerWidgetBase::ControllerWidgetBase(): QScrollArea()
-{
-}
-
-/*****************************************************************************
   \brief Constructor
 *****************************************************************************/
-ControllerWidgetBase::ControllerWidgetBase(ControllerBase* cntrl,
+ControllerWidgetBase::ControllerWidgetBase(const ControllerBase* cntrl,
                                            MatNd* a_des,
                                            MatNd* a_curr,
                                            MatNd* x_des,
@@ -234,9 +227,9 @@ ControllerWidgetBase::ControllerWidgetBase(ControllerBase* cntrl,
               task_widget, SLOT(setActive(int)));
       connect(timer, SIGNAL(timeout()), task_widget, SLOT(updateUnconstrainedControls()));
       connect(timer, SIGNAL(timeout()), task_widget, SLOT(displayAct()));
-      rowIndex += _controller->getTask(id)->getDim();
     }
 
+    rowIndex += _controller->getTask(id)->getDim();
   }
 
   // all lcd sliders have been added, let's adjust the label size
@@ -261,6 +254,7 @@ ControllerWidgetBase::ControllerWidgetBase(ControllerBase* cntrl,
   setActive(showOnly ? Qt::Unchecked : Qt::Checked);
   resize(650, 700);
   showActiveTasks(Qt::Unchecked);
+
   RLOG(5, "ControllerWidgetBase generated");
 }
 
@@ -435,7 +429,9 @@ void ControllerWidgetBase::reset(const MatNd* a, const MatNd* x)
 
 }
 
-
+void ControllerWidgetBase::wheelEvent(QWheelEvent* e)
+{
+}
 
 
 }   // namespace Rcs

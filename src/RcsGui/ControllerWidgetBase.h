@@ -51,6 +51,36 @@
 namespace Rcs
 {
 
+/*! \ingroup RcsGui
+ *  \brief Gui to display and / or modify task-level control variables. This
+ *         gui is instantiated with a ControllerBase class. It will go trough
+ *         all its tasks and create a TaskWidget for each of them. If a task
+ *         has not been assigned a name (default is unnamed task), then it
+ *         will be skipped.
+ *
+ *         The widget will display and modify the arrays pointed to by a_des
+ *         and x_des. It will store the pointers internally. In order to ensure
+ *         no concurrent access, the class will lock the passed mutex when any
+ *         changes are done to the arrays pointed to. You need to make sure
+ *         to lock the pointer access on any other usage.
+ *
+ *         The Gui shold be instantiated through the factory create methods.
+ *         These will take care that is runs in it's own thread. Therefore
+ *         the constructors of the Qt class are not exposed publically. Here
+ *         is an example:
+ *
+ *         \code
+ *         pthread_mutex_t mtx;
+ *         pthread_mutex_init(&mtx, NULL);
+ *         ControllerBase* c = new ControllerBase(...);
+ *         int hndl = ControllerWidgetBase::create(c, a_des, x_des, x_curr, &mtx);
+ *         ...
+ *         ControllerWidgetBase::destroy(hndl);
+ *         \endcode
+ *
+ *         The detroy method does not need to be called if you call the
+ *         RcsGuiFactory_shutdown() method.
+ */
 class ControllerWidgetBase: public QScrollArea
 {
   Q_OBJECT
@@ -76,30 +106,37 @@ public:
   void reset(const MatNd* a_des, const MatNd* x_des);
 
 protected slots:
+
   virtual void showActiveTasks(int checkBoxState);
   virtual void setActive(int status);
   virtual void displayAct();
 
 protected:
 
-  ControllerWidgetBase();
-
-  ControllerWidgetBase(ControllerBase* cntrl,
+  ControllerWidgetBase(const ControllerBase* cntrl,
                        MatNd* a_des,
                        MatNd* a_curr,
                        MatNd* x_des,
                        const MatNd* x_curr,
-                       pthread_mutex_t* lock_=NULL,
-                       bool showOnly = false);
+                       pthread_mutex_t* lock,
+                       bool showOnly);
 
   virtual ~ControllerWidgetBase();
+
+  /*! \brief We overwrite this with an empty function, otherwise the widget
+   *         scrolls when we use te mouse wheel inside the canvas and not
+   *         above the scroll bar. This is inconvenient, since we also want
+   *         use the mouse wheel for scrolling the task sliders. Tis beaviour
+   *         only exists for windows.
+   */
+  void wheelEvent(QWheelEvent* e);
 
   static void* controllerGuiBase(void* arg);
   virtual QGroupBox* boxKinematicsInfo();
   virtual QGroupBox* boxControllerButtons();
   void lock();
   void unlock();
-  ControllerBase* _controller;
+  const ControllerBase* _controller;
   bool showOnly;
   pthread_mutex_t* mutex;
   std::vector<TaskWidget*> taskWidgets;

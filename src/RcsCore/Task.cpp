@@ -53,29 +53,29 @@ typedef Rcs::StackVec<double, 8> TaskVec;
 /*******************************************************************************
  * Constructor of nested class Parameters
  ******************************************************************************/
-Rcs::Task::Parameters::Parameters(const double minVal,
-                                  const double maxVal,
+Rcs::Task::Parameters::Parameters(const double minVal_,
+                                  const double maxVal_,
                                   const double scaleFactor_,
-                                  const std::string& name):
-  minVal(minVal),
-  maxVal(maxVal),
+                                  const std::string& name_):
+  minVal(minVal_),
+  maxVal(maxVal_),
   scaleFactor(scaleFactor_),
-  name(name)
+  name(name_)
 {
 }
 
 /*******************************************************************************
  * Setter method of nested class Parameters
  ******************************************************************************/
-void Rcs::Task::Parameters::setParameters(const double minVal,
-                                          const double maxVal,
+void Rcs::Task::Parameters::setParameters(const double minVal_,
+                                          const double maxVal_,
                                           const double scaleFactor_,
-                                          const std::string& name)
+                                          const std::string& name_)
 {
-  this->minVal = minVal;
-  this->maxVal = maxVal;
+  this->minVal = minVal_;
+  this->maxVal = maxVal_;
   this->scaleFactor = scaleFactor_;
-  this->name.assign(name);
+  this->name.assign(name_);
 }
 
 /*******************************************************************************
