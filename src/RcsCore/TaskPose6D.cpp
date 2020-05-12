@@ -42,6 +42,9 @@
 #include "Rcs_parser.h"
 #include "Rcs_VecNd.h"
 
+#include <cmath>
+
+
 static Rcs::TaskFactoryRegistrar<Rcs::TaskPose6D> registrar("XYZABC");
 
 
