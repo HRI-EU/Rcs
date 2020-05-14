@@ -2324,16 +2324,17 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("p", "Print information to console");
       Rcs::KeyCatcherBase::registerKey("n", "Reset");
 
-      int algo = 1;
+      int algo = 1, nTests = -1;
       unsigned int loopCount = 0, nIter = 10000;
-      double alpha = 0.01;
-      double lambda = 1.0e-8;
+      double alpha = 0.01, lambda = 1.0e-8;
       double jlCost = 0.0, dJlCost = 0.0, eps=1.0e-5;
       strcpy(xmlFileName, "cAction.xml");
       strcpy(directory, "config/xml/DexBot");
 
       argP.getArgument("-iter", &nIter, "Number of iterations before next pose"
                        "(default is %u)", nIter);
+      argP.getArgument("-nTests", &nTests, "Number of test iterations (default"
+                       " is %d)", nTests);
       argP.getArgument("-algo", &algo, "IK algorithm: 0: left inverse, 1: "
                        "right inverse (default is %d)", algo);
       argP.getArgument("-alpha", &alpha,
