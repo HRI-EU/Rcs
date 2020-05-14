@@ -57,6 +57,14 @@ usage="
     <Shape type="FRAME" scale="0.3" />
   </Body>
 	
+
+
+
+
+  <!--
+      Hand with fingers that have elongated finger collision models
+    -->
+      
   <Body name="HandBase" physics="kinematic" mass="1" color="RANDOM" >
     <Joint name="plx"  type="TransX" range="2"  />
     <Joint name="ply"  type="TransY" range="2"    />
@@ -158,16 +166,125 @@ usage="
   </Body>
 
 
-    <Body name="Object_1" rigid_body_joints="0.2 0 0.5 90 0 0" color="BRONZE" >
-      <Shape type="SSL" radius="0.06" length="2.8" graphics="true" physics="true" distance="true" transform="0 0 -1 0 0 0" />
-      <Shape type="SSL" radius="0.08" length="0.5" graphics="true" physics="true" distance="true" transform="0 0 -0.25 0 0 0" />
-      <Shape type="SSL" radius="0.1" length="0.2" graphics="true" physics="true" distance="true" transform="0 0 -0.1 0 0 0" />
-      <Shape type="SPHERE" radius="0.15" graphics="true" physics="true" distance="true" transform="0 0 -0.4 0 0 0" />
-      <Shape type="CONE" radius="0.25" length="0.4" graphics="true" physics="true" distance="true" transform="0 0 0.8 0 180 0" />
-      <Shape type="CYLINDER" radius="0.25" length="0.2" graphics="true" physics="true" distance="true" transform="0 0 0.9 0 180 0" />
-      <Shape type="CONE" radius="0.25" length="0.4" graphics="true" physics="true" distance="true" transform="0 0 1 0 0 0" />
-	 <Shape type="FRAME" scale="1" />
-    </Body>
+
+  <!--
+      Hand with fingers that have the same collision and graphics model
+    -->
+
+<!--
+
+<Body name="HandBase" physics="kinematic" mass="1" color="RANDOM" >
+    <Joint name="plx"  type="TransX" range="2"  />
+    <Joint name="ply"  type="TransY" range="2"    />
+    <Joint name="plz"  type="TransZ" range="0 1"  />
+    <Joint name="pla"  type="RotX"   range="-400 30 400" />
+    <Joint name="pla2" type="RotX"   range="-400 -30  400" />
+    <Joint name="plb"  type="RotY"   range="-400 30 400" />
+    <Joint name="plb2" type="RotY"   range="-400 -30  400" />
+    <Joint name="plc"  type="RotZ"   range="-400 30 400"  />
+    <Joint name="plc2" type="RotZ"   range="-400 -30  400"  />
+    <Shape type="BOX" extents="0.01 0.22 0.1" transform="0 -0.07 0 0 0 0" graphics="true" distance="false" />
+    <Shape type="POINT" transform="0 -0.07 0 0 0 0" graphics="true" distance="true" />
+  </Body>
+
+  <Body name="Finger_1a" prev="HandBase" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f1a" range="-180 60 180" type="RotY" transform="0 0 0.05 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="0.14" graphics="true" distance="true" transform="0 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+
+  <Body name="Finger_1b" prev="Finger_1a" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f1b" range="-180 60 180" type="RotY" transform="0 0 0.16 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="0.12" graphics="true" distance="true" transform="-0.01 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+
+
+  <Body name="Thumb" prev="HandBase" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f2a" range="-180 120 180" type="RotY" transform="0 0 -0.05 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="0.14" graphics="true" distance="true"  />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+  <Body name="Thumb_b" prev="Thumb" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f2b" range="-180 -60 180" type="RotY" transform="0 0 0.16 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="0.1" graphics="true" distance="true" transform="0.01 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+
+  <Body name="Finger_3a" prev="HandBase" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f3a" range="-180 60 180" type="RotY" transform="0 -0.05 0.05 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="0.14" graphics="true" distance="true" transform="0 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+  <Body name="Finger_3b" prev="Finger_3a" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f3b" range="-180 60 180" type="RotY" transform="0 0 0.16 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="0.15" graphics="true" distance="true" transform="-0.01 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+
+  <Body name="Finger_4a" prev="HandBase" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f4a" range="-180 60 180" type="RotY" transform="0 -0.1 0.05 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="0.14" graphics="true" distance="true" transform="0 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+  <Body name="Finger_4b" prev="Finger_4a" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f4b" range="-180 60 180" type="RotY" transform="0 0 0.16 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="0.13" graphics="true" distance="true" transform="-0.01 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+
+  <Body name="Finger_5a" prev="HandBase" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f5a" range="-180 60 180" type="RotY" transform="0 -0.15 0.05 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="0.14" graphics="true" distance="true" transform="0 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+  <Body name="Finger_5b" prev="Finger_5a" physics="dynamic" mass="1" color="RANDOM" >
+    <Joint name="f5b" range="-180 60 180" type="RotY" transform="0 0 0.16 0 0 0" 
+	   speedLimit="90" />
+     <Shape type="SSL" radius="0.02" length="0.11" graphics="true" distance="true" transform="-0.01 0 0 0 0 0" />
+	 <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+-->
+
+
+ 
+
+
+
+  
+
+  <Body name="Object_1" rigid_body_joints="0.2 0 0.5 90 0 0" color="BRONZE" >
+    <Shape type="SSL" radius="0.06" length="2.8" graphics="true" physics="true" distance="true" transform="0 0 -1 0 0 0" />
+    <Shape type="SSL" radius="0.08" length="0.5" graphics="true" physics="true" distance="true" transform="0 0 -0.25 0 0 0" />
+    <Shape type="SSL" radius="0.1" length="0.2" graphics="true" physics="true" distance="true" transform="0 0 -0.1 0 0 0" />
+    <Shape type="SPHERE" radius="0.15" graphics="true" physics="true" distance="true" transform="0 0 -0.4 0 0 0" />
+    <Shape type="CONE" radius="0.25" length="0.4" graphics="true" physics="true" distance="true" transform="0 0 0.8 0 180 0" />
+    <Shape type="CYLINDER" radius="0.25" length="0.2" graphics="true" physics="true" distance="true" transform="0 0 0.9 0 180 0" />
+    <Shape type="CONE" radius="0.25" length="0.4" graphics="true" physics="true" distance="true" transform="0 0 1 0 0 0" />
+    <Shape type="FRAME" scale="1" />
+  </Body>
+
+
+
 
 
 <model_state model="Default">
