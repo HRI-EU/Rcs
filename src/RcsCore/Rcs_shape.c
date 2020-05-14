@@ -1284,10 +1284,6 @@ static double RcsShape_closestPointToCylinder(const RcsShape* point,
 {
   double dist = Math_distPointCylinder(A_point->org, A_cyl, cyl->extents[2],
                                        cyl->extents[0], I_cp2);
-  REXEC(1)
-  {
-    RLOG(0, "Point: %f %f %f", A_point->org[0], A_point->org[1], A_point->org[2]);
-  }
   Vec3d_copy(I_cp1, A_point->org);
   Vec3d_sub(I_n, I_cp2, I_cp1);
   Vec3d_normalizeSelf(I_n);

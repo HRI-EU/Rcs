@@ -963,7 +963,7 @@ MatNd* MatNd_createFromFile(const char* fileName)
 
   if (fd == NULL)
   {
-    RLOG(1, "Error opening file \"%s\"", fileName);
+    RLOG(1, "Can't open file \"%s\" - returning NULL", fileName);
     return NULL ;
   }
 
