@@ -207,7 +207,13 @@ public:
    */
   virtual unsigned int getInternalDof() const;
 
-  /*! \brief Returns the pointer to the internal pseudo-inverse pinvJ.
+  /*! \brief Returns the pointer to the internal Jacobian J. It corresponds
+   *         to the state of the last call to solve().
+   */
+  const MatNd* getJacobian() const;
+
+  /*! \brief Returns the pointer to the internal pseudo-inverse pinvJ.It
+   *         corresponds to the state of the last call to solve().
    */
   const MatNd* getPseudoInverse() const;
 
