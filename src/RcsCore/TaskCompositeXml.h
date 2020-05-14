@@ -46,11 +46,13 @@ namespace Rcs
  * \brief This tasks allows to populate a CompositeTask from an xml node. Here
  *        is an example:
  *
+ *  \code
  *  <Task name="XZABC Effector" controlVariable="Composite" >
  *    <Task name="c1" controlVariable="X"   effector="Effector" />
  *    <Task name="c2" controlVariable="Z"   effector="Effector" />
  *    <Task name="c3" controlVariable="ABC" effector="Effector" />
  *  </Task>
+ *  \endcode
  *
  * This will construct a task that is composed out of the three sub-tasks c1,
  * c2 and c3. The task dimension is 5.

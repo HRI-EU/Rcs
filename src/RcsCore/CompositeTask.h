@@ -45,18 +45,24 @@ namespace Rcs
 {
 
 /*! \ingroup RcsTask
- * \brief This tasks composes several sub-tasks into one.
+ *  \brief This tasks composes several sub-tasks into one. This class is not
+ *         directly accessible through the TaskFactory. The task activation
+ *         will be distributed to all sub-tasks, and all task calculations
+ *         will be carried out by going through the vector of sub-tasks and
+ *         augmenting the result. A number of classes inherit from it, for
+ *         instance TaskPose5D or TaskCompositeXml. Please have a look at
+ *         their implementation for details.
  */
 class CompositeTask: public Task
 {
 public:
 
 
-  /*! \brief Default constructor
+  /*! \brief Calls the constructor of Task
    */
   CompositeTask();
 
-  /*! \brief Constructor based on xml parsing
+  /*! \brief Calls the constructor of Task with the same arguments
    */
   CompositeTask(const std::string& className, xmlNode* node, RcsGraph* graph);
 
@@ -77,8 +83,13 @@ public:
    */
   virtual ~CompositeTask();
 
+  /*! \brief Returns a deep copy of the class created by the copy constructor.
+   */
   virtual CompositeTask* clone(RcsGraph* newGraph=NULL) const;
 
+  /*! \brief Adds a sub-task, updates the task dimension, and appends the
+   *         sub-tasks parameters.
+   */
   virtual void addTask(Task* subTask);
 
   /*! \brief Calls \ref Task::computeX(double*) const on all subtasks and

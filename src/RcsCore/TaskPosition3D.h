@@ -43,10 +43,45 @@
 namespace Rcs
 {
 /*! \ingroup RcsTask
- * \brief This tasks allows to set a 3D position (XYZ) of an effector
+ *  \brief This tasks allows to set a 3D position (XYZ) of an effector. The
+ *         position can also be relative to another body and reference frame.
  *
- *  This tasks allows to set a 3D position (XYZ) of an effector. The position
- *  can also be relative to another body and reference frame.
+ *  The task vector is computed as:
+ *
+ *  1. If a reference body does not exist:
+ *
+ *     A) No reference frame exist:
+ *       I_r = I_r_effector
+ *
+ *     B) A reference frame and no reference body exist:
+ *       refFrame_r = A_refFrame-I * I_r_effector
+ *
+ *  2. If a reference body exists:
+ *
+ *     A) No reference frame exists, or reference frame is equal to reference
+ *        body: subtract its origin and rotate the result into the reference
+ *        bodies's basis:
+ *        refBdy_r = A_refBdy-I * (I_r - I_r_refBdy)
+ *
+ *     B) A reference frame that is different to the reference body exists:
+ *        subtract its origin and rotate the result into the reference frame's
+ *        basis:
+ *        refFrame_r = A_refFrame-I * (I_r - I_r_refBdy)
+ *
+ *  The following xml tags are parsed in the xml constructor:
+ *  - controlVariable: must be "XYZ"
+ *  - effector="Name of effector RcsBody"
+ *  - refBdy="Name of reference RcsBody"
+ *  - refFrame="Name of reference frame RcsBody"
+ *  - guiMin: three values for lower bounds slider values (default: -2.5)
+ *  - guiMax: three values for lower bounds slider values (default: +2.5)
+ *  - name: The task name will be displayed in Gui (unless it is the default
+*            name "Unnamed task")
+ *
+ *  Example:
+ *  \code
+ *    <Task name="Hand XYZ" controlVariable="XYZ" effector="HandTip" active="true" />
+ *  \endcode
  */
 class TaskPosition3D: public TaskGenericIK
 {

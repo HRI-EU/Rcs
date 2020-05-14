@@ -45,19 +45,22 @@
 #include "Rcs_kinematics.h"
 
 
-static Rcs::TaskFactoryRegistrar<Rcs::TaskPosition3D> registrar("XYZ");
 
+namespace Rcs
+{
+
+static TaskFactoryRegistrar<TaskPosition3D> registrar("XYZ");
 
 /*******************************************************************************
  * Constructor based on xml parsing
  ******************************************************************************/
-Rcs::TaskPosition3D::TaskPosition3D(const std::string& className,
-                                    xmlNode* node,
-                                    RcsGraph* graph_,
-                                    int dim):
+TaskPosition3D::TaskPosition3D(const std::string& className,
+                               xmlNode* node,
+                               RcsGraph* graph_,
+                               int dim) :
   TaskGenericIK(className, node, graph_, dim)
 {
-  if (getClassName()=="XYZ")
+  if (getClassName() == "XYZ")
   {
     double guiMax[3], guiMin[3];
     Vec3d_set(guiMax, 2.5, 2.5, 2.5);
@@ -74,8 +77,8 @@ Rcs::TaskPosition3D::TaskPosition3D(const std::string& className,
 /*******************************************************************************
  * Copy constructor doing deep copying
  ******************************************************************************/
-Rcs::TaskPosition3D::TaskPosition3D(const TaskPosition3D& src,
-                                    RcsGraph* newGraph):
+TaskPosition3D::TaskPosition3D(const TaskPosition3D& src,
+                               RcsGraph* newGraph) :
   TaskGenericIK(src, newGraph)
 {
 }
@@ -83,10 +86,10 @@ Rcs::TaskPosition3D::TaskPosition3D(const TaskPosition3D& src,
 /*******************************************************************************
  * Constructor based on body pointers
  ******************************************************************************/
-Rcs::TaskPosition3D::TaskPosition3D(RcsGraph* graph_,
-                                    const RcsBody* effector,
-                                    const RcsBody* refBdy,
-                                    const RcsBody* refFrame): TaskGenericIK()
+TaskPosition3D::TaskPosition3D(RcsGraph* graph_,
+                               const RcsBody* effector,
+                               const RcsBody* refBdy,
+                               const RcsBody* refFrame) : TaskGenericIK()
 {
   this->graph = graph_;
   setClassName("XYZ");
@@ -102,47 +105,22 @@ Rcs::TaskPosition3D::TaskPosition3D(RcsGraph* graph_,
 /*******************************************************************************
  * Destructor
  ******************************************************************************/
-Rcs::TaskPosition3D::~TaskPosition3D()
+TaskPosition3D::~TaskPosition3D()
 {
 }
 
 /*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskPosition3D* Rcs::TaskPosition3D::clone(RcsGraph* newGraph) const
+TaskPosition3D* TaskPosition3D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskPosition3D(*this, newGraph);
+  return new TaskPosition3D(*this, newGraph);
 }
 
 /*******************************************************************************
- * Computes the current value of the task variable
- *
- *  1. If a reference body does not exist:
- *
- *     A) No reference frame exist:
- *
- *       I_r = I_r_effector
- *
- *     B) A reference frame and no reference body exist:
- *
- *       refFrame_r = A_refFrame-I * I_r_effector
- *
- *  2. If a reference body exists:
- *
- *     A) No reference frame exists, or reference frame is equal to reference
- *        body: subtract its origin and rotate the result into the reference
- *        bodies's basis:
- *
- *        refBdy_r = A_refBdy-I * (I_r - I_r_refBdy)
- *
- *     B) A reference frame that is different to the reference body exists:
- *        subtract its origin and rotate the result into the reference frame's
- *        basis:
- *
- *        refFrame_r = A_refFrame-I * (I_r - I_r_refBdy)
- *
+ * See class description for details
  ******************************************************************************/
-void Rcs::TaskPosition3D::computeX(double* I_r) const
+void TaskPosition3D::computeX(double* I_r) const
 {
   // Effector-fixed reference point in world coordinates
   Vec3d_copy(I_r, this->ef ? this->ef->A_BI->org : Vec3d_zeroVec());
@@ -153,7 +131,7 @@ void Rcs::TaskPosition3D::computeX(double* I_r) const
     Vec3d_subSelf(I_r, this->refBody->A_BI->org);     // I_r -= I_r_refBdy
 
     // refBody and refFrame, but they differ: refFrame_r = A_refFrame-I*I_r
-    if ((this->refFrame!=NULL) && (this->refFrame!=this->refBody))
+    if ((this->refFrame != NULL) && (this->refFrame != this->refBody))
     {
       Vec3d_rotateSelf(I_r, this->refFrame->A_BI->rot);
     }
@@ -182,9 +160,9 @@ void Rcs::TaskPosition3D::computeX(double* I_r) const
  * x_dot = A_1I * (x_dot_2 - x_dot_1 + r_12 x omega_1)
  *
  ******************************************************************************/
-void Rcs::TaskPosition3D::computeXp_ik(double* x_dot) const
+void TaskPosition3D::computeXp_ik(double* x_dot) const
 {
-  const double* I_xp_ef  = this->ef ? this->ef->x_dot : Vec3d_zeroVec();
+  const double* I_xp_ef = this->ef ? this->ef->x_dot : Vec3d_zeroVec();
 
   if (this->refBody == NULL)
   {
@@ -206,7 +184,7 @@ void Rcs::TaskPosition3D::computeXp_ik(double* x_dot) const
     Vec3d_crossProduct(eul, r_12, this->refBody->omega);
     Vec3d_addSelf(x_dot, eul);
 
-    if (this->refFrame!=NULL)
+    if (this->refFrame != NULL)
     {
       Vec3d_rotateSelf(x_dot, this->refFrame->A_BI->rot);
     }
@@ -222,7 +200,7 @@ void Rcs::TaskPosition3D::computeXp_ik(double* x_dot) const
  * Computes current task Jacobian to parameter jacobian. See
  * RcsGraph_3dPosJacobian() for details.
  ******************************************************************************/
-void Rcs::TaskPosition3D::computeJ(MatNd* jacobian) const
+void TaskPosition3D::computeJ(MatNd* jacobian) const
 {
   RcsGraph_3dPosJacobian(this->graph, this->ef, this->refBody, this->refFrame,
                          jacobian);
@@ -232,7 +210,7 @@ void Rcs::TaskPosition3D::computeJ(MatNd* jacobian) const
  * Computes current task Hessian to parameter hessian. See
  * RcsGraph_3dPosHessian() for details.
  ******************************************************************************/
-void Rcs::TaskPosition3D::computeH(MatNd* hessian) const
+void TaskPosition3D::computeH(MatNd* hessian) const
 {
   RcsGraph_3dPosHessian(this->graph, this->ef, this->refBody, this->refFrame,
                         hessian);
@@ -241,9 +219,11 @@ void Rcs::TaskPosition3D::computeH(MatNd* hessian) const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-bool Rcs::TaskPosition3D::isValid(xmlNode* node, const RcsGraph* graph)
+bool TaskPosition3D::isValid(xmlNode* node, const RcsGraph* graph)
 {
-  bool success = Rcs::Task::isValid(node, graph, "XYZ");
+  bool success = Task::isValid(node, graph, "XYZ");
 
   return success;
 }
+
+}   // namespace Rcs
