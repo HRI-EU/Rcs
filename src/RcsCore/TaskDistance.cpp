@@ -41,7 +41,6 @@
 #include "Rcs_parser.h"
 #include "Rcs_body.h"
 #include "Rcs_Vec3d.h"
-#include "Rcs_kinematics.h"
 
 
 static Rcs::TaskFactoryRegistrar<Rcs::TaskDistance> registrar1("Distance");
@@ -89,6 +88,14 @@ Rcs::TaskDistance::TaskDistance(RcsGraph* graph_,
   TaskGenericIK(), gainDX(1.0)
 
 {
+  int nQueries = RcsBody_getNumDistanceQueries(effector, refBdy);
+  RCHECK(graph_);
+  RCHECK(effector);
+  RCHECK(refBdy);
+  RCHECK_MSG(nQueries>0, "The body pair %s - %s has no distance query. Did "
+             "you include any shape with enabled distance flag?",
+             effector->name, refBdy->name);
+
   this->graph = graph_;
   setClassName("Distance");
   setName("Distance " + std::string(effector ? effector->name : "NULL") + "-"
