@@ -47,56 +47,56 @@
     </Body>
 
     <Body name="b2" prev="b1" mass="1" physics="kinematic" color="RANDOM" >
-      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
+      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="-2" />
       <Joint type="TransZ" coupledTo="j1" couplingFactor="0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
     <Body name="b3" prev="b2" mass="1" physics="kinematic" color="RANDOM" >
-      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="0.01" />
+      <Joint type="RotZ" range="90" transform="0 0 0.02 0 0 0" xcoupledTo="j1" couplingFactor="-2" />
+      <Joint type="TransZ" range="19" coupledTo="j1" couplingFactor="0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
     <Body name="b4" prev="b3" mass="1" physics="kinematic" color="RANDOM" >
-      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="0.01" />
+      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="-2" />
+      <Joint type="TransZ" coupledTo="j1" couplingFactor="0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
     <Body name="b5" prev="b4" mass="1" physics="kinematic" color="RANDOM" >
-      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="0.01" />
+      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="-2" />
+      <Joint type="TransZ" coupledTo="j1" couplingFactor="0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
     <Body name="b6" prev="b5" mass="1" physics="kinematic" color="RANDOM" >
-      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="0.01" />
+      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="-2" />
+      <Joint type="TransZ" coupledTo="j1" couplingFactor="0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
     <Body name="b7" prev="b6" mass="1" physics="kinematic" color="RANDOM" >
-      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="0.01" />
+      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="-2" />
+      <Joint type="TransZ" coupledTo="j1" couplingFactor="0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
     <Body name="b8" prev="b7" mass="1" physics="kinematic" color="RANDOM" >
-      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="0.01" />
+      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="-2" />
+      <Joint type="TransZ" coupledTo="j1" couplingFactor="0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
     <Body name="b9" prev="b8" mass="1" physics="kinematic" color="RANDOM" >
-      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="0.01" />
+      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="-2" />
+      <Joint type="TransZ" coupledTo="j1" couplingFactor="0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
     <Body name="b10" prev="b9" mass="1" physics="kinematic" color="RANDOM" >
-      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="0.01" />
+      <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="-2" />
+      <Joint type="TransZ" coupledTo="j1" couplingFactor="0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
@@ -123,49 +123,49 @@
 
     <Body name="c3" prev="c2" mass="1" physics="kinematic" color="RANDOM" >
       <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="-0.01" />
+      <Joint type="TransZ" coupledTo="j1" couplingFactor="-0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
     <Body name="c4" prev="c3" mass="1" physics="kinematic" color="RANDOM" >
       <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="-0.01" />
+      <Joint type="TransZ" coupledTo="j1" couplingFactor="-0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
     <Body name="c5" prev="c4" mass="1" physics="kinematic" color="RANDOM" >
       <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="-0.01" />
+      <Joint type="TransZ" coupledTo="j1" couplingFactor="-0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
     <Body name="c6" prev="c5" mass="1" physics="kinematic" color="RANDOM" >
       <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="-0.01" />
+      <Joint type="TransZ" coupledTo="j1" couplingFactor="-0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
     <Body name="c7" prev="c6" mass="1" physics="kinematic" color="RANDOM" >
       <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="-0.01" />
+      <Joint type="TransZ" coupledTo="j1" couplingFactor="-0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
     <Body name="c8" prev="c7" mass="1" physics="kinematic" color="RANDOM" >
       <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="-0.01" />
+      <Joint type="TransZ" coupledTo="j1" couplingFactor="-0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
     <Body name="c9" prev="c8" mass="1" physics="kinematic" color="RANDOM" >
       <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="-0.01" />
+      <Joint type="TransZ" coupledTo="j1" couplingFactor="-0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 
     <Body name="c10" prev="c9" mass="1" physics="kinematic" color="RANDOM" >
       <Joint type="RotZ" transform="0 0 0.02 0 0 0" coupledTo="j1" couplingFactor="2" />
-      <Joint type="TransZ" range="90" coupledTo="j1" couplingFactor="-0.01" />
+      <Joint type="TransZ" coupledTo="j1" couplingFactor="-0.01" />
       <Shape type="BOX" extents="0.2 0.2 0.02" graphics="true" transform="0 0 0.01 0 0 0" />
     </Body>
 

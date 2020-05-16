@@ -715,7 +715,7 @@ bool Rcs::Task::testJacobian(double errorLimit,
   MatNd_create2(dx, nx, 1);
 
   // Set the state.
-  RcsGraph_setState(this->graph, NULL, NULL);
+  RcsGraph_computeForwardKinematics(this->graph, NULL, NULL);
 
   // Memorize the graph's state for the finite difference computation
   MatNd* q0;
@@ -745,18 +745,19 @@ bool Rcs::Task::testJacobian(double errorLimit,
       continue;
     }
 
-    double delta = 1.0e-6;
     // Determine the finite difference step according to the joint type:
-    // rotational joint: 0.1 degree, translational joint: 0.1mm
-    delta = RcsJoint_isRotation(JNT) ? 0.01*(M_PI/180.0) : 0.01*0.001;
+    // rotational joint: 0.01 degree, translational joint: 0.01mm
+    double delta = RcsJoint_isRotation(JNT) ? 0.01*(M_PI/180.0) : 0.01*0.001;
 
     // Calculate task variable x1 after applying finite difference step
     MatNd_copy(this->graph->q, q0);
     MatNd_addToEle(this->graph->q, JNT->jointIndex, 0, delta);
 
-    // MatNd_printTwoArraysDiff(q0, graph->q, 8);
-
-    RcsGraph_setState(this->graph, NULL, NULL);
+    // Here we don't use the RcsGraph_setState() function, since it also
+    // updates potentially kinematically coupled joints. Here we don't
+    // consider any kinematic coupling, and therefore don't want to see
+    // them in the pertubations of the finite differences.
+    RcsGraph_computeForwardKinematics(this->graph, NULL, NULL);
     computeX(x1->ele);
 
     // Reset state and calculate dx

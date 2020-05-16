@@ -2512,7 +2512,9 @@ bool RcsGraph_updateSlaveJoints(const RcsGraph* self, MatNd* q, MatNd* q_dot)
       double q_slave    = RcsJoint_computeSlaveJointAngle(JNT, q_master);
 
       // Compare with original joint angle
-      if (q_slave != q->ele[JNT->jointIndex])
+      const double eps = 1.0e-8;
+      double qErr = fabs(q_slave-q->ele[JNT->jointIndex]);
+      if (qErr>eps)
       {
         qHasChanged = true;
       }
