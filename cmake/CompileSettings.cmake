@@ -31,6 +31,12 @@ IF(WIN32)
     ADD_DEFINITIONS(-DWIN_DLL)
   ENDIF()
 
+  # Some special treatment for 32-bit and 64-bit machines
+  IF(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    ADD_DEFINITIONS(-D__64BIT__)
+  ELSE()
+    ADD_DEFINITIONS(-D__32BIT__)
+  ENDIF()
 
 ELSEIF(UNIX)
 
