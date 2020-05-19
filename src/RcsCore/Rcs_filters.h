@@ -110,6 +110,7 @@ public:
   virtual void init(double x0, double tmc, double dt);
   virtual void init(double x0);
   virtual void setState(double x, double x_dot);
+  virtual double iterate(double goal, double addedAccel);
   virtual double iterate(double goal);
   virtual double iterate();
   virtual double getPosition() const;
@@ -171,11 +172,12 @@ class SecondOrderLPFND
 public:
 
   SecondOrderLPFND(double tmc, double dt, size_t dim);
-  SecondOrderLPFND(double* x, double tmc, double dt, size_t dim);
+  SecondOrderLPFND(const double* x, double tmc, double dt, size_t dim);
   virtual ~SecondOrderLPFND();
   virtual void init(const double* x, double tmc, double dt);
   virtual void init(const double* x);
   virtual void setState(const double* x, const double* x_dot);
+  virtual void iterate(double* x_ddot, const double* goal, const double* addedAccel);
   virtual void iterate(double* x_ddot, const double* goal);
   virtual void iterate(double* x_ddot);
   virtual void iterate();
@@ -186,7 +188,7 @@ public:
   virtual size_t getDim() const;
   virtual void setDim(size_t dim);
   virtual void setDamping(double damping);
-  virtual void setTarget(double* target);
+  virtual void setTarget(const double* target);
   virtual void print() const;
   virtual void fprint(FILE* out) const;
 
