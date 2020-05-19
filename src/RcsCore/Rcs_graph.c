@@ -2609,11 +2609,8 @@ int RcsGraph_coupledJointMatrix(const RcsGraph* self, MatNd* A, MatNd* invA)
   MatNd* invDiagAtA = NULL;
   MatNd_create2(invDiagAtA, nqr, 1);
 
-  MatNd_reshape(A, nq, nqr);
-  MatNd_setZero(A);
-
-  MatNd_reshape(invA, nqr, nq);
-  MatNd_setZero(invA);
+  MatNd_reshapeAndSetZero(A, nq, nqr);
+  MatNd_reshapeAndSetZero(invA, nqr, nq);
 
   unsigned int nColumsA = 0;
 
@@ -2649,12 +2646,12 @@ int RcsGraph_coupledJointMatrix(const RcsGraph* self, MatNd* A, MatNd* invA)
 
 
   // Test
-  /* MatNd* invA2 = NULL; */
-  /* MatNd_create2(invA2, nqr, nq); */
-  /* MatNd_rwPinv2(invA2, A, NULL, NULL); */
-  /* MatNd_printCommentDigits("invA", invA, 4); */
-  /* MatNd_printCommentDigits("invA2", invA2, 4); */
-  /* MatNd_destroy(invA2); */
+  //MatNd* invA2 = NULL;
+  //MatNd_create2(invA2, nqr, nq);
+  //MatNd_rwPinv2(invA2, A, NULL, NULL);
+  //MatNd_printCommentDigits("invA", invA, 4);
+  //MatNd_printCommentDigits("invA2", invA2, 4);
+  //MatNd_destroy(invA2);
 
 
   MatNd_destroy(H);

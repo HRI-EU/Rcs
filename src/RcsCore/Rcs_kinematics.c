@@ -1501,26 +1501,20 @@ double RcsGraph_jointLimitGradient(const RcsGraph* self,
                                    RcsStateType type)
 {
   double cost = 0.0;
-  int dimension = (type == RcsStateFull ? self->dof : self->nJ);
-
-  MatNd_reshape(dH, 1, dimension);
-  MatNd_setZero(dH);
+  const int dimension = (type == RcsStateFull ? self->dof : self->nJ);
+  MatNd_reshapeAndSetZero(dH, 1, dimension);
 
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {
-    if ((JNT->constrained==true) && (type == RcsStateIK))
-    {
-      continue;
-    }
+    const double range = JNT->q_max - JNT->q_min;
 
-    double qi = MatNd_get(self->q, JNT->jointIndex, 0);
-    int index = (type == RcsStateIK) ? JNT->jacobiIndex : JNT->jointIndex;
-    double range = JNT->q_max - JNT->q_min;
-    double delta = qi - JNT->q0;
-
-    if ((range > 0.0) && (JNT->jacobiIndex != -1))
+    // Joints with constraint or zero range don't contribute to the gradient.
+    if ((JNT->jacobiIndex != -1) && (range > 0.0))
     {
-      dH->ele[index] = JNT->weightJL * delta / (range * range);
+      const double qi = MatNd_get2(self->q, JNT->jointIndex, 0);
+      const double delta = qi - JNT->q0;
+      const int idx = (type==RcsStateIK) ? JNT->jacobiIndex : JNT->jointIndex;
+      dH->ele[idx] = JNT->weightJL * delta / (range * range);
       cost += JNT->weightJL * pow(delta / range, 2);
     }
   }

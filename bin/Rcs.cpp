@@ -3163,6 +3163,8 @@ int main(int argc, char** argv)
   // before calling exit() to avoid leak reports from valgrind !
   xmlCleanupParser();
 
+  pthread_mutex_destroy(&graphLock);
+
   if (!valgrind)
   {
     RLOG(0, "Thanks for using the Rcs libraries\n");
