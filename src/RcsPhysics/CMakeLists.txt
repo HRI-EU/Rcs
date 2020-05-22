@@ -81,7 +81,7 @@ ADD_LIBRARY(RcsPhysics ${LIBRARY_LINKING_TYPE} ${RCS_PHYSICS_SRCS})
 # We add this option to force the linker to export this symbol. This
 # solves the issue that it will not be exposed, since all initialization 
 # happens inside statically. 
-IF(WIN32)
+IF(WIN32 AND USE_BULLET)
   TARGET_LINK_OPTIONS(RcsPhysics PUBLIC /include:RcsShape_distanceBullet)
 ENDIF()
 

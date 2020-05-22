@@ -12,8 +12,6 @@ IF(WIN32)
   # /Gy: Pre-compile individual functions into library
   # /fp:precise
   # /arch:SSE2
-  #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /GF /MD /W3 /GS- /Gd /Gy /fp:precise")
-  ADD_DEFINITIONS(-D_USE_MATH_DEFINES)   # M_PI etc. for windows
   ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE)
   IF (NOT (MSVC_VERSION LESS 1900))
     ADD_DEFINITIONS(-DHAVE_STRUCT_TIMESPEC)
