@@ -165,11 +165,39 @@ void Rcs::BulletHingeJoint::setJointTorque(double torque, double dt)
 }
 
 /*******************************************************************************
- *
+ * Bullet does not support joint limits outside a range of [-2*pi ... 2*pi].
+ * If limits outside that range are set, the joint doesn't seem to move. We
+ * therefore check this and only apply the joint limits when the condition is
+ * fine. We also allow cases where the limits are exactly 2*pi, since that's
+ * a common case in many configuration files. For these angles we modify the
+ * limits a tiny little bit to eb within the range, and hope that nobody will
+ * get mad at us.
  ******************************************************************************/
-void Rcs::BulletHingeJoint::setJointLimit(bool enable, double q_min, double q_max)
+void Rcs::BulletHingeJoint::setJointLimit(bool enable,
+                                          double q_min, double q_max)
 {
-  setLimit(btScalar(q_min+this->offset), btScalar(q_max+this->offset));
+  btScalar ll = btScalar(q_min + this->offset);
+  btScalar ul = btScalar(q_max + this->offset);
+
+  if (ll == -2.0*M_PI)
+  {
+    ll += 1.0e-12;
+  }
+
+  if (ul == 2.0*M_PI)
+  {
+    ul -= 1.0e-12;
+  }
+
+  if ((ll > -2.0*M_PI) && (ul < 2.0*M_PI))
+  {
+    setLimit(ll, ul);
+  }
+  else
+  {
+    RLOG(1, "[%s]: Joint limits outside [-2*pi ... 2*pi] not supported",
+         rcsJoint->name);
+  }
 }
 
 /*******************************************************************************

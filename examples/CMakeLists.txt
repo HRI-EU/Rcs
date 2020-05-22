@@ -6,6 +6,9 @@ IF(NOT HEADLESS_BUILD)
   ADD_EXECUTABLE(ExampleHighGui ExampleHighGui.cpp)
   TARGET_LINK_LIBRARIES(ExampleHighGui RcsCore RcsGui)
 
+  ADD_EXECUTABLE(ExampleIK ExampleIK.cpp)
+  TARGET_LINK_LIBRARIES(ExampleIK RcsCore RcsGui RcsGraphics RcsPhysics)
+
   ADD_EXECUTABLE(ExamplePrioritizedIK ExamplePrioritizedIK.cpp)
   TARGET_LINK_LIBRARIES(ExamplePrioritizedIK RcsCore RcsGui RcsGraphics)
 
