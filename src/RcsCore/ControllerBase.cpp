@@ -47,6 +47,7 @@
 #include "Rcs_dynamics.h"
 #include "Rcs_joint.h"
 
+#include <cfloat>
 
 
 
