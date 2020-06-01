@@ -99,6 +99,14 @@ private:
               bool passive = false);
   ~JointWidget();
 
+  /*! \brief We overwrite this with an empty function, otherwise the widget
+   *         scrolls when we use te mouse wheel inside the canvas and not
+   *         above the scroll bar. This is inconvenient, since we also want
+   *         use the mouse wheel for scrolling the task sliders. Tis beaviour
+   *         only exists for windows.
+   */
+  void wheelEvent(QWheelEvent* e);
+
   void lock() const;
   void unlock() const;
   RcsGraph* _graph;

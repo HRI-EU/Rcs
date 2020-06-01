@@ -442,4 +442,14 @@ void JointWidget::registerCallback(JointChangeCallback* cb)
   callback.push_back(cb);
 }
 
+/*******************************************************************************
+ * This overrides the behavior that the scroll area scrolls whenever the
+ * mouse wheel is used inside it. This is a bit disturbing, since the sliders
+ * inside the scroll area then cannot be scrolled accurately using the mouse
+ * wheel. For some reason, this issue only exists on Windows.
+ ******************************************************************************/
+void JointWidget::wheelEvent(QWheelEvent* e)
+{
+}
+
 }   // namespace Rcs
