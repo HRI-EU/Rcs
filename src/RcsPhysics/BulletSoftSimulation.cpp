@@ -98,7 +98,6 @@ static void setSoftMaterial(btSoftBody* softBdy, int materialId)
       softBdy->m_cfg.kKHR = 1.0;   // Kinetic contacts hardness [0,1]
       softBdy->m_cfg.kSHR = 1.0;   // Soft contacts hardness [0,1]
 
-
       //softBdy->m_cfg.collisions = btSoftBody::fCollision::SDF_RS;// + btSoftBody::fCollision::SDF_RDF;
       // btSoftBody::fCollision::CL_SS +
       // btSoftBody::fCollision::CL_RS;
@@ -106,6 +105,42 @@ static void setSoftMaterial(btSoftBody* softBdy, int materialId)
       softBdy->m_cfg.collisions = btSoftBody::fCollision::CL_SS +
                                   btSoftBody::fCollision::CL_RS;
       softBdy->generateClusters(1200);
+    }
+    break;
+
+    case 2:
+    {
+      softBdy->m_cfg.kMT = 0.0;// Pose matching coefficient [0,1]
+      softBdy->m_cfg.kVCF = 1.0;// Velocities correction factor (Baumgarte)
+      softBdy->m_cfg.kVC = 0.0;// Volume conversation coefficient [0,+inf]
+      softBdy->m_cfg.piterations = 250;
+      softBdy->m_cfg.citerations = 10;
+      softBdy->m_cfg.diterations = 10;
+
+      softBdy->m_cfg.kCHR = 1.0;   // Rigid contacts hardness [0,1]
+      softBdy->m_cfg.kKHR = 1.0;   // Kinetic contacts hardness [0,1]
+      softBdy->m_cfg.kSHR = 1.0;   // Soft contacts hardness [0,1]
+    }
+    break;
+
+    case 3:
+    {
+      btSoftBody::Material* material = softBdy->appendMaterial();
+      material->m_kLST = 1.0;  // Linear stiffness coefficient [0,1]
+      material->m_kAST = 1.0;  // Area/Angular stiffness coefficient [0,1]
+
+      //softBdy->m_cfg.kDF = 0.9; // dynamic friction
+      //softBdy->m_cfg.kDP = 0.01;// damping
+      //softBdy->m_cfg.kMT = 0.00;// Pose matching coefficient [0,1]  was 0.05
+      //softBdy->m_cfg.kVCF = 0.1;// Velocities correction factor (Baumgarte)
+      //softBdy->m_cfg.kVC = 0.0;// Volume conversation coefficient [0,+inf]
+      softBdy->m_cfg.piterations = 250;
+      softBdy->m_cfg.citerations = 100;
+      softBdy->m_cfg.diterations = 100;
+
+      //softBdy->m_cfg.kCHR = 1.0;   // Rigid contacts hardness [0,1]
+      //softBdy->m_cfg.kKHR = 1.0;   // Kinetic contacts hardness [0,1]
+      //softBdy->m_cfg.kSHR = 1.0;   // Soft contacts hardness [0,1]
     }
     break;
 
@@ -379,6 +414,10 @@ void BulletSoftSimulation::createSoftBodies()
       if (STRCASEEQ(SHAPE->material, "cloth"))
       {
         materialId = 1;
+      }
+      else if (STRCASEEQ(SHAPE->material, "cloth2"))
+      {
+        materialId = 2;
       }
 
       setSoftMaterial(softBdy, materialId);
