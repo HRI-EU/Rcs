@@ -357,7 +357,7 @@ static bool test_cylinderHullMesh()
   argP.getArgument("-r1", &radiusBottom, "Radius bottom (default is %f)",
                    radiusBottom);
   argP.getArgument("-r2", &radiusTop, "Radius top (default is %f)", radiusTop);
-  argP.getArgument("-h", &height, "Height (default is %f)", height);
+  argP.getArgument("-height", &height, "Height (default is %f)", height);
   argP.getArgument("-angleAround", &angleAround, "Angle around [deg](default "
                    "is %f)", angleAround);
   argP.getArgument("-radialSegments", &radialSegments, "Radial segments "
@@ -380,17 +380,18 @@ static bool test_cylinderHullMesh()
   RLOG(0, "Reduced mesh by %d duplicates", nDuplicates);
   RMSGS("Reduced mesh has %d vertices and %d facecs",
         mesh->nVertices, mesh->nFaces);
+  RcsMesh_toFile(mesh, "reducedMesh.stl");
 
   RcsMeshData* delauny = RcsMesh_fromVertices(mesh->vertices, mesh->nVertices);
 
   if (delauny)
-    {
-      nDuplicates = RcsMesh_compressVertices(delauny, 1.0e-8);
-      RLOG(0, "Delaunay mesh has now less %d duplicates", nDuplicates);
-      RcsMesh_toFile(delauny, "CylinderHullDelaunay.stl");
-      RcsMesh_destroy(delauny);
-    }
-  
+  {
+    nDuplicates = RcsMesh_compressVertices(delauny, 1.0e-8);
+    RLOG(0, "Delaunay mesh has now less %d duplicates", nDuplicates);
+    RcsMesh_toFile(delauny, "CylinderHullDelaunay.stl");
+    RcsMesh_destroy(delauny);
+  }
+
   showMesh(mesh);
   RcsMesh_destroy(mesh);
 
