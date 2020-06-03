@@ -444,9 +444,7 @@ static void testOsgViewer()
   osgDB::Registry::instance()->setOptions(options);
 
   osgViewer::Viewer* viewer = new osgViewer::Viewer();
-
-  osg::ref_ptr<osgGA::TrackballManipulator> trackball = new osgGA::TrackballManipulator();
-  viewer->setCameraManipulator(trackball.get());
+  viewer->setCameraManipulator(new osgGA::TrackballManipulator());
 
   osg::ref_ptr<osg::Group> rootnode;
 
@@ -687,7 +685,7 @@ static void testMeshNode()
 
   if (withScaling)
   {
-    MatNdWidget::create(&scaleArr, -2.0, 2.0, "Scale");
+    Rcs::MatNdWidget::create(&scaleArr, -2.0, 2.0, "Scale");
   }
 
   while (runLoop)
@@ -983,7 +981,7 @@ void testDepthRenderer()
   zRenderer->setCameraTransform(HTr_identity());
   zRenderer->addNode(gn.get());
 
-  MatNdWidget::create(graph->q, -10.0, 10.0, "q");
+  Rcs::MatNdWidget::create(graph->q, -10.0, 10.0, "q");
 
   while (runLoop)
   {

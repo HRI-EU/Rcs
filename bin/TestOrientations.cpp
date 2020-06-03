@@ -628,7 +628,7 @@ static void testRotationAverage(int argc, char** argv, bool useRotationAxes = fa
 
   MatNd* weight = MatNd_create(N_COS, 1);
   MatNd_setElementsTo(weight, 1.0);
-  MatNdWidget::create(weight, weight, 0.0, 1.0, "weight", &mtx);
+  Rcs::MatNdWidget::create(weight, weight, 0.0, 1.0, "weight", &mtx);
 
 
 

@@ -506,9 +506,9 @@ int main(int argc, char** argv)
         v->runInThread(mtx);
 
         // Launch the dx widget
-        MatNdWidget* mw = MatNdWidget::create(dx_gui, x_curr,
-                                              -1.0, 1.0, "dx",
-                                              &graphLock);
+        Rcs::MatNdWidget* mw = Rcs::MatNdWidget::create(dx_gui, x_curr,
+                                                        -1.0, 1.0, "dx",
+                                                        &graphLock);
 
         std::vector<std::string> labels;
         for (size_t id=0; id<controller.getNumberOfTasks(); id++)
@@ -524,8 +524,8 @@ int main(int argc, char** argv)
         mw->setLabels(labels);
 
         // Launch the widget for the activations
-        mw = MatNdWidget::create(a_des, a_des,
-                                 0.0, 1.0, "activations", &graphLock);
+        mw = Rcs::MatNdWidget::create(a_des, a_des,
+                                      0.0, 1.0, "activations", &graphLock);
 
         labels.clear();
         for (size_t id=0; id<controller.getNumberOfTasks(); id++)

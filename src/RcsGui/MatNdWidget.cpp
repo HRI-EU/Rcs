@@ -42,7 +42,8 @@
 #include <QTimer>
 #include <QLayout>
 
-
+namespace Rcs
+{
 
 /*******************************************************************************
  *
@@ -423,5 +424,6 @@ void MatNdWidget::reset(const MatNd* values)
   }
 }
 
+}   // namespace Rcs
 
 

@@ -126,7 +126,7 @@ int main(int argc, char** argv)
 
       MatNd* mat = MatNd_create(rows,cols);
       MatNd_setRandom(mat, -1.0, 1.0);
-      MatNdWidget::create(mat, NULL, mtx);
+      Rcs::MatNdWidget::create(mat, NULL, mtx);
 
       while (runLoop==true)
       {

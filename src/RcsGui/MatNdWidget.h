@@ -47,24 +47,32 @@
 #include <string>
 #include <pthread.h>
 
+namespace Rcs
+{
 
-
-class MatNdWidget: public QScrollArea
+class MatNdWidget : public QScrollArea
 {
   Q_OBJECT
 
 public:
-  static MatNdWidget* create(MatNd* mat, const char* title=NULL,
-                             pthread_mutex_t* mutex=NULL);
+
+  static MatNdWidget* create(MatNd* mat, const char* title = NULL,
+                             pthread_mutex_t* mutex = NULL);
+
   static MatNdWidget* create(MatNd* mat, double lower, double upper,
-                             const char* title=NULL,
-                             pthread_mutex_t* mutex=NULL);
+                             const char* title = NULL,
+                             pthread_mutex_t* mutex = NULL);
+
   static MatNdWidget* create(MatNd* mat, const MatNd* dispMat,
                              double lower, double upper,
-                             const char* title=NULL,
-                             pthread_mutex_t* mutex=NULL);
+                             const char* title = NULL,
+                             pthread_mutex_t* mutex = NULL);
+
   MatNdWidget(MatNd* mat, const MatNd* dispMat, double lower, double upper,
               const char* title, pthread_mutex_t* mutex);
+
+  /*! \brief Virtual destructor to allow inheriting from this nice class.
+   */
   virtual ~MatNdWidget();
 
   /*! \brief Sets all slider lower bounds to the values given in limit. Array
@@ -116,5 +124,7 @@ private slots:
   void displayAct();
   void setCommand();
 };
+
+}   // namespace Rcs
 
 #endif   // MATNDWIDGET_H

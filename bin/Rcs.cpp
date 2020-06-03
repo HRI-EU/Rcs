@@ -1054,7 +1054,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("u", "Toggle gravity compensation");
       Rcs::KeyCatcherBase::registerKey("W", "Create joint widget");
       Rcs::KeyCatcherBase::registerKey("m", "Change physics parameters");
-      Rcs::KeyCatcherBase::registerKey("e", "Remove body by name");
+      Rcs::KeyCatcherBase::registerKey("e", "Remove body under mouse");
       Rcs::KeyCatcherBase::registerKey("k", "Shoot sphere");
       Rcs::KeyCatcherBase::registerKey("D", "Show dot file of graph");
       Rcs::KeyCatcherBase::registerKey("a", "Deactivate body under mouse");
@@ -1382,18 +1382,13 @@ int main(int argc, char** argv)
         }
         else if (kc && kc->getAndResetKey('e'))
         {
-          std::string bdyName;
-          //RMSG("Removing body");
-          //printf("Enter body to remove: ");
-          //std::cin >> bdyName;
-
           Rcs::BodyNode* bNd = viewer->getBodyNodeUnderMouse<Rcs::BodyNode*>();
           if (bNd == NULL)
           {
             RMSG("No BodyNode found under mouse");
             continue;
           }
-          bdyName = std::string(bNd->body()->name);
+          std::string bdyName = std::string(bNd->body()->name);
 
           RMSG("Removing body \"%s\" under mouse", bdyName.c_str());
           pthread_mutex_lock(&graphLock);
@@ -1708,7 +1703,8 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("C", "Toggle closest point lines");
       Rcs::KeyCatcherBase::registerKey("o", "Toggle distance calculation");
       Rcs::KeyCatcherBase::registerKey("m", "Manipulability null space");
-      Rcs::KeyCatcherBase::registerKey("e", "Link generic body");
+      Rcs::KeyCatcherBase::registerKey("e", "Remove body under mouse");
+      Rcs::KeyCatcherBase::registerKey("E", "Link generic body");
       Rcs::KeyCatcherBase::registerKey("v", "Write current q to model_state");
       Rcs::KeyCatcherBase::registerKey("f", "Toggle physics feedback");
       Rcs::KeyCatcherBase::registerKey("p", "Print controller info on console");
@@ -1778,14 +1774,14 @@ int main(int argc, char** argv)
         ikSolver = new Rcs::IkSolverRMR(&controller);
       }
 
-      MatNd* dq_des  = MatNd_create(controller.getGraph()->dof, 1);
-      MatNd* q_dot_des  = MatNd_create(controller.getGraph()->dof, 1);
-      MatNd* a_des   = MatNd_create(controller.getNumberOfTasks(), 1);
-      MatNd* x_curr  = MatNd_create(controller.getTaskDim(), 1);
-      MatNd* x_des   = MatNd_create(controller.getTaskDim(), 1);
-      MatNd* x_des_f = MatNd_create(controller.getTaskDim(), 1);
-      MatNd* dx_des  = MatNd_create(controller.getTaskDim(), 1);
-      MatNd* dH      = MatNd_create(1, controller.getGraph()->nJ);
+      MatNd* dq_des    = MatNd_create(controller.getGraph()->dof, 1);
+      MatNd* q_dot_des = MatNd_create(controller.getGraph()->dof, 1);
+      MatNd* a_des     = MatNd_create(controller.getNumberOfTasks(), 1);
+      MatNd* x_curr    = MatNd_create(controller.getTaskDim(), 1);
+      MatNd* x_des     = MatNd_create(controller.getTaskDim(), 1);
+      MatNd* x_des_f   = MatNd_create(controller.getTaskDim(), 1);
+      MatNd* dx_des    = MatNd_create(controller.getTaskDim(), 1);
+      MatNd* dH        = MatNd_create(1, controller.getGraph()->nJ);
 
       controller.readActivationsFromXML(a_des);
       controller.computeX(x_curr);
@@ -1879,9 +1875,9 @@ int main(int argc, char** argv)
         else
         {
           // Launch the task widget
-          MatNdWidget* mw = MatNdWidget::create(dx_des, x_curr,
-                                                -1.0, 1.0, "dx",
-                                                mtx);
+          Rcs::MatNdWidget* mw = Rcs::MatNdWidget::create(dx_des, x_curr,
+                                                          -1.0, 1.0, "dx",
+                                                          mtx);
 
           std::vector<std::string> labels;
           for (size_t id=0; id<controller.getNumberOfTasks(); id++)
@@ -1894,9 +1890,9 @@ int main(int argc, char** argv)
 
           mw->setLabels(labels);
 
-          mw = MatNdWidget::create(a_des, a_des,
-                                   0.0, 1.0, "activation",
-                                   &graphLock);
+          mw = Rcs::MatNdWidget::create(a_des, a_des,
+                                        0.0, 1.0, "activation",
+                                        &graphLock);
           labels.clear();
           for (size_t id=0; id<controller.getNumberOfTasks(); id++)
           {
@@ -1914,8 +1910,8 @@ int main(int argc, char** argv)
         if (effortBdy != NULL)
         {
           std::vector<std::string> labels;
-          MatNdWidget* mw = MatNdWidget::create(F_effort, F_effort,
-                                                -1.0, 1.0, "F_effort", mtx);
+          Rcs::MatNdWidget* mw = Rcs::MatNdWidget::create(F_effort, F_effort,
+                                                          -1.0, 1.0, "F_effort", mtx);
           labels.push_back("Fx");
           labels.push_back("Fy");
           labels.push_back("Fz");
@@ -2113,6 +2109,53 @@ int main(int argc, char** argv)
                manipulability ? "ON" : "OFF");
         }
         else if (kc && kc->getAndResetKey('e'))
+        {
+          Rcs::BodyNode* bNd = v->getBodyNodeUnderMouse<Rcs::BodyNode*>();
+          if (bNd == NULL)
+          {
+            RMSG("No BodyNode found under mouse");
+            continue;
+          }
+          std::string bdyName = std::string(bNd->body()->name);
+
+          RMSG("Removing body \"%s\" under mouse", bdyName.c_str());
+          pthread_mutex_lock(&graphLock);
+          bool ok = true;
+
+          if (sim)
+          {
+            RLOG(0, "Removing from simulator");
+            ok = sim->removeBody(bdyName.c_str());
+          }
+
+          if (ok)
+          {
+            MatNd* arrBuf[2];
+            arrBuf[0] = dq_des;
+            arrBuf[1] = q_dot_des;
+
+            RLOG(0, "Removing from graph");
+            ok = RcsGraph_removeBody(controller.getGraph(), bdyName.c_str(),
+                                     arrBuf, 2) && ok;
+
+            if (ok && simNode)
+            {
+              RLOG(0, "Removing from simNode");
+              ok = simNode->removeBodyNode(bdyName.c_str()) && ok;
+            }
+
+            if (ok && gn)
+            {
+              RLOG(0, "Removing from GraphNode");
+              ok = gn->removeBodyNode(bdyName.c_str()) && ok;
+            }
+
+          }
+          pthread_mutex_unlock(&graphLock);
+          RMSG("%s removing body \"%s\"", ok ? "SUCCEEDED" : "FAILED",
+               bdyName.c_str());
+        }
+        else if (kc && kc->getAndResetKey('E'))
         {
           std::string bdyName;
           RMSG("Linking GenericBody");
@@ -2401,9 +2444,9 @@ int main(int argc, char** argv)
 
         // Launch the activation widget
         std::vector<std::string> labels;
-        MatNdWidget* mw = MatNdWidget::create(a_des, a_des,
-                                              0.0, 1.0, "activation",
-                                              &graphLock);
+        Rcs::MatNdWidget* mw = Rcs::MatNdWidget::create(a_des, a_des,
+                                                        0.0, 1.0, "activation",
+                                                        &graphLock);
         for (size_t id=0; id<controller.getNumberOfTasks(); id++)
         {
           labels.push_back(controller.getTaskName(id));
@@ -2677,9 +2720,9 @@ int main(int argc, char** argv)
         else
         {
           // Launch the task widget
-          MatNdWidget* mw = MatNdWidget::create(xpp_des, x_curr,
-                                                -1000.0, 1000.0, "xpp_des",
-                                                mtx);
+          Rcs::MatNdWidget* mw = Rcs::MatNdWidget::create(xpp_des, x_curr,
+                                                          -1000.0, 1000.0, "xpp_des",
+                                                          mtx);
 
           std::vector<std::string> labels;
           for (size_t id=0; id<controller.getNumberOfTasks(); id++)
@@ -2692,9 +2735,9 @@ int main(int argc, char** argv)
 
           mw->setLabels(labels);
 
-          mw = MatNdWidget::create(a_des, a_des,
-                                   0.0, 1.0, "activation",
-                                   &graphLock);
+          mw = Rcs::MatNdWidget::create(a_des, a_des,
+                                        0.0, 1.0, "activation",
+                                        &graphLock);
           labels.clear();
           for (size_t id=0; id<controller.getNumberOfTasks(); id++)
           {
@@ -3003,8 +3046,8 @@ int main(int argc, char** argv)
         leafNode = BODY;
       }
 
-      MatNdWidget::create(invW, invW, 0.0, 1.0, "weighting");
-      MatNdWidget::create(T, T, 0.0, 1.0, "torque");
+      Rcs::MatNdWidget::create(invW, invW, 0.0, 1.0, "weighting");
+      Rcs::MatNdWidget::create(T, T, 0.0, 1.0, "torque");
 
       RcsGraph_worldPointJacobian(graph, leafNode, Vec3d_ez(), NULL, J);
 

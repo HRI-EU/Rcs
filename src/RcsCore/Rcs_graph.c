@@ -2658,7 +2658,6 @@ int RcsGraph_coupledJointMatrix(const RcsGraph* self, MatNd* A, MatNd* invA)
   MatNd_destroy(colSum);
   MatNd_destroy(invDiagAtA);
 
-
   return nCoupledJoints;
 }
 
@@ -2701,8 +2700,19 @@ static void RcsGraph_recomputeJointIndices(RcsGraph* self, MatNd* stateVec[],
     }
     nqCount++;
 
-    JNT->jacobiIndex = (JNT->constrained == false) ? njCount : -1;
-    njCount++;
+    //JNT->jacobiIndex = (JNT->constrained == false) ? njCount : -1;
+    //njCount++;
+
+    if (JNT->constrained == false)
+    {
+      JNT->jacobiIndex = njCount;
+      njCount++;
+    }
+    else
+    {
+      JNT->jacobiIndex = -1;
+    }
+
   }
 
   self->q->m = nqCount;
@@ -2792,9 +2802,6 @@ void RcsGraph_makeJointsConsistent(RcsGraph* self)
  ******************************************************************************/
 void RcsGraph_fprintXML(FILE* out, const RcsGraph* self)
 {
-  RCHECK(out);
-  RCHECK(self);
-
   fprintf(out, "<Graph name=\"DefaultPose\" >\n\n");
 
   RCSGRAPH_TRAVERSE_BODIES(self)
@@ -3100,8 +3107,14 @@ bool RcsGraph_removeBody(RcsGraph* self, const char* bdyName,
     RCHECK(self->root);
   }
 
+  // In case the body is attached to its parent by one or more joints, we need
+  // to update the joint and Jacobi indices.
+  if (bdy->jnt)
+  {
+    RcsGraph_recomputeJointIndices(self, stateVec, nVec);
+  }
+
   RcsBody_destroy(bdy);
-  RcsGraph_recomputeJointIndices(self, stateVec, nVec);
 
   return true;
 }

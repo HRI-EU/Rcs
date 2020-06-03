@@ -477,7 +477,7 @@ int main(int argc, char** argv)
       Rcs::Viewer* viewer = NULL;
       osg::ref_ptr<Rcs::HUD> hud;
       osg::ref_ptr<Rcs::KeyCatcher> kc;
-      MatNdWidget* gui = NULL;
+      Rcs::MatNdWidget* gui = NULL;
 
       if (!valgrind)
       {
@@ -493,8 +493,8 @@ int main(int argc, char** argv)
         viewer->add(kc.get());
         viewer->runInThread(&graphLock);
 
-        gui = MatNdWidget::create(q_gui, q_curr, -3.0, 3.0,
-                                  "Joint angles", &graphLock);
+        gui = Rcs::MatNdWidget::create(q_gui, q_curr, -3.0, 3.0,
+                                       "Joint angles", &graphLock);
       }
 
 
