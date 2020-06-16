@@ -178,7 +178,7 @@ static bool Math_pointInsideOrOnConvexPolygon2D(const double pt[2],
   {
     if (pt[0]==0.0 && pt[1]==0.0)
     {
-      return true;
+      return true;// \todo: Really? A point should never lie on a polygon with no vertices, or?
     }
 
     return false;
@@ -455,7 +455,7 @@ double Math_sqrDistPointConvexPolygon(const double I_pt[3],
   }
   // If it is inside, we modify the closest point to be the projection of the
   // point on the polygon plane. This results in a distance to a "filled", and
-  // not a "wired" polygon. The distance is ust the "height" (z-component) of
+  // not a "wired" polygon. The distance is just the "height" (z-component) of
   // P_pt.
   else
   {
@@ -463,25 +463,48 @@ double Math_sqrDistPointConvexPolygon(const double I_pt[3],
     P_cp[0] = P_pt[0];
     P_cp[1] = P_pt[1];
     Vec3d_transform(I_cpPoly, A_PI, P_cp);
-    //Vec3d_sub(I_nPoly, I_pt, I_cpPoly);
-    //Vec3d_normalizeSelf(I_nPoly);
 
     // If the point lies inside the filled rectangle, the normal is
     // perpendicular to the rectangle. In world coordinates, this is the
     // z-component of the rotation matrix from I to B.
-    if (P_pt[2]>=0.0)
-    {
-      Vec3d_copy(I_nPoly, A_PI->rot[2]);
-    }
-    else
-    {
-      Vec3d_constMul(I_nPoly, A_PI->rot[2], -1.0);
-    }
+    Vec3d_constMul(I_nPoly, A_PI->rot[2], Math_dsign(P_pt[2]));
   }
 
-  // Project the normal back to the "world" coordinates
-
   return sqrDist3D;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+double Math_sqrDistPointRect(const double I_pt[3],
+                             const HTr* A_RI,
+                             const double extents[2],
+                             double I_cpRect[3],
+                             double I_nRect[3])
+{
+  // Transform point into the frame of reference of the rectangle: Vertices lie
+  // in the x-y plane, the plane normal is the z-axis of A_PI.
+  double R_pt[3];
+  Vec3d_invTransform(R_pt, A_RI, I_pt);
+
+  // Compute the closest point and distance for the 2D projection.
+  double R_cp[3];
+  R_cp[0] = Math_clip(R_pt[0], -0.5*extents[0], 0.5*extents[0]);
+  R_cp[1] = Math_clip(R_pt[1], -0.5*extents[1], 0.5*extents[1]);
+  R_cp[2] = 0.0;
+
+  // If the projected point is outside the polygon, we keep the closest point
+  // as the one at the polygon boundary, and set the z-component to 0.
+  Vec3d_transform(I_cpRect, A_RI, R_cp);
+  Vec3d_sub(I_nRect, I_pt, I_cpRect);
+  double len = Vec3d_normalizeSelf(I_nRect);
+
+  if (len == 0.0)
+  {
+    Vec3d_setUnitVector(I_nRect, 2);
+  }
+
+  return len*len;
 }
 
 /*******************************************************************************
@@ -1441,9 +1464,10 @@ int Math_pointInsideOrOnPolygon2D(const double pt[2],
           iCount++;
           break;
         case 2: // Currently ignore degenerate intersections and loop again
-        case 3:
+        case 3:   // Point on vertex
         case 4:
           success = false;
+          //fprintf(stderr, "res=%d\n", res);
           break;
         default:
           RFATAL("Unknown result: %d", res);
@@ -1466,10 +1490,26 @@ int Math_pointInsideOrOnPolygon2D(const double pt[2],
     // \todo: No logging on dl 0
     if (iter >= maxIter / 2)
     {
-      RLOG(0, "Iteration %d failed", iter);
+      RLOG(4, "Iteration %d failed", iter);
+      //for (unsigned int n = 0; n < nVertices; ++n)
+      //{
+      //  fprintf(stderr, "Vertex %d: %f %f\n", n, polygon[n][0], polygon[n][1]);
+      //}
+      //fprintf(stderr, "Ray direction: %f %f\n", rayDir[0], rayDir[1]);
+      //fprintf(stderr, "point: %f %f\n", pt[0], pt[1]);
     }
 
   }   // for (unsigned int iter=0;iter<maxIter; ++iter)
+
+  for (unsigned int n = 0; n < nVertices; ++n)
+  {
+    if (fabs(pt[0]-polygon[n][0])<1.0e-12 && fabs(pt[1]-polygon[n][1])<1.0e-12)
+    {
+      RLOG(4, "Coincident vtx");
+      return 1;
+    }
+  }
+
 
   // If we get here, we iterated maxIter times with different random ray
   // directions without getting a valid solution. That's extremely unlikely,

@@ -338,6 +338,12 @@ double Math_sqrDistPointConvexPolygon(const double I_pt[3],
                                       double I_cpPoly[3],
                                       double I_nPoly[3]);
 
+double Math_sqrDistPointRect(const double I_pt[3],
+                             const HTr* A_RI,
+                             const double extents[2],
+                             double I_cpRect[3],
+                             double I_nRect[3]);
+
 /*! \ingroup RcsBasicMathFunctions
  *  \brief This function returns the squared distance between two line
  *         segments, and computes the closest points.
