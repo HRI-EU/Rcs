@@ -28,7 +28,7 @@
   <xi:include href="sdh.xml" />
 </Group>
 
-<Body name="LeftHandTip" prev="m9"  transform="0.2 0 0 0 0 0" >
+<Body name="Hand" prev="m9"  transform="0.2 0 0 0 0 0" >
   <Shape type="FRAME" scale="0.25" />
 </Body>
 
