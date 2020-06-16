@@ -103,7 +103,10 @@ double RcsShape_distance(const RcsShape* s1, const RcsShape* s2,
  *  \brief Computes the distance between a shape and a 3d point.
  *
  *  \param[in]  shape        RcsShape to which distance is to be computed
- *  \param[in]  A_SI         Transformation from world (I) to shape frame
+ *  \param[in]  A_SI         Transformation from world (I) to the shape's base
+ *                           frame. The shape frame might have an additional
+ *                           relative transform that is represented in
+ *                           RcsShape::A_CB.
  *  \param[in]  I_pt         Point in world coordinates
  *  \param[out] I_cpShape    Closest point on the shape in world coordinates
  *  \param[out] I_nShapePt   Unit normal vector from shape towards point

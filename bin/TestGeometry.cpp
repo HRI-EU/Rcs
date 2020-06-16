@@ -124,19 +124,13 @@ static void testDistance(int argc, char** argv)
   b1->A_BI = HTr_create();
   b1->Inertia = HTr_create();
   Vec3d_setRandom(b1->A_BI->org, -0.2, -0.1);
-  b1->shape = RNALLOC(2, RcsShape*);
-  b1->shape[0] = RcsShape_createRandomShape(shapeType1);
-  RCHECK(b1->shape[0]);
-  b1->shape[1] = NULL;
+  RcsBody_addShape(b1, RcsShape_createRandomShape(shapeType1));
 
   RcsBody* b2 = RALLOC(RcsBody);
   b2->A_BI = HTr_create();
   b2->Inertia = HTr_create();
   Vec3d_setRandom(b1->A_BI->org, 0.1, 0.2);
-  b2->shape = RNALLOC(2, RcsShape*);
-  b2->shape[0] = RcsShape_createRandomShape(shapeType2);
-  RCHECK(b2->shape[0]);
-  b2->shape[1] = NULL;
+  RcsBody_addShape(b2, RcsShape_createRandomShape(shapeType2));
 
   double I_closestPts[6];
   VecNd_setZero(I_closestPts, 6);

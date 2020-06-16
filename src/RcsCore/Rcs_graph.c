@@ -2733,8 +2733,8 @@ static void RcsGraph_recomputeJointIndices(RcsGraph* self, MatNd* stateVec[],
 }
 
 /*******************************************************************************
-* See header.
-******************************************************************************/
+ * See header.
+ ******************************************************************************/
 void RcsGraph_makeJointsConsistent(RcsGraph* self)
 {
   // Re-order joint indices according to depth-first traversal.
@@ -3054,8 +3054,8 @@ void RcsGraph_scale(RcsGraph* graph, double scale)
 }
 
 /*******************************************************************************
-* See header.
-******************************************************************************/
+ * See header.
+ ******************************************************************************/
 bool RcsGraph_removeBody(RcsGraph* self, const char* bdyName,
                          MatNd* stateVec[], unsigned int nVec)
 {
@@ -3120,8 +3120,8 @@ bool RcsGraph_removeBody(RcsGraph* self, const char* bdyName,
 }
 
 /*******************************************************************************
-*
-******************************************************************************/
+ *
+ ******************************************************************************/
 bool RcsGraph_addBody(RcsGraph* graph, RcsBody* parent, RcsBody* body,
                       MatNd* stateVec[], unsigned int nVec)
 {
@@ -3312,10 +3312,11 @@ void RcsGraph_computeAABB(const RcsGraph* self,
 
 }
 
-/******************************************************************************
+/*******************************************************************************
  *
- *****************************************************************************/
-RcsMeshData* RcsGraph_meshify(const RcsGraph* self, double scale, char computeType)
+ ******************************************************************************/
+RcsMeshData* RcsGraph_meshify(const RcsGraph* self, double scale,
+                              char computeType)
 {
   if (self==NULL)
   {

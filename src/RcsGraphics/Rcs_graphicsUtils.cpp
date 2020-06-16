@@ -721,6 +721,8 @@ bool setNodeMaterial(const std::string& matString, osg::Node* node,
 
   if (alpha >= 0.0 && alpha <= 1.0)
   {
+    RLOG(4, "Material %s: Ignoring alpha value %f, must be [0 ... 1]",
+         matString.c_str(), alpha);
     material->setAlpha(osg::Material::FRONT_AND_BACK, alpha);
   }
 
