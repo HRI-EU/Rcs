@@ -658,16 +658,28 @@ static double* RcsMesh_readSTLFile(const char* fileName,
 /*******************************************************************************
  * Reads all vertices from a wavefront obj file.
  ******************************************************************************/
-static double* RcsMesh_readObjFile(const char* fileName,
-                                   unsigned int* numVertices)
+static void String_chopOff(char* dst, const char* src, const char* delim)
+{
+  // Make a local copy of str, since strtok modifies it during processing
+  char* lStr = String_clone(src);
+  char* pch = strtok(lStr, delim);
+  strcpy(dst, pch);
+  RFREE(lStr);
+}
+
+
+
+bool RcsMesh_readObjFile(const char* fileName, RcsMeshData* mesh)
 {
   RLOG(5, "Reading mesh file \"%s\"", fileName);
   FILE* fd = fopen(fileName, "rb");
-  *numVertices = 0;
+  mesh->nVertices = 0;
+  mesh->nFaces = 0;
 
   if (fd==NULL)
   {
-    return NULL;
+    RLOG(4, "Could not open mesh file \"%s\"", fileName ? fileName : "NULL");
+    return false;
   }
 
   char lineStr[512];
@@ -676,29 +688,52 @@ static double* RcsMesh_readObjFile(const char* fileName,
     if (STRNEQ(lineStr, "v ", 2))
     {
       NLOG(5, "Vertex line: %s", lineStr);
-      (*numVertices) ++;
+      mesh->nVertices++;
+    }
+
+    if (STRNEQ(lineStr, "f ", 2))
+    {
+      NLOG(5, "Face line: %s", lineStr);
+      mesh->nFaces++;
     }
   }
 
-  RLOG(5, "Found %d vertices", *numVertices);
+  RLOG(5, "Found %d vertices and %d faces", mesh->nVertices, mesh->nFaces);
   rewind(fd);
 
-  double* verts = RNALLOC(3*(*numVertices), double);
+  mesh->vertices = RNALLOC(3*mesh->nVertices, double);
 
-  if (verts == NULL)
+  if (mesh->vertices == NULL)
   {
-    RLOG(4, "Failed to load obj file \"%s\" with %d vertices",
-         fileName, *numVertices);
-    *numVertices = 0;
+    RLOG(4, "Obj file \"%s\": Failed to alloate memory for %d vertices",
+         fileName, mesh->nVertices);
+    mesh->nVertices = 0;
+    mesh->nFaces = 0;
     fclose(fd);
-    return NULL;
+    return false;
+  }
+
+  mesh->faces = RNALLOC(3*mesh->nFaces, unsigned int);
+
+  if (mesh->faces == NULL)
+  {
+    RLOG(4, "Obj file \"%s\": Failed to alloate memory for %d vertices",
+         fileName, mesh->nFaces);
+    mesh->nVertices = 0;
+    mesh->nFaces = 0;
+    RFREE(mesh->vertices);
+    fclose(fd);
+    return false;
   }
 
   char buf[4][32];
-  unsigned int count = 0;
+  unsigned int vCount = 0, fCount = 0;
 
   while (fgets(lineStr, sizeof(lineStr), fd))
   {
+    RLOG(5, "vCount=%d fCount=%d", vCount, fCount);
+    RLOG(5, "lineStr=%s", lineStr);
+
     if (STRNEQ(lineStr, "v ", 2))
     {
       int nItemsRead = sscanf(lineStr, "%31s %31s %31s %31s",
@@ -707,31 +742,66 @@ static double* RcsMesh_readObjFile(const char* fileName,
       if (nItemsRead < 4)
       {
         RLOG(4, "[%s, vertex %d]: Failed to read 4 vertices (%d only: \"%s\")",
-             fileName, count/3, nItemsRead, lineStr);
-        RFREE(verts);
-        *numVertices = 0;
+             fileName, vCount / 3, nItemsRead, lineStr);
+        RFREE(mesh->vertices);
+        RFREE(mesh->faces);
+        mesh->nVertices = 0;
+        mesh->nFaces = 0;
         fclose(fd);
-        return NULL;
+        return false;
       }
       else
       {
-        verts[count]   = String_toDouble_l(buf[1]);
-        verts[count+1] = String_toDouble_l(buf[2]);
-        verts[count+2] = String_toDouble_l(buf[3]);
+        mesh->vertices[vCount] = String_toDouble_l(buf[1]);
+        mesh->vertices[vCount+1] = String_toDouble_l(buf[2]);
+        mesh->vertices[vCount+2] = String_toDouble_l(buf[3]);
       }
 
-      count += 3;
+      vCount += 3;
     }
+
+
+
+    // Parse all faces
+    if (STRNEQ(lineStr, "f ", 2))
+    {
+      int nItemsRead = sscanf(lineStr, "%31s %31s %31s %31s",
+                              buf[0], buf[1], buf[2], buf[3]);
+
+      if (nItemsRead < 4)
+      {
+        RLOG(4, "[%s, face %d]: Failed to read 4 faces (%d only: \"%s\")",
+             fileName, fCount / 3, nItemsRead, lineStr);
+        RFREE(mesh->vertices);
+        RFREE(mesh->faces);
+        mesh->nVertices = 0;
+        mesh->nFaces = 0;
+        fclose(fd);
+        return false;
+      }
+      else
+      {
+        char tmp[32];
+        String_chopOff(tmp, buf[1], "//");
+        mesh->faces[fCount] = atoi(tmp);
+        String_chopOff(tmp, buf[2], "//");
+        mesh->faces[fCount + 1] = atoi(tmp);
+        String_chopOff(tmp, buf[3], "//");
+        mesh->faces[fCount + 2] = atoi(tmp);
+        RLOG(5, "face=%d %d %d",
+             mesh->faces[fCount],
+             mesh->faces[fCount + 1],
+             mesh->faces[fCount + 2]);
+      }
+
+      fCount += 3;
+    }
+
   }
 
   fclose(fd);
 
-  if (verts == NULL)
-  {
-    RLOG(1, "Failed to read Obj file \"%s\"", fileName);
-  }
-
-  return verts;
+  return true;
 }
 
 /*******************************************************************************
@@ -889,8 +959,7 @@ bool RcsMesh_readFromFile(const char* meshFile, RcsMeshData* meshData)
   }
   else if (String_hasEnding(meshFile, ".obj", false) == true)
   {
-    meshData->vertices = RcsMesh_readObjFile(meshFile, &meshData->nVertices);
-    return (meshData->vertices != NULL) ? true : false;
+    return RcsMesh_readObjFile(meshFile, meshData);
   }
 
   return false;
@@ -1088,12 +1157,15 @@ void RcsMesh_rotate(RcsMeshData* mesh, double A_MI[3][3])
  ******************************************************************************/
 void RcsMesh_add(RcsMeshData* mesh, const RcsMeshData* other)
 {
+  RCHECK(mesh);
+  RCHECK(other);
+
   size_t vMem = 3*(mesh->nVertices+other->nVertices)*sizeof(double);
   mesh->vertices = (double*) realloc(mesh->vertices, vMem);
 
   size_t fMem = 3*(mesh->nFaces+other->nFaces)*sizeof(unsigned int);
   mesh->faces = (unsigned int*) realloc(mesh->faces, fMem);
-  RCHECK(mesh->faces);
+  RCHECK_MSG(mesh->faces, "Failed to realloc %zu bytes", fMem);
 
   memcpy(&mesh->vertices[3*mesh->nVertices], other->vertices,
          3*other->nVertices*sizeof(double));
@@ -1171,14 +1243,14 @@ RcsMeshData* RcsMesh_createBox(const double extents[3])
   const double verts[24] =
   {
     -0.5, -0.5, -0.5,
-      0.5, -0.5, -0.5,
-      0.5,  0.5, -0.5,
-      -0.5,  0.5, -0.5,
-      -0.5,  0.5,  0.5,
-      0.5,  0.5,  0.5,
-      0.5, -0.5,  0.5,
-      -0.5, -0.5,  0.5,
-    };
+    0.5, -0.5, -0.5,
+    0.5,  0.5, -0.5,
+    -0.5,  0.5, -0.5,
+    -0.5,  0.5,  0.5,
+    0.5,  0.5,  0.5,
+    0.5, -0.5,  0.5,
+    -0.5, -0.5,  0.5,
+  };
 
   memcpy(mesh->faces, vertexIndex, 3*mesh->nFaces*sizeof(unsigned int));
 
@@ -1607,10 +1679,10 @@ static RcsMeshData* RcsMesh_createRectangle(double x, double y)
   const double verts[12] =
   {
     -0.5, -0.5, 0.0,
-      0.5, -0.5, 0.0,
-      0.5,  0.5, 0.0,
-      -0.5,  0.5, 0.0,
-    };
+    0.5, -0.5, 0.0,
+    0.5,  0.5, 0.0,
+    -0.5,  0.5, 0.0,
+  };
 
   memcpy(mesh->faces, vertexIndex, 3*mesh->nFaces*sizeof(unsigned int));
 
