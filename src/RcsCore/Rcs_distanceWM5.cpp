@@ -2377,13 +2377,13 @@ static double RcsShape_closestSSLToCone(const RcsShape* ssl,
 /*******************************************************************************
  * Computes the distance between a SSL and a cone shape primitives.
  ******************************************************************************/
-static double RcsShape_closestConeToSSL(const RcsShape* cone,
-                                        const RcsShape* ssl,
-                                        const HTr* A_cone,
-                                        const HTr* A_ssl,
-                                        double I_cp2[3],
-                                        double I_cp1[3],
-                                        double I_n[3])
+static inline double RcsShape_closestConeToSSL(const RcsShape* cone,
+                                               const RcsShape* ssl,
+                                               const HTr* A_cone,
+                                               const HTr* A_ssl,
+                                               double I_cp2[3],
+                                               double I_cp1[3],
+                                               double I_n[3])
 {
   double dist = RcsShape_closestSSLToCone(ssl, cone, A_ssl, A_cone,
                                           I_cp1, I_cp2, I_n);
@@ -2736,13 +2736,13 @@ double RcsShape_closestSSLToBox(const RcsShape* s1,
  * Computes the distance between a SSL and box shape primitives sh1 and
  * sh2 that are associated with transformations A_bxI.
  ******************************************************************************/
-static double RcsShape_closestBoxToSSL(const RcsShape* s1,
-                                       const RcsShape* s2,
-                                       const HTr* A_b1I,
-                                       const HTr* A_b2I,
-                                       double cp1[3],
-                                       double cp2[3],
-                                       double I_n[3])
+static inline double RcsShape_closestBoxToSSL(const RcsShape* s1,
+                                              const RcsShape* s2,
+                                              const HTr* A_b1I,
+                                              const HTr* A_b2I,
+                                              double cp1[3],
+                                              double cp2[3],
+                                              double I_n[3])
 {
   double dist = RcsShape_closestSSLToBox(s2, s1, A_b2I, A_b1I, cp2, cp1, I_n);
 
@@ -2901,8 +2901,8 @@ static bool setWildMagicDistanceFunctions()
 
   success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_SSR,
                                          RcsShape_closestSSLToSSR) && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_BOX,
-                                         RcsShape_closestSSLToBox) && success;
+  //success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_BOX,
+  //                                       RcsShape_closestSSLToBox) && success;
   //success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_CYLINDER,
   //                                       RcsShape_closestSSLToCylinder)
   //          && success;
@@ -2925,8 +2925,8 @@ static bool setWildMagicDistanceFunctions()
   //}
 
   // BOX
-  success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_SSL,
-                                         RcsShape_closestBoxToSSL) && success;
+  //success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_SSL,
+  //                                       RcsShape_closestBoxToSSL) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_SSR,
                                          RcsShape_closestBoxToSSR) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_BOX,

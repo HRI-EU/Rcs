@@ -1409,32 +1409,21 @@ static double RcsShape_closestBoxToSphere(const RcsShape* box,
 /*******************************************************************************
  * Computes the distance between a point and a SSR.
  ******************************************************************************/
-static double RcsShape_closestPointToSSR(const RcsShape* pt,
-                                         const RcsShape* ssr,
-                                         const HTr* A_ptI,
-                                         const HTr* A_ssrI,
-                                         double I_cpPt[3],
-                                         double I_cpSSR[3],
-                                         double I_nPtSSR[3])
+static inline double RcsShape_closestPointToSSR(const RcsShape* pt,
+                                                const RcsShape* ssr,
+                                                const HTr* A_ptI,
+                                                const HTr* A_ssrI,
+                                                double I_cpPt[3],
+                                                double I_cpSSR[3],
+                                                double I_nPtSSR[3])
 {
-  double poly[4][2];
-  const double x = 0.5*ssr->extents[0];
-  const double y = 0.5*ssr->extents[1];
-  const double z = 0.5*ssr->extents[2];
-  poly[0][0] =  x;
-  poly[0][1] =  y;
-  poly[1][0] = -x;
-  poly[1][1] =  y;
-  poly[2][0] = -x;
-  poly[2][1] = -y;
-  poly[3][0] =  x;
-  poly[3][1] = -y;
+  double d = Math_sqrDistPointRect(A_ptI->org, A_ssrI, ssr->extents,
+                                   I_cpSSR, I_nPtSSR);
 
-  double d = Math_sqrDistPointConvexPolygon(A_ptI->org, A_ssrI, poly, 4,
-                                            I_cpSSR, I_nPtSSR);
   Vec3d_constMulSelf(I_nPtSSR, -1.0);
 
   // Surface point
+  const double z = 0.5*ssr->extents[2];
   for (int i = 0; i < 3; i++)
   {
     I_cpSSR[i] -= z*I_nPtSSR[i];
@@ -1448,13 +1437,13 @@ static double RcsShape_closestPointToSSR(const RcsShape* pt,
 /*******************************************************************************
  * SSR to Point distance computation.
  ******************************************************************************/
-static double RcsShape_closestSSRToPoint(const RcsShape* ssr,
-                                         const RcsShape* pt,
-                                         const HTr* A_ssrI,
-                                         const HTr* A_ptI,
-                                         double cpSSR[3],
-                                         double cpPt[3],
-                                         double I_n[3])
+static inline double RcsShape_closestSSRToPoint(const RcsShape* ssr,
+                                                const RcsShape* pt,
+                                                const HTr* A_ssrI,
+                                                const HTr* A_ptI,
+                                                double cpSSR[3],
+                                                double cpPt[3],
+                                                double I_n[3])
 {
   double dist = RcsShape_closestPointToSSR(pt, ssr, A_ptI, A_ssrI,
                                            cpPt, cpSSR, I_n);
@@ -1725,9 +1714,9 @@ double RcsShape_distance(const RcsShape* s1,
   HTr_transform(&A_C1I, A_B1I, &s1->A_CB);
   HTr_transform(&A_C2I, A_B2I, &s2->A_CB);
 
-  RCHECK(I_cp1);
-  RCHECK(I_cp2);
-  RCHECK(I_n);
+  RCHECK_MSG(I_cp1, "%s - %s", RcsShape_name(s1->type), RcsShape_name(s2->type));
+  RCHECK_MSG(I_cp2, "%s - %s", RcsShape_name(s1->type), RcsShape_name(s2->type));
+  RCHECK_MSG(I_n, "%s - %s", RcsShape_name(s1->type), RcsShape_name(s2->type));
 
   double d = func(s1, s2, &A_C1I, &A_C2I, I_cp1, I_cp2, I_n);
 
@@ -1746,10 +1735,10 @@ double RcsShape_distanceToPoint(const RcsShape* shape,
   RcsShape ptShape;
   memset(&ptShape, 0, sizeof(RcsShape));
   ptShape.type = RCSSHAPE_POINT;
-  HTr_setIdentity(&ptShape.A_CB);
-  Vec3d_setZero(ptShape.extents);
+  Mat3d_setIdentity(ptShape.A_CB.rot);
+  Vec3d_copy(ptShape.A_CB.org, I_pt);
   ptShape.scale = 1.0;
-  ptShape.computeType |= RCSSHAPE_COMPUTE_DISTANCE;
+  ptShape.computeType = RCSSHAPE_COMPUTE_DISTANCE;
 
   double tmp[3];
   double d = RcsShape_distance(shape, &ptShape, A_SI, HTr_identity(),

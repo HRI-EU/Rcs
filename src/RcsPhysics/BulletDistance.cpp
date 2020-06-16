@@ -208,14 +208,16 @@ double RcsShape_distanceBullet(const RcsShape* s1, const RcsShape* s2,
 
   if ((s1->type == RCSSHAPE_BOX) ||
       (s1->type == RCSSHAPE_CYLINDER) ||
-      (s1->type == RCSSHAPE_CONE))
+      (s1->type == RCSSHAPE_CONE) ||
+      (s1->type == RCSSHAPE_SSR))
   {
     sh1->setMargin(0.0);
   }
 
   if ((s2->type == RCSSHAPE_BOX) ||
       (s2->type == RCSSHAPE_CYLINDER) ||
-      (s2->type == RCSSHAPE_CONE))
+      (s2->type == RCSSHAPE_CONE) ||
+      (s2->type == RCSSHAPE_SSR))
   {
     sh2->setMargin(0.0);
   }
@@ -354,6 +356,10 @@ static bool setBulletDistanceFunctions()
   bool success = true;
 
   // SSL
+  success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_SSR,
+                                         RcsShape_distanceBullet) && success;
+  success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_BOX,
+                                         RcsShape_distanceBullet) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_CONE,
                                          RcsShape_distanceBullet) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_MESH,
@@ -363,6 +369,8 @@ static bool setBulletDistanceFunctions()
 
   // SSR
   success = RcsShape_setDistanceFunction(RCSSHAPE_SSR, RCSSHAPE_SSL,
+                                         RcsShape_distanceBullet) && success;
+  success = RcsShape_setDistanceFunction(RCSSHAPE_SSR, RCSSHAPE_SSR,
                                          RcsShape_distanceBullet) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_SSR, RCSSHAPE_BOX,
                                          RcsShape_distanceBullet) && success;
@@ -398,6 +406,8 @@ static bool setBulletDistanceFunctions()
                                          RcsShape_distanceBullet) && success;
 
   // BOX
+  success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_SSL,
+                                         RcsShape_distanceBullet) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_SSR,
                                          RcsShape_distanceBullet) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_MESH,
@@ -410,8 +420,8 @@ static bool setBulletDistanceFunctions()
                                          RcsShape_distanceBullet) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_TORUS,
                                          RcsShape_distanceShapeTorus) && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_POINT,
-                                         RcsShape_distanceBullet) && success;
+  //success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_POINT,
+  //                                       RcsShape_distanceBullet) && success;
 
   // CYLINDER
   success = RcsShape_setDistanceFunction(RCSSHAPE_CYLINDER, RCSSHAPE_MESH,
@@ -468,8 +478,8 @@ static bool setBulletDistanceFunctions()
   // POINT
   success = RcsShape_setDistanceFunction(RCSSHAPE_POINT, RCSSHAPE_MESH,
                                          RcsShape_distanceBullet) && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_POINT, RCSSHAPE_BOX,
-                                         RcsShape_distanceBullet) && success;
+  //success = RcsShape_setDistanceFunction(RCSSHAPE_POINT, RCSSHAPE_BOX,
+  //                                       RcsShape_distanceBullet) && success;
 
 
   RLOG(5, "%s Bullet distance functions",
@@ -479,7 +489,5 @@ static bool setBulletDistanceFunctions()
 }
 
 
-
 // This is being called before main()
 static bool distanceInitialized = setBulletDistanceFunctions();
-
