@@ -49,18 +49,12 @@ IF(USE_VORTEX AND VORTEX_FOUND)
   ENDIF()
 ENDIF(USE_VORTEX AND VORTEX_FOUND)
 
-# Build the actual physics library
-SET(RCS_PHYSICS_SRCS)
-
-IF(NOT HEADLESS_BUILD)
-  LIST(APPEND RCS_PHYSICS_SRCS 
-       ContactsNode.cpp 
-       ForceDragger.cpp
-       PhysicsNode.cpp)
-ENDIF()
-
+# Build a separate library for Bullet physics. We separate it since we
+# have to link it to the RcsPhysics library with the no-as-needed linker
+# option. Otherwise, te static self-registration meachnism (for
+# instance in the function table initialization) will never be called.
 IF(USE_BULLET)
-  LIST(APPEND RCS_PHYSICS_SRCS 
+  SET(RCS_BULLET_SRCS 
     BulletDistance.cpp
     BulletHelpers.cpp
     BulletHingeJoint.cpp
@@ -69,21 +63,36 @@ IF(USE_BULLET)
     BulletSimulation.cpp
     BulletSoftSimulation.cpp)
   IF(NOT HEADLESS_BUILD)
-    LIST(APPEND RCS_PHYSICS_SRCS
+    LIST(APPEND RCS_BULLET_SRCS
       BulletDebugNode.cpp
       BulletDebugDrawer.cpp)
   ENDIF(NOT HEADLESS_BUILD)
+
+  ADD_LIBRARY(RcsBullet ${LIBRARY_LINKING_TYPE} ${RCS_BULLET_SRCS})
+  TARGET_LINK_LIBRARIES(RcsBullet ${BULLET_LIBRARIES} RcsGraphics)
+  TARGET_INCLUDE_DIRECTORIES(RcsBullet SYSTEM PRIVATE ${BULLET_INCLUDE_DIR})
+  TARGET_COMPILE_DEFINITIONS(RcsBullet PRIVATE ${BULLET_DEFINITIONS})
+
+  # We add this option to force the linker to export this symbol. This
+  # solves the issue that it will not be exposed, since all initialization 
+  # happens inside statically. Under Unix, we can use -Wl,--no-as-needed
+  IF(WIN32)
+    TARGET_LINK_OPTIONS(RcsBullet PUBLIC /include:RcsShape_distanceBullet)
+  ENDIF()
+
 ENDIF(USE_BULLET)
 
 
-ADD_LIBRARY(RcsPhysics ${LIBRARY_LINKING_TYPE} ${RCS_PHYSICS_SRCS})
-
-# We add this option to force the linker to export this symbol. This
-# solves the issue that it will not be exposed, since all initialization 
-# happens inside statically. 
-IF(WIN32 AND USE_BULLET)
-  TARGET_LINK_OPTIONS(RcsPhysics PUBLIC /include:RcsShape_distanceBullet)
+# Build the actual physics library. Currently the eadless mode is a bit broken.
+SET(RCS_PHYSICS_SRCS)
+IF(NOT HEADLESS_BUILD)
+  LIST(APPEND RCS_PHYSICS_SRCS 
+       ContactsNode.cpp 
+       ForceDragger.cpp
+       PhysicsNode.cpp)
 ENDIF()
+
+ADD_LIBRARY(RcsPhysics ${LIBRARY_LINKING_TYPE} ${RCS_PHYSICS_SRCS})
 
 TARGET_INCLUDE_DIRECTORIES(RcsPhysics PUBLIC 
     # Header source location
@@ -106,8 +115,14 @@ ENDIF()
 # be added explicitely, see for instance the target ExampleBullet below.
 IF(USE_BULLET)
   TARGET_INCLUDE_DIRECTORIES(RcsPhysics SYSTEM PRIVATE ${BULLET_INCLUDE_DIR})
-  TARGET_LINK_LIBRARIES(RcsPhysics ${BULLET_LIBRARIES})
   TARGET_COMPILE_DEFINITIONS(RcsPhysics PRIVATE ${BULLET_DEFINITIONS})
+
+  IF (UNIX)
+    TARGET_LINK_LIBRARIES(RcsPhysics -Wl,--no-as-needed RcsBullet -Wl,--as-needed)
+  ELSE()
+    TARGET_LINK_LIBRARIES(RcsPhysics RcsBullet)
+  ENDIF()
+  
 ENDIF(USE_BULLET)
 
 IF(USE_VORTEX AND VORTEX_FOUND)
@@ -130,6 +145,11 @@ ENDIF(USE_BULLET)
 # copy the .dll file to the same folder as the executable
 IF (WIN32)
 ADD_CUSTOM_COMMAND(
+    TARGET RcsBullet POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+    ${LIBRARY_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsBullet.dll
+    ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsBullet.dll)
+ADD_CUSTOM_COMMAND(
     TARGET RcsPhysics POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
     ${LIBRARY_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsPhysics.dll
@@ -137,6 +157,7 @@ ADD_CUSTOM_COMMAND(
 ENDIF()
 
 # Mark for export
+RCS_ADD_EXPORT_LIBRARY(RcsBullet)
 RCS_ADD_EXPORT_LIBRARY(RcsPhysics)
 
 # Installation
@@ -147,4 +168,4 @@ INSTALL(
   FILES_MATCHING PATTERN "*.h"
 )
 # Install the binaries
-INSTALL(TARGETS RcsPhysics EXPORT RcsExport DESTINATION lib/${PLATFORM_INSTALL_DIR})
+INSTALL(TARGETS RcsBullet RcsPhysics EXPORT RcsExport DESTINATION lib/${PLATFORM_INSTALL_DIR})
