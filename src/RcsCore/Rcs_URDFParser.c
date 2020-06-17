@@ -378,8 +378,8 @@ static RcsBody* parseBodyURDF(xmlNode* node)
     body->physicsSim = RCSBODY_PHYSICS_DYNAMIC;
     if (numCollisionShapes == 0)
     {
-      RLOG(1, "You specified a non-zero mass but no collision shapes for body \"%s\". "
-           "Body will not partake in physics simulation", body->name);
+      RLOG(1, "You specified a non-zero mass but no collision shapes for body "
+           "\"%s\". It will not work in physics simulations", body->name);
       body->physicsSim = RCSBODY_PHYSICS_NONE;
     }
   }

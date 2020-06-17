@@ -719,11 +719,14 @@ bool setNodeMaterial(const std::string& matString, osg::Node* node,
   material->setSpecular(osg::Material::FRONT_AND_BACK, matDataPtr->spec);
   material->setShininess(osg::Material::FRONT_AND_BACK, matDataPtr->shininess);
 
-  if (alpha >= 0.0 && alpha <= 1.0)
+  if ((alpha >= 0.0) && (alpha <= 1.0))
   {
-    RLOG(4, "Material %s: Ignoring alpha value %f, must be [0 ... 1]",
-         matString.c_str(), alpha);
     material->setAlpha(osg::Material::FRONT_AND_BACK, alpha);
+  }
+  else
+  {
+    RLOG(5, "Material %s: Ignoring alpha value %.16f, must be [0 ... 1]",
+         matString.c_str(), alpha);
   }
 
   // Assign material through state set

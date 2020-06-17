@@ -152,32 +152,6 @@ int RcsMesh_compressVertices(RcsMeshData* mesh, double eps)
 }
 
 /*******************************************************************************
- * If the file contains NULL bytes, it is a binary file.
- ******************************************************************************/
-/* static */ bool Rcs_isBinaryFile(FILE* data)
-{
-  int c;
-  bool isBinary = true;
-
-  while ((c = getc(data)) != EOF && c <= 127)
-    ;
-  if (c == EOF)
-  {
-    /* file is all ASCII */
-    isBinary = false;
-  }
-  rewind(data);
-  return isBinary;
-  //
-  //fseek(data, 0, SEEK_END);
-  //size_t len = ftell(data);
-  //rewind(data);
-  //bool isBinary = memchr((const void*) data, '\0', len) != NULL;
-  //
-  //return isBinary;
-}
-
-/*******************************************************************************
  *
  * From https://en.wikipedia.org/wiki/STL_(file_format) :
  *
@@ -612,6 +586,7 @@ static double* RcsMesh_readSTLFile(const char* fileName,
 
   if (fd==NULL)
   {
+    RLOG(4, "Failed to open STL file \"%s\"", fileName ? fileName : "NULL");
     return NULL;
   }
 
@@ -629,18 +604,26 @@ static double* RcsMesh_readSTLFile(const char* fileName,
 
   double* verts = NULL;
 
-  //bool isBinary = Rcs_isBinaryFile(fd);
-  //RLOG(0, "File %s is %s", fileName, isBinary ? "BINARY" : "ASCII");
-
+  // In case we find the solid keyword at te start of te file, it is very
+  // likely (but not guaranteed) that it is an ASCII STL file.
   if (STRCASEEQ(firstWord, "solid"))
-    //if (!isBinary)
   {
-    NLOG(5, "STL file \"%s\" is not binary", fileName);
+    RLOG(5, "STL file \"%s\" is probably ASCII", fileName);
     verts = RcsMesh_readAsciiSTLFile(fd, numVertices);
+
+    // There exist STL files that contain an ASCII header section, but a
+    // binary vertex representation. We identify these edge cases if the
+    // ASCII parsing returns no vertices.
+    if (*numVertices==0)
+    {
+      RLOG(5, "ASCII file has no vertices - try parsing binary STL file");
+      rewind(fd);
+      verts = RcsMesh_readBinarySTLFile(fd, numVertices);
+    }
   }
   else
   {
-    NLOG(5, "STL file \"%s\" is binary", fileName);
+    RLOG(5, "STL file \"%s\" is binary", fileName);
     rewind(fd);
     verts = RcsMesh_readBinarySTLFile(fd, numVertices);
   }
