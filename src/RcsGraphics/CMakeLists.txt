@@ -3,35 +3,49 @@
 # CMakeLists file for the RcsGraphics library
 #
 ###############################################################################
+SET (OpenSceneGraph_DIR "${HGR}/External/OpenSceneGraph/3.6.5/cmake")
+FIND_PACKAGE(OpenSceneGraph REQUIRED
+  osgUtil 
+  osgDB 
+  osgGA 
+  osg
+  OpenThreads 
+  osgShadow 
+  osgText 
+  osgViewer 
+  osgFX 
+  osgManipulator)
+
+
 SET(RCS_GRAPHICS_SRCS
-ArrowNode.cpp
-BodyNode.cpp
-BodyPointDragger.cpp
-BoxNode.cpp
-CapsuleNode.cpp
-COSNode.cpp
-CylinderNode.cpp
-DepthRenderer.cpp
-FTSensorNode.cpp
-GraphNode.cpp
-HUD.cpp
-KeyCatcher.cpp
-MeshNode.cpp
-MouseDragger.cpp
-NodeBase.cpp
-PPSSensorNode.cpp
-Rcs_graphicsUtils.cpp
-RcsViewer.cpp
-RigidBodyTracker.cpp
-SphereNode.cpp
-SSRNode.cpp
-TargetSetter.cpp
-TextNode3D.cpp
-TorusNode.cpp
-TransformTrace.cpp
-VectorFieldNode.cpp
-VertexArrayNode.cpp
-)
+  ArrowNode.cpp
+  BodyNode.cpp
+  BodyPointDragger.cpp
+  BoxNode.cpp
+  CapsuleNode.cpp
+  COSNode.cpp
+  CylinderNode.cpp
+  DepthRenderer.cpp
+  FTSensorNode.cpp
+  GraphNode.cpp
+  HUD.cpp
+  KeyCatcher.cpp
+  MeshNode.cpp
+  MouseDragger.cpp
+  NodeBase.cpp
+  PPSSensorNode.cpp
+  Rcs_graphicsUtils.cpp
+  RcsViewer.cpp
+  RigidBodyTracker.cpp
+  SphereNode.cpp
+  SSRNode.cpp
+  TargetSetter.cpp
+  TextNode3D.cpp
+  TorusNode.cpp
+  TransformTrace.cpp
+  VectorFieldNode.cpp
+  VertexArrayNode.cpp
+  )
 
 ADD_LIBRARY(RcsGraphics ${LIBRARY_LINKING_TYPE} ${RCS_GRAPHICS_SRCS})
 
@@ -53,14 +67,16 @@ ENDIF(USE_OCTOMAP)
 
 TARGET_LINK_LIBRARIES(RcsGraphics RcsCore ${OPENSCENEGRAPH_LIBRARIES})
 
-# copy the .dll file to the same folder as the executable
+# copy all .dll files to the same folder as the executable
 IF (WIN32)
-ADD_CUSTOM_COMMAND(
-    TARGET RcsGraphics POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-    ${LIBRARY_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsGraphics.dll
-    ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsGraphics.dll)
-ENDIF()
+  FILE(GLOB OSG_DLLS "${OPENSCENEGRAPH_INCLUDE_DIRS}/../bin/*.dll")
+  FILE(GLOB OSGPLUGIN_DLLS "${OPENSCENEGRAPH_INCLUDE_DIRS}/../bin/osgPlugin*/*.dll")
+  LIST(APPEND OSG_DLLS ${OSGPLUGIN_DLLS})
+  LIST(APPEND OSG_DLLS "${LIBRARY_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsGraphics.dll")
+  ADD_CUSTOM_COMMAND(TARGET RcsGraphics POST_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                     ${OSG_DLLS} ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE})
+ENDIF(WIN32)
 
 # Mark for export
 RCS_ADD_EXPORT_LIBRARY(RcsGraphics)

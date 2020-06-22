@@ -93,58 +93,6 @@ ENDIF()
 
 ################################################################################
 #
-# Settings for OpenSceneGraph 
-# 
-################################################################################
-IF(NOT HEADLESS_BUILD)
-
-  IF(WIN32)
-
-    SET(OPENSCENEGRAPH_INCLUDE_DIRS ${HGR}/External/OpenSceneGraph/3.6.2/${MKPLT}/include)
-    SET(OSG_BINARY_DIR ${HGR}/External/OpenSceneGraph/3.6.2/${MKPLT}/bin)
-    SET(OSG_LIBRARY_DIR ${HGR}/External/OpenSceneGraph/3.6.2/${MKPLT}/lib)
-
-    SET(OPENSCENEGRAPH_LIBRARIES
-      ${OSG_LIBRARY_DIR}/osgAnimation${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/osg${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/osgDB${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/osgFX${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/osgGA${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/osgManipulator${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/osgParticle${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/osgPresentation${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/osgShadow${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/osgSim${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/osgTerrain${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/osgText${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/osgUtil${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/osgViewer${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/osgVolume${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/osgWidget${RCS_DEBUG_SUFFIX}.lib
-      ${OSG_LIBRARY_DIR}/OpenThreads${RCS_DEBUG_SUFFIX}.lib
-      )
-
-  ELSE(WIN32)
-
-    SET(OpenSceneGraph_MARK_AS_ADVANCED TRUE)
-    FIND_PACKAGE(OpenSceneGraph REQUIRED
-      OpenThreads 
-      osgDB 
-      osg 
-      osgManipulator 
-      osgShadow 
-      osgText 
-      osgUtil 
-      osgViewer 
-      osgFX 
-      osgGA)
-
-  ENDIF(WIN32)
-
-ENDIF(NOT HEADLESS_BUILD)
-
-################################################################################
-#
 # Settings for qwt
 #
 ################################################################################
