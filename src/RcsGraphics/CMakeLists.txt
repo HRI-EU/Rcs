@@ -3,18 +3,32 @@
 # CMakeLists file for the RcsGraphics library
 #
 ###############################################################################
-SET (OpenSceneGraph_DIR "${HGR}/External/OpenSceneGraph/3.6.5/cmake")
-FIND_PACKAGE(OpenSceneGraph REQUIRED
-  osgUtil 
-  osgDB 
-  osgGA 
-  osg
-  OpenThreads 
-  osgShadow 
-  osgText 
-  osgViewer 
-  osgFX 
-  osgManipulator)
+IF (WIN32)
+  FIND_PACKAGE(OpenSceneGraph REQUIRED
+    osgUtil 
+    osgDB 
+    osgGA 
+    osg
+    OpenThreads 
+    osgShadow 
+    osgText 
+    osgViewer 
+    osgFX 
+    osgManipulator
+    HINTS "${HGR}/External/OpenSceneGraph/3.6.5/cmake")
+ELSE()
+  FIND_PACKAGE(OpenSceneGraph REQUIRED
+    osgUtil 
+    osgDB 
+    osgGA 
+    osg
+    OpenThreads 
+    osgShadow 
+    osgText 
+    osgViewer 
+    osgFX 
+    osgManipulator)
+ENDIF()
 
 
 SET(RCS_GRAPHICS_SRCS
