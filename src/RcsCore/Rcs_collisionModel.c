@@ -202,6 +202,11 @@ RcsCollisionMdl* RcsCollisionModel_createFromXML(const RcsGraph* graph,
 
   } // while(lnode)
 
+  // Adjust dimensions of matrices for closest points and normals, in case some
+  // bodies have not been found in the graph.
+  nBodies = 2*nPairs;
+  MatNd_reshape(self->cp, nBodies, 3);
+  MatNd_reshape(self->n1, nPairs, 3);
 
   return self;
 }
