@@ -1,8 +1,6 @@
-#include "Rcs_Mat3d.h"
-#include "Rcs_MatNd.h"
-#include "Rcs_Vec3d.h"
-#include "Rcs_basicMath.h"
+#include "Rcs_math.h"
 #include "Rcs_macros.h"
+#include "Rcs_mesh.h"
 
 #include <float.h>
 
@@ -443,4 +441,145 @@ double MatNd_gaussInverse(MatNd* invA, const MatNd* A)
   }
 
   return determinant;
+}
+
+/*******************************************************************************
+ *
+ * Code extract from:
+ * "Polyhedral Mass Properties (Revisited)" by David Eberly
+ *  http://www.geometrictools.com/Documentation/PolyhedralMassProperties.pdf
+ *
+ * The pseudo-code for computing the integrals is quite simple. The polyhedron
+ * vertices are passes as the array p[]. The number of triangles is tmax. The
+ * array index[] has tmax triples of integers that are indices into the vertex
+ * array. The return values are the mass, the center of mass, and the inertia
+ * tensor relative to the center of mass. The code assumes that the rigid body
+ * has constant density 1. If your rigid body has constant density D, then you
+ * need to multiply the output mass by D and the output inertia tensor by D.
+ ******************************************************************************/
+static void Subespressions(double* w0, double* w1, double* w2,
+                           double* f1, double* f2, double* f3,
+                           double* g0, double* g1, double* g2)
+{
+  double temp0 = (*w0)+(*w1);
+  *f1 = temp0+(*w2);
+  double temp1 = (*w0)*(*w0);
+  double temp2 = temp1+(*w1)*temp0;
+  *f2 = temp2+(*w2)*(*f1);
+  *f3 = (*w0)*temp1+(*w1)*temp2+(*w2)*(*f2);
+  *g0 = (*f2)+(*w0)*((*f1)+(*w0));
+  *g1 = (*f2)+(*w1)*((*f1)+(*w1));
+  *g2 = (*f2)+(*w2)*((*f1)+(*w2));
+}
+
+static double Compute(const double* p, int tmax, const unsigned int index[],
+                      double com[3], double inertia[3][3])
+{
+  const double mult[10]  = { 1.0/6.0, 1.0/24.0, 1.0/24.0, 1.0/24.0, 1.0/60.0, 1.0/60.0, 1.0/60.0, 1.0/120.0, 1.0/120.0, 1.0/120.0 };
+
+  // order: 1, x, y, z, x^2, y^2 , z^2, xy, yz, zx
+  double intg[10];
+  for (int i=0; i<10; ++i)
+  {
+    intg[i] = 0.0;
+  }
+
+  for (int t=0 ; t < tmax ; t++)
+  {
+    // get vertices of triangle t
+    int i0 = index[3*t];
+    int i1 = index[3*t+1];
+    int i2 = index[3*t+2];
+
+    double x0 = p[i0*3+0];
+    double y0 = p[i0*3+1];
+    double z0 = p[i0*3+2];
+
+    double x1 = p[i1*3+0];
+    double y1 = p[i1*3+1];
+    double z1 = p[i1*3+2];
+
+    double x2 = p[i2*3+0];
+    double y2 = p[i2*3+1];
+    double z2 = p[i2*3+2];
+
+    // get edges and cross product of edges
+    double a1 = x1-x0;
+    double b1 = y1-y0;
+    double c1 = z1-z0;
+    double a2 = x2-x0;
+    double b2 = y2-y0;
+    double c2 = z2-z0;
+    double d0 = b1*c2-b2*c1;
+    double d1 = a2*c1-a1*c2;
+    double d2 = a1*b2-a2*b1;
+
+    double f1x, f1y, f1z, f2x, f2y, f2z, f3x, f3y, f3z;
+    double g0x, g0y, g0z, g1x, g1y, g1z, g2x, g2y, g2z;
+
+    // compute integral terms
+    Subespressions(&x0, &x1, &x2, &f1x, &f2x, &f3x, &g0x, &g1x, &g2x);
+    Subespressions(&y0, &y1, &y2, &f1y, &f2y, &f3y, &g0y, &g1y, &g2y);
+    Subespressions(&z0, &z1, &z2, &f1z, &f2z, &f3z, &g0z, &g1z, &g2z);
+
+    // updte integrals
+    intg[0] += d0* f1x;
+    intg[1] += d0* f2x;
+    intg[2] += d1* f2y;
+    intg[4] += d0* f3x;
+    intg[5] += d1* f3y;
+    intg[7] += d0 *(y0 * g0x+y1 * g1x+y2 * g2x);
+    intg[8] += d1 *(z0 * g0y+z1 * g1y+z2 * g2y);
+    intg[9] += d2 *(x0 * g0z+x1 * g1z+x2 * g2z);
+    intg[3] += d2* f2z;
+    intg[6] += d2* f3z;
+  }
+
+  for (int i=0 ; i<10 ; i++)
+  {
+    intg[i] *= mult[i];
+  }
+
+  double mass = intg[0];
+
+  // center of mass
+  com[0] = intg[1] / mass;
+  com[1] = intg[2] / mass;
+  com[2] = intg[3] / mass;
+
+  // inertia tensor relative to center of mass
+  inertia[0][0] = intg[5] + intg[6] - mass*(com[1]*com[1] + com[2]*com[2]);
+  inertia[1][1]= intg[4] + intg[6] - mass*(com[2] *com[2] + com[0]*com[0]);
+  inertia[2][2] = intg[4] + intg[5] - mass*(com[0]*com[0] + com[1]*com[1]);
+  inertia[0][1] = -(intg[7] - mass*com[0] * com[1]);
+  inertia[1][2] = -(intg[8] - mass*com[1] * com[2]);
+  inertia[0][2] = -(intg[9] - mass*com[2] * com[0]);
+  inertia[1][0] = inertia[0][1];
+  inertia[2][0] = inertia[0][2];
+  inertia[2][1] = inertia[1][2];
+
+  return mass;
+}
+
+/*! \brief Computes the mesh's center of mass and the inertia tensor around the
+ *         COM. If argument mesh is NULL, both I and com are set to zero.
+ *
+ * Code extract from:
+ * "Polyhedral Mass Properties (Revisited)" by David Eberly
+ *  http://www.geometrictools.com/Documentation/PolyhedralMassProperties.pdf
+ *
+ *  \param[in] mesh Mesh data. If it is invalid, the behavior is undefined.
+ *  \param[out] I   Inertia tensor around COM
+ *  \param[out] com Center of mass
+ */
+void RcsMesh_computeInertia(RcsMeshData* mesh, double I[3][3], double com[3])
+{
+  if (mesh==NULL)
+  {
+    Vec3d_setZero(com);
+    Mat3d_setZero(I);
+    return;
+  }
+
+  Compute(mesh->vertices, mesh->nFaces, mesh->faces, com, I);
 }

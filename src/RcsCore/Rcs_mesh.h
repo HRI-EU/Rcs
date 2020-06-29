@@ -56,7 +56,7 @@ typedef struct
 } RcsMeshData;
 
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Reads the given mesh file and copies the vertex and face data into
  *         the argument meshData. The caller is responsible to destroy the
  *         returned memory, including vertices and faces arrays. Currently, the
@@ -68,7 +68,7 @@ typedef struct
  */
 bool RcsMesh_readFromFile(const char* fileName, RcsMeshData* meshData);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Reads a mesh file (stl and tri). The caller is responsible to destroy
  *         the returned memory pointed to by vertices and faces. If argument
  *         meshFile is NULL, the file cannot be opened, or the file cannot be
@@ -79,7 +79,7 @@ bool RcsMesh_readFromFile(const char* fileName, RcsMeshData* meshData);
  */
 RcsMeshData* RcsMesh_createFromFile(const char* fileName);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Prints out the mesh vertex and face lists to stdout.
  *
  *  \param[in] mesh Valid mesh data. If the argument is NULL, a warning is
@@ -87,7 +87,7 @@ RcsMeshData* RcsMesh_createFromFile(const char* fileName);
  */
 void RcsMesh_print(const RcsMeshData* mesh);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Performs some checks on the mesh.
  *
  *  \param[in] mesh Mesh data to be checked
@@ -96,7 +96,7 @@ void RcsMesh_print(const RcsMeshData* mesh);
  */
 bool RcsMesh_check(const RcsMeshData* mesh);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Creates a deep copy of the argument mesh. If mesh is NULL, the
  *         function returns NULL and a warning is emitted on debug level 4.
  *
@@ -104,21 +104,21 @@ bool RcsMesh_check(const RcsMeshData* mesh);
  */
 RcsMeshData* RcsMesh_clone(const RcsMeshData* mesh);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Deletes all created memory.
  *
  *  \param[in] mesh Mesh data. If mesh is NULL, nothing is done.
  */
 void RcsMesh_destroy(RcsMeshData* mesh);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Reverts the order of the face indices
  *
  *  \param[in] mesh Mesh data. If it is invalid, the behavior is undefined.
  */
 void RcsMesh_flipNormals(RcsMeshData* mesh);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Computes the volume of a triangle mesh. It is not required that it
  *         is convex. If argument mesh is NULL, the function returns 0.0.
  *
@@ -127,7 +127,7 @@ void RcsMesh_flipNormals(RcsMeshData* mesh);
  */
 double RcsMesh_computeVolume(RcsMeshData* mesh);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Creates a mesh from a set of vertices. This function computes the
  *         Delaunay Triangulation of the vertex set. It only works if the
  *         GeometricTools library is enabled. Otherwise, always NULL is
@@ -142,7 +142,7 @@ double RcsMesh_computeVolume(RcsMeshData* mesh);
 RcsMeshData* RcsMesh_fromVertices(const double* vertices,
                                   unsigned int numVertices);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Writes the mesh to the given file name as a binary stl file.
  *
  *  \param[in] mesh       Mesh data
@@ -152,7 +152,7 @@ RcsMeshData* RcsMesh_fromVertices(const double* vertices,
  */
 bool RcsMesh_toFile(const RcsMeshData* mesh, const char* fileName);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief This function removes the duplicates and adjusts the corresponding
  *         face index. A vertex is considered to be duplicate if its Euclidean
  *         distance to another vertex is less than eps.
@@ -165,7 +165,7 @@ bool RcsMesh_toFile(const RcsMeshData* mesh, const char* fileName);
  */
 int RcsMesh_compressVertices(RcsMeshData* mesh, double eps);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief This function computes the axis-aligned bounding box of a mesh.
  *
  *  \param[in] mesh       Mesh data. If it is NULL, the AABB is set to zero,
@@ -176,7 +176,7 @@ int RcsMesh_compressVertices(RcsMeshData* mesh, double eps);
 void RcsMesh_computeAABB(const RcsMeshData* mesh,
                          double xyzMin[3], double xyzMax[3]);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief This function scales all vertices of the mesh with the given scale
  *         factor.
  *
@@ -186,7 +186,7 @@ void RcsMesh_computeAABB(const RcsMeshData* mesh,
  */
 void RcsMesh_scale(RcsMeshData* mesh, double scale);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Adds a mesh to another one.
  *
  *  \param[in] mesh       Mesh data to be extended by other.
@@ -194,7 +194,7 @@ void RcsMesh_scale(RcsMeshData* mesh, double scale);
  */
 void RcsMesh_add(RcsMeshData* mesh, const RcsMeshData* other);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Shifts all vertices of a mesh by the given offset
  *
  *  \param[in] mesh  Mesh data to be shifted.
@@ -204,7 +204,7 @@ void RcsMesh_add(RcsMeshData* mesh, const RcsMeshData* other);
  */
 void RcsMesh_shift(RcsMeshData* mesh, double x, double y, double z);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Applies a rotation to a mesh.
  *
  *  \param[in] mesh  Mesh data to be rotated.
@@ -212,7 +212,7 @@ void RcsMesh_shift(RcsMeshData* mesh, double x, double y, double z);
  */
 void RcsMesh_rotate(RcsMeshData* mesh, double A_MI[3][3]);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Applies a transformation to a mesh.
  *
  *  \param[in] mesh  Mesh data to be rotated.
@@ -222,7 +222,7 @@ void RcsMesh_rotate(RcsMeshData* mesh, double A_MI[3][3]);
 void RcsMesh_transform(RcsMeshData* mesh, const double pos[3],
                        double A_MI[3][3]);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Creates a mesh for a box with the given extents.
  *
  *  \param[in] extents   Box extents
@@ -230,7 +230,7 @@ void RcsMesh_transform(RcsMeshData* mesh, const double pos[3],
  */
 RcsMeshData* RcsMesh_createBox(const double extents[3]);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Creates the cylindrical envelope of a cylinder without the caps.
  *         This function is based on three.js library licensed under the
  *         MIT license.
@@ -251,7 +251,7 @@ RcsMeshData* RcsMesh_createCylinderHull(double radiusBottom,
                                         unsigned int heightSegments,
                                         double angleAround);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Creates a cylinder mesh including the caps.
  *         This function is based on three.js library licensed under the
  *         MIT license.
@@ -265,7 +265,7 @@ RcsMeshData* RcsMesh_createCylinderHull(double radiusBottom,
 RcsMeshData* RcsMesh_createCylinder(double radius, double height,
                                     unsigned int segments);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Creates a sphere segment.
  *         This function is based on three.js library licensed under the
  *         MIT license.
@@ -288,7 +288,7 @@ RcsMeshData* RcsMesh_createSphereSegment(double radius,
                                          double thetaStart,
                                          double thetaLength);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Creates a sphere.
  *
  *  \param[in] radius           Sphere radius
@@ -298,7 +298,7 @@ RcsMeshData* RcsMesh_createSphereSegment(double radius,
  */
 RcsMeshData* RcsMesh_createSphere(double radius, unsigned int segments);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Creates a sphere.
  *
  *  \param[in] radius           Capsule radius
@@ -310,7 +310,7 @@ RcsMeshData* RcsMesh_createSphere(double radius, unsigned int segments);
 RcsMeshData* RcsMesh_createCapsule(double radius, double height,
                                    unsigned int segments);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Creates a cone with the given dimensions. The cone axis is aligned
  *         with the z-axis, the bottom disk is at z=0.
  *
@@ -323,7 +323,7 @@ RcsMeshData* RcsMesh_createCapsule(double radius, double height,
 RcsMeshData* RcsMesh_createCone(double radius, double height,
                                 unsigned int segments);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
  *  \brief Creates a triangle mesh of a torus.
  *
  *  \param[in] radius            Radius about the torus symmetry axis
@@ -337,7 +337,7 @@ RcsMeshData* RcsMesh_createTorus(double radius, double thickness,
                                  unsigned int radialSegments,
                                  unsigned int tubularSegments);
 
-/*! \ingroup RcsUtilsFunctions
+/*! \ingroup RcsMeshFunctions
 *  \brief Creates a triangle mesh of a sphere-swept rectangle.
 *
 *  \param[in] extents           Dimensions. The third element is the thickness.
@@ -346,6 +346,21 @@ RcsMeshData* RcsMesh_createTorus(double radius, double thickness,
 *          delete the memory.
 */
 RcsMeshData* RcsMesh_createSSR(const double extents[3], unsigned int segments);
+
+/*! \ingroup RcsMeshFunctions
+ *  \brief Computes the mesh's center of mass and the inertia tensor around the
+ *         COM. If argument mesh is NULL, both I and com are set to zero.
+ *
+ *  This code is extract from:
+ *  "Polyhedral Mass Properties (Revisited)" by David Eberly
+ *   http://www.geometrictools.com/Documentation/PolyhedralMassProperties.pdf
+ *  The implementation can be found in external/Rcs_thirdPartyMath.c
+ *
+ *  \param[in] mesh Mesh data. If it is invalid, the behavior is undefined.
+ *  \param[out] I   Inertia tensor around COM
+ *  \param[out] com Center of mass
+ */
+void RcsMesh_computeInertia(RcsMeshData* mesh, double I[3][3], double com[3]);
 
 
 #ifdef __cplusplus
