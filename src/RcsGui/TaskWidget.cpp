@@ -303,12 +303,26 @@ void TaskWidget::updateUnconstrainedControls()
     return;
   }
 
+  bool valuesUpdated = false;
+
+  // We only write into x_des if necessary: No activation, and x_des differs
+  // from x__curr.
   lock();
-  if (*this->a_des==0.0)
+  if ((*this->a_des==0.0) && (!VecNd_isEqual(x_des, x_curr, dimTask, 0.0)))
   {
     VecNd_copy(x_des, x_curr, this->dimTask);
+    valuesUpdated = true;
   }
   unlock();
+
+  // Call callbacks if we did any changes to x_des.
+  if (valuesUpdated)
+  {
+    for (size_t i=0; i<callback.size(); ++i)
+    {
+      callback[i]->callback();
+    }
+  }
 }
 
 

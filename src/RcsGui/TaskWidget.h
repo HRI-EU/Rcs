@@ -64,6 +64,12 @@ public:
 
   virtual ~TaskWidget();
 
+  /*! \brief This callback is called each time the desired task values are
+   *         modified by the Gui. It is the case if
+   *         - the activation is not zero and the task slider is moved
+   *         - the activation is zero and the desired values differ from
+   *           the curent ones.
+   */
   class TaskChangeCallback
   {
   public:
