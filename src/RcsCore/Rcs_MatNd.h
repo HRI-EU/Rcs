@@ -1888,6 +1888,17 @@ double MatNd_computeManipulabilityIndexGradient(MatNd* grad,
                                                 const MatNd* W,
                                                 const MatNd* J);
 
+/*! Compute the column-wise softmax
+ *  \f$ \sigma(x)_{i,j} = \frac{e^{x_{i,j}}}{\sum_{k=1}^{K} e^{x_{k,j}}} \f$.
+ *  The entries of the resulting matrix sum to one
+ *
+ * \param[in]  src input matrix
+ * \param[in]  beta scaling factor, as beta goes to infinity we get the argmax
+ * \param[out] dst output matrix
+ */
+void MatNd_softMax(MatNd* dst, const MatNd* src, double beta);
+
+
 ///@}
 
 

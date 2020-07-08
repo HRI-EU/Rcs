@@ -55,16 +55,15 @@ unsigned int MatNd_maxStackBytes = 0;
 
 
 /*******************************************************************************
-
- \brief Inverse of a 2 x 2 matrix.
-
- | a11 a12 |-1             |  a22 -a12 |
- | a21 a22 |    =  1/det * | -a21  a11 |
-
- with det  =  a11*a22 - a12*a21
-
-*******************************************************************************/
-
+ *
+ * \brief Inverse of a 2 x 2 matrix.
+ *
+ * | a11 a12 |-1             |  a22 -a12 |
+ * | a21 a22 |    =  1/det * | -a21  a11 |
+ *
+ * with det  =  a11*a22 - a12*a21
+ *
+ ******************************************************************************/
 double MatNd_inverse2D(MatNd* invA, const MatNd* A)
 {
   RCHECK_MSG((A->m == 2) && (A->n == 2), "A->m=%d   A->n=%d", A->m, A->n);
@@ -93,22 +92,16 @@ double MatNd_inverse2D(MatNd* invA, const MatNd* A)
 }
 
 /*******************************************************************************
-
- \brief In-place inversion for convenience
-
-*******************************************************************************/
-
+ * In-place inversion for convenience
+ ******************************************************************************/
 double MatNd_inverse2DSelf(MatNd* A)
 {
   return MatNd_inverse2D(A, A);
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 MatNd* MatNd_create(unsigned int m, unsigned int n)
 {
   MatNd* self = RALLOC(MatNd);
@@ -124,11 +117,8 @@ MatNd* MatNd_create(unsigned int m, unsigned int n)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 MatNd* MatNd_clone(const MatNd* src)
 {
   if (src==NULL)
@@ -149,13 +139,9 @@ MatNd* MatNd_clone(const MatNd* src)
   return self;
 }
 
-
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_destroy(MatNd* self)
 {
   if (self == NULL)
@@ -178,11 +164,8 @@ void MatNd_destroy(MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 MatNd* MatNd_realloc(MatNd* self, unsigned int m, unsigned int n)
 {
   if (self == NULL)
@@ -209,11 +192,8 @@ MatNd* MatNd_realloc(MatNd* self, unsigned int m, unsigned int n)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_print(const MatNd* M)
 {
   unsigned int i, j;
@@ -229,11 +209,8 @@ void MatNd_print(const MatNd* M)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_printTranspose(const MatNd* M)
 {
   unsigned int i, j;
@@ -249,11 +226,8 @@ void MatNd_printTranspose(const MatNd* M)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_printDetail(const MatNd* M)
 {
   unsigned int i, j;
@@ -272,11 +246,8 @@ void MatNd_printDetail(const MatNd* M)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_printDigits(const MatNd* M, int digits)
 {
   unsigned int i, j;
@@ -295,11 +266,8 @@ void MatNd_printDigits(const MatNd* M, int digits)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_printComment(const char* comment, const MatNd* M)
 {
   unsigned int i, j;
@@ -320,11 +288,8 @@ void MatNd_printComment(const char* comment, const MatNd* M)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_printCommentDigits(const char* text,
                               const MatNd* M,
                               unsigned int digits)
@@ -350,11 +315,8 @@ void MatNd_printCommentDigits(const char* text,
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_printFormatted(const char* text, const char* format, const MatNd* M)
 {
   unsigned int i, j;
@@ -375,22 +337,16 @@ void MatNd_printFormatted(const char* text, const char* format, const MatNd* M)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_printDims(const char* comment, const MatNd* M)
 {
   fprintf(stderr, "%s is %u x %u (size %u)\n", comment, M->m, M->n, M->size);
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_printTwoArrays(const MatNd* v1, const MatNd* v2, int digits)
 {
   unsigned int i, j;
@@ -420,11 +376,8 @@ void MatNd_printTwoArrays(const MatNd* v1, const MatNd* v2, int digits)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_printThreeArrays(const MatNd* v1, const MatNd* v2, const MatNd* v3,
                             int digits)
 {
@@ -463,11 +416,8 @@ void MatNd_printThreeArrays(const MatNd* v1, const MatNd* v2, const MatNd* v3,
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_printTwoArraysDiff(const MatNd* v1, const MatNd* v2, int digits)
 {
   unsigned int i, j;
@@ -506,11 +456,8 @@ void MatNd_printTwoArraysDiff(const MatNd* v1, const MatNd* v2, int digits)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 bool MatNd_toFile(const MatNd* M, const char* fileName)
 {
   FILE* fd = fopen(fileName, "w+");
@@ -537,11 +484,8 @@ bool MatNd_toFile(const MatNd* M, const char* fileName)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_appendToFile(const MatNd* M, const char* fileName)
 {
   FILE* fd = fopen(fileName, "a");
@@ -565,11 +509,8 @@ void MatNd_appendToFile(const MatNd* M, const char* fileName)
 }
 
 /*******************************************************************************
-
- \brief See header. TODO: String can overflow if array is too large.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_gnuplotPipes(const char* title, const MatNd* self)
 {
   FILE* gnuplotPipe = NULL;
@@ -617,6 +558,9 @@ void MatNd_gnuplotPipes(const char* title, const MatNd* self)
   pclose(gnuplotPipe);
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
 bool MatNd_gnuplot2(const char* title, const MatNd* self)
 {
   char fileName[256], gpFileName[256];
@@ -687,6 +631,9 @@ bool MatNd_gnuplot2(const char* title, const MatNd* self)
   return true;
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
 bool MatNd_gnuplot(const char* title, const MatNd* self)
 {
   char fileName[256], gpFileName[256];
@@ -762,22 +709,21 @@ bool MatNd_gnuplot(const char* title, const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief Counts rows and columns of an array in a file. Returns true for
- success, false otherwise. False means that the data in the file
- is malformed (different numbers of columns). A header line is
- counted for each line that does not begin with a
- - digit
- - white space
- - plus sign
- - minus sign
- - dot
- - e
- The file descriptor is moved to the position after the header
- lines.
-
-*******************************************************************************/
-
+ *
+ * \brief Counts rows and columns of an array in a file. Returns true for
+ *        success, false otherwise. False means that the data in the file
+ *        is malformed (different numbers of columns). A header line is
+ *        counted for each line that does not begin with a
+ *        - digit
+ *        - white space
+ *        - plus sign
+ *        - minus sign
+ *        - dot
+ *        - e
+ *        The file descriptor is moved to the position after the header
+ *        lines.
+ *
+ ******************************************************************************/
 bool MatNd_arraySizeFromFile(FILE* fd, int* rows, int* cols, int* nHeaderLines)
 {
   // Determine file size
@@ -884,7 +830,6 @@ bool MatNd_arraySizeFromFile(FILE* fd, int* rows, int* cols, int* nHeaderLines)
  *         needed outside.
  *
  ******************************************************************************/
-
 bool MatNd_arraySizeFromFilename(const char* filename, int* rows, int* cols,
                                  int* nHeaderLines)
 {
@@ -903,11 +848,8 @@ bool MatNd_arraySizeFromFilename(const char* filename, int* rows, int* cols,
 }
 
 /*******************************************************************************
-
- \brief See header, also for code example.
-
-*******************************************************************************/
-
+ * See header, also for code example.
+ ******************************************************************************/
 bool MatNd_fromFile(MatNd* M, const char* fileName)
 {
   int i, m, n, nHeaderLines, nEle = 0, nItems;
@@ -947,11 +889,8 @@ bool MatNd_fromFile(MatNd* M, const char* fileName)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 MatNd* MatNd_createFromFile(const char* fileName)
 {
   int i, m, n, nEle = 0, nHeaderLines, nItems;
@@ -995,23 +934,17 @@ MatNd* MatNd_createFromFile(const char* fileName)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_setZero(MatNd* self)
 {
   memset(self->ele, 0, self->m * self->n * sizeof(double));
 }
 
 /*******************************************************************************
-
- \brief See header. Here we can use memset since the row is memory-aligned.
- It's more efficient than going through the indices.
-
-*******************************************************************************/
-
+ * See header. Here we can use memset since the row is memory-aligned.
+ * It's more efficient than going through the indices.
+ ******************************************************************************/
 void MatNd_setRowZero(MatNd* self, unsigned int row)
 {
   RCHECK_MSG(row < (unsigned int) self->m, "Index out of limits: row=%d   "
@@ -1021,11 +954,8 @@ void MatNd_setRowZero(MatNd* self, unsigned int row)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_setColumnZero(MatNd* self, unsigned int column)
 {
   unsigned int i;
@@ -1039,11 +969,8 @@ void MatNd_setColumnZero(MatNd* self, unsigned int column)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_setColumnToValue(MatNd* self, unsigned int column, double value)
 {
   unsigned int i;
@@ -1057,11 +984,8 @@ void MatNd_setColumnToValue(MatNd* self, unsigned int column, double value)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_setIdentity(MatNd* self)
 {
   unsigned int i;
@@ -1078,11 +1002,8 @@ void MatNd_setIdentity(MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_addIdentity(MatNd* self)
 {
   unsigned int i;
@@ -1097,11 +1018,8 @@ void MatNd_addIdentity(MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_set(MatNd* self, int m, int n, double val)
 {
   RCHECK_MSG(m < (int) self->m, "Out of limits: m=%d self->m=%d", m, self->m);
@@ -1113,11 +1031,8 @@ void MatNd_set(MatNd* self, int m, int n, double val)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_addToEle(MatNd* self, int m, int n, double val)
 {
   RCHECK_MSG(m < (int) self->m, "Out of limits: m=%d self->m=%d", m, self->m);
@@ -1127,11 +1042,8 @@ void MatNd_addToEle(MatNd* self, int m, int n, double val)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_addConst(MatNd* dst, double value)
 {
   int i, nEle = dst->m * dst->n;
@@ -1142,11 +1054,8 @@ void MatNd_addConst(MatNd* dst, double value)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_addConstToDiag(MatNd* dst, double value)
 {
   MatNd diag = MatNd_fromPtr(1, 1, &value);
@@ -1154,11 +1063,8 @@ void MatNd_addConstToDiag(MatNd* dst, double value)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_addConstToColum(MatNd* dst, unsigned int column, double value)
 {
   RCHECK(dst);
@@ -1171,11 +1077,8 @@ void MatNd_addConstToColum(MatNd* dst, unsigned int column, double value)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_setDiag(MatNd* dst, const MatNd* diag)
 {
   MatNd_setZero(dst);
@@ -1183,11 +1086,8 @@ void MatNd_setDiag(MatNd* dst, const MatNd* diag)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_overwriteDiag(MatNd* dst, const MatNd* diag)
 {
   unsigned int i;
@@ -1220,11 +1120,8 @@ void MatNd_overwriteDiag(MatNd* dst, const MatNd* diag)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_addDiag(MatNd* dst, const MatNd* diag)
 {
   unsigned int i;
@@ -1259,11 +1156,8 @@ void MatNd_addDiag(MatNd* dst, const MatNd* diag)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_setElementsTo(MatNd* self, double val)
 {
   unsigned int i, nEle = self->m * self->n;
@@ -1274,11 +1168,8 @@ void MatNd_setElementsTo(MatNd* self, double val)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double MatNd_get(const MatNd* self, int m, int n)
 {
   RCHECK_MSG((m >= 0) &&
@@ -1293,11 +1184,8 @@ double MatNd_get(const MatNd* self, int m, int n)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double* MatNd_getElePtr(const MatNd* self, int m, int n)
 {
   RCHECK_MSG((m >= 0) &&
@@ -1311,12 +1199,9 @@ double* MatNd_getElePtr(const MatNd* self, int m, int n)
   return &self->ele[m * self->n + n];
 }
 
-/******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNd_swapElements(MatNd* A, int m1, int n1, int m2, int n2)
 {
   double* value1 = MatNd_getElePtr(A, m1, n1);
@@ -1326,12 +1211,9 @@ void MatNd_swapElements(MatNd* A, int m1, int n1, int m2, int n2)
   *value2 = tmp;
 }
 
-/******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNd_reshape(MatNd* self, int m, int n)
 {
   RCHECK_MSG((int) self->size >= m * n,
@@ -1342,12 +1224,9 @@ void MatNd_reshape(MatNd* self, int m, int n)
   self->n = n;
 }
 
-/******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNd_reshapeAndSetZero(MatNd* self, int m, int n)
 {
   RCHECK_MSG((int) self->size >= m * n,
@@ -1360,11 +1239,8 @@ void MatNd_reshapeAndSetZero(MatNd* self, int m, int n)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_copy(MatNd* dst, const MatNd* src)
 {
   RCHECK_MSG((dst->m == src->m) && (dst->n == src->n),
@@ -1374,11 +1250,8 @@ void MatNd_copy(MatNd* dst, const MatNd* src)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_reshapeCopy(MatNd* dst, const MatNd* src)
 {
   unsigned int srcEle = src->m*src->n;
@@ -1392,27 +1265,18 @@ void MatNd_reshapeCopy(MatNd* dst, const MatNd* src)
   memmove(dst->ele, src->ele, srcEle*sizeof(double));
 }
 
-
-
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
+ *
+ ******************************************************************************/
 void MatNd_resizeCopy(MatNd** dst, const MatNd* src)
 {
   *dst = MatNd_realloc(*dst, src->m, src->n);
   MatNd_copy(*dst, src);
 }
 
-
-
 /*******************************************************************************
-
- \brief See header, also for code example.
-
-*******************************************************************************/
-
+ * See header, also for code example.
+ ******************************************************************************/
 void MatNd_copyColumns(MatNd* dst, const MatNd* src, const int* cols)
 {
   unsigned int i, j, nCols = 0, maxCol = 0;
@@ -1449,10 +1313,8 @@ void MatNd_copyColumns(MatNd* dst, const MatNd* src, const int* cols)
 }
 
 /*******************************************************************************
-
- \brief See header
-
-*******************************************************************************/
+ *
+ ******************************************************************************/
 void MatNd_copyColumn(MatNd* dst,
                       unsigned int dstColumn,
                       const MatNd* src,
@@ -1472,11 +1334,8 @@ void MatNd_copyColumn(MatNd* dst,
 }
 
 /*******************************************************************************
-
- \brief dst = m1 - m2.
-
-*******************************************************************************/
-
+ * dst = m1 - m2.
+ ******************************************************************************/
 void MatNd_sub(MatNd* dst, const MatNd* m1, const MatNd* m2)
 {
   int i, nEle = dst->m * dst->n;
@@ -1495,11 +1354,8 @@ void MatNd_sub(MatNd* dst, const MatNd* m1, const MatNd* m2)
 }
 
 /*******************************************************************************
-
- \brief dst = m1 + m2.
-
-*******************************************************************************/
-
+ * dst = m1 + m2.
+ ******************************************************************************/
 void MatNd_add(MatNd* dst, const MatNd* m1, const MatNd* m2)
 {
   int i, nEle = dst->m * dst->n;
@@ -1515,11 +1371,8 @@ void MatNd_add(MatNd* dst, const MatNd* m1, const MatNd* m2)
 }
 
 /*******************************************************************************
-
- \brief dst = dst - m1.
-
-*******************************************************************************/
-
+ * dst = dst - m1.
+ ******************************************************************************/
 void MatNd_subSelf(MatNd* dst, const MatNd* m1)
 {
   int i, nEle = dst->m * dst->n;
@@ -1534,10 +1387,8 @@ void MatNd_subSelf(MatNd* dst, const MatNd* m1)
 }
 
 /*******************************************************************************
-
- \brief dst = dst + m1.
-
-*******************************************************************************/
+ * dst = dst + m1.
+ ******************************************************************************/
 
 void MatNd_addSelf(MatNd* dst, const MatNd* m1)
 {
@@ -1553,40 +1404,33 @@ void MatNd_addSelf(MatNd* dst, const MatNd* m1)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_appendRows(MatNd* dst, const MatNd* src)
 {
   MatNd_insertRows(dst, dst->m - 1, src, 0, src->m);
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_prependRows(MatNd* dst, const MatNd* src)
 {
   MatNd_insertRows(dst, -1, src, 0, src->m);
 }
 
 /*******************************************************************************
-
- \brief inserts nCols starting with index colSrc of array src after column
-        colDst of array dst.
-
-        Examples:
-        - MatNd_insertRows(dst, 2, src, 4, 2):
-          row 4 and 5 of src will be inserted behind the 3rd row of self
-        - MatNd_insertRows(dst, -1, src, 4, 2):
-          row 4 and 5 of src will be inserted before the first row of self
-
-*******************************************************************************/
-
+ *
+ * \brief inserts nCols starting with index colSrc of array src after column
+ *       colDst of array dst.
+ *
+ *       Examples:
+ *       - MatNd_insertRows(dst, 2, src, 4, 2):
+ *         row 4 and 5 of src will be inserted behind the 3rd row of self
+ *       - MatNd_insertRows(dst, -1, src, 4, 2):
+ *         row 4 and 5 of src will be inserted before the first row of self
+ *
+ ******************************************************************************/
 void MatNd_insertRows(MatNd* self, int rowDst, const MatNd* from, int rowSrc,
                       unsigned int nRows)
 {
@@ -1641,22 +1485,16 @@ void MatNd_insertRows(MatNd* self, int rowDst, const MatNd* from, int rowSrc,
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_appendColumns(MatNd* dst, const MatNd* src)
 {
   MatNd_insertColumns(dst, dst->n - 1, src, 0, src->n);
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_insertColumns(MatNd* self,
                          int colDst,
                          const MatNd* from,
@@ -1673,11 +1511,8 @@ void MatNd_insertColumns(MatNd* self,
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_condenseRows(MatNd* dst, const MatNd* src, double ratio)
 {
   unsigned int i;
@@ -1703,11 +1538,8 @@ void MatNd_condenseRows(MatNd* dst, const MatNd* src, double ratio)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double MatNd_mean(const MatNd* self)
 {
   int i, nEle = self->m * self->n;
@@ -1727,11 +1559,8 @@ double MatNd_mean(const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double MatNd_getNorm(const MatNd* self)
 {
   double norm = 0.0;
@@ -1746,11 +1575,8 @@ double MatNd_getNorm(const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double MatNd_getNormL1(const MatNd* self)
 {
   unsigned int i, nEle = self->m * self->n;
@@ -1765,11 +1591,8 @@ double MatNd_getNormL1(const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double MatNd_sqrDistance(const MatNd* A, const MatNd* B)
 {
   int i, nEle = A->m * A->n;
@@ -1788,11 +1611,8 @@ double MatNd_sqrDistance(const MatNd* A, const MatNd* B)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double MatNd_msqError(const MatNd* a1, const MatNd* a2)
 {
   if (a1->m*a1->n==0)
@@ -1804,27 +1624,22 @@ double MatNd_msqError(const MatNd* a1, const MatNd* a2)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double MatNd_rmsqError(const MatNd* a1, const MatNd* a2)
 {
   return sqrt(MatNd_msqError(a1, a2));
 }
 
 /*******************************************************************************
-
- \brief C = A * B.
-
- Matrix multiplication: C(m x l) = A(m x n) * B(n x l)
- m: rows of matrix C
- n: columns of matrix A
- l: columns of matrix C.
-
-*******************************************************************************/
-
+ * \brief C = A * B.
+ *
+ * Matrix multiplication: C(m x l) = A(m x n) * B(n x l)
+ * m: rows of matrix C
+ * n: columns of matrix A
+ * l: columns of matrix C.
+ *
+ ******************************************************************************/
 void MatNd_mul(MatNd* C, const MatNd* A, const MatNd* B)
 {
   const int m = C->m, n = A->n, l = C->n;
@@ -1857,20 +1672,18 @@ void MatNd_mul(MatNd* C, const MatNd* A, const MatNd* B)
 }
 
 /*******************************************************************************
-
- \brief C = C + A * B
-
- void MatNd_mulAndAddSelf(MatNd* C, const MatNd* A, const MatNd* B)
- {
- MatNd* AxB = NULL;
- MatNd_create2(AxB, A->m, B->n);
- MatNd_mul(AxB, A, B);
- MatNd_addSelf(C, AxB);
- MatNd_destroy(AxB);
- }
-
-*******************************************************************************/
-
+ * \brief C = C + A * B
+ *
+ * void MatNd_mulAndAddSelf(MatNd* C, const MatNd* A, const MatNd* B)
+ * {
+ * MatNd* AxB = NULL;
+ * MatNd_create2(AxB, A->m, B->n);
+ * MatNd_mul(AxB, A, B);
+ * MatNd_addSelf(C, AxB);
+ * MatNd_destroy(AxB);
+ * }
+ *
+ ******************************************************************************/
 void MatNd_mulAndAddSelf(MatNd* C, const MatNd* A, const MatNd* B)
 {
   const int m = C->m, n = A->n, l = C->n;
@@ -1903,10 +1716,8 @@ void MatNd_mulAndAddSelf(MatNd* C, const MatNd* A, const MatNd* B)
 }
 
 /*******************************************************************************
-
- \brief A = B * A
-
-*******************************************************************************/
+ * A = B * A
+ ******************************************************************************/
 
 void MatNd_preMulSelf(MatNd* A, const MatNd* B)
 {
@@ -1919,10 +1730,8 @@ void MatNd_preMulSelf(MatNd* A, const MatNd* B)
 }
 
 /*******************************************************************************
-
- \brief A = A*B
-
-*******************************************************************************/
+ * A = A*B
+ ******************************************************************************/
 
 void MatNd_postMulSelf(MatNd* A, const MatNd* B)
 {
@@ -1935,15 +1744,15 @@ void MatNd_postMulSelf(MatNd* A, const MatNd* B)
 }
 
 /*******************************************************************************
-
-  Generalized pseudo-inverse with weighting matrices for both dimensions. This
-  function decides for the type of inverse by the number of rows and columns
-  of argument J. The more efficient inverse is utilized.
-
-  Right inverse: J1# = Wq J^T (J Wq J^T + invWx)^-1     -> MatNd_rwPinv()
-  Left inverse:  J2# = (J^T Wx J + invWq)^-1 J^T Wx     -> MatNd_rwPinv2()
-
-*******************************************************************************/
+ *
+ * Generalized pseudo-inverse with weighting matrices for both dimensions. This
+ * function decides for the type of inverse by the number of rows and columns
+ * of argument J. The more efficient inverse is utilized.
+ *
+ * Right inverse: J1# = Wq J^T (J Wq J^T + invWx)^-1     -> MatNd_rwPinv()
+ * Left inverse:  J2# = (J^T Wx J + invWq)^-1 J^T Wx     -> MatNd_rwPinv2()
+ *
+ ******************************************************************************/
 double MatNd_generalizedInverse(MatNd* pinvJ, const MatNd* J, const MatNd* Wx,
                                 const MatNd* invWq)
 {
@@ -1981,17 +1790,16 @@ double MatNd_generalizedInverse(MatNd* pinvJ, const MatNd* J, const MatNd* Wx,
 }
 
 /*******************************************************************************
-
- \brief Regularized weighted Pseudo-Inverse:  Wq J^T (J Wq J^T + lambda)^-1
-
- Arrays W and lambda are the diagonal vectors of the corresponding
- (symmetric) matrices. The function returns the determinant of the
- matrix part that is inverted: det(J*Wq*Jt). We use the Cholesky
- decomposition. Please note that it is only applicable to symmetric
- matrices.
-
-*******************************************************************************/
-
+ *
+ * \brief Regularized weighted Pseudo-Inverse:  Wq J^T (J Wq J^T + lambda)^-1
+ *
+ * Arrays W and lambda are the diagonal vectors of the corresponding
+ * (symmetric) matrices. The function returns the determinant of the
+ * matrix part that is inverted: det(J*Wq*Jt). We use the Cholesky
+ * decomposition. Please note that it is only applicable to symmetric
+ * matrices.
+ *
+ ******************************************************************************/
 double MatNd_rwPinv(MatNd* J_pinv, const MatNd* J, const MatNd* invW,
                     const MatNd* lambda)
 {
@@ -2077,11 +1885,8 @@ double MatNd_rwPinv(MatNd* J_pinv, const MatNd* J, const MatNd* invW,
 }
 
 /*******************************************************************************
-
- \brief Regularized weighted Pseudo-Inverse: (J^T Wx J + lambda)^-1 * J^T Wx
-
-*******************************************************************************/
-
+ * Regularized weighted Pseudo-Inverse: (J^T Wx J + lambda)^-1 * J^T Wx
+ ******************************************************************************/
 double MatNd_rwPinv2(MatNd* J_pinv,
                      const MatNd* J,
                      const MatNd* Wx,
@@ -2100,11 +1905,8 @@ double MatNd_rwPinv2(MatNd* J_pinv,
 }
 
 /*******************************************************************************
-
- \brief Regularized weighted Pseudo-Inverse: (J^T Wx J + lambda)^-1 * J^T Wx
-
-*******************************************************************************/
-
+ * Regularized weighted Pseudo-Inverse: (J^T Wx J + lambda)^-1 * J^T Wx
+ ******************************************************************************/
 double MatNd_rwPinv2_(MatNd* J_pinv,
                       const MatNd* J,
                       const MatNd* Wx,
@@ -2188,34 +1990,33 @@ double MatNd_rwPinv2_(MatNd* J_pinv,
 }
 
 /*******************************************************************************
-
-  \brief Miller matrix inversion for a sum of symmetric matrices.
-
-         See: Kenneth S. Miller: On the Inverse of the Sum of Matrices,
-              Mathematics Magazine, Vol. 54, No. 2 (Mar., 1981), pp. 67-72
-
-         nq  = 7
-         nx  = 3
-         lambda = diag(1.0e-8*ones(nq,1));
-         A = diag(lambda0*ones(nq,1));
-         J = rand(nx,nq);
-         Wx = diag(rand(nx,1))
-
-         % Initialization
-         invC = inv(A);
-
-         % Miller algorithm
-         for i = 1:nx
-           Ji = J(i,:);
-           Bi = transpose(Ji)*Wx(i,i)*Ji;
-           gi = 1.0/(1.0+trace(invC*Bi));
-           invC = invC - gi*invC*Bi*invC
-         endfor
-
-         The result is in invC
-
-*******************************************************************************/
-
+ *
+ * \brief Miller matrix inversion for a sum of symmetric matrices.
+ *
+ *        See: Kenneth S. Miller: On the Inverse of the Sum of Matrices,
+ *             Mathematics Magazine, Vol. 54, No. 2 (Mar., 1981), pp. 67-72
+ *
+ *        nq  = 7
+ *        nx  = 3
+ *        lambda = diag(1.0e-8*ones(nq,1));
+ *        A = diag(lambda0*ones(nq,1));
+ *        J = rand(nx,nq);
+ *        Wx = diag(rand(nx,1))
+ *
+ *        % Initialization
+ *        invC = inv(A);
+ *
+ *        % Miller algorithm
+ *        for i = 1:nx
+ *          Ji = J(i,:);
+ *          Bi = transpose(Ji)*Wx(i,i)*Ji;
+ *          gi = 1.0/(1.0+trace(invC*Bi));
+ *          invC = invC - gi*invC*Bi*invC
+ *        endfor
+ *
+ *        The result is in invC
+ *
+ ******************************************************************************/
 void MatNd_MillerPinv(MatNd* pinvJ,
                       const MatNd* J,
                       const MatNd* Wx,
@@ -2316,11 +2117,8 @@ void MatNd_MillerPinv(MatNd* pinvJ,
 
 
 /*******************************************************************************
-
- \brief Sets the given double array to the n-th column of the MatNd.
-
-*******************************************************************************/
-
+ * Sets the given double array to the n-th column of the MatNd.
+ ******************************************************************************/
 void MatNd_setColumn(MatNd* A, int column, const double* p, int n)
 {
   int i;
@@ -2337,11 +2135,8 @@ void MatNd_setColumn(MatNd* A, int column, const double* p, int n)
 
 
 /*******************************************************************************
-
- \brief Adds the given double array to the n-th column of the MatNd.
-
-*******************************************************************************/
-
+ * Adds the given double array to the n-th column of the MatNd.
+ ******************************************************************************/
 void MatNd_addToColumn(MatNd* A, int column, const double* p, int n)
 {
   int i;
@@ -2356,11 +2151,8 @@ void MatNd_addToColumn(MatNd* A, int column, const double* p, int n)
 }
 
 /*******************************************************************************
-
- \brief Copies the c-th column of A into B.
-
-*******************************************************************************/
-
+ * Copies the c-th column of A into B.
+ ******************************************************************************/
 void MatNd_getColumn(MatNd* B, int c, const MatNd* A)
 {
   unsigned int i;
@@ -2379,19 +2171,18 @@ void MatNd_getColumn(MatNd* B, int c, const MatNd* A)
 }
 
 /*******************************************************************************
-
- Some test code:
-
- MatNd *seppl = MatNd_create(6,6);
- MatNd_setRandom(seppl, 0.0, 1.0);
- MatNd_printCommentDigits("1", seppl, 2);
- MatNd_deleteColumn(seppl, 0);
- MatNd_printCommentDigits("2", seppl, 2);
- MatNd_deleteColumn(seppl, 2);
- MatNd_printCommentDigits("3", seppl, 2);
-
-*******************************************************************************/
-
+ *
+ * Some test code:
+ *
+ * MatNd *seppl = MatNd_create(6,6);
+ * MatNd_setRandom(seppl, 0.0, 1.0);
+ * MatNd_printCommentDigits("1", seppl, 2);
+ * MatNd_deleteColumn(seppl, 0);
+ * MatNd_printCommentDigits("2", seppl, 2);
+ * MatNd_deleteColumn(seppl, 2);
+ * MatNd_printCommentDigits("3", seppl, 2);
+ *
+ ******************************************************************************/
 void MatNd_deleteColumn(MatNd* self, int index)
 {
   MatNd* tmp = NULL;
@@ -2420,11 +2211,8 @@ void MatNd_deleteColumn(MatNd* self, int index)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_deleteColumns(MatNd* self, int first, int last)
 {
   int nCols = last - first;
@@ -2438,11 +2226,8 @@ void MatNd_deleteColumns(MatNd* self, int first, int last)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_deleteRow(MatNd* self, int index)
 {
   RCHECK_MSG(index >= 0 && index < (int) self->m, "m = %d, index = %d",
@@ -2458,11 +2243,8 @@ void MatNd_deleteRow(MatNd* self, int index)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_deleteRows(MatNd* self, int first, int last)
 {
   int nRows = last - first;
@@ -2476,11 +2258,8 @@ void MatNd_deleteRows(MatNd* self, int first, int last)
 }
 
 /*******************************************************************************
-
- \brief Transposes an array.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_transpose(MatNd* dst, const MatNd* src)
 {
   unsigned int i, j, i_n;
@@ -2501,11 +2280,8 @@ void MatNd_transpose(MatNd* dst, const MatNd* src)
 }
 
 /*******************************************************************************
-
- \brief Transposes an array in place.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_transposeSelf(MatNd* dst)
 {
   // Fast solution for vectors only.
@@ -2539,11 +2315,8 @@ void MatNd_transposeSelf(MatNd* dst)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_constMul(MatNd* dst, const MatNd* src, double c)
 {
   int i, nEle = dst->m * dst->n;
@@ -2559,11 +2332,8 @@ void MatNd_constMul(MatNd* dst, const MatNd* src, double c)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_constMulAndAdd(MatNd* dst,
                           const MatNd* v1,
                           const MatNd* v2,
@@ -2585,11 +2355,8 @@ void MatNd_constMulAndAdd(MatNd* dst,
 }
 
 /*******************************************************************************
-
- \brief dst += v1 * c
-
-*******************************************************************************/
-
+ * dst += v1 * c
+ ******************************************************************************/
 void MatNd_constMulAndAddSelf(MatNd* dst, const MatNd* v1, double c)
 {
   int i, nEle = dst->m * dst->n;
@@ -2604,11 +2371,8 @@ void MatNd_constMulAndAddSelf(MatNd* dst, const MatNd* v1, double c)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_constMulSelf(MatNd* self, double c)
 {
   int i, nEle = self->m * self->n;
@@ -2620,11 +2384,8 @@ void MatNd_constMulSelf(MatNd* self, double c)
 }
 
 /*******************************************************************************
-
- \brief Copies n elements of an array into the MatNd data structure.
-
-*******************************************************************************/
-
+ * Copies n elements of an array into the MatNd data structure.
+ ******************************************************************************/
 void MatNd_fromArray(MatNd* self, const double* p, int n)
 {
   RCHECK_MSG((int) self->size >= n, "self->size=%d   n=%d", self->size, n);
@@ -2633,11 +2394,8 @@ void MatNd_fromArray(MatNd* self, const double* p, int n)
 }
 
 /*******************************************************************************
-
- \brief Returns the sum of all values of the array.
-
-*******************************************************************************/
-
+ * Returns the sum of all values of the array.
+ ******************************************************************************/
 double MatNd_sumEle(const MatNd* self)
 {
   double res = 0.0;
@@ -2652,11 +2410,8 @@ double MatNd_sumEle(const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief TODO.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double MatNd_columnSum(const MatNd* self, unsigned int column)
 {
   double colSum = 0.0;
@@ -2671,11 +2426,8 @@ double MatNd_columnSum(const MatNd* self, unsigned int column)
 }
 
 /*******************************************************************************
-
- \brief Returns the lowest absolut (=fabs()) value of the array.
-
-*******************************************************************************/
-
+ * Returns the lowest absolut (=fabs()) value of the array.
+ ******************************************************************************/
 double MatNd_minAbsEle(const MatNd* self)
 {
   double res = fabs(self->ele[0]);
@@ -2693,11 +2445,8 @@ double MatNd_minAbsEle(const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief Returns the highest absolut (=fabs()) value of the array.
-
-*******************************************************************************/
-
+ * Returns the highest absolut (=fabs()) value of the array.
+ ******************************************************************************/
 double MatNd_maxAbsEle(const MatNd* self)
 {
   double res = fabs(self->ele[0]);
@@ -2715,11 +2464,8 @@ double MatNd_maxAbsEle(const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double MatNd_minEle(const MatNd* self)
 {
   double res = self->ele[0];
@@ -2737,11 +2483,8 @@ double MatNd_minEle(const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double MatNd_maxEle(const MatNd* self)
 {
   double res = self->ele[0];
@@ -2759,11 +2502,8 @@ double MatNd_maxEle(const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 unsigned int MatNd_minAbsEleIndex(const MatNd* self)
 {
   unsigned int minIndex = 0;
@@ -2783,11 +2523,8 @@ unsigned int MatNd_minAbsEleIndex(const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 unsigned int MatNd_maxEleIndex(const MatNd* self)
 {
   unsigned int maxIndex = 0;
@@ -2807,11 +2544,8 @@ unsigned int MatNd_maxEleIndex(const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 unsigned int MatNd_maxAbsEleIndex(const MatNd* self)
 {
   unsigned int maxIndex = 0;
@@ -2897,11 +2631,8 @@ double MatNd_scaleSelf(MatNd* self, const MatNd* limit)
 }
 
 /*******************************************************************************
-
- \brief Replaces self with element-wise maximum of self and other
-
-*******************************************************************************/
-
+ * Replaces self with element-wise maximum of self and other
+ ******************************************************************************/
 void MatNd_maxSelf(MatNd* self, const MatNd* other)
 {
   RCHECK(self->m == other->m && self->n == other->n);
@@ -2921,11 +2652,8 @@ void MatNd_maxSelf(MatNd* self, const MatNd* other)
 }
 
 /*******************************************************************************
-
- \brief Replaces self with element-wise minimum of self and other
-
-*******************************************************************************/
-
+ * Replaces self with element-wise minimum of self and other
+ ******************************************************************************/
 void MatNd_minSelf(MatNd* self, const MatNd* other)
 {
   RCHECK(self->m == other->m && self->n == other->n);
@@ -2945,12 +2673,9 @@ void MatNd_minSelf(MatNd* self, const MatNd* other)
 }
 
 /*******************************************************************************
-
- \brief Saturates self element-wise to +-limit.
- Limit has to be either a 1x1 matrix or have the same size as self
-
-*******************************************************************************/
-
+ * Saturates self element-wise to +-limit.
+ * Limit has to be either a 1x1 matrix or have the same size as self
+ ******************************************************************************/
 void MatNd_saturateSelf(MatNd* self, const MatNd* limit)
 {
   unsigned int i, mn = self->m * self->n;
@@ -2981,11 +2706,8 @@ void MatNd_saturateSelf(MatNd* self, const MatNd* limit)
 }
 
 /*******************************************************************************
-
- \brief Sets the given double array to the n-th row of the MatNd.
-
-*******************************************************************************/
-
+ * Sets the given double array to the n-th row of the MatNd.
+ ******************************************************************************/
 void MatNd_setRow(MatNd* A, int row, const double* p, int n)
 {
   RCHECK_MSG(row + (n / A->n) <= A->m, "row = %d, should be < %d", row, A->m);
@@ -2995,11 +2717,8 @@ void MatNd_setRow(MatNd* A, int row, const double* p, int n)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double* MatNd_getRowPtr(const MatNd* self, int row)
 {
   RCHECK_MSG(row < (int) self->m, "row = %d, should be < %d", row, self->m);
@@ -3007,11 +2726,8 @@ double* MatNd_getRowPtr(const MatNd* self, int row)
 }
 
 /*******************************************************************************
-
- \brief Copies the row-th row of A into B.
-
-*******************************************************************************/
-
+ * Copies the row-th row of A into B.
+ ******************************************************************************/
 void MatNd_getRow(MatNd* B, int row, const MatNd* A)
 {
   MatNd_reshape(B, 1, A->n);
@@ -3020,33 +2736,24 @@ void MatNd_getRow(MatNd* B, int row, const MatNd* A)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 MatNd MatNd_getRowView(const MatNd* B, int row)
 {
   return MatNd_fromPtr(1, B->n, MatNd_getRowPtr(B, row));
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 MatNd MatNd_getRowViewTranspose(const MatNd* B, int row)
 {
   return MatNd_fromPtr(B->n, 1, MatNd_getRowPtr(B, row));
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_rotateSelf(MatNd* self, double A_KI[3][3])
 {
   // with heap memory
@@ -3075,11 +2782,8 @@ void MatNd_rotateSelf(MatNd* self, double A_KI[3][3])
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_invRotateSelf(MatNd* self, double A_KI[3][3])
 {
   double A_IK[3][3];
@@ -3088,12 +2792,9 @@ void MatNd_invRotateSelf(MatNd* self, double A_KI[3][3])
 }
 
 /*******************************************************************************
-
- \brief dst = vec x self
- This function allows in-place operation.
-
-*******************************************************************************/
-
+ * dst = vec x self
+ * This function allows in-place operation.
+ ******************************************************************************/
 void MatNd_columnCrossProduct(MatNd* dst, const MatNd* src, const double vec[3])
 {
   double tmp[3];
@@ -3120,33 +2821,24 @@ void MatNd_columnCrossProduct(MatNd* dst, const MatNd* src, const double vec[3])
 }
 
 /*******************************************************************************
-
- \brief self = vec x self
-
-*******************************************************************************/
-
+* self = vec x self
+ ******************************************************************************/
 void MatNd_columnCrossProductSelf(MatNd* self, const double vec[3])
 {
   MatNd_columnCrossProduct(self, self, vec);
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_setRandom(MatNd* self, double lower, double upper)
 {
   VecNd_setRandom(self->ele, lower, upper, self->m * self->n);
 }
 
 /*******************************************************************************
-
- \brief Element-wise multiplication.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_eleMul(MatNd* dst, const MatNd* m1, const MatNd* m2)
 {
   int i, nEle = dst->m * dst->n;
@@ -3165,11 +2857,8 @@ void MatNd_eleMul(MatNd* dst, const MatNd* m1, const MatNd* m2)
 }
 
 /*******************************************************************************
-
- \brief Element-wise multiplication.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_eleMulSelf(MatNd* dst, const MatNd* m)
 {
   int i, nEle = dst->m * dst->n;
@@ -3184,11 +2873,8 @@ void MatNd_eleMulSelf(MatNd* dst, const MatNd* m)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double MatNd_variance(const MatNd* self)
 {
   int i, nEle = self->m * self->n;
@@ -3209,11 +2895,8 @@ double MatNd_variance(const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief dst = src^T * src
-
-*******************************************************************************/
-
+ * dst = src^T * src
+ ******************************************************************************/
 void MatNd_dyadicProduct(MatNd* dst, const MatNd* src)
 {
   MatNd* src_tp = NULL;
@@ -3228,11 +2911,8 @@ void MatNd_dyadicProduct(MatNd* dst, const MatNd* src)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_fromString(MatNd* J, const char* str)
 {
   // Make a local copy of str, since strtok modifies it during processing
@@ -3278,11 +2958,8 @@ void MatNd_fromString(MatNd* J, const char* str)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_toString(const MatNd* M, char* str)
 {
   unsigned int i, j;
@@ -3305,11 +2982,8 @@ void MatNd_toString(const MatNd* M, char* str)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 MatNd* MatNd_createFromString(const char* str)
 {
   if (str==NULL)
@@ -3342,30 +3016,28 @@ MatNd* MatNd_createFromString(const char* str)
 }
 
 /*******************************************************************************
-
- \brief Mirrors upper to lower triangle.
-
- Here's a test function:
-
- MatNd *A = MatNd_create(i,i);
- MatNd_setRandom(A, -1.0, 1.0);
- RMSG("Original"); MatNd_print(A);
-
- // Walk through lower triangle and set to 0.0
- for (int row=0;row<i;row++)
- for (int col=0;col<row;col++)
- A->ele[row*i+col] = 0.0;
-
- RMSG("Lower triangle resetted"); MatNd_print(A);
-
- MatNd_mirrorUppeHTriangle(A);
-
- RMSG("Upper triangle mirrored to lower"); MatNd_print(A);
- MatNd_destroy(A);
-
-
-*******************************************************************************/
-
+ *
+ * \brief Mirrors upper to lower triangle.
+ *
+ * Here's a test function:
+ *
+ * MatNd *A = MatNd_create(i,i);
+ * MatNd_setRandom(A, -1.0, 1.0);
+ * RMSG("Original"); MatNd_print(A);
+ *
+ * // Walk through lower triangle and set to 0.0
+ * for (int row=0;row<i;row++)
+ * for (int col=0;col<row;col++)
+ * A->ele[row*i+col] = 0.0;
+ *
+ *  RMSG("Lower triangle resetted"); MatNd_print(A);
+ *
+ * MatNd_mirrorUppeHTriangle(A);
+ *
+ * RMSG("Upper triangle mirrored to lower"); MatNd_print(A);
+ * MatNd_destroy(A);
+ *
+ ******************************************************************************/
 void MatNd_mirrorUppeHTriangle(MatNd* A)
 {
   RCHECK_MSG(A->m == A->n, "Matrix is not square (%d x %d)", A->m, A->n);
@@ -3385,12 +3057,9 @@ void MatNd_mirrorUppeHTriangle(MatNd* A)
 }
 
 /******************************************************************************
-
- \brief Copies the lower triangle of src to dst. This does not include the
- main diagonal. The matrices must be square.
-
-*******************************************************************************/
-
+ * Copies the lower triangle of src to dst. This does not include the
+ * main diagonal. The matrices must be square.
+ ******************************************************************************/
 void MatNd_copyLowerTriangle(MatNd* dst, const MatNd* src)
 {
   int row, col, n = src->m;
@@ -3408,11 +3077,8 @@ void MatNd_copyLowerTriangle(MatNd* dst, const MatNd* src)
 }
 
 /*******************************************************************************
-
- \brief Copies the main diagonal of src to dst. The matrices must be square.
-
-*******************************************************************************/
-
+ * Copies the main diagonal of src to dst. The matrices must be square.
+ ******************************************************************************/
 void MatNd_copyMainDiagonal(MatNd* dst, const MatNd* src)
 {
   int i, n = src->m;
@@ -3428,12 +3094,8 @@ void MatNd_copyMainDiagonal(MatNd* dst, const MatNd* src)
 }
 
 /*******************************************************************************
-
- \brief Walk through upper triangle of result matrix and mirror to lower
- triangle.
-
-*******************************************************************************/
-
+ * Walk through upper triangle of result matrix and mirror to lower triangle.
+ ******************************************************************************/
 bool MatNd_isSymmetric(const MatNd* A, double eps)
 {
   int row, col, n = A->m;
@@ -3454,11 +3116,8 @@ bool MatNd_isSymmetric(const MatNd* A, double eps)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 bool MatNd_isEqual(const MatNd* m1, const MatNd* m2, double eps)
 {
   if (m1->m != m2->m)
@@ -3485,11 +3144,8 @@ bool MatNd_isEqual(const MatNd* m1, const MatNd* m2, double eps)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 bool MatNd_isIdentity(const MatNd* self, double eps)
 {
   if (self->m != self->n)
@@ -3518,11 +3174,8 @@ bool MatNd_isIdentity(const MatNd* self, double eps)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 bool MatNd_isDiagonal(const MatNd* A, double eps)
 {
   int row, col, n = A->m;
@@ -3543,11 +3196,8 @@ bool MatNd_isDiagonal(const MatNd* A, double eps)
 }
 
 /*******************************************************************************
-
-  See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double MatNd_lineSearch(MatNd* q, const MatNd* q0, const MatNd* grad,
                         double (*func)(double[], void*), void* data,
                         int* nEval, double stpmax, bool* converged)
@@ -3557,11 +3207,8 @@ double MatNd_lineSearch(MatNd* q, const MatNd* q0, const MatNd* grad,
 }
 
 /*******************************************************************************
-
- \brief See header, also for an example.
-
-*******************************************************************************/
-
+ * See header, also for an example.
+ ******************************************************************************/
 double MatNd_lineSearchSelf(MatNd* x,
                             const MatNd* dfdx,
                             double (*func)(double[], void*),
@@ -3574,11 +3221,8 @@ double MatNd_lineSearchSelf(MatNd* x,
 }
 
 /*******************************************************************************
-
-  See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double MatNd_lineSearchArmijo(MatNd* x,
                               const MatNd* gradient,
                               double (*costFunction)(double[], void*),
@@ -3627,11 +3271,8 @@ double MatNd_lineSearchArmijo(MatNd* x,
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_copyBlock(MatNd* dst, const MatNd* src, unsigned int m0,
                      unsigned int n0, unsigned int m1, unsigned int n1)
 {
@@ -3653,11 +3294,8 @@ void MatNd_copyBlock(MatNd* dst, const MatNd* src, unsigned int m0,
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_copyRows(MatNd* dst,
                     unsigned int dst_start_row,
                     const MatNd* src,
@@ -3684,11 +3322,8 @@ void MatNd_copyRows(MatNd* dst,
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_copyRow(MatNd* dst, unsigned int dst_idx, const MatNd* src,
                    unsigned int src_idx)
 {
@@ -3704,11 +3339,8 @@ void MatNd_copyRow(MatNd* dst, unsigned int dst_idx, const MatNd* src,
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_setBlockZero(MatNd* dst,
                         unsigned int m0,
                         unsigned int n0,
@@ -3731,11 +3363,8 @@ void MatNd_setBlockZero(MatNd* dst,
 }
 
 /*******************************************************************************
-
- \brief ABAt = A * B * A^T
-
-*******************************************************************************/
-
+ * ABAt = A * B * A^T
+ ******************************************************************************/
 void MatNd_sqrMulABAt(MatNd* ABAt, const MatNd* A, const MatNd* B)
 {
 
@@ -3830,11 +3459,8 @@ void MatNd_sqrMulABAt(MatNd* ABAt, const MatNd* A, const MatNd* B)
 }
 
 /*******************************************************************************
-
- \brief AtBA = A^T * B * A
-
-*******************************************************************************/
-
+ * AtBA = A^T * B * A
+ ******************************************************************************/
 void MatNd_sqrMulAtBA(MatNd* AtBA, const MatNd* A, const MatNd* B)
 {
   // No weighting matrix
@@ -3868,11 +3494,8 @@ void MatNd_sqrMulAtBA(MatNd* AtBA, const MatNd* A, const MatNd* B)
 }
 
 /*******************************************************************************
-
- \brief dst += A^T * B * A
-
-*******************************************************************************/
-
+ * dst += A^T * B * A
+ ******************************************************************************/
 void MatNd_sqrMulAndAddAtBA(MatNd* dst, const MatNd* A, const MatNd* B)
 {
   MatNd* AtBA = NULL;
@@ -3884,11 +3507,8 @@ void MatNd_sqrMulAndAddAtBA(MatNd* dst, const MatNd* A, const MatNd* B)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 bool MatNd_isNAN(const MatNd* self)
 {
   int i, nEle = self->m * self->n;
@@ -3905,11 +3525,8 @@ bool MatNd_isNAN(const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 bool MatNd_isINF(const MatNd* self)
 {
   int i, nEle = self->m * self->n;
@@ -3926,11 +3543,8 @@ bool MatNd_isINF(const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 bool MatNd_isFinite(const MatNd* self)
 {
   int i, nEle = self->m * self->n;
@@ -3947,11 +3561,8 @@ bool MatNd_isFinite(const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 MatNd MatNd_fromPtr(int m, int n, double* ptr)
 {
   MatNd self;
@@ -3966,11 +3577,8 @@ MatNd MatNd_fromPtr(int m, int n, double* ptr)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_preMulDiagSelf(MatNd* dst, const MatNd* vec)
 {
   unsigned int i, j;
@@ -4000,11 +3608,8 @@ void MatNd_preMulDiagSelf(MatNd* dst, const MatNd* vec)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_postMulDiagSelf(MatNd* dst, const MatNd* vec)
 {
   unsigned int i, j;
@@ -4033,11 +3638,8 @@ void MatNd_postMulDiagSelf(MatNd* dst, const MatNd* vec)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_columnDerivative(MatNd* dst, const MatNd* src)
 {
   unsigned int i, j;
@@ -4067,11 +3669,8 @@ void MatNd_columnDerivative(MatNd* dst, const MatNd* src)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_columnIntegral(MatNd* x_int, const MatNd* x, const MatNd* x0)
 {
   MatNd_reshape(x_int, x->m, x->n);
@@ -4101,11 +3700,8 @@ void MatNd_columnIntegral(MatNd* x_int, const MatNd* x, const MatNd* x0)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_columnLength(MatNd* x_length, const MatNd* x)
 {
   RCHECK_EQ(x_length->m, x->n);
@@ -4127,11 +3723,8 @@ void MatNd_columnLength(MatNd* x_length, const MatNd* x)
 
 
 /*******************************************************************************
-
- \brief N = I - pinv(J) J
-
-*******************************************************************************/
-
+ * N = I - pinv(J) J
+ ******************************************************************************/
 void MatNd_nullspace(MatNd* N, const MatNd* J_pinv, const MatNd* J)
 {
   unsigned int i, j, k;
@@ -4147,11 +3740,8 @@ void MatNd_nullspace(MatNd* N, const MatNd* J_pinv, const MatNd* J)
 }
 
 /*******************************************************************************
-
- \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_calcMeanAndCovariance(const MatNd* A, double* mu, MatNd* sigma)
 {
   RCHECK(A->n == sigma->m && A->n == sigma->n);
@@ -4187,34 +3777,33 @@ void MatNd_calcMeanAndCovariance(const MatNd* A, double* mu, MatNd* sigma)
 }
 
 /*******************************************************************************
-
- \brief Computes the partial derivative of the pseudo inverse.
-
- del_q(J#) = -J# dq(J) J# + N invW dq(J^T) (J invW J^T)^-1
-
- There's a paper by Golub et al.:
-
- The Differentiation of Pseudo-Inverses and Nonlinear Least Squares
- Problems Whose Variables Separate. Author(s): G. H. Golub and
- V. Pereyra. Source: SIAM Journal on Numerical Analysis, Vol. 10,
- No. 2 (Apr., 1973), pp. 413-432
-
- del_q(J#) = -J# dq(J) J# + J# J#^T dq(J^T) (I - J J#)
- + (I - J# J) dq(J^T) J#^T J#
-
- It's stated just for reference, however it is possible to get it into
- our form: with J J# = I, the second term vanishes and we get
-
- del_q(J#) = -J# dq(J) J# + (I - J# J) dq(J^T) J#^T J#
-
- The term J#^T J# written out is: (J J^T)^-1 J J#
-
- where again J J# = I. With N = (I - J# J) we get
-
- del_q(J#) = -J# dq(J) J# + N dq(J^T) (J J^T)^-1
-
-*******************************************************************************/
-
+ *
+ * \brief Computes the partial derivative of the pseudo inverse.
+ *
+ * del_q(J#) = -J# dq(J) J# + N invW dq(J^T) (J invW J^T)^-1
+ *
+ * There's a paper by Golub et al.:
+ *
+ * The Differentiation of Pseudo-Inverses and Nonlinear Least Squares
+ * Problems Whose Variables Separate. Author(s): G. H. Golub and
+ * V. Pereyra. Source: SIAM Journal on Numerical Analysis, Vol. 10,
+ * No. 2 (Apr., 1973), pp. 413-432
+ *
+ * del_q(J#) = -J# dq(J) J# + J# J#^T dq(J^T) (I - J J#)
+ * + (I - J# J) dq(J^T) J#^T J#
+ *
+ * It's stated just for reference, however it is possible to get it into
+ * our form: with J J# = I, the second term vanishes and we get
+ *
+ * del_q(J#) = -J# dq(J) J# + (I - J# J) dq(J^T) J#^T J#
+ *
+ * The term J#^T J# written out is: (J J^T)^-1 J J#
+ *
+ * where again J J# = I. With N = (I - J# J) we get
+ *
+ * del_q(J#) = -J# dq(J) J# + N dq(J^T) (J J^T)^-1
+ *
+ ******************************************************************************/
 void MatNd_PinvHessian(MatNd* dqJpinv, const MatNd* J, const MatNd* dqJ,
                        const MatNd* invW, const MatNd* invJWJt,
                        const MatNd* Jpinv, bool transposed)
@@ -4339,13 +3928,9 @@ void MatNd_PinvHessian(MatNd* dqJpinv, const MatNd* J, const MatNd* dqJ,
 }
 
 /*******************************************************************************
-
- \brief Computes the partial derivative of the pseudo inverse:
-
- del_q(J#) = -J# dq(J) J# + inv(JtWJ) dqJ^T Wx (I - J J#)
-
-*******************************************************************************/
-
+ * Computes the partial derivative of the pseudo inverse:
+ * del_q(J#) = -J# dq(J) J# + inv(JtWJ) dqJ^T Wx (I - J J#)
+ ******************************************************************************/
 void MatNd_PinvHessian2(MatNd* dqJpinv, const MatNd* J, const MatNd* dqJ,
                         const MatNd* invWx, const MatNd* invJtWJ,
                         const MatNd* Jpinv, bool transposed)
@@ -4435,20 +4020,17 @@ void MatNd_PinvHessian2(MatNd* dqJpinv, const MatNd* J, const MatNd* dqJ,
 }
 
 /*******************************************************************************
-
- \brief Data must be a n x 2 vector. Each column holds the data for one
- dimension:
-
-  data =
- | x_0    y_0   |
- | x_1    y_1   |
- |      .       |
- |      .       |
- |      .       |
- | x_n-1  y_n-1 |
-
-*******************************************************************************/
-
+ * Data must be a n x 2 vector. Each column holds the data for one dimension:
+ *
+ *  data =
+ * | x_0    y_0   |
+ * | x_1    y_1   |
+ * |      .       |
+ * |      .       |
+ * |      .       |
+ * | x_n-1  y_n-1 |
+ *
+ ******************************************************************************/
 static bool MatNd_lineFit2D_(double* A, double* B, const MatNd* data)
 {
   unsigned int i;
@@ -4542,11 +4124,8 @@ bool MatNd_lineFit2D(double* A, double* B, const MatNd* data)
 }
 
 /*******************************************************************************
-
- \brief a dot b = Sum_i(a_i, b_i)
-
-*******************************************************************************/
-
+ * a dot b = Sum_i(a_i, b_i)
+ ******************************************************************************/
 double MatNd_innerProduct(const MatNd* a, const MatNd* b)
 {
   unsigned int i;
@@ -4565,11 +4144,8 @@ double MatNd_innerProduct(const MatNd* a, const MatNd* b)
 }
 
 /*******************************************************************************
-
- \brief cos(phi) = (a dot b) / ( |a| * |b|)
-
-*******************************************************************************/
-
+ * cos(phi) = (a dot b) / ( |a| * |b|)
+ ******************************************************************************/
 double MatNd_diffAngle(const MatNd* a, const MatNd* b)
 {
   unsigned int i;
@@ -4602,30 +4178,29 @@ double MatNd_diffAngle(const MatNd* a, const MatNd* b)
 }
 
 /*******************************************************************************
-
- \brief c is the projection of b on a
- Vectors are interpreted as columns
-
- c = [ (a dot b) / (b dot b) ] * b
-
- The same, but less efficient (because of sqrt and vector by scalar
- division), is:
-
- c = [ (a dot b) / |b| ] * [ b / |b| ]
-
- Vector projection
-
- The vector projection of a on b is a vector c which is either null or
- parallel to b. More exactly,
-
- c = 0 if phi = 90 degrees
- c and b have the same direction if 0 < phi < 90 degrees
- c and b have opposite directions if 90 < phi < 180 degrees
-
- Explanations from: http://en.wikipedia.org/wiki/Vector_projection
-
-*******************************************************************************/
-
+ *
+ * \brief c is the projection of b on a
+ * Vectors are interpreted as columns
+ *
+ * c = [ (a dot b) / (b dot b) ] * b
+ *
+ * The same, but less efficient (because of sqrt and vector by scalar
+ * division), is:
+ *
+ * c = [ (a dot b) / |b| ] * [ b / |b| ]
+ *
+ * Vector projection
+ *
+ * The vector projection of a on b is a vector c which is either null or
+ * parallel to b. More exactly,
+ *
+ * c = 0 if phi = 90 degrees
+ * c and b have the same direction if 0 < phi < 90 degrees
+ * c and b have opposite directions if 90 < phi < 180 degrees
+ *
+ * Explanations from: http://en.wikipedia.org/wiki/Vector_projection
+ *
+ ******************************************************************************/
 void MatNd_vectorProjection(MatNd* c, const MatNd* b, const MatNd* a)
 {
   unsigned int row;
@@ -4662,22 +4237,16 @@ void MatNd_vectorProjection(MatNd* c, const MatNd* b, const MatNd* a)
 }
 
 /*******************************************************************************
-
- \brief See header
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 static inline double minDouble(double a, double b)
 {
   return a < b ? a : b;
 }
 
 /*******************************************************************************
-
- \brief See header
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double MatNd_DTW(MatNd* warped, const MatNd* dst, const MatNd* src,
                  const MatNd* weight)
 {
@@ -4824,11 +4393,8 @@ double MatNd_DTW(MatNd* warped, const MatNd* dst, const MatNd* src,
 }
 
 /*******************************************************************************
-
- \brief Apply function to all elements
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_applyFctEle(MatNd* dst, double (*func)(double))
 {
   unsigned int i, nEle = dst->m * dst->n;
@@ -4840,22 +4406,16 @@ void MatNd_applyFctEle(MatNd* dst, double (*func)(double))
 }
 
 /*******************************************************************************
-
- \brief Element-wise absolute values
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_fabsEleSelf(MatNd* self)
 {
   MatNd_applyFctEle(self, fabs);
 }
 
 /*******************************************************************************
-
- \brief Element-wise to-the-power of
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_powEle(MatNd* dst, const MatNd* src, double exponent)
 {
   RCHECK((dst->m == src->m) && (dst->n == src->n));
@@ -4870,11 +4430,8 @@ void MatNd_powEle(MatNd* dst, const MatNd* src, double exponent)
 }
 
 /*******************************************************************************
-
- \brief Element-wise to-the-power of
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_powEleSelf(MatNd* self, double exponent)
 {
   unsigned int i, nEle = self->m * self->n;
@@ -4887,11 +4444,8 @@ void MatNd_powEleSelf(MatNd* self, double exponent)
 }
 
 /*******************************************************************************
-
- \brief See header
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_sigmoidExponentialEle(MatNd* sigX, const MatNd* x, double beta)
 {
   RCHECK((sigX->m == x->m) && (sigX->n == x->n));
@@ -4905,11 +4459,8 @@ void MatNd_sigmoidExponentialEle(MatNd* sigX, const MatNd* x, double beta)
 }
 
 /*******************************************************************************
-
- \brief See header
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_interpolateRows(MatNd* dst, const MatNd* src)
 {
   RCHECK(dst);
@@ -4946,11 +4497,8 @@ void MatNd_interpolateRows(MatNd* dst, const MatNd* src)
 }
 
 /*******************************************************************************
-
- \brief See header
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_interpolateRowsEuler(MatNd* dst, const MatNd* src)
 {
   RCHECK(dst);
@@ -4992,11 +4540,8 @@ void MatNd_interpolateRowsEuler(MatNd* dst, const MatNd* src)
 }
 
 /*******************************************************************************
-
- \brief See header
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_reverseSelf(MatNd* mat)
 {
   MatNd* row = NULL;
@@ -5013,11 +4558,8 @@ void MatNd_reverseSelf(MatNd* mat)
 }
 
 /*******************************************************************************
-
- \brief See header
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 double MatNd_trace(const MatNd* self)
 {
   RCHECK(self->m == self->n);
@@ -5032,11 +4574,8 @@ double MatNd_trace(const MatNd* self)
 }
 
 /*******************************************************************************
-
- \brief See header
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_rowLerp(MatNd* dst, const MatNd* src, const double s)
 {
   unsigned int cols = src->n;
@@ -5082,11 +4621,8 @@ void MatNd_rowLerp(MatNd* dst, const MatNd* src, const double s)
 }
 
 /*******************************************************************************
-
- \brief See header
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_interpolateLinear(MatNd* dst, const MatNd* src,
                              unsigned int subSteps)
 {
@@ -5117,14 +4653,12 @@ void MatNd_interpolateLinear(MatNd* dst, const MatNd* src,
 }
 
 /*******************************************************************************
-
-  Computes 5th order polynomial. Could be more efficient:
-
-  - pre-compute x_dot and x_ddot before loop
-  - pre-compute ti and its exponents
-
-*******************************************************************************/
-
+ * Computes 5th order polynomial. Could be more efficient:
+ *
+ * - pre-compute x_dot and x_ddot before loop
+ * - pre-compute ti and its exponents
+ *
+ ******************************************************************************/
 void MatNd_interpolateFifthOrder(MatNd* dst, const MatNd* src,
                                  unsigned int subSteps)
 {
@@ -5266,11 +4800,8 @@ void MatNd_interpolateFifthOrder(MatNd* dst, const MatNd* src,
 }
 
 /*******************************************************************************
-
- \brief Rolling average filter.
-
-*******************************************************************************/
-
+ * Rolling average filter.
+ ******************************************************************************/
 void MatNd_filterMovingMean(MatNd* dst, const MatNd* src, unsigned int window)
 {
   RCHECK((src->m == dst->m) && (src->n == dst->n));
@@ -5342,11 +4873,8 @@ void MatNd_filterMovingMean(MatNd* dst, const MatNd* src, unsigned int window)
 }
 
 /*******************************************************************************
-
- \brief Rolling average filter.
-
-*******************************************************************************/
-
+ * Rolling average filter.
+ ******************************************************************************/
 void MatNd_filterMovingMeanSelf(MatNd* self, unsigned int window)
 {
   MatNd* src = MatNd_clone(self);
@@ -5355,11 +4883,8 @@ void MatNd_filterMovingMeanSelf(MatNd* self, unsigned int window)
 }
 
 /*******************************************************************************
-
- \brief First order lag filter
-
-*******************************************************************************/
-
+ * First order lag filter
+ ******************************************************************************/
 void MatNd_filterFirstOrderLag(MatNd* dst, MatNd* src, double tmc)
 {
   RCHECK_EQ(dst->m, src->m);
@@ -5386,11 +4911,8 @@ void MatNd_filterFirstOrderLag(MatNd* dst, MatNd* src, double tmc)
 }
 
 /*******************************************************************************
-
- \brief First order lag filter
-
-*******************************************************************************/
-
+ * First order lag filter
+ ******************************************************************************/
 void MatNd_filterFirstOrderLagSelf(MatNd* self, double tmc)
 {
   MatNd* src = MatNd_clone(self);
@@ -5399,11 +4921,8 @@ void MatNd_filterFirstOrderLagSelf(MatNd* self, double tmc)
 }
 
 /*******************************************************************************
-
- \brief Gets the interpolated row along the arc coordinate.
-
-*******************************************************************************/
-
+ * Gets the interpolated row along the arc coordinate.
+ ******************************************************************************/
 double MatNd_interpolateArcLength(MatNd* res, const MatNd* s_, const MatNd* x,
                                   double s_des)
 {
@@ -5517,11 +5036,8 @@ double MatNd_interpolateArcLength(MatNd* res, const MatNd* s_, const MatNd* x,
 }
 
 /*******************************************************************************
-
- \brief Gets the interpolated row along the arc coordinate.
-
-*******************************************************************************/
-
+ * Gets the interpolated row along the arc coordinate.
+ ******************************************************************************/
 void MatNd_interpolateArcLengthEuler(MatNd* res, const MatNd* s,
                                      const MatNd* x, double s_des)
 {
@@ -5580,10 +5096,8 @@ void MatNd_interpolateArcLengthEuler(MatNd* res, const MatNd* s,
 
 
 /*******************************************************************************
-
- \brief Get diagonal from square matrix.
-
-*******************************************************************************/
+ * Get diagonal from square matrix.
+ ******************************************************************************/
 void MatNd_getDiag(MatNd* diag, const MatNd* src)
 {
   unsigned int i;
@@ -5602,10 +5116,8 @@ void MatNd_getDiag(MatNd* diag, const MatNd* src)
 }
 
 /*******************************************************************************
-
- \brief Invert diagonal of a matrix.
-
-*******************************************************************************/
+ * Invert diagonal of a matrix.
+ ******************************************************************************/
 double MatNd_inverseDiag(MatNd* dst, const MatNd* src)
 {
   RCHECK_MSG((src->n == 1) || (src->m == src->n),
@@ -5647,14 +5159,9 @@ double MatNd_inverseDiag(MatNd* dst, const MatNd* src)
   return det;
 }
 
-
-
 /*******************************************************************************
-
-  \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_computeMinimumJerkTrajectory(MatNd* s_, MatNd* s_dot_)
 {
   MatNd* s = s_;
@@ -5731,11 +5238,8 @@ void MatNd_computeMinimumJerkTrajectory(MatNd* s_, MatNd* s_dot_)
 }
 
 /*******************************************************************************
-
-  \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 unsigned int minJerkTrajectoryLengthFromMaxVelocity(double max_velocity)
 {
   const double p2 =  1.0;
@@ -5750,13 +5254,9 @@ unsigned int minJerkTrajectoryLengthFromMaxVelocity(double max_velocity)
   return T;
 }
 
-
 /*******************************************************************************
-
-  \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_getSubset(MatNd* subset, const MatNd* full, const MatNd* logical)
 {
   RCHECK_MSG(full->m * full->n <= subset->size,
@@ -5779,11 +5279,8 @@ void MatNd_getSubset(MatNd* subset, const MatNd* full, const MatNd* logical)
 }
 
 /*******************************************************************************
-
-  \brief See header.
-
-*******************************************************************************/
-
+ *
+ ******************************************************************************/
 void MatNd_setSubset(MatNd* full, const MatNd* subset, const MatNd* logical)
 {
   RCHECK_MSG(full->m * full->n >= subset->m*subset->n,
@@ -5810,12 +5307,9 @@ void MatNd_setSubset(MatNd* full, const MatNd* subset, const MatNd* logical)
 
 
 /*******************************************************************************
-
- \brief Returns the normalized time at which the arc length coordinate s_des
-        is reached, given the current arc length trajectory s_curr
-
-*******************************************************************************/
-
+ * Returns the normalized time at which the arc length coordinate s_des
+ * is reached, given the current arc length trajectory s_curr
+ ******************************************************************************/
 double MatNd_timeFromArcLength(const MatNd* x, double s_des,
                                const MatNd* s_curr_)
 {
@@ -5903,14 +5397,9 @@ double MatNd_timeFromArcLength(const MatNd* x, double s_des,
   return normalizedTimePoint;
 }
 
-
-
 /******************************************************************************
-
-  Manipulability index according to Yoshikawa: w = sqrt(det(J*W*J^T))
-
-******************************************************************************/
-
+ * Manipulability index according to Yoshikawa: w = sqrt(det(J*W*J^T))
+ *****************************************************************************/
 double MatNd_computeManipulabilityIndex(const MatNd* J, const MatNd* W)
 {
   if (J->m==0)
@@ -5934,45 +5423,42 @@ double MatNd_computeManipulabilityIndex(const MatNd* J, const MatNd* W)
   return sqrt(det);
 }
 
-
-
-/******************************************************************************
-
-  Manipulability index according to Yoshikawa: w = sqrt(det(J*W*J^T))
-
-  Without weighting: the gradient is:
-
-  dw/dqi = 1/(2*w)*d/dqi(det(J*J^T))
-         = 1/(2*w)*det(J*J^T)*Tr{(J*J^T)^-1 d/dqi(J*J^T)}   // matrixcookbook
-         = 0.5*sqrt(det(J*J^T))*Tr{(J*J^T)^-1 d/dqi(J*J^T)}
-
-  where d/dqi(J*J^T) = dJ/dqi*J^T + J*(dJ/dqi)^T
-                     = dJ/dqi*J^T + (dJ/dqi*J^T)^T
-
-  which leads to
-
-  dw/dqi = 0.5*sqrt(det(J*J^T))*Tr{(J*J^T)^-1*(dJ/dqi*J^T + (dJ/dqi*J^T)^T)}
-         = 0.5*sqrt(det(J*J^T))*Tr{(J*J^T)^-1*2*(dJ/dqi*J^T)}
-         = sqrt(det(J*J^T))*Tr{(J*J^T)^-1*(dJ/dqi*J^T)}
-
-  With weighting: the gradient is:
-
-  dw/dqi = 1/(2*w)*d/dqi(det(J*W*J^T))
-         = 1/(2*w)*det(J*W*J^T)*Tr{(J*W*J^T)^-1 d/dqi(J*W*J^T)}
-         = 0.5*sqrt(det(J*W*J^T))*Tr{(J*W*J^T)^-1 d/dqi(J*W*J^T)}
-
-  where d/dqi(J*W*J^T) = d(J*W)/dqi*J^T + J*W*(dJ/dqi)^T
-                       = dJ/dqi*W*J^T + (dJ/dqi*W*J^T)^T
-
-  which leads to
-
-  dw/dqi =
-    0.5*sqrt(det(J*W*J^T))*Tr{(J*W*J^T)^-1*(dJ/dqi**WJ^T + (dJ/dqi*W*J^T)^T)}
-  = 0.5*sqrt(det(J*W*J^T))*Tr{(J*W*J^T)^-1*2*(dJ/dqi*W*J^T)}
-  = sqrt(det(J*W*J^T))*Tr{(J*W*J^T)^-1*(dJ/dqi*W*J^T)}
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ * Manipulability index according to Yoshikawa: w = sqrt(det(J*W*J^T))
+ *
+ * Without weighting: the gradient is:
+ *
+ * dw/dqi = 1/(2*w)*d/dqi(det(J*J^T))
+ *        = 1/(2*w)*det(J*J^T)*Tr{(J*J^T)^-1 d/dqi(J*J^T)}   // matrixcookbook
+ *        = 0.5*sqrt(det(J*J^T))*Tr{(J*J^T)^-1 d/dqi(J*J^T)}
+ *
+ * where d/dqi(J*J^T) = dJ/dqi*J^T + J*(dJ/dqi)^T
+ *                    = dJ/dqi*J^T + (dJ/dqi*J^T)^T
+ *
+ * which leads to
+ *
+ * dw/dqi = 0.5*sqrt(det(J*J^T))*Tr{(J*J^T)^-1*(dJ/dqi*J^T + (dJ/dqi*J^T)^T)}
+ *        = 0.5*sqrt(det(J*J^T))*Tr{(J*J^T)^-1*2*(dJ/dqi*J^T)}
+ *        = sqrt(det(J*J^T))*Tr{(J*J^T)^-1*(dJ/dqi*J^T)}
+ *
+ * With weighting: the gradient is:
+ *
+ * dw/dqi = 1/(2*w)*d/dqi(det(J*W*J^T))
+ *        = 1/(2*w)*det(J*W*J^T)*Tr{(J*W*J^T)^-1 d/dqi(J*W*J^T)}
+ *        = 0.5*sqrt(det(J*W*J^T))*Tr{(J*W*J^T)^-1 d/dqi(J*W*J^T)}
+ *
+ * where d/dqi(J*W*J^T) = d(J*W)/dqi*J^T + J*W*(dJ/dqi)^T
+ *                      = dJ/dqi*W*J^T + (dJ/dqi*W*J^T)^T
+ *
+ * which leads to
+ *
+ * dw/dqi =
+ *   0.5*sqrt(det(J*W*J^T))*Tr{(J*W*J^T)^-1*(dJ/dqi**WJ^T + (dJ/dqi*W*J^T)^T)}
+ * = 0.5*sqrt(det(J*W*J^T))*Tr{(J*W*J^T)^-1*2*(dJ/dqi*W*J^T)}
+ * = sqrt(det(J*W*J^T))*Tr{(J*W*J^T)^-1*(dJ/dqi*W*J^T)}
+ *
+ ******************************************************************************/
 double MatNd_computeManipulabilityIndexGradient(MatNd* grad,
                                                 const MatNd* J,
                                                 const MatNd* H,
@@ -6051,4 +5537,28 @@ double MatNd_computeManipulabilityIndexGradient(MatNd* grad,
   MatNd_destroy(inneHTrace);
 
   return sqrtDet;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void MatNd_softMax(MatNd* dst, const MatNd* src, double beta)
+{
+  RCHECK_MSG((dst->m == src->m) && (dst->n == src->n),
+             "dst: [%d x %d] src: [%d x %d]", dst->m, dst->n, src->m, src->n);
+  RCHECK_MSG(beta > 0, "beta: %f", beta);
+
+  for (unsigned int j = 0; j < src->n; j++)
+  {
+    double dnom = 0.;
+    for (unsigned int i = 0; i < src->m; i++)
+    {
+      dnom += exp(beta*MatNd_get2(src, i, j));
+    }
+
+    for (unsigned int i = 0; i < src->m; i++)
+    {
+      MatNd_set2(dst, i, j, exp(beta*MatNd_get2(src, i, j))/dnom);
+    }
+  }
 }
