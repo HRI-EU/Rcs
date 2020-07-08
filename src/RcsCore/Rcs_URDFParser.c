@@ -437,7 +437,7 @@ static RcsBody* findBdyByNameNoCase(const char* name, RcsBody** bdyVec)
  ******************************************************************************/
 RcsJoint* parseJointURDF(xmlNode* node)
 {
-  // Return if node is not a body node
+  // Return if node is not a joint node
   if (!isXMLNodeNameNoCase(node, "joint"))
   {
     RLOG(5, "Parsing URDF joint but xml node doesn't contain joint data");
@@ -517,6 +517,27 @@ RcsJoint* parseJointURDF(xmlNode* node)
 
   jnt->q0 = (jnt->q_max + jnt->q_min) / 2.0;
   jnt->q_init = jnt->q0;
+
+  // Create coupled joint if mimic tag is present
+  xmlNodePtr mimicNode = getXMLChildByName(node, "mimic");
+  if (mimicNode)
+  {
+    // Coupled to is required
+    char coupledTo[256] = "";
+    len = getXMLNodePropertyStringN(mimicNode, "joint", coupledTo, 256);
+    RCHECK(len > 0);
+
+    unsigned int nBytes = strlen(coupledTo) + 1;
+    jnt->coupledJointName = RNALLOC(nBytes, char);
+    strcpy(jnt->coupledJointName, coupledTo);
+
+    // Multiplier is optional (default: 1.0)
+    jnt->couplingFactors = MatNd_create(1, 1);
+    MatNd_setElementsTo(jnt->couplingFactors, 1.0);
+    getXMLNodePropertyDouble(mimicNode, "multiplier", jnt->couplingFactors->ele);
+
+    RLOG(5, "Joint \"%s\" coupled to \"%s\" with factor %lf", jnt->name, jnt->coupledJointName, *jnt->couplingFactors->ele);
+  }
 
   return jnt;
 }
@@ -923,6 +944,17 @@ RcsBody* RcsGraph_rootBodyFromURDFFile(const char* filename,
         strcat(newName, suffix);
         String_copyOrRecreate(&j->name, newName);
         RFREE(newName);
+
+        // Also need to add the suffix to the coupledJointName
+        if (j->coupledJointName != NULL)
+        {
+          size_t nameLen = strlen(j->coupledJointName) + strlen(suffix) + 1;
+          char* newName = RNALLOC(nameLen, char);
+          strcpy(newName, j->coupledJointName);
+          strcat(newName, suffix);
+          String_copyOrRecreate(&j->coupledJointName, newName);
+          RFREE(newName);
+        }
       }
       RCHECK(jntIdx<numJnts);
       jntVec[jntIdx++] = j;
