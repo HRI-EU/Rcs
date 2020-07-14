@@ -204,6 +204,24 @@ MatNd* MatNd_createFromFile(const char* fileName);
 MatNd* MatNd_createFromString(const char* str);
 
 /*! \ingroup MatNdFunctions
+ * \brief Use MatNd_create to create a new matrix, filled with zeros,
+ *        that has the same shape as the given matrix.
+ *
+ * \param[in] src input matrix
+ * \return output matrix
+ */
+MatNd* MatNd_createLike(const MatNd* src);
+
+/*!\ingroup MatNdFunctions
+ * \brief Use MatNd_create to create a new matrix, filled with zeros, that has
+ *        the same shape as the given matrix.
+ *
+ * \param[in] src input matrix
+ * \param[out] dst output matrix
+ */
+void MatNd_createLike2(MatNd* dst, const MatNd* src);
+
+/*! \ingroup MatNdFunctions
  *  \hideinitializer
  *  \brief see \ref MatNd_create.
  *         This version allocates memory on the stack if the array size is
@@ -262,6 +280,7 @@ MatNd* MatNd_createFromString(const char* str);
     self->stackMem = true;                                             \
     memcpy(self->ele, src->ele, src->size*sizeof(double));             \
   }
+
 
 ///@}
 
