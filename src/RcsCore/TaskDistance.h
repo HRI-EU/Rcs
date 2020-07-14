@@ -62,7 +62,7 @@ public:
   /*! Constructor based on graph and effectors.
   */
   TaskDistance(RcsGraph* graph, const RcsBody* effector,
-               const RcsBody* refBdy);
+               const RcsBody* refBdy, double gainDX=1.0);
 
   /*! Destructor.
    */

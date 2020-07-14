@@ -84,8 +84,9 @@ Rcs::TaskDistance::TaskDistance(const TaskDistance& copyFromMe,
  ******************************************************************************/
 Rcs::TaskDistance::TaskDistance(RcsGraph* graph_,
                                 const RcsBody* effector,
-                                const RcsBody* refBdy) :
-  TaskGenericIK(), gainDX(1.0)
+                                const RcsBody* refBdy,
+                                double gainDX_) :
+  TaskGenericIK(), gainDX(gainDX_)
 
 {
   int nQueries = RcsBody_getNumDistanceQueries(effector, refBdy);
@@ -104,7 +105,7 @@ Rcs::TaskDistance::TaskDistance(RcsGraph* graph_,
   setRefBody(refBdy);
   setRefFrame(refFrame ? refFrame : refBdy);
   setDim(1);
-  resetParameter(Parameters(-1.0, 1.0, 1.0, "Distance [m]"));
+  resetParameter(Parameters(-0.1, 1.0, 1.0, "Distance [m]"));
 }
 
 /*******************************************************************************
