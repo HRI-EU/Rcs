@@ -2401,8 +2401,8 @@ void RcsGraph_relativeRigidBodyDoFs(const RcsBody* body,
                                     const HTr* new_A_BI_parent,
                                     double angles[6])
 {
-  RCHECK(body);
-  RCHECK_MSG(body->rigid_body_joints, "Body \"%s\"", body->name);
+  RCHECK_MSG(RcsBody_isFloatingBase(body),
+             "Body \"%s\"", body ? body->name : "NULL");
 
   const HTr* A_BI_body = NULL;
   const HTr* A_BI_parent = NULL;

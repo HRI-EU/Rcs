@@ -649,6 +649,75 @@ long File_getLineCount(const char* fileName)
 /*******************************************************************************
  * See header
  ******************************************************************************/
+bool File_isEqual(const char* file1, const char* file2)
+{
+  if (file1==NULL)
+  {
+    RLOG(1, "File 1 is NULL");
+    return false;
+  }
+
+  if (file2==NULL)
+  {
+    RLOG(1, "File 2 is NULL");
+    return false;
+  }
+
+  FILE *fd1 = fopen(file1, "r");
+  FILE *fd2 = fopen(file2, "r");
+
+  if (fd1==NULL)
+  {
+    RLOG(1, "Failed to open file \"%s\" for reading", file1);
+    return false;
+  }
+
+  if (fd2==NULL)
+  {
+    RLOG(1, "Failed to open file \"%s\" for reading", file2);
+    return false;
+  }
+
+  // Compare the overall number of bytes
+  fseek(fd1, 0, SEEK_END);
+  fseek(fd2, 0, SEEK_END);
+  int byteCount1 = ftell(fd1);
+  int byteCount2 = ftell(fd2);
+
+  // check for the total number of bytes
+  if (byteCount1 != byteCount2)
+  {
+    RLOG(5, "Files differ: %d vs. %d bytes", byteCount1, byteCount2);
+    fclose(fd1);
+    fclose(fd2);
+    return false;
+  }
+
+  // Rewind and go through all characters
+  rewind(fd1);
+  rewind(fd2);
+
+  bool isEqual = true;
+
+  while (!feof(fd1))
+  {
+    if (fgetc(fd1) != fgetc(fd2))
+    {
+      isEqual = false;
+      break;
+    }
+  }
+
+  fclose(fd1);
+  fclose(fd2);
+
+  return isEqual;
+}
+
+
+/*******************************************************************************
+ * See header
+ ******************************************************************************/
 int Rcs_getch(void)
 {
 #if defined(_MSC_VER)

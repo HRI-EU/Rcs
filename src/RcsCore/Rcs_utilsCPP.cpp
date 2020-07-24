@@ -166,7 +166,7 @@ std::string formatStdString(const char* fmt, va_list ap)
   return ret_val;
 }
 
-bool File_isEqual(const char* file1, const char* file2)
+bool File_isEqualCpp(const char* file1, const char* file2)
 {
   std::ifstream in1(file1, std::ios::binary);
   std::ifstream in2(file2, std::ios::binary);

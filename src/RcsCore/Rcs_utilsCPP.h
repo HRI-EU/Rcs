@@ -87,7 +87,7 @@ std::string formatStdString(const char* fmt, va_list ap);
  *  \param file2 Filename 2
  *  \return True if files are equal
  */
-bool File_isEqual(const char* file1, const char* file2);
+bool File_isEqualCpp(const char* file1, const char* file2);
 
 /*! \ingroup RcsUtilsFunctions
  *  \brief Splits the given string into pieces that are separated by the given

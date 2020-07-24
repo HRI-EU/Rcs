@@ -277,6 +277,14 @@ long File_getSize(const char* name);
  */
 long File_getLineCount(const char* fileName);
 
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Character-by-character comparison of two files. If they differ, the
+ *         function returns false, if they are the same, the function returns
+ *         true.
+ */
+bool File_isEqual(const char* file1, const char* file2);
+
+
 ///@}
 
 

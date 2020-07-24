@@ -6,13 +6,10 @@ PROJECT(Rcs)
 ################################################################################
 # Check if project is stand-alone or inside tree with dependencies
 ################################################################################
-SET(RCS_STANDALONE_PROJECT OFF)
-
 IF(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  SET(RCS_STANDALONE_PROJECT ON)
   MESSAGE(STATUS "Compiling Rcs as stand-alone project")
 
-  # Adjust paths to match ToolBOS install conventions. 
+  # Adjust paths to match ToolBOS CI conventions. 
   IF (CMAKE_MODULE_PATH MATCHES "ToolBOSCore")
     SET(CMAKE_INSTALL_PREFIX $ENV{SIT}/${BST_INSTALL_CATEGORY}/Rcs CACHE PATH "Cmake prefix" FORCE)
     MESSAGE(STATUS "Setting CMAKE_INSTALL_PREFIX to ${CMAKE_INSTALL_PREFIX}")
