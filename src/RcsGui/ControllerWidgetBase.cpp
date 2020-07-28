@@ -106,7 +106,7 @@ int ControllerWidgetBase::create(ControllerBase* c,
   bool* _showOnly = new bool;
   *_showOnly = showOnly;
   p->ptr[5] = (void*) _showOnly;
-  p->ptr[6] = (void*) a_des;
+  p->ptr[6] = (void*) NULL;
 
   int handle =
     RcsGuiFactory_requestGUI(ControllerWidgetBase::controllerGuiBase, (void*) p);
