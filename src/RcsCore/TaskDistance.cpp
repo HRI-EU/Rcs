@@ -166,6 +166,20 @@ void Rcs::TaskDistance::computeH(MatNd* hessian) const
 }
 
 /*******************************************************************************
+ * We give it a bit more permissive error limits since the distance gradient
+ * is assuming body-fixed closest points which is only an approximation.
+ ******************************************************************************/
+bool Rcs::TaskDistance::testJacobian(double errorLimit,
+                             double delta,
+                             bool relativeError,
+                             bool verbose)
+{
+  errorLimit = 0.1;   // 10% error is permitted
+  relativeError = true;
+  return Task::testJacobian(errorLimit, delta, relativeError, verbose);
+}
+
+/*******************************************************************************
  * See header
  ******************************************************************************/
 bool Rcs::TaskDistance::testHessian(bool verbose)

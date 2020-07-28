@@ -101,6 +101,12 @@ public:
    */
   virtual void computeH(MatNd* hessian) const;
 
+  /*! \brief Same as the Task::testJacobian, except for a larger error limit,
+   *         and forcing the relative error calculation.
+   */
+  virtual bool testJacobian(double errorLimit=1.0e-4, double delta=1.0e-6,
+                            bool relativeError=false, bool verbose=false);
+
   /*! \brief We skip the hessian derivative test since it usually fails due to
    *         the assumption that the closest points are body-fixed. This
    *         function is empty and just returns true.

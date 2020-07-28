@@ -776,13 +776,13 @@ bool Rcs::Task::testJacobian(double errorLimit,
   // used to compute the relative error of each finite difference
   // approximation. We add a tiny value to avoid divisions by zero
   // later.
-  double maxAbsEleJ = fabs(J->ele[0]);
+  double maxAbsEleJ = fabs(J_fd->ele[0]);
 
   for (unsigned int i = 0; i < J->m*J->n; i++)
   {
-    if (fabs(J->ele[i]) > maxAbsEleJ)
+    if (fabs(J_fd->ele[i]) > maxAbsEleJ)
     {
-      maxAbsEleJ = fabs(J->ele[i]);
+      maxAbsEleJ = fabs(J_fd->ele[i]);
     }
   }
 
@@ -805,13 +805,17 @@ bool Rcs::Task::testJacobian(double errorLimit,
         // of the gradient is larger than 1, the denominator is scaled with
         // it. This is an implicit normalization of the gradient and avoids
         // numerical effects if the gradient magnitude is very large.
-        denom = fabs(J->ele[idx_ele]) > fabs(J_fd->ele[idx_ele]) ?
-                fabs(J->ele[idx_ele]) : fabs(J_fd->ele[idx_ele]);
+        // denom = fabs(J->ele[idx_ele]) > fabs(J_fd->ele[idx_ele]) ?
+        //         fabs(J->ele[idx_ele]) : fabs(J_fd->ele[idx_ele]);
 
-        if (denom < scaleMag*epsDenom)
-        {
-          denom = scaleMag*epsDenom;
-        }
+        // if (denom < scaleMag*epsDenom)
+        // {
+        //   denom = scaleMag*epsDenom;
+        // }
+
+        // We normalize with the largest absolute value of the finite difference
+        // Jacobian and add a small regularizer to avoid division by zero.
+        denom = maxAbsEleJ + epsDenom;
 
       }   // if (relativeError==true)
 
@@ -854,6 +858,7 @@ bool Rcs::Task::testJacobian(double errorLimit,
       MatNd_printDigits(J_fd, 4);
       if (relativeError==true)
       {
+        MatNd_constMulSelf(J_err, 100.0);
         RMSG("diff [%%]");
       }
       else
