@@ -1794,6 +1794,8 @@ RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* b,
     jnt->q_min  = qi-2.0*M_PI;
     jnt->q_init = qi;
     jnt->weightMetric = 1.0;
+    jnt->speedLimit = DBL_MAX;
+    jnt->maxTorque = DBL_MAX;
   }
 
   return jnt0;
