@@ -54,7 +54,7 @@ Rcs::TaskJoint::TaskJoint(const std::string& className,
                           RcsGraph* _graph,
                           int dim):
   TaskGenericIK(className, node, _graph, dim),
-  joint(NULL), refJoint(NULL)
+  joint(NULL), refJoint(NULL), refGain(1.0)
 {
   // Parse XML file
   char msg[265] = "";
@@ -80,6 +80,9 @@ Rcs::TaskJoint::TaskJoint(const std::string& className,
     // Jacobian.
     RCHECK_MSG(refJoint->constrained==false, "Ref-joint \"%s\" is "
                "constrained", msg);
+
+    // Coupling factor between joints, default is 1
+    getXMLNodePropertyDouble(node, "refGain", &this->refGain);
   }
 
   // re-initialize parameters
@@ -103,8 +106,10 @@ Rcs::TaskJoint::TaskJoint(const std::string& className,
 Rcs::TaskJoint::TaskJoint(const RcsJoint* _joint,
                           const RcsJoint* _refJoint,
                           xmlNode* node,
-                          RcsGraph* _graph):
-  TaskGenericIK("Joint", node, _graph, 1), joint(_joint), refJoint(_refJoint)
+                          RcsGraph* _graph,
+                          double refGain_):
+  TaskGenericIK("Joint", node, _graph, 1), joint(_joint), refJoint(_refJoint),
+  refGain(refGain_)
 {
   // We require the joint to be unconstrained. Otherwise, we'll have a zero
   // Jacobian.
@@ -130,8 +135,8 @@ Rcs::TaskJoint::TaskJoint(const RcsJoint* _joint,
  *
 ******************************************************************************/
 Rcs::TaskJoint::TaskJoint(RcsGraph* graph_, const RcsJoint* jnt,
-                          const RcsJoint* _refJoint) :
-  TaskGenericIK(), joint(jnt), refJoint(_refJoint)
+                          const RcsJoint* _refJoint, double refGain_) :
+  TaskGenericIK(), joint(jnt), refJoint(_refJoint), refGain(refGain_)
 {
   // We require the joint to be unconstrained. Otherwise, we'll have a zero
   // Jacobian.
@@ -164,7 +169,8 @@ Rcs::TaskJoint::TaskJoint(RcsGraph* graph_, const RcsJoint* jnt,
  * Copy constructor doing deep copying
  ******************************************************************************/
 Rcs::TaskJoint::TaskJoint(const TaskJoint& copyFromMe, RcsGraph* newGraph):
-  TaskGenericIK(copyFromMe, newGraph), joint(NULL), refJoint(NULL)
+  TaskGenericIK(copyFromMe, newGraph), joint(NULL), refJoint(NULL),
+  refGain(copyFromMe.refGain)
 {
   if (newGraph != NULL)
   {
@@ -210,7 +216,7 @@ void Rcs::TaskJoint::computeX(double* x_res) const
 
   if (this->refJoint)
   {
-    x_res[0] += MatNd_get(this->graph->q, this->refJoint->jointIndex, 0);
+    x_res[0] += refGain*MatNd_get(this->graph->q, this->refJoint->jointIndex, 0);
   }
 }
 
@@ -224,7 +230,7 @@ void Rcs::TaskJoint::computeXp(double* x_dot_res) const
 
   if (this->refJoint)
   {
-    x_dot_res[0] += MatNd_get(graph->q_dot, refJoint->jointIndex, 0);
+    x_dot_res[0] += refGain*MatNd_get(graph->q_dot, refJoint->jointIndex, 0);
   }
 }
 
@@ -240,7 +246,7 @@ void Rcs::TaskJoint::computeJ(MatNd* jacobian) const
 
   if (this->refJoint)
   {
-    MatNd_set(jacobian, 0, this->refJoint->jacobiIndex, 1.0);
+    MatNd_set(jacobian, 0, this->refJoint->jacobiIndex, refGain);
   }
 }
 

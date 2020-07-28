@@ -66,11 +66,12 @@ public:
   /*! Constructor for tasks using the joint pointer directly.
    */
   TaskJoint(const RcsJoint* joint, const RcsJoint* refJoint,
-            xmlNode* node, RcsGraph* graph = NULL);
+            xmlNode* node, RcsGraph* graph = NULL, double refGain=1.0);
 
   /*! Constructor for tasks using the joint pointer directly.
    */
-  TaskJoint(RcsGraph* graph, const RcsJoint* joint, const RcsJoint* refJoint=NULL);
+  TaskJoint(RcsGraph* graph, const RcsJoint* joint, const RcsJoint* refJoint=NULL,
+            double refGain=1.0);
 
   /*! Destructor
    */
@@ -145,6 +146,7 @@ public:
 protected:
   const RcsJoint* joint;    //!< Joint for single joint tasks
   const RcsJoint* refJoint; //!< Relative joint
+  double refGain;
 };
 
 }
