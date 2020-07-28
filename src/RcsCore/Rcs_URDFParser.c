@@ -525,18 +525,23 @@ RcsJoint* parseJointURDF(xmlNode* node)
     // Coupled to is required
     char coupledTo[256] = "";
     len = getXMLNodePropertyStringN(mimicNode, "joint", coupledTo, 256);
-    RCHECK(len > 0);
+    RCHECK_MSG(len > 0, "Couldn't find tag \"joint\" in mimic joint %s",
+               jnt->name);
+    jnt->coupledJointName = String_clone(coupledTo);
 
-    unsigned int nBytes = strlen(coupledTo) + 1;
-    jnt->coupledJointName = RNALLOC(nBytes, char);
-    strcpy(jnt->coupledJointName, coupledTo);
+    // Here we force-set the constraint of the joint. This invalidates the
+    // joint coupling projection. The joint is not treated in the inverse
+    // kinematics, and its value is kinematically overwritten after the
+    // forward kinematics step.
+    jnt->constrained = true;
 
     // Multiplier is optional (default: 1.0)
     jnt->couplingFactors = MatNd_create(1, 1);
     MatNd_setElementsTo(jnt->couplingFactors, 1.0);
     getXMLNodePropertyDouble(mimicNode, "multiplier", jnt->couplingFactors->ele);
 
-    RLOG(5, "Joint \"%s\" coupled to \"%s\" with factor %lf", jnt->name, jnt->coupledJointName, *jnt->couplingFactors->ele);
+    RLOG(5, "Joint \"%s\" coupled to \"%s\" with factor %lf",
+         jnt->name, jnt->coupledJointName, *jnt->couplingFactors->ele);
   }
 
   return jnt;
