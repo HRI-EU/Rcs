@@ -2590,7 +2590,7 @@ int RcsGraph_coupledJointMatrix(const RcsGraph* self, MatNd* A, MatNd* invA)
     }
     else
     {
-      if (masterJnt->coupledTo!=NULL)
+      if (masterJnt->coupledTo==NULL)
       {
         double q_master, sensitivity;
         q_master = MatNd_get2(self->q, masterJnt->jointIndex, 0);
@@ -2601,8 +2601,8 @@ int RcsGraph_coupledJointMatrix(const RcsGraph* self, MatNd* A, MatNd* invA)
       }
       else
       {
-        RLOG(4, "Currently a slave joint (%s) can't be coupled to another slave"
-             "joint (%s)!", JNT->name, masterJnt->name);
+        RLOG(4, "Currently a slave joint (%s) can't be properly coupled to another"
+             " slave joint (%s)!", JNT->name, masterJnt->name);
       }
     }
 
