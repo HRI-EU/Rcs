@@ -786,7 +786,7 @@ bool Rcs::Task::testJacobian(double errorLimit,
     }
   }
 
-  double scaleMag = maxAbsEleJ > 1.0 ? maxAbsEleJ : 1.0;
+  //double scaleMag = maxAbsEleJ > 1.0 ? maxAbsEleJ : 1.0;
 
   for (unsigned int rows = 0; rows < J->m; rows++)
   {
