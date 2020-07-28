@@ -57,11 +57,11 @@
 #endif
 
 // See top-level CMakeLists.txt how RCS_BASE_PATH_LENGTH is defined
-#if defined (RCS_BASE_PATH_LENGTH)
-#define __FILENAME__ (__FILE__ + RCS_BASE_PATH_LENGTH)
-#else
-#define __FILENAME__ (__FILE__)
-#endif
+/* #if defined (RCS_BASE_PATH_LENGTH) */
+/* #define __FILENAME__ (__FILE__ + RCS_BASE_PATH_LENGTH) */
+/* #else */
+/* #define __FILENAME__ (__FILE__) */
+/* #endif */
 
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp

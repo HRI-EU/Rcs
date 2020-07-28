@@ -60,7 +60,11 @@
 #endif
 
 #if !defined (__FILENAME__)
-#define __FILENAME__ __FILE__
+#if defined (RCS_BASE_PATH_LENGTH)
+#define __FILENAME__ (__FILE__ + RCS_BASE_PATH_LENGTH)
+#else
+#define __FILENAME__ (__FILE__)
+#endif
 #endif
 
 #if !defined (__FUNCTION__)
