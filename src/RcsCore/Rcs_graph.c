@@ -976,7 +976,7 @@ unsigned int RcsGraph_numJointLimitsViolated(const RcsGraph* self,
 
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {
-    // We skip updating the matrix for constrained dofs
+    // We skip the check for constrained dofs
     if (JNT->constrained==true)
     {
       continue;
