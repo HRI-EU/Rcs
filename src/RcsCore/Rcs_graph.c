@@ -1923,6 +1923,24 @@ int RcsGraph_check(const RcsGraph* self)
 
   RLOG(6, "Graph check : %d errors", nErrors);
 
+  // Check that coupled joints are not coupled against other coupled joints
+  // if they have no constraint
+  RCSGRAPH_TRAVERSE_JOINTS(self)
+  {
+    if (JNT->constrained)
+    {
+      continue;
+    }
+
+    if (JNT->coupledTo && JNT->coupledTo->coupledTo)
+    {
+      RLOG(1, "Joint %s is coupled against the coupled joint %s",
+           JNT->name, JNT->coupledTo->name);
+      nErrors++;
+    }
+  }
+
+
   return nErrors;
 }
 
@@ -2590,20 +2608,16 @@ int RcsGraph_coupledJointMatrix(const RcsGraph* self, MatNd* A, MatNd* invA)
     }
     else
     {
-      if (masterJnt->coupledTo==NULL)
-      {
-        double q_master, sensitivity;
-        q_master = MatNd_get2(self->q, masterJnt->jointIndex, 0);
-        sensitivity = RcsJoint_computeSlaveJointVelocity(JNT, q_master, 1.0);
-        MatNd_set2(H, JNT->jacobiIndex, masterJnt->jacobiIndex, sensitivity);
-        MatNd_addToEle(colSum, 0, masterJnt->jacobiIndex, sensitivity);
-        nCoupledJoints++;
-      }
-      else
-      {
-        RLOG(4, "Currently a slave joint (%s) can't be properly coupled to another"
-             " slave joint (%s)!", JNT->name, masterJnt->name);
-      }
+      double q_master, sensitivity;
+      q_master = MatNd_get2(self->q, masterJnt->jointIndex, 0);
+      sensitivity = RcsJoint_computeSlaveJointVelocity(JNT, q_master, 1.0);
+      MatNd_set2(H, JNT->jacobiIndex, masterJnt->jacobiIndex, sensitivity);
+      MatNd_addToEle(colSum, 0, masterJnt->jacobiIndex, sensitivity);
+      nCoupledJoints++;
+
+      RCHECK_MSG(masterJnt->coupledTo==NULL, "Currently a slave joint (%s)"
+                 " can't be coupled to another slave joint (%s)!",
+                 JNT->name, masterJnt->name);
     }
 
   }
@@ -2703,9 +2717,6 @@ static void RcsGraph_recomputeJointIndices(RcsGraph* self, MatNd* stateVec[],
       JNT->jointIndex = nqCount;
     }
     nqCount++;
-
-    //JNT->jacobiIndex = (JNT->constrained == false) ? njCount : -1;
-    //njCount++;
 
     if (JNT->constrained == false)
     {
