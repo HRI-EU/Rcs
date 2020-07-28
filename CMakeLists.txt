@@ -7,18 +7,15 @@ PROJECT(Rcs)
 # Check if project is stand-alone or inside tree with dependencies
 ################################################################################
 IF(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    SET(CMAKE_INSTALL_PREFIX "$ENV{SIT}/Libraries/Rcs/1.0" CACHE PATH "Default sand box directory" FORCE)
+  ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  
   MESSAGE(STATUS "Compiling Rcs as stand-alone project")
-
-  # Adjust paths to match ToolBOS CI conventions. 
-  IF (CMAKE_MODULE_PATH MATCHES "ToolBOSCore")
-    SET(CMAKE_INSTALL_PREFIX $ENV{SIT}/${BST_INSTALL_CATEGORY}/Rcs CACHE PATH "Cmake prefix" FORCE)
-    MESSAGE(STATUS "Setting CMAKE_INSTALL_PREFIX to ${CMAKE_INSTALL_PREFIX}")
-    MESSAGE(STATUS "Setting output paths to comply with BST")
-    SET(PLATFORM_INSTALL_DIR $ENV{MAKEFILE_PLATFORM})
-  ENDIF()
-
-  SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin/${PLATFORM_INSTALL_DIR})
-  SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib/${PLATFORM_INSTALL_DIR})
+  SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+  SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
+  STRING(LENGTH "${CMAKE_SOURCE_DIR}/" RCS_BASE_PATH_LENGTH)
+  ADD_DEFINITIONS("-DRCS_BASE_PATH_LENGTH=${RCS_BASE_PATH_LENGTH}")
 ENDIF()
 
 IF (NOT CMAKE_BUILD_TYPE)
@@ -144,7 +141,7 @@ ENDIF()
 # outside the build tree to the install RPATH. Required for Vortex and other
 # dependencies from the SIT.
 # Note: This only works with CMake >= 3.0. With 2.8, the library directories of
-# the dependencies must be added to the LD_LIBRARY_PATH manually in oredr to
+# the dependencies must be added to the LD_LIBRARY_PATH manually in order to
 # use the installed executables. This has no effect on using the package in
 # another CMake project.
 #
@@ -158,22 +155,10 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 # (https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/RPATH-handling)
 #
 ################################################################################
-LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib/${PLATFORM_INSTALL_DIR}" isSystemDir)
+LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
 IF("${isSystemDir}" STREQUAL "-1")
-   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/${PLATFORM_INSTALL_DIR}")
+   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 ENDIF("${isSystemDir}" STREQUAL "-1")
-
-
-################################################################################
-#
-# Flags to strip down the file names for logging at compile time. Adapted from
-# http://stackoverflow.com/questions/8487986/file-macro-shows-full-path
-#
-################################################################################
-IF(UNIX)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__FILENAME__='\"$(subst ${CMAKE_SOURCE_DIR}/,,$(abspath $<))\"'")
-  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__FILENAME__='\"$(subst ${CMAKE_SOURCE_DIR}/,,$(abspath $<))\"'")
-ENDIF()
 
 ################################################################################
 #

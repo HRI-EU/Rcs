@@ -30,6 +30,8 @@
 #
 name = "Rcs"
 
+version = "1.0"
+
 category="Libraries"
 
 sqLevel = "basic"
@@ -40,9 +42,9 @@ sqComments       = { 'GEN04': 'Copyright header with BSD license not recognized 
                      'C02': 'Link guards not to be used in Cpp headers ',
                      'C06': 'inline in template declarations should be ok '}
 
-SQ_12 = [ 'build/bionic64/bin/bionic64/TestMath -m -1 -numTests 10 -dl 1',
-          'build/bionic64/bin/bionic64/Rcs -m 3 -iter 10 -dl 1 -valgrind',
-          'build/bionic64/bin/bionic64/Rcs -m 6 -valgrind -nTests 10 -dl 1']
+SQ_12 = [ 'build/bionic64/bin/TestMath -m -1 -numTests 10 -dl 1',
+          'build/bionic64/bin/Rcs -m 3 -iter 10 -dl 1 -valgrind',
+          'build/bionic64/bin/Rcs -m 6 -valgrind -nTests 10 -dl 1']
 
 
 

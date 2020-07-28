@@ -15,9 +15,10 @@
 
 
 cd build/${MAKEFILE_PLATFORM}
+make doc
 make install
-mv ${SIT}/Libraries/Rcs/Rcs/doc/html ${SIT}/Libraries/Rcs/doc/
-rm -fr ${SIT}/Libraries/Rcs/Rcs
+#mv ${SIT}/Libraries/Rcs/Rcs/doc/html ${SIT}/Libraries/Rcs/doc/
+#rm -fr ${SIT}/Libraries/Rcs/Rcs
 
 
 # EOF
