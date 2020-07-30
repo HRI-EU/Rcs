@@ -2817,6 +2817,12 @@ void RcsGraph_makeJointsConsistent(RcsGraph* self)
  ******************************************************************************/
 void RcsGraph_fprintXML(FILE* out, const RcsGraph* self)
 {
+  if (out==NULL)
+  {
+    RLOG(1, "Can't write graph to NULL xml file");
+    return;
+  }
+
   fprintf(out, "<Graph name=\"DefaultPose\" >\n\n");
 
   RCSGRAPH_TRAVERSE_BODIES(self)

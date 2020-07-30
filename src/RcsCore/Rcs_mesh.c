@@ -581,12 +581,19 @@ static double* RcsMesh_readBinarySTLFile(FILE* fd, unsigned int* numVertices)
 static double* RcsMesh_readSTLFile(const char* fileName,
                                    unsigned int* numVertices)
 {
-  FILE* fd = fopen(fileName, "rb");
   *numVertices = 0;
+
+  if (fileName==NULL)
+  {
+    RLOG(4, "Failed to file \"NULL\"");
+    return NULL;
+  }
+
+  FILE* fd = fopen(fileName, "rb");
 
   if (fd==NULL)
   {
-    RLOG(4, "Failed to open STL file \"%s\"", fileName ? fileName : "NULL");
+    RLOG(4, "Failed to open STL file \"%s\"", fileName);
     return NULL;
   }
 
@@ -646,7 +653,10 @@ static void String_chopOff(char* dst, const char* src, const char* delim)
   // Make a local copy of str, since strtok modifies it during processing
   char* lStr = String_clone(src);
   char* pch = strtok(lStr, delim);
-  strcpy(dst, pch);
+  if (pch)
+  {
+    strcpy(dst, pch);
+  }
   RFREE(lStr);
 }
 
@@ -654,14 +664,21 @@ static void String_chopOff(char* dst, const char* src, const char* delim)
 
 bool RcsMesh_readObjFile(const char* fileName, RcsMeshData* mesh)
 {
-  RLOG(5, "Reading mesh file \"%s\"", fileName);
-  FILE* fd = fopen(fileName, "rb");
   mesh->nVertices = 0;
   mesh->nFaces = 0;
 
+  if (fileName==NULL)
+  {
+    RLOG(4, "Failed to file \"NULL\"");
+    return false;
+  }
+
+  RLOG(5, "Reading mesh file \"%s\"", fileName);
+  FILE* fd = fopen(fileName, "rb");
+
   if (fd==NULL)
   {
-    RLOG(4, "Could not open mesh file \"%s\"", fileName ? fileName : "NULL");
+    RLOG(4, "Could not open mesh file \"%s\"", fileName);
     return false;
   }
 

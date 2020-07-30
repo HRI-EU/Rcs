@@ -664,7 +664,6 @@ bool File_isEqual(const char* file1, const char* file2)
   }
 
   FILE *fd1 = fopen(file1, "r");
-  FILE *fd2 = fopen(file2, "r");
 
   if (fd1==NULL)
   {
@@ -672,9 +671,12 @@ bool File_isEqual(const char* file1, const char* file2)
     return false;
   }
 
+  FILE *fd2 = fopen(file2, "r");
+
   if (fd2==NULL)
   {
     RLOG(1, "Failed to open file \"%s\" for reading", file2);
+    fclose(fd1);
     return false;
   }
 

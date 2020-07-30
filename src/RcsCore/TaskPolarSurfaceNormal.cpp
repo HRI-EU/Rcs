@@ -56,7 +56,7 @@ Rcs::TaskPolarSurfaceNormal::TaskPolarSurfaceNormal(const std::string& className
                                                     xmlNode* node,
                                                     RcsGraph* _graph,
                                                     int dim) :
-  Task(className, node, _graph, dim), gainDX(1.0)
+  Task(className, node, _graph, dim), direction(2), gainDX(1.0)
 {
   if (getClassName()=="POLAR_SURFACE")
   {

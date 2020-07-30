@@ -213,9 +213,13 @@ void BulletSoftSimulation::updateSoftMeshes()
     const size_t nValues = 3*sbi->m_faces.size();
     dstMesh->vertices = (double*) realloc(dstMesh->vertices,
                                           3*nValues*sizeof(double));
+    RCHECK_MSG(dstMesh->vertices, "Failed to reallocate %ld bytes for vertices",
+               3*nValues*sizeof(double));
     dstMesh->nVertices = nValues;
     dstMesh->faces = (unsigned int*) realloc(dstMesh->faces,
                                              nValues*sizeof(unsigned int));
+    RCHECK_MSG(dstMesh->faces, "Failed to reallocate %ld bytes for faces",
+               nValues*sizeof(unsigned int));
     dstMesh->nFaces = sbi->m_faces.size();
 
     // The vertices of all soft objects are represented in the world frame.
@@ -352,7 +356,7 @@ void BulletSoftSimulation::createSoftBodies()
       if (softMesh == NULL)
       {
         RLOG(1, "Could not create mesh from file %s - skipping soft body",
-             SHAPE->meshFile ? SHAPE->meshFile : NULL);
+             SHAPE->meshFile ? SHAPE->meshFile : "NULL");
         continue;
       }
 

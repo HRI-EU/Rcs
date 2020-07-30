@@ -74,11 +74,6 @@ int main(int argc, char** argv)
   Rcs_addResourcePath("config");
   Rcs_addResourcePath(directory.c_str());
 
-  // Initialize mutex that takes care that Gui, viewer and control loop can
-  // run concurrently.
-  pthread_mutex_t mtx;
-  pthread_mutex_init(&mtx, NULL);
-
   // If the program is started with the -h option, we print out lots of
   // information and quit.
   if (argP.hasArgument("-h"))
@@ -90,6 +85,11 @@ int main(int argc, char** argv)
     Rcs::ControllerBase::printUsage(xmlFileName);
     return 0;
   }
+
+  // Initialize mutex that takes care that Gui, viewer and control loop can
+  // run concurrently.
+  pthread_mutex_t mtx;
+  pthread_mutex_init(&mtx, NULL);
 
   // Create controller and Inverse Kinematics solver
   Rcs::ControllerBase controller(xmlFileName, true);
@@ -115,6 +115,7 @@ int main(int argc, char** argv)
   // Create a physics simulator with our graph model.
   Rcs::PhysicsBase* sim = Rcs::PhysicsFactory::create("SoftBullet", controller.getGraph(),
                                                       "config/physics/physics.xml");
+  RCHECK(sim);
 
   // Create visualization. We add a key catcher that allows us to determine
   // which key was pressed in the graphics window. The HUD allows us to

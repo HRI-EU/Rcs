@@ -1651,7 +1651,7 @@ bool Rcs::BulletSimulation::setParameter(ParameterCategory category,
       const RcsBody* bdy = RcsGraph_getBodyByName(getGraph(), name);
       BulletRigidBody* btBdy = getRigidBody(bdy);
 
-      if (btBdy != NULL)
+      if ((bdy!=NULL) && (btBdy!=NULL))
       {
         // Rigid bodies need to be removed from the simulation if their
         // parameters are to be changed (at least for some parameters).
@@ -1893,14 +1893,15 @@ bool Rcs::BulletSimulation::removeBody(const char* name)
  ******************************************************************************/
 bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
 {
-  RLOG(5, "Creating bullet body for \"%s\"", body_->name);
+  RLOG(5, "Creating bullet body for \"%s\"", body_ ? body_->name : "NULL");
 
   PhysicsConfig config(this->physicsConfigFile);
 
   lock();
 
   RcsBody* body = RcsBody_clone(body_);
-  body->parent = RcsGraph_getBodyByName(getGraph(), body_->name);
+  RCHECK(body);
+  body->parent = RcsGraph_getBodyByName(getGraph(), body->name);
 
   BulletRigidBody* btBody = BulletRigidBody::create(body, &config);
   RCHECK(btBody);

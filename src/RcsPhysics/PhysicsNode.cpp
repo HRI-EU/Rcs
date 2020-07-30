@@ -61,6 +61,7 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   NodeBase(), modelNd(NULL), physicsNd(NULL), sim(sim_), displayMode(0),
   resizeable(resizeable_)
 {
+  RCHECK(sim);
   setName("PhysicsNode");
 
   KeyCatcherBase::registerKey("C", "Toggle contacts node", "PhysicsNode");

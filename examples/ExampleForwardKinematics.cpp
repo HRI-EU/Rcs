@@ -174,6 +174,7 @@ int main(int argc, char** argv)
 
       RMSG("Writing graph to xml file");
       FILE* out = fopen("graph.xml", "w+");
+      RCHECK(out);
       RcsGraph_fprintXML(out, graph);
       fclose(out);
 
@@ -284,4 +285,3 @@ int main(int argc, char** argv)
 
   return 0;
 }
-

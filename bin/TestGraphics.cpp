@@ -693,6 +693,7 @@ static void testMeshNode()
     if (withScaling)
     {
       RcsMeshData* cpyOfMesh = RcsMesh_clone(mesh);
+      RCHECK(cpyOfMesh);
       RcsMesh_scale(cpyOfMesh, scale);
       mn->setMesh(cpyOfMesh->vertices, cpyOfMesh->nVertices,
                   cpyOfMesh->faces, cpyOfMesh->nFaces);
@@ -971,6 +972,7 @@ void testDepthRenderer()
   }
 
   RcsGraph* graph = RcsGraph_create(xmlFileName);
+  RCHECK(graph);
   osg::ref_ptr<Rcs::GraphNode> gn = new Rcs::GraphNode(graph);
   Rcs::Viewer* viewer = new Rcs::Viewer();
   viewer->setCameraTransform(HTr_identity());
