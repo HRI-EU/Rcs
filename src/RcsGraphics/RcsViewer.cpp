@@ -333,7 +333,7 @@ Viewer::Viewer() :
   updateFreq(25.0), initialized(false), wireFrame(false), shadowsEnabled(false),
   llx(0), lly(0), sizeX(640), sizeY(480), cartoonEnabled(false),
   threadStopped(true), leftMouseButtonPressed(false),
-  rightMouseButtonPressed(false)
+  rightMouseButtonPressed(false), title("RcsViewer")
 {
   // Check if logged in remotely
   const char* sshClient = getenv("SSH_CLIENT");
@@ -362,7 +362,7 @@ Viewer::Viewer(bool fancy, bool startupWithShadow) :
   updateFreq(25.0), initialized(false), wireFrame(false), shadowsEnabled(false),
   llx(0), lly(0), sizeX(640), sizeY(480), cartoonEnabled(false),
   threadStopped(true), leftMouseButtonPressed(false),
-  rightMouseButtonPressed(false)
+  rightMouseButtonPressed(false), title("RcsViewer")
 {
   create(fancy, startupWithShadow);
 

@@ -444,7 +444,6 @@ protected:
   bool leftMouseButtonPressed;
   bool rightMouseButtonPressed;
   pthread_t frameThread;
-
   std::string title;
 
   // osg node members
