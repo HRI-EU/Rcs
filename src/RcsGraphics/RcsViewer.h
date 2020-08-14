@@ -354,7 +354,7 @@ public:
   void setCameraHomePosition(const HTr* transformation);
 
   /*!
-   * \brief setTitle Set the title of the viewer window
+   * \brief Sets the title of the viewer window
    * \param title
    */
   void setTitle(const std::string& title);
