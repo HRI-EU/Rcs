@@ -353,6 +353,12 @@ public:
                              const osg::Vec3d& up=osg::Vec3d(0.0, 0.0, 1.0));
   void setCameraHomePosition(const HTr* transformation);
 
+  /*!
+   * \brief setTitle Set the title of the viewer window
+   * \param title
+   */
+  void setTitle(const std::string& title);
+
   /*! \brief Resets the camera to the parameters (field of view, near and far
    *         planes) that the viewer has been initialized with.
    */
@@ -438,6 +444,8 @@ protected:
   bool leftMouseButtonPressed;
   bool rightMouseButtonPressed;
   pthread_t frameThread;
+
+  std::string title;
 
   // osg node members
   osg::ref_ptr<osgViewer::Viewer> viewer;
