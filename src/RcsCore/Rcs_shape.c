@@ -863,32 +863,35 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
       break;
   }
 
-  // Compute type
-  if (self->computeType & RCSSHAPE_COMPUTE_DISTANCE)
+  // Compute type, only written out if shape is not a frame
+  if (self->type != RCSSHAPE_REFFRAME)
   {
-    fprintf(out, "distance=\"true\" ");
-  }
-  else
-  {
-    fprintf(out, "distance=\"false\" ");
-  }
+    if (self->computeType & RCSSHAPE_COMPUTE_DISTANCE)
+    {
+      fprintf(out, "distance=\"true\" ");
+    }
+    else
+    {
+      fprintf(out, "distance=\"false\" ");
+    }
 
-  if (self->computeType & RCSSHAPE_COMPUTE_PHYSICS)
-  {
-    fprintf(out, "physics=\"true\" ");
-  }
-  else
-  {
-    fprintf(out, "physics=\"false\" ");
-  }
+    if (self->computeType & RCSSHAPE_COMPUTE_PHYSICS)
+    {
+      fprintf(out, "physics=\"true\" ");
+    }
+    else
+    {
+      fprintf(out, "physics=\"false\" ");
+    }
 
-  if (self->computeType & RCSSHAPE_COMPUTE_GRAPHICS)
-  {
-    fprintf(out, "graphics=\"true\" ");
-  }
-  else
-  {
-    fprintf(out, "graphics=\"false\" ");
+    if (self->computeType & RCSSHAPE_COMPUTE_GRAPHICS)
+    {
+      fprintf(out, "graphics=\"true\" ");
+    }
+    else
+    {
+      fprintf(out, "graphics=\"false\" ");
+    }
   }
 
   // Scale
@@ -935,7 +938,8 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
   }
 
   // Color
-  if (self->color && (!STREQ(self->color, "DEFAULT")))
+  if ((self->type != RCSSHAPE_REFFRAME) && self->color
+      && (!STREQ(self->color, "DEFAULT")))
   {
     fprintf(out, "color=\"%s\" ", self->color);
   }

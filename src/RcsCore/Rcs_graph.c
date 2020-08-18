@@ -1374,6 +1374,7 @@ void RcsGraph_printState(const RcsGraph* self, const MatNd* q)
 void RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q)
 {
   RcsStateType stateType;
+  char buf[256];
 
   if (q->m == self->dof)
   {
@@ -1409,18 +1410,11 @@ void RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q)
       continue;
     }
 
-    int index = (stateType==RcsStateIK) ? JNT->jacobiIndex : JNT->jointIndex;
+    int idx = (stateType==RcsStateIK) ? JNT->jacobiIndex : JNT->jointIndex;
+    double qi = RcsJoint_isRotation(JNT)?RCS_RAD2DEG(q->ele[idx]):q->ele[idx];
 
-    if (RcsJoint_isRotation(JNT))
-    {
-      fprintf(out, "  <joint_state joint=\"%s\" position=\"%.3f\" />\n",
-              JNT->name, RCS_RAD2DEG(q->ele[index]));
-    }
-    else
-    {
-      fprintf(out, "  <joint_state joint=\"%s\" position=\"%.3f\" />\n",
-              JNT->name, q->ele[index]);
-    }
+    fprintf(out, "  <joint_state joint=\"%s\" position=\"%s\" />\n",
+            JNT->name, String_fromDouble(buf, qi, 6));
   }
 
 
