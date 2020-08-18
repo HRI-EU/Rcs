@@ -440,8 +440,7 @@ void RcsBody_scale(RcsBody* self, double scale);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Determines the number of distance calculations carried out between
- *         the bodies when using the function
- *         \ref RcsBody_distance(const RcsBody*, const RcsBody*). The result
+ *         the bodies when using the function \ref RcsBody_distance. The result
  *         depends on the shapes that are considered for distance calculation
  *         (see enum RCSSHAPE_COMPUTE_TYPE), and the libraries that provide
  *         their distance function implementation.

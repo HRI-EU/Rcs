@@ -89,7 +89,7 @@ public:
   virtual void computeX(double* polarAngles) const;
 
   /*! \brief Angular velocity Jacobian, projected into the directions as
-   *         described in \ref computeX(double*)
+   *         described in \ref TaskPolarSurfaceNormal::computeX
    */
   virtual void computeJ(MatNd* jacobian) const;
 
