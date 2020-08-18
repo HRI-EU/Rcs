@@ -108,6 +108,15 @@ class Viewer
   friend class KeyHandler;
 public:
 
+  /*!
+     * @name Construction and running
+     *
+     * Functions to create and run viewer instances
+     */
+
+  ///@{
+
+
   /*! \brief Default constructor with default window dimensions. Shadows and
    *         anti-aliasing settings are selected by checking if the viewer
    *         runs through X11 forwarding, or on a local machine. The constructor
@@ -135,6 +144,21 @@ public:
    */
   virtual void optimize();
 
+  /*! \brief Starts a thread that periodically calls the frame() call. The
+   *         thread will try to achieve the given updateFrequency. Changing the
+   *         update frequency will take effect also when the thread is running.
+   *
+   * \param[in] mutex   Optional mutex that will be locked whenever the viewer
+   *                    traverses or does changes to the scene graph.
+   */
+  void runInThread(pthread_mutex_t* mutex = NULL);
+
+  /*! \brief Does all rendering. If the viewer's thread has been started
+   *         (see runInThread() method), the frame() call is called
+   *         periodically from there.
+   */
+  virtual void frame();
+
   /*! \brief Locks all mutexes around the frame() call. Depending on the
    *         complexity of the scene graph, the lock() function can block for
    *         a while (worst case: rendering framerate)
@@ -145,22 +169,50 @@ public:
    */
   virtual bool unlock() const;
 
-  /*! \brief Changes the window size. This function only takes effect if there
-   *         was no frame() call before.
-   *
-   *  \param[in] llx     Lower left x screen coordinate
-   *  \param[in] lly     Lower left y screen coordinate
-   *  \param[in] sizeX   Screen size in x-direction
-   *  \param[in] sizeY   Screen size in y-direction
-   *
-   *  \return True for success, false otherwise: View has already been set
-   *          up (frame() has been called). In case of failure, there will be a
-   *          log message on debug level 1.
+  /*! \brief Joins the viewer's thread in case it has been started. If not, the
+   *         function does nothing.
    */
-  bool setWindowSize(unsigned int llx,     // lower left x
-                     unsigned int lly,     // lower left y
-                     unsigned int sizeX,   // size in x-direction
-                     unsigned int sizeY);  // size in y-direction
+  void stopUpdateThread();
+
+  /*! \brief Sets the viewer's update frequency. This only has an effect if the
+   *         viewer runs its own thread (see runInThread() method). The default
+   *         is 25Hz.
+   *
+   *  \param[in] Hz  Update frequency in [Hz]
+   */
+  void setUpdateFrequency(double Hz);
+
+  /*! \brief Toggles the screen capture mode. For screen recording, a process
+   *         is forked that records the screen with avsync or ffmpeg. This
+   *         function is also accessible through key "M".
+   */
+  bool toggleVideoRecording();
+
+  /*! \brief Sets the withh of the field of view to the given angle. The aspect
+   *         ratio is kept constant.
+   *  \param[in] fov   Horizontal field of view in degrees
+   */
+  void setFieldOfView(double fov);
+
+
+  /*! \brief Sets the field of view to the given angles.
+   *
+   *  \param[in] fovWidth   Horizontal field of view in degrees
+   *  \param[in] fovHeight  Vertical field of view in degrees
+   */
+  void setFieldOfView(double fovWidth, double fovHeight);
+
+  ///@}
+
+
+
+  /*!
+     * @name Scene graph manipulation
+     *
+     * Functions are deferred to the osg event loop
+     */
+
+  ///@{
 
   /*! \brief Adds the osg::Node to the root node of the viewer's scene graph.
    *         This function does not directly add the node, but defers it to
@@ -172,7 +224,7 @@ public:
    *         not directly add the node, but defers it to the next update
    *         traversal.
    */
-  void add(osg::Node* parent, osg::Node* child);
+  void add(osg::Group* parent, osg::Node* child);
 
   /*! \brief Adds the event handler to the root node of the viewer's scene
    *         graph. This function does not directly add the node, but defers
@@ -194,7 +246,7 @@ public:
    *         the parent node. This function does not directly add the node,
    *         but defers it to the next update traversal.
    */
-  void removeNode(osg::Node* parent, std::string nodeName);
+  void removeNode(osg::Group* parent, std::string nodeName);
 
   /*! \brief Removes all osg::Node from the viewer's root node, but leaves the
    *         background clear node. This function does not directly add the
@@ -202,72 +254,16 @@ public:
    */
   void removeNodes();
 
-  /*! \brief Starts a thread that periodically calls the frame() call. The
-   *         thread will try to achieve the given updateFrequency. Changing the
-   *         update frequency will take effect also when the thread is running.
-   *
-   * \param[in] mutex   Optional mutex that will be locked whenever the viewer
-   *                    traverses or does changes to the scene graph.
+  /*! \brief Resets the camera to the parameters (field of view, near and far
+   *         planes) that the viewer has been initialized with. Deferred to
+   *         the event loop.
    */
-  void runInThread(pthread_mutex_t* mutex = NULL);
+  void resetView();
 
-  /*! \brief Sets the viewer's update frequency. This only has an effect if the
-   *         viewer runs its own thread (see runInThread() method). The default
-   *         is 25Hz.
-   *
-   *  \param[in] Hz  Update frequency in [Hz]
+  /*! \brief Sets the given title to the window rectangle. Deferred to the
+   *         event loop.
    */
-  void setUpdateFrequency(double Hz);
-
-  /*! \brief Set wire frame mode.
-   *
-   *  \param[in] wf  True for wire frame display, false for solid.
-   */
-  void displayWireframe(bool wf = true);
-
-  /*! \brief Toggles the wire frame mode.
-   */
-  void toggleWireframe();
-
-  /*! \brief Enable or disable shadow casting.
-   *
-   *  \param[in] enable  True for shadow casting, false for no shadows.
-   */
-  void setShadowEnabled(bool enable);
-
-  /*! \brief Enable or disable cartoon mode.
-   *
-   *  \param[in] enabled  True for cartoon mode, false otherwise.
-   */
-  void setCartoonEnabled(bool enabled);
-
-  /*! \brief Sets the viewer's background color. See colorFromString() for
-   *         colors.
-   *
-   *  \param[in] color   Color to be set as background color. if color is NULL,
-   *                     it is set to white.
-   */
-  void setBackgroundColor(const char* color);
-
-  /*! \brief Returns the viewer thread's update frequency.
-  */
-  double updateFrequency() const;
-
-  /*! \brief Does all rendering. If the viewer's thread has been started
-   *         (see runInThread() method), the frame() call is called
-   *         periodically from there.
-   */
-  virtual void frame();
-
-  /*! \brief Copies the camera transformation to A_CI.
-   *  \param[out] A_CI Transformation from world to camera frame
-   */
-  void getCameraTransform(HTr* A_CI) const;
-
-  /*! \brief Sets the camera transformation to A_CI.
-   *  \param[in] A_CI Transformation from world to camera frame
-   */
-  void setCameraTransform(const HTr* A_CI);
+  void setTitle(const std::string& title);
 
   /*! \brief Sets the camera transformation to the given position and Euler
    *         angles. Euler angles are in x-y-z order (rotated frame)
@@ -281,6 +277,75 @@ public:
    */
   void setCameraTransform(double x, double y, double z,
                           double thx, double thy, double thz);
+
+  /*! \brief Sets the camera transformation to A_CI.
+   *  \param[in] A_CI Transformation from world to camera frame
+   */
+  void setCameraTransform(const HTr* A_CI);
+
+  /*! \brief Sets the viewer's background color. See colorFromString() for
+   *         colors.
+   *
+   *  \param[in] color   Color to be set as background color. if color is NULL,
+   *                     it is set to white.
+   */
+  void setBackgroundColor(const std::string& color);
+
+  /*! \brief Enable or disable shadow casting.
+   *
+   *  \param[in] enable  True for shadow casting, false for no shadows.
+   */
+  void setShadowEnabled(bool enable);
+
+  /*! \brief Set wire frame mode.
+   *
+   *  \param[in] wf  True for wire frame display, false for solid.
+   */
+  void displayWireframe(bool wf = true);
+
+  /*! \brief Toggles the wire frame mode.
+   */
+  void toggleWireframe();
+
+  /*! \brief Sets the default camera transform.
+   */
+  void setCameraHomePosition(const HTr* transformation);
+
+  /*! \brief Enable or disable cartoon mode.
+   *
+   *  \param[in] enable  True for cartoon mode, false otherwise.
+   */
+  void setCartoonEnabled(bool enable);
+
+  /*! \brief Sets the rotation center of the Trackball manipulator to the given
+   *         3d coordinates.
+   *
+   *  \param[in]   x Position x in [m]
+   *  \param[in]   y Position y in [m]
+   *  \param[in]   z Position z in [m]
+   */
+  void setTrackballCenter(double x, double y, double z);
+
+  ///@}
+
+
+
+  /*!
+   * @name Accessors
+   *
+   * Functions to query information from the viewer
+   */
+
+  ///@{
+
+  /*! \brief Copies the camera transformation to A_CI.
+   *  \param[out] A_CI Transformation from world to camera frame
+   */
+  void getCameraTransform(HTr* A_CI) const;
+
+  /*! \brief Returns the viewer thread's update frequency.
+  */
+  double updateFrequency() const;
 
   /*! \brief Returns the node and the 3D world position of the
    *         mouse pointer (closest intersection of picking ray and node)
@@ -305,16 +370,6 @@ public:
     return node;
   }
 
-  /*! \brief Sets the rotation center of the Trackball manipulator to the given
-   *         3d coordinates.
-   *
-   *  \param[in]   x Position x in [m]
-   *  \param[in]   y Position y in [m]
-   *  \param[in]   z Position z in [m]
-   *  \return True for success, false otherwise (no mouse manipulator found).
-   */
-  bool setTrackballCenter(double x, double y, double z);
-
   /*! \brief Gets the rotation center of the Trackball manipulator in 3d
    *         scene coordinates.
    *
@@ -324,17 +379,6 @@ public:
    */
   bool getTrackballCenter(double pos[3]) const;
 
-  /*! \brief Toggles the screen capture mode. For screen recording, a process
-   *         is forked that records the screen with avsync or ffmpeg. This
-   *         function is also accessible through key "M".
-   */
-  bool toggleVideoRecording();
-
-  /*! \brief Joins the viewer's thread in case it has been started. If not, the
-   *         function does nothing.
-   */
-  void stopUpdateThread();
-
   /*! \brief Returns true after the viewer thread has been joined, false
    *         otherwise.
    */
@@ -343,29 +387,19 @@ public:
   /*! \brief Returns a reference to the internal osgViewer instance.
    */
   osg::ref_ptr<osgViewer::Viewer> getOsgViewer() const;
+
   double getFieldOfView() const;
-  void setFieldOfView(double fov);
-  void setFieldOfView(double fovWidth, double fovHeight);
+
   void getMouseTip(double I_tip[3]) const;
 
-  void setCameraHomePosition(const osg::Vec3d& eye,
-                             const osg::Vec3d& center,
-                             const osg::Vec3d& up=osg::Vec3d(0.0, 0.0, 1.0));
-  void setCameraHomePosition(const HTr* transformation);
+  ///@}
 
-  /*! \brief Resets the camera to the parameters (field of view, near and far
-   *         planes) that the viewer has been initialized with.
-   */
-  void resetView();
+
+
+
+
 
 protected:
-
-  double fps;
-
-  float mouseX;
-  float mouseY;
-  float normalizedMouseX;
-  float normalizedMouseY;
 
   /*! \brief Called from the KeyHandler's update function.
    */
@@ -382,7 +416,60 @@ protected:
   bool isThreadRunning() const;
   bool isRealized() const;
 
+  /*! \brief Changes the window size. This function only takes effect if there
+   *         was no frame() call before.
+   *
+   *  \param[in] llx     Lower left x screen coordinate
+   *  \param[in] lly     Lower left y screen coordinate
+   *  \param[in] sizeX   Screen size in x-direction
+   *  \param[in] sizeY   Screen size in y-direction
+   *
+   *  \return True for success, false otherwise: View has already been set
+   *          up (frame() has been called). In case of failure, there will be a
+   *          log message on debug level 1.
+   */
+  bool setWindowSize(unsigned int llx,     // lower left x
+                     unsigned int lly,     // lower left y
+                     unsigned int sizeX,   // size in x-direction
+                     unsigned int sizeY);  // size in y-direction
 
+  double fps;
+  float mouseX;
+  float mouseY;
+  float normalizedMouseX;
+  float normalizedMouseY;
+
+  mutable pthread_mutex_t* mtxFrameUpdate;
+  bool threadRunning;
+  double updateFreq;
+  bool initialized;
+  bool wireFrame;
+  bool shadowsEnabled;
+
+  unsigned int llx, lly, sizeX, sizeY;
+  bool cartoonEnabled;
+  bool threadStopped;
+  bool leftMouseButtonPressed;
+  bool rightMouseButtonPressed;
+  pthread_t frameThread;
+
+  // osg node members
+  osg::ref_ptr<osgViewer::Viewer> viewer;
+  osg::ref_ptr<osgShadow::ShadowedScene> shadowScene;
+  osg::ref_ptr<osg::LightSource> cameraLight;
+  osg::ref_ptr<osg::Group> rootnode;
+  osg::ref_ptr<osg::ClearNode> clearNode;
+  osg::ref_ptr<KeyHandler> keyHandler;
+  osg::Matrix startView;
+
+  // Event handling of user events. We buffer them in a separate vector so that
+  // they can be published before the viewer is realized.
+  std::vector<osg::ref_ptr<osg::Referenced>> userEventStack;
+  OpenThreads::Mutex userEventMtx;
+
+
+
+private:
 
   /*! \brief Adds a node to the rootNode. This function must not be called
    *         concurrently with the viewer's frame update.
@@ -391,8 +478,15 @@ protected:
    *                such as camera etc.
    */
   bool addInternal(osg::Node* node);
-  bool addInternal(osg::Node* parent, osg::Node* child);
-  void addInternal(osgGA::GUIEventHandler* eventHandler);
+
+  /*! \brief Adds a node to a parent. This function must not be called
+   *         concurrently with the viewer's frame update.
+   *
+   * \return parent Group node the node is to be attached to.
+   * \return node   Node to be added. Can also be of certain derived types
+   *                such as camera etc.
+   */
+  bool addInternal(osg::Group* parent, osg::Node* child);
 
   /*! \brief Removes the node from the viewer's scene graph. This is called
    *         from inside the locked frame() call so that there is no
@@ -425,32 +519,11 @@ protected:
    */
   int removeAllNodesInternal();
 
-  mutable pthread_mutex_t* mtxFrameUpdate;
-  bool threadRunning;
-  double updateFreq;
-  bool initialized;
-  bool wireFrame;
-  bool shadowsEnabled;
-
-  unsigned int llx, lly, sizeX, sizeY;
-  bool cartoonEnabled;
-  bool threadStopped;
-  bool leftMouseButtonPressed;
-  bool rightMouseButtonPressed;
-  pthread_t frameThread;
-
-  // osg node members
-  osg::ref_ptr<osgViewer::Viewer> viewer;
-  osg::ref_ptr<osgShadow::ShadowedScene> shadowScene;
-  osg::ref_ptr<osg::LightSource> cameraLight;
-  osg::ref_ptr<osg::Group> rootnode;
-  osg::ref_ptr<osg::ClearNode> clearNode;
-  std::vector<osg::ref_ptr<osg::Camera> > hud;
-  osg::ref_ptr<KeyHandler> keyHandler;
-  osg::Matrix startView;
-
-  // Concurrency mutexes
-  mutable pthread_mutex_t mtxEventLoop;
+  /*! \brief Adds a custom event to the internal user event queue. This is
+   *         protected by the userEventMtx in order to avoid concurrent
+   *         access with the frame() function.
+   */
+  void addUserEvent(osg::Referenced* userEvent);
 };
 
 

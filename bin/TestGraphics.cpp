@@ -574,6 +574,7 @@ static void testOsgViewer()
     rootnode->addChild(gn.get());
   }
 
+
   if (argP.hasArgument("-h"))
   {
     delete viewer;
@@ -584,6 +585,28 @@ static void testOsgViewer()
   viewer->setUpViewInWindow(12, 38, 640, 480);
   viewer->realize();
   viewer->run();
+
+  delete viewer;
+}
+
+/*******************************************************************************
+* Test for Rcs viewer
+******************************************************************************/
+static void testRcsViewer()
+{
+  int loopCount = 0;
+  Rcs::Viewer* viewer = new Rcs::Viewer();
+  viewer->setTitle("Window title before realize()");
+  viewer->add(new Rcs::COSNode());
+  viewer->runInThread();
+
+  while (runLoop)
+  {
+    Timer_waitDT(1.0);
+    char newTitle[256];
+    snprintf(newTitle, 256, "Window title %d", loopCount++);
+    viewer->setTitle(newTitle);
+  }
 
   delete viewer;
 }
@@ -1042,6 +1065,7 @@ int main(int argc, char** argv)
       printf("\t\t14   Test 3d text\n");
       printf("\t\t15   Test findChildrenOfType() function\n");
       printf("\t\t16   Test depth rendering\n");
+      printf("\t\t17   Test RcsViewer setTitle() method\n");
       break;
 
     case 0:
@@ -1140,6 +1164,10 @@ int main(int argc, char** argv)
       testDepthRenderer();
       break;
     }
+
+    case 17:
+      testRcsViewer();
+      break;
 
     default:
       RFATAL("No mode %d", mode);

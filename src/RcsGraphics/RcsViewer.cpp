@@ -76,6 +76,11 @@ static pid_t forkProcess(const char* command)
 }
 #endif
 
+
+
+namespace Rcs
+{
+
 /*******************************************************************************
  * Keyboard handler for default keys. The default manipulator is extended so
  * that the default space behavior (default camera pose) is disabled, and that
@@ -142,11 +147,8 @@ public:
 };
 
 /*******************************************************************************
- * Keyboard handler for default keys.
+ * User event data structure for custom events.
  ******************************************************************************/
-namespace Rcs
-{
-
 struct ViewerEventData : public osg::Referenced
 {
   enum EventType
@@ -159,54 +161,69 @@ struct ViewerEventData : public osg::Referenced
     RemoveChildNode,
     RemoveAllNodes,
     SetCameraTransform,
+    SetCameraHomePose,
+    SetTitle,
+    ResetView,
+    SetBackgroundColor,
+    SetShadowEnabled,
+    SetWireframeEnabled,
+    SetCartoonEnabled,
+    SetTrackballCenter,
     None
   };
 
-  ViewerEventData(EventType type) : eType(type)
+  ViewerEventData(EventType type) : eType(type), flag(false)
   {
     init(type, "No arguments");
   }
 
   ViewerEventData(osg::ref_ptr<osg::Node> node_, EventType type) :
-    node(node_), eType(type)
+    node(node_), eType(type), flag(false)
   {
     init(type, node->getName());
   }
 
-  ViewerEventData(const HTr* transform, EventType type) : eType(type)
+  ViewerEventData(const HTr* transform, EventType type) :
+    eType(type), flag(false)
   {
     HTr_copy(&trf, transform);
     init(type, "Transform");
   }
 
   ViewerEventData(std::string nodeName, EventType type) :
-    childName(nodeName), eType(type)
+    childName(nodeName), eType(type), flag(false)
   {
     init(type, nodeName);
   }
 
-  ViewerEventData(osg::ref_ptr<osg::Node> parent_,
+  ViewerEventData(osg::ref_ptr<osg::Group> parent_,
                   osg::ref_ptr<osg::Node> node_, EventType type) :
-    parent(parent_), node(node_), eType(type)
+    parent(parent_), node(node_), eType(type), flag(false)
   {
     init(type, node->getName());
   }
 
   ViewerEventData(osg::ref_ptr<osgGA::GUIEventHandler> eHandler,
                   EventType type) :
-    eventHandler(eHandler), eType(type)
+    eventHandler(eHandler), eType(type), flag(false)
   {
     init(type, "osgGA::GUIEventHandler");
   }
 
-  ViewerEventData(osg::Node* parent_, std::string childName_, EventType type) :
-    parent(parent_), childName(childName_), eType(type)
+  ViewerEventData(osg::Group* parent_, std::string childName_, EventType type) :
+    parent(parent_), childName(childName_), eType(type), flag(false)
   {
     init(type, "osgGA::GUIEventHandler");
+  }
+
+  ViewerEventData(EventType type, bool enable) : eType(type), flag(enable)
+  {
+    init(type, "No arguments");
   }
 
   void init(EventType type, std::string comment)
   {
+    this->eType = type;
     RLOG(5, "Creating ViewerEventData %d: %s", userEventCount, comment.c_str());
     userEventCount++;
   }
@@ -218,17 +235,21 @@ struct ViewerEventData : public osg::Referenced
   }
 
 
-  osg::ref_ptr<osg::Node> parent;
+  osg::ref_ptr<osg::Group> parent;
   osg::ref_ptr<osg::Node> node;
   std::string childName;
   osg::ref_ptr<osgGA::GUIEventHandler> eventHandler;
   EventType eType;
   HTr trf;
+  bool flag;
   static int userEventCount;
 };
 
 int Rcs::ViewerEventData::userEventCount = 0;
 
+/*******************************************************************************
+ * Keyboard handler for default keys.
+ ******************************************************************************/
 class KeyHandler : public osgGA::GUIEventHandler
 {
 public:
@@ -375,7 +396,6 @@ Viewer::Viewer(bool fancy, bool startupWithShadow) :
 Viewer::~Viewer()
 {
   stopUpdateThread();
-  pthread_mutex_destroy(&this->mtxEventLoop);
 }
 
 /*******************************************************************************
@@ -396,7 +416,6 @@ void Viewer::create(bool fancy, bool startupWithShadow)
     startupWithShadow = false;
   }
 
-  pthread_mutex_init(&this->mtxEventLoop, NULL);
   this->shadowsEnabled = startupWithShadow;
 
   // Rotate loaded file nodes to standard coordinate conventions
@@ -475,7 +494,6 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   // Change the threading model. The default threading model is
   // osgViewer::Viewer::CullThreadPerCameraDrawThreadPerContext.
   // This leads to problems with multi-threaded updates (HUD).
-
   if (forceSimple)
   {
     viewer->setThreadingModel(osgViewer::Viewer::SingleThreaded);
@@ -504,9 +522,10 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   viewer->getCamera()->setCullingMode(viewer->getCamera()->getCullingMode() &
                                       ~osg::CullSettings::SMALL_FEATURE_CULLING);
 
-  setCameraHomePosition(osg::Vec3d(4.0,  3.5, 3.0),
-                        osg::Vec3d(0.0, -0.2, 0.8),
-                        osg::Vec3d(0.0, 0.05, 1.0));
+  viewer->getCameraManipulator()->setHomePosition(osg::Vec3d(4.0,  3.5, 3.0),
+                                                  osg::Vec3d(0.0, -0.2, 0.8),
+                                                  osg::Vec3d(0.0, 0.05, 1.0));
+  viewer->home();
 
   KeyCatcherBase::registerKey("F10", "Toggle full screen", "Viewer");
   osg::ref_ptr<osgViewer::WindowSizeHandler> wsh;
@@ -558,7 +577,7 @@ bool Viewer::setWindowSize(unsigned int llx_,     // lower left x
 }
 
 /*******************************************************************************
- * \ţodo: In case the viewer is bout to be realized, we might get into the
+ * \ţodo: In case the viewer is about to be realized, we might get into the
  *        realized==false branch. If it then gets realized, we get a
  *        concurrency problem. Can this ever happen? Does it make sense to
  *        handle this?
@@ -566,24 +585,7 @@ bool Viewer::setWindowSize(unsigned int llx_,     // lower left x
 void Viewer::add(osgGA::GUIEventHandler* eventHandler)
 {
   RLOG(5, "Adding event handler");
-  if (viewer->isRealized())
-  {
-    osg::ref_ptr<ViewerEventData> ev;
-    ev = new ViewerEventData(eventHandler, ViewerEventData::AddEventHandler);
-    viewer->getEventQueue()->userEvent(ev.get());
-  }
-  else
-  {
-    viewer->addEventHandler(eventHandler);
-  }
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-void Viewer::addInternal(osgGA::GUIEventHandler* eventHandler)
-{
-  viewer->addEventHandler(eventHandler);
+  addUserEvent(new ViewerEventData(eventHandler, ViewerEventData::AddEventHandler));
 }
 
 /*******************************************************************************
@@ -591,19 +593,9 @@ void Viewer::addInternal(osgGA::GUIEventHandler* eventHandler)
  ******************************************************************************/
 void Viewer::add(osg::Node* node)
 {
-  if (viewer->isRealized())
-  {
-    osg::ref_ptr<ViewerEventData> ev;
-    osg::ref_ptr<osg::Node> refNode(node);
-    ev = new ViewerEventData(refNode, ViewerEventData::AddNode);
-    RLOG(5, "Adding node %s to eventqueue", node->getName().c_str());
-    viewer->getEventQueue()->userEvent(ev.get());
-  }
-  else
-  {
-    RLOG(5, "Adding node %s directly", node->getName().c_str());
-    addInternal(node);
-  }
+  RLOG(5, "Adding node %s to eventqueue", node->getName().c_str());
+  osg::ref_ptr<osg::Node> refNode(node);
+  addUserEvent(new ViewerEventData(refNode, ViewerEventData::AddNode));
 }
 
 /*******************************************************************************
@@ -617,14 +609,14 @@ bool Viewer::addInternal(osg::Node* node)
   // after construction, therefore in that case we push all cameras on a
   // vector and add them later. In case the graphics context exists, we can
   // directly add it.
-  if (newHud != NULL)
+  if (newHud)
   {
     osgViewer::Viewer::Windows windows;
     viewer->getWindows(windows);
 
     if (windows.empty())
     {
-      this->hud.push_back(newHud);
+      RLOG(1, "Failed to add HUD - window not created");
     }
     else
     {
@@ -654,34 +646,17 @@ bool Viewer::addInternal(osg::Node* node)
 /*******************************************************************************
  * Add a node to the parent node.
  ******************************************************************************/
-void Viewer::add(osg::Node* parent, osg::Node* child)
+void Viewer::add(osg::Group* parent, osg::Node* child)
 {
-  if (viewer->isRealized())
-  {
-    osg::ref_ptr<ViewerEventData> ev;
-    ev = new ViewerEventData(parent, child, ViewerEventData::AddChildNode);
-    viewer->getEventQueue()->userEvent(ev.get());
-  }
-  else
-  {
-    addInternal(parent, child);
-  }
+  addUserEvent(new ViewerEventData(parent, child, ViewerEventData::AddChildNode));
 }
 
 /*******************************************************************************
  * Add a node to the parent node.
  ******************************************************************************/
-bool Viewer::addInternal(osg::Node* parent, osg::Node* child)
+bool Viewer::addInternal(osg::Group* parent, osg::Node* child)
 {
-  osg::Group* grp = dynamic_cast<osg::Group*>(parent);
-  if (!grp)
-  {
-    RLOG(1, "Can't add child to node (%s) other than derived from osg::Group",
-         parent->getName().c_str());
-    return false;
-  }
-
-  grp->addChild(child);
+  parent->addChild(child);
   return true;
 }
 
@@ -690,16 +665,7 @@ bool Viewer::addInternal(osg::Node* parent, osg::Node* child)
  ******************************************************************************/
 void Viewer::removeNode(osg::Node* node)
 {
-  if (viewer->isRealized())
-  {
-    osg::ref_ptr<ViewerEventData> ev;
-    ev = new ViewerEventData(node, ViewerEventData::RemoveNode);
-    viewer->getEventQueue()->userEvent(ev.get());
-  }
-  else
-  {
-    removeInternal(node);
-  }
+  addUserEvent(new ViewerEventData(node, ViewerEventData::RemoveNode));
 }
 
 /*******************************************************************************
@@ -708,36 +674,16 @@ void Viewer::removeNode(osg::Node* node)
 void Viewer::removeNode(std::string nodeName)
 {
   RLOG_CPP(5, "Removing node " << nodeName);
-  if (viewer->isRealized())
-  {
-    osg::ref_ptr<ViewerEventData> ev;
-    ev = new ViewerEventData(nodeName, ViewerEventData::RemoveNamedNode);
-    viewer->getEventQueue()->userEvent(ev.get());
-  }
-  else
-  {
-    removeInternal(nodeName);
-  }
+  addUserEvent(new ViewerEventData(nodeName, ViewerEventData::RemoveNamedNode));
 }
 
 /*******************************************************************************
  * Removes all nodes with a given name from a parent node.
  ******************************************************************************/
-void Viewer::removeNode(osg::Node* parent, std::string child)
+void Viewer::removeNode(osg::Group* parent, std::string child)
 {
   RLOG_CPP(5, "Removing node " << child << " of parent " << parent->getName());
-  if (viewer->isRealized())
-  {
-    osg::ref_ptr<ViewerEventData> ev;
-    ev = new ViewerEventData(parent, child, ViewerEventData::RemoveChildNode);
-    viewer->getEventQueue()->userEvent(ev.get());
-  }
-  else
-  {
-    int numNodes = removeInternal(parent, child);
-    RLOG_CPP(5, "Removed " << numNodes << " children with name " << child
-             << " from parent " << parent->getName());
-  }
+  addUserEvent(new ViewerEventData(parent, child, ViewerEventData::RemoveChildNode));
 }
 
 /*******************************************************************************
@@ -745,16 +691,7 @@ void Viewer::removeNode(osg::Node* parent, std::string child)
  ******************************************************************************/
 void Viewer::removeNodes()
 {
-  if (viewer->isRealized())
-  {
-    osg::ref_ptr<ViewerEventData> ev;
-    ev = new ViewerEventData(ViewerEventData::RemoveAllNodes);
-    viewer->getEventQueue()->userEvent(ev.get());
-  }
-  else
-  {
-    removeAllNodesInternal();
-  }
+  addUserEvent(new ViewerEventData(ViewerEventData::RemoveAllNodes));
 }
 
 /*******************************************************************************
@@ -762,17 +699,7 @@ void Viewer::removeNodes()
  ******************************************************************************/
 void Viewer::setCameraTransform(const HTr* A_CI)
 {
-  if (viewer->isRealized())
-  {
-    osg::ref_ptr<ViewerEventData> ev;
-    ev = new ViewerEventData(A_CI, ViewerEventData::SetCameraTransform);
-    viewer->getEventQueue()->userEvent(ev.get());
-  }
-  else
-  {
-    osg::Matrix vm = viewMatrixFromHTr(A_CI);
-    viewer->getCameraManipulator()->setByInverseMatrix(vm);
-  }
+  addUserEvent(new ViewerEventData(A_CI, ViewerEventData::SetCameraTransform));
 }
 
 /*******************************************************************************
@@ -932,40 +859,21 @@ double Viewer::updateFrequency() const
 }
 
 /*******************************************************************************
- * Sets the camera position and viewing direction
- * First vector is where camera is, Second vector is where the
- * camera points to, the up vector is set internally to always stay upright
- ******************************************************************************/
-void Viewer::setCameraHomePosition(const osg::Vec3d& eye,
-                                   const osg::Vec3d& center,
-                                   const osg::Vec3d& up)
-{
-  viewer->getCameraManipulator()->setHomePosition(eye, center, up);
-  viewer->home();
-}
-
-/*******************************************************************************
  *
  ******************************************************************************/
 void Viewer::resetView()
 {
-  viewer->getCamera()->setProjectionMatrix(this->startView);
+  addUserEvent(new ViewerEventData(ViewerEventData::ResetView));
 }
 
 /*******************************************************************************
- *
+ * Sets the camera position and viewing direction
+ * First vector is where camera is, Second vector is where the
+ * camera points to, the up vector is set internally to always stay upright
  ******************************************************************************/
 void Viewer::setCameraHomePosition(const HTr* A_CI)
 {
-  osg::Vec3d eye(A_CI->org[0], A_CI->org[1], A_CI->org[2]);
-
-  osg::Vec3d center(A_CI->org[0] + A_CI->rot[2][0],
-                    A_CI->org[1] + A_CI->rot[2][1],
-                    A_CI->org[2] + A_CI->rot[2][2]);
-
-  osg::Vec3d up(-A_CI->rot[1][0], -A_CI->rot[1][1], -A_CI->rot[1][2]);
-
-  setCameraHomePosition(eye, center, up);
+  addUserEvent(new ViewerEventData(A_CI, ViewerEventData::SetCameraHomePose));
 }
 
 /*******************************************************************************
@@ -1053,6 +961,16 @@ void* Viewer::ViewerThread(void* arg)
 
   while (viewer->isThreadRunning() == true)
   {
+
+    viewer->userEventMtx.lock();
+    for (size_t i=0; i<viewer->userEventStack.size(); ++i)
+    {
+      viewer->getOsgViewer()->getEventQueue()->userEvent(viewer->userEventStack[i].get());
+    }
+
+    viewer->userEventStack.clear();
+    viewer->userEventMtx.unlock();
+
     viewer->frame();
     unsigned long dt = (unsigned long)(1.0e6/viewer->updateFrequency());
     Timer_usleep(dt);
@@ -1089,22 +1007,7 @@ void Viewer::runInThread(pthread_mutex_t* mutex)
  ******************************************************************************/
 void Viewer::displayWireframe(bool wf)
 {
-  this->wireFrame = wf;
-  osg::ref_ptr<osg::StateSet> pStateSet = rootnode->getOrCreateStateSet();
-
-  if (wf == true)
-  {
-    pStateSet->setAttribute(new osg::PolygonMode
-                            (osg::PolygonMode::FRONT_AND_BACK,
-                             osg::PolygonMode::LINE));
-  }
-  else
-  {
-    pStateSet->setAttribute(new osg::PolygonMode
-                            (osg::PolygonMode::FRONT_AND_BACK,
-                             osg::PolygonMode::FILL));
-  }
-
+  addUserEvent(new ViewerEventData(ViewerEventData::SetWireframeEnabled, wf));
 }
 
 /*******************************************************************************
@@ -1120,56 +1023,23 @@ void Viewer::toggleWireframe()
  ******************************************************************************/
 void Viewer::setShadowEnabled(bool enable)
 {
-  osg::Matrix lastViewMatrix = viewer->getCameraManipulator()->getMatrix();
-
-  if (enable==false)
-  {
-    RLOG(3, "Shadows off");
-    if (this->shadowsEnabled == true)
-    {
-      viewer->setSceneData(rootnode.get());
-    }
-    this->shadowsEnabled = false;
-  }
-  else
-  {
-    RLOG(3, "Shadows on");
-    if (this->shadowsEnabled == false)
-    {
-      viewer->setSceneData(shadowScene.get());
-    }
-    this->shadowsEnabled = true;
-  }
-
-  viewer->getCameraManipulator()->setByMatrix(lastViewMatrix);
+  addUserEvent(new ViewerEventData(ViewerEventData::SetShadowEnabled, enable));
 }
 
 /*******************************************************************************
  * Renders the scene in cartoon mode.
  ******************************************************************************/
-void Viewer::setCartoonEnabled(bool enabled)
+void Viewer::setCartoonEnabled(bool enable)
 {
-  osgFX::Effect* cartoon = dynamic_cast<osgFX::Effect*>(rootnode.get());
-
-  if (!cartoon)
-  {
-    return;
-  }
-
-  if (enabled == true)
-  {
-    setShadowEnabled(false);
-  }
-
-  cartoon->setEnabled(enabled);
+  addUserEvent(new ViewerEventData(ViewerEventData::SetCartoonEnabled, enable));
 }
 
 /*******************************************************************************
- * Renders the scene in cartoon mode.
+ *
  ******************************************************************************/
-void Viewer::setBackgroundColor(const char* color)
+void Viewer::setBackgroundColor(const std::string& color)
 {
-  this->clearNode->setClearColor(colorFromString(color));
+  addUserEvent(new ViewerEventData(color, ViewerEventData::SetBackgroundColor));
 }
 
 /*******************************************************************************
@@ -1209,27 +1079,6 @@ void Viewer::init()
   // Stop listening to ESC key, cause it doesn't end RCS properly
   viewer->setKeyEventSetsDone(0);
   viewer->realize();
-
-  // Add all HUD's after creation of the window
-  osgViewer::Viewer::Windows windows;
-  viewer->getWindows(windows);
-
-  if (windows.empty())
-  {
-    RLOG(1, "Failed to add HUD - no viewer window");
-  }
-  else
-  {
-    for (size_t i=0; i<hud.size(); i++)
-    {
-      hud[i]->setGraphicsContext(windows[0]);
-      hud[i]->setViewport(0, 0, windows[0]->getTraits()->width,
-                          windows[0]->getTraits()->height);
-      viewer->addSlave(hud[i].get(), false);
-    }
-
-    hud.clear();
-  }
 
   this->startView = viewer->getCamera()->getProjectionMatrix();
   this->initialized = true;
@@ -1418,10 +1267,136 @@ void Viewer::handleUserEvents(const osg::Referenced* userEvent)
       break;
 
     case ViewerEventData::SetCameraTransform:
-    {
       RLOG(5, "Setting camera transform");
-      osg::Matrix vm = viewMatrixFromHTr(&ev->trf);
-      viewer->getCameraManipulator()->setByInverseMatrix(vm);
+      viewer->getCameraManipulator()->setByInverseMatrix(viewMatrixFromHTr(&ev->trf));
+      break;
+
+    case ViewerEventData::SetCameraHomePose:
+    {
+      RLOG(5, "Setting camera home pose");
+      const HTr* A_CI = &ev->trf;
+      osg::Vec3d eye(A_CI->org[0], A_CI->org[1], A_CI->org[2]);
+
+      osg::Vec3d center(A_CI->org[0] + A_CI->rot[2][0],
+                        A_CI->org[1] + A_CI->rot[2][1],
+                        A_CI->org[2] + A_CI->rot[2][2]);
+
+      osg::Vec3d up(-A_CI->rot[1][0], -A_CI->rot[1][1], -A_CI->rot[1][2]);
+
+      viewer->getCameraManipulator()->setHomePosition(eye, center, up);
+      viewer->home();
+    }
+    break;
+
+    // Sets the title of the viewer windows. We set the title for all windows,
+    // but only one window should be created anyways
+    case ViewerEventData::SetTitle:
+    {
+      RLOG_CPP(5, "Setting window title to" << ev->childName);
+      osgViewer::ViewerBase::Windows windows;
+      this->viewer->getWindows(windows);
+      osgViewer::ViewerBase::Windows::iterator window;
+
+      for (window = windows.begin(); window != windows.end(); window++)
+      {
+        (*window)->setWindowName(ev->childName);
+      }
+    }
+    break;
+
+    case ViewerEventData::ResetView:
+      RLOG(5, "Resetting view");
+      viewer->getCamera()->setProjectionMatrix(this->startView);
+      break;
+
+    case ViewerEventData::SetBackgroundColor:
+      RLOG_CPP(5, "Setting background color to" << ev->childName);
+      this->clearNode->setClearColor(colorFromString(ev->childName.c_str()));
+      break;
+
+    case ViewerEventData::SetShadowEnabled:
+    {
+      RLOG(5, "Setting shadows to %s", ev->flag ? "TRUE" : "FALSE");
+      osg::Matrix lastViewMatrix = viewer->getCameraManipulator()->getMatrix();
+
+      if (ev->flag==false)
+      {
+        RLOG(3, "Shadows off");
+        if (this->shadowsEnabled == true)
+        {
+          viewer->setSceneData(rootnode.get());
+        }
+        this->shadowsEnabled = false;
+      }
+      else
+      {
+        RLOG(3, "Shadows on");
+        if (this->shadowsEnabled == false)
+        {
+          viewer->setSceneData(shadowScene.get());
+        }
+        this->shadowsEnabled = true;
+      }
+
+      viewer->getCameraManipulator()->setByMatrix(lastViewMatrix);
+    }
+    break;
+
+    case ViewerEventData::SetWireframeEnabled:
+    {
+      RLOG(5, "Setting wireframe to %s", ev->flag ? "TRUE" : "FALSE");
+      this->wireFrame = ev->flag;
+      osg::ref_ptr<osg::StateSet> sSet = rootnode->getOrCreateStateSet();
+
+      if (ev->flag == true)
+      {
+        sSet->setAttribute(new osg::PolygonMode
+                           (osg::PolygonMode::FRONT_AND_BACK,
+                            osg::PolygonMode::LINE));
+      }
+      else
+      {
+        sSet->setAttribute(new osg::PolygonMode
+                           (osg::PolygonMode::FRONT_AND_BACK,
+                            osg::PolygonMode::FILL));
+      }
+
+    }
+    break;
+
+    case ViewerEventData::SetCartoonEnabled:
+    {
+      RLOG(5, "Setting cartoon mode to %s", ev->flag ? "TRUE" : "FALSE");
+      osgFX::Effect* cartoon = dynamic_cast<osgFX::Effect*>(rootnode.get());
+
+      if (!cartoon)
+      {
+        return;
+      }
+
+      // Disable shadows when switching to cartoon mode
+      if ((ev->flag==true) && (this->shadowsEnabled==true))
+      {
+        viewer->setSceneData(rootnode.get());
+        this->shadowsEnabled = false;
+      }
+
+      cartoon->setEnabled(ev->flag);
+    }
+    break;
+
+    case ViewerEventData::SetTrackballCenter:
+    {
+      RLOG(5, "Setting trackball center to %f %f %f",
+           ev->trf.org[0], ev->trf.org[1], ev->trf.org[2]);
+      osgGA::TrackballManipulator* trackball =
+        dynamic_cast<osgGA::TrackballManipulator*>(viewer->getCameraManipulator());
+
+      if (trackball)
+      {
+        const double* cntr = ev->trf.org;
+        trackball->setCenter(osg::Vec3(cntr[0], cntr[1], cntr[2]));
+      }
     }
     break;
 
@@ -1569,9 +1544,6 @@ bool Viewer::handle(const osgGA::GUIEventAdapter& ea,
       //
       else if (ea.getKey() == 'R')
       {
-        // Once cartoon mode is enabled, other keys than R don't work
-        // anymore. This is a OSG bug, because the effect node seems to
-        // not call the children's eventhandlers
         this->cartoonEnabled = !this->cartoonEnabled;
         setCartoonEnabled(this->cartoonEnabled);
         return false;
@@ -1596,18 +1568,13 @@ bool Viewer::handle(const osgGA::GUIEventAdapter& ea,
 /*******************************************************************************
  *
  ******************************************************************************/
-bool Viewer::setTrackballCenter(double x, double y, double z)
+void Viewer::setTrackballCenter(double x, double y, double z)
 {
-  osgGA::TrackballManipulator* trackball =
-    dynamic_cast<osgGA::TrackballManipulator*>(viewer->getCameraManipulator());
+  HTr cntr;
+  HTr_setIdentity(&cntr);
+  Vec3d_set(cntr.org, x, y, z);
 
-  if (trackball)
-  {
-    trackball->setCenter(osg::Vec3(x, y, z));
-    return true;
-  }
-
-  return false;
+  addUserEvent(new ViewerEventData(&cntr, ViewerEventData::SetTrackballCenter));
 }
 
 /*******************************************************************************
@@ -1634,6 +1601,26 @@ bool Viewer::getTrackballCenter(double pos[3]) const
 bool Viewer::isThreadStopped() const
 {
   return this->threadStopped;
+}
+
+/*******************************************************************************
+ * Add a node to the root node.
+ ******************************************************************************/
+void Viewer::setTitle(const std::string& title)
+{
+  addUserEvent(new ViewerEventData(title, ViewerEventData::SetTitle));
+}
+
+/*******************************************************************************
+ * This might run concurrent with the frame's appending of events to the event
+ * queue.
+ ******************************************************************************/
+void Viewer::addUserEvent(osg::Referenced* userEvent)
+{
+  osg::ref_ptr<osg::Referenced> ev(userEvent);
+  userEventMtx.lock();
+  userEventStack.push_back(ev);
+  userEventMtx.unlock();
 }
 
 }   // namespace Rcs
