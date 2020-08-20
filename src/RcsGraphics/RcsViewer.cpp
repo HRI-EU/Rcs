@@ -254,8 +254,7 @@ class KeyHandler : public osgGA::GUIEventHandler
 {
 public:
 
-  KeyHandler(Rcs::Viewer* viewer) : _viewer(viewer),
-    _video_capture_process(-1)
+  KeyHandler(Rcs::Viewer* viewer) : _viewer(viewer), _video_capture_process(-1)
   {
     RCHECK(_viewer);
 
@@ -551,6 +550,8 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   stats->setKeyEventTogglesOnScreenStats('z');
   stats->setKeyEventPrintsOutStats('Z');
   viewer->addEventHandler(stats.get());
+
+  setTitle("RcsViewer");
 }
 
 /*******************************************************************************
@@ -904,14 +905,27 @@ osg::Node* Viewer::getNode(std::string nodeName)
 }
 
 /*******************************************************************************
- *
+ * aspectRatio = width/height
+ * OSG returns field of view in [degrees]. We convert it to SI units
+ ******************************************************************************/
+void Viewer::getFieldOfView(double& width, double& height) const
+{
+  double aspectRatio, zNear, zFar;
+  viewer->getCamera()->getProjectionMatrixAsPerspective(width, aspectRatio,
+                                                        zNear, zFar);
+  width = RCS_DEG2RAD(width);
+  height = width/aspectRatio;
+}
+
+/*******************************************************************************
+ * OSG returns field of view in [degrees]. We convert it to SI units
  ******************************************************************************/
 double Viewer::getFieldOfView() const
 {
   double fovy, aspectRatio, zNear, zFar;
   viewer->getCamera()->getProjectionMatrixAsPerspective(fovy, aspectRatio,
                                                         zNear, zFar);
-  return fovy;
+  return RCS_DEG2RAD(fovy);
 }
 
 /*******************************************************************************
@@ -919,8 +933,9 @@ double Viewer::getFieldOfView() const
  ******************************************************************************/
 void Viewer::setFieldOfView(double fovy)
 {
-  double fovy_old, aspectRatio, zNear, zFar;
-  viewer->getCamera()->getProjectionMatrixAsPerspective(fovy_old, aspectRatio,
+  double fovyOld, aspectRatio, zNear, zFar;
+  fovy = RCS_RAD2DEG(fovy);
+  viewer->getCamera()->getProjectionMatrixAsPerspective(fovyOld, aspectRatio,
                                                         zNear, zFar);
   viewer->getCamera()->setProjectionMatrixAsPerspective(fovy, aspectRatio,
                                                         zNear, zFar);
@@ -933,8 +948,10 @@ void Viewer::setFieldOfView(double fovy)
  ******************************************************************************/
 void Viewer::setFieldOfView(double fovWidth, double fovHeight)
 {
-  double fovy_old, aspectRatio, zNear, zFar;
-  viewer->getCamera()->getProjectionMatrixAsPerspective(fovy_old, aspectRatio,
+  double fovyOld, aspectRatio, zNear, zFar;
+  fovWidth = RCS_RAD2DEG(fovWidth);
+  fovHeight = RCS_RAD2DEG(fovHeight);
+  viewer->getCamera()->getProjectionMatrixAsPerspective(fovyOld, aspectRatio,
                                                         zNear, zFar);
   viewer->getCamera()->setProjectionMatrixAsPerspective(fovWidth,
                                                         fovWidth/fovHeight,
@@ -1138,6 +1155,7 @@ void Viewer::stopUpdateThread()
   this->threadRunning = false;
   pthread_join(frameThread, NULL);
   threadStopped = true;
+  this->initialized = false;
 }
 
 /*******************************************************************************
@@ -1426,6 +1444,16 @@ bool Viewer::handle(const osgGA::GUIEventAdapter& ea,
     }
 
     /////////////////////////////////////////////////////////////////
+    // Gets called once viewer window is closed. We then leave the
+    // viewer's thread so that no more rendering is performed.
+    /////////////////////////////////////////////////////////////////
+    case (osgGA::GUIEventAdapter::CLOSE_WINDOW):
+    {
+      stopUpdateThread();
+      break;
+    }
+
+    /////////////////////////////////////////////////////////////////
     // Frame update event
     /////////////////////////////////////////////////////////////////
     case (osgGA::GUIEventAdapter::FRAME):
@@ -1480,7 +1508,6 @@ bool Viewer::handle(const osgGA::GUIEventAdapter& ea,
     /////////////////////////////////////////////////////////////////
     case (osgGA::GUIEventAdapter::RELEASE):
     {
-
       // Left mouse button released.
       if (ea.getButton() == osgGA::GUIEventAdapter::LEFT_MOUSE_BUTTON)
       {
@@ -1601,6 +1628,14 @@ bool Viewer::getTrackballCenter(double pos[3]) const
 bool Viewer::isThreadStopped() const
 {
   return this->threadStopped;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+double Viewer::getFPS() const
+{
+  return this->fps;
 }
 
 /*******************************************************************************

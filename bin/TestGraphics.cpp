@@ -743,8 +743,8 @@ static void testCameraTransform()
   Rcs::KeyCatcherBase::registerKey("-", "Shift camera transform to left");
   Rcs::KeyCatcherBase::registerKey("e", "Rotate camera transform about z");
   Rcs::KeyCatcherBase::registerKey("E", "Align camera transform horizontally");
-  Rcs::KeyCatcherBase::registerKey("Z", "Increase field of view");
-  Rcs::KeyCatcherBase::registerKey("z", "Decrease field of view");
+  Rcs::KeyCatcherBase::registerKey("T", "Increase field of view");
+  Rcs::KeyCatcherBase::registerKey("t", "Decrease field of view");
 
   // Parse command line arguments
   char xmlFileName[128] = "gScenario.xml";
@@ -842,21 +842,21 @@ static void testCameraTransform()
       RMSGS("Camera transform after setting:");
       HTr_fprint(stdout, &A_CI);
     }
-    else if (kc->getAndResetKey('Z'))
+    else if (kc->getAndResetKey('T'))
     {
       double fov = viewer->getFieldOfView();
-      RMSGS("Field of view: %f", fov);
-      viewer->setFieldOfView(fov + 5.0);
+      RMSGS("Field of view: %f deg", RCS_RAD2DEG(fov));
+      viewer->setFieldOfView(fov + RCS_DEG2RAD(5.0));
       fov = viewer->getFieldOfView();
-      RMSGS("Field of view after setting: %f", fov);
+      RMSGS("Field of view after setting: %f deg", RCS_RAD2DEG(fov));
     }
-    else if (kc->getAndResetKey('z'))
+    else if (kc->getAndResetKey('t'))
     {
       double fov = viewer->getFieldOfView();
-      RMSGS("Field of view: %f", fov);
-      viewer->setFieldOfView(fov - 5.0);
+      RMSGS("Field of view: %f deg", RCS_RAD2DEG(fov));
+      viewer->setFieldOfView(fov - RCS_DEG2RAD(5.0));
       fov = viewer->getFieldOfView();
-      RMSGS("Field of view after setting: %f", fov);
+      RMSGS("Field of view after setting: %f deg", RCS_RAD2DEG(fov));
     }
 
     pthread_mutex_unlock(&mtx);

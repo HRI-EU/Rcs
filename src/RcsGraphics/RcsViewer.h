@@ -67,6 +67,20 @@ static const int CastsShadowTraversalMask = 0x2;
  * \ingroup RcsGraphics
  * \brief The Viewer main class. It is based on the osg::Viewer.
  *
+ *        The viewer can operate in two modes: Sequential or threaded. In the
+ *        sequential mode, the user is responsible to call the viewer's frame()
+ *        method. This performs all the graphics-related things, such as
+ *        rendering and mouse event handling. In the threaded mode, the viewer
+ *        runs its own thread that calls the frame() method. The viewer's API
+ *        is designed to be usable without any concurrency issues, see below.
+ *        However, it is the user's responsibility to avoid concurrent
+ *        modifications of nodes during the rendering. For this, the viewer's
+ *        runInThread() method accepts a mutex that is locked around the frame
+ *        call. There are several examples of how to use it in the user's code,
+ *        see for instance Rcs.cpp. When closing the graphics window in threaded
+ *        mode, the thread will be terminated, however all nodes remain within
+ *        the scene graph.
+ *
  *        The public API to add and remove nodes etc. is implemented using the
  *        osg event queue. It means that the function call does not directly
  *        take effect, but defers the command to the next event update. This is
@@ -89,7 +103,8 @@ static const int CastsShadowTraversalMask = 0x2;
  *        - Key F8 will take a screenshot
  *        - Key F9 will start / stop taking screenshort in each frame
  *        - Key M will toggle movie recording (Linux only)
- *        - Key R will toggle the cartoon mode
+ *        - Key R will toggle the cartoon mode. In cartoon mode, the shadows
+ *          are disabled.
  *        - LBM while right mouse button is pressed will select the mouse point
  *          as the new rotation center of the mouse manipulator
  *        - Key z will toggle the OpenScenegraph StatsHandler information
@@ -148,7 +163,7 @@ public:
    *         thread will try to achieve the given updateFrequency. Changing the
    *         update frequency will take effect also when the thread is running.
    *
-   * \param[in] mutex   Optional mutex that will be locked whenever the viewer
+   *  \param[in] mutex  Optional mutex that will be locked whenever the viewer
    *                    traverses or does changes to the scene graph.
    */
   void runInThread(pthread_mutex_t* mutex = NULL);
@@ -159,13 +174,20 @@ public:
    */
   virtual void frame();
 
-  /*! \brief Locks all mutexes around the frame() call. Depending on the
-   *         complexity of the scene graph, the lock() function can block for
-   *         a while (worst case: rendering framerate)
+  /*! \brief Locks all mutexes around the frame() call. This only has any
+   *         effect if the viewer's runInThread() method was called with a
+   *         mutex. Depending on the complexity of the scene graph, the lock()
+   *         function can block for a while (worst case: rendering framerate).
+   *
+   *  \return true if mutex was present, false otherrwise.
    */
   virtual bool lock() const;
 
-  /*! \brief Unlocks all mutexes around the frame() call.
+  /*! \brief Unlocks all mutexes around the frame() call. This only has any
+   *         effect if the viewer's runInThread() method was called with a
+   *         mutex.
+   *
+   *  \return true if mutex was present, false otherrwise.
    */
   virtual bool unlock() const;
 
@@ -190,15 +212,16 @@ public:
 
   /*! \brief Sets the withh of the field of view to the given angle. The aspect
    *         ratio is kept constant.
-   *  \param[in] fov   Horizontal field of view in degrees
+   *
+   *  \param[in] fov   Horizontal field of view in radians
    */
   void setFieldOfView(double fov);
 
 
   /*! \brief Sets the field of view to the given angles.
    *
-   *  \param[in] fovWidth   Horizontal field of view in degrees
-   *  \param[in] fovHeight  Vertical field of view in degrees
+   *  \param[in] fovWidth   Horizontal field of view in radians
+   *  \param[in] fovHeight  Vertical field of view in radians
    */
   void setFieldOfView(double fovWidth, double fovHeight);
 
@@ -279,6 +302,7 @@ public:
                           double thx, double thy, double thz);
 
   /*! \brief Sets the camera transformation to A_CI.
+   *
    *  \param[in] A_CI Transformation from world to camera frame
    */
   void setCameraTransform(const HTr* A_CI);
@@ -388,9 +412,26 @@ public:
    */
   osg::ref_ptr<osgViewer::Viewer> getOsgViewer() const;
 
+  /*! \brief Gets the horizontal and vertical field of view in radians.
+   */
+  void getFieldOfView(double& width, double& height) const;
+
+  /*! \brief Returns the horizontal field of view in radians.
+   */
   double getFieldOfView() const;
 
+  /*! \brief Computes the intersection point of a line through camera position
+   *         and mouse tip with a distance to the camera of 1 meter.
+   *
+   *  \param[out]   I_tip    Intersection point in world coordinates
+   */
   void getMouseTip(double I_tip[3]) const;
+
+  /*! \brief Returns the frames per second the frame() function is called from
+   *         the viewer's thread. The value is only updated when the viewer is
+   *         running in threaded mode. A low-pass filter is applied.
+   */
+  double getFPS() const;
 
   ///@}
 
@@ -400,21 +441,6 @@ public:
 
 
 protected:
-
-  /*! \brief Called from the KeyHandler's update function.
-   */
-  bool handle(const osgGA::GUIEventAdapter& ea,
-              osgGA::GUIActionAdapter& aa);
-
-  void handleUserEvents(const osg::Referenced* userEvent);
-
-  static void* ViewerThread(void* arg);
-  void create(bool fancy, bool startupWithShadow);
-  void init();
-  void setSceneData(osg::Node* node);
-  bool isInitialized() const;
-  bool isThreadRunning() const;
-  bool isRealized() const;
 
   /*! \brief Changes the window size. This function only takes effect if there
    *         was no frame() call before.
@@ -432,6 +458,21 @@ protected:
                      unsigned int lly,     // lower left y
                      unsigned int sizeX,   // size in x-direction
                      unsigned int sizeY);  // size in y-direction
+
+  /*! \brief Called from the KeyHandler's update function.
+   */
+  bool handle(const osgGA::GUIEventAdapter& ea,
+              osgGA::GUIActionAdapter& aa);
+
+  void handleUserEvents(const osg::Referenced* userEvent);
+
+  static void* ViewerThread(void* arg);
+  void create(bool fancy, bool startupWithShadow);
+  void init();
+  void setSceneData(osg::Node* node);
+  bool isInitialized() const;
+  bool isThreadRunning() const;
+  bool isRealized() const;
 
   double fps;
   float mouseX;
@@ -482,9 +523,9 @@ private:
   /*! \brief Adds a node to a parent. This function must not be called
    *         concurrently with the viewer's frame update.
    *
-   * \return parent Group node the node is to be attached to.
-   * \return node   Node to be added. Can also be of certain derived types
-   *                such as camera etc.
+   *  \return parent Group node the node is to be attached to.
+   *  \return node   Node to be added. Can also be of certain derived types
+   *                 such as camera etc.
    */
   bool addInternal(osg::Group* parent, osg::Node* child);
 
@@ -492,10 +533,10 @@ private:
    *         from inside the locked frame() call so that there is no
    *         concurrency issue.
    *
-   * \return True for success, false otherwise: node is NULL, or not found in
-   *         the viewer's scenegraph. The scenegraph is searched through all
-   *         levels. The frame mutex is internally set around the scenegraph
-   *         modification so that threading issues can be avoided.
+   *  \return True for success, false otherwise: node is NULL, or not found in
+   *          the viewer's scenegraph. The scenegraph is searched through all
+   *          levels. The frame mutex is internally set around the scenegraph
+   *          modification so that threading issues can be avoided.
    */
   bool removeInternal(osg::Node* node);
 
@@ -503,19 +544,19 @@ private:
    *         graph. This is called from inside the locked frame() call so that
    *         there is no concurrency issue.
    *
-   * \return Number of nodes removed.
+   *  \return Number of nodes removed.
    */
   int removeInternal(std::string nodeName);
 
   /*! \brief Removes all nodes with the given name from the parent node.
    *
-   * \return Number of nodes removed.
+   *  \return Number of nodes removed.
    */
   int removeInternal(osg::Node* parent, std::string nodeName);
 
   /*! \brief Removes all nodes from the rootNode.
    *
-   * \return Number of nodes removed.
+   *  \return Number of nodes removed.
    */
   int removeAllNodesInternal();
 

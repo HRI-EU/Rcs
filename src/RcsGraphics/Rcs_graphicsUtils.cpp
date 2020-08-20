@@ -598,11 +598,11 @@ osg::ref_ptr<osg::LineSegment> lineOfSightSegment(const osg::Matrix& projMat,
   osg::Matrix inverseVP;
   inverseVP.invert(matrix);
 
-  osg::Vec3 near_point = osg::Vec3(x, y, -1.0f) * inverseVP;
-  osg::Vec3 far_point = osg::Vec3(x, y, 1.0f) * inverseVP;
+  osg::Vec3 nearPoint = osg::Vec3(x, y, -1.0f) * inverseVP;
+  osg::Vec3 farPoint = osg::Vec3(x, y, 1.0f) * inverseVP;
 
   osg::ref_ptr<osg::LineSegment> lineOfSight =
-    new osg::LineSegment(near_point, far_point);
+    new osg::LineSegment(nearPoint, farPoint);
 
   return lineOfSight;
 }
