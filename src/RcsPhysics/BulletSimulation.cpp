@@ -301,27 +301,14 @@ Rcs::BulletSimulation::~BulletSimulation()
       // BulletRigidBody takes care of recursively deleting all shapes
       delete obj;
     }
-    //     else
-    //     {
-    //       // Other shapes such as ground plane need explicit destruction of shapes
-    //       delete obj->getCollisionShape();
-    //       delete obj;
-    //     }
+    else
+    {
+      // Other shapes such as ground plane need explicit destruction of shapes
+      delete obj->getCollisionShape();
+      delete obj;
+    }
 #endif
   }
-
-  // btSoftRigidDynamicsWorld* softWorld = dynamic_cast<btSoftRigidDynamicsWorld*>(this->dynamicsWorld);
-
-  // if (softWorld)
-  // {
-  //   btSoftBodyArray& arr = softWorld->getSoftBodyArray();
-
-  //   for (int i=0;i<arr.size(); ++i)
-  //   {
-  //     softWorld->removeSoftBody(arr[i]);
-  //     //delete arr[i];
-  //   }
-  // }
 
   delete this->dynamicsWorld;
   delete this->solver;
