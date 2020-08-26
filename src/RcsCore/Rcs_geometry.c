@@ -38,6 +38,8 @@
 #include "Rcs_Vec3d.h"
 #include "Rcs_VecNd.h"
 #include "Rcs_basicMath.h"
+#include "Rcs_Mat3d.h"
+#include "Rcs_MatNd.h"
 #include "Rcs_macros.h"
 
 #include <limits.h>
@@ -240,7 +242,7 @@ static void Math_centroidConvexPolygon2D(double centroid[2],
     centroid[1] += poly[i][1];
   }
 
-  if (nVertices>0.0)
+  if (nVertices>0)
   {
     centroid[0] /= nVertices;
     centroid[1] /= nVertices;
@@ -1572,4 +1574,64 @@ double Math_polyVertexDistance(double polygon[][2],
   }
 
   return len;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Math_planeFit3d(const double points_[][3], unsigned int nPoints,
+                     double centroid[3], double normal[3])
+{
+  if (nPoints<3)
+  {
+    RLOG(1, "Can't match plane to less than 3 points (received %d)", nPoints);
+    return false;
+  }
+
+  MatNd* points = MatNd_create(nPoints, 3);
+
+
+  // Calculate centroid
+  Vec3d_setZero(centroid);
+
+  for (unsigned int i=0; i<nPoints; ++i)
+  {
+    double* row_i = MatNd_getRowPtr(points, i);
+    Vec3d_copy(row_i, points_[i]);
+    Vec3d_addSelf(centroid, row_i);
+  }
+
+  Vec3d_constMulSelf(centroid, 1.0/nPoints);
+
+  // Substract centroid from point set
+  for (unsigned int i=0; i<nPoints; ++i)
+  {
+    double* row_i = MatNd_getRowPtr(points, i);
+    Vec3d_subSelf(row_i, centroid);
+  }
+
+
+  MatNd* eig = MatNd_create(3,3);
+  MatNd_dyadicProduct(eig, points);
+  double V[3][3], d[3];
+  bool success = Mat3d_getEigenVectors(V, d, (double (*)[3])eig->ele);
+  MatNd_destroy(eig);
+
+  if (success==false)
+  {
+    RLOG(1, "Failed to compute polygon Eigenbasis");
+    MatNd_destroy(points);
+    return false;
+  }
+
+  int minEig = VecNd_indexMin(d, 3);
+
+  for (int i=0; i<3; ++i)
+  {
+    normal[i] = V[i][minEig];
+  }
+
+  MatNd_destroy(points);
+
+  return true;
 }

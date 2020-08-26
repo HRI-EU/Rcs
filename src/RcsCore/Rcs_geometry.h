@@ -321,7 +321,9 @@ double Math_distPointCapsule(const double pt[3],
  *
  *  \param[in]  I_pt        Query Point in world coordinates
  *  \param[in]  A_PI        Transformation from world to polygon frame
- *  \param[in]  polygon     Polygon vertices in ordered counter-clockwise
+ *  \param[in]  polygon     Polygon vertices in ordered counter-clockwise. The
+ *                          vertices are assumed to lie on the x-y plane of
+ *                          frame P.
  *  \param[in]  nVertices   Number of polygon vertices. Must be > 0, otherwise
  *                          the function exits with a fatal error.
  *  \param[out] I_cpPoly    Closest point on the polygon in world coordinates.
@@ -338,6 +340,24 @@ double Math_sqrDistPointConvexPolygon(const double I_pt[3],
                                       double I_cpPoly[3],
                                       double I_nPoly[3]);
 
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Returns the distance and closest points between a point and a convex
+ *         polygon in 3D. The polygon is assumed to be in the x-y plane of the
+ *         frame A_PI. Its z-direction is the polygon normal. The polygon
+ *         is assumed to be "filled".
+ *
+ *  \param[in]  I_pt        Query Point in world coordinates
+ *  \param[in]  A_RI        Transformation from world to rectangle frame. The
+ *                          rectangle vertices are assumed to lie on the
+ *                          x-y plane of the frame R.
+ *  \param[in]  extents     x- and y-extents of the rectangle.
+ *  \param[out] I_cpPoly    Closest point on the polygon in world coordinates.
+ *                          If it is NULL, it will be ignored.
+ *  \param[out] I_nPoly     Normal vector that depenetrates the point from the
+ *                          polygon, in world coordinates. It is of unit length.
+ *                          If it is NULL, it will be ignored.
+ *  \return Squared distance between point and polygon.
+ */
 double Math_sqrDistPointRect(const double I_pt[3],
                              const HTr* A_RI,
                              const double extents[2],
@@ -473,6 +493,34 @@ double Math_distPointBox(const double point[3],
 ///@}
 
 
+
+
+/**
+ * @name Miscellaneous
+ *
+ * Other computational geometry functions
+ */
+
+///@{
+
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Plane fit through a set of points. The function does an
+ *         Eigendecomposition of the point set and returns the normal as the
+ *         Eigenvector corresponding to the smallest Eigenvalue. The point set
+ *         must contrain at least 3 points.
+ *
+ *  \param[in]  points   Point set with at least 3 points
+ *  \param[in]  nPoints  Number of points in the set
+ *  \param[in]  centroid Plane centroid
+ *  \param[in]  normal   Normal vector in the direction of the Eigenvector
+ *                       with the smallest Eigenvalue
+ *  \return True for success, false otherwise. Failure is explained on debug
+ *          leves <5
+ */
+bool Math_planeFit3d(const double points[][3], unsigned int nPoints,
+                     double centroid[3], double normal[3]);
+
+///@}
 
 
 

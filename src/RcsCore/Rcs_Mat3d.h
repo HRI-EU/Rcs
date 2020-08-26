@@ -731,6 +731,7 @@ double Mat3d_maxAbsEle(double A[3][3]);
  *         right-handed coordinate system.
  *
  *  \param[out] V Eigenvectors in columns of V, corresponding eigenvalues in d
+ *                The Eigenvectors are of unit-length.
  *  \param[out] d Eigenvalues in the same order as eigenvectors in V
  *  \param[in]  A  Symmetric matrix
  *  \return True for success, false otherwise (e.g. A is non-symmetric).
@@ -753,6 +754,19 @@ bool Mat3d_getEigenVectors(double V[3][3], double d[3], double A[3][3]);
 bool Mat3d_compareEigenbasis(double lambda1[3], double V1[3][3],
                              double lambda2[3], double V2[3][3],
                              double eps);
+
+/*! \ingroup RcsMat3dFunctions
+ *  \brief First order low pass filter for rotation matrices. The new rotation
+ *         will be filtered with a SLERP, multiplied by the time constant. For
+ *         tmc=1, the filtered rotation will be set to the new sample, for any
+ *         smaller value, the filtered rotation will be smoothed.
+ *
+ *  \param[in,out]  A_filt   Fitered rotation
+ *  \param[in]      A_new    New rotation matrix to be incorporated
+ *  \param[in]      tmc      Time constant between [0...1]. Smaller is smoother.
+ *  \return False if filtered matrix can't be orthonormalized, true for success.
+ */
+bool Mat3d_firstOrderLPF(double A_filt[3][3], double A_new[3][3], double tmc);
 
 
 #ifdef __cplusplus

@@ -36,6 +36,7 @@
 
 #include "Rcs_mathTests.h"
 #include "Rcs_math.h"
+#include "Rcs_geometry.h"
 #include "Rcs_quaternion.h"
 #include "Rcs_filters.h"
 #include "ViaPointSequence.h"
@@ -4249,3 +4250,68 @@ bool testFunctionsEigen3(int argc, char** argv)
 }
 
 #endif
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool testPlaneFit3d(int argc, char** argv)
+{
+  bool success = true;
+
+  double points[4][3], centroid[3], normal[3];
+  Vec3d_set(points[0], 0.0, 0.0, 0.0);
+  Vec3d_set(points[1], 1.0, 0.0, 0.0);
+  Vec3d_set(points[2], 0.0, 1.0, 0.0);
+  Vec3d_set(points[3], 1.0, 1.0, 0.0);
+
+  success = Math_planeFit3d(points, 4, centroid, normal) && success;
+
+  RLOG(2, "Centroid: %g %g %g   normal: %g %g %g",
+       centroid[0], centroid[1], centroid[2],
+       normal[0], normal[1], normal[2]);
+
+  if (Vec3d_distance(normal, Vec3d_ez()) > 1.0e-8)
+  {
+    success = false;
+    RLOG(1, "normal direction wrong: should be ez but is %g %g %g",
+         normal[0], normal[1], normal[2]);
+  }
+
+  Vec3d_set(points[0], 0.0, 0.0, 0.0);
+  Vec3d_set(points[1], 0.0, 1.0, 0.0);
+  Vec3d_set(points[2], 0.0, 0.0, 1.0);
+  Vec3d_set(points[3], 0.0, 1.0, 1.0);
+
+  success = Math_planeFit3d(points, 4, centroid, normal) && success;
+
+  RLOG(2, "Centroid: %g %g %g   normal: %g %g %g",
+       centroid[0], centroid[1], centroid[2],
+       normal[0], normal[1], normal[2]);
+
+  if (Vec3d_distance(normal, Vec3d_ex()) > 1.0e-8)
+  {
+    success = false;
+    RLOG(1, "normal direction wrong: should be ex but is %g %g %g",
+         normal[0], normal[1], normal[2]);
+  }
+
+  Vec3d_set(points[0], 0.0, 0.0, 0.0);
+  Vec3d_set(points[1], 1.0, 0.0, 0.0);
+  Vec3d_set(points[2], 0.0, 0.0, 1.0);
+  Vec3d_set(points[3], 1.0, 0.0, 1.0);
+
+  success = Math_planeFit3d(points, 4, centroid, normal) && success;
+
+  RLOG(2, "Centroid: %g %g %g   normal: %g %g %g",
+       centroid[0], centroid[1], centroid[2],
+       normal[0], normal[1], normal[2]);
+
+  if (Vec3d_distance(normal, Vec3d_ey()) > 1.0e-8)
+  {
+    success = false;
+    RLOG(1, "normal direction wrong: should be ey but is %g %g %g",
+         normal[0], normal[1], normal[2]);
+  }
+
+  return success;
+}

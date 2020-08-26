@@ -2091,3 +2091,22 @@ bool Mat3d_getEigenVectors(double V[3][3], double lambda[3], double A[3][3])
 
   return Mat3d_testEigenbasis(A, lambda, V, 1.0e-6);
 }
+
+/*******************************************************************************
+ * \todo: Try out with SLERP
+ ******************************************************************************/
+bool Mat3d_firstOrderLPF(double A_filt[3][3], double A_new[3][3], double tmc)
+{
+  // Filter orientation (Chiaverini's Euler filter)
+  double e[3], A_err[3][3];
+  Mat3d_getEulerError(e, A_filt, A_new);
+
+  // Error e is in world coords, lets transform it into the local frame
+  Vec3d_rotateSelf(e, A_new);
+  Vec3d_constMulSelf(e, tmc);
+  Mat3d_fromEulerAngles(A_err, e);
+  Mat3d_preMulSelf(A_filt, A_err);
+
+  // Orthonormalization to avoid drift in the axes
+  return Mat3d_orthonormalizeSelf(A_filt);
+}
