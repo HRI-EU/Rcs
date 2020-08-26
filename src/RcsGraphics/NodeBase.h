@@ -37,6 +37,8 @@
 #ifndef RCS_NODEBASE_H
 #define RCS_NODEBASE_H
 
+#include <Rcs_HTr.h>
+
 #include <osg/Switch>
 #include <osg/PositionAttitudeTransform>
 #include <osgGA/GUIEventHandler>
@@ -114,6 +116,10 @@ public:
    *         Quaternion.
    */
   virtual void setRotation(osg::Quat att);
+
+  /*! \brief Sets the 3d position and orientation of the transform.
+   */
+  virtual void setTransformation(const HTr* A_BI);
 
   /*! \brief Sets the 3d position and orientation of the transform.
    */

@@ -270,6 +270,14 @@ void Rcs::NodeBase::setRotation(osg::Quat att)
 /*******************************************************************************
  *
  ******************************************************************************/
+void Rcs::NodeBase::setTransformation(const HTr* A_BI)
+{
+  setTransformation(A_BI->org, (double (*)[3]) A_BI->rot);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void Rcs::NodeBase::setTransformation(const double x[3], double A_KI[3][3])
 {
   setPosition(x);
