@@ -34,6 +34,8 @@
 
 *******************************************************************************/
 
+#include "template.hpp"
+
 #include <Rcs_macros.h>
 #include <Rcs_utils.h>
 #include <Rcs_utilsCPP.h>
@@ -457,6 +459,12 @@ int main(int argc, char** argv)
     case 8:
     {
       success = test_DoubleToString();
+      break;
+    }
+
+    case 9:
+    {
+      logSomething<int>();
       break;
     }
 
