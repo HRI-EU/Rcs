@@ -379,12 +379,14 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 #define RLOG_CPP(debugLevel, msg) \
   do { \
     if (debugLevel <= RcsLogLevel) { \
-      std::cerr << "[" << __FILENAME__ << ": " << __FUNCTION__ << "(" << __LINE__ << ")]: " << msg << std::endl; } \
+      std::cerr << "[" << __FILENAME__ << ": " << __FUNCTION__ << "(" \
+                << __LINE__ << ")]: " << msg << std::endl; }          \
   } while (0)
 
 #define RMSG_CPP(msg)               \
   do { \
-    std::cerr << "[" << __FILENAME__ << ": " << __FUNCTION__ << "(" << __LINE__ << ")]: " << msg << std::endl; \
+    std::cerr << "[" << __FILENAME__ << ": " << __FUNCTION__ << "(" \
+              << __LINE__ << ")]: " << msg << std::endl;            \
   } while (0)
 #endif
 

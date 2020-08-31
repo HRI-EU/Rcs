@@ -33,6 +33,7 @@ Rcs can be compiled with the cmake build system and has mainly been developed on
     cd <build-directory>
     cmake <source-directory>
     make 
+    make unittest
 
 To build the doxygen documentation, just type:
 
