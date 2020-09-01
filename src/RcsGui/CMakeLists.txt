@@ -47,47 +47,11 @@ HighGuiPlot.h
 HighGuiWidget.h
 )
 
-SET(RCS_Qt4_SRC
-ControllerWidgetBase.h
-ForceControlGui.h
-GuiFactory.h
-JointSlider.h
-JointWidget.h
-LcdSlider.h
-MatNdWidget.h
-SimpleSlider.h
-Slider1Dof.h
-SliderCheck1Dof.h
-TaskWidget.h
-PPSGui.h
-PPSWidget.h
-DblSlider.h
-${RCS_HIGHGUI_HEADERS}
-)
+FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
 
-# We first look if Qt5 is vailable. If it isn't, we fall back to Qt4
-FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets QUIET)
-IF (NOT Qt5_FOUND)
-  MESSAGE(STATUS "Couldn't find Qt5 - trying Qt4")
-  FIND_PACKAGE(Qt4 REQUIRED)
-  INCLUDE(${QT_USE_FILE})
-ENDIF(NOT Qt5_FOUND)
-
-IF (Qt5_FOUND)
-  MESSAGE(STATUS "Compiling RcsGui with Qt5 libraries")
-  ADD_LIBRARY(RcsGui ${LIBRARY_LINKING_TYPE} ${RCS_GUI_SRCS} )
-  TARGET_LINK_LIBRARIES(RcsGui RcsCore Qt5::Core Qt5::Gui Qt5::Widgets ${QWT_LIBRARIES})
-  SET_TARGET_PROPERTIES(RcsGui PROPERTIES AUTOMOC TRUE)
-ELSE()
-  MESSAGE(STATUS "Compiling RcsGui with Qt4 libraries")
-  SET_PROPERTY(SOURCE HighGui.cpp HighGuiWindow.cpp PROPERTY COMPILE_DEFINITIONS WITH_X11_SUPPORT)
-  SET(RCS_Qt4_RES )
-  QT4_ADD_RESOURCES(RCS_RES_H ${RCS_Qt4_RES})
-  QT4_WRAP_UI(RCS_UI_CPP ${RCS_Qt4_UI})
-  QT4_WRAP_CPP(RCS_MOC_CPP ${RCS_Qt4_SRC})
-  ADD_LIBRARY(RcsGui ${LIBRARY_LINKING_TYPE} ${RCS_GUI_SRCS} ${RCS_MOC_CPP} ${RCS_UI_CPP} ${RCS_RES_H})
-  TARGET_LINK_LIBRARIES(RcsGui RcsCore ${QWT_LIBRARIES} Qt4::QtGui)
-ENDIF()
+ADD_LIBRARY(RcsGui ${LIBRARY_LINKING_TYPE} ${RCS_GUI_SRCS} )
+TARGET_LINK_LIBRARIES(RcsGui RcsCore Qt5::Core Qt5::Gui Qt5::Widgets ${QWT_LIBRARIES})
+SET_TARGET_PROPERTIES(RcsGui PROPERTIES AUTOMOC TRUE)
 
 TARGET_INCLUDE_DIRECTORIES(RcsGui PUBLIC
     # Header source location
