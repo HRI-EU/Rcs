@@ -335,6 +335,13 @@ public:
    */
   void setCameraHomePosition(const HTr* transformation);
 
+  /*! \brief Sets the default camera transform conveniently using eye, center
+   *         and up vectors.
+   */
+  void setCameraHomePosition(const osg::Vec3d& eye,
+                             const osg::Vec3d& center,
+                             const osg::Vec3d& up=osg::Vec3d(0.0, 0.0, 1.0));
+
   /*! \brief Enable or disable cartoon mode.
    *
    *  \param[in] enable  True for cartoon mode, false otherwise.

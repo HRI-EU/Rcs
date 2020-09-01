@@ -162,6 +162,7 @@ struct ViewerEventData : public osg::Referenced
     RemoveAllNodes,
     SetCameraTransform,
     SetCameraHomePose,
+    SetCameraHomePoseEyeCenterUp,
     SetTitle,
     ResetView,
     SetBackgroundColor,
@@ -878,6 +879,24 @@ void Viewer::setCameraHomePosition(const HTr* A_CI)
 }
 
 /*******************************************************************************
+ * Sets the camera position and viewing direction
+ * First vector is where camera is, Second vector is where the
+ * camera points to, the up vector is set internally to always stay upright.
+ * The eye, center and up vectors are stored in the rows of the transform's
+ * rotation matrix.
+ ******************************************************************************/
+void Viewer::setCameraHomePosition(const osg::Vec3d& eye,
+                                   const osg::Vec3d& center,
+                                   const osg::Vec3d& up)
+{
+  HTr ecu;
+  Vec3d_set(ecu.rot[0], eye[0], eye[1], eye[2]);
+  Vec3d_set(ecu.rot[1], center[0], center[1], center[2]);
+  Vec3d_set(ecu.rot[2], up[0], up[1], up[2]);
+  addUserEvent(new ViewerEventData(&ecu, ViewerEventData::SetCameraHomePoseEyeCenterUp));
+}
+
+/*******************************************************************************
  *
  ******************************************************************************/
 void Viewer::getCameraTransform(HTr* A_CI) const
@@ -1300,6 +1319,22 @@ void Viewer::handleUserEvents(const osg::Referenced* userEvent)
                         A_CI->org[2] + A_CI->rot[2][2]);
 
       osg::Vec3d up(-A_CI->rot[1][0], -A_CI->rot[1][1], -A_CI->rot[1][2]);
+
+      viewer->getCameraManipulator()->setHomePosition(eye, center, up);
+      viewer->home();
+    }
+    break;
+
+    // The eye, center and up vectors are stored in the rows of the transform's
+    // rotation matrix.
+    case ViewerEventData::SetCameraHomePoseEyeCenterUp:
+    {
+      RLOG(5, "Setting camera home pose from eye, center and up");
+      const HTr* A_CI = &ev->trf;
+
+      osg::Vec3d eye(A_CI->rot[0][0], A_CI->rot[0][1], A_CI->rot[0][2]);
+      osg::Vec3d center(A_CI->rot[1][0], A_CI->rot[1][1], A_CI->rot[1][2]);
+      osg::Vec3d up(A_CI->rot[2][0], A_CI->rot[2][1], A_CI->rot[2][2]);
 
       viewer->getCameraManipulator()->setHomePosition(eye, center, up);
       viewer->home();
