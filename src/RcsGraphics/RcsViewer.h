@@ -225,6 +225,23 @@ public:
    */
   void setFieldOfView(double fovWidth, double fovHeight);
 
+  /*! \brief Changes the window size. This function only takes effect if there
+   *         was no frame() call before.
+   *
+   *  \param[in] llx     Lower left x screen coordinate
+   *  \param[in] lly     Lower left y screen coordinate
+   *  \param[in] sizeX   Screen size in x-direction
+   *  \param[in] sizeY   Screen size in y-direction
+   *
+   *  \return True for success, false otherwise: View has already been set
+   *          up (frame() has been called). In case of failure, there will be a
+   *          log message on debug level 1.
+   */
+  bool setWindowSize(unsigned int llx,     // lower left x
+                     unsigned int lly,     // lower left y
+                     unsigned int sizeX,   // size in x-direction
+                     unsigned int sizeY);  // size in y-direction
+
   ///@}
 
 
@@ -448,23 +465,6 @@ public:
 
 
 protected:
-
-  /*! \brief Changes the window size. This function only takes effect if there
-   *         was no frame() call before.
-   *
-   *  \param[in] llx     Lower left x screen coordinate
-   *  \param[in] lly     Lower left y screen coordinate
-   *  \param[in] sizeX   Screen size in x-direction
-   *  \param[in] sizeY   Screen size in y-direction
-   *
-   *  \return True for success, false otherwise: View has already been set
-   *          up (frame() has been called). In case of failure, there will be a
-   *          log message on debug level 1.
-   */
-  bool setWindowSize(unsigned int llx,     // lower left x
-                     unsigned int lly,     // lower left y
-                     unsigned int sizeX,   // size in x-direction
-                     unsigned int sizeY);  // size in y-direction
 
   /*! \brief Called from the KeyHandler's update function.
    */
