@@ -88,6 +88,23 @@ ELSEIF(USE_BULLET STREQUAL latest)
     ${BT_LIB_DIR}/libBulletDynamics.so 
     ${BT_LIB_DIR}/libBulletSoftBody.so 
     )
+  
+ELSEIF(USE_BULLET STREQUAL 2.89_double)
+
+  SET(BULLET_FOUND 1)
+  SET(BULLET_ROOT_DIR     "${HGR}/External/Bullet/2.89" )
+  SET(BULLET_USE_FILE     "lib/cmake/bullet/UseBullet.cmake" )
+  SET(BULLET_INCLUDE_DIR  "${BULLET_ROOT_DIR}/include/bullet" )
+  SET(BULLET_INCLUDE_DIRS "${BULLET_ROOT_DIR}/include/bullet" )
+  SET(BULLET_LIBRARIES
+    ${BULLET_ROOT_DIR}/lib/libLinearMath.so
+    ${BULLET_ROOT_DIR}/lib/libBullet3Common.so
+    ${BULLET_ROOT_DIR}/lib/libBulletInverseDynamics.so
+    ${BULLET_ROOT_DIR}/lib/libBulletCollision.so
+    ${BULLET_ROOT_DIR}/lib/libBulletDynamics.so
+    ${BULLET_ROOT_DIR}/lib/libBulletSoftBody.so)
+  SET(BULLET_VERSION_STRING "2.89" )
+  SET(BULLET_DEFINITIONS -DUSE_BULLET -DBT_USE_DOUBLE_PRECISION)
 
 ENDIF()
 

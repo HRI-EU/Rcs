@@ -114,7 +114,7 @@ IF(BULLET_FOUND)
 ELSE()
   SET(USE_BULLET OFF CACHE STRING "Bullet version to use")
 ENDIF()
-SET_PROPERTY(CACHE USE_BULLET PROPERTY STRINGS latest 2.83_float 2.83_double OFF)
+SET_PROPERTY(CACHE USE_BULLET PROPERTY STRINGS 2.89_double 2.83_float 2.83_double OFF)
 
 ################################################################################
 #
