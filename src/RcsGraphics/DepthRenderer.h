@@ -78,7 +78,7 @@ public:
 
   /*! \brief Renders the scene into a depth image on each frame call.
    */
-  virtual void frame();
+  virtual void frame(double simulationTime=USE_REFERENCE_TIME);
 
 
 private:

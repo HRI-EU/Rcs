@@ -138,9 +138,9 @@ void DepthRenderer::setCameraTransform(const HTr* A_CI)
   getCameraManipulator()->setByInverseMatrix(vm);
 }
 
-void DepthRenderer::frame()
+void DepthRenderer::frame(double simulationTime)
 {
-  osgViewer::Viewer::frame();
+  osgViewer::Viewer::frame(simulationTime);
 
   // get transformation matrix from world to screen and invert it
   osg::Matrixd pw = depthCam->getProjectionMatrix() *
