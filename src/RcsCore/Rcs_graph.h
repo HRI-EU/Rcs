@@ -516,7 +516,7 @@ void RcsGraph_setRandomState(RcsGraph* self);
  *         both original graphs. The sensors of the other graph are appended to
  *         the sensor array of self.
  *
- *  \param[in] self   Graph to be extended
+ *  \param[in] self   Graph to be extended. Must not be NULL.
  *  \param[in] root   Body of attachement. It must belong to RcsGraph self. If
  *                    it doesn't, the behavoir of the function is undefined. The
  *                    body must not have any children. If it does, the function
