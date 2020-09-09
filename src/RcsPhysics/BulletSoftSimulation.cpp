@@ -175,6 +175,19 @@ BulletSoftSimulation::BulletSoftSimulation(const BulletSoftSimulation& copyFromM
 
 BulletSoftSimulation::~BulletSoftSimulation()
 {
+  for (int i=softWorld->getNumCollisionObjects()-1; i>=0 ; i--)
+  {
+    btCollisionObject* obj = softWorld->getCollisionObjectArray()[i];
+    btSoftBody* body = btSoftBody::upcast(obj);
+
+    if (body)
+    {
+      softWorld->removeSoftBody(body);
+      delete body;
+    }
+
+  }
+
   delete this->softBodyWorldInfo;
 }
 

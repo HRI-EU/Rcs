@@ -875,14 +875,14 @@ Rcs::BulletRigidBody::BulletRigidBody(const btRigidBody::btRigidBodyConstruction
  ******************************************************************************/
 Rcs::BulletRigidBody::~BulletRigidBody()
 {
-  clearShapes();
+  clearCompoundShapes();
   delete getCollisionShape();  // It's safe to call delete on a NULL pointer
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::BulletRigidBody::clearShapes()
+void Rcs::BulletRigidBody::clearCompoundShapes()
 {
   btCollisionShape* sh = getCollisionShape();
   btCompoundShape* compound = NULL;

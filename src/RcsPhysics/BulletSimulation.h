@@ -178,8 +178,6 @@ public:
 
   void setNearCallback(btNearCallback nearCallback);
 
-  btDynamicsWorld* dynamicsWorld;
-
 protected:
 
   static void NearCallbackAllToAll(btBroadphasePair& collisionPair,
@@ -206,6 +204,7 @@ protected:
   virtual void createWorld(xmlNodePtr bulletParams);
   virtual void updateSoftMeshes();
 
+  btDynamicsWorld* dynamicsWorld;
   btBroadphaseInterface* broadPhase;
   btCollisionDispatcher* dispatcher;
   btConstraintSolver* solver;

@@ -55,6 +55,7 @@
 
 #include <BulletDynamics/MLCPSolvers/btDantzigSolver.h>
 #include <BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h>
+#include <BulletSoftBody/btSoftBody.h>
 
 #include <iostream>
 #include <climits>
@@ -274,7 +275,6 @@ Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe,
 /*******************************************************************************
  * Cleanup in the reverse order of creation/initialization.
  ******************************************************************************/
-//! \todo Check MSVC conditional
 Rcs::BulletSimulation::~BulletSimulation()
 {
   // Remove the constraints from the dynamics world and delete them
@@ -289,25 +289,39 @@ Rcs::BulletSimulation::~BulletSimulation()
   for (int i=dynamicsWorld->getNumCollisionObjects()-1; i>=0 ; i--)
   {
     btCollisionObject* obj = dynamicsWorld->getCollisionObjectArray()[i];
-    btRigidBody* body = btRigidBody::upcast(obj);
-    if (body && body->getMotionState())
+
+    // The soft bodies need to be cleaned up separately. It is not so great
+    // that we need to check for this here, since it somehow breaks the
+    // whole idea of the object oriented design.
+    if (dynamic_cast<btSoftBody*>(obj))
     {
-      delete body->getMotionState();
+      continue;
     }
-    dynamicsWorld->removeCollisionObject(obj);
-#if !defined (_MSC_VER)
-    if (dynamic_cast<BulletRigidBody*>(body))
+
+    btRigidBody* body = btRigidBody::upcast(obj);
+
+    // BulletRigidBody takes care of recursively deleting all shapes
+    // Other shapes such as ground plane need explicit destruction of shapes
+    if (!dynamic_cast<BulletRigidBody*>(body))
     {
-      // BulletRigidBody takes care of recursively deleting all shapes
-      delete obj;
+      delete obj->getCollisionShape();
+    }
+
+    if (body)
+    {
+      if (body->getMotionState())
+      {
+        delete body->getMotionState();
+      }
+      dynamicsWorld->removeRigidBody(body);
+      delete body;
     }
     else
     {
-      // Other shapes such as ground plane need explicit destruction of shapes
-      delete obj->getCollisionShape();
+      dynamicsWorld->removeCollisionObject(obj);
       delete obj;
     }
-#endif
+
   }
 
   delete this->dynamicsWorld;
@@ -1858,7 +1872,7 @@ bool Rcs::BulletSimulation::removeBody(const char* name)
 
   BulletRigidBody* btBdy = it->second;
   lock();
-  btBdy->clearShapes();
+  btBdy->clearCompoundShapes();
   dynamicsWorld->removeRigidBody(btBdy);
   bdyMap.erase(it);
   delete btBdy;

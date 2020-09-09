@@ -64,7 +64,7 @@ private:
                   const RcsBody* body);
   virtual ~BulletRigidBody();
 
-  void clearShapes();
+  void clearCompoundShapes();
   void calcHingeTrans(const RcsJoint* jnt, btVector3& pivot, btVector3& axis);
   btTransform calcSliderTrans(const RcsJoint* jnt);
   btTypedConstraint* createFixedJoint(const RcsGraph* graph);
