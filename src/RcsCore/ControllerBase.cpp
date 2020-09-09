@@ -52,6 +52,19 @@
 
 
 /*******************************************************************************
+ * Construction without tasks and default settings.
+ ******************************************************************************/
+Rcs::ControllerBase::ControllerBase() :
+  graph(NULL),
+  ownsGraph(true),
+  xmlRootNode(NULL),
+  xmlDoc(NULL),
+  cMdl(NULL),
+  name("Unknown controller")
+{
+}
+
+/*******************************************************************************
  * Constructor based on xml parsing.
  ******************************************************************************/
 Rcs::ControllerBase::ControllerBase(const std::string& xmlDescription,
@@ -1848,7 +1861,14 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
                               const char* suffix,
                               const HTr* A_BP)
 {
-  bool success = RcsGraph_appendCopyOfGraph(getGraph(), NULL, other.getGraph(),
+  return add(&other, suffix, A_BP);
+}
+
+bool Rcs::ControllerBase::add(const ControllerBase* other,
+                              const char* suffix,
+                              const HTr* A_BP)
+{
+  bool success = RcsGraph_appendCopyOfGraph(getGraph(), NULL, other->getGraph(),
                                             suffix, A_BP);
 
   if (success == false)
@@ -1856,7 +1876,7 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
     return false;
   }
 
-  const std::vector<Task*>& otherTasks = other.taskVec();
+  const std::vector<Task*>& otherTasks = other->taskVec();
   const size_t otherTasksSize = otherTasks.size();
 
   if (otherTasksSize == 0)
@@ -1950,7 +1970,7 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
     // Rename joint names for TaskJoints
     if (dynamic_cast<TaskJoints*>(copyOfOtherTask))
     {
-      RLOG(0, "Copying joints task %s", copyOfOtherTask->getName().c_str());
+      RLOG(5, "Copying joints task %s", copyOfOtherTask->getName().c_str());
       TaskJoints* jntsTask = dynamic_cast<TaskJoints*>(copyOfOtherTask);
 
       for (size_t i=0; i<jntsTask->getNumberOfTasks(); ++i)

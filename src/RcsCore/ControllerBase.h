@@ -67,6 +67,10 @@ class ControllerBase
 {
 public:
 
+  /*! \brief Empty constructor with default settings. 
+   */
+  ControllerBase();
+
   /*! \brief Constructor based on xml parsing. The file xmlDescription must
    *         contain the file name of the controller definition, or a string
    *         containing the xml description itself. The flag
@@ -82,7 +86,7 @@ public:
   /*! \brief Constructor based on a graph. The new class takes ownership of the
    *         given graph. Use this if you only want to add tasks manually using
    *         addTask. If this constructor is used, the readXYFromXML methods
-   *         will NOT work.
+   *         will not work.
    */
   ControllerBase(RcsGraph* graph);
 
@@ -669,6 +673,14 @@ public:
    */
   virtual xmlNodePtr getXmlNode() const;
 
+  /*! \brief Adds a copy of the other controller to the task list, and appends
+   *         the corresponding graph. The suffix is appended to each body and
+   *         task name. The transform A_BP is an optional relative 
+   *         transformation of the added graph root. If it is NULL, it is
+   *         ignored.
+   */
+  virtual bool add(const ControllerBase* other, const char* suffix,
+                   const HTr* A_BP);
   virtual bool add(const ControllerBase& other, const char* suffix,
                    const HTr* A_BP);
 
