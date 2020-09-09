@@ -1411,6 +1411,13 @@ void RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q)
     }
 
     int idx = (stateType==RcsStateIK) ? JNT->jacobiIndex : JNT->jointIndex;
+
+    // We ignore entries that equal the initial q_init values
+    if (fabs(q->ele[idx]-JNT->q_init)<1.0e-6)
+    {
+      continue;
+    }
+
     double qi = RcsJoint_isRotation(JNT)?RCS_RAD2DEG(q->ele[idx]):q->ele[idx];
 
     fprintf(out, "  <joint_state joint=\"%s\" position=\"%s\" />\n",
@@ -2867,6 +2874,12 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self, RcsBody* root,
                                 const char* suffix,
                                 const HTr* A_BP)
 {
+  if (self == NULL)
+  {
+    RLOG(1, "Can't append graph to NULL graph");
+    return false;
+  }
+
   if ((root!=NULL) && (root->firstChild!=NULL))
   {
     RLOG(1, "Can't append graph to body with children (%s)", root->name);
@@ -2884,6 +2897,7 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self, RcsBody* root,
   if (other->root == NULL)
   {
     RLOG(1, "Cloned graph has no root body");
+    RcsGraph_destroy(other);
     return false;
   }
 
@@ -2892,6 +2906,7 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self, RcsBody* root,
     RLOG(1, "Currently we can't handle multiple root bodies - your graph has "
          "body \"%s\" next to root (%s)", other->root->next->name,
          other->root->name);
+    RcsGraph_destroy(other);
     return false;
   }
 
