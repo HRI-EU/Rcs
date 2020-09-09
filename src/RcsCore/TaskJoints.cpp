@@ -39,7 +39,9 @@
 #include "TaskFactory.h"
 #include "Rcs_macros.h"
 #include "Rcs_typedef.h"
+#include "Rcs_parser.h"
 #include "Rcs_stlParser.h"
+#include "Rcs_VecNd.h"
 
 
 static Rcs::TaskFactoryRegistrar<Rcs::TaskJoints> registrar("Joints");
@@ -67,6 +69,19 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
       RCHECK(refJntsVec.size()==jntsVec.size());
     }
 
+    double* refGains = new double[jntsVec.size()];
+    VecNd_setElementsTo(refGains, 1.0, jntsVec.size());
+    bool hasRefGains = getXMLNodePropertyVecN(node, "refGains", refGains, jntsVec.size());
+    if (!hasRefGains)
+      {
+        hasRefGains = getXMLNodePropertyDouble(node, "refGains", &refGains[0]);
+
+        if (hasRefGains)
+          {
+            VecNd_setElementsTo(refGains, refGains[0], jntsVec.size());
+          }
+      }
+
     for (size_t idx = 0; idx < jntsVec.size(); idx++)
     {
       RcsJoint* jnt = RcsGraph_getJointByName(_graph, jntsVec[idx].c_str());
@@ -79,9 +94,10 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
         RCHECK_MSG(refJnt, "Not found: %s", refJntsVec[idx].c_str());
       }
 
-      addTask(new TaskJoint(jnt, refJnt, node, _graph));
+      addTask(new TaskJoint(jnt, refJnt, node, _graph, refGains[idx]));
     }
 
+    delete [] refGains;
   }
   else
   {
