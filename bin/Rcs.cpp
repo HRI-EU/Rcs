@@ -2065,7 +2065,9 @@ int main(int argc, char** argv)
         else if (kc && kc->getAndResetKey('T'))
         {
           RLOGS(0, "Running controller test");
+          pthread_mutex_lock(&graphLock);
           controller.test(true);
+          pthread_mutex_unlock(&graphLock);
         }
         else if (kc && kc->getAndResetKey(' '))
         {
