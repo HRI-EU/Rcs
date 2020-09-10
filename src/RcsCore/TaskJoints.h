@@ -45,9 +45,47 @@ namespace Rcs
 /*! \ingroup RcsTask
  * \brief This tasks allows to control a set of joints in a single task.
  *
- *  If the tag "jnts" is given in the xml description, the task controls
- *  only the specified joints. Otherwise, the task controls all joints
- *  in the graph.
+ * First example: Specifying joint names
+ *
+ * \code
+ *    <Task controlVariable="Joints"
+ *          jnts="joint1 joint2 joint3"
+ *          refJnts="basejoint1 basejoint2 basejoint3"
+ *          refGains="1 2 3" />
+ * \endcode
+ *
+ * Second example: Specifying body names. If a body is specified by the
+ * effector or refBdy attribute, all joints that connect the body to its
+ * predecessor are considered.
+ *
+ * \code
+ *    <Task controlVariable="Joints"
+ *          effector="body"
+ *          refBdy="basebody"
+ *          refGains="1" />
+ * \endcode
+ *
+ * - jnts: Space-separated list of joint names that are to be controlled
+ *
+ * - refJnts: Optional space-separated list of joint names. The joints listed
+ *            in the jnts attribute are described with respect to the refJnts.
+ *            It means that the velocities of the jnts are added to the ones
+ *            of the refJnts with a given scaling factor (see refGains).
+ *            If this attribute is given, the number of refJnts must match the
+ *            number of the attribute jnts.
+ *
+ * - refGains: Optional space-separated list of scaling factors. If this
+ *             attribute is not given, the default is 1. If this attribute is
+ *             given, the number of refJnts must either match the number of
+ *             the attribute jnts, or must be 1. In the latter case, the same
+ *             scaling factor is applied to all joints.
+ *
+ * - effector: All joints that connect the body to its predecessors are
+ *             extracted. This attribute is exclusive to jnts
+ *
+ * - refBdy: All joints that connect the body to its predecessors are
+ *           extracted as refJnts. The dimensions must match. This attribute
+ *           is exclusive to refJnts.
  */
 class TaskJoints: public CompositeTask
 {
@@ -68,8 +106,20 @@ public:
 
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise. The following checks are performed:
-   *         - XML tag "effector" corresponds to body in graph
-   *         - XML tag "controlVariable" is "XYZ"
+   *         - All joints in attribute "jnts" exist
+   *         - If refJnts is given:
+   *           - All joints in attribute "refJnts" exist
+   *           - Number of refJnts matches number of joints
+   *         - If refGains is given:
+   *           - Number of refGains matches one or number of joints
+   *         - If effector is given:
+   *           - Attribute "jnts" is not specified
+   *           - Corresponding body exists in graph
+   *         - If refBdy is given:
+   *           - Attribute "refFnts" is not specified
+   *           - Corresponding body exists in graph
+   *           - Number of body joints matches number of the joints specified
+   *             in the task
    */
   static bool isValid(xmlNode* xml_node, const RcsGraph* graph);
 };

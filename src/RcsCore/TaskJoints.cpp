@@ -42,6 +42,7 @@
 #include "Rcs_parser.h"
 #include "Rcs_stlParser.h"
 #include "Rcs_VecNd.h"
+#include "Rcs_body.h"
 
 
 static Rcs::TaskFactoryRegistrar<Rcs::TaskJoints> registrar("Joints");
@@ -55,15 +56,55 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
                             RcsGraph* _graph):
   CompositeTask(className_, node, _graph)
 {
-  // If the attribute "jnts" is given, TaskJoints are only created
-  // for the joints listed within the attribute
+  // Parse all joints specified in attribute "jnts"
   std::vector<std::string> jntsVec;
   getXMLNodePropertyVecSTLString(node, "jnts", jntsVec);
 
-  if (jntsVec.size() > 0)
+  // If atribute "jnts" does not exist or contain anything, we look for
+  // an "effector" attribute and add all body joints
+  if (jntsVec.empty())
   {
-    std::vector<std::string> refJntsVec;
-    getXMLNodePropertyVecSTLString(node, "refJnts", refJntsVec);
+    std::string tmp;
+    getXMLNodePropertySTLString(node, "effector", tmp);
+
+    if (!tmp.empty())
+    {
+      const RcsBody* bdy = RcsGraph_getBodyByName(_graph, tmp.c_str());
+      RCHECK_MSG(bdy, "Can't find body \"%s\" for jntsVec", tmp.c_str());
+      const RcsJoint* jPtr = bdy->jnt;
+
+      while (jPtr)
+      {
+        jntsVec.push_back(std::string(jPtr->name));
+        jPtr = jPtr->next;
+      }
+    }
+  }
+
+  std::vector<std::string> refJntsVec;
+  getXMLNodePropertyVecSTLString(node, "refJnts", refJntsVec);
+
+  // If atribute "refJnts" does not exist or contain anything, we look
+  // for a "refBdy" attribute and add all body joints
+  if (refJntsVec.empty())
+  {
+    std::string tmp;
+    getXMLNodePropertySTLString(node, "refBdy", tmp);
+
+    if (!tmp.empty())
+    {
+      const RcsBody* bdy = RcsGraph_getBodyByName(_graph, tmp.c_str());
+      RCHECK_MSG(bdy, "Can't find body \"%s\" for refJntsVec", tmp.c_str());
+      const RcsJoint* jPtr = bdy->jnt;
+
+      while (jPtr)
+      {
+        refJntsVec.push_back(std::string(jPtr->name));
+        jPtr = jPtr->next;
+      }
+    }
+  }
+
     if (!refJntsVec.empty())
     {
       RCHECK(refJntsVec.size()==jntsVec.size());
@@ -71,16 +112,25 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
 
     double* refGains = new double[jntsVec.size()];
     VecNd_setElementsTo(refGains, 1.0, jntsVec.size());
-    bool hasRefGains = getXMLNodePropertyVecN(node, "refGains", refGains, jntsVec.size());
-    if (!hasRefGains)
-      {
-        hasRefGains = getXMLNodePropertyDouble(node, "refGains", &refGains[0]);
 
-        if (hasRefGains)
-          {
-            VecNd_setElementsTo(refGains, refGains[0], jntsVec.size());
-          }
+    unsigned int nStrings = getXMLNodeNumStrings(node, "refGains");
+
+    if (nStrings==1)
+    {
+      getXMLNodePropertyDouble(node, "refGains", &refGains[0]);
+      VecNd_setElementsTo(refGains, refGains[0], jntsVec.size());
+    }
+    else if (nStrings==6)
+    {
+      getXMLNodePropertyVecN(node, "refGains", refGains, nStrings);
+    }
+    else
+    {
+      if (nStrings!=0)
+      {
+        RLOG(1, "Wrong number of refGains: %u, should be 1 or 6", nStrings);
       }
+    }
 
     for (size_t idx = 0; idx < jntsVec.size(); idx++)
     {
@@ -98,14 +148,6 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
     }
 
     delete [] refGains;
-  }
-  else
-  {
-    RCSGRAPH_TRAVERSE_JOINTS(getGraph())
-    {
-      addTask(new TaskJoint(JNT, NULL, node, _graph));
-    }
-  }
 }
 
 /*******************************************************************************
@@ -136,9 +178,9 @@ bool Rcs::TaskJoints::isValid(xmlNode* node, const RcsGraph* graph)
   // If the attribute "jnts" is given, TaskJoints are only created
   // for the joints listed within the attribute
   std::vector<std::string> jntVec;
-  getXMLNodePropertyVecSTLString(node, "jnts", jntVec);
+  bool hasJnts = getXMLNodePropertyVecSTLString(node, "jnts", jntVec);
 
-  if (!jntVec.empty())
+  if (hasJnts)
   {
     for (size_t idx = 0; idx < jntVec.size(); idx++)
     {
@@ -151,12 +193,45 @@ bool Rcs::TaskJoints::isValid(xmlNode* node, const RcsGraph* graph)
     }
   }
 
+  std::string efBdy;
+  bool hasEffector = getXMLNodePropertySTLString(node, "effector", efBdy);
+
+  if (hasEffector)
+  {
+    if (hasJnts)
+    {
+      RLOG(4, "Both effector and jnts attribute given - giving up");
+      success = false;
+    }
+    else
+    {
+      const RcsBody* bdy = RcsGraph_getBodyByName(graph, efBdy.c_str());
+
+      if (bdy==NULL)
+      {
+        RLOG(4, "Effector \"%s\" not found in graph", efBdy.c_str());
+        success = false;
+      }
+      else
+      {
+        const RcsJoint* jPtr = bdy->jnt;
+
+        while (jPtr)
+        {
+          jntVec.push_back(std::string(jPtr->name));
+          jPtr = jPtr->next;
+        }
+      }
+    }
+
+  }   // if (hasEffector)
+
   // If the attribute "refJnts" is given, TaskJoints are only created
   // for the joints listed within the attribute
   std::vector<std::string> refJntVec;
-  getXMLNodePropertyVecSTLString(node, "refJnts", refJntVec);
+  bool hasRefJnts = getXMLNodePropertyVecSTLString(node, "refJnts", refJntVec);
 
-  if (!refJntVec.empty())
+  if (hasRefJnts)
   {
     if (refJntVec.size() != jntVec.size())
     {
@@ -175,6 +250,52 @@ bool Rcs::TaskJoints::isValid(xmlNode* node, const RcsGraph* graph)
       }
     }
   }
+
+  std::string refBdy;
+  bool hasRefBdy = getXMLNodePropertySTLString(node, "refBdy", refBdy);
+
+  if (hasRefBdy)
+  {
+    if (hasRefJnts)
+    {
+      RLOG(4, "Both refBdy and refJnts attribute given - giving up");
+      success = false;
+    }
+    else
+    {
+      const RcsBody* bdy = RcsGraph_getBodyByName(graph, refBdy.c_str());
+
+      if (bdy==NULL)
+      {
+        RLOG(4, "refBdy \"%s\" not found in graph", refBdy.c_str());
+        success = false;
+      }
+      else
+      {
+        const RcsJoint* jPtr = bdy->jnt;
+
+        while (jPtr)
+        {
+          refJntVec.push_back(std::string(jPtr->name));
+          jPtr = jPtr->next;
+        }
+      }
+    }
+
+  }   // if (hasRefBdy)
+
+  // If the attribute "refGains" is given, the number of entries must match the number of
+  // entries of the joints
+  unsigned int nStrings = getXMLNodeNumStrings(node, "refGains");
+
+  if ((nStrings!=0) && (nStrings!=1) && (nStrings!=jntVec.size()))
+  {
+      RLOG_CPP(4, "Wrong number of refGains: " << nStrings
+               <<  "  should be 0, 1 or " << jntVec.size());
+      success = false;
+  }
+
+
 
   return success;
 }

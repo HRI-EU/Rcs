@@ -89,9 +89,9 @@ RcsBody* RcsBody_clone(const RcsBody* src);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns the number of joints by which the body is attached to its
- *         predecessor.
+ *         predecessor. If body is NULL, the function returns 0.
  */
-unsigned int RcsBody_numJoints(const RcsBody* b);
+unsigned int RcsBody_numJoints(const RcsBody* body);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns the number of shapes attached to the body. If self is NULL,

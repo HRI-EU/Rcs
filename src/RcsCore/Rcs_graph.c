@@ -1963,7 +1963,7 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src)
 
   // Adjust pointers to local data
   dst->q       = MatNd_clone(src->q);
-  dst->q_dot      = MatNd_clone(src->q_dot);
+  dst->q_dot   = MatNd_clone(src->q_dot);
   dst->xmlFile = String_clone(src->xmlFile);
 
   // Traverse the graph and create all elements
@@ -2929,9 +2929,9 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self, RcsBody* root,
   {
     RCSGRAPH_TRAVERSE_BODIES(other)
     {
-      char* newName = RNALLOC(strlen(BODY->name) + strlen(suffix) + 1, char);
-      strcpy(newName, BODY->name);
-      strcat(newName, suffix);
+      const size_t nameLen = strlen(BODY->name) + strlen(suffix) + 1;
+      char* newName = RNALLOC(nameLen, char);
+      snprintf(newName, nameLen, "%s%s", BODY->name, suffix);
       RFREE(BODY->name);
       BODY->name = newName;
     }
@@ -2939,9 +2939,9 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self, RcsBody* root,
     // Add the suffix to all joints that come new into the graph
     RCSGRAPH_TRAVERSE_JOINTS(other)
     {
-      char* newName = RNALLOC(strlen(JNT->name) + strlen(suffix) + 1, char);
-      strcpy(newName, JNT->name);
-      strcat(newName, suffix);
+      const size_t nameLen = strlen(JNT->name) + strlen(suffix) + 1;
+      char* newName = RNALLOC(nameLen, char);
+      snprintf(newName, nameLen, "%s%s", JNT->name, suffix);
       RFREE(JNT->name);
       JNT->name = newName;
     }
@@ -2949,9 +2949,9 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self, RcsBody* root,
     // Add the suffix to all sensors that come new into the graph
     RCSGRAPH_TRAVERSE_SENSORS(other)
     {
-      char* newName = RNALLOC(strlen(SENSOR->name) + strlen(suffix) + 1, char);
-      strcpy(newName, SENSOR->name);
-      strcat(newName, suffix);
+      const size_t nameLen = strlen(SENSOR->name) + strlen(suffix) + 1;
+      char* newName = RNALLOC(nameLen, char);
+      snprintf(newName, nameLen, "%s%s", SENSOR->name, suffix);
       RFREE(SENSOR->name);
       SENSOR->name = newName;
     }

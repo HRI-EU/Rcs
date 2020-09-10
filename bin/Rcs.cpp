@@ -1740,6 +1740,7 @@ int main(int argc, char** argv)
       argP.getArgument("-scaleDragForce", &scaleDragForce, "Scale factor for"
                        " mouse dragger (default is \"%f\")", scaleDragForce);
       bool ffwd = argP.hasArgument("-ffwd", "Feed-forward dx only");
+      bool skipGui = argP.hasArgument("-skipGui", "No GUIs, only viewer");
       bool pause = argP.hasArgument("-pause", "Pause after each iteration");
       bool launchJointWidget = argP.hasArgument("-jointWidget",
                                                 "Launch JointWidget");
@@ -1869,10 +1870,15 @@ int main(int argc, char** argv)
         // Launch the task widget
         if (ffwd == false)
         {
-          Rcs::ControllerWidgetBase::create(&controller, a_des, x_des, x_curr,
-                                            mtx);
+          if (!skipGui)
+          {
+            Rcs::ControllerWidgetBase::create(&controller, a_des,
+                                              x_des, x_curr, mtx);
+          }
         }
         else
+        {
+          if (!skipGui)
         {
           // Launch the task widget
           Rcs::MatNdWidget* mw = Rcs::MatNdWidget::create(dx_des, x_curr,
@@ -1899,6 +1905,7 @@ int main(int argc, char** argv)
             labels.push_back(controller.getTaskName(id));
           }
           mw->setLabels(labels);
+          }
         }
 
 
