@@ -3201,9 +3201,9 @@ int main(int argc, char** argv)
 
   if ((mode!=0) && argP.hasArgument("-h", "Show help message"))
   {
+    Rcs_printResourcePath();
     Rcs::KeyCatcherBase::printRegisteredKeys();
     argP.print();
-    Rcs_printResourcePath();
   }
 
   // Clean up global stuff. From the libxml2 documentation:

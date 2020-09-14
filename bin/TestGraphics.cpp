@@ -753,6 +753,11 @@ static void testCameraTransform()
   argP.getArgument("-f", xmlFileName, "Configuration file name");
   argP.getArgument("-dir", directory, "Configuration file directory");
 
+  if (argP.hasArgument("-h"))
+  {
+    return;
+  }
+
   pthread_mutex_t mtx;
   pthread_mutex_init(&mtx, NULL);
 
@@ -1176,6 +1181,8 @@ int main(int argc, char** argv)
 
   if (argP.hasArgument("-h"))
   {
+    Rcs_printResourcePath();
+    Rcs::KeyCatcherBase::printRegisteredKeys();
     argP.print();
   }
 
