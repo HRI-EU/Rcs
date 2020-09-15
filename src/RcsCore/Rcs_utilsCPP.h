@@ -91,13 +91,11 @@ bool File_isEqualCpp(const char* file1, const char* file2);
 
 /*! \ingroup RcsUtilsFunctions
  *  \brief Splits the given string into pieces that are separated by the given
- *         delimiter. After splitting, the string that is to be splitted will
- *         contain only the remainder of what's left after the last delimiter.
+ *         delimiter.
  *
  *  \param stringToBeSplitted The string that is to be splitted.
  *  \param delimiter Pattern that spearates the sub-strings
- *  \return Vector of sub-strings without delimiter. The remainder of the
- *          stringToBeSplitted is not contained.
+ *  \return Vector of sub-strings without delimiter.
  */
 std::vector<std::string> String_split(const std::string& stringToBeSplitted,
                                       const std::string& delimiter);

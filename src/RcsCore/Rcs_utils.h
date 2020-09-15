@@ -224,6 +224,20 @@ char* String_createUnique();
  */
 char* String_createRandom(unsigned int size);
 
+/*! \ingroup RcsUtilsFunctions
+ * \brief Copies the portion of src until the last occurance of the suffix
+ *        character into dst. For instance the string "abc_1" with suffix '_'
+ *        becomes "abc". If the suffix character is not found, the original
+ *        string is copied into dst, and false is returned. If a suffix was
+ *        successfully removed, the function returns true.
+ *
+ *  \param[out] dst     Target string with sufficient memory
+ *  \param[in] src      Array whose suffix is to be stripped
+ *  \param[in] suffix   Suffix character
+ *  \return             True for success, false otherwise
+ */
+bool String_removeSuffix(char* dst, const char* src, char suffix);
+
 ///@}
 
 

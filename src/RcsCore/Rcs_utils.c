@@ -39,6 +39,7 @@
 #include "Rcs_timer.h"
 
 #include <locale.h>
+#include <limits.h>
 
 #if !defined(_MSC_VER)
 #include <unistd.h>
@@ -351,14 +352,12 @@ bool String_toBool(const char* str)
  ******************************************************************************/
 unsigned int String_countSubStrings(const char* str, const char* delim)
 {
-  char* lStr, *pch;
-  unsigned int nSubStrings = 0;
-
   // Make a local copy of str, since strtok modifies it during processing
-  lStr = String_clone(str);
-  pch = strtok(lStr, delim);
+  char* lStr = String_clone(str);
+  char* pch = strtok(lStr, delim);
 
   // Determine number of delim-separated sub-strings
+  unsigned int nSubStrings = 0;
   while (pch != NULL)
   {
     pch = strtok(NULL, delim);
@@ -366,11 +365,6 @@ unsigned int String_countSubStrings(const char* str, const char* delim)
   }
 
   RFREE(lStr);
-
-  if (str[strlen(str)-1]==32)   // Ignore white space at the end of the line
-  {
-    nSubStrings--;
-  }
 
   return nSubStrings;
 }
@@ -573,11 +567,35 @@ char* String_createRandom(unsigned int size)
 /*******************************************************************************
  * See header
  ******************************************************************************/
+bool String_removeSuffix(char* dst, const char* src, char suffix)
+{
+  const char* cursor = strrchr(src, suffix);
+  strcpy(dst, src);
+
+  if (cursor == NULL)
+  {
+    return false;
+  }
+
+  size_t namelen = cursor - src;
+  dst[namelen] = '\0';
+
+  return true;
+}
+
+/*******************************************************************************
+ * See header
+ ******************************************************************************/
 bool File_exists(const char* filename)
 {
   FILE* file;
 
   if (filename == NULL)
+  {
+    return false;
+  }
+
+  if (strlen(filename) > FILENAME_MAX)
   {
     return false;
   }
@@ -663,7 +681,7 @@ bool File_isEqual(const char* file1, const char* file2)
     return false;
   }
 
-  FILE *fd1 = fopen(file1, "r");
+  FILE* fd1 = fopen(file1, "r");
 
   if (fd1==NULL)
   {
@@ -671,7 +689,7 @@ bool File_isEqual(const char* file1, const char* file2)
     return false;
   }
 
-  FILE *fd2 = fopen(file2, "r");
+  FILE* fd2 = fopen(file2, "r");
 
   if (fd2==NULL)
   {

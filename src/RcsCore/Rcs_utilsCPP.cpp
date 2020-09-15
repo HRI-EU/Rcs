@@ -214,7 +214,14 @@ std::vector<std::string> String_split(const std::string& toBeSplitted,
   std::vector<std::string> splittedString;
   size_t startIdx = 0, endIdx = 0;
 
-  if (delim.size() != 0)
+  // Border case: If toBeSplitted is empty, we return an empty string.
+  if (toBeSplitted.empty())
+  {
+    splittedString.push_back(toBeSplitted);
+    return splittedString;
+  }
+
+  if (!delim.empty())
   {
     while ((endIdx = toBeSplitted.find(delim, startIdx)) != std::string::npos)
     {
@@ -231,7 +238,7 @@ std::vector<std::string> String_split(const std::string& toBeSplitted,
     splittedString.push_back(toBeSplitted);
   }
 
-  if (endIdx == std::string::npos && startIdx < toBeSplitted.size())
+  if ((endIdx==std::string::npos) && (startIdx<toBeSplitted.size()))
   {
     splittedString.push_back(toBeSplitted.substr(startIdx));
   }

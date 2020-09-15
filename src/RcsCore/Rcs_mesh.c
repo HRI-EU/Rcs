@@ -1243,14 +1243,14 @@ RcsMeshData* RcsMesh_createBox(const double extents[3])
   const double verts[24] =
   {
     -0.5, -0.5, -0.5,
-    0.5, -0.5, -0.5,
-    0.5,  0.5, -0.5,
-    -0.5,  0.5, -0.5,
-    -0.5,  0.5,  0.5,
-    0.5,  0.5,  0.5,
-    0.5, -0.5,  0.5,
-    -0.5, -0.5,  0.5,
-  };
+      0.5, -0.5, -0.5,
+      0.5,  0.5, -0.5,
+      -0.5,  0.5, -0.5,
+      -0.5,  0.5,  0.5,
+      0.5,  0.5,  0.5,
+      0.5, -0.5,  0.5,
+      -0.5, -0.5,  0.5,
+    };
 
   memcpy(mesh->faces, vertexIndex, 3*mesh->nFaces*sizeof(unsigned int));
 
@@ -1679,10 +1679,10 @@ static RcsMeshData* RcsMesh_createRectangle(double x, double y)
   const double verts[12] =
   {
     -0.5, -0.5, 0.0,
-    0.5, -0.5, 0.0,
-    0.5,  0.5, 0.0,
-    -0.5,  0.5, 0.0,
-  };
+      0.5, -0.5, 0.0,
+      0.5,  0.5, 0.0,
+      -0.5,  0.5, 0.0,
+    };
 
   memcpy(mesh->faces, vertexIndex, 3*mesh->nFaces*sizeof(unsigned int));
 
