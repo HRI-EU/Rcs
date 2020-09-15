@@ -1879,32 +1879,32 @@ int main(int argc, char** argv)
         else
         {
           if (!skipGui)
-        {
-          // Launch the task widget
-          Rcs::MatNdWidget* mw = Rcs::MatNdWidget::create(dx_des, x_curr,
-                                                          -1.0, 1.0, "dx",
-                                                          mtx);
-
-          std::vector<std::string> labels;
-          for (size_t id=0; id<controller.getNumberOfTasks(); id++)
           {
-            for (unsigned int j=0; j<controller.getTaskDim(id); j++)
-              labels.push_back(controller.getTaskName(id) +
-                               std::string(": ") +
-                               controller.getTask(id)->getParameter(j).name);
-          }
+            // Launch the task widget
+            Rcs::MatNdWidget* mw = Rcs::MatNdWidget::create(dx_des, x_curr,
+                                                            -1.0, 1.0, "dx",
+                                                            mtx);
 
-          mw->setLabels(labels);
+            std::vector<std::string> labels;
+            for (size_t id=0; id<controller.getNumberOfTasks(); id++)
+            {
+              for (unsigned int j=0; j<controller.getTaskDim(id); j++)
+                labels.push_back(controller.getTaskName(id) +
+                                 std::string(": ") +
+                                 controller.getTask(id)->getParameter(j).name);
+            }
 
-          mw = Rcs::MatNdWidget::create(a_des, a_des,
-                                        0.0, 1.0, "activation",
-                                        &graphLock);
-          labels.clear();
-          for (size_t id=0; id<controller.getNumberOfTasks(); id++)
-          {
-            labels.push_back(controller.getTaskName(id));
-          }
-          mw->setLabels(labels);
+            mw->setLabels(labels);
+
+            mw = Rcs::MatNdWidget::create(a_des, a_des,
+                                          0.0, 1.0, "activation",
+                                          &graphLock);
+            labels.clear();
+            for (size_t id=0; id<controller.getNumberOfTasks(); id++)
+            {
+              labels.push_back(controller.getTaskName(id));
+            }
+            mw->setLabels(labels);
           }
         }
 
@@ -2191,13 +2191,27 @@ int main(int argc, char** argv)
           RMSG("Physics feedback is %s", physicsFeedback ? "ON" : "OFF");
         }
 
-        sprintf(hudText, "IK calculation: %.1f us\ndof: %d nJ: %d "
+        char timeStr[64] = "";
+        if (1.0e6*dt_calc>10000000.0)   // show seconds
+        {
+          snprintf(timeStr, 64, "%.1f s", dt_calc);
+        }
+        else if (1.0e6*dt_calc>10000.0)   // show milliseconds
+        {
+          snprintf(timeStr, 64, "%.1f ms", 1.0e3*dt_calc);
+        }
+        else
+        {
+          snprintf(timeStr, 64, "%.1f us", 1.0e6*dt_calc);
+        }
+
+        sprintf(hudText, "IK calculation: %s\ndof: %d nJ: %d "
                 "nqr: %d nx: %d\nJL-cost: %.6f dJL-cost: %.6f %s %s"
                 "\nalgo: %d lambda:%g alpha: %g tmc: %.3f\n"
                 "Manipulability index: %.6f\n"
                 "Static effort: %.6f\n"
                 "Robot pose %s",
-                1.0e6*dt_calc, controller.getGraph()->dof,
+                timeStr, controller.getGraph()->dof,
                 controller.getGraph()->nJ, ikSolver->getInternalDof(),
                 (int) controller.getActiveTaskDim(a_des),
                 jlCost, dJlCost,
