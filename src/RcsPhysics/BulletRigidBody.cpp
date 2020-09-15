@@ -144,7 +144,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
                         btScalar(0.5*sh->extents[2]));
       bShape = new btCylinderShapeZ(halfExt);
       setMargin(bShape);
-     break;
+      break;
     }
 
     case RCSSHAPE_BOX:
