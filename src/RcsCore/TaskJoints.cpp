@@ -43,6 +43,7 @@
 #include "Rcs_stlParser.h"
 #include "Rcs_VecNd.h"
 #include "Rcs_body.h"
+#include "Rcs_utils.h"
 
 
 static Rcs::TaskFactoryRegistrar<Rcs::TaskJoints> registrar("Joints");
@@ -71,6 +72,7 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
     {
       const RcsBody* bdy = RcsGraph_getBodyByName(_graph, tmp.c_str());
       RCHECK_MSG(bdy, "Can't find body \"%s\" for jntsVec", tmp.c_str());
+      setEffector(bdy);
       const RcsJoint* jPtr = bdy->jnt;
 
       while (jPtr)
@@ -95,6 +97,7 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
     {
       const RcsBody* bdy = RcsGraph_getBodyByName(_graph, tmp.c_str());
       RCHECK_MSG(bdy, "Can't find body \"%s\" for refJntsVec", tmp.c_str());
+      setRefBody(bdy);
       const RcsJoint* jPtr = bdy->jnt;
 
       while (jPtr)
@@ -105,49 +108,97 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
     }
   }
 
+  if (!refJntsVec.empty())
+  {
+    RCHECK(refJntsVec.size()==jntsVec.size());
+  }
+
+  double* refGains = new double[jntsVec.size()];
+  VecNd_setElementsTo(refGains, 1.0, jntsVec.size());
+
+  unsigned int nStrings = getXMLNodeNumStrings(node, "refGains");
+
+  if (nStrings==1)
+  {
+    getXMLNodePropertyDouble(node, "refGains", &refGains[0]);
+    VecNd_setElementsTo(refGains, refGains[0], jntsVec.size());
+  }
+  else if (nStrings != 0)
+  {
+    getXMLNodePropertyVecN(node, "refGains", refGains, nStrings);
+  }
+
+  for (size_t idx = 0; idx < jntsVec.size(); idx++)
+  {
+    RcsJoint* jnt = RcsGraph_getJointByName(_graph, jntsVec[idx].c_str());
+    RCHECK_MSG(jnt, "Not found: %s", jntsVec[idx].c_str());
+
+    RcsJoint* refJnt = NULL;
     if (!refJntsVec.empty())
     {
-      RCHECK(refJntsVec.size()==jntsVec.size());
+      refJnt = RcsGraph_getJointByName(_graph, refJntsVec[idx].c_str());
+      RCHECK_MSG(refJnt, "Not found: %s", refJntsVec[idx].c_str());
     }
 
-    double* refGains = new double[jntsVec.size()];
-    VecNd_setElementsTo(refGains, 1.0, jntsVec.size());
+    addTask(new TaskJoint(jnt, refJnt, node, _graph, refGains[idx]));
+  }
 
-    unsigned int nStrings = getXMLNodeNumStrings(node, "refGains");
+  delete [] refGains;
+}
 
-    if (nStrings==1)
+/*******************************************************************************
+ * Explicit construction using rigid body joint links
+ ******************************************************************************/
+Rcs::TaskJoints::TaskJoints(const RcsBody* effector,  RcsGraph* graph):
+  CompositeTask(graph)
+{
+  setClassName("Joints");
+  setEffector(effector);
+  const unsigned int nJoints = RcsBody_numJoints(effector);
+  RCHECK_MSG(nJoints>0, "Body \"%s\"", effector ? effector->name : "NULL");
+
+  const RcsJoint* jEf = effector->jnt;
+
+  for (unsigned int i = 0; i < nJoints; ++i)
+  {
+    addTask(new TaskJoint(graph, jEf, NULL, 1.0));
+    jEf = jEf->next;
+  }
+}
+
+/*******************************************************************************
+ * Explicit construction using rigid body joint links
+ ******************************************************************************/
+Rcs::TaskJoints::TaskJoints(const RcsBody* effector, const RcsBody* refBdy,
+                            RcsGraph* graph) :
+  CompositeTask(graph)
+{
+  setClassName("Joints");
+  setEffector(effector);
+  setRefBody(refBdy);
+  const unsigned int nJoints = RcsBody_numJoints(effector);
+  RCHECK_MSG(nJoints > 0, "Body \"%s\"", effector ? effector->name : "NULL");
+
+  if (refBdy)
+  {
+    RCHECK(nJoints == RcsBody_numJoints(refBdy));
+  }
+
+  const RcsJoint* jEf = effector->jnt;
+  const RcsJoint* jRef = refBdy ? refBdy->jnt : NULL;
+
+  RLOG(0, "Creating %d joints task between %s and %s", nJoints,
+       effector->name, refBdy ? refBdy->name : "NULL");
+
+  for (unsigned int i = 0; i < nJoints; ++i)
+  {
+    addTask(new TaskJoint(graph, jEf, jRef, -1.0));
+    jEf = jEf->next;
+    if (jRef)
     {
-      getXMLNodePropertyDouble(node, "refGains", &refGains[0]);
-      VecNd_setElementsTo(refGains, refGains[0], jntsVec.size());
+      jRef = jRef->next;
     }
-    else if (nStrings==6)
-    {
-      getXMLNodePropertyVecN(node, "refGains", refGains, nStrings);
-    }
-    else
-    {
-      if (nStrings!=0)
-      {
-        RLOG(1, "Wrong number of refGains: %u, should be 1 or 6", nStrings);
-      }
-    }
-
-    for (size_t idx = 0; idx < jntsVec.size(); idx++)
-    {
-      RcsJoint* jnt = RcsGraph_getJointByName(_graph, jntsVec[idx].c_str());
-      RCHECK_MSG(jnt, "Not found: %s", jntsVec[idx].c_str());
-
-      RcsJoint* refJnt = NULL;
-      if (!refJntsVec.empty())
-      {
-        refJnt = RcsGraph_getJointByName(_graph, refJntsVec[idx].c_str());
-        RCHECK_MSG(refJnt, "Not found: %s", refJntsVec[idx].c_str());
-      }
-
-      addTask(new TaskJoint(jnt, refJnt, node, _graph, refGains[idx]));
-    }
-
-    delete [] refGains;
+  }
 }
 
 /*******************************************************************************
@@ -165,6 +216,197 @@ Rcs::TaskJoints::TaskJoints(const Rcs::TaskJoints& copyFromMe,
 Rcs::TaskJoints* Rcs::TaskJoints::clone(RcsGraph* newGraph) const
 {
   return new Rcs::TaskJoints(*this, newGraph);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::TaskJoints::setJoints(std::vector<const RcsJoint*> jnt)
+{
+  RCHECK(subTask.size() == jnt.size());
+
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    Rcs::TaskJoint* tsk = dynamic_cast<Rcs::TaskJoint*>(subTask[i]);
+    RCHECK(tsk);
+    tsk->setJoint(jnt[i]);
+  }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::TaskJoints::setRefJoints(std::vector<const RcsJoint*> jnt)
+{
+  RCHECK(subTask.size() == jnt.size());
+
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    Rcs::TaskJoint* tsk = dynamic_cast<Rcs::TaskJoint*>(subTask[i]);
+    RCHECK(tsk);
+    tsk->setRefJoint(jnt[i]);
+  }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::TaskJoints::setRefJoint(size_t index, const RcsJoint* jnt)
+{
+  RCHECK(index < subTask.size());
+  Rcs::TaskJoint* tsk = dynamic_cast<Rcs::TaskJoint*>(subTask[index]);
+  RCHECK(tsk);
+  tsk->setRefJoint(jnt);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::TaskJoints::setRefGains(std::vector<double> gains)
+{
+  RCHECK(subTask.size() == gains.size());
+
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    Rcs::TaskJoint* tsk = dynamic_cast<Rcs::TaskJoint*>(subTask[i]);
+    RCHECK(tsk);
+    tsk->setRefGain(gains[i]);
+  }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::TaskJoints::setRefGains(double gain)
+{
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    Rcs::TaskJoint* tsk = dynamic_cast<Rcs::TaskJoint*>(subTask[i]);
+    RCHECK(tsk);
+    tsk->setRefGain(gain);
+  }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+std::vector<const RcsJoint*> Rcs::TaskJoints::getJoints() const
+{
+  std::vector<const RcsJoint*> jVec;
+
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    Rcs::TaskJoint* tsk = dynamic_cast<Rcs::TaskJoint*>(subTask[i]);
+    RCHECK(tsk);
+    jVec.push_back(tsk->getJoint());
+  }
+
+  return jVec;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+std::vector<const RcsJoint*> Rcs::TaskJoints::getRefJoints() const
+{
+  std::vector<const RcsJoint*> jVec;
+
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    Rcs::TaskJoint* tsk = dynamic_cast<Rcs::TaskJoint*>(subTask[i]);
+    RCHECK(tsk);
+    jVec.push_back(tsk->getRefJoint());
+  }
+
+  return jVec;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+std::vector<double> Rcs::TaskJoints::getRefGains() const
+{
+  std::vector<double> gains;
+
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    Rcs::TaskJoint* tsk = dynamic_cast<Rcs::TaskJoint*>(subTask[i]);
+    RCHECK(tsk);
+    gains.push_back(tsk->getRefGain());
+  }
+
+  return gains;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::TaskJoints::toXMLBody(FILE* out) const
+{
+  size_t nRefJoints = 0, nRefGains = 0;
+
+  fprintf(out, " jnts=\"");
+
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    Rcs::TaskJoint* tsk = dynamic_cast<Rcs::TaskJoint*>(subTask[i]);
+    RCHECK(tsk);
+    fprintf(out, "%s", tsk->getJoint()->name);
+
+    if (i != subTask.size() - 1)
+    {
+      fprintf(out, " ");
+    }
+
+    if (tsk->getRefJoint())
+    {
+      nRefJoints++;
+    }
+    if (tsk->getRefGain()!=1.0)
+    {
+      nRefGains++;
+    }
+  }
+
+  fprintf(out, "\"");
+
+  if (nRefJoints== subTask.size())
+  {
+    fprintf(out, " refJnts=\"");
+
+    for (size_t i = 0; i < subTask.size(); ++i)
+    {
+      Rcs::TaskJoint* tsk = dynamic_cast<Rcs::TaskJoint*>(subTask[i]);
+      fprintf(out, "%s", tsk->getRefJoint()->name);
+
+      if (i != subTask.size() - 1)
+      {
+        fprintf(out, " ");
+      }
+    }
+
+    fprintf(out, "\"");
+  }
+
+  if (nRefGains > 0)
+  {
+    char buf[256];
+    fprintf(out, " refGains=\"");
+
+    for (size_t i = 0; i < subTask.size(); ++i)
+    {
+      Rcs::TaskJoint* tsk = dynamic_cast<Rcs::TaskJoint*>(subTask[i]);
+      fprintf(out, "%s", String_fromDouble(buf, tsk->getRefGain(), 6));
+
+      if (i != subTask.size()-1)
+      {
+        fprintf(out, " ");
+      }
+    }
+
+    fprintf(out, "\"");
+  }
+
 }
 
 /*******************************************************************************
@@ -290,9 +532,9 @@ bool Rcs::TaskJoints::isValid(xmlNode* node, const RcsGraph* graph)
 
   if ((nStrings!=0) && (nStrings!=1) && (nStrings!=jntVec.size()))
   {
-      RLOG_CPP(4, "Wrong number of refGains: " << nStrings
-               <<  "  should be 0, 1 or " << jntVec.size());
-      success = false;
+    RLOG_CPP(4, "Wrong number of refGains: " << nStrings
+             <<  "  should be 0, 1 or " << jntVec.size());
+    success = false;
   }
 
 

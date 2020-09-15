@@ -173,6 +173,11 @@ public:
   static bool isValid(xmlNode* node, const RcsGraph* graph);
 
 protected:
+
+  /*! \brief Additionally writes the axis direction into the output stream.
+   */
+  void toXMLBody(FILE* out) const;
+
   int direction;
 };
 

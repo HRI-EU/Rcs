@@ -742,6 +742,14 @@ const std::vector<Rcs::Task*>& Rcs::ControllerBase::taskVec() const
 }
 
 /*******************************************************************************
+ * Returns the vector of tasks.
+ ******************************************************************************/
+std::vector<Rcs::Task*>& Rcs::ControllerBase::taskVec()
+{
+  return this->tasks;
+}
+
+/*******************************************************************************
  * Task Jacobian.
  ******************************************************************************/
 void Rcs::ControllerBase::computeJ(MatNd* J, const MatNd* a_des) const
@@ -1998,6 +2006,89 @@ bool Rcs::ControllerBase::add(const ControllerBase* other,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+bool Rcs::ControllerBase::eraseTask(size_t index)
+{
+  if (index > tasks.size() - 1)
+  {
+    RLOG_CPP(1, "Failed to erase task with index " << index
+             << " - should be less than " << tasks.size());
+    return false;
+  }
+
+  delete this->tasks[index];
+  this->tasks.erase(tasks.begin() + index);
+  recomputeIndices();
+
+  return true;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool Rcs::ControllerBase::eraseTask(const std::string& taskName)
+{
+  int index = getTaskIndex(taskName.c_str());
+
+  if (index < 0)
+  {
+    RLOG_CPP(1, "Failed to erase task with name " << taskName);
+    return false;
+  }
+
+  return eraseTask(index);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool Rcs::ControllerBase::replaceTask(size_t index, Task* newTask)
+{
+  if (newTask==NULL)
+  {
+    RLOG_CPP(1, "Failed to replace task with NULL task");
+    return false;
+  }
+
+  if (index > tasks.size() - 1)
+  {
+    RLOG_CPP(1, "Failed to replace task with index " << index
+             << " - should be less than " << tasks.size());
+    return false;
+  }
+
+  size_t oldDim = tasks[index]->getDim();
+
+  delete this->tasks[index];
+  this->tasks[index] = newTask;
+
+  if (oldDim != newTask->getDim())
+  {
+    recomputeIndices();
+  }
+
+  return true;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool Rcs::ControllerBase::replaceTask(const std::string& taskName,
+                                      Task* newTask)
+{
+  int index = getTaskIndex(taskName.c_str());
+
+  if (index < 0)
+  {
+    RLOG_CPP(1, "Failed to replace task with name " << taskName);
+    return false;
+  }
+
+  return replaceTask(index, newTask);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void Rcs::ControllerBase::add(Task* other)
 {
   if (other == NULL)
@@ -2471,6 +2562,51 @@ void Rcs::ControllerBase::print() const
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::ControllerBase::toXML(const std::string& fileName,
+                                const MatNd* activation) const
+{
+  if (activation && (activation->m != getNumberOfTasks()))
+  {
+    RLOG_CPP(1, "Activation vector has " << activation->m
+             << "rows, " << getNumberOfTasks() << " tasks in controller");
+    return false;
+  }
+
+  FILE* out = fopen(fileName.c_str(), "w+");
+
+  if (out == NULL)
+  {
+    RLOG_CPP(1, "Failed to open file " << fileName);
+    return false;
+  }
+
+  fprintf(out, "<Controller>\n\n");
+
+  RcsGraph_fprintXML(out, getGraph());
+
+  // Print information for each task
+  fprintf(out, "\n");
+  for (size_t i = 0; i < getNumberOfTasks(); i++)
+  {
+    bool ai = false;
+    if ((activation == NULL) || (activation->ele[i] != 0.0))
+    {
+      ai = true;
+    }
+
+    tasks[i]->toXML(out, ai);
+  }
+
+  fprintf(out, "\n</Controller>\n");
+
+  fclose(out);
+
+  return true;
+}
+
+/*******************************************************************************
  * Calculate one step of the inverse dynamics: T = M*aq + h + g
  *
  *      Here we neglect the influence of the accelerations of the
@@ -2560,4 +2696,25 @@ void Rcs::ControllerBase::computeInvDynJointSpace(MatNd* T_des,
 {
   computeInvDynJointSpace(T_des, graph, q_des, NULL, NULL,
                           positionGain, velocityGain);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::ControllerBase::recomputeIndices()
+{
+  taskArrayIdx.clear();
+
+  if (tasks.empty())
+  {
+    return;
+  }
+
+  taskArrayIdx.push_back(0);
+
+  for (size_t i = 1; i < this->tasks.size(); i++)
+  {
+    taskArrayIdx.push_back(taskArrayIdx[i-1] + tasks[i-1]->getDim());
+  }
+
 }

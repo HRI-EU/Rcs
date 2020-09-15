@@ -275,6 +275,14 @@ const RcsJoint* Rcs::TaskJoint::getRefJoint() const
 }
 
 /*******************************************************************************
+ * See header.
+ ******************************************************************************/
+double Rcs::TaskJoint::getRefGain() const
+{
+  return this->refGain;
+}
+
+/*******************************************************************************
  * Since those joints are mostly kinematic, we scale the gains to make sure
  * they don't get into oscillations.
  ******************************************************************************/
@@ -306,7 +314,7 @@ void Rcs::TaskJoint::print() const
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskJoint::setJoint(RcsJoint* jnt)
+void Rcs::TaskJoint::setJoint(const RcsJoint* jnt)
 {
   this->joint = jnt;
 }
@@ -314,9 +322,17 @@ void Rcs::TaskJoint::setJoint(RcsJoint* jnt)
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskJoint::setRefJoint(RcsJoint* jnt)
+void Rcs::TaskJoint::setRefJoint(const RcsJoint* jnt)
 {
   this->refJoint = jnt;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::TaskJoint::setRefGain(double gain)
+{
+  this->refGain = gain;
 }
 
 /*******************************************************************************

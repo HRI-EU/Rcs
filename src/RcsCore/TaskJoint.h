@@ -110,13 +110,21 @@ public:
    */
   const RcsJoint* getRefJoint() const;
 
+  /*! \brief Returns the coupling gain
+   */
+  double getRefGain() const;
+
   /*! \brief Assigns the joint member.
    */
-  void setJoint(RcsJoint* jnt);
+  void setJoint(const RcsJoint* jnt);
 
   /*! \brief Assigns the refJoint member.
    */
-  void setRefJoint(RcsJoint* jnt);
+  void setRefJoint(const RcsJoint* jnt);
+
+  /*! \brief Assigns the coupling gain between jnt and refJnt.
+   */
+  void setRefGain(double gain);
 
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise:

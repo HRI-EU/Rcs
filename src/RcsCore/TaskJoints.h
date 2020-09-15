@@ -95,6 +95,14 @@ public:
    */
   TaskJoints(const std::string& className, xmlNode* node, RcsGraph* graph);
 
+  /*! Constructor based on joints of a body
+   */
+  TaskJoints(const RcsBody* effector, RcsGraph* graph);
+
+  /*! Constructor based on linking rigid bodies
+   */
+  TaskJoints(const RcsBody* effector, const RcsBody* refBdy, RcsGraph* graph);
+
   /*! \brief Copy constructor doing deep copying with optional new graph
    *         pointer
    */
@@ -103,6 +111,15 @@ public:
   /*! \brief Virtual copy constructor with optional new graph
    */
   TaskJoints* clone(RcsGraph* newGraph=NULL) const;
+
+  void setJoints(std::vector<const RcsJoint*> jnt);
+  void setRefJoints(std::vector<const RcsJoint*> jnt);
+  void setRefJoint(size_t index, const RcsJoint* jnt);
+  void setRefGains(std::vector<double> gains);
+  void setRefGains(double gain);
+  std::vector<const RcsJoint*> getJoints() const;
+  std::vector<const RcsJoint*> getRefJoints() const;
+  std::vector<double> getRefGains() const;
 
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise. The following checks are performed:
@@ -122,6 +139,15 @@ public:
    *             in the task
    */
   static bool isValid(xmlNode* xml_node, const RcsGraph* graph);
+
+protected:
+
+  /*! \brief Writes the specific task's xml representation to a file
+   *         desriptor. Here it is effector, refBdy, refFrame. To be
+   *         overwritten in specialized classes.
+   */
+  virtual void toXMLBody(FILE* out) const;
+
 };
 
 }

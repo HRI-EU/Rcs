@@ -133,6 +133,30 @@ Rcs::TaskPose6D* Rcs::TaskPose6D::clone(RcsGraph* newGraph) const
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+const RcsBody* Rcs::TaskPose6D::getEffector() const
+{
+  return getSubTask(0)->getEffector();
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+const RcsBody* Rcs::TaskPose6D::getRefBody() const
+{
+  return getSubTask(0)->getRefBody();
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+const RcsBody* Rcs::TaskPose6D::getRefFrame() const
+{
+  return getSubTask(0)->getRefFrame();
+}
+
+/*******************************************************************************
  * See header.  \todo Check isValid() of subtasks
  ******************************************************************************/
 bool Rcs::TaskPose6D::isValid(xmlNode* node, const RcsGraph* graph)

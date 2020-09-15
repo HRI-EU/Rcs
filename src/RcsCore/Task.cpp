@@ -331,6 +331,23 @@ void Rcs::Task::addParameter(const Task::Parameters& newParam)
 /*******************************************************************************
  *
  ******************************************************************************/
+bool Rcs::Task::removeParameter(size_t index)
+{
+  if (index > params.size() - 1)
+  {
+    RLOG_CPP(1, "Failed to erase task with index " << index
+             << " - should be less than " << params.size());
+    return false;
+  }
+
+  params.erase(params.begin() + index);
+
+  return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void Rcs::Task::resetParameter(const Task::Parameters& newParam)
 {
   clearParameters();
@@ -1234,4 +1251,53 @@ bool Rcs::Task::checkBody(xmlNode* node, const char* tag,
   }
 
   return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::Task::toXML(FILE* out, bool activation) const
+{
+  toXMLStart(out);
+  toXMLBody(out);
+  toXMLEnd(out, activation);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::Task::toXMLStart(FILE* out) const
+{
+  fprintf(out, "<Task name=\"%s\" controlVariable= \"%s\"",
+          getName().c_str(), getClassName().c_str());
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::Task::toXMLBody(FILE* out) const
+{
+  if (getEffector())
+  {
+    fprintf(out, " effector=\"%s\"", getEffector()->name);
+  }
+
+  if (getRefBody())
+  {
+    fprintf(out, " refBdy=\"%s\"", getRefBody()->name);
+  }
+
+  if (getRefFrame() && (getRefFrame()!= getRefBody()))
+  {
+    fprintf(out, " refFrame=\"%s\"", getRefFrame()->name);
+  }
+
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::Task::toXMLEnd(FILE* out, bool activation) const
+{
+  fprintf(out, " active=\"%s\" />\n", activation ? "true" : "false");
 }

@@ -170,9 +170,9 @@ void Rcs::TaskDistance::computeH(MatNd* hessian) const
  * is assuming body-fixed closest points which is only an approximation.
  ******************************************************************************/
 bool Rcs::TaskDistance::testJacobian(double errorLimit,
-                             double delta,
-                             bool relativeError,
-                             bool verbose)
+                                     double delta,
+                                     bool relativeError,
+                                     bool verbose)
 {
   errorLimit = 0.1;   // 10% error is permitted
   relativeError = true;

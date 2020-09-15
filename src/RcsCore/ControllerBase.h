@@ -67,7 +67,7 @@ class ControllerBase
 {
 public:
 
-  /*! \brief Empty constructor with default settings. 
+  /*! \brief Empty constructor with default settings.
    */
   ControllerBase();
 
@@ -245,6 +245,10 @@ public:
    *         be copied to x.
    */
   void readTaskVectorFromXML(MatNd* x, const char* tag) const;
+
+  /*! \brief Return the vector of tasks
+   */
+  std::vector<Task*>& taskVec();
 
   /*! \brief Return the vector of tasks
    */
@@ -675,14 +679,51 @@ public:
 
   /*! \brief Adds a copy of the other controller to the task list, and appends
    *         the corresponding graph. The suffix is appended to each body and
-   *         task name. The transform A_BP is an optional relative 
+   *         task name. The transform A_BP is an optional relative
    *         transformation of the added graph root. If it is NULL, it is
    *         ignored.
    */
   virtual bool add(const ControllerBase* other, const char* suffix,
                    const HTr* A_BP);
+
+  /*! \brief Adds a copy of the other controller to the task list, and appends
+   *         the corresponding graph. The suffix is appended to each body and
+   *         task name. The transform A_BP is an optional relative
+   *         transformation of the added graph root. If it is NULL, it is
+   *         ignored.
+   */
   virtual bool add(const ControllerBase& other, const char* suffix,
                    const HTr* A_BP);
+
+  /*! \brief Erases the task with the given index and recomputes all indices.
+   *         The function returns false if index is out of range, true
+   *         otherwise.
+   */
+  virtual bool eraseTask(size_t index);
+
+  /*! \brief Erases the task with the given name and recomputes all indices.
+   *          The function returns false if a task with the given name cannot
+   *          be found in the task vector, true otherwise.
+   */
+  virtual bool eraseTask(const std::string& taskName);
+
+  /*! \brief Replaces the task at the given index with the given new task and
+   *         recomputes all indices (if needed). The class takes ownership of
+   *         the newTask, it must not be deleted by the caller. The function
+   *         returns true for success, and false for failure, such as
+   *         - index is out of range
+   *         - newTask is NULL
+   */
+  virtual bool replaceTask(size_t index, Task* newTask);
+
+  /*! \brief Replaces the task with the given name with the new task and
+   *         recomputes all indices. The class takes ownership of the newTask,
+   *         it must not be deleted by the caller. The function returns true
+   *         for success, and false for failure, such as
+   *         - a task with the taskName cannot be found in task vector
+   *         - newTask is NULL
+   */
+  virtual bool replaceTask(const std::string& taskName, Task* newTask);
 
   /*! \brief Adds the task to the controller's task vector and updates the
    *         task array indices. If other is NULL, the function returns without
@@ -741,6 +782,21 @@ public:
   /*! \brief Prints information about tasks to console.
    */
   virtual void print() const;
+
+  /*! \brief Prints the controller's xml description into a file with the
+   *         given name. Returns true for success, false otherwise.
+   *
+   *  \param[in] fileName   File name to be written to. If it cannot be created,
+   *                        the function returns false and does nothing.
+   *  \param[in] activation Activation values to be written for each task. If
+   *                        activation is NULL, all task's active flags will be
+   *                        set to true. If the dimension of activation does
+   *                        not match the number of tasks, the function does
+   *                        nothing and returns false.
+   *  \return true for success, false otherwise.
+   */
+  virtual bool toXML(const std::string& fileName,
+                     const MatNd* activaton=NULL) const;
 
   /*! \brief Prints whatever is written in the xml-file under the node tag
    *         usage to the console
@@ -808,6 +864,12 @@ public:
                                       double velocityGain=-1.0);
 
 protected:
+
+  /*! \brief Recomputes the index array vector by going through the tasks
+   *         vector and adding the dimensions on top of each other. This
+   *         function is needed if tasks are removed / added / changed.
+   */
+  void recomputeIndices();
 
   RcsGraph* graph;                   //!< Underlying graph
   bool ownsGraph;                    //!< True if controller needs to destroy it

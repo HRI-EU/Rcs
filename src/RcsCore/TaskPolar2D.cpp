@@ -355,6 +355,29 @@ void Rcs::TaskPolar2D::selectionTrafo(double* S_des_trafo,
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::TaskPolar2D::toXMLBody(FILE* out) const
+{
+  Task::toXMLBody(out);
+
+  switch (direction)
+  {
+    case 0:
+      fprintf(out, " axisDirection=\"X\"");
+      break;
+
+    case 1:
+      fprintf(out, " axisDirection=\"Y\"");
+      break;
+
+    default:
+      break;
+  }
+
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
 bool Rcs::TaskPolar2D::isValid(xmlNode* node, const RcsGraph* graph)

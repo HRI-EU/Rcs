@@ -43,6 +43,7 @@
 
 #include <vector>
 #include <string>
+#include <cstdio>
 
 
 /*!
@@ -207,6 +208,11 @@ public:
   /*! \brief Adds a parameter instance to the vector of parameters.
    */
   void addParameter(const Parameters& newParam);
+
+  /*! \brief Removes the parameter at the given index from the parameter
+   *         vector.
+   */
+  bool removeParameter(size_t index);
 
   /*! \brief Clears all parameters and adds this one.
    */
@@ -650,6 +656,7 @@ public:
   static bool checkBody(xmlNode* node, const char* tag,
                         const RcsGraph* graph, const char* taskName);
 
+
   ///@}
 
   /**
@@ -710,6 +717,10 @@ public:
    */
   virtual bool test(bool verbose=false);
 
+  /*! \brief Writes the task's xml representation to a file desriptor.
+   */
+  virtual void toXML(FILE* out, bool activation = true) const;
+
   ///@}
 
 
@@ -720,6 +731,21 @@ protected:
    *         is needed.
    */
   virtual void setDim(unsigned int taskDim);
+
+  /*! \brief Writes the task's xml representation common to all tasks into
+   *         thie file descriptor: name, control variable
+   */
+  virtual void toXMLStart(FILE* out) const;
+
+  /*! \brief Writes the specific task's xml representation to a file
+   *         desriptor. Here it is effector, refBdy, refFrame. To be
+   *         overwritten in specialized classes.
+   */
+  virtual void toXMLBody(FILE* out) const;
+
+  /*! \brief Writes the active flag and the xml closing syntax.
+   */
+  virtual void toXMLEnd(FILE* out, bool activation) const;
 
   /*! \brief Graph on which the task operates. It is not a const pointer,
    *         since it is modified in some test functions. However, it is safe

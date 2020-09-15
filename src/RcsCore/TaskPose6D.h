@@ -70,6 +70,18 @@ public:
    */
   TaskPose6D* clone(RcsGraph* newGraph=NULL) const;
 
+  /*! \brief Returns the effector body of the first sub-task.
+   */
+  virtual const RcsBody* getEffector() const;
+
+  /*! \brief Returns the refBdy of the first sub-task.
+   */
+  virtual const RcsBody* getRefBody() const;
+
+  /*! \brief Returns the refFrame of the first sub-task.
+   */
+  virtual const RcsBody* getRefFrame() const;
+
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise. The following checks are performed:
    *         - XML tag "effector" corresponds to body in graph

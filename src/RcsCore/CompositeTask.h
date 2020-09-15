@@ -92,6 +92,12 @@ public:
    */
   virtual void addTask(Task* subTask);
 
+  /*! \brief Removes the sub-task with the given dimension and updates the
+   *         task dimension and parameters vector. Returns true for success,
+   *         false otherwise.
+   */
+  virtual bool removeTask(size_t index);
+
   /*! \brief Calls \ref Task::computeX(double*) const on all subtasks and
    *         stacks the results in vector x_res.
    */

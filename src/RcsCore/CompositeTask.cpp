@@ -36,6 +36,7 @@
 
 #include "CompositeTask.h"
 #include "Rcs_typedef.h"
+#include "Rcs_macros.h"
 
 
 
@@ -130,6 +131,36 @@ void Rcs::CompositeTask::addTask(Task* tsk)
     addParameter(tsk->getParameter(j));
   }
 
+}
+
+/*******************************************************************************
+ * Clone function
+ ******************************************************************************/
+bool Rcs::CompositeTask::removeTask(size_t index)
+{
+  if (index > subTask.size() - 1)
+  {
+    RLOG_CPP(1, "Failed to erase task with index " << index
+             << " - should be less than " << subTask.size());
+    return false;
+  }
+
+  delete subTask[index];
+  this->subTask.erase(subTask.begin() + index);
+
+  // Update the task's private taskDim member.
+  unsigned int compositeDim = 0;
+
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    compositeDim += subTask[i]->getDim();
+  }
+
+  setDim(compositeDim);
+
+  removeParameter(index);
+
+  return true;
 }
 
 /*******************************************************************************
