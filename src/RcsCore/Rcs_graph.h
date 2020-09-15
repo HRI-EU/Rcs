@@ -215,16 +215,15 @@ RcsBody* RcsBody_getLastChild(const RcsBody* body);
 
 
 /*! \ingroup RcsGraphFunctions
- *  \brief Creates an instance of a graph. The filename refers to an XML
- *         file.
+ *  \brief Creates an instance of a graph. Here is what this function can parse:
+ *         - From an xml-file with Rcs conventions
+ *         - From a bvh-file (suffix .bvh)
+ *         - From an URDF-file (filename starts with <robot> keyword)
+ *         - From a string (filename starts with <Graph> keyword)
+ *         There is also some rudimentary OpenRave parsing that needs more work
+ *         for a seamless usage.
  */
 RcsGraph* RcsGraph_create(const char* filename);
-
-/*! \ingroup RcsGraphFunctions
- *  \brief Creates an instance of a graph. The buffer should contain an
- *         XML file.
- */
-RcsGraph* RcsGraph_createFromBuffer(const char* buffer, unsigned int size);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Destroys an instance of a graph. The function does nothing if
@@ -326,6 +325,13 @@ void RcsGraph_changeDefaultState(RcsGraph* self, const MatNd* q0);
  *         an array holding the center angles of all joints.
  */
 void RcsGraph_getDefaultState(const RcsGraph* self, MatNd* q0);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Returns the initial state vector of the graph. It corresponds to
+ *         an array holding the center angles of all joints right after
+ *         construction, even before parsing any model state.
+ */
+void RcsGraph_getInitState(const RcsGraph* self, MatNd* q_init);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Returns a n x 1 array with elements that correspond to the range

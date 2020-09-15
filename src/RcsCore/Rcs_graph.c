@@ -322,22 +322,66 @@ void RcsGraph_computeForwardKinematics(RcsGraph* self,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-RcsGraph* RcsGraph_create(const char* configFile)
+static RcsGraph* RcsGraph_createFromBuffer(const char* buffer, unsigned int size)
+{
+  if (buffer == NULL)
+  {
+    RLOG(1, "buffer node is NULL");
+    return NULL;
+  }
+
+  // Read XML file
+  xmlDocPtr doc;
+  xmlNodePtr node = parseXMLMemory(buffer, size, &doc);
+
+  if (node == NULL)
+  {
+    RLOG(1, "xmlNodePtr node is NULL");
+    RLOG(4, "buffer is \"%s\"", buffer);
+    return NULL;
+  }
+
+  RcsGraph* self = RcsGraph_createFromXmlNode(node);
+
+  // Free the xml memory
+  xmlFreeDoc(doc);
+
+  if (self == NULL)
+  {
+    return NULL;
+  }
+
+  RFREE(self->xmlFile);
+  self->xmlFile = String_clone("Created_from_memory_buffer");
+
+  return self;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+RcsGraph* RcsGraph_create(const char* cfgFile)
 {
   // Determine absolute file name of config file and return if it doesn't exist
   char filename[256] = "";
-  bool fileExists = Rcs_getAbsoluteFileName(configFile, filename);
+  bool fileExists = Rcs_getAbsoluteFileName(cfgFile, filename);
 
   if (fileExists==false)
   {
-    REXEC(1)
+    RcsGraph* self = RcsGraph_createFromBuffer(cfgFile, strlen(cfgFile)+1);
+
+    if (self==NULL)
     {
-      RMSG("Resource path is:");
-      Rcs_printResourcePath();
-      RMSG("RcsGraph configuration file \"%s\" not found in "
-           "ressource path - exiting", configFile ? configFile : "NULL");
+      REXEC(1)
+      {
+        RMSG("Resource path is:");
+        Rcs_printResourcePath();
+        RMSG("RcsGraph configuration file \"%s\" not found in "
+             "ressource path - exiting", cfgFile ? cfgFile : "NULL");
+      }
     }
-    return NULL;
+
+    return self;
   }
 
   // Try parsing bounding volume hierarchy file for .bvh suffix
@@ -426,44 +470,6 @@ RcsGraph* RcsGraph_create(const char* configFile)
   xmlFreeDoc(doc);
 
   return RcsGraph_fromURDFFile(filename);
-}
-
-/*******************************************************************************
- * See header.
- ******************************************************************************/
-RcsGraph* RcsGraph_createFromBuffer(const char* buffer, unsigned int size)
-{
-  if (buffer == NULL)
-  {
-    RLOG(1, "buffer node is NULL");
-    return NULL;
-  }
-
-  // Read XML file
-  xmlDocPtr doc;
-  xmlNodePtr node = parseXMLMemory(buffer, size, &doc);
-
-  if (node == NULL)
-  {
-    RLOG(1, "xmlNodePtr node is NULL");
-    RLOG(4, "buffer is \"%s\"", buffer);
-    return NULL;
-  }
-
-  RcsGraph* self = RcsGraph_createFromXmlNode(node);
-
-  // Free the xml memory
-  xmlFreeDoc(doc);
-
-  if (self == NULL)
-  {
-    return NULL;
-  }
-
-  RFREE(self->xmlFile);
-  self->xmlFile = String_clone("Created_from_memory_buffer");
-
-  return self;
 }
 
 /*******************************************************************************
@@ -677,6 +683,19 @@ void RcsGraph_getDefaultState(const RcsGraph* self, MatNd* q0)
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {
     MatNd_set2(q0, JNT->jointIndex, 0, JNT->q0);
+  }
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void RcsGraph_getInitState(const RcsGraph* self, MatNd* q_init)
+{
+  MatNd_reshape(q_init, self->dof, 1);
+
+  RCSGRAPH_TRAVERSE_JOINTS(self)
+  {
+    MatNd_set2(q_init, JNT->jointIndex, 0, JNT->q_init);
   }
 }
 
@@ -3001,8 +3020,20 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self, RcsBody* root,
   // We search for the joint index of the last joint before the other graph's
   // root joint
   RLOG(5, "Merging state vectors");
-  RcsJoint* jntBeforeNewBody = RcsBody_lastJointBeforeBody(root);
-  unsigned int splitIdx = jntBeforeNewBody ? jntBeforeNewBody->jointIndex+1 : 0;
+  unsigned int splitIdx = 0;
+
+  // If no body of attachement is given, we add the state vector after all
+  // already existing state vector elements.
+  if (root == NULL)
+  {
+    splitIdx = self->dof - other->dof;
+  }
+  else
+  {
+    RcsJoint* jntBeforeNewBody = RcsBody_lastJointBeforeBody(root);
+    splitIdx = jntBeforeNewBody ? jntBeforeNewBody->jointIndex + 1 : 0;
+  }
+
   RLOG(5, "Indices: initial=%d split=%d rest=%d",
        splitIdx, other->dof, self->dof-splitIdx);
 
