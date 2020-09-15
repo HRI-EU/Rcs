@@ -377,68 +377,9 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_des,
                                          const MatNd* activation,
                                          double lambda0)
 {
-  RcsGraph* graph = controller->getGraph();
-
-  // Create coupled joint matrix
-  RcsGraph_coupledJointMatrix(graph, this->A, this->invA);
-
-  // Compute the Jacobian
-  controller->computeJ(this->J, activation);
-
-
-  // Task space
-  MatNd_postMulSelf(this->J, this->A);
-  RcsGraph_getInvWq(graph, this->invWq, RcsStateIK);
-  MatNd_preMulSelf(this->invWq, this->invA);
-
-  MatNd lambda = MatNd_fromPtr(1, 1, &lambda0);
-  this->det = MatNd_rwPinv(this->pinvJ, this->J, this->invWq, &lambda);
-
-  // Do nothing if the projection is singular
-  if (this->det == 0.0)
-  {
-    RLOG(1, "Singular Jacobian - setting velocities to zero");
-    MatNd_reshapeAndSetZero(dq_des, graph->dof, 1);
-    return;
-  }
-
-  // Add task space component to the result
-  MatNd_reshapeAndSetZero(this->dqr, this->pinvJ->m, 1);
-
-  if ((dx != NULL) && (J->m>0))
-  {
-    if ((activation!=NULL) && (dx->m==nx))
-    {
-      controller->compressToActive(this->dxr, dx, activation);
-      MatNd_mul(this->dqr, this->pinvJ, this->dxr);
-    }
-    else
-    {
-      MatNd_mul(this->dqr, this->pinvJ, dx);
-    }
-
-  }
-
-  // Compute null space
-  if (dH != NULL)
-  {
-    RCHECK((dH->m==nq && dH->n==1) || (dH->m==1 && dH->n==nq));
-    MatNd_reshapeCopy(this->dHr, dH);
-    MatNd_constMulSelf(this->dHr, -1.0);
-    MatNd_reshape(this->dHr, nq, 1);
-    MatNd_preMulSelf(this->dHr, this->invA);
-    MatNd_reshape(this->NinvW, this->pinvJ->m, this->pinvJ->m);
-    MatNd_nullspace(this->NinvW, this->pinvJ, this->J);
-    MatNd_postMulDiagSelf(this->NinvW, invWq);   // apply joint metric
-    MatNd_mulAndAddSelf(this->dqr, this->NinvW, this->dHr);
-  }
-
-  // Expand from coupled joint space to constraint joints
-  MatNd_reshape(dq_des, nq, 1);
-  MatNd_mul(dq_des, this->A, this->dqr);
-
-  // Uncompress to all states
-  RcsGraph_stateVectorFromIKSelf(graph, dq_des);
+  MatNd lambdaArr = MatNd_fromPtr(1, 1, &lambda0);
+  solveRightInverse(dq_des, dx, dH, activation, &lambdaArr);
+  return;
 }
 
 /*******************************************************************************
@@ -454,18 +395,24 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_des,
                                          const MatNd* lambda)
 {
   RcsGraph* graph = controller->getGraph();
+  const bool hasCouplings = (nqr != nq);
 
   // Create coupled joint matrix
-  RcsGraph_coupledJointMatrix(graph, this->A, this->invA);
+  if (hasCouplings)
+  {
+    RcsGraph_coupledJointMatrix(graph, this->A, this->invA);
+  }
 
-  // Compute the Jacobian
+  // Compute the Jacobian and joint metric
   controller->computeJ(this->J, activation);
-
+  RcsGraph_getInvWq(graph, this->invWq, RcsStateIK);
 
   // Task space
-  MatNd_postMulSelf(this->J, this->A);
-  RcsGraph_getInvWq(graph, this->invWq, RcsStateIK);
-  MatNd_preMulSelf(this->invWq, this->invA);
+  if (hasCouplings)
+  {
+    MatNd_postMulSelf(this->J, this->A);
+    MatNd_preMulSelf(this->invWq, this->invA);
+  }
 
   this->det = MatNd_rwPinv(this->pinvJ, this->J, this->invWq, lambda);
 
@@ -501,7 +448,10 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_des,
     MatNd_reshapeCopy(this->dHr, dH);
     MatNd_constMulSelf(this->dHr, -1.0);
     MatNd_reshape(this->dHr, nq, 1);
-    MatNd_preMulSelf(this->dHr, this->invA);
+    if (hasCouplings)
+    {
+      MatNd_preMulSelf(this->dHr, this->invA);
+    }
     MatNd_reshape(this->NinvW, this->pinvJ->m, this->pinvJ->m);
     MatNd_nullspace(this->NinvW, this->pinvJ, this->J);
     MatNd_postMulDiagSelf(this->NinvW, invWq);   // apply joint metric
@@ -509,8 +459,15 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_des,
   }
 
   // Expand from coupled joint space to constraint joints
-  MatNd_reshape(dq_des, nq, 1);
-  MatNd_mul(dq_des, this->A, this->dqr);
+  if (hasCouplings)
+  {
+    MatNd_reshape(dq_des, nq, 1);
+    MatNd_mul(dq_des, this->A, this->dqr);
+  }
+  else
+  {
+    MatNd_reshapeCopy(dq_des, this->dqr);
+  }
 
   // Uncompress to all states
   RcsGraph_stateVectorFromIKSelf(graph, dq_des);

@@ -212,7 +212,7 @@ public:
    */
   const MatNd* getJacobian() const;
 
-  /*! \brief Returns the pointer to the internal pseudo-inverse pinvJ.It
+  /*! \brief Returns the pointer to the internal pseudo-inverse pinvJ. It
    *         corresponds to the state of the last call to solve().
    */
   const MatNd* getPseudoInverse() const;
