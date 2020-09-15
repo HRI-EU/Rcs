@@ -30,9 +30,15 @@
 #
 #
 
+function testCore()
+{
+    @EXECUTABLE_OUTPUT_PATH@/TestCore -m -1 -dl 1 &> UnitTestResults.txt
+    testCoreResult=$?
+}
+
 function testMath()
 {
-    @EXECUTABLE_OUTPUT_PATH@/TestMath -m -1 -numTests 10 -dl 1 &> UnitTestResults.txt
+    @EXECUTABLE_OUTPUT_PATH@/TestMath -m -1 -numTests 10 -dl 1 &>> UnitTestResults.txt
     testMathResult=$?
 }
 
@@ -47,6 +53,21 @@ function testController()
     @EXECUTABLE_OUTPUT_PATH@/Rcs -m 6 -valgrind -nTests 10 -dl 1 &>> UnitTestResults.txt
     testControllerResult=$?
 }
+
+echo -n "Testing core functions        ... "
+testCore
+
+if [ $testCoreResult -eq 0 ]
+then
+  echo "succeeded"
+elif [ $testCoreResult -eq 255 ]
+then
+  echo "failed with more than 255 errors"
+else
+  echo "failed with $testCoreResult errors" 
+fi
+
+
 
 echo -n "Testing mathematics functions ... "
 testMath

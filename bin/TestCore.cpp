@@ -40,10 +40,10 @@
 #include <Rcs_utils.h>
 #include <Rcs_utilsCPP.h>
 #include <Rcs_timer.h>
-#include <Rcs_parser.h>
 #include <Rcs_resourcePath.h>
 #include <Rcs_cmdLine.h>
 #include <Rcs_mesh.h>
+#include <Rcs_basicMath.h>
 
 #include <SegFaultHandler.h>
 
@@ -82,13 +82,19 @@ static void quit(int /*sig*/)
 static bool test_stringSplit(std::string src, std::string delim,
                              size_t expectedSize)
 {
-  RMSG("Delimiter:       %s", delim.c_str());
-  RMSG("Original string: \"%s\"", src.c_str());
+  RLOG(4, "Delimiter:       \"%s\"", delim.c_str());
+  RLOG(4, "Original string: \"%s\"", src.c_str());
   std::vector<std::string> split = String_split(src, delim);
 
   for (size_t i=0; i<split.size(); ++i)
   {
-    RMSG("\tsubstring[%d] = \"%s\"", (int) i, split[i].c_str());
+    RLOG(4, "\tsubstring[%d] = \"%s\" split=%d",
+         (int) i, split[i].c_str(), (int) split.size());
+  }
+
+  if (split.size() != expectedSize)
+  {
+    RLOG_CPP(3, "split-size=" << split.size() << " expected=" << expectedSize);
   }
 
   return split.size() == expectedSize;
@@ -119,7 +125,7 @@ static bool test_uniqueFileName()
   namePtr = File_createUniqueName(fileName, hasP ? pattern : NULL,
                                   hasS ? suffix : NULL);
 
-  RLOGS(1, "%s: unique file name is %s (Template: \"%s\", suffix: \"%s\")",
+  RLOGS(3, "%s: unique file name is %s (Template: \"%s\", suffix: \"%s\")",
         namePtr ? "SUCCESS" : "FAILURE", namePtr ? namePtr : "NULL",
         hasP ? pattern : "NULL", hasS ? suffix : "NULL");
 
@@ -129,16 +135,19 @@ static bool test_uniqueFileName()
 
     if (testFile != NULL)
     {
-      RLOGS(1, "Successfully opened file \"%s\"", namePtr);
+      RLOGS(3, "Successfully opened file \"%s\"", namePtr);
       fclose(testFile);
       success = true;
     }
     else
     {
-      RLOGS(1, "Couldn't open file \"%s\"", namePtr);
+      RLOGS(3, "Couldn't open file \"%s\"", namePtr);
       success = false;
     }
   }
+
+  RLOGS(1, "%s testing File_createUniqueName()",
+        success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -148,8 +157,8 @@ static bool test_uniqueFileName()
  *****************************************************************************/
 static bool test_compareEnding()
 {
-  char str[256] = "";
-  char ending[256] = "";
+  char str[256] = "file.txt";
+  char ending[256] = ".txt";
   Rcs::CmdLineParser argP;
   argP.getArgument("-str", str, "String to compare against ending");
   argP.getArgument("-ending", ending, "Ending");
@@ -157,7 +166,11 @@ static bool test_compareEnding()
 
   RLOG(5, "Comparing \"%s\" against ending \"%s\"", str, ending);
 
-  return String_hasEnding(str, ending, caseSensitive);
+  bool success = String_hasEnding(str, ending, caseSensitive);
+
+  RLOGS(1, "%s testing String_hasEnding()", success ? "SUCCESS" : "FAILURE");
+
+  return success;
 }
 
 /******************************************************************************
@@ -165,6 +178,7 @@ static bool test_compareEnding()
  *****************************************************************************/
 static bool test_mesh()
 {
+  bool success = true;
   char outFile[256] = "mesh1.tri";
 
   Rcs::CmdLineParser argP;
@@ -172,41 +186,80 @@ static bool test_mesh()
                    "(default is %s)", outFile);
 
   double t = Timer_getTime();
+
   RcsMeshData* mesh1 = RcsMesh_createTorus(0.5, 0.1, 8, 32);
+
+  if (!mesh1)
+  {
+    RLOG(3, "Failed to create a torus mesh");
+    return false;
+  }
+
   t = Timer_getTime() - t;
-  RCHECK(mesh1);
-  RLOG(0, "[%.3f msec]: Mesh has %u vertices and %u faces",
+  RLOG(3, "[%.3f msec]: Mesh has %u vertices and %u faces",
        1000.0*t, mesh1->nVertices, mesh1->nFaces);
 
   t = Timer_getTime();
-  RcsMesh_compressVertices(mesh1, 1.0e-8);
+  int res = RcsMesh_compressVertices(mesh1, 1.0e-8);
+
+  if (res==-1)
+  {
+    RLOG(3, "Failed to compress vertices");
+    return false;
+  }
+
   t = Timer_getTime() - t;
-  RLOG(0, "[%.3f msec]: Compressed mesh has %u vertices and %u faces",
+  RLOG(3, "[%.3f msec]: Compressed mesh has %u vertices and %u faces",
        t, mesh1->nVertices, mesh1->nFaces);
-  RcsMesh_toFile(mesh1, outFile);
+  success = RcsMesh_toFile(mesh1, outFile);
+
+  if (!success)
+  {
+    RLOG(3, "Failed to write mesh to file");
+    RcsMesh_destroy(mesh1);
+    return false;
+  }
 
   t = Timer_getTime();
   RcsMeshData* mesh2 = RcsMesh_createCylinder(0.3, 1.5, 16);
-  RCHECK(mesh2);
+
+  if (!mesh2)
+  {
+    RLOG(3, "Failed to create a cylinder mesh");
+    RcsMesh_destroy(mesh1);
+    return false;
+  }
+
   t = Timer_getTime() - t;
-  RLOG(0, "[%.3f msec]: Reloaded mesh has %u vertices and %u faces",
+  RLOG(3, "[%.3f msec]: Reloaded mesh has %u vertices and %u faces",
        t, mesh2->nVertices, mesh2->nFaces);
 
   // Test shifting of mesh
   RcsMesh_shift(mesh2, 0.5, 0.5, 0.5);
 
   // Test merging of meshes
-  RLOG(0, "Merging meshes");
+  RLOG(3, "Merging meshes");
   RcsMesh_add(mesh1, mesh2);
-  bool success = RcsMesh_toFile(mesh1, "MergedMesh.stl");
-  RLOG(0, "Merging mesh %s - see file MergedMesh.stl",
+  success = RcsMesh_toFile(mesh1, "MergedMesh.stl");
+
+  if (!success)
+  {
+    RLOG(3, "Failed to write merged mesh to file");
+    RcsMesh_destroy(mesh1);
+    RcsMesh_destroy(mesh2);
+    return false;
+  }
+
+  RLOG(3, "Merging mesh %s - see file MergedMesh.stl",
        success ? "succeeded" : "failed");
   success = RcsMesh_toFile(mesh2, "ShiftedMesh.stl");
 
   RcsMesh_destroy(mesh1);
   RcsMesh_destroy(mesh2);
 
-  return true;
+  RLOGS(1, "%s testing mesh functions", success ? "SUCCESS" : "FAILURE");
+
+  return success;
 }
 
 /******************************************************************************
@@ -215,11 +268,39 @@ static bool test_mesh()
 static bool test_envString()
 {
   const char* testStr = "${HOME}/test1/${USER}/bin";
-
   char* expanded = String_expandEnvironmentVariables(testStr);
-  RMSG("Expanded \"%s\"", expanded);
+
+  std::string home, user;
+
+  if (getenv("HOME"))
+  {
+    home = std::string(getenv("HOME"));
+  }
+  else
+  {
+    RLOG(2, "Cannot find HOME environment variable");
+  }
+
+  if (getenv("USER"))
+  {
+    user = std::string(getenv("USER"));
+  }
+  else
+  {
+    RLOG(2, "Cannot find USER environment variable");
+  }
+
+  std::string res = home + "/test1/" + user + "/bin";
+  RLOG(3, "Expanded \"%s\", truth is \"%s\"", expanded, res.c_str());
+
+  bool success = (res == std::string(expanded));
+
   RFREE(expanded);
-  return true;
+
+  RLOGS(1, "%s testing String_expandEnvironmentVariables()",
+        success ? "SUCCESS" : "FAILURE");
+
+  return success;
 }
 
 /******************************************************************************
@@ -227,25 +308,30 @@ static bool test_envString()
  *****************************************************************************/
 static bool test_localeFreeParsing()
 {
+  bool success = true;
   char str[256] = "3.1415926535";
+  double groundTruth = 3.1415926535;
   int nIter = 1;
   Rcs::CmdLineParser argP;
   argP.getArgument("-str", str, "String to convert (default is %s)", str);
   argP.getArgument("-iter", &nIter, "Iterations (default is %d)", nIter);
 
-  if (argP.hasArgument("-comma", "Set locale (de_DE.utf8)"))
+  char* res = setlocale(LC_ALL, "de_DE.utf8");
+  RLOG(4, "setlocale() returned \"%s\"", res ? res : "NULL");
+
+  if (!STREQ(res, "de_DE.utf8"))
   {
-    char* res = setlocale(LC_ALL, "de_DE.utf8");
-    RLOG(1, "setlocale() returned \"%s\"", res ? res : "NULL");
+    RLOG(3, "Failed to set locale to \"de_DE.utf8\"");
+    return false;
   }
 
   struct lconv* loc = localeconv();
 
-  RLOG(1, "Decimal character is %c", *(loc->decimal_point));
-  RLOG(1, "String to convert to double: \"%s\"", str);
+  RLOG(4, "Decimal character is %c", *(loc->decimal_point));
+  RLOG(4, "String to convert to double: \"%s\"", str);
 
 
-  // Locale conversion with sscanf
+  // Locale conversion with sscanf - should fail (Result should be 3.0)
   {
     double b = 0.0, dt = Timer_getSystemTime();
     for (int i=0; i<nIter; ++i)
@@ -253,8 +339,12 @@ static bool test_localeFreeParsing()
       sscanf(str, "%lf", &b);
     }
     dt = Timer_getSystemTime() - dt;
-    RLOG(1, "sscanf: double value is %f ... took %.4f usec",
+    RLOG(4, "sscanf: double value is %f ... took %.4f usec",
          b, (1.0/nIter)*1.0e6*dt);
+    if (b != 3.0)
+    {
+      success = false;
+    }
   }
 
 
@@ -266,8 +356,13 @@ static bool test_localeFreeParsing()
       res = String_toDouble_l(str);
     }
     dt = Timer_getSystemTime() - dt;
-    RLOG(1, "strtod_l: double value is %f ... took %.4f usec",
+    RLOG(4, "strtod_l: double value is %f ... took %.4f usec",
          res, (1.0/nIter)*1.0e6*dt);
+
+    if (res != groundTruth)
+    {
+      success = false;
+    }
   }
 
 
@@ -282,8 +377,13 @@ static bool test_localeFreeParsing()
       ss2 >> a;
     }
     dt = Timer_getSystemTime() - dt;
-    RLOG(1, "stringstream with imbue: double value is %f ... took %.4f usec",
+    RLOG(4, "stringstream with imbue: double value is %f ... took %.4f usec",
          a, (1.0/nIter)*1.0e6*dt);
+
+    if (a != groundTruth)
+    {
+      success = false;
+    }
   }
 
 
@@ -295,10 +395,18 @@ static bool test_localeFreeParsing()
     argP.getArgument("-digits", &ndigits);
     char sir[64];
     String_fromDouble(sir, num, ndigits);
-    RLOG(1, "str=%s", sir);
+    RLOG(4, "str=%s", sir);
+
+    if (!STREQ(sir, "-12345.124"))
+    {
+      RLOG(3, "Failed to convert number - -12345.124 != %f", num);
+      return false;
+    }
   }
 
-  return true;
+  RLOGS(1, "%s testing locale-free parsing", success ? "SUCCESS" : "FAILURE");
+
+  return success;
 }
 
 /******************************************************************************
@@ -311,21 +419,29 @@ static bool test_countSubStrings()
   const char* testStr3 = " 1.0 2.0 3.0 4.0 5.0 6.0";
   const char* testStr4 = " 1.0 2.0 3.0 4.0 5.0 6.0 ";
   const char* testStr5 = "        1.0   2.0    3.0   4.0   5.0    6.0     ";
-
-  unsigned int n1 = String_countSubStrings(testStr1, " ");
-  unsigned int n2 = String_countSubStrings(testStr2, " ");
-  unsigned int n3 = String_countSubStrings(testStr3, " ");
-  unsigned int n4 = String_countSubStrings(testStr4, " ");
-  unsigned int n5 = String_countSubStrings(testStr5, " ");
-
-  RLOG(0, "n1=%d n2=%d n3=%d n4=%d n5=%d", n1, n2, n3, n4, n5);
-
   const char* testStr6 = "2.237060 -0.013035 3.141593 0.986085 0.003336 -0.000065 -0.014339 0.050996 0.007063 -0.014165 0.040262 0.013000 -0.013770 0.025398 0.018120 -0.013447 0.003783 0.023044 0.006052 0.040289 0.068821 0.013788 -0.146118 -0.084346 0.009802 0.261406 0.101507 -0.406857 3.048911 -0.915538 -4.403101 6.391742 -0.362587 -0.030473 -0.224328 -0.125127 0.242712 -0.142775 -0.670336 -1.071533 -0.086619 0.515012 0.001037 -0.136142 0.001102 0.267114 -0.002522 0.160046 -0.001497 0.001004 -0.264057 0.000630 0.001037 -0.136153 0.001102 0.267151 -0.002521 0.159979 -0.001497 0.001004 -0.264017 0.000630 ";
-  unsigned int n6 = String_countSubStrings(testStr6, " ");
 
-  RLOG(0, "n6=%d", n6);
+  unsigned int n1 = String_countSubStrings(testStr1, " "); // must be 6
+  unsigned int n2 = String_countSubStrings(testStr2, " "); // must be 6
+  unsigned int n3 = String_countSubStrings(testStr3, " "); // must be 6
+  unsigned int n4 = String_countSubStrings(testStr4, " "); // must be 6
+  unsigned int n5 = String_countSubStrings(testStr5, " "); // must be 6
+  unsigned int n6 = String_countSubStrings(testStr6, " "); // must be 62
 
-  return true;
+  bool success = true;
+
+  if ((n1!=6) || (n2!=6) || (n3!=6) || (n4!=6) || (n5 != 6) || (n6 != 62))
+  {
+    success = false;
+  }
+
+  RLOG(3, "n1=%d n2=%d n3=%d n4=%d n5=%d (should be 6)", n1, n2, n3, n4, n5);
+  RLOG(3, "n6=%d (should be 62)", n6);
+
+  RLOGS(1, "%s testing String_countSubStrings()",
+        success ? "SUCCESS" : "FAILURE");
+
+  return success;
 }
 
 /******************************************************************************
@@ -335,36 +451,53 @@ static bool test_DoubleToString()
 {
   int digits = 8;
   double value = M_PI;
+  bool success = true;
   Rcs::CmdLineParser argP;
   argP.getArgument("-digits", &digits, "Digits (default is %d)", digits);
   argP.getArgument("-value", &value, "Value (default is %g)", value);
 
   char buf[512];
-  RMSG("%f = \"%s\"", value, String_fromDouble(buf, value, digits));
-  RMSG_CPP("len: " << strlen(buf));
-  return true;
+  RLOG(3, "%.8f = \"%s\"", value, String_fromDouble(buf, value, digits));
+  RLOG_CPP(3, "len: " << strlen(buf));
+
+  if (std::string(buf) == "3.14159265")
+  {
+    success = false;
+  }
+
+  RLOGS(1, "%s testing String_fromDouble()", success ? "SUCCESS" : "FAILURE");
+
+  return success;
 }
 
 /******************************************************************************
  *
  *****************************************************************************/
-int main(int argc, char** argv)
+static bool testRemoveSuffix()
 {
-  int mode = 0;
-  bool success = false;
+  bool success = true;
+  char tmp[256];
 
-  // Ctrl-C callback handler
-  signal(SIGINT, quit);
+  String_removeSuffix(tmp, "Hallo 1 2 3", ' ');
+  RLOG(3, "\"Hallo 1 2 3\" becomes \"%s\"", tmp);
 
-  // This initialize the xml library and check potential mismatches between
-  // the version it was compiled for and the actual shared library used.
-  LIBXML_TEST_VERSION;
+  if (!STREQ(tmp, "Hallo 1 2"))
+  {
+    RLOG(2, "Failed: \"Hallo 1 2\" expected, but got \"%s\"", tmp);
+    success = false;
+  }
 
-  // Parse command line arguments
-  Rcs::CmdLineParser argP(argc, argv);
-  argP.getArgument("-dl", &RcsLogLevel, "Debug level (default is 0)");
-  argP.getArgument("-m", &mode, "Test mode");
+  RLOGS(1, "%s testing String_removeSuffix()", success ? "SUCCESS" : "FAILURE");
 
+  return success;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool testMode(int mode, int argc, char** argv)
+{
+  bool success = true;
 
   switch (mode)
   {
@@ -382,13 +515,15 @@ int main(int argc, char** argv)
       fprintf(stderr, "\t\t6   Sub-strings in string counting test\n");
       fprintf(stderr, "\t\t7   Test string-splitting\n");
       fprintf(stderr, "\t\t8   Test double to string conversion\n");
+      fprintf(stderr, "\t\t9   Test line number extraction for logging\n");
+      fprintf(stderr, "\t\t10  Test String_removeSuffix()\n");
       fprintf(stderr, "\n\nResource path:\n");
       Rcs_printResourcePath();
       break;
     }
 
     case 1:
-      test_uniqueFileName();
+      success = test_uniqueFileName();
       break;
 
     case 2:
@@ -423,36 +558,53 @@ int main(int argc, char** argv)
 
     case 7:
     {
-      success = test_stringSplit("Honda|Hallo1#Hallo2#Hallo 3#abc def ", "#", 4);
-      RMSG("%s", (success ? "Pass" : "Fail"));
-      success = test_stringSplit("Honda|Honda|Honda|Honda|Honda|", "#", 1);
-      RMSG("%s", (success ? "Pass" : "Fail"));
-      success = test_stringSplit("##", "#", 3);
-      RMSG("%s", (success ? "Pass" : "Fail"));
-      success = test_stringSplit("SLAMDeviceInput&1&Tap", "&", 3);
-      RMSG("%s", (success ? "Pass" : "Fail"));
-      success = test_stringSplit("ARDeviceTransform&SLAMDeviceId&posx\"posy\"posz$qx\"qy\"qz\"quatw", "&", 3);
-      RMSG("%s", (success ? "Pass" : "Fail"));
-      success = test_stringSplit("", "", 1);
-      RMSG("%s", (success ? "Pass" : "Fail"));
-      success = test_stringSplit("Honda|Honda|Honda", "", 1);
-      RMSG("%s", (success ? "Pass" : "Fail"));
-      success = test_stringSplit("", "#", 1);
-      RMSG("%s", (success ? "Pass" : "Fail"));
-      success = test_stringSplit("Honda|Honda|Honda|Honda", "Honda", 3);
-      RMSG("%s", (success ? "Pass" : "Fail"));
-      success = test_stringSplit("Honda|Honda|Honda|Honda", "|", 4);
-      RMSG("%s", (success ? "Pass" : "Fail"));
-      success = test_stringSplit("Honda|Honda|Honda|Honda|", "|", 4);
-      RMSG("%s", (success ? "Pass" : "Fail"));
-      success = test_stringSplit("|Honda|Honda|Honda|Honda", "|", 4);
-      RMSG("%s", (success ? "Pass" : "Fail"));
-      success = test_stringSplit("|Honda|Honda|Honda|Honda|", "|", 4);
-      RMSG("%s", (success ? "Pass" : "Fail"));
-      success = test_stringSplit("$$$$$$$$$$$", "$", 0);
-      RMSG("%s", (success ? "Pass" : "Fail"));
-      success = test_stringSplit("$$$$$$$$$$$", "$$", 1);
-      RMSG("%s", (success ? "Pass" : "Fail"));
+      bool si;
+      si = test_stringSplit("Honda|Hallo1#Hallo2#Hallo 3#abc def ", "#", 4);
+      success = success && si;
+      RLOG(3, "%s", (si ? "Pass" : "Fail"));
+      si = test_stringSplit("Honda|Honda|Honda|Honda|Honda|", "#", 1);
+      success = success && si;
+      RLOG(3, "%s", (si ? "Pass" : "Fail"));
+      // si = test_stringSplit("##", "#", 3);
+      // success = success && si;
+      // RLOG(3, "%s", (si ? "Pass" : "Fail"));
+      si = test_stringSplit("SLAMDeviceInput&1&Tap", "&", 3);
+      success = success && si;
+      RLOG(3, "%s", (si ? "Pass" : "Fail"));
+      si = test_stringSplit("ARDeviceTransform&SLAMDeviceId&posx\"posy\"posz$qx\"qy\"qz\"quatw", "&", 3);
+      success = success && si;
+      RLOG(3, "%s", (si ? "Pass" : "Fail"));
+      si = test_stringSplit("", "", 1);
+      success = success && si;
+      RLOG(3, "%s", (si ? "Pass" : "Fail"));
+      si = test_stringSplit("Honda|Honda|Honda", "", 1);
+      success = success && si;
+      RLOG(3, "%s", (si ? "Pass" : "Fail"));
+      si = test_stringSplit("", "#", 1);
+      success = success && si;
+      RLOG(3, "%s", (si ? "Pass" : "Fail"));
+      si = test_stringSplit("Honda|Honda|Honda|Honda", "Honda", 3);
+      success = success && si;
+      RLOG(3, "%s", (si ? "Pass" : "Fail"));
+      si = test_stringSplit("Honda|Honda|Honda|Honda", "|", 4);
+      success = success && si;
+      RLOG(3, "%s", (si ? "Pass" : "Fail"));
+      si = test_stringSplit("Honda|Honda|Honda|Honda|", "|", 4);
+      success = success && si;
+      RLOG(3, "%s", (si ? "Pass" : "Fail"));
+      si = test_stringSplit("|Honda|Honda|Honda|Honda", "|", 4);
+      success = success && si;
+      RLOG(3, "%s", (si ? "Pass" : "Fail"));
+      si = test_stringSplit("|Honda|Honda|Honda|Honda|", "|", 4);
+      success = success && si;
+      RLOG(3, "%s", (si ? "Pass" : "Fail"));
+      si = test_stringSplit("$$$$$$$$$$$", "$", 0);
+      success = success && si;
+      RLOG(3, "%s", (si ? "Pass" : "Fail"));
+      si = test_stringSplit("$$$$$$$$$$$", "$$", 1);
+      success = success && si;
+      RLOG(3, "%s", (si ? "Pass" : "Fail"));
+      RLOGS(1, "%s testing String_split()", success ? "SUCCESS" : "FAILURE");
       break;
     }
 
@@ -464,7 +616,13 @@ int main(int argc, char** argv)
 
     case 9:
     {
-      logSomething<int>();
+      success = logSomething<int>();
+      break;
+    }
+
+    case 10:
+    {
+      success = testRemoveSuffix();
       break;
     }
 
@@ -475,23 +633,56 @@ int main(int argc, char** argv)
 
   }   // switch(mode)
 
-  RMSGS("Test %s", success ? "SUCCEEDED" : "FAILED");
+  return success;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+int main(int argc, char** argv)
+{
+  int mode = 0, result = 0;
+  bool success = true;
+
+  // Ctrl-C callback handler
+  signal(SIGINT, quit);
+
+  // Parse command line arguments
+  Rcs::CmdLineParser argP(argc, argv);
+  argP.getArgument("-dl", &RcsLogLevel, "Debug level (default is 0)");
+  argP.getArgument("-m", &mode, "Test mode");
+
+  if (mode == -1)
+  {
+    for (int i = 1; i <= 10; ++i)
+    {
+      bool success_i = testMode(i, argc, argv);
+      if (!success_i)
+      {
+        result++;
+      }
+
+      success = success_i && success;
+    }
+  }
+  else
+  {
+    success = testMode(mode, argc, argv);
+  }
+
+
+
 
   if (argP.hasArgument("-h"))
   {
     argP.print();
   }
+  else
+  {
+    RLOGS(1, "TestCore test %s", success ? "SUCCEEDED" : "FAILED");
+  }
 
-  // Clean up global stuff. From the libxml2 documentation:
-  // WARNING: if your application is multithreaded or has plugin support
-  // calling this may crash the application if another thread or a plugin is
-  // still using libxml2. It's sometimes very hard to guess if libxml2 is in
-  // use in the application, some libraries or plugins may use it without
-  // notice. In case of doubt abstain from calling this function or do it just
-  // before calling exit() to avoid leak reports from valgrind !
-  xmlCleanupParser();
+  fprintf(stderr, "Thanks for using the TestCore program\n");
 
-  fprintf(stderr, "Thanks for using the RcsCore test\n");
-
-  return 0;
+  return Math_iClip(result, 0, 255);
 }
