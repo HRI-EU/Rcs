@@ -78,8 +78,8 @@ It is also possible to compile it on Microsoft Visual Studio, however with some 
 Rcs has been designed carefully to have only little dependencies. The ones that have been selected are in our opinion very matured libraries:
 
  - Libxml2 (MIT License, Ubuntu-package libxml2-dev)
- - Qt4 or Qt5: LGPL (Also dual commercial license available, Ubuntu-package libqt4-dev or whatever is needed for Qt5)
- - qwt (LGPL with additions, Ubuntu-package libqwt5-qt4-dev in case you use Qt4, otherwise libqwt-qt5-dev)
+ - Qt5: LGPL (Also dual commercial license available, Ubuntu-package qt5-default)
+ - qwt (LGPL with additions, Ubuntu-package libqwt-qt5-dev)
  - OpenSceneGraph (OSGPL, Ubuntu-package libopenscenegraph-dev)
 
 Optionally (please use the ccmake tool to manage the compile options), additional functionality can be compiled in when activating
