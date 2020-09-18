@@ -51,7 +51,12 @@ function testGraph()
 function testController()
 {
     @EXECUTABLE_OUTPUT_PATH@/Rcs -m 6 -valgrind -nTests 10 -dl 1 &>> UnitTestResults.txt
-    testControllerResult=$?
+    res1=$?
+    @EXECUTABLE_OUTPUT_PATH@/Rcs -m 10 -valgrind -dl 1 &>> UnitTestResults.txt
+    res2=$?
+    @EXECUTABLE_OUTPUT_PATH@/Rcs -m 7 -valgrind -dl 1 &>> UnitTestResults.txt
+    res3=$?
+    testControllerResult=$((res1 + res2 + res3))
 }
 
 echo -n "Testing core functions        ... "
