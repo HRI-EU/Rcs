@@ -238,13 +238,13 @@ void Rcs::TaskJoints::setJoints(std::vector<const RcsJoint*> jnt)
  ******************************************************************************/
 void Rcs::TaskJoints::setRefJoints(std::vector<const RcsJoint*> jnt)
 {
-  RCHECK(subTask.size() == jnt.size());
+  RCHECK(jnt.empty() || (jnt.size()==subTask.size()));
 
   for (size_t i = 0; i < subTask.size(); ++i)
   {
-    Rcs::TaskJoint* tsk = dynamic_cast<Rcs::TaskJoint*>(subTask[i]);
+    TaskJoint* tsk = dynamic_cast<Rcs::TaskJoint*>(subTask[i]);
     RCHECK(tsk);
-    tsk->setRefJoint(jnt[i]);
+    tsk->setRefJoint(jnt.empty() ? NULL : jnt[i]);
   }
 }
 
@@ -264,13 +264,13 @@ void Rcs::TaskJoints::setRefJoint(size_t index, const RcsJoint* jnt)
  ******************************************************************************/
 void Rcs::TaskJoints::setRefGains(std::vector<double> gains)
 {
-  RCHECK(subTask.size() == gains.size());
+  RCHECK(gains.empty() || (gains.size()==subTask.size()));
 
   for (size_t i = 0; i < subTask.size(); ++i)
   {
     Rcs::TaskJoint* tsk = dynamic_cast<Rcs::TaskJoint*>(subTask[i]);
     RCHECK(tsk);
-    tsk->setRefGain(gains[i]);
+    tsk->setRefGain(gains.empty() ? 1.0 : gains[i]);
   }
 }
 
@@ -537,7 +537,7 @@ bool Rcs::TaskJoints::isValid(xmlNode* node, const RcsGraph* graph)
     success = false;
   }
 
-
+  RCHECK(success);
 
   return success;
 }

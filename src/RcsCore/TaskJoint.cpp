@@ -308,7 +308,28 @@ void Rcs::TaskJoint::computeAX(double* a_res,
 void Rcs::TaskJoint::print() const
 {
   TaskGenericIK::print();
-  printf("Joint: \"%s\"\n", joint ? joint->name : "NULL");
+
+  if (joint)
+  {
+    printf("Joint: \"%s\" (type: %s value: %f)",
+           joint->name, RcsJoint_typeName(joint->type),
+           getGraph()->q->ele[joint->jointIndex]);
+  }
+
+  if (refJoint)
+  {
+    printf(" refJoint: \"%s\" (type: %s value: %f)",
+           refJoint->name, RcsJoint_typeName(joint->type),
+           getGraph()->q->ele[joint->jointIndex]);
+  }
+
+  if (refGain != 1.0)
+  {
+    printf(" refGain: %g", refGain);
+  }
+
+  printf("\n");
+
 }
 
 /*******************************************************************************
