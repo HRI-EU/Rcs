@@ -104,8 +104,6 @@ public:
    */
   virtual ~ControllerBase();
 
-  virtual void initFromXmlNode(xmlNodePtr xmlNodeController);
-
   /*! \brief Returns the name of a task with the given ID. If id is out
    *         of range, the function will exit with a fatal error.
    *
@@ -863,13 +861,15 @@ public:
                                       double positionGain,
                                       double velocityGain=-1.0);
 
-protected:
-
   /*! \brief Recomputes the index array vector by going through the tasks
    *         vector and adding the dimensions on top of each other. This
    *         function is needed if tasks are removed / added / changed.
    */
   void recomputeIndices();
+
+protected:
+
+  bool initFromXmlNode(xmlNodePtr xmlNodeController);
 
   RcsGraph* graph;                   //!< Underlying graph
   bool ownsGraph;                    //!< True if controller needs to destroy it

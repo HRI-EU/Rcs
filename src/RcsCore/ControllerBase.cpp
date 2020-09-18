@@ -117,7 +117,8 @@ Rcs::ControllerBase::ControllerBase(const std::string& xmlDescription,
     RFATAL("Node \"Controller\" not found in \"%s\"", this->xmlFile.c_str());
   }
 
-  initFromXmlNode(this->xmlRootNode);
+  bool success = initFromXmlNode(this->xmlRootNode);
+  RCHECK_MSG(success, "Failed to create graph for controller");
 
   // Free the xml memory in case no child ctors need to continue parsing
   if (xmlParsingFinished)
@@ -130,7 +131,7 @@ Rcs::ControllerBase::ControllerBase(const std::string& xmlDescription,
 /*******************************************************************************
  * Initialization from xml node "Controller".
  ******************************************************************************/
-void Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
+bool Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
 {
   // Parse controller name
   char txt[256];
@@ -181,11 +182,22 @@ void Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
       RCHECK_MSG(this->graph==NULL, "Found xml tag <Graph>, but already graph"
                  " loaded graph from file \"%s\"", graph->xmlFile);
       this->graph = RcsGraph_createFromXmlNode(node);
+      RCHECK_MSG(this->graph, "Failed to create inlined graph");
     }
 
     node = node->next;
   }
 
+  // Check for consistency
+  int graphErrors = RcsGraph_check(this->graph);
+
+  if (graphErrors > 0)
+  {
+    RLOG(1, "Check for graph failed: %d errors", graphErrors);
+    return false;
+  }
+
+  return true;
 }
 
 /*******************************************************************************
@@ -1512,10 +1524,10 @@ bool Rcs::ControllerBase::test(bool verbose)
 
     if ((verbose==true) || (RcsLogLevel>0))
     {
-      RMSG("%s when checking task \"%s\" (%s)",
-           success_i ? "SUCCESS" : "FAILURE",
-           getTaskName(id).c_str(),
-           tasks[id]->getClassName().c_str());
+      RMSGS("%s when checking task \"%s\" (%s)",
+            success_i ? "SUCCESS" : "FAILURE",
+            getTaskName(id).c_str(),
+            tasks[id]->getClassName().c_str());
     }
   }
 
