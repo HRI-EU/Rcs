@@ -382,6 +382,18 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_des,
   return;
 }
 
+void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
+                                         MatNd* dq_ns,
+                                         const MatNd* dx,
+                                         const MatNd* dH,
+                                         const MatNd* activation,
+                                         double lambda0)
+{
+  MatNd lambdaArr = MatNd_fromPtr(1, 1, &lambda0);
+  solveRightInverse(dq_ts, dq_ns, dx, dH, activation, &lambdaArr);
+  return;
+}
+
 /*******************************************************************************
  * Calculate the inverse kinematics using the right-hand pseudo-inverse. This
  * follows the derivation of Liegeois.
@@ -394,8 +406,25 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_des,
                                          const MatNd* activation,
                                          const MatNd* lambda)
 {
+  MatNd* dq_ns = MatNd_createLike(dq_des);
+  solveRightInverse(dq_des, dq_ns, dx, dH, activation, lambda);
+  MatNd_addSelf(dq_des, dq_ns);
+  MatNd_destroy(dq_ns);
+}
+
+void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
+                                         MatNd* dq_ns,
+                                         const MatNd* dx,
+                                         const MatNd* dH,
+                                         const MatNd* activation,
+                                         const MatNd* lambda)
+{
   RcsGraph* graph = controller->getGraph();
-  const bool hasCouplings = (nqr != nq);
+
+  // Look for kinematic joint couplings in each iteration so that they can be
+  // changed at run-time
+  const int nCpldJnts = RcsGraph_countCoupledJoints(controller->getGraph());
+  const bool hasCouplings = (nCpldJnts>0);
 
   // Create coupled joint matrix
   if (hasCouplings)
@@ -420,7 +449,8 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_des,
   if (this->det == 0.0)
   {
     RLOG(1, "Singular Jacobian - setting velocities to zero");
-    MatNd_reshapeAndSetZero(dq_des, graph->dof, 1);
+    MatNd_reshapeAndSetZero(dq_ts, graph->dof, 1);
+    MatNd_reshapeAndSetZero(dq_ns, graph->dof, 1);
     return;
   }
 
@@ -440,6 +470,25 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_des,
     }
 
   }
+
+  MatNd_reshapeCopy(dq_ts, this->dqr);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MatNd_setZero(this->dqr);
 
   // Compute null space
   if (dH != NULL)
@@ -461,16 +510,17 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_des,
   // Expand from coupled joint space to constraint joints
   if (hasCouplings)
   {
-    MatNd_reshape(dq_des, nq, 1);
-    MatNd_mul(dq_des, this->A, this->dqr);
+    MatNd_reshape(dq_ns, nq, 1);
+    MatNd_mul(dq_ns, this->A, this->dqr);
   }
   else
   {
-    MatNd_reshapeCopy(dq_des, this->dqr);
+    MatNd_reshapeCopy(dq_ns, this->dqr);
   }
 
   // Uncompress to all states
-  RcsGraph_stateVectorFromIKSelf(graph, dq_des);
+  RcsGraph_stateVectorFromIKSelf(graph, dq_ts);
+  RcsGraph_stateVectorFromIKSelf(graph, dq_ns);
 }
 
 /*******************************************************************************
@@ -568,4 +618,56 @@ const MatNd* Rcs::IkSolverRMR::getJacobian() const
 const MatNd* Rcs::IkSolverRMR::getPseudoInverse() const
 {
   return pinvJ;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::IkSolverRMR::computeRightInverse(MatNd* pinvJ_,
+                                           const MatNd* activation,
+                                           double lambda) const
+{
+  const RcsGraph* graph = controller->getGraph();
+
+  MatNd* A_ = MatNd_create(nq, nq);
+  MatNd* invA_ = MatNd_create(nq, nq);
+  MatNd* J_ = MatNd_create(nx, nq);
+  MatNd* invWq_ = MatNd_create(nq, 1);
+
+  // Look for kinematic joint couplings in each iteration so that they can be
+  // changed at run-time
+  const int nCpldJnts = RcsGraph_countCoupledJoints(graph);
+  const bool hasCouplings = (nCpldJnts>0);
+
+  // Create coupled joint matrix
+  if (hasCouplings)
+  {
+    RcsGraph_coupledJointMatrix(graph, A_, invA_);
+  }
+
+  // Compute the Jacobian and joint metric
+  controller->computeJ(J_, activation);
+  RcsGraph_getInvWq(graph, invWq_, RcsStateIK);
+
+  // Task space
+  if (hasCouplings)
+  {
+    MatNd_postMulSelf(J_, A_);
+    MatNd_preMulSelf(invWq_, invA_);
+  }
+
+  MatNd lambdaArr = MatNd_fromPtr(1, 1, &lambda);
+  double det_ = MatNd_rwPinv(pinvJ_, J_, invWq_, &lambdaArr);
+
+  if (hasCouplings)
+  {
+    MatNd_preMulSelf(pinvJ_, A_);
+  }
+
+  MatNd_destroy(A_);
+  MatNd_destroy(invA_);
+  MatNd_destroy(J_);
+  MatNd_destroy(invWq_);
+
+  return (det_==0.0) ? false : true;
 }

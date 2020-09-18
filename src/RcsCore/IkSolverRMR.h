@@ -157,6 +157,12 @@ public:
                                  const MatNd* dH,
                                  const MatNd* activation,
                                  const MatNd* lambda);
+  virtual void solveRightInverse(MatNd* dq_ts,
+                                 MatNd* dq_ns,
+                                 const MatNd* dx,
+                                 const MatNd* dH,
+                                 const MatNd* activation,
+                                 const MatNd* lambda);
 
   /*! \brief Same as
    *         \ref IkSolverRMR::solveRightInverse(MatNd* dq_des, const MatNd* dx,
@@ -166,6 +172,10 @@ public:
    *         elements.
    */
   virtual void solveRightInverse(MatNd* dq_des, const MatNd* dx,
+                                 const MatNd* dH, const MatNd* activation,
+                                 double lambda);
+
+  virtual void solveRightInverse(MatNd* dq_ts, MatNd* dq_ns, const MatNd* dx,
                                  const MatNd* dH, const MatNd* activation,
                                  double lambda);
 
@@ -216,6 +226,12 @@ public:
    *         corresponds to the state of the last call to solve().
    */
   const MatNd* getPseudoInverse() const;
+
+  /*! \brief Returns the pointer to the internal pseudo-inverse pinvJ. It
+   *         corresponds to the state of the last call to solve().
+   */
+  bool computeRightInverse(MatNd* pinvJ, const MatNd* activation,
+                           double lambda) const;
 
 protected:
 
