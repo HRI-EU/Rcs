@@ -334,6 +334,18 @@ void RcsGraph_getDefaultState(const RcsGraph* self, MatNd* q0);
 void RcsGraph_getInitState(const RcsGraph* self, MatNd* q_init);
 
 /*! \ingroup RcsGraphFunctions
+ * \brief This function overwrites the initial joint values with q_init.
+ *
+ *  \param[in]  self   The graph containing the joint centers to be overwritten
+ *  \param[in]  q_init Vector of new initial joint values to be written to the
+ *                     joints member q_init. The vector must be of dimension
+ *                     RcsGraph::dof x 1 or nJ x 1, otherwise the function
+ *                     will exit fatally. If it is nJ, the constrained dof
+ *                     remain unchanged.
+ */
+void RcsGraph_changeInitState(RcsGraph* self, const MatNd* q_init);
+
+/*! \ingroup RcsGraphFunctions
  *  \brief Returns a n x 1 array with elements that correspond to the range
  *         of the respective joint. The elements are aligned in the same
  *         order as in the state vector. If type is RcsStateFull, all
@@ -427,6 +439,7 @@ void RcsGraph_bodyTorque(const RcsGraph* self, const RcsBody* body,
  *           identity relative transforms
  *         - duplicate body names
  *         - joint centers out of range
+ *         - joint positions out of range
  *         - joint indices out of range
  *         - Jacobian indices out of range
  *         - joint direction index out of range

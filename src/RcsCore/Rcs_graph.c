@@ -894,6 +894,35 @@ void RcsGraph_changeDefaultState(RcsGraph* self, const MatNd* q0)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+void RcsGraph_changeInitState(RcsGraph* self, const MatNd* q_init)
+{
+  RCHECK_EQ(q_init->n, 1);
+
+  if (q_init->m == self->dof)
+  {
+    RCSGRAPH_TRAVERSE_JOINTS(self)
+    {
+      JNT->q_init = MatNd_get2(q_init, JNT->jointIndex, 0);
+    }
+  }
+  else if (q_init->m == self->nJ)
+  {
+    RCSGRAPH_TRAVERSE_JOINTS(self)
+    {
+      JNT->q_init = MatNd_get2(q_init, JNT->jacobiIndex, 0);
+    }
+  }
+  else
+  {
+    RFATAL("Size mismatch: dof=%d   nJ=%d but array q_init has %d rows",
+           self->dof, self->nJ, q_init->m);
+  }
+
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void RcsGraph_resetRigidBodyDofs(RcsGraph* self)
 {
   RCSGRAPH_TRAVERSE_BODIES(self)
@@ -1044,6 +1073,7 @@ void RcsGraph_getInvWq(const RcsGraph* self, MatNd* invWq, RcsStateType type)
                    JNT->weightMetric * (JNT->q_max - JNT->q_min));
     }
   }
+
 }
 
 /*******************************************************************************
@@ -1834,8 +1864,8 @@ int RcsGraph_check(const RcsGraph* self)
     }
   }
 
-  // Check for joint centers out of range and for valid indices of the
-  // joint array pointers
+  // Check for joint centers and positions out of range, and for valid indices
+  // of the joint array pointers
   unsigned int numJoints = 0;
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {
@@ -1882,9 +1912,7 @@ int RcsGraph_check(const RcsGraph* self)
              " are defined", JNT->name);
       }
 
-      if ((JNT->couplingFactors->size!=1) &&
-          (JNT->couplingFactors->size!=5) &&
-          (JNT->couplingFactors->size!=9))
+      if ((JNT->couplingFactors->size!=1))
       {
         nErrors++;
         RLOG(1, "Incorrect number of coupling factors in joint \"%s\": %d",
@@ -1898,6 +1926,29 @@ int RcsGraph_check(const RcsGraph* self)
       nErrors++;
       RLOG(1, "Joint \"%s\" has negative speed limit: %f",
            JNT->name, JNT->speedLimit);
+    }
+
+    if ((JNT->jointIndex >= 0) || (JNT->jointIndex < (int) self->dof))
+    {
+      const double qi = self->q->ele[JNT->jointIndex];
+
+      if ((qi<JNT->q_min) && (JNT->coupledTo==NULL))
+      {
+        nErrors++;
+        double s = RcsJoint_isRotation(JNT) ? 180.0/M_PI : 1.0;
+        RLOG(1, "Joint \"%s\": q < q_min (q_min=%f   q=%f   q_max=%f [%s])",
+             JNT->name, s*JNT->q_min, s*qi, s*JNT->q_max,
+             RcsJoint_isRotation(JNT) ? "deg" : "m");
+      }
+
+      if ((qi>JNT->q_max) && (JNT->coupledTo==NULL))
+      {
+        nErrors++;
+        double s = RcsJoint_isRotation(JNT) ? 180.0/M_PI : 1.0;
+        RLOG(1, "Joint \"%s\": q > q_max (q_min=%f   q=%f   q_max=%f [%s])",
+             JNT->name, s*JNT->q_min, s*qi, s*JNT->q_max,
+             RcsJoint_isRotation(JNT) ? "deg" : "m");
+      }
     }
 
   }
@@ -2781,53 +2832,54 @@ void RcsGraph_makeJointsConsistent(RcsGraph* self)
   {
     MatNd_set(self->q, JNT->jointIndex, 0, JNT->q0);
 
-    if (JNT->coupledJointName != NULL)
+    if (JNT->coupledJointName == NULL)
     {
-      RcsJoint* master = RcsGraph_getJointByName(self, JNT->coupledJointName);
-      RCHECK_MSG(master, "No coupled joint \"%s\"", JNT->coupledJointName);
-      JNT->coupledTo = master;
-
-      // Calculate range and initial posture
-      double q_min  = RcsJoint_computeSlaveJointAngle(JNT, master->q_min);
-      double q_max  = RcsJoint_computeSlaveJointAngle(JNT, master->q_max);
-      double q0     = RcsJoint_computeSlaveJointAngle(JNT, master->q0);
-      double q_init = RcsJoint_computeSlaveJointAngle(JNT, master->q_init);
-
-      bool hasRange = false;
-
-      if ((JNT->q_min!=0.0) || (JNT->q_max!=0.0) || (JNT->q0!=0.0))
-      {
-        hasRange = true;
-      }
-
-      REXEC(4)
-      {
-        if ((hasRange==true) &&
-            ((fabs(JNT->q_min-q_min)>1.0e-4) ||
-             (fabs(JNT->q_max-q_max)>1.0e-4) ||
-             (fabs(JNT->q0-q0)>1.0e-4) ||
-             (fabs(JNT->q_init-q_init)>1.0e-4)))
-        {
-          double s = RcsJoint_isRotation(JNT) ? 180.0/M_PI : 1.0;
-          RLOG(4, "Overwriting range of coupled joint \"%s\" with "
-               "values calculated from master range min, q0, max = "
-               "[%f %f %f] init = %f (original: min, q0, max = "
-               "[%f %f %f] init = %f)",
-               JNT->name, s*JNT->q_min, s*JNT->q0, s*JNT->q_max, s*JNT->q_init,
-               s*q_min, s*q0, s*q_max, s*q_init);
-        }
-      }
-
-      JNT->q_min  = q_min;
-      JNT->q_max  = q_max;
-      JNT->q0     = q0;
-      JNT->q_init = q_init;
-
-      double master_q = MatNd_get(self->q, master->jointIndex, 0);
-      MatNd_set(self->q, JNT->jointIndex, 0,
-                RcsJoint_computeSlaveJointAngle(JNT, master_q));
-
+      continue;
     }
+
+    RcsJoint* master = RcsGraph_getJointByName(self, JNT->coupledJointName);
+    RCHECK_MSG(master, "No coupled joint \"%s\"", JNT->coupledJointName);
+    JNT->coupledTo = master;
+
+    // Calculate range and initial posture
+    double q_min  = RcsJoint_computeSlaveJointAngle(JNT, master->q_min);
+    double q_max  = RcsJoint_computeSlaveJointAngle(JNT, master->q_max);
+    double q0     = RcsJoint_computeSlaveJointAngle(JNT, master->q0);
+    double q_init = RcsJoint_computeSlaveJointAngle(JNT, master->q_init);
+
+    bool hasRange = false;
+
+    if ((JNT->q_min!=0.0) || (JNT->q_max!=0.0) || (JNT->q0!=0.0))
+    {
+      hasRange = true;
+    }
+
+    REXEC(4)
+    {
+      if ((hasRange==true) &&
+          ((fabs(JNT->q_min-q_min)>1.0e-4) ||
+           (fabs(JNT->q_max-q_max)>1.0e-4) ||
+           (fabs(JNT->q0-q0)>1.0e-4) ||
+           (fabs(JNT->q_init-q_init)>1.0e-4)))
+      {
+        double s = RcsJoint_isRotation(JNT) ? 180.0/M_PI : 1.0;
+        RLOG(4, "Overwriting range of coupled joint \"%s\" with "
+             "values calculated from master range min, q0, max = "
+             "[%f %f %f] init = %f (original: min, q0, max = "
+             "[%f %f %f] init = %f)",
+             JNT->name, s*JNT->q_min, s*JNT->q0, s*JNT->q_max, s*JNT->q_init,
+             s*q_min, s*q0, s*q_max, s*q_init);
+      }
+    }
+
+    JNT->q_min  = q_min;
+    JNT->q_max  = q_max;
+    JNT->q0     = q0;
+    JNT->q_init = q_init;
+
+    double master_q = MatNd_get(self->q, master->jointIndex, 0);
+    MatNd_set(self->q, JNT->jointIndex, 0,
+              RcsJoint_computeSlaveJointAngle(JNT, master_q));
   }
 
 }
