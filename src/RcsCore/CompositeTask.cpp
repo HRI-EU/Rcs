@@ -398,8 +398,8 @@ Rcs::Task* Rcs::CompositeTask::getSubTask(size_t index)
  ******************************************************************************/
 void Rcs::CompositeTask::print() const
 {
-  printf("CompositeTask %s: type %s\n",
-         getName().c_str(), getClassName().c_str());
+  printf("CompositeTask %s: type %s with %zu sub-tasks\n",
+         getName().c_str(), getClassName().c_str(), subTask.size());
 
   for (size_t i=0; i<subTask.size(); ++i)
   {
