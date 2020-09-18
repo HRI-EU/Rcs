@@ -395,9 +395,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 
     if (File_exists(fullName) == true)
     {
-      shape->meshFile = RNALLOC(strlen(fullName) + 1, char);
-      RCHECK_PEDANTIC(shape->meshFile);
-      strcpy(shape->meshFile, fullName);
+      shape->meshFile = String_clone(fullName);
     }
     else
     {
@@ -430,9 +428,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   char shapeColor[256];
   strcpy(shapeColor, bodyColor ? bodyColor : "DEFAULT");
   getXMLNodePropertyStringN(node, "color", shapeColor, 256);
-  shape->color = RNALLOC(strlen(shapeColor) + 1, char);
-  RCHECK_PEDANTIC(shape->color);
-  strcpy(shape->color, shapeColor);
+  shape->color = String_clone(shapeColor);
 
   // Material
   char shapeMaterial[256] = "default";
@@ -862,20 +858,16 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   getXMLNodePropertyStringN(bdyNode, "name", msg, 256);
   RCHECK_MSG(strncmp(msg, "GenericBody", 11) != 0,
              "The name \"GenericBody\" is reserved for internal use");
-  b->xmlName = RNALLOC(strlen(msg) + 1, char);
-  strcpy(b->xmlName, msg);
+  b->xmlName = String_clone(msg);
   RLOG(9, "Creating body \"%s\"", b->xmlName);
 
   // Group suffix
-  //   b->suffix = RNALLOC(strlen(suffix)+1, char);
-  b->suffix = RNALLOC(256, char); // \todo Fixit
-  strcpy(b->suffix, suffix);
+  b->suffix = String_clone(suffix);
 
   // Fully qualified name
   strcpy(msg, b->xmlName);
   strcat(msg, suffix);
-  b->name = RNALLOC(strlen(msg) + 1, char);
-  strcpy(b->name, msg);
+  b->name = String_clone(msg);
 
 
   RcsBody* parentBdy = root;
@@ -1214,11 +1206,11 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
 
     if (getXMLNodeProperty(node, "resourcePath"))
     {
-      char resourceDir[1024] = "";
+      char* resourceDir = RNALLOC(1024, char);
       getXMLNodePropertyStringN(node, "resourcePath", resourceDir, 1024);
 
       char* pch = strtok(resourceDir, " ");
-      char path[256];
+      char* path = RNALLOC(256, char);
       int nPaths = 0;
 
       // Determine paths by space-separated tags
@@ -1231,6 +1223,9 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
         RLOG(9, "Adding path %d to ressource path: \"%s\"", nPaths++, path);
         pch = strtok(NULL, " ");
       }
+
+      RFREE(resourceDir);
+      RFREE(path);
     }
 
     RcsGraph_parseBodies(node->children, self, gCol, suffix,
@@ -1248,10 +1243,10 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     // Then we look for the generic bodies and link them accordingly
     for (int i = 0; i < 10; i++)
     {
-      char a[16], gBody[256];
+      char a[16], gBody[32];
       sprintf(a, "GenericBody%d", i);
 
-      if (getXMLNodePropertyStringN(node, a, gBody, 256))
+      if (getXMLNodePropertyStringN(node, a, gBody, 32))
       {
         RLOG(5, "Linking \"%s\"", a);
         RcsBody* b = RcsGraph_getBodyByName(self, gBody);
@@ -1281,7 +1276,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
   }
   else if (isXMLNodeName(node, "Group"))
   {
-    char ndExt[256], tmp[64] = "", pGroupSuffix[256];
+    char ndExt[16], tmp[32] = "", pGroupSuffix[16];
 
     // Propagation of group transformation to next level
     HTr A_local, A_group;
@@ -1291,14 +1286,14 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     HTr_transformSelf(&A_group, &A_local);
 
     // New extension = suffix + new group name
-    getXMLNodePropertyStringN(node, "name", tmp, 64);
-    snprintf(pGroupSuffix, 256, "%s", suffix);
-    snprintf(ndExt, 256, "%s%s", suffix, tmp);
+    getXMLNodePropertyStringN(node, "name", tmp, 32);
+    snprintf(pGroupSuffix, 16, "%s", suffix);
+    snprintf(ndExt, 16, "%s%s", suffix, tmp);
 
     // Groups default color, inherited from current levels' color
-    char col[64];
-    snprintf(col, 64, "%s", gCol);
-    getXMLNodePropertyStringN(node, "color", col, 64);
+    char col[16];
+    snprintf(col, 16, "%s", gCol);
+    getXMLNodePropertyStringN(node, "color", col, 16);
 
     REXEC(9)
     {
@@ -1318,7 +1313,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     root[level + 1] = root[level];
     level++;
 
-    if (getXMLNodePropertyStringN(node, "prev", tmp, 64) > 0)
+    if (getXMLNodePropertyStringN(node, "prev", tmp, 32) > 0)
     {
       RcsBody* pB = RcsGraph_getBodyByName(self, tmp);
       if (pB)
@@ -1743,16 +1738,6 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
 
   // Set state vector
   RcsGraph_setState(self, NULL, NULL);
-
-  // Check for consistency
-  int graphErrors = RcsGraph_check(self);
-
-  if (graphErrors > 0)
-  {
-    RLOG(1, "Check for graph failed: %d errors", graphErrors);
-    RcsGraph_destroy(self);
-    return NULL;
-  }
 
   return self;
 }
