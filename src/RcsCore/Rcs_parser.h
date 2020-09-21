@@ -261,11 +261,16 @@ bool getXMLNodePropertyQuat(xmlNodePtr node, const char* tag,
 /*! \ingroup RcsParserFunctions
  *  \brief If the tag is a NULL pointer, argument A will be unchanged and
  *         "false" is returned. Otherwise, the contents of argument tag
- *         must contain 6 values. If not, "false" is returned and A remains
- *         unchanged. The first 3 values are copied to the translation vector
- *         of the HTr, the last 3 values are interpreted as Euler angles
- *         (x-y-z order), converted, and copied into the rotation matrix
- *         part of A.
+ *         must contain either 6 or 12 values:
+ *         - In case of 6 values, the transformation is constructed according
+ *           to the convention x-y-z-thx-thy-thz, where the angular part is
+ *           interpreted as Euler angles (x-y-z order). The values for the
+ *           angles are interpreted in degrees.
+ *         - In case of 12 values, the transformation is constructed according
+ *           to x-y-z, then followed by nine values of the rotation matrix
+ *           (row-wise).
+ *         In case there are no 6 or 12 values, the function returns false
+ *         and leaves the transformation unchanged.
  */
 bool getXMLNodePropertyHTr(xmlNodePtr node, const char* tag, HTr* A);
 

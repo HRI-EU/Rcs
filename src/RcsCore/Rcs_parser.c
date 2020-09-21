@@ -703,21 +703,40 @@ bool getXMLNodePropertyQuat(xmlNodePtr node, const char* tag, double A_BI[3][3])
 }
 
 /*******************************************************************************
-*
-******************************************************************************/
+ *
+ ******************************************************************************/
 bool getXMLNodePropertyHTr(xmlNodePtr node, const char* tag, HTr* A)
 {
-  double x[6];
+  double x[12];
+  unsigned int nItems = getXMLNodeNumStrings(node, tag);
+  bool success = getXMLNodePropertyVecN(node, tag, x, nItems);
 
-  if (!getXMLNodePropertyVecN(node, tag, x, 6))
+  if (!success)
   {
     return false;
   }
 
-  // Convert angular magnitudes into radians (xml expects degrees)
-  Vec3d_copy(A->org, &x[0]);
-  Vec3d_constMulSelf(&x[3], M_PI/180.0);
-  Mat3d_fromEulerAngles(A->rot, &x[3]);
+  switch (nItems)
+  {
+    case 6:
+      // x-y-z-a-b-c:
+      // Convert angular magnitudes into radians (xml expects degrees)
+      Vec3d_copy(A->org, &x[0]);
+      Vec3d_constMulSelf(&x[3], M_PI/180.0);
+      Mat3d_fromEulerAngles(A->rot, &x[3]);
+      break;
 
-  return true;
+    case 12:
+      // x-y-z, followed by row-wise rotation matrix:
+      // Convert angular magnitudes into radians (xml expects degrees)
+      Vec3d_copy(A->org, &x[0]);
+      Mat3d_fromArray(A->rot, &x[3]);
+      break;
+
+    default:
+      success = false;
+      break;
+  }
+
+  return success;
 }
