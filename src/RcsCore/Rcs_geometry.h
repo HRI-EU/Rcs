@@ -351,9 +351,9 @@ double Math_sqrDistPointConvexPolygon(const double I_pt[3],
  *                          rectangle vertices are assumed to lie on the
  *                          x-y plane of the frame R.
  *  \param[in]  extents     x- and y-extents of the rectangle.
- *  \param[out] I_cpPoly    Closest point on the polygon in world coordinates.
+ *  \param[out] I_cpRect    Closest point on the polygon in world coordinates.
  *                          If it is NULL, it will be ignored.
- *  \param[out] I_nPoly     Normal vector that depenetrates the point from the
+ *  \param[out] I_nRect     Normal vector that depenetrates the point from the
  *                          polygon, in world coordinates. It is of unit length.
  *                          If it is NULL, it will be ignored.
  *  \return Squared distance between point and polygon.

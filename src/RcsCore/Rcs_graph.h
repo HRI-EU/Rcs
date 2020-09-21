@@ -218,8 +218,8 @@ RcsBody* RcsBody_getLastChild(const RcsBody* body);
  *  \brief Creates an instance of a graph. Here is what this function can parse:
  *         - From an xml-file with Rcs conventions
  *         - From a bvh-file (suffix .bvh)
- *         - From an URDF-file (filename starts with <robot> keyword)
- *         - From a string (filename starts with <Graph> keyword)
+ *         - From an URDF-file (filename starts with \<robot\> keyword)
+ *         - From a string (filename starts with \<Graph\> keyword)
  *         There is also some rudimentary OpenRave parsing that needs more work
  *         for a seamless usage.
  */

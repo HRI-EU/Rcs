@@ -794,7 +794,7 @@ public:
    *  \return true for success, false otherwise.
    */
   virtual bool toXML(const std::string& fileName,
-                     const MatNd* activaton=NULL) const;
+                     const MatNd* activation=NULL) const;
 
   /*! \brief Prints whatever is written in the xml-file under the node tag
    *         usage to the console
