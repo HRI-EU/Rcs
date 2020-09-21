@@ -3184,14 +3184,12 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("q", "Quit");
       Rcs::KeyCatcherBase::registerKey("t", "Run controller test");
       Rcs::KeyCatcherBase::registerKey("Space", "Toggle pause");
-      Rcs::KeyCatcherBase::registerKey("a", "Change IK algorithm");
-      Rcs::KeyCatcherBase::registerKey("p", "Print information to console");
       Rcs::KeyCatcherBase::registerKey("n", "Reset");
 
-      int algo = 1, nTests = -1;
+      int nTests = -1;
       unsigned int loopCount = 0, nIter = 10000;
       double alpha = 0.01, lambda = 0.0;
-      double jlCost = 0.0, dJlCost = 0.0, eps=1.0e-5;
+      double jlCost = 0.0, dJlCost = 0.0, eps=0*1.0e-5;
       strcpy(xmlFileName, "cAction.xml");
       strcpy(directory, "config/xml/DexBot");
 
@@ -3199,8 +3197,6 @@ int main(int argc, char** argv)
                        "(default is %u)", nIter);
       argP.getArgument("-nTests", &nTests, "Number of test iterations (default"
                        " is %d)", nTests);
-      argP.getArgument("-algo", &algo, "IK algorithm: 0: left inverse, 1: "
-                       "right inverse (default is %d)", algo);
       argP.getArgument("-alpha", &alpha,
                        "Null space scaling factor (default is %f)", alpha);
       argP.getArgument("-lambda", &lambda, "Regularization (default is %f)",
@@ -3216,14 +3212,6 @@ int main(int argc, char** argv)
 
       if (argP.hasArgument("-h"))
       {
-        RMSG("Rcs -m %d\n", mode);
-        printf("\n\tController nullspace gradient tests: The controller is "
-               "initialized in a random pose. From there, the null space is "
-               "iterated for a fixed number of steps (command line argument"
-               " \"iter\"). In each iteration, it is checked if the cost "
-               "function value is decreasing. If it is not the case (with a"
-               " threshold of command line argument \"eps\"), the program is"
-               " paused in the respective pose.\n");
         break;
       }
 
@@ -3291,10 +3279,11 @@ int main(int argc, char** argv)
           RCSGRAPH_TRAVERSE_JOINTS(controller.getGraph())
           {
             controller.getGraph()->q->ele[JNT->jointIndex] =
-              //((Math_getRandomNumber(JNT->q_min, JNT->q_max);
-              Math_getRandomNumber(JNT->q0-0.1*fabs(JNT->q0-JNT->q_min),
-                                   JNT->q0+0.1*fabs(JNT->q_max-JNT->q0));
+              //Math_getRandomNumber(JNT->q_min, JNT->q_max);
+              Math_getRandomNumber(JNT->q0-0.5*fabs(JNT->q0-JNT->q_min),
+                                   JNT->q0+0.5*fabs(JNT->q_max-JNT->q0));
           }
+
         }
 
         RcsGraph_setState(controller.getGraph(), NULL, NULL);
@@ -3302,21 +3291,23 @@ int main(int argc, char** argv)
         controller.computeJointlimitGradient(dH);
         MatNd_constMulSelf(dH, alpha);
 
+        MatNd_setZero(dx_des);
+
         // Add task-space re-projection: dH^T J#
+        if (true == false)
         {
-          double scaling = MatNd_getNorm(dq_ns);
+          double scaling = 1.0;// MatNd_getNorm(dq_ns);
           MatNd* invWq = MatNd_create(controller.getGraph()->dof, 1);
           RcsGraph_getInvWq(controller.getGraph(), invWq, RcsStateIK);
           MatNd_transposeSelf(invWq);
           MatNd_eleMulSelf(dH, invWq);
 
           MatNd* pinvJ = MatNd_create(controller.getGraph()->nJ, controller.getTaskDim());
-          bool successPinv = ikSolver.computeRightInverse(pinvJ, a_des, 0.0);
+          bool successPinv = ikSolver.computeRightInverse(pinvJ, a_des, lambda);
           RCHECK(successPinv);
 
           MatNd* dxProj = MatNd_create(1, controller.getTaskDim());
           MatNd_reshape(dxProj, 1, controller.getActiveTaskDim(a_des));
-          MatNd_printDims("pinvJ", pinvJ);
           MatNd_mul(dxProj, dH, pinvJ);
           MatNd_constMulSelf(dxProj, -scaling);
 
@@ -3333,10 +3324,8 @@ int main(int argc, char** argv)
         // End add task-space re-projection: dH J#
 
         // Add task-space re-projection: J dH^T
-        if (true==false)
         {
-          double scaling = MatNd_getNorm(dq_ns);
-          RLOG(0, "Scaling = %f", scaling);
+          double scaling = 1.0;// MatNd_getNorm(dq_ns);
           MatNd* J = MatNd_create(controller.getTaskDim(), controller.getGraph()->nJ);
           controller.computeJ(J, a_des);
 
@@ -3358,23 +3347,9 @@ int main(int argc, char** argv)
         // End add task-space re-projection: dH^T J#
 
         double dtIK = Timer_getTime();
-
-        switch (algo)
-        {
-          case 0:
-            ikSolver.solveLeftInverse(dq_ts, dq_ns, dx_des, dH, a_des, lambda);
-            break;
-
-          case 1:
             ikSolver.solveRightInverse(dq_ts, dq_ns, dx_des, dH, a_des, lambda);
-            break;
-
-          default:
-            RFATAL("No such algorithm; %d", algo);
-        }
-
         MatNd_copy(dq_des, dq_ts);
-        //MatNd_addSelf(dq_des, dq_ns);
+        MatNd_addSelf(dq_des, dq_ns);
 
         dtIK = Timer_getTime() - dtIK;
 
@@ -3393,16 +3368,6 @@ int main(int argc, char** argv)
         {
           runLoop = false;
         }
-        else if (kc && kc->getAndResetKey('a'))
-        {
-          algo++;
-          if (algo>1)
-          {
-            algo = 0;
-          }
-
-          RLOGS(0, "Switching to IK algorithm %d", algo);
-        }
         else if (kc && kc->getAndResetKey('t'))
         {
           RLOGS(0, "Running controller test");
@@ -3413,17 +3378,6 @@ int main(int argc, char** argv)
           pause = !pause;
           RMSG("Pause modus is %s", pause ? "ON" : "OFF");
         }
-        else if (kc && kc->getAndResetKey('p'))
-        {
-          RMSG("Writing q to file \"q.dat\"");
-          MatNd_toFile(controller.getGraph()->q, "q.dat");
-        }
-        else if (kc && kc->getAndResetKey('P'))
-        {
-          RMSG("Reading q from file \"q.dat\"");
-          MatNd_fromFile(controller.getGraph()->q, "q.dat");
-          RcsGraph_setState(controller.getGraph(), NULL, NULL);
-        }
         else if (kc && kc->getAndResetKey('n'))
         {
           RMSG("Resetting");
@@ -3432,7 +3386,7 @@ int main(int argc, char** argv)
 
         sprintf(hudText, "%.1f %%: IK calculation: %.2f ms\ndof: %d nJ: %d "
                 "nqr: %d nx: %zu\nJL-cost: %.6f dJL-cost: %.6f %s %s\n"
-                "dt=%.2f us\nalgo: %d lambda:%g alpha: %g",
+                "dt=%.2f uslambda:%g alpha: %g\nloopCount=%d",
                 fmod(100.0*((double)loopCount/nIter), 100.0),
                 1.0e3*dt, controller.getGraph()->dof,
                 controller.getGraph()->nJ, ikSolver.getInternalDof(),
@@ -3441,7 +3395,7 @@ int main(int argc, char** argv)
                 ikSolver.getDeterminant()==0.0?"SINGULAR":"",
                 ((dJlCost > eps) && (MatNd_getNorm(dx_des) == 0.0)) ?
                 "COST INCREASE" : "",
-                dtIK*1.0e6, algo, lambda, alpha);
+                dtIK*1.0e6, lambda, alpha, loopCount);
 
         if (hud != NULL)
         {

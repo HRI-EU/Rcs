@@ -1,10 +1,10 @@
 <Controller graph="gScenario.xml" >
 
-  <Task name="PowerGrasp_L XYZ"   controlVariable="XYZ"   effector="PowerGrasp_L" cmplGain="0.002 0.002 0.002" active="true" />
-  <Task name="PowerGrasp_L ABC"   controlVariable="ABC"   effector="PowerGrasp_L" cmplGain="0.002 0 0" prio="1" />
+  <Task name="PowerGrasp_L XYZ"   controlVariable="XYZ"   effector="PowerGrasp_L" active="true" />
+  <Task name="PowerGrasp_L ABC"   controlVariable="ABC"   effector="PowerGrasp_L" prio="1" />
 
   <Task name="PowerGrasp_R XYZ"   controlVariable="XYZ"   effector="PowerGrasp_R" active="true" />
-  <Task name="PowerGrasp_R ABC"   controlVariable="ABC"   effector="PowerGrasp_R" cmplGain="0.002 0 0" prio="1" />
+  <Task name="PowerGrasp_R ABC"   controlVariable="ABC"   effector="PowerGrasp_R" prio="1" />
 
   <!-- Overall center of gravity in heel coordinates -->
   <Task name="COG X" controlVariable="COGX" refBdy="Base" />
