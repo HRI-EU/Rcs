@@ -471,26 +471,22 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
 
   }
 
-  MatNd_reshapeCopy(dq_ts, this->dqr);
+  // Expand from coupled joint space to constraint joints
+  if (hasCouplings)
+  {
+    MatNd_reshape(dq_ts, graph->nJ, 1);
+    MatNd_mul(dq_ts, this->A, this->dqr);
+  }
+  else
+  {
+    MatNd_reshapeCopy(dq_ts, this->dqr);
+  }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  MatNd_setZero(this->dqr);
 
   // Compute null space
+  MatNd_setZero(this->dqr);
+
   if (dH != NULL)
   {
     RCHECK((dH->m==nq && dH->n==1) || (dH->m==1 && dH->n==nq));
