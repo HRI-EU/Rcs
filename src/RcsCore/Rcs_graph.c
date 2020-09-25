@@ -2820,6 +2820,9 @@ static void RcsGraph_recomputeJointIndices(RcsGraph* self, MatNd* stateVec[],
 
 /*******************************************************************************
  * See header.
+ * \todo: Check if
+ * - RcsGraph_recomputeJointIndices() needs self->q and self->q_dot passed
+ * - Why MatNd_set(self->q, JNT->jointIndex, 0, JNT->q0) ?
  ******************************************************************************/
 void RcsGraph_makeJointsConsistent(RcsGraph* self)
 {

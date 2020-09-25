@@ -1057,7 +1057,7 @@ double Vec3d_constSaturateSelf(double* self, const double limit)
 /*******************************************************************************
  *
  ******************************************************************************/
-int Vec3d_indexMax(const double x[3])
+unsigned int Vec3d_indexMax(const double x[3])
 {
   unsigned int res = 0;
 

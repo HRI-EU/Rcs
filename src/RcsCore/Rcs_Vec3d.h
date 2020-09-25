@@ -459,8 +459,9 @@ void Vec3d_printFormatted(const char* text, const char* format,
 
 /*! \ingroup RcsVec3Functions
  *  \brief Returns the index of the entry with the highest value of the vector.
+ *         If two values have the same value, the lower index is returned.
  */
-int Vec3d_indexMax(const double x[3]);
+unsigned int Vec3d_indexMax(const double x[3]);
 
 /*! \ingroup RcsVec3Functions
  *  \brief Returns the multiplicity of vector elements:
