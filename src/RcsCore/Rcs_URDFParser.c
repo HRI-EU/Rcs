@@ -145,8 +145,8 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
     if (File_exists(shape->meshFile) == false)
     {
       RLOG(4, "Mesh file \"%s\" not found!", meshFile);
-      RFREE(shape->meshFile);
-      shape->meshFile = NULL;
+      //RFREE(shape->meshFile);
+      //shape->meshFile = NULL;
     }
     else
     {
