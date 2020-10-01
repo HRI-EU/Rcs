@@ -3031,7 +3031,7 @@ int main(int argc, char** argv)
       success = RcsGraph_appendCopyOfGraph(graph, attachementBody,
                                            attachedGraph, "_4", &A);
       RCHECK(success);
-      RCHECK(RcsGraph_check(graph)==0);
+      RCHECK(RcsGraph_check(graph, NULL, NULL));
 
       RcsGraph_writeDotFile(graph, dotFile);
       RcsGraph_writeDotFileDfsTraversal(graph, dotFileDfs);
@@ -3188,7 +3188,7 @@ int main(int argc, char** argv)
 
       int nTests = -1;
       unsigned int loopCount = 0, nIter = 10000;
-      double alpha = 0.01, lambda = 0.0;
+      double alpha = 0.05, lambda = 0.0;
       double jlCost = 0.0, dJlCost = 0.0, eps=0*1.0e-5;
       strcpy(xmlFileName, "cAction.xml");
       strcpy(directory, "config/xml/DexBot");
@@ -3207,6 +3207,7 @@ int main(int argc, char** argv)
                        "acceptable as increase of the null space cost "
                        "(default is %f)", eps);
       bool pause = argP.hasArgument("-pause", "Pause after each iteration");
+      bool projJ = argP.hasArgument("-projJ", "Projection: J dH^T");
 
       Rcs_addResourcePath(directory);
 
@@ -3215,7 +3216,6 @@ int main(int argc, char** argv)
         break;
       }
 
-      // Create controller
       Rcs::ControllerBase controller(xmlFileName);
       Rcs::IkSolverRMR ikSolver(&controller);
 
@@ -3274,7 +3274,7 @@ int main(int argc, char** argv)
         double dt = Timer_getTime();
 
         // Set state to random and compute null space cost and gradient
-        if (loopCount%nIter==0)
+        if (loopCount>0 && loopCount%nIter==0)
         {
           RCSGRAPH_TRAVERSE_JOINTS(controller.getGraph())
           {
@@ -3294,7 +3294,7 @@ int main(int argc, char** argv)
         MatNd_setZero(dx_des);
 
         // Add task-space re-projection: dH^T J#
-        if (true == false)
+        if (!projJ)
         {
           double scaling = 1.0;// MatNd_getNorm(dq_ns);
           MatNd* invWq = MatNd_create(controller.getGraph()->dof, 1);
@@ -3302,7 +3302,8 @@ int main(int argc, char** argv)
           MatNd_transposeSelf(invWq);
           MatNd_eleMulSelf(dH, invWq);
 
-          MatNd* pinvJ = MatNd_create(controller.getGraph()->nJ, controller.getTaskDim());
+          MatNd* pinvJ = MatNd_create(controller.getGraph()->nJ,
+                                      controller.getTaskDim());
           bool successPinv = ikSolver.computeRightInverse(pinvJ, a_des, lambda);
           RCHECK(successPinv);
 
@@ -3310,23 +3311,20 @@ int main(int argc, char** argv)
           MatNd_reshape(dxProj, 1, controller.getActiveTaskDim(a_des));
           MatNd_mul(dxProj, dH, pinvJ);
           MatNd_constMulSelf(dxProj, -scaling);
-
           MatNd_transposeSelf(dxProj);
           controller.decompressFromActiveSelf(dxProj, a_des);
           MatNd_addSelf(dx_des, dxProj);
 
-          //MatNd_setZero(dH);
-
           MatNd_destroy(dxProj);
           MatNd_destroy(pinvJ);
           MatNd_destroy(invWq);
-        }
-        // End add task-space re-projection: dH J#
-
-        // Add task-space re-projection: J dH^T
+        }   // End add task-space re-projection: dH J#
+        else
         {
+          // Add task-space re-projection: J dH^T
           double scaling = 1.0;// MatNd_getNorm(dq_ns);
-          MatNd* J = MatNd_create(controller.getTaskDim(), controller.getGraph()->nJ);
+          MatNd* J = MatNd_create(controller.getTaskDim(),
+                                  controller.getGraph()->nJ);
           controller.computeJ(J, a_des);
 
           MatNd* dxProj = MatNd_create(1, controller.getTaskDim());
@@ -3334,20 +3332,23 @@ int main(int argc, char** argv)
           MatNd_transposeSelf(dH);
           MatNd_mul(dxProj, J, dH);
           MatNd_constMulSelf(dxProj, -scaling);
-
           controller.decompressFromActiveSelf(dxProj, a_des);
           MatNd_addSelf(dx_des, dxProj);
-
           MatNd_transposeSelf(dH);
-          //MatNd_setZero(dH);
 
           MatNd_destroy(dxProj);
           MatNd_destroy(J);
         }
         // End add task-space re-projection: dH^T J#
 
+        if (loopCount < 100)
+        {
+          MatNd_setZero(dx_des);
+          MatNd_set(dx_des, 2, 0, 0.005);
+        }
+
         double dtIK = Timer_getTime();
-            ikSolver.solveRightInverse(dq_ts, dq_ns, dx_des, dH, a_des, lambda);
+        ikSolver.solveRightInverse(dq_ts, dq_ns, dx_des, dH, a_des, lambda);
         MatNd_copy(dq_des, dq_ts);
         MatNd_addSelf(dq_des, dq_ns);
 
@@ -3361,6 +3362,12 @@ int main(int argc, char** argv)
         dJlCost = -jlCost;
         jlCost = controller.computeJointlimitCost();
         dJlCost += jlCost;
+
+        REXEC(1)
+        {
+          VecNd_printComment("dx", dx_des->ele, 3);
+          RLOG(1, "dJLCost: %f", dJlCost);
+        }
 
         pthread_mutex_unlock(&graphLock);
 
