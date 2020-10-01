@@ -43,6 +43,7 @@
 #include "Rcs_typedef.h"
 #include "Rcs_resourcePath.h"
 #include "Rcs_graphParser.h"
+#include "Rcs_stlParser.h"
 #include "Rcs_kinematics.h"
 #include "Rcs_dynamics.h"
 #include "Rcs_joint.h"
@@ -118,7 +119,10 @@ Rcs::ControllerBase::ControllerBase(const std::string& xmlDescription,
   }
 
   bool success = initFromXmlNode(this->xmlRootNode);
-  RCHECK_MSG(success, "Failed to create graph for controller");
+  if (!success)
+  {
+    RLOG(1, "Found errors in graph for controller");
+  }
 
   // Free the xml memory in case no child ctors need to continue parsing
   if (xmlParsingFinished)
@@ -134,19 +138,18 @@ Rcs::ControllerBase::ControllerBase(const std::string& xmlDescription,
 bool Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
 {
   // Parse controller name
-  char txt[256];
-  strcpy(txt, "Unknown controller");
-  getXMLNodePropertyStringN(xmlNodeController, "name", txt, 256);
-  this->name.assign(txt);
-  RLOG(5, "Controller name is \"%s\"", this->name.c_str());
+  this->name = "Unknown controller";
+  getXMLNodePropertySTLString(xmlNodeController, "name", name);
+  RLOG_CPP(5, "Controller name is " << this->name);
 
   // Create the graph. If no tag "graph" exists, the graph still can
   // be included by an xinclude directive. Therefore it's not fatal
   // if we don't find it here.
-  if (getXMLNodePropertyStringN(xmlNodeController, "graph", txt, 256))
+  std::string txt;
+  if (getXMLNodePropertySTLString(xmlNodeController, "graph", txt))
   {
-    this->graph = RcsGraph_create(txt);
-    RCHECK_MSG(this->graph, "Failed to create graph \"%s\"", txt);
+    this->graph = RcsGraph_create(txt.c_str());
+    RCHECK_MSG(this->graph, "Failed to create graph \"%s\"", txt.c_str());
   }
 
   // Descend one level in XML parsing to find Task et al.
@@ -157,14 +160,13 @@ bool Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
     if (isXMLNodeName(node, "Task"))
     {
       // Create the new task, and add it to the task list
-      if (getXMLNodePropertyStringN(node, "controlVariable", txt, 256))
+      if (getXMLNodePropertySTLString(node, "controlVariable", txt))
       {
-        std::string cVar(txt);
-        add(TaskFactory::instance()->createTask(cVar, node, graph));
+        add(TaskFactory::instance()->createTask(txt, node, graph));
       }
       else
       {
-        RLOG(1, "No controlVariable tag found in task description");
+        RLOG(1, "No controlVariable attribute found in task description");
       }
 
     }
@@ -189,12 +191,22 @@ bool Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
   }
 
   // Check for consistency
-  int graphErrors = RcsGraph_check(this->graph);
+  int graphErrors=0, graphWarnings=0;
 
-  if (graphErrors > 0)
+  bool success = RcsGraph_check(this->graph, &graphErrors, &graphWarnings);
+
+  if (!success)
   {
-    RLOG(1, "Check for graph failed: %d errors", graphErrors);
-    return false;
+    if (graphErrors>0)
+    {
+      RLOG(1, "Check for graph failed: %d errors", graphErrors);
+      return false;
+    }
+
+    if (graphWarnings>0)
+    {
+      RLOG(1, "Found %d warnings in graph", graphWarnings);
+    }
   }
 
   return true;

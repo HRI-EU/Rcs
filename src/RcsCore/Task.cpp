@@ -438,10 +438,10 @@ void Rcs::Task::computeJdot(MatNd* Jdot) const
 {
   size_t nq = this->graph->nJ;
   size_t nx = getDim();
-  MatNd* Hessian = NULL;
-  MatNd_create2(Hessian, nx*nq, nq);
+  MatNd* hessian = NULL;
+  MatNd_create2(hessian, nx*nq, nq);
 
-  computeH(Hessian);
+  computeH(hessian);
   MatNd_reshape(Jdot, nx*nq, 1);
 
   // Get the current joint velocities
@@ -449,10 +449,10 @@ void Rcs::Task::computeJdot(MatNd* Jdot) const
   MatNd_create2(q_dot, this->graph->nJ, 1);
   RcsGraph_stateVectorToIK(this->graph, this->graph->q_dot, q_dot);
 
-  MatNd_mul(Jdot, Hessian, q_dot);
+  MatNd_mul(Jdot, hessian, q_dot);
   MatNd_reshape(Jdot, nx, nq);
 
-  MatNd_destroy(Hessian);
+  MatNd_destroy(hessian);
   MatNd_destroy(q_dot);
 }
 

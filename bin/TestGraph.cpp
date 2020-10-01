@@ -666,7 +666,7 @@ int main(int argc, char** argv)
             }
             else
             {
-              nErrors = RcsGraph_check(graph);
+              RcsGraph_check(graph, &nErrors, NULL);
             }
 
             if (nErrors>0)

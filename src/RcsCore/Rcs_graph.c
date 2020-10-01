@@ -1754,17 +1754,28 @@ double RcsGraph_limitJointSpeeds(const RcsGraph* self, MatNd* dq, double dt,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-int RcsGraph_check(const RcsGraph* self)
+bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
 {
-  int nErrors  = 0;
-
+  // Return if graph points to NULL
   if (self==NULL)
   {
-    nErrors++;
     RLOG(1, "Graph is NULL");
-    return nErrors;
+
+    if (nErrors_)
+    {
+      *nErrors_ = 1;
+    }
+
+    if (nWarnings_)
+    {
+      *nWarnings_ = 0;
+    }
+
+    return false;
   }
 
+
+  int nErrors = 0, nWarnings = 0;
 
   // Check for correctness of rigid body joints
   RCSGRAPH_TRAVERSE_BODIES(self)
@@ -1859,8 +1870,8 @@ int RcsGraph_check(const RcsGraph* self)
     // Check if we have a finite inertia but no mass
     if ((Mat3d_getFrobeniusnorm(BODY->Inertia->rot)>0.0) && (BODY->m<=0.0))
     {
-      nErrors++;
-      RLOG(1, "Body \"%s\" has positive inertia zero mass", BODY->name);
+      nWarnings++;
+      RLOG(1, "Body \"%s\" has positive inertia but zero mass", BODY->name);
     }
   }
 
@@ -1873,7 +1884,7 @@ int RcsGraph_check(const RcsGraph* self)
 
     if ((JNT->q0<JNT->q_min) && (JNT->coupledTo==NULL))
     {
-      nErrors++;
+      nWarnings++;
       double s = RcsJoint_isRotation(JNT) ? 180.0/M_PI : 1.0;
       RLOG(1, "Joint \"%s\": q0 < q_min (q_min=%f   q0=%f   q_max=%f [%s])",
            JNT->name, s*JNT->q_min, s*JNT->q0, s*JNT->q_max,
@@ -1882,7 +1893,7 @@ int RcsGraph_check(const RcsGraph* self)
 
     if ((JNT->q0>JNT->q_max) && (JNT->coupledTo==NULL))
     {
-      nErrors++;
+      nWarnings++;
       double s = RcsJoint_isRotation(JNT) ? 180.0/M_PI : 1.0;
       RLOG(1, "Joint \"%s\": q0 > q_max (q_min=%f   q0=%f   q_max=%f [%s])",
            JNT->name, s*JNT->q_min, s*JNT->q0, s*JNT->q_max,
@@ -1992,8 +2003,6 @@ int RcsGraph_check(const RcsGraph* self)
     }
   }
 
-  RLOG(6, "Graph check : %d errors", nErrors);
-
   // Check that coupled joints are not coupled against other coupled joints
   // if they have no constraint
   RCSGRAPH_TRAVERSE_JOINTS(self)
@@ -2011,8 +2020,41 @@ int RcsGraph_check(const RcsGraph* self)
     }
   }
 
+  // Check finiteness of q and q_dot
+  if (!MatNd_isFinite(self->q))
+  {
+    RLOG(1, "Found non-finite values in q");
+    REXEC(4)
+    {
+      MatNd_printCommentDigits("q", self->q, 12);
+    }
+    nErrors++;
+  }
 
-  return nErrors;
+  if (!MatNd_isFinite(self->q_dot))
+  {
+    RLOG(1, "Found non-finite values in q_dot");
+    REXEC(4)
+    {
+      MatNd_printCommentDigits("q_dot", self->q_dot, 12);
+    }
+    nErrors++;
+  }
+
+
+
+  // Copy warning and error statistics
+  if (nErrors_)
+  {
+    *nErrors_ = nErrors;
+  }
+
+  if (nWarnings_)
+  {
+    *nWarnings_ = nWarnings;
+  }
+
+  return (nErrors+nWarnings==0) ? true : false;
 }
 
 /*******************************************************************************
@@ -2157,7 +2199,7 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src)
   REXEC(4)
   {
     // Check for consistency
-    RCHECK_MSG(RcsGraph_check(dst) == 0,
+    RCHECK_MSG(RcsGraph_check(dst, NULL, NULL),
                "Consistency check for graph \"%s\" failed",
                dst->xmlFile ? dst->xmlFile : "NULL");
   }

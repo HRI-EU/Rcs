@@ -205,4 +205,3 @@ static void VARIABLE_IS_NOT_USED signal_abrt(int, siginfo_t*, void*)
 #endif   // _MSC_VER
 
 #endif   // SEGFAULTHANDLER_H
-

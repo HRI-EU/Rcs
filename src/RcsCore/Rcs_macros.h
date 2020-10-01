@@ -91,7 +91,7 @@ typedef void (*RLOG_CB_FUNC)(int log_level, const char* file,
 
 typedef void* (*RCS_MALLOC_FUNC)(size_t nmemb, size_t size);
 
-#ifdef __cplusplus
+#if defined (__cplusplus)
 #include <iostream>
 
 extern "C" {
@@ -114,7 +114,7 @@ extern RCSCORE_API int RcsLogLevel;
 extern RLOG_CB_FUNC RCS_GLOBAL_RLOG_CB;
 extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 
-#ifdef __cplusplus
+#if defined (__cplusplus)
 }
 #endif // __cplusplus
 
@@ -141,32 +141,36 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 /*! \ingroup RcsMacros
  *  \brief Triggers a stack trace and exits the application.
  */
-#define RFATAL(...) \
-  do { \
-    fprintf(stderr, "[%s: %s(%d)]: Fatal: -   ", \
+#define RFATAL(...)                                \
+  do                                               \
+  {                                                \
+    fprintf(stderr, "[%s: %s(%d)]: Fatal: -   ",   \
             __FILENAME__, __FUNCTION__, __LINE__); \
-    fprintf(stderr, __VA_ARGS__); \
-    fprintf(stderr, "\n"); \
-    print_trace(); \
-    exit(EXIT_FAILURE); \
+    fprintf(stderr, __VA_ARGS__);                  \
+    fprintf(stderr, "\n");                         \
+    print_trace();                                 \
+    exit(EXIT_FAILURE);                            \
   } while (0)
 
 /*! \ingroup RcsMacros
  *  \brief Triggers a stack trace.
  */
-#define RWARNING(debugLevel, ...) \
-  do { \
-    if (debugLevel <= RcsLogLevel) { \
-      fprintf(stderr, ANSI_COLOR_CYAN "[%s: " ANSI_COLOR_GREEN "%s(%d)]:"  ANSI_COLOR_RED "WARNING: -   ", \
-              __FILENAME__, __FUNCTION__, __LINE__); \
-      fprintf(stderr, __VA_ARGS__); \
-      fprintf(stderr, "\n"); \
-      print_trace(); } \
+#define RWARNING(debugLevel, ...)                                         \
+  do                                                                      \
+  {                                                                       \
+    if (debugLevel <= RcsLogLevel)                                        \
+    {                                                                     \
+      fprintf(stderr, ANSI_COLOR_CYAN "[%s: " ANSI_COLOR_GREEN "%s(%d)]:" \
+              ANSI_COLOR_RED "WARNING: -   ",                             \
+              __FILENAME__, __FUNCTION__, __LINE__);                      \
+      fprintf(stderr, __VA_ARGS__);                                       \
+      fprintf(stderr, "\n");                                              \
+      print_trace(); }                                                    \
   } while (0)
 
 
 /*! \ingroup RcsMacros
- *  \brief String compare macro. Returns true if the strings a and b a re equal,
+ *  \brief String compare macro. Returns true if the strings a and b are equal,
  *         false otherwise.
  */
 #define STREQ(a,b) (strcmp((a),(b))==0)
@@ -221,73 +225,84 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 /*! \ingroup RcsMacros
  *  \brief Print macro.
  */
-#define RMSG(...) \
-  do { \
+#define RMSG(...)                                                            \
+  do                                                                         \
+  {                                                                          \
     fprintf(stderr, "[%s: %s(%d)]: ", __FILENAME__, __FUNCTION__, __LINE__); \
-    fprintf(stderr, __VA_ARGS__); \
-    fprintf(stderr, "\n"); \
-    fflush(stderr); \
+    fprintf(stderr, __VA_ARGS__);                                            \
+    fprintf(stderr, "\n");                                                   \
+    fflush(stderr);                                                          \
   } while (0)
 
 /*! \ingroup RcsMacros
  *  \brief Print macro (short form)
  */
-#define RMSGS(...) \
-  do { \
+#define RMSGS(...)                                         \
+  do                                                       \
+  {                                                        \
     fprintf(stderr, "[%s(%d)]: ", __FUNCTION__, __LINE__); \
-    fprintf(stderr, __VA_ARGS__); \
-    fprintf(stderr, "\n"); \
-    fflush(stderr); \
+    fprintf(stderr, __VA_ARGS__);                          \
+    fprintf(stderr, "\n");                                 \
+    fflush(stderr);                                        \
   } while (0)
 
 /*! \ingroup RcsMacros
  * \brief Rcs stack trace function
  */
 #define RTRACE() \
-  do { print_trace(); } while (0)
+  do \
+  { \
+    print_trace(); \
+  } while (0)
 
 // These macros are empty if RCS_NO_DEBUG is flagged
 
-#ifndef RCS_NO_DEBUG
+#if !defined (RCS_NO_DEBUG)
 
 /*! \ingroup RcsMacros
  *  \brief Pause macro.
  */
-#define RPAUSE() \
-  do { \
+#define RPAUSE()                                           \
+  do                                                       \
+  {                                                        \
     fprintf(stderr, "[%s: %s(%d)]: Hit enter to continue", \
-            __FILENAME__, __FUNCTION__, __LINE__); \
-    getchar(); \
+            __FILENAME__, __FUNCTION__, __LINE__);         \
+    getchar();                                             \
   } while (0)
 
 /*! \ingroup RcsMacros
  *  \brief Pause macro.
  */
-#define RPAUSE_DL(debugLevel) \
-  do { \
-    if (debugLevel <= RcsLogLevel) { \
+#define RPAUSE_DL(debugLevel)                                \
+  do                                                         \
+  {                                                          \
+    if (debugLevel <= RcsLogLevel)                           \
+    {                                                        \
       fprintf(stderr, "[%s: %s(%d)]: Hit enter to continue", \
-              __FILENAME__, __FUNCTION__, __LINE__); \
-      getchar(); }        \
+              __FILENAME__, __FUNCTION__, __LINE__);         \
+      getchar(); }                                           \
   } while (0)
 
 /*! \ingroup RcsMacros
  *  \brief Pause macro with message.
  */
-#define RPAUSE_MSG(...) \
-  do { \
-    fprintf(stderr, "[%s: %s(%d)]: ", \
+#define RPAUSE_MSG(...)                            \
+  do                                               \
+  {                                                \
+    fprintf(stderr, "[%s: %s(%d)]: ",              \
             __FILENAME__, __FUNCTION__, __LINE__); \
-    fprintf(stderr, __VA_ARGS__); \
-    getchar();  \
+    fprintf(stderr, __VA_ARGS__);                  \
+    getchar();                                     \
   } while (0)
 
 /*! \ingroup RcsMacros
  *  \brief Pause macro with message.
  */
-#define RPAUSE_MSG_DL(debugLevel, ...) \
-  do {                                                \
-    if (debugLevel <= RcsLogLevel) {                  \
+#define RPAUSE_MSG_DL(debugLevel, ...)                \
+  do                                                  \
+  {                                                   \
+    if (debugLevel <= RcsLogLevel)                    \
+    {                                                 \
       fprintf(stderr, "[%s: %s(%d)]: ",               \
               __FILENAME__, __FUNCTION__, __LINE__);  \
       fprintf(stderr, __VA_ARGS__);                   \
@@ -297,39 +312,46 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 /*! \ingroup RcsMacros
  *  \brief Check macro. Exits if condition is not met.
  */
-#define RCHECK(cond) \
-  do { \
-    if (!(cond)) { \
+#define RCHECK(cond)                                                  \
+  do                                                                  \
+  {                                                                   \
+    if (!(cond))                                                      \
+    {                                                                 \
       fprintf(stderr, "\n[%s: %s(%d)]: Check failed: %s - Exiting\n", \
-              __FILENAME__, __FUNCTION__, __LINE__, #cond); \
-      print_trace(); \
-      abort(); }\
+              __FILENAME__, __FUNCTION__, __LINE__, #cond);           \
+      print_trace();                                                  \
+      abort(); }                                                      \
   } while (0)
 
 /*! \ingroup RcsMacros
  *  \brief Check macro. Exits if condition is not met.
  */
 #define RCHECK_EQ(var1, var2) \
-  do { \
-    if (var1 != var2) { \
-      fprintf(stderr, "\n[%s: %s(%d)]: Check failed: %s (%g) != %s (%g) - Exiting\n", \
-              __FILENAME__, __FUNCTION__, __LINE__, #var1, (double) var1, #var2, (double) var2); \
-      print_trace(); \
-      exit(EXIT_FAILURE); }\
+  do                                                                      \
+  {                                                                       \
+    if (var1 != var2)                                                     \
+    {                                                                     \
+      fprintf(stderr, "\n[%s: %s(%d)]: Check failed: %s (%g) != %s (%g) " \
+              "- Exiting\n", __FILENAME__, __FUNCTION__, __LINE__, #var1, \
+              (double) var1, #var2, (double) var2);                       \
+      print_trace();                                                      \
+      exit(EXIT_FAILURE); }                                               \
   } while (0)
 
 /*! \ingroup RcsMacros
  *  \brief Check macro. Exits with a message if condition is not met.
  */
-#define RCHECK_MSG(cond, ...) \
-  do { \
-    if (!(cond)) { \
+#define RCHECK_MSG(cond, ...)                                    \
+  do                                                             \
+  {                                                              \
+    if (!(cond))                                                 \
+    {                                                            \
       fprintf(stderr, "\n[%s: %s(%d)]: Check failed: %s   -   ", \
-              __FILENAME__, __FUNCTION__, __LINE__, #cond); \
-      fprintf(stderr, __VA_ARGS__); \
-      fprintf(stderr, "\n"); \
-      print_trace(); \
-      exit(EXIT_FAILURE); } \
+              __FILENAME__, __FUNCTION__, __LINE__, #cond);      \
+      fprintf(stderr, __VA_ARGS__);                              \
+      fprintf(stderr, "\n");                                     \
+      print_trace();                                             \
+      exit(EXIT_FAILURE); }                                      \
   } while (0)
 
 
@@ -340,51 +362,75 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
  * \todo: callback mechanism not supported in Windows
  */
 #if !defined(_MSC_VER)
-#define RLOG(debugLevel, ...) \
-  do { \
-    if (RCS_GLOBAL_RLOG_CB) { \
-      RCS_GLOBAL_RLOG_CB(debugLevel, __FILENAME__, __FUNCTION__, __LINE__, __VA_ARGS__); } \
-    if (debugLevel <= RcsLogLevel) { \
-      fprintf(stderr, "[%s : %s(%d)]: ", __FILENAME__, __FUNCTION__, __LINE__); \
-      fprintf(stderr, __VA_ARGS__); \
-      fprintf(stderr, "\n"); } \
+
+#define RLOG(debugLevel, ...)                                        \
+  do                                                                 \
+  {                                                                  \
+    if (RCS_GLOBAL_RLOG_CB)                                          \
+    {                                                                \
+      RCS_GLOBAL_RLOG_CB(debugLevel, __FILENAME__, __FUNCTION__,     \
+                         __LINE__, __VA_ARGS__); }                   \
+    if (debugLevel <= RcsLogLevel)                                   \
+    {                                                                \
+      fprintf(stderr, "[%s : %s(%d)]: ", __FILENAME__, __FUNCTION__, \
+              __LINE__);                                             \
+      fprintf(stderr, __VA_ARGS__);                                  \
+      fprintf(stderr, "\n"); }                                       \
   } while (0)
-#define RLOGS(debugLevel, ...) \
-  do { \
-    if(RCS_GLOBAL_RLOG_CB) { \
-      RCS_GLOBAL_RLOG_CB(debugLevel, "", __FUNCTION__, __LINE__, __VA_ARGS__); } \
-    if (debugLevel <= RcsLogLevel) { \
-      fprintf(stderr, "[%s(%d)]: ", __FUNCTION__, __LINE__); \
-      fprintf(stderr, __VA_ARGS__); \
-      fprintf(stderr, "\n"); } \
+
+#define RLOGS(debugLevel, ...)                                   \
+  do                                                             \
+  {                                                              \
+    if (RCS_GLOBAL_RLOG_CB)                                      \
+    {                                                            \
+      RCS_GLOBAL_RLOG_CB(debugLevel, "", __FUNCTION__, __LINE__, \
+                         __VA_ARGS__);                           \
+    }                                                            \
+    if (debugLevel <= RcsLogLevel)                               \
+    {                                                            \
+      fprintf(stderr, "[%s(%d)]: ", __FUNCTION__, __LINE__);     \
+      fprintf(stderr, __VA_ARGS__);                              \
+      fprintf(stderr, "\n"); }                                   \
   } while (0)
+
 #else
-#define RLOG(debugLevel, ...) \
-  do { \
-    if (debugLevel <= RcsLogLevel) { \
+
+#define RLOG(debugLevel, ...)                                \
+  do                                                         \
+  {                                                          \
+    if (debugLevel <= RcsLogLevel)                           \
+    {                                                        \
       fprintf(stderr, "[%s(%d)]: ", __FILENAME__, __LINE__); \
-      fprintf(stderr, __VA_ARGS__); \
-      fprintf(stderr, "\n"); } \
+      fprintf(stderr, __VA_ARGS__);                          \
+      fprintf(stderr, "\n"); }                               \
   } while (0)
-#define RLOGS(debugLevel, ...) \
-  do { \
-    if (debugLevel <= RcsLogLevel) { \
+
+#define RLOGS(debugLevel, ...)                               \
+  do                                                         \
+  {                                                          \
+    if (debugLevel <= RcsLogLevel)                           \
+    {                                                        \
       fprintf(stderr, "[%s(%d)]: ", __FILENAME__, __LINE__); \
-      fprintf(stderr, __VA_ARGS__); \
-      fprintf(stderr, "\n"); } \
+      fprintf(stderr, __VA_ARGS__);                          \
+      fprintf(stderr, "\n"); }                               \
   } while (0)
+
 #endif
 
-#ifdef __cplusplus
+#if defined (__cplusplus)
+
 #define RLOG_CPP(debugLevel, msg) \
-  do { \
-    if (debugLevel <= RcsLogLevel) { \
+  do                                                                  \
+  {                                                                   \
+    if (debugLevel <= RcsLogLevel)                                    \
+    {                                                                 \
       std::cerr << "[" << __FILENAME__ << ": " << __FUNCTION__ << "(" \
                 << __LINE__ << ")]: " << msg << std::endl; }          \
   } while (0)
 
-#define RMSG_CPP(msg)               \
-  do { \
+#define RMSG_CPP(msg)                                               \
+  do                                                                \
+  {                                                                 \
     std::cerr << "[" << __FILENAME__ << ": " << __FUNCTION__ << "(" \
               << __LINE__ << ")]: " << msg << std::endl;            \
   } while (0)
@@ -395,82 +441,6 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
  */
 #define REXEC(debugLevel) \
   if (debugLevel<=RcsLogLevel)
-
-/*! \ingroup RcsMacros
- * \brief Profiling macro: RTICK() sets the start of a time measurement and
- *        RTOCK() stops it and prints the difference. You need to provide a
- *        name or number as argument to allow for multiple uses of the macros
- *        in one function. It is also printed to identify the console output.
- *        This is because the macros use local variables. Also note that RTICK
- *        has to have a greater or equal scope than RTOCK().
- */
-#define RTICK(s) \
-  double __RTIME_T0_##s = Timer_getSystemTime();
-
-/*! \ingroup RcsMacros
- * \brief Profiling macro: RTICK() sets the start of a time measurement and
- *        RTOCK() stops it and prints the difference. You need to provide a
- *        name or number as argument to allow for multiple uses of the macros
- *        in one function.It is also printed to identify the console output.
- *        This is because the macros use local variables. Also note that RTICK
- *        has to have a greater or equal scope than RTOCK().
- */
-#define RTOCK(s) \
-  double __RTIME_T1_##s = Timer_getSystemTime(); \
-  RLOGS(0, "%s took %fms", #s, (__RTIME_T1_##s - __RTIME_T0_##s)*1000.0);
-
-/*! \ingroup RcsMacros
- * \brief Same as RTOCK but with a custom message.
- *
- * Due to the implementation as a macro, you have to include a %f as last
- * variable entry, which will be filled with the duration.
- * For example this is valid:
- * RTOCK_MSG(OMP, "Computation with %2d threads took %fms", i)
- */
-#define RTOCK_MSG(s, msg, ...) \
-  double __RTIME_T1_##s = Timer_getSystemTime(); \
-  RLOGS(0, msg, __VA_ARGS__, (__RTIME_T1_##s - __RTIME_T0_##s)*1000.0);
-
-/*! \ingroup RcsMacros
- * \brief Tmc value for the low-pass filter of RCS_CALC_UPDATE_RATE
- */
-#define RCS_CALL_RATE_TMC (0.8)
-
-/*! \ingroup RcsMacros
- * \brief Macro for calculating the calling rate of a function call
- *
- * The macro uses static variables, but with the __thread keyword. So the
- * variables are thread local in linux.
- *
- * Note that thread local variables can only be initialized statically, so
- * the function looks a bit more complicated than it actually is.
- *
- * The update rate is filtered with an IIR low pass filter. You can change the
- * tmc globally with the RCS_CALC_UPDATE_RATE_TMC macro;
- */
-#define RCS_CALL_RATE(var) \
-  { \
-    static __thread double __RTIME_RATE_##var##initialized = false; \
-    static __thread double __RTIME_RATE_##var##T_prev = 0.0; \
-    static __thread double __RTIME_RATE_##var = 0.0; \
-    double __RTIME_RATE_##var##T_curr = Timer_getSystemTime(); \
-    if (!__RTIME_RATE_##var##initialized) \
-    { \
-      __RTIME_RATE_##var##T_prev = __RTIME_RATE_##var##T_curr; \
-      __RTIME_RATE_##var##initialized = true; \
-    } \
-    double __RTIME_RATE_##var##T_delta = __RTIME_RATE_##var##T_curr - __RTIME_RATE_##var##T_prev; \
-    if (__RTIME_RATE_##var##T_delta > 1e-20) \
-    { \
-      __RTIME_RATE_##var = \
-                           RCS_CALL_RATE_TMC * __RTIME_RATE_##var + \
-                           (1.0 - RCS_CALL_RATE_TMC) * (1 / __RTIME_RATE_##var##T_delta); \
-      __RTIME_RATE_##var##T_prev = __RTIME_RATE_##var##T_curr; \
-    } \
-    var = __RTIME_RATE_##var; \
-  }
-
-
 
 #else   // RCS_NO_DEBUG
 

@@ -428,31 +428,36 @@ void RcsGraph_bodyTorque(const RcsGraph* self, const RcsBody* body,
                          MatNd* torque);
 
 /*! \ingroup RcsGraphFunctions
- *  \brief Checks the graph for consistency. The number of errors is
- *         returned.
+ *  \brief Checks the graph for consistency.
  *
- *         Currently, the following tests are done:
+ *         Failing the following checks is considered to be an error:
  *         - self is NULL pointer
  *         - bodies with rigid body joints have 6 joints in the order
  *           transX-transY-transZ-rotX-rotY-rotZ (rotations are relative to
  *           previous frame, not static axis representation), and NULL or
  *           identity relative transforms
  *         - duplicate body names
- *         - joint centers out of range
- *         - joint positions out of range
  *         - joint indices out of range
  *         - Jacobian indices out of range
  *         - joint direction index out of range
  *         - consistency of coupled joints
- *         - bodies have a mass >= 0
- *         - bodies with finite inertia have a mass > 0
  *         - correct connectivity of graph structure
  *         - dof and dimension of q-vector match number of joints
+ *         - finiteness of q and q_dot
+ *         - bodies have a mass >= 0
  *
- *  \param[in] self  Pointer to the graph to be checked.
- *  \return Number of errors.
+ *         Failing the following checks is considered to be a warning:
+ *         - joint centers out of range
+ *         - joint positions out of range
+ *         - bodies with finite inertia have a mass > 0
+ *
+ *  \param[in]     self      Pointer to the graph to be checked.
+ *  \param[in,out] nErrors   If not NULL, the error count will be copied here.
+ *  \param[in,out] nWarnings If not NULL, the warning count will be copied here.
+ *  \return True for success, false in case there is one or more warnings
+ *          or errors.
  */
-int RcsGraph_check(const RcsGraph* self);
+bool RcsGraph_check(const RcsGraph* self, int* nErrors, int* nWarnings);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Creates a deep copy of a graph.

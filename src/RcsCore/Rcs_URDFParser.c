@@ -1129,9 +1129,10 @@ RcsGraph* RcsGraph_fromURDFFile(const char* configFile)
   RcsGraph_setState(self, NULL, NULL);
 
   // Check for consistency
-  int graphErrors = RcsGraph_check(self);
-  RCHECK_MSG(graphErrors == 0, "Check for graph \"%s\" failed: %d errors",
-             self->xmlFile, graphErrors);
+  int errs=0, warnings=0;
+  bool success = RcsGraph_check(self, &errs, &warnings);
+  RCHECK_MSG(success, "Check for graph \"%s\" failed: %d errors %d warnings",
+             self->xmlFile, errs, warnings);
 
   return self;
 }

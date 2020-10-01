@@ -56,6 +56,10 @@ RCS_INSTALL_ERRORHANDLERS
 
 int main(int argc, char** argv)
 {
+  // That's what KeyCatcherBase::printRegisteredKeys() will show
+  Rcs::KeyCatcherBase::registerKey("q", "Quit");
+  Rcs::KeyCatcherBase::registerKey("f", "Toggle feed-back / feed-forward mode");
+
   // Parse command line arguments
   double alpha = 0.05, lambda = 1.0e-8, dt = 0.01;
   std::string xmlFileName = "cSoftPhysicsIK.xml";
