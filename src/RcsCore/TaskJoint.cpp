@@ -85,19 +85,27 @@ Rcs::TaskJoint::TaskJoint(const std::string& className,
     getXMLNodePropertyDouble(node, "refGain", &this->refGain);
   }
 
+
+
   // re-initialize parameters
-  if (RcsJoint_isTranslation(this->joint) == true)
+  if (getClassName() == "Joint")
   {
-    std::string label = std::string(this->joint->name) + " [m]";
-    resetParameter(Parameters(this->joint->q_min, this->joint->q_max,
-                              1.0, label));
+    double guiMax = joint->q_max, guiMin = joint->q_min;
+    getXMLNodePropertyDouble(node, "guiMax", &guiMax);
+    getXMLNodePropertyDouble(node, "guiMin", &guiMin);
+
+    if (RcsJoint_isTranslation(this->joint) == true)
+    {
+      std::string label = std::string(this->joint->name) + " [m]";
+      resetParameter(Parameters(guiMin, guiMax, 1.0, label));
+    }
+    else
+    {
+      std::string label = std::string(this->joint->name) + " [deg]";
+      resetParameter(Parameters(guiMin, guiMax, 180.0/M_PI, label));
+    }
   }
-  else
-  {
-    std::string label = std::string(this->joint->name) + " [deg]";
-    resetParameter(Parameters(this->joint->q_min, this->joint->q_max,
-                              180.0/M_PI, label));
-  }
+
 }
 
 /*******************************************************************************
