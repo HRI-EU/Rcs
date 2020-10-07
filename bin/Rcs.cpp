@@ -335,11 +335,16 @@ int main(int argc, char** argv)
 
       RcsGraph* graph = RcsGraph_create(xmlFileName);
 
-      RMSG("Here's the forward tree:");
-      RcsGraph_fprint(stderr, graph);
+      REXEC(1)
+      {
+        RMSG("Here's the forward tree:");
+        RcsGraph_fprint(stderr, graph);
+      }
+
+      RMSG("Writing graph to dot file \"RcsGraph.dot\"");
       RcsGraph_writeDotFile(graph, "RcsGraph.dot");
 
-      RMSG("Writing graph to xml file");
+      RMSG("Writing graph to xml file \"graph.xml\"");
       FILE* out = fopen("graph.xml", "w+");
       RcsGraph_fprintXML(out, graph);
       fclose(out);
