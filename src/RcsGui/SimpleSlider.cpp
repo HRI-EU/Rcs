@@ -44,6 +44,8 @@
 #include <QLabel>
 #include <QHBoxLayout>
 
+#include <cmath>
+
 
 
 /*******************************************************************************
@@ -65,9 +67,10 @@ SimpleSlider::SimpleSlider(double lowerBound,
                       0.01, // Fraction of the interval length
                       10); // Page size (?)
 #else
-  qwtslider->setLowerBound(lowerBound*scaleFactor);
-  qwtslider->setUpperBound(upperBound*scaleFactor);
+  qwtslider->setLowerBound(round(lowerBound*scaleFactor));
+  qwtslider->setUpperBound(round(upperBound*scaleFactor));
   qwtslider->setOrientation(Qt::Horizontal);
+  qwtslider->setTotalSteps(round((upperBound-lowerBound)*scaleFactor));
 #endif
   qwtslider->setValue(zeroPos*scaleFactor);
 
