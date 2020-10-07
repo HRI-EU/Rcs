@@ -2047,23 +2047,23 @@ bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName)
   {
     if (body->A_BP != NULL)
     {
-      double r_rel[3];
-      Vec3d_transform(r_rel, body->A_BP, SHAPE->A_CB.org);
-      HTr_transformSelf(&SHAPE->A_CB, body->A_BP);
-      Vec3d_copy(SHAPE->A_CB.org, r_rel);
+      /* double r_rel[3]; */
+      /* Vec3d_transform(r_rel, body->A_BP, SHAPE->A_CB.org); */
+      /* HTr_transformSelf(&SHAPE->A_CB, body->A_BP); */
+      /* Vec3d_copy(SHAPE->A_CB.org, r_rel); */
+
+      HTr A_CI;
+      HTr_transform(&A_CI, body->A_BI, &SHAPE->A_CB);
+      HTr_invTransform(&SHAPE->A_CB, parent->A_BI, &A_CI);
     }
   }
 
   // Add them to the parent's shape array
-  unsigned int bDim = RcsBody_numShapes(body);
-  unsigned int pDim = RcsBody_numShapes(parent);
-  parent->shape = (RcsShape**) realloc(parent->shape,
-                                       (bDim+pDim+1)*sizeof(RcsShape*));
-  RCHECK(parent->shape);
+  const unsigned int bDim = RcsBody_numShapes(body);
+
   for (unsigned int i=0; i<bDim; ++i)
   {
-    parent->shape[i+pDim] = body->shape[i];
-    parent->shape[i+pDim+1] = NULL;
+    RcsBody_addShape(parent, body->shape[i]);
   }
 
   // Go through all bodies and update their parent transformations if the
@@ -2076,49 +2076,50 @@ bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName)
       continue;
     }
 
-    // Change traversal connectivity
+    // Change traversal connectivity. From here, BODY is a child of body.
+    RcsBody* child = BODY;
 
     // Case 1: only 1 child
     if (parent->firstChild==parent->lastChild)
     {
-      parent->firstChild = BODY;
-      parent->lastChild = BODY;
-      BODY->parent = body->parent;
-      BODY->prev = NULL;
-      BODY->next = NULL;
+      parent->firstChild = child;
+      parent->lastChild = child;
+      child->parent = parent;
+      child->prev = NULL;
+      child->next = NULL;
     }
     else // Case 2: more than 1 children
     {
-      parent->lastChild->next = BODY;
-      BODY->prev = parent->lastChild;
-      BODY->next = NULL;
-      parent->lastChild = BODY;
-      BODY->parent = body->parent;
+      parent->lastChild->next = child;
+      child->prev = parent->lastChild;
+      child->next = NULL;
+      parent->lastChild = child;
+      child->parent = parent;
     }
 
     // Change relative transformations
     if (body->A_BP != NULL)
     {
-      if (BODY->jnt == NULL)   // There is only a fixed transformation
+      if (child->jnt == NULL)   // There is only a fixed transformation
       {
-        if (BODY->A_BP != NULL)
+        if (child->A_BP != NULL)
         {
-          HTr_transformSelf(BODY->A_BP, body->A_BP);
+          HTr_transformSelf(child->A_BP, body->A_BP);
         }
         else
         {
-          BODY->A_BP = HTr_clone(body->A_BP);
+          child->A_BP = HTr_clone(body->A_BP);
         }
       }
       else   // There is a joint
       {
-        if (BODY->jnt->A_JP != NULL)
+        if (child->jnt->A_JP != NULL)
         {
-          HTr_transformSelf(BODY->jnt->A_JP, body->A_BP);
+          HTr_transformSelf(child->jnt->A_JP, body->A_BP);
         }
         else
         {
-          BODY->jnt->A_JP = HTr_clone(body->A_BP);
+          child->jnt->A_JP = HTr_clone(body->A_BP);
         }
       }
     }
@@ -2152,7 +2153,11 @@ bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName)
   }
 
   body->shape[0] = NULL;   // Otherwise the shapes will be deleted
-  RcsBody_destroy(body);
+  //RcsBody_destroy(body);
+  MatNd* qVec[2];
+  qVec[0] = graph->q;
+  qVec[1] = graph->q_dot;
+  RcsGraph_removeBody(graph, body->name, qVec, 2);
 
   return true;
 }
@@ -2452,6 +2457,9 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
     sPtr++;
   }
 
+  // In case there were no shapes, we need to allocate memory
+  self->shape = (RcsShape**) realloc(self->shape, 2*sizeof(RcsShape*));
+  RCHECK(self->shape);
   self->shape[0] = boxShape;
   self->shape[1] = NULL;
 

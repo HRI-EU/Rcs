@@ -838,34 +838,43 @@ int main(int argc, char** argv)
           else if (kc->getAndResetKey('W'))
           {
             RMSG("Merging bodies. Here are the options:");
+            int nBodiesMergeable = 0;
             RCSGRAPH_TRAVERSE_BODIES(graph)
             {
-              if (BODY->jnt==NULL)
+              if (BODY->jnt==NULL && BODY!=graph->root)
               {
                 printf("   %s\n", BODY->name);
+                nBodiesMergeable++;
               }
             }
 
-            std::string bdyName;
-            printf("Enter body to merge: ");
-            std::cin >> bdyName;
-            pthread_mutex_lock(&graphLock);
-            bool success = RcsBody_mergeWithParent(graph, bdyName.c_str());
-            RMSG("%s merging body %s", success ? "SUCCEEDED" : "FAILED",
-                 bdyName.c_str());
-            if (success==true)
+            if (nBodiesMergeable>0)
             {
-              FILE* fd = fopen("merged.xml", "w+");
-              RCHECK(fd);
-              RcsGraph_fprintXML(fd, graph);
-              fclose(fd);
+              std::string bdyName;
+              printf("Enter body to merge: ");
+              std::cin >> bdyName;
+              pthread_mutex_lock(&graphLock);
+              bool success = RcsBody_mergeWithParent(graph, bdyName.c_str());
+              RMSG("%s merging body %s", success ? "SUCCEEDED" : "FAILED",
+                   bdyName.c_str());
+              if (success==true)
+              {
+                FILE* fd = fopen("merged.xml", "w+");
+                RCHECK(fd);
+                RcsGraph_fprintXML(fd, graph);
+                fclose(fd);
+              }
+              pthread_mutex_unlock(&graphLock);
+              viewer->removeNode(gn);
+              gn = NULL;
+              gn = new Rcs::GraphNode(graph);
+              gn->toggleReferenceFrames();
+              viewer->add(gn);
             }
-            pthread_mutex_unlock(&graphLock);
-            viewer->removeNode(gn);
-            gn = NULL;
-            gn = new Rcs::GraphNode(graph);
-            gn->toggleReferenceFrames();
-            viewer->add(gn);
+            else
+            {
+              RMSG("There are no more bodies to merge");
+            }
           }
           else if (kc->getAndResetKey('x'))
           {
@@ -913,12 +922,18 @@ int main(int argc, char** argv)
               RMSG("%s to merge body %s with root",
                    success ? "SUCCEEDED" : "FAILED", first->name);
               first = RcsBody_depthFirstTraversalGetNext(graph->root);
-              RMSG("Next body to merge: %s", first->name);
+              RMSG("Next body to merge: \"%s\"", first ? first->name : "NULL");
               RPAUSE();
             }
 
 
             pthread_mutex_unlock(&graphLock);
+
+            viewer->removeNode(gn);
+            gn = NULL;
+            gn = new Rcs::GraphNode(graph);
+            gn->toggleReferenceFrames();
+            viewer->add(gn);
           }
         }   // KeyCatcher
 
