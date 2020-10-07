@@ -34,6 +34,30 @@
 
 *******************************************************************************/
 
+
+
+
+/*!
+ *
+ *
+ *
+ * Compute absolute transform of child's C relative transform A_CB, applied
+ * on body's absolute transform A_BI:
+ *
+ * \code
+ *    HTr_transform(&A_CI, A_BI, A_CB);
+ * \endcode
+ *
+ * Compute relative transform from body B to child C (A_CB) from body's and
+ * child's world transformations A_BI and A_CI;
+ *
+ * \code
+ *    HTr_invTransform(&A_CB, A_BI, A_CI);
+ * \endcode
+ *
+ */
+
+
 #include "Rcs_math.h"
 #include "Rcs_macros.h"
 #include "Rcs_utils.h"
