@@ -63,10 +63,17 @@ TaskPosition3D::TaskPosition3D(const std::string& className,
   if (getClassName() == "XYZ")
   {
     double guiMax[3], guiMin[3];
-    Vec3d_set(guiMax, 2.5, 2.5, 2.5);
-    Vec3d_set(guiMin, -2.5, -2.5, -2.5);
+    Vec3d_setElementsTo(guiMax, 2.5);
+    Vec3d_setElementsTo(guiMin, -2.5);
     getXMLNodePropertyVec3(node, "guiMax", guiMax);
     getXMLNodePropertyVec3(node, "guiMin", guiMin);
+    bool hide = false;
+    getXMLNodePropertyBoolString(node, "hide", &hide);
+    if (hide)
+    {
+      Vec3d_setZero(guiMin);
+      Vec3d_setZero(guiMax);
+    }
 
     resetParameter(Parameters(guiMin[0], guiMax[0], 1.0, "X [m]"));
     addParameter(Parameters(guiMin[1], guiMax[1], 1.0, "Y [m]"));

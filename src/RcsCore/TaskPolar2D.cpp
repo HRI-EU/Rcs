@@ -59,8 +59,24 @@ Rcs::TaskPolar2D::TaskPolar2D(const std::string& className,
 {
   if (getClassName()=="POLAR")
   {
-    resetParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "Phi [deg]"));
-    addParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "Theta [deg]"));
+    double guiMax[2], guiMin[2];
+    guiMin[0] = -M_PI;
+    guiMin[1] = -M_PI;
+    guiMax[0] = M_PI;
+    guiMax[1] = M_PI;
+    getXMLNodePropertyVecN(node, "guiMax", guiMax, 2);
+    getXMLNodePropertyVecN(node, "guiMin", guiMin, 2);
+
+    bool hide = false;
+    getXMLNodePropertyBoolString(node, "hide", &hide);
+    if (hide)
+    {
+      VecNd_setZero(guiMin, 2);
+      VecNd_setZero(guiMax, 2);
+    }
+
+    resetParameter(Parameters(guiMin[0], guiMax[0], (180.0/M_PI), "Phi [deg]"));
+    addParameter(Parameters(guiMin[1], guiMax[1], (180.0/M_PI), "Theta [deg]"));
   }
 
   // Parse axis direction (should be X, Y or Z)

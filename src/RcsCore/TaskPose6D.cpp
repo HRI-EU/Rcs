@@ -72,6 +72,13 @@ Rcs::TaskPose6D::TaskPose6D(const std::string& className_,
     getXMLNodePropertyVecN(node, "guiMax", guiMax, 6);
     getXMLNodePropertyVecN(node, "guiMin", guiMin, 6);
 
+    bool hide = false;
+    getXMLNodePropertyBoolString(node, "hide", &hide);
+    if (hide)
+    {
+      VecNd_setZero(guiMin, 6);
+      VecNd_setZero(guiMax, 6);
+    }
     resetParameter(Parameters(guiMin[0], guiMax[0], 1.0, "X [m]"));
     addParameter(Parameters(guiMin[1], guiMax[1], 1.0, "Y [m]"));
     addParameter(Parameters(guiMin[2], guiMax[2], 1.0, "Z [m]"));

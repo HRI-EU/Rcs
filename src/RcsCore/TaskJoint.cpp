@@ -90,20 +90,29 @@ Rcs::TaskJoint::TaskJoint(const std::string& className,
   // re-initialize parameters
   if (getClassName() == "Joint")
   {
-    double guiMax = joint->q_max, guiMin = joint->q_min;
+    bool isRot = RcsJoint_isRotation(this->joint);
+    double xml2SI = isRot ? M_PI / 180.0 : 1.0;
+
+    // Convert to deg / m units before xml parsing, since the values in the xml
+    // file are degrees and meters.
+    double guiMax = joint->q_max / xml2SI;
+    double guiMin = joint->q_min / xml2SI;
     getXMLNodePropertyDouble(node, "guiMax", &guiMax);
     getXMLNodePropertyDouble(node, "guiMin", &guiMin);
 
-    if (RcsJoint_isTranslation(this->joint) == true)
+    // Convert from xml units back to SI units.
+    guiMax *= xml2SI;
+    guiMin *= xml2SI;
+
+    bool hide = false;
+    getXMLNodePropertyBoolString(node, "hide", &hide);
+    if (hide)
     {
-      std::string label = std::string(this->joint->name) + " [m]";
-      resetParameter(Parameters(guiMin, guiMax, 1.0, label));
+      guiMin = 0.0;
+      guiMax = 0.0;
     }
-    else
-    {
-      std::string label = std::string(this->joint->name) + " [deg]";
-      resetParameter(Parameters(guiMin, guiMax, 180.0/M_PI, label));
-    }
+    std::string label = std::string(joint->name) + (isRot ? " [deg]" : " [m]");
+    resetParameter(Parameters(guiMin, guiMax, 1.0 / xml2SI, label));
   }
 
 }

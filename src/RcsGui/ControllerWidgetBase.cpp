@@ -201,33 +201,47 @@ ControllerWidgetBase::ControllerWidgetBase(const ControllerBase* cntrl,
     {
       TaskWidget* task_widget;
 
-      if (a_curr == NULL)
+      bool showTask = false;
+
+      for (size_t tskIdx = 0; tskIdx < tsk->getDim(); ++tskIdx)
       {
-        task_widget = new TaskWidget(tsk,
-                                     &a_des->ele[id],
-                                     &x_des->ele[rowIndex],
-                                     &x_curr->ele[rowIndex],
-                                     mutex_, showOnly);
+        const Task::Parameters& param = tsk->getParameter(tskIdx);
+        if (param.maxVal - param.minVal > 0.0)
+        {
+          showTask = true;
+        }
       }
-      else
+      if (showTask)
       {
-        task_widget = new TaskWidget(tsk,
-                                     &a_des->ele[id],
-                                     &x_des->ele[rowIndex],
-                                     &a_curr->ele[rowIndex],
-                                     &x_curr->ele[rowIndex],
-                                     mutex_, showOnly);
+        if (a_curr == NULL)
+        {
+          task_widget = new TaskWidget(tsk,
+                                       &a_des->ele[id],
+                                       &x_des->ele[rowIndex],
+                                       &x_curr->ele[rowIndex],
+                                       mutex_, showOnly);
+        }
+        else
+        {
+          task_widget = new TaskWidget(tsk,
+                                       &a_des->ele[id],
+                                       &x_des->ele[rowIndex],
+                                       &a_curr->ele[rowIndex],
+                                       &x_curr->ele[rowIndex],
+                                       mutex_, showOnly);
+        }
+
+        max_label_width = std::max(task_widget->getMaxLabelWidth(), max_label_width);
+        this->taskWidgets.push_back(task_widget);
+        taskLayout->addWidget(task_widget);
+        connect(check_active_gui, SIGNAL(stateChanged(int)),
+                task_widget, SLOT(setActive(int)));
+        connect(timer, SIGNAL(timeout()), task_widget, SLOT(updateUnconstrainedControls()));
+        connect(timer, SIGNAL(timeout()), task_widget, SLOT(displayAct()));
       }
 
 
-      max_label_width = std::max(task_widget->getMaxLabelWidth(), max_label_width);
-      this->taskWidgets.push_back(task_widget);
-      taskLayout->addWidget(task_widget);
-      connect(check_active_gui, SIGNAL(stateChanged(int)),
-              task_widget, SLOT(setActive(int)));
-      connect(timer, SIGNAL(timeout()), task_widget, SLOT(updateUnconstrainedControls()));
-      connect(timer, SIGNAL(timeout()), task_widget, SLOT(displayAct()));
-    }
+    }   // if (showTask)
 
     rowIndex += _controller->getTask(id)->getDim();
   }

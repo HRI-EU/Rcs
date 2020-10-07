@@ -44,6 +44,7 @@
 #include "Rcs_VecNd.h"
 #include "Rcs_body.h"
 #include "Rcs_utils.h"
+#include "Rcs_joint.h"
 
 
 static Rcs::TaskFactoryRegistrar<Rcs::TaskJoints> registrar("Joints");
@@ -144,6 +145,57 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
   }
 
   delete [] refGains;
+  // Re-initialize parameters
+  if (getClassName() == "Joints")
+  {
+    std::vector<const RcsJoint*> jnts = Rcs::TaskJoints::getJoints();
+    double* guiMin = new double[jnts.size()];
+    double* guiMax = new double[jnts.size()];
+
+    for (size_t i = 0; i < jnts.size(); ++i)
+    {
+      double xml2SI = RcsJoint_isTranslation(jnts[i]) ? 1.0 : M_PI / 180.0;
+      guiMin[i] = jnts[i]->q_min / xml2SI;
+      guiMax[i] = jnts[i]->q_max / xml2SI;
+    }
+
+    getXMLNodePropertyVecN(node, "guiMax", guiMax, jnts.size());
+    getXMLNodePropertyVecN(node, "guiMin", guiMin, jnts.size());
+
+    for (size_t i = 0; i < jnts.size(); ++i)
+    {
+      double xml2SI = RcsJoint_isTranslation(jnts[i]) ? 1.0 : M_PI / 180.0;
+      guiMin[i] *= xml2SI;
+      guiMax[i] *= xml2SI;
+    }
+
+    bool hide = false;
+    getXMLNodePropertyBoolString(node, "hide", &hide);
+    if (hide)
+    {
+      VecNd_setZero(guiMin, jnts.size());
+      VecNd_setZero(guiMax, jnts.size());
+    }
+
+    clearParameters();
+
+    for (size_t i = 0; i < jnts.size(); ++i)
+    {
+      if (RcsJoint_isTranslation(jnts[i]) == true)
+      {
+        std::string label = std::string(jnts[i]->name) + " [m]";
+        addParameter(Parameters(guiMin[i], guiMax[i], 1.0, label));
+      }
+      else
+      {
+        std::string label = std::string(jnts[i]->name) + " [deg]";
+        addParameter(Parameters(guiMin[i], guiMax[i], 180.0 / M_PI, label));
+      }
+    }
+
+    delete[] guiMin;
+    delete[] guiMax;
+  }
 }
 
 /*******************************************************************************
