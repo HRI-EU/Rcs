@@ -448,3 +448,13 @@ int Rcs::CmdLineParser::getTagIndex(const char* tag) const
 
   return -1;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+int Rcs::CmdLineParser::getArgs(char*** argv_) const
+{
+  *argv_ = argv;
+
+  return argc;
+}

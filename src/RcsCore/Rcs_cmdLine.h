@@ -154,6 +154,7 @@ public:
    */
   void addDescription(const char* tag, const char* description, ...) const;
 
+  int getArgs(char*** argv) const;
 
 
 protected:
