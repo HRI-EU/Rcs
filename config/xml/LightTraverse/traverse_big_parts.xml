@@ -1,0 +1,28 @@
+<Graph name="traverse_big" xmlns:xi="http://www.w3.org/2003/XInclude">
+  <Group name="_s1" rigid_body_joints="0.7 -0.25 0.9908334 90 0 0">
+    <xi:include href="traverse_big_side.xml" />
+  </Group>
+  <Group name="_s2" prev="traverse_big_s1" transform="0 0 0 0 0 120">
+    <xi:include href="traverse_big_side.xml" />
+  </Group>
+  <Group name="_s3" prev="traverse_big_s1" transform="0 0 0 0 0 240">
+    <xi:include href="traverse_big_side.xml" />
+  </Group>
+  
+  
+  <Body name="traverse_base" prev="traverse_big_s1" transform="0 0 -0.5 0 0 0">
+    <Shape type="FRAME" scale="0.2"/>
+  </Body>
+  
+  <Body name="traverse_top" prev="traverse_big_s1" transform="0 0 0.5 0 0 0">
+    <Shape type="FRAME" scale="0.2"/>
+  </Body>
+  
+  <Body name="traverse" prev="traverse_big_s1">
+    <Shape type="FRAME" scale="0.2"/>
+  </Body>
+  
+  <Body name="traverse_capsule" prev="traverse_big_s1">
+     <Shape type="SSL" length="0.9" radius="0.164" transform="0 0 -0.45 0 0 0" graphics="false" distance="true"/>
+  </Body>
+</Graph>

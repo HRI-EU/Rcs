@@ -1,0 +1,223 @@
+<Graph>
+
+  <Body name="traverse_small_s1" rigid_body_joints="0.7 -0.25 0.9908334 90 0 0">
+    <Shape type="CYLINDER" length="1" radius="0.0175" distance="false" physics="false" graphics="true" transform="0.0925 -0.053333 0 0 0 0" />
+    <Shape type="CYLINDER" length="0.185" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 0.455 0 90 0" />
+    <Shape type="CYLINDER" length="0.185" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 -0.455 0 90 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 0.355 0 44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 0.174 0 -44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 -0.001 0 44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 -0.178 0 -44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 -0.358 0 44 0" />
+    <Shape type="SSL" length="1" radius="0.0175" distance="true" physics="false" graphics="false" transform="0.0925 -0.053333 -0.5 0 0 0" />
+    <Shape type="SSL" length="0.185" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.0925 -0.053333 0.455 0 90 0" />
+    <Shape type="SSL" length="0.185" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.0925 -0.053333 -0.455 0 90 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.089264 -0.053333 0.262565 0 44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" distance="true" physics="false" graphics="false" transform="0.089264 -0.053333 0.081565 0 -44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.089264 -0.053333 -0.093435 0 44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" distance="true" physics="false" graphics="false" transform="0.089264 -0.053333 -0.270435 0 -44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.089264 -0.053333 -0.450435 0 44 0" />
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.05" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp0_s1" prev="traverse_small_s1" transform="0 -0.053333 0.455 90 90 0" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp11_s1" prev="traverse_small_s1" transform="0 -0.053333 -0.455 90 90 0" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp1_s1" prev="traverse_small_s1" transform="0 -0.053333 0.355 0 44 90" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp3_s1" prev="traverse_small_s1" transform="0 -0.053333 0.174 0 -44 90" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp5_s1" prev="traverse_small_s1" transform="0 -0.053333 -0.001 0 44 90" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp7_s1" prev="traverse_small_s1" transform="0 -0.053333 -0.178 0 -44 90" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp9_s1" prev="traverse_small_s1" transform="0 -0.053333 -0.358 0 44 90" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp2_s1" prev="traverse_small_s1" transform="0.0925 -0.053333 0.355 0 0 150" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp4_s1" prev="traverse_small_s1" transform="0.0925 -0.053333 0.174 0 0 150" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp6_s1" prev="traverse_small_s1" transform="0.0925 -0.053333 -0.001 0 0 150" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp8_s1" prev="traverse_small_s1" transform="0.0925 -0.053333 -0.178 0 0 150" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp10_s1" prev="traverse_small_s1" transform="0.0925 -0.053333 -0.358 0 0 150" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="traverse_small_s2" prev="traverse_small_s1" transform="0 0 0 -0 0 120" >
+    <Shape type="CYLINDER" length="1" radius="0.0175" distance="false" physics="false" graphics="true" transform="0.0925 -0.053333 0 0 0 0" />
+    <Shape type="CYLINDER" length="0.185" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 0.455 0 90 0" />
+    <Shape type="CYLINDER" length="0.185" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 -0.455 0 90 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 0.355 0 44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 0.174 0 -44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 -0.001 0 44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 -0.178 0 -44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 -0.358 0 44 0" />
+    <Shape type="SSL" length="1" radius="0.0175" distance="true" physics="false" graphics="false" transform="0.0925 -0.053333 -0.5 0 0 0" />
+    <Shape type="SSL" length="0.185" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.0925 -0.053333 0.455 0 90 0" />
+    <Shape type="SSL" length="0.185" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.0925 -0.053333 -0.455 0 90 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.089264 -0.053333 0.262565 0 44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" distance="true" physics="false" graphics="false" transform="0.089264 -0.053333 0.081565 0 -44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.089264 -0.053333 -0.093435 0 44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" distance="true" physics="false" graphics="false" transform="0.089264 -0.053333 -0.270435 0 -44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.089264 -0.053333 -0.450435 0 44 0" />
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.05" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp0_s2" prev="traverse_small_s2" transform="0 -0.053333 0.455 90 90 0" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp11_s2" prev="traverse_small_s2" transform="0 -0.053333 -0.455 90 90 0" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp1_s2" prev="traverse_small_s2" transform="0 -0.053333 0.355 0 44 90" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp3_s2" prev="traverse_small_s2" transform="0 -0.053333 0.174 0 -44 90" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp5_s2" prev="traverse_small_s2" transform="0 -0.053333 -0.001 0 44 90" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp7_s2" prev="traverse_small_s2" transform="0 -0.053333 -0.178 0 -44 90" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp9_s2" prev="traverse_small_s2" transform="0 -0.053333 -0.358 0 44 90" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp2_s2" prev="traverse_small_s2" transform="0.0925 -0.053333 0.355 0 0 150" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp4_s2" prev="traverse_small_s2" transform="0.0925 -0.053333 0.174 0 0 150" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp6_s2" prev="traverse_small_s2" transform="0.0925 -0.053333 -0.001 0 0 150" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp8_s2" prev="traverse_small_s2" transform="0.0925 -0.053333 -0.178 0 0 150" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp10_s2" prev="traverse_small_s2" transform="0.0925 -0.053333 -0.358 0 0 150" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="traverse_small_s3" prev="traverse_small_s1" transform="0 0 0 -0 0 -120" >
+    <Shape type="CYLINDER" length="1" radius="0.0175" distance="false" physics="false" graphics="true" transform="0.0925 -0.053333 0 0 0 0" />
+    <Shape type="CYLINDER" length="0.185" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 0.455 0 90 0" />
+    <Shape type="CYLINDER" length="0.185" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 -0.455 0 90 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 0.355 0 44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 0.174 0 -44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 -0.001 0 44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 -0.178 0 -44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" distance="false" physics="false" graphics="true" transform="0 -0.053333 -0.358 0 44 0" />
+    <Shape type="SSL" length="1" radius="0.0175" distance="true" physics="false" graphics="false" transform="0.0925 -0.053333 -0.5 0 0 0" />
+    <Shape type="SSL" length="0.185" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.0925 -0.053333 0.455 0 90 0" />
+    <Shape type="SSL" length="0.185" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.0925 -0.053333 -0.455 0 90 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.089264 -0.053333 0.262565 0 44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" distance="true" physics="false" graphics="false" transform="0.089264 -0.053333 0.081565 0 -44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.089264 -0.053333 -0.093435 0 44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" distance="true" physics="false" graphics="false" transform="0.089264 -0.053333 -0.270435 0 -44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" distance="true" physics="false" graphics="false" transform="-0.089264 -0.053333 -0.450435 0 44 0" />
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.05" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp0_s3" prev="traverse_small_s3" transform="0 -0.053333 0.455 90 90 0" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp11_s3" prev="traverse_small_s3" transform="0 -0.053333 -0.455 90 90 0" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp1_s3" prev="traverse_small_s3" transform="0 -0.053333 0.355 0 44 90" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp3_s3" prev="traverse_small_s3" transform="0 -0.053333 0.174 0 -44 90" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp5_s3" prev="traverse_small_s3" transform="0 -0.053333 -0.001 0 44 90" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp7_s3" prev="traverse_small_s3" transform="0 -0.053333 -0.178 0 -44 90" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp9_s3" prev="traverse_small_s3" transform="0 -0.053333 -0.358 0 44 90" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp2_s3" prev="traverse_small_s3" transform="0.0925 -0.053333 0.355 0 0 150" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp4_s3" prev="traverse_small_s3" transform="0.0925 -0.053333 0.174 0 0 150" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp6_s3" prev="traverse_small_s3" transform="0.0925 -0.053333 -0.001 0 0 150" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp8_s3" prev="traverse_small_s3" transform="0.0925 -0.053333 -0.178 0 0 150" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="Grasp10_s3" prev="traverse_small_s3" transform="0.0925 -0.053333 -0.358 0 0 150" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.15" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="traverse_base" prev="traverse_small_s1" transform="0 0 -0.5 0 0 0" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.2" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="traverse_top" prev="traverse_small_s1" transform="0 0 0.5 0 0 0" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.2" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="traverse" prev="traverse_small_s1" >
+    <Shape type="FRAME" distance="false" physics="false" graphics="true" scale="0.2" transform="0 0 0 -0 0 -0" />
+  </Body>
+
+  <Body name="traverse_capsule" prev="traverse_small_s1" >
+    <Shape type="SSL" length="0.94" radius="0.1255" distance="true" physics="false" graphics="false" transform="0 0 -0.47 0 0 0" />
+  </Body>
+
+</Graph>

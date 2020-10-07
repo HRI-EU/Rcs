@@ -1,0 +1,63 @@
+<Graph name="traverse_small_side">
+
+  <Body name="traverse_small">
+    <Shape type="CYLINDER" length="1" radius="0.0175" graphics="true" distance="false" transform="0.0925 -0.053333 0 0 0 0" />
+    <Shape type="CYLINDER" length="0.185" radius="0.005" graphics="true" distance="false" transform="0 -0.053333 0.455 0 90 0" />
+    <Shape type="CYLINDER" length="0.185" radius="0.005" graphics="true" distance="false" transform="0 -0.053333 -0.455 0 90 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" graphics="true" distance="false" transform="0 -0.053333 0.355 0 44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" graphics="true" distance="false" transform="0 -0.053333 0.174 0 -44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" graphics="true" distance="false" transform="0 -0.053333 -0.001 0 44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" graphics="true" distance="false" transform="0 -0.053333 -0.178 0 -44 0" />
+    <Shape type="CYLINDER" length="0.257" radius="0.005" graphics="true" distance="false" transform="0 -0.053333 -0.358 0 44 0" />
+   
+    <Shape type="SSL" length="1" radius="0.0175" graphics="false" distance="true" transform="0.0925 -0.053333 -0.5 0 0 0" />
+    <Shape type="SSL" length="0.185" radius="0.005" graphics="false" distance="true" transform="-0.0925 -0.053333 0.455 0 90 0" />
+    <Shape type="SSL" length="0.185" radius="0.005" graphics="false" distance="true" transform="-0.0925 -0.053333 -0.455 0 90 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" graphics="false" distance="true" transform="-0.0892636 -0.053333 0.2625648 0 44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" graphics="false" distance="true" transform="0.0892636 -0.053333 0.0815648 0 -44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" graphics="false" distance="true" transform="-0.0892636 -0.053333 -0.0934352 0 44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" graphics="false" distance="true" transform="0.0892636 -0.053333 -0.2704352 0 -44 0" />
+    <Shape type="SSL" length="0.257" radius="0.005" graphics="false" distance="true" transform="-0.0892636 -0.053333 -0.4504352 0 44 0" />
+   
+    
+    <Shape type="FRAME" graphics="true" scale="0.05" />
+  </Body>
+  
+  <Body name="Grasp0" prev="traverse_small" transform="0 -0.053333 0.455 0 90 90">
+    <Shape type="FRAME" graphics="true" scale="0.15"/>
+  </Body>
+  <Body name="Grasp11" prev="traverse_small" transform="0 -0.053333 -0.455 0 90 90">
+    <Shape type="FRAME" graphics="true" scale="0.15"/>
+  </Body>
+  <Body name="Grasp1" prev="traverse_small" transform="0 -0.053333 0.355 0 44 90">
+    <Shape type="FRAME" graphics="true" scale="0.15"/>
+  </Body>
+  <Body name="Grasp3" prev="traverse_small" transform="0 -0.053333 0.174 0 -44 90">
+    <Shape type="FRAME" graphics="true" scale="0.15"/>
+  </Body>
+  <Body name="Grasp5" prev="traverse_small" transform="0 -0.053333 -0.001 0 44 90">
+    <Shape type="FRAME" graphics="true" scale="0.15"/>
+  </Body>
+  <Body name="Grasp7" prev="traverse_small" transform="0 -0.053333 -0.178 0 -44 90">
+    <Shape type="FRAME" graphics="true" scale="0.15"/>
+  </Body>
+  <Body name="Grasp9" prev="traverse_small" transform="0 -0.053333 -0.358 0 44 90">
+    <Shape type="FRAME" graphics="true" scale="0.15"/>
+  </Body>
+  <Body name="Grasp2" prev="traverse_small" transform="0.0925 -0.053333 0.355 0 0 150">
+    <Shape type="FRAME" graphics="true" scale="0.15"/>
+  </Body>
+  <Body name="Grasp4" prev="traverse_small" transform="0.0925 -0.053333 0.174 0 0 150">
+    <Shape type="FRAME" graphics="true" scale="0.15"/>
+  </Body>
+  <Body name="Grasp6" prev="traverse_small" transform="0.0925 -0.053333 -0.001 0 0 150">
+    <Shape type="FRAME" graphics="true" scale="0.15"/>
+  </Body>
+  <Body name="Grasp8" prev="traverse_small" transform="0.0925 -0.053333 -0.178 0 0 150">
+    <Shape type="FRAME" graphics="true" scale="0.15"/>
+  </Body>
+  <Body name="Grasp10" prev="traverse_small" transform="0.0925 -0.053333 -0.358 0 0 150">
+    <Shape type="FRAME" graphics="true" scale="0.15"/>
+  </Body>
+  
+</Graph>

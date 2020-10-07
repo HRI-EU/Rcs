@@ -1,0 +1,44 @@
+<Graph name="traverse_big">
+
+  <Body name="traverse_big">
+    <Shape type="CYLINDER" length="1" radius="0.025" graphics="true" distance="false" transform="0.120 -0.069333 0 0 0 0" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" graphics="true" distance="false" transform="0 -0.069333 0.4215 0 90 0" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" graphics="true" distance="false" transform="0 -0.069333 -0.4215 0 90 0" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" graphics="true" distance="false" transform="0 -0.069333 0.2635 0 39 0" />
+    <Shape type="CYLINDER" length="0.3455" radius="0.01" graphics="true" distance="false" transform="0 -0.069333 0 0 -44 0" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" graphics="true" distance="false" transform="0 -0.069333 -0.2615 0 39 0" />
+   
+    <Shape type="SSL" length="1" radius="0.025" graphics="false" distance="true" transform="0.120 -0.069333 -0.5 0 0 0" />
+    <Shape type="SSL" length="0.24" radius="0.01" graphics="false" distance="true" transform="-0.12 -0.069333 0.4215 0 90 0" />
+    <Shape type="SSL" length="0.24" radius="0.01" graphics="false" distance="true" transform="-0.12 -0.069333 -0.4215 0 90 0" />
+    <Shape type="SSL" length="0.37" radius="0.01" graphics="false" distance="true" transform="-0.116424 -0.069333 0.119728 0 39 0" />
+    <Shape type="SSL" length="0.35" radius="0.01" graphics="false" distance="true" transform="0.121565 -0.069333 -0.125884 0 -44 0" />
+    <Shape type="SSL" length="0.37" radius="0.01" graphics="false" distance="true" transform="-0.116424 -0.069333 -0.405272 0 39 0" />
+  </Body>
+  
+  <Body name="Grasp4" prev="traverse_big" transform="0.120 -0.069333 0 0 0 150">
+    <Shape type="FRAME" graphics="true" scale="0.2"/>
+  </Body>
+  
+  <Body name="Grasp2" prev="traverse_big" transform="0.120 -0.069333 0.2635 0 0 150">
+    <Shape type="FRAME" graphics="true" scale="0.2"/>
+  </Body>
+  <Body name="Grasp6" prev="traverse_big" transform="0.120 -0.069333 -0.2615 0 0 150">
+    <Shape type="FRAME" graphics="true" scale="0.2"/>
+  </Body>
+  <Body name="Grasp0" prev="traverse_big" transform="0 -0.069333 0.4215 0 90 90">
+    <Shape type="FRAME" graphics="true" scale="0.2"/>
+  </Body>
+  <Body name="Grasp7" prev="traverse_big" transform="0 -0.069333 -0.4215 0 90 90">
+    <Shape type="FRAME" graphics="true" scale="0.2"/>
+  </Body>
+  <Body name="Grasp1" prev="traverse_big" transform="0 -0.069333 0.2635 0 39 90">
+    <Shape type="FRAME" graphics="true" scale="0.2"/>
+  </Body>
+  <Body name="Grasp3" prev="traverse_big" transform="0 -0.069333 0 0 -44 90">
+    <Shape type="FRAME" graphics="true" scale="0.2"/>
+  </Body>
+  <Body name="Grasp5" prev="traverse_big" transform="0 -0.069333 -0.2615 0 39 90">
+    <Shape type="FRAME" graphics="true" scale="0.2"/>
+  </Body>
+</Graph>

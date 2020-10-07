@@ -1,0 +1,115 @@
+<Graph name="DefaultPose" >
+
+  <Body name="traverse_long" mass="16.2" cogVector="1.500095 0 0.094333" inertia="0.641211 4.90179e-05 -5.85855   4.90179e-05 97.8253 -0.0358857   -5.85855 -0.0358857 97.3691" >
+    <Shape type="FRAME" scale="0.5" />
+    <Shape type="CYLINDER" length="1" radius="0.025" distance="false" physics="true" graphics="true" transform="2.5 0.12 0.025 90 90 0" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="2.9215 0 0.025 -90 0 -180" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="2.0785 0 0.025 -90 0 -180" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="2.7635 0 0.025 -90 51 -180" material="object" />
+    <Shape type="CYLINDER" length="0.3455" radius="0.01" distance="false" physics="true" graphics="true" transform="2.5 0 0.025 90 46 0" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="2.2385 0 0.025 -90 51 -180" material="object" />
+    <Shape type="SSL" length="1" radius="0.025" distance="true" physics="false" graphics="false" transform="2 0.12 0.025 90 90 0" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="2.9215 -0.12 0.025 -90 0 -180" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="2.0785 -0.12 0.025 -90 0 -180" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="2.619728 -0.116424 0.025 -90 51 -180" />
+    <Shape type="SSL" length="0.35" radius="0.01" distance="true" physics="false" graphics="false" transform="2.374116 0.121565 0.025 90 46 0" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="2.094728 -0.116424 0.025 -90 51 -180" />
+    <Shape type="CYLINDER" length="1" radius="0.025" distance="false" physics="true" graphics="true" transform="2.5 0.000044 0.232923 -150 90 0" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="2.9215 0.060044 0.128999 30 0 180" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="2.0785 0.060044 0.128999 30 0 180" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="2.7635 0.060044 0.128999 30 51 -180" material="object" />
+    <Shape type="CYLINDER" length="0.3455" radius="0.01" distance="false" physics="true" graphics="true" transform="2.5 0.060044 0.128999 -150 46 0" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="2.2385 0.060044 0.128999 30 51 -180" material="object" />
+    <Shape type="SSL" length="1" radius="0.025" distance="true" physics="false" graphics="false" transform="2 0.000044 0.232923 -150 90 0" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="2.9215 0.120044 0.025076 30 0 180" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="2.0785 0.120044 0.025076 30 0 180" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="2.619728 0.118256 0.028173 30 51 -180" />
+    <Shape type="SSL" length="0.35" radius="0.01" distance="true" physics="false" graphics="false" transform="2.374116 -0.000738 0.234278 -150 46 0" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="2.094728 0.118256 0.028173 30 51 -180" />
+    <Shape type="CYLINDER" length="1" radius="0.025" distance="false" physics="true" graphics="true" transform="2.5 -0.120044 0.025076 -30 90 0" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="2.9215 -0.060044 0.129 150 0 -180" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="2.0785 -0.060044 0.129 150 0 -180" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="2.7635 -0.060044 0.129 150 51 180" material="object" />
+    <Shape type="CYLINDER" length="0.3455" radius="0.01" distance="false" physics="true" graphics="true" transform="2.5 -0.060044 0.129 -30 46 0" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="2.2385 -0.060044 0.129 150 51 180" material="object" />
+    <Shape type="SSL" length="1" radius="0.025" distance="true" physics="false" graphics="false" transform="2 -0.120044 0.025076 -30 90 0" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="2.9215 -0.000044 0.232923 150 0 -180" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="2.0785 -0.000044 0.232923 150 0 -180" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="2.619728 -0.001832 0.229826 150 51 180" />
+    <Shape type="SSL" length="0.35" radius="0.01" distance="true" physics="false" graphics="false" transform="2.374116 -0.120827 0.023721 -30 46 0" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="2.094728 -0.001832 0.229826 150 51 180" />
+    <Shape type="CYLINDER" length="1" radius="0.025" distance="false" physics="true" graphics="true" transform="1.5 0.12 0.025 90 90 0" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="1.9215 0 0.025 -90 0 -180" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="1.0785 0 0.025 -90 0 -180" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="1.7635 0 0.025 -90 51 -180" material="object" />
+    <Shape type="CYLINDER" length="0.3455" radius="0.01" distance="false" physics="true" graphics="true" transform="1.5 0 0.025 90 46 0" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="1.2385 0 0.025 -90 51 -180" material="object" />
+    <Shape type="SSL" length="1" radius="0.025" distance="true" physics="false" graphics="false" transform="1 0.12 0.025 90 90 0" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="1.9215 -0.12 0.025 -90 0 -180" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="1.0785 -0.12 0.025 -90 0 -180" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="1.619728 -0.116424 0.025 -90 51 -180" />
+    <Shape type="SSL" length="0.35" radius="0.01" distance="true" physics="false" graphics="false" transform="1.374116 0.121565 0.025 90 46 0" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="1.094728 -0.116424 0.025 -90 51 -180" />
+    <Shape type="CYLINDER" length="1" radius="0.025" distance="false" physics="true" graphics="true" transform="1.5 0.000044 0.232923 -150 90 0" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="1.9215 0.060044 0.128999 30 0 180" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="1.0785 0.060044 0.128999 30 0 180" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="1.7635 0.060044 0.128999 30 51 -180" material="object" />
+    <Shape type="CYLINDER" length="0.3455" radius="0.01" distance="false" physics="true" graphics="true" transform="1.5 0.060044 0.128999 -150 46 0" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="1.2385 0.060044 0.128999 30 51 -180" material="object" />
+    <Shape type="SSL" length="1" radius="0.025" distance="true" physics="false" graphics="false" transform="1 0.000044 0.232923 -150 90 0" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="1.9215 0.120044 0.025076 30 0 180" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="1.0785 0.120044 0.025076 30 0 180" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="1.619728 0.118256 0.028173 30 51 -180" />
+    <Shape type="SSL" length="0.35" radius="0.01" distance="true" physics="false" graphics="false" transform="1.374116 -0.000738 0.234278 -150 46 0" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="1.094728 0.118256 0.028173 30 51 -180" />
+    <Shape type="CYLINDER" length="1" radius="0.025" distance="false" physics="true" graphics="true" transform="1.5 -0.120044 0.025076 -30 90 0" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="1.9215 -0.060044 0.129 150 0 -180" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="1.0785 -0.060044 0.129 150 0 -180" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="1.7635 -0.060044 0.129 150 51 180" material="object" />
+    <Shape type="CYLINDER" length="0.3455" radius="0.01" distance="false" physics="true" graphics="true" transform="1.5 -0.060044 0.129 -30 46 0" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="1.2385 -0.060044 0.129 150 51 180" material="object" />
+    <Shape type="SSL" length="1" radius="0.025" distance="true" physics="false" graphics="false" transform="1 -0.120044 0.025076 -30 90 0" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="1.9215 -0.000044 0.232923 150 0 -180" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="1.0785 -0.000044 0.232923 150 0 -180" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="1.619728 -0.001832 0.229826 150 51 180" />
+    <Shape type="SSL" length="0.35" radius="0.01" distance="true" physics="false" graphics="false" transform="1.374116 -0.120827 0.023721 -30 46 0" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="1.094728 -0.001832 0.229826 150 51 180" />
+    <Shape type="CYLINDER" length="1" radius="0.025" distance="false" physics="true" graphics="true" transform="0.5 0.12 0.025 90 90 0" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="0.9215 0 0.025 -90 0 -180" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="0.0785 0 0.025 -90 0 -180" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="0.7635 0 0.025 -90 51 -180" material="object" />
+    <Shape type="CYLINDER" length="0.3455" radius="0.01" distance="false" physics="true" graphics="true" transform="0.5 0 0.025 90 46 0" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="0.2385 0 0.025 -90 51 -180" material="object" />
+    <Shape type="SSL" length="1" radius="0.025" distance="true" physics="false" graphics="false" transform="0 0.12 0.025 90 90 0" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="0.9215 -0.12 0.025 -90 0 -180" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="0.0785 -0.12 0.025 -90 0 -180" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="0.619728 -0.116424 0.025 -90 51 -180" />
+    <Shape type="SSL" length="0.35" radius="0.01" distance="true" physics="false" graphics="false" transform="0.374116 0.121565 0.025 90 46 0" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="0.094728 -0.116424 0.025 -90 51 -180" />
+    <Shape type="CYLINDER" length="1" radius="0.025" distance="false" physics="true" graphics="true" transform="0.5 0.000044 0.232923 -150 90 0" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="0.9215 0.060044 0.128999 30 0 180" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="0.0785 0.060044 0.128999 30 0 180" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="0.7635 0.060044 0.128999 30 51 -180" material="object" />
+    <Shape type="CYLINDER" length="0.3455" radius="0.01" distance="false" physics="true" graphics="true" transform="0.5 0.060044 0.128999 -150 46 0" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="0.2385 0.060044 0.128999 30 51 -180" material="object" />
+    <Shape type="SSL" length="1" radius="0.025" distance="true" physics="false" graphics="false" transform="0 0.000044 0.232923 -150 90 0" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="0.9215 0.120044 0.025076 30 0 180" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="0.0785 0.120044 0.025076 30 0 180" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="0.619728 0.118256 0.028173 30 51 -180" />
+    <Shape type="SSL" length="0.35" radius="0.01" distance="true" physics="false" graphics="false" transform="0.374116 -0.000738 0.234278 -150 46 0" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="0.094728 0.118256 0.028173 30 51 -180" />
+    <Shape type="CYLINDER" length="1" radius="0.025" distance="false" physics="true" graphics="true" transform="0.5 -0.120044 0.025076 -30 90 0" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="0.9215 -0.060044 0.129 150 0 -180" material="object" />
+    <Shape type="CYLINDER" length="0.24" radius="0.01" distance="false" physics="true" graphics="true" transform="0.0785 -0.060044 0.129 150 0 -180" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="0.7635 -0.060044 0.129 150 51 180" material="object" />
+    <Shape type="CYLINDER" length="0.3455" radius="0.01" distance="false" physics="true" graphics="true" transform="0.5 -0.060044 0.129 -30 46 0" material="object" />
+    <Shape type="CYLINDER" length="0.37" radius="0.01" distance="false" physics="true" graphics="true" transform="0.2385 -0.060044 0.129 150 51 180" material="object" />
+    <Shape type="SSL" length="1" radius="0.025" distance="true" physics="false" graphics="false" transform="0 -0.120044 0.025076 -30 90 0" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="0.9215 -0.000044 0.232923 150 0 -180" />
+    <Shape type="SSL" length="0.24" radius="0.01" distance="true" physics="false" graphics="false" transform="0.0785 -0.000044 0.232923 150 0 -180" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="0.619728 -0.001832 0.229826 150 51 180" />
+    <Shape type="SSL" length="0.35" radius="0.01" distance="true" physics="false" graphics="false" transform="0.374116 -0.120827 0.023721 -30 46 0" />
+    <Shape type="SSL" length="0.37" radius="0.01" distance="true" physics="false" graphics="false" transform="0.094728 -0.001832 0.229826 150 51 180" />
+  </Body>
+  
+</Graph>
