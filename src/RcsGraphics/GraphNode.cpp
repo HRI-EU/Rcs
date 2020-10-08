@@ -257,6 +257,23 @@ void GraphNode::togglePhysicsModel()
 }
 
 /*******************************************************************************
+ * Toggles visibility of the depth model.
+ ******************************************************************************/
+void GraphNode::toggleDepthModel()
+{
+  GraphNodeList::iterator li;
+  BodyNodeVisitor bnv;
+  this->accept(bnv);
+
+  for (li = bnv.nodes.begin(); li != bnv.nodes.end(); ++li)
+  {
+    Rcs::BodyNode* nd = (*li).get();
+    nd->toggleDepthNode();
+  }
+
+}
+
+/*******************************************************************************
  * Toggles visibility of the collision model.
  ******************************************************************************/
 void GraphNode::toggleCollisionModel()
@@ -965,6 +982,14 @@ bool Rcs::GraphNode::callback(const osgGA::GUIEventAdapter& ea,
       else if (ea.getKey() == 'D')
       {
         toggleDebugInformation();
+      }
+
+      //
+      // Toggle depth rendering mode
+      //
+      else if (ea.getKey() == 'F')
+      {
+        toggleDepthModel();
       }
 
       //

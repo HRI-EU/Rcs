@@ -41,6 +41,8 @@
 
 #include <osgViewer/Viewer>
 
+#include <vector>
+
 
 
 /**
@@ -76,10 +78,13 @@ public:
 
   void setCameraTransform(const HTr* A_CI);
 
+  void setFieldOfView(double fovWidth, double fovHeight);
+
   /*! \brief Renders the scene into a depth image on each frame call.
    */
   virtual void frame(double simulationTime=USE_REFERENCE_TIME);
 
+  const std::vector<std::vector<float>>& getDepthImageRef() const;
 
 private:
 
@@ -94,6 +99,7 @@ private:
   double zFar;
   double fieldOfView;
   double aspectRatio;
+  std::vector<std::vector<float>> depthImage;
 };
 
 }

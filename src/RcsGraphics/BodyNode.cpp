@@ -168,11 +168,13 @@ BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
   _graphicsNode  = addShapes(RCSSHAPE_COMPUTE_GRAPHICS, resizeable);
   _physicsNode   = addShapes(RCSSHAPE_COMPUTE_PHYSICS+
                              RCSSHAPE_COMPUTE_SOFTPHYSICS, resizeable);
+  _depthNode     = addShapes(RCSSHAPE_COMPUTE_DEPTHBUFFER, resizeable);
 
   _refNode->setAllChildrenOff();
   _collisionNode->setAllChildrenOff();
   _graphicsNode->setAllChildrenOn();
   _physicsNode->setAllChildrenOff();
+  _depthNode->setAllChildrenOff();
 
   _nodeSwitch = new osg::Switch();
   addChild(_nodeSwitch.get());
@@ -181,11 +183,13 @@ BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
   _nodeSwitch->addChild(_graphicsNode.get());
   _nodeSwitch->addChild(_physicsNode.get());
   _nodeSwitch->addChild(_refNode.get());
+  _nodeSwitch->addChild(_depthNode.get());
 
   _collisionNode->setName("BodyNode::CollisionNode");
   _graphicsNode->setName("BodyNode::GraphicsNode");
   _physicsNode->setName("BodyNode::PhysicsNode");
   _refNode->setName("BodyNode::ReferenceFramesNode");
+  _depthNode->setName("BodyNode::DepthBufferNode");
 
 
   // Assign the initial transformation to the node
@@ -1225,6 +1229,15 @@ void BodyNode::toggleReferenceNode()
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+void BodyNode::toggleDepthNode()
+{
+  bool visible = _depthNode->getValue(0);
+  displayDepthNode(!visible);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void BodyNode::toggleDebugInformation()
 {
   bool visible = _debugNode->getValue(0);
@@ -1288,6 +1301,21 @@ void BodyNode::displayReferenceNode(bool visible)
   else
   {
     _refNode->setAllChildrenOff();
+  }
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void BodyNode::displayDepthNode(bool visible)
+{
+  if (visible)
+  {
+    _depthNode->setAllChildrenOn();
+  }
+  else
+  {
+    _depthNode->setAllChildrenOff();
   }
 }
 

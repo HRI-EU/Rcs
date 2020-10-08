@@ -131,11 +131,22 @@ void DepthRenderer::addNode(osg::Node* node)
   rootNode->addChild(node);
 }
 
-
 void DepthRenderer::setCameraTransform(const HTr* A_CI)
 {
   osg::Matrix vm = Rcs::viewMatrixFromHTr(A_CI);
   getCameraManipulator()->setByInverseMatrix(vm);
+}
+
+void DepthRenderer::setFieldOfView(double fovWidth, double fovHeight)
+{
+  double fovyOld, aspectRatio, zNear, zFar;
+  fovWidth = RCS_RAD2DEG(fovWidth);
+  fovHeight = RCS_RAD2DEG(fovHeight);
+  getCamera()->getProjectionMatrixAsPerspective(fovyOld, aspectRatio,
+                                                zNear, zFar);
+  getCamera()->setProjectionMatrixAsPerspective(fovWidth,
+                                                fovWidth/fovHeight,
+                                                zNear, zFar);
 }
 
 void DepthRenderer::frame(double simulationTime)
@@ -149,7 +160,13 @@ void DepthRenderer::frame(double simulationTime)
   osg::Matrixd inverse_pw;
   inverse_pw.invert(pw);
 
-  MatNd* mat = MatNd_create(height, width);
+  //MatNd* mat = MatNd_create(height, width);
+
+  depthImage.resize(height);
+  for (unsigned int i = 0; i < height; ++i)
+  {
+    depthImage[i].resize(width);
+  }
 
   const unsigned int n = width * height;
   const float* zData = ((float*) zImage->data());
@@ -171,11 +188,16 @@ void DepthRenderer::frame(double simulationTime)
       world_coord[2] = -zFar;
     }
 
-    MatNd_set(mat, screen_y, screen_x, -world_coord[2]);
+    //MatNd_set(mat, screen_y, screen_x, -world_coord[2]);
+    depthImage[screen_y][screen_x] = -world_coord[2];
   }
 
-  MatNd_printCommentDigits("Depth image", mat, 1);
-  MatNd_destroy(mat);
+  //MatNd_destroy(mat);
+}
+
+const std::vector<std::vector<float>>& DepthRenderer::getDepthImageRef() const
+{
+  return this->depthImage;
 }
 
 

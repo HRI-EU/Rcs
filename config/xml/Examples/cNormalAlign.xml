@@ -35,15 +35,15 @@
 
 <Controller 
 usage="
-&#xA;  Configuration file to illustrate the Distance and POLAR_SURFACE tasks.
-&#xA;  The Distance task describes the scalar 1-d distance of two bodies. They
-&#xA;  need to be specified in the Task as effector and refBdy. The Distance
-&#xA;  task allows to control their closest distance. Since it is only of
-&#xA;  dimension one, the tangent space movement perpendicular to the closest
+&#xA;  Configuration file to illustrate the Distance and PolarSurfaceNormal 
+&#xA;  tasks. The Distance task describes the scalar 1-d distance of two bodies.
+&#xA;  They need to be specified in the Task as effector and refBdy. The 
+&#xA;  Distance task allows to control their closest distance. Since it is only 
+&#xA;  of dimension one, the tangent space movement perpendicular to the closest
 &#xA;  distance normal is not constraint. This can be verified by applying a
 &#xA;  drag force with the mouse dragger to the end effector (red objects).
 &#xA;  
-&#xA;  The task POLAR_SURFACE allows to control the angle of a task's end
+&#xA;  The TaskPolarSurfaceNormal allows to control the angle of a task's end
 &#xA;  effector axis with respect to the contact normal between refBdy and
 &#xA;  effector. For instance setting it to 180 degrees will oppose the 
 &#xA;  effector's axis with the contact normal. This task is of dimension two
@@ -298,12 +298,12 @@ usage="
 
   <Task name="Distance" controlVariable="Distance" effector="ee1" refBdy="object1" active="true" />
   <xxTask name="RelPos" controlVariable="XYZ" effector="ee1" refBdy="object1" active="untrue" />
-  <Task name="Normal" controlVariable="POLAR_SURFACE" gainDX="0.1" effector="ee1" refBdy="object1" active="true" />
+  <Task name="Normal" controlVariable="POLAR_SURFACE_Z" gainDX="0.1" effector="ee1" refBdy="object1" active="true" />
   
   
   <Task name="Distance" controlVariable="Distance" effector="ee2" refBdy="object2" active="true" />
   <xxTask name="RelPos" controlVariable="XYZ" effector="ee2" refBdy="object2" active="untrue" />
-  <Task name="Normal" controlVariable="POLAR_SURFACE" gainDX="0.1" effector="ee2" refBdy="object2" active="true" />
+  <Task name="Normal" controlVariable="POLAR_SURFACE_Z" gainDX="0.1" effector="ee2" refBdy="object2" active="true" />
 
   
   

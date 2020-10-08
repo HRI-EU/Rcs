@@ -68,11 +68,13 @@ public:
   void displayGraphicsNode(bool visibility = true);
   void displayPhysicsNode(bool visibility = true);
   void displayReferenceNode(bool visibility = true);
+  void displayDepthNode(bool visibility = true);
   void displayDebugInformation(bool visible = true);
   void toggleCollisionNode();
   void toggleGraphicsNode();
   void togglePhysicsNode();
   void toggleReferenceNode();
+  void toggleDepthNode();
   void toggleDebugInformation();
   bool collisionNodeVisible() const;
   bool graphicsNodeVisible() const;
@@ -109,6 +111,7 @@ protected:
   osg::ref_ptr<osg::Switch> _graphicsNode;
   osg::ref_ptr<osg::Switch> _physicsNode;
   osg::ref_ptr<osg::Switch> _refNode;
+  osg::ref_ptr<osg::Switch> _depthNode;
   osg::ref_ptr<osg::Switch> _nodeSwitch;
   std::vector<osg::ref_ptr<osg::Geode> > _dynamicShapes;
   osg::ref_ptr<osg::Switch> _debugNode;

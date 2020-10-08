@@ -112,6 +112,10 @@ public:
    */
   void togglePhysicsModel();
 
+  /*! \brief Toggles the visibility of the depth model of all BodyNodes
+   */
+  void toggleDepthModel();
+
   /*! \brief Toggles the visibility of the reference frames of all BodyNodes
    */
   void toggleReferenceFrames();
