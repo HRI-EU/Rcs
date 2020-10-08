@@ -178,7 +178,6 @@ void Rcs::TaskDistance1D::computeH(MatNd* hessian) const
   MatNd_reshape(hessian, n, n);
   MatNd slice = MatNd_fromPtr(n, n, &H3->ele[this->index*nn]);
   MatNd_copy(hessian, &slice);
-  //memcpy(hessian->ele, &H3->ele[index * nn], nn * sizeof(double));
   MatNd_destroy(H3);
 }
 

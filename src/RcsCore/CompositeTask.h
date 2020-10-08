@@ -180,6 +180,11 @@ public:
    */
   virtual size_t getNumberOfTasks() const;
 
+  /*! \brief Writes the specific task's xml representation to a file
+   *         desriptor. Here it is the vector of sub-tasks.
+   */
+  virtual void toXML(FILE* out) const;
+
 protected:
 
   std::vector<Task*> subTask;

@@ -168,6 +168,15 @@ void Rcs::TaskSphericalForce1D::forceTrafo(double* ft_task) const
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::TaskSphericalForce1D::toXMLBody(FILE* out) const
+{
+  TaskSpherical1D::toXMLBody(out);
+  fprintf(out, " forceFeedback=\"%g\"", this->force_feedback);
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
 bool Rcs::TaskSphericalForce1D::isValid(xmlNode* node, const RcsGraph* graph)

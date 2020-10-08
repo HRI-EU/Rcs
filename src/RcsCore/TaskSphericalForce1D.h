@@ -104,6 +104,9 @@ public:
   static bool isValid(xmlNode* node, const RcsGraph* graph);
 
 protected:
+
+  virtual void toXMLBody(FILE* out) const;
+
   double ft_curr_temp;
   double ft_des_temp;
   bool force_feedback;

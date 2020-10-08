@@ -152,6 +152,12 @@ public:
 
 
 protected:
+
+  /*! \brief Writes the specific task's xml representation to a file
+   *         desriptor. Here it is the joint and refJoint name.
+   */
+  virtual void toXMLBody(FILE* out) const;
+
   const RcsJoint* joint;    //!< Joint for single joint tasks
   const RcsJoint* refJoint; //!< Relative joint
   double refGain;

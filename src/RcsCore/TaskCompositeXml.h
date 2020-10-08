@@ -43,8 +43,8 @@
 namespace Rcs
 {
 /*! \ingroup RcsTask
- * \brief This tasks allows to populate a CompositeTask from an xml node. Here
- *        is an example:
+ *  \brief This tasks allows to populate a CompositeTask from an xml node. Here
+ *         is an example:
  *
  *  \code
  *  <Task name="XZABC Effector" controlVariable="Composite" >

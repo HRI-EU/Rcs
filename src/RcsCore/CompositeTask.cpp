@@ -415,3 +415,11 @@ size_t Rcs::CompositeTask::getNumberOfTasks() const
 {
   return this->subTask.size();
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::CompositeTask::toXML(FILE* out) const
+{
+  RFATAL("Implement me");
+}

@@ -45,7 +45,9 @@
 
 
 // register task at the task factory
-static Rcs::TaskFactoryRegistrar<Rcs::TaskPolarSurfaceNormal> registrar("POLAR_SURFACE");
+static Rcs::TaskFactoryRegistrar<Rcs::TaskPolarSurfaceNormal> regX("POLAR_SURFACE_X");
+static Rcs::TaskFactoryRegistrar<Rcs::TaskPolarSurfaceNormal> regY("POLAR_SURFACE_Y");
+static Rcs::TaskFactoryRegistrar<Rcs::TaskPolarSurfaceNormal> regZ("POLAR_SURFACE_Z");
 
 
 
@@ -58,27 +60,25 @@ Rcs::TaskPolarSurfaceNormal::TaskPolarSurfaceNormal(const std::string& className
                                                     int dim) :
   Task(className, node, _graph, dim), direction(2), gainDX(1.0)
 {
-  if (getClassName()=="POLAR_SURFACE")
+  if (getClassName()=="POLAR_SURFACE_X" ||
+      getClassName()=="POLAR_SURFACE_Y" ||
+      getClassName()=="POLAR_SURFACE_Z")
   {
     resetParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "Phi [deg]"));
     addParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "Theta [deg]"));
-  }
 
-  // Parse axis direction (should be X, Y or Z)
-  char text[256] = "Z";
-  getXMLNodePropertyStringN(node, "axisDirection", text, 256);
-
-  if (STRCASEEQ(text, "X"))
-  {
-    this->direction = 0;
-  }
-  else if (STRCASEEQ(text, "Y"))
-  {
-    this->direction = 1;
-  }
-  else if (STRCASEEQ(text, "Z"))
-  {
-    this->direction = 2;
+    if (getClassName()=="POLAR_SURFACE_X")
+    {
+      this->direction = 0;
+    }
+    else if (getClassName()=="POLAR_SURFACE_Y")
+    {
+      this->direction = 1;
+    }
+    else if (getClassName()=="POLAR_SURFACE_Z")
+    {
+      this->direction = 2;
+    }
   }
 
   // The gainDX scales the position error coming out of computeDX. It is
@@ -206,7 +206,11 @@ void Rcs::TaskPolarSurfaceNormal::computePolarNormal(double polarAngs[2]) const
  ******************************************************************************/
 bool Rcs::TaskPolarSurfaceNormal::isValid(xmlNode* node, const RcsGraph* graph)
 {
-  bool success = Rcs::Task::isValid(node, graph, "POLAR_SURFACE");
+  std::vector<std::string> cVars;
+  cVars.push_back("POLAR_SURFACE_X");
+  cVars.push_back("POLAR_SURFACE_Y");
+  cVars.push_back("POLAR_SURFACE_Z");
+  bool success = Rcs::Task::isValid(node, graph, cVars);
 
   char taskName[256] = "Unnamed task";
   getXMLNodePropertyStringN(node, "name", taskName, 256);

@@ -62,6 +62,7 @@ Rcs::TaskStaticEffort::TaskStaticEffort(const std::string& className,
   W(NULL),
   sensor(NULL)
 {
+  RFATAL("Parsing sensor and W missing, also toXML needs update");
   resetParameter(Parameters(0.0, 1.0, 1.0, "Effort"));
 }
 

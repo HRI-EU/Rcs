@@ -413,3 +413,25 @@ bool Rcs::TaskJoint::isValid(xmlNode* node, const RcsGraph* graph)
 
   return success;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::TaskJoint::toXMLBody(FILE* out) const
+{
+  if (getJoint())
+  {
+    fprintf(out, " jnt=\"%s\"", getJoint()->name);
+  }
+
+  if (getRefJoint())
+  {
+    fprintf(out, " refJnt=\"%s\"", getRefJoint()->name);
+  }
+
+  if (getRefGain())
+  {
+    fprintf(out, " refGain=\"%g\"", getRefGain());
+  }
+
+}
