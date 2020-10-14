@@ -184,6 +184,17 @@ here is what you can set:
           compliance="0.001"
           damping="100"
 />
+<material name="bouncy"
+          friction_model="ScaledBoxFast"
+          friction_coefficient="0.8"
+          rolling_friction_coefficient="0.8"
+          static_friction_scale="1.1"
+          slip="0.0001"
+          integrated_slip_displacement="true"
+          compliance="0.1"
+          damping="0.01"
+	  restitution="0.9"
+/>
 
 
 

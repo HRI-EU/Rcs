@@ -37,8 +37,10 @@
 #include "Rcs_stlParser.h"
 #include "Rcs_macros.h"
 #include "Rcs_parser.h"
+#include "Rcs_utils.h"
 
 #include <sstream>
+#include <cstdlib>
 
 
 namespace Rcs
@@ -47,10 +49,10 @@ namespace Rcs
 /*******************************************************************************
  *
  ******************************************************************************/
-unsigned int getXMLNodePropertySTLString(xmlNodePtr node, const char* tag,
-                                         std::string& str)
+size_t getXMLNodePropertySTLString(xmlNodePtr node, const char* tag,
+                                   std::string& str)
 {
-  unsigned int len = 0;
+  size_t len = 0;
   xmlChar* txt = xmlGetProp(node, (const xmlChar*) tag);
 
   if (txt)
@@ -67,11 +69,21 @@ unsigned int getXMLNodePropertySTLString(xmlNodePtr node, const char* tag,
 /*******************************************************************************
  *
  ******************************************************************************/
-unsigned int getXMLNodePropertyVecSTLString(xmlNodePtr node, const char* tag,
-                                            std::vector<std::string>& vec)
+std::string getXMLNodePropertySTLString(xmlNodePtr node, const char* tag)
+{
+  std::string str;
+  getXMLNodePropertySTLString(node, tag, str);
+  return str;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+size_t getXMLNodePropertyVecSTLString(xmlNodePtr node, const char* tag,
+                                      std::vector<std::string>& vec)
 {
   std::string tmp;
-  unsigned int len = getXMLNodePropertySTLString(node, tag, tmp);
+  size_t len = getXMLNodePropertySTLString(node, tag, tmp);
 
   if (len > 0)
   {
@@ -86,6 +98,58 @@ unsigned int getXMLNodePropertyVecSTLString(xmlNodePtr node, const char* tag,
   }
 
   return len;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+std::vector<std::string> getXMLNodePropertyVecSTLString(xmlNodePtr node,
+                                                        const char* tag)
+{
+  std::vector<std::string> str;
+  getXMLNodePropertyVecSTLString(node, tag, str);
+  return str;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+size_t getXMLNodePropertyVecSTLDouble(xmlNodePtr node, const char* tag,
+                                      std::vector<double>& vec)
+{
+  std::vector<double> dVec = getXMLNodePropertyVecSTLDouble(node, tag);
+
+  if (dVec.empty())
+  {
+    return 0;
+  }
+
+  vec = dVec;
+
+  return dVec.size();
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+std::vector<double> getXMLNodePropertyVecSTLDouble(xmlNodePtr node,
+                                                   const char* tag)
+{
+  std::vector<std::string> str = getXMLNodePropertyVecSTLString(node, tag);
+
+  if (str.empty())
+  {
+    return std::vector<double>();
+  }
+
+  std::vector<double> vec(str.size());
+
+  for (size_t i=0; i<vec.size(); ++i)
+  {
+    vec[i] = atof(str[i].c_str());
+  }
+
+  return vec;
 }
 
 }  // namespace Rcs

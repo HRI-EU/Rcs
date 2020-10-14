@@ -175,6 +175,7 @@ bool GraphNode::init(const RcsGraph* g, bool resizeable,
                               " the mouse", "GraphNode");
   KeyCatcherBase::registerKey("I", "Display information about RcsBody under the"
                               " mouse", "GraphNode");
+  KeyCatcherBase::registerKey("F", "Toggle depth model", "GraphNode");
 
   RCSGRAPH_TRAVERSE_BODIES(g)
   {

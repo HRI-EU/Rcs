@@ -42,31 +42,83 @@
 #include <string>
 #include <vector>
 
+
 namespace Rcs
 {
 
-/*!
- * \ingroup RcsParserFunctions
- * \brief Read node property into a STL string
- * \param[in] node The xml node to read from
- * \param[in] tag The name of node property to read
- * \param[out] str Reference to std::string object that gets the result
- * \return number of read bytes (including trailing '\\0')
+/*! \ingroup RcsParserFunctions
+ *  \brief Read node property into a STL string
+ *
+ *  \param[in] node The xml node to read from
+ *  \param[in] tag The name of node property to read
+ *  \param[out] str Reference to std::string object that gets the result
+ *
+ *  \return number of read bytes (including trailing '\\0')
  */
-unsigned int getXMLNodePropertySTLString(xmlNodePtr node, const char* tag,
-                                         std::string& str);
+size_t getXMLNodePropertySTLString(xmlNodePtr node, const char* tag,
+                                   std::string& str);
 
-/*!
- * \ingroup RcsParserFunctions
- * \brief Reads multiple words from xml node into a vector of STL strings
- * \param[in] node The xml node to read from
- * \param[in] tag  The name of node property to read
- * \param[out] vec Reference to a std::vector of std::string object that gets
- *                 the result
- * \return number of read bytes (including trailing '\\0')
+
+/*! \ingroup RcsParserFunctions
+ *  \brief Read node property into a STL string
+ *
+ *  \param[in] node The xml node to read from
+ *  \param[in] tag The name of node property to read
+ *
+ *  \return STL string with content of tag, or empty vector otherwise.
  */
-unsigned int getXMLNodePropertyVecSTLString(xmlNodePtr node, const char* tag,
-                                            std::vector<std::string>& vec);
+std::string getXMLNodePropertySTLString(xmlNodePtr node, const char* tag);
+
+/*! \ingroup RcsParserFunctions
+ *  \brief Reads multiple words from xml node into a vector of STL strings
+ *
+ *  \param[in]  node The xml node to read from
+ *  \param[in]  tag  The name of node property to read
+ *  \param[out] vec  Reference to a std::vector of std::string object that gets
+ *                   the result
+ *
+ *  \return number of read bytes (including trailing '\\0')
+ */
+size_t getXMLNodePropertyVecSTLString(xmlNodePtr node, const char* tag,
+                                      std::vector<std::string>& vec);
+
+
+/*! \ingroup RcsParserFunctions
+ *  \brief Reads multiple words from xml node into a vector of STL strings
+ *
+ *  \param[in] node The xml node to read from
+ *  \param[in] tag  The name of node property to read
+ *
+ *  \return Vector of std::strings containing the contents of what's in tag.
+ */
+std::vector<std::string> getXMLNodePropertyVecSTLString(xmlNodePtr node,
+                                                        const char* tag);
+
+
+/*! \ingroup RcsParserFunctions
+ *  \brief Reads multiple double values from xml node into a STL vector
+ *
+ *  \param[in] node The xml node to read from
+ *  \param[in] tag  The name of node property to read
+ *
+ *  \return Vector of double values found in the xml tag
+ */
+std::vector<double> getXMLNodePropertyVecSTLDouble(xmlNodePtr node,
+                                                   const char* tag);
+
+/*! \ingroup RcsParserFunctions
+ *  \brief Reads multiple double values from xml node into a STL vector
+ *
+ *  \param[in]  node The xml node to read from
+ *  \param[in]  tag  The name of node property to read
+ *  \param[out] vec  Reference to a vector of doubles containing the values
+ *                   in tag.
+ *
+ *  \return Number of values in vec.
+ */
+size_t getXMLNodePropertyVecSTLDouble(xmlNodePtr node, const char* tag,
+                                      std::vector<double>& vec);
+
 
 }  // namespace Rcs
 

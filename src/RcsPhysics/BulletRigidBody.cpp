@@ -495,7 +495,6 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
     angFac[1] = rbj->weightMetric;
     rbj = rbj->next;
     angFac[2] = rbj->weightMetric;
-    rbj = rbj->next;
 
     btBody->setLinearFactor(linFac);
     btBody->setAngularFactor(angFac);

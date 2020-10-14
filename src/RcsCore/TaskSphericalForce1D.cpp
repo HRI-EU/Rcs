@@ -173,7 +173,7 @@ void Rcs::TaskSphericalForce1D::forceTrafo(double* ft_task) const
 void Rcs::TaskSphericalForce1D::toXMLBody(FILE* out) const
 {
   TaskSpherical1D::toXMLBody(out);
-  fprintf(out, " forceFeedback=\"%g\"", this->force_feedback);
+  fprintf(out, " forceFeedback=\"%s\"", this->force_feedback ? "true" : "false");
 }
 
 /*******************************************************************************
