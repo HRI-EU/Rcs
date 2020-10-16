@@ -997,16 +997,6 @@ void* Viewer::ViewerThread(void* arg)
 
   while (viewer->isThreadRunning() == true)
   {
-
-    viewer->userEventMtx.lock();
-    for (size_t i=0; i<viewer->userEventStack.size(); ++i)
-    {
-      viewer->getOsgViewer()->getEventQueue()->userEvent(viewer->userEventStack[i].get());
-    }
-
-    viewer->userEventStack.clear();
-    viewer->userEventMtx.unlock();
-
     viewer->frame();
     unsigned long dt = (unsigned long)(1.0e6/viewer->updateFrequency());
     Timer_usleep(dt);
@@ -1089,6 +1079,15 @@ void Viewer::frame()
   }
 
   double dtFrame = Timer_getSystemTime();
+
+  // Publish all queued events before the frame() call
+  userEventMtx.lock();
+  for (size_t i=0; i<userEventStack.size(); ++i)
+  {
+    getOsgViewer()->getEventQueue()->userEvent(userEventStack[i].get());
+  }
+  userEventStack.clear();
+  userEventMtx.unlock();
 
   lock();
   viewer->frame();
