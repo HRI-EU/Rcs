@@ -85,6 +85,7 @@ ENDIF()
 OPTION(HEADLESS_BUILD "Build without graphics and Guis" OFF)
 OPTION(USE_EIGEN3 "Use Eigen3 in RcsCore" OFF)
 OPTION(ENABLE_DEBUG_MACROS "Enable debug macros also in release mode" ON)
+OPTION(BUILD_RCS_LIBRARIES_ONLY "Build only libs, but not examples and tests" OFF)
 
 IF(UNIX)
   OPTION(ENABLE_C++11 "Compile with C++11 support enabled" OFF)
@@ -99,11 +100,10 @@ ENDIF()
 
 FIND_PACKAGE(Vortex QUIET)
 IF (VORTEX_FOUND)
-  SET(USE_VORTEX ESSENTIALS CACHE STRING "Vortex version to use")
+  OPTION(USE_VORTEX "Use the Vortex physics library" ON)
 ELSE()
-  SET(USE_VORTEX OFF CACHE STRING "Vortex version to use")
+  OPTION(USE_VORTEX "Use the Vortex physics library" OFF)
 ENDIF()
-SET_PROPERTY(CACHE USE_VORTEX PROPERTY STRINGS OFF ESSENTIALS)
 
 IF(UNIX)
   FIND_PACKAGE(Bullet QUIET)
@@ -192,8 +192,11 @@ ENDIF()
 #
 ################################################################################
 ADD_SUBDIRECTORY (src)
-ADD_SUBDIRECTORY (bin)
-ADD_SUBDIRECTORY (examples)
+
+IF (NOT BUILD_RCS_LIBRARIES_ONLY)
+  ADD_SUBDIRECTORY (bin)
+  ADD_SUBDIRECTORY (examples)
+ENDIF()
 
 IF(EXISTS "${PROJECT_SOURCE_DIR}/projects")
   MESSAGE(STATUS "Including projects directory" )
