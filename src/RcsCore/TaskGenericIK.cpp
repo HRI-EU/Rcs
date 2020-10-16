@@ -35,6 +35,7 @@
 *******************************************************************************/
 
 #include "TaskGenericIK.h"
+#include "TaskRegion.h"
 #include "Rcs_typedef.h"
 #include "Rcs_macros.h"
 #include "Rcs_math.h"
@@ -83,7 +84,15 @@ void Rcs::TaskGenericIK::computeDX(double* dx,
                                    const double* x_des,
                                    const double* x_curr) const
 {
+  if (this->tsr)
+  {
+    tsr->computeDX(this, dx, x_des, x_curr);
+  }
+  else
+  {
   VecNd_sub(dx, x_des, x_curr, getDim());
+  }
+
 }
 
 /*******************************************************************************

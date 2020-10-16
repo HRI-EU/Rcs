@@ -35,6 +35,7 @@
 *******************************************************************************/
 
 #include "Task.h"
+#include "TaskRegionFactory.h"
 #include "Rcs_macros.h"
 #include "Rcs_parser.h"
 #include "Rcs_typedef.h"
@@ -86,6 +87,7 @@ Rcs::Task::Task():
   ef(NULL),
   refBody(NULL),
   refFrame(NULL),
+  tsr(NULL),
   taskDim(0)
 {
 }
@@ -101,6 +103,7 @@ Rcs::Task::Task(const std::string& className_,
   ef(NULL),
   refBody(NULL),
   refFrame(NULL),
+  tsr(NULL),
   taskDim(dim),
   className(className_)
 {
@@ -162,6 +165,30 @@ Rcs::Task::Task(const std::string& className_,
     this->refFrame = this->refBody;
   }
 
+  // Go through all children and look for TaskRegion
+  node = node->children;
+  while (node)
+  {
+    if (isXMLNodeName(node, "TaskRegion"))
+    {
+      RLOG(0, "Found TaskRegion");
+      this->tsr = TaskRegionFactory::create(this, node);
+
+      // Create the new task, and add it to the task list
+      if (tsr==NULL)
+      {
+        RLOG(0, "Failed to instantiate TaskRegion");
+      }
+      else
+      {
+        RLOG(0, "Succeeded to instantiate TaskRegion");
+      }
+
+    }
+
+    node = node->next;
+  }
+
   RLOG(5, "constructed task \"%s\" of type %s: dim: %d, dimIK: %d",
        getName().c_str(), className.c_str(), getDim(), getDim());
 }
@@ -173,6 +200,7 @@ Rcs::Task::Task(const Task& copyFromMe, RcsGraph* newGraph):
   ef(NULL),
   refBody(NULL),
   refFrame(NULL),
+  tsr(copyFromMe.tsr ? copyFromMe.tsr->clone() : NULL),
   taskDim(copyFromMe.taskDim),
   name(copyFromMe.name),
   className(copyFromMe.className),
@@ -211,6 +239,10 @@ Rcs::Task::Task(const Task& copyFromMe, RcsGraph* newGraph):
  ******************************************************************************/
 Rcs::Task::~Task()
 {
+  if (this->tsr)
+  {
+    delete this->tsr;
+  }
 }
 
 /*******************************************************************************
@@ -276,6 +308,14 @@ void Rcs::Task::print() const
   {
     printf("Reference frame: \"%s\"\n", getRefFrame()->name);
   }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+Rcs::TaskRegion* Rcs::Task::getTaskRegion()
+{
+  return this->tsr;
 }
 
 /*******************************************************************************

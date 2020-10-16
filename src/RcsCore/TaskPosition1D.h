@@ -34,8 +34,8 @@
 
 *******************************************************************************/
 
-#ifndef TASKPOSITION1D_H
-#define TASKPOSITION1D_H
+#ifndef RCS_TASKPOSITION1D_H
+#define RCS_TASKPOSITION1D_H
 
 #include "TaskPosition3D.h"
 
@@ -43,9 +43,15 @@ namespace Rcs
 {
 
 /*! \ingroup RcsTask
- * \brief This tasks allows to set a 1D position (X, Y, or Z) of an effector
+ *  \brief This tasks allows to set a 1D position (X, Y, or Z) of an effector.
  *
- *  The position can also be relative to another body and reference frame.
+ *  The task calls the methods of TaskPosition3D, and extracts the component
+ *  of the arrays that correspond to the given index X, Y or Z.
+ *
+ *  Example:
+ *  \code
+ *    <Task name="Hand X" controlVariable="X" effector="HandTip" active="true" />
+ *  \endcode
  */
 class TaskPosition1D: public Rcs::TaskPosition3D
 {
@@ -112,4 +118,4 @@ protected:
 };
 }
 
-#endif // TASKPOSITION1D_H
+#endif // RCS_TASKPOSITION1D_H

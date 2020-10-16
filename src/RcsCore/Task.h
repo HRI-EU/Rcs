@@ -129,6 +129,8 @@ namespace Rcs
  *         have target variables as arguments, plus possible input (state)
  *         variables.
  */
+class TaskRegion;
+
 class Task
 {
 public:
@@ -258,7 +260,7 @@ public:
   static bool isValid(xmlNode* node, const RcsGraph* graph,
                       const std::vector<std::string>& className);
 
-
+  TaskRegion* getTaskRegion();
 
   /**
    * @name TaskSpecialization
@@ -755,6 +757,7 @@ protected:
   const RcsBody* ef;        //!< Effector
   const RcsBody* refBody;   //!< Reference body
   const RcsBody* refFrame;  //!< Reference frame body
+  TaskRegion* tsr;          //!< Task space region
 
 
 private:

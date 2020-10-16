@@ -100,6 +100,10 @@ TaskVelocityJoint.cpp
 ViaPointSequence.cpp
 ${RCS_THIRDPARTY_DIR}/Rcs_thirdPartyMath.c
 ${RCS_THIRDPARTY_DIR}/EulerAngles.c
+TaskRegion.cpp
+TaskRegionBoundingBox.cpp
+TaskRegionBoxInterval.cpp
+TaskRegionFactory.cpp
 )
 
 IF(WIN32)

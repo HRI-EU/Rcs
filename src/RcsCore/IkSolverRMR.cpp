@@ -40,8 +40,7 @@
 #include "Rcs_math.h"
 #include "Rcs_parser.h"
 
-#include <cfloat>
-
+#include "TaskRegion.h"
 
 
 /*******************************************************************************
@@ -53,7 +52,7 @@ Rcs::IkSolverRMR::IkSolverRMR(Rcs::ControllerBase* controller_) :
   nq(controller_->getGraph()->nJ), nqr(0), det(0.0),
   A(NULL), invA(NULL), invWq(NULL), J(NULL), pinvJ(NULL), N(NULL), dHA(NULL),
   dq(NULL), dqr(NULL), dxr(NULL), NinvW(NULL), Wx(NULL), dHr(NULL), dH(NULL),
-  dH_jl(NULL), dH_ca(NULL), dx(NULL)
+  dx_proj(NULL)
 {
   // Coupled joint matrix
   this->A = MatNd_create(this->nq, this->nq);
@@ -99,14 +98,8 @@ Rcs::IkSolverRMR::IkSolverRMR(Rcs::ControllerBase* controller_) :
   // Null space potential (in IK-relevant coordinates)
   this->dH = MatNd_create(1, this->nq);
 
-  // Null space potential for joint limits
-  this->dH_jl = MatNd_create(1, this->nq);
-
-  // Null space potential for collision avoidance
-  this->dH_ca = MatNd_create(1, this->nq);
-
-  // Task space error
-  this->dx = MatNd_create(this->nx, 1);
+  // Null space -> task space re-projection
+  this->dx_proj = MatNd_create(this->nx, 1);
 
   reshape();
 }
@@ -130,9 +123,7 @@ Rcs::IkSolverRMR::~IkSolverRMR()
   MatNd_destroy(this->Wx);
   MatNd_destroy(this->dHr);
   MatNd_destroy(this->dH);
-  MatNd_destroy(this->dH_jl);
-  MatNd_destroy(this->dH_ca);
-  MatNd_destroy(this->dx);
+  MatNd_destroy(this->dx_proj);
 }
 
 /*******************************************************************************
@@ -152,7 +143,7 @@ Rcs::ControllerBase* Rcs::IkSolverRMR::getController() const
 }
 
 /*******************************************************************************
- * \brief Change array dimensions of the internal arrays
+ * Change array dimensions of the internal arrays
  ******************************************************************************/
 void Rcs::IkSolverRMR::reshape()
 {
@@ -168,8 +159,6 @@ void Rcs::IkSolverRMR::reshape()
   MatNd_destroy(tmpInvA);
 
   MatNd_reshape(this->dH, 1, this->nq);
-  MatNd_reshape(this->dH_jl, 1, this->nq);
-  MatNd_reshape(this->dH_ca, 1, this->nq);
 }
 
 /*******************************************************************************
@@ -454,39 +443,7 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
     return;
   }
 
-  // Add task space component to the result
-  MatNd_reshapeAndSetZero(this->dqr, this->pinvJ->m, 1);
-
-  if ((dx != NULL) && (J->m>0))
-  {
-    if ((activation!=NULL) && (dx->m==nx))
-    {
-      controller->compressToActive(this->dxr, dx, activation);
-      MatNd_mul(this->dqr, this->pinvJ, this->dxr);
-    }
-    else
-    {
-      MatNd_mul(this->dqr, this->pinvJ, dx);
-    }
-
-  }
-
-  // Expand from coupled joint space to constraint joints
-  if (hasCouplings)
-  {
-    MatNd_reshape(dq_ts, graph->nJ, 1);
-    MatNd_mul(dq_ts, this->A, this->dqr);
-  }
-  else
-  {
-    MatNd_reshapeCopy(dq_ts, this->dqr);
-  }
-
-
-
-  // Compute null space
-  MatNd_setZero(this->dqr);
-
+  // Compute null space terms
   if (dH != NULL)
   {
     RCHECK((dH->m==nq && dH->n==1) || (dH->m==1 && dH->n==nq));
@@ -500,23 +457,104 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
     MatNd_reshape(this->NinvW, this->pinvJ->m, this->pinvJ->m);
     MatNd_nullspace(this->NinvW, this->pinvJ, this->J);
     MatNd_postMulDiagSelf(this->NinvW, invWq);   // apply joint metric
-    MatNd_mulAndAddSelf(this->dqr, this->NinvW, this->dHr);
   }
 
-  // Expand from coupled joint space to constraint joints
-  if (hasCouplings)
+  // Compute null space -> task space re-projection: dH^T J#
+  MatNd_reshape(this->dHr, dHr->n, dHr->m);
+  MatNd_reshape(dx_proj, 1, pinvJ->n);
+  MatNd_mul(dx_proj, this->dHr, this->pinvJ);
+  MatNd_reshape(this->dHr, dHr->n, dHr->m);
+  MatNd_reshape(dx_proj, pinvJ->n, 1);
+
+  // Here comes the sinister HACK
+  for (size_t i=0; i<controller->getNumberOfTasks(); ++i)
   {
-    MatNd_reshape(dq_ns, nq, 1);
-    MatNd_mul(dq_ns, this->A, this->dqr);
+    Rcs::Task* tsk = controller->getTask(i);
+    Rcs::TaskRegion* tsr = tsk->getTaskRegion();
+
+    if (tsr)
+    {
+      size_t idx = controller->getTaskArrayIndex(i);
+      const double* xi = &dx_proj->ele[idx];
+      std::vector<double> dx_proj(xi, xi+tsk->getDim());
+      tsr->setTaskReprojection(dx_proj);
+    }
+  }
+  // Here ends the sinister HACK
+
+
+
+
+
+  // Compute task space displacement vector
+  if ((dx != NULL) && (J->m>0))
+  {
+    MatNd_reshape(this->dqr, this->pinvJ->m, 1);
+
+    if ((activation!=NULL) && (dx->m==nx))
+    {
+      controller->compressToActive(this->dxr, dx, activation);
+      MatNd_mul(this->dqr, this->pinvJ, this->dxr);
+    }
+    else
+    {
+      MatNd_mul(this->dqr, this->pinvJ, dx);
+    }
+
+    // Expand from coupled joint space to constraint joints
+    if (hasCouplings)
+    {
+      MatNd_reshape(dq_ts, nq, 1);
+      MatNd_mul(dq_ts, this->A, this->dqr);
+    }
+    else
+    {
+      MatNd_reshapeCopy(dq_ts, this->dqr);
+    }
+
+    // Uncompress to all states
+    RcsGraph_stateVectorFromIKSelf(graph, dq_ts);
   }
   else
   {
-    MatNd_reshapeCopy(dq_ns, this->dqr);
+    MatNd_reshapeAndSetZero(dq_ts, graph->dof, 1);
   }
 
-  // Uncompress to all states
-  RcsGraph_stateVectorFromIKSelf(graph, dq_ts);
-  RcsGraph_stateVectorFromIKSelf(graph, dq_ns);
+
+
+
+
+
+
+
+
+
+
+  // Compute null space displacement vector
+  if (dH != NULL)
+  {
+    MatNd_reshape(this->dqr, this->pinvJ->m, 1);
+    MatNd_mul(this->dqr, this->NinvW, this->dHr);
+
+    // Expand from coupled joint space to constraint joints
+    if (hasCouplings)
+    {
+      MatNd_reshape(dq_ns, nq, 1);
+      MatNd_mul(dq_ns, this->A, this->dqr);
+    }
+    else
+    {
+      MatNd_reshapeCopy(dq_ns, this->dqr);
+    }
+
+    // Uncompress to all states
+    RcsGraph_stateVectorFromIKSelf(graph, dq_ns);
+  }
+  else
+  {
+    MatNd_reshapeAndSetZero(dq_ns, graph->dof, 1);
+  }
+
 }
 
 /*******************************************************************************

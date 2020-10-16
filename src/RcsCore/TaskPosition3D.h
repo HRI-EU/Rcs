@@ -76,7 +76,7 @@ namespace Rcs
  *  - guiMin: three values for lower bounds slider values (default: -2.5)
  *  - guiMax: three values for lower bounds slider values (default: +2.5)
  *  - name: The task name will be displayed in Gui (unless it is the default
-*            name "Unnamed task")
+ *          name "Unnamed task")
  *
  *  Example:
  *  \code

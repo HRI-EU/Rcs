@@ -1,6 +1,9 @@
 <Controller graph="gScenario.xml" >
 
-  <Task name="PowerGrasp_L XYZ"   controlVariable="XYZ"   effector="PowerGrasp_L" active="true" />
+  <Task name="PowerGrasp_L XYZ"   controlVariable="XYZ"   effector="PowerGrasp_L" active="true" >
+    <TaskRegion type="BoxInterval" min="0 0 -0.2" max="0 0 0.2" /> 
+    <xxxTaskRegion type="BoundingBox" min="0.6 0 0.8" max="1 0.5 1.2" /> 
+  </Task>
   <Task name="PowerGrasp_L ABC"   controlVariable="ABC"   effector="PowerGrasp_L" prio="1" />
 
   <Task name="PowerGrasp_R XYZ"   controlVariable="XYZ"   effector="PowerGrasp_R" active="true" />

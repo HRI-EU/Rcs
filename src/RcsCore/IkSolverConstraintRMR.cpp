@@ -42,8 +42,6 @@
 #include "Rcs_macros.h"
 #include "Rcs_math.h"
 
-#include <cfloat>
-
 
 
 /*******************************************************************************
@@ -121,7 +119,6 @@ Rcs::IkSolverConstraintRMR::IkSolverConstraintRMR(Rcs::ControllerBase* ctrl) :
   MatNd_realloc(this->pinvJ, this->nq, activeSet.size());
   MatNd_realloc(this->dxr, activeSet.size(), 1);
   MatNd_realloc(this->Wx, activeSet.size(), 1);
-  MatNd_realloc(this->dx, activeSet.size(), 1);
 }
 
 /*******************************************************************************

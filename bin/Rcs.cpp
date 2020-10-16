@@ -94,6 +94,7 @@
 #include <IkSolverConstraintRMR.h>
 #include <SolverRAC.h>
 #include <TaskFactory.h>
+#include <TaskRegionFactory.h>
 #include <PhysicsFactory.h>
 #include <PhysicsNode.h>
 #include <GraphNode.h>
@@ -296,6 +297,7 @@ int main(int argc, char** argv)
       REXEC(3)
       {
         Rcs::TaskFactory::instance()->printRegisteredTasks();
+        Rcs::TaskRegionFactory::instance()->printRegisteredTaskRegions();
         Rcs::PhysicsFactory::print();
         RcsShape_fprintDistanceFunctions(stdout);
       }
