@@ -113,7 +113,7 @@ ENDIF()
 # We mark the Bullet include directories as private, since the standard use
 # case is to use the physics simulation classes through the factory class.
 # In case an explicit use of Bullet is desired, the include path needs to
-# be added explicitely, see for instance the target ExampleBullet below.
+# be added explicitely, see for instance the target ExampleBullet.
 IF(USE_BULLET)
   TARGET_INCLUDE_DIRECTORIES(RcsPhysics SYSTEM PRIVATE ${BULLET_INCLUDE_DIR})
   TARGET_COMPILE_DEFINITIONS(RcsPhysics PRIVATE ${BULLET_DEFINITIONS})
@@ -136,13 +136,6 @@ IF(USE_VORTEX AND VORTEX_FOUND)
     ENDIF(UNIX)
   ADD_DEPENDENCIES(RcsPhysics RcsVortex)
 ENDIF()
-
-IF(USE_BULLET AND NOT HEADLESS_BUILD)
-  ADD_EXECUTABLE(ExampleBullet ExampleBullet.cpp)
-  TARGET_LINK_LIBRARIES(ExampleBullet RcsPhysics)
-  TARGET_INCLUDE_DIRECTORIES(ExampleBullet SYSTEM PRIVATE ${BULLET_INCLUDE_DIR})
-  TARGET_COMPILE_DEFINITIONS(RcsPhysics PRIVATE ${BULLET_DEFINITIONS})
-ENDIF(USE_BULLET AND NOT HEADLESS_BUILD)
 
 # copy the .dll file to the same folder as the executable
 IF (WIN32)

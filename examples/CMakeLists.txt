@@ -18,6 +18,13 @@ IF(NOT HEADLESS_BUILD)
   ADD_EXECUTABLE(ExampleKinetics ExampleKinetics.cpp)
   TARGET_LINK_LIBRARIES(ExampleKinetics RcsCore RcsGui RcsGraphics RcsPhysics)
 
+  IF(USE_BULLET)
+    ADD_EXECUTABLE(ExampleBullet ExampleBullet.cpp)
+    TARGET_LINK_LIBRARIES(ExampleBullet RcsPhysics)
+    TARGET_INCLUDE_DIRECTORIES(ExampleBullet SYSTEM PRIVATE ${BULLET_INCLUDE_DIR})
+    TARGET_COMPILE_DEFINITIONS(RcsPhysics PRIVATE ${BULLET_DEFINITIONS})
+  ENDIF(USE_BULLET)
+
   # Install the binaries
   INSTALL(TARGETS ExampleHighGui ExamplePrioritizedIK ExampleForwardKinematics ExampleKinetics RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
 
