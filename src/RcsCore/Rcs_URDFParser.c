@@ -516,7 +516,10 @@ RcsJoint* parseJointURDF(xmlNode* node)
   }
 
   jnt->q0 = (jnt->q_max + jnt->q_min) / 2.0;
-  jnt->q_init = jnt->q0;
+
+  // Setting to zero since joint coupling logic in URDF does not consider q_init and any other value
+  // leads to a difference between URDF and RCS coupled joint computations
+  jnt->q_init = 0.0;
 
   // Create coupled joint if mimic tag is present
   xmlNodePtr mimicNode = getXMLChildByName(node, "mimic");
@@ -707,7 +710,7 @@ static void connectURDF(xmlNode* node, RcsBody** bdyVec, RcsJoint** jntVec,
           RLOG(0, "TODO: Check axis transform for joint \"%s\"", jnt->name);
           double A_JN[3][3];
           Mat3d_transpose(A_JN, A_NJ);
-          Mat3d_postMulSelf(jnt->A_JP->rot, A_JN);
+          Mat3d_postMulSelf(childBody->A_BP->rot, A_JN);
         }
       }    // Axis is skew
 
