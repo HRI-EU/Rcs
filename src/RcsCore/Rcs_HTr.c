@@ -239,7 +239,7 @@ void HTr_fprint(FILE* fd, const HTr* A)
 {
   if (A == NULL)
   {
-    fprintf(fd, "HTr is NULL");
+    fprintf(fd, "HTr is NULL\n");
     return;
   }
 
