@@ -2917,6 +2917,15 @@ void RcsGraph_makeJointsConsistent(RcsGraph* self)
       }
     }
 
+    // In case min and max values are switched (could happen if for example coupled joints have a negative multiplier)
+    if (q_min > q_max)
+    {
+      double q_tmp = q_min;
+      q_min = q_max;
+      q_max = q_tmp;
+    }
+
+
     JNT->q_min  = q_min;
     JNT->q_max  = q_max;
     JNT->q0     = q0;
