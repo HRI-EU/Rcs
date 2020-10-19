@@ -237,10 +237,18 @@ public:
   BodyNode* getBodyNode(const RcsBody* body);
 
   /*! \brief Returns a vector with all BodyNodes that have been added.
+   *         The pointers are const and don't allow changing the
+   *         individual BodyNodes
    *
    *  \return Vector of pointers to all BodyNodes of the GraphNode.
    */
   std::vector<const BodyNode*> getBodyNodes() const;
+
+  /*! \brief Returns a vector with all BodyNodes that have been added.
+   *
+   *  \return Vector of pointers to all BodyNodes of the GraphNode.
+   */
+  std::vector<BodyNode*> getBodyNodes();
 
   /*! \brief Attaches the BodyNode to the transformation A_BI. It must be a
    *         valid transformation. If the body has no BodyNode, the function

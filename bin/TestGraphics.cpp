@@ -1031,6 +1031,34 @@ void testDepthRenderer()
 }
 
 /*******************************************************************************
+ * Changing colors in GraphNode
+ ******************************************************************************/
+void testDynamicColoring()
+{
+  RcsGraph* graph = RcsGraph_create("config/xml/DexBot/LBR.xml");
+  RCHECK(graph);
+
+  Rcs::Viewer viewer;
+  osg::ref_ptr<Rcs::GraphNode> gn = new Rcs::GraphNode(graph);
+  viewer.add(gn.get());
+
+  std::vector<Rcs::BodyNode*> bdyNodes = gn->getBodyNodes();
+
+  while (runLoop)
+  {
+
+    for (size_t i=0; i<bdyNodes.size(); ++i)
+    {
+      setNodeMaterial("RANDOM", bdyNodes[i]);
+    }
+
+    viewer.frame();
+    Timer_waitDT(0.5);
+  }
+
+}
+
+/*******************************************************************************
  * Select test modes
  ******************************************************************************/
 int main(int argc, char** argv)
@@ -1071,6 +1099,7 @@ int main(int argc, char** argv)
       printf("\t\t15   Test findChildrenOfType() function\n");
       printf("\t\t16   Test depth rendering\n");
       printf("\t\t17   Test RcsViewer setTitle() method\n");
+      printf("\t\t18   Test Setting colors in GraphNode\n");
       break;
 
     case 0:
@@ -1172,6 +1201,10 @@ int main(int argc, char** argv)
 
     case 17:
       testRcsViewer();
+      break;
+
+    case 18:
+      testDynamicColoring();
       break;
 
     default:

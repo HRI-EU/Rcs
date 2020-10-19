@@ -1060,5 +1060,27 @@ std::vector<const BodyNode*> GraphNode::getBodyNodes() const
   return bnVec;
 }
 
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+std::vector<BodyNode*> GraphNode::getBodyNodes()
+{
+  std::vector<BodyNode*> bnVec;
+
+  for (unsigned int i=0; i< switchNode->getNumChildren(); ++i)
+  {
+    const osg::Node* n1 = switchNode->getChild(i);
+    osg::Node* n2 = const_cast<osg::Node*>(n1);
+    BodyNode* n3 = dynamic_cast<BodyNode*>(n2);
+
+    if (n3 != NULL)
+    {
+      bnVec.push_back(n3);
+    }
+  }
+
+  return bnVec;
+}
+
 
 }   // namespace Rcs
