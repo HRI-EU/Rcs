@@ -50,17 +50,54 @@ namespace Rcs
 REGISTER_TASKREGION(TaskRegionBoxInterval, "BoxInterval");
 
 TaskRegionBoxInterval::TaskRegionBoxInterval(const Task* task, xmlNode* node) :
-  TaskRegion(task, node)
+  TaskRegion(task, node), slowDownRatio(0.0)
 {
+  getXMLNodePropertyDouble(node, "slowDownRatio", &slowDownRatio);
+  RCHECK_MSG((slowDownRatio >= 0) && (slowDownRatio <= 1.0),
+             "slowDownRatio is %f but must be [0...1]", slowDownRatio);
+
   bbMin = std::vector<double>(task->getDim(), -DBL_MAX);
   bbMax = std::vector<double>(task->getDim(), DBL_MAX);
 
-  getXMLNodePropertyVecSTLDouble(node, "min", bbMin);
-  getXMLNodePropertyVecSTLDouble(node, "max", bbMax);
+  std::vector<double> tmp = getXMLNodePropertyVecSTLDouble(node, "min");
+
+  // For parsing min and max interval bounds, we allow one value, or as many
+  // values as there are task dimensions.
+  if (tmp.size() == 1)
+  {
+    bbMin = std::vector<double>(task->getDim(), tmp[0]);
+  }
+  else if (tmp.size() == task->getDim())
+  {
+    bbMin = tmp;
+  }
+  else if (!tmp.empty())
+  {
+    RFATAL("Dimension mismatch: attribute \"min\" has %zu values, but task"
+           " dimension is %u", tmp.size(), task->getDim());
+  }
+
+  tmp = getXMLNodePropertyVecSTLDouble(node, "max");
+
+  if (tmp.size() == 1)
+  {
+    bbMax = std::vector<double>(task->getDim(), tmp[0]);
+  }
+  else if (tmp.size() == task->getDim())
+  {
+    bbMax = tmp;
+  }
+  else if (!tmp.empty())
+  {
+    RFATAL("Dimension mismatch: attribute \"min\" has %zu values, but task"
+           " dimension is %u", tmp.size(), task->getDim());
+  }
+
 }
 
 TaskRegionBoxInterval::TaskRegionBoxInterval(const TaskRegionBoxInterval& src) :
-  TaskRegion(src), bbMin(src.bbMin), bbMax(src.bbMax)
+  TaskRegion(src), bbMin(src.bbMin), bbMax(src.bbMax),
+  slowDownRatio(src.slowDownRatio)
 {
 }
 
@@ -84,6 +121,21 @@ void TaskRegionBoxInterval::computeDX(const Task* task, double* dx,
     const double x_ub = x_des[i] + bbMax[i];
 
     dx[i] = dx_proj[i];
+
+    const double slowRange = 0.5*slowDownRatio*(bbMax[i]-bbMin[i]);
+
+    if (slowRange>0.0)
+    {
+      if ((x_curr[i] < x_lb + slowRange) && (dx[i] < 0.0))
+      {
+        dx[i] *= Math_clip((x_curr[i] - x_lb) / slowRange, 0.0, 1.0);
+      }
+      else if ((x_curr[i] > x_ub - slowRange) && (dx[i] > 0.0))
+      {
+        dx[i] *= Math_clip((x_ub - x_curr[i]) / slowRange, 0.0, 1.0);
+      }
+
+    }
 
       // Limit so that dx does not bring us out
       double x_next = x_curr[i] + dx[i];

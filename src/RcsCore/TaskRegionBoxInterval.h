@@ -48,12 +48,36 @@ namespace Rcs
  *
  *  This class enforces the task-space coordinates to be on or within the given
  *  bounding box. The motion inside the bounding box is computed to follow the
- *  gradient set by the \ref setTaskReprojection() method.
+ *  gradient set by the \ref setTaskReprojection() method. For parsing, the min
+ *  and max attributes can be specified with 1 value or as many values as the
+ *  dimension of the task. The "slowDownRatio" is the ratio of the component's
+ *  range in which the projected gradient is scaled down. At the border of the
+ *  interval, it is scaled to zero, and at the beggining of the slowDownRatio,
+ *  the scaling is 1. The default for the slowDownRatio is 0, which leads to an
+ *  abrupt velocity stop when getting to the interval's limit. Everything else
+ *  is gradually reducing the velocity in the interval when approaching the
+ *  limit, leading to a smoother motion. The velocity in the opposite direction
+ *  of the interval boundary is not scaled. If the value is specified outside
+ *  of the range [0...1] the constructor exits fatally.
+ *  Here is an illustration for a slowDownRatio of 0.5:
+ *
+ *    scaling
+ *    ^
+ *  1 |
+ *    |            __________
+ *    |           /          \
+ *    |          /            \
+ *    |         /              \
+ *    |        /                \
+ *    |       /                  \
+ *  0 o-------|----|----|----|----|-----> range
+ *           min       cntr    max
  *
  *  Example:
  *  \code
  *    <Task name="Position XYZ" controlVariable="XYZ" effector="EndEffector" >
- *      <TaskRegion type="BoxInterval" min="0.6 0 0.8" max="1 0.5 1.2" />
+ *      <TaskRegion type="BoxInterval" min="-0.1 -0.2 -0.05" max="0.1"
+ *                  slowDownRatio="0.5" />
  *    </Task>
  *  \endcode
  */
@@ -80,6 +104,7 @@ public:
 private:
 
   std::vector<double> bbMin, bbMax;
+  double slowDownRatio;
 };
 
 }
