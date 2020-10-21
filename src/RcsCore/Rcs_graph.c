@@ -1756,9 +1756,11 @@ double RcsGraph_checkJointSpeeds(const RcsGraph* self, const MatNd* dq,
     if ((sc<1.0) && (theEvilJoint!=NULL))
     {
       double sLim = theEvilJoint->speedLimit;
-      RMSG("Scaling speeds with %5.5f (due to joint \"%s\": speed=%5.6f   "
+      double toSI = RcsJoint_isRotation(theEvilJoint) ? 180.0/M_PI : 1.0;
+      RMSG("Scaling speeds with %5.5f (due to joint \"%s\": speed=%5.6f %s  "
            "limit=%5.6f)", sc, theEvilJoint->name,
-           fabs(dq->ele[theEvilIndex] / dt), sLim);
+           toSI*fabs(dq->ele[theEvilIndex] / dt),
+           RcsJoint_isRotation(theEvilJoint) ? "deg" : "m", toSI*sLim);
     }
   }
 
