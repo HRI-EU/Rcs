@@ -169,11 +169,32 @@ public:
    *         mode, false otherwise.
    */
   bool getGhostMode() const;
+
+  /*! \brief Sets / un-sets the GraphNode to / from transparent, with an
+   *         optional color given by matname. The default is no color. This
+   *         function applies to all models of the GraphNode.
+   */
   void setGhostMode(bool enabled, const std::string& matname="");
+
+  /*! \brief Sets / un-sets the GraphNode to / from wireframe display. This
+   *         function applies to all models of the GraphNode.
+   */
   void showWireframe(bool enabled);
+
+  /*! \brief Sets the overall GraphNode to be visible.
+   */
   void show();
+
+  /*! \brief Sets the overall GraphNode to be invisible.
+   */
   void hide();
+
+  /*! \brief Toggles the visibility of the overall GraphNode.
+   */
   void toggle();
+
+  /*! \brief Returns a pointer to the graph the GraphNode is associated with.
+   */
   const RcsGraph* getGraphPtr() const;
 
   /*! \brief Adds a BodyNode to the GraphNode.
@@ -210,11 +231,47 @@ public:
    * \return true for success, false otherwise.
    */
   bool removeBodyNode(const char* body);
+
+  /*! \brief Removes the first occurance of a BodyNode pointed to by bdyNode.
+   *         If it is NULL or can't be found in the GraphNode, nothing happens.
+   *
+   *  \param[in]   bdyNode   Pointer to BodyNode to be removed.
+   *  \return True if it was remoed, false otherwise.
+   */
   bool removeBodyNode(BodyNode* bdyNode);
 
+  /*! \brief Hides the graphics model of the first occurance of a BodyNode
+   *         corresponding to the body pointed to. If body is NULL or can't
+   *         be found in the GraphNode, nothing happens.
+   *
+   *  \param[in]   body   Pointer to body corresponding to the BodyNode
+   *               to be removed.
+   *  \return True if it was remoed, false otherwise.
+   */
   bool hideBodyNode(const RcsBody* body);
-  bool hideBodyNode(const char* body);
-  bool hideSubGraph(const char* body);
+
+  /*! \brief Hides the graphics model of the first occurance of a BodyNode
+   *         corresponding to the body name. If bodyName is NULL or a body
+   *         with this name cannot be found in the GraphNode, nothing happens.
+   *
+   *  \param[in]   bodyName   Name of body to be removed.
+   *  \return True if it was remoed, false otherwise.
+   */
+  bool hideBodyNode(const char* bodyName);
+
+  /*! \brief Hides the graphics model of the sub-graph that starts with the
+   *         BodyNode corresponding to the bodyName.
+   *
+   *  \return False if no body with bodyName was found in the graph,
+   *          true otherwise.
+   */
+  bool hideSubGraph(const char* bodyName);
+
+  /*! \brief Hides the graphics model of the sub-graph that starts with the
+   *         BodyNode corresponding to the body pointed to.
+   *
+   *  \return False if body wwas was not found in the graph, true otherwise.
+   */
   bool hideSubGraph(const RcsBody* body);
 
   /*! \brief Returns a pointer to the body node with the indicated name. If
@@ -260,10 +317,18 @@ public:
    */
   void setBodyTransformPtr(const RcsBody* body, const HTr* A_BI);
 
-
+  /*! \brief Enables or disables the updating of the mesh vertices before
+   *         rendering. Per default, it is disabled. If meshes deform at
+   *         run-time (e.g. during soft-body simulations), the vertices need
+   *         to be updated before rendering. This function is doing this for
+   *         all BodyNodes that have meshes attached.
+   *
+   *  \param[in] enabled   True for updating, false otherwise.
+   */
   void setDynamicMeshUpdate(bool enabled);
 
 protected:
+
   virtual bool callback(const osgGA::GUIEventAdapter& ea,
                         osgGA::GUIActionAdapter& aa);
 

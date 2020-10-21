@@ -780,7 +780,6 @@ bool GraphNode::hideBodyNode(const RcsBody* body)
     Rcs::BodyNode* node = (*li).get();
     if (node->body() == body)
     {
-      RLOG(3, "Hiding body node %s", body->name);
       node->displayGraphicsNode(false);
       return true;
     }
