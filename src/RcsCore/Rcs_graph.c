@@ -1698,6 +1698,23 @@ void RcsGraph_bodyTorque(const RcsGraph* self, const RcsBody* body,
 double RcsGraph_limitJointSpeeds(const RcsGraph* self, MatNd* dq, double dt,
                                  RcsStateType type)
 {
+  double sc = RcsGraph_checkJointSpeeds(self, dq, dt, type);
+
+  // Scale it down
+  if (sc < 1.0)
+  {
+    MatNd_constMulSelf(dq, sc);
+  }
+
+  return sc;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+double RcsGraph_checkJointSpeeds(const RcsGraph* self, const MatNd* dq,
+                                 double dt, RcsStateType type)
+{
   int dimension = (type == RcsStateFull) ? self->dof : self->nJ;
 
   RCHECK_MSG((dq->m==dimension && dq->n==1) || (dq->m==1 &&  dq->n==dimension),
@@ -1744,9 +1761,6 @@ double RcsGraph_limitJointSpeeds(const RcsGraph* self, MatNd* dq, double dt,
            fabs(dq->ele[theEvilIndex] / dt), sLim);
     }
   }
-
-  // Scale it down
-  MatNd_constMulSelf(dq, sc);
 
   return sc;
 }
