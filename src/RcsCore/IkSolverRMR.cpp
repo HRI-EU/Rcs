@@ -459,12 +459,18 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
     MatNd_postMulDiagSelf(this->NinvW, invWq);   // apply joint metric
   }
 
-  // Compute null space -> task space re-projection: dH^T J#
+#if 0
+  // Compute null space -> task space re-projection: (dH^T J#)^T
   MatNd_reshape(this->dHr, dHr->n, dHr->m);
   MatNd_reshape(dx_proj, 1, pinvJ->n);
   MatNd_mul(dx_proj, this->dHr, this->pinvJ);
   MatNd_reshape(this->dHr, dHr->n, dHr->m);
   MatNd_reshape(dx_proj, pinvJ->n, 1);
+#else
+  // Compute null space -> task space re-projection: J dH^T
+  MatNd_reshape(dx_proj, J->m, 1);
+  MatNd_mul(dx_proj, this->J, this->dHr);
+#endif
 
   // Here comes the sinister HACK
   for (size_t i=0; i<controller->getNumberOfTasks(); ++i)

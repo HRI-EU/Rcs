@@ -137,9 +137,8 @@ RcsBody* RcsBody_getLastChild(const RcsBody* body);
        BODY = RcsBody_depthFirstTraversalGetNext(BODY))
 
 /*! \ingroup RcsGraphTraversalFunctions
- *  \brief Loops through the given body and its children, depth-first. Body
- *         LASTBODY is the last body that should not be reached (outside the
- *         subtree).
+ *  \brief Loops through the given body and its children, depth-first. The
+ *         "next" bodies of body are not considered.
  */
 #define RCSBODY_TRAVERSE_BODIES(body) \
   for (RcsBody* BODY = (body), \

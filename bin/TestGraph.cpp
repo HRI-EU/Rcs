@@ -907,6 +907,15 @@ int main(int argc, char** argv)
         break;
       }
 
+      RcsGraph_writeDotFile(graph, "Traversal.dot");
+      std::string dottyCommand = "dotty Traversal.dot&";
+      int err = system(dottyCommand.c_str());
+
+      if (err == -1)
+      {
+        RMSG("Couldn't start dot file viewer!");
+      }
+
       RcsBody* traversalRoot = RcsGraph_getBodyByName(graph, rootBdy);
       RCHECK_MSG(traversalRoot, "Not found in graph: %s", rootBdy);
 

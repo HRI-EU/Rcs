@@ -1,0 +1,53 @@
+<!-- 
+  Copyright (c) 2020, Honda Research Institute Europe GmbH.
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  3. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  4. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER "AS IS" AND ANY EXPRESS OR
+  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT, INDIRECT,
+  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+  <Graph name="Default" >
+    
+    <Body name="RacketHolder" physics="kinematic" rigid_body_joints="0 0 0.5 0 0 0     0 1 1 1 0 0" >
+      <Shape type="CYLINDER" radius="0.025" length="0.1" color="PEWTER" graphics="true" physics="true" transform="0 0 -0.07 0 0 0" />
+    </Body>
+
+    <Body name="Racket" prev="RacketHolder" mass="1" physics="fixed" color="PEARL_S" >
+      <Shape type="CYLINDER" radius="0.1" length="0.02" material="bouncy" 
+             transform="0 0 -0.01 0 0 0" graphics="true" physics="true" />
+      <Shape type="FRAME" scale="0.1" />
+    </Body>
+
+    <Body name="ball" mass="0.01" physics="dynamic" color="RUBY_S" rigid_body_joints="0 0 0.75 0 0 0    0 1 1 1 1 1" >
+      <Shape type="SPHERE" radius="0.02" graphics="true" physics="true" material="bouncy" />
+      <Shape type="FRAME" scale="0.05" />
+    </Body>
+
+  </Graph>
+
