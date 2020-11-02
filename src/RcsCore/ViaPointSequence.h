@@ -74,6 +74,12 @@ class ViaPointSequence
 
 public:
 
+  enum ViaPointType
+  {
+    FifthOrderPolynomial = 0,
+    LinearAcceleration
+  };
+
   /*! \brief Constructor without initialization. All member pointers are
    *         initialized to NULL, and no heap memory is allocated. It is safe
    *         to call the destructor for an instance that has been constructed
@@ -84,12 +90,14 @@ public:
   /*! \brief Constructor with descriptor. The polynomial parameters will will
    *         be computed in the constructor.
    */
-  ViaPointSequence(const MatNd* viaDescr);
+  ViaPointSequence(const MatNd* viaDescr,
+                   ViaPointType type=FifthOrderPolynomial);
 
   /*! \brief Convenience constructor with string version of descriptor. If no
    *         descriptor can be destructed from it, the behavior is undefined.
    */
-  ViaPointSequence(const char* viaString);
+  ViaPointSequence(const char* viaString,
+                   ViaPointType type=FifthOrderPolynomial);
 
   /*! \brief Copy constructor. It does only member copying, no additional
    *         initialization.
@@ -231,6 +239,10 @@ public:
    */
   void computeTrajectoryPoint(double& xt, double& xt_dot, double& xt_ddot,
                               double t) const;
+  void computeTrajectoryPoint_poly5(double& xt, double& xt_dot, double& xt_ddot,
+                                    double t) const;
+  void computeTrajectoryPoint_linAcc(double& xt, double& xt_dot, double& xt_ddot,
+                                     double t) const;
 
   /*! \brief Calculates the position at time t
    *
@@ -300,6 +312,10 @@ public:
   bool gradientDxDvia(MatNd* dxdvia, unsigned int row, double t0, double t1, double dt) const;
   bool gradientDxDvia_a(MatNd* dxdvia, unsigned int row, double t0, double t1, double dt) const;
 
+  void setViaPointType(ViaPointType type);
+
+  ViaPointType getViaPointType() const;
+
   MatNd* viaDescr;
 
 protected:
@@ -324,7 +340,8 @@ protected:
   static int getConstraintIndex(const MatNd* desc, unsigned int row,
                                 unsigned int pos_vel_or_acc);
 
-  static void computeB(MatNd* B, const MatNd* vDesc);
+  static void computeB_poly5(MatNd* B, const MatNd* vDesc);
+  static void computeB_linAcc(MatNd* B, const MatNd* vDesc);
 
   /*! \brief Finds the first flag 7 constraint after start and reshapes the
    *         descriptor so that it is the last one. This function assumes a
@@ -336,6 +353,7 @@ protected:
 
   MatNd* B, *invB, *x, *p;
   bool computeAllParams;
+  ViaPointType viaType;
 
   // Vectors with dimension equal to the number of rows / columns of B
   std::vector<int> constraintType;

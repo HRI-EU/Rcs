@@ -65,6 +65,419 @@
 
 using namespace Rcs;
 
+
+/*******************************************************************************
+ * Vectors with vDescr->m-2 elements: The initial and final conditions are
+ * not represented. Each element of the index vector corresponds to the
+ * respective via point. If it is -1, the via point does not have a
+ * position / velocity / acceleration constraint. If it is a value >=0, it
+ * means the column index of the matrix B:
+ * pos/vel/accIdx[viaPoint] = column of B of the parameter
+ ******************************************************************************/
+static void computeDependentIndices(const MatNd* vDescr,
+                                    std::vector<int>& pIdx,
+                                    std::vector<int>& vIdx,
+                                    std::vector<int>& aIdx)
+{
+  // Indices 0 - 5 correspond to a5...0. Their indices in matrix B are the
+  // block (0,0,5,5). Therefore we start counting from 6, and skip the first
+  // via point.
+  int idxPi = 6;
+
+  for (size_t i=1; i<vDescr->m-1; i++)
+  {
+    unsigned int flag = lround(MatNd_get2(vDescr, i, 4));
+
+    // These flags ensure that we push the indices only once per row
+    bool posIsUpdated = false;
+    bool velIsUpdated = false;
+    bool accIsUpdated = false;
+
+    if (Math_isBitSet(flag, VIA_POS))
+    {
+      pIdx.push_back(idxPi);
+
+      if (!Math_isBitSet(flag, VIA_VEL))
+      {
+        vIdx.push_back(-1);
+        velIsUpdated = true;
+      }
+
+      if (!Math_isBitSet(flag, VIA_ACC))
+      {
+        aIdx.push_back(-1);
+        accIsUpdated = true;
+      }
+
+      idxPi++;
+    }
+
+    if (Math_isBitSet(flag, VIA_VEL))
+    {
+      vIdx.push_back(idxPi);
+
+      if (!Math_isBitSet(flag, VIA_POS))
+      {
+        pIdx.push_back(-1);
+        posIsUpdated = true;
+      }
+
+      if ((!Math_isBitSet(flag, VIA_ACC)) && (!accIsUpdated))
+      {
+        aIdx.push_back(-1);
+      }
+
+      idxPi++;
+    }
+
+    if (Math_isBitSet(flag, VIA_ACC))
+    {
+      aIdx.push_back(idxPi);
+
+      if ((!Math_isBitSet(flag, VIA_POS)) && (!posIsUpdated))
+      {
+        pIdx.push_back(-1);
+      }
+
+      if ((!Math_isBitSet(flag, VIA_VEL)) && (!velIsUpdated))
+      {
+        vIdx.push_back(-1);
+      }
+
+      idxPi++;
+    }
+
+  }
+
+}
+
+/*******************************************************************************
+ * Static function to compute the B matrix for linear acceleration segments.
+ ******************************************************************************/
+void ViaPointSequence::computeB_linAcc(MatNd* B, const MatNd* vDescr)
+{
+  double t_start = MatNd_get2(vDescr, 0, 0);
+  double t_end   = MatNd_get2(vDescr, vDescr->m-1, 0);
+  double duration = t_end - t_start;
+  double t_a = t_start + duration/3.0;
+  double t_b = t_start + 2.0*duration/3.0;
+
+  // Vectors with vDescr->m-2 elements: The initial and final conditions are
+  // not represented. Each element of the index vector corresponds to the
+  // respective via point. If it is -1, the via point does not have a
+  // position / velocity / acceleration constraint. If it is a value >=0, it
+  // means the column index of the matrix B:
+  // pos/vel/accIdx[viaPoint] = column of B of the parameter
+  std::vector<int> pIdx, vIdx, aIdx;
+  computeDependentIndices(vDescr, pIdx, vIdx, aIdx);
+
+  // From here on we construct the matrix B
+  size_t row = 0;
+
+  for (size_t i=0; i<vDescr->m; i++)
+  {
+    double t = MatNd_get2(vDescr, i, 0);
+    double t_sqr = t*t;
+    double t_pow3 = t_sqr*t;
+
+    unsigned int flag = lround(MatNd_get(vDescr, i, 4));
+
+    // Position polynomial elements first
+    if (Math_isBitSet(flag, VIA_POS))
+    {
+      MatNd_set(B, row, 0, 0.5*t_sqr);
+      MatNd_set(B, row, 1, t_pow3/6.0);
+      MatNd_set(B, row, 2, t > t_a ? pow(t-t_a, 3)/6.0 : 0.0);
+      MatNd_set(B, row, 3, t > t_b ? pow(t-t_b, 3)/6.0 : 0.0);
+      MatNd_set(B, row, 4, t);
+      MatNd_set(B, row, 5, 1.0);
+
+      // After the first via point, we need to fill the lower triangular
+      // sub-matrices according to the Lagrange Multipliers pi. Here we
+      // assume that the via-descriptor is sorted with rows being in
+      // increasing time.
+      for (size_t j=1; j<i; j++)
+      {
+        double t_base = MatNd_get(vDescr, j, 0);
+
+        if (t_base>=t)
+        {
+          MatNd_printCommentDigits("viaDesc", vDescr, 5);
+          RFATAL("Row %d, pivot %d: t_base: %f t: %f",
+                 (int) i, (int) j, t_base, t);
+        }
+
+        if (aIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, aIdx[j-1], t-t_base);
+        }
+
+        if (vIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, vIdx[j-1], pow(t-t_base, 2)/2.0);
+        }
+
+        if (pIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, pIdx[j-1], pow(t-t_base, 3)/6.0);
+        }
+
+      }
+
+      row++;
+    }
+
+    // Velocity polynomial elements second
+    if (Math_isBitSet(flag, VIA_VEL))
+    {
+      MatNd_set(B, row, 0, t);
+      MatNd_set(B, row, 1, 0.5*t_sqr);
+      MatNd_set(B, row, 2, t > t_a ? pow(t-t_a, 2)/2.0 : 0.0);
+      MatNd_set(B, row, 3, t > t_b ? pow(t-t_b, 2)/2.0 : 0.0);
+      MatNd_set(B, row, 4, 1.0);
+      MatNd_set(B, row, 5, 0.0);
+
+      // After the first via point, we need to fill the lower triangular
+      // sub-matrices according to the Lagrange Multipliers pi
+      for (size_t j=1; j<i; j++)
+      {
+        double t_base = MatNd_get(vDescr, j, 0);
+
+        if (t_base>=t)
+        {
+          MatNd_printCommentDigits("viaDesc", vDescr, 5);
+          RFATAL("Row %d, pivot %d: t_base: %f t: %f",
+                 (int) i, (int) j, t_base, t);
+        }
+
+        if (vIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, vIdx[j-1], t-t_base);
+        }
+
+        if (aIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, aIdx[j-1], 0.0);
+        }
+
+        if (pIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, pIdx[j-1], pow(t-t_base, 2)/2.0);
+        }
+
+      }
+
+      row++;
+    }
+
+
+    // Acceleration polynomial elements second
+    if (Math_isBitSet(flag, VIA_ACC))
+    {
+      MatNd_set(B, row, 0, 1.0);
+      MatNd_set(B, row, 1, t);
+      MatNd_set(B, row, 2, t > t_a ? t-t_a : 0.0);
+      MatNd_set(B, row, 3, t > t_b ? t-t_b : 0.0);
+      MatNd_set(B, row, 4, 0.0);
+      MatNd_set(B, row, 5, 0.0);
+
+      // After the first via point, we need to fill the lower triangular
+      // sub-matrices according to the Lagrange Multipliers pi
+      for (size_t j=1; j<i; j++)
+      {
+        double t_base = MatNd_get(vDescr, j, 0);
+
+        if (t_base>=t)
+        {
+          MatNd_printCommentDigits("viaDesc", vDescr, 5);
+          RFATAL("Row %d, pivot %d: t_base: %f t: %f",
+                 (int) i, (int) j, t_base, t);
+        }
+
+        if (pIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, pIdx[j-1], t-t_base);
+        }
+
+        if (vIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, vIdx[j-1], 0.0);
+        }
+
+        if (aIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, aIdx[j-1], 0.0);
+        }
+
+      }
+
+      row++;
+    }
+
+  }   // for(size_t i=0;i<vDescr->m;i++)
+
+}
+
+/*******************************************************************************
+ * Static function to compute the B matrix.
+ ******************************************************************************/
+void ViaPointSequence::computeB_poly5(MatNd* B, const MatNd* vDescr)
+{
+  // Vectors with vDescr->m-2 elements: The initial and final conditions are
+  // not represented. Each element of the index vector corresponds to the
+  // respective via point. If it is -1, the via point does not have a
+  // position / velocity / acceleration constraint. If it is a value >=0, it
+  // means the column index of the matrix B:
+  // pos/vel/accIdx[viaPoint] = column of B of the parameter
+  std::vector<int> pIdx, vIdx, aIdx;
+  computeDependentIndices(vDescr, pIdx, vIdx, aIdx);
+
+  // From here on we construct the matrix B
+  size_t row = 0;
+
+  for (size_t i=0; i<vDescr->m; i++)
+  {
+    double t = MatNd_get2(vDescr, i, 0);
+    double t2 = t*t;
+    double t3 = t2*t;
+    double t4 = t2*t2;
+    double t5 = t3*t2;
+
+    unsigned int flag = lround(MatNd_get(vDescr, i, 4));
+
+    // Position polynomial elements first
+    if (Math_isBitSet(flag, VIA_POS))
+    {
+      MatNd_set(B, row, 0, t5);
+      MatNd_set(B, row, 1, t4);
+      MatNd_set(B, row, 2, t3);
+      MatNd_set(B, row, 3, t2);
+      MatNd_set(B, row, 4, t);
+      MatNd_set(B, row, 5, 1.0);
+
+      // After the first via point, we need to fill the lower triangular
+      // sub-matrices according to the Lagrange Multipliers pi. Here we
+      // assume that the via-descriptor is sorted with rows being in
+      // increasing time.
+      for (size_t j=1; j<i; j++)
+      {
+        double t_base = MatNd_get(vDescr, j, 0);
+
+        if (t_base>=t)
+        {
+          MatNd_printCommentDigits("viaDesc", vDescr, 5);
+          RFATAL("Row %d, pivot %d: t_base: %f t: %f",
+                 (int) i, (int) j, t_base, t);
+        }
+
+        if (pIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, pIdx[j-1], pow(t-t_base, 5));
+        }
+
+        if (vIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, vIdx[j-1], pow(t-t_base, 4));
+        }
+
+        if (aIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, aIdx[j-1], pow(t-t_base, 3));
+        }
+
+      }
+
+      row++;
+    }
+
+    // Velocity polynomial elements second
+    if (Math_isBitSet(flag, VIA_VEL))
+    {
+      MatNd_set(B, row, 0, 5.0*t4);
+      MatNd_set(B, row, 1, 4.0*t3);
+      MatNd_set(B, row, 2, 3.0*t2);
+      MatNd_set(B, row, 3, 2.0*t);
+      MatNd_set(B, row, 4, 1.0);
+
+      // After the first via point, we need to fill the lower triangular
+      // sub-matrices according to the Lagrange Multipliers pi
+      for (size_t j=1; j<i; j++)
+      {
+        double t_base = MatNd_get(vDescr, j, 0);
+
+        if (t_base>=t)
+        {
+          MatNd_printCommentDigits("viaDesc", vDescr, 5);
+          RFATAL("Row %d, pivot %d: t_base: %f t: %f",
+                 (int) i, (int) j, t_base, t);
+        }
+
+        if (vIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, vIdx[j-1], 4.0*pow(t-t_base, 3));
+        }
+
+        if (pIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, pIdx[j-1], 5.0*pow(t-t_base, 4));
+        }
+
+        if (aIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, aIdx[j-1], 3.0*pow(t-t_base, 2));
+        }
+
+      }
+
+      row++;
+    }
+
+
+    // Acceleration polynomial elements second
+    if (Math_isBitSet(flag, VIA_ACC))
+    {
+      MatNd_set(B, row, 0, 20.0*t3);
+      MatNd_set(B, row, 1, 12.0*t2);
+      MatNd_set(B, row, 2, 6.0*t);
+      MatNd_set(B, row, 3, 2.0);
+
+      // After the first via point, we need to fill the lower triangular
+      // sub-matrices according to the Lagrange Multipliers pi
+      for (size_t j=1; j<i; j++)
+      {
+        double t_base = MatNd_get(vDescr, j, 0);
+
+        if (t_base>=t)
+        {
+          MatNd_printCommentDigits("viaDesc", vDescr, 5);
+          RFATAL("Row %d, pivot %d: t_base: %f t: %f",
+                 (int) i, (int) j, t_base, t);
+        }
+
+        if (aIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, aIdx[j-1], 6.0*(t-t_base));
+        }
+
+        if (vIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, vIdx[j-1], 12.0*pow(t-t_base, 2));
+        }
+
+        if (pIdx[j-1] != -1)
+        {
+          MatNd_set(B, row, pIdx[j-1], 20.0*pow(t-t_base, 3));
+        }
+
+      }
+
+      row++;
+    }
+
+  }   // for(size_t i=0;i<vDescr->m;i++)
+
+}
+
 /*******************************************************************************
  *
  ******************************************************************************/
@@ -82,15 +495,17 @@ static inline void getUniqueFileName(char* fileName)
  *
  ******************************************************************************/
 ViaPointSequence::ViaPointSequence() :
-  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL), computeAllParams(true)
+  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL), computeAllParams(true),
+  viaType(FifthOrderPolynomial)
 {
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-ViaPointSequence::ViaPointSequence(const MatNd* viaDescr_) :
-  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL), computeAllParams(true)
+ViaPointSequence::ViaPointSequence(const MatNd* viaDescr_, ViaPointType type) :
+  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL), computeAllParams(true),
+  viaType(type)
 {
   init(viaDescr_);
 }
@@ -98,8 +513,9 @@ ViaPointSequence::ViaPointSequence(const MatNd* viaDescr_) :
 /*******************************************************************************
  *
  ******************************************************************************/
-ViaPointSequence::ViaPointSequence(const char* viaString) :
-  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL), computeAllParams(true)
+ViaPointSequence::ViaPointSequence(const char* viaString, ViaPointType type) :
+  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL), computeAllParams(true),
+  viaType(type)
 {
   MatNd* tmp = MatNd_createFromString(viaString);
   init(tmp);
@@ -123,6 +539,7 @@ ViaPointSequence::~ViaPointSequence()
  ******************************************************************************/
 ViaPointSequence::ViaPointSequence(const ViaPointSequence& copyFromMe):
   computeAllParams(copyFromMe.computeAllParams),
+  viaType(copyFromMe.viaType),
   constraintType(copyFromMe.constraintType),
   viaTime(copyFromMe.viaTime)
 {
@@ -149,6 +566,7 @@ ViaPointSequence& ViaPointSequence::operator=(const ViaPointSequence& rhs)
   this->x = MatNd_realloc(this->x, rhs.x->m, rhs.x->n);
   this->p = MatNd_realloc(this->p, rhs.p->m, rhs.p->n);
   this->computeAllParams = rhs.computeAllParams;
+  this->viaType = rhs.viaType;
 
   MatNd_copy(this->viaDescr, rhs.viaDescr);
   MatNd_copy(this->B, rhs.B);
@@ -343,8 +761,21 @@ bool ViaPointSequence::init(const MatNd* viaDescr_)
   this->B = MatNd_realloc(this->B, nConstraints, nConstraints);
   RCHECK(this->B);
   MatNd_setZero(this->B);
-  computeB(this->B, this->viaDescr);
 
+  switch (viaType)
+  {
+    case FifthOrderPolynomial:
+      computeB_poly5(this->B, this->viaDescr);
+      break;
+
+    case LinearAcceleration:
+      computeB_linAcc(this->B, this->viaDescr);
+      break;
+
+    default:
+      RFATAL("No via point type %d", viaType);
+      break;
+  }
 
   // Delete arrays to make sure the init function can be called several times.
   this->invB = MatNd_realloc(this->invB, this->B->m, this->B->n);
@@ -362,236 +793,6 @@ bool ViaPointSequence::init(const MatNd* viaDescr_)
   MatNd_mul(this->p, this->invB, this->x);
 
   return (det==0.0) ? false : true;
-}
-
-/*******************************************************************************
- * Static function to compute the B matrix.
- ******************************************************************************/
-void ViaPointSequence::computeB(MatNd* B, const MatNd* vDescr)
-{
-  // Vectors with vDescr->m-2 elements: The initial and final conditions are
-  // not represented. Each element of the index vector corresponds to the
-  // respective via point. If it is -1, the via point does not have a
-  // position / velocity / acceleration constraint. If it is a value >=0, it
-  // means the column index of the matrix B:
-  // pos/vel/accIdx[viaPoint] = column of B of the parameter
-  std::vector<int> pIdx, vIdx, aIdx;
-
-  // Indices 0 - 5 correspond to a5...0. Their indices in matrix B are the
-  // block (0,0,5,5). Therefore we start counting from 6, and skip the first
-  // via point.
-  int idxPi = 6;
-
-  for (size_t i=1; i<vDescr->m-1; i++)
-  {
-    unsigned int flag = lround(MatNd_get2(vDescr, i, 4));
-
-    // These flags ensure that we push the indices only once per row
-    bool posIsUpdated = false;
-    bool velIsUpdated = false;
-    bool accIsUpdated = false;
-
-    if (Math_isBitSet(flag, VIA_POS))
-    {
-      pIdx.push_back(idxPi);
-
-      if (!Math_isBitSet(flag, VIA_VEL))
-      {
-        vIdx.push_back(-1);
-        velIsUpdated = true;
-      }
-
-      if (!Math_isBitSet(flag, VIA_ACC))
-      {
-        aIdx.push_back(-1);
-        accIsUpdated = true;
-      }
-
-      idxPi++;
-    }
-
-    if (Math_isBitSet(flag, VIA_VEL))
-    {
-      vIdx.push_back(idxPi);
-
-      if (!Math_isBitSet(flag, VIA_POS))
-      {
-        pIdx.push_back(-1);
-        posIsUpdated = true;
-      }
-
-      if ((!Math_isBitSet(flag, VIA_ACC)) && (!accIsUpdated))
-      {
-        aIdx.push_back(-1);
-      }
-
-      idxPi++;
-    }
-
-    if (Math_isBitSet(flag, VIA_ACC))
-    {
-      aIdx.push_back(idxPi);
-
-      if ((!Math_isBitSet(flag, VIA_POS)) && (!posIsUpdated))
-      {
-        pIdx.push_back(-1);
-      }
-
-      if ((!Math_isBitSet(flag, VIA_VEL)) && (!velIsUpdated))
-      {
-        vIdx.push_back(-1);
-      }
-
-      idxPi++;
-    }
-
-  }
-
-
-  // From here on we construct the matrix B
-  size_t row = 0;
-
-  for (size_t i=0; i<vDescr->m; i++)
-  {
-    double t = MatNd_get2(vDescr, i, 0);
-    double t2 = t*t;
-    double t3 = t2*t;
-    double t4 = t2*t2;
-    double t5 = t3*t2;
-
-    unsigned int flag = lround(MatNd_get(vDescr, i, 4));
-
-    // Position polynomial elements first
-    if (Math_isBitSet(flag, VIA_POS))
-    {
-      MatNd_set(B, row, 0, t5);
-      MatNd_set(B, row, 1, t4);
-      MatNd_set(B, row, 2, t3);
-      MatNd_set(B, row, 3, t2);
-      MatNd_set(B, row, 4, t);
-      MatNd_set(B, row, 5, 1.0);
-
-      // After the first via point, we need to fill the lower triangular
-      // sub-matrices according to the Lagrange Multipliers pi. Here we
-      // assume that the via-descriptor is sorted with rows being in
-      // increasing time.
-      for (size_t j=1; j<i; j++)
-      {
-        double t_base = MatNd_get(vDescr, j, 0);
-
-        if (t_base>=t)
-        {
-          MatNd_printCommentDigits("viaDesc", vDescr, 5);
-          RFATAL("Row %d, pivot %d: t_base: %f t: %f",
-                 (int) i, (int) j, t_base, t);
-        }
-
-        if (pIdx[j-1] != -1)
-        {
-          MatNd_set(B, row, pIdx[j-1], pow(t-t_base, 5));
-        }
-
-        if (vIdx[j-1] != -1)
-        {
-          MatNd_set(B, row, vIdx[j-1], pow(t-t_base, 4));
-        }
-
-        if (aIdx[j-1] != -1)
-        {
-          MatNd_set(B, row, aIdx[j-1], pow(t-t_base, 3));
-        }
-
-      }
-
-      row++;
-    }
-
-    // Velocity polynomial elements second
-    if (Math_isBitSet(flag, VIA_VEL))
-    {
-      MatNd_set(B, row, 0, 5.0*t4);
-      MatNd_set(B, row, 1, 4.0*t3);
-      MatNd_set(B, row, 2, 3.0*t2);
-      MatNd_set(B, row, 3, 2.0*t);
-      MatNd_set(B, row, 4, 1.0);
-
-      // After the first via point, we need to fill the lower triangular
-      // sub-matrices according to the Lagrange Multipliers pi
-      for (size_t j=1; j<i; j++)
-      {
-        double t_base = MatNd_get(vDescr, j, 0);
-
-        if (t_base>=t)
-        {
-          MatNd_printCommentDigits("viaDesc", vDescr, 5);
-          RFATAL("Row %d, pivot %d: t_base: %f t: %f",
-                 (int) i, (int) j, t_base, t);
-        }
-
-        if (vIdx[j-1] != -1)
-        {
-          MatNd_set(B, row, vIdx[j-1], 4.0*pow(t-t_base, 3));
-        }
-
-        if (pIdx[j-1] != -1)
-        {
-          MatNd_set(B, row, pIdx[j-1], 5.0*pow(t-t_base, 4));
-        }
-
-        if (aIdx[j-1] != -1)
-        {
-          MatNd_set(B, row, aIdx[j-1], 3.0*pow(t-t_base, 2));
-        }
-
-      }
-
-      row++;
-    }
-
-
-    // Acceleration polynomial elements second
-    if (Math_isBitSet(flag, VIA_ACC))
-    {
-      MatNd_set(B, row, 0, 20.0*t3);
-      MatNd_set(B, row, 1, 12.0*t2);
-      MatNd_set(B, row, 2, 6.0*t);
-      MatNd_set(B, row, 3, 2.0);
-
-      // After the first via point, we need to fill the lower triangular
-      // sub-matrices according to the Lagrange Multipliers pi
-      for (size_t j=1; j<i; j++)
-      {
-        double t_base = MatNd_get(vDescr, j, 0);
-
-        if (t_base>=t)
-        {
-          MatNd_printCommentDigits("viaDesc", vDescr, 5);
-          RFATAL("Row %d, pivot %d: t_base: %f t: %f",
-                 (int) i, (int) j, t_base, t);
-        }
-
-        if (aIdx[j-1] != -1)
-        {
-          MatNd_set(B, row, aIdx[j-1], 6.0*(t-t_base));
-        }
-
-        if (vIdx[j-1] != -1)
-        {
-          MatNd_set(B, row, vIdx[j-1], 12.0*pow(t-t_base, 2));
-        }
-
-        if (pIdx[j-1] != -1)
-        {
-          MatNd_set(B, row, pIdx[j-1], 20.0*pow(t-t_base, 3));
-        }
-
-      }
-
-      row++;
-    }
-
-  }   // for(size_t i=0;i<vDescr->m;i++)
-
 }
 
 /*******************************************************************************
@@ -1002,27 +1203,29 @@ void ViaPointSequence::gnuplot(double t0, double t1, double dt, int flag) const
   char gpCmdPos[256];
   sprintf(gpCmdPos,
           "set grid\nplot \"%s\" u 1:2 w l title \"x\", \"%s\" "
-          "u 1:2 w p pointsize 3 title \"x_via\"\n", fTraj, fdataPos);
+          "u 1:2 w p pointsize 3 title \"x_{via}\"\n", fTraj, fdataPos);
 
   char gpCmdVel[256];
   sprintf(gpCmdVel,
-          "set grid\nplot \"%s\" u 1:3 w l title \"x_dot\", "
-          "\"%s\" u 1:2  title \"x_dot_via\" w p pointsize 3\n",
+          "set grid\nplot \"%s\" u 1:3 w l title \"x_{dot}\", "
+          "\"%s\" u 1:2  title \"x_{dot_via}\" w p pointsize 3\n",
           fTraj, fdataVel);
+
+  RLOG(0, "%s", gpCmdVel);
 
   char gpCmdAcc[256];
   sprintf(gpCmdAcc,
-          "set grid\nplot \"%s\" u 1:4 w l title \"x_ddot\", "
-          "\"%s\" u 1:2  title \"x_ddot_via\" w p pointsize 3\n",
+          "set grid\nplot \"%s\" u 1:4 w l title \"x_{ddot}\", "
+          "\"%s\" u 1:2  title \"x_{ddot_via}\" w p pointsize 3\n",
           fTraj, fdataAcc);
 
   char gpCmd[512];
   sprintf(gpCmd,
           "set grid\nplot \"%s\" u 1:2 w l title \"x\", \"%s\" u 1:3 w l"
-          " title \"x_dot\", \"%s\" u 1:4 w l title \"x_ddot\", \"%s\" "
-          "u 1:2 w p pointsize 3 title \"x_via\", \"%s\" u 1:2 w p pointsize"
-          " 3 title \"x_dot_via\", \"%s\" u 1:2 w p pointsize 3 title"
-          " \"x_ddot_via\"\n",
+          " title \"x_{dot}\", \"%s\" u 1:4 w l title \"x_{ddot}\", \"%s\" "
+          "u 1:2 w p pointsize 3 title \"x_{via}\", \"%s\" u 1:2 w p pointsize"
+          " 3 title \"x_{dot,via}\", \"%s\" u 1:2 w p pointsize 3 title"
+          " \"x_{ddot,via}\"\n",
           fTraj, fTraj, fTraj, fdataPos, fdataVel, fdataAcc);
 
   char fAll[maxFileNameSize], fPos[maxFileNameSize], fVel[maxFileNameSize],
@@ -1132,6 +1335,29 @@ void ViaPointSequence::computeTrajectory(MatNd* traj, double t0, double t1,
 void ViaPointSequence::computeTrajectoryPoint(double& xt, double& xt_dot,
                                               double& xt_ddot, double t) const
 {
+
+  switch (viaType)
+  {
+    case FifthOrderPolynomial:
+      computeTrajectoryPoint_poly5(xt, xt_dot, xt_ddot, t);
+      break;
+
+    case LinearAcceleration:
+      computeTrajectoryPoint_linAcc(xt, xt_dot, xt_ddot, t);
+      break;
+
+    default:
+      RFATAL("No via point type %d", viaType);
+      break;
+  }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void ViaPointSequence::computeTrajectoryPoint_poly5(double& xt, double& xt_dot,
+                                                    double& xt_ddot, double t) const
+{
   //if ((this->viaDescr->m>0) && (t>=MatNd_get(this->viaDescr, this->viaDescr->m-1, 0)))
   //{
   //  xt = MatNd_get(this->viaDescr, this->viaDescr->m-1, 1);
@@ -1200,6 +1426,94 @@ void ViaPointSequence::computeTrajectoryPoint(double& xt, double& xt_dot,
 /*******************************************************************************
  *
  ******************************************************************************/
+void ViaPointSequence::computeTrajectoryPoint_linAcc(double& xt, double& xt_dot,
+                                                     double& xt_ddot, double t) const
+{
+  //if ((this->viaDescr->m>0) && (t>=MatNd_get(this->viaDescr, this->viaDescr->m-1, 0)))
+  //{
+  //  xt = MatNd_get(this->viaDescr, this->viaDescr->m-1, 1);
+  //  xt_dot = MatNd_get(this->viaDescr, this->viaDescr->m-1, 2);
+  //  xt_ddot = MatNd_get(this->viaDescr, this->viaDescr->m-1, 3);
+  //  return;
+  //}
+
+  double t_start = MatNd_get2(this->viaDescr, 0, 0);
+  double t_end   = MatNd_get2(this->viaDescr, this->viaDescr->m-1, 0);
+  double duration = t_end - t_start;
+  double ta = t_start + duration/3.0;
+  double tb = t_start + 2.0*duration/3.0;
+
+
+  const double t2 = t*t;
+  const double t3 = t2*t;
+
+
+  const double a0 = MatNd_get2(p, 0, 0);
+  const double j0 = MatNd_get2(p, 1, 0);
+  const double ja = MatNd_get2(p, 2, 0);
+  const double jb = MatNd_get2(p, 3, 0);
+  const double v0 = MatNd_get2(p, 4, 0);
+  const double x0 = MatNd_get2(p, 5, 0);
+
+
+  // Trajectory according to boundary constraints
+  xt = 0.5*a0*t2 + j0*t3/6.0 + x0*t + x0;
+  xt_dot  = a0*t + 0.5*j0*t2 + v0;
+  xt_ddot = a0 + j0*t;
+
+  if (t > ta)
+  {
+    xt += ja*pow(t-ta,3)/6.0;
+    xt_dot += ja*pow(t-ta,2)/2.0;
+    xt_ddot += ja*(t-ta);
+  }
+
+  if (t > tb)
+  {
+    xt += jb*pow(t-tb,3)/6.0;
+    xt_dot += jb*pow(t-tb,2)/2.0;
+    xt_ddot += jb*(t-tb);
+  }
+
+  // Lagrange Multiplier contribution. We spare out the first and last 3
+  // indices, since they correspond to the initial and target boundary
+  // conditions.
+  for (size_t j=3; j<this->constraintType.size()-3; j++)
+  {
+    const double dt = t-this->viaTime[j] > 0.0 ? t-this->viaTime[j] : 0.0;
+
+    if (dt > 0.0)
+    {
+      const double dt2 = dt*dt;
+      const double dt3 = dt2*dt;
+      const double param = MatNd_get(p, j+3, 0);
+
+      if (this->constraintType[j]==VIA_ACC)
+      {
+        xt      += param*dt;
+        xt_dot  += 0.0;
+        xt_ddot += 0.0;
+      }
+      else if (this->constraintType[j]==VIA_VEL)
+      {
+        xt      += param*dt/2.0;
+        xt_dot  += param*dt;
+        xt_ddot += 0.0;
+      }
+      else if (this->constraintType[j]==VIA_POS)
+      {
+        xt      += param*dt3/6.0;
+        xt_dot  += param*dt2/2.0;
+        xt_ddot += param*dt;
+      }
+    }
+
+  }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 double ViaPointSequence::computeTrajectoryPos(double t) const
 {
   if (t >= MatNd_get(this->viaDescr, this->viaDescr->m-1, 0))
@@ -1207,7 +1521,7 @@ double ViaPointSequence::computeTrajectoryPos(double t) const
     return MatNd_get(this->viaDescr, this->viaDescr->m-1, 1);
   }
 
-#if 0
+#if 1
   double xt, xt_dot, xt_ddot;
   computeTrajectoryPoint(xt, xt_dot, xt_ddot, t);
 #else
@@ -1246,6 +1560,7 @@ double ViaPointSequence::computeTrajectoryAcc(double t) const
  ******************************************************************************/
 double ViaPointSequence::computeTrajectoryJerk(double t) const
 {
+  RFATAL("FIXME");
   const double t2 = t*t;
   const double a5 = MatNd_get(p, 0, 0);
   const double a4 = MatNd_get(p, 1, 0);
@@ -1291,6 +1606,23 @@ void ViaPointSequence::print() const
   unsigned int nConstraintsPos = 0;
   unsigned int nConstraintsVel = 0;
   unsigned int nConstraintsAcc = 0;
+
+  printf("ViaPointType is ");
+
+  switch (viaType)
+  {
+    case FifthOrderPolynomial:
+      printf("FifthOrderPolynomial\n");
+      break;
+
+    case LinearAcceleration:
+      printf("LinearAcceleration\n");
+      break;
+
+    default:
+      RFATAL("Undefined");
+      break;
+  }
 
   for (unsigned int i=0; i<this->constraintType.size(); i++)
   {
@@ -1822,6 +2154,22 @@ void ViaPointSequence::setTurboMode(bool enable)
 bool ViaPointSequence::getTurboMode() const
 {
   return !this->computeAllParams;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void ViaPointSequence::setViaPointType(ViaPointType type)
+{
+  this->viaType = type;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+ViaPointSequence::ViaPointType ViaPointSequence::getViaPointType() const
+{
+  return this->viaType;
 }
 
 
