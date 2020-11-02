@@ -421,6 +421,7 @@ int main(int argc, char** argv)
       bool editMode = argP.hasArgument("-edit", "Start in xml edit mode "
                                        "(no Qt Gui)");
       bool playBVH = argP.hasArgument("-bvh", "Play bvh file");
+      bool noHud = argP.hasArgument("-noHud", "Don't show HUD");
 
       Rcs_addResourcePath(directory);
 
@@ -535,9 +536,11 @@ int main(int argc, char** argv)
           viewer->add(new Rcs::GraphNode(graph2, resizeable));
         }
 
-
-        hud = new Rcs::HUD();
-        viewer->add(hud);
+        if (!noHud)
+        {
+          hud = new Rcs::HUD();
+          viewer->add(hud);
+        }
 
         kc = new Rcs::KeyCatcher();
         viewer->add(kc);
