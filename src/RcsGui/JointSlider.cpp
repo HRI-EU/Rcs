@@ -92,7 +92,7 @@ JointSlider::JointSlider(double lower_bound,
   t1->setPipeWidth(4);
   t1->setFont(QFont("Helvetica", 10));
   t1->setAlarmLevel(0.25 * (_lb));
-#if QWT_VERSION < 0x060103
+#if QWT_VERSION < 0x060102
   t1->setOrientation(Qt::Horizontal, QwtThermo::NoScale);
   t1->setRange(_zp, _lb);
 #else
@@ -112,7 +112,7 @@ JointSlider::JointSlider(double lower_bound,
   t2->setFont(QFont("Helvetica", 10));
   t2->setAlarmLevel(0.75 * _ub);
 
-#if QWT_VERSION < 0x060103
+#if QWT_VERSION < 0x060102
   t2->setOrientation(Qt::Horizontal, QwtThermo::NoScale);
   t2->setRange(_zp, _ub);
 #else
@@ -185,7 +185,3 @@ QwtSlider* JointSlider::getSlider()
 {
   return sl->getSlider();
 }
-
-
-
-

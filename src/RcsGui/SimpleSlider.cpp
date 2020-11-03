@@ -62,7 +62,7 @@ SimpleSlider::SimpleSlider(double lowerBound,
 
   qwtslider = new QwtSlider(this);
   qwtslider->setFixedWidth(200);
-#if QWT_VERSION < 0x060103
+#if QWT_VERSION < 0x060102
   qwtslider->setRange(lowerBound*scaleFactor, upperBound*scaleFactor,
                       0.01, // Fraction of the interval length
                       10); // Page size (?)

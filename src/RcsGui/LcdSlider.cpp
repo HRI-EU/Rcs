@@ -140,7 +140,7 @@ void LcdSlider::init(double lowerBound,
     ub = valueCurr + 0.5*(ub-lb);
   }
 
-#if QWT_VERSION < 0x060103
+#if QWT_VERSION < 0x060102
   this->slider->setRange(lb, ub,
                          ticSize * 0.1, // Fraction of the interval length
                          10);   // Page size (?)
@@ -450,7 +450,7 @@ void LcdSlider::updateControls()
   {
     double q_des = getSliderValue();
     double diff2Zero = (this->zeroPos - q_des);
-#if QWT_VERSION < 0x060103
+#if QWT_VERSION < 0x060102
     double minDecrease = .02*fabs(this->slider->maxValue() - this->slider->minValue())/this->scaleFactor;
 #else
     double minDecrease = .02*fabs(this->slider->upperBound() - this->slider->lowerBound()) / this->scaleFactor;
@@ -484,7 +484,7 @@ void LcdSlider::stopMouseInteraction()
 
 void LcdSlider::setLowerBound(double value)
 {
-#if QWT_VERSION < 0x060103
+#if QWT_VERSION < 0x060102
   slider->setRange(value*this->scaleFactor, slider->maxValue());
 #else
   slider->setLowerBound(value*this->scaleFactor);
@@ -493,7 +493,7 @@ void LcdSlider::setLowerBound(double value)
 
 void LcdSlider::setUpperBound(double value)
 {
-#if QWT_VERSION < 0x060103
+#if QWT_VERSION < 0x060102
   slider->setRange(slider->minValue(), value*this->scaleFactor);
 #else
   slider->setUpperBound(value*this->scaleFactor);
