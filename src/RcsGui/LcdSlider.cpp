@@ -150,7 +150,16 @@ void LcdSlider::init(double lowerBound,
   //this->slider->setFixedWidth(400);
   this->slider->setPageSteps(10);
   this->slider->setOrientation(Qt::Horizontal);
-  //this->slider->setTotalSteps(100);
+
+  // 1cm for linear units, 1 deg for angular ones
+  if (scaleFactor==1.0)
+  {
+    this->slider->setTotalSteps(100*round((ub-lb)));
+  }
+  else
+  {
+    this->slider->setTotalSteps(round((ub-lb)));
+  }
 #endif
   this->slider->setValue(valueCurr);
   connect(this->slider, SIGNAL(valueChanged(double)), SLOT(updateCmd()));
