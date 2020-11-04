@@ -977,6 +977,22 @@ double RcsBody_distance(const RcsBody* b1,
 
   double d_closest = Math_infinity();
   double d, p1[3], p2[3], ni[3];
+
+  if (cp1 != NULL)
+  {
+    Vec3d_setElementsTo(cp1, DBL_MAX);
+  }
+
+  if (cp2 != NULL)
+  {
+    Vec3d_setElementsTo(cp2, -DBL_MAX);
+  }
+
+  if (n != NULL)
+  {
+    Vec3d_setUnitVector(n, 2);
+  }
+
   RcsShape** sh1Ptr = &b1->shape[0];
   RcsShape** sh2Ptr = &b2->shape[0];
 
