@@ -294,7 +294,11 @@ void RcsCollisionModel_fprintCollisions(FILE* fd, const RcsCollisionMdl* self,
         fprintf(stderr, " (points to \"%s\")", gPtr ? gPtr->name : "NULL");
       }
 
-      fprintf(stderr, "\tdistance = %.6f\n", (*pPtr)->distance);
+      fprintf(stderr, "\tdistance = %.6f   ", (*pPtr)->distance);
+      const double* cp1 = (*pPtr)->cp1;
+      const double* cp2 = (*pPtr)->cp2;
+      fprintf(stderr, "cp1=%.4f %.4f %.4f", cp1[0], cp1[1], cp1[2]);
+      fprintf(stderr, "   cp2=%.4f %.4f %.4f\n", cp2[0], cp2[1], cp2[2]);
     }
 
     pPtr++;
@@ -336,23 +340,23 @@ void RcsCollisionModel_fprint(FILE* fd, const RcsCollisionMdl* self)
     int k = 0;
     while (*pPtr)
     {
-      fprintf(stderr, "\t[%d]   %s", k, (*pPtr)->b1 ? (*pPtr)->b1->name : "NULL");
+      fprintf(fd, "\t[%d]   %s", k, (*pPtr)->b1 ? (*pPtr)->b1->name : "NULL");
 
       if ((*pPtr)->b1 && STRNEQ((*pPtr)->b1->name, "GenericBody", 11))
       {
         RcsBody* gPtr = (RcsBody*)(*pPtr)->b1->extraInfo;
-        fprintf(stderr, " (points to \"%s\")", gPtr ? gPtr->name : "NULL");
+        fprintf(fd, " (points to \"%s\")", gPtr ? gPtr->name : "NULL");
       }
 
-      fprintf(stderr, "\t\t%s", (*pPtr)->b2 ? (*pPtr)->b2->name : "NULL");
+      fprintf(fd, "\t\t%s", (*pPtr)->b2 ? (*pPtr)->b2->name : "NULL");
 
       if ((*pPtr)->b2 && STRNEQ((*pPtr)->b2->name, "GenericBody", 11))
       {
         RcsBody* gPtr = (RcsBody*)(*pPtr)->b2->extraInfo;
-        fprintf(stderr, " (points to \"%s\")", gPtr ? gPtr->name : "NULL");
+        fprintf(fd, " (points to \"%s\")", gPtr ? gPtr->name : "NULL");
       }
 
-      fprintf(stderr, "\n\tdistance = %.6f   weight=%.3f   dThreshold=%.3f\n",
+      fprintf(fd, "\n\tdistance = %.6f   weight=%.3f   dThreshold=%.3f\n",
               (*pPtr)->distance, (*pPtr)->weight, (*pPtr)->dThreshold);
 
       pPtr++;
@@ -890,23 +894,23 @@ void RcsPair_printCollisionModel(FILE* fd, RcsPair** pPtr)
     int k = 0;
     while (*pPtr)
     {
-      fprintf(stderr, "\t[%d]   %s", k, (*pPtr)->b1->name);
+      fprintf(fd, "\t[%d]   %s", k, (*pPtr)->b1->name);
 
       if (STRNEQ((*pPtr)->b1->name, "GenericBody", 11))
       {
         RcsBody* gPtr = (RcsBody*)(*pPtr)->b1->extraInfo;
-        fprintf(stderr, " (points to \"%s\")", gPtr ? gPtr->name : "NULL");
+        fprintf(fd, " (points to \"%s\")", gPtr ? gPtr->name : "NULL");
       }
 
-      fprintf(stderr, "\t\t%s", (*pPtr)->b2->name);
+      fprintf(fd, "\t\t%s", (*pPtr)->b2->name);
 
       if (STRNEQ((*pPtr)->b2->name, "GenericBody", 11))
       {
         RcsBody* gPtr = (RcsBody*)(*pPtr)->b2->extraInfo;
-        fprintf(stderr, " (points to \"%s\")", gPtr ? gPtr->name : "NULL");
+        fprintf(fd, " (points to \"%s\")", gPtr ? gPtr->name : "NULL");
       }
 
-      fprintf(stderr, "\n");
+      fprintf(fd, "\n");
 
       pPtr++;
       k++;
