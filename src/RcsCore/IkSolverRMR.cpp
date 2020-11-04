@@ -459,20 +459,9 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
     MatNd_postMulDiagSelf(this->NinvW, invWq);   // apply joint metric
   }
 
-#if 0
-  // Compute null space -> task space re-projection: (dH^T J#)^T
-  MatNd_reshape(this->dHr, dHr->n, dHr->m);
-  MatNd_reshape(dx_proj, 1, pinvJ->n);
-  MatNd_mul(dx_proj, this->dHr, this->pinvJ);
-  MatNd_reshape(this->dHr, dHr->n, dHr->m);
-  MatNd_reshape(dx_proj, pinvJ->n, 1);
-#else
-  // Compute null space -> task space re-projection: J dH^T
-  MatNd_reshape(dx_proj, J->m, 1);
-  MatNd_mul(dx_proj, this->J, this->dHr);
-#endif
 
-  // Here comes the sinister HACK
+  bool hasTaskRegions = false;
+
   for (size_t i=0; i<controller->getNumberOfTasks(); ++i)
   {
     Rcs::Task* tsk = controller->getTask(i);
@@ -480,12 +469,44 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
 
     if (tsr)
     {
-      size_t idx = controller->getTaskArrayIndex(i);
-      const double* xi = &dx_proj->ele[idx];
-      std::vector<double> dx_proj(xi, xi+tsk->getDim());
-      tsr->setTaskReprojection(dx_proj);
+      hasTaskRegions = true;
+      break;
     }
   }
+
+
+  if (hasTaskRegions)
+  {
+#if 0
+    // Compute null space -> task space re-projection: (dH^T J#)^T
+    MatNd_reshape(this->dHr, dHr->n, dHr->m);
+    MatNd_reshape(dx_proj, 1, pinvJ->n);
+    MatNd_mul(dx_proj, this->dHr, this->pinvJ);
+    MatNd_reshape(this->dHr, dHr->n, dHr->m);
+    MatNd_reshape(dx_proj, pinvJ->n, 1);
+#else
+    // Compute null space -> task space re-projection: J dH^T
+    MatNd_reshape(dx_proj, J->m, 1);
+    MatNd_mul(dx_proj, this->J, this->dHr);
+#endif
+
+    // Here comes the sinister HACK
+    for (size_t i=0; i<controller->getNumberOfTasks(); ++i)
+    {
+      Rcs::Task* tsk = controller->getTask(i);
+      Rcs::TaskRegion* tsr = tsk->getTaskRegion();
+
+      if (tsr)
+      {
+        size_t idx = controller->getTaskArrayIndex(i);
+        const double* xi = &dx_proj->ele[idx];
+        std::vector<double> dx_proj(xi, xi+tsk->getDim());
+        tsr->setTaskReprojection(dx_proj);
+      }
+    }
+
+  }   // if (hasTaskRegions)
+
   // Here ends the sinister HACK
 
 

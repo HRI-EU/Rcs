@@ -178,7 +178,7 @@ Slider1Dof::Slider1Dof(double* q_des_,
 
   // Slider
   this->slider = new QwtSlider(this);
-#if QWT_VERSION < 0x060103
+#if QWT_VERSION < 0x060102
   this->slider->setRange(lowerBound_,
                          upperBound_,
                          ticSize * 0.1, // Fraction of the interval length

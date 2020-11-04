@@ -382,7 +382,7 @@ void VecNd_setElementsTo(double* dst, double value, unsigned int n)
 /*******************************************************************************
  *
  ******************************************************************************/
-void VecNd_set6(double vec[6],
+void VecNd_set6(double* vec,
                 double a, double b, double c, double d, double e, double f)
 {
   vec[0] = a;
@@ -451,7 +451,10 @@ void VecNd_addSelf(double* A, const double* B, unsigned int n)
 double* VecNd_clone(const double* A, unsigned int n)
 {
   double* self = RNALLOC(n, double);
-  RCHECK(self);
+  if (self == NULL)
+  {
+    return NULL;
+  }
   memcpy(self, A, n * sizeof(double));
   return self;
 }

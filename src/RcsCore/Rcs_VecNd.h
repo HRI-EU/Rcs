@@ -201,7 +201,8 @@ void VecNd_addSelf(double* A, const double* B, unsigned int n);
 /*! \ingroup RcsVecNFunctions
  *  \brief Returns a clone of n elements of A. The returned pointer points
  *         to newly allocated heap memory. The caller is responsible for
- *         destruction.
+ *         destruction. If memory allocation for the cloned vector fails, the
+ *         function returns NULL.
  */
 double* VecNd_clone(const double* A, unsigned int n);
 

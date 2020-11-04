@@ -3281,24 +3281,31 @@ bool testMat3dFunctions(int argc, char** argv)
  ******************************************************************************/
 bool testViaPointSequence(int argc, char** argv)
 {
-  char viaFileName[256] = "";
+  std::string viaFileName;
+  std::string viaType = "Poly5D";
   double beyondRange = 0.0, dt = 0.01;
   int flag = 7;
 
   // Parse command line arguments
   Rcs::CmdLineParser argP(argc, argv);
-  argP.getArgument("-f", viaFileName, "Via point file name (default none)");
+  argP.getArgument("-f", &viaFileName, "Via point file name (default none)");
+  argP.getArgument("-viaType", &viaType, "Interpolation type: Poly5D or LinAcc");
   argP.getArgument("-dt", &dt, "Sampling time step (default: %f)", dt);
   argP.getArgument("-flag", &flag, "Flag to be shown (default: %d)", flag);
   argP.getArgument("-beyondRange", &beyondRange, "Percentage of duraion to be "
                    "plotted before and after time range (default: %f)",
                    beyondRange);
 
+  if (argP.hasArgument("-h"))
+  {
+    return false;
+  }
+
   MatNd* viaDesc = NULL;
 
-  if (strlen(viaFileName)>0)
+  if (!viaFileName.empty())
   {
-    viaDesc = MatNd_createFromFile(viaFileName);
+    viaDesc = MatNd_createFromFile(viaFileName.c_str());
   }
   else
   {
@@ -3308,9 +3315,22 @@ bool testViaPointSequence(int argc, char** argv)
   RCHECK(viaDesc);
   MatNd_printCommentDigits("viaDesc", viaDesc, 2);
 
-  Rcs::ViaPointSequence via(viaDesc);
+  Rcs::ViaPointSequence::ViaPointType vType;
+
+  if (viaType=="LinAcc")
+  {
+    vType = Rcs::ViaPointSequence::LinearAcceleration;
+  }
+  else
+  {
+    vType = Rcs::ViaPointSequence::FifthOrderPolynomial;
+  }
+
+  Rcs::ViaPointSequence via(viaDesc, vType);
   via.print();
   RCHECK(via.check());
+
+
 
   double t0 = MatNd_get(viaDesc, 0, 0);
   double t1 = MatNd_get(viaDesc, viaDesc->m-1, 0);

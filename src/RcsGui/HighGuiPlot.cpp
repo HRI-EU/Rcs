@@ -251,7 +251,7 @@ void HighGuiPlot::update()
       _data[it->first].second = 0;
       if (!_linearize)
       {
-#if QWT_VERSION < 0x060103
+#if QWT_VERSION < 0x060102
         _curves[it->first]->setRawData(_x.data(), _data[it->first].first.data(),
                                        _capacity);
 #else
@@ -330,7 +330,7 @@ void HighGuiPlot::update()
         if (!_linearize)
         {
           // set raw data ptr
-#if QWT_VERSION < 0x060103
+#if QWT_VERSION < 0x060102
           _curves[value_id]->setRawData(_x.data(), _data[value_id].first.data(),
                                         _capacity);
 #else
@@ -345,7 +345,7 @@ void HighGuiPlot::update()
           QPen marker_pen = QPen(QColor::fromRgb(50, 50, 50));
           marker_pen.setWidth(3);
           marker->setLinePen(marker_pen);
-#if QWT_VERSION < 0x060103
+#if QWT_VERSION < 0x060102
           QwtSymbol marker_symbol(QwtSymbol::Ellipse, curve_color, curve_color,
                                   QSize(5,5));
           marker->setSymbol(marker_symbol);
@@ -370,7 +370,7 @@ void HighGuiPlot::update()
       {
         std::vector<double> linearized_data = linearizeData(_data_ref.first,
                                                             (_data_ref.second + 1) % _capacity);
-#if QWT_VERSION < 0x060103
+#if QWT_VERSION < 0x060102
         _curves[value_id]->setData(_x.data(), linearized_data.data(), _capacity);
 #else
         RLOG(0, "Fixme");
