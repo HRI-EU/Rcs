@@ -226,6 +226,17 @@ bool Rcs::VertexArrayNode::updatePoints()
     for (size_t i = 0; i < this->nPoints; i++)
     {
       const double* row = &this->points[i*stride];
+
+      if (fabs(row[0])>=DBL_MAX || fabs(row[1])>=DBL_MAX)
+      {
+        continue;
+      }
+
+      if (!mat_is_2D && fabs(row[2])>=DBL_MAX)
+      {
+        continue;
+      }
+
       this->pointsArray->push_back(osg::Vec3(row[0], row[1],
                                              mat_is_2D ? 0.0 : row[2]));
     }
@@ -363,7 +374,8 @@ bool Rcs::VertexArrayNode::takePointsOwnership()
     return true;   // already owner
   }
 
-  myMat = MatNd_clone(mat);
+  myMat = MatNd_realloc(myMat, mat->m, mat->n);
+  MatNd_copy(myMat, mat);
 
   return setPoints(myMat);
 }
