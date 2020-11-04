@@ -2901,8 +2901,8 @@ static bool setWildMagicDistanceFunctions()
 
   success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_SSR,
                                          RcsShape_closestSSLToSSR) && success;
-  //success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_BOX,
-  //                                       RcsShape_closestSSLToBox) && success;
+  success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_BOX,
+                                         RcsShape_closestSSLToBox) && success;
   //success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_CYLINDER,
   //                                       RcsShape_closestSSLToCylinder)
   //          && success;
@@ -2925,8 +2925,8 @@ static bool setWildMagicDistanceFunctions()
   //}
 
   // BOX
-  //success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_SSL,
-  //                                       RcsShape_closestBoxToSSL) && success;
+  success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_SSL,
+                                         RcsShape_closestBoxToSSL) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_SSR,
                                          RcsShape_closestBoxToSSR) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_BOX,
