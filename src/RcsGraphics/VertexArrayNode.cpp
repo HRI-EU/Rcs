@@ -248,7 +248,7 @@ bool Rcs::VertexArrayNode::updatePoints()
   this->geometry->setVertexArray(this->pointsArray.get());
   this->geometry->setPrimitiveSet(0, ps);
 
-  return true;
+  return success;
 }
 
 /*******************************************************************************
