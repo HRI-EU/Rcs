@@ -92,7 +92,9 @@ void quit(int /*sig*/)
 static void showMesh(const RcsMeshData* mesh)
 {
   Rcs::CmdLineParser argP;
+  std::string outFile;
   bool valgrind = argP.hasArgument("-valgrind");
+  argP.getArgument("-f", &outFile);
 
   if (valgrind || (mesh==NULL))
   {
@@ -103,6 +105,12 @@ static void showMesh(const RcsMeshData* mesh)
   {
     RcsMesh_print(mesh);
   }
+
+  if (!outFile.empty())
+  {
+    RcsMesh_toFile(mesh, outFile.c_str());
+  }
+
   Rcs::MeshNode* mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
                                         mesh->faces, mesh->nFaces);
   Rcs::Viewer* viewer = new Rcs::Viewer();
@@ -140,6 +148,35 @@ static bool test_ssrMesh()
   }
 
   RcsMeshData* mesh = RcsMesh_createSSR(extents, segments);
+
+  showMesh(mesh);
+  RcsMesh_destroy(mesh);
+
+  return true;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool test_pyramidMesh()
+{
+  double extents[3];
+  Vec3d_setElementsTo(extents, 1.0);
+
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-x", &extents[0], "X-dimension (default is %f)",
+                   extents[0]);
+  argP.getArgument("-y", &extents[1], "Y-dimension (default is %f)",
+                   extents[1]);
+  argP.getArgument("-z", &extents[2], "Z-dimension (default is %f)",
+                   extents[2]);
+
+  if (argP.hasArgument("-h"))
+  {
+    return true;
+  }
+
+  RcsMeshData* mesh = RcsMesh_createPyramid(extents[0], extents[1], extents[2]);
 
   showMesh(mesh);
   RcsMesh_destroy(mesh);
@@ -1100,6 +1137,9 @@ int main(int argc, char** argv)
       printf("\t\t16   Test depth rendering\n");
       printf("\t\t17   Test RcsViewer setTitle() method\n");
       printf("\t\t18   Test Setting colors in GraphNode\n");
+      printf("\t\t19   Test pyramid mesh\n");
+      printf("\n");
+      printf("\t\tYou can write the meshes to a file with -f\n");
       break;
 
     case 0:
@@ -1206,6 +1246,12 @@ int main(int argc, char** argv)
     case 18:
       testDynamicColoring();
       break;
+
+    case 19:
+    {
+      test_pyramidMesh();
+      break;
+    }
 
     default:
       RFATAL("No mode %d", mode);

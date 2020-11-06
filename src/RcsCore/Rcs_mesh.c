@@ -1243,14 +1243,14 @@ RcsMeshData* RcsMesh_createBox(const double extents[3])
   const double verts[24] =
   {
     -0.5, -0.5, -0.5,
-      0.5, -0.5, -0.5,
-      0.5,  0.5, -0.5,
-      -0.5,  0.5, -0.5,
-      -0.5,  0.5,  0.5,
-      0.5,  0.5,  0.5,
-      0.5, -0.5,  0.5,
-      -0.5, -0.5,  0.5,
-    };
+    0.5, -0.5, -0.5,
+    0.5,  0.5, -0.5,
+    -0.5,  0.5, -0.5,
+    -0.5,  0.5,  0.5,
+    0.5,  0.5,  0.5,
+    0.5, -0.5,  0.5,
+    -0.5, -0.5,  0.5,
+  };
 
   memcpy(mesh->faces, vertexIndex, 3*mesh->nFaces*sizeof(unsigned int));
 
@@ -1660,6 +1660,45 @@ RcsMeshData* RcsMesh_createCone(double radius, double height,
 }
 
 /*******************************************************************************
+ * 5 vertices, 6 triangles
+ ******************************************************************************/
+RcsMeshData* RcsMesh_createPyramid(double x, double y, double h)
+{
+  const unsigned int vertexIndex[] =
+  {
+    2,  1,  0,
+    2,  0,  3,
+    4,  0,  1,
+    4,  1,  2,
+    4,  2,  3,
+    4,  3,  0
+  };
+
+  x *= 0.5;
+  y *= 0.5;
+
+  const double verts[] =
+  {
+    x,    y,     0,
+    -x,   y,     0,
+    -x,   -y,    0,
+    x,   -y,     0,
+    0,    0,     h
+  };
+
+  RcsMeshData* mesh = RALLOC(RcsMeshData);
+  mesh->nFaces = 6;
+  mesh->nVertices = 5;
+  mesh->faces = RNALLOC(mesh->nFaces*3, unsigned int);
+  mesh->vertices = RNALLOC(mesh->nVertices*3, double);
+
+  memcpy(mesh->faces, vertexIndex, 3*mesh->nFaces*sizeof(unsigned int));
+  memcpy(mesh->vertices, verts, 3*mesh->nVertices*sizeof(double));
+
+  return mesh;
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
 static RcsMeshData* RcsMesh_createRectangle(double x, double y)
@@ -1679,10 +1718,10 @@ static RcsMeshData* RcsMesh_createRectangle(double x, double y)
   const double verts[12] =
   {
     -0.5, -0.5, 0.0,
-      0.5, -0.5, 0.0,
-      0.5,  0.5, 0.0,
-      -0.5,  0.5, 0.0,
-    };
+    0.5, -0.5, 0.0,
+    0.5,  0.5, 0.0,
+    -0.5,  0.5, 0.0,
+  };
 
   memcpy(mesh->faces, vertexIndex, 3*mesh->nFaces*sizeof(unsigned int));
 

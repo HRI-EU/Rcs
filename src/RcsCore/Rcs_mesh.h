@@ -338,14 +338,25 @@ RcsMeshData* RcsMesh_createTorus(double radius, double thickness,
                                  unsigned int tubularSegments);
 
 /*! \ingroup RcsMeshFunctions
-*  \brief Creates a triangle mesh of a sphere-swept rectangle.
-*
-*  \param[in] extents           Dimensions. The third element is the thickness.
-*  \param[in] segments          Number of segments around curves.
-*  \return Triangle mesh according to dimensions. The caller is responsible to
-*          delete the memory.
-*/
+ *  \brief Creates a triangle mesh of a sphere-swept rectangle.
+ *
+ *  \param[in] extents           Dimensions. The third element is the thickness.
+ *  \param[in] segments          Number of segments around curves.
+ *  \return Triangle mesh according to dimensions. The caller is responsible to
+ *          delete the memory.
+ */
 RcsMeshData* RcsMesh_createSSR(const double extents[3], unsigned int segments);
+
+/*! \ingroup RcsMeshFunctions
+ *  \brief Creates a four-sided pyramid with side lengths y and y, and height z.
+ *
+ *  \param[in] x   Side length 1 of base rectangle
+ *  \param[in] y   Side length 2 of base rectangle
+ *  \param[in] z   Height of pyramid
+ *  \return Pyramid mesh according to dimensions. The caller is responsible to
+ *          delete the memory.
+ */
+RcsMeshData* RcsMesh_createPyramid(double x, double y, double z);
 
 /*! \ingroup RcsMeshFunctions
  *  \brief Computes the mesh's center of mass and the inertia tensor around the
