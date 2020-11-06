@@ -359,6 +359,19 @@ RcsMeshData* RcsMesh_createSSR(const double extents[3], unsigned int segments);
 RcsMeshData* RcsMesh_createPyramid(double x, double y, double z);
 
 /*! \ingroup RcsMeshFunctions
+ *  \brief Creates a four-sided view frustum with the origin at (0 0 0),
+ *         pointing into the z-direction. It is actually not a real frustum,
+ *         but an inverted four-sided pyramid.
+ *
+ *  \param[in] fovX   Field of view / opening angle in x-direction
+ *  \param[in] fovY   Field of view / opening angle in x-direction
+ *  \param[in] h      Height of frustum
+ *  \return Frustum mesh according to dimensions. The caller is responsible to
+ *          delete the memory.
+ */
+RcsMeshData* RcsMesh_createFrustum(double fovX, double fovY, double h);
+
+/*! \ingroup RcsMeshFunctions
  *  \brief Computes the mesh's center of mass and the inertia tensor around the
  *         COM. If argument mesh is NULL, both I and com are set to zero.
  *

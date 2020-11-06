@@ -187,6 +187,33 @@ static bool test_pyramidMesh()
 /******************************************************************************
  *
  *****************************************************************************/
+static bool test_frustumMesh()
+{
+  double fovx = M_PI_2;
+  double fovy = M_PI_2;
+  double h = 1.0;
+
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-fovx", &fovx, "Field of view x (default is %f)", fovx);
+  argP.getArgument("-fovy", &fovy, "Field of view y (default is %f)", fovy);
+  argP.getArgument("-z", &extents[2], "Height (default is %f)", h);
+
+  if (argP.hasArgument("-h"))
+  {
+    return true;
+  }
+
+  RcsMeshData* mesh = RcsMesh_createFrustum(fovx, fovy, h);
+
+  showMesh(mesh);
+  RcsMesh_destroy(mesh);
+
+  return true;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
 static bool test_coneMesh()
 {
   double radius = 0.5, height = 1.0;
@@ -1138,6 +1165,7 @@ int main(int argc, char** argv)
       printf("\t\t17   Test RcsViewer setTitle() method\n");
       printf("\t\t18   Test Setting colors in GraphNode\n");
       printf("\t\t19   Test pyramid mesh\n");
+      printf("\t\t20   Test frustum mesh\n");
       printf("\n");
       printf("\t\tYou can write the meshes to a file with -f\n");
       break;
@@ -1250,6 +1278,12 @@ int main(int argc, char** argv)
     case 19:
     {
       test_pyramidMesh();
+      break;
+    }
+
+    case 20:
+    {
+      test_frustumMesh();
       break;
     }
 

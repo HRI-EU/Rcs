@@ -1243,14 +1243,14 @@ RcsMeshData* RcsMesh_createBox(const double extents[3])
   const double verts[24] =
   {
     -0.5, -0.5, -0.5,
-    0.5, -0.5, -0.5,
-    0.5,  0.5, -0.5,
-    -0.5,  0.5, -0.5,
-    -0.5,  0.5,  0.5,
-    0.5,  0.5,  0.5,
-    0.5, -0.5,  0.5,
-    -0.5, -0.5,  0.5,
-  };
+      0.5, -0.5, -0.5,
+      0.5,  0.5, -0.5,
+      -0.5,  0.5, -0.5,
+      -0.5,  0.5,  0.5,
+      0.5,  0.5,  0.5,
+      0.5, -0.5,  0.5,
+      -0.5, -0.5,  0.5,
+    };
 
   memcpy(mesh->faces, vertexIndex, 3*mesh->nFaces*sizeof(unsigned int));
 
@@ -1699,6 +1699,22 @@ RcsMeshData* RcsMesh_createPyramid(double x, double y, double h)
 }
 
 /*******************************************************************************
+ * 5 vertices, 6 triangles
+ ******************************************************************************/
+RcsMeshData* RcsMesh_createFrustum(double fovX, double fovY, double h)
+{
+  double x = 2.0*tan(0.5*fovX);
+  double y = 2.0*tan(0.5*fovY);
+  RcsMeshData* mesh = RcsMesh_createPyramid(x, y, h);
+  double A_MI[3][3];
+  Mat3d_setRotMatX(A_MI, M_PI);
+  RcsMesh_rotate(mesh, A_MI);
+  RcsMesh_shift(mesh, 0.0, 0.0, h);
+
+  return mesh;
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
 static RcsMeshData* RcsMesh_createRectangle(double x, double y)
@@ -1718,10 +1734,10 @@ static RcsMeshData* RcsMesh_createRectangle(double x, double y)
   const double verts[12] =
   {
     -0.5, -0.5, 0.0,
-    0.5, -0.5, 0.0,
-    0.5,  0.5, 0.0,
-    -0.5,  0.5, 0.0,
-  };
+      0.5, -0.5, 0.0,
+      0.5,  0.5, 0.0,
+      -0.5,  0.5, 0.0,
+    };
 
   memcpy(mesh->faces, vertexIndex, 3*mesh->nFaces*sizeof(unsigned int));
 
