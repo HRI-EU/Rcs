@@ -1049,7 +1049,7 @@ double RcsBody_distance(const RcsBody* b1,
 
   if (d_closest == Math_infinity())
   {
-    RLOG(3, "Body \"%s\" - \"%s\": distance is INFINITY",
+    RLOG(5, "Body \"%s\" - \"%s\": distance is INFINITY",
          b1->name, b2->name);
   }
 

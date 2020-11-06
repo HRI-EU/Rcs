@@ -111,6 +111,11 @@ static void showMesh(const RcsMeshData* mesh)
     RcsMesh_toFile(mesh, outFile.c_str());
   }
 
+  if (argP.hasArgument("-h"))
+  {
+    return;
+  }
+
   Rcs::MeshNode* mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
                                         mesh->faces, mesh->nFaces);
   Rcs::Viewer* viewer = new Rcs::Viewer();
@@ -142,11 +147,6 @@ static bool test_ssrMesh()
   argP.getArgument("-segments", &segments, "Segments (default is %d)",
                    segments);
 
-  if (argP.hasArgument("-h"))
-  {
-    return true;
-  }
-
   RcsMeshData* mesh = RcsMesh_createSSR(extents, segments);
 
   showMesh(mesh);
@@ -171,11 +171,6 @@ static bool test_pyramidMesh()
   argP.getArgument("-z", &extents[2], "Z-dimension (default is %f)",
                    extents[2]);
 
-  if (argP.hasArgument("-h"))
-  {
-    return true;
-  }
-
   RcsMeshData* mesh = RcsMesh_createPyramid(extents[0], extents[1], extents[2]);
 
   showMesh(mesh);
@@ -189,19 +184,17 @@ static bool test_pyramidMesh()
  *****************************************************************************/
 static bool test_frustumMesh()
 {
-  double fovx = M_PI_2;
-  double fovy = M_PI_2;
+  double fovx = RCS_RAD2DEG(M_PI_2);
+  double fovy = RCS_RAD2DEG(M_PI_2);
   double h = 1.0;
 
   Rcs::CmdLineParser argP;
-  argP.getArgument("-fovx", &fovx, "Field of view x (default is %f)", fovx);
-  argP.getArgument("-fovy", &fovy, "Field of view y (default is %f)", fovy);
-  argP.getArgument("-z", &extents[2], "Height (default is %f)", h);
+  argP.getArgument("-fovx", &fovx, "Field of view x (default: %f deg)", fovx);
+  argP.getArgument("-fovy", &fovy, "Field of view y (default: %f deg)", fovy);
+  argP.getArgument("-z", &h, "Height (default is %f)", h);
 
-  if (argP.hasArgument("-h"))
-  {
-    return true;
-  }
+  fovx = RCS_DEG2RAD(fovx);
+  fovy = RCS_DEG2RAD(fovy);
 
   RcsMeshData* mesh = RcsMesh_createFrustum(fovx, fovy, h);
 
@@ -224,11 +217,6 @@ static bool test_coneMesh()
   argP.getArgument("-height", &height, "Heigth (default is %f)", height);
   argP.getArgument("-segments", &segments, "Segments (default is %d)",
                    segments);
-
-  if (argP.hasArgument("-h"))
-  {
-    return true;
-  }
 
   RcsMeshData* mesh = RcsMesh_createCone(radius, 1.0, segments);
 
@@ -254,11 +242,6 @@ static bool test_torusMesh()
   argP.getArgument("-tubular", &tSegments, "Tubular segments (default is %d)",
                    tSegments);
 
-  if (argP.hasArgument("-h"))
-  {
-    return true;
-  }
-
   RcsMeshData* mesh = RcsMesh_createTorus(radius, height, rSegments, tSegments);
 
   showMesh(mesh);
@@ -281,11 +264,6 @@ static bool test_capsuleMesh()
   argP.getArgument("-segments", &segments, "Segments (default is %d)",
                    segments);
 
-  if (argP.hasArgument("-h"))
-  {
-    return true;
-  }
-
   RcsMeshData* mesh = RcsMesh_createCapsule(radius, 1.0, segments);
 
   showMesh(mesh);
@@ -306,11 +284,6 @@ static bool test_sphereMesh()
   argP.getArgument("-r", &radius, "Radius (default is %f)", radius);
   argP.getArgument("-segments", &segments, "Segments (default is %d)",
                    segments);
-
-  if (argP.hasArgument("-h"))
-  {
-    return true;
-  }
 
   RcsMeshData* mesh = RcsMesh_createSphere(radius, segments);
 
@@ -347,11 +320,6 @@ static bool test_sphereSegmentMesh()
                    "is %f)", thetaStart);
   argP.getArgument("-thetaLength", &thetaLength, "Theta length [deg](default"
                    "is %f)", thetaLength);
-
-  if (argP.hasArgument("-h"))
-  {
-    return true;
-  }
 
   phiStart*= M_PI/180.0;
   phiLength*= M_PI/180.0;
@@ -390,11 +358,6 @@ static bool test_cylinderMesh()
   argP.getArgument("-heightSegments", &heightSegments, "Height segments "
                    "(default is %d)", heightSegments);
 
-  if (argP.hasArgument("-h"))
-  {
-    return true;
-  }
-
   angleAround *= M_PI/180.0;
 
   RcsMeshData* mesh = RcsMesh_createCylinder(radius, height, 32);
@@ -428,11 +391,6 @@ static bool test_cylinderHullMesh()
                    "(default is %d)", radialSegments);
   argP.getArgument("-heightSegments", &heightSegments, "Height segments "
                    "(default is %d)", heightSegments);
-
-  if (argP.hasArgument("-h"))
-  {
-    return true;
-  }
 
   angleAround *= M_PI/180.0;
 
