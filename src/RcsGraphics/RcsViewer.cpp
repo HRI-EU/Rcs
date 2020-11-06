@@ -76,7 +76,7 @@ static pid_t forkProcess(const char* command)
 }
 #endif
 
-
+static const std::string defaultBgColor = "LIGHT_GRAYISH_GREEN";
 
 namespace Rcs
 {
@@ -1670,6 +1670,14 @@ bool Viewer::isThreadStopped() const
 double Viewer::getFPS() const
 {
   return this->fps;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+std::string Viewer::getDefaultBackgroundColor() const
+{
+  return defaultBgColor;
 }
 
 /*******************************************************************************

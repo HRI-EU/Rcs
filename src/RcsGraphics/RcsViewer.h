@@ -457,6 +457,13 @@ public:
    */
   double getFPS() const;
 
+  /*! \brief Returns a string with the background color the viewer was
+   *         constructed with.
+   *
+   *  \return Default background color.
+   */
+  std::string getDefaultBackgroundColor() const;
+
   ///@}
 
 
