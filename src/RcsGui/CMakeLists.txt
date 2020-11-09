@@ -38,15 +38,6 @@ IF(WIN32)
 
 ENDIF()
 
-SET(RCS_HIGHGUI_HEADERS
-HighGuiLabel.h
-HighGuiSlider.h
-HighGuiButton.h
-HighGuiWindow.h
-HighGuiPlot.h
-HighGuiWidget.h
-)
-
 FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
 
 ADD_LIBRARY(RcsGui ${LIBRARY_LINKING_TYPE} ${RCS_GUI_SRCS} )
@@ -61,9 +52,9 @@ TARGET_INCLUDE_DIRECTORIES(RcsGui PUBLIC
     $<INSTALL_INTERFACE:include/RcsGui>
     
     # Regular dependencies
-    ${QT_QTGUI_INCLUDE_DIR}
-    ${QT_QTCORE_INCLUDE_DIR}
-    ${QT_INCLUDE_DIR})
+    ${Qt5Core_INCLUDE_DIRS}
+    ${Qt5Gui_INCLUDE_DIRS}
+    ${Qt5Widgets_INCLUDE_DIRS})
 TARGET_INCLUDE_DIRECTORIES(RcsGui PRIVATE ${QWT_INCLUDE_DIRS})
 
 # copy the .dll file to the same folder as the executable
