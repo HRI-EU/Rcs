@@ -400,7 +400,7 @@ void Math_printBinaryVector(int b);
  *  \brief Returns a uniformly distributed random number within the interval
  *         given by lower and upper: lower <= result < upper. The random
  *         numbers are seeded with the computer clock, so that they do not
- *         give reproduceable results. Lower must be <= upper, otherwise the
+ *         give reproduceable results. Lower must be < upper, otherwise the
  *         function will exit fatally.
  */
 double Math_getRandomNumber(double lower, double upper);

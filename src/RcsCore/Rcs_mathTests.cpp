@@ -1817,7 +1817,7 @@ bool testRnd(int argc, char** argv)
     }
   }
 
-  if (trueCount < 4500 || trueCount > 5500)
+  if (trueCount < 4500 || trueCount > 5500 || RcsLogLevel>2)
   {
     success = false;
     RLOG(1, "True: %d   false: %d", trueCount, falseCount);
