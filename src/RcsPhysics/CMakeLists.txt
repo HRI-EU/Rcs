@@ -55,7 +55,7 @@ ENDIF(USE_VORTEX AND VORTEX_FOUND)
 # option. Otherwise, te static self-registration meachnism (for
 # instance in the function table initialization) will never be called.
 IF(USE_BULLET)
-  SET(RCS_BULLET_SRCS 
+  LIST(APPEND RCS_BULLET_SRCS 
     BulletDistance.cpp
     BulletHelpers.cpp
     BulletHingeJoint.cpp
