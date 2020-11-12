@@ -55,7 +55,7 @@ ENDIF(USE_VORTEX AND VORTEX_FOUND)
 # option. Otherwise, te static self-registration meachnism (for
 # instance in the function table initialization) will never be called.
 IF(USE_BULLET)
-  LIST(APPEND RCS_BULLET_SRCS 
+  SET(RCS_BULLET_SRCS 
     BulletDistance.cpp
     BulletHelpers.cpp
     BulletHingeJoint.cpp
@@ -63,14 +63,22 @@ IF(USE_BULLET)
     BulletRigidBody.cpp
     BulletSimulation.cpp
     BulletSoftSimulation.cpp)
-  IF(NOT HEADLESS_BUILD)
+  
+  IF(NOT HEADLESS_BUILD)    
     LIST(APPEND RCS_BULLET_SRCS
       BulletDebugNode.cpp
       BulletDebugDrawer.cpp)
   ENDIF(NOT HEADLESS_BUILD)
 
   ADD_LIBRARY(RcsBullet ${LIBRARY_LINKING_TYPE} ${RCS_BULLET_SRCS})
-  TARGET_LINK_LIBRARIES(RcsBullet ${BULLET_LIBRARIES} RcsGraphics)
+
+  IF(HEADLESS_BUILD)
+    TARGET_LINK_LIBRARIES(RcsBullet ${BULLET_LIBRARIES} RcsCore)
+    TARGET_COMPILE_DEFINITIONS(RcsBullet PRIVATE -DHEADLESS_BUILD)
+  ELSE(HEADLESS_BUILD)
+    TARGET_LINK_LIBRARIES(RcsBullet ${BULLET_LIBRARIES} RcsGraphics)
+  ENDIF(HEADLESS_BUILD)
+
   TARGET_INCLUDE_DIRECTORIES(RcsBullet SYSTEM PRIVATE ${BULLET_INCLUDE_DIR})
   TARGET_COMPILE_DEFINITIONS(RcsBullet PRIVATE ${BULLET_DEFINITIONS})
 
@@ -79,13 +87,14 @@ IF(USE_BULLET)
   # happens inside statically. Under Unix, we can use -Wl,--no-as-needed
   IF(WIN32)
     TARGET_LINK_OPTIONS(RcsBullet PUBLIC /include:RcsShape_distanceBullet)
-  ENDIF()
+  ENDIF(WIN32)
 
 ENDIF(USE_BULLET)
 
 
-# Build the actual physics library. Currently the eadless mode is a bit broken.
-SET(RCS_PHYSICS_SRCS)
+# Build the actual physics library. The PhysicsHeadless.cpp exists for the case
+# that no other sources are added to the RcsPhysics target.
+SET(RCS_PHYSICS_SRCS PhysicsHeadless.cpp)
 IF(NOT HEADLESS_BUILD)
   LIST(APPEND RCS_PHYSICS_SRCS 
        ContactsNode.cpp 
