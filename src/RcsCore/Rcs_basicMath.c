@@ -258,7 +258,12 @@ double Math_getRandomNumber(double lower, double upper)
  ******************************************************************************/
 int Math_getRandomInteger(int lower, int upper)
 {
-  RCHECK_MSG(upper - lower > 0, "Lower is larger or equal to upper!");
+  RCHECK_MSG(upper - lower >= 0, "Lower is larger or equal to upper!");
+
+  if (lower == upper)
+  {
+    return lower;
+  }
 
   if (randomNumberGeneratorInit==false)
   {
