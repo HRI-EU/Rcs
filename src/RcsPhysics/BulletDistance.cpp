@@ -54,11 +54,119 @@
 #include <BulletCollision/NarrowPhaseCollision/btConvexPenetrationDepthSolver.h>
 
 #include <limits>
+#include <vector>
+#include <pthread.h>
 
+void* threadFunc(void* arg)
+{
+  size_t* iterations = (size_t*)arg;
+  bool* result = new bool;
+  *result = testBulletDistance(*iterations);
+  return result;
+}
 
+bool testBulletDistanceThreaded(size_t nThreads, size_t iterations)
+{
+  const size_t maxThreads = 32;
+  pthread_t threads[maxThreads];
+  bool success = true;
+
+  nThreads = Math_iClip(nThreads, 0, maxThreads);
+
+  RLOG_CPP(0, "Launching " << nThreads << " threads with " << iterations
+           << " iterations");
+
+  for (size_t i=0; i< nThreads; ++i)
+  {
+    int res = pthread_create(&threads[i], NULL, threadFunc, &iterations);
+    RCHECK_MSG(res == 0, "Failure launching thread number %zu", i);
+  }
+
+  for (size_t i = 0; i < nThreads; ++i)
+  {
+    bool* result_i;
+    pthread_join(threads[i], (void**)&result_i);
+    success = *result_i && success;
+    delete result_i;
+  }
+
+  RLOG(0, "Joined %zu threads, test was a great %s", nThreads,
+       success ? "SUCCESS" : "FAILURE");
+
+  return success;
+}
+
+bool testBulletDistance(size_t iterations)
+{
+  std::vector<RCSSHAPE_TYPE> sTypes;
+  sTypes.push_back(RCSSHAPE_SSL);
+  sTypes.push_back(RCSSHAPE_SSR);
+  sTypes.push_back(RCSSHAPE_MESH);
+  sTypes.push_back(RCSSHAPE_BOX);
+  sTypes.push_back(RCSSHAPE_CYLINDER);
+  sTypes.push_back(RCSSHAPE_SPHERE);
+  sTypes.push_back(RCSSHAPE_CONE);
+  sTypes.push_back(RCSSHAPE_POINT);
+
+  bool success = true;
+  const double eps = 1.0e-5;
+
+  for (size_t i = 0; i < iterations; ++i)
+  {
+    RLOG_CPP(2, "Iteration " << i << " of " << iterations);
+    int rndIdx1 = Math_getRandomInteger(0, sTypes.size() - 1);
+    int rndIdx2 = Math_getRandomInteger(0, sTypes.size() - 1);
+
+    RcsShape* s1 = RcsShape_createRandomShape(sTypes[rndIdx1]);
+    RcsShape* s2 = RcsShape_createRandomShape(sTypes[rndIdx2]);
+    RLOG_CPP(2, "Testing " << RcsShape_name(s1->type) << " against "
+             << RcsShape_name(s2->type));
+
+    HTr A_BI1, A_BI2;
+    Vec3d_setRandom(A_BI1.org, -0.1, 0.1);
+    Mat3d_setRandomRotation(A_BI1.rot);
+    Vec3d_setRandom(A_BI2.org, -0.1, 0.1);
+    Mat3d_setRandomRotation(A_BI2.rot);
+
+    double cp1[3], cp2[3], n12[3];
+
+    HTr A_C1I, A_C2I;
+    HTr_transform(&A_C1I, &A_BI1, &s1->A_CB);
+    HTr_transform(&A_C2I, &A_BI2, &s2->A_CB);
+
+    double d = RcsShape_distanceBullet(s1, s2, &A_C1I, &A_C2I, cp1, cp2, n12);
+
+    double testPt1[3], testPt2[3], tmp[3];
+    double dtest1 = RcsShape_distanceToPoint(s1, &A_BI1, cp1, testPt1, tmp);
+    double dtest2 = RcsShape_distanceToPoint(s2, &A_BI2, cp2, testPt2, tmp);
+
+    bool success_i = true;
+    if (fabs(dtest1 > eps) || fabs(dtest2 > eps))
+    {
+      success_i = false;
+      success = false;
+      RLOG_CPP(1, "Testing " << RcsShape_name(s1->type) << " against "
+               << RcsShape_name(s2->type));
+      RLOG(1, "Distance test %zu failed: %f %f", i, dtest1, dtest2);
+    }
+
+    RLOG(2, "Distance test %s: %f %f (distance=%f)",
+         success_i ? "SUCCEEDED" : "FAILED", dtest1, dtest2, d);
+  }
+
+  return success;
+}
 
 /*******************************************************************************
- * Create a shape
+ * Create a shape. Here id what this function can crete:
+ * - Point
+ * - SSL
+ * - Cone
+ * - Sphere
+ * - Cylinder
+ * - Box
+ * - SSR
+ * - Mesh (convex only)
  ******************************************************************************/
 static btConvexShape* createShape(const RcsShape* sh, HTr* A_SB)
 {
@@ -181,12 +289,18 @@ static btConvexShape* createShape(const RcsShape* sh, HTr* A_SB)
 }
 
 /*******************************************************************************
- *
+ * The underlying bullet methods are not reentrant. We therefore protect
+ * concurrent access with a static mutex. This can be verified with the
+ * ExampleBullet program (mode 4), where a number of threads can be tested. If
+ * the mutex locking is removed, we get errors.
  ******************************************************************************/
 double RcsShape_distanceBullet(const RcsShape* s1, const RcsShape* s2,
                                const HTr* A_C1I_, const HTr* A_C2I_,
                                double cp1[3], double cp2[3], double n12[3])
 {
+  static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+
+  pthread_mutex_lock(&mtx);
   double distance = std::numeric_limits<double>::max();
   static btVoronoiSimplexSolver sGjkSimplexSolver;
   btGjkEpaPenetrationDepthSolver epa;
@@ -200,6 +314,7 @@ double RcsShape_distanceBullet(const RcsShape* s1, const RcsShape* s2,
     Vec3d_set(cp1, -distance, -distance, -distance);
     Vec3d_set(cp2,  distance,  distance,  distance);
     Vec3d_setUnitVector(n12, 2);
+    pthread_mutex_unlock(&mtx);
     return distance;
   }
 
@@ -257,9 +372,18 @@ double RcsShape_distanceBullet(const RcsShape* s1, const RcsShape* s2,
     }
 
   }
+  else
+  {
+    Vec3d_set(cp1, -distance, -distance, -distance);
+    Vec3d_set(cp2,  distance,  distance,  distance);
+    Vec3d_setUnitVector(n12, 2);
+    RLOG(1, "GJK found no result for %s - %s",
+         RcsShape_name(s1->type), RcsShape_name(s2->type));
+  }
 
   delete sh1;
   delete sh2;
+  pthread_mutex_unlock(&mtx);
 
   return distance;
 }

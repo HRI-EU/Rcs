@@ -44,8 +44,43 @@
 extern "C" {
 #endif
 
+bool testBulletDistance(size_t iterations);
+bool testBulletDistanceThreaded(size_t nThreads, size_t iterations);
+
+/*! \brief Returns the distance of s1 and s2. The closest points (in world
+ *         coordinates) will be copied to I_cp1 and I_cp2. The unit normal
+ *         vector (in world coordinates) of s1 (pointing away from the
+ *         surface) is copied to I_n12. The following shapes can be computed:
+ *         - Point
+ *         - SSL
+ *         - Cone
+ *         - Sphere
+ *         - Cylinder
+ *         - Box
+ *         - SSR
+ *         - Mesh (convex only)
+ *
+ *  \param[in]  s1        First shape
+ *  \param[in]  s2        Second shape
+ *  \param[in]  A_S1I     Transformation from world (I) to the first shape's
+ *                        frame. The shape frame might have an additional
+ *                        relative transform that is represented in
+ *                        RcsShape::A_CB. The caller is respnsible to compute
+ *                        the correct transform.
+ *  \param[in]  A_S2I     Transformation from world (I) to the secon shape's
+ *                        frame. The shape frame might have an additional
+ *                        relative transform that is represented in
+ *                        RcsShape::A_CB. The caller is respnsible to compute
+ *                        the correct transform.
+ *  \param[in]  I_cp1     Closest point on shape 1 in world coordinates. Must
+ *                        not be NULL.
+ *  \param[out] I_cp2     Closest point on shape 2 in world coordinates. Must
+ *                        not be NULL.
+ *  \param[out] I_n12     Unit normal vector from shape1 towards shape2. Must
+ *                        not be NULL.
+ */
 double RcsShape_distanceBullet(const RcsShape* s1, const RcsShape* s2,
-                               const HTr* A_B1I, const HTr* A_B2I,
+                               const HTr* A_S1I, const HTr* A_S2I,
                                double I_cp1[3], double I_cp2[3],
                                double I_n12[3]);
 
