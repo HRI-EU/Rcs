@@ -1278,6 +1278,46 @@ static double RcsShape_closestConeToPoint(const RcsShape* cone,
 }
 
 /*******************************************************************************
+ * Computes the distance between a sphere and a cone shape primitives.
+ ******************************************************************************/
+static double RcsShape_closestSphereToCone(const RcsShape* sphere,
+                                           const RcsShape* cone,
+                                           const HTr* A_sphere,
+                                           const HTr* A_cone,
+                                           double I_cp1[3],
+                                           double I_cp2[3],
+                                           double I_n[3])
+{
+  double dist = RcsShape_closestPointToCone(sphere, cone, A_sphere, A_cone,
+                                            I_cp1, I_cp2, I_n);
+
+  // Point on sphere surface: cp_sphere = cp_point + radius_sphere*n
+  Vec3d_constMulAndAddSelf(I_cp1, I_n, sphere->extents[0]);
+
+  return dist - sphere->extents[0];
+}
+
+/*******************************************************************************
+ * Computes the distance between a cone and a sphere shape primitives.
+ ******************************************************************************/
+static double RcsShape_closestConeToSphere(const RcsShape* cone,
+                                           const RcsShape* sphere,
+                                           const HTr* A_cone,
+                                           const HTr* A_sphere,
+                                           double I_cp2[3],
+                                           double I_cp1[3],
+                                           double I_n[3])
+{
+  double dist = RcsShape_closestSphereToCone(sphere, cone, A_sphere, A_cone,
+                                             I_cp1, I_cp2, I_n);
+
+  // revert the normal, because we are calling the reverse method
+  Vec3d_constMulSelf(I_n, -1.0);
+  return dist;
+}
+
+
+/*******************************************************************************
  *
  ******************************************************************************/
 static double RcsShape_closestPointToCylinder(const RcsShape* point,
@@ -1575,7 +1615,7 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
     RcsShape_noDistance,                // RCSSHAPE_CYLINDER
     RcsShape_noDistance,                // RCSSHAPE_REFFRAME
     RcsShape_closestSphereToSphere,     // RCSSHAPE_SPHERE
-    RcsShape_noDistance,                // RCSSHAPE_CONE
+    RcsShape_closestSphereToCone,       // RCSSHAPE_CONE
     RcsShape_noDistance,                // RCSSHAPE_GPISF
     RcsShape_noDistance,                // RCSSHAPE_TORUS
     RcsShape_noDistance,                // RCSSHAPE_OCTREE
@@ -1592,7 +1632,7 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
     RcsShape_noDistance,                // RCSSHAPE_BOX
     RcsShape_noDistance,                // RCSSHAPE_CYLINDER
     RcsShape_noDistance,                // RCSSHAPE_REFFRAME
-    RcsShape_noDistance,                // RCSSHAPE_SPHERE
+    RcsShape_closestConeToSphere,       // RCSSHAPE_SPHERE
     RcsShape_noDistance,                // RCSSHAPE_CONE
     RcsShape_noDistance,                // RCSSHAPE_GPISF
     RcsShape_noDistance,                // RCSSHAPE_TORUS
@@ -1720,9 +1760,9 @@ double RcsShape_distance(const RcsShape* s1,
   HTr_transform(&A_C1I, A_B1I, &s1->A_CB);
   HTr_transform(&A_C2I, A_B2I, &s2->A_CB);
 
-  RCHECK_MSG(I_cp1, "%s - %s", RcsShape_name(s1->type), RcsShape_name(s2->type));
-  RCHECK_MSG(I_cp2, "%s - %s", RcsShape_name(s1->type), RcsShape_name(s2->type));
-  RCHECK_MSG(I_n, "%s - %s", RcsShape_name(s1->type), RcsShape_name(s2->type));
+  RCHECK_MSG(I_cp1, "%s-%s", RcsShape_name(s1->type), RcsShape_name(s2->type));
+  RCHECK_MSG(I_cp2, "%s-%s", RcsShape_name(s1->type), RcsShape_name(s2->type));
+  RCHECK_MSG(I_n, "%s-%s", RcsShape_name(s1->type), RcsShape_name(s2->type));
 
   double d = func(s1, s2, &A_C1I, &A_C2I, I_cp1, I_cp2, I_n);
 
@@ -1733,7 +1773,7 @@ double RcsShape_distance(const RcsShape* s1,
  * Compute the closest distance of a shape to a point.
  ******************************************************************************/
 double RcsShape_distanceToPoint(const RcsShape* shape,
-                                const HTr* A_SI,
+                                const HTr* A_BI,
                                 const double I_pt[3],
                                 double I_cpShape[3],
                                 double I_nShapePt[3])
@@ -1747,7 +1787,7 @@ double RcsShape_distanceToPoint(const RcsShape* shape,
   ptShape.computeType = RCSSHAPE_COMPUTE_DISTANCE;
 
   double tmp[3];
-  double d = RcsShape_distance(shape, &ptShape, A_SI, HTr_identity(),
+  double d = RcsShape_distance(shape, &ptShape, A_BI, HTr_identity(),
                                I_cpShape, tmp, I_nShapePt);
 
   return d;
