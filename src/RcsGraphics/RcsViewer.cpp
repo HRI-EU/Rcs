@@ -1566,7 +1566,14 @@ bool Viewer::handle(const osgGA::GUIEventAdapter& ea,
       if ((ea.getKey() >= 48) && (ea.getKey() <= 57))
       {
         unsigned int dLev = ea.getKey() - 48;
-        RcsLogLevel = dLev;
+        if (dLev<9)
+        {
+          RcsLogLevel = dLev;
+        }
+        else
+        {
+          RcsLogLevel = -1;
+        }
         RMSG("Setting debug level to %u", dLev);
         return false;
       }
