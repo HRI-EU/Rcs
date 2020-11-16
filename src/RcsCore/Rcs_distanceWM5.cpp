@@ -1378,49 +1378,49 @@ static double Rcs_distancePointCylinder(const double p[3],
  * is given by A_cone and its dimensions by height and radius. Vectors cp0 and
  * cp1 hold the closest points of the distance query. They may be NULL.
  ******************************************************************************/
-static double Rcs_distancePointCone(const double p[3],
-                                    const HTr* A_cone,
-                                    double height,
-                                    double radius,
-                                    double cp0_[3],
-                                    double cp1_[3])
-{
-  double buf0[3], buf1[3];
-  double* cp0 = cp0_ ? cp0_ : buf0;
-  double* cp1 = cp1_ ? cp1_ : buf1;
+// static double Rcs_distancePointCone(const double p[3],
+//                                     const HTr* A_cone,
+//                                     double height,
+//                                     double radius,
+//                                     double cp0_[3],
+//                                     double cp1_[3])
+// {
+//   double buf0[3], buf1[3];
+//   double* cp0 = cp0_ ? cp0_ : buf0;
+//   double* cp1 = cp1_ ? cp1_ : buf1;
 
-  //transform into cone ref frame.
-  double pTrafo[3];
-  Vec3d_invTransform(pTrafo, A_cone, p);
+//   //transform into cone ref frame.
+//   double pTrafo[3];
+//   Vec3d_invTransform(pTrafo, A_cone, p);
 
-  //transform into cylinder coordinates
-  double pt[2];
-  double angle;
-  Rcs_Cart2Cyl(pTrafo, pt[0], angle, pt[1]);
+//   //transform into cylinder coordinates
+//   double pt[2];
+//   double angle;
+//   Rcs_Cart2Cyl(pTrafo, pt[0], angle, pt[1]);
 
-  double p0[2] = {0, -0.25*height}; //base
-  double p1[2] = {radius, -0.25*height}; //rim
-  double p2[2] = {0, 0.75*height}; //tip
+//   double p0[2] = { 0, 0 }; //base
+//   double p1[2] = { radius, 0 }; //rim
+//   double p2[2] = { 0, height }; //tip
 
-  double cp1_2D[2];
-  double distance =
-    Rcs_distancePointLineseg2D(pt, p0, p1, NULL, cp1_2D); //prefer bottom
+//   double cp1_2D[2];
+//   double distance =
+//     Rcs_distancePointLineseg2D(pt, p0, p1, NULL, cp1_2D); //prefer bottom
 
-  double cp1_2D_temp[2];
-  double distance_temp = Rcs_distancePointLineseg2D(pt, p1, p2, NULL,
-                                                    cp1_2D_temp);
-  Rcs_copyPointIfCloser2D(distance_temp, NULL, cp1_2D_temp, distance, NULL,
-                          cp1_2D);
+//   double cp1_2D_temp[2];
+//   double distance_temp = Rcs_distancePointLineseg2D(pt, p1, p2, NULL,
+//                                                     cp1_2D_temp);
+//   Rcs_copyPointIfCloser2D(distance_temp, NULL, cp1_2D_temp, distance, NULL,
+//                           cp1_2D);
 
-  //transform back to Cartesian coordinates
-  Vec3d_copy(cp0, p);
-  Rcs_Cyl2Cart(cp1_2D[0], angle, cp1_2D[1], cp1);
+//   //transform back to Cartesian coordinates
+//   Vec3d_copy(cp0, p);
+//   Rcs_Cyl2Cart(cp1_2D[0], angle, cp1_2D[1], cp1);
 
-  //transform back into global ref frame
-  Vec3d_transformSelf(cp1, A_cone);
+//   //transform back into global ref frame
+//   Vec3d_transformSelf(cp1, A_cone);
 
-  return distance;
-}
+//   return distance;
+// }
 
 /*!
  * \brief Recursive helper function to decide if a point lies inside convex
@@ -2397,44 +2397,44 @@ static inline double RcsShape_closestConeToSSL(const RcsShape* cone,
 /*******************************************************************************
  * Computes the distance between a sphere and a cone shape primitives.
  ******************************************************************************/
-static double RcsShape_closestSphereToCone(const RcsShape* sphere,
-                                           const RcsShape* cone,
-                                           const HTr* A_sphere,
-                                           const HTr* A_cone,
-                                           double I_cp1[3],
-                                           double I_cp2[3],
-                                           double I_n[3])
-{
-  double dist = Rcs_distancePointCone(A_sphere->org, A_cone, cone->extents[2],
-                                      cone->extents[0], I_cp1, I_cp2);
+// static double RcsShape_closestSphereToCone(const RcsShape* sphere,
+//                                            const RcsShape* cone,
+//                                            const HTr* A_sphere,
+//                                            const HTr* A_cone,
+//                                            double I_cp1[3],
+//                                            double I_cp2[3],
+//                                            double I_n[3])
+// {
+//   double dist = Rcs_distancePointCone(A_sphere->org, A_cone, cone->extents[2],
+//                                       cone->extents[0], I_cp1, I_cp2);
 
-  // Normal vector on sphere
-  Vec3d_sub(I_n, I_cp2, I_cp1);
-  Vec3d_normalizeSelf(I_n);
+//   // Normal vector on sphere
+//   Vec3d_sub(I_n, I_cp2, I_cp1);
+//   Vec3d_normalizeSelf(I_n);
 
-  // Point on sphere surface: cp_sphere = cp_point + radius_sphere*n
-  Vec3d_constMulAndAddSelf(I_cp1, I_n, sphere->extents[0]);
+//   // Point on sphere surface: cp_sphere = cp_point + radius_sphere*n
+//   Vec3d_constMulAndAddSelf(I_cp1, I_n, sphere->extents[0]);
 
-  return dist;
-}
+//   return dist - sphere->extents[0];
+// }
 
 /*******************************************************************************
  * Computes the distance between a cone and a sphere shape primitives.
  ******************************************************************************/
-static double RcsShape_closestConeToSphere(const RcsShape* cone,
-                                           const RcsShape* sphere,
-                                           const HTr* A_cone,
-                                           const HTr* A_sphere,
-                                           double I_cp2[3],
-                                           double I_cp1[3],
-                                           double I_n[3])
-{
-  double dist = RcsShape_closestSphereToCone(sphere, cone, A_sphere, A_cone,
-                                             I_cp1, I_cp2, I_n);
-  // revert the normal, because we are calling the reverse method
-  Vec3d_constMulSelf(I_n, -1.0);
-  return dist;
-}
+// static double RcsShape_closestConeToSphere(const RcsShape* cone,
+//                                            const RcsShape* sphere,
+//                                            const HTr* A_cone,
+//                                            const HTr* A_sphere,
+//                                            double I_cp2[3],
+//                                            double I_cp1[3],
+//                                            double I_n[3])
+// {
+//   double dist = RcsShape_closestSphereToCone(sphere, cone, A_sphere, A_cone,
+//                                              I_cp1, I_cp2, I_n);
+//   // revert the normal, because we are calling the reverse method
+//   Vec3d_constMulSelf(I_n, -1.0);
+//   return dist;
+// }
 
 /*******************************************************************************
  * Computes the distance between a SSL and a cylinder shape primitives.
@@ -2951,18 +2951,18 @@ static bool setWildMagicDistanceFunctions()
   success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_CYLINDER,
                                          RcsShape_closestSphereToCylinder)
             && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_CONE,
-                                         RcsShape_closestSphereToCone)
-            && success;
+  //success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_CONE,
+  //                                       RcsShape_closestSphereToCone)
+  //          && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_TORUS,
                                          RcsShape_closestSphereToTorus) && success;
 
   // CONE
   //success = RcsShape_setDistanceFunction(RCSSHAPE_CONE, RCSSHAPE_SSL,
   //                                       RcsShape_closestConeToSSL) && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_CONE, RCSSHAPE_SPHERE,
-                                         RcsShape_closestConeToSphere)
-            && success;
+  //success = RcsShape_setDistanceFunction(RCSSHAPE_CONE, RCSSHAPE_SPHERE,
+  //                                       RcsShape_closestConeToSphere)
+  //          && success;
   //success = RcsShape_setDistanceFunction(RCSSHAPE_CONE, RCSSHAPE_POINT,
   //                                       RcsShape_closestConeToSphere)
   //          && success;
