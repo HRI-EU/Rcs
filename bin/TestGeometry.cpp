@@ -46,6 +46,7 @@
 #include <Rcs_shape.h>
 #include <Rcs_utils.h>
 #include <GraphNode.h>
+#include <SphereNode.h>
 #include <ArrowNode.h>
 #include <CapsuleNode.h>
 #include <HUD.h>
@@ -58,6 +59,7 @@
 #include <TargetSetter.h>
 #include <SegFaultHandler.h>
 
+#include <pthread.h>
 
 RCS_INSTALL_ERRORHANDLERS
 
@@ -81,6 +83,215 @@ void quit(int /*sig*/)
     fprintf(stderr, "Exiting without cleanup\n");
     exit(0);
   }
+}
+
+/*******************************************************************************
+ * Random plausibility tests
+ ******************************************************************************/
+static bool testDistanceRandomly()
+{
+  int iterations = 10, st1 = -1, st2 = -1;
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-iter", &iterations, "Number of iterations");
+  argP.getArgument("-t1", &st1, "Shape type for shape 1 (Default: all shapes)");
+  argP.getArgument("-t2", &st2, "Shape type for shape 2 (Default: all shapes)");
+  bool skipPenetrations = argP.hasArgument("-skipPenetrations",
+                                           "Ignore cases with penetrations");
+  bool showWindow = argP.hasArgument("-graphics",
+                                     "Show graphics window for failure cases");
+
+  if (argP.hasArgument("-h"))
+  {
+    RcsShape_fprintDistanceFunctions(stdout);
+    return false;
+  }
+
+  std::vector<RCSSHAPE_TYPE> sTypes;
+  sTypes.push_back(RCSSHAPE_SSL);
+  sTypes.push_back(RCSSHAPE_SSR);
+  sTypes.push_back(RCSSHAPE_MESH);
+  sTypes.push_back(RCSSHAPE_BOX);
+  sTypes.push_back(RCSSHAPE_CYLINDER);
+  sTypes.push_back(RCSSHAPE_SPHERE);
+  sTypes.push_back(RCSSHAPE_CONE);
+  sTypes.push_back(RCSSHAPE_TORUS);
+  sTypes.push_back(RCSSHAPE_POINT);
+
+  bool success = true;
+  const double eps = 1.0e-5;
+
+  for (int i = 0; i < iterations; ++i)
+  {
+    RLOG_CPP(2, "Iteration " << i << " of " << iterations);
+
+    int rndIdx1 = st1;
+    int rndIdx2 = st2;
+
+    if (rndIdx1 == -1)
+    {
+      rndIdx1 = sTypes[Math_getRandomInteger(0, sTypes.size() - 1)];
+    }
+
+    if (rndIdx2 == -1)
+    {
+      rndIdx2 = sTypes[Math_getRandomInteger(0, sTypes.size() - 1)];
+    }
+
+    RcsShape* s1 = RcsShape_createRandomShape(rndIdx1);
+    RcsShape* s2 = RcsShape_createRandomShape(rndIdx2);
+    RLOG_CPP(2, "Testing " << RcsShape_name(s1->type) << " against "
+             << RcsShape_name(s2->type));
+
+    HTr A_BI1, A_BI2;
+    Vec3d_setRandom(A_BI1.org, -0.1, 0.1);
+    Mat3d_setRandomRotation(A_BI1.rot);
+    Vec3d_setRandom(A_BI2.org, -0.1, 0.1);
+    Mat3d_setRandomRotation(A_BI2.rot);
+
+    double cp1[3], cp2[3], n12[3];
+    HTr A_C1I, A_C2I;
+    HTr_transform(&A_C1I, &A_BI1, &s1->A_CB);
+    HTr_transform(&A_C2I, &A_BI2, &s2->A_CB);
+
+    double d = RcsShape_distance(s1, s2, &A_BI1, &A_BI2, cp1, cp2, n12);
+
+    if (skipPenetrations && (d<0.0))
+    {
+      continue;
+    }
+
+    double testPt1[3], testPt2[3], tmp[3];
+    double dtest1 = RcsShape_distanceToPoint(s1, &A_BI1, cp1, testPt1, tmp);
+    double dtest2 = RcsShape_distanceToPoint(s2, &A_BI2, cp2, testPt2, tmp);
+
+    bool success_i = true;
+
+    // Test 1: contact points must be on shape's surface
+    if (fabs(dtest1 > eps) || fabs(dtest2 > eps))
+    {
+      success_i = false;
+      success = false;
+      RLOG_CPP(1, "Testing " << RcsShape_name(s1->type) << " against "
+               << RcsShape_name(s2->type) << " with d=" << d);
+      RLOG(1, "Distance test 1 %zu failed: %f %f", i, dtest1, dtest2);
+    }
+
+    // Test 2: Distance query from point cp2 to shape 1 (and the other way
+    //         around) must deiver the same contact point cp1.
+    RcsShape_distanceToPoint(s1, &A_BI1, cp2, testPt1, tmp);
+    RcsShape_distanceToPoint(s2, &A_BI2, cp1, testPt2, tmp);
+
+    if ((d>0.0) && ((Vec3d_distance(cp1, testPt1) > eps) ||
+                    (Vec3d_distance(cp1, testPt1) > eps)))
+    {
+      success_i = false;
+      success = false;
+      RLOG_CPP(1, "Testing " << RcsShape_name(s1->type) << " against "
+               << RcsShape_name(s2->type) << " with d=" << d);
+      RLOG(1, "Distance test 2 %zu failed", i);
+    }
+
+    if ((!success_i) && showWindow)
+    {
+      Rcs::Viewer viewer;
+      osg::ref_ptr<Rcs::SphereNode> sp1 = new Rcs::SphereNode(cp1, 0.01);
+      osg::ref_ptr<Rcs::SphereNode> sp2 = new Rcs::SphereNode(cp2, 0.01);
+      sp1->setMaterial("RED");
+      sp2->setMaterial("GREEN");
+      viewer.add(sp1);
+      viewer.add(sp2);
+
+      RcsBody b1;
+      memset(&b1, 0, sizeof(RcsBody));
+      b1.shape = RNALLOC(2, RcsShape*);
+      b1.shape[0] = s1;
+      b1.shape[1] = NULL;
+      b1.A_BI = &A_BI1;
+
+      osg::ref_ptr<Rcs::BodyNode> coll1 = new Rcs::BodyNode(&b1);
+      coll1->setMaterial("RED");
+      coll1->displayCollisionNode(true);
+      coll1->displayGraphicsNode(false);
+      coll1->displayPhysicsNode(false);
+
+      RcsBody b2;
+      memset(&b2, 0, sizeof(RcsBody));
+      b2.shape = RNALLOC(2, RcsShape*);
+      b2.shape[0] = s2;
+      b2.shape[1] = NULL;
+      b2.A_BI = &A_BI2;
+
+      osg::ref_ptr<Rcs::BodyNode> coll2 = new Rcs::BodyNode(&b2);
+      coll2->setMaterial("BLUE");
+      coll2->displayCollisionNode(true);
+      coll2->displayGraphicsNode(false);
+      coll2->displayPhysicsNode(false);
+      viewer.add(coll1);
+      viewer.add(coll2);
+
+      viewer.runInThread();
+      RPAUSE();
+    }
+
+    RLOG(2, "Distance test %s: %f %f", success_i ? "SUCCEEDED" : "FAILED",
+         dtest1, dtest2);
+  }
+
+  RMSG("Distance test reported %s", success ? "SUCCESS" : "FAILURE");
+
+  return success;
+}
+
+
+/*******************************************************************************
+ * Threaded distance function test
+ ******************************************************************************/
+static void* threadFunc(void* arg)
+{
+  bool* result = new bool;
+  *result = testDistanceRandomly();
+  return result;
+}
+
+static bool testDistanceThreaded()
+{
+  const size_t maxThreads = 32;
+  pthread_t threads[maxThreads];
+  bool success = true;
+  int iterations = 10, nThreads = 1;
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-iter", &iterations, "Number of iterations");
+  argP.getArgument("-nThreads", &nThreads, "Number of threads");
+
+  if (argP.hasArgument("-h"))
+  {
+    RcsShape_fprintDistanceFunctions(stdout);
+    return false;
+  }
+
+  nThreads = Math_iClip(nThreads, 0, maxThreads);
+
+  RLOG_CPP(0, "Launching " << nThreads << " threads with " << iterations
+           << " iterations");
+
+  for (int i=0; i< nThreads; ++i)
+  {
+    int res = pthread_create(&threads[i], NULL, threadFunc, &iterations);
+    RCHECK_MSG(res == 0, "Failure launching thread number %zu", i);
+  }
+
+  for (int i = 0; i < nThreads; ++i)
+  {
+    bool* result_i;
+    pthread_join(threads[i], (void**)&result_i);
+    success = *result_i && success;
+    delete result_i;
+  }
+
+  RLOG(0, "Joined %zu threads, test was a great %s", nThreads,
+       success ? "SUCCESS" : "FAILURE");
+
+  return success;
 }
 
 /*******************************************************************************
@@ -616,6 +827,8 @@ int main(int argc, char** argv)
       printf("\t\t1   Distance function test\n");
       printf("\t\t2   2D polygon test\n");
       printf("\t\t3   2D ray - line segment intersection test\n");
+      printf("\t\t4   Random distance test\n");
+      printf("\t\t5   Threaded random distance test\n");
       break;
     }
 
@@ -634,6 +847,18 @@ int main(int argc, char** argv)
     case 3:
     {
       testRayLinesegIntersection2D(argc, argv);
+      break;
+    }
+
+    case 4:
+    {
+      testDistanceRandomly();
+      break;
+    }
+
+    case 5:
+    {
+      testDistanceThreaded();
       break;
     }
 

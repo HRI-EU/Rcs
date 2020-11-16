@@ -37,6 +37,7 @@
 #include <BulletSoftSimulation.h>
 #include <BulletHelpers.h>
 #include <BulletDebugDrawer.h>
+#include <BulletDistance.h>
 #include <Rcs_macros.h>
 #include <Rcs_cmdLine.h>
 #include <Rcs_math.h>
@@ -230,6 +231,33 @@ static void test_mesh(int argc, char** argv)
   Rcs::convertMesh(outFile.c_str(), meshFile.c_str());
 }
 
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool test_BulletDistance(int argc, char** argv)
+{
+  RMSG("BulletDistance test");
+  int iter = 10;
+  int nThreads = 1;
+  Rcs::CmdLineParser argP(argc, argv);
+  argP.getArgument("-iter", &iter, "Number of iterations");
+  argP.getArgument("-nThreads", &nThreads, "Number of threads");
+
+  bool success;
+
+  if (nThreads==1)
+  {
+    success = testBulletDistance(iter);
+  }
+  else
+  {
+    success = testBulletDistanceThreaded(nThreads, iter);
+  }
+
+  RMSG("Distance test reported %s", success ? "SUCCESS" : "FAILURE");
+
+  return success;
+}
 /*******************************************************************************
  *
  ******************************************************************************/
@@ -264,6 +292,7 @@ int main(int argc, char** argv)
       printf("\t0   Prints this message (default)\n");
       printf("\t\t1   Mesh conversion to convex hull\n");
       printf("\t\t2   Bullet soft body simulation with native meshes\n");
+      printf("\t\t3   Bullet distance function test\n");
       break;
     }
 
@@ -276,6 +305,12 @@ int main(int argc, char** argv)
     case 2:
     {
       test_softBody(argc, argv);
+      break;
+    }
+
+    case 3:
+    {
+      test_BulletDistance(argc, argv);
       break;
     }
 
