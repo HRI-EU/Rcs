@@ -1417,6 +1417,14 @@ bool BodyNode::debugInformationVisible() const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+void BodyNode::setMaterial(const std::string& material, double alpha)
+{
+  setNodeMaterial(material, this, alpha);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 const RcsBody* BodyNode::body() const
 {
   return this->bdy;

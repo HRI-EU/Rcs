@@ -94,6 +94,7 @@ public:
   void setGhostMode(bool enabled, const std::string& matname="");
   void setDynamicMeshUpdate(bool enabled);
   bool getDynamicMeshUpdate() const;
+  void setMaterial(const std::string& material, double alpha=1.0);
 
 protected:
 
