@@ -395,6 +395,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("X", "Make monolithic");
       Rcs::KeyCatcherBase::registerKey("S", "Scale graph");
       Rcs::KeyCatcherBase::registerKey("b", "Boxify graph");
+      Rcs::KeyCatcherBase::registerKey("H", "Toggle HUD");
 
       double dtSim = 0.0, dtStep = 0.04;
       char hudText[512] = "", comRef[64] = "";
@@ -621,6 +622,13 @@ int main(int argc, char** argv)
           if (kc->getAndResetKey('q'))
           {
             runLoop = false;
+          }
+          else if (kc->getAndResetKey('H'))
+          {
+            if (hud)
+            {
+              hud->toggle();
+            }
           }
           else if (kc->getAndResetKey('S'))
           {
@@ -1735,6 +1743,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("v", "Write current q to model_state");
       Rcs::KeyCatcherBase::registerKey("f", "Toggle physics feedback");
       Rcs::KeyCatcherBase::registerKey("p", "Print controller info on console");
+      Rcs::KeyCatcherBase::registerKey("H", "Toggle HUD");
 
       int algo = 0;
       double alpha = 0.05, lambda = 1.0e-8, tmc = 0.1, dt = 0.01, dt_calc = 0.0;
@@ -2097,6 +2106,13 @@ int main(int argc, char** argv)
         if (kc && kc->getAndResetKey('q'))
         {
           runLoop = false;
+        }
+        else if (kc->getAndResetKey('H'))
+        {
+          if (hud)
+          {
+            hud->toggle();
+          }
         }
         else if (kc && kc->getAndResetKey('a'))
         {
