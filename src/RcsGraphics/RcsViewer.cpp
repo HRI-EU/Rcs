@@ -493,7 +493,6 @@ void Viewer::create(bool fancy, bool startupWithShadow)
 
   // Change the threading model. The default threading model is
   // osgViewer::Viewer::CullThreadPerCameraDrawThreadPerContext.
-  // This leads to problems with multi-threaded updates (HUD).
   if (forceSimple)
   {
     viewer->setThreadingModel(osgViewer::Viewer::SingleThreaded);
@@ -608,9 +607,9 @@ bool Viewer::addInternal(osg::Node* node)
   osg::Camera* newHud = dynamic_cast<osg::Camera*>(node);
 
   // If it's a camera, it needs a graphics context. This doesn't exist right
-  // after construction, therefore in that case we push all cameras on a
-  // vector and add them later. In case the graphics context exists, we can
-  // directly add it.
+  // after construction, therefore in that case we ignore it. This shouldn't
+  // happen here, since this function gets called from within the viewer's
+  // frame traversals.
   if (newHud)
   {
     osgViewer::Viewer::Windows windows;

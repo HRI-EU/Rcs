@@ -143,7 +143,7 @@ void Rcs::TaskPolar2D::computeXp(double* phip) const
   computeRelativeRotationMatrix(A_ER, this->ef, this->refBody);
   Vec3d_getPolarVelocityMatrix(H, A_ER[this->direction]);
 
-  // TODO: Do we need to account forthe direction vector here? Plase check.
+  // TODO: Do we need to account for the direction vector here? Plase check.
   phip[0] = H[0][0]*R_om[0] + H[0][1]*R_om[1] + H[0][2]*R_om[2];
   phip[1] = H[1][0]*R_om[0] + H[1][1]*R_om[1] + H[1][2]*R_om[2];
 }

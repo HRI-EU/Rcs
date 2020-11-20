@@ -206,9 +206,10 @@ Rcs::HUD::~HUD()
  ******************************************************************************/
 void Rcs::HUD::setText(const std::string& text)
 {
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mutex);
+
   if (_text != text)
   {
-    OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mutex);
     textChanged = true;
     _text = text;
   }
