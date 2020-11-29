@@ -2,6 +2,8 @@
 IF(ENABLE_C++11)
   SET(CMAKE_CXX_STANDARD 11)
   SET(CMAKE_CXX_STANDARD_REQUIRED ON)
+ELSEIF(UNIX)
+  SET(CMAKE_CXX_FLAGS "-std=c++0x")
 ENDIF()
 
 # Some special treatment for 32-bit and 64-bit machines
