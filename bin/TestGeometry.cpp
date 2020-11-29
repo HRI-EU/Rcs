@@ -235,6 +235,9 @@ static bool testDistanceRandomly()
 
     RLOG(2, "Distance test %s: %f %f", success_i ? "SUCCEEDED" : "FAILED",
          dtest1, dtest2);
+
+    RcsShape_destroy(s1);
+    RcsShape_destroy(s2);
   }
 
   RMSG("Distance test reported %s", success ? "SUCCESS" : "FAILURE");
@@ -879,6 +882,8 @@ int main(int argc, char** argv)
     argP.print();
     Rcs_printResourcePath();
   }
+
+  xmlCleanupParser();
 
   fprintf(stderr, "Thanks for using the Rcs libraries\n");
 
