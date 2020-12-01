@@ -654,6 +654,7 @@ void RcsShape_copy(RcsShape* dst, const RcsShape* src)
   Vec3d_copy(dst->extents, src->extents);
   dst->scale = src->scale;
   dst->computeType = src->computeType;
+  dst->resizeable = src->resizeable;
 
   // Copy or re-create string members
   String_copyOrRecreate(&dst->meshFile, src->meshFile);
@@ -754,6 +755,9 @@ void RcsShape_fprint(FILE* out, const RcsShape* s)
     fprintf(out, "graphics ");
   }
   fprintf(out, "\n");
+
+  // Resizeable
+  fprintf(out, "\tResizeable: %s\n", s->resizeable ? "true" : "false");
 
   // File names
   fprintf(out, "\tmeshFile   : \"%s\"\n", s->meshFile ? s->meshFile : "NULL");
@@ -894,6 +898,12 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
     }
   }
 
+  // Resizeable
+  if (self->resizeable)
+  {
+    fprintf(out, "resizeable=\"true\" ");
+  }
+
   // Scale
   if (self->scale != 1.0)
   {
@@ -969,6 +979,7 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
   RcsShape* shape = RALLOC(RcsShape);
   shape->scale = 1.0;
   shape->type = shapeType;
+  shape->resizeable = true;
   Vec3d_setRandom(shape->extents, 0.1, 0.3);
   Vec3d_setRandom(shape->A_CB.org, -0.1, 0.1);
   Mat3d_setRandomRotation(shape->A_CB.rot);
@@ -1010,6 +1021,7 @@ RcsShape* RcsShape_createFrameShape(double scale)
   shape->scale = scale;
   shape->type = RCSSHAPE_REFFRAME;
   shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
+  shape->resizeable = false;
   shape->extents[0] = 0.9;
   shape->extents[1] = 0.9;
   shape->extents[2] = 0.9;

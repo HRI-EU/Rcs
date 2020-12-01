@@ -3541,3 +3541,67 @@ RcsMeshData* RcsGraph_meshify(const RcsGraph* self, double scale,
 
   return allMesh;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void RcsGraph_setShapesResizeable(RcsGraph* self, bool resizeable)
+{
+  RCSGRAPH_TRAVERSE_BODIES(self)
+  {
+    RCSBODY_TRAVERSE_SHAPES(BODY)
+    {
+      SHAPE->resizeable = resizeable;
+    }
+  }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void RcsGraph_copyResizeableShapes(RcsGraph* dst, const RcsGraph* src,
+                                   int level)
+{
+  const RcsBody* bSrc = src->root;
+  RcsBody* bDst = dst->root;
+
+  do
+  {
+    RcsShape** sSrc = bSrc->shape;
+    RcsShape** sDst = bDst->shape;
+
+    while ((*sSrc) && (*sDst))
+    {
+      RcsShape* shapeDst = *sDst;
+
+      if (!shapeDst->resizeable)
+      {
+        sSrc++;
+        sDst++;
+        continue;
+      }
+
+      const RcsShape* shapeSrc = *sSrc;
+      Vec3d_copy(shapeDst->extents, shapeSrc->extents);
+      shapeDst->computeType = shapeSrc->computeType;
+
+      if (level>0)
+      {
+        HTr_copy(&shapeDst->A_CB, &shapeSrc->A_CB);
+      }
+
+      if (level>1)
+      {
+        RcsShape_copy(shapeDst, shapeSrc);
+      }
+
+
+      sSrc++;
+      sDst++;
+    }
+
+    bSrc = RcsBody_depthFirstTraversalGetNext(bSrc);
+    bDst = RcsBody_depthFirstTraversalGetNext(bDst);
+  }
+  while (bSrc && bDst);
+}

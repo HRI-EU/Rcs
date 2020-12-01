@@ -599,11 +599,11 @@ bool RcsGraph_addBody(RcsGraph* graph, RcsBody* parent, RcsBody* body,
                       MatNd* qVec[], unsigned int nVec);
 
 /*! \ingroup RcsGraphFunctions
-*  \brief Adds box shapes between parent and child bodies so that an
-*         approximate can be visualized.
-*
-*  \param[in] self    Graph to which random shapes are to be added
-*/
+ *  \brief Adds box shapes between parent and child bodies so that an
+ *         approximate can be visualized.
+ *
+ *  \param[in] self    Graph to which random shapes are to be added
+ */
 void RcsGraph_addRandomGeometry(RcsGraph* self);
 
 /*! \ingroup RcsGraphFunctions
@@ -617,6 +617,28 @@ void RcsGraph_addRandomGeometry(RcsGraph* self);
  */
 void RcsGraph_computeAABB(const RcsGraph* self,
                           double xyzMin[3], double xyzMax[3]);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Sets the resizeable property of all shapes of the graph. This has an
+ *         effect for the visualization (3d graphics), and for copying the
+ *         shapes with \ref RcsGraph_copyResizeableShapes()
+ *
+ *  \param[in] resizeable    True for resizeable, false otherwise.
+ */
+void RcsGraph_setShapesResizeable(RcsGraph* self, bool resizeable);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Copies all resizeable shapes from graph src to graph dst. It is
+ *         assumed that the graphs have the same structure, otherwise the
+ *         result is undefined.
+ *
+ *  \param[in,out] dst    Graph receiving the updated shapes from src
+ *  \param[in]     src    Graph providing the shapes to dst
+ *  \param[in]     level  0: extents and computeType, 1: additionally transform,
+ *                        2: everything including meshes if any
+ */
+void RcsGraph_copyResizeableShapes(RcsGraph* dst, const RcsGraph* src,
+                                   int level);
 
 
 /**

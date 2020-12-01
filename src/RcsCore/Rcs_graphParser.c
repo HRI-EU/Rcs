@@ -341,6 +341,9 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
     getXMLNodePropertyInt(node, "id", (int*)shape->userData);
   }
 
+  shape->resizeable = false;
+  getXMLNodePropertyBoolString(node, "resizeable", &shape->resizeable);
+
   // Mesh file
   int strLength = getXMLNodeBytes(node, "meshFile");
 
@@ -764,8 +767,12 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
   RCHECK(jnt->maxTorque >= 0.0);
 
   // Speed limit
-  jnt->speedLimit = DBL_MAX;   // Default
+  jnt->speedLimit = DBL_MAX;
   getXMLNodePropertyDouble(node, "speedLimit", &jnt->speedLimit);
+
+  // Acceleration limit
+  jnt->accLimit = DBL_MAX;
+  getXMLNodePropertyDouble(node, "accelerationLimit", &jnt->accLimit);
 
   // Gear ratio
   double gearRatio = 1.0;
@@ -775,15 +782,23 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
     RCHECK_MSG(gearRatio >= 0.0,
                "Joint gear ratio of \"%s\" is negative (%f) - exiting",
                jnt->name, gearRatio);
-    double rpm2rad = 2.0*M_PI / 60.0;
+    const double rpm2rad = M_PI / 30.0;
     jnt->speedLimit *= rpm2rad / gearRatio;
   }
 
   // If the joint is of type rotation and no gear ratio is given,
   // we convert the value to radians (degrees assumed).
-  if ((gearRatio == 1.0) && RcsJoint_isRotation(jnt) && (jnt->speedLimit != DBL_MAX))
+  if ((gearRatio == 1.0) && RcsJoint_isRotation(jnt))
   {
-    jnt->speedLimit *= (M_PI / 180.0);
+    if (jnt->speedLimit != DBL_MAX)
+    {
+      jnt->speedLimit *= (M_PI / 180.0);
+    }
+
+    if (jnt->accLimit != DBL_MAX)
+    {
+      jnt->accLimit *= (M_PI / 180.0);
+    }
   }
 
   // Coupled joint

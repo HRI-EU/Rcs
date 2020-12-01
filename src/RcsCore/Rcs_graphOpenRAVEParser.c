@@ -505,6 +505,7 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
   jnt->weightMetric = 1.0;
   jnt->maxTorque = 1.0;
   jnt->speedLimit = DBL_MAX;
+  jnt->accLimit = DBL_MAX;
   jnt->ctrlType = RCSJOINT_CTRL_POSITION;
 
   // first find body that the joint is attached to

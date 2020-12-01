@@ -84,7 +84,8 @@ struct _RcsJoint
   HTr* A_JP;           ///< Relative transformation
   HTr A_JI;            ///< Absolute transformation
   double maxTorque;    ///< Max. torque for physics (default is 1.0)
-  double speedLimit;   ///< Speed limit, considering gear ratio.
+  double speedLimit;   ///< Speed limit (default is DBL_MAX)
+  double accLimit;     ///< Acceleration limit (default is DBL_MAX)
   int ctrlType;        ///< See RCSJOINT_CTRL_TYPE
   char* coupledJointName;
   MatNd* couplingFactors;
@@ -135,6 +136,7 @@ struct _RcsShape
   HTr A_CB;             ///< Relative transformation from body
   double extents[3];    ///< Geometrical parameters
   double scale;         ///< Scale factor for meshes (applied after parsing)
+  bool resizeable;      ///< For visualization and copying
   char computeType;     ///< Bitmask, see RCSSHAPE_COMPUTE_TYPE
 
   char* meshFile;       ///< Name of a mesh file (if any)

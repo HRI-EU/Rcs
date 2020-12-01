@@ -493,6 +493,7 @@ RcsJoint* parseJointURDF(xmlNode* node)
     getXMLNodePropertyDouble(limitNode, "lower", &jnt->q_min);
     getXMLNodePropertyDouble(limitNode, "upper", &jnt->q_max);
     getXMLNodePropertyDouble(limitNode, "velocity", &jnt->speedLimit);
+    jnt->accLimit = DBL_MAX;
   }
 
   // Joint type. We skip the relative transformation at this point. The reason
