@@ -52,12 +52,14 @@ Rcs::BulletSliderJoint::BulletSliderJoint(RcsJoint* jnt, double q0,
                                           btRigidBody& rbA, btRigidBody& rbB,
                                           const btTransform& frameInA,
                                           const btTransform& frameInB,
-                                          bool useReferenceFrameA):
+                                          bool useReferenceFrameA,
+                                          bool enableForceLimit):
   BulletJointBase(),
   btSliderConstraint(rbA, rbB, frameInA, frameInB, useReferenceFrameA),
   rcsJoint(jnt), constraintPosCurr(0.0), constraintPosPrev(0.0),
   jointPosCurr(0.0), jointPosPrev(0.0), jointVelocity(0.0),
-  jointVelocityPrev(0.0), jointAcceleration(0.0), offset(0.0), jf()
+  jointVelocityPrev(0.0), jointAcceleration(0.0), offset(0.0), jf(),
+  withForceLimit(enableForceLimit)
 {
   RCHECK(RcsJoint_isTranslation(rcsJoint));
 
@@ -77,7 +79,14 @@ Rcs::BulletSliderJoint::BulletSliderJoint(RcsJoint* jnt, double q0,
       (jnt->ctrlType == RCSJOINT_CTRL_VELOCITY))
   {
     RLOG(5, "Enabling motor for joint %s", jnt->name);
-    setJointLimit(true, q0, q0);
+    if (withForceLimit)
+    {
+      setJointLimit(true, jnt->q_min, jnt->q_max);
+    }
+    else
+    {
+      setJointLimit(true, q0, q0);
+    }
   }
   else
   {
@@ -166,13 +175,19 @@ void Rcs::BulletSliderJoint::update(double dt)
  ******************************************************************************/
 void Rcs::BulletSliderJoint::setJointPosition(double angle, double dt)
 {
-  // setPoweredLinMotor(true);
-  // setMaxLinMotorForce(rcsJoint->maxTorque);
-  // double vel = (angle-getJointPosition())/dt;
-  // vel = Math_clip(vel, -0.5, 0.5);
-  // setTargetLinMotorVelocity(vel);
+  if (withForceLimit)
+  {
+    setPoweredLinMotor(true);
+    setMaxLinMotorForce(rcsJoint->maxTorque);
+    double vel = (angle-getJointPosition())/dt;
+    vel = Math_clip(vel, -0.5, 0.5);
+    setTargetLinMotorVelocity(vel);
+  }
+  else
+  {
+    setJointLimit(true, angle, angle);
+  }
 
-  setJointLimit(true, angle, angle);
 }
 
 /*******************************************************************************

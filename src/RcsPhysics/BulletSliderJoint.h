@@ -54,7 +54,7 @@ public:
   BulletSliderJoint(RcsJoint* jnt, double q0,
                     btRigidBody& rbA, btRigidBody& rbB,
                     const btTransform& frameInA, const btTransform& frameInB,
-                    bool useReferenceFrameA);
+                    bool useReferenceFrameA, bool withForceLimit);
   virtual ~BulletSliderJoint();
 
   double getJointPosition() const;
@@ -86,7 +86,7 @@ private:
   double jointAcceleration;
   double offset;
   btJointFeedback jf;
-
+  bool withForceLimit;
 };
 
 }   // namespace Rcs

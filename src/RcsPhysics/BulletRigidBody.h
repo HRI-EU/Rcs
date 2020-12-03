@@ -94,6 +94,7 @@ private:
   double x_dot[3];
   double omega[3];
   btJointFeedback jf;
+  bool linearJointForceLimit;
 };
 
 }   // namespace Rcs

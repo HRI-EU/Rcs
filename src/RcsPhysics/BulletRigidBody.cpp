@@ -303,6 +303,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
   // Read number of vertices limit to be compressed into convex hull
   RCHECK(config);
   unsigned int convexHullVertexLimit = MAX_VERTICES_WITHOUT_COMPRESSION;
+  bool linearJointForceLimit = true;
   xmlNodePtr bulletParams = getXMLChildByName(config->getXMLRootNode(),
                                               "bullet_parameters");
   if (bulletParams == NULL)
@@ -314,6 +315,8 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
   {
     getXMLNodePropertyUnsignedInt(bulletParams, "convex_hull_vertex_limit",
                                   &convexHullVertexLimit);
+    getXMLNodePropertyBoolString(bulletParams, "linear_joint_force_limit",
+                                 &linearJointForceLimit);
   }
 
 
@@ -451,6 +454,11 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
 
   // Never sleep
   btBody->setSleepingThresholds(0.0, 0.0);
+
+  // Enable or disable slider joint force limits. Deactivated limits tend to
+  // be a bit more stable, so if they are not needed it's advisable to
+  // disable the force limit handling.
+  btBody->linearJointForceLimit = linearJointForceLimit;
 
   // Assign a bit higher damping for bodies that are not connected through
   // joints
@@ -714,7 +722,8 @@ btTypedConstraint* Rcs::BulletRigidBody::createJoint(const RcsGraph* graph)
                                   graph->q->ele[body->jnt->jointIndex],
                                   *this, *parent,
                                   frameInA, frameInB,
-                                  useReferenceFrameA);
+                                  useReferenceFrameA,
+                                  linearJointForceLimit);
   }
 
   return joint;
