@@ -133,6 +133,15 @@ void RcsJoint_fprint(FILE* out, const RcsJoint* jnt)
     fprintf(out, "\taccLimit   = %f\n", jnt->accLimit);
   }
 
+  if (jnt->decLimit==DBL_MAX)
+  {
+    fprintf(out, "\tdecLimit   = DBL_MAX\n");
+  }
+  else
+  {
+    fprintf(out, "\tdecLimit   = %f\n", jnt->decLimit);
+  }
+
   fprintf(out, "\tweightJL     = %f\n", jnt->weightJL);
   fprintf(out, "\tweightCA     = %f\n", jnt->weightCA);
   fprintf(out, "\tweightMetric = %f\n", jnt->weightMetric);
@@ -285,6 +294,7 @@ void RcsJoint_copy(RcsJoint* dst, const RcsJoint* src)
   dst->maxTorque = src->maxTorque;
   dst->speedLimit = src->speedLimit;
   dst->accLimit = src->accLimit;
+  dst->decLimit = src->decLimit;
   dst->ctrlType = src->ctrlType;
   String_copyOrRecreate(&dst->coupledJointName, src->coupledJointName);
 
@@ -463,24 +473,13 @@ double RcsJoint_computeSlaveJointVelocity(const RcsJoint* slave,
 void RcsJoint_fprintXML(FILE* out, const RcsJoint* self)
 {
   char buf[256];
-  const double r2d = 180.0/M_PI;
+  const double scaleToXML = RcsJoint_isRotation(self) ? (180.0/M_PI) : 1.0;
 
   fprintf(out, "    <Joint ");
-
   fprintf(out, "name=\"%s\" ", self->name);
-
-  if (RcsJoint_isRotation(self))
-  {
-    fprintf(out, "range=\"%s ", String_fromDouble(buf, r2d*self->q_min, 6));
-    fprintf(out, "%s ", String_fromDouble(buf, r2d*self->q_init, 6));
-    fprintf(out, "%s\" ", String_fromDouble(buf, r2d*self->q_max, 6));
-  }
-  else
-  {
-    fprintf(out, "range=\"%s ", String_fromDouble(buf, self->q_min, 6));
-    fprintf(out, "%s ", String_fromDouble(buf, self->q_init, 6));
-    fprintf(out, "%s\" ", String_fromDouble(buf, self->q_max, 6));
-  }
+  fprintf(out, "range=\"%s ", String_fromDouble(buf, scaleToXML*self->q_min, 6));
+  fprintf(out, "%s ", String_fromDouble(buf, scaleToXML*self->q_init, 6));
+  fprintf(out, "%s\" ", String_fromDouble(buf, scaleToXML*self->q_max, 6));
 
   if (self->weightJL != 1.0)
   {
@@ -533,7 +532,6 @@ void RcsJoint_fprintXML(FILE* out, const RcsJoint* self)
       RFATAL("Unknown control type: %d", self->ctrlType);
   }
 
-
   if (self->A_JP != NULL)
   {
     double trf[6];
@@ -561,30 +559,20 @@ void RcsJoint_fprintXML(FILE* out, const RcsJoint* self)
 
   if (self->speedLimit < DBL_MAX)
   {
-    if (RcsJoint_isRotation(self))
-    {
-      fprintf(out, "speedLimit=\"%s\" ",
-              String_fromDouble(buf, r2d*self->speedLimit, 6));
-    }
-    else
-    {
-      fprintf(out, "speedLimit=\"%s\" ",
-              String_fromDouble(buf, self->speedLimit, 6));
-    }
+    fprintf(out, "speedLimit=\"%s\" ",
+            String_fromDouble(buf, scaleToXML*self->speedLimit, 6));
   }
 
   if (self->accLimit < DBL_MAX)
   {
-    if (RcsJoint_isRotation(self))
-    {
-      fprintf(out, "accelerationLimit=\"%s\" ",
-              String_fromDouble(buf, r2d*self->accLimit, 6));
-    }
-    else
-    {
-      fprintf(out, "accelerationLimit=\"%s\" ",
-              String_fromDouble(buf, self->accLimit, 6));
-    }
+    fprintf(out, "accelerationLimit=\"%s\" ",
+            String_fromDouble(buf, scaleToXML*self->accLimit, 6));
+  }
+
+  if ((self->decLimit < DBL_MAX) && (self->decLimit!=self->accLimit))
+  {
+    fprintf(out, "decelerationLimit=\"%s\" ",
+            String_fromDouble(buf, scaleToXML*self->decLimit, 6));
   }
 
   switch (self->ctrlType)
@@ -612,13 +600,14 @@ void RcsJoint_fprintXML(FILE* out, const RcsJoint* self)
   if (self->couplingFactors != NULL)
   {
     fprintf(out, "couplingFactor=\"");
+
     for (unsigned int i=0; i<self->couplingFactors->m; i++)
     {
       fprintf(out, "%s ",
               String_fromDouble(buf, MatNd_get(self->couplingFactors, i, 0), 6));
     }
-    fprintf(out, "\"");
 
+    fprintf(out, "\"");
   }
 
   fprintf(out, "/>\n");

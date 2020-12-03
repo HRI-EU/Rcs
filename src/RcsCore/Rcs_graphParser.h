@@ -57,7 +57,35 @@ extern "C" {
  *  <h1> XML graph description </h1>
  *
  *  Values in the xml files are represented in human-readable units. For
- *  angles, it is degrees, for positions, it is meters.
+ *  angles, it is degrees, for positions, it is meters. Rcs uses the libxml2
+ *  parsing library which is very powerful. It allows the xinclude directive
+ *  so that you can conveniently include xml files into other ones. When
+ *  working with RcsGraphs, it is mandatory that all RcsBodies have a different
+ *  name. The concept of a group allows you to include xml files, and suffix
+ *  all bodies so that no name clashes occur. Here is an example:
+ *
+ * \code
+ * <Graph xmlns:xi="http://www.w3.org/2003/XInclude" >
+ *
+ *   ...
+ *
+ *   <Group name="_1" prev="BaseBody" transform="0 0 0.2 0 0 0" >
+ *     <xi:include href="Leg.xml" />
+ *   </Group >
+ *
+ *   <Group name="_2" prev="BaseBody" transform="0 0 -0.2 0 0 0" >
+ *     <xi:include href="Leg.xml" />
+ *   </Group >
+ *
+ *  </Graph>
+ * \endcode
+ *
+ *  The xml-file Leg.xml is included twice, and it's root body is connected to
+ *  the body BaseBody with the given transform. Each body and joint within
+ *  Leg.xml is suffixed with _1 for the first include directive, and with _2
+ *  for the second one. When using groups, the root body of the included file
+ *  should not have an explicit "prev" attribute. If it has, there will be a
+ *  warning on debug level 4.
  *
  *  <h2> Joints </h2>
  *
@@ -146,7 +174,14 @@ extern "C" {
  * Any number of RcsShapes can be associated with a RcsBody. Their relative
  * transformation with respect to the boie's frame can be defined in the
  * RcsShape's tag "transform". If none is given, the identity transform is
- * the default.
+ * the default. The below image shows the coordinate frame for the shape
+ * primitives. For meshes, the vertices are defined with respect to the
+ * frame.
+ *
+ * <img src="../images/ShapeTypes.png" >
+ *
+ * The below image shows the transformation of the shape with respect to the
+ * body it belongs to.
  *
  * <img src="../images/RcsShape.png" >
  *

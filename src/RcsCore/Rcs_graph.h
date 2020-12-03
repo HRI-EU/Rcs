@@ -623,6 +623,7 @@ void RcsGraph_computeAABB(const RcsGraph* self,
  *         effect for the visualization (3d graphics), and for copying the
  *         shapes with \ref RcsGraph_copyResizeableShapes()
  *
+ *  \param[in,out] self      Graph whose shapes should be modified.
  *  \param[in] resizeable    True for resizeable, false otherwise.
  */
 void RcsGraph_setShapesResizeable(RcsGraph* self, bool resizeable);
@@ -815,6 +816,29 @@ double RcsGraph_limitJointSpeeds(const RcsGraph* self, MatNd* dq,
  */
 double RcsGraph_checkJointSpeeds(const RcsGraph* self, const MatNd* dq,
                                  double dt, RcsStateType type);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Clips the joint speeds qdot independently according to the limits
+ *         given. The array dq is assumed to be of size nq x 1 or 1 x nq, where
+ *         nq is RcsGraph::nJ for type being RcsStateIK, and RcsGraph::dof
+ *         for type being RcsStateFull.
+ *
+ *  \param[in] self      Valid pointer to graph.
+ *  \param[in] qdot      Array of joint velocities. The array may be a row
+ *                       or a column vector. See explanations about
+ *                       dimensions above.
+ *  \param[in] qdot_prev Array of the joint velocities of the previous time
+ *                       step. The array may be a row. See explanations about
+ *                       dimensions above.
+ *  \param[in] dt        Time between qdot and qdot_prev.
+ *  \param[in] type      If type is RcsStateFull, the large dimension of the
+ *                       array dq is assumed to be RcsGraph::dof, otherwise
+ *                       it must be RcsGraph::nJ.
+ *  \return Number of joints that have been clipped.
+ */
+int RcsGraph_clipJointAccelerations(const RcsGraph* self, MatNd* qdot,
+                                    const MatNd* qdot_prev, double dt,
+                                    RcsStateType type);
 
 ///@}
 

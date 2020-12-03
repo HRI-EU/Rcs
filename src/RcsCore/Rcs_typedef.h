@@ -86,6 +86,7 @@ struct _RcsJoint
   double maxTorque;    ///< Max. torque for physics (default is 1.0)
   double speedLimit;   ///< Speed limit (default is DBL_MAX)
   double accLimit;     ///< Acceleration limit (default is DBL_MAX)
+  double decLimit;     ///< Deceleration limit (default is DBL_MAX)
   int ctrlType;        ///< See RCSJOINT_CTRL_TYPE
   char* coupledJointName;
   MatNd* couplingFactors;

@@ -54,6 +54,25 @@ namespace Rcs
 
 /*!
  * \ingroup RcsGraphics
+ *
+ * \brief Node to display an RcsBody data structure.
+ *
+ *        A visual representation of all shapes of the body is added to the
+ *        node. Further, the BodyNode allows to display / hide / toggle
+ *        different kinds of visualization modes: A graphics model, a physics
+ *        model, a collision model and a depth model. These models can be defined
+ *        in the bodie's xml description by graphics="false/true",
+ *        physics="false/true", collision="false/true" and depth="false/true".
+ *        There are also convenience keys available, see the documentation of the
+ *        the GraphNode class for details. The visualization of all coordinate
+ *        frames can be toggled independently. The class also can show some
+ *        debug information, such as the position of joints and bodies etc.
+ *
+ *        The class also supports resizeable shapes. Shapes can be made
+ *        resizeable by setting the resizeable argument in the constructor, or
+ *        by setting the shape's resizeable attribute in the xml description to
+ *        true. In this case, the OpenGL display lists are enabled, and an
+ *        update callback to update the geometries is enabled.
  */
 class BodyNode: public osg::PositionAttitudeTransform
 {
@@ -87,7 +106,6 @@ public:
   const RcsBody* body() const;
   const HTr* getTransformPtr() const;
   void setTransformPtr(const HTr* A_BI);
-  void updateDynamicShapes();
   void hide();
   void show();
   void setVisibility(bool visible);
@@ -98,6 +116,7 @@ public:
 
 protected:
 
+  void updateDynamicShapes();
   void updateCallback(osg::Node* node, osg::NodeVisitor* nv);
   void updateDynamicMeshes();
   virtual ~BodyNode();

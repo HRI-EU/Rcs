@@ -244,7 +244,7 @@ osg::Switch* BodyNode::addShapes(int mask, bool resizeable)
       new osg::PositionAttitudeTransform;
     osg::ref_ptr<osg::Geode> geode = new osg::Geode();
 
-    if (resizeable)
+    if (resizeable || shape->resizeable)
     {
       _dynamicShapes.push_back(geode);
     }
@@ -252,11 +252,11 @@ osg::Switch* BodyNode::addShapes(int mask, bool resizeable)
     geode->setUserData(dnmData);
 
 #if 1
-    // This would enable depth sorting by default for correctly drawing
+    // This enables depth sorting by default for correctly drawing
     // transparent objects. However, there is a performance penalty.
-    // Thus, it's better to enable dept sorting selectively
+    // Thus, it'd be better to enable depth sorting selectively
 
-    // set render bin to depthsorted in order to handle transparency correctly
+    // Set render bin to depthsorted in order to handle transparency correctly
     osg::StateSet* state_set = geode->getOrCreateStateSet();
     state_set->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
     geode->setStateSet(state_set);
@@ -287,7 +287,7 @@ osg::Switch* BodyNode::addShapes(int mask, bool resizeable)
       osg::Capsule* capsule =
         new osg::Capsule(osg::Vec3(0.0, 0.0, length / 2.0), r, length);
       osg::ShapeDrawable* sd = new osg::ShapeDrawable(capsule, hints.get());
-      if (resizeable)
+      if (resizeable || shape->resizeable)
       {
         sd->setUseDisplayList(false);
       }
@@ -318,7 +318,7 @@ osg::Switch* BodyNode::addShapes(int mask, bool resizeable)
         new osg::Box(osg::Vec3(0.0, 0.0, 0.0),
                      shape->extents[0], shape->extents[1], shape->extents[2]);
       osg::ShapeDrawable* sd = new osg::ShapeDrawable(box, hints.get());
-      if (resizeable)
+      if (resizeable || shape->resizeable)
       {
         sd->setUseDisplayList(false);
       }
@@ -348,7 +348,7 @@ osg::Switch* BodyNode::addShapes(int mask, bool resizeable)
       osg::Sphere* sphere =
         new osg::Sphere(osg::Vec3(0.0, 0.0, 0.0), shape->extents[0]);
       osg::ShapeDrawable* sd = new osg::ShapeDrawable(sphere, hints.get());
-      if (resizeable)
+      if (resizeable || shape->resizeable)
       {
         sd->setUseDisplayList(false);
       }
@@ -374,7 +374,7 @@ osg::Switch* BodyNode::addShapes(int mask, bool resizeable)
     {
       // If the shape is not resizeable, we create a nice mesh, which in
       // wireframe mode looks a lot better than the capsule composite.
-      if (resizeable==false)
+      if ((resizeable==false) && (shape->resizeable==false))
       {
         RcsMeshData* mesh = RcsMesh_createSSR(shape->extents, 64);
 
@@ -492,7 +492,7 @@ osg::Switch* BodyNode::addShapes(int mask, bool resizeable)
         new osg::Cylinder(osg::Vec3(0.f, 0.0f, 0.0f), shape->extents[0],
                           shape->extents[2]);
       osg::ShapeDrawable* sd = new osg::ShapeDrawable(cylinder, hints.get());
-      if (resizeable)
+      if (resizeable || shape->resizeable)
       {
         sd->setUseDisplayList(false);
       }
@@ -523,7 +523,7 @@ osg::Switch* BodyNode::addShapes(int mask, bool resizeable)
       // below compensated base offset value.
       cone->setCenter(osg::Vec3(0.0f, 0.0f, -cone->getBaseOffset()));
       osg::ShapeDrawable* sd = new osg::ShapeDrawable(cone, hints.get());
-      if (resizeable)
+      if (resizeable || shape->resizeable)
       {
         sd->setUseDisplayList(false);
       }
@@ -766,7 +766,7 @@ osg::Switch* BodyNode::addShapes(int mask, bool resizeable)
       osg::Sphere* sphere =
         new osg::Sphere(osg::Vec3(0.0, 0.0, 0.0), 0.005);
       osg::ShapeDrawable* sd = new osg::ShapeDrawable(sphere, hints.get());
-      if (resizeable)
+      if (resizeable || shape->resizeable)
       {
         sd->setUseDisplayList(false);
       }
@@ -790,7 +790,7 @@ osg::Switch* BodyNode::addShapes(int mask, bool resizeable)
         new osg::Box(osg::Vec3(0.0, 0.0, 0.0),
                      shape->extents[2], shape->extents[2], 0.001);
       osg::ShapeDrawable* sd = new osg::ShapeDrawable(box, hints.get());
-      if (resizeable)
+      if (resizeable || shape->resizeable)
       {
         sd->setUseDisplayList(false);
       }

@@ -774,6 +774,10 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
   jnt->accLimit = DBL_MAX;
   getXMLNodePropertyDouble(node, "accelerationLimit", &jnt->accLimit);
 
+  // Deceleration limit, default is acceleration limit
+  jnt->decLimit = jnt->accLimit;
+  getXMLNodePropertyDouble(node, "decelerationLimit", &jnt->decLimit);
+
   // Gear ratio
   double gearRatio = 1.0;
 
@@ -798,6 +802,11 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
     if (jnt->accLimit != DBL_MAX)
     {
       jnt->accLimit *= (M_PI / 180.0);
+    }
+
+    if (jnt->decLimit != DBL_MAX)
+    {
+      jnt->decLimit *= (M_PI / 180.0);
     }
   }
 
