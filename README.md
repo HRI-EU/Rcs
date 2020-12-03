@@ -37,7 +37,7 @@ Rcs can be compiled with the cmake build system and has mainly been developed on
 
 To build the doxygen documentation, just type:
 
-    make doc
+    make RcsDoc
 
 Compilation has successfully been tested on Ubuntu 14.04, Ubuntu 16.04 with GCC 5 and Ubuntu 18.04 with GCC 7 and clang, and Ubuntu 20.
 
