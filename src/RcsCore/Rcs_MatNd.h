@@ -41,6 +41,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
 
 
@@ -178,6 +179,16 @@ MatNd* MatNd_clone(const MatNd* src);
  *         will be done.
  */
 void MatNd_destroy(MatNd* self);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Convenience function for releasing memory for several arrays. Use
+ *         like: MatNd_destroyN(3, mat1, mat2, mat3); This function is not
+ *         very safe. You must make sure that there are as many MatNd pointers
+ *         after the nToDestroy as nToDestroy is. The function does not do
+ *         any type checking neither. If you call it not properly, the
+ *         behavior is undefined.
+ */
+void MatNd_destroyN(unsigned int nToDestroy, ...);
 
 /*! \ingroup MatNdFunctions
  *  \brief Reallocates the MatNd to hold memory for m*n values. All original

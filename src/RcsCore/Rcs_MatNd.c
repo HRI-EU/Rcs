@@ -182,6 +182,23 @@ void MatNd_destroy(MatNd* self)
 /*******************************************************************************
  *
  ******************************************************************************/
+void MatNd_destroyN(unsigned int nToDestroy, ...)
+{
+  va_list argPtr;
+  va_start(argPtr, nToDestroy);
+
+  for (unsigned int i = 0; i < nToDestroy; ++i)
+  {
+    MatNd* toDestroy = va_arg(argPtr, MatNd*);
+    MatNd_destroy(toDestroy);
+  }
+
+  va_end(argPtr);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 MatNd* MatNd_realloc(MatNd* self, unsigned int m, unsigned int n)
 {
   if (self == NULL)
