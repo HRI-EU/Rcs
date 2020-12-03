@@ -45,6 +45,7 @@
 #include <TextNode3D.h>
 #include <Rcs_graphicsUtils.h>
 #include <DepthRenderer.h>
+#include <PPSGui.h>
 
 #include <MatNdWidget.h>
 #include <Rcs_guiFactory.h>
@@ -1001,27 +1002,47 @@ bool testFindChildrenOfType()
 /*******************************************************************************
  * Depth rendering test
  ******************************************************************************/
+// The below comment is for astyle, since otherwise it screws up the formatting
+// *INDENT-OFF*
+#define MULTI_LINE_STRING(a) #a
+const char* depthExampleGraph =
+  MULTI_LINE_STRING(
+<Graph >
+<Body name="Box" rigid_body_joints="3 0 0 0 0 0" >
+   <Shape type="BOX" extents="1 1 1" transform="0.5 0 0 0 0 0"
+graphics="true" />
+</Body>
+</Graph>
+);
+// *INDENT-ON*
+
 void testDepthRenderer()
 {
-  char xmlFileName[128] = "gDepth.xml";
+  std::string xmlFileName;
+  const char* cfgFilePtr = depthExampleGraph;
   char directory[128] = "config/xml/Examples";
   unsigned int width = 32, height = 24;
 
   Rcs::CmdLineParser argP;
-  argP.getArgument("-f", xmlFileName, "Configuration file name "
-                   "(default is %s)", xmlFileName);
+  argP.getArgument("-f", &xmlFileName, "Configuration file name "
+                   "(default is %s)", xmlFileName.c_str());
   argP.getArgument("-dir", directory, "Configuration file directory "
                    "(default is %s)", directory);
   argP.getArgument("-width", &width, "Image width (default is %d)", width);
   argP.getArgument("-height", &height, "Image height (default is %d)", height);
   Rcs_addResourcePath(directory);
 
+  if (!xmlFileName.empty())
+  {
+    cfgFilePtr = xmlFileName.c_str();
+  }
+
   if (argP.hasArgument("-h"))
   {
     return;
   }
 
-  RcsGraph* graph = RcsGraph_create(xmlFileName);
+  RcsGraph* graph = RcsGraph_create(cfgFilePtr);
   RCHECK(graph);
   osg::ref_ptr<Rcs::GraphNode> gn = new Rcs::GraphNode(graph);
   Rcs::Viewer* viewer = new Rcs::Viewer();
@@ -1033,6 +1054,12 @@ void testDepthRenderer()
   zRenderer->setCameraTransform(HTr_identity());
   zRenderer->addNode(gn.get());
 
+  double* data = new double[width*height];
+  std::vector<Rcs::PPSGui::Entry> pps;
+  pps.push_back(Rcs::PPSGui::Entry("Depth image", width, height, data, 0.1));
+  Rcs::PPSGui::create(pps);
+  const std::vector<std::vector<float>>& zImage = zRenderer->getDepthImageRef();
+
   Rcs::MatNdWidget::create(graph->q, -10.0, 10.0, "q");
 
   while (runLoop)
@@ -1043,6 +1070,19 @@ void testDepthRenderer()
     viewer->getCameraTransform(&camTrf);
     zRenderer->setCameraTransform(&camTrf);
     zRenderer->frame();
+
+    for (size_t i=0; i<height; ++i)
+    {
+      for (size_t j=0; j<width; ++j)
+      {
+        data[i*width+j] = zImage[i][j];
+      }
+    }
+
+    REXEC(1)
+    {
+      zRenderer->print();
+    }
 
     Timer_waitDT(0.1);
   }

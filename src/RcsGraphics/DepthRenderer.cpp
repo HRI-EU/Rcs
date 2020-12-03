@@ -45,7 +45,7 @@
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
 
-
+#include <algorithm>
 
 
 
@@ -89,6 +89,40 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
   this->zImage = new osg::Image;
   zImage->allocateImage(width, height, 1, GL_DEPTH_COMPONENT, GL_FLOAT);
 
+
+
+  // msg_info->K = { 6.5746697810243404e+002, 0., 3.1950000000000000e+002,
+  //                 0., 6.5746697810243404e+002, 2.3950000000000000e+002,
+  //                 0., 0., 1.
+  //               };
+  double fx = 1.0;//6.5746697810243404e+002;
+  double cx = 0.0;//3.1950000000000000e+002;
+  double fy = 1.0;//6.5746697810243404e+002;
+  double cy = 0.0;//2.3950000000000000e+002;
+
+
+
+  float left = zNear * -cx / fx;
+  float right = zNear * (width - cx) / fx;
+  float top = zNear * cy / fy;
+  float bottom = zNear * (cy - height) / fy;
+
+  // glMatrixMode(GL_PROJECTION);
+  // glLoadIdentity();
+  // glFrustum(left, right, bottom, top, near_, far_);
+
+  // glMatrixMode(GL_MODELVIEW);
+  // glLoadIdentity();
+  // gluLookAt(0, 0, 0, 0, 0, 1, 0, -1, 0);
+
+  // setProjectionMatrixAsFrustum(left, right, bottom, top, zNear, zFar);
+
+
+
+
+
+
+
   // Create graphics context with pixel settings
   osg::ref_ptr<osg::GraphicsContext::Traits> traits;
   traits = new osg::GraphicsContext::Traits;
@@ -112,6 +146,7 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
   depthCam->attach(osg::Camera::DEPTH_BUFFER, zImage.get());
   depthCam->setProjectionMatrixAsPerspective(fieldOfView, aspectRatio,
                                              zNear, zFar);
+  //depthCam->setProjectionMatrixAsFrustum(left, right, bottom, top, zNear, zFar);
   addSlave(depthCam.get());
 
   // Apply viewer settings
@@ -198,6 +233,31 @@ void DepthRenderer::frame(double simulationTime)
 const std::vector<std::vector<float>>& DepthRenderer::getDepthImageRef() const
 {
   return this->depthImage;
+}
+
+void DepthRenderer::print() const
+{
+  if (depthImage.empty() || depthImage[0].empty())
+  {
+    printf("Empty depth image\n");
+    return;
+  }
+
+  float minDepth = depthImage[0][0];
+  float maxDepth = minDepth;
+
+  for (size_t i=0; i<depthImage.size(); ++i)
+  {
+    for (size_t j=0; j<depthImage[i].size(); ++j)
+    {
+      printf("%.1f ", depthImage[i][j]);
+      minDepth = std::min(minDepth, depthImage[i][j]);
+      maxDepth = std::max(minDepth, depthImage[i][j]);
+    }
+    printf("\n");
+  }
+
+  printf("\nMin. depth: %f   max. depth: %f\n", minDepth, maxDepth);
 }
 
 

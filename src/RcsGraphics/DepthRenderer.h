@@ -86,6 +86,8 @@ public:
 
   const std::vector<std::vector<float>>& getDepthImageRef() const;
 
+  void print() const;
+
 private:
 
   bool init(unsigned int width, unsigned int height, double zNear, double zFar);
