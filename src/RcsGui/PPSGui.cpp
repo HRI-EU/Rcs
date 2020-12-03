@@ -53,6 +53,18 @@ typedef struct
 namespace Rcs
 {
 
+static void* ppsGui(void* arg)
+{
+  VoidPointerList* p = (VoidPointerList*) arg;
+  RCHECK(p);
+
+  std::vector<PPSGui::Entry>* entries = (std::vector<PPSGui::Entry>*)p->ptr[0];
+  pthread_mutex_t* mutex = (pthread_mutex_t*) p->ptr[1];
+  PPSGui* gui = new PPSGui(entries, mutex);
+  gui->show();
+  return gui;
+}
+
 PPSGui* PPSGui::create(std::vector<Rcs::PPSGui::Entry> ppsEntries,
                        pthread_mutex_t* mutex)
 {
@@ -63,18 +75,6 @@ PPSGui* PPSGui::create(std::vector<Rcs::PPSGui::Entry> ppsEntries,
   int handle = RcsGuiFactory_requestGUI(ppsGui, p);
 
   return (PPSGui*) RcsGuiFactory_getPointer(handle);
-}
-
-void* ppsGui(void* arg)
-{
-  VoidPointerList* p = (VoidPointerList*) arg;
-  RCHECK(p);
-
-  std::vector<PPSGui::Entry>* entries = (std::vector<PPSGui::Entry>*)p->ptr[0];
-  pthread_mutex_t* mutex = (pthread_mutex_t*) p->ptr[1];
-  PPSGui* gui = new PPSGui(entries, mutex);
-  gui->show();
-  return gui;
 }
 
 

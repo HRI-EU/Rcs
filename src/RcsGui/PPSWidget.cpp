@@ -41,8 +41,9 @@
 
 #include <QTimer>
 
+#include <cmath>
 
-#define LABEL_WIDTH 160
+#define LABEL_WIDTH (160)
 
 namespace Rcs
 {
@@ -134,6 +135,20 @@ void PPSWidget::updateDisplay()
 {
   int counter = 0;
 
+  double scaleFactor = this->scaling;
+  double maxVal = 0.0;
+
+  // Autoscale
+  if (scaleFactor < 0.0)
+  {
+    for (size_t i = 0; i < width*height; ++i)
+    {
+      maxVal = std::max(fabs(data[i]), maxVal);
+    }
+
+    scaleFactor = maxVal!=0.0 ? 1.0/maxVal : 1.0;
+  }
+
   this->pixmap->fill(QColor("transparent"));
 
   this->painter.begin(this->pixmap);
@@ -150,7 +165,7 @@ void PPSWidget::updateDisplay()
 
       // the user is to specify offset and scaling such that the range is [0..1]
       // 3*255 is the number of levels supported by this color map
-      int r = (int)((this->data[counter++] + this->offset) * 3.0 * 255.0 * this->scaling);
+      int r = (int)((this->data[counter++] + this->offset) * 3.0 * 255.0 * scaleFactor);
       int g = 0;
       int b = 0;
 

@@ -47,41 +47,31 @@
 namespace Rcs
 {
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void* ppsGui(void* arg);
-
-#ifdef __cplusplus
-}
-#endif
-
-
 class PPSGui: public QScrollArea
 {
-Q_OBJECT
+  Q_OBJECT
 
 public:
-struct Entry
-{
-  Entry(const std::string& _name, const size_t _width, const size_t _height, const double* _data, double _scaling=1.0, double _offset=0.0, bool _palm=false):
-    name(_name), width(_width), height(_height), data(_data), scaling(_scaling), offset(_offset), palm(_palm) {}
-  std::string name;
-  size_t width;
-  size_t height;
-  const double* data;
-  double scaling;
-  double offset;
-  bool palm;
-};
+  // The user needs to specify offset and scaling such that the range is [0..1].
+  // A negative scaling value means auto-scaling.
+  struct Entry
+  {
+    Entry(const std::string& _name, const size_t _width, const size_t _height, const double* _data, double _scaling=1.0, double _offset=0.0, bool _palm=false):
+      name(_name), width(_width), height(_height), data(_data), scaling(_scaling), offset(_offset), palm(_palm) {}
+    std::string name;
+    size_t width;
+    size_t height;
+    const double* data;
+    double scaling;
+    double offset;
+    bool palm;
+  };
 
 public:
-static PPSGui* create(std::vector<Rcs::PPSGui::Entry> ppsEntries,
-                      pthread_mutex_t* mutex=NULL);
-PPSGui(std::vector<Entry>* entries, pthread_mutex_t* mutex);
-virtual ~PPSGui();
+  static PPSGui* create(std::vector<Rcs::PPSGui::Entry> ppsEntries,
+                        pthread_mutex_t* mutex=NULL);
+  PPSGui(std::vector<Entry>* entries, pthread_mutex_t* mutex);
+  virtual ~PPSGui();
 
 };
 
