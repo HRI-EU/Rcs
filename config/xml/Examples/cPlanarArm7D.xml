@@ -43,7 +43,7 @@
   </Body>
 
     <Body name="b1" >
-      <Joint name="j1" type="RotX" range="-360 0 360" speedLimit="90" />
+      <Joint name="j1" type="RotZ" range="-360 0 360" speedLimit="90" />
       <Shape type="SSL" radius="0.05" length="0.3" 
 	     color="RANDOM" graphics="true" physics="true" distance="true" />
     </Body>
