@@ -1798,9 +1798,19 @@ double RcsShape_distanceToPoint(const RcsShape* shape,
   ptShape.scale = 1.0;
   ptShape.computeType = RCSSHAPE_COMPUTE_DISTANCE;
 
-  double tmp[3];
+  double tmp1[3], tmp2[3], tmp3[3];
   double d = RcsShape_distance(shape, &ptShape, A_BI, HTr_identity(),
-                               I_cpShape, tmp, I_nShapePt);
+                               tmp1, tmp2, tmp3);
+
+  if (I_cpShape)
+  {
+    Vec3d_copy(I_cpShape, tmp1);
+  }
+
+  if (I_nShapePt)
+  {
+    Vec3d_copy(I_nShapePt, tmp3);
+  }
 
   return d;
 }

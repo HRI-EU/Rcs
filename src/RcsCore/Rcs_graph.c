@@ -1834,7 +1834,7 @@ int RcsGraph_clipJointAccelerations(const RcsGraph* self, MatNd* qd,
 
     if (accClip)
     {
-      RLOG(0, "Acceleration clip +: accel=%f qp_curr=%f qp_prev=%f",
+      RLOG(5, "Acceleration clip +: accel=%f qp_curr=%f qp_prev=%f",
            accel, RCS_RAD2DEG(qd->ele[index]),
            RCS_RAD2DEG(qd_prev->ele[index]));
     }
