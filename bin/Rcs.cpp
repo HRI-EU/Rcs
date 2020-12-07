@@ -799,8 +799,10 @@ int main(int argc, char** argv)
             gn = NULL;
             RCSGRAPH_TRAVERSE_BODIES(graph)
             {
-              bool success = RcsBody_boxify(BODY, RCSSHAPE_COMPUTE_GRAPHICS+RCSSHAPE_COMPUTE_PHYSICS);
-              RLOG(0, "%s boxifying body %s", success ? "SUCCESS" : "FAILURE", BODY->name);
+              bool success = RcsBody_boxify(BODY, RCSSHAPE_COMPUTE_GRAPHICS+
+                                            RCSSHAPE_COMPUTE_PHYSICS);
+              RLOG(0, "%s boxifying body %s", success ? "SUCCESS" : "FAILURE",
+                   BODY->name);
             }
             gn = new Rcs::GraphNode(graph);
             pthread_mutex_unlock(&graphLock);
@@ -1747,7 +1749,8 @@ int main(int argc, char** argv)
 
       int algo = 0;
       double alpha = 0.05, lambda = 1.0e-8, tmc = 0.1, dt = 0.01, dt_calc = 0.0;
-      double jlCost = 0.0, dJlCost = 0.0, clipLimit = 0.1, scaleDragForce = 0.01;
+      double jlCost = 0.0, dJlCost = 0.0, clipLimit = DBL_MAX;
+      double scaleDragForce = 0.01;
       bool calcDistance = true;
       strcpy(xmlFileName, "cAction.xml");
       strcpy(directory, "config/xml/DexBot");
@@ -1920,8 +1923,19 @@ int main(int argc, char** argv)
         {
           if (!skipGui)
           {
-            Rcs::ControllerWidgetBase::create(&controller, a_des,
-                                              x_des, x_curr, mtx);
+            if (algo==0 && lambda>0.0)
+            {
+              Rcs::ControllerWidgetBase::create(&controller, a_des,
+                                                ikSolver->getCurrentActivation(), x_des,
+                                                x_curr, mtx);
+            }
+            else
+            {
+              Rcs::ControllerWidgetBase::create(&controller, a_des,
+                                                x_des, x_curr, mtx);
+            }
+            // Rcs::ControllerWidgetBase::create(&controller, a_des,
+            //                                   x_des, x_curr, mtx);
           }
         }
         else
@@ -1966,7 +1980,8 @@ int main(int argc, char** argv)
         {
           std::vector<std::string> labels;
           Rcs::MatNdWidget* mw = Rcs::MatNdWidget::create(F_effort, F_effort,
-                                                          -1.0, 1.0, "F_effort", mtx);
+                                                          -1.0, 1.0,
+                                                          "F_effort", mtx);
           labels.push_back("Fx");
           labels.push_back("Fy");
           labels.push_back("Fz");
@@ -2077,7 +2092,8 @@ int main(int argc, char** argv)
           RcsGraph_setState(simGraph, NULL, NULL);
           if (physicsFeedback)
           {
-            RcsGraph_setState(controller.getGraph(), simGraph->q, simGraph->q_dot);
+            RcsGraph_setState(controller.getGraph(), simGraph->q,
+                              simGraph->q_dot);
           }
           else
           {

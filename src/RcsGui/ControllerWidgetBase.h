@@ -73,7 +73,8 @@ namespace Rcs
  *         pthread_mutex_t mtx;
  *         pthread_mutex_init(&mtx, NULL);
  *         ControllerBase* c = new ControllerBase(...);
- *         int hndl = ControllerWidgetBase::create(c, a_des, x_des, x_curr, &mtx);
+ *         int hndl;
+ *         hndl = ControllerWidgetBase::create(c, a_des, x_des, x_curr, &mtx);
  *         ...
  *         ControllerWidgetBase::destroy(hndl);
  *         \endcode
@@ -94,7 +95,7 @@ public:
 
   static int create(ControllerBase* cntrl,
                     MatNd* a_des,
-                    MatNd* a_curr,
+                    const MatNd* a_curr,
                     MatNd* x_des,
                     const MatNd* x_curr,
                     pthread_mutex_t* lock_=NULL,

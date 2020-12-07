@@ -39,8 +39,12 @@
 #include "Rcs_macros.h"
 #include "Rcs_math.h"
 #include "Rcs_parser.h"
-
 #include "TaskRegion.h"
+
+#define USE_BLENDING
+#if defined (USE_BLENDING)
+#include "TaskSpaceBlender.h"
+#endif
 
 
 /*******************************************************************************
@@ -52,7 +56,7 @@ Rcs::IkSolverRMR::IkSolverRMR(Rcs::ControllerBase* controller_) :
   nq(controller_->getGraph()->nJ), nqr(0), det(0.0),
   A(NULL), invA(NULL), invWq(NULL), J(NULL), pinvJ(NULL), N(NULL), dHA(NULL),
   dq(NULL), dqr(NULL), dxr(NULL), NinvW(NULL), Wx(NULL), dHr(NULL), dH(NULL),
-  dx_proj(NULL)
+  dx_proj(NULL), ax_curr(NULL), blendingMode(0)
 {
   // Coupled joint matrix
   this->A = MatNd_create(this->nq, this->nq);
@@ -101,6 +105,9 @@ Rcs::IkSolverRMR::IkSolverRMR(Rcs::ControllerBase* controller_) :
   // Null space -> task space re-projection
   this->dx_proj = MatNd_create(this->nx, 1);
 
+  // True task activation ax_curr = J*J#
+  this->ax_curr = MatNd_create(this->nx, 1);
+
   reshape();
 }
 
@@ -124,6 +131,7 @@ Rcs::IkSolverRMR::~IkSolverRMR()
   MatNd_destroy(this->dHr);
   MatNd_destroy(this->dH);
   MatNd_destroy(this->dx_proj);
+  MatNd_destroy(this->ax_curr);
 }
 
 /*******************************************************************************
@@ -185,12 +193,18 @@ void Rcs::IkSolverRMR::computeKinematics(const MatNd* activation,
   MatNd_postMulDiagSelf(this->J, this->invWq); // J_r = J*A*invWq_r
 
   // Compute the blending matrix
+#if defined (USE_BLENDING)
+  TaskSpaceBlender b(controller);
+  b.setBlendingMode((TaskSpaceBlender::BlendingMode)blendingMode);
+  b.compute(this->Wx, this->ax_curr, activation, this->J, lambda0);
+#else
   computeBlendingMatrix(*controller, this->Wx, activation, J, lambda0, true);
+#endif
 }
 
-/********************************************************************************
+/*******************************************************************************
  * Calculate the inverse kinematics, left-hand (nq x nq) inverse.
- *******************************************************************************/
+ ******************************************************************************/
 void Rcs::IkSolverRMR::solveLeftInverse(MatNd* dq_des,
                                         const MatNd* dx,
                                         const MatNd* dH,
@@ -660,6 +674,38 @@ void Rcs::IkSolverRMR::computeBlendingMatrix(const Rcs::ControllerBase& cntrl,
 /*******************************************************************************
  *
  ******************************************************************************/
+void Rcs::IkSolverRMR::computeBlendingMatrixDirect(const Rcs::ControllerBase& cntrl,
+                                                   MatNd* Wx,
+                                                   const MatNd* a_des)
+{
+  unsigned int nRows = 0;
+
+  for (unsigned int i=0; i<cntrl.getNumberOfTasks(); i++)
+  {
+    const double a = MatNd_get(a_des, i, 0);
+
+    if (a > 0.0)
+    {
+      unsigned int dimTask = cntrl.getTaskDim(i);
+
+      RCHECK_MSG(Wx->size >= nRows + dimTask, "While adding task "
+                 "\"%s\": size of Wx: %d   m: %d   dimTask: %d",
+                 cntrl.getTaskName(i).c_str(), Wx->size, nRows, dimTask);
+
+      VecNd_setElementsTo(&Wx->ele[nRows], a, dimTask);
+      nRows += dimTask;
+    }
+
+  }
+
+  // Reshape
+  Wx->m = nRows;
+  Wx->n = 1;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 unsigned int Rcs::IkSolverRMR::getInternalDof() const
 {
   return this->nqr;
@@ -670,7 +716,7 @@ unsigned int Rcs::IkSolverRMR::getInternalDof() const
  ******************************************************************************/
 const MatNd* Rcs::IkSolverRMR::getJacobian() const
 {
-  return J;
+  return this->J;
 }
 
 /*******************************************************************************
@@ -678,7 +724,23 @@ const MatNd* Rcs::IkSolverRMR::getJacobian() const
  ******************************************************************************/
 const MatNd* Rcs::IkSolverRMR::getPseudoInverse() const
 {
-  return pinvJ;
+  return this->pinvJ;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+const MatNd* Rcs::IkSolverRMR::getNullSpace() const
+{
+  return this->NinvW;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+const MatNd* Rcs::IkSolverRMR::getCurrentActivation() const
+{
+  return this->ax_curr;
 }
 
 /*******************************************************************************
@@ -731,4 +793,40 @@ bool Rcs::IkSolverRMR::computeRightInverse(MatNd* pinvJ_,
   MatNd_destroy(invWq_);
 
   return (det_==0.0) ? false : true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::IkSolverRMR::setActivationBlending(const std::string& mode)
+{
+  bool success = true;
+
+  if (mode=="Binary")
+  {
+    blendingMode = TaskSpaceBlender::BlendingMode::Binary;
+  }
+  else if (mode=="Linear")
+  {
+    blendingMode = TaskSpaceBlender::BlendingMode::Linear;
+  }
+  else if (mode=="Approximate")
+  {
+    blendingMode = TaskSpaceBlender::BlendingMode::Approximate;
+  }
+  else if (mode=="IndependentTasks")
+  {
+    blendingMode = TaskSpaceBlender::BlendingMode::IndependentTasks;
+  }
+  else if (mode=="DependentTasks")
+  {
+    blendingMode = TaskSpaceBlender::BlendingMode::DependentTasks;
+  }
+  else
+  {
+    RLOG_CPP(4, "Activation blending mode " << mode << " not supported");
+    success = false;
+  }
+
+  return success;
 }

@@ -200,6 +200,9 @@ public:
                                     const double lambda0,
                                     const bool useInnerProduct=true);
 
+  static void computeBlendingMatrixDirect(const ControllerBase& controller,
+                                          MatNd* Wx, const MatNd* a_des);
+
   /*! \brief Returns the determinant of the Jacobian from the last solver
    *         iteration.
    */
@@ -227,11 +230,35 @@ public:
    */
   const MatNd* getPseudoInverse() const;
 
+  /*! \brief Returns the pointer to the internal null space projection matrix N.
+   *         It corresponds to the state of the last call to solve().
+   */
+  const MatNd* getNullSpace() const;
+
+  /*! \brief Returns the pointer to the activation computed according to the
+   *         employed blending scheme.
+   */
+  const MatNd* getCurrentActivation() const;
+
   /*! \brief Returns the pointer to the internal pseudo-inverse pinvJ. It
    *         corresponds to the state of the last call to solve().
    */
   bool computeRightInverse(MatNd* pinvJ, const MatNd* activation,
                            double lambda) const;
+
+  /*! \brief Sets the way the blending matrix is computed (currently works for
+   *         left inverses only). See TaskSpaceBlender class for details.
+   *
+   *  \param[in]   blendingMode   One out of these:
+   *                              - Binary
+   *                              - Linear
+   *                              - Approximate
+   *                              - IndependentTasks
+   *                              - DependentTasks
+   *  \return True for success, false otherwise. In case of failure, a debug
+   *          message is emitted on debug level 4.
+   */
+  bool setActivationBlending(const std::string& blendingMode);
 
 protected:
 
@@ -242,7 +269,8 @@ protected:
   unsigned int nx, nTasks, nq, nqr;
   double det;
   MatNd* A, *invA, *invWq, *J, *pinvJ, *N, *dHA, *dq, *dqr, *dxr, *NinvW,
-         *Wx, *dHr, *dH, *dx_proj;
+         *Wx, *dHr, *dH, *dx_proj, *ax_curr;
+  int blendingMode;
 };
 
 

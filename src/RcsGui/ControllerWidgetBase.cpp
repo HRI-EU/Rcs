@@ -119,7 +119,7 @@ int ControllerWidgetBase::create(ControllerBase* c,
  ******************************************************************************/
 int ControllerWidgetBase::create(ControllerBase* c,
                                  MatNd* a_des,
-                                 MatNd* a_curr,
+                                 const MatNd* a_curr,
                                  MatNd* x_des,
                                  const MatNd* x_curr,
                                  pthread_mutex_t* mutex,
