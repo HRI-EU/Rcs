@@ -831,6 +831,9 @@ double RcsGraph_checkJointSpeeds(const RcsGraph* self, const MatNd* dq,
  *                       step. The array may be a row. See explanations about
  *                       dimensions above.
  *  \param[in] dt        Time between qdot and qdot_prev.
+ *  \param[in] ratio     Scale to a ratio of the limts. If ratio is 1, the
+ *                       values will be clipped to the limits, for 0.5 to half
+ *                       of the limits etc.
  *  \param[in] type      If type is RcsStateFull, the large dimension of the
  *                       array dq is assumed to be RcsGraph::dof, otherwise
  *                       it must be RcsGraph::nJ.
@@ -838,7 +841,7 @@ double RcsGraph_checkJointSpeeds(const RcsGraph* self, const MatNd* dq,
  */
 int RcsGraph_clipJointAccelerations(const RcsGraph* self, MatNd* qdot,
                                     const MatNd* qdot_prev, double dt,
-                                    RcsStateType type);
+                                    double ratio, RcsStateType type);
 
 ///@}
 

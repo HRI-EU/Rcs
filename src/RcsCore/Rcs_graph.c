@@ -1721,9 +1721,8 @@ double RcsGraph_checkJointSpeeds(const RcsGraph* self, const MatNd* dq,
              "dq is of size %d x %d - should be %d x 1 or 1 x %d",
              dq->m, dq->n, dimension, dimension);
 
-  int theEvilIndex = 0;
-  double sc_i = 1.0, sc = 1.0;
-  RcsJoint* theEvilJoint = NULL;
+  double sc = 1.0;
+  RcsJoint* badJnt = NULL;
 
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {
@@ -1735,32 +1734,26 @@ double RcsGraph_checkJointSpeeds(const RcsGraph* self, const MatNd* dq,
     int index = (type == RcsStateIK) ? JNT->jacobiIndex : JNT->jointIndex;
 
     // Get speed limits in units/sec
-    double q_dot_max = JNT->speedLimit;
-    double q_dot     = fabs(dq->ele[index] / dt);
-    NLOG(0, "Comparing joint %s: q_dot = %f   q_dot_max = %f",
-         JNT->name, q_dot, q_dot_max);
-    if (q_dot > q_dot_max)
-    {
-      sc_i = q_dot_max / q_dot;
-    }
+    const double q_dot = fabs(dq->ele[index] / dt);
+    const double sc_i = (q_dot > JNT->speedLimit) ? JNT->speedLimit/q_dot : 1.0;
+
     if (sc_i < sc)
     {
       sc = sc_i;
-      theEvilJoint = JNT;
-      theEvilIndex = index;
+      badJnt = JNT;
     }
   }
 
   REXEC(6)
   {
-    if ((sc<1.0) && (theEvilJoint!=NULL))
+    if ((sc<1.0) && (badJnt!=NULL))
     {
-      double sLim = theEvilJoint->speedLimit;
-      double toSI = RcsJoint_isRotation(theEvilJoint) ? 180.0/M_PI : 1.0;
+      double sLim = badJnt->speedLimit;
+      double toDeg = RcsJoint_isRotation(badJnt) ? 180.0/M_PI : 1.0;
+      int i = (type == RcsStateIK) ? badJnt->jacobiIndex : badJnt->jointIndex;
       RMSG("Scaling speeds with %5.5f (due to joint \"%s\": speed=%5.6f %s  "
-           "limit=%5.6f)", sc, theEvilJoint->name,
-           toSI*fabs(dq->ele[theEvilIndex] / dt),
-           RcsJoint_isRotation(theEvilJoint) ? "deg" : "m", toSI*sLim);
+           "limit=%5.6f)", sc, badJnt->name, toDeg*fabs(dq->ele[i] / dt),
+           RcsJoint_isRotation(badJnt) ? "deg" : "m", toDeg*sLim);
     }
   }
 
@@ -1772,7 +1765,7 @@ double RcsGraph_checkJointSpeeds(const RcsGraph* self, const MatNd* dq,
  ******************************************************************************/
 int RcsGraph_clipJointAccelerations(const RcsGraph* self, MatNd* qd,
                                     const MatNd* qd_prev, double dt,
-                                    RcsStateType type)
+                                    double ratio, RcsStateType type)
 {
   int dimension = (type == RcsStateFull) ? self->dof : self->nJ;
 
@@ -1802,34 +1795,36 @@ int RcsGraph_clipJointAccelerations(const RcsGraph* self, MatNd* qd,
     bool accClip = false;
     int index = (type == RcsStateIK) ? JNT->jacobiIndex : JNT->jointIndex;
     double accel = (qd->ele[index] - qd_prev->ele[index])/dt;
+    const double accLimit = ratio * JNT->accLimit;
+    const double decLimit = ratio * JNT->decLimit;
 
     // Here we treat acceleration and deceleration differently.
     if (qd_prev->ele[index] < 0.0)
     {
-      if (accel > JNT->decLimit)   // deceleration
+      if (accel > decLimit)   // deceleration
       {
-        qd->ele[index] = qd_prev->ele[index] + JNT->decLimit*dt;
+        qd->ele[index] = qd_prev->ele[index] + decLimit*dt;
         nClipped++;
         accClip = true;
       }
-      else if (accel < -JNT->accLimit)   // acceleration
+      else if (accel < -accLimit)   // acceleration
       {
-        qd->ele[index] = qd_prev->ele[index] - JNT->accLimit*dt;
+        qd->ele[index] = qd_prev->ele[index] - accLimit*dt;
         nClipped++;
         accClip = true;
       }
     }
     else   // qp_prev[i] >= 0.0
     {
-      if (accel > JNT->accLimit)   // acceleration
+      if (accel > accLimit)   // acceleration
       {
-        qd->ele[index] = qd_prev->ele[index] + JNT->accLimit*dt;
+        qd->ele[index] = qd_prev->ele[index] + accLimit*dt;
         nClipped++;
         accClip = true;
       }
-      else if (accel < -JNT->decLimit)   // deceleration
+      else if (accel < -decLimit)   // deceleration
       {
-        qd->ele[index] = qd_prev->ele[index] - JNT->decLimit*dt;
+        qd->ele[index] = qd_prev->ele[index] - decLimit*dt;
         nClipped++;
         accClip = true;
       }
@@ -1840,7 +1835,8 @@ int RcsGraph_clipJointAccelerations(const RcsGraph* self, MatNd* qd,
     if (accClip)
     {
       RLOG(0, "Acceleration clip +: accel=%f qp_curr=%f qp_prev=%f",
-           accel, RCS_RAD2DEG(qd->ele[index]), RCS_RAD2DEG(qd_prev->ele[index]));
+           accel, RCS_RAD2DEG(qd->ele[index]),
+           RCS_RAD2DEG(qd_prev->ele[index]));
     }
 
 
