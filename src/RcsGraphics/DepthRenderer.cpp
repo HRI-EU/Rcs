@@ -73,9 +73,7 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
 {
   // check if executed remotely, rendering to pixel buffer not working for
   // ssh connections
-  bool remote_connection = (getenv("SSH_CLIENT") != NULL) ||
-                           (getenv("SSH_TTY") != NULL);
-  if (remote_connection)
+  if (getenv("SSH_CLIENT") || getenv("SSH_TTY"))
   {
     RFATAL("DepthRenderer does not work via SSH");
   }
@@ -99,13 +97,26 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
   double cx = 0.0;//3.1950000000000000e+002;
   double fy = 1.0;//6.5746697810243404e+002;
   double cy = 0.0;//2.3950000000000000e+002;
+  fx = 6.5746697810243404e+002;
+  cx = 3.1950000000000000e+002;
+  fy = 6.5746697810243404e+002;
+  cy = 2.3950000000000000e+002;
+
+  float left0 = 0.0;
+  float right0 = 640.0;
+  float top0 = 480.0;
+  float bottom0 = 0.0;
 
 
+  float left = left0 * zNear/fx -cx;
+  float right = right0 * zNear/fx -cx;
+  float top = top0 * zNear/fy - cy;
+  float bottom = bottom0 * zNear/fy - cy;
 
-  float left = zNear * -cx / fx;
-  float right = zNear * (width - cx) / fx;
-  float top = zNear * cy / fy;
-  float bottom = zNear * (cy - height) / fy;
+  // float left = zNear * -cx / fx;
+  // float right = zNear * (width - cx) / fx;
+  // float top = zNear * cy / fy;
+  // float bottom = zNear * (cy - height) / fy;
 
   // glMatrixMode(GL_PROJECTION);
   // glLoadIdentity();
@@ -138,16 +149,27 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
   osg::ref_ptr<osg::GraphicsContext> gc;
   gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
-  // Create depth camera and add as slave to the viewer
+  // Create depth camera and add as slave to the viewer. It shares the main
+  // camera's view and propjection matrices
   this->depthCam = new osg::Camera;
   depthCam->setGraphicsContext(gc.get());
   depthCam->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
   depthCam->setViewport(new osg::Viewport(0, 0, width, height));
   depthCam->attach(osg::Camera::DEPTH_BUFFER, zImage.get());
-  depthCam->setProjectionMatrixAsPerspective(fieldOfView, aspectRatio,
-                                             zNear, zFar);
-  //depthCam->setProjectionMatrixAsFrustum(left, right, bottom, top, zNear, zFar);
+  depthCam->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
   addSlave(depthCam.get());
+
+  getCamera()->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
+
+
+  double left_0, right_0, bottom_0, top_0, zNear_0, zFar_0;
+  getCamera()->getProjectionMatrixAsFrustum(left_0, right_0, bottom_0, top_0, zNear_0, zFar_0);
+  RLOG(0, "left=%f right=%f top=%f bottom=%f near=%f far=%f",
+       left_0, right_0, bottom_0, top_0, zNear_0, zFar_0);
+
+
+
+  //getCamera()->setProjectionMatrixAsFrustum(left_0, right_0, bottom_0, top_0, zNear_0, zFar_0);
 
   // Apply viewer settings
   setDataVariance(osg::Object::DYNAMIC);
@@ -182,6 +204,34 @@ void DepthRenderer::setFieldOfView(double fovWidth, double fovHeight)
   getCamera()->setProjectionMatrixAsPerspective(fovWidth,
                                                 fovWidth/fovHeight,
                                                 zNear, zFar);
+}
+
+void DepthRenderer::setFrustumProjection(double left, double right, double bottom, double top, double zNear, double zFar)
+{
+  getCamera()->setProjectionMatrixAsFrustum(left, right, bottom, top, zNear, zFar);
+}
+
+// See http://www.songho.ca/opengl/gl_projectionmatrix.html for details
+// https://stackoverflow.com/questions/22064084/how-to-create-perspective-projection-matrix-given-focal-points-and-camera-princ
+// Here is the code to obtain the OpenGL projection matrix equivalent to a computer vision camera with camera matrix K=[fx, s, cx; 0, fy, cy; 0, 0, 1] and image size [W, H]:
+void DepthRenderer::setProjectionFromFocalParams(double fx, double fy, double cx, double cy, double zmin, double zmax)
+{
+  double W = width, H = height, s = 0.0;
+
+  osg::Matrixf pMat(2.0*fx/W, 0.0, 0.0, 0.0,
+                    2.0*s/W, 2.0*fy/H, 0.0, 0.0,
+                    2.0*(cx/W)-1.0, 2.0*(cy/H)-1.0, (zmax+zmin)/(zmax-zmin), 1.0,
+                    0.0, 0.0, 2.0*zmax* zmin/(zmin-zmax), 0.0);
+
+  osg::Matrixf pMat2(2.0*fx/W, 0.0, 0.0, 0.0,
+                     0.0, 2.0*fy/H, 0.0, 0.0,
+                     2.0*(cx/W)-1.0, 2.0*(cy/H)-1.0, -(zmax+zmin)/(zmax-zmin), -1.0,
+                     0.0, 0.0,-2.0*zmax*zmin/(zmax-zmin), 0.0);
+
+
+
+
+  getCamera()->setProjectionMatrix(pMat2);
 }
 
 void DepthRenderer::frame(double simulationTime)
@@ -243,6 +293,9 @@ void DepthRenderer::print() const
     return;
   }
 
+  FILE* fd = fopen("depth.dat", "w+");
+  RCHECK(fd);
+
   float minDepth = depthImage[0][0];
   float maxDepth = minDepth;
 
@@ -250,13 +303,16 @@ void DepthRenderer::print() const
   {
     for (size_t j=0; j<depthImage[i].size(); ++j)
     {
-      printf("%.1f ", depthImage[i][j]);
+      //printf("%.1f ", depthImage[i][j]);
+      fprintf(fd, "%f ", depthImage[i][j]);
       minDepth = std::min(minDepth, depthImage[i][j]);
       maxDepth = std::max(minDepth, depthImage[i][j]);
     }
-    printf("\n");
+    fprintf(fd, "\n");
+    //printf("\n");
   }
 
+  fclose(fd);
   printf("\nMin. depth: %f   max. depth: %f\n", minDepth, maxDepth);
 }
 

@@ -51,6 +51,7 @@
 #include <SegFaultHandler.h>
 
 #include <pthread.h>
+#include <csignal>
 
 RCS_INSTALL_ERRORHANDLERS
 

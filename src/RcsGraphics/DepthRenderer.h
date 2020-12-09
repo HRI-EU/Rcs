@@ -79,6 +79,8 @@ public:
   void setCameraTransform(const HTr* A_CI);
 
   void setFieldOfView(double fovWidth, double fovHeight);
+  void setFrustumProjection(double left, double right, double bottom, double top, double zNear, double zFar);
+  void setProjectionFromFocalParams(double fx, double fy, double cx, double cy, double zmin, double zmax);
 
   /*! \brief Renders the scene into a depth image on each frame call.
    */

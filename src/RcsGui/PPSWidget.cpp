@@ -92,6 +92,11 @@ PPSWidget::PPSWidget(const std::string& name, const size_t width, const size_t h
   pixelSize(10),
   mtx(mtx_)
 {
+  if (width>=100 || height>=100)
+  {
+    pixelSize = 1.0;
+  }
+
   // main layout containing two lines
   this->main_layout = new QVBoxLayout(this);
   this->main_layout->setMargin(1);
