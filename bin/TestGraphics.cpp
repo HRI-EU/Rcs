@@ -46,6 +46,7 @@
 #include <Rcs_graphicsUtils.h>
 #include <DepthRenderer.h>
 #include <PPSGui.h>
+#include <HighGui.h>
 
 #include <MatNdWidget.h>
 #include <Rcs_guiFactory.h>
@@ -1021,7 +1022,7 @@ void testDepthRenderer()
   std::string xmlFileName;
   const char* cfgFilePtr = depthExampleGraph;
   char directory[128] = "config/xml/Examples";
-  unsigned int width = 32, height = 24;
+  unsigned int width = 640, height = 480;
 
   Rcs::CmdLineParser argP;
   argP.getArgument("-f", &xmlFileName, "Configuration file name "
@@ -1062,6 +1063,24 @@ void testDepthRenderer()
 
   Rcs::MatNdWidget::create(graph->q, -10.0, 10.0, "q");
 
+  // These come from a Kinect v2 calbration
+  const int windowId = 0;
+  Rcs::Atomic<double> fx = 6.5746697810243404e+002;
+  Rcs::Atomic<double> cx = 3.1950000000000000e+002;
+  Rcs::Atomic<double> fy = 6.5746697810243404e+002;
+  Rcs::Atomic<double> cy = 2.3950000000000000e+002;
+  Rcs::Atomic<double> near = 0.3;
+  Rcs::Atomic<double> far = 10.0;
+  zRenderer->setProjectionFromFocalParams(fx, fy, cx, cy, near, far);
+  Rcs::HighGui::showSlider("fx", windowId, 0.0, 1000.0, 10.0, &fx);
+  Rcs::HighGui::showSlider("fy", windowId, 0.0, 1000.0, 10.0, &fy);
+  Rcs::HighGui::showSlider("cx", windowId, 0.0, 1000.0, 10.0, &cx);
+  Rcs::HighGui::showSlider("cy", windowId, 0.0, 1000.0, 10.0, &cy);
+  Rcs::HighGui::showSlider("near", windowId, 0.01, 20.0, 0.01, &near);
+  Rcs::HighGui::showSlider("far", windowId, 0.01, 100.0, 0.01, &far);
+
+
+
   while (runLoop)
   {
     RcsGraph_setState(graph, NULL, NULL);
@@ -1069,19 +1088,19 @@ void testDepthRenderer()
     HTr camTrf;
     viewer->getCameraTransform(&camTrf);
     zRenderer->setCameraTransform(&camTrf);
+    zRenderer->setProjectionFromFocalParams(fx, fy, cx, cy, near, far);
+    double t_render = Timer_getSystemTime();
     zRenderer->frame();
+    t_render = Timer_getSystemTime() - t_render;
+    RLOG(0, "Rendering took %.1f msec", 1000.0*t_render);
 
+    // Update the pixel widget
     for (size_t i=0; i<height; ++i)
     {
       for (size_t j=0; j<width; ++j)
       {
         data[i*width+j] = zImage[i][j];
       }
-    }
-
-    REXEC(1)
-    {
-      zRenderer->print();
     }
 
     Timer_waitDT(0.1);
@@ -1118,6 +1137,90 @@ void testDynamicColoring()
     Timer_waitDT(0.5);
   }
 
+  RcsGraph_destroy(graph);
+}
+
+/*******************************************************************************
+ * Changing shape size in GraphNode
+ ******************************************************************************/
+void test_dynamicShapeResizing()
+{
+  double x = 0.2;
+  Rcs::CmdLineParser argP;
+  std::string xmlFileName = "gShapes.xml";
+  std::string directory = "config/xml/Examples";
+  argP.getArgument("-f", &xmlFileName, "Configuration file name "
+                   "(default is %s)", xmlFileName.c_str());
+  argP.getArgument("-dir", &directory, "Configuration file directory "
+                   "(default is %s)", directory);
+  bool native = argP.hasArgument("-native", "osg::Capsule test only");
+  Rcs_addResourcePath(directory.c_str());
+
+  RcsGraph* graph = RcsGraph_create(xmlFileName.c_str());
+  RCHECK(graph);
+
+  Rcs::Viewer viewer;
+  osg::ref_ptr<osg::Capsule> capsule;
+  osg::ref_ptr <osg::ShapeDrawable> sd;
+  osg::ref_ptr<osg::Geode> geode;
+
+  if (native)
+  {
+    osg::ref_ptr <osg::PositionAttitudeTransform> pat;
+    pat = new osg::PositionAttitudeTransform;
+    geode = new osg::Geode();
+    capsule = new osg::Capsule(osg::Vec3(0.0, 0.0, 0.0), x, x);
+
+    capsule->setDataVariance(osg::Object::DYNAMIC);
+
+    sd = new osg::ShapeDrawable(capsule);
+    sd->setUseDisplayList(true);
+    sd->setUseVertexBufferObjects(false);
+    sd->setDataVariance(osg::Object::DYNAMIC);
+    geode->addDrawable(sd.get());
+    pat->addChild(geode.get());
+
+    viewer.add(pat.get());
+  }
+  else
+  {
+    viewer.add(new Rcs::GraphNode(graph, true));
+  }
+
+  double time = 0.0, dt = 0.01;
+
+  while (runLoop)
+  {
+
+    RCSGRAPH_TRAVERSE_BODIES(graph)
+    {
+      RCSBODY_TRAVERSE_SHAPES(BODY)
+      {
+        Vec3d_setElementsTo(SHAPE->extents, fabs(sin(time)));
+      }
+    }
+
+    x = fabs(sin(time));
+
+    if (native)
+    {
+      sd->dirtyBound();
+      sd->dirtyDisplayList();
+      geode->dirtyBound();
+      capsule->setRadius(x);
+      capsule->setHeight(x);
+      //sd->dirtyGLObjects();
+      RLOG(0, "r=%f displayList=%s   VBO=%s", x,
+           sd->getUseDisplayList()?"TRUE":"FALSE",
+           sd->getUseVertexBufferObjects() ? "TRUE" : "FALSE");
+    }
+
+    viewer.frame();
+    time += dt;
+    Timer_waitDT(dt);
+  }
+
+  RcsGraph_destroy(graph);
 }
 
 /*******************************************************************************
@@ -1164,6 +1267,7 @@ int main(int argc, char** argv)
       printf("\t\t18   Test Setting colors in GraphNode\n");
       printf("\t\t19   Test pyramid mesh\n");
       printf("\t\t20   Test frustum mesh\n");
+      printf("\t\t21   Test dynamic shape resizing\n");
       printf("\n");
       printf("\t\tYou can write the meshes to a file with -f\n");
       break;
@@ -1282,6 +1386,12 @@ int main(int argc, char** argv)
     case 20:
     {
       test_frustumMesh();
+      break;
+    }
+
+    case 21:
+    {
+      test_dynamicShapeResizing();
       break;
     }
 

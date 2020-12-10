@@ -52,7 +52,13 @@ namespace Rcs
 {
 
 /*!
- * \brief Class for rendering a depth image from an OpenSceneGraph scene.
+ * \brief Class for rendering a depth image from an OpenSceneGraph scene. The
+ *        class is rendering an OpenSceneGraph scene into a depth image. The
+ *        methods are not thread safe, the user must make sure that there are
+ *        no concurrent accesses, such as for instance adding a node while the
+ *        frame() call is running. There are several convenience functions for
+ *        setting the camera projection matrices. The default is set to the
+ *        Kinect v2 settings.
  */
 class DepthRenderer : public osgViewer::Viewer
 {
@@ -63,24 +69,33 @@ public:
    * \param[in] width Width of the depth image in pixels
    * \param[in] height Height of the depth image in pixels
    */
-  DepthRenderer(unsigned int width, unsigned int height);
+  DepthRenderer(unsigned int width=640, unsigned int height=480,
+                double near=0.1, double far=10.0);
 
   /*!
    * \brief Destructor to support polymorphism. Does nothing.
    */
   virtual ~DepthRenderer();
 
-  /*! \brief Adds a OpenSceneGraph node to the scene
+  /*! \brief Adds a OpenSceneGraph node to the scene. It will be rendered into
+   *         the depth images. This function is thread-safe.
    *
    *  \param node Node to add
    */
   void addNode(osg::Node* node);
+  int removeNode(const std::string& nodeName);
+  size_t removeNode(osg::Node* node);
 
   void setCameraTransform(const HTr* A_CI);
 
   void setFieldOfView(double fovWidth, double fovHeight);
-  void setFrustumProjection(double left, double right, double bottom, double top, double zNear, double zFar);
-  void setProjectionFromFocalParams(double fx, double fy, double cx, double cy, double zmin, double zmax);
+  void getFrustumProjection(double& left, double& right, double& bottom,
+                            double& top, double& zNear, double& zFar) const;
+  void getNearFar(double& zNear, double& zFar) const;
+  void setFrustumProjection(double left, double right, double bottom,
+                            double top, double zNear, double zFar);
+  void setProjectionFromFocalParams(double fx, double fy, double cx, double cy,
+                                    double zmin, double zmax);
 
   /*! \brief Renders the scene into a depth image on each frame call.
    */
@@ -88,21 +103,29 @@ public:
 
   const std::vector<std::vector<float>>& getDepthImageRef() const;
 
-  void print() const;
+  /*! \brief Writes the depth image to a file with the given file name.
+   *         Values are space-separated.
+   */
+  bool print(const std::string& fileName) const;
+
+  /*! \brief Writes the depth image to the given file descriptor.
+   *         Values are space-separated.
+   */
+  bool print(FILE* fd) const;
+
+  void getMinMaxDepth(double& minDepth, double& maxDepth) const;
 
 private:
 
-  bool init(unsigned int width, unsigned int height, double zNear, double zFar);
+  bool init(unsigned int width, unsigned int height,
+            double zNear, double zFar);
+
 
   osg::ref_ptr<osg::Group> rootNode;
   osg::ref_ptr<osg::Image> zImage;
   osg::ref_ptr<osg::Camera> depthCam;
   unsigned int width;
   unsigned int height;
-  double zNear;
-  double zFar;
-  double fieldOfView;
-  double aspectRatio;
   std::vector<std::vector<float>> depthImage;
 };
 
