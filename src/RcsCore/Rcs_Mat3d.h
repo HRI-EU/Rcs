@@ -236,6 +236,12 @@ bool Mat3d_isSymmetric(double A[3][3], double eps);
 bool Mat3d_isDigonal(double A[3][3], double eps);
 
 /*! \ingroup RcsMat3dFunctions
+ *  \brief Returns true if the matrix elements are elementwise equal with a
+ *         tolerance less than eps.
+ */
+bool Mat3d_isEqual(double A[3][3], double B[3][3], double eps);
+
+/*! \ingroup RcsMat3dFunctions
  *  \brief Transposes the matrix.
  */
 void Mat3d_transpose(double dst[3][3], double src[3][3]);

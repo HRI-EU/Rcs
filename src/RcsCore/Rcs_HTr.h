@@ -87,6 +87,13 @@ bool HTr_isValid(const HTr* A);
 bool HTr_isIdentity(const HTr* A);
 
 /*! \ingroup RcsHTrFunctions
+ *  \brief Returns true if the elements are elementwise equal with a
+ *         tolerance less than eps. Both position and rotation matrix
+ *         elements are considered.
+ */
+bool HTr_isEqual(const HTr* A, const HTr* B, double eps);
+
+/*! \ingroup RcsHTrFunctions
  *  \brief Prints the transform to a file descriptor.
  */
 void HTr_fprint(FILE* fd, const HTr* A);

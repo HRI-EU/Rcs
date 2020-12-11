@@ -215,6 +215,19 @@ bool HTr_isIdentity(const HTr* A)
 /*******************************************************************************
  *
  ******************************************************************************/
+bool HTr_isEqual(const HTr* A, const HTr* B, double eps)
+{
+  if (!Vec3d_isEqual(A->org, B->org, eps))
+  {
+    return false;
+  }
+
+  return Mat3d_isEqual((double (*)[3])A->org, (double (*)[3])B->org, eps);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void HTr_slerp(HTr* A, const HTr* A_1I, const HTr* A_2I, double t)
 {
   int i;
