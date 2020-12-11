@@ -47,26 +47,30 @@ namespace Rcs
 {
 
 TorusNode::TorusNode(double radius, double thickness, double start_angle,
-                     double end_angle) :
-  _radius(radius), _thickness(thickness)
+                     double end_angle)
 {
   setName("TorusNode");
-  osg::ref_ptr<osg::Geode> torus = createGeometry(start_angle, end_angle);
-  patPtr()->addChild(torus.get());
+  osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+  osg::ref_ptr<osg::Geometry> torus = createGeometry(radius, thickness,
+                                                     start_angle, end_angle);
+  geode->addDrawable(torus.get());
+  patPtr()->addChild(geode.get());
 }
 
 TorusNode::~TorusNode()
 {
 }
 
-osg::ref_ptr<osg::Geode> TorusNode::createGeometry(double start_angle, double end_angle) const
+osg::ref_ptr<osg::Geometry> TorusNode::createGeometry(double radius,
+                                                      double thickness,
+                                                      double start_angle,
+                                                      double end_angle)
 {
-  osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+  double oradius = radius;
+  double iradius = thickness / 2.0;
 
-  double oradius = _radius;
-  double iradius = _thickness / 2.0;
-
-  // add 1 to nRings and nSides, because we need to store more vertices than we have facets
+  // add 1 to nRings and nSides, because we need to store more vertices
+  // than we have facets
   unsigned int nRings = 30 + 1;
   unsigned int nSides = 30 + 1;
 
@@ -131,12 +135,11 @@ osg::ref_ptr<osg::Geode> TorusNode::createGeometry(double start_angle, double en
   geometry->setVertexArray(quad_vertices);
   geometry->setNormalArray(quad_normals);
   geometry->setNormalBinding(osg::Geometry::BIND_PER_VERTEX);
-  geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0, quad_vertices->size()));
-  geometry->setUseDisplayList(true);
-  geode->addDrawable(geometry.get());
+  geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUADS, 0,
+                                                quad_vertices->size()));
 
-  return geode;
+  return geometry;
 }
 
 
-} /* namespace Rcs */
+} // namespace Rcs

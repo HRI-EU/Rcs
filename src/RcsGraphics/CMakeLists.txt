@@ -19,6 +19,7 @@ FIND_PACKAGE(OpenSceneGraph REQUIRED
 SET(RCS_GRAPHICS_SRCS
   ArrowNode.cpp
   BodyNode.cpp
+  ShapeNode.cpp
   BodyPointDragger.cpp
   BoxNode.cpp
   CapsuleNode.cpp

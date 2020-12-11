@@ -34,35 +34,43 @@
 
 *******************************************************************************/
 
-#ifndef RCS_TORUSNODE_H
-#define RCS_TORUSNODE_H
+#ifndef RCS_SHAPENODE_H
+#define RCS_SHAPENODE_H
 
-#include "NodeBase.h"
+#include <Rcs_graph.h>
+#include <NodeBase.h>
+
+#include <osg/PositionAttitudeTransform>
+
+#include <vector>
+
 
 namespace Rcs
 {
-/*!
- * \ingroup RcsGraphics
- * \brief An OSG node that draws a torus
- */
-class TorusNode : public NodeBase
+
+class ShapeNode : public osg::PositionAttitudeTransform
 {
+  friend class ShapeUpdateCallback;
+
 public:
-  TorusNode(double radius, double thickness, double startAng=0.0,
-            double endAng=2.0*M_PI);
+  ShapeNode(const RcsShape* shape, bool resizeable);
+  void displayFrames(bool visibility = true);
+  void toggleFrames();
 
-  virtual ~TorusNode();
+protected:
+  virtual ~ShapeNode();
+  void addShape(bool resizeable);
+  void addTexture(const char* textureFile);
+  void setMaterial(const char* color, osg::Node* node);
 
-  /*!
-   * \brief Creates a osg::Geode that holds the vertices and normals of the
-   *        torus
-   */
-  static osg::ref_ptr<osg::Geometry> createGeometry(double radius,
-                                                    double thickness,
-                                                    double startAng=0.0,
-                                                    double endAng=2.0*M_PI);
+  const RcsShape* shape;
+  std::vector<osg::ref_ptr<NodeBase>> frames;
 };
 
-} // namespace Rcs
 
-#endif // RCS_TORUSNODE_H
+
+
+}   // namespace Rcs
+
+
+#endif // RCS_SHAPENODE_H

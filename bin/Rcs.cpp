@@ -2165,7 +2165,10 @@ int main(int argc, char** argv)
           bool success = MatNd_fromFile(controller.getGraph()->q, "q.dat");
           RMSG("%s read q from file \"q.dat\"",
                success ? "Successfully" : "Failed to");
-          RcsGraph_setState(controller.getGraph(), NULL, NULL);
+          if (success)
+          {
+            RcsGraph_setState(controller.getGraph(), NULL, NULL);
+          }
         }
         else if (kc && kc->getAndResetKey('n'))
         {

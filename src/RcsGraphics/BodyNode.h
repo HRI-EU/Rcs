@@ -37,6 +37,8 @@
 #ifndef RCS_BODYNODE_H
 #define RCS_BODYNODE_H
 
+#include "ShapeNode.h"
+
 #include <Rcs_graph.h>
 
 #include <osg/Geode>
@@ -60,10 +62,10 @@ namespace Rcs
  *        A visual representation of all shapes of the body is added to the
  *        node. Further, the BodyNode allows to display / hide / toggle
  *        different kinds of visualization modes: A graphics model, a physics
- *        model, a collision model and a depth model. These models can be defined
- *        in the bodie's xml description by graphics="false/true",
+ *        model, a collision model and a depth model. These models can be
+ *        defined in the bodie's xml description by graphics="false/true",
  *        physics="false/true", collision="false/true" and depth="false/true".
- *        There are also convenience keys available, see the documentation of the
+ *        There are also convenience keys available, see the documentation of
  *        the GraphNode class for details. The visualization of all coordinate
  *        frames can be toggled independently. The class also can show some
  *        debug information, such as the position of joints and bodies etc.
@@ -116,34 +118,26 @@ public:
 
 protected:
 
-  void updateDynamicShapes();
   void updateCallback(osg::Node* node, osg::NodeVisitor* nv);
   void updateDynamicMeshes();
   virtual ~BodyNode();
-  osg::Switch* addShapes(int mask, bool resizeable);
   osg::Switch* addDebugInformation();
 
   const RcsBody* bdy;
   const HTr* A_BI;
   bool ghostMode;
   bool dynamicMeshUpdate;
+  bool refNode;
+  std::vector<osg::ref_ptr<ShapeNode>> _shapeNodes;
   osg::ref_ptr<osg::Switch> _collisionNode;
   osg::ref_ptr<osg::Switch> _graphicsNode;
   osg::ref_ptr<osg::Switch> _physicsNode;
-  osg::ref_ptr<osg::Switch> _refNode;
   osg::ref_ptr<osg::Switch> _depthNode;
   osg::ref_ptr<osg::Switch> _nodeSwitch;
-  std::vector<osg::ref_ptr<osg::Geode> > _dynamicShapes;
   osg::ref_ptr<osg::Switch> _debugNode;
   osg::ref_ptr<osgText::Text> _debugText;
   osg::ref_ptr<osg::Vec3Array> _debugLine;
   osg::ref_ptr<osg::Geometry> _debugLineGeometry;
-
-  static char _fontFile[256];
-  static bool _fontFileFound;
-  static bool _fontFileSearched;
-  static std::map<std::string, osg::ref_ptr<osg::Node> > _meshBuffer;
-  static std::map<std::string, osg::ref_ptr<osg::Texture2D> > _textureBuffer;
 };
 
 
