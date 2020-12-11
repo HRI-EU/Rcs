@@ -110,7 +110,8 @@ BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
   A_BI(b->A_BI),
   ghostMode(false),
   dynamicMeshUpdate(false),
-  refNode(false)
+  refNode(false),
+  initializeDebugInfo(false)
 {
   RCHECK(this->bdy);
   setName(this->bdy->name ? this->bdy->name : "Unnamed body");
@@ -120,10 +121,6 @@ BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
 
   RCHECK(scale > 0.0);
   setScale(osg::Vec3(scale, scale, scale));
-
-  _debugNode = addDebugInformation();
-  _debugNode->setAllChildrenOff();
-  addChild(_debugNode.get());
 
   _collisionNode = new osg::Switch;
   _graphicsNode = new osg::Switch;
@@ -184,6 +181,9 @@ BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
   {
     RLOG(4, "Invalid transform in \"%s\"", getName().c_str());
   }
+
+  // Switch off all coordinate frames per default
+  displayReferenceNode(false);
 
   // Assign transformation update callback upon scene traversal
   setUpdateCallback(new BodyUpdateCallback(this));
@@ -462,8 +462,7 @@ bool BodyNode::setTexture(std::string textureFile)
  ******************************************************************************/
 void BodyNode::toggleCollisionNode()
 {
-  bool visible = _collisionNode->getValue(0);
-  displayCollisionNode(!visible);
+  displayCollisionNode(!collisionNodeVisible());
 }
 
 /*******************************************************************************
@@ -471,8 +470,7 @@ void BodyNode::toggleCollisionNode()
  ******************************************************************************/
 void BodyNode::toggleGraphicsNode()
 {
-  bool visible = _graphicsNode->getValue(0);
-  displayGraphicsNode(!visible);
+  displayGraphicsNode(!graphicsNodeVisible());
 }
 
 /*******************************************************************************
@@ -480,8 +478,7 @@ void BodyNode::toggleGraphicsNode()
  ******************************************************************************/
 void BodyNode::togglePhysicsNode()
 {
-  bool visible = _physicsNode->getValue(0);
-  displayPhysicsNode(!visible);
+  displayPhysicsNode(!physicsNodeVisible());
 }
 
 /*******************************************************************************
@@ -497,8 +494,7 @@ void BodyNode::toggleReferenceNode()
  ******************************************************************************/
 void BodyNode::toggleDepthNode()
 {
-  bool visible = _depthNode->getValue(0);
-  displayDepthNode(!visible);
+  displayDepthNode(!depthNodeVisible());
 }
 
 /*******************************************************************************
@@ -506,8 +502,7 @@ void BodyNode::toggleDepthNode()
  ******************************************************************************/
 void BodyNode::toggleDebugInformation()
 {
-  bool visible = _debugNode->getValue(0);
-  displayDebugInformation(!visible);
+  displayDebugInformation(!debugInformationVisible());
 }
 
 /*******************************************************************************
@@ -590,11 +585,19 @@ void BodyNode::displayDebugInformation(bool visible)
 {
   if (visible)
   {
-    _debugNode->setAllChildrenOn();
+    if (_debugNode.valid())
+    {
+      _debugNode->setAllChildrenOn();
+    }
+
+    this->initializeDebugInfo = true;
   }
   else
   {
-    _debugNode->setAllChildrenOff();
+    if (_debugNode.valid())
+    {
+      _debugNode->setAllChildrenOff();
+    }
   }
 }
 
@@ -625,6 +628,14 @@ bool BodyNode::physicsNodeVisible() const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+bool BodyNode::depthNodeVisible() const
+{
+  return _depthNode->getValue(0);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 bool BodyNode::referenceFramesVisible() const
 {
   return refNode;
@@ -635,6 +646,11 @@ bool BodyNode::referenceFramesVisible() const
  ******************************************************************************/
 bool BodyNode::debugInformationVisible() const
 {
+  if (!_debugNode.valid())
+  {
+    return false;
+  }
+
   return _debugNode->getValue(0);
 }
 
@@ -825,6 +841,16 @@ void BodyNode::updateCallback(osg::Node* node, osg::NodeVisitor* nv)
 
   // Set the nodes transform
   setTransformation(A);
+
+  // Dynamically create debug info, so that we don't need to do it in the
+  // constructor each and every time. We can safely add it to the scene
+  // graph here, since this function is called within the update callback.
+  if (initializeDebugInfo && (!_debugNode.valid()))
+  {
+    _debugNode = addDebugInformation();
+    _debugNode->setAllChildrenOn();
+    addChild(_debugNode.get());
+  }
 
   // Update debug lines
   if (debugInformationVisible() && (body()->parent) && (_debugLine.valid()))

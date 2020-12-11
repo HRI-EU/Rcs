@@ -100,6 +100,7 @@ public:
   bool collisionNodeVisible() const;
   bool graphicsNodeVisible() const;
   bool physicsNodeVisible() const;
+  bool depthNodeVisible() const;
   bool referenceFramesVisible() const;
   bool debugInformationVisible() const;
   void setAlpha(float alpha);
@@ -128,6 +129,7 @@ protected:
   bool ghostMode;
   bool dynamicMeshUpdate;
   bool refNode;
+  bool initializeDebugInfo;
   std::vector<osg::ref_ptr<ShapeNode>> _shapeNodes;
   osg::ref_ptr<osg::Switch> _collisionNode;
   osg::ref_ptr<osg::Switch> _graphicsNode;

@@ -171,17 +171,17 @@ Rcs::Task::Task(const std::string& className_,
   {
     if (isXMLNodeName(node, "TaskRegion"))
     {
-      RLOG(0, "Found TaskRegion");
+      RLOG(5, "Found TaskRegion");
       this->tsr = TaskRegionFactory::create(this, node);
 
       // Create the new task, and add it to the task list
       if (tsr==NULL)
       {
-        RLOG(0, "Failed to instantiate TaskRegion");
+        RLOG(1, "Failed to instantiate TaskRegion");
       }
       else
       {
-        RLOG(0, "Succeeded to instantiate TaskRegion");
+        RLOG(5, "Succeeded to instantiate TaskRegion");
       }
 
     }
