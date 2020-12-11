@@ -42,9 +42,11 @@
 #include <Rcs_typedef.h>
 #include <Rcs_utils.h>
 #include <IkSolverRMR.h>
+#include <ViaPointSequence.h>
 #include <JointWidget.h>
 #include <Rcs_guiFactory.h>
 #include <ControllerWidgetBase.h>
+#include <DynamicDataPlot.h>
 #include <MatNdWidget.h>
 #include <PPSGui.h>
 #include <SegFaultHandler.h>
@@ -109,6 +111,23 @@ int main(int argc, char** argv)
   switch (mode)
   {
     // ==============================================================
+    // Just print out some global information
+    // ==============================================================
+    case 0:
+    {
+      argP.print();
+
+      printf("\nHere's some useful testing modes:\n\n");
+      printf("\t-m");
+      printf("\t0   Print this message\n");
+      printf("\t\t1   MatNdWidget test\n");
+      printf("\t\t2   JointWidget test\n");
+      printf("\t\t3   DynamicDataPlot test\n");
+      printf("\t\t4   DynamicDataPlot testwith ViaPointSequence\n");
+      break;
+    }
+
+    // ==============================================================
     // MatNdWidget test
     // ==============================================================
     case 1:
@@ -168,6 +187,56 @@ int main(int argc, char** argv)
     }
 
     // ==============================================================
+    // DynamicDataPlot test
+    // ==============================================================
+    case 3:
+    {
+      MatNd* mat = MatNd_create(1, 200);
+
+      int handle = Rcs::DynamicDataPlot::create(mat, "Test", &graphLock);
+
+      while (runLoop == true)
+      {
+        pthread_mutex_lock(&graphLock);
+        MatNd_setRandom(mat, -1.0, 3.0);
+        pthread_mutex_unlock(&graphLock);
+        Timer_usleep(100000);
+      }
+
+      Rcs::DynamicDataPlot::destroy(handle);
+      break;
+    }
+
+    // ==============================================================
+    // DynamicDataPlot test with ViaPointSequence
+    // ==============================================================
+    case 4:
+    {
+      MatNd* viaDesc = MatNd_createFromString("0 0 0 0 7 , 0.9 1 0 0 1 , 1 1 0 0 7");
+      Rcs::ViaPointSequence via(viaDesc);
+      RCHECK(via.check());
+
+      MatNd* traj_ = MatNd_create(4, 200);
+      via.computeTrajectory(traj_);
+      MatNd traj = MatNd_fromPtr(2, traj_->n, traj_->ele);
+
+      int handle = Rcs::DynamicDataPlot::create(&traj, "Test", &graphLock);
+      Rcs::MatNdWidget::create(viaDesc, -2.0, 2.0, "via", &graphLock);
+
+      while (runLoop == true)
+      {
+        pthread_mutex_lock(&graphLock);
+        via.init(viaDesc);
+        via.computeTrajectory(traj_);
+        pthread_mutex_unlock(&graphLock);
+        Timer_usleep(100000);
+      }
+
+      Rcs::DynamicDataPlot::destroy(handle);
+      break;
+    }
+
+    // ==============================================================
     // That's it.
     // ==============================================================
     default:
@@ -196,13 +265,6 @@ int main(int argc, char** argv)
   pthread_mutex_destroy(&graphLock);
 
   fprintf(stderr, "Thanks for using the Rcs libraries\n");
-
-#if defined (_MSC_VER)
-  if ((mode==0) || argP.hasArgument("-h"))
-  {
-    RPAUSE();
-  }
-#endif
 
   return 0;
 }
