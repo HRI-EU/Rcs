@@ -883,13 +883,11 @@ void ShapeNode::toggleFrames()
 
 void ShapeNode::updateDynamicShapes()
 {
-  if (!shapeUpdater.valid())
+  if (shapeUpdater.valid())
   {
-    NLOG(0, "Skipping dynamic shape updates for %s", RcsShape_name(shape->type));
-    return;
+    shapeUpdater->updateDynamicShapes();
   }
 
-  shapeUpdater->updateDynamicShapes();
 }
 
 }   // namespace Rcs
