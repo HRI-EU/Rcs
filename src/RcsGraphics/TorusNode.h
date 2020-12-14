@@ -61,6 +61,15 @@ public:
                                                     double thickness,
                                                     double startAng=0.0,
                                                     double endAng=2.0*M_PI);
+
+  static void resize(double radius, double thickness, osg::Geometry* geometry);
+
+private:
+  static void createHelperArrays(double radius, double thickness,
+                                 double startAngle, double endAngle,
+                                 unsigned int nSides, unsigned int nRings,
+                                 osg::Vec3Array* vertices,
+                                 osg::Vec3Array* normals);
 };
 
 } // namespace Rcs

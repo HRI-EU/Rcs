@@ -1154,12 +1154,14 @@ void test_dynamicShapeResizing()
   argP.getArgument("-dir", &directory, "Configuration file directory "
                    "(default is %s)", directory);
   bool native = argP.hasArgument("-native", "osg::Capsule test only");
+  bool pause = argP.hasArgument("-pause", "Pause before each frame");
   Rcs_addResourcePath(directory.c_str());
 
   RcsGraph* graph = RcsGraph_create(xmlFileName.c_str());
   RCHECK(graph);
 
   Rcs::Viewer viewer;
+  viewer.setCameraTransform(18.0, 26.0, 10.0, 0.2, -0.3, -2.4);
   osg::ref_ptr<osg::Capsule> capsule;
   osg::ref_ptr <osg::ShapeDrawable> sd;
   osg::ref_ptr<osg::Geode> geode;
@@ -1184,7 +1186,7 @@ void test_dynamicShapeResizing()
   }
   else
   {
-    viewer.add(new Rcs::GraphNode(graph, true));
+    viewer.add(new Rcs::GraphNode(graph));
   }
 
   double time = 0.0, dt = 0.01;
@@ -1196,11 +1198,11 @@ void test_dynamicShapeResizing()
     {
       RCSBODY_TRAVERSE_SHAPES(BODY)
       {
-        Vec3d_setElementsTo(SHAPE->extents, fabs(sin(time)));
+        Vec3d_setElementsTo(SHAPE->extents, fabs(cos(time)));
       }
     }
 
-    x = fabs(sin(time));
+    x = fabs(cos(time));
 
     if (native)
     {
@@ -1215,9 +1217,14 @@ void test_dynamicShapeResizing()
            sd->getUseVertexBufferObjects() ? "TRUE" : "FALSE");
     }
 
+    if (pause)
+    {
+      RPAUSE();
+    }
     viewer.frame();
     time += dt;
     Timer_waitDT(dt);
+    RPAUSE_DL(1);
   }
 
   RcsGraph_destroy(graph);

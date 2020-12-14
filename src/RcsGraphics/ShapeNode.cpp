@@ -164,225 +164,200 @@ static osg::ref_ptr<osg::Node> createMesh(const RcsShape* shape,
 }
 
 /*******************************************************************************
- * Update callback: Sets the bodies transformation to the node.
+ * Update shape geometry when labelled as resizeable
  *
  * \todo:
  *  resize if scale is changed
  *  resize meshes, torus
  *  change color
  ******************************************************************************/
-class ShapeUpdateCallback : public osg::NodeCallback
+ShapeNode::ShapeUpdater::ShapeUpdater(ShapeNode* node) : shapeNode(node)
 {
-public:
+  Vec3d_copy(this->extents, node->shape->extents);
+  HTr_copy(&this->A_CB, &node->shape->A_CB);
+}
 
-  ShapeUpdateCallback(ShapeNode* node) : shapeNode(node)
+void ShapeNode::ShapeUpdater::addGeometry(osg::Shape* s)
+{
+  geometry.push_back(s);
+}
+
+void ShapeNode::ShapeUpdater::addDrawable(osg::Drawable* d)
+{
+  drawable.push_back(d);
+}
+
+const RcsShape* ShapeNode::ShapeUpdater::shape()
+{
+  return shapeNode->shape;
+}
+
+void ShapeNode::ShapeUpdater::updateDynamicShapes()
+{
+  const double eps = 1.0e-8;
+
+  // Update relative transform
+  if (!HTr_isEqual(&A_CB, &shape()->A_CB, eps))
   {
-    Vec3d_copy(this->extents, node->shape->extents);
-    HTr_copy(&this->A_CB, &node->shape->A_CB);
+    shapeNode->setPosition(osg::Vec3(shape()->A_CB.org[0],
+                                     shape()->A_CB.org[1],
+                                     shape()->A_CB.org[2]));
+    shapeNode->setAttitude(QuatFromHTr(&shape()->A_CB));
   }
 
-  virtual void operator()(osg::Node* node, osg::NodeVisitor* nv)
+  // If the extents didn't change, step to the next geode.
+  if (Vec3d_isEqual(shape()->extents, extents, eps))
   {
-    updateDynamicShapes();
-    traverse(node, nv);
+    return;
   }
 
-  void addGeometry(osg::Shape* s)
-  {
-    geometry.push_back(s);
-  }
+  // If the extents changed, we memorize them in the userData
+  Vec3d_copy(extents, shape()->extents);
 
-  void addDrawable(osg::Drawable* d)
+  switch (shape()->type)
   {
-    drawable.push_back(d);
-  }
-
-  inline const RcsShape* shape()
-  {
-    return shapeNode->shape;
-  }
-
-  void updateDynamicShapes()
-  {
-    const double eps = 1.0e-8;
-
-    // Update relative transform
-    if (!HTr_isEqual(&A_CB, &shape()->A_CB, eps))
+    // Here we adjust the size of the SSR. It is assumed that the
+    // shape pointers point to the shapes in the order of their
+    // creation (4 capsules and 1 box):
+    // 1. Capsule: Front y-direction
+    // 2. Capsule: Back y-direction
+    // 3. Capsule: Right x-direction
+    // 4. Capsule: Left x-direction
+    // 5. Box
+    case RCSSHAPE_SSR:
     {
-      shapeNode->setPosition(osg::Vec3(shape()->A_CB.org[0],
-                                       shape()->A_CB.org[1],
-                                       shape()->A_CB.org[2]));
-      shapeNode->setAttitude(QuatFromHTr(&shape()->A_CB));
-    }
+      std::vector<osg::Shape*>::iterator sit;
+      int index = 0;
+      double r  = 0.5*extents[2];
+      double lx = extents[0];
+      double ly = extents[1];
 
-    // If the extents didn't change, step to the next geode.
-    if (Vec3d_isEqual(shape()->extents, extents, eps))
-    {
-      return;
-    }
-
-    // If the extents changed, we memorize them in the userData
-    Vec3d_copy(extents, shape()->extents);
-
-    switch (shape()->type)
-    {
-      // Here we adjust the size of the SSR. It is assumed that the
-      // shape pointers point to the shapes in the order of their
-      // creation (4 capsules and 1 box):
-      // 1. Capsule: Front y-direction
-      // 2. Capsule: Back y-direction
-      // 3. Capsule: Right x-direction
-      // 4. Capsule: Left x-direction
-      // 5. Box
-      case RCSSHAPE_SSR:
+      for (sit = geometry.begin(); sit != geometry.end(); ++sit)
       {
-        std::vector<osg::Shape*>::iterator sit;
-        int index = 0;
-        double r  = 0.5*extents[2];
-        double lx = extents[0];
-        double ly = extents[1];
 
-        for (sit = geometry.begin(); sit != geometry.end(); ++sit)
+        switch (index)
         {
-
-          switch (index)
+          case 0:
           {
-            case 0:
-            {
-              osg::Capsule* c = static_cast<osg::Capsule*>(*sit);
-              c->setCenter(osg::Vec3(-lx / 2.0, 0.0, 0.0));
-              c->setHeight(ly);
-              c->setRadius(r);
-            }
-            break;
+            osg::Capsule* c = static_cast<osg::Capsule*>(*sit);
+            c->setCenter(osg::Vec3(-lx / 2.0, 0.0, 0.0));
+            c->setHeight(ly);
+            c->setRadius(r);
+          }
+          break;
 
-            case 1:
-            {
-              osg::Capsule* c = static_cast<osg::Capsule*>(*sit);
-              c->setCenter(osg::Vec3(lx / 2.0, 0.0, 0.0));
-              c->setHeight(ly);
-              c->setRadius(r);
-            }
-            break;
+          case 1:
+          {
+            osg::Capsule* c = static_cast<osg::Capsule*>(*sit);
+            c->setCenter(osg::Vec3(lx / 2.0, 0.0, 0.0));
+            c->setHeight(ly);
+            c->setRadius(r);
+          }
+          break;
 
-            case 2:
-            {
-              osg::Capsule* c = static_cast<osg::Capsule*>(*sit);
-              c->setCenter(osg::Vec3(0.0, ly / 2.0, 0.0));
-              c->setHeight(lx);
-              c->setRadius(r);
-            }
-            break;
+          case 2:
+          {
+            osg::Capsule* c = static_cast<osg::Capsule*>(*sit);
+            c->setCenter(osg::Vec3(0.0, ly / 2.0, 0.0));
+            c->setHeight(lx);
+            c->setRadius(r);
+          }
+          break;
 
-            case 3:
-            {
-              osg::Capsule* c = static_cast<osg::Capsule*>(*sit);
-              c->setCenter(osg::Vec3(0.0, -ly / 2.0, 0.0));
-              c->setHeight(lx);
-              c->setRadius(r);
-            }
-            break;
+          case 3:
+          {
+            osg::Capsule* c = static_cast<osg::Capsule*>(*sit);
+            c->setCenter(osg::Vec3(0.0, -ly / 2.0, 0.0));
+            c->setHeight(lx);
+            c->setRadius(r);
+          }
+          break;
 
-            case 4:
-            {
-              osg::Box* b = static_cast<osg::Box*>(*sit);
-              b->setHalfLengths(osg::Vec3(0.5 * lx, 0.5 * ly, r));
-            }
-            break;
+          case 4:
+          {
+            osg::Box* b = static_cast<osg::Box*>(*sit);
+            b->setHalfLengths(osg::Vec3(0.5 * lx, 0.5 * ly, r));
+          }
+          break;
 
-            default:
-              RLOG(1, "Capsule index out of range: %d", index);
-          }   // switch(index)
+          default:
+            RLOG(1, "Capsule index out of range: %d", index);
+        }   // switch(index)
 
-          index++;
+        index++;
 
-        }   // for(sit=...
+      }   // for(sit=...
 
-        // "Dirty" the shapes bounding box to adjust bounding box
-        std::vector<osg::Drawable*>::iterator dit;
+      // "Dirty" the shapes bounding box to adjust bounding box
+      std::vector<osg::Drawable*>::iterator dit;
 
-        for (dit = drawable.begin(); dit != drawable.end(); ++dit)
-        {
-          (*dit)->dirtyBound();
-        }
-
-      }   // case RCSSHAPE_SSR
-      break;
-
-      // Here we adjust the size of a SSL.
-      case RCSSHAPE_SSL:
+      for (dit = drawable.begin(); dit != drawable.end(); ++dit)
       {
-        osg::Capsule* c = static_cast<osg::Capsule*>(geometry.front());
-        c->setCenter(osg::Vec3(0.0, 0.0, extents[2]/2.0));
-        c->setHeight(extents[2]);
-        c->setRadius(extents[0]);
-
-        // "Dirty" the shapes bounding box to adjust bounding box
-        drawable.front()->dirtyBound();
+        (*dit)->dirtyBound();
       }
-      break;
 
-      // Here we adjust the size of a cylinder.
-      case RCSSHAPE_CYLINDER:
-      {
-        osg::Cylinder* c = static_cast<osg::Cylinder*>(geometry.front());
-        c->setHeight(extents[2]);
-        c->setRadius(extents[0]);
+    }   // case RCSSHAPE_SSR
+    break;
 
-        // "Dirty" the shapes bounding box to adjust bounding box
-        drawable.front()->dirtyBound();
-      }
-      break;
-
-      // Here we adjust the size of a cone.
-      case RCSSHAPE_CONE:
-      {
-        osg::Cone* c = static_cast<osg::Cone*>(geometry.front());
-        c->setHeight(extents[2]);
-        c->setRadius(extents[0]);
-
-        // "Dirty" the shapes bounding box to adjust bounding box
-        drawable.front()->dirtyBound();
-      }
-      break;
-
-      // Here we adjust the size of a sphere.
-      case RCSSHAPE_SPHERE:
-      {
-        osg::Sphere* s = static_cast<osg::Sphere*>(geometry.front());
-        s->setRadius(extents[0]);
-
-        // "Dirty" the shapes bounding box to adjust bounding box
-        drawable.front()->dirtyBound();
-      }
-      break;
-
-      // Here we adjust the size of a BOX.
-      case RCSSHAPE_BOX:
-      {
-        osg::Box* b = static_cast<osg::Box*>(geometry.front());
-        b->setHalfLengths(osg::Vec3(0.5*extents[0], 0.5*extents[1],
-                                    0.5*extents[2]));
-
-        // "Dirty" the shapes bounding box to adjust bounding box
-        drawable.front()->dirtyBound();
-      }
-      break;
-
-      default:
-        break;
+    case RCSSHAPE_SSL:
+    {
+      osg::Capsule* c = static_cast<osg::Capsule*>(geometry.front());
+      c->setCenter(osg::Vec3(0.0, 0.0, extents[2]/2.0));
+      c->setHeight(extents[2]);
+      c->setRadius(extents[0]);
+      drawable.front()->dirtyBound();
     }
+    break;
 
+    case RCSSHAPE_CYLINDER:
+    {
+      osg::Cylinder* c = static_cast<osg::Cylinder*>(geometry.front());
+      c->setHeight(extents[2]);
+      c->setRadius(extents[0]);
+      drawable.front()->dirtyBound();
+    }
+    break;
+
+    case RCSSHAPE_CONE:
+    {
+      osg::Cone* c = static_cast<osg::Cone*>(geometry.front());
+      c->setHeight(extents[2]);
+      c->setRadius(extents[0]);
+      drawable.front()->dirtyBound();
+    }
+    break;
+
+    case RCSSHAPE_SPHERE:
+    {
+      osg::Sphere* s = static_cast<osg::Sphere*>(geometry.front());
+      s->setRadius(extents[0]);
+      drawable.front()->dirtyBound();
+    }
+    break;
+
+    case RCSSHAPE_BOX:
+    {
+      osg::Box* b = static_cast<osg::Box*>(geometry.front());
+      b->setHalfLengths(osg::Vec3(0.5*extents[0], 0.5*extents[1],
+                                  0.5*extents[2]));
+      drawable.front()->dirtyBound();
+    }
+    break;
+
+    case RCSSHAPE_TORUS:
+    {
+      osg::Geometry* geo = dynamic_cast<osg::Geometry*>(drawable.front());
+      RCHECK(geo);
+      TorusNode::resize(extents[0], extents[2], geo);
+      drawable.front()->dirtyBound();
+    }
+    break;
+
+    default:
+      break;
   }
 
-protected:
-
-  ShapeNode* shapeNode;
-  std::vector<osg::Shape*> geometry;
-  std::vector<osg::Drawable*> drawable;
-  double extents[3];
-  HTr A_CB;
-};
+}
 
 /*******************************************************************************
  * Recursively adds the bodies collision shapes to the node.
@@ -414,13 +389,11 @@ void ShapeNode::addShape(bool resizeable)
   osg::ref_ptr<osg::TessellationHints> hints = new osg::TessellationHints;
   hints->setDetailRatio(2.0);
   osg::ref_ptr<osg::Geode> geode = new osg::Geode();
-  osg::ref_ptr<ShapeUpdateCallback> dnmData;
   const double* ext = shape->extents;
 
   if (resizeable || shape->resizeable)
   {
-    dnmData = new ShapeUpdateCallback(this);
-    setUpdateCallback(dnmData.get());
+    shapeUpdater = new ShapeUpdater(this);
   }
 
   // This enables depth sorting by default for correctly drawing
@@ -444,18 +417,17 @@ void ShapeNode::addShape(bool resizeable)
   if (shape->type == RCSSHAPE_SSL)
   {
     double r = ext[0], length = ext[2];
-    osg::Capsule* capsule =
-      new osg::Capsule(osg::Vec3(0.0, 0.0, 0.5*length), r, length);
-    osg::ref_ptr<osg::Drawable> sd = new osg::ShapeDrawable(capsule, hints.get());
+    osg::Capsule* caps = new osg::Capsule(osg::Vec3(0.0, 0.0, 0.5*length), r, length);
+    osg::ref_ptr<osg::Drawable> sd = new osg::ShapeDrawable(caps, hints.get());
     geode->addDrawable(sd);
     setMaterial(shape->color, geode.get());
 
     // Add the information for dynamic resizing
-    if (dnmData.valid())
+    if (shapeUpdater.valid())
     {
       sd->setUseDisplayList(false);
-      dnmData->addGeometry(capsule);
-      dnmData->addDrawable(sd);
+      shapeUpdater->addGeometry(caps);
+      shapeUpdater->addDrawable(sd);
     }
 
   }
@@ -470,10 +442,10 @@ void ShapeNode::addShape(bool resizeable)
     geode->addDrawable(sd);
     setMaterial(shape->color, geode.get());
 
-    if (dnmData.valid())
+    if (shapeUpdater.valid())
     {
-      dnmData->addGeometry(box);
-      dnmData->addDrawable(sd);
+      shapeUpdater->addGeometry(box);
+      shapeUpdater->addDrawable(sd);
       sd->setUseDisplayList(false);
     }
 
@@ -489,10 +461,10 @@ void ShapeNode::addShape(bool resizeable)
     geode->addDrawable(sd);
     setMaterial(shape->color, geode.get());
 
-    if (dnmData.valid())
+    if (shapeUpdater.valid())
     {
-      dnmData->addGeometry(sphere);
-      dnmData->addDrawable(sd);
+      shapeUpdater->addGeometry(sphere);
+      shapeUpdater->addDrawable(sd);
       sd->setUseDisplayList(false);
     }
 
@@ -583,12 +555,12 @@ void ShapeNode::addShape(bool resizeable)
       setMaterial(shape->color, geode.get());
 
       // Add the information for dynamic resizing
-      dnmData->addGeometry(cSSR1);
-      dnmData->addGeometry(cSSR2);
-      dnmData->addGeometry(cSSR3);
-      dnmData->addGeometry(cSSR4);
-      dnmData->addGeometry(bSSR);
-      dnmData->addDrawable(sd);
+      shapeUpdater->addGeometry(cSSR1);
+      shapeUpdater->addGeometry(cSSR2);
+      shapeUpdater->addGeometry(cSSR3);
+      shapeUpdater->addGeometry(cSSR4);
+      shapeUpdater->addGeometry(bSSR);
+      shapeUpdater->addDrawable(sd);
     }   // resizeable
 
   }
@@ -603,10 +575,10 @@ void ShapeNode::addShape(bool resizeable)
     geode->addDrawable(sd);
     setMaterial(shape->color, geode.get());
 
-    if (dnmData.valid())
+    if (shapeUpdater.valid())
     {
-      dnmData->addGeometry(cylinder);
-      dnmData->addDrawable(sd);
+      shapeUpdater->addGeometry(cylinder);
+      shapeUpdater->addDrawable(sd);
       sd->setUseDisplayList(false);
     }
 
@@ -627,10 +599,10 @@ void ShapeNode::addShape(bool resizeable)
     geode->addDrawable(sd);
     setMaterial(shape->color, geode.get());
 
-    if (dnmData.valid())
+    if (shapeUpdater.valid())
     {
-      dnmData->addGeometry(cone);
-      dnmData->addDrawable(sd);
+      shapeUpdater->addGeometry(cone);
+      shapeUpdater->addDrawable(sd);
       sd->setUseDisplayList(false);
     }
 
@@ -681,8 +653,15 @@ void ShapeNode::addShape(bool resizeable)
   /////////////////////////////
   else if (shape->type == RCSSHAPE_TORUS)
   {
-    osg::ref_ptr<osg::Drawable> sd = TorusNode::createGeometry(ext[0], ext[2]);
-    geode->addDrawable(sd);
+    osg::ref_ptr<osg::Geometry> g = TorusNode::createGeometry(ext[0], ext[2]);
+    geode->addDrawable(g.get());
+
+    if (shapeUpdater.valid())
+    {
+      shapeUpdater->addDrawable(g);
+      g->setUseDisplayList(false);
+    }
+
     setMaterial(shape->color, geode.get());
   }
 
@@ -900,6 +879,17 @@ void ShapeNode::toggleFrames()
   {
     frames[i]->toggle();
   }
+}
+
+void ShapeNode::updateDynamicShapes()
+{
+  if (!shapeUpdater.valid())
+  {
+    NLOG(0, "Skipping dynamic shape updates for %s", RcsShape_name(shape->type));
+    return;
+  }
+
+  shapeUpdater->updateDynamicShapes();
 }
 
 }   // namespace Rcs

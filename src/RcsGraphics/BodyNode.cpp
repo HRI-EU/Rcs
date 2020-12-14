@@ -876,6 +876,15 @@ void BodyNode::updateCallback(osg::Node* node, osg::NodeVisitor* nv)
   {
     updateDynamicMeshes();
   }
+
+  // Dynamic shape update. We call it from here, since several ShapeNode
+  // references might have been added, and we only want to update the one
+  // instance instead of every reference.
+  for (size_t i=0; i<_shapeNodes.size(); ++i)
+  {
+    _shapeNodes[i]->updateDynamicShapes();
+  }
+
 }
 
 

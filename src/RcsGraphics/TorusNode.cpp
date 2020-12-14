@@ -36,6 +36,8 @@
 
 #include "TorusNode.h"
 
+#include <Rcs_macros.h>
+
 #include <osg/Geode>
 #include <osg/Geometry>
 #include <osg/ShadeModel>
@@ -61,21 +63,19 @@ TorusNode::~TorusNode()
 {
 }
 
-osg::ref_ptr<osg::Geometry> TorusNode::createGeometry(double radius,
-                                                      double thickness,
-                                                      double start_angle,
-                                                      double end_angle)
+void TorusNode::createHelperArrays(double radius, double thickness,
+                                   double start_angle, double end_angle,
+                                   unsigned int nSides, unsigned int nRings,
+                                   osg::Vec3Array* vertices,
+                                   osg::Vec3Array* normals)
 {
   double oradius = radius;
   double iradius = thickness / 2.0;
 
   // add 1 to nRings and nSides, because we need to store more vertices
   // than we have facets
-  unsigned int nRings = 30 + 1;
-  unsigned int nSides = 30 + 1;
-
-  osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
-  osg::ref_ptr<osg::Vec3Array> normals = new osg::Vec3Array;
+  // unsigned int nRings = 30 + 1;
+  // unsigned int nSides = 30 + 1;
 
   double dpsi = (end_angle - start_angle) / (double)(nRings - 1);
   double dphi = -2.0 * M_PI / (double)(nSides - 1);
@@ -92,21 +92,44 @@ osg::ref_ptr<osg::Geometry> TorusNode::createGeometry(double radius,
       double cphi = cos(phi);
       double sphi = sin(phi);
 
-      double x = cpsi * (oradius + cphi * iradius);
-      double y = spsi * (oradius + cphi * iradius);
-      double z = sphi * iradius;
-      vertices->push_back(osg::Vec3(x, y, z));
+      if (vertices)
+      {
+        double x = cpsi * (oradius + cphi * iradius);
+        double y = spsi * (oradius + cphi * iradius);
+        double z = sphi * iradius;
+        vertices->push_back(osg::Vec3(x, y, z));
+      }
 
-      double nx = cpsi * cphi;
-      double ny = spsi * cphi;
-      double nz = sphi;
-      normals->push_back(osg::Vec3(nx, ny, nz));
+      if (normals)
+      {
+        double nx = cpsi * cphi;
+        double ny = spsi * cphi;
+        double nz = sphi;
+        normals->push_back(osg::Vec3(nx, ny, nz));
+      }
 
       phi += dphi;
     }
 
     psi += dpsi;
   }
+}
+
+osg::ref_ptr<osg::Geometry> TorusNode::createGeometry(double radius,
+                                                      double thickness,
+                                                      double start_angle,
+                                                      double end_angle)
+{
+  osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
+  osg::ref_ptr<osg::Vec3Array> normals = new osg::Vec3Array;
+
+  // add 1 to nRings and nSides, because we need to store more vertices
+  // than we have facets
+  unsigned int nRings = 30 + 1;
+  unsigned int nSides = 30 + 1;
+
+  createHelperArrays(radius, thickness, start_angle, end_angle,
+                     nSides, nRings, vertices, normals);
 
   // build using quads
   osg::Vec3Array* quad_vertices = new osg::Vec3Array;
@@ -139,6 +162,37 @@ osg::ref_ptr<osg::Geometry> TorusNode::createGeometry(double radius,
                                                 quad_vertices->size()));
 
   return geometry;
+}
+
+void TorusNode::resize(double radius, double thickness, osg::Geometry* geometry)
+{
+  osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
+
+  // add 1 to nRings and nSides, because we need to store more vertices
+  // than we have facets
+  unsigned int nRings = 30 + 1;
+  unsigned int nSides = 30 + 1;
+
+  createHelperArrays(radius, thickness, 0.0, 2.0*M_PI,
+                     nSides, nRings, vertices, NULL);
+
+  // build using quads
+  osg::Array* vertexArr = geometry->getVertexArray();
+  osg::Vec3Array* quad_vertices = dynamic_cast<osg::Vec3Array*>(vertexArr);
+  RCHECK(quad_vertices);
+  size_t vidx = 0;
+
+  for (unsigned int i = 0; i < nSides - 1; i++)
+  {
+    for (unsigned int j = 0; j < nRings - 1; j++)
+    {
+      (*quad_vertices)[vidx++] = osg::Vec3(vertices->at(j * nSides + i));
+      (*quad_vertices)[vidx++] = osg::Vec3(vertices->at(j * nSides + i + 1));
+      (*quad_vertices)[vidx++] = osg::Vec3(vertices->at((j + 1) * nSides + i + 1));
+      (*quad_vertices)[vidx++] = osg::Vec3(vertices->at((j + 1) * nSides + i));
+    }
+  }
+
 }
 
 
