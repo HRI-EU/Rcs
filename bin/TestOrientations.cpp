@@ -99,11 +99,13 @@ static void quit(int /*sig*/)
 void Mat3d_fromEulerAngles_Shoemake(double A_KI[3][3], const double ea[3],
                                     int eulerOrder)
 {
-  HMatrix R;
-  EulerAngles inAngs = {0, 0, 0, static_cast<double>(eulerOrder)};
+  EulerAngles inAngs;
   inAngs.x = ea[0];
   inAngs.y = ea[1];
   inAngs.z = ea[2];
+  inAngs.order = eulerOrder;
+
+  HMatrix R;
   Eul_ToHMatrix(inAngs, R);
 
   for (int i=0; i<3; i++)

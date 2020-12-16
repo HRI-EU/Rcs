@@ -20,20 +20,40 @@
 #ifndef _H_EulerAngles
 #define _H_EulerAngles
 
-#include "QuatTypes.h"
+typedef struct
+{
+  double x, y, z, w;
+} ShoemakeQuat;
 
-/*** Order type constants, constructors, extractors ***/
-/* There are 24 possible conventions, designated by:    */
-/*    o EulAxI = axis used initially        */
-/*    o EulPar = parity of axis permutation       */
-/*    o EulRep = repetition of initial axis as last     */
-/*    o EulFrm = frame from which axes are taken      */
-/* Axes I,J,K will be a permutation of X,Y,Z.     */
-/* Axis H will be either I or K, depending on EulRep.   */
-/* Frame S takes axes from initial static frame.      */
-/* If ord = (AxI=X, Par=Even, Rep=No, Frm=S), then      */
-/* {a,b,c,ord} means Rz(c)Ry(b)Rx(a), where Rz(c)v      */
-/* rotates v around Z by c radians.         */
+enum ShoemakeIdx
+{
+  ShoemakeIdx_X, ShoemakeIdx_Y, ShoemakeIdx_Z, ShoemakeIdx_W
+};
+
+typedef double HMatrix[4][4]; /* Right-handed, for column vectors */
+
+typedef struct
+{
+  double x, y, z;
+  int order;
+} EulerAngles;
+
+
+
+/*
+  Order type constants, constructors, extractors
+  There are 24 possible conventions, designated by:
+     o EulAxI = axis used initially
+     o EulPar = parity of axis permutation
+     o EulRep = repetition of initial axis as last
+     o EulFrm = frame from which axes are taken
+  Axes I,J,K will be a permutation of X,Y,Z.
+  Axis H will be either I or K, depending on EulRep.
+  Frame S takes axes from initial static frame.
+  If ord = (AxI=X, Par=Even, Rep=No, Frm=S), then
+  {a,b,c,ord} means Rz(c)Ry(b)Rx(a), where Rz(c)v
+  rotates v around Z by c radians.
+*/
 
 #define EulFrmS      0
 #define EulFrmR      1
@@ -56,46 +76,58 @@
 /* EulOrd creates an order value between 0 and 23 from 4-tuple choices. */
 #define EulOrd(i,p,r,f)    (((((((i)<<1)+(p))<<1)+(r))<<1)+(f))
 /* Static axes */
-#define EulOrdXYZs    EulOrd(X,EulParEven,EulRepNo,EulFrmS)
-#define EulOrdXYXs    EulOrd(X,EulParEven,EulRepYes,EulFrmS)
-#define EulOrdXZYs    EulOrd(X,EulParOdd,EulRepNo,EulFrmS)
-#define EulOrdXZXs    EulOrd(X,EulParOdd,EulRepYes,EulFrmS)
-#define EulOrdYZXs    EulOrd(Y,EulParEven,EulRepNo,EulFrmS)
-#define EulOrdYZYs    EulOrd(Y,EulParEven,EulRepYes,EulFrmS)
-#define EulOrdYXZs    EulOrd(Y,EulParOdd,EulRepNo,EulFrmS)
-#define EulOrdYXYs    EulOrd(Y,EulParOdd,EulRepYes,EulFrmS)
-#define EulOrdZXYs    EulOrd(Z,EulParEven,EulRepNo,EulFrmS)
-#define EulOrdZXZs    EulOrd(Z,EulParEven,EulRepYes,EulFrmS)
-#define EulOrdZYXs    EulOrd(Z,EulParOdd,EulRepNo,EulFrmS)
-#define EulOrdZYZs    EulOrd(Z,EulParOdd,EulRepYes,EulFrmS)
+#define EulOrdXYZs    EulOrd(ShoemakeIdx_X,EulParEven,EulRepNo,EulFrmS)
+#define EulOrdXYXs    EulOrd(ShoemakeIdx_X,EulParEven,EulRepYes,EulFrmS)
+#define EulOrdXZYs    EulOrd(ShoemakeIdx_X,EulParOdd,EulRepNo,EulFrmS)
+#define EulOrdXZXs    EulOrd(ShoemakeIdx_X,EulParOdd,EulRepYes,EulFrmS)
+#define EulOrdYZXs    EulOrd(ShoemakeIdx_Y,EulParEven,EulRepNo,EulFrmS)
+#define EulOrdYZYs    EulOrd(ShoemakeIdx_Y,EulParEven,EulRepYes,EulFrmS)
+#define EulOrdYXZs    EulOrd(ShoemakeIdx_Y,EulParOdd,EulRepNo,EulFrmS)
+#define EulOrdYXYs    EulOrd(ShoemakeIdx_Y,EulParOdd,EulRepYes,EulFrmS)
+#define EulOrdZXYs    EulOrd(ShoemakeIdx_Z,EulParEven,EulRepNo,EulFrmS)
+#define EulOrdZXZs    EulOrd(ShoemakeIdx_Z,EulParEven,EulRepYes,EulFrmS)
+#define EulOrdZYXs    EulOrd(ShoemakeIdx_Z,EulParOdd,EulRepNo,EulFrmS)
+#define EulOrdZYZs    EulOrd(ShoemakeIdx_Z,EulParOdd,EulRepYes,EulFrmS)
 /* Rotating axes */
-#define EulOrdZYXr    EulOrd(X,EulParEven,EulRepNo,EulFrmR)
-#define EulOrdXYXr    EulOrd(X,EulParEven,EulRepYes,EulFrmR)
-#define EulOrdYZXr    EulOrd(X,EulParOdd,EulRepNo,EulFrmR)
-#define EulOrdXZXr    EulOrd(X,EulParOdd,EulRepYes,EulFrmR)
-#define EulOrdXZYr    EulOrd(Y,EulParEven,EulRepNo,EulFrmR)
-#define EulOrdYZYr    EulOrd(Y,EulParEven,EulRepYes,EulFrmR)
-#define EulOrdZXYr    EulOrd(Y,EulParOdd,EulRepNo,EulFrmR)
-#define EulOrdYXYr    EulOrd(Y,EulParOdd,EulRepYes,EulFrmR)
-#define EulOrdYXZr    EulOrd(Z,EulParEven,EulRepNo,EulFrmR)
-#define EulOrdZXZr    EulOrd(Z,EulParEven,EulRepYes,EulFrmR)
-#define EulOrdXYZr    EulOrd(Z,EulParOdd,EulRepNo,EulFrmR)
-#define EulOrdZYZr    EulOrd(Z,EulParOdd,EulRepYes,EulFrmR)
+#define EulOrdZYXr    EulOrd(ShoemakeIdx_X,EulParEven,EulRepNo,EulFrmR)
+#define EulOrdXYXr    EulOrd(ShoemakeIdx_X,EulParEven,EulRepYes,EulFrmR)
+#define EulOrdYZXr    EulOrd(ShoemakeIdx_X,EulParOdd,EulRepNo,EulFrmR)
+#define EulOrdXZXr    EulOrd(ShoemakeIdx_X,EulParOdd,EulRepYes,EulFrmR)
+#define EulOrdXZYr    EulOrd(ShoemakeIdx_Y,EulParEven,EulRepNo,EulFrmR)
+#define EulOrdYZYr    EulOrd(ShoemakeIdx_Y,EulParEven,EulRepYes,EulFrmR)
+#define EulOrdZXYr    EulOrd(ShoemakeIdx_Y,EulParOdd,EulRepNo,EulFrmR)
+#define EulOrdYXYr    EulOrd(ShoemakeIdx_Y,EulParOdd,EulRepYes,EulFrmR)
+#define EulOrdYXZr    EulOrd(ShoemakeIdx_Z,EulParEven,EulRepNo,EulFrmR)
+#define EulOrdZXZr    EulOrd(ShoemakeIdx_Z,EulParEven,EulRepYes,EulFrmR)
+#define EulOrdXYZr    EulOrd(ShoemakeIdx_Z,EulParOdd,EulRepNo,EulFrmR)
+#define EulOrdZYZr    EulOrd(ShoemakeIdx_Z,EulParOdd,EulRepYes,EulFrmR)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/*! \brief "Constructor" based on Euler angle components and order.
+ */
 EulerAngles Eul_(double ai, double aj, double ah, int order);
+
+/*! \brief Conversion from Euler angles to quaternion.
+ */
 ShoemakeQuat Eul_ToQuat(EulerAngles ea);
+
+/*! \brief Conversion from Euler angles to homogenuous 4 x 4 matrix.
+ */
 void Eul_ToHMatrix(EulerAngles ea, HMatrix M);
+
+/*! \brief Conversion from homogenuous 4 x 4 matrix to Euler angles of a given
+ *         order.
+ */
 EulerAngles Eul_FromHMatrix(HMatrix M, int order);
+
+/*! \brief Conversion from quaternion to Euler angles of a given order.
+ */
 EulerAngles Eul_FromQuat(ShoemakeQuat q, int order);
 
-/*!
- *  \brief Convert between Euler types
- *
- *  MM: Function added for convenience
+/*! \brief Convert between Euler types
  *
  *  \param[in] ea Input Euler angles
  *  \param[in] order Type of the returned Euler angles
@@ -103,10 +135,7 @@ EulerAngles Eul_FromQuat(ShoemakeQuat q, int order);
  */
 EulerAngles Eul_FromEuler(EulerAngles ea, int order);
 
-/*!
- * \brief Convert between Euler types with one function call
- *
- * Another convenience function.
+/*! \brief Convert between Euler types with one function call
  *
  *  \param[out] out Output Euler angles
  *  \param[in] outOrder Output Euler type
@@ -115,10 +144,7 @@ EulerAngles Eul_FromEuler(EulerAngles ea, int order);
  */
 void convertEulerAngles(double out[3], int outOrder, double in[3], int inOrder);
 
-/*!
- * \brief Convert between Euler types with one function call
- *
- * Another convenience function.
+/*! \brief Convert between Euler types with one function call
  *
  *  \param[in,out] inout Input and output Euler angles
  *  \param[in] outOrder Output Euler type
@@ -126,8 +152,14 @@ void convertEulerAngles(double out[3], int outOrder, double in[3], int inOrder);
  */
 void convertEulerAnglesSelf(double inout[3], int outOrder, int inOrder);
 
+/*! \brief Computes the Euler angles of the given order from the given
+ *         rotation matrix.
+ */
 void computeEulerAngles(double ea[3], double A_BI[3][3], int eulerOrder);
 
+/*! \brief Prints the Euler angles of the rotation matrix in all orders
+ *         to the console.
+ */
 void printAllEulerAngles(double rm[3][3]);
 
 #ifdef __cplusplus

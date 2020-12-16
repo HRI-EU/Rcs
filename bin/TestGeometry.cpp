@@ -173,7 +173,7 @@ static bool testDistanceRandomly()
       success = false;
       RLOG_CPP(1, "Testing " << RcsShape_name(s1->type) << " against "
                << RcsShape_name(s2->type) << " with d=" << d);
-      RLOG(1, "Distance test 1 %zu failed: %f %f", i, dtest1, dtest2);
+      RLOG(1, "Distance test 1 %d failed: %f %f", i, dtest1, dtest2);
     }
 
     // Test 2: Distance query from point cp2 to shape 1 (and the other way
@@ -188,7 +188,7 @@ static bool testDistanceRandomly()
       success = false;
       RLOG_CPP(1, "Testing " << RcsShape_name(s1->type) << " against "
                << RcsShape_name(s2->type) << " with d=" << d);
-      RLOG(1, "Distance test 2 %zu failed", i);
+      RLOG(1, "Distance test 2 %d failed", i);
     }
 
     if ((!success_i) && showWindow)
@@ -280,7 +280,7 @@ static bool testDistanceThreaded()
   for (int i=0; i< nThreads; ++i)
   {
     int res = pthread_create(&threads[i], NULL, threadFunc, &iterations);
-    RCHECK_MSG(res == 0, "Failure launching thread number %zu", i);
+    RCHECK_MSG(res == 0, "Failure launching thread number %d", i);
   }
 
   for (int i = 0; i < nThreads; ++i)
@@ -291,7 +291,7 @@ static bool testDistanceThreaded()
     delete result_i;
   }
 
-  RLOG(0, "Joined %zu threads, test was a great %s", nThreads,
+  RLOG(0, "Joined %d threads, test was a great %s", nThreads,
        success ? "SUCCESS" : "FAILURE");
 
   return success;

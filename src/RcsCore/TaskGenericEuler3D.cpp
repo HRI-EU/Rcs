@@ -103,7 +103,7 @@ static void Eul2RotMatrix(double A_KI[3][3], const double ea[3], int eulerOrder)
   inAngs.x = ea[0];
   inAngs.y = ea[1];
   inAngs.z = ea[2];
-  inAngs.w = eulerOrder;
+  inAngs.order = eulerOrder;
 
   // Determine the current rotation matrix according to the angular ordering
   HMatrix R;
@@ -153,15 +153,15 @@ Rcs::TaskGenericEuler3D::TaskGenericEuler3D(const std::string& className_,
   {
     if (eulerOrderChar[i] == 'A' || eulerOrderChar[i] == 'X')
     {
-      this->eulerOrderVect[i] = X;
+      this->eulerOrderVect[i] = ShoemakeIdx_X;
     }
     else if (eulerOrderChar[i] == 'B' || eulerOrderChar[i] == 'Y')
     {
-      this->eulerOrderVect[i] = Y;
+      this->eulerOrderVect[i] = ShoemakeIdx_Y;
     }
     else if (eulerOrderChar[i] == 'C' || eulerOrderChar[i] == 'Z')
     {
-      this->eulerOrderVect[i] = Z;
+      this->eulerOrderVect[i] = ShoemakeIdx_Z;
     }
     else
     {
@@ -181,9 +181,9 @@ Rcs::TaskGenericEuler3D::TaskGenericEuler3D(const std::string& className_,
   if (this->eulerOrderVect[3] == 2)
   {
     RLOG(1, "Invalid eulerOrder! Using \"ABCr\"");
-    this->eulerOrderVect[0] = X;
-    this->eulerOrderVect[1] = Y;
-    this->eulerOrderVect[2] = Z;
+    this->eulerOrderVect[0] = ShoemakeIdx_X;
+    this->eulerOrderVect[1] = ShoemakeIdx_Y;
+    this->eulerOrderVect[2] = ShoemakeIdx_Z;
     this->eulerOrderVect[3] = EulOrdPara[3] = EulFrmR;
   }
 
@@ -312,15 +312,15 @@ Rcs::TaskGenericEuler3D::TaskGenericEuler3D(RcsGraph* graph_,
   {
     if (eulerOrderChar[i] == 'A' || eulerOrderChar[i] == 'X')
     {
-      this->eulerOrderVect[i] = X;
+      this->eulerOrderVect[i] = ShoemakeIdx_X;
     }
     else if (eulerOrderChar[i] == 'B' || eulerOrderChar[i] == 'Y')
     {
-      this->eulerOrderVect[i] = Y;
+      this->eulerOrderVect[i] = ShoemakeIdx_Y;
     }
     else if (eulerOrderChar[i] == 'C' || eulerOrderChar[i] == 'Z')
     {
-      this->eulerOrderVect[i] = Z;
+      this->eulerOrderVect[i] = ShoemakeIdx_Z;
     }
     else
     {
@@ -340,9 +340,9 @@ Rcs::TaskGenericEuler3D::TaskGenericEuler3D(RcsGraph* graph_,
   if (this->eulerOrderVect[3] == 2)
   {
     RLOG(1, "Invalid eulerOrder! Using \"ABCr\"");
-    this->eulerOrderVect[0] = X;
-    this->eulerOrderVect[1] = Y;
-    this->eulerOrderVect[2] = Z;
+    this->eulerOrderVect[0] = ShoemakeIdx_X;
+    this->eulerOrderVect[1] = ShoemakeIdx_Y;
+    this->eulerOrderVect[2] = ShoemakeIdx_Z;
     this->eulerOrderVect[3] = EulOrdPara[3] = EulFrmR;
   }
 

@@ -346,7 +346,7 @@ void ControllerWidgetBase::displayAct()
   char a[256];
 
   lock();
-  sprintf(a, "Dofs: %d/%d  Tasks: %zu",
+  snprintf(a, 256, "Dofs: %d/%d  Tasks: %zu",
           _controller->getGraph()->nJ,
           _controller->getGraph()->dof,
           _controller->getTaskDim());

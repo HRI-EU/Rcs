@@ -30,7 +30,7 @@ EulerAngles Eul_(double ai, double aj, double ah, int order)
   ea.x = ai;
   ea.y = aj;
   ea.z = ah;
-  ea.w = order;
+  ea.order = order;
   return (ea);
 }
 
@@ -41,7 +41,7 @@ ShoemakeQuat Eul_ToQuat(EulerAngles ea)
   double a[3], ti, tj, th, ci, cj, ch, si, sj, sh, cc, cs, sc, ss;
   int i,j,k,h,n,s,f;
   (void) h; // to avoid "assigned but unused" warning
-  EulGetOrd(ea.w,i,j,k,h,n,s,f);
+  EulGetOrd(ea.order,i,j,k,h,n,s,f);
   if (f==EulFrmR)
   {
     double t = ea.x;
@@ -83,9 +83,9 @@ ShoemakeQuat Eul_ToQuat(EulerAngles ea)
   {
     a[j] = -a[j];
   }
-  qu.x = a[X];
-  qu.y = a[Y];
-  qu.z = a[Z];
+  qu.x = a[ShoemakeIdx_X];
+  qu.y = a[ShoemakeIdx_Y];
+  qu.z = a[ShoemakeIdx_Z];
   return (qu);
 }
 
@@ -95,7 +95,7 @@ void Eul_ToHMatrix(EulerAngles ea, HMatrix M)
   double ti, tj, th, ci, cj, ch, si, sj, sh, cc, cs, sc, ss;
   int i,j,k,h,n,s,f;
   (void) h; // to avoid "assigned but unused" warning
-  EulGetOrd(ea.w,i,j,k,h,n,s,f);
+  EulGetOrd(ea.order,i,j,k,h,n,s,f);
   if (f==EulFrmR)
   {
     double t = ea.x;
@@ -145,8 +145,13 @@ void Eul_ToHMatrix(EulerAngles ea, HMatrix M)
     M[k][j] = cj*si;
     M[k][k] = cj*ci;
   }
-  M[W][X]=M[W][Y]=M[W][Z]=M[X][W]=M[Y][W]=M[Z][W]=0.0;
-  M[W][W]=1.0;
+  M[ShoemakeIdx_W][ShoemakeIdx_X] = 0.0;
+  M[ShoemakeIdx_W][ShoemakeIdx_Y] = 0.0;
+  M[ShoemakeIdx_W][ShoemakeIdx_Z] = 0.0;
+  M[ShoemakeIdx_X][ShoemakeIdx_W] = 0.0;
+  M[ShoemakeIdx_Y][ShoemakeIdx_W] = 0.0;
+  M[ShoemakeIdx_Z][ShoemakeIdx_W] = 0.0;
+  M[ShoemakeIdx_W][ShoemakeIdx_W] = 1.0;
 }
 
 /*******************************************************************************
@@ -202,7 +207,7 @@ EulerAngles Eul_FromHMatrix(HMatrix M, int order)
     ea.x = ea.z;
     ea.z = t;
   }
-  ea.w = order;
+  ea.order = order;
   return (ea);
 }
 
@@ -216,17 +221,22 @@ EulerAngles Eul_FromQuat(ShoemakeQuat q, int order)
   double wx = q.w*xs,   wy = q.w*ys,   wz = q.w*zs;
   double xx = q.x*xs,   xy = q.x*ys,   xz = q.x*zs;
   double yy = q.y*ys,   yz = q.y*zs,   zz = q.z*zs;
-  M[X][X] = 1.0 - (yy + zz);
-  M[X][Y] = xy - wz;
-  M[X][Z] = xz + wy;
-  M[Y][X] = xy + wz;
-  M[Y][Y] = 1.0 - (xx + zz);
-  M[Y][Z] = yz - wx;
-  M[Z][X] = xz - wy;
-  M[Z][Y] = yz + wx;
-  M[Z][Z] = 1.0 - (xx + yy);
-  M[W][X]=M[W][Y]=M[W][Z]=M[X][W]=M[Y][W]=M[Z][W]=0.0;
-  M[W][W]=1.0;
+  M[ShoemakeIdx_X][ShoemakeIdx_X] = 1.0 - (yy + zz);
+  M[ShoemakeIdx_X][ShoemakeIdx_Y] = xy - wz;
+  M[ShoemakeIdx_X][ShoemakeIdx_Z] = xz + wy;
+  M[ShoemakeIdx_Y][ShoemakeIdx_X] = xy + wz;
+  M[ShoemakeIdx_Y][ShoemakeIdx_Y] = 1.0 - (xx + zz);
+  M[ShoemakeIdx_Y][ShoemakeIdx_Z] = yz - wx;
+  M[ShoemakeIdx_Z][ShoemakeIdx_X] = xz - wy;
+  M[ShoemakeIdx_Z][ShoemakeIdx_Y] = yz + wx;
+  M[ShoemakeIdx_Z][ShoemakeIdx_Z] = 1.0 - (xx + yy);
+  M[ShoemakeIdx_W][ShoemakeIdx_X] = 0.0;
+  M[ShoemakeIdx_W][ShoemakeIdx_Y] = 0.0;
+  M[ShoemakeIdx_W][ShoemakeIdx_Z] = 0.0;
+  M[ShoemakeIdx_X][ShoemakeIdx_W] = 0.0;
+  M[ShoemakeIdx_Y][ShoemakeIdx_W] = 0.0;
+  M[ShoemakeIdx_Z][ShoemakeIdx_W] = 0.0;
+  M[ShoemakeIdx_W][ShoemakeIdx_W] = 1.0;
   return (Eul_FromHMatrix(M, order));
 }
 

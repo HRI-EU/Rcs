@@ -45,7 +45,6 @@
 #include <QHBoxLayout>
 #include <QCheckBox>
 #include <QLabel>
-#include <QTimer>
 
 #include <vector>
 #include <algorithm>
