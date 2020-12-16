@@ -366,7 +366,7 @@ RcsGraph* RcsGraph_create(const char* cfgFile)
   char filename[256] = "";
   bool fileExists = Rcs_getAbsoluteFileName(cfgFile, filename);
 
-  if (fileExists==false)
+  if ((fileExists==false) && (cfgFile!=NULL))
   {
     RcsGraph* self = RcsGraph_createFromBuffer(cfgFile, strlen(cfgFile)+1);
 
@@ -376,8 +376,7 @@ RcsGraph* RcsGraph_create(const char* cfgFile)
       {
         RMSG("Resource path is:");
         Rcs_printResourcePath();
-        RMSG("RcsGraph configuration file \"%s\" not found in "
-             "ressource path - exiting", cfgFile ? cfgFile : "NULL");
+        RMSG("RcsGraph config file \"%s\" not found in resource path", cfgFile);
       }
     }
 

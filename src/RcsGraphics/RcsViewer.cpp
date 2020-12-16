@@ -889,6 +889,7 @@ void Viewer::setCameraHomePosition(const osg::Vec3d& eye,
                                    const osg::Vec3d& up)
 {
   HTr ecu;
+  Vec3d_setZero(ecu.org);
   Vec3d_set(ecu.rot[0], eye[0], eye[1], eye[2]);
   Vec3d_set(ecu.rot[1], center[0], center[1], center[2]);
   Vec3d_set(ecu.rot[2], up[0], up[1], up[2]);

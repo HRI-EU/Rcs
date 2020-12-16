@@ -119,6 +119,8 @@ bool testBulletDistance(size_t iterations)
 
     RcsShape* s1 = RcsShape_createRandomShape(sTypes[rndIdx1]);
     RcsShape* s2 = RcsShape_createRandomShape(sTypes[rndIdx2]);
+    RCHECK(s1);
+    RCHECK(s2);
     RLOG_CPP(2, "Testing " << RcsShape_name(s1->type) << " against "
              << RcsShape_name(s2->type));
 

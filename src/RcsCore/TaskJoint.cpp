@@ -336,8 +336,8 @@ void Rcs::TaskJoint::print() const
   if (refJoint)
   {
     printf(" refJoint: \"%s\" (type: %s value: %f)",
-           refJoint->name, RcsJoint_typeName(joint->type),
-           getGraph()->q->ele[joint->jointIndex]);
+           refJoint->name, RcsJoint_typeName(refJoint->type),
+           getGraph()->q->ele[refJoint->jointIndex]);
   }
 
   if (refGain != 1.0)

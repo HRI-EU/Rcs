@@ -319,7 +319,7 @@ static bool test_localeFreeParsing()
   char* res = setlocale(LC_ALL, "de_DE.utf8");
   RLOG(4, "setlocale() returned \"%s\"", res ? res : "NULL");
 
-  if (!STREQ(res, "de_DE.utf8"))
+  if ((res==NULL) || (!STREQ(res, "de_DE.utf8")))
   {
     RLOG(3, "Failed to set locale to \"de_DE.utf8\"");
     return false;

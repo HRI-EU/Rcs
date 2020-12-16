@@ -594,6 +594,7 @@ static void testOsgViewer()
   {
     RcsGraph* graph = RcsGraph_create("config/xml/DexBot/LBR.xml");
     RCHECK(graph);
+    RCHECK(graph->root);
     osg::ref_ptr<Rcs::BodyNode> gn = new Rcs::BodyNode(graph->root);
     rootnode->addChild(gn.get());
   }
