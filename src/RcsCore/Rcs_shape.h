@@ -266,6 +266,21 @@ void RcsShape_scale(RcsShape* self, double scale);
  */
 RcsMeshData* RcsShape_createMesh(const RcsShape* self);
 
+/*! \ingroup RcsShapeFunctions
+ *  \brief Sets or clears the bit of the shape's compute type. For instance:
+ *         RcsShape_setComputeType(shape, RCSSHAPE_COMPUTE_DISTANCE)
+ *         activates the distance computation of the shape.
+ *         RcsShape_clearComputeType(shape, RCSSHAPE_COMPUTE_DISTANCE)
+ *         deactivates the distance computation of the shape.
+ */
+void RcsShape_setComputeType(RcsShape* shape, char computeType, bool enable);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Returns true if the compute type is set, false otherwise.
+ */
+bool RcsShape_isOfComputeType(const RcsShape* shape, char computeType);
+
+
 #ifdef __cplusplus
 }
 #endif

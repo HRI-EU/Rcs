@@ -2041,3 +2041,31 @@ void RcsShape_scale(RcsShape* shape, double scale)
     RcsMesh_scale((RcsMeshData*) shape->userData, scale);
   }
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void RcsShape_setComputeType(RcsShape* shape, char computeType, bool enable)
+{
+  if (enable)
+  {
+    shape->computeType |= computeType;
+  }
+  else
+  {
+    shape->computeType &= ~(computeType);
+  }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool RcsShape_isOfComputeType(const RcsShape* shape, char computeType)
+{
+  if ((shape->computeType & computeType) == 0)
+  {
+    return false;
+  }
+
+  return true;
+}
