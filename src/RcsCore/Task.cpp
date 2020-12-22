@@ -1111,23 +1111,25 @@ void Rcs::Task::projectTaskForce(MatNd* ft_task,
 
   const double* S_ft = loadCell->rawData->ele;
 
+  RcsBody* loadCellBdy = &graph->bodies[loadCell->bodyId];
+
   // Transform sensor values into world coordinates
   double I_ft[6];
   MatNd I_ft_ = MatNd_fromPtr(6, 1, I_ft);
   VecNd_copy(I_ft, S_ft, 6);
-  Vec3d_transRotateSelf(&I_ft[0], loadCell->offset->rot);
-  Vec3d_transRotateSelf(&I_ft[0], loadCell->body->A_BI.rot);
-  Vec3d_transRotateSelf(&I_ft[3], loadCell->offset->rot);
-  Vec3d_transRotateSelf(&I_ft[3], loadCell->body->A_BI.rot);
+  Vec3d_transRotateSelf(&I_ft[0], (double (*)[3])loadCell->offset.rot);
+  Vec3d_transRotateSelf(&I_ft[0], loadCellBdy->A_BI.rot);
+  Vec3d_transRotateSelf(&I_ft[3], (double (*)[3])loadCell->offset.rot);
+  Vec3d_transRotateSelf(&I_ft[3], loadCellBdy->A_BI.rot);
 
   // Compute the sensor Jacobian
   MatNd* J_sensor = NULL;
   MatNd_create2(J_sensor, 6, this->graph->nJ);
-  RcsGraph_bodyPointJacobian(getGraph(), loadCell->body, loadCell->offset->org,
+  RcsGraph_bodyPointJacobian(getGraph(), loadCellBdy, loadCell->offset.org,
                              NULL, J_sensor);
   MatNd_reshape(J_sensor, 6, this->graph->nJ);
   MatNd J_rot = MatNd_fromPtr(3, this->graph->nJ, MatNd_getRowPtr(J_sensor, 3));
-  RcsGraph_rotationJacobian(this->graph, loadCell->body, NULL, &J_rot);
+  RcsGraph_rotationJacobian(this->graph, loadCellBdy, NULL, &J_rot);
 
   // Sensor wrench Pseudo-inverse
   MatNd* pinvJ_sensor = NULL;

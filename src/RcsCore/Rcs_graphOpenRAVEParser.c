@@ -893,34 +893,18 @@ RcsShape* RcsShape_createFromOpenRAVEXML(xmlNode* node, RcsBody* body)
     char fullName[512] = "-";
     RCHECK(shape->type == RCSSHAPE_MESH);
     Rcs_getAbsoluteFileName(fileName, fullName);
-    shape->meshFile = RNALLOC(strlen(fullName) + 1, char);
-    RCHECK_PEDANTIC(shape->meshFile);
-    strcpy(shape->meshFile, fullName);
+    snprintf(shape->meshFile, RCS_MAX_FILENAMELEN, "%s", fullName);
 
     if (File_exists(shape->meshFile) == false)
     {
       RLOG(4, "Mesh file \"%s\" not found!", fileName);
-      RFREE(shape->meshFile);
-      shape->meshFile = NULL;
     }
 
   }
 
-  /// \todo (MM, Oct 2, 2013): textures not supported yet
-
-  /// \todo (MM, Oct 2, 2013): colors not supported yet
-
-  // Color
-  char shapeColor[256];
-  strcpy(shapeColor, "DEFAULT");
-  shape->color = RNALLOC(strlen(shapeColor) + 1, char);
-  RCHECK_PEDANTIC(shape->color);
-  strcpy(shape->color, shapeColor);
-
-  /// \todo (MM, Oct 2, 2013): materials not supported yet
-  // Material
-  char shapeMaterial[256] = "default";
-  shape->material = String_clone(shapeMaterial);
+  /// \todo textures, colors, materials not supported yet
+  strcpy(shape->color, "DEFAULT");
+  strcpy(shape->material, "default");
 
   return shape;
 }

@@ -1386,11 +1386,12 @@ void Rcs::BulletSimulation::applyControl(double dt)
  ******************************************************************************/
 bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
 {
-  Rcs::BulletRigidBody* rb = getRigidBody(fts->body);
+  RcsBody* ftsBdy = &getGraph()->bodies[fts->bodyId];
+  Rcs::BulletRigidBody* rb = getRigidBody(ftsBdy);
 
   if (rb == NULL)
   {
-    RLOG(5, "No BulletRigidBody found for RcsBody \"%s\"", fts->body->bdyName);
+    RLOG(5, "No BulletRigidBody found for RcsBody \"%s\"", ftsBdy->bdyName);
     return false;
   }
 
@@ -1400,7 +1401,7 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
   if (jnt == NULL)
   {
     RLOG(1, "Load cell of body \"%s\" is not attached to joint",
-         fts->body->bdyName);
+         ftsBdy->bdyName);
     return false;
   }
 
@@ -1408,14 +1409,14 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
 
   if (jf==NULL)
   {
-    RLOG(1, "No joint feedback found for RcsBody \"%s\"", fts->body->bdyName);
+    RLOG(1, "No joint feedback found for RcsBody \"%s\"", ftsBdy->bdyName);
     return false;
   }
 
   if (fts->rawData->size<6)
   {
     RLOG(1, "Data size mismatch for loadcell in  RcsBody \"%s\": size is %d",
-         fts->body->bdyName, fts->rawData->size);
+         ftsBdy->bdyName, fts->rawData->size);
     return false;
   }
 
@@ -1440,7 +1441,7 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
   Rcs::HTrFromBtTransform(&A_FI, A_FI_);
 
   // Sensor frame: A_SI = A_SB * A_BI
-  const HTr* A_SB = fts->offset; // Body -> Sensor
+  const HTr* A_SB = &fts->offset; // Body -> Sensor
   HTr A_SI, A_BI;
   rbA.getBodyTransform(&A_BI);
   HTr_transform(&A_SI, &A_BI, A_SB);
@@ -1828,11 +1829,11 @@ bool Rcs::BulletSimulation::updatePPSSensor(RcsSensor* sensor)
 
     double signOfForce;
 
-    if (rbA && rbA->getBodyPtr()==sensor->body)
+    if (rbA && rbA->getBodyPtr()->id==sensor->bodyId)
     {
       signOfForce = 1.0;
     }
-    else if (rbB && rbB->getBodyPtr()==sensor->body)
+    else if (rbB && rbB->getBodyPtr()->id==sensor->bodyId)
     {
       signOfForce = -1.0;
     }

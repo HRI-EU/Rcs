@@ -1950,8 +1950,10 @@ const char* Rcs::VortexSimulation::getClassName() const
  ******************************************************************************/
 bool Rcs::VortexSimulation::updateFTS(RcsSensor* fts)
 {
+  RcsBody* ftsBdy = &getGraph()->bodies[fts->bodyId];
+
   // For a load cell sensor, the body must be attached by a fixed joint
-  if (fts->body->physicsSim != RCSBODY_PHYSICS_FIXED)
+  if (ftsBdy->physicsSim != RCSBODY_PHYSICS_FIXED)
   {
     RLOG(4, "Load cell sensors must be attached to a body of type "
          "\"fixed\" -> not updating sensor %s", fts->name);
@@ -1959,7 +1961,7 @@ bool Rcs::VortexSimulation::updateFTS(RcsSensor* fts)
   }
 
   // Get the Vortex part that the sensor is attached to
-  VortexBody* part = getPartPtr(fts->body);
+  VortexBody* part = getPartPtr(ftsBdy);
   if (part == NULL)
   {
     RLOG(4, "Load cell sensors %s not attached to VxPart", fts->name);
@@ -2017,8 +2019,10 @@ bool Rcs::VortexSimulation::updateFTS(RcsSensor* fts)
  ******************************************************************************/
 bool Rcs::VortexSimulation::updateJointTorqueSensor(RcsSensor* sensor)
 {
+  RcsBody* sensorBdy = &getGraph()->bodies[sensor->bodyId];
+
   // For a joint torque sensor, the body must be attached by a revolute joint
-  if (sensor->body->physicsSim != RCSBODY_PHYSICS_DYNAMIC)
+  if (sensorBdy->physicsSim != RCSBODY_PHYSICS_DYNAMIC)
   {
     RLOG(1, "Joint torque sensors must be attached to a body of type "
          "\"dynamic\" -> not creating sensor %s", sensor->name);
@@ -2026,7 +2030,7 @@ bool Rcs::VortexSimulation::updateJointTorqueSensor(RcsSensor* sensor)
   }
 
   // Get the Vortex part that the sensor is attached to
-  Vx::VxPart* part = getPartPtr(sensor->body);
+  Vx::VxPart* part = getPartPtr(sensorBdy);
   if (part == NULL)
   {
     RLOG(4, "Torque sensors %s not attached to VxPart", sensor->name);
@@ -2062,8 +2066,10 @@ bool Rcs::VortexSimulation::updateJointTorqueSensor(RcsSensor* sensor)
  ******************************************************************************/
 bool Rcs::VortexSimulation::updateContactForceSensor(RcsSensor* sensor)
 {
+  RcsBody* sensorBdy = &getGraph()->bodies[sensor->bodyId];
+
   // Get the Vortex part that the sensor is attached to
-  VortexBody* part = getPartPtr(sensor->body);
+  VortexBody* part = getPartPtr(sensorBdy);
   if (part == NULL)
   {
     RLOG(4, "Contact force sensor %s not attached to VxPart", sensor->name);
@@ -2071,7 +2077,7 @@ bool Rcs::VortexSimulation::updateContactForceSensor(RcsSensor* sensor)
   }
 
   HTr A_SI;
-  const HTr* A_SB = sensor->offset;
+  const HTr* A_SB = &sensor->offset;
   HTr_transform(&A_SI, &part->A_PI, A_SB);
 
   double forceVec[3], sensorNormal[3] = {1.0, 0.0, 0.0};
@@ -2111,8 +2117,11 @@ bool Rcs::VortexSimulation::updateContactForceSensor(RcsSensor* sensor)
  ******************************************************************************/
 bool Rcs::VortexSimulation::updatePPSSensor(RcsSensor* sensor)
 {
+  RcsBody* sensorBdy = &getGraph()->bodies[sensor->bodyId];
+
   // Get the Vortex part that the sensor is attached to
-  VortexBody* vxPart = getPartPtr(sensor->body);
+  VortexBody* vxPart = getPartPtr(sensorBdy);
+
   if (vxPart == NULL)
   {
     RLOG(4, "Contact force sensor %s not attached to VxPart", sensor->name);

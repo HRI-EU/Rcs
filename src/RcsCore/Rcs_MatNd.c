@@ -3612,6 +3612,22 @@ MatNd MatNd_fromPtr(int m, int n, double* ptr)
 /*******************************************************************************
  *
  ******************************************************************************/
+MatNd MatNd_fromMat3d(double mat[3][3])
+{
+  MatNd self;
+
+  self.m = 3;
+  self.n = 3;
+  self.size = 9;
+  self.ele = &mat[0][0];
+  self.stackMem = true; // Somebody else deletes ptr
+
+  return self;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void MatNd_preMulDiagSelf(MatNd* dst, const MatNd* vec)
 {
   unsigned int i, j;

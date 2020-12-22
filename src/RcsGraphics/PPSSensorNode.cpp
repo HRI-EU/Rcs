@@ -54,10 +54,12 @@
  * This array offsetNormal has as many columns as texels. It has 6 rows: Rows
  * 1-3 hold the texel position, rows 4-6 the corresponding texel normal vector.
  ******************************************************************************/
-Rcs::PPSSensorNode::PPSSensorNode(const RcsSensor* pps, bool debug)
+Rcs::PPSSensorNode::PPSSensorNode(const RcsSensor* pps, const RcsGraph* graph,
+                                  bool debug)
 {
   setName("PPSSensorNode");
   RCHECK(pps->type==RCSSENSOR_PPS);
+  RCHECK(pps->bodyId!=-1);
 
   char fontFile[256]="";
   bool fontFound = Rcs_getAbsoluteFileName("fonts/VeraMono.ttf", fontFile);
@@ -141,7 +143,8 @@ Rcs::PPSSensorNode::PPSSensorNode(const RcsSensor* pps, bool debug)
 
   this->patPtr()->addChild(geode.get());
 
-  makeDynamic(pps->body->A_BI.org, pps->body->A_BI.rot);
+  RcsBody* ppsBdy = &graph->bodies[pps->bodyId];
+  makeDynamic(ppsBdy->A_BI.org, ppsBdy->A_BI.rot);
 }
 
 /*******************************************************************************

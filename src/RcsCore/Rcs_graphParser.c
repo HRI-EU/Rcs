@@ -349,14 +349,14 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 
   if (strLength > 0)
   {
-    char fileName[256] = "-", fullName[512] = "-";
+    char fileName[RCS_MAX_FILENAMELEN] = "-", fullName[512] = "-";
     RCHECK((shape->type == RCSSHAPE_MESH) || (shape->type == RCSSHAPE_OCTREE));
-    getXMLNodePropertyStringN(node, "meshFile", fileName, 256);
+    getXMLNodePropertyStringN(node, "meshFile", fileName, RCS_MAX_FILENAMELEN);
     Rcs_getAbsoluteFileName(fileName, fullName);
 
     if (File_exists(fullName) == true)
     {
-      shape->meshFile = String_clone(fullName);
+      snprintf(shape->meshFile, RCS_MAX_FILENAMELEN, "%s", fullName);
 
       if (shape->type == RCSSHAPE_MESH)
       {
@@ -376,7 +376,6 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
     {
       RLOG(4, "[%s]: Mesh file \"%s\" (\"%s\") not found!",
            body->bdyName, fileName, fullName);
-      shape->meshFile = NULL;
     }
 
     if (shape->type == RCSSHAPE_OCTREE)
@@ -384,8 +383,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
       shape->userData = RcsShape_addOctree(shape, shape->meshFile);
       if (shape->userData == NULL)
       {
-        RLOG(1, "Failed to load Octree file \"%s\"",
-             shape->meshFile ? shape->meshFile : "NULL");
+        RLOG(1, "Failed to load Octree file \"%s\"", shape->meshFile);
       }
     }
 
@@ -396,20 +394,19 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 
   if (strLength > 0)
   {
-    RCHECK_MSG(shape->meshFile == NULL, "GPISF shape has meshfile tag !!!");
-    char fileName[256] = "-", fullName[512] = "-";
+    RCHECK_MSG(strlen(shape->meshFile) == 0, "GPISF shape has meshfile tag !!!");
+    char fileName[RCS_MAX_FILENAMELEN] = "-", fullName[512] = "-";
     RCHECK(shape->type == RCSSHAPE_GPISF);
-    getXMLNodePropertyStringN(node, "gpFile", fileName, 256);
+    getXMLNodePropertyStringN(node, "gpFile", fileName, RCS_MAX_FILENAMELEN);
     Rcs_getAbsoluteFileName(fileName, fullName);
 
     if (File_exists(fullName) == true)
     {
-      shape->meshFile = String_clone(fullName);
+      snprintf(shape->meshFile, RCS_MAX_FILENAMELEN, "%s", fullName);
     }
     else
     {
       RLOG(4, "GP file \"%s\" not found!", fileName);
-      shape->meshFile = NULL;
     }
 
   }
@@ -423,26 +420,22 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
     char fullname[512];
     if (Rcs_getAbsoluteFileName(str, fullname))
     {
-      shape->textureFile = String_clone(fullname);
+      snprintf(shape->textureFile, RCS_MAX_FILENAMELEN, "%s", fullname);
     }
     else
     {
       RLOG(4, "Texture file \"%s\" in body \"%s\" not found!", str, body->bdyName);
-      shape->textureFile = NULL;
     }
 
   }
 
   // Color
-  char shapeColor[256];
-  strcpy(shapeColor, bodyColor ? bodyColor : "DEFAULT");
-  getXMLNodePropertyStringN(node, "color", shapeColor, 256);
-  shape->color = String_clone(shapeColor);
+  strcpy(shape->color, bodyColor ? bodyColor : "DEFAULT");
+  getXMLNodePropertyStringN(node, "color", shape->color, RCS_MAX_NAMELEN);
 
   // Material
-  char shapeMaterial[256] = "default";
-  getXMLNodePropertyStringN(node, "material", shapeMaterial, 256);
-  shape->material = String_clone(shapeMaterial);
+  strcpy(shape->material, "default");
+  getXMLNodePropertyStringN(node, "material", shape->material, RCS_MAX_NAMELEN);
 
   // Some pedantic checking on tags that might lead to mistakes
   REXEC(1)

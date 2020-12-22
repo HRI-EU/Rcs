@@ -54,7 +54,7 @@ class FTSensorNode: public ArrowNode
 
 public:
 
-  FTSensorNode(const RcsSensor* fts);
+  FTSensorNode(const RcsSensor* fts, const RcsGraph* graph);
   virtual ~FTSensorNode();
   virtual bool frameCallback();
   virtual void setTransformPtr(const HTr* A_BI);
@@ -63,6 +63,7 @@ public:
 protected:
 
   const RcsSensor* loadCell;
+  const RcsBody* mountBdy;
   const HTr* A_BI;
 };
 

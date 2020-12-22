@@ -53,7 +53,7 @@ class PPSSensorNode: public NodeBase
 
 public:
 
-  PPSSensorNode(const RcsSensor* pps, bool debug=false);
+  PPSSensorNode(const RcsSensor* pps, const RcsGraph* graph, bool debug=false);
   virtual ~PPSSensorNode();
 protected:
 

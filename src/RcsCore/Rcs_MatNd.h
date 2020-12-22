@@ -1551,6 +1551,15 @@ bool MatNd_isFinite(const MatNd* self);
 MatNd MatNd_fromPtr(int m, int n, double* ptr);
 
 /*! \ingroup MatNdFunctions
+ *  \brief Returns a MatNd with the dimensions 3 x 3 and the element
+ *         pointer pointing to the mat.
+ *
+ *  \param [in] mat 3x3 array
+ *  \return MatNd struct with dimension 3 x 3 pointing to mat.
+ */
+MatNd MatNd_fromMat3d(double mat[3][3]);
+
+/*! \ingroup MatNdFunctions
  *  \brief Pre-multiplies dst with a diagonal matrix with the elements
  *         stored in vec: dst = vec*dst
  *         Array vec must have 1 row or the same number of rows as dst,

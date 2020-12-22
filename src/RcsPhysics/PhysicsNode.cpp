@@ -108,7 +108,7 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   {
     if (SENSOR->type == RCSSENSOR_LOAD_CELL)
     {
-      osg::ref_ptr<FTSensorNode> ftn = new FTSensorNode(SENSOR);
+      osg::ref_ptr<FTSensorNode> ftn = new FTSensorNode(SENSOR, sim_->getGraph());
       ftn->setTransformPtr(sim->getPhysicsTransformPtr(ftn->getMountBody()));
       pat->addChild(ftn.get());
     }

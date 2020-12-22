@@ -1843,14 +1843,14 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
     MatNd I_ft_ = MatNd_fromPtr(6, 1, I_ft);
     VecNd_copy(I_ft, S_ft_f, 6);
     RcsBody* loadCellBdy = &graph->bodies[loadCell->bodyId];
-    Vec3d_transRotateSelf(&I_ft[0], loadCell->offset->rot);
+    Vec3d_transRotateSelf(&I_ft[0], loadCell->offset.rot);
     Vec3d_transRotateSelf(&I_ft[0], loadCellBdy->A_BI.rot);
-    Vec3d_transRotateSelf(&I_ft[3], loadCell->offset->rot);
+    Vec3d_transRotateSelf(&I_ft[3], loadCell->offset.rot);
     Vec3d_transRotateSelf(&I_ft[3], loadCellBdy->A_BI.rot);
 
     // Compute the sensor Jacobian
     RcsGraph_bodyPointJacobian(getGraph(), loadCellBdy,
-                               loadCell->offset->org, NULL, J_sensor);
+                               loadCell->offset.org, NULL, J_sensor);
     MatNd_reshape(J_sensor, 6, this->graph->nJ);
     MatNd J_rot = MatNd_fromPtr(3, this->graph->nJ,
                                 MatNd_getRowPtr(J_sensor, 3));

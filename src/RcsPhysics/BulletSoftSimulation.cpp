@@ -369,7 +369,7 @@ void BulletSoftSimulation::createSoftBodies()
       if (softMesh == NULL)
       {
         RLOG(1, "Could not create mesh from file %s - skipping soft body",
-             SHAPE->meshFile ? SHAPE->meshFile : "NULL");
+             SHAPE->meshFile);
         continue;
       }
 
@@ -533,7 +533,7 @@ void BulletSoftSimulation::convertShapesToMesh()
              nDuplicates, shapeMesh->nVertices, shapeMesh->nFaces);
 
         SHAPE->userData = (void*) shapeMesh;
-        SHAPE->meshFile = String_clone(RcsShape_name(SHAPE->type));
+        snprintf(SHAPE->meshFile, RCS_MAX_FILENAMELEN, "%s", RcsShape_name(SHAPE->type));
         SHAPE->type = RCSSHAPE_MESH;
         SHAPE->computeType = RCSSHAPE_COMPUTE_SOFTPHYSICS;
       }

@@ -542,11 +542,6 @@ void RcsShape_destroy(RcsShape* self)
     return;
   }
 
-  RFREE(self->meshFile);
-  RFREE(self->textureFile);
-  RFREE(self->color);
-  RFREE(self->material);
-
   if (self->type == RCSSHAPE_OCTREE)
   {
     // We assume userData is an Octomap type
@@ -657,10 +652,10 @@ void RcsShape_copy(RcsShape* dst, const RcsShape* src)
   dst->resizeable = src->resizeable;
 
   // Copy or re-create string members
-  String_copyOrRecreate(&dst->meshFile, src->meshFile);
-  String_copyOrRecreate(&dst->textureFile, src->textureFile);
-  String_copyOrRecreate(&dst->color, src->color);
-  String_copyOrRecreate(&dst->material, src->material);
+  snprintf(dst->meshFile, RCS_MAX_FILENAMELEN, "%s", src->meshFile);
+  snprintf(dst->textureFile, RCS_MAX_FILENAMELEN, "%s", src->textureFile);
+  snprintf(dst->color, RCS_MAX_NAMELEN, "%s", src->color);
+  snprintf(dst->material, RCS_MAX_NAMELEN, "%s", src->material);
 
   switch (dst->type)
   {
@@ -760,11 +755,10 @@ void RcsShape_fprint(FILE* out, const RcsShape* s)
   fprintf(out, "\tResizeable: %s\n", s->resizeable ? "true" : "false");
 
   // File names
-  fprintf(out, "\tmeshFile   : \"%s\"\n", s->meshFile ? s->meshFile : "NULL");
-  fprintf(out, "\ttextureFile: \"%s\"\n",
-          s->textureFile ? s->textureFile : "NULL");
-  fprintf(out, "\tcolor      : \"%s\"\n", s->color ? s->color : "NULL");
-  fprintf(out, "\tmaterial   : \"%s\"\n", s->material ? s->material : "NULL");
+  fprintf(out, "\tmeshFile   : \"%s\"\n", s->meshFile);
+  fprintf(out, "\ttextureFile: \"%s\"\n", s->textureFile);
+  fprintf(out, "\tcolor      : \"%s\"\n", s->color);
+  fprintf(out, "\tmaterial   : \"%s\"\n", s->material);
 
   // User data
   fprintf(out, "\tuserData %s\n", s->userData ? "exists" : "is NULL");
@@ -929,7 +923,7 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
   }
 
   // Mesh file
-  if (self->meshFile != NULL)
+  if (strlen(self->meshFile)>0)
   {
     if (self->type==RCSSHAPE_GPISF)
     {
@@ -942,20 +936,20 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
   }
 
   // Texture file
-  if (self->textureFile != NULL)
+  if (strlen(self->textureFile)>0)
   {
     fprintf(out, "textureFile=\"%s\" ", self->textureFile);
   }
 
   // Color
-  if ((self->type != RCSSHAPE_REFFRAME) && self->color
+  if ((self->type != RCSSHAPE_REFFRAME) && (strlen(self->color)>0)
       && (!STREQ(self->color, "DEFAULT")))
   {
     fprintf(out, "color=\"%s\" ", self->color);
   }
 
   // Material
-  if (self->material && (!STREQ(self->material, "default")))
+  if ((strlen(self->material)>0) && (!STREQ(self->material, "default")))
   {
     fprintf(out, "material=\"%s\" ", self->material);
   }
@@ -990,7 +984,7 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
 
   if (shapeType==RCSSHAPE_MESH)
   {
-    shape->meshFile = String_clone("Cylinder");
+    strcpy(shape->meshFile, "Cylinder");
     shape->userData = (RcsMeshData*) RcsMesh_createCylinder(0.2, 1.0, 32);
   }
 
@@ -999,10 +993,8 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
     const char* sit = getenv("SIT");
     if (sit!=NULL)
     {
-      char a[256];
-      snprintf(a, 256, "%s\\Data\\RobotMeshes\\1.0\\data\\Octrees\\octree.bt",
-               sit);
-      shape->meshFile = String_clone(a);
+      snprintf(shape->meshFile, RCS_MAX_FILENAMELEN,
+               "%s\\Data\\RobotMeshes\\1.0\\data\\Octrees\\octree.bt", sit);
       shape->userData = Rcs_loadOctree(shape->meshFile);
     }
   }
@@ -1942,8 +1934,7 @@ void* RcsShape_addOctree(RcsShape* self, const char* fileName)
 
   if (self->userData == NULL)
   {
-    RLOG(1, "Failed to load Octree file \"%s\"",
-         self->meshFile ? self->meshFile : "NULL");
+    RLOG(1, "Failed to load Octree file \"%s\"", self->meshFile);
   }
 
   return self->userData;

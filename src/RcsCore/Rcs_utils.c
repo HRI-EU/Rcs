@@ -944,6 +944,11 @@ static bool Rcs_testGradient2(void (*f)(double*, const double*, void*),
     if (md > tolerance)
     {
       failure = true;
+
+      if (verbose==true)
+      {
+        fprintf(stderr, "gradient test FAILURE!  max err=%f\n", md);
+      }
     }
 
     if (verbose==true)

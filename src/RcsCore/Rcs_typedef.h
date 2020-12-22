@@ -140,10 +140,10 @@ struct _RcsShape
   bool resizeable;      ///< For visualization and copying
   char computeType;     ///< Bitmask, see RCSSHAPE_COMPUTE_TYPE
 
-  char* meshFile;       ///< Name of a mesh file (if any)
-  char* textureFile;    ///< File holding texture data
-  char* color;          ///< Color of shape primitives
-  char* material;       ///< Material of the shape (for physics simulation)
+  char meshFile[RCS_MAX_FILENAMELEN];    ///< Name of a mesh file (if any)
+  char textureFile[RCS_MAX_FILENAMELEN]; ///< File holding texture data
+  char color[RCS_MAX_NAMELEN];           ///< Color of shape primitives
+  char material[RCS_MAX_NAMELEN];        ///< Physics material of the shape
 
   void* userData;       ///< For user extensions
 };
@@ -243,14 +243,14 @@ struct _RcsTexel
 
 struct _RcsSensor
 {
-  RCSSENSOR_TYPE type;   ///< Sensor type, see enum RCSSENSOR_TYPE
-  char* name;            ///< Name of the sensor
-  RcsSensor* next;       ///< Pointer to next sensor, NULL otherwise
-  int bodyId;            ///< Id of the body the sensor is attached to
-  HTr* offset;           ///< Relative transformation of the sensor mount point
-  char* extraInfo;       ///< Pressure array data
-  RcsTexel** texel;      ///< Array of texels for PPS sensors
-  MatNd* rawData;        ///< Raw sensor data array
+  RCSSENSOR_TYPE type;         ///< Sensor type, see enum RCSSENSOR_TYPE
+  int bodyId;                  ///< Id of the body the sensor is attached to
+  char name[RCS_MAX_NAMELEN];  ///< Name of the sensor
+  RcsSensor* next;             ///< Pointer to next sensor, NULL otherwise
+  HTr offset;                  ///< Transformation of the sensor mount point
+  char* extraInfo;             ///< Pressure array data
+  RcsTexel** texel;            ///< Array of texels for PPS sensors
+  MatNd* rawData;              ///< Raw sensor data array
 };
 
 

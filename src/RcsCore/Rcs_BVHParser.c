@@ -289,7 +289,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     shape->extents[0] = 0.1*len;
     shape->extents[1] = 0.1*len;
     shape->extents[2] = 0.1*len;
-    shape->color = String_clone("BLACK_RUBBER");
+    strcpy(shape->color, "BLACK_RUBBER");
     RcsBody_addShape(body, shape);
 
 
@@ -377,7 +377,7 @@ static void addGeometry(RcsGraph* self)
       shape->extents[0] = 0.2*len;
       shape->extents[1] = 0.2*len;
       shape->extents[2] = len;
-      shape->color = String_clone(color);
+      snprintf(shape->color, RCS_MAX_NAMELEN, "%s", color);
       Mat3d_fromVec(shape->A_CB.rot, K_p12, 2);
       Vec3d_copy(shape->A_CB.org, K_center);
       RcsBody_addShape(BODY, shape);
@@ -391,7 +391,7 @@ static void addGeometry(RcsGraph* self)
       shape->extents[0] = 0.15*len;
       shape->extents[1] = 0.15*len;
       shape->extents[2] = 0.15*len;
-      shape->color = String_clone(color);
+      snprintf(shape->color, RCS_MAX_NAMELEN, "%s", color);
       RcsBody_addShape(BODY, shape);
 
       CHILD=CHILD->next;
@@ -719,7 +719,7 @@ bool RcsGraph_beautifyHumanModelBVH(RcsGraph* graph,
   shape->type = RCSSHAPE_SPHERE;
   shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
   Vec3d_set(shape->extents, 0.12, 0.0, 0.0);
-  shape->color = String_clone("YELLOW");
+  strcpy(shape->color, "YELLOW");
   Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
   Vec3d_constMulSelf(shape->extents, linearScaleToSI);
   RcsBody_addShape(head, shape);
@@ -736,7 +736,7 @@ bool RcsGraph_beautifyHumanModelBVH(RcsGraph* graph,
   shape = RcsShape_clone(shape);
   Vec3d_set(shape->A_CB.org, 0.0, 0.02, -0.05);
   Vec3d_set(shape->extents, 0.12, 0.04, 0.3);
-  shape->color = String_clone("RED");
+  strcpy(shape->color, "RED");
   Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
   Vec3d_constMulSelf(shape->extents, linearScaleToSI);
   RcsBody_addShape(rightToe, shape);
@@ -752,7 +752,7 @@ bool RcsGraph_beautifyHumanModelBVH(RcsGraph* graph,
   shape = RcsShape_clone(shape);
   Vec3d_set(shape->A_CB.org, 0.1, 0.0, 0.0);
   Vec3d_set(shape->extents, 0.16, 0.02, 0.1);
-  shape->color = String_clone("BLUE");
+  strcpy(shape->color, "BLUE");
   Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
   Vec3d_constMulSelf(shape->extents, linearScaleToSI);
   RcsBody_addShape(leftWrist, shape);

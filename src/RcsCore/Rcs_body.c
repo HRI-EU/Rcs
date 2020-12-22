@@ -2377,8 +2377,8 @@ RcsBody* RcsBody_createBouncingSphere(const double pos[3],
   sphere->scale = 1.0;
   sphere->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
   sphere->computeType |= RCSSHAPE_COMPUTE_PHYSICS;
-  sphere->material = String_clone("default");
-  sphere->color = String_clone("YELLOW");
+  strcpy(sphere->material, "default");
+  strcpy(sphere->color, "YELLOW");
 
   RcsBody* bdy = RcsBody_create();
   bdy->shape = RNALLOC(2, RcsShape*);

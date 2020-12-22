@@ -1252,9 +1252,10 @@ static void Rcs_setRndBdy1(RcsGraph* self)
   RCHECK(nBodies>0);
 
   unsigned int rnd1 = Math_getRandomInteger(0, nBodies-1);
-  RCS_GRADIENTTESTS_BODY1 = self->root;
 
 #ifdef OLD_TOPO
+  RCS_GRADIENTTESTS_BODY1 = self->root;
+
   for (unsigned int i = 0; i <= rnd1; i++)
   {
     RCS_GRADIENTTESTS_BODY1 =
@@ -1281,9 +1282,10 @@ static void Rcs_setRndBdy2(RcsGraph* self)
   RCHECK(nBodies>0);
 
   unsigned int rnd2 = Math_getRandomInteger(0, nBodies-1);
-  RCS_GRADIENTTESTS_BODY2 = self->root;
 
 #ifdef OLD_TOPO
+  RCS_GRADIENTTESTS_BODY2 = self->root;
+
   for (unsigned int i = 0; i < rnd2; i++)
   {
     RCS_GRADIENTTESTS_BODY2 =
@@ -1310,9 +1312,10 @@ static void Rcs_setRndBdy3(RcsGraph* self)
   RCHECK(nBodies>0);
 
   unsigned int rnd3 = Math_getRandomInteger(0, nBodies-1);
-  RCS_GRADIENTTESTS_BODY3 = self->root;
 
 #ifdef OLD_TOPO
+  RCS_GRADIENTTESTS_BODY3 = self->root;
+
   for (unsigned int i = 0; i < rnd3; i++)
   {
     RCS_GRADIENTTESTS_BODY3 =
@@ -1398,16 +1401,12 @@ static void test_A(double* f, const double* x, void* params)
 {
   RcsGraph* self = (RcsGraph*) params;
   Rcs_setIKState(self, x);
-  double Id[3][3];
-  Mat3d_setIdentity(Id);
 
-  double* A1_ = RCS_GRADIENTTESTS_BODY1 ?
-                (double*) RCS_GRADIENTTESTS_BODY1->A_BI.rot : (double*) Id;
-  double* A2_ = RCS_GRADIENTTESTS_BODY2 ?
-                (double*) RCS_GRADIENTTESTS_BODY2->A_BI.rot : (double*) Id;
+  const HTr* A1_ = RCS_GRADIENTTESTS_BODY1 ? &RCS_GRADIENTTESTS_BODY1->A_BI : HTr_identity();
+  const HTr* A2_ = RCS_GRADIENTTESTS_BODY2 ? &RCS_GRADIENTTESTS_BODY2->A_BI : HTr_identity();
 
-  MatNd A1 = MatNd_fromPtr(3, 3, A1_);
-  MatNd A2 = MatNd_fromPtr(3, 3, A2_);
+  MatNd A1 = MatNd_fromMat3d((double (*)[3])A1_->rot);
+  MatNd A2 = MatNd_fromMat3d((double (*)[3])A2_->rot);
   MatNd A3 = MatNd_fromPtr(3, 3, f);
 
   MatNd_mul(&A3, &A1, &A2);
@@ -1418,16 +1417,12 @@ static void test_dA(double* f, const double* x, void* params)
   RcsGraph* self = (RcsGraph*) params;
   Rcs_setIKState(self, x);
   int n = self->nJ;
-  double Id[3][3];
-  Mat3d_setIdentity(Id);
 
-  double* A1_ = RCS_GRADIENTTESTS_BODY1 ?
-                (double*) RCS_GRADIENTTESTS_BODY1->A_BI.rot : (double*) Id;
-  double* A2_ = RCS_GRADIENTTESTS_BODY2 ?
-                (double*) RCS_GRADIENTTESTS_BODY2->A_BI.rot : (double*) Id;
+  const HTr* A1_ = RCS_GRADIENTTESTS_BODY1 ? &RCS_GRADIENTTESTS_BODY1->A_BI : HTr_identity();
+  const HTr* A2_ = RCS_GRADIENTTESTS_BODY2 ? &RCS_GRADIENTTESTS_BODY2->A_BI : HTr_identity();
 
-  MatNd A1 = MatNd_fromPtr(3, 3, A1_);
-  MatNd A2 = MatNd_fromPtr(3, 3, A2_);
+  MatNd A1 = MatNd_fromMat3d((double (*)[3])A1_->rot);
+  MatNd A2 = MatNd_fromMat3d((double (*)[3])A2_->rot);
 
   // Term 1: A1 * dA2
   MatNd* dA2 = MatNd_create(3, 3 * n);
@@ -1476,10 +1471,11 @@ void test_rotMat(double* f, const double* x, void* params)
 
   Rcs_setIKState(self, x);
 
-  double* A_BI = RCS_GRADIENTTESTS_BODY1 ?
-                 (double*) RCS_GRADIENTTESTS_BODY1->A_BI.rot : (double*) Id;
+  const HTr* A_BI = RCS_GRADIENTTESTS_BODY1 ? &RCS_GRADIENTTESTS_BODY1->A_BI : HTr_identity();
+  /* double* A_BI = RCS_GRADIENTTESTS_BODY1 ? */
+  /*                (double*) RCS_GRADIENTTESTS_BODY1->A_BI.rot : (double*) Id; */
 
-  memcpy(f, (double*) A_BI, 9 * sizeof(double));
+  memcpy(f, (double*) A_BI->rot, 9 * sizeof(double));
 }
 
 void test_rotMatDerivative(double* f, const double* x, void* params)
@@ -2429,6 +2425,9 @@ bool Rcs_gradientTestGraph(RcsGraph* graph, const MatNd* q, bool verbose)
   if (verbose==true)
   {
     RMSG("Testing gradients");
+    /* RMSG("Random body 1=%s", RCS_GRADIENTTESTS_BODY1->bdyName); */
+    /* RMSG("Random body 2=%s", RCS_GRADIENTTESTS_BODY2->bdyName); */
+    /* RMSG("Random body 3=%s", RCS_GRADIENTTESTS_BODY3->bdyName); */
   }
 
   RcsGraph_setState(graph, q, NULL);
@@ -2462,297 +2461,273 @@ bool Rcs_gradientTestGraph(RcsGraph* graph, const MatNd* q, bool verbose)
 
   if (verbose==true)
   {
-    fprintf(stderr, "3D translation Jacobian: ");
-  }
-  success = success &&
-            Rcs_testGradient(test_position3D, test_jacobian3D,
-                             graph, q->ele, graph->nJ, 3, tolerance, verbose);
-
-  if (verbose==true)
-  {
-    fprintf(stderr, "3D translation Hessian:  ");
-  }
-  success = success &&
-            Rcs_testGradient(test_jacobian3D, test_hessian3D,
-                             graph, q->ele, graph->nJ, 3 * graph->nJ, tolerance,
-                             verbose);
-
-  if (verbose==true)
-  {
-    fprintf(stderr, "Manipulability grad. (IK):  ");
-  }
-  success = success &&
-            Rcs_testGradient(test_manipulability, test_manipulabilityJ,
-                             graph, q->ele, graph->nJ, 1, tolerance, verbose);
-
-  if (verbose==true)
-  {
     fprintf(stderr, "Rotmat gradient:         ");
   }
-  success = success &&
-            Rcs_testGradient(test_rotMat, test_rotMatDerivative, graph,
-                             q->ele, graph->nJ, 9, tolerance, verbose);
+  success = Rcs_testGradient(test_rotMat, test_rotMatDerivative, graph,
+                             q->ele, graph->nJ, 9, tolerance, verbose) && success;
+
 
   if (verbose==true)
   {
     fprintf(stderr, "Rotmat gradient (rel):   ");
   }
-  success = success &&
-            Rcs_testGradient(test_A, test_dA, graph,
-                             q->ele, graph->nJ, 9, tolerance, verbose);
-
-  if (verbose==true)
-  {
-    fprintf(stderr, "Joint limit gradient:    ");
-  }
-  success = success &&
-            Rcs_testGradient(test_jointLimit_Full, test_jointLimitJ_Full,
-                             graph, q->ele, graph->dof, 1, tolerance, verbose);
-
-  if (verbose==true)
-  {
-    fprintf(stderr, "Joint limit Hessian:     ");
-  }
-  success = success &&
-            Rcs_testGradient(test_jointLimitJ_Full, test_jointLimitH_Full,
-                             graph, q->ele, graph->dof, graph->dof, tolerance,
-                             verbose);
-
-  if (verbose==true)
-  {
-    fprintf(stderr, "Joint limit grad. (IK):  ");
-  }
-  success = success &&
-            Rcs_testGradient(test_jointLimit_IK, test_jointLimitJ_IK,
-                             graph, q->ele, graph->nJ, 1, tolerance, verbose);
-
-  if (verbose==true)
-  {
-    fprintf(stderr, "Joint limit Hess. (IK):  ");
-  }
-  success = success &&
-            Rcs_testGradient(test_jointLimitJ_IK, test_jointLimitH_IK,
-                             graph, q->ele, graph->nJ, graph->nJ, tolerance,
-                             verbose);
-
-  if (verbose==true)
-  {
-    fprintf(stderr, "Joint limit border:      ");
-  }
-  success = success &&
-            Rcs_testGradient(f_jlBorderFull, df_jlBorderFull,
-                             graph, q->ele, graph->dof, 1, tolerance, verbose);
-
-  if (verbose==true)
-  {
-    fprintf(stderr, "Joint limit border (IK): ");
-  }
-  success = success &&
-            Rcs_testGradient(f_jlBorderIK, df_jlBorderIK,
-                             graph, q->ele, graph->nJ, 1, tolerance, verbose);
-
-  if (verbose==true)
-  {
-    fprintf(stderr, "Position Jacobian:       ");
-  }
-  success = success &&
-            Rcs_testGradient(test_kinematics, test_kinematicsJ, graph,
-                             q->ele, graph->nJ, 3, tolerance, verbose);
-
-  if (verbose==true)
-  {
-    fprintf(stderr, "Position Hessian:        ");
-  }
-  success = success &&
-            Rcs_testGradient(test_kinematicsJ, test_kinematicsH,
-                             graph, q->ele, graph->nJ, 3 * graph->nJ, tolerance,
-                             verbose);
-
-  if (verbose==true)
-  {
-    fprintf(stderr, "Rotational Hessian:      ");
-  }
-  success = success &&
-            Rcs_testGradient(test_jacobianRot, test_hessianRot,
-                             graph, q->ele, graph->nJ, 3 * graph->nJ, tolerance,
-                             verbose);
-
-  if (verbose==true)
-  {
-    fprintf(stderr, "COG Jacobian:            ");
-  }
-  success = success &&
-            Rcs_testGradient(test_COG, test_COGJ,
-                             graph, q->ele, graph->nJ, 3, tolerance, verbose);
-
-  if (verbose==true)
-  {
-    fprintf(stderr, "GOG Hessian:             ");
-  }
-  success = success &&
-            Rcs_testGradient(test_COGJ, test_COGH,
-                             graph, q->ele, graph->nJ, 3 * graph->nJ, tolerance,
-                             verbose);
+  success = Rcs_testGradient(test_A, test_dA, graph,
+                             q->ele, graph->nJ, 9, tolerance, verbose) && success;
 
   if (verbose==true)
   {
     fprintf(stderr, "3D translation Jacobian: ");
   }
-  success = success &&
-            Rcs_testGradient(test_position3D, test_jacobian3D,
-                             graph, q->ele, graph->nJ, 3, tolerance, verbose);
+  success = Rcs_testGradient(test_position3D, test_jacobian3D,
+                             graph, q->ele, graph->nJ, 3, tolerance, verbose) && success;
 
   if (verbose==true)
   {
     fprintf(stderr, "3D translation Hessian:  ");
   }
-  success = success &&
-            Rcs_testGradient(test_jacobian3D, test_hessian3D,
+  success = Rcs_testGradient(test_jacobian3D, test_hessian3D,
                              graph, q->ele, graph->nJ, 3 * graph->nJ, tolerance,
-                             verbose);
+                             verbose) && success;
+
+  if (verbose==true)
+  {
+    fprintf(stderr, "Manipulability grad. (IK):  ");
+  }
+  success = Rcs_testGradient(test_manipulability, test_manipulabilityJ,
+                             graph, q->ele, graph->nJ, 1, tolerance, verbose) && success;
+
+
+  if (verbose==true)
+  {
+    fprintf(stderr, "Joint limit gradient:    ");
+  }
+  success = Rcs_testGradient(test_jointLimit_Full, test_jointLimitJ_Full,
+                             graph, q->ele, graph->dof, 1, tolerance, verbose) && success;
+
+  if (verbose==true)
+  {
+    fprintf(stderr, "Joint limit Hessian:     ");
+  }
+  success = Rcs_testGradient(test_jointLimitJ_Full, test_jointLimitH_Full,
+                             graph, q->ele, graph->dof, graph->dof, tolerance,
+                             verbose) && success;
+
+  if (verbose==true)
+  {
+    fprintf(stderr, "Joint limit grad. (IK):  ");
+  }
+  success = Rcs_testGradient(test_jointLimit_IK, test_jointLimitJ_IK,
+                             graph, q->ele, graph->nJ, 1, tolerance, verbose) && success;
+
+  if (verbose==true)
+  {
+    fprintf(stderr, "Joint limit Hess. (IK):  ");
+  }
+  success = Rcs_testGradient(test_jointLimitJ_IK, test_jointLimitH_IK,
+                             graph, q->ele, graph->nJ, graph->nJ, tolerance,
+                             verbose) && success;
+
+  if (verbose==true)
+  {
+    fprintf(stderr, "Joint limit border:      ");
+  }
+  success = Rcs_testGradient(f_jlBorderFull, df_jlBorderFull,
+                             graph, q->ele, graph->dof, 1, tolerance, verbose) && success;
+
+  if (verbose==true)
+  {
+    fprintf(stderr, "Joint limit border (IK): ");
+  }
+  success = Rcs_testGradient(f_jlBorderIK, df_jlBorderIK,
+                             graph, q->ele, graph->nJ, 1, tolerance, verbose) && success;
+
+  if (verbose==true)
+  {
+    fprintf(stderr, "Position Jacobian:       ");
+  }
+  success = Rcs_testGradient(test_kinematics, test_kinematicsJ, graph,
+                             q->ele, graph->nJ, 3, tolerance, verbose) && success;
+
+  if (verbose==true)
+  {
+    fprintf(stderr, "Position Hessian:        ");
+  }
+  success = Rcs_testGradient(test_kinematicsJ, test_kinematicsH,
+                             graph, q->ele, graph->nJ, 3 * graph->nJ, tolerance,
+                             verbose) && success;
+
+  if (verbose==true)
+  {
+    fprintf(stderr, "Rotational Hessian:      ");
+  }
+  success = Rcs_testGradient(test_jacobianRot, test_hessianRot,
+                             graph, q->ele, graph->nJ, 3 * graph->nJ, tolerance,
+                             verbose) && success;
+  ;
+
+  if (verbose==true)
+  {
+    fprintf(stderr, "COG Jacobian:            ");
+  }
+  success = Rcs_testGradient(test_COG, test_COGJ,
+                             graph, q->ele, graph->nJ, 3, tolerance, verbose) && success;
+  ;
+
+  if (verbose==true)
+  {
+    fprintf(stderr, "GOG Hessian:             ");
+  }
+  success = Rcs_testGradient(test_COGJ, test_COGH,
+                             graph, q->ele, graph->nJ, 3 * graph->nJ, tolerance,
+                             verbose) && success;
+
+  if (verbose==true)
+  {
+    fprintf(stderr, "3D translation Jacobian: ");
+  }
+  success = Rcs_testGradient(test_position3D, test_jacobian3D,
+                             graph, q->ele, graph->nJ, 3, tolerance, verbose) && success;
+
+  if (verbose==true)
+  {
+    fprintf(stderr, "3D translation Hessian:  ");
+  }
+  success = Rcs_testGradient(test_jacobian3D, test_hessian3D,
+                             graph, q->ele, graph->nJ, 3 * graph->nJ, tolerance,
+                             verbose) && success;
 
   if (verbose==true)
   {
     fprintf(stderr, "1D translation Jacobian: ");
   }
-  success = success &&
-            Rcs_testGradient(test_position1D, test_jacobian1D,
-                             graph, q->ele, graph->nJ, 1, tolerance, verbose);
+  success = Rcs_testGradient(test_position1D, test_jacobian1D,
+                             graph, q->ele, graph->nJ, 1, tolerance, verbose) && success;
 
   if (verbose==true)
   {
     fprintf(stderr, "1D translation Hessian:  ");
   }
-  success = success &&
-            Rcs_testGradient(test_jacobian1D, test_hessian1D,
+  success = Rcs_testGradient(test_jacobian1D, test_hessian1D,
                              graph, q->ele, graph->nJ, graph->nJ, tolerance,
-                             verbose);
+                             verbose) && success;
 
   if (verbose==true)
   {
     fprintf(stderr, "3D omega Hessian:        ");
   }
-  success = success &&
-            Rcs_testGradient(test_omegaJacobian3D, test_omegaHessian3D,
+  success = Rcs_testGradient(test_omegaJacobian3D, test_omegaHessian3D,
                              graph, q->ele, graph->nJ, 3 * graph->nJ, tolerance,
-                             verbose);
+                             verbose) && success;
 
   if (verbose==true)
   {
     fprintf(stderr, "Euler err gradient:      ");
   }
-  success = success &&
-            Rcs_testGradient(test_EulerError, test_EulerErrorJ,
-                             graph, q->ele, graph->nJ, 3, tolerance, verbose);
+  success = Rcs_testGradient(test_EulerError, test_EulerErrorJ,
+                             graph, q->ele, graph->nJ, 3, tolerance, verbose) && success;
 
   if (verbose==true)
   {
     fprintf(stderr, "Position err gradient:   ");
   }
-  success = success &&
-            Rcs_testGradient(test_positionError, test_positionErrorJ,
-                             graph, q->ele, graph->nJ, 3, tolerance, verbose);
+  success = Rcs_testGradient(test_positionError, test_positionErrorJ,
+                             graph, q->ele, graph->nJ, 3, tolerance, verbose) && success;
 
   if (verbose==true)
   {
     fprintf(stderr, "Distance gradient:       ");
   }
-  success = success &&
-            Rcs_testGradient(test_distance, test_distanceJ,
-                             graph, q->ele, graph->nJ, 1, tolerance, verbose);
+  success = Rcs_testGradient(test_distance, test_distanceJ,
+                             graph, q->ele, graph->nJ, 1, tolerance, verbose) && success;
 
   if (verbose==true)
   {
     fprintf(stderr, "Distance Hessian:        ");
   }
-  success = success &&
-            Rcs_testGradient(test_distanceJ, test_distanceH,
+  success = Rcs_testGradient(test_distanceJ, test_distanceH,
                              graph, q->ele, graph->nJ, graph->nJ, tolerance,
-                             verbose);
+                             verbose) && success;
 
   if (verbose==true)
   {
     fprintf(stderr, "Effort gradient :        ");
   }
-  success = success &&
-            Rcs_testGradient(test_effort, test_effortJ,
-                             graph, q->ele, graph->nJ, 1, tolerance, verbose);
+  success = Rcs_testGradient(test_effort, test_effortJ,
+                             graph, q->ele, graph->nJ, 1, tolerance, verbose) && success;
 
   if (verbose==true)
   {
     fprintf(stderr, "Goal attitude gradient:  ");
   }
-  success = success &&
-            Rcs_testGradient(test_attitude3D, test_dAttitude3D,
-                             graph, q->ele, graph->nJ, 1, tolerance, verbose);
+  success = Rcs_testGradient(test_attitude3D, test_dAttitude3D,
+                             graph, q->ele, graph->nJ, 1, tolerance, verbose) && success;
 
 
 
   /* fprintf(stderr, "Delta Rot. Hessian:      "); */
-  /* success = success && Rcs_testGradient(test_dDeltaJRot, test_dDeltaHRot,  */
-  /*        graph, q->ele, graph->nJ, 3*graph->nJ, tolerance); */
+  /* success = Rcs_testGradient(test_dDeltaJRot, test_dDeltaHRot,  */
+  /*        graph, q->ele, graph->nJ, 3*graph->nJ, tolerance) && success; */
 
   /* fprintf(stderr, "Delta Trans. Hessian:    "); */
-  /* success = success && Rcs_testGradient(test_dDeltaJTrans, test_dDeltaHTrans,  */
-  /*        graph, q->ele, graph->nJ, 3*graph->nJ, tolerance); */
+  /* success = Rcs_testGradient(test_dDeltaJTrans, test_dDeltaHTrans,  */
+  /*        graph, q->ele, graph->nJ, 3*graph->nJ, tolerance) && success; */
 
   /* fprintf(stderr, "CP Distance gradient:    "); */
-  /* success = success && Rcs_testGradient(test_CPdistance, test_CPdistanceJ, */
-  /*        graph, q->ele, graph->nJ, 1, tolerance); */
+  /* success = Rcs_testGradient(test_CPdistance, test_CPdistanceJ, */
+  /*        graph, q->ele, graph->nJ, 1, tolerance) && success; */
 
   /* fprintf(stderr, "Collision gradient:      "); */
-  /* success = success && Rcs_testGradient(test_bodyCollision, test_bodyCollisionJ, */
-  /*        graph, q->ele, graph->nJ, 1, tolerance); */
+  /* success = Rcs_testGradient(test_bodyCollision, test_bodyCollisionJ, */
+  /*        graph, q->ele, graph->nJ, 1, tolerance) && success; */
 
   /* fprintf(stderr, "Frustrum gradient :      "); */
-  /* success = success && Rcs_testGradient(test_frustrum, test_frustrumJ, */
-  /*        graph, q->ele, graph->nJ, 1, tolerance); */
+  /* success = Rcs_testGradient(test_frustrum, test_frustrumJ, */
+  /*        graph, q->ele, graph->nJ, 1, tolerance) && success; */
 
   /* fprintf(stderr, "J# e:                    "); */
-  /* success = success && Rcs_testGradient(test_Jpinv_e, test_dJpinv_e, */
-  /*        graph, q->ele, graph->nJ, graph->nJ, tolerance); */
+  /* success = Rcs_testGradient(test_Jpinv_e, test_dJpinv_e, */
+  /*        graph, q->ele, graph->nJ, graph->nJ, tolerance) && success; */
 
   /* fprintf(stderr, "Linear Pinv Hessian CPP: "); */
-  /* success = success && Rcs_testGradient(test_jacobianPinvCPP, test_hessianPinvCPP, */
-  /*        graph, q->ele, graph->nJ, 3*graph->nJ, tolerance); */
+  /* success = Rcs_testGradient(test_jacobianPinvCPP, test_hessianPinvCPP, */
+  /*        graph, q->ele, graph->nJ, 3*graph->nJ, tolerance) && success; */
 
   if (verbose==true)
   {
     fprintf(stderr, "Pinv Hessian:            ");
   }
-  success = success &&
-            Rcs_testGradient(test_jacobianPinv, test_hessianPinv,
+  success = Rcs_testGradient(test_jacobianPinv, test_hessianPinv,
                              graph, q->ele, graph->nJ, 3*graph->nJ, tolerance,
-                             verbose);
+                             verbose) && success;
+
 
   if (verbose==true)
   {
     fprintf(stderr, "Pinv Hessian2:           ");
   }
-  success = success &&
-            Rcs_testGradient(test_jacobianPinv2, test_hessianPinv2,
+  success = Rcs_testGradient(test_jacobianPinv2, test_hessianPinv2,
                              graph, q->ele, graph->nJ, 3*graph->nJ, tolerance,
-                             verbose);
+                             verbose) && success;
 
   /* fprintf(stderr, "Task space prop 3:       "); */
-  /* success = success && Rcs_testGradient(test_qprop_ts3, test_dqprop_ts3, */
-  /*        graph, q->ele, graph->nJ, graph->nJ, 1.0e-4); */
+  /* success = Rcs_testGradient(test_qprop_ts3, test_dqprop_ts3, */
+  /*        graph, q->ele, graph->nJ, graph->nJ, 1.0e-4) && success; */
 
   /* fprintf(stderr, "Task space prop C 6:     "); */
-  /* success = success && Rcs_testGradient(test_qprop_ts, test_dqprop_ts, */
-  /*        graph, q->ele, graph->nJ, graph->nJ, 1.0e-4); */
+  /* success = Rcs_testGradient(test_qprop_ts, test_dqprop_ts, */
+  /*        graph, q->ele, graph->nJ, graph->nJ, 1.0e-4) && success; */
 
   /* fprintf(stderr, "Null space prop CPP 6:   "); */
-  /* success = success && Rcs_testGradient(test_qprop_nsCPP, test_dqprop_nsCPP, */
-  /*        graph, q->ele, graph->nJ, graph->nJ, 1.0e-4); */
+  /* success = Rcs_testGradient(test_qprop_nsCPP, test_dqprop_nsCPP, */
+  /*        graph, q->ele, graph->nJ, graph->nJ, 1.0e-4) && success; */
 
   /* fprintf(stderr, "Null space prop C 6:     "); */
-  /* success = success && Rcs_testGradient(test_qprop_ns, test_dqprop_ns, */
-  /*        graph, q->ele, graph->nJ, graph->nJ, 1.0e-4); */
+  /* success = Rcs_testGradient(test_qprop_ns, test_dqprop_ns, */
+  /*        graph, q->ele, graph->nJ, graph->nJ, 1.0e-4) && success; */
 
   /* fprintf(stderr, "dq[t+1]/dq[t]:           "); */
-  /* success = success && Rcs_testGradient(test_qprop, test_dqprop, */
-  /*        graph, q->ele, graph->nJ, graph->nJ, 1.0e-4); */
+  /* success = Rcs_testGradient(test_qprop, test_dqprop, */
+  /*        graph, q->ele, graph->nJ, graph->nJ, 1.0e-4) && success; */
 
 
 
@@ -2767,18 +2742,16 @@ bool Rcs_gradientTestGraph(RcsGraph* graph, const MatNd* q, bool verbose)
   // efficiency here? Or maybe I'm still missing something?
 #if 0
   fprintf(stderr, "CP Distance Hessian:   ");
-  success = success &&
-            Rcs_testGradient(test_CPdistanceJ, test_CPdistanceH,
+  success = Rcs_testGradient(test_CPdistanceJ, test_CPdistanceH,
                              graph, q->ele, graph->nJ, graph->nJ, tolerance,
-                             verbose);
+                             verbose) && success;
 #endif
 
 #if 0
   fprintf(stderr, "Collision Hessian:     ");
-  success = success &&
-            Rcs_testGradient(test_bodyCollisionJ, test_bodyCollisionH,
+  success = Rcs_testGradient(test_bodyCollisionJ, test_bodyCollisionH,
                              graph, q->ele, graph->nJ, graph->nJ, tolerance,
-                             verbose);
+                             verbose) && success;
 #endif
 
   if (verbose==true)

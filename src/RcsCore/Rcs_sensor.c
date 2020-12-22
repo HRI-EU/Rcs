@@ -160,7 +160,7 @@ static double RcsSensor_computeForceCompensation(const RcsGraph* graph,
     MatNd* H_cog = NULL, *buf = NULL;
     MatNd_create2(H_cog, 3*n*n, 1);
     MatNd_create2(buf, 3*n*n, 1);
-    RcsGraph_computeCOGHessian_Body_(graph, ftsBody, H_cog, buf);
+    RcsGraph_computeCOGHessian_Body_(graph, ftsBdy, H_cog, buf);
     MatNd_reshape(H_cog, 3*n, n);
 
     // J_dot
@@ -182,7 +182,7 @@ static double RcsSensor_computeForceCompensation(const RcsGraph* graph,
     {
       MatNd* J_cog = NULL;
       MatNd_create2(J_cog, 3, n);
-      RcsGraph_COGJacobian_Body(graph, fts->body, J_cog);
+      RcsGraph_COGJacobian_Body(graph, ftsBdy, J_cog);
 
       MatNd* q_ddot = NULL;
       MatNd_create2(q_ddot, n, 1);
@@ -203,19 +203,19 @@ static double RcsSensor_computeForceCompensation(const RcsGraph* graph,
   // Calculate the gravity torque at the sensor that results from the COG of
   // the kinematic chain that comes after the sensor (in world coordinates)
   double t_gravity[3];
-  Vec3d_subSelf(I_r_cog_fts, fts->body->A_BI.org);
+  Vec3d_subSelf(I_r_cog_fts, ftsBdy->A_BI.org);
 
   double I_sensorOffset[3];
-  Vec3d_transRotate(I_sensorOffset, fts->body->A_BI.rot, fts->offset->org);
+  Vec3d_transRotate(I_sensorOffset, ftsBdy->A_BI.rot, fts->offset.org);
   Vec3d_subSelf(I_r_cog_fts, I_sensorOffset);
   Vec3d_crossProduct(t_gravity, I_r_cog_fts, f_gravity);
 
   // Rotate into sensor frame
-  Vec3d_rotateSelf(f_gravity, fts->body->A_BI.rot);
-  Vec3d_rotate(&S_f_compensation[0], fts->offset->rot, f_gravity);
+  Vec3d_rotateSelf(f_gravity, ftsBdy->A_BI.rot);
+  Vec3d_rotate(&S_f_compensation[0], (double(*)[3])fts->offset.rot, f_gravity);
 
-  Vec3d_rotateSelf(t_gravity, fts->body->A_BI.rot);
-  Vec3d_rotate(&S_f_compensation[3], fts->offset->rot, t_gravity);
+  Vec3d_rotateSelf(t_gravity, ftsBdy->A_BI.rot);
+  Vec3d_rotate(&S_f_compensation[3], (double(*)[3])fts->offset.rot, t_gravity);
 
   VecNd_constMulSelf(S_f_compensation, -1.0, 6);
 
@@ -266,20 +266,21 @@ RcsSensor* RcsSensor_create(unsigned int type, const char* name,
 {
   RcsSensor* self = RALLOC(RcsSensor);
   RCHECK(self);
-
   RCHECK(parentBody);
 
   self->type = (RCSSENSOR_TYPE) type;
 
-  char sensorName[256];
-  strcpy(sensorName, name);
   if (parentBody && parentBody->bdySuffix)
   {
-    strcat(sensorName, parentBody->bdySuffix);
+    snprintf(self->name, RCS_MAX_NAMELEN, "%s%s", name, parentBody->bdySuffix);
   }
-  self->name = String_clone(sensorName);
-  self->body = parentBody;
-  self->offset = HTr_clone(offset);
+  else
+  {
+    snprintf(self->name, RCS_MAX_NAMELEN, "%s", name);
+  }
+
+  self->bodyId = parentBody->id;
+  HTr_copy(&self->offset, offset);
   self->next = NULL;
   self->extraInfo = String_clone(extraInfo);
   self->rawData = MatNd_create(1, RcsSensor_dim(self));
@@ -304,8 +305,8 @@ RcsSensor* RcsSensor_createFromXML(xmlNode* node, RcsBody* parentBody)
   }
 
   // read sensor name
-  char name[100] = "unnamed sensor";
-  getXMLNodePropertyStringN(node, "name", name, 100);
+  char name[RCS_MAX_NAMELEN] = "unnamed sensor";
+  getXMLNodePropertyStringN(node, "name", name, RCS_MAX_NAMELEN);
   RLOG(5, "found new sensor node \"%s\" attached to body \"%s\"",
        name, parentBody ? parentBody->bdyName : "NULL");
 
@@ -429,26 +430,11 @@ RcsSensor* RcsSensor_clone(const RcsSensor* src, const RcsGraph* dstGraph)
     return NULL;
   }
 
-  if (src->body==NULL)
-  {
-    RLOG(4, "Sensor \"%s\" has no mount body - skip cloning", src->name);
-    return NULL;
-  }
-
-  RcsBody* myMountBody = RcsGraph_getBodyByName(dstGraph, src->body->bdyName);
-
-  if (myMountBody==NULL)
-  {
-    RLOG(0, "Couldn't find mount body \"%s\" for sensor \"%s\" in new graph"
-         "- skip cloning", src->body->bdyName, src->name);
-    return NULL;
-  }
-
   RcsSensor* self = RALLOC(RcsSensor);
   self->type = src->type;
-  self->name = String_clone(src->name);
-  self->body = myMountBody;
-  self->offset = HTr_clone(src->offset);
+  snprintf(self->name, RCS_MAX_NAMELEN, "%s", src->name);
+  self->bodyId = src->bodyId;
+  HTr_copy(&self->offset, &src->offset);
   self->extraInfo = String_clone(src->extraInfo);
   self->rawData = MatNd_clone(src->rawData);
 
@@ -483,10 +469,10 @@ RcsSensor* RcsSensor_clone(const RcsSensor* src, const RcsGraph* dstGraph)
  ******************************************************************************/
 void RcsSensor_copy(RcsSensor* self, const RcsSensor* src)
 {
-  RFATAL("FIXME");
   self->type = src->type;
-  String_copyOrRecreate(&self->name, src->name);
-  HTr_copyOrRecreate(&self->offset, src->offset);
+  self->bodyId = src->bodyId;
+  snprintf(self->name, RCS_MAX_NAMELEN, "%s", src->name);
+  HTr_copy(&self->offset, &src->offset);
   MatNd_resizeCopy(&self->rawData, src->rawData);
 }
 
@@ -500,8 +486,6 @@ void RcsSensor_destroy(RcsSensor* self)
     return;
   }
 
-  RFREE(self->name);
-  RFREE(self->offset);
   RFREE(self->extraInfo);
   RCHECK(self->rawData);
   MatNd_destroy(self->rawData);
@@ -609,11 +593,11 @@ void RcsSensor_fprint(FILE* out, const RcsSensor* s)
   fprintf(out, "[RcsSensor_fprint():%d] \n\tSensor \"%s\" of type \"%s\"\n",
           __LINE__, s->name, RcsSensor_name(s->type));
 
-  fprintf(out, "\tAttached to body \"%s\"\n", s->body ? s->body->bdyName : "NULL");
+  fprintf(out, "\tAttached to body with id %d\n", s->bodyId);
 
-  if (s->offset != NULL)
+  if (!HTr_isIdentity(&s->offset))
   {
-    HTr_fprint(out, s->offset);
+    HTr_fprint(out, &s->offset);
   }
   else
   {
@@ -672,8 +656,8 @@ void RcsSensor_fprintXML(FILE* out, const RcsSensor* self)
   // Relative transformation only if non-zero elements exist
   {
     double trf[6];
-    Vec3d_copy(&trf[0], self->offset->org);
-    Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->offset->rot);
+    Vec3d_copy(&trf[0], self->offset.org);
+    Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->offset.rot);
     Vec3d_constMulSelf(&trf[3], 180.0 / M_PI);
 
     if (VecNd_maxAbsEle(trf, 6) > 1.0e-8)
@@ -732,11 +716,13 @@ bool RcsSensor_computePPS(RcsGraph* graph, const RcsSensor* self, MatNd* ppsResu
     return false;
   }
 
-  if (self->body==NULL)
+  if (self->bodyId==-1)
   {
     RLOG(4, "Sensor \"%s\" has no mount body - skipping", self->name);
     return false;
   }
+
+  RcsBody* sensorBdy = &graph->bodies[self->bodyId];
 
   unsigned int dimension = 0;
 
@@ -752,8 +738,7 @@ bool RcsSensor_computePPS(RcsGraph* graph, const RcsSensor* self, MatNd* ppsResu
 
   // Determine the mount body transformation from physics
   HTr A_SI;
-  const HTr* A_SB = self->offset ? self->offset : HTr_identity();
-  HTr_transform(&A_SI, &self->body->A_BI, A_SB);
+  HTr_transform(&A_SI, &sensorBdy->A_BI, &self->offset);
 
   // calculate the maximum distance of the PPS elements to the mount body origin
   // used to check whether a shape can be completely ignored
@@ -845,9 +830,9 @@ bool RcsSensor_computePPS(RcsGraph* graph, const RcsSensor* self, MatNd* ppsResu
       continue;
     }
 #else
-    if ((BODY->id==self->body->id) ||
-        (BODY->id==self->body->parentId) ||
-        (BODY->parentId==self->body->id))
+    if ((BODY->id==sensorBdy->id) ||
+        (BODY->id==sensorBdy->parentId) ||
+        (BODY->parentId==sensorBdy->id))
     {
       continue;
     }

@@ -3865,7 +3865,7 @@ void RcsGraph_addRandomGeometry(RcsGraph* self)
       shape->extents[0] = 0.2*len;
       shape->extents[1] = 0.2*len;
       shape->extents[2] = len;
-      shape->color = String_clone(color);
+      snprintf(shape->color, RCS_MAX_NAMELEN, "%s", color);
       Mat3d_fromVec(shape->A_CB.rot, K_p12, 2);
       Vec3d_copy(shape->A_CB.org, K_center);
       RcsBody_addShape(BODY, shape);
@@ -3879,7 +3879,7 @@ void RcsGraph_addRandomGeometry(RcsGraph* self)
       shape->extents[0] = 0.15*len;
       shape->extents[1] = 0.15*len;
       shape->extents[2] = 0.15*len;
-      shape->color = String_clone(color);
+      snprintf(shape->color, RCS_MAX_NAMELEN, "%s", color);
       RcsBody_addShape(BODY, shape);
 
       CHILD=CHILD->next;

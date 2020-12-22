@@ -113,7 +113,7 @@ void Rcs::TaskStaticEffort::getForceInWorldCoords(double f[3]) const
   Vec3d_copy(f, this->sensor->rawData->ele);
   HTr A_SI;
   HTr_copy(&A_SI, &this->ef->A_BI);
-  HTr_transformSelf(&A_SI, this->sensor->offset);
+  HTr_transformSelf(&A_SI, &this->sensor->offset);
   Vec3d_transRotateSelf(f, A_SI.rot);
 }
 
@@ -126,7 +126,7 @@ void Rcs::TaskStaticEffort::computeX(double* x_res) const
   MatNd f = MatNd_fromPtr(3, 1, fbuf);
   getForceInWorldCoords(f.ele);
   *x_res = RcsGraph_staticEffort(this->graph, this->ef, &f, this->W,
-                                 this->sensor->offset->org);
+                                 this->sensor->offset.org);
 }
 
 /*******************************************************************************
@@ -139,7 +139,7 @@ void Rcs::TaskStaticEffort::computeJ(MatNd* dH) const
   MatNd f = MatNd_fromPtr(3, 1, fbuf);
   getForceInWorldCoords(f.ele);
   RcsGraph_staticEffortGradient(this->graph, this->ef, &f, this->W,
-                                this->sensor->offset->org, dH);
+                                this->sensor->offset.org, dH);
   MatNd_reshape(dH, 1, this->graph->nJ);
 }
 

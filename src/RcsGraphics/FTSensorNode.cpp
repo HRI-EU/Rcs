@@ -45,11 +45,16 @@
 /*******************************************************************************
  * Constructor.
  ******************************************************************************/
-Rcs::FTSensorNode::FTSensorNode(const RcsSensor* fts) :
+Rcs::FTSensorNode::FTSensorNode(const RcsSensor* fts, const RcsGraph* graph) :
   ArrowNode(),
-  loadCell(fts),
-  A_BI(&fts->body->A_BI)
+  loadCell(fts)
 {
+  RCHECK(fts->type==RCSSENSOR_LOAD_CELL);
+  RCHECK(fts->bodyId!=-1);
+
+  this->mountBdy = &graph->bodies[fts->bodyId];
+  this->A_BI = &mountBdy->A_BI;
+
   setName("FTSensorNode");
   makeDynamic();
 }
@@ -69,12 +74,12 @@ bool Rcs::FTSensorNode::frameCallback()
   double pos[3], dir[3];
 
   Vec3d_transRotate(pos, (double (*)[3]) this->A_BI->rot,
-                    this->loadCell->offset->org);
+                    this->loadCell->offset.org);
   Vec3d_addSelf(pos, this->A_BI->org);
 
   Vec3d_copy(dir, this->loadCell->rawData->ele);
-  Vec3d_transRotateSelf(dir, this->loadCell->offset->rot);
-  Vec3d_transRotateSelf(dir, (double (*)[3]) this->A_BI->rot);
+  Vec3d_transRotateSelf(dir, (double(*)[3])this->loadCell->offset.rot);
+  Vec3d_transRotateSelf(dir, (double(*)[3]) this->A_BI->rot);
   Vec3d_constMulSelf(dir, 0.01);   // 1kg = 10cm
 
   double A[3][3];
@@ -100,5 +105,5 @@ void Rcs::FTSensorNode::setTransformPtr(const HTr* A_BI_)
  ******************************************************************************/
 const RcsBody* Rcs::FTSensorNode::getMountBody() const
 {
-  return this->loadCell->body;
+  return this->mountBdy;
 }
