@@ -322,13 +322,10 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
   getXMLNodePropertyStringN(bdyNode, "name", msg, 256);
   RCHECK_MSG(strncmp(msg, "GenericBody", 11) != 0,
              "The name \"GenericBody\" is reserved for internal use");
-  b->xmlName = RNALLOC(strlen(msg) + 1, char);
-  RCHECK_PEDANTIC(b->xmlName);
-  strcpy(b->xmlName, msg);
-  RLOG(9, "Creating body \"%s\"", b->xmlName);
 
   // Fully qualified name
-  snprintf(b->bdyName, RCS_MAX_NAMELEN, "%s", b->xmlName);
+  snprintf(b->bdyXmlName, RCS_MAX_NAMELEN, "%s", msg);
+  snprintf(b->bdyName, RCS_MAX_NAMELEN, "%s", msg);
 
   /// \todo (MM, Oct 2, 2013): Groups not yet supported by OpenRAVE parser
 

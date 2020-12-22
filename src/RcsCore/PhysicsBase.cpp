@@ -198,12 +198,12 @@ void Rcs::PhysicsBase::disableCollisionsWithinGroup(const char* suffix)
   RCSGRAPH_TRAVERSE_BODIES(this->internalDesiredGraph)
   {
     //if ((suffix && STREQ(suffix, BODY->suffix)) || (!suffix))
-    if ((suffix && STREQ(suffix, BODY->suffix)))
+    if ((suffix && STREQ(suffix, BODY->bdySuffix)))
     {
       RcsBody* b1 = BODY;
       RCSGRAPH_TRAVERSE_BODIES(this->internalDesiredGraph)
       {
-        if (STREQ(b1->suffix, BODY->suffix) && BODY != b1)
+        if (STREQ(b1->bdySuffix, BODY->bdySuffix) && BODY != b1)
         {
           disableCollision(b1, BODY);
         }

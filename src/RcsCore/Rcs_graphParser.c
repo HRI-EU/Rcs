@@ -888,16 +888,11 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   getXMLNodePropertyStringN(bdyNode, "name", msg, 256);
   RCHECK_MSG(strncmp(msg, "GenericBody", 11) != 0,
              "The name \"GenericBody\" is reserved for internal use");
-  b->xmlName = String_clone(msg);
-  RLOG(9, "Creating body \"%s\"", b->xmlName);
-
-  // Group suffix
-  b->suffix = String_clone(suffix);
 
   // Fully qualified name
-  strcpy(msg, b->xmlName);
-  strcat(msg, suffix);
-  snprintf(b->bdyName, RCS_MAX_NAMELEN, "%s", msg);
+  snprintf(b->bdyXmlName, RCS_MAX_NAMELEN, "%s", msg);
+  snprintf(b->bdySuffix, RCS_MAX_NAMELEN, "%s", suffix);
+  snprintf(b->bdyName, RCS_MAX_NAMELEN, "%s%s", msg, suffix);
 
 
   RcsBody* parentBdy = root;
@@ -1732,17 +1727,7 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
   for (int i = 0; i < 10; i++)
   {
     memset(&self->gBody[i], 0, sizeof(RcsBody));
-    self->gBody[i].xmlName   = RNALLOC(64, char);
-    self->gBody[i].suffix    = RNALLOC(64, char);
-    self->gBody[i].id           = -1;
-    self->gBody[i].parentId     = -1;
-    self->gBody[i].firstChildId = -1;
-    self->gBody[i].lastChildId  = -1;
-    self->gBody[i].nextId       = -1;
-    self->gBody[i].prevId       = -1;
-    HTr_setIdentity(&self->gBody[i].A_BI);
-    HTr_setIdentity(&self->gBody[i].A_BP);
-    HTr_setZero(&self->gBody[i].Inertia);
+    RcsBody_init(&self->gBody[i]);
     snprintf(self->gBody[i].bdyName, RCS_MAX_NAMELEN, "GenericBody%d", i);
   }
 

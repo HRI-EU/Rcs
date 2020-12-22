@@ -518,18 +518,6 @@ void RcsGraph_destroy(RcsGraph* self)
   NLOG(5, "Deleting graph \"%s\" (addr 0x%x)",
        self->xmlFile, (unsigned int) self);
 
-  // Delete generic bodies dynamic memory. If the generic body points to
-  // NULL, it had its own memory and we need to delete it here. This must
-  // go before deleting the bodies.
-  for (int i = 0; i < 10; i++)
-  {
-    NLOG(0, "Deleting generic body %d", i);
-
-    // These elements belong exclusively to the gBody
-    RFREE(self->gBody[i].xmlName);
-    RFREE(self->gBody[i].suffix);
-  }
-
   // Destroy all bodies
 #ifdef OLD_TOPO
   RcsBody* b    = RcsBody_getLastInGraph(self);
@@ -2378,20 +2366,8 @@ static RcsGraph* RcsGraph_cloneById(const RcsGraph* src)
   for (int i = 0; i < 10; i++)
   {
     RcsBody* gSrc = (RcsBody*) src->gBody[i].extraInfo;
-
-    memset(&dst->gBody[i], 0, sizeof(RcsBody));
-    dst->gBody[i].xmlName   = RNALLOC(64, char);
-    dst->gBody[i].suffix    = RNALLOC(64, char);
-
-    if (gSrc != NULL)
-    {
-      HTr_setIdentity(&dst->gBody[i].A_BI);
-      HTr_setIdentity(&dst->gBody[i].A_BP);
-      HTr_setZero(&dst->gBody[i].Inertia);
-    }
-
+    RcsBody_init(&dst->gBody[i]);
     snprintf(dst->gBody[i].bdyName, RCS_MAX_NAMELEN, "GenericBody%d", i);
-
     RcsGraph_linkGenericBody(dst, i, gSrc ? gSrc->bdyName : "");
   }
 

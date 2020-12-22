@@ -268,9 +268,9 @@ RcsSensor* RcsSensor_create(unsigned int type, const char* name,
 
   char sensorName[256];
   strcpy(sensorName, name);
-  if (parentBody && parentBody->suffix)
+  if (parentBody && parentBody->bdySuffix)
   {
-    strcat(sensorName, parentBody->suffix);
+    strcat(sensorName, parentBody->bdySuffix);
   }
   self->name = String_clone(sensorName);
   self->body = parentBody;

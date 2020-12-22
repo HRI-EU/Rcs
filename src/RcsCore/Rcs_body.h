@@ -57,6 +57,11 @@ extern "C" {
 RcsBody* RcsBody_create();
 
 /*! \ingroup RcsBodyFunctions
+ *  \brief Initializes the RcsBody structure with default values.
+ */
+void RcsBody_init(RcsBody* self);
+
+/*! \ingroup RcsBodyFunctions
  *  \brief Deletes the body and frees all memory. The function does nothing
  *         if self is NULL.
  */

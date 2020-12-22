@@ -189,19 +189,19 @@ typedef enum
 
 struct _RcsBody
 {
-  double m;                      ///< Body mass
-  bool rigid_body_joints;        ///< Body is linked to parent with 6 rigid body dof
-  int physicsSim;                ///< see enum RCSBODY_PHYSICS_SIMULATION_TYPE
-  double x_dot[3];               ///< Bodie's linear velocity in world coordinates
-  double omega[3];               ///< Bodie's angular velocity in world coordinates
-  double confidence;             ///< Obsolete
-  char bdyName[RCS_MAX_NAMELEN]; ///< Fully qualified name of the body with suffix
-  char* xmlName;                 ///< Name of the body as indicated in xml file
-  char* suffix;                  ///< Group suffix of the body
+  double m;                         ///< Body mass
+  bool rigid_body_joints;           ///< Has 6 rigid body dof
+  int physicsSim;                   ///< see RCSBODY_PHYSICS_SIMULATION_TYPE
+  double x_dot[3];                  ///< Bodie's lin. velocity in world coords
+  double omega[3];                  ///< Bodie's ang. velocity in world coords
+  double confidence;                ///< Obsolete
+  char bdyName[RCS_MAX_NAMELEN];    ///< Fully qualified name including suffix
+  char bdyXmlName[RCS_MAX_NAMELEN]; ///< Name of the body from xml file
+  char bdySuffix[RCS_MAX_NAMELEN];  ///< Group suffix of the body
 
-  HTr A_BP;                      ///< Relative transformation
-  HTr A_BI;                      ///< Absolute transformation
-  HTr Inertia;                   ///< Inertia tensor and local COG vector
+  HTr A_BP;                         ///< Relative transformation
+  HTr A_BI;                         ///< Absolute transformation
+  HTr Inertia;                      ///< Inertia tensor and local COG vector
 
 #ifdef OLD_TOPO
   RcsBody* parent;        ///< Parent body

@@ -87,15 +87,27 @@
 RcsBody* RcsBody_create()
 {
   RcsBody* b = RALLOC(RcsBody);
+  RcsBody_init(b);
+  return b;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void RcsBody_init(RcsBody* b)
+{
   HTr_setIdentity(&b->A_BP);
   HTr_setIdentity(&b->A_BI);
+  HTr_setZero(&b->Inertia);
+  memset(b->bdyName, 0, RCS_MAX_NAMELEN*(sizeof(char)));
+  memset(b->bdyXmlName, 0, RCS_MAX_NAMELEN*(sizeof(char)));
+  memset(b->bdySuffix, 0, RCS_MAX_NAMELEN*(sizeof(char)));
   b->id = -1;
   b->parentId = -1;
   b->firstChildId = -1;
   b->lastChildId = -1;
   b->nextId = -1;
   b->prevId = -1;
-  return b;
 }
 
 /*******************************************************************************
@@ -136,9 +148,6 @@ void RcsBody_destroy(RcsBody* self)
 
     RFREE(self->shape);
   }
-
-  RFREE(self->xmlName);
-  RFREE(self->suffix);
 
   // Reset all internal memory
   memset(self, 0, sizeof(RcsBody));
@@ -551,9 +560,9 @@ void RcsBody_copy(RcsBody* dst, const RcsBody* src)
   Vec3d_copy(dst->omega, src->omega);
   dst->confidence = src->confidence;
 
-  strcpy(dst->bdyName, src->bdyName);
-  String_copyOrRecreate(&dst->xmlName, src->xmlName);
-  String_copyOrRecreate(&dst->suffix, src->suffix);
+  snprintf(dst->bdyName,  RCS_MAX_NAMELEN,   "%s", src->bdyName);
+  snprintf(dst->bdySuffix,  RCS_MAX_NAMELEN, "%s", src->bdySuffix);
+  snprintf(dst->bdyXmlName, RCS_MAX_NAMELEN, "%s", src->bdyXmlName);
 
   dst->A_BP = src->A_BP;
   dst->A_BI = src->A_BI;

@@ -275,21 +275,18 @@ static RcsBody* parseBodyURDF(xmlNode* node)
   // Dynamic properties
   Mat3d_setZero(body->Inertia.rot);
 
-  body->xmlName = RNALLOC(len, char);
-  getXMLNodePropertyStringN(node, "name", body->xmlName, len);
-  RCHECK(body->xmlName);
+  getXMLNodePropertyStringN(node, "name", body->bdyXmlName, RCS_MAX_NAMELEN);
 
-  if (strncmp(body->xmlName, "GenericBody", 11) == 0)
+  if (strncmp(body->bdyXmlName, "GenericBody", 11) == 0)
   {
     RLOG(4, "The name \"GenericBody\" is reserved for internal use");
-    RFREE(body->xmlName);
     return NULL;
   }
 
-  RLOG(5, "Creating body \"%s\"", body->xmlName);
+  RLOG(5, "Creating body \"%s\"", body->bdyXmlName);
 
   // Fully qualified name
-  snprintf(body->bdyName, RCS_MAX_NAMELEN, "%s", body->xmlName);
+  snprintf(body->bdyName, RCS_MAX_NAMELEN, "%s", body->bdyXmlName);
 
   // Go one level deeper
   node = node->children;
@@ -1115,11 +1112,7 @@ RcsGraph* RcsGraph_fromURDFFile(const char* configFile)
   for (int i = 0; i < 10; i++)
   {
     memset(&self->gBody[i], 0, sizeof(RcsBody));
-    self->gBody[i].xmlName   = RNALLOC(64, char);
-    self->gBody[i].suffix    = RNALLOC(64, char);
-    HTr_setIdentity(&self->gBody[i].A_BI);
-    HTr_setIdentity(&self->gBody[i].A_BP);
-    HTr_setZero(&self->gBody[i].Inertia);
+    RcsBody_init(&self->gBody[i]);
     snprintf(self->gBody[i].bdyName, RCS_MAX_NAMELEN, "GenericBody%d", i);
   }
 
