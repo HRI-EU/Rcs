@@ -521,7 +521,7 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
 #else
     RLOG(4, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
          "unnamed joint\"", bdy->bdyName,
-         bdy->parentId!=-1 ? self->bodies[bdy->parentId]->bdyName : "NULL");
+         bdy->parentId!=-1 ? self->bodies[bdy->parentId].bdyName : "NULL");
 #endif
   }
 

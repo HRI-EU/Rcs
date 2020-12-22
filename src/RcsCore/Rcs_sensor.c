@@ -99,7 +99,12 @@ static double RcsSensor_computeForceCompensation(const RcsGraph* graph,
   RCHECK(fts->type == RCSSENSOR_LOAD_CELL);
 
 
-
+#ifdef OLD_TOPO
+  RcsBody* ftsBdy = fts->body;
+#else
+  RCHECK(fts->bodyId!=-1);
+  RcsBody* ftsBdy = &graph->bodies[fts->bodyId];
+#endif
 
 
   /////////////////////////////////////////////////////////
@@ -112,9 +117,9 @@ static double RcsSensor_computeForceCompensation(const RcsGraph* graph,
   // the sensor
   double I_r_cog_fts[3];
 #ifdef OLD_TOPO
-  double m_fts = RcsGraph_COG_Body(fts->body, I_r_cog_fts);
+  double m_fts = RcsGraph_COG_Body(ftsBdy, I_r_cog_fts);
 #else
-  double m_fts = RcsGraph_COG_Body(graph, fts->body, I_r_cog_fts);
+  double m_fts = RcsGraph_COG_Body(graph, ftsBdy, I_r_cog_fts);
 #endif
 
   // Calculate the gravity force at the COG of the kinematic chain that comes
@@ -155,7 +160,7 @@ static double RcsSensor_computeForceCompensation(const RcsGraph* graph,
     MatNd* H_cog = NULL, *buf = NULL;
     MatNd_create2(H_cog, 3*n*n, 1);
     MatNd_create2(buf, 3*n*n, 1);
-    RcsGraph_computeCOGHessian_Body_(graph, fts->body, H_cog, buf);
+    RcsGraph_computeCOGHessian_Body_(graph, ftsBody, H_cog, buf);
     MatNd_reshape(H_cog, 3*n, n);
 
     // J_dot
@@ -434,7 +439,7 @@ RcsSensor* RcsSensor_clone(const RcsSensor* src, const RcsGraph* dstGraph)
 
   if (myMountBody==NULL)
   {
-    RLOG(4, "Couldn't find mount body \"%s\" for sensor \"%s\" in new graph"
+    RLOG(0, "Couldn't find mount body \"%s\" for sensor \"%s\" in new graph"
          "- skip cloning", src->body->bdyName, src->name);
     return NULL;
   }

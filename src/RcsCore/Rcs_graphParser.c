@@ -930,7 +930,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
 
   // This takes care of linking body indices and appending to graph's bodies
   // arraay.
-  RcsGraph_insertBody(self, parentBdy, b);
+  /* RcsGraph_insertBody(self, parentBdy, b); */
 
   // Relative vector from prev. body to body (in prev. body coords)
   // It is only created if the XML file transform is not the identity matrix.
@@ -1135,19 +1135,18 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   // transformation. If it doesn't exist, it will be created.
   if ((nJoints == 0) && (HTr_isIdentity(A_group) == false))
   {
-    /* if (b->A_BP == NULL) */
-    /* { */
-    /*   b->A_BP = HTr_clone(A_group); */
-    /* } */
-    /* else */
-    /* { */
     HTr_transformSelf(&b->A_BP, A_group);
-    /* } */
     RLOG(5, "Transformed body \"%s\"", b->bdyName);
   }
 
   // Reset the groups transform, it only must be applied to the first body.
   HTr_setIdentity(A_group);
+
+  // This takes care of linking body indices and appending to graph's bodies
+  // arraay.
+  RcsGraph_insertBody(self, parentBdy, b);
+  //RcsBody_destroy(b);
+  RFREE(b);
 
 
   // Search for sensors attached to the body
@@ -1156,13 +1155,14 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   {
     if (isXMLNodeName(sensorNode, "Sensor"))
     {
-      RcsSensor* sensor_i = RcsSensor_createFromXML(sensorNode, b);
+      RcsSensor* sensor_i = RcsSensor_createFromXML(sensorNode, &self->bodies[self->nBodies-1]);
       RcsGraph_addSensor(self, sensor_i);
     }
     sensorNode = sensorNode->next;
   }
 
-  return b;
+
+  return &self->bodies[self->nBodies-1];
 }
 
 /*******************************************************************************
@@ -1707,7 +1707,7 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
   // The RcsGraph_insertBody() takes care of reallocating it if needed.
   RcsGraph* self = RALLOC(RcsGraph);
   self->xmlFile = String_clone("Created_from_xml_node");
-  self->bodies = RNALLOC(10, RcsBody*);
+  self->bodies = RNALLOC(10, RcsBody);
 
 
   // This is the arrays for the state vectors and velocities. We need to

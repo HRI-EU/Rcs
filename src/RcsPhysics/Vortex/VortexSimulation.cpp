@@ -1453,7 +1453,7 @@ bool Rcs::VortexSimulation::createJoint(const RcsBody* body)
              body->paren ? body->parent->bdyName : "NULL", body->bdyName);
 #else
         RLOG(4, "Creating fixed joint between \"%s\" and \"%s\" failed",
-             body->parentId!=-1 ? getGraph()->bodies[body->parentId]->bdyName : "NULL", body->bdyName);
+             body->parentId!=-1 ? getGraph()->bodies[body->parentId].bdyName : "NULL", body->bdyName);
 #endif
       }
     }
@@ -1634,7 +1634,7 @@ void Rcs::VortexSimulation::getJointAngles(MatNd* q, RcsStateType sType) const
         HTr* A_ParentI = vxBdy->body->parent ? vxBdy->body->parent->A_BI : NULL;
         RcsGraph_relativeRigidBodyDoFs(vxBdy->body, &pose, A_ParentI, q_i);
 #else
-        HTr* A_ParentI = vxBdy->body->parentId!=-1 ? &getGraph()->bodies[vxBdy->body->parentId]->A_BI : NULL;
+        HTr* A_ParentI = vxBdy->body->parentId!=-1 ? &getGraph()->bodies[vxBdy->body->parentId].A_BI : NULL;
         RcsGraph_relativeRigidBodyDoFs(getGraph(), vxBdy->body, &pose, A_ParentI, q_i);
 #endif
       }
@@ -2673,7 +2673,7 @@ Rcs::VortexBody* Rcs::VortexSimulation::getPartPtrById(int bodyId) const
     return NULL;
   }
 
-  const RcsBody* body = getGraph()->bodies[bodyId];
+  const RcsBody* body = &getGraph()->bodies[bodyId];
 
   return getPartPtr(body);
 }

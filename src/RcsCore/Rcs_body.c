@@ -96,6 +96,7 @@ RcsBody* RcsBody_create()
  ******************************************************************************/
 void RcsBody_init(RcsBody* b)
 {
+  memset(b, 0, sizeof(RcsBody));
   HTr_setIdentity(&b->A_BP);
   HTr_setIdentity(&b->A_BI);
   HTr_setZero(&b->Inertia);
@@ -114,6 +115,19 @@ void RcsBody_init(RcsBody* b)
  * See header.
  ******************************************************************************/
 void RcsBody_destroy(RcsBody* self)
+{
+  RcsBody_clear(self);
+
+  // Reset all internal memory
+  memset(self, 0, sizeof(RcsBody));
+
+  RFREE(self);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void RcsBody_clear(RcsBody* self)
 {
   RcsJoint* jnt, *next;
 
@@ -149,10 +163,6 @@ void RcsBody_destroy(RcsBody* self)
     RFREE(self->shape);
   }
 
-  // Reset all internal memory
-  memset(self, 0, sizeof(RcsBody));
-
-  RFREE(self);
 }
 
 /*******************************************************************************
@@ -1847,7 +1857,7 @@ RcsJoint* RcsBody_lastJointBeforeBodyById(const RcsGraph* graph, const RcsBody* 
       return NULL;
     }
 
-    body = graph->bodies[body->parentId];
+    body = &graph->bodies[body->parentId];
     jnt = body->jnt;
   }
 
@@ -1956,7 +1966,7 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
 #else
   if (self->parentId != -1)
   {
-    fprintf(out, "prev=\"%s\" ", graph->bodies[self->parentId]->bdyName);
+    fprintf(out, "prev=\"%s\" ", graph->bodies[self->parentId].bdyName);
   }
 #endif
 
@@ -2063,7 +2073,7 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
   // Place the sensor's xml into the body description
   RCSGRAPH_TRAVERSE_SENSORS(graph)
   {
-    if (SENSOR->body==self)
+    if (SENSOR->bodyId==self->id)
     {
       RcsSensor_fprintXML(out, SENSOR);
     }
@@ -2682,7 +2692,7 @@ RcsBody* RcsBody_getPrev(RcsGraph* graph, RcsBody* body)
 #ifdef OLD_TOPO
   return body->prev;
 #else
-  return ((body->prevId == -1) ? NULL : (graph->bodies[body->prevId]));
+  return ((body->prevId == -1) ? NULL : (&graph->bodies[body->prevId]));
 #endif
 }
 
@@ -2691,7 +2701,7 @@ RcsBody* RcsBody_getNext(RcsGraph* graph, RcsBody* body)
 #ifdef OLD_TOPO
   return body->next;
 #else
-  return ((body->nextId == -1) ? NULL : (graph->bodies[body->nextId]));
+  return ((body->nextId == -1) ? NULL : (&graph->bodies[body->nextId]));
 #endif
 }
 
@@ -2700,7 +2710,7 @@ RcsBody* RcsBody_getParent(RcsGraph* graph, RcsBody* body)
 #ifdef OLD_TOPO
   return body->parent;
 #else
-  return ((body->parentId == -1) ? NULL : (graph->bodies[body->parentId]));
+  return ((body->parentId == -1) ? NULL : (&graph->bodies[body->parentId]));
 #endif
 }
 
@@ -2709,7 +2719,7 @@ const RcsBody* RcsBody_getConstParent(const RcsGraph* graph, const RcsBody* body
 #ifdef OLD_TOPO
   return body->parent;
 #else
-  return ((body->parentId == -1) ? NULL : (graph->bodies[body->parentId]));
+  return ((body->parentId == -1) ? NULL : (&graph->bodies[body->parentId]));
 #endif
 }
 
@@ -2718,7 +2728,7 @@ RcsBody* RcsBody_getFirstChild(RcsGraph* graph, RcsBody* body)
 #ifdef OLD_TOPO
   return body->firstChild;
 #else
-  return ((body->firstChildId == -1) ? NULL : (graph->bodies[body->firstChildId]));
+  return ((body->firstChildId == -1) ? NULL : (&graph->bodies[body->firstChildId]));
 #endif
 }
 
@@ -2727,7 +2737,7 @@ RcsBody* RcsBody_getLastChild_(RcsGraph* graph, RcsBody* body)
 #ifdef OLD_TOPO
   return body->lastChild;
 #else
-  return ((body->lastChildId == -1) ? NULL : (graph->bodies[body->lastChildId]));
+  return ((body->lastChildId == -1) ? NULL : (&graph->bodies[body->lastChildId]));
 #endif
 }
 
@@ -2742,26 +2752,26 @@ RcsBody* RcsBody_depthFirstTraversalGetNextById(const RcsGraph* graph,
   if (body->firstChildId!=-1)
   {
     //RLOG(0, "First child: %s", graph->bodies[body->firstChildId]->bdyName);
-    return graph->bodies[body->firstChildId];
+    return &graph->bodies[body->firstChildId];
   }
 
   if (body->nextId != -1)
   {
     //RLOG(0, "Next: %s", graph->bodies[body->nextId]->bdyName);
-    return graph->bodies[body->nextId];
+    return &graph->bodies[body->nextId];
   }
 
-  RcsBody* body2 = (body->parentId != -1) ? graph->bodies[body->parentId] : NULL;
+  RcsBody* body2 = (body->parentId != -1) ? &graph->bodies[body->parentId] : NULL;
 
   while (body2)
   {
     if (body2->nextId != -1)
     {
       //RLOG(0, "Second next: %s", graph->bodies[body2->nextId]->bdyName);
-      return graph->bodies[body2->nextId];
+      return &graph->bodies[body2->nextId];
     }
 
-    body2 = (body2->parentId != -1) ? graph->bodies[body2->parentId] : NULL;
+    body2 = (body2->parentId != -1) ? &graph->bodies[body2->parentId] : NULL;
   }
 
   //RLOG(0, "Nullinger - no parent");
@@ -2784,7 +2794,7 @@ RcsBody* RcsBody_getLastChildById(const RcsGraph* graph, RcsBody* b)
     RCHECK(graph);
     RCHECK(graph->nBodies);
     RCHECK(b->lastChildId<graph->nBodies);
-    b = graph->bodies[b->lastChildId];
+    b = &graph->bodies[b->lastChildId];
   }
 
   return b;
@@ -2905,7 +2915,7 @@ bool RcsBody_attachToBodyById(RcsGraph* graph, RcsBody* body, RcsBody* target,
 
     if (target->lastChildId != -1)
     {
-      graph->bodies[target->lastChildId]->nextId = body->id;
+      graph->bodies[target->lastChildId].nextId = body->id;
       body->prevId = target->lastChildId;
     }
     else
@@ -2919,10 +2929,10 @@ bool RcsBody_attachToBodyById(RcsGraph* graph, RcsBody* body, RcsBody* target,
   {
     body->parentId = -1;
 
-    RcsBody* t = graph->bodies[0];
+    RcsBody* t = &graph->bodies[0];
     while (t->nextId != -1)
     {
-      t = graph->bodies[t->nextId];
+      t = &graph->bodies[t->nextId];
     }
     t->nextId = body->id;
     body->prevId = t->id;

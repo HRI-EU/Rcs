@@ -190,8 +190,8 @@ static void RcsGraph_bodyKinematics(RcsGraph* graph, RcsBody* bdy, unsigned int*
       Vec3d_copy(bdy->x_dot, bdy->parent->x_dot);
       Vec3d_copy(bdy->omega, bdy->parent->omega);
 #else
-      Vec3d_copy(bdy->x_dot, graph->bodies[bdy->parentId]->x_dot);
-      Vec3d_copy(bdy->omega, graph->bodies[bdy->parentId]->omega);
+      Vec3d_copy(bdy->x_dot, graph->bodies[bdy->parentId].x_dot);
+      Vec3d_copy(bdy->omega, graph->bodies[bdy->parentId].omega);
 #endif
 
       // Linear velocity term due to the parent's angular velocity
@@ -200,8 +200,8 @@ static void RcsGraph_bodyKinematics(RcsGraph* graph, RcsBody* bdy, unsigned int*
       Vec3d_sub(tmp, bdy->A_BI->org, bdy->parent->A_BI->org);
       Vec3d_crossProduct(oxr, bdy->parent->omega, tmp);
 #else
-      Vec3d_sub(tmp, bdy->A_BI.org, graph->bodies[bdy->parentId]->A_BI.org);
-      Vec3d_crossProduct(oxr, graph->bodies[bdy->parentId]->omega, tmp);
+      Vec3d_sub(tmp, bdy->A_BI.org, graph->bodies[bdy->parentId].A_BI.org);
+      Vec3d_crossProduct(oxr, graph->bodies[bdy->parentId].omega, tmp);
 #endif
       Vec3d_addSelf(bdy->x_dot, oxr);
     }
@@ -531,10 +531,10 @@ void RcsGraph_destroy(RcsGraph* self)
     b = prev;
   }
 #else
+  // Just clear joints and shapes
   for (unsigned int i=0; i<self->nBodies; ++i)
   {
-    RcsBody_destroy(self->bodies[i]);
-    self->bodies[i] = NULL;
+    RcsBody_clear(&self->bodies[i]);
   }
   RFREE(self->bodies);
 #endif
@@ -1144,9 +1144,9 @@ RcsBody* RcsGraph_getBodyByName(const RcsGraph* self, const char* name)
 #else
   for (unsigned int i=0; i<self->nBodies; ++i)
   {
-    if (STREQ(name, self->bodies[i]->bdyName))
+    if (STREQ(name, self->bodies[i].bdyName))
     {
-      return self->bodies[i];
+      return &self->bodies[i];
     }
   }
 #endif
@@ -2188,7 +2188,7 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
 
     if (first && (first->prevId!=-1))
     {
-      RcsBody* prefOfFirst = self->bodies[first->prevId];
+      RcsBody* prefOfFirst = &self->bodies[first->prevId];
       RLOG(1, "Body \"%s\" has firstChild (\"%s\") with prev body (\"%s\")",
            BODY->bdyName, first->bdyName, prefOfFirst->bdyName);
       nErrors++;
@@ -2196,7 +2196,7 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
 
     if (last && (last->nextId != -1))
     {
-      RcsBody* nextAfterLast = self->bodies[last->nextId];
+      RcsBody* nextAfterLast = &self->bodies[last->nextId];
       RLOG(1, "Body \"%s\" has lastChild (\"%s\") with next body (\"%s\")",
            BODY->bdyName, last->bdyName, nextAfterLast->bdyName);
       nErrors++;
@@ -2285,35 +2285,30 @@ static RcsGraph* RcsGraph_cloneById(const RcsGraph* src)
   dst->q       = MatNd_clone(src->q);
   dst->q_dot   = MatNd_clone(src->q_dot);
   dst->xmlFile = String_clone(src->xmlFile);
-  dst->bodies = RNALLOC(src->nBodies, RcsBody*);
+  dst->bodies = RNALLOC(src->nBodies, RcsBody);
   dst->nBodies = 0;
 
-  // Traverse the graph and create all elements
+  // Copy all bodies
   for (unsigned int i=0; i<src->nBodies; ++i)
   {
-    // Make a copy of the body
-    RcsBody* b = RcsBody_create();
-    RcsBody_copy(b, src->bodies[i]);
-    b->id           = src->bodies[i]->id;
-    b->parentId     = src->bodies[i]->parentId;
-    b->firstChildId = src->bodies[i]->firstChildId;
-    b->lastChildId  = src->bodies[i]->lastChildId;
-    b->nextId       = src->bodies[i]->nextId;
-    b->prevId       = src->bodies[i]->prevId;
-    dst->bodies[dst->nBodies] = b;
+    dst->bodies[dst->nBodies] = src->bodies[i];
+    dst->bodies[dst->nBodies].shape = NULL;
+    dst->bodies[dst->nBodies].jnt = NULL;
+    dst->bodies[dst->nBodies].extraInfo = NULL;
     dst->nBodies++;
   }
 
-  dst->root = dst->bodies[0];
+  dst->root = &dst->bodies[0];
 
   RCSGRAPH_TRAVERSE_BODIES(src)
   {
     // Determine body corresponding to BODY in the dst graph
-    RcsBody* b = dst->bodies[BODY->id];
+    RcsBody* b = &dst->bodies[BODY->id];
 
     // Determine the previous joint to which the body is connected. That's
     // the relevant one for the backward chain connectivity
-    RcsJoint* prevJoint = RcsBody_lastJointBeforeBodyById(src, BODY->parentId!=-1 ? src->bodies[BODY->parentId] : NULL);
+    RcsBody* srcParent = BODY->parentId!=-1 ? &src->bodies[BODY->parentId] : NULL;
+    RcsJoint* prevJoint = RcsBody_lastJointBeforeBodyById(src, srcParent);
 
     if (prevJoint != NULL)
     {
@@ -2896,7 +2891,7 @@ void RcsGraph_insertJoint(RcsGraph* graph, RcsBody* body, RcsJoint* jnt)
 #else
     if (body->parentId != -1)    // The body has a predecessor
     {
-      RcsJoint* prevJnt = RcsBody_lastJointBeforeBodyById(graph, graph->bodies[body->parentId]);
+      RcsJoint* prevJnt = RcsBody_lastJointBeforeBodyById(graph, &graph->bodies[body->parentId]);
       body->jnt->prev = prevJnt;
     }
 #endif
@@ -2972,7 +2967,7 @@ void RcsGraph_relativeRigidBodyDoFs(const RcsGraph* self,
     }
     else
     {
-      A_BI_parent = &self->bodies[body->parentId]->A_BI;
+      A_BI_parent = &self->bodies[body->parentId].A_BI;
     }
   }
 #endif
@@ -3362,16 +3357,6 @@ void RcsGraph_fprintXML(FILE* out, const RcsGraph* self)
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
     RcsBody_fprintXML(out, BODY, self);
-  }
-
-  // Pedantic: Check for sensors that are not attached to a body of the graph.
-  // What to do with these?
-  RCSGRAPH_TRAVERSE_SENSORS(self)
-  {
-    RCHECK_MSG(RcsBody_isInGraph(SENSOR->body, self), "Sensor \"%s\" not "
-               "attached to any body (SENSOR->body is \"%s\")!",
-               SENSOR->name ? SENSOR->name : "NULL",
-               SENSOR->body ? SENSOR->body->bdyName : "NULL");
   }
 
   RcsGraph_fprintModelState(out, self, self->q);
@@ -4078,12 +4063,12 @@ void RcsGraph_insertBodyById(RcsGraph* graph, RcsBody* parent, RcsBody* body)
     return;
   }
 
-  RLOG(5, "Inserting %s with parent %s", body->bdyName, parent ? parent->bdyName : "NULL");
+  RLOG(0, "Inserting %s with parent %s", body->bdyName, parent ? parent->bdyName : "NULL");
   body->id = graph->nBodies;
 
   // TODO for now only bodies without joints are supported
-  RCHECK_MSG(RcsBody_numJoints(body) == 0, "for now only bodies without "
-             "joints are supported");
+  /* RCHECK_MSG(RcsBody_numJoints(body) == 0, "for now only bodies without " */
+  /*            "joints are supported"); */
 
   // TODO for now only bodies without children or sibbling are supported
   RCHECK_MSG(RcsBody_getPrev(graph, body) == NULL, "for now only bodies without sibbling are "
@@ -4101,7 +4086,7 @@ void RcsGraph_insertBodyById(RcsGraph* graph, RcsBody* parent, RcsBody* body)
 
   if (parent != NULL)
   {
-    RLOG(5, "---------------- Inserting body %s with parent %s",
+    RLOG(0, "---------------- Inserting body %s with parent %s",
          body->bdyName, parent->bdyName);
     body->parentId = parent->id;
 
@@ -4119,46 +4104,36 @@ void RcsGraph_insertBodyById(RcsGraph* graph, RcsBody* parent, RcsBody* body)
   }
   else   // parent is NULL - We are on the root level
   {
-    RLOG(5, "************* Inserting body %s with id=%d", body->bdyName, body->id);
+    RLOG(0, "************* Inserting body %s with id=%d", body->bdyName, body->id);
     body->parentId = -1;
 
-    if (graph->root != NULL)
+    //if (graph->root != NULL)
+    if (graph->nBodies>0)
     {
-      RLOG(5, "root is %s - next is %d", graph->root->bdyName, graph->root->nextId);
+      RLOG(0, "root is %s - next is %d", graph->root->bdyName, graph->root->nextId);
       RcsBody* b = graph->root;
       while (b->nextId!=-1)
       {
         b = RcsBody_getNext(graph, b);
       }
 
-      RLOG(5, "Found prev=%s of body %s", b->bdyName, body->bdyName);
+      RLOG(0, "Found prev=%s of body %s", b->bdyName, body->bdyName);
 
-      //if (b != body)
-      {
-        b->nextId = body->id;
-        body->prevId = b->id;
-      }
+      b->nextId = body->id;
+      body->prevId = b->id;
     }
-    else
-    {
-      graph->root = body;
-      RLOG(5, "Assigning root to %s", body->bdyName);
-    }
+    /* else */
+    /* { */
+    /*   graph->root = body; */
+    /*   RLOG(0, "Assigning root to %s", body->bdyName); */
+    /* } */
   }
 
   graph->nBodies++;
-  graph->bodies = (RcsBody**) realloc(graph->bodies, graph->nBodies*sizeof(RcsBody*));
-  graph->bodies[graph->nBodies-1] = body;
-  RLOG(5, "Inserted Body into Graph: name=%s id=%d parent=%d prev=%d next=%d first=%d last=%d",
+  graph->bodies = (RcsBody*) realloc(graph->bodies, graph->nBodies*sizeof(RcsBody));
+  graph->bodies[graph->nBodies-1] = *body;// \todo Dereferencing not so good here
+  graph->root = &graph->bodies[0];
+  RLOG(0, "Inserted Body into Graph: name=%s id=%d parent=%d prev=%d next=%d first=%d last=%d",
        body->bdyName, body->id, body->parentId, body->prevId, body->nextId,
        body->firstChildId, body->lastChildId);
-
-  RcsBody* parent2 = RcsBody_getParent(graph, body);
-  if (parent2)
-  {
-    RLOG(5, "Parent: name=%s id=%d parent=%d prev=%d next=%d first=%d last=%d",
-         parent2->bdyName, parent2->id, parent2->parentId, parent2->prevId, parent2->nextId,
-         parent2->firstChildId, parent2->lastChildId);
-    RCHECK(parent2==parent);
-  }
 }

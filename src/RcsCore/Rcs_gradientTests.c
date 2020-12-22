@@ -1261,7 +1261,7 @@ static void Rcs_setRndBdy1(RcsGraph* self)
       RcsBody_depthFirstTraversalGetNext(RCS_GRADIENTTESTS_BODY1);
   }
 #else
-  RCS_GRADIENTTESTS_BODY1 = self->bodies[rnd1];
+  RCS_GRADIENTTESTS_BODY1 = &self->bodies[rnd1];
 #endif
 
   RCHECK(RCS_GRADIENTTESTS_BODY1);
@@ -1290,7 +1290,7 @@ static void Rcs_setRndBdy2(RcsGraph* self)
       RcsBody_depthFirstTraversalGetNext(RCS_GRADIENTTESTS_BODY2);
   }
 #else
-  RCS_GRADIENTTESTS_BODY2 = self->bodies[rnd2];
+  RCS_GRADIENTTESTS_BODY2 = &self->bodies[rnd2];
 #endif
 
   RCHECK(RCS_GRADIENTTESTS_BODY2);
@@ -1319,7 +1319,7 @@ static void Rcs_setRndBdy3(RcsGraph* self)
       RcsBody_depthFirstTraversalGetNext(RCS_GRADIENTTESTS_BODY3);
   }
 #else
-  RCS_GRADIENTTESTS_BODY3 = self->bodies[rnd3];
+  RCS_GRADIENTTESTS_BODY3 = &self->bodies[rnd3];
 #endif
 
   RCHECK(RCS_GRADIENTTESTS_BODY3);

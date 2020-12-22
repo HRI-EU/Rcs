@@ -246,7 +246,7 @@ struct _RcsSensor
   RCSSENSOR_TYPE type;   ///< Sensor type, see enum RCSSENSOR_TYPE
   char* name;            ///< Name of the sensor
   RcsSensor* next;       ///< Pointer to next sensor, NULL otherwise
-  RcsBody* body;         ///< Pointer to the body the sensor is attached to
+  int bodyId;            ///< Id of the body the sensor is attached to
   HTr* offset;           ///< Relative transformation of the sensor mount point
   char* extraInfo;       ///< Pressure array data
   RcsTexel** texel;      ///< Array of texels for PPS sensors
@@ -258,7 +258,7 @@ struct _RcsSensor
 struct _RcsGraph
 {
   RcsBody* root;          ///< Pointer to root body
-  RcsBody** bodies;       ///< Array of pointers to bodies
+  RcsBody* bodies;        ///< Array of bodies
   RcsBody gBody[10];      ///< Generic bodies
   unsigned int dof;       ///< Number of degrees of freedom
   unsigned int nJ;        ///< Number of unconstrained degrees of freedom

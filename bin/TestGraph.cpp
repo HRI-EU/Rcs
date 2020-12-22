@@ -581,7 +581,7 @@ int main(int argc, char** argv)
                  BODY->parent ? BODY->parent->bdyName : "NULL");
 #else
             RLOG(0, "Parent is %s",
-                 BODY->parentId!=-1 ? graph->bodies[BODY->parentId]->bdyName : "NULL");
+                 BODY->parentId!=-1 ? graph->bodies[BODY->parentId].bdyName : "NULL");
 #endif
 
             REXEC(3)

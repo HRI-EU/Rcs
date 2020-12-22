@@ -373,6 +373,7 @@ void ShapeNode::ShapeUpdater::updateDynamicShapes()
 *******************************************************************************/
 ShapeNode::ShapeNode(const RcsShape* shape_, bool resizeable) : shape(shape_)
 {
+  RCHECK(shape);
   addShape(resizeable);
 
   if (shape->textureFile)

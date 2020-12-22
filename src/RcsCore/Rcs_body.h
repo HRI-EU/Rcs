@@ -68,6 +68,12 @@ void RcsBody_init(RcsBody* self);
 void RcsBody_destroy(RcsBody* self);
 
 /*! \ingroup RcsBodyFunctions
+ *  \brief Clears and deletes all internal RcsBody members (joints, shapes),
+ *         but does not delete the body itself.
+ */
+void RcsBody_clear(RcsBody* self);
+
+/*! \ingroup RcsBodyFunctions
  *  \brief Creates a shallow copy of the body (Shapes etc. are not copied).
  *         These members are left unchanged and need to be handled separately:
  *         - parent

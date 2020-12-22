@@ -463,7 +463,7 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
       body_it it = bdyMap.end();
       if (BODY->parentId!=-1)
       {
-        it = bdyMap.find(getGraph()->bodies[BODY->parentId]);
+        it = bdyMap.find(&getGraph()->bodies[BODY->parentId]);
       }
 #endif
 
@@ -1966,7 +1966,7 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
 
     if (body->parentId!=-1)
     {
-      it = bdyMap.find(getGraph()->bodies[body->parentId]);
+      it = bdyMap.find(&getGraph()->bodies[body->parentId]);
     }
 #endif
 

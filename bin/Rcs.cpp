@@ -460,20 +460,21 @@ int main(int argc, char** argv)
       RCSGRAPH_TRAVERSE_BODIES(graph)
       {
         printf("%d: %s - %d: %s\n", count1, BODY->bdyName,
-               graph->bodies[count1]->id, graph->bodies[count1]->bdyName);
+               graph->bodies[count1].id, graph->bodies[count1].bdyName);
         RcsBody* body = BODY;
         RLOG(0, "name=%s id=%d parent=%d prev=%d next=%d first=%d last=%d",
              body->bdyName, body->id, body->parentId, body->prevId, body->nextId,
              body->firstChildId, body->lastChildId);
         count1++;
       }
+      RLOG(0, "Done traversal:");
 
-      // RLOG(0, "New traversal:");
-      // count1 = 0;
-      // RCSGRAPH_TRAVERSE_BODIES2(graph)
-      // {
-      //   printf("%d: %s\n", count1++, BODY->bdyName);
-      // }
+      RLOG(0, "New traversal:");
+      count1 = 0;
+      for (unsigned int i=0; i<graph->nBodies; ++i)
+      {
+        printf("%d: %s\n", i, graph->bodies[i].bdyName);
+      }
 
       if (graph == NULL)
       {

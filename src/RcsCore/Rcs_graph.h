@@ -145,7 +145,7 @@ RcsBody* RcsBody_getLastChild(const RcsBody* body);
        BODY = RcsBody_depthFirstTraversalGetNext(BODY))
 #else
 #define RCSGRAPH_TRAVERSE_BODIES(graph) \
-  for (RcsBody* BODY = (graph)->bodies[0]; \
+  for (RcsBody* BODY = &(graph)->bodies[0]; \
        BODY; \
        BODY = RcsBody_depthFirstTraversalGetNextById(graph, BODY))
 #endif
