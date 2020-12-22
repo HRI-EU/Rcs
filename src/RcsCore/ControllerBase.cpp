@@ -1933,7 +1933,7 @@ bool Rcs::ControllerBase::add(const ControllerBase* other,
 
       if (otherTasks[i]->getEffector())
       {
-        newName.assign(otherTasks[i]->getEffector()->name);
+        newName.assign(otherTasks[i]->getEffector()->bdyName);
       }
 
       if (suffix)
@@ -1953,7 +1953,7 @@ bool Rcs::ControllerBase::add(const ControllerBase* other,
 
       if (otherTasks[i]->getRefBody())
       {
-        newName.assign(otherTasks[i]->getRefBody()->name);
+        newName.assign(otherTasks[i]->getRefBody()->bdyName);
       }
 
       if (suffix)
@@ -1973,7 +1973,7 @@ bool Rcs::ControllerBase::add(const ControllerBase* other,
 
       if (otherTasks[i]->getRefFrame())
       {
-        newName.assign(otherTasks[i]->getRefFrame()->name);
+        newName.assign(otherTasks[i]->getRefFrame()->bdyName);
       }
 
       if (suffix)

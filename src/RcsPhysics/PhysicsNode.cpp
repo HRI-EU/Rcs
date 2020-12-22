@@ -518,7 +518,7 @@ void Rcs::PhysicsNode::updateTransformPointers()
   RCSGRAPH_TRAVERSE_BODIES(physicsNd->getGraphPtr())
   {
     const RcsBody* simBdy = RcsGraph_getBodyByName(modelNd->getGraphPtr(),
-                                                   BODY->name);
+                                                   BODY->bdyName);
     const HTr* physicsTrf = sim->getPhysicsTransformPtr(simBdy);
     physicsNd->setBodyTransformPtr(BODY, physicsTrf);
   }
@@ -544,7 +544,7 @@ void Rcs::PhysicsNode::addBodyNode(const RcsBody* body)
   modelNd->addBodyNode(body, 1.0, false);
   BodyNode* node = physicsNd->addBodyNode(body, 1.0, false);
 
-  const RcsBody* simBdy = RcsGraph_getBodyByName(sim->getGraph(), body->name);
+  const RcsBody* simBdy = RcsGraph_getBodyByName(sim->getGraph(), body->bdyName);
   const HTr* physicsTrf = sim->getPhysicsTransformPtr(simBdy);
   node->setTransformPtr(physicsTrf);
 }

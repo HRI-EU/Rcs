@@ -273,13 +273,13 @@ Rcs::TaskGenericEuler3D::TaskGenericEuler3D(RcsGraph* graph_,
   if (effector != NULL)
   {
     taskName += std::string(" ");
-    taskName += std::string(effector->name);
+    taskName += std::string(effector->bdyName);
   }
 
   if (refBdy != NULL)
   {
     taskName += std::string("-");
-    taskName += std::string(refBdy->name);
+    taskName += std::string(refBdy->bdyName);
   }
 
   setName(taskName);

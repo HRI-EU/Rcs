@@ -126,8 +126,8 @@ Rcs::TaskCollision::TaskCollision(const std::string& className_,
       REXEC(1)
       {
         RMSG("Pair %d: \"%s\" - \"%s\"", nPairs,
-             this->pair[nPairs]->b1->name,
-             this->pair[nPairs]->b2->name);
+             this->pair[nPairs]->b1->bdyName,
+             this->pair[nPairs]->b2->bdyName);
         RMSG("DistanceThreshold = %g", this->pair[nPairs]->dThreshold);
         RMSG("Distance weight is %g", this->pair[nPairs]->weight);
       }
@@ -194,8 +194,8 @@ void Rcs::TaskCollision::copyCollisionModel(RcsPair** srcPair,
     if (newGraph)
     {
       this->pair[nPairs]->graph = newGraph;
-      this->pair[nPairs]->b1 = RcsGraph_getBodyByName(newGraph, PAIR->b1->name);
-      this->pair[nPairs]->b2 = RcsGraph_getBodyByName(newGraph, PAIR->b2->name);
+      this->pair[nPairs]->b1 = RcsGraph_getBodyByName(newGraph, PAIR->b1->bdyName);
+      this->pair[nPairs]->b2 = RcsGraph_getBodyByName(newGraph, PAIR->b2->bdyName);
     }
     else
     {

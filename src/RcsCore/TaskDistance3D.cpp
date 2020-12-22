@@ -93,8 +93,8 @@ Rcs::TaskDistance3D::TaskDistance3D(RcsGraph* graph_,
 {
   this->graph = graph_;
   setClassName("Distance3D");
-  setName("Dist3D " + std::string(effector ? effector->name : "NULL") + "-"
-          + std::string(refBdy ? refBdy->name : "NULL"));
+  setName("Dist3D " + std::string(effector ? effector->bdyName : "NULL") + "-"
+          + std::string(refBdy ? refBdy->bdyName : "NULL"));
   setDim(3);
   setEffector(effector);
   setRefBody(refBdy);

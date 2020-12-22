@@ -118,7 +118,7 @@ Rcs::TaskInclination::TaskInclination(const std::string& className,
 
     for (size_t i=0; i<effectorVec.size(); ++i)
     {
-      RMSG("Effector %zu is \"%s\"", i, effectorVec[i]->name);
+      RMSG("Effector %zu is \"%s\"", i, effectorVec[i]->bdyName);
     }
   }
 
@@ -138,7 +138,7 @@ Rcs::TaskInclination::TaskInclination(const TaskInclination& copyFromMe,
   for (size_t i=0; i<copyFromMe.effectorVec.size(); ++i)
   {
     const RcsBody* bdy =
-      RcsGraph_getBodyByName(newGraph, copyFromMe.effectorVec[i]->name);
+      RcsGraph_getBodyByName(newGraph, copyFromMe.effectorVec[i]->bdyName);
     this->effectorVec.push_back(bdy);
   }
 }

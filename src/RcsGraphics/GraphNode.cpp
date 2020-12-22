@@ -199,12 +199,12 @@ bool GraphNode::init(const RcsGraph* g, bool resizeable,
     // Add target setters
     RCSGRAPH_TRAVERSE_BODIES(this->graph)
     {
-      RLOG(5, "Scanning body \"%s\" for rigid body joints", BODY->name);
+      RLOG(5, "Scanning body \"%s\" for rigid body joints", BODY->bdyName);
 
       /// \todo: Implement for rigid bodies with parent body
       if (BODY->rigid_body_joints==true)
       {
-        RLOG(5, "Adding TargetSetter for body %s", BODY->name);
+        RLOG(5, "Adding TargetSetter for body %s", BODY->bdyName);
 
         RCHECK(BODY->jnt);
         double* x = &graph->q->ele[BODY->jnt->jointIndex];
@@ -696,13 +696,13 @@ bool GraphNode::removeBodyNode(const RcsBody* body)
       bool success = switchNode->removeChild(node);
       if (success == false)
       {
-        RLOG(4, "BodyNode %s is not child of GraphNode - skipping", body->name);
+        RLOG(4, "BodyNode %s is not child of GraphNode - skipping", body->bdyName);
       }
       return true;
     }
   }
 
-  RLOG(4, "BodyNode %s is not child of GraphNode - skipping", body->name);
+  RLOG(4, "BodyNode %s is not child of GraphNode - skipping", body->bdyName);
 
   return false;
 }
@@ -730,14 +730,14 @@ bool GraphNode::removeBodyNode(BodyNode* bdyNode)
       if (success == false)
       {
         RLOG(4, "BodyNode %s is not child of GraphNode - skipping",
-             bdyNode->body()->name);
+             bdyNode->body()->bdyName);
       }
       return true;
     }
   }
 
   RLOG(4, "BodyNode %s is not child of GraphNode - skipping",
-       bdyNode->body()->name);
+       bdyNode->body()->bdyName);
 
   return false;
 }

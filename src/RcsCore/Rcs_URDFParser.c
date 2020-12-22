@@ -220,7 +220,7 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
       else
       {
         RLOG(4, "Texture file \"%s\" in body \"%s\" not found!",
-             str, body->name);
+             str, body->bdyName);
         shape->textureFile = NULL;
       }
     }
@@ -289,7 +289,7 @@ static RcsBody* parseBodyURDF(xmlNode* node)
   RLOG(5, "Creating body \"%s\"", body->xmlName);
 
   // Fully qualified name
-  body->name = String_clone(body->xmlName);
+  snprintf(body->bdyName, RCS_MAX_NAMELEN, "%s", body->xmlName);
 
   // Go one level deeper
   node = node->children;
@@ -361,7 +361,7 @@ static RcsBody* parseBodyURDF(xmlNode* node)
   if ((Mat3d_getFrobeniusnorm(body->Inertia.rot)>0.0) && (body->m<=0.0))
   {
     RLOG(4, "You specified a non-zero inertia but a zero mass for body \"%s\"."
-         " Shame on you!", body->name);
+         " Shame on you!", body->bdyName);
   }
 
   // Rigid body joints not supported
@@ -375,7 +375,7 @@ static RcsBody* parseBodyURDF(xmlNode* node)
     if (numCollisionShapes == 0)
     {
       RLOG(1, "You specified a non-zero mass but no collision shapes for body "
-           "\"%s\". It will not work in physics simulations", body->name);
+           "\"%s\". It will not work in physics simulations", body->bdyName);
       body->physicsSim = RCSBODY_PHYSICS_NONE;
     }
   }
@@ -417,7 +417,7 @@ static RcsBody* findBdyByNameNoCase(const char* name, RcsBody** bdyVec)
 {
   while (*bdyVec)
   {
-    if (STRCASEEQ(name, (*bdyVec)->name))
+    if (STRCASEEQ(name, (*bdyVec)->bdyName))
     {
       return *bdyVec;
     }
@@ -909,15 +909,12 @@ RcsBody* RcsGraph_rootBodyFromURDFFile(const char* filename,
     RcsBody* b = parseBodyURDF(linkNode);
     if (b != NULL)
     {
-      RLOG(5, "Adding body %d: %s", bdyIdx, b->name);
+      RLOG(5, "Adding body %d: %s", bdyIdx, b->bdyName);
       if (suffix != NULL)
       {
-        size_t nameLen = strlen(b->name) + strlen(suffix) + 1;
-        char* newName = RNALLOC(nameLen, char);
-        strcpy(newName, b->name);
-        strcat(newName, suffix);
-        String_copyOrRecreate(&b->name, newName);
-        RFREE(newName);
+        char newName[RCS_MAX_NAMELEN];
+        snprintf(newName, RCS_MAX_NAMELEN, "%s%s", b->name, suffix);
+        snprintf(b->bdyName, RCS_MAX_NAMELEN, newName);
       }
 
       RCHECK(bdyIdx<numLinks);
@@ -1118,13 +1115,12 @@ RcsGraph* RcsGraph_fromURDFFile(const char* configFile)
   for (int i = 0; i < 10; i++)
   {
     memset(&self->gBody[i], 0, sizeof(RcsBody));
-    self->gBody[i].name      = RNALLOC(64, char);
     self->gBody[i].xmlName   = RNALLOC(64, char);
     self->gBody[i].suffix    = RNALLOC(64, char);
     HTr_setIdentity(&self->gBody[i].A_BI);
     HTr_setIdentity(&self->gBody[i].A_BP);
     HTr_setZero(&self->gBody[i].Inertia);
-    sprintf(self->gBody[i].name, "GenericBody%d", i);
+    snprintf(self->gBody[i].bdyName, RCS_MAX_NAMELEN, "GenericBody%d", i);
   }
 
   // Order joint indices according to depth-first traversal and compute

@@ -213,17 +213,17 @@ Rcs::Task::Task(const Task& copyFromMe, RcsGraph* newGraph):
   {
     if (copyFromMe.getEffector() != NULL)
     {
-      setEffector(RcsGraph_getBodyByName(newGraph, copyFromMe.ef->name));
+      setEffector(RcsGraph_getBodyByName(newGraph, copyFromMe.ef->bdyName));
     }
 
     if (copyFromMe.getRefBody() != NULL)
     {
-      setRefBody(RcsGraph_getBodyByName(newGraph, copyFromMe.refBody->name));
+      setRefBody(RcsGraph_getBodyByName(newGraph, copyFromMe.refBody->bdyName));
     }
 
     if (copyFromMe.getRefFrame() != NULL)
     {
-      setRefFrame(RcsGraph_getBodyByName(newGraph, copyFromMe.refFrame->name));
+      setRefFrame(RcsGraph_getBodyByName(newGraph, copyFromMe.refFrame->bdyName));
     }
   }
   else
@@ -296,17 +296,17 @@ void Rcs::Task::print() const
 
   if (getEffector())
   {
-    printf("Effector: \"%s\"\n", getEffector()->name);
+    printf("Effector: \"%s\"\n", getEffector()->bdyName);
   }
 
   if (getRefBody())
   {
-    printf("Reference body: \"%s\"\n", getRefBody()->name);
+    printf("Reference body: \"%s\"\n", getRefBody()->bdyName);
   }
 
   if (getRefFrame())
   {
-    printf("Reference frame: \"%s\"\n", getRefFrame()->name);
+    printf("Reference frame: \"%s\"\n", getRefFrame()->bdyName);
   }
 }
 
@@ -1319,17 +1319,17 @@ void Rcs::Task::toXMLBody(FILE* out) const
 {
   if (getEffector())
   {
-    fprintf(out, " effector=\"%s\"", getEffector()->name);
+    fprintf(out, " effector=\"%s\"", getEffector()->bdyName);
   }
 
   if (getRefBody())
   {
-    fprintf(out, " refBdy=\"%s\"", getRefBody()->name);
+    fprintf(out, " refBdy=\"%s\"", getRefBody()->bdyName);
   }
 
   if (getRefFrame() && (getRefFrame()!= getRefBody()))
   {
-    fprintf(out, " refFrame=\"%s\"", getRefFrame()->name);
+    fprintf(out, " refFrame=\"%s\"", getRefFrame()->bdyName);
   }
 
 }

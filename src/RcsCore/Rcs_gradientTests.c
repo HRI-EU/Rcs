@@ -377,7 +377,7 @@ static void test_qprop_ns(double* f, const double* x, void* params)
   if (det < eps)
   {
     RLOG(1, "Determinant %g < %g - setting gradient of body %s to 0",
-         det, eps, b ? b->name : "NULL");
+         det, eps, b ? b->bdyName : "NULL");
     MatNd fA = MatNd_fromPtr(nq, 1, f);
     MatNd_setZero(&fA);
     MatNd_destroy(J);
@@ -453,7 +453,7 @@ static void test_dqprop_ns(double* f, const double* x, void* params)
   if (det < eps)
   {
     RLOG(1, "Determinant %g < %g - setting gradient of body %s to 0",
-         det, eps, b ? b->name : "NULL");
+         det, eps, b ? b->bdyName : "NULL");
     MatNd fA = MatNd_fromPtr(nq, nq, f);
     MatNd_setZero(&fA);
     MatNd_destroy(J);
@@ -747,7 +747,7 @@ STATIC_FUNC void test_qprop_ts3(double* f, const double* x, void* params)
   if (det < eps)
   {
     RLOG(1, "Determinant %g < %g - setting gradient of body %s to 0",
-         det, eps, b ? b->name : "NULL");
+         det, eps, b ? b->bdyName : "NULL");
     MatNd_setZero(&fA);
     MatNd_destroy(e);
     MatNd_destroy(J);
@@ -819,7 +819,7 @@ STATIC_FUNC void test_dqprop_ts3(double* f, const double* x, void* params)
   if (det < eps)
   {
     RLOG(1, "Determinant %g < %g - setting gradient of body %s to 0",
-         det, eps, b ? b->name : "NULL");
+         det, eps, b ? b->bdyName : "NULL");
     MatNd fA = MatNd_fromPtr(nq, nq, f);
     MatNd_setZero(&fA);
     MatNd_destroy(e);
@@ -958,7 +958,7 @@ STATIC_FUNC void test_jacobianPinv(double* f, const double* x, void* params)
   if (det < eps)
   {
     RLOG(4, "Determinant %g < %g - setting gradient of body %s to 0",
-         det, eps, b ? b->name : "NULL");
+         det, eps, b ? b->bdyName : "NULL");
     MatNd_setZero(&J_pinv);
   }
 
@@ -1016,7 +1016,7 @@ STATIC_FUNC void test_hessianPinv(double* f, const double* x, void* params)
   if (det < eps)
   {
     RLOG(4, "Determinant %g < %g - setting gradient of body %s to 0",
-         det, eps, b ? b->name : "NULL");
+         det, eps, b ? b->bdyName : "NULL");
     memset(f, 0, nx * nq * nq * sizeof(double));
     MatNd_destroy(J);
     MatNd_destroy(WJt);
@@ -1092,7 +1092,7 @@ STATIC_FUNC void test_jacobianPinv2(double* f, const double* x, void* params)
   if (det == 0.0)
   {
     RLOG(1, "Determinant is 0 - setting gradient of body %s to 0",
-         b ? b->name : "NULL");
+         b ? b->bdyName : "NULL");
     MatNd_setZero(&J_pinv);
   }
 
@@ -1157,7 +1157,7 @@ STATIC_FUNC void test_hessianPinv2(double* f, const double* x, void* params)
   if (det == 0.0)
   {
     RLOG(1, "Determinant is 0 - setting gradient of body %s to 0",
-         b ? b->name : "NULL");
+         b ? b->bdyName : "NULL");
     memset(f, 0, nx * nq * nq * sizeof(double));
     MatNd_destroy(J);
     MatNd_destroy(JtW);
@@ -2010,8 +2010,8 @@ static void test_distanceH(double* f, const double* x, void* params)
       RcsBody_numDistanceShapes(RCS_GRADIENTTESTS_BODY2) == 0)
   {
     RLOG(4, "[%s - %s]: Distance skipped, no shapes found",
-         RCS_GRADIENTTESTS_BODY1->name,
-         RCS_GRADIENTTESTS_BODY2->name);
+         RCS_GRADIENTTESTS_BODY1->bdyName,
+         RCS_GRADIENTTESTS_BODY2->bdyName);
     return;
   }
 
@@ -2447,9 +2447,9 @@ bool Rcs_gradientTestGraph(RcsGraph* graph, const MatNd* q, bool verbose)
     RMSG("\n\n\t\tBodies \"%s\" - \"%s\" - \"%s\"\n\t\t%d dofs, distance is"
          " %f\n\t\tbodyPt1 (%g %g %g) \n\t\tbodyPt2 (%g %g %g)\n\t\t"
          "Random index: %d\n",
-         RCS_GRADIENTTESTS_BODY1->name,
-         RCS_GRADIENTTESTS_BODY2->name,
-         RCS_GRADIENTTESTS_BODY3->name,
+         RCS_GRADIENTTESTS_BODY1->bdyName,
+         RCS_GRADIENTTESTS_BODY2->bdyName,
+         RCS_GRADIENTTESTS_BODY3->bdyName,
          graph->nJ, d,
          RCS_GRADIENTTESTS_BODYPT1[0],
          RCS_GRADIENTTESTS_BODYPT1[1],

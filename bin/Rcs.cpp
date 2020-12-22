@@ -459,11 +459,11 @@ int main(int argc, char** argv)
       int count1 = 0;
       RCSGRAPH_TRAVERSE_BODIES(graph)
       {
-        printf("%d: %s - %d: %s\n", count1, BODY->name,
-               graph->bodies[count1]->id, graph->bodies[count1]->name);
+        printf("%d: %s - %d: %s\n", count1, BODY->bdyName,
+               graph->bodies[count1]->id, graph->bodies[count1]->bdyName);
         RcsBody* body = BODY;
         RLOG(0, "name=%s id=%d parent=%d prev=%d next=%d first=%d last=%d",
-             body->name, body->id, body->parentId, body->prevId, body->nextId,
+             body->bdyName, body->id, body->parentId, body->prevId, body->nextId,
              body->firstChildId, body->lastChildId);
         count1++;
       }
@@ -472,7 +472,7 @@ int main(int argc, char** argv)
       // count1 = 0;
       // RCSGRAPH_TRAVERSE_BODIES2(graph)
       // {
-      //   printf("%d: %s\n", count1++, BODY->name);
+      //   printf("%d: %s\n", count1++, BODY->bdyName);
       // }
 
       if (graph == NULL)
@@ -708,9 +708,9 @@ int main(int argc, char** argv)
               RMSG("No BodyNode found under mouse");
               continue;
             }
-            RMSG("Removing body \"%s\" under mouse", bNd->body()->name);
+            RMSG("Removing body \"%s\" under mouse", bNd->body()->bdyName);
             pthread_mutex_lock(&graphLock);
-            bool ok = RcsGraph_removeBody(graph, bNd->body()->name, NULL, 0);
+            bool ok = RcsGraph_removeBody(graph, bNd->body()->bdyName, NULL, 0);
             if (ok)
             {
               ok = gn->removeBodyNode(bNd);
@@ -736,7 +736,7 @@ int main(int argc, char** argv)
             RCSGRAPH_TRAVERSE_BODIES(graph)
             {
               bool success = RcsBody_removeJoints(BODY, graph);
-              RLOG(1, "Removing all joints of a body %s %s", BODY->name,
+              RLOG(1, "Removing all joints of a body %s %s", BODY->bdyName,
                    success ? "SUCCEEDED" : "FAILED");
             }
             pthread_mutex_unlock(&graphLock);
@@ -781,8 +781,8 @@ int main(int argc, char** argv)
             RcsBody* child = RcsGraph_getBodyByName(graph, childName.c_str());
             RcsBody* parent = RcsGraph_getBodyByName(graph, parentName.c_str());
             RLOG(0, "Attaching \"%s\" (%s) to \"%s\" (%s)",
-                 child ? child->name : "NULL", childName.c_str(),
-                 parent ? parent->name : "NULL", parentName.c_str());
+                 child ? child->bdyName : "NULL", childName.c_str(),
+                 parent ? parent->bdyName : "NULL", parentName.c_str());
 
 #ifdef OLD_TOPO
             bool success = RcsBody_attachToBody(graph, child, parent, NULL);
@@ -829,7 +829,7 @@ int main(int argc, char** argv)
               bool success = RcsBody_boxify(BODY, RCSSHAPE_COMPUTE_GRAPHICS+
                                             RCSSHAPE_COMPUTE_PHYSICS);
               RLOG(0, "%s boxifying body %s", success ? "SUCCESS" : "FAILURE",
-                   BODY->name);
+                   BODY->bdyName);
             }
             gn = new Rcs::GraphNode(graph);
             pthread_mutex_unlock(&graphLock);
@@ -890,7 +890,7 @@ int main(int argc, char** argv)
             {
               if (BODY->jnt==NULL && BODY!=graph->root)
               {
-                printf("   %s\n", BODY->name);
+                printf("   %s\n", BODY->bdyName);
                 nBodiesMergeable++;
               }
             }
@@ -957,7 +957,7 @@ int main(int argc, char** argv)
             RCSGRAPH_TRAVERSE_BODIES(graph)
             {
               bool success = RcsBody_removeJoints(BODY, graph);
-              RMSG("Removing all joints of a body %s %s", BODY->name,
+              RMSG("Removing all joints of a body %s %s", BODY->bdyName,
                    success ? "SUCCEEDED" : "FAILED");
             }
 
@@ -969,15 +969,15 @@ int main(int argc, char** argv)
 
             while (first)
             {
-              bool success = RcsBody_mergeWithParent(graph, first->name);
+              bool success = RcsBody_mergeWithParent(graph, first->bdyName);
               RMSG("%s to merge body %s with root",
-                   success ? "SUCCEEDED" : "FAILED", first->name);
+                   success ? "SUCCEEDED" : "FAILED", first->bdyName);
 #ifdef OLD_TOPO
               first = RcsBody_depthFirstTraversalGetNext(graph->root);
 #else
               first = RcsBody_depthFirstTraversalGetNextById(graph, graph->root);
 #endif
-              RMSG("Next body to merge: \"%s\"", first ? first->name : "NULL");
+              RMSG("Next body to merge: \"%s\"", first ? first->bdyName : "NULL");
               RPAUSE();
             }
 
@@ -1388,7 +1388,7 @@ int main(int argc, char** argv)
           }
           pthread_mutex_unlock(&graphLock);
 
-          RMSG("%s adding body \"%s\"", ok ? "SUCCEEDED" : "FAILED", bdy->name);
+          RMSG("%s adding body \"%s\"", ok ? "SUCCEEDED" : "FAILED", bdy->bdyName);
 
           bodyAdded = true;
         }
@@ -1460,7 +1460,7 @@ int main(int argc, char** argv)
             RMSG("No BodyNode found under mouse");
             continue;
           }
-          std::string bdyName = std::string(bNd->body()->name);
+          std::string bdyName = std::string(bNd->body()->bdyName);
 
           RMSG("Removing body \"%s\" under mouse", bdyName.c_str());
           pthread_mutex_lock(&graphLock);
@@ -1492,7 +1492,7 @@ int main(int argc, char** argv)
             RMSG("No BodyNode found under mouse");
             continue;
           }
-          std::string bdyName = std::string(bNd->body()->name);
+          std::string bdyName = std::string(bNd->body()->bdyName);
 
           RMSG("Deactivating body \"%s\" under mouse", bdyName.c_str());
           pthread_mutex_lock(&graphLock);
@@ -1513,7 +1513,7 @@ int main(int argc, char** argv)
             RMSG("No BodyNode found under mouse");
             continue;
           }
-          std::string bdyName = std::string(bNd->body()->name);
+          std::string bdyName = std::string(bNd->body()->bdyName);
 
           RMSG("Activating body \"%s\" under mouse", bdyName.c_str());
           pthread_mutex_lock(&graphLock);
@@ -2234,7 +2234,7 @@ int main(int argc, char** argv)
             RMSG("No BodyNode found under mouse");
             continue;
           }
-          std::string bdyName = std::string(bNd->body()->name);
+          std::string bdyName = std::string(bNd->body()->bdyName);
 
           RMSG("Removing body \"%s\" under mouse", bdyName.c_str());
           pthread_mutex_lock(&graphLock);
@@ -2282,7 +2282,7 @@ int main(int argc, char** argv)
 
           RcsBody* lb = RcsGraph_linkGenericBody(controller.getGraph(),
                                                  0, bdyName.c_str());
-          RMSG("Linked against \"%s\"", lb ? lb->name : "NULL");
+          RMSG("Linked against \"%s\"", lb ? lb->bdyName : "NULL");
         }
         else if (kc && kc->getAndResetKey('v'))
         {

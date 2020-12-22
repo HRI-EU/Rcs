@@ -115,7 +115,7 @@ BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
   initializeDebugInfo(false)
 {
   RCHECK(this->bdy);
-  setName(this->bdy->name ? this->bdy->name : "Unnamed body");
+  setName(this->bdy->bdyName ? this->bdy->bdyName : "Unnamed body");
 
   _nodeSwitch = new osg::Switch();
   addChild(_nodeSwitch.get());
@@ -690,7 +690,7 @@ const HTr* BodyNode::getTransformPtr() const
  ******************************************************************************/
 void BodyNode::setTransformPtr(const HTr* A_BI_)
 {
-  RCHECK_MSG(A_BI_ != NULL, "BodyNode \"%s\": pointer is NULL", body()->name);
+  RCHECK_MSG(A_BI_ != NULL, "BodyNode \"%s\": pointer is NULL", body()->bdyName);
   this->A_BI = A_BI_;
 }
 
@@ -802,7 +802,7 @@ void BodyNode::updateDynamicMeshes()
 
     if (meshDat == NULL)
     {
-      RLOG(1, "Body \"%s\" has mesh shape without RcsMeshData", body()->name);
+      RLOG(1, "Body \"%s\" has mesh shape without RcsMeshData", body()->bdyName);
       continue;
     }
 

@@ -59,7 +59,7 @@ Rcs::IkSolverConstraintRMR::IkSolverConstraintRMR(Rcs::ControllerBase* ctrl) :
     RCSPAIR_TRAVERSE(controller->getCollisionMdl()->pair)
     {
       RLOG(5, "Adding distance constraint between \"%s\" and \"%s\"",
-           PAIR->b1->name, PAIR->b2->name);
+           PAIR->b1->bdyName, PAIR->b2->bdyName);
       Task* ti = new TaskDistance(controller->getGraph(), PAIR->b1, PAIR->b2);
       RCHECK(ti->getDim() == 1);
       controller->add(ti);
@@ -222,7 +222,7 @@ void Rcs::IkSolverConstraintRMR::solveRightInverse(MatNd* dq_des,
         dx->ele[xIdx] = (penetration > baumgarteLimit) ? 0.9*(penetration-baumgarteLimit)+0.1*baumgarteLimit : 0.0;
         nViolations++;
         RLOG(5, "Applying distance constraint %s - %s at violation depth %f mm",
-             distTsk->getEffector()->name, distTsk->getRefBody()->name,
+             distTsk->getEffector()->bdyName, distTsk->getRefBody()->bdyName,
              1000.0*(x-eps));
       }
     }   // "Distance"

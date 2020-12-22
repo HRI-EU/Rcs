@@ -197,8 +197,8 @@ RcsBody* Rcs::TaskPositionTarget3D::createBody()
 {
   RcsBody* body = RcsBody_create();
 
-  body->name        = String_clone("TaskPositionTarget3D::refFrame");
-  body->xmlName     = String_clone(body->name);
+  snprintf(body->bdyName, RCS_MAX_NAMELEN, "%s", "TaskPositionTarget3D::refFrame");
+  body->xmlName     = String_clone(body->bdyName);
   body->suffix      = String_clone(" ");
 
   return body;

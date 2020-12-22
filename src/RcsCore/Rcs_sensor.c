@@ -302,7 +302,7 @@ RcsSensor* RcsSensor_createFromXML(xmlNode* node, RcsBody* parentBody)
   char name[100] = "unnamed sensor";
   getXMLNodePropertyStringN(node, "name", name, 100);
   RLOG(5, "found new sensor node \"%s\" attached to body \"%s\"",
-       name, parentBody ? parentBody->name : "NULL");
+       name, parentBody ? parentBody->bdyName : "NULL");
 
   // read sensor type
   char buffer[100];
@@ -430,12 +430,12 @@ RcsSensor* RcsSensor_clone(const RcsSensor* src, const RcsGraph* dstGraph)
     return NULL;
   }
 
-  RcsBody* myMountBody = RcsGraph_getBodyByName(dstGraph, src->body->name);
+  RcsBody* myMountBody = RcsGraph_getBodyByName(dstGraph, src->body->bdyName);
 
   if (myMountBody==NULL)
   {
     RLOG(4, "Couldn't find mount body \"%s\" for sensor \"%s\" in new graph"
-         "- skip cloning", src->body->name, src->name);
+         "- skip cloning", src->body->bdyName, src->name);
     return NULL;
   }
 
@@ -604,7 +604,7 @@ void RcsSensor_fprint(FILE* out, const RcsSensor* s)
   fprintf(out, "[RcsSensor_fprint():%d] \n\tSensor \"%s\" of type \"%s\"\n",
           __LINE__, s->name, RcsSensor_name(s->type));
 
-  fprintf(out, "\tAttached to body \"%s\"\n", s->body ? s->body->name : "NULL");
+  fprintf(out, "\tAttached to body \"%s\"\n", s->body ? s->body->bdyName : "NULL");
 
   if (s->offset != NULL)
   {

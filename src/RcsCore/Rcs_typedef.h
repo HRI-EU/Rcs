@@ -44,7 +44,9 @@ extern "C" {
 
 #include "Rcs_graph.h"
 
-#define RCS_GRAVITY (9.81)
+#define RCS_GRAVITY          (9.81)
+#define RCS_MAX_NAMELEN      (64)
+#define RCS_MAX_FILENAMELEN  (256)
 
 typedef enum
 {
@@ -187,20 +189,19 @@ typedef enum
 
 struct _RcsBody
 {
-  double m;               ///< Body mass
-  bool rigid_body_joints; ///< Body is linked to parent with 6 rigid body dof
-  int physicsSim;         ///< see enum RCSBODY_PHYSICS_SIMULATION_TYPE
-  double x_dot[3];        ///< Bodie's linear velocity in world coordinates
-  double omega[3];        ///< Bodie's angular velocity in world coordinates
-  double confidence;
+  double m;                      ///< Body mass
+  bool rigid_body_joints;        ///< Body is linked to parent with 6 rigid body dof
+  int physicsSim;                ///< see enum RCSBODY_PHYSICS_SIMULATION_TYPE
+  double x_dot[3];               ///< Bodie's linear velocity in world coordinates
+  double omega[3];               ///< Bodie's angular velocity in world coordinates
+  double confidence;             ///< Obsolete
+  char bdyName[RCS_MAX_NAMELEN]; ///< Fully qualified name of the body with suffix
+  char* xmlName;                 ///< Name of the body as indicated in xml file
+  char* suffix;                  ///< Group suffix of the body
 
-  char* name;             ///< Fully qualified name of the body with suffix
-  char* xmlName;          ///< Name of the body as indicated in xml file
-  char* suffix;           ///< Group suffix of the body
-
-  HTr A_BP;               ///< Relative transformation
-  HTr A_BI;               ///< Absolute transformation
-  HTr Inertia;            ///< Inertia tensor and local COG vector
+  HTr A_BP;                      ///< Relative transformation
+  HTr A_BI;                      ///< Absolute transformation
+  HTr Inertia;                   ///< Inertia tensor and local COG vector
 
 #ifdef OLD_TOPO
   RcsBody* parent;        ///< Parent body

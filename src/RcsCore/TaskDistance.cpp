@@ -95,12 +95,12 @@ Rcs::TaskDistance::TaskDistance(RcsGraph* graph_,
   RCHECK(refBdy);
   RCHECK_MSG(nQueries>0, "The body pair %s - %s has no distance query. Did "
              "you include any shape with enabled distance flag?",
-             effector->name, refBdy->name);
+             effector->bdyName, refBdy->bdyName);
 
   this->graph = graph_;
   setClassName("Distance");
-  setName("Distance " + std::string(effector ? effector->name : "NULL") + "-"
-          + std::string(refBdy ? refBdy->name : "NULL"));
+  setName("Distance " + std::string(effector ? effector->bdyName : "NULL") + "-"
+          + std::string(refBdy ? refBdy->bdyName : "NULL"));
   setEffector(effector);
   setRefBody(refBdy);
   setRefFrame(refFrame ? refFrame : refBdy);

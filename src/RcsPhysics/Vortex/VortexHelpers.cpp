@@ -650,7 +650,7 @@ Vx::VxConstraint* Rcs::createFixedJoint(Vx::VxPart* vxParent,
       if ((SENSOR->type==RCSSENSOR_LOAD_CELL) && (SENSOR->body==child))
       {
         RCHECK_MSG(loadCell==NULL, "Body \"%s\" has more than 1 load cells "
-                   "attached", child->name);
+                   "attached", child->bdyName);
 
         loadCell = SENSOR;
 

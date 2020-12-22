@@ -207,7 +207,7 @@ Rcs::TaskJoints::TaskJoints(const RcsBody* effector,  RcsGraph* graph):
   setClassName("Joints");
   setEffector(effector);
   const unsigned int nJoints = RcsBody_numJoints(effector);
-  RCHECK_MSG(nJoints>0, "Body \"%s\"", effector ? effector->name : "NULL");
+  RCHECK_MSG(nJoints>0, "Body \"%s\"", effector ? effector->bdyName : "NULL");
 
   const RcsJoint* jEf = effector->jnt;
 
@@ -229,7 +229,7 @@ Rcs::TaskJoints::TaskJoints(const RcsBody* effector, const RcsBody* refBdy,
   setEffector(effector);
   setRefBody(refBdy);
   const unsigned int nJoints = RcsBody_numJoints(effector);
-  RCHECK_MSG(nJoints > 0, "Body \"%s\"", effector ? effector->name : "NULL");
+  RCHECK_MSG(nJoints > 0, "Body \"%s\"", effector ? effector->bdyName : "NULL");
 
   if (refBdy)
   {
@@ -240,7 +240,7 @@ Rcs::TaskJoints::TaskJoints(const RcsBody* effector, const RcsBody* refBdy,
   const RcsJoint* jRef = refBdy ? refBdy->jnt : NULL;
 
   RLOG(0, "Creating %d joints task between %s and %s", nJoints,
-       effector->name, refBdy ? refBdy->name : "NULL");
+       effector->bdyName, refBdy ? refBdy->bdyName : "NULL");
 
   for (unsigned int i = 0; i < nJoints; ++i)
   {

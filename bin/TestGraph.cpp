@@ -573,15 +573,15 @@ int main(int argc, char** argv)
           if (failure == true)
           {
             RLOG(0, "Body %s: x_dot = %.4f %.4f %.4f   om = %.4f %.4f %.4f",
-                 BODY->name,
+                 BODY->bdyName,
                  BODY->x_dot[0], BODY->x_dot[1], BODY->x_dot[2],
                  BODY->omega[0], BODY->omega[1], BODY->omega[2]);
 #ifdef OLD_TOPO
             RLOG(0, "Parent is %s",
-                 BODY->parent ? BODY->parent->name : "NULL");
+                 BODY->parent ? BODY->parent->bdyName : "NULL");
 #else
             RLOG(0, "Parent is %s",
-                 BODY->parentId!=-1 ? graph->bodies[BODY->parentId]->name : "NULL");
+                 BODY->parentId!=-1 ? graph->bodies[BODY->parentId]->bdyName : "NULL");
 #endif
 
             REXEC(3)
@@ -902,7 +902,7 @@ int main(int argc, char** argv)
 
       RcsGraph* graph = RcsGraph_create(xmlFileName);
       RCHECK(graph);
-      strcpy(rootBdy, graph->root->name);
+      strcpy(rootBdy, graph->root->bdyName);
       argP.getArgument("-root", rootBdy, "Name of body to start traversals ("
                        "default is %s)", rootBdy);
 
@@ -928,7 +928,7 @@ int main(int argc, char** argv)
       RMSG("RCSGRAPH_TRAVERSE_BODIES");
       RCSGRAPH_TRAVERSE_BODIES(graph)
       {
-        std::cout << bdyCount++ << " " << BODY->name << std::endl;
+        std::cout << bdyCount++ << " " << BODY->bdyName << std::endl;
       }
 
       bdyCount = 0;
@@ -939,7 +939,7 @@ int main(int argc, char** argv)
       RCSBODY_TRAVERSE_BODIES(graph, traversalRoot)
 #endif
       {
-        std::cout << bdyCount++ << " " << BODY->name << std::endl;
+        std::cout << bdyCount++ << " " << BODY->bdyName << std::endl;
       }
 
       bdyCount = 0;
@@ -950,7 +950,7 @@ int main(int argc, char** argv)
       RCSBODY_TRAVERSE_CHILD_BODIES(graph, traversalRoot)
 #endif
       {
-        std::cout << bdyCount++ << " " << BODY->name << std::endl;
+        std::cout << bdyCount++ << " " << BODY->bdyName << std::endl;
       }
 
 

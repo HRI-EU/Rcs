@@ -439,7 +439,7 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
   // Create physics for RcsGraph
   RCSGRAPH_TRAVERSE_BODIES(getGraph())
   {
-    RLOGS(5, "Creating bullet body for \"%s\"", BODY->name);
+    RLOGS(5, "Creating bullet body for \"%s\"", BODY->bdyName);
 
     BulletRigidBody* btBody = BulletRigidBody::create(BODY, config);
 
@@ -500,7 +500,7 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
     }
 
     RLOGS(5, "%s adding \"%s\" to Bullet universe",
-          btBody ? "SUCCESS" : "FAILURE", BODY->name);
+          btBody ? "SUCCESS" : "FAILURE", BODY->bdyName);
   }
 
   // Create ground plane
@@ -742,7 +742,7 @@ void Rcs::BulletSimulation::reset()
     if (btBdy==NULL)
     {
       const RcsBody* rb = it->first;
-      RCHECK_MSG(btBdy, "%s", rb ? rb->name : "NULL");
+      RCHECK_MSG(btBdy, "%s", rb ? rb->bdyName : "NULL");
     }
 
     btBdy->reset();
@@ -801,7 +801,7 @@ void Rcs::BulletSimulation::setForce(const RcsBody* body, const double F[3],
   }
   else
   {
-    RLOG(1, "Could not find a physical body for RcsBody: \"%s\"", body->name);
+    RLOG(1, "Could not find a physical body for RcsBody: \"%s\"", body->bdyName);
   }
 }
 
@@ -831,7 +831,7 @@ void Rcs::BulletSimulation::applyImpulse(const RcsBody* body, const double F[3],
   }
   else
   {
-    RLOG(1, "Could not find a physical body for RcsBody: '%s'", body->name);
+    RLOG(1, "Could not find a physical body for RcsBody: '%s'", body->bdyName);
   }
 }
 
@@ -889,7 +889,7 @@ void Rcs::BulletSimulation::applyLinearVelocity(const RcsBody* body,
 
   if (bdy == NULL)
   {
-    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->name : "NULL");
+    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->bdyName : "NULL");
     return;
   }
 
@@ -906,7 +906,7 @@ void Rcs::BulletSimulation::applyAngularVelocity(const RcsBody* body,
 
   if (bdy == NULL)
   {
-    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->name : "NULL");
+    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->bdyName : "NULL");
     return;
   }
 
@@ -923,7 +923,7 @@ void Rcs::BulletSimulation::getLinearVelocity(const RcsBody* body,
 
   if (bdy == NULL)
   {
-    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->name : "NULL");
+    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->bdyName : "NULL");
     return;
   }
 
@@ -943,7 +943,7 @@ void Rcs::BulletSimulation::getAngularVelocity(const RcsBody* body,
 
   if (bdy == NULL)
   {
-    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->name : "NULL");
+    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->bdyName : "NULL");
     return;
   }
 
@@ -1015,7 +1015,7 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
       //if (RcsBody_isFloatingBase(rb) == true)
     {
       Rcs::BulletRigidBody* btBdy = it->second;
-      RCHECK_MSG(btBdy, "%s", rb->name);
+      RCHECK_MSG(btBdy, "%s", rb->bdyName);
       HTr A_BI;
       btBdy->getBodyTransform(&A_BI);
       const RcsJoint* jnt = rb->jnt;
@@ -1197,7 +1197,7 @@ void Rcs::BulletSimulation::getPhysicsTransform(HTr* A_BI,
   else
   {
     RLOG(1, "Couldn't get physics transformation of body \"%s\"",
-         body ? body->name : "NULL");
+         body ? body->bdyName : "NULL");
   }
 }
 
@@ -1341,7 +1341,7 @@ void Rcs::BulletSimulation::applyControl(double dt)
       {
         const RcsBody* rb_ = it->first;
         const RcsBody* rb = RcsGraph_getBodyByName(getGraph(),
-                                                   rb_->name);
+                                                   rb_->bdyName);
 
         if (rb)
         {
@@ -1390,7 +1390,7 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
 
   if (rb == NULL)
   {
-    RLOG(5, "No BulletRigidBody found for RcsBody \"%s\"", fts->body->name);
+    RLOG(5, "No BulletRigidBody found for RcsBody \"%s\"", fts->body->bdyName);
     return false;
   }
 
@@ -1400,7 +1400,7 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
   if (jnt == NULL)
   {
     RLOG(1, "Load cell of body \"%s\" is not attached to joint",
-         fts->body->name);
+         fts->body->bdyName);
     return false;
   }
 
@@ -1408,14 +1408,14 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
 
   if (jf==NULL)
   {
-    RLOG(1, "No joint feedback found for RcsBody \"%s\"", fts->body->name);
+    RLOG(1, "No joint feedback found for RcsBody \"%s\"", fts->body->bdyName);
     return false;
   }
 
   if (fts->rawData->size<6)
   {
     RLOG(1, "Data size mismatch for loadcell in  RcsBody \"%s\": size is %d",
-         fts->body->name, fts->rawData->size);
+         fts->body->bdyName, fts->rawData->size);
     return false;
   }
 
@@ -1561,7 +1561,7 @@ void Rcs::BulletSimulation::print() const
       const RcsBody* rb = it->first;
       BulletRigidBody* btBdy = it->second;
       printf("%d: %s - %s   friction: %f\n", bdyCount++,
-             rb ? rb->name : "NULL", btBdy ? btBdy->getBodyName() : "NULL",
+             rb ? rb->bdyName : "NULL", btBdy ? btBdy->getBodyName() : "NULL",
              btBdy ? btBdy->getFriction(): 0.0);
     }
   }
@@ -1856,7 +1856,7 @@ bool Rcs::BulletSimulation::updatePPSSensor(RcsSensor* sensor)
                       pt.m_lateralFrictionDir2[i]*pt.m_appliedImpulseLateral2)/this->lastDt;
         }
 
-        NLOG(1, "Adding f[%s,%d]=%f %f %f", sensor->body->name, j,
+        NLOG(1, "Adding f[%s,%d]=%f %f %f", sensor->body->bdyName, j,
              force[0], force[1], force[2]);
 
         Vec3d_constMulAndAddSelf(contactForce, force, signOfForce);
@@ -1921,7 +1921,7 @@ bool Rcs::BulletSimulation::removeBody(const char* name)
  ******************************************************************************/
 bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
 {
-  RLOG(5, "Creating bullet body for \"%s\"", body_ ? body_->name : "NULL");
+  RLOG(5, "Creating bullet body for \"%s\"", body_ ? body_->bdyName : "NULL");
 
   PhysicsConfig config(this->physicsConfigFile);
 
@@ -1932,7 +1932,7 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
 
 
 #ifdef OLD_TOPO
-  body->parent = RcsGraph_getBodyByName(getGraph(), body->name);  // This must be body->parent->name
+  body->parent = RcsGraph_getBodyByName(getGraph(), body->bdyName);  // This must be body->parent->bdyName
   RCHECK(parent);// HACK
 #else
   // Nothing to do, already handled by parentId
@@ -2020,13 +2020,13 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
   RcsGraph_addBody(getGraph(), body->parent, body, arrBuf, 3);
 #else
   // \todo: Must it be body->parent->name???
-  RcsGraph_addBody(getGraph(), RcsGraph_getBodyByName(getGraph(), body->name), body, arrBuf, 3);
+  RcsGraph_addBody(getGraph(), RcsGraph_getBodyByName(getGraph(), body->bdyName), body, arrBuf, 3);
 #endif
 
   unlock();
 
   RLOG(1, "%s adding \"%s\" to Bullet universe",
-       btBody ? "SUCCESS" : "FAILURE", body->name);
+       btBody ? "SUCCESS" : "FAILURE", body->bdyName);
 
   return true;
 }
@@ -2046,7 +2046,7 @@ bool Rcs::BulletSimulation::deactivateBody(const char* name)
 
   if (!RcsBody_isLeaf(bdy))
   {
-    RLOG(1, "Can't deactivate non-leaf body \"%s\" - skipping", bdy->name);
+    RLOG(1, "Can't deactivate non-leaf body \"%s\" - skipping", bdy->bdyName);
     return false;
   }
 
@@ -2060,7 +2060,7 @@ bool Rcs::BulletSimulation::deactivateBody(const char* name)
   else
   {
     RLOG(1, "Can't find BulletRigidBody for body \"%s\" - skipping deactivation",
-         bdy->name);
+         bdy->bdyName);
     return false;
   }
 

@@ -191,7 +191,7 @@ RcsCollisionMdl* RcsCollisionModel_createFromXML(const RcsGraph* graph,
 
       RLOG(5, "Collision pair %d is \"%s\" - \"%s\"\n"
            "\tDistance threshold =  %g\n\tDistance weight is %g",
-           nPairs, pair[nPairs]->b1->name, pair[nPairs]->b2->name,
+           nPairs, pair[nPairs]->b1->bdyName, pair[nPairs]->b2->bdyName,
            pair[nPairs]->dThreshold, pair[nPairs]->weight);
 
       nPairs++;
@@ -231,7 +231,7 @@ void RcsCollisionModel_compute(RcsCollisionMdl* self)
   RCSPAIR_TRAVERSE(self->pair)
   {
     NLOG(0, "Computing distance between \"%s\" and \"%s\"",
-         PAIR->b1->name, PAIR->b2->name);
+         PAIR->b1->bdyName, PAIR->b2->bdyName);
     PAIR->distance = RcsBody_distance(PAIR->b1, PAIR->b2,
                                       PAIR->cp1, PAIR->cp2, PAIR->n1);
   }
@@ -278,20 +278,20 @@ void RcsCollisionModel_fprintCollisions(FILE* fd, const RcsCollisionMdl* self,
 
     if ((*pPtr)->distance<=distanceThreshold)
     {
-      fprintf(stderr, "\t[%d]   %s", k, (*pPtr)->b1 ? (*pPtr)->b1->name : "NULL");
+      fprintf(stderr, "\t[%d]   %s", k, (*pPtr)->b1 ? (*pPtr)->b1->bdyName : "NULL");
 
-      if ((*pPtr)->b1 && STRNEQ((*pPtr)->b1->name, "GenericBody", 11))
+      if ((*pPtr)->b1 && STRNEQ((*pPtr)->b1->bdyName, "GenericBody", 11))
       {
         RcsBody* gPtr = (RcsBody*)(*pPtr)->b1->extraInfo;
-        fprintf(stderr, " (points to \"%s\")", gPtr ? gPtr->name : "NULL");
+        fprintf(stderr, " (points to \"%s\")", gPtr ? gPtr->bdyName : "NULL");
       }
 
-      fprintf(stderr, "\t\t%s", (*pPtr)->b2 ? (*pPtr)->b2->name : "NULL");
+      fprintf(stderr, "\t\t%s", (*pPtr)->b2 ? (*pPtr)->b2->bdyName : "NULL");
 
-      if ((*pPtr)->b2 && STRNEQ((*pPtr)->b2->name, "GenericBody", 11))
+      if ((*pPtr)->b2 && STRNEQ((*pPtr)->b2->bdyName, "GenericBody", 11))
       {
         RcsBody* gPtr = (RcsBody*)(*pPtr)->b2->extraInfo;
-        fprintf(stderr, " (points to \"%s\")", gPtr ? gPtr->name : "NULL");
+        fprintf(stderr, " (points to \"%s\")", gPtr ? gPtr->bdyName : "NULL");
       }
 
       fprintf(stderr, "\tdistance = %.6f   ", (*pPtr)->distance);
@@ -340,20 +340,20 @@ void RcsCollisionModel_fprint(FILE* fd, const RcsCollisionMdl* self)
     int k = 0;
     while (*pPtr)
     {
-      fprintf(fd, "\t[%d]   %s", k, (*pPtr)->b1 ? (*pPtr)->b1->name : "NULL");
+      fprintf(fd, "\t[%d]   %s", k, (*pPtr)->b1 ? (*pPtr)->b1->bdyName : "NULL");
 
-      if ((*pPtr)->b1 && STRNEQ((*pPtr)->b1->name, "GenericBody", 11))
+      if ((*pPtr)->b1 && STRNEQ((*pPtr)->b1->bdyName, "GenericBody", 11))
       {
         RcsBody* gPtr = (RcsBody*)(*pPtr)->b1->extraInfo;
-        fprintf(fd, " (points to \"%s\")", gPtr ? gPtr->name : "NULL");
+        fprintf(fd, " (points to \"%s\")", gPtr ? gPtr->bdyName : "NULL");
       }
 
-      fprintf(fd, "\t\t%s", (*pPtr)->b2 ? (*pPtr)->b2->name : "NULL");
+      fprintf(fd, "\t\t%s", (*pPtr)->b2 ? (*pPtr)->b2->bdyName : "NULL");
 
-      if ((*pPtr)->b2 && STRNEQ((*pPtr)->b2->name, "GenericBody", 11))
+      if ((*pPtr)->b2 && STRNEQ((*pPtr)->b2->bdyName, "GenericBody", 11))
       {
         RcsBody* gPtr = (RcsBody*)(*pPtr)->b2->extraInfo;
-        fprintf(fd, " (points to \"%s\")", gPtr ? gPtr->name : "NULL");
+        fprintf(fd, " (points to \"%s\")", gPtr ? gPtr->bdyName : "NULL");
       }
 
       fprintf(fd, "\n\tdistance = %.6f   weight=%.3f   dThreshold=%.3f\n",
@@ -388,7 +388,7 @@ void RcsCollisionModel_destroy(RcsCollisionMdl* self)
     while (self->pair[i])
     {
       RLOG(5, "Deleting collision pair %d: \"%s\" - \"%s\"",
-           i, self->pair[i]->b1->name, self->pair[i]->b2->name);
+           i, self->pair[i]->b1->bdyName, self->pair[i]->b2->bdyName);
       RFREE(self->pair[i]);
       self->pair[i] = NULL;
       i++;
@@ -457,13 +457,13 @@ RcsCollisionMdl* RcsCollisionModel_clone(const RcsCollisionMdl* src,
       if (src->pair[i]->b1 != NULL)
       {
         dst->pair[i]->b1 =
-          RcsGraph_getBodyByName(dst->graph, src->pair[i]->b1->name);
+          RcsGraph_getBodyByName(dst->graph, src->pair[i]->b1->bdyName);
       }
 
       if (src->pair[i]->b2 != NULL)
       {
         dst->pair[i]->b2 =
-          RcsGraph_getBodyByName(dst->graph, src->pair[i]->b2->name);
+          RcsGraph_getBodyByName(dst->graph, src->pair[i]->b2->bdyName);
       }
 
       dst->pair[i]->graph = dst->graph;
@@ -515,14 +515,14 @@ bool RcsCollisionMdl_getPointers(const RcsCollisionMdl* self,
   }
 
   RLOG(5, "Getting distance pointers between \"%s\" and \"%s\"",
-       b1 ? b1->name : "NULL", b2 ? b2->name : "NULL");
+       b1 ? b1->bdyName : "NULL", b2 ? b2->bdyName : "NULL");
 
   RCSPAIR_TRAVERSE(self->pair)
   {
     if ((PAIR->b1 == b1) && (PAIR->b2 == b2))
     {
       NLOG(5, "Getting distance pointers between \"%s\" and \"%s\""
-           " in correct order", PAIR->b1->name, PAIR->b2->name);
+           " in correct order", PAIR->b1->bdyName, PAIR->b2->bdyName);
       success = true;
       *cp1 = (PAIR->cp1);
       *cp2 = (PAIR->cp2);
@@ -530,7 +530,7 @@ bool RcsCollisionMdl_getPointers(const RcsCollisionMdl* self,
     else if ((PAIR->b1 == b2) && (PAIR->b2 == b1))
     {
       NLOG(5, "Getting distance pointers between \"%s\" and \"%s\""
-           " in reverse order", PAIR->b1->name, PAIR->b2->name);
+           " in reverse order", PAIR->b1->bdyName, PAIR->b2->bdyName);
       *cp1 = (PAIR->cp2);
       *cp2 = (PAIR->cp1);
     }
@@ -830,8 +830,8 @@ bool RcsCollisionMdl_isEqual(const RcsCollisionMdl* self,
       else
       {
         NLOGS(1, "Pair \"%s\" - \"%s\" is equal",
-              p1->b1 ? p1->b1->name : "NULL",
-              p1->b2 ? p1->b2->name : "NULL");
+              p1->b1 ? p1->b1->bdyName : "NULL",
+              p1->b2 ? p1->b2->bdyName : "NULL");
       }
 
     }
@@ -863,8 +863,8 @@ void RcsPair_fprint(FILE* fd, const RcsPair* self)
   }
 
   fprintf(fd, "Pair \"%s\" - \"%s\":\n",
-          self->b1 ? self->b1->name : "NULL",
-          self->b2 ? self->b2->name : "NULL");
+          self->b1 ? self->b1->bdyName : "NULL",
+          self->b2 ? self->b2->bdyName : "NULL");
   fprintf(fd, "\tdThreshold = %.6f ", self->dThreshold);
   fprintf(fd, "weight = %.6f ", self->weight);
   fprintf(fd, "d = %.6f\n", self->distance);
@@ -894,20 +894,20 @@ void RcsPair_printCollisionModel(FILE* fd, RcsPair** pPtr)
     int k = 0;
     while (*pPtr)
     {
-      fprintf(fd, "\t[%d]   %s", k, (*pPtr)->b1->name);
+      fprintf(fd, "\t[%d]   %s", k, (*pPtr)->b1->bdyName);
 
-      if (STRNEQ((*pPtr)->b1->name, "GenericBody", 11))
+      if (STRNEQ((*pPtr)->b1->bdyName, "GenericBody", 11))
       {
         RcsBody* gPtr = (RcsBody*)(*pPtr)->b1->extraInfo;
-        fprintf(fd, " (points to \"%s\")", gPtr ? gPtr->name : "NULL");
+        fprintf(fd, " (points to \"%s\")", gPtr ? gPtr->bdyName : "NULL");
       }
 
-      fprintf(fd, "\t\t%s", (*pPtr)->b2->name);
+      fprintf(fd, "\t\t%s", (*pPtr)->b2->bdyName);
 
-      if (STRNEQ((*pPtr)->b2->name, "GenericBody", 11))
+      if (STRNEQ((*pPtr)->b2->bdyName, "GenericBody", 11))
       {
         RcsBody* gPtr = (RcsBody*)(*pPtr)->b2->extraInfo;
-        fprintf(fd, " (points to \"%s\")", gPtr ? gPtr->name : "NULL");
+        fprintf(fd, " (points to \"%s\")", gPtr ? gPtr->bdyName : "NULL");
       }
 
       fprintf(fd, "\n");
@@ -930,10 +930,10 @@ bool RcsPair_isEqual(const RcsPair* p1, const RcsPair* p2, double eps)
 {
   bool isPairEqual = true;
 
-  const char* nameP11 = p1->b1 ? p1->b1->name : "NULL";
-  const char* nameP12 = p1->b2 ? p1->b2->name : "NULL";
-  const char* nameP21 = p2->b1 ? p2->b1->name : "NULL";
-  const char* nameP22 = p2->b2 ? p2->b2->name : "NULL";
+  const char* nameP11 = p1->b1 ? p1->b1->bdyName : "NULL";
+  const char* nameP12 = p1->b2 ? p1->b2->bdyName : "NULL";
+  const char* nameP21 = p2->b1 ? p2->b1->bdyName : "NULL";
+  const char* nameP22 = p2->b2 ? p2->b2->bdyName : "NULL";
 
   if (!STREQ(nameP11, nameP21))
   {
@@ -1018,8 +1018,8 @@ bool RcsCollisionMdl_removePair(RcsCollisionMdl* self,
   {
     RLOGS(2, "Can't remove pair \"%s\" - \"%s\" from collision model: "
           "Has no pairs",
-          pair->b1 ? pair->b1->name : "NULL",
-          pair->b2 ? pair->b2->name : "NULL");
+          pair->b1 ? pair->b1->bdyName : "NULL",
+          pair->b2 ? pair->b2->bdyName : "NULL");
     return false;
   }
 
@@ -1039,8 +1039,8 @@ bool RcsCollisionMdl_removePair(RcsCollisionMdl* self,
   if (pairIdx == -1)
   {
     RLOGS(2, "Pair \"%s\" - \"%s\" not found in collision model",
-          pair->b1 ? pair->b1->name : "NULL",
-          pair->b2 ? pair->b2->name : "NULL");
+          pair->b1 ? pair->b1->bdyName : "NULL",
+          pair->b2 ? pair->b2->bdyName : "NULL");
     return false;
   }
 

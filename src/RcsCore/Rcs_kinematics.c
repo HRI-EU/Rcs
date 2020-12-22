@@ -1868,7 +1868,7 @@ double RcsGraph_pointFrustrumCost(const RcsBody* cam,
 
   const RcsBody* bdy = NULL;
   // check if body is GenericBody
-  if (STRNEQ(body->name, "GenericBody", 11))
+  if (STRNEQ(body->bdyName, "GenericBody", 11))
   {
     bdy = (RcsBody*) body->extraInfo;
   }
@@ -1907,7 +1907,7 @@ double RcsGraph_pointFrustrumCost(const RcsBody* cam,
   {
     if (bdy)
     {
-      RMSG("Cost for body %s is %f", bdy->name, cost);
+      RMSG("Cost for body %s is %f", bdy->bdyName, cost);
     }
   }
 
@@ -1938,7 +1938,7 @@ void RcsGraph_pointFrustrumGradient(const RcsGraph* graph,
 
   const RcsBody* bdy = NULL;
   // check if body is GenericBody
-  if (STRNEQ(body->name, "GenericBody", 11))
+  if (STRNEQ(body->bdyName, "GenericBody", 11))
   {
     bdy = (RcsBody*) body->extraInfo;
   }
@@ -2055,7 +2055,7 @@ void RcsGraph_pointFrustrumGradient(const RcsGraph* graph,
   {
     if (bdy)
     {
-      RMSG("Gradient for body %s (cam is %s)", bdy->name, cam->name);
+      RMSG("Gradient for body %s (cam is %s)", bdy->bdyName, cam->bdyName);
       MatNd_printDigits(grad, 2);
     }
   }

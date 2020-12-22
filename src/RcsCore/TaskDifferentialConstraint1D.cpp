@@ -268,7 +268,7 @@ bool Rcs::TaskDifferentialConstraint1D::isValid(xmlNode* node,
   {
     RLOG(3, "Task \"%s\": Bodies must be different, but effector=\"%s\", "
          "refBdy=\"%s\" and refFrame=\"%s\"",
-         taskName, ef->name, refBdy->name, refFrame->name);
+         taskName, ef->bdyName, refBdy->bdyName, refFrame->bdyName);
 
   }
 

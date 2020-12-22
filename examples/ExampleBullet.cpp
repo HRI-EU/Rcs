@@ -149,7 +149,7 @@ static void test_softBody(int argc, char** argv)
       RcsMeshData* mesh = (RcsMeshData*)SHAPE->userData;
       if (mesh)
       {
-        RLOG(0, "Found mesh for body %s", BODY->name);
+        RLOG(0, "Found mesh for body %s", BODY->bdyName);
         osg::ref_ptr<Rcs::MeshNode> mn;
         mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
                                mesh->faces, mesh->nFaces);
@@ -158,7 +158,7 @@ static void test_softBody(int argc, char** argv)
       }
       else
       {
-        RLOG(0, "Failed to add mesh for body %s", BODY->name);
+        RLOG(0, "Failed to add mesh for body %s", BODY->bdyName);
       }
     }
   }

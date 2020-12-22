@@ -95,7 +95,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_SSL:
     {
-      RLOG(5, "Creating SSL for object \"%s\"", body->name);
+      RLOG(5, "Creating SSL for object \"%s\"", body->bdyName);
 
       // Local transformation from body frame into collision geometry frame:
       // We have to consider the offset to make the ball end to the
@@ -113,7 +113,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_CONE:
     {
-      RLOG(5, "Creating cone for object \"%s\"", body->name);
+      RLOG(5, "Creating cone for object \"%s\"", body->bdyName);
       bShape = new btConeShapeZ(btScalar(sh->extents[0]),
                                 btScalar(sh->extents[2]));
       bShape->setMargin(0.0);
@@ -131,7 +131,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_SPHERE:
     {
-      RLOG(5, "Creating sphere for object \"%s\"", body->name);
+      RLOG(5, "Creating sphere for object \"%s\"", body->bdyName);
       bShape = new btSphereShape(btScalar(sh->extents[0]));
       setMargin(bShape);
       break;
@@ -139,7 +139,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_CYLINDER:
     {
-      RLOG(5, "Creating CYLINDER for object \"%s\"", body->name);
+      RLOG(5, "Creating CYLINDER for object \"%s\"", body->bdyName);
       btVector3 halfExt(btScalar(sh->extents[0]), btScalar(sh->extents[0]),
                         btScalar(0.5*sh->extents[2]));
       bShape = new btCylinderShapeZ(halfExt);
@@ -149,7 +149,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_BOX:
     {
-      RLOG(5, "Creating BOX for object \"%s\"", body->name);
+      RLOG(5, "Creating BOX for object \"%s\"", body->bdyName);
       btVector3 halfExt(0.5*sh->extents[0], 0.5*sh->extents[1],
                         btScalar(0.5*sh->extents[2]));
       bShape = new btBoxShape(halfExt);
@@ -159,7 +159,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_SSR:
     {
-      RLOG(5, "Creating SSR for object \"%s\"", body->name);
+      RLOG(5, "Creating SSR for object \"%s\"", body->bdyName);
       btVector3 positions[4];
       btScalar radi[4];
       btScalar hx = sh->extents[0];
@@ -183,7 +183,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_TORUS:
     {
-      RLOG(5, "Creating TORUS for object \"%s\"", body->name);
+      RLOG(5, "Creating TORUS for object \"%s\"", body->bdyName);
       btCompoundShape* compound = new btCompoundShape();
       bShape = compound;
       const int nSlices = 16;
@@ -229,12 +229,12 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_MESH:
     {
-      RLOG(5, "Creating MESH for object \"%s\"", body->name);
+      RLOG(5, "Creating MESH for object \"%s\"", body->bdyName);
       RcsMeshData* mesh = (RcsMeshData*) sh->userData;
 
       if (mesh==NULL)
       {
-        RLOG(4, "[%s]: Failed to find or create mesh", body->name);
+        RLOG(4, "[%s]: Failed to find or create mesh", body->bdyName);
         break;
       }
 
@@ -242,7 +242,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
       if (mesh->nVertices>convexHullVertexLimit)
       {
         RLOG(5, "[%s]: Compressing mesh with %u vertices (limit: %u)",
-             body->name, mesh->nVertices, convexHullVertexLimit);
+             body->bdyName, mesh->nVertices, convexHullVertexLimit);
         btConvexHullShape* hull = meshToCompressedHull(mesh);
         sh->userData = hullToMesh(hull);   // and link the compressed one
 
@@ -290,13 +290,13 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
 
   if (bdy->physicsSim == RCSBODY_PHYSICS_NONE)
   {
-    RLOG(5, "Body \"%s\": physicsSim is not set - skipping part", bdy->name);
+    RLOG(5, "Body \"%s\": physicsSim is not set - skipping part", bdy->bdyName);
     return NULL;
   }
 
   if (RcsBody_numShapes(bdy) == 0)
   {
-    RLOG(1, "Body \"%s\" has no shape attached - skipping", bdy->name);
+    RLOG(1, "Body \"%s\" has no shape attached - skipping", bdy->bdyName);
     return NULL;
   }
 
@@ -367,7 +367,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
     }
     else
     {
-      RLOG(4, "Skipping shape for body %s", bdy->name);
+      RLOG(4, "Skipping shape for body %s", bdy->bdyName);
     }
 
     sPtr++;
@@ -379,7 +379,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
   {
     if (!hasSoftShape)
     {
-      RLOG(1, "Body %s: Compound shape has 0 bodies", bdy->name);
+      RLOG(1, "Body %s: Compound shape has 0 bodies", bdy->bdyName);
     }
 
     delete cSh;
@@ -433,14 +433,14 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
 
     REXEC(5)
     {
-      RLOG(0, "%s inertia before: %f %f %f", bdy->name,
+      RLOG(0, "%s inertia before: %f %f %f", bdy->bdyName,
            bdyInertia[0], bdyInertia[1], bdyInertia[2]);
 
       btVector3 bulletInertia = btBody->getLocalInertia();
-      RLOG(0, "%s inertia from Bullet: %f %f %f", bdy->name,
+      RLOG(0, "%s inertia from Bullet: %f %f %f", bdy->bdyName,
            bulletInertia[0], bulletInertia[1], bulletInertia[2]);
       cSh->calculateLocalInertia(bdy->m, bulletInertia);
-      RLOG(0, "%s shape inertia from Bullet: %f %f %f", bdy->name,
+      RLOG(0, "%s shape inertia from Bullet: %f %f %f", bdy->bdyName,
            bulletInertia[0], bulletInertia[1], bulletInertia[2]);
     }
   }
@@ -527,7 +527,7 @@ const RcsBody* Rcs::BulletRigidBody::getBodyPtr() const
  ******************************************************************************/
 const char* Rcs::BulletRigidBody::getBodyName() const
 {
-  return this->body ? this->body->name : "NULL";
+  return this->body ? this->body->bdyName : "NULL";
 }
 
 /*******************************************************************************
@@ -621,7 +621,7 @@ btTypedConstraint* Rcs::BulletRigidBody::createFixedJoint(const RcsGraph* graph)
     if ((SENSOR->type==RCSSENSOR_LOAD_CELL) && (SENSOR->body==this->body))
     {
       RCHECK_MSG(loadCell==NULL, "Body \"%s\" has more than 1 load cells "
-                 "attached", body->name);
+                 "attached", body->bdyName);
 
       loadCell = SENSOR;
 

@@ -328,10 +328,7 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
   RLOG(9, "Creating body \"%s\"", b->xmlName);
 
   // Fully qualified name
-  strcpy(msg, b->xmlName);
-  b->name = RNALLOC(strlen(msg) + 1, char);
-  RCHECK_PEDANTIC(b->name);
-  strcpy(b->name, msg);
+  snprintf(b->bdyName, RCS_MAX_NAMELEN, "%s", b->xmlName);
 
   /// \todo (MM, Oct 2, 2013): Groups not yet supported by OpenRAVE parser
 
@@ -426,11 +423,11 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
     {
       getXMLNodeVecN(total_node, &b->m, 1);
       RCHECK_MSG(b->m >= 0.0, "Body \"%s\" has negative mass: %f",
-                 b->name, b->m);
+                 b->bdyName, b->m);
     }
     else
     {
-      RLOG(4, "Couldn't find node \"total\" for body \"%s\"", b->name);
+      RLOG(4, "Couldn't find node \"total\" for body \"%s\"", b->bdyName);
     }
 
     // get cog
@@ -459,7 +456,7 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
   if (Mat3d_getFrobeniusnorm(b->Inertia.rot) > 0.0)
   {
     RCHECK_MSG(b->m > 0.0, "You specified a non-zero inertia but a zero mass "
-               "for body \"%s\". Shame on you!", b->name);
+               "for body \"%s\". Shame on you!", b->bdyName);
   }
 
   /// \todo (MM, Oct 2, 2013): Sensors are not supported yet
@@ -523,20 +520,20 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
     strcpy(jnt->name, "unnamed joint");
 #ifdef OLD_TOPO
     RLOG(4, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
-         "unnamed joint\"", bdy->name, bdy->parent ? bdy->parent->name : "NULL");
+         "unnamed joint\"", bdy->bdyName, bdy->parent ? bdy->parent->bdyName : "NULL");
 #else
     RLOG(4, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
-         "unnamed joint\"", bdy->name,
-         bdy->parentId!=-1 ? self->bodies[bdy->parentId]->name : "NULL");
+         "unnamed joint\"", bdy->bdyName,
+         bdy->parentId!=-1 ? self->bodies[bdy->parentId]->bdyName : "NULL");
 #endif
   }
 
-  RLOG(5, "Inserting joint \"%s\" into body \"%s\"", jnt->name, bdy->name);
+  RLOG(5, "Inserting joint \"%s\" into body \"%s\"", jnt->name, bdy->bdyName);
   RcsGraph_insertJoint(self, bdy, jnt);
 
   if (verbose == true)
   {
-    RMSG("%s: dof = %d", bdy->name, jnt->jointIndex);
+    RMSG("%s: dof = %d", bdy->bdyName, jnt->jointIndex);
   }
 
   // joints in OpenRAVE format don't have transformations, but we have

@@ -271,9 +271,9 @@ void BulletSoftSimulation::updateSoftMeshes()
       Vec3d_set(vtx1, v1[0], v1[1], v1[2]);
       Vec3d_set(vtx2, v2[0], v2[1], v2[2]);
 
-      RCHECK_MSG(Vec3d_isFinite(vtx0), "%s", rcsSoftBdy->name);
-      RCHECK_MSG(Vec3d_isFinite(vtx1), "%s", rcsSoftBdy->name);
-      RCHECK_MSG(Vec3d_isFinite(vtx2), "%s", rcsSoftBdy->name);
+      RCHECK_MSG(Vec3d_isFinite(vtx0), "%s", rcsSoftBdy->bdyName);
+      RCHECK_MSG(Vec3d_isFinite(vtx1), "%s", rcsSoftBdy->bdyName);
+      RCHECK_MSG(Vec3d_isFinite(vtx2), "%s", rcsSoftBdy->bdyName);
 
       // Transformation from world into shape's frame so that parent-child
       // relations in the graphics scene graph are preserved. The vertices
@@ -363,7 +363,7 @@ void BulletSoftSimulation::createSoftBodies()
         continue;
       }
 
-      RLOG(5, "Creating soft body for %s", BODY->name);
+      RLOG(5, "Creating soft body for %s", BODY->bdyName);
       RcsMeshData* softMesh = (RcsMeshData*)SHAPE->userData;
 
       if (softMesh == NULL)
@@ -424,8 +424,8 @@ void BulletSoftSimulation::createSoftBodies()
       }
 
       // For all parameters, see btSoftBody.h (struct Config)
-      RCHECK_MSG(softBdy, "Failed to create soft body for %s", BODY->name);
-      RCHECK_MSG(BODY->m>0.0, "Soft body %s has zero mass", BODY->name);
+      RCHECK_MSG(softBdy, "Failed to create soft body for %s", BODY->bdyName);
+      RCHECK_MSG(BODY->m>0.0, "Soft body %s has zero mass", BODY->bdyName);
 
       int materialId = 0;
       if (STRCASEEQ(SHAPE->material, "cloth"))
@@ -451,7 +451,7 @@ void BulletSoftSimulation::createSoftBodies()
 
       if (parent)
       {
-        RLOG_CPP(5, "Body " << BODY->name << " has "
+        RLOG_CPP(5, "Body " << BODY->bdyName << " has "
                  << softBdy->m_nodes.size() << " nodes (" << softMesh->nFaces
                  << " faces " << softMesh->nVertices << " vertices) ");
 
@@ -479,7 +479,7 @@ void BulletSoftSimulation::createSoftBodies()
 
         int anchoredVertices = connectSoftToRigidBody(softBdy, bChild);
         RLOG(5, "Anchored %d vertices to child %s",
-             anchoredVertices, child->name);
+             anchoredVertices, child->bdyName);
 
         //child = child->next;
         child = RcsBody_getNext(getGraph(), child);
@@ -512,7 +512,7 @@ void BulletSoftSimulation::convertShapesToMesh()
         if (shapeMesh)
         {
           RLOG(5, "Mesh %s has %d vertices and %d facecs",
-               BODY->name, shapeMesh->nVertices, shapeMesh->nFaces);
+               BODY->bdyName, shapeMesh->nVertices, shapeMesh->nFaces);
           int nDuplicates = RcsMesh_compressVertices(shapeMesh, 1.0e-8);
           RLOG(5, "Reduced mesh by %d duplicates - now %d vertices and %d facecs",
                nDuplicates, shapeMesh->nVertices, shapeMesh->nFaces);
@@ -527,7 +527,7 @@ void BulletSoftSimulation::convertShapesToMesh()
       if (shapeMesh)
       {
         RLOG(5, "Mesh %s has %d vertices and %d facecs",
-             BODY->name, shapeMesh->nVertices, shapeMesh->nFaces);
+             BODY->bdyName, shapeMesh->nVertices, shapeMesh->nFaces);
         int nDuplicates = RcsMesh_compressVertices(shapeMesh, 1.0e-8);
         RLOG(5, "Reduced mesh by %d duplicates - now %d vertices and %d facecs",
              nDuplicates, shapeMesh->nVertices, shapeMesh->nFaces);
@@ -540,7 +540,7 @@ void BulletSoftSimulation::convertShapesToMesh()
       else
       {
         RLOG(0, "Failed to convert shape %s of body %s",
-             RcsShape_name(SHAPE->type), BODY->name);
+             RcsShape_name(SHAPE->type), BODY->bdyName);
       }
 
     }   // RCSBODY_TRAVERSE_SHAPES
