@@ -122,7 +122,8 @@ unsigned int RcsSensor_dim(RcsSensor* self);
  *                           sensor's frame of reference
  *  \return Compensated mass in [kg]
  */
-double RcsSensor_computeStaticForceCompensation(const RcsSensor* fts,
+double RcsSensor_computeStaticForceCompensation(const RcsGraph* graph,
+                                                const RcsSensor* fts,
                                                 double S_f_gravity[6]);
 
 /*! \ingroup RcsSensorFunctions
@@ -190,8 +191,13 @@ void RcsSensor_fprintXML(FILE* out, const RcsSensor* self);
  *         \ref RcsSensor_dim()), and filled with the calculated pressure
  *         values, and true is returned.
  */
+#ifdef OLD_TOPO
 bool RcsSensor_computePPS(const RcsSensor* self, MatNd* ppsResult,
                           const double contactForce[3]);
+#else
+bool RcsSensor_computePPS(RcsGraph* graph, const RcsSensor* self, MatNd* ppsResult,
+                          const double contactForce[3]);
+#endif
 
 /*! \ingroup RcsSensorFunctions
  *  \brief Returns the name of the sensor (see enum RCSSENSOR_TYPE)

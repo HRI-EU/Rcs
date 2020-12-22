@@ -44,8 +44,6 @@ extern "C" {
 
 #include "Rcs_graph.h"
 
-
-
 #define RCS_GRAVITY (9.81)
 
 typedef enum
@@ -204,11 +202,20 @@ struct _RcsBody
   HTr* A_BI;              ///< Absolute transformation
   HTr* Inertia;           ///< Inertia tensor and local COG vector
 
+#ifdef OLD_TOPO
   RcsBody* parent;        ///< Parent body
   RcsBody* firstChild;    ///< First child body
   RcsBody* lastChild;     ///< Last child body
   RcsBody* next;          ///< Next sibling body
   RcsBody* prev;          ///< Previous sibling body
+#endif
+
+  int id;                 ///< Body id
+  int parentId;           ///< Parent body
+  int firstChildId;       ///< First child body
+  int lastChildId;        ///< Last child body
+  int nextId;             ///< Next sibling body
+  int prevId;             ///< Previous sibling body
 
   RcsShape** shape;       ///< Shapes of the body for collision detection
   RcsJoint* jnt;          ///< Joint to which body is attached
@@ -250,9 +257,11 @@ struct _RcsSensor
 struct _RcsGraph
 {
   RcsBody* root;          ///< Pointer to root body
+  RcsBody** bodies;       ///< Array of pointers to bodies
   RcsBody gBody[10];      ///< Generic bodies
   unsigned int dof;       ///< Number of degrees of freedom
   unsigned int nJ;        ///< Number of unconstrained degrees of freedom
+  unsigned int nBodies;   ///< Number of bodies in the graph
   MatNd* q;               ///< Array of joint values
   MatNd* q_dot;           ///< Array of joint velocity values
   char* xmlFile;          ///< Configuration file name (full path)

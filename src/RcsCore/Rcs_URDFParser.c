@@ -270,7 +270,7 @@ static RcsBody* parseBodyURDF(xmlNode* node)
     return NULL;
   }
 
-  RcsBody* body = RALLOC(RcsBody);
+  RcsBody* body = RcsBody_create();
 
   // Default transformation
   body->A_BI = HTr_create();
@@ -556,6 +556,7 @@ RcsJoint* parseJointURDF(xmlNode* node)
 static void connectURDF(xmlNode* node, RcsBody** bdyVec, RcsJoint** jntVec,
                         const char* suffix)
 {
+#ifdef OLD_TOPO
   char jointName[256] = "";
   unsigned len = getXMLNodePropertyStringN(node, "name", jointName, 256);
   RCHECK(len > 0);
@@ -790,7 +791,9 @@ static void connectURDF(xmlNode* node, RcsBody** bdyVec, RcsJoint** jntVec,
   {
     RLOG(0, "Unknown joint type: %s", type);
   }
-
+#else
+  RFATAL("Implement me");
+#endif
 }
 
 /*******************************************************************************
@@ -870,6 +873,7 @@ RcsBody* RcsGraph_rootBodyFromURDFFile(const char* filename,
                                        const HTr* A_BP,
                                        unsigned int* dof)
 {
+#ifdef OLD_TOPO
   // Read XML file
   xmlDocPtr doc;
   xmlNodePtr node = parseXMLFile(filename, "robot", &doc);
@@ -1058,6 +1062,10 @@ RcsBody* RcsGraph_rootBodyFromURDFFile(const char* filename,
   RFREE(jntVec);
 
   return root;
+#else
+  RFATAL("Implement me");
+  return NULL;
+#endif
 }
 
 /*******************************************************************************

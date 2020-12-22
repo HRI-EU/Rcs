@@ -163,7 +163,11 @@ static void RcsGraph_addWorldPointJacobian(const RcsGraph* self,
                          (body ? body->A_BI->org : Vec3d_zeroVec());
 
   // Find "driving" joint of the body
+#ifdef  OLD_TOPO
   RcsJoint* jnt = RcsBody_lastJointBeforeBody(body);
+#else
+  RcsJoint* jnt = RcsBody_lastJointBeforeBodyById(self, body);
+#endif
 
   // Traverse backwards through the joints
   while (jnt != NULL)
@@ -248,7 +252,11 @@ static void RcsGraph_constMulAndAddBodyPointJacobian(const RcsGraph* self,
   }
 
   // Find "driving" joint of the body
+#ifdef  OLD_TOPO
   RcsJoint* jnt = RcsBody_lastJointBeforeBody(body);
+#else
+  RcsJoint* jnt = RcsBody_lastJointBeforeBodyById(self, body);
+#endif
 
   // Traverse backwards through the joints
   double col[3];
@@ -322,7 +330,12 @@ void RcsGraph_bodyPointHessian(const RcsGraph* self,
   MatNd_reshapeAndSetZero(H, 3*n, n);
 
   // Find last joint of previous body (which has joints)
+#ifdef  OLD_TOPO
   RcsJoint* jnt_j = RcsBody_lastJointBeforeBody(b);
+#else
+  RcsJoint* jnt_j = RcsBody_lastJointBeforeBodyById(self, b);
+#endif
+
   if (jnt_j == NULL)
   {
     return;
@@ -431,7 +444,11 @@ void RcsGraph_rotationJacobian(const RcsGraph* self,
   }
 
   // Find the last joint of the previous body which has joints
+#ifdef  OLD_TOPO
   RcsJoint* jnt = RcsBody_lastJointBeforeBody(b);
+#else
+  RcsJoint* jnt = RcsBody_lastJointBeforeBodyById(self, b);
+#endif
 
   // Traverse backwards through the joints
   while (jnt != NULL)
@@ -481,7 +498,11 @@ void RcsGraph_rotationHessian(const RcsGraph* self,
   MatNd_reshapeAndSetZero(H, n*3, n);
 
   // Find last joint of previous body (which has joints)
+#ifdef  OLD_TOPO
   RcsJoint* jnt_j = RcsBody_lastJointBeforeBody(b);
+#else
+  RcsJoint* jnt_j = RcsBody_lastJointBeforeBodyById(self, b);
+#endif
 
   if (jnt_j == NULL)
   {
@@ -938,13 +959,21 @@ double RcsGraph_COG(const RcsGraph* self, double r_cog[3])
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+#ifdef OLD_TOPO
 double RcsGraph_COG_Body(const RcsBody* body, double r_cog[3])
+#else
+double RcsGraph_COG_Body(const RcsGraph* self, const RcsBody* body, double r_cog[3])
+#endif
 {
   double tmp[3], m = 0.0;
 
   Vec3d_setZero(r_cog);
 
+#ifdef OLD_TOPO
   RCSBODY_TRAVERSE_BODIES((RcsBody*) body)
+#else
+  RCSBODY_TRAVERSE_BODIES((RcsGraph*) self, (RcsBody*) body)
+#endif
   {
     if (BODY->m>0.0)
     {
@@ -1014,7 +1043,11 @@ void RcsGraph_COGJacobian_Body(const RcsGraph* self, const RcsBody* body,
   MatNd_reshape(J_cog, 3, self->nJ);
   MatNd_setZero(J_cog);
 
+#ifdef OLD_TOPO
   RCSBODY_TRAVERSE_BODIES((RcsBody*) body)
+#else
+  RCSBODY_TRAVERSE_BODIES(self, (RcsBody*) body)
+#endif
   {
     if (BODY->m > 0.0)
     {
@@ -1091,7 +1124,11 @@ void RcsGraph_computeCOGHessian_Body(const RcsGraph* self, const RcsBody* body,
   MatNd_reshape(H, 3*n, n);
   MatNd_setZero(H);
 
+#ifdef OLD_TOPO
   RCSBODY_TRAVERSE_BODIES((RcsBody*) body)
+#else
+  RCSBODY_TRAVERSE_BODIES(self, (RcsBody*) body)
+#endif
   {
     if (BODY->m > 0.0)
     {
@@ -1126,7 +1163,11 @@ void RcsGraph_computeCOGHessian_Body_(const RcsGraph* self, const RcsBody* body,
   MatNd_reshape(H, 3*n, n);
   MatNd_setZero(H);
 
+#ifdef OLD_TOPO
   RCSBODY_TRAVERSE_BODIES((RcsBody*) body)
+#else
+  RCSBODY_TRAVERSE_BODIES(self, (RcsBody*) body)
+#endif
   {
     if (BODY->m > 0.0)
     {
@@ -1746,7 +1787,11 @@ void RcsGraph_dAdq(const RcsGraph* self, const RcsBody* b, double* dAdq,
     return;
   }
 
+#ifdef  OLD_TOPO
   const RcsJoint* jnt = RcsBody_lastJointBeforeBody(b);
+#else
+  const RcsJoint* jnt = RcsBody_lastJointBeforeBodyById(self, b);
+#endif
 
   while (jnt != NULL)
   {

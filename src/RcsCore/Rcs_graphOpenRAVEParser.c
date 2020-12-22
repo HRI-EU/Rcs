@@ -313,8 +313,7 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
   char msg[256];
 
   // Allocate memory
-  RcsBody* b = RALLOC(RcsBody);
-  RCHECK_PEDANTIC(b);
+  RcsBody* b = RcsBody_create();
 
   // Default transformation
   b->A_BI = HTr_create();
@@ -509,7 +508,8 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
   jnt->ctrlType = RCSJOINT_CTRL_POSITION;
 
   // first find body that the joint is attached to
-  /// \todo (MM, Oct 2, 2013): offsetfrom is used and Body nodes are ignored, that may not be valid for all OpenRAVE files
+  /// \todo (MM, Oct 2, 2013): offsetfrom is used and Body nodes are ignored,
+  // that may not be valid for all OpenRAVE files
   xmlNodePtr child = getXMLChildByName(node, "offsetfrom");
   RCHECK_MSG(child, "Couldn't find tag \"offsetfrom\"");
 
@@ -534,8 +534,14 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
   {
     jnt->name = RNALLOC(strlen("unnamed joint") + 1, char);
     strcpy(jnt->name, "unnamed joint");
+#ifdef OLD_TOPO
     RLOG(4, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
          "unnamed joint\"", bdy->name, bdy->parent ? bdy->parent->name : "NULL");
+#else
+    RLOG(4, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
+         "unnamed joint\"", bdy->name,
+         bdy->parentId!=-1 ? self->bodies[bdy->parentId]->name : "NULL");
+#endif
   }
 
   RLOG(5, "Inserting joint \"%s\" into body \"%s\"", jnt->name, bdy->name);

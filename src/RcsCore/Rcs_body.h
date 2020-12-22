@@ -51,6 +51,12 @@ extern "C" {
 
 
 /*! \ingroup RcsBodyFunctions
+ *  \brief Creates and initializes a new RcsBody structure. All connection
+ *         indices are set to -1, the rest of the structure is set to 0.
+ */
+RcsBody* RcsBody_create();
+
+/*! \ingroup RcsBodyFunctions
  *  \brief Deletes the body and frees all memory. The function does nothing
  *         if self is NULL.
  */
@@ -85,7 +91,6 @@ void RcsBody_copy(RcsBody* dst, const RcsBody* src);
 *  \return Clone of the body, or NULL on failure.
 */
 RcsBody* RcsBody_clone(const RcsBody* src);
-
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns the number of joints by which the body is attached to its
@@ -143,10 +148,9 @@ RcsBody* RcsBody_getLastInGraph(const RcsGraph* self);
 RcsBody* RcsBody_getGraphRoot(const RcsBody* self);
 
 /*! \ingroup RcsBodyFunctions
- *  \brief Attaches body to a target body. If A_KV is NULL, the identity
- *         transform is assumed. It is not supported to attach a body to a
- *         target body that is a generic body. In this case, the function
- *         will exit fatally. If the body is a generic body, the function
+ *  \brief Attaches body to a target body. It is not supported to attach a body
+ *          to a target body that is a generic body. In this case, the function
+ *          returns false. If the body is a generic body, the function
  *         attaches the body it is pointing to.
  *
  *  \param[in,out] graph   RcsGraph whose structure is to be changed
@@ -154,11 +158,14 @@ RcsBody* RcsBody_getGraphRoot(const RcsBody* self);
  *  \param[in]     target  RcsBody which will have the body as child. If it is
  *                         NULL, body will be attached to the root.
  *  \param[in]     A_BP    Relative transformation from target to body. If it
- *                         is NULL, an identity transformation is used.
- *  \return true for success, false if body is NULL or the target is a
+ *                         is NULL, the current relative transformation between
+ *                         body and target is used.
+ *  \return True for success, false if body is NULL or the target is a
  *          GenericBody.
  */
 bool RcsBody_attachToBody(RcsGraph* graph, RcsBody* body, RcsBody* target,
+                          const HTr* A_BP);
+bool RcsBody_attachToBodyById(RcsGraph* graph, RcsBody* body, RcsBody* target,
                           const HTr* A_BP);
 
 /*! \ingroup RcsBodyFunctions
@@ -309,7 +316,10 @@ void RcsBody_collisionHessian(const RcsGraph* self, const RcsBody* b1,
  *         NULL, the function returns NULL. If there is no driving joint,
  *         the function returns NULL.
  */
+#ifdef  OLD_TOPO
 RcsJoint* RcsBody_lastJointBeforeBody(const RcsBody* body);
+#endif
+RcsJoint* RcsBody_lastJointBeforeBodyById(const RcsGraph* graph, const RcsBody* body);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Creates and initializes the 6 joints associated to a rigid body
@@ -452,6 +462,17 @@ void RcsBody_scale(RcsBody* self, double scale);
  */
 int RcsBody_getNumDistanceQueries(const RcsBody* b1, const RcsBody* b2);
 
+RcsBody* RcsBody_getPrev(RcsGraph* graph, RcsBody* body);
+
+RcsBody* RcsBody_getNext(RcsGraph* graph, RcsBody* body);
+
+RcsBody* RcsBody_getParent(RcsGraph* graph, RcsBody* body);
+
+const RcsBody* RcsBody_getConstParent(const RcsGraph* graph, const RcsBody* body);
+
+RcsBody* RcsBody_getFirstChild(RcsGraph* graph, RcsBody* body);
+
+RcsBody* RcsBody_getLastChild_(RcsGraph* graph, RcsBody* body);
 
 #ifdef __cplusplus
 }

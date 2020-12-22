@@ -329,7 +329,11 @@ double RcsGraph_COG(const RcsGraph* self, double r_cog[3]);
  *         body as root node in world coordinates. The function returns the
  *         mass of the tree starting from body.
  */
+#ifdef OLD_TOPO
 double RcsGraph_COG_Body(const RcsBody* body, double r_cog[3]);
+#else
+double RcsGraph_COG_Body(const RcsGraph* self, const RcsBody* body, double r_cog[3]);
+#endif
 
 /*! \ingroup RcsKinematicsFunctions
  *  \brief Computes the center of gravity Jacobian of the full graph.

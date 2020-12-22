@@ -82,7 +82,7 @@ static void initQProp(void)
     return;
   }
 
-  bdy_target_qprop = RALLOC(RcsBody);
+  bdy_target_qprop = RcsBody_create();
   bdy_target_qprop->A_BI = HTr_create();
   atexit(clearQProp);
 }
@@ -1251,14 +1251,22 @@ void Rcs_setGradientTestBdy2(RcsBody* b)
 
 static void Rcs_setRndBdy1(RcsGraph* self)
 {
-  unsigned int i, nBodies = RcsGraph_numBodies(self);
-  unsigned int rnd1 = (int)(nBodies * (rand() / (RAND_MAX + 1.0)));
-  RCHECK(rnd1 < nBodies);
+  unsigned int nBodies = RcsGraph_numBodies(self);
+  RCHECK(nBodies>0);
+
+  unsigned int rnd1 = Math_getRandomInteger(0, nBodies-1);
   RCS_GRADIENTTESTS_BODY1 = self->root;
 
-  for (i = 0; i < rnd1; i++)
+#ifdef OLD_TOPO
+  for (unsigned int i = 0; i <= rnd1; i++)
+  {
     RCS_GRADIENTTESTS_BODY1 =
       RcsBody_depthFirstTraversalGetNext(RCS_GRADIENTTESTS_BODY1);
+  }
+#else
+  RCS_GRADIENTTESTS_BODY1 = self->bodies[rnd1];
+#endif
+
   RCHECK(RCS_GRADIENTTESTS_BODY1);
 }
 
@@ -1272,14 +1280,22 @@ static void Rcs_setRndBdy1(RcsGraph* self)
 
 static void Rcs_setRndBdy2(RcsGraph* self)
 {
-  unsigned int i, nBodies = RcsGraph_numBodies(self);
-  unsigned int rnd2 = (int)(nBodies * (rand() / (RAND_MAX + 1.0)));
-  RCHECK(rnd2 < nBodies);
+  unsigned int nBodies = RcsGraph_numBodies(self);
+  RCHECK(nBodies>0);
+
+  unsigned int rnd2 = Math_getRandomInteger(0, nBodies-1);
   RCS_GRADIENTTESTS_BODY2 = self->root;
 
-  for (i = 0; i < rnd2; i++)
+#ifdef OLD_TOPO
+  for (unsigned int i = 0; i < rnd2; i++)
+  {
     RCS_GRADIENTTESTS_BODY2 =
       RcsBody_depthFirstTraversalGetNext(RCS_GRADIENTTESTS_BODY2);
+  }
+#else
+  RCS_GRADIENTTESTS_BODY2 = self->bodies[rnd2];
+#endif
+
   RCHECK(RCS_GRADIENTTESTS_BODY2);
 }
 
@@ -1293,14 +1309,22 @@ static void Rcs_setRndBdy2(RcsGraph* self)
 
 static void Rcs_setRndBdy3(RcsGraph* self)
 {
-  unsigned int i, nBodies = RcsGraph_numBodies(self);
-  unsigned int rnd3 = (int)(nBodies * (rand() / (RAND_MAX + 1.0)));
-  RCHECK(rnd3 < nBodies);
+  unsigned int nBodies = RcsGraph_numBodies(self);
+  RCHECK(nBodies>0);
+
+  unsigned int rnd3 = Math_getRandomInteger(0, nBodies-1);
   RCS_GRADIENTTESTS_BODY3 = self->root;
 
-  for (i = 0; i < rnd3; i++)
+#ifdef OLD_TOPO
+  for (unsigned int i = 0; i < rnd3; i++)
+  {
     RCS_GRADIENTTESTS_BODY3 =
       RcsBody_depthFirstTraversalGetNext(RCS_GRADIENTTESTS_BODY3);
+  }
+#else
+  RCS_GRADIENTTESTS_BODY3 = self->bodies[rnd3];
+#endif
+
   RCHECK(RCS_GRADIENTTESTS_BODY3);
 }
 

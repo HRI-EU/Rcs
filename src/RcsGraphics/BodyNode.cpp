@@ -303,6 +303,7 @@ osg::Switch* BodyNode::addDebugInformation()
 
   }   // RCSBODY_TRAVERSE_JOINTS(this->bdy)
 
+#ifdef OLD_TOPO
   if (this->bdy->parent)
   {
     // add a line between this and the previous body
@@ -324,6 +325,9 @@ osg::Switch* BodyNode::addDebugInformation()
     _debugLineGeometry->setPrimitiveSet(0, ps);
     geode->addDrawable(_debugLineGeometry.get());
   }
+#else
+  RFATAL("Implement me");
+#endif
 
   osg::StateSet* pStateSet = debugNode->getOrCreateStateSet();
 
@@ -590,6 +594,7 @@ void BodyNode::displayDebugInformation(bool visible)
       _debugNode->setAllChildrenOn();
     }
 
+    RLOG(0, "DISPLA DEBUG");
     this->initializeDebugInfo = true;
   }
   else
@@ -853,6 +858,7 @@ void BodyNode::updateCallback(osg::Node* node, osg::NodeVisitor* nv)
   }
 
   // Update debug lines
+#ifdef OLD_TOPO
   if (debugInformationVisible() && (body()->parent) && (_debugLine.valid()))
   {
     _debugLine->clear();
@@ -870,6 +876,9 @@ void BodyNode::updateCallback(osg::Node* node, osg::NodeVisitor* nv)
     _debugLineGeometry->setVertexArray(_debugLine.get());
     _debugLineGeometry->setPrimitiveSet(0, ps);
   }
+#else
+  RLOG(4, "Needs update");
+#endif
 
   // Mesh dynamic update
   if (getDynamicMeshUpdate())

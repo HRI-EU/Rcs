@@ -111,7 +111,11 @@ static double RcsSensor_computeForceCompensation(const RcsGraph* graph,
   // Calculate the force and torque due to the bodies (e.g., the hand) after
   // the sensor
   double I_r_cog_fts[3];
+#ifdef OLD_TOPO
   double m_fts = RcsGraph_COG_Body(fts->body, I_r_cog_fts);
+#else
+  double m_fts = RcsGraph_COG_Body(graph, fts->body, I_r_cog_fts);
+#endif
 
   // Calculate the gravity force at the COG of the kinematic chain that comes
   // after the sensor (in world coordinates)
@@ -216,10 +220,11 @@ static double RcsSensor_computeForceCompensation(const RcsGraph* graph,
 /*******************************************************************************
  *
  ******************************************************************************/
-double RcsSensor_computeStaticForceCompensation(const RcsSensor* fts,
+double RcsSensor_computeStaticForceCompensation(const RcsGraph* graph,
+                                                const RcsSensor* fts,
                                                 double S_f_gravity[6])
 {
-  return RcsSensor_computeForceCompensation(NULL, fts, NULL, S_f_gravity,
+  return RcsSensor_computeForceCompensation(graph, fts, NULL, S_f_gravity,
                                             true, false);
 }
 
@@ -708,8 +713,13 @@ void RcsSensor_fprintXML(FILE* out, const RcsSensor* self)
 /******************************************************************************
  * Compute PPS sensor pressure distribution
  *****************************************************************************/
+#ifdef OLD_TOPO
 bool RcsSensor_computePPS(const RcsSensor* self, MatNd* ppsResult,
                           const double contactForce[3])
+#else
+bool RcsSensor_computePPS(RcsGraph* graph, const RcsSensor* self, MatNd* ppsResult,
+                          const double contactForce[3])
+#endif
 {
   if (self==NULL)
   {
@@ -815,16 +825,31 @@ bool RcsSensor_computePPS(const RcsSensor* self, MatNd* ppsResult,
   RcsBody* rootBdy = RcsBody_getGraphRoot(self->body);
 
   // Go through all the shapes in the graph to calculate the ray distances
+#ifdef OLD_TOPO
   for (RcsBody* BODY = rootBdy; BODY;
        BODY = RcsBody_depthFirstTraversalGetNext(BODY))
+#else
+  RCHECK(rootBdy==graph->root);
+  RCSGRAPH_TRAVERSE_BODIES(graph)
+#endif
   {
     // Skipping mount body & immediate parent & immediate children
+#ifdef OLD_TOPO
     if ((BODY==self->body) ||
         (BODY==self->body->parent) ||
         (BODY->parent==self->body))
     {
       continue;
     }
+#else
+    if ((BODY->id==self->body->id) ||
+        (BODY->id==self->body->parentId) ||
+        (BODY->parentId==self->body->id))
+    {
+      continue;
+    }
+
+#endif
 
     RCSBODY_TRAVERSE_SHAPES(BODY)
     {

@@ -455,10 +455,29 @@ int main(int argc, char** argv)
 
       RcsGraph* graph = RcsGraph_create(xmlFileName);
 
+      RLOG(0, "Original traversal:");
+      int count1 = 0;
+      RCSGRAPH_TRAVERSE_BODIES(graph)
+      {
+        printf("%d: %s - %d: %s\n", count1, BODY->name,
+               graph->bodies[count1]->id, graph->bodies[count1]->name);
+        RcsBody* body = BODY;
+        RLOG(0, "name=%s id=%d parent=%d prev=%d next=%d first=%d last=%d",
+             body->name, body->id, body->parentId, body->prevId, body->nextId,
+             body->firstChildId, body->lastChildId);
+        count1++;
+      }
+
+      // RLOG(0, "New traversal:");
+      // count1 = 0;
+      // RCSGRAPH_TRAVERSE_BODIES2(graph)
+      // {
+      //   printf("%d: %s\n", count1++, BODY->name);
+      // }
+
       if (graph == NULL)
       {
-        RMSG("Failed to create graph from file \"%s\" - exiting",
-             xmlFileName);
+        RMSG("Failed to create graph from file \"%s\" - exiting", xmlFileName);
         break;
       }
 
@@ -597,7 +616,11 @@ int main(int argc, char** argv)
           dtSim = Timer_getSystemTime() - dtSim;
           if (comBase != NULL)
           {
+#ifdef OLD_TOPO
             mass = RcsGraph_COG_Body(comBase, r_com);
+#else
+            mass = RcsGraph_COG_Body(graph, comBase, r_com);
+#endif
           }
           else
           {
@@ -750,35 +773,39 @@ int main(int argc, char** argv)
           {
             std::string parentName, childName;
             RMSG("Changing body childName");
-            printf("Enter body to attach (parent): ");
-            std::cin >> parentName;
-            printf("Enter attachement (child) body: ");
+            printf("Enter body to attach (child): ");
             std::cin >> childName;
+            printf("Enter attachement (parent) body: ");
+            std::cin >> parentName;
 
-            RcsBody* child = RcsGraph_getBodyByName(graph, parentName.c_str());
-            RcsBody* parent = RcsGraph_getBodyByName(graph, childName.c_str());
+            RcsBody* child = RcsGraph_getBodyByName(graph, childName.c_str());
+            RcsBody* parent = RcsGraph_getBodyByName(graph, parentName.c_str());
             RLOG(0, "Attaching \"%s\" (%s) to \"%s\" (%s)",
                  child ? child->name : "NULL", childName.c_str(),
                  parent ? parent->name : "NULL", parentName.c_str());
 
-            HTr A_KV;
-            HTr_setIdentity(&A_KV);
-            HTr_invTransform(&A_KV, parent ? parent->A_BI : HTr_identity(),
-                             child ? child->A_BI : HTr_identity());
-            if (child && child->rigid_body_joints == true)
-            {
-              RcsJoint* jPtr = child->jnt;
-              while (jPtr->next != NULL)
-              {
-                MatNd_set(graph->q, jPtr->jointIndex, 0, 0.0);
-                jPtr = jPtr->next;
-              }
-            }
-            bool success = RcsBody_attachToBody(graph, child, parent, &A_KV);
+#ifdef OLD_TOPO
+            bool success = RcsBody_attachToBody(graph, child, parent, NULL);
+#else
+            bool success = RcsBody_attachToBodyById(graph, child, parent, NULL);
+#endif
             RMSG("%s changing body attachement",
                  success ? "SUCCESS" : "FAILURE");
 
             RcsGraph_fprintJointRecursion(stdout, graph, parentName.c_str());
+            RcsGraph_toXML("graph.xml", graph);
+            RcsGraph_writeDotFile(graph, dotFile);
+
+            char osCmd[256];
+            sprintf(osCmd, "dotty %s&", dotFile);
+            int err = system(osCmd);
+
+            if (err == -1)
+            {
+              RMSG("Couldn't start dot file viewer!");
+            }
+
+
           }
           else if (kc->getAndResetKey('p'))
           {
@@ -934,14 +961,22 @@ int main(int argc, char** argv)
                    success ? "SUCCEEDED" : "FAILED");
             }
 
+#ifdef OLD_TOPO
             RcsBody* first = RcsBody_depthFirstTraversalGetNext(graph->root);
+#else
+            RcsBody* first = RcsBody_depthFirstTraversalGetNextById(graph, graph->root);
+#endif
 
             while (first)
             {
               bool success = RcsBody_mergeWithParent(graph, first->name);
               RMSG("%s to merge body %s with root",
                    success ? "SUCCEEDED" : "FAILED", first->name);
+#ifdef OLD_TOPO
               first = RcsBody_depthFirstTraversalGetNext(graph->root);
+#else
+              first = RcsBody_depthFirstTraversalGetNextById(graph, graph->root);
+#endif
               RMSG("Next body to merge: \"%s\"", first ? first->name : "NULL");
               RPAUSE();
             }

@@ -181,10 +181,12 @@ void Rcs::PhysicsBase::simulate(double dt, RcsGraph* graph, MatNd* q_ddot,
 
   while (dstSensorPtr != NULL)
   {
+    RCHECK(srcSensorPtr);
     MatNd_copy(dstSensorPtr->rawData, srcSensorPtr->rawData);
     dstSensorPtr = dstSensorPtr->next;
     srcSensorPtr = srcSensorPtr->next;
   }
+
 }
 
 /*******************************************************************************

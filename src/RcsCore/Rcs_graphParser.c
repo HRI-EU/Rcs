@@ -551,8 +551,10 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
     snprintf(uniqueIdStr, 8, " %d", uniqueId++);
     strcat(jnt->name, uniqueIdStr);
 
+#ifdef OLD_TOPO
     RLOG(5, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
          "unnamed joint\"", b->name, b->parent ? b->parent->name : "NULL");
+#endif
   }
 
   // Relative transformation from prev. body to joint (in prev. body coords)
@@ -876,13 +878,12 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   }
 
   // Create default transformation
-  RcsBody* b = RALLOC(RcsBody);
+  RcsBody* b = RcsBody_create();
   b->A_BI = HTr_create();
 
   // Body name
-  static int bdyCount = 0;
   char msg[256];
-  snprintf(msg, 255, "unnamed body %d", bdyCount++);
+  snprintf(msg, 255, "body %d", self->nBodies);
 
   // The name as indicated in the xml file
   getXMLNodePropertyStringN(bdyNode, "name", msg, 256);
@@ -933,6 +934,8 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
     }
   }
 
+  // This takes care of linking body indices and appending to graph's bodies
+  // arraay.
   RcsGraph_insertBody(self, parentBdy, b);
 
   // Relative vector from prev. body to body (in prev. body coords)
@@ -1440,6 +1443,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
 
   else if (isXMLNodeName(node, "URDF"))
   {
+#ifdef OLD_TOPO
     // check if prev tag is provided --> first body of URDF graph will be
     // attached to it
     char tmp[256] = "";
@@ -1568,6 +1572,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     if (pB != NULL)
     {
       urdfRoot->parent = pB;
+
       if (pB->firstChild != NULL)
       {
         pB->lastChild->next = urdfRoot;
@@ -1603,6 +1608,9 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
 
     RcsGraph_parseBodies(node->next, self, gCol, suffix,
                          parentGroup, A, firstInGroup, level, root, verbose);
+#else
+    RFATAL("Implement me");
+#endif
   }
   else // can be a body or some junk
   {
@@ -1715,10 +1723,12 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
     return NULL;
   }
 
-  // Get memory for the graph
+  // Get memory for the graph. We initialize the body array with a few entries.
+  // The RcsGraph_insertBody() takes care of reallocating it if needed.
   RcsGraph* self = RALLOC(RcsGraph);
-  RCHECK(self);
   self->xmlFile = String_clone("Created_from_xml_node");
+  self->bodies = RNALLOC(10, RcsBody*);
+
 
   // This is the arrays for the state vectors and velocities. We need to
   // create them here, since in the RcsJoint data structure a pointer will
@@ -1743,6 +1753,12 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
     self->gBody[i].A_BI      = HTr_create();
     self->gBody[i].A_BP      = HTr_create();
     self->gBody[i].Inertia   = HTr_create();
+    self->gBody[i].id           = -1;
+    self->gBody[i].parentId     = -1;
+    self->gBody[i].firstChildId = -1;
+    self->gBody[i].lastChildId  = -1;
+    self->gBody[i].nextId       = -1;
+    self->gBody[i].prevId       = -1;
     HTr_setZero(self->gBody[i].Inertia);
     sprintf(self->gBody[i].name, "GenericBody%d", i);
   }

@@ -576,8 +576,13 @@ int main(int argc, char** argv)
                  BODY->name,
                  BODY->x_dot[0], BODY->x_dot[1], BODY->x_dot[2],
                  BODY->omega[0], BODY->omega[1], BODY->omega[2]);
+#ifdef OLD_TOPO
             RLOG(0, "Parent is %s",
                  BODY->parent ? BODY->parent->name : "NULL");
+#else
+            RLOG(0, "Parent is %s",
+                 BODY->parentId!=-1 ? graph->bodies[BODY->parentId]->name : "NULL");
+#endif
 
             REXEC(3)
             {
@@ -928,14 +933,22 @@ int main(int argc, char** argv)
 
       bdyCount = 0;
       RMSG("RCSBODY_TRAVERSE_BODIES");
+#ifdef OLD_TOPO
       RCSBODY_TRAVERSE_BODIES(traversalRoot)
+#else
+      RCSBODY_TRAVERSE_BODIES(graph, traversalRoot)
+#endif
       {
         std::cout << bdyCount++ << " " << BODY->name << std::endl;
       }
 
       bdyCount = 0;
       RMSG("RCSBODY_TRAVERSE_CHILD_BODIES");
+#ifdef OLD_TOPO
       RCSBODY_TRAVERSE_CHILD_BODIES(traversalRoot)
+#else
+      RCSBODY_TRAVERSE_CHILD_BODIES(graph, traversalRoot)
+#endif
       {
         std::cout << bdyCount++ << " " << BODY->name << std::endl;
       }

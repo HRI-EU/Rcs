@@ -104,7 +104,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
 
   if (STRCASEEQ(buf, "ROOT"))
   {
-    RcsBody* child = RALLOC(RcsBody);
+    RcsBody* child = RcsBody_create();
     child->A_BI = HTr_create();
     itemsMatched = fscanf(fd, "%63s", buf);   // Body name
     RCHECK_MSG(itemsMatched==1, "Couldn't read body name");
@@ -234,7 +234,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     RCHECK_MSG(itemsMatched==1, "Couldn't read joint link name");
 
     // Create a new body and recursively call this function again
-    RcsBody* child = RALLOC(RcsBody);
+    RcsBody* child = RcsBody_create();
     child->A_BI = HTr_create();
     child->name = String_clone(buf);
     child->Inertia = HTr_create();
@@ -336,6 +336,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
  ******************************************************************************/
 static void addGeometry(RcsGraph* self)
 {
+#ifdef OLD_TOPO
 
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
@@ -402,6 +403,9 @@ static void addGeometry(RcsGraph* self)
     }
   }
 
+#else
+  RFATAL("Implement me");
+#endif
 }
 
 /*******************************************************************************
@@ -466,7 +470,7 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
 
   if (Z_up_x_forward == true)
   {
-    RcsBody* xyzRoot = RALLOC(RcsBody);
+    RcsBody* xyzRoot = RcsBody_create();
     xyzRoot->A_BI = HTr_create();
     xyzRoot->name = String_clone("BVHROOT");
     xyzRoot->Inertia = HTr_create();

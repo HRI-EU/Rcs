@@ -69,6 +69,15 @@ static Rcs::PhysicsFactoryRegistrar<Rcs::BulletSimulation> physics(className);
 typedef std::map<const RcsJoint*, Rcs::BulletJointBase*>::iterator hinge_it;
 typedef std::map<const RcsBody*, Rcs::BulletRigidBody*>::iterator body_it;
 
+struct MyCollisionDispatcher : public btCollisionDispatcher
+{
+  MyCollisionDispatcher(btDefaultCollisionConfiguration* cc, RcsGraph* graph) :
+    btCollisionDispatcher(cc), graphPtr(graph)
+  {
+  }
+
+  RcsGraph* graphPtr;
+};
 
 /*******************************************************************************
  * Callback for collision filtering. Do your collision logic here
@@ -119,8 +128,13 @@ void Rcs::BulletSimulation::MyNearCallbackEnabled(btBroadphasePair& collisionPai
     NLOG(0, "Broadphase collision between %s and %s",
          rb0->getBodyName(), rb1->getBodyName());
 
-    if ((rb0->getBodyPtr()->rigid_body_joints==false && rb0->getBodyPtr()->parent) ||
-        (rb1->getBodyPtr()->rigid_body_joints==false && rb1->getBodyPtr()->parent))
+    MyCollisionDispatcher& myCD = dynamic_cast<MyCollisionDispatcher&>(dispatcher);
+
+    const RcsBody* parent0 = RcsBody_getParent(myCD.graphPtr, (RcsBody*)rb0->getBodyPtr());
+    const RcsBody* parent1 = RcsBody_getParent(myCD.graphPtr, (RcsBody*)rb1->getBodyPtr());
+
+    if ((rb0->getBodyPtr()->rigid_body_joints==false && parent0) ||
+        (rb1->getBodyPtr()->rigid_body_joints==false && parent1))
     {
 
       if ((RcsBody_isChild(rb0->getBodyPtr(), rb1->getBodyPtr())) ||
@@ -443,7 +457,15 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
 
       bdyMap[BODY] = btBody;
 
+#ifdef OLD_TOPO
       body_it it = bdyMap.find(BODY->parent);
+#else
+      body_it it = bdyMap.end();
+      if (BODY->parentId!=-1)
+      {
+        it = bdyMap.find(getGraph()->bodies[BODY->parentId]);
+      }
+#endif
 
       if (it!=bdyMap.end())
       {
@@ -1007,7 +1029,8 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
       // parent body exists. In the latter case, the transformation must be
       // relative between two bodies.
       HTr A_ParentI;
-      RcsBody* rcsParent = rb->parent;
+      //RcsBody* rcsParent = rb->parent;
+      const RcsBody* rcsParent = RcsBody_getConstParent(getGraph(), rb);
 
       if (rcsParent != NULL)
       {
@@ -1030,7 +1053,7 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
         HTr_setIdentity(&A_ParentI);
       }
 
-      RcsGraph_relativeRigidBodyDoFs(rb, &A_BI, &A_ParentI, &q->ele[idx]);
+      RcsGraph_relativeRigidBodyDoFs(getGraph(), rb, &A_BI, &A_ParentI, &q->ele[idx]);
     }   // if (rb->rigid_body_joints == true)
   }
 
@@ -1437,7 +1460,7 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
 
   // Sensor's mass compensation (static forces only)
   double S_f_gravity[6];
-  RcsSensor_computeStaticForceCompensation(fts, S_f_gravity);
+  RcsSensor_computeStaticForceCompensation(getGraph(), fts, S_f_gravity);
   VecNd_subSelf(ftWrench, S_f_gravity, 6);
 
   // Copy into sensor's rawData array
@@ -1843,7 +1866,11 @@ bool Rcs::BulletSimulation::updatePPSSensor(RcsSensor* sensor)
 
   }   // for (int i=0; i<numManifolds; i++)
 
+#ifdef OLD_TOPO
   return RcsSensor_computePPS(sensor, sensor->rawData, contactForce);
+#else
+  return RcsSensor_computePPS(getGraph(), sensor, sensor->rawData, contactForce);
+#endif
 }
 
 /*******************************************************************************
@@ -1902,7 +1929,14 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
 
   RcsBody* body = RcsBody_clone(body_);
   RCHECK(body);
-  body->parent = RcsGraph_getBodyByName(getGraph(), body->name);
+
+
+#ifdef OLD_TOPO
+  body->parent = RcsGraph_getBodyByName(getGraph(), body->name);  // This must be body->parent->name
+  RCHECK(parent);// HACK
+#else
+  // Nothing to do, already handled by parentId
+#endif
 
   BulletRigidBody* btBody = BulletRigidBody::create(body, &config);
   RCHECK(btBody);
@@ -1925,7 +1959,16 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
 
     bdyMap[body] = btBody;
 
+#ifdef OLD_TOPO
     body_it it = bdyMap.find(body->parent);
+#else
+    body_it it = bdyMap.end();
+
+    if (body->parentId!=-1)
+    {
+      it = bdyMap.find(getGraph()->bodies[body->parentId]);
+    }
+#endif
 
     if (it != bdyMap.end())
     {
@@ -1973,7 +2016,12 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
     this->q_dot_des = MatNd_realloc(this->q_dot_des, getGraph()->dof, 1);
   }
 
+#ifdef OLD_TOPO
   RcsGraph_addBody(getGraph(), body->parent, body, arrBuf, 3);
+#else
+  // \todo: Must it be body->parent->name???
+  RcsGraph_addBody(getGraph(), RcsGraph_getBodyByName(getGraph(), body->name), body, arrBuf, 3);
+#endif
 
   unlock();
 
@@ -2118,7 +2166,8 @@ void Rcs::BulletSimulation::createWorld(xmlNodePtr bulletParams)
   }
 
   this->collisionConfiguration = new btDefaultCollisionConfiguration();
-  this->dispatcher = new btCollisionDispatcher(collisionConfiguration);
+  //this->dispatcher = new btCollisionDispatcher(collisionConfiguration);
+  this->dispatcher = new MyCollisionDispatcher(collisionConfiguration, getGraph());
   dispatcher->setNearCallback(MyNearCallbackEnabled);
   broadPhase = new btDbvtBroadphase();
 

@@ -106,20 +106,27 @@ extern "C" {
  *
  */
 
+RcsBody* RcsBody_getLastChildById(const RcsGraph* graph, RcsBody* b);
+RcsBody* RcsBody_depthFirstTraversalGetNextById(const RcsGraph* graph,
+                                                const RcsBody* body);
 
 /*! \ingroup RcsGraphTraversalFunctions
  *  \brief Depth-first traversal through a graph, starting from body. This
  *         function steps through the complete graph, even through the
  *         parents of body.
  */
+#ifdef OLD_TOPO
 RcsBody* RcsBody_depthFirstTraversalGetNext(const RcsBody* body);
+#endif
 
 /*! \ingroup RcsGraphTraversalFunctions
  *  \brief This function returns a body in the reverse direction of
  *         RcsBody_depthFirstTraversalGetNext(). It is so-to-say an
  *         inverse depth-first step.
  */
+#ifdef OLD_TOPO
 RcsBody* RcsBody_depthFirstTraversalGetPrevious(const RcsBody* body);
+#endif
 
 /*! \ingroup RcsGraphTraversalFunctions
  *  \brief Returns the leaf-node that comes last in a depth-first traversal.
@@ -131,31 +138,54 @@ RcsBody* RcsBody_getLastChild(const RcsBody* body);
  *         from the root body. The bodies can be accessed with variable
  *         "BODY".
  */
+#ifdef OLD_TOPO
 #define RCSGRAPH_TRAVERSE_BODIES(graph) \
   for (RcsBody* BODY = (graph)->root; \
        BODY; \
        BODY = RcsBody_depthFirstTraversalGetNext(BODY))
+#else
+#define RCSGRAPH_TRAVERSE_BODIES(graph) \
+  for (RcsBody* BODY = (graph)->bodies[0]; \
+       BODY; \
+       BODY = RcsBody_depthFirstTraversalGetNextById(graph, BODY))
+#endif
 
 /*! \ingroup RcsGraphTraversalFunctions
  *  \brief Loops through the given body and its children, depth-first. The
  *         "next" bodies of body are not considered.
  */
+#ifdef OLD_TOPO
 #define RCSBODY_TRAVERSE_BODIES(body) \
   for (RcsBody* BODY = (body), \
        *LAST = RcsBody_depthFirstTraversalGetNext(RcsBody_getLastChild(BODY)); \
        BODY && BODY != LAST; \
        BODY = RcsBody_depthFirstTraversalGetNext(BODY))
+#else
+#define RCSBODY_TRAVERSE_BODIES(graph, body)     \
+  for (RcsBody* BODY = (body),                \
+       *LAST = RcsBody_depthFirstTraversalGetNextById((graph), RcsBody_getLastChildById((graph), BODY)); \
+       BODY && BODY != LAST; \
+       BODY = RcsBody_depthFirstTraversalGetNextById((graph),BODY))
+#endif
 
 /*! \ingroup RcsGraphTraversalFunctions
  *  \brief This macro is almost identical to RCSBODY_TRAVERSE_BODIES(),
  *         except that the body argument itself will not be traversed, but
  *         only its children.
  */
+#ifdef OLD_TOPO
 #define RCSBODY_TRAVERSE_CHILD_BODIES(body)                             \
   for (RcsBody* BODY = RcsBody_depthFirstTraversalGetNext(body),        \
        *LAST = RcsBody_depthFirstTraversalGetNext(RcsBody_getLastChild(body)); \
        BODY && BODY != LAST;                                            \
        BODY = RcsBody_depthFirstTraversalGetNext(BODY))
+#else
+#define RCSBODY_TRAVERSE_CHILD_BODIES(graph, body)                             \
+  for (RcsBody* BODY = RcsBody_depthFirstTraversalGetNextById((graph), (body)), \
+       *LAST = RcsBody_depthFirstTraversalGetNextById((graph), RcsBody_getLastChild(body)); \
+       BODY && BODY != LAST;                                            \
+       BODY = RcsBody_depthFirstTraversalGetNextById((graph), BODY))
+#endif
 
 /*! \ingroup RcsGraphTraversalFunctions
  *  \brief Traverses all joints of the graph, starting from the root body.
@@ -509,6 +539,7 @@ RcsBody* RcsGraph_getGenericBodyPtr(const RcsGraph* self, int bdyNum);
  *         case, the graph is not modified.
  */
 void RcsGraph_insertBody(RcsGraph* graph, RcsBody* parent, RcsBody* body);
+void RcsGraph_insertBodyById(RcsGraph* graph, RcsBody* parent, RcsBody* body);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Please explain.
@@ -991,7 +1022,8 @@ bool RcsGraph_copyRigidBodyDofs(MatNd* q, const RcsGraph* self,
  *                  -  A^0_{KI}\mbox{.org} \,)
  *  \f}
  */
-void RcsGraph_relativeRigidBodyDoFs(const RcsBody* body,
+void RcsGraph_relativeRigidBodyDoFs(const RcsGraph* self,
+                                    const RcsBody* body,
                                     const HTr* new_A_KI_body,
                                     const HTr* new_A_KI_parent,
                                     double angles[6]);
@@ -1022,6 +1054,16 @@ bool RcsGraph_setRigidBodyDoFs(RcsGraph* self, const RcsBody* body,
  */
 
 ///@{
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Prints the graph's xml representation to a file with the given name.
+ *         If the file cannot be written, the function returns false and
+ *         complains on debug level 1.
+ *
+ *  \param[in] fileName   Desired file name for xml file
+ *  \param[in] self       Pointer to a valid RcsGraph
+ */
+bool RcsGraph_toXML(const char* fileName, const RcsGraph* self);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Prints the graph's xml representation to the given file

@@ -94,7 +94,11 @@ void Rcs::TaskCOM3D::computeX(double* x_res) const
 {
   if (this->ef)
   {
+#ifdef OLD_TOPO
     RcsGraph_COG_Body(this->ef, x_res);
+#else
+    RcsGraph_COG_Body(this->graph, this->ef, x_res);
+#endif
   }
   else
   {
@@ -150,7 +154,11 @@ void Rcs::TaskCOM3D::computeJ(MatNd* jacobian) const
 
       if (this->ef != NULL)
       {
+#ifdef OLD_TOPO
         RcsGraph_COG_Body(this->ef, I_r_cog);
+#else
+        RcsGraph_COG_Body(this->graph, this->ef, I_r_cog);
+#endif
       }
       else
       {

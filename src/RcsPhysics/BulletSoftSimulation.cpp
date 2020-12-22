@@ -447,7 +447,9 @@ void BulletSoftSimulation::createSoftBodies()
 
       // Link soft body to parent if it exists and the body physics type is
       // fixed
-      if (BODY->parent)
+      const RcsBody* parent = RcsBody_getConstParent(getGraph(), BODY);
+
+      if (parent)
       {
         RLOG_CPP(5, "Body " << BODY->name << " has "
                  << softBdy->m_nodes.size() << " nodes (" << softMesh->nFaces
@@ -455,7 +457,7 @@ void BulletSoftSimulation::createSoftBodies()
 
         RCHECK(BODY->physicsSim==RCSBODY_PHYSICS_FIXED);
         std::map<const RcsBody*, Rcs::BulletRigidBody*>::iterator it;
-        it = bdyMap.find(BODY->parent);
+        it = bdyMap.find(parent);
         RCHECK(it!=bdyMap.end());
         BulletRigidBody* bParent = it->second;
 
@@ -464,7 +466,8 @@ void BulletSoftSimulation::createSoftBodies()
       }
 
       // Link rigid child bodies to soft parent
-      RcsBody* child = BODY->firstChild;
+      //RcsBody* child = BODY->firstChild;
+      RcsBody* child = RcsBody_getFirstChild(getGraph(), BODY);
 
       while (child)
       {
@@ -478,7 +481,8 @@ void BulletSoftSimulation::createSoftBodies()
         RLOG(5, "Anchored %d vertices to child %s",
              anchoredVertices, child->name);
 
-        child = child->next;
+        //child = child->next;
+        child = RcsBody_getNext(getGraph(), child);
       }
 
       softWorld->addSoftBody(softBdy);

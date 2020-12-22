@@ -205,11 +205,21 @@ bool GraphNode::init(const RcsGraph* g, bool resizeable,
         double* a = &graph->q->ele[BODY->jnt->jointIndex+3];
         RLOG(5, "index is %d", BODY->jnt->jointIndex);
         osg::ref_ptr<Rcs::TargetSetter> ts = new Rcs::TargetSetter(x, a);
+#ifdef OLD_TOPO
         if (BODY->parent)
         {
           ts->setReferenceFrame(BODY->parent->A_BI->org,
                                 BODY->parent->A_BI->rot);
         }
+#else
+        if (BODY->parentId != -1)
+        {
+          RcsBody* parent_ = RcsBody_getParent((RcsGraph*)this->graph, BODY);
+          ts->setReferenceFrame(parent_->A_BI->org,
+                                parent_->A_BI->rot);
+        }
+#endif
+
         addChild(ts.get());
       }   // if(BODY->rigid_body_joints==true)
 
@@ -814,7 +824,11 @@ bool GraphNode::hideSubGraph(const RcsBody* bdy)
     return false;
   }
 
+#ifdef OLD_TOPO
   RCSBODY_TRAVERSE_BODIES((RcsBody*)bdy)
+#else
+  RCSBODY_TRAVERSE_BODIES(this->graph, (RcsBody*)bdy)
+#endif
   {
     hideBodyNode(BODY);
   }

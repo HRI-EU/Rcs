@@ -195,7 +195,7 @@ void Rcs::TaskPositionTarget3D::computeH(MatNd* hessian) const
  ******************************************************************************/
 RcsBody* Rcs::TaskPositionTarget3D::createBody()
 {
-  RcsBody* body = RALLOC(RcsBody);
+  RcsBody* body = RcsBody_create();
 
   body->name        = String_clone("TaskPositionTarget3D::refFrame");
   body->xmlName     = String_clone(body->name);
