@@ -69,7 +69,7 @@ class VortexSimulation : public PhysicsBase
 {
 public:
 
-  /*! \brief Constructs an empty simlation instance that needs to be 
+  /*! \brief Constructs an empty simlation instance that needs to be
    *         initialized.
    */
   VortexSimulation();
@@ -297,6 +297,7 @@ public:
 private:
 
   VortexBody* getPartPtr(const RcsBody* body) const;
+  VortexBody* getPartPtrById(int bodyId) const;
 
   bool initSettings(const PhysicsConfig* config);
 
@@ -354,7 +355,7 @@ private:
   /*! \brief Assignment operator. Ideally, this should be implemented, rather
    *         than being made private.
    */
-  VortexSimulation& operator=(const VortexSimulation&); 
+  VortexSimulation& operator=(const VortexSimulation&);
 
 
 
@@ -367,4 +368,3 @@ private:
 }   // namespace Rcs
 
 #endif // RCS_VORTEXSIMULATION_H
-

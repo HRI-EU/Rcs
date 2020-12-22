@@ -822,14 +822,17 @@ bool RcsSensor_computePPS(RcsGraph* graph, const RcsSensor* self, MatNd* ppsResu
   }
 
   // We do not have access to the graph, so we find the root body manually
+#ifdef OLD_TOPO
   RcsBody* rootBdy = RcsBody_getGraphRoot(self->body);
+#else
+  RcsBody* rootBdy = graph->root;
+#endif
 
   // Go through all the shapes in the graph to calculate the ray distances
 #ifdef OLD_TOPO
   for (RcsBody* BODY = rootBdy; BODY;
        BODY = RcsBody_depthFirstTraversalGetNext(BODY))
 #else
-  RCHECK(rootBdy==graph->root);
   RCSGRAPH_TRAVERSE_BODIES(graph)
 #endif
   {

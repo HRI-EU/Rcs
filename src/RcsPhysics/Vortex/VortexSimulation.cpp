@@ -173,7 +173,7 @@ Rcs::VortexSimulation::VortexSimulation(const VortexSimulation& copyFromMe,
 {
   this->materialFileName = String_clone(copyFromMe.materialFileName);
   PhysicsConfig config(materialFileName);
-  initPhysics(&config); 
+  initPhysics(&config);
 }
 
 /*******************************************************************************
@@ -352,7 +352,7 @@ void Rcs::VortexSimulation::updateSensors()
 
         // Sensor's mass compensation (static forces only)
         double S_f_gravity[6];
-        RcsSensor_computeStaticForceCompensation(fts, S_f_gravity);
+        RcsSensor_computeStaticForceCompensation(getGraph(), fts, S_f_gravity);
         VecNd_subSelf(ftWrench, S_f_gravity, 6);
 
         // Update accelerations and rotate into body frame
@@ -461,17 +461,17 @@ bool Rcs::VortexSimulation::initSettings(const PhysicsConfig* config)
                                    &useGroundPlane);
 
       if (useGroundPlane)
-        {
-          Vx::VxPart* groundPlane = new Vx::VxPart();
-          groundPlane->setName("GroundPlane");
-          Vx::VxCollisionGeometry* g;
-          g = new Vx::VxCollisionGeometry(new Vx::VxPlane());
-          groundPlane->addCollisionGeometry(g);
-          universe->addPart(groundPlane);
-          RLOG(5, "Created ground plane");
-        }
+      {
+        Vx::VxPart* groundPlane = new Vx::VxPart();
+        groundPlane->setName("GroundPlane");
+        Vx::VxCollisionGeometry* g;
+        g = new Vx::VxCollisionGeometry(new Vx::VxPlane());
+        groundPlane->addCollisionGeometry(g);
+        universe->addPart(groundPlane);
+        RLOG(5, "Created ground plane");
+      }
 
-      
+
     }
 
     node = node->next;
@@ -714,8 +714,11 @@ bool Rcs::VortexSimulation::createCompositeBody(const RcsBody* body)
     return false;
   }
 
-
+#ifdef OLD_TOPO
   Vx::VxPart* parentPrt = body->parent ? getPartPtr(body->parent) : NULL;
+#else
+  Vx::VxPart* parentPrt = getPartPtrById(body->parentId);
+#endif
 
   if ((body->physicsSim == RCSBODY_PHYSICS_DYNAMIC) &&
       (body->rigid_body_joints==false) &&
@@ -1352,7 +1355,11 @@ bool Rcs::VortexSimulation::createJoint(const RcsBody* body)
     return false;
   }
 
+#ifdef OLD_TOPO
   Vx::VxPart* part0 = body->parent ? getPartPtr(body->parent) : NULL;
+#else
+  Vx::VxPart* part0 = getPartPtrById(body->parentId);
+#endif
   Vx::VxPart* part1 = getPartPtr(body);
 
   switch (body->physicsSim)
@@ -1410,7 +1417,11 @@ bool Rcs::VortexSimulation::createJoint(const RcsBody* body)
 
     case RCSBODY_PHYSICS_FIXED:
     {
+#ifdef OLD_TOPO
       if (body->parent == NULL)
+#else
+      if (body->parentId == -1)
+#endif
       {
         RLOG(1, "Can't create fixed joint for body \"%s\": Parent is NULL",
              body->name);
@@ -1437,9 +1448,13 @@ bool Rcs::VortexSimulation::createJoint(const RcsBody* body)
       }
       else
       {
+#ifdef OLD_TOPO
         RLOG(4, "Creating fixed joint between \"%s\" and \"%s\" failed",
-             body->parent ? body->parent->name : "NULL", body->name);
-
+             body->paren ? body->parent->name : "NULL", body->name);
+#else
+        RLOG(4, "Creating fixed joint between \"%s\" and \"%s\" failed",
+             body->parentId!=-1 ? getGraph()->bodies[body->parentId]->name : "NULL", body->name);
+#endif
       }
     }
     break;
@@ -1615,8 +1630,13 @@ void Rcs::VortexSimulation::getJointAngles(MatNd* q, RcsStateType sType) const
         HTr pose;
         HTr_fromVxTransform(&pose, vxBdy->getTransform());
         double* q_i = &q->ele[vxBdy->body->jnt->jointIndex];
+#ifdef OLD_TOPO
         HTr* A_ParentI = vxBdy->body->parent ? vxBdy->body->parent->A_BI : NULL;
         RcsGraph_relativeRigidBodyDoFs(vxBdy->body, &pose, A_ParentI, q_i);
+#else
+        HTr* A_ParentI = vxBdy->body->parentId!=-1 ? getGraph()->bodies[vxBdy->body->parentId]->A_BI : NULL;
+        RcsGraph_relativeRigidBodyDoFs(getGraph(), vxBdy->body, &pose, A_ParentI, q_i);
+#endif
       }
 
     }
@@ -1781,11 +1801,22 @@ void Rcs::VortexSimulation::getPhysicsTransform(HTr* A_BI,
   // a physics body and in that case compute the relative transformation.
   else
   {
+#ifdef OLD_TOPO
     Vx::VxPart* vxParent = getPartPtr(body->parent);
+#else
+    Vx::VxPart* vxParent = getPartPtrById(body->parentId);
+#endif
 
     // If there is no parent in the physics or if there are joints between
     // body and parent, we give up.
-    if ((vxParent==NULL) || (body->parent->jnt!=NULL))
+#ifdef OLD_TOPO
+    const RcsJoint* parentJnt = body->parent->jnt;
+#else
+    const RcsBody* parent = RcsBody_getConstParent(getGraph(), body);
+    const RcsJoint* parentJnt = parent ? parent->jnt : NULL;
+#endif
+
+    if ((vxParent==NULL) || (parentJnt!=NULL))
     {
       HTr_setIdentity(A_BI);
       RLOG(1, "Couldn't get physics transformation of body \"%s\"",
@@ -1827,7 +1858,11 @@ bool Rcs::VortexSimulation::removeJoint(RcsBody* body)
     return false;
   }
 
+#ifdef OLD_TOPO
   Vx::VxPart* part0 = body->parent ? getPartPtr(body->parent) : NULL;
+#else
+  Vx::VxPart* part0 = getPartPtrById(body->parentId);
+#endif
 
   if (part0 == NULL)
   {
@@ -1960,7 +1995,7 @@ bool Rcs::VortexSimulation::updateFTS(RcsSensor* fts)
 
   // Sensor's mass compensation (static forces only)
   double S_f_gravity[6];
-  RcsSensor_computeStaticForceCompensation(fts, S_f_gravity);
+  RcsSensor_computeStaticForceCompensation(getGraph(), fts, S_f_gravity);
   VecNd_subSelf(ftWrench, S_f_gravity, 6);
 
   // Update accelerations and rotate into body frame
@@ -2100,7 +2135,7 @@ bool Rcs::VortexSimulation::updatePPSSensor(RcsSensor* sensor)
     it++;
   }
 
-  return RcsSensor_computePPS(sensor, sensor->rawData, contactForce);
+  return RcsSensor_computePPS(getGraph(), sensor, sensor->rawData, contactForce);
 }
 
 /*******************************************************************************
@@ -2629,6 +2664,21 @@ Rcs::VortexBody* Rcs::VortexSimulation::getPartPtr(const RcsBody* body) const
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+Rcs::VortexBody* Rcs::VortexSimulation::getPartPtrById(int bodyId) const
+{
+  if (bodyId == -1)
+  {
+    return NULL;
+  }
+
+  const RcsBody* body = getGraph()->bodies[bodyId];
+
+  return getPartPtr(body);
+}
+
+/*******************************************************************************
 *
 ******************************************************************************/
 bool Rcs::VortexSimulation::removeBody(const char* name)
@@ -2693,7 +2743,12 @@ bool Rcs::VortexSimulation::addBody(const RcsBody* body)
 
   RcsBody* cpyOfBody = RcsBody_clone(body);
   RCHECK(cpyOfBody);
+
+#ifdef OLD_TOPO
   cpyOfBody->parent = RcsGraph_getBodyByName(getGraph(), body->name);
+#else
+  RFATAL("Fix me");
+#endif
 
   bool success = createCompositeBody(cpyOfBody);
 
@@ -2713,7 +2768,11 @@ bool Rcs::VortexSimulation::addBody(const RcsBody* body)
     this->q_dot_des = MatNd_realloc(this->q_dot_des, getGraph()->dof, 1);
   }
 
+#ifdef OLD_TOPO
   RcsGraph_addBody(getGraph(), cpyOfBody->parent, cpyOfBody, arrBuf, 3);
+#else
+  RFATAL("Fix me");
+#endif
 
 
   pthread_mutex_unlock(&this->extForceLock);

@@ -2310,7 +2310,6 @@ static RcsGraph* RcsGraph_cloneById(const RcsGraph* src)
   {
     // Determine body corresponding to BODY in the dst graph
     RcsBody* b = dst->bodies[BODY->id];
-    RLOG(0, "Initializing %s", b->name);
 
     // Determine the previous joint to which the body is connected. That's
     // the relevant one for the backward chain connectivity
@@ -2390,20 +2389,12 @@ static RcsGraph* RcsGraph_cloneById(const RcsGraph* src)
   dst->sensor = NULL;
 
 
-
   RCSGRAPH_TRAVERSE_SENSORS(src)
   {
-    RLOG(0, "sensor");
     RcsSensor* sensor = RcsSensor_clone(SENSOR, dst);
     RCHECK(sensor);
     RcsGraph_addSensor(dst, sensor);
   }
-
-  RCSGRAPH_TRAVERSE_SENSORS(dst)
-  {
-    RLOG(0, "dst sensor");
-  }
-
 
 
   // Handle coupled joints
