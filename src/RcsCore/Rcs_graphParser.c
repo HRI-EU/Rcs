@@ -944,13 +944,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   {
     bool success = !getXMLNodeProperty(bdyNode, "quat");
     RCHECK_MSG(success, "\"quat\" is not allowed if \"quat\" exists.");
-
-    HTr A_BP;
-    getXMLNodePropertyHTr(bdyNode, "transform", &A_BP);
-    if (!HTr_isIdentity(&A_BP))
-    {
-      b->A_BP = HTr_clone(&A_BP);
-    }
+    getXMLNodePropertyHTr(bdyNode, "transform", &b->A_BP);
   }
 
   // check if the quat tag exists and if yes, transform is not allowed
@@ -958,15 +952,8 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   {
     bool success = !getXMLNodeProperty(bdyNode, "transform");
     RCHECK_MSG(success, "\"transform\" is not allowed if \"quat\" exists.");
-
-    HTr A_BP;
-    HTr_setIdentity(&A_BP);
-    success = getXMLNodePropertyQuat(bdyNode, "quat", A_BP.rot);
-    getXMLNodePropertyVec3(bdyNode, "pos", A_BP.org);
-    if (!HTr_isIdentity(&A_BP))
-    {
-      b->A_BP = HTr_clone(&A_BP);
-    }
+    success = getXMLNodePropertyQuat(bdyNode, "quat", b->A_BP.rot);
+    getXMLNodePropertyVec3(bdyNode, "pos", b->A_BP.org);
   }
 
 
@@ -1154,14 +1141,14 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   // transformation. If it doesn't exist, it will be created.
   if ((nJoints == 0) && (HTr_isIdentity(A_group) == false))
   {
-    if (b->A_BP == NULL)
-    {
-      b->A_BP = HTr_clone(A_group);
-    }
-    else
-    {
-      HTr_transformSelf(b->A_BP, A_group);
-    }
+    /* if (b->A_BP == NULL) */
+    /* { */
+    /*   b->A_BP = HTr_clone(A_group); */
+    /* } */
+    /* else */
+    /* { */
+    HTr_transformSelf(&b->A_BP, A_group);
+    /* } */
     RLOG(5, "Transformed body \"%s\"", b->name);
   }
 
@@ -1750,13 +1737,13 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
     self->gBody[i].xmlName   = RNALLOC(64, char);
     self->gBody[i].suffix    = RNALLOC(64, char);
     self->gBody[i].A_BI      = HTr_create();
-    self->gBody[i].A_BP      = HTr_create();
     self->gBody[i].id           = -1;
     self->gBody[i].parentId     = -1;
     self->gBody[i].firstChildId = -1;
     self->gBody[i].lastChildId  = -1;
     self->gBody[i].nextId       = -1;
     self->gBody[i].prevId       = -1;
+    HTr_setIdentity(&self->gBody[i].A_BP);
     HTr_setZero(&self->gBody[i].Inertia);
     sprintf(self->gBody[i].name, "GenericBody%d", i);
   }

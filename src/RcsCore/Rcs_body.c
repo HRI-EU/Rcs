@@ -87,6 +87,7 @@
 RcsBody* RcsBody_create()
 {
   RcsBody* b = RALLOC(RcsBody);
+  HTr_setIdentity(&b->A_BP);
   b->id = -1;
   b->parentId = -1;
   b->firstChildId = -1;
@@ -138,7 +139,6 @@ void RcsBody_destroy(RcsBody* self)
   RFREE(self->name);
   RFREE(self->xmlName);
   RFREE(self->suffix);
-  RFREE(self->A_BP);
   RFREE(self->A_BI);
 
   // Reset all internal memory
@@ -556,7 +556,7 @@ void RcsBody_copy(RcsBody* dst, const RcsBody* src)
   String_copyOrRecreate(&dst->xmlName, src->xmlName);
   String_copyOrRecreate(&dst->suffix, src->suffix);
 
-  HTr_copyOrRecreate(&dst->A_BP, src->A_BP);
+  HTr_copy(&dst->A_BP, &src->A_BP);
   HTr_copyOrRecreate(&dst->A_BI, src->A_BI);
   HTr_copy(&dst->Inertia, &src->Inertia);
 }
@@ -1953,11 +1953,11 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
   }
 #endif
 
-  if (self->A_BP != NULL)
+  if (!HTr_isIdentity(&self->A_BP))
   {
     double trf[6];
-    Vec3d_copy(&trf[0], self->A_BP->org);
-    Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->A_BP->rot);
+    Vec3d_copy(&trf[0], self->A_BP.org);
+    Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->A_BP.rot);
     Vec3d_constMulSelf(&trf[3], 180.0 / M_PI);
 
     if (VecNd_maxAbsEle(trf, 6) > 1.0e-8)
@@ -2483,14 +2483,14 @@ bool RcsBody_removeJoints(RcsBody* self, RcsGraph* graph)
   }
 
   // Update body relative transform to predecessor
-  if (self->A_BP)
-  {
-    HTr_transformSelf(self->A_BP, &A_JB);
-  }
-  else
-  {
-    self->A_BP = HTr_clone(&A_JB);
-  }
+  /* if (self->A_BP) */
+  /* { */
+  HTr_transformSelf(&self->A_BP, &A_JB);
+  /* } */
+  /* else */
+  /* { */
+  /*   self->A_BP = HTr_clone(&A_JB); */
+  /* } */
 
   // Remove all joints
   unsigned int nJoints = RcsBody_numJoints(self);
@@ -2615,10 +2615,7 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
  ******************************************************************************/
 void RcsBody_scale(RcsBody* bdy, double scale)
 {
-  if (bdy->A_BP)
-  {
-    Vec3d_constMulSelf(bdy->A_BP->org, scale);
-  }
+  Vec3d_constMulSelf(bdy->A_BP.org, scale);
 
   RCSBODY_TRAVERSE_JOINTS(bdy)
   {
@@ -2929,33 +2926,21 @@ bool RcsBody_attachToBodyById(RcsGraph* graph, RcsBody* body, RcsBody* target,
 
   if (target != NULL)
   {
-    if (body->A_BP == NULL)
-    {
-      body->A_BP = HTr_create();
-    }
-
     if (!A_BP)
     {
       // Calculate the new A_BP = A_BI * (A_VI)'
-      HTr_invTransform(body->A_BP, target->A_BI, body->A_BI);
+      HTr_invTransform(&body->A_BP, target->A_BI, body->A_BI);
     }
     else
     {
-      HTr_copy(body->A_BP, A_BP);
+      HTr_copy(&body->A_BP, A_BP);
     }
   }
   else   // no target, but A_BP
   {
     if (A_BP != NULL)
     {
-      if (body->A_BP == NULL)
-      {
-        body->A_BP = HTr_clone(A_BP);
-      }
-      else
-      {
-        HTr_copy(body->A_BP, A_BP);
-      }
+      HTr_copy(&body->A_BP, A_BP);
     }
   }
 

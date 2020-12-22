@@ -352,27 +352,19 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
 
   RcsGraph_insertBody(self, parentBdy, b);
 
-  HTr A_KV;
-  HTr_setIdentity(&A_KV);
-
   // check for translation
   child = getXMLChildByName(bdyNode, "Translation");
 
   if (child && !root)
   {
-    getXMLNodeVec3(child, A_KV.org);
+    getXMLNodeVec3(child, b->A_BP.org);
   }
 
   // check for quat
   child = getXMLChildByName(bdyNode, "Quat");
   if (child && !root)
   {
-    getXMLNodeQuat(child, A_KV.rot);
-  }
-
-  if (!HTr_isIdentity(&A_KV))
-  {
-    b->A_BP = HTr_clone(&A_KV);
+    getXMLNodeQuat(child, b->A_BP.rot);
   }
 
   /// \todo (MM, Oct 2, 2013): physics not supported yet
@@ -555,8 +547,10 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
   // body's transformation
   if (bdy->jnt == jnt)
   {
-    jnt->A_JP = bdy->A_BP;
-    bdy->A_BP = NULL;
+    /* jnt->A_JP = bdy->A_BP; */
+    /* bdy->A_BP = NULL; */
+    HTr_copy(jnt->A_JP, &bdy->A_BP);
+    HTr_setIdentity(&bdy->A_BP);
   }
 
   /// \todo (MM, Oct 2, 2013): Groups are not supported yet

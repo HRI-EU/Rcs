@@ -113,7 +113,6 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     HTr_setZero(&child->Inertia);
     if (Z_up_x_forward)
     {
-      child->A_BP = HTr_create();
       //Mat3d_fromEulerAngles2(child->A_BP->rot, M_PI_2, M_PI_2, 0.0);
     }
     RcsBody_addShape(child, createFrameShape(0.5));
@@ -472,8 +471,7 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
     xyzRoot->A_BI = HTr_create();
     xyzRoot->name = String_clone("BVHROOT");
     HTr_setZero(&xyzRoot->Inertia);
-    xyzRoot->A_BP = HTr_create();
-    Mat3d_fromEulerAngles2(xyzRoot->A_BP->rot, M_PI_2, M_PI_2, 0.0);
+    Mat3d_fromEulerAngles2(xyzRoot->A_BP.rot, M_PI_2, M_PI_2, 0.0);
     RcsBody_addShape(xyzRoot, createFrameShape(1.0));
     RcsGraph_insertBody(self, NULL, xyzRoot);
     bvhRoot = xyzRoot;

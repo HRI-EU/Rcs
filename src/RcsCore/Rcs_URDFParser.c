@@ -1125,7 +1125,7 @@ RcsGraph* RcsGraph_fromURDFFile(const char* configFile)
     self->gBody[i].xmlName   = RNALLOC(64, char);
     self->gBody[i].suffix    = RNALLOC(64, char);
     self->gBody[i].A_BI      = HTr_create();
-    self->gBody[i].A_BP      = HTr_create();
+    HTr_setIdentity(&self->gBody[i].A_BP);
     HTr_setZero(&self->gBody[i].Inertia);
     sprintf(self->gBody[i].name, "GenericBody%d", i);
   }

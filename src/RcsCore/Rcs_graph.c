@@ -160,11 +160,11 @@ static void RcsGraph_bodyKinematics(RcsGraph* graph, RcsBody* bdy, unsigned int*
   }
 
   // Apply relative rotation of body wrt. last joint
-  if (bdy->A_BP != NULL)
-  {
-    Vec3d_transMulAndAddSelf(bdy->A_BI->org, bdy->A_BI->rot, bdy->A_BP->org);
-    Mat3d_preMulSelf(bdy->A_BI->rot, bdy->A_BP->rot);
-  }
+  /* if (bdy->A_BP != NULL) */
+  /* { */
+  Vec3d_transMulAndAddSelf(bdy->A_BI->org, bdy->A_BI->rot, bdy->A_BP.org);
+  Mat3d_preMulSelf(bdy->A_BI->rot, bdy->A_BP.rot);
+  /* } */
 
 
 
@@ -528,7 +528,6 @@ void RcsGraph_destroy(RcsGraph* self)
     {
       // Those elements point to another body if not "NULL"
       RFREE(self->gBody[i].A_BI);
-      RFREE(self->gBody[i].A_BP);
     }
 
     // These elements belong exclusively to the gBody
@@ -2374,7 +2373,7 @@ static RcsGraph* RcsGraph_cloneById(const RcsGraph* src)
     if (gSrc != NULL)
     {
       dst->gBody[i].A_BI      = HTr_create();
-      dst->gBody[i].A_BP      = HTr_create();
+      HTr_setIdentity(&dst->gBody[i].A_BP);
       HTr_setZero(&dst->gBody[i].Inertia);
     }
 
@@ -2711,7 +2710,7 @@ RcsBody* RcsGraph_linkGenericBody(RcsGraph* self, int bdyNum,
     // extraInfo to NULL and recreate its own memory for the transformations.
     self->gBody[bdyNum].extraInfo  = NULL;
     self->gBody[bdyNum].A_BI       = HTr_create();
-    self->gBody[bdyNum].A_BP       = HTr_create();
+    HTr_setIdentity(&self->gBody[bdyNum].A_BP);
     HTr_setZero(&self->gBody[bdyNum].Inertia);
 
 #ifdef OLD_TOPO
@@ -2757,7 +2756,6 @@ RcsBody* RcsGraph_linkGenericBody(RcsGraph* self, int bdyNum,
   if (self->gBody[bdyNum].extraInfo == NULL)
   {
     RFREE(self->gBody[bdyNum].A_BI);
-    RFREE(self->gBody[bdyNum].A_BP);
   }
 
   self->gBody[bdyNum].m                 = b->m;
@@ -3001,14 +2999,14 @@ void RcsGraph_relativeRigidBodyDoFs(const RcsGraph* self,
   }
 #endif
 
-  if (body->A_BP != NULL)
-  {
-    HTr_copy(&A_BP_body, body->A_BP);
-  }
-  else
-  {
-    HTr_setIdentity(&A_BP_body);
-  }
+  /* if (body->A_BP != NULL) */
+  /* { */
+  HTr_copy(&A_BP_body, &body->A_BP);
+  /* } */
+  /* else */
+  /* { */
+  /*   HTr_setIdentity(&A_BP_body); */
+  /* } */
 
   HTr trans;
   HTr_copy(&trans, A_BI_body);

@@ -198,7 +198,7 @@ struct _RcsBody
   char* xmlName;          ///< Name of the body as indicated in xml file
   char* suffix;           ///< Group suffix of the body
 
-  HTr* A_BP;              ///< Relative transformation
+  HTr  A_BP;              ///< Relative transformation
   HTr* A_BI;              ///< Absolute transformation
   HTr  Inertia;           ///< Inertia tensor and local COG vector
 

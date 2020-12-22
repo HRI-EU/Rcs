@@ -1828,7 +1828,7 @@ void Rcs::VortexSimulation::getPhysicsTransform(HTr* A_BI,
       pthread_mutex_lock(&this->extForceLock);
       HTr_fromVxTransform(&A_PI, vxParent->getTransform());
       pthread_mutex_unlock(&this->extForceLock);
-      HTr_transform(A_BI, &A_PI, body->A_BP ? body->A_BP : HTr_identity());
+      HTr_transform(A_BI, &A_PI, &body->A_BP);
     }
   }
 }
