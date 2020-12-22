@@ -201,7 +201,6 @@ RcsBody* Rcs::TaskPositionTarget3D::createBody()
   body->xmlName     = String_clone(body->name);
   body->suffix      = String_clone(" ");
   body->A_BI        = HTr_create();
-  body->Inertia     = HTr_create();
 
   return body;
 }

@@ -830,13 +830,13 @@ bool Rcs::VortexSimulation::createCompositeBody(const RcsBody* body)
   // Assign dynamic properties
   if (body->m > 0.0)
   {
-    p->setMassAndInertia(body->m, body->Inertia->rot);
+    p->setMassAndInertia(body->m, body->Inertia.rot);
 
     // if the inertia tensor is zero, Vortex calculates it based on the collision model
     // and sets the mass to 1 kg
     // if this fails for some reason (like for tri-meshes) vortexInertiaTensor is identity
     // (stl and obj seem to work fine)
-    if (Mat3d_isZero(body->Inertia->rot))
+    if (Mat3d_isZero((double(*)[3])body->Inertia.rot))
     {
       Vx::VxReal33 vortexInertiaTensor;
       p->getMassProperties().getInertiaTensorAbsolute(vortexInertiaTensor);
@@ -861,7 +861,7 @@ bool Rcs::VortexSimulation::createCompositeBody(const RcsBody* body)
   //
   // the COM is also calculated from the mesh by setMassAndInertia if the inertia tensor is zero
   // which we could/should use to replace the default
-  p->setCOMOffset(body->Inertia->org);
+  p->setCOMOffset(body->Inertia.org[0], body->Inertia.org[1], body->Inertia.org[2]);
   p->setName(body->name);
   p->setTransform(VxTransform_fromHTr(body->A_BI));
 
@@ -1763,8 +1763,8 @@ void Rcs::VortexSimulation::setMassAndInertiaFromPhysics(RcsGraph* graph_)
     // otherwise uninitialized values are written
     if (hasMassProperties == true)
     {
-      Vec3d_copy(body->Inertia->org, r_com);
-      Mat3d_copy(body->Inertia->rot, I);
+      Vec3d_copy(body->Inertia.org, r_com);
+      Mat3d_copy(body->Inertia.rot, I);
     }
   }
 }

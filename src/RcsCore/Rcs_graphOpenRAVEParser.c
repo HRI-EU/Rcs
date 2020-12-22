@@ -418,9 +418,7 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
 
 
   // Dynamic properties
-  b->Inertia = HTr_create();
-  RCHECK_PEDANTIC(b->Inertia);
-  Mat3d_setZero(b->Inertia->rot);
+  Mat3d_setZero(b->Inertia.rot);
 
   // get mass
   xmlNodePtr mass_node = getXMLChildByName(bdyNode, "mass");
@@ -449,7 +447,7 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
     // get cog
     xmlNodePtr com_node = getXMLChildByName(mass_node, "com");
     RCHECK(com_node);
-    getXMLNodeVec3(com_node, b->Inertia->org);
+    getXMLNodeVec3(com_node, b->Inertia.org);
 
 
     // get inertia
@@ -457,19 +455,19 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
 
     if (inertia_node)
     {
-      getXMLNodeVecN(inertia_node, &b->Inertia->rot[0][0], 9);
+      getXMLNodeVecN(inertia_node, &b->Inertia.rot[0][0], 9);
     }
     else
     {
       // If not specified in the xml file, compute the inertia tensor based on the
       // volume of the shapes and the given body mass
-      RcsBody_computeInertiaTensor(b, b->Inertia);
+      RcsBody_computeInertiaTensor(b, &b->Inertia);
     }
   }
 
 
   // Check if we have a finite inertia but no mass
-  if (Mat3d_getFrobeniusnorm(b->Inertia->rot) > 0.0)
+  if (Mat3d_getFrobeniusnorm(b->Inertia.rot) > 0.0)
   {
     RCHECK_MSG(b->m > 0.0, "You specified a non-zero inertia but a zero mass "
                "for body \"%s\". Shame on you!", b->name);

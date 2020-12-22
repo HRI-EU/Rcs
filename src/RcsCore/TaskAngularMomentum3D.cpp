@@ -129,15 +129,15 @@ void Rcs::TaskAngularMomentum3D::computeJ(MatNd* jacobian) const
     // with the inertia tensor referring to the bodies COG, represented in
     // the bodies frame of reference.
     RcsGraph_rotationJacobian(this->graph, BODY, NULL, J1);
-    MatNd Inertia = MatNd_fromPtr(3, 3, &BODY->Inertia->rot[0][0]);
+    MatNd Inertia = MatNd_fromPtr(3, 3, &BODY->Inertia.rot[0][0]);
     MatNd_mul(J2, &Inertia, J1);
     MatNd_addSelf(jacobian, J2);
 
     // Steiner portion of angular momentum: J2 = m * (r_cog x J_cog)
     // Currently the reference point is (0 0 0).
-    RcsGraph_bodyPointJacobian(this->graph, BODY, BODY->Inertia->org, NULL, J1);
+    RcsGraph_bodyPointJacobian(this->graph, BODY, BODY->Inertia.org, NULL, J1);
     MatNd_constMulSelf(J1, BODY->m);
-    RcsGraph_bodyPoint(BODY, BODY->Inertia->org, I_r_cog);
+    RcsGraph_bodyPoint(BODY, BODY->Inertia.org, I_r_cog);
     MatNd_columnCrossProductSelf(J1, I_r_cog);
     MatNd_addSelf(jacobian, J1);
   }

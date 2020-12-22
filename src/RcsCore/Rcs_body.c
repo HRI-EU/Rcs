@@ -140,7 +140,6 @@ void RcsBody_destroy(RcsBody* self)
   RFREE(self->suffix);
   RFREE(self->A_BP);
   RFREE(self->A_BI);
-  RFREE(self->Inertia);
 
   // Reset all internal memory
   memset(self, 0, sizeof(RcsBody));
@@ -559,7 +558,7 @@ void RcsBody_copy(RcsBody* dst, const RcsBody* src)
 
   HTr_copyOrRecreate(&dst->A_BP, src->A_BP);
   HTr_copyOrRecreate(&dst->A_BI, src->A_BI);
-  HTr_copyOrRecreate(&dst->Inertia, src->Inertia);
+  HTr_copy(&dst->Inertia, &src->Inertia);
 }
 
 /*******************************************************************************
@@ -748,9 +747,9 @@ bool RcsBody_isLeaf(const RcsBody* bdy)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+#ifdef  OLD_TOPO
 bool RcsBody_isArticulated(const RcsBody* self)
 {
-#ifdef  OLD_TOPO
   RcsJoint* jnt = RcsBody_lastJointBeforeBody(self);
 
   while (jnt)
@@ -763,11 +762,24 @@ bool RcsBody_isArticulated(const RcsBody* self)
   }
 
   return false;
-#else
-  RFATAL("Implement me");
-  return false;
-#endif
 }
+#else
+bool RcsBody_isArticulated(const RcsGraph* graph, const RcsBody* self)
+{
+  RcsJoint* jnt = RcsBody_lastJointBeforeBodyById(graph, self);
+
+  while (jnt)
+  {
+    if (!jnt->constrained)
+    {
+      return true;
+    }
+    jnt = jnt->prev;
+  }
+
+  return false;
+}
+#endif
 
 /*******************************************************************************
  * See header.
@@ -1991,7 +2003,7 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
     fprintf(out, "mass=\"%s\" ", String_fromDouble(buf, self->m, 6));
   }
 
-  const double* cogVector = self->Inertia->org;
+  const double* cogVector = self->Inertia.org;
   if ((cogVector[0]!=0.0) && (cogVector[1]!=0.0) && (cogVector[2]!=0.0))
   {
     fprintf(out, "cogVector=\"");
@@ -2002,18 +2014,18 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
 
   // We print out the inertia with the %g format specifier, since the values
   // are sometimes pretty small.
-  if (Mat3d_maxAbsEle(self->Inertia->rot) > 0.0)
+  if (Mat3d_maxAbsEle((double (*)[3])self->Inertia.rot) > 0.0)
   {
     int len = snprintf(buf, 256, "inertia=\"%g %g %g   %g %g %g   %g %g %g",
-                       self->Inertia->rot[0][0],
-                       self->Inertia->rot[0][1],
-                       self->Inertia->rot[0][2],
-                       self->Inertia->rot[1][0],
-                       self->Inertia->rot[1][1],
-                       self->Inertia->rot[1][2],
-                       self->Inertia->rot[2][0],
-                       self->Inertia->rot[2][1],
-                       self->Inertia->rot[2][2]);
+                       self->Inertia.rot[0][0],
+                       self->Inertia.rot[0][1],
+                       self->Inertia.rot[0][2],
+                       self->Inertia.rot[1][0],
+                       self->Inertia.rot[1][1],
+                       self->Inertia.rot[1][2],
+                       self->Inertia.rot[2][0],
+                       self->Inertia.rot[2][1],
+                       self->Inertia.rot[2][2]);
 
     if (len < 256)
     {
@@ -2361,8 +2373,7 @@ RcsBody* RcsBody_createBouncingSphere(const double pos[3],
   bdy->m = mass;
   bdy->physicsSim = RCSBODY_PHYSICS_DYNAMIC;
   bdy->A_BI = HTr_create();
-  bdy->Inertia = HTr_create();
-  RcsBody_computeInertiaTensor(bdy, bdy->Inertia);
+  RcsBody_computeInertiaTensor(bdy, &bdy->Inertia);
   double q_rbj[6];
   VecNd_setZero(q_rbj, 6);
   Vec3d_copy(q_rbj, pos);

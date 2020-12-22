@@ -338,13 +338,11 @@ static void testDistance(int argc, char** argv)
 
   RcsBody* b1 = RcsBody_create();
   b1->A_BI = HTr_create();
-  b1->Inertia = HTr_create();
   Vec3d_setRandom(b1->A_BI->org, -0.2, -0.1);
   RcsBody_addShape(b1, RcsShape_createRandomShape(shapeType1));
 
   RcsBody* b2 = RcsBody_create();
   b2->A_BI = HTr_create();
-  b2->Inertia = HTr_create();
   Vec3d_setRandom(b1->A_BI->org, 0.1, 0.2);
   RcsBody_addShape(b2, RcsShape_createRandomShape(shapeType2));
 

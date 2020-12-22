@@ -821,7 +821,11 @@ void RcsGraph_3dOmegaJacobian(const RcsGraph* self, const RcsBody* effector,
   }
   // Jacobian wrt. static reference frame: J = A_2I * JR_2
   else if ((refBdy!=NULL) && (refFrame==refBdy) &&
+#ifdef  OLD_TOPO
            (RcsBody_isArticulated(refBdy)==false))
+#else
+           (RcsBody_isArticulated(self, refBdy)==false))
+#endif
   {
     RcsGraph_rotationJacobian(self, effector, refBdy->A_BI->rot, J);
   }
@@ -866,7 +870,11 @@ void RcsGraph_3dOmegaHessian(const RcsGraph* self, const RcsBody* effector,
   }
   // Hessian wrt. static reference frame
   else if ((refBdy!=NULL) && (refFrame==refBdy) &&
+#ifdef  OLD_TOPO
            (RcsBody_isArticulated(refBdy)==false))
+#else
+           (RcsBody_isArticulated(self, refBdy)==false))
+#endif
   {
     MatNd_reshape(H, n, n3);
     RcsGraph_rotationHessian(self, effector, refBdy->A_BI->rot, H);
@@ -935,8 +943,7 @@ double RcsGraph_COG(const RcsGraph* self, double r_cog[3])
   {
     if (BODY->m>0.0)
     {
-      Vec3d_transRotate(tmp, BODY->A_BI->rot,
-                        BODY->Inertia->org); // I_r_Ki-COMi
+      Vec3d_transRotate(tmp, BODY->A_BI->rot, BODY->Inertia.org);// I_r_Ki-COMi
       Vec3d_addSelf(tmp, BODY->A_BI->org);   // I_r_I-COMi
       Vec3d_constMulSelf(tmp, BODY->m);
       Vec3d_addSelf(r_cog, tmp);
@@ -977,8 +984,7 @@ double RcsGraph_COG_Body(const RcsGraph* self, const RcsBody* body, double r_cog
   {
     if (BODY->m>0.0)
     {
-      Vec3d_transRotate(tmp, BODY->A_BI->rot,
-                        BODY->Inertia->org); // I_r_Ki-COMi
+      Vec3d_transRotate(tmp, BODY->A_BI->rot, BODY->Inertia.org);// I_r_Ki-COMi
       Vec3d_addSelf(tmp, BODY->A_BI->org);   // I_r_I-COMi
       Vec3d_constMulSelf(tmp, BODY->m);
       Vec3d_addSelf(r_cog, tmp);
@@ -1011,9 +1017,8 @@ void RcsGraph_COGJacobian(const RcsGraph* self, MatNd* J_cog)
   {
     if (BODY->m > 0.0)
     {
-      RcsGraph_constMulAndAddBodyPointJacobian(self, BODY,
-                                               BODY->Inertia->org, NULL,
-                                               BODY->m, J_cog);
+      RcsGraph_constMulAndAddBodyPointJacobian(self, BODY,BODY->Inertia.org,
+                                               NULL, BODY->m, J_cog);
       m += BODY->m;
     }
 
@@ -1051,8 +1056,7 @@ void RcsGraph_COGJacobian_Body(const RcsGraph* self, const RcsBody* body,
   {
     if (BODY->m > 0.0)
     {
-      RcsGraph_bodyPointJacobian(self, BODY, BODY->Inertia->org, NULL,
-                                 J_local);
+      RcsGraph_bodyPointJacobian(self, BODY, BODY->Inertia.org, NULL, J_local);
       MatNd_constMulAndAddSelf(J_cog, J_local, BODY->m);
       m += BODY->m;
     }
@@ -1087,7 +1091,7 @@ void RcsGraph_computeCOGHessian(const RcsGraph* self, double* H)
   {
     if (BODY->m > 0.0)
     {
-      RcsGraph_bodyPointHessian(self, BODY, BODY->Inertia->org, NULL, Hi);
+      RcsGraph_bodyPointHessian(self, BODY, BODY->Inertia.org, NULL, Hi);
       for (i = 0; i < hEle; i++)
       {
         H[i] += Hi->ele[i] * BODY->m;
@@ -1132,7 +1136,7 @@ void RcsGraph_computeCOGHessian_Body(const RcsGraph* self, const RcsBody* body,
   {
     if (BODY->m > 0.0)
     {
-      RcsGraph_bodyPointHessian(self, BODY, BODY->Inertia->org, NULL, Hi);
+      RcsGraph_bodyPointHessian(self, BODY, BODY->Inertia.org, NULL, Hi);
       MatNd_constMulAndAddSelf(H, Hi, BODY->m);
       mass += BODY->m;
     }
@@ -1171,7 +1175,7 @@ void RcsGraph_computeCOGHessian_Body_(const RcsGraph* self, const RcsBody* body,
   {
     if (BODY->m > 0.0)
     {
-      RcsGraph_bodyPointHessian(self, BODY, BODY->Inertia->org, NULL, Hi);
+      RcsGraph_bodyPointHessian(self, BODY, BODY->Inertia.org, NULL, Hi);
       MatNd_constMulAndAddSelf(H, Hi, BODY->m);
       mass += BODY->m;
     }

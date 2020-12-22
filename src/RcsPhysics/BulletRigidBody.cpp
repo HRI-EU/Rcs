@@ -80,12 +80,12 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
   // Compute the transformation from COM (Index P) frame to body frame
   // The principal axes of inertia correspond to the Eigenvectors
   double lambda[3], A_BP[3][3];
-  Mat3d_getEigenVectors(A_BP, lambda, body->Inertia->rot);
+  Mat3d_getEigenVectors(A_BP, lambda, (double (*)[3])body->Inertia.rot);
   HTr A_SP;   // Rotation from physics to shape: A_SP = A_SB*A_BP
-  Mat3d_mul(A_SP.rot, (double (*)[3])sh->A_CB.rot, A_BP);
+  Mat3d_mul(A_SP.rot, sh->A_CB.rot, A_BP);
 
   // Vector from COM to shape, in COM-frame: p_r_ps = A_PB*(-b_r_com + b_r_s)
-  Vec3d_sub(A_SP.org, sh->A_CB.org, body->Inertia->org);   // -b_r_com + b_r_s
+  Vec3d_sub(A_SP.org, sh->A_CB.org, body->Inertia.org);   // -b_r_com + b_r_s
   Vec3d_transRotateSelf(A_SP.org, A_BP);
 
   relTrans = btTransformFromHTr(&A_SP);
@@ -392,7 +392,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
   // Compute the transformation from COM (Index P) frame to body frame
   // The principal axes of inertia correspond to the Eigenvectors
   double lambda[3], A_PB[3][3];
-  Mat3d_getEigenVectors(A_PB, lambda, bdy->Inertia->rot);
+  Mat3d_getEigenVectors(A_PB, lambda, (double (*)[3])bdy->Inertia.rot);
   Mat3d_transposeSelf(A_PB);
   RCHECK(Mat3d_isValid(A_PB));
 
@@ -400,7 +400,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
   Mat3d_mul(A_PI.rot, A_PB, bdy->A_BI->rot);
 
   double I_r_com[3];
-  Vec3d_transRotate(I_r_com, bdy->A_BI->rot, bdy->Inertia->org);
+  Vec3d_transRotate(I_r_com, bdy->A_BI->rot, bdy->Inertia.org);
   Vec3d_add(A_PI.org, bdy->A_BI->org, I_r_com);
 
   btTransform bdyTrans = btTransformFromHTr(&A_PI);
@@ -480,7 +480,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
   //btBody->setSpinningFriction(0.1);
   btBody->setRestitution(material.getRestitution());
 
-  Vec3d_copy(btBody->A_PB_.org, bdy->Inertia->org);
+  Vec3d_copy(btBody->A_PB_.org, bdy->Inertia.org);
   Mat3d_copy(btBody->A_PB_.rot, A_PB);
 
   // For rigid body joints, the joint's weightMetric propoerty is interpreted
@@ -543,7 +543,7 @@ void Rcs::BulletRigidBody::calcHingeTrans(const RcsJoint* jnt,
   Mat3d_mul(A_PI.rot, this->A_PB_.rot, body->A_BI->rot);
 
   double I_r_com[3];
-  Vec3d_transRotate(I_r_com, body->A_BI->rot, body->Inertia->org);
+  Vec3d_transRotate(I_r_com, body->A_BI->rot, body->Inertia.org);
   Vec3d_add(A_PI.org, body->A_BI->org, I_r_com);
 
   // Transformation from physics body to joint in physics coordinates
@@ -575,7 +575,7 @@ btTransform Rcs::BulletRigidBody::calcSliderTrans(const RcsJoint* jnt)
   Mat3d_mul(A_PI.rot, this->A_PB_.rot, body->A_BI->rot);
 
   double I_r_com[3];
-  Vec3d_transRotate(I_r_com, body->A_BI->rot, body->Inertia->org);
+  Vec3d_transRotate(I_r_com, body->A_BI->rot, body->Inertia.org);
   Vec3d_add(A_PI.org, body->A_BI->org, I_r_com);
 
   // Transformation from physics body to joint in physics coordinates
@@ -742,7 +742,7 @@ void Rcs::BulletRigidBody::getBodyTransform(HTr* A_BI) const
 
   // Origin: I_r_IB = I_r_IP - A_IB*B_r_BP
   //                = A_PI.org - transpose(A_BI)*body->Inertia->org
-  const double* B_r_BP = body->Inertia->org;
+  const double* B_r_BP = body->Inertia.org;
   Vec3d_transRotate(A_BI->org, A_BI->rot, B_r_BP);
   Vec3d_constMulSelf(A_BI->org, -1.0);
   Vec3d_addSelf(A_BI->org, A_PI.org);

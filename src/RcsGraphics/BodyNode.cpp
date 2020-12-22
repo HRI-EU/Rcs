@@ -251,11 +251,9 @@ osg::Switch* BodyNode::addDebugInformation()
   {
     osg::Geode* comGeode = new osg::Geode();
     setNodeMaterial("BLUE", comGeode);
-    osg::Sphere* sphere = new osg::Sphere(osg::Vec3(this->bdy->Inertia->org[0],
-                                                    this->bdy->Inertia->org[1],
-                                                    this->bdy->Inertia->org[2]),
-                                          1.01*r);
-    osg::ShapeDrawable* shape = new osg::ShapeDrawable(sphere, hints.get());
+    const double* cg = this->bdy->Inertia.org;
+    osg::Sphere* sph = new osg::Sphere(osg::Vec3(cg[0], cg[1], cg[2]), 1.01*r);
+    osg::ShapeDrawable* shape = new osg::ShapeDrawable(sph, hints.get());
     comGeode->addDrawable(shape);
     debugNode->addChild(comGeode);
   }

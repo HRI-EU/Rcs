@@ -200,7 +200,7 @@ struct _RcsBody
 
   HTr* A_BP;              ///< Relative transformation
   HTr* A_BI;              ///< Absolute transformation
-  HTr* Inertia;           ///< Inertia tensor and local COG vector
+  HTr  Inertia;           ///< Inertia tensor and local COG vector
 
 #ifdef OLD_TOPO
   RcsBody* parent;        ///< Parent body

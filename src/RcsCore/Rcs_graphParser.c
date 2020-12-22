@@ -1105,19 +1105,18 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
 
 
   // Dynamic properties
-  b->Inertia = HTr_create();
-  Mat3d_setZero(b->Inertia->rot);
+  Mat3d_setZero(b->Inertia.rot);
   getXMLNodePropertyDouble(bdyNode, "mass", &b->m);
 
   // Calculate default inertia properties from shapes
-  RcsBody_computeInertiaTensor(b, b->Inertia);
+  RcsBody_computeInertiaTensor(b, &b->Inertia);
 
   // Overwrite them if a tag is given
   double inertiaVec[9];
-  Mat3d_toArray(inertiaVec, b->Inertia->rot);
+  Mat3d_toArray(inertiaVec, b->Inertia.rot);
   getXMLNodePropertyVecN(bdyNode, "inertia", inertiaVec, 9);
-  Mat3d_fromArray(b->Inertia->rot, inertiaVec);
-  getXMLNodePropertyVec3(bdyNode, "cogVector", b->Inertia->org);
+  Mat3d_fromArray(b->Inertia.rot, inertiaVec);
+  getXMLNodePropertyVec3(bdyNode, "cogVector", b->Inertia.org);
 
   // Specifying an inertia tensor, and not the COG offset easily leads to
   // trouble in the equations of motion. We therefore warn to be explicit
@@ -1752,14 +1751,13 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
     self->gBody[i].suffix    = RNALLOC(64, char);
     self->gBody[i].A_BI      = HTr_create();
     self->gBody[i].A_BP      = HTr_create();
-    self->gBody[i].Inertia   = HTr_create();
     self->gBody[i].id           = -1;
     self->gBody[i].parentId     = -1;
     self->gBody[i].firstChildId = -1;
     self->gBody[i].lastChildId  = -1;
     self->gBody[i].nextId       = -1;
     self->gBody[i].prevId       = -1;
-    HTr_setZero(self->gBody[i].Inertia);
+    HTr_setZero(&self->gBody[i].Inertia);
     sprintf(self->gBody[i].name, "GenericBody%d", i);
   }
 

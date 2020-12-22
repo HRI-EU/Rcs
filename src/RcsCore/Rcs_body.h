@@ -166,7 +166,7 @@ RcsBody* RcsBody_getGraphRoot(const RcsBody* self);
 bool RcsBody_attachToBody(RcsGraph* graph, RcsBody* body, RcsBody* target,
                           const HTr* A_BP);
 bool RcsBody_attachToBodyById(RcsGraph* graph, RcsBody* body, RcsBody* target,
-                          const HTr* A_BP);
+                              const HTr* A_BP);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns true if child is a child of parent, false otherwise.
@@ -184,7 +184,11 @@ bool RcsBody_isLeaf(const RcsBody* bdy);
  *         least one unconstrained joint, false otherwise. If self is NULL,
  *         the function returns false.
  */
+#ifdef  OLD_TOPO
 bool RcsBody_isArticulated(const RcsBody* self);
+#else
+bool RcsBody_isArticulated(const RcsGraph* graph, const RcsBody* self);
+#endif
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns true if the body is part of the graph, false otherwise.

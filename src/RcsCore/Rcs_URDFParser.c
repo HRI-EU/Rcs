@@ -276,8 +276,7 @@ static RcsBody* parseBodyURDF(xmlNode* node)
   body->A_BI = HTr_create();
 
   // Dynamic properties
-  body->Inertia = HTr_create();
-  Mat3d_setZero(body->Inertia->rot);
+  Mat3d_setZero(body->Inertia.rot);
 
   body->xmlName = RNALLOC(len, char);
   getXMLNodePropertyStringN(node, "name", body->xmlName, len);
@@ -316,7 +315,7 @@ static RcsBody* parseBodyURDF(xmlNode* node)
       xmlNodePtr childNode = getXMLChildByName(node, "origin");
       if (childNode)
       {
-        getXMLNodePropertyVec3(childNode, "xyz", body->Inertia->org);
+        getXMLNodePropertyVec3(childNode, "xyz", body->Inertia.org);
       }
 
       childNode = getXMLChildByName(node, "mass");
@@ -328,15 +327,15 @@ static RcsBody* parseBodyURDF(xmlNode* node)
       childNode = getXMLChildByName(node, "inertia");
       if (childNode)
       {
-        getXMLNodePropertyDouble(childNode, "ixx", &body->Inertia->rot[0][0]);
-        getXMLNodePropertyDouble(childNode, "ixy", &body->Inertia->rot[0][1]);
-        getXMLNodePropertyDouble(childNode, "ixz", &body->Inertia->rot[0][2]);
-        body->Inertia->rot[1][0] = -body->Inertia->rot[0][1];
-        getXMLNodePropertyDouble(childNode, "iyy", &body->Inertia->rot[1][1]);
-        getXMLNodePropertyDouble(childNode, "iyz", &body->Inertia->rot[1][2]);
-        body->Inertia->rot[2][0] = -body->Inertia->rot[0][2];
-        body->Inertia->rot[2][1] = -body->Inertia->rot[1][2];
-        getXMLNodePropertyDouble(childNode, "izz", &body->Inertia->rot[2][2]);
+        getXMLNodePropertyDouble(childNode, "ixx", &body->Inertia.rot[0][0]);
+        getXMLNodePropertyDouble(childNode, "ixy", &body->Inertia.rot[0][1]);
+        getXMLNodePropertyDouble(childNode, "ixz", &body->Inertia.rot[0][2]);
+        body->Inertia.rot[1][0] = -body->Inertia.rot[0][1];
+        getXMLNodePropertyDouble(childNode, "iyy", &body->Inertia.rot[1][1]);
+        getXMLNodePropertyDouble(childNode, "iyz", &body->Inertia.rot[1][2]);
+        body->Inertia.rot[2][0] = -body->Inertia.rot[0][2];
+        body->Inertia.rot[2][1] = -body->Inertia.rot[1][2];
+        getXMLNodePropertyDouble(childNode, "izz", &body->Inertia.rot[2][2]);
       }
     }  // "inertial"
     else if (isXMLNodeNameNoCase(node, "visual") ||
@@ -358,11 +357,11 @@ static RcsBody* parseBodyURDF(xmlNode* node)
   // volume of the shapes and the given body mass
   if (inertialTagCount==0)
   {
-    RcsBody_computeInertiaTensor(body, body->Inertia);
+    RcsBody_computeInertiaTensor(body, &body->Inertia);
   }
 
   // Check if we have a finite inertia but no mass
-  if ((Mat3d_getFrobeniusnorm(body->Inertia->rot)>0.0) && (body->m<=0.0))
+  if ((Mat3d_getFrobeniusnorm(body->Inertia.rot)>0.0) && (body->m<=0.0))
   {
     RLOG(4, "You specified a non-zero inertia but a zero mass for body \"%s\"."
          " Shame on you!", body->name);
@@ -1127,8 +1126,7 @@ RcsGraph* RcsGraph_fromURDFFile(const char* configFile)
     self->gBody[i].suffix    = RNALLOC(64, char);
     self->gBody[i].A_BI      = HTr_create();
     self->gBody[i].A_BP      = HTr_create();
-    self->gBody[i].Inertia   = HTr_create();
-    HTr_setZero(self->gBody[i].Inertia);
+    HTr_setZero(&self->gBody[i].Inertia);
     sprintf(self->gBody[i].name, "GenericBody%d", i);
   }
 

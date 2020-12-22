@@ -135,7 +135,11 @@ void Rcs::TaskCOM3D::computeJ(MatNd* jacobian) const
   if (this->refBody != NULL)
   {
 
+#ifdef  OLD_TOPO
     if (RcsBody_isArticulated(this->refBody)==false)
+#else
+    if (RcsBody_isArticulated(this->graph, this->refBody)==false)
+#endif
     {
       MatNd_rotateSelf(J_cog, this->refBody->A_BI->rot);
     }
@@ -200,7 +204,11 @@ void Rcs::TaskCOM3D::computeH(MatNd* H) const
 
   if (this->refBody != NULL)
   {
+#ifdef  OLD_TOPO
     if (RcsBody_isArticulated(this->refBody)==false)
+#else
+    if (RcsBody_isArticulated(this->graph, this->refBody)==false)
+#endif
     {
       MatNd_reshape(H, 3, this->graph->nJ*this->graph->nJ);
       MatNd_rotateSelf(H, this->refBody->A_BI->rot);

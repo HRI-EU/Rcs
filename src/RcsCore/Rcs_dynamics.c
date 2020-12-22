@@ -372,7 +372,8 @@ static void RcsBody_HVector(const RcsBody* bdy,
   // Transform inertia matrix into inertial frame:
   double I_IBuf[3][3];
   MatNd I_I = MatNd_fromPtr(3, 3, &I_IBuf[0][0]);
-  Mat3d_similarityTransform(I_IBuf, bdy->A_BI->rot, bdy->Inertia->rot);
+  Mat3d_similarityTransform(I_IBuf, bdy->A_BI->rot,
+                            (double (*)[3])bdy->Inertia.rot);
 
   // h_local(3,5) = (~om)*I*om;
   MatNd hPtr = MatNd_fromPtr(3, 1, &hVec->ele[3]);
@@ -403,7 +404,8 @@ static void RcsBody_massMatrix(const RcsBody* bdy, MatNd* MassMatrix)
 
   // Transform inertia matrix into inertial frame
   double I_I[3][3];
-  Mat3d_similarityTransform(I_I, bdy->A_BI->rot, bdy->Inertia->rot);
+  Mat3d_similarityTransform(I_I, bdy->A_BI->rot,
+                            (double (*)[3])bdy->Inertia.rot);
 
   for (int i = 0; i < 3; i++)
   {
@@ -508,7 +510,7 @@ double RcsGraph_computeKineticTerms(const RcsGraph* graph,
     }
 
     // Compute linear and angular Jacobian of body COM in inertial frame
-    K_r_com = BODY->Inertia->org;
+    K_r_com = BODY->Inertia.org;
     RcsGraph_bodyPointJacobian(graph, BODY, K_r_com, NULL, &JT);
     RcsGraph_rotationJacobian(graph, BODY, NULL, &JR);
     MatNd_transpose(Jtp, J);
@@ -631,7 +633,7 @@ void RcsGraph_computeMassMatrix(const RcsGraph* graph, MatNd* M)
     }
 
     // Compute linear and angular Jacobian of body COM in inertial frame
-    RcsGraph_bodyPointJacobian(graph, BODY, BODY->Inertia->org, NULL, &JT);
+    RcsGraph_bodyPointJacobian(graph, BODY, BODY->Inertia.org, NULL, &JT);
     RcsGraph_rotationJacobian(graph, BODY, NULL, &JR);
 
     // Compute bodie's mass matrix M_local (in inertial coordinates) and add it
@@ -840,5 +842,3 @@ void Rcs_directDynamicsIntegrationStep(const double* x,
 
   memmove(&xp[0], &x[n], n*sizeof(double));
 }
-
-

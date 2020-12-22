@@ -529,7 +529,6 @@ void RcsGraph_destroy(RcsGraph* self)
       // Those elements point to another body if not "NULL"
       RFREE(self->gBody[i].A_BI);
       RFREE(self->gBody[i].A_BP);
-      RFREE(self->gBody[i].Inertia);
     }
 
     // These elements belong exclusively to the gBody
@@ -1782,7 +1781,7 @@ void RcsGraph_bodyTorque(const RcsGraph* self, const RcsBody* body,
   MatNd* bodyTorque = NULL;
   MatNd_create2(bodyTorque, self->nJ, 1);
 
-  RcsGraph_bodyPointJacobian(self, body, body->Inertia->org, NULL, J_cog);
+  RcsGraph_bodyPointJacobian(self, body, body->Inertia.org, NULL, J_cog);
   MatNd_transposeSelf(J_cog);
   MatNd_set2(force, 2, 0, -body->m * RCS_GRAVITY);
   MatNd_mul(bodyTorque, J_cog, force);
@@ -2065,7 +2064,7 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
     }
 
     // Check if we have a finite inertia but no mass
-    if ((Mat3d_getFrobeniusnorm(BODY->Inertia->rot)>0.0) && (BODY->m<=0.0))
+    if ((Mat3d_getFrobeniusnorm(BODY->Inertia.rot)>0.0) && (BODY->m<=0.0))
     {
       nWarnings++;
       RLOG(1, "Body \"%s\" has positive inertia but zero mass", BODY->name);
@@ -2376,8 +2375,7 @@ static RcsGraph* RcsGraph_cloneById(const RcsGraph* src)
     {
       dst->gBody[i].A_BI      = HTr_create();
       dst->gBody[i].A_BP      = HTr_create();
-      dst->gBody[i].Inertia   = HTr_create();
-      HTr_setZero(dst->gBody[i].Inertia);
+      HTr_setZero(&dst->gBody[i].Inertia);
     }
 
     sprintf(dst->gBody[i].name, "GenericBody%d", i);
@@ -2714,8 +2712,7 @@ RcsBody* RcsGraph_linkGenericBody(RcsGraph* self, int bdyNum,
     self->gBody[bdyNum].extraInfo  = NULL;
     self->gBody[bdyNum].A_BI       = HTr_create();
     self->gBody[bdyNum].A_BP       = HTr_create();
-    self->gBody[bdyNum].Inertia    = HTr_create();
-    HTr_setZero(self->gBody[bdyNum].Inertia);
+    HTr_setZero(&self->gBody[bdyNum].Inertia);
 
 #ifdef OLD_TOPO
     self->gBody[bdyNum].parent     = NULL;
@@ -2761,7 +2758,6 @@ RcsBody* RcsGraph_linkGenericBody(RcsGraph* self, int bdyNum,
   {
     RFREE(self->gBody[bdyNum].A_BI);
     RFREE(self->gBody[bdyNum].A_BP);
-    RFREE(self->gBody[bdyNum].Inertia);
   }
 
   self->gBody[bdyNum].m                 = b->m;

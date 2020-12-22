@@ -110,8 +110,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     RCHECK_MSG(itemsMatched==1, "Couldn't read body name");
 
     child->name = String_clone(buf);
-    child->Inertia = HTr_create();
-    Mat3d_setZero(child->Inertia->rot);
+    HTr_setZero(&child->Inertia);
     if (Z_up_x_forward)
     {
       child->A_BP = HTr_create();
@@ -237,8 +236,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     RcsBody* child = RcsBody_create();
     child->A_BI = HTr_create();
     child->name = String_clone(buf);
-    child->Inertia = HTr_create();
-    Mat3d_setZero(child->Inertia->rot);
+    HTr_setZero(&child->Inertia);
     RcsBody_addShape(child, createFrameShape(0.1));
     RcsGraph_insertBody(self, body, child);
 
@@ -473,10 +471,9 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
     RcsBody* xyzRoot = RcsBody_create();
     xyzRoot->A_BI = HTr_create();
     xyzRoot->name = String_clone("BVHROOT");
-    xyzRoot->Inertia = HTr_create();
+    HTr_setZero(&xyzRoot->Inertia);
     xyzRoot->A_BP = HTr_create();
     Mat3d_fromEulerAngles2(xyzRoot->A_BP->rot, M_PI_2, M_PI_2, 0.0);
-    Mat3d_setZero(xyzRoot->Inertia->rot);
     RcsBody_addShape(xyzRoot, createFrameShape(1.0));
     RcsGraph_insertBody(self, NULL, xyzRoot);
     bvhRoot = xyzRoot;
