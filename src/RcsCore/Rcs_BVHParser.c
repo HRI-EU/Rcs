@@ -105,7 +105,6 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
   if (STRCASEEQ(buf, "ROOT"))
   {
     RcsBody* child = RcsBody_create();
-    child->A_BI = HTr_create();
     itemsMatched = fscanf(fd, "%63s", buf);   // Body name
     RCHECK_MSG(itemsMatched==1, "Couldn't read body name");
 
@@ -233,7 +232,6 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
 
     // Create a new body and recursively call this function again
     RcsBody* child = RcsBody_create();
-    child->A_BI = HTr_create();
     child->name = String_clone(buf);
     HTr_setZero(&child->Inertia);
     RcsBody_addShape(child, createFrameShape(0.1));
@@ -468,7 +466,6 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
   if (Z_up_x_forward == true)
   {
     RcsBody* xyzRoot = RcsBody_create();
-    xyzRoot->A_BI = HTr_create();
     xyzRoot->name = String_clone("BVHROOT");
     HTr_setZero(&xyzRoot->Inertia);
     Mat3d_fromEulerAngles2(xyzRoot->A_BP.rot, M_PI_2, M_PI_2, 0.0);

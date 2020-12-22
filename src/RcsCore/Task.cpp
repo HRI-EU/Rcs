@@ -1116,9 +1116,9 @@ void Rcs::Task::projectTaskForce(MatNd* ft_task,
   MatNd I_ft_ = MatNd_fromPtr(6, 1, I_ft);
   VecNd_copy(I_ft, S_ft, 6);
   Vec3d_transRotateSelf(&I_ft[0], loadCell->offset->rot);
-  Vec3d_transRotateSelf(&I_ft[0], loadCell->body->A_BI->rot);
+  Vec3d_transRotateSelf(&I_ft[0], loadCell->body->A_BI.rot);
   Vec3d_transRotateSelf(&I_ft[3], loadCell->offset->rot);
-  Vec3d_transRotateSelf(&I_ft[3], loadCell->body->A_BI->rot);
+  Vec3d_transRotateSelf(&I_ft[3], loadCell->body->A_BI.rot);
 
   // Compute the sensor Jacobian
   MatNd* J_sensor = NULL;
@@ -1213,7 +1213,7 @@ void Rcs::Task::computeRelativeRotationMatrix(double A_ER[3][3],
     if (bdyEff != NULL)
     {
       // No refBody, but effector
-      Mat3d_copy(A_ER, bdyEff->A_BI->rot);
+      Mat3d_copy(A_ER, (double(*)[3]) bdyEff->A_BI.rot);
     }
     else
     {
@@ -1226,13 +1226,13 @@ void Rcs::Task::computeRelativeRotationMatrix(double A_ER[3][3],
     if (bdyEff != NULL)
     {
       // refBody and effector
-      Mat3d_mulTranspose(A_ER, (double(*)[3]) bdyEff->A_BI->rot,
-                         (double(*)[3]) bdyRef->A_BI->rot);
+      Mat3d_mulTranspose(A_ER, (double(*)[3]) bdyEff->A_BI.rot,
+                         (double(*)[3]) bdyRef->A_BI.rot);
     }
     else
     {
       // refBody, but no effector
-      Mat3d_transpose(A_ER, (double(*)[3]) bdyRef->A_BI->rot);
+      Mat3d_transpose(A_ER, (double(*)[3]) bdyRef->A_BI.rot);
     }
 
   }
@@ -1261,7 +1261,7 @@ void Rcs::Task::computeOmega(double* omega_curr) const
   if (this->refBody != NULL)
   {
     Vec3d_subSelf(omega_curr, this->refBody->omega);
-    Vec3d_rotateSelf(omega_curr, this->refFrame->A_BI->rot);
+    Vec3d_rotateSelf(omega_curr, (double (*)[3])this->refFrame->A_BI.rot);
   }
 
 }

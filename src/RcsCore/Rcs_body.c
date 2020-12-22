@@ -88,6 +88,7 @@ RcsBody* RcsBody_create()
 {
   RcsBody* b = RALLOC(RcsBody);
   HTr_setIdentity(&b->A_BP);
+  HTr_setIdentity(&b->A_BI);
   b->id = -1;
   b->parentId = -1;
   b->firstChildId = -1;
@@ -139,7 +140,6 @@ void RcsBody_destroy(RcsBody* self)
   RFREE(self->name);
   RFREE(self->xmlName);
   RFREE(self->suffix);
-  RFREE(self->A_BI);
 
   // Reset all internal memory
   memset(self, 0, sizeof(RcsBody));
@@ -556,9 +556,9 @@ void RcsBody_copy(RcsBody* dst, const RcsBody* src)
   String_copyOrRecreate(&dst->xmlName, src->xmlName);
   String_copyOrRecreate(&dst->suffix, src->suffix);
 
-  HTr_copy(&dst->A_BP, &src->A_BP);
-  HTr_copyOrRecreate(&dst->A_BI, src->A_BI);
-  HTr_copy(&dst->Inertia, &src->Inertia);
+  dst->A_BP = src->A_BP;
+  dst->A_BI = src->A_BI;
+  dst->Inertia = src->Inertia;
 }
 
 /*******************************************************************************
@@ -1096,7 +1096,7 @@ double RcsBody_distance(const RcsBody* b1,
       }
 
       // Compute the closest distance via function table lookup
-      d = RcsShape_distance(*sh1Ptr, *sh2Ptr, b1->A_BI, b2->A_BI, p1, p2, ni);
+      d = RcsShape_distance(*sh1Ptr, *sh2Ptr, &b1->A_BI, &b2->A_BI, p1, p2, ni);
 
       // Copy results if distance is smaller than before
       if (d < d_closest)
@@ -1158,8 +1158,7 @@ double RcsBody_distanceToPoint(const RcsBody* body,
   ptBdy->shape = RNALLOC(2, RcsShape*);
   ptBdy->shape[0] = ptShape;
   ptBdy->shape[1] = NULL;
-  ptBdy->A_BI = HTr_create();
-  Vec3d_copy(ptBdy->A_BI->org, I_pt);
+  Vec3d_copy(ptBdy->A_BI.org, I_pt);
 
   double tmp[3];
   double d = RcsBody_distance(body, ptBdy, I_cpBdy, tmp, I_nBdyPt);
@@ -1188,17 +1187,17 @@ double RcsBody_centerDistance(const RcsBody* b1,
 
   if (k_p1 != NULL)
   {
-    Vec3d_transRotate(I_p1, b1->A_BI->rot, k_p1);
+    Vec3d_transRotate(I_p1, (double (*)[3])b1->A_BI.rot, k_p1);
   }
 
-  Vec3d_addSelf(I_p1, b1->A_BI->org);
+  Vec3d_addSelf(I_p1, b1->A_BI.org);
 
   if (k_p2 != NULL)
   {
-    Vec3d_transRotate(I_p2, b2->A_BI->rot, k_p2);
+    Vec3d_transRotate(I_p2, (double (*)[3])b2->A_BI.rot, k_p2);
   }
 
-  Vec3d_addSelf(I_p2, b2->A_BI->org);
+  Vec3d_addSelf(I_p2, b2->A_BI.org);
 
   if (I_cp1 != NULL)
   {
@@ -1237,13 +1236,13 @@ void RcsBody_distanceGradient(const RcsGraph* self,
 
   // If I_p is given, then it's I_p. Otherwise, it's the bodie's origin.
   // If the body is NULL, it is the world origin.
-  const double* p1 = I_p1 ? I_p1 : (b1 ? b1->A_BI->org : Vec3d_zeroVec());
-  const double* p2 = I_p2 ? I_p2 : (b2 ? b2->A_BI->org : Vec3d_zeroVec());
+  const double* p1 = I_p1 ? I_p1 : (b1 ? b1->A_BI.org : Vec3d_zeroVec());
+  const double* p2 = I_p2 ? I_p2 : (b2 ? b2->A_BI.org : Vec3d_zeroVec());
 
   // Closest points in body coordinates k_p1 and k_p2 for the
   // closest point Jacobian Jp1 and Jp2
-  Vec3d_invTransform(k_p1, b1 ? b1->A_BI : HTr_identity(), p1);
-  Vec3d_invTransform(k_p2, b2 ? b2->A_BI : HTr_identity(), p2);
+  Vec3d_invTransform(k_p1, b1 ? &b1->A_BI : HTr_identity(), p1);
+  Vec3d_invTransform(k_p2, b2 ? &b2->A_BI : HTr_identity(), p2);
 
   // Transpose of the delta Jacobian: transpose(Jp2-Jp1)
   MatNd* J1 = NULL;
@@ -1329,8 +1328,8 @@ void RcsBody_distanceHessian(const RcsGraph* self,
 {
   RCHECK_PEDANTIC(b1 && b2 && self && H);
 
-  const double* p1 = I_p1 ? I_p1 : b1->A_BI->org;
-  const double* p2 = I_p2 ? I_p2 : b2->A_BI->org;
+  const double* p1 = I_p1 ? I_p1 : b1->A_BI.org;
+  const double* p2 = I_p2 ? I_p2 : b2->A_BI.org;
 
   int n = self->nJ;
   memset(H, 0, n * n * sizeof(double));
@@ -1338,8 +1337,8 @@ void RcsBody_distanceHessian(const RcsGraph* self,
   // Closest points in body coordinates k_p1 and k_p2 for the
   // closest point Jacobian Jp1 and Jp2
   double k_p1[3], k_p2[3];
-  Vec3d_invTransform(k_p1, b1->A_BI, p1);
-  Vec3d_invTransform(k_p2, b2->A_BI, p2);
+  Vec3d_invTransform(k_p1, &b1->A_BI, p1);
+  Vec3d_invTransform(k_p2, &b2->A_BI, p2);
 
   // Transpose of the delta Jacobian: transpose(Jp2-Jp1)
   MatNd* J1       = NULL;
@@ -2372,7 +2371,6 @@ RcsBody* RcsBody_createBouncingSphere(const double pos[3],
   bdy->name = String_clone(a);
   bdy->m = mass;
   bdy->physicsSim = RCSBODY_PHYSICS_DYNAMIC;
-  bdy->A_BI = HTr_create();
   RcsBody_computeInertiaTensor(bdy, &bdy->Inertia);
   double q_rbj[6];
   VecNd_setZero(q_rbj, 6);
@@ -2929,7 +2927,7 @@ bool RcsBody_attachToBodyById(RcsGraph* graph, RcsBody* body, RcsBody* target,
     if (!A_BP)
     {
       // Calculate the new A_BP = A_BI * (A_VI)'
-      HTr_invTransform(&body->A_BP, target->A_BI, body->A_BI);
+      HTr_invTransform(&body->A_BP, &target->A_BI, &body->A_BI);
     }
     else
     {

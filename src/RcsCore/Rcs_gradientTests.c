@@ -70,7 +70,6 @@ static void clearQProp(void)
     return;
   }
 
-  RFREE(bdy_target_qprop->A_BI);
   RFREE(bdy_target_qprop);
   bdy_target_qprop = NULL;
 }
@@ -83,7 +82,6 @@ static void initQProp(void)
   }
 
   bdy_target_qprop = RcsBody_create();
-  bdy_target_qprop->A_BI = HTr_create();
   atexit(clearQProp);
 }
 
@@ -157,14 +155,14 @@ static void test_attitude3D(double* f, const double* x, void* params)
 
   Rcs_setIKState(self, x);
 
-  const RcsBody* ef       = RCS_GRADIENTTESTS_BODY2;
+  RcsBody* ef       = RCS_GRADIENTTESTS_BODY2;
   //const RcsBody* refBdy   = RCS_GRADIENTTESTS_BODY1;
   const double* target    = RCS_GRADIENTTESTS_BODYPT1;
 
   double phi, E[3][3], A_TR[3][3], A_ER[3][3], A_TE[3][3];
   Mat3d_setIdentity(E);
   Mat3d_fromEulerAngles(A_TR, target);
-  Mat3d_mulTranspose(A_ER, ef ? ef->A_BI->rot : Id, E);
+  Mat3d_mulTranspose(A_ER, ef ? ef->A_BI.rot : Id, E);
   Mat3d_mulTranspose(A_TE, A_TR, A_ER);
   phi = Mat3d_diffAngleSelf(A_TE);
   *f = phi * phi;
@@ -178,7 +176,7 @@ static void test_dAttitude3D(double* f, const double* x, void* params)
 
   Rcs_setIKState(self, x);
 
-  const RcsBody* ef       = RCS_GRADIENTTESTS_BODY2;
+  RcsBody* ef       = RCS_GRADIENTTESTS_BODY2;
   //const RcsBody* refBdy   = RCS_GRADIENTTESTS_BODY1;
   const double* target    = RCS_GRADIENTTESTS_BODYPT1;
 
@@ -189,7 +187,7 @@ static void test_dAttitude3D(double* f, const double* x, void* params)
   double phi0, E[3][3], A_TR[3][3], A_ER[3][3], A_TE[3][3];
   Mat3d_setIdentity(E);
   Mat3d_fromEulerAngles(A_TR, target);
-  Mat3d_mulTranspose(A_ER, ef ? ef->A_BI->rot : Id, E);
+  Mat3d_mulTranspose(A_ER, ef ? ef->A_BI.rot : Id, E);
   Mat3d_mulTranspose(A_TE, A_TR, A_ER);   // A_TE = A_TR * A_ER^T
   phi0 = Mat3d_diffAngleSelf(A_TE);
 
@@ -197,7 +195,7 @@ static void test_dAttitude3D(double* f, const double* x, void* params)
   for (int i = 0; i < 3; i++)
   {
     double A_ERi[3][3];
-    Mat3d_copy(A_ERi, ef ? ef->A_BI->rot : Id);
+    Mat3d_copy(A_ERi, ef ? ef->A_BI.rot : Id);
     Mat3d_rotateSelfAboutXYZAxis(A_ERi, i, eps);
     Mat3d_mulTranspose(A_TE, A_TR, A_ERi);
     double phi1 = Mat3d_diffAngleSelf(A_TE);
@@ -207,7 +205,7 @@ static void test_dAttitude3D(double* f, const double* x, void* params)
   MatNd_constMulSelf(gGradX, -2.0 * phi0);
   MatNd* JR = MatNd_create(3, self->nJ);
   RcsGraph_rotationJacobian(self, ef, NULL, JR);
-  MatNd_rotateSelf(JR, ef ? ef->A_BI->rot : Id);
+  MatNd_rotateSelf(JR, ef ? ef->A_BI.rot : Id);
   MatNd_mul(&gGradQ, gGradX, JR);
   MatNd_destroy(JR);
 
@@ -251,7 +249,7 @@ void test_Jpinv_e(double* f, const double* x, void* params)
 
   // Determine e
   MatNd* e = MatNd_create(nx, 1);
-  Vec3d_sub(e->ele, b_des->A_BI->org, b->A_BI->org);
+  Vec3d_sub(e->ele, b_des->A_BI.org, b->A_BI.org);
 
   // J# e
   MatNd* J     = MatNd_create(nx, nq);
@@ -277,26 +275,25 @@ void test_dJpinv_e(double* f, const double* x, void* params)
   {
     initQProp();
   }
-  //const RcsBody *b     = Rcs_getRndBdy1();
-  const RcsBody* b     = RcsGraph_getBodyByName(self, "Seg6");
+  RcsBody* b     = Rcs_getRndBdy1();
   RCHECK(b);
-  const RcsBody* b_des = bdy_target_qprop;
+  RcsBody* b_des = bdy_target_qprop;
 
   Rcs_setIKState(self, x);
 
   // Determine target body transformation
   const double eps = 1.0e-3;
-  Vec3d_constMul(b_des->A_BI->org, b->A_BI->org, 1.0 - eps);
-  Mat3d_copy(b_des->A_BI->rot, b->A_BI->rot);
-  Mat3d_rotateSelfAboutXYZAxis(b_des->A_BI->rot, 0, eps);
-  Mat3d_rotateSelfAboutXYZAxis(b_des->A_BI->rot, 1, eps);
-  Mat3d_rotateSelfAboutXYZAxis(b_des->A_BI->rot, 2, eps);
+  Vec3d_constMul(b_des->A_BI.org, b->A_BI.org, 1.0 - eps);
+  Mat3d_copy(b_des->A_BI.rot, b->A_BI.rot);
+  Mat3d_rotateSelfAboutXYZAxis(b_des->A_BI.rot, 0, eps);
+  Mat3d_rotateSelfAboutXYZAxis(b_des->A_BI.rot, 1, eps);
+  Mat3d_rotateSelfAboutXYZAxis(b_des->A_BI.rot, 2, eps);
 
   // J# e
   MatNd* e     = MatNd_create(3, 1);
   MatNd* J     = MatNd_create(nx, nq);
   MatNd* Jpinv = MatNd_create(nq, nx);
-  Vec3d_sub(e->ele, b->A_BI->org, b_des->A_BI->org);
+  Vec3d_sub(e->ele, b->A_BI.org, b_des->A_BI.org);
   RcsGraph_bodyPointJacobian(self, b, pt, NULL, J);
   MatNd_rwPinv(Jpinv, J, NULL, NULL);
 
@@ -569,14 +566,14 @@ static void test_qprop_ts(double* f, const double* x, void* params)
   }
 
   int nx = 6, nq = self->nJ;
-  const RcsBody* b     = Rcs_getRndBdy1();
-  const RcsBody* b_des = bdy_target_qprop;
+  RcsBody* b     = Rcs_getRndBdy1();
+  RcsBody* b_des = bdy_target_qprop;
   const double* pt     = NULL;
 
   // Determine feedback error
   MatNd* e = MatNd_create(nx, 1);
-  Vec3d_sub(e->ele, b_des->A_BI->org, b->A_BI->org);
-  Mat3d_getEulerError(&e->ele[3], b->A_BI->rot, b_des->A_BI->rot);
+  Vec3d_sub(e->ele, b_des->A_BI.org, b->A_BI.org);
+  Mat3d_getEulerError(&e->ele[3], b->A_BI.rot, b_des->A_BI.rot);
 
   // J# e
   MatNd* J = MatNd_create(nx, nq);
@@ -617,23 +614,23 @@ static void test_dqprop_ts(double* f, const double* x, void* params)
   double dt = Timer_getTime();
 
   int nx = 6, nq = self->nJ;
-  const RcsBody* b     = Rcs_getRndBdy1();
-  const RcsBody* b_des = bdy_target_qprop;
+  RcsBody* b     = Rcs_getRndBdy1();
+  RcsBody* b_des = bdy_target_qprop;
   const double* pt     = NULL;
 
   // Determine target body transformation
   const double eps = 1.0e-6;
-  Vec3d_constMul(b_des->A_BI->org, b->A_BI->org, 1.0 - eps);
-  Mat3d_copy(b_des->A_BI->rot, b->A_BI->rot);
-  Mat3d_rotateSelfAboutXYZAxis(b_des->A_BI->rot, 0, eps);
-  Mat3d_rotateSelfAboutXYZAxis(b_des->A_BI->rot, 1, eps);
-  Mat3d_rotateSelfAboutXYZAxis(b_des->A_BI->rot, 2, eps);
+  Vec3d_constMul(b_des->A_BI.org, b->A_BI.org, 1.0 - eps);
+  Mat3d_copy(b_des->A_BI.rot, b->A_BI.rot);
+  Mat3d_rotateSelfAboutXYZAxis(b_des->A_BI.rot, 0, eps);
+  Mat3d_rotateSelfAboutXYZAxis(b_des->A_BI.rot, 1, eps);
+  Mat3d_rotateSelfAboutXYZAxis(b_des->A_BI.rot, 2, eps);
 
   // Determine feedback error e
   MatNd* e = MatNd_create(nx, 1);
-  Vec3d_sub(e->ele, b_des->A_BI->org, b->A_BI->org);
+  Vec3d_sub(e->ele, b_des->A_BI.org, b->A_BI.org);
   //HTr_getEulerError(b->A_BI, b_des->A_BI, &e->ele[3]);
-  Mat3d_getEulerError(&e->ele[3], b->A_BI->rot, b_des->A_BI->rot);
+  Mat3d_getEulerError(&e->ele[3], b->A_BI.rot, b_des->A_BI.rot);
 
   // Jacobian
   MatNd* J = MatNd_create(nx, nq);
@@ -737,7 +734,7 @@ STATIC_FUNC void test_qprop_ts3(double* f, const double* x, void* params)
 
   // Determine e
   MatNd* e = MatNd_create(nx, 1);
-  Vec3d_sub(e->ele, b ? b->A_BI->org : Vec3d_zeroVec(), x_target_qprop);
+  Vec3d_sub(e->ele, b ? b->A_BI.org : Vec3d_zeroVec(), x_target_qprop);
 
   // J#
   MatNd* J = MatNd_create(nx, nq);
@@ -793,12 +790,12 @@ STATIC_FUNC void test_dqprop_ts3(double* f, const double* x, void* params)
 
   // Determine x_target
   const double eps_target = 1.0e-3;
-  Vec3d_constMul(x_target_qprop, b ? b->A_BI->org : Vec3d_zeroVec(),
+  Vec3d_constMul(x_target_qprop, b ? b->A_BI.org : Vec3d_zeroVec(),
                  1.0 - eps_target);
 
   // Determine e
   MatNd* e = MatNd_create(3, 1);
-  Vec3d_sub(e->ele, b ? b->A_BI->org : Vec3d_zeroVec(), x_target_qprop);
+  Vec3d_sub(e->ele, b ? b->A_BI.org : Vec3d_zeroVec(), x_target_qprop);
 
   // Jacobian
   MatNd* J = MatNd_create(nx, nq);
@@ -1405,9 +1402,9 @@ static void test_A(double* f, const double* x, void* params)
   Mat3d_setIdentity(Id);
 
   double* A1_ = RCS_GRADIENTTESTS_BODY1 ?
-                (double*) RCS_GRADIENTTESTS_BODY1->A_BI->rot : (double*) Id;
+                (double*) RCS_GRADIENTTESTS_BODY1->A_BI.rot : (double*) Id;
   double* A2_ = RCS_GRADIENTTESTS_BODY2 ?
-                (double*) RCS_GRADIENTTESTS_BODY2->A_BI->rot : (double*) Id;
+                (double*) RCS_GRADIENTTESTS_BODY2->A_BI.rot : (double*) Id;
 
   MatNd A1 = MatNd_fromPtr(3, 3, A1_);
   MatNd A2 = MatNd_fromPtr(3, 3, A2_);
@@ -1425,9 +1422,9 @@ static void test_dA(double* f, const double* x, void* params)
   Mat3d_setIdentity(Id);
 
   double* A1_ = RCS_GRADIENTTESTS_BODY1 ?
-                (double*) RCS_GRADIENTTESTS_BODY1->A_BI->rot : (double*) Id;
+                (double*) RCS_GRADIENTTESTS_BODY1->A_BI.rot : (double*) Id;
   double* A2_ = RCS_GRADIENTTESTS_BODY2 ?
-                (double*) RCS_GRADIENTTESTS_BODY2->A_BI->rot : (double*) Id;
+                (double*) RCS_GRADIENTTESTS_BODY2->A_BI.rot : (double*) Id;
 
   MatNd A1 = MatNd_fromPtr(3, 3, A1_);
   MatNd A2 = MatNd_fromPtr(3, 3, A2_);
@@ -1480,7 +1477,7 @@ void test_rotMat(double* f, const double* x, void* params)
   Rcs_setIKState(self, x);
 
   double* A_BI = RCS_GRADIENTTESTS_BODY1 ?
-                 (double*) RCS_GRADIENTTESTS_BODY1->A_BI->rot : (double*) Id;
+                 (double*) RCS_GRADIENTTESTS_BODY1->A_BI.rot : (double*) Id;
 
   memcpy(f, (double*) A_BI, 9 * sizeof(double));
 }
@@ -1548,19 +1545,19 @@ static void test_position3D(double* f, const double* x, void* params)
   Mat3d_setIdentity(Id);
   Rcs_setIKState(self, x);
 
-  const RcsBody* ef       = RCS_GRADIENTTESTS_BODY2;
-  const RcsBody* refBdy   = RCS_GRADIENTTESTS_BODY1;
-  const RcsBody* refFrame = RCS_GRADIENTTESTS_BODY3;
+  RcsBody* ef       = RCS_GRADIENTTESTS_BODY2;
+  RcsBody* refBdy   = RCS_GRADIENTTESTS_BODY1;
+  RcsBody* refFrame = RCS_GRADIENTTESTS_BODY3;
 
-  Vec3d_sub(f, ef ? ef->A_BI->org : v0, refBdy ? refBdy->A_BI->org : v0);
+  Vec3d_sub(f, ef ? ef->A_BI.org : v0, refBdy ? refBdy->A_BI.org : v0);
 
   if ((refFrame!=NULL) && (refFrame!=refBdy))
   {
-    Vec3d_rotateSelf(f, refFrame->A_BI->rot);
+    Vec3d_rotateSelf(f, refFrame->A_BI.rot);
   }
   else
   {
-    Vec3d_rotateSelf(f, refBdy ? refBdy->A_BI->rot : Id);
+    Vec3d_rotateSelf(f, refBdy ? refBdy->A_BI.rot : Id);
   }
 
 }
@@ -1634,13 +1631,13 @@ static void test_position1D(double* f, const double* x, void* params)
   Mat3d_setIdentity(Id);
   Rcs_setIKState(self, x);
 
-  const RcsBody* ef       = RCS_GRADIENTTESTS_BODY2;
-  const RcsBody* refBdy   = RCS_GRADIENTTESTS_BODY1;
-  const RcsBody* refFrame = refBdy;//RCS_GRADIENTTESTS_BODY3;
+  RcsBody* ef       = RCS_GRADIENTTESTS_BODY2;
+  RcsBody* refBdy   = RCS_GRADIENTTESTS_BODY1;
+  RcsBody* refFrame = refBdy;//RCS_GRADIENTTESTS_BODY3;
 
   double r[3];
-  Vec3d_sub(r, ef ? ef->A_BI->org : v0, refBdy ? refBdy->A_BI->org : v0);
-  Vec3d_rotateSelf(r, refFrame ? refFrame->A_BI->rot : Id);
+  Vec3d_sub(r, ef ? ef->A_BI.org : v0, refBdy ? refBdy->A_BI.org : v0);
+  Vec3d_rotateSelf(r, refFrame ? refFrame->A_BI.rot : Id);
   *f = r[RCS_RNDXYZ];
 }
 
@@ -1946,12 +1943,12 @@ static void test_distance(double* f, const double* x, void* params)
   }
 
   double I_p1[3], I_p2[3];
-  Vec3d_transRotate(I_p1, RCS_GRADIENTTESTS_BODY1->A_BI->rot,
+  Vec3d_transRotate(I_p1, RCS_GRADIENTTESTS_BODY1->A_BI.rot,
                     RCS_GRADIENTTESTS_BODYPT1);
-  Vec3d_addSelf(I_p1, RCS_GRADIENTTESTS_BODY1->A_BI->org);
-  Vec3d_transRotate(I_p2, RCS_GRADIENTTESTS_BODY2->A_BI->rot,
+  Vec3d_addSelf(I_p1, RCS_GRADIENTTESTS_BODY1->A_BI.org);
+  Vec3d_transRotate(I_p2, RCS_GRADIENTTESTS_BODY2->A_BI.rot,
                     RCS_GRADIENTTESTS_BODYPT2);
-  Vec3d_addSelf(I_p2, RCS_GRADIENTTESTS_BODY2->A_BI->org);
+  Vec3d_addSelf(I_p2, RCS_GRADIENTTESTS_BODY2->A_BI.org);
 
   *f = Vec3d_distance(I_p1, I_p2);
 }
@@ -1981,12 +1978,12 @@ static void test_distanceJ(double* f, const double* x, void* params)
   }
 
   double I_p1[3], I_p2[3];
-  Vec3d_transRotate(I_p1, RCS_GRADIENTTESTS_BODY1->A_BI->rot,
+  Vec3d_transRotate(I_p1, RCS_GRADIENTTESTS_BODY1->A_BI.rot,
                     RCS_GRADIENTTESTS_BODYPT1);
-  Vec3d_addSelf(I_p1, RCS_GRADIENTTESTS_BODY1->A_BI->org);
-  Vec3d_transRotate(I_p2, RCS_GRADIENTTESTS_BODY2->A_BI->rot,
+  Vec3d_addSelf(I_p1, RCS_GRADIENTTESTS_BODY1->A_BI.org);
+  Vec3d_transRotate(I_p2, RCS_GRADIENTTESTS_BODY2->A_BI.rot,
                     RCS_GRADIENTTESTS_BODYPT2);
-  Vec3d_addSelf(I_p2, RCS_GRADIENTTESTS_BODY2->A_BI->org);
+  Vec3d_addSelf(I_p2, RCS_GRADIENTTESTS_BODY2->A_BI.org);
 
   RcsBody_distanceGradient(self, RCS_GRADIENTTESTS_BODY1,
                            RCS_GRADIENTTESTS_BODY2, true, I_p1, I_p2, NULL, &dDdq);
@@ -2019,12 +2016,12 @@ static void test_distanceH(double* f, const double* x, void* params)
   }
 
   double I_p1[3], I_p2[3];
-  Vec3d_transRotate(I_p1, RCS_GRADIENTTESTS_BODY1->A_BI->rot,
+  Vec3d_transRotate(I_p1, RCS_GRADIENTTESTS_BODY1->A_BI.rot,
                     RCS_GRADIENTTESTS_BODYPT1);
-  Vec3d_addSelf(I_p1, RCS_GRADIENTTESTS_BODY1->A_BI->org);
-  Vec3d_transRotate(I_p2, RCS_GRADIENTTESTS_BODY2->A_BI->rot,
+  Vec3d_addSelf(I_p1, RCS_GRADIENTTESTS_BODY1->A_BI.org);
+  Vec3d_transRotate(I_p2, RCS_GRADIENTTESTS_BODY2->A_BI.rot,
                     RCS_GRADIENTTESTS_BODYPT2);
-  Vec3d_addSelf(I_p2, RCS_GRADIENTTESTS_BODY2->A_BI->org);
+  Vec3d_addSelf(I_p2, RCS_GRADIENTTESTS_BODY2->A_BI.org);
 
   RcsBody_distanceHessian(self, RCS_GRADIENTTESTS_BODY1,
                           RCS_GRADIENTTESTS_BODY2, true, I_p1, I_p2, f);
@@ -2310,9 +2307,9 @@ static void test_EulerError(double* f, const double* x, void* params)
   Mat3d_setIdentity(Id);
 
   double(*A1_)[3] = RCS_GRADIENTTESTS_BODY1 ?
-                    RCS_GRADIENTTESTS_BODY1->A_BI->rot : Id;
+                    RCS_GRADIENTTESTS_BODY1->A_BI.rot : Id;
   double(*A2_)[3] = RCS_GRADIENTTESTS_BODY2 ?
-                    RCS_GRADIENTTESTS_BODY2->A_BI->rot : Id;
+                    RCS_GRADIENTTESTS_BODY2->A_BI.rot : Id;
 
   Rcs_setIKState(self, x);
   Mat3d_getEulerError(f, A2_, A1_);
@@ -2336,9 +2333,9 @@ static void test_EulerErrorJ(double* f, const double* x, void* params)
   MatNd grad = MatNd_fromPtr(3, self->nJ, f);
 
   double* A1_ = RCS_GRADIENTTESTS_BODY1 ?
-                (double*) RCS_GRADIENTTESTS_BODY1->A_BI->rot : (double*) Id;
+                (double*) RCS_GRADIENTTESTS_BODY1->A_BI.rot : (double*) Id;
   double* A2_ = RCS_GRADIENTTESTS_BODY2 ?
-                (double*) RCS_GRADIENTTESTS_BODY2->A_BI->rot : (double*) Id;
+                (double*) RCS_GRADIENTTESTS_BODY2->A_BI.rot : (double*) Id;
 
   Mat3d_setIdentity(Id);
 
@@ -2373,7 +2370,7 @@ static void test_positionError(double* f, const double* x, void* params)
 
   Vec3d_setZero(v0);
   Rcs_setIKState(self, x);
-  Vec3d_copy(f, RCS_GRADIENTTESTS_BODY1 ? RCS_GRADIENTTESTS_BODY1->A_BI->org : v0);
+  Vec3d_copy(f, RCS_GRADIENTTESTS_BODY1 ? RCS_GRADIENTTESTS_BODY1->A_BI.org : v0);
   Vec3d_constMulSelf(f, -1.0);
 }
 

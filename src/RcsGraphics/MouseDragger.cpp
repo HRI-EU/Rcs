@@ -93,7 +93,7 @@ const RcsBody* Rcs::MouseDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter
 
   if (k_pt && I_pt)
   {
-    Vec3d_invTransform(k_pt, bdy->A_BI, I_pt);
+    Vec3d_invTransform(k_pt, &bdy->A_BI, I_pt);
   }
 
   return bdy;
@@ -206,7 +206,7 @@ bool Rcs::MouseDragger::callback(const osgGA::GUIEventAdapter& ea,
           // Memorize rotation matrix
           if (_draggedBody)
           {
-            Mat3d_copy(_A_BI0, _draggedBody->A_BI->rot);
+            Mat3d_copy(_A_BI0, (double(*)[3])_draggedBody->A_BI.rot);
           }
         }
       }
@@ -332,7 +332,7 @@ void Rcs::MouseDragger::update()
  *****************************************************************************/
 void Rcs::MouseDragger::updateWorldAnchor()
 {
-  Vec3d_transform(_I_anchor, _draggedBody->A_BI, _k_anchor);
+  Vec3d_transform(_I_anchor, &_draggedBody->A_BI, _k_anchor);
 }
 
 /******************************************************************************
@@ -418,7 +418,7 @@ bool Rcs::MouseDragger::getBodyMove(HTr* A_BI)
   if ((_RMBPressed) && (_leftShiftPressed) && (_draggedBody))
   {
     double I_r_offset[3];
-    Vec3d_transRotate(I_r_offset, _draggedBody->A_BI->rot, _k_anchor);
+    Vec3d_transRotate(I_r_offset, (double(*)[3])_draggedBody->A_BI.rot, _k_anchor);
     Vec3d_copy(A_BI->org, _I_mouseTip);
     Vec3d_subSelf(A_BI->org, I_r_offset);
     Mat3d_copy(A_BI->rot, _A_BI0);

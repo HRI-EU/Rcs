@@ -107,8 +107,8 @@ void Rcs::TaskCOM3D::computeX(double* x_res) const
 
   if (this->refBody)  // ref_r = A_ref-I * (I_r - I_r_refBody)
   {
-    Vec3d_subSelf(x_res, this->refBody->A_BI->org);    // I_r -= I_r_refBody
-    Vec3d_rotateSelf(x_res, this->refBody->A_BI->rot); // ref_r = A_ref_I*I_r
+    Vec3d_subSelf(x_res, this->refBody->A_BI.org);    // I_r -= I_r_refBody
+    Vec3d_rotateSelf(x_res, (double (*)[3])refBody->A_BI.rot); // ref_r = A_ref_I*I_r
   }
 }
 
@@ -141,7 +141,7 @@ void Rcs::TaskCOM3D::computeJ(MatNd* jacobian) const
     if (RcsBody_isArticulated(this->graph, this->refBody)==false)
 #endif
     {
-      MatNd_rotateSelf(J_cog, this->refBody->A_BI->rot);
+      MatNd_rotateSelf(J_cog, (double (*)[3])this->refBody->A_BI.rot);
     }
     else
     {
@@ -169,12 +169,12 @@ void Rcs::TaskCOM3D::computeJ(MatNd* jacobian) const
         RcsGraph_COG(this->graph, I_r_cog);
       }
 
-      Vec3d_sub(tmp, I_r_cog, this->refBody->A_BI->org);
+      Vec3d_sub(tmp, I_r_cog, this->refBody->A_BI.org);
       MatNd_columnCrossProductSelf(J_rel, tmp);
       MatNd_addSelf(J_cog, J_rel);
 
       // J = A_ref-I * J
-      MatNd_rotateSelf(J_cog, this->refBody->A_BI->rot);
+      MatNd_rotateSelf(J_cog, (double (*)[3])this->refBody->A_BI.rot);
 
       MatNd_destroy(J_rel);
     }
@@ -211,7 +211,7 @@ void Rcs::TaskCOM3D::computeH(MatNd* H) const
 #endif
     {
       MatNd_reshape(H, 3, this->graph->nJ*this->graph->nJ);
-      MatNd_rotateSelf(H, this->refBody->A_BI->rot);
+      MatNd_rotateSelf(H, (double (*)[3])this->refBody->A_BI.rot);
       MatNd_reshape(H, 3*this->graph->nJ, this->graph->nJ);
     }
     else

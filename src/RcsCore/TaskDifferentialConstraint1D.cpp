@@ -116,10 +116,10 @@ void Rcs::TaskDifferentialConstraint1D::computeX(double* I_r) const
 {
   double F_x_ef[3], F_x_ref[3], diff[3];
 
-  Vec3d_sub(F_x_ef, this->ef->A_BI->org, this->refFrame->A_BI->org);
-  Vec3d_sub(F_x_ref, this->refBody->A_BI->org, this->refFrame->A_BI->org);
+  Vec3d_sub(F_x_ef, this->ef->A_BI.org, this->refFrame->A_BI.org);
+  Vec3d_sub(F_x_ref, this->refBody->A_BI.org, this->refFrame->A_BI.org);
   Vec3d_add(diff, F_x_ef, F_x_ref);
-  Vec3d_rotateSelf(diff, this->refFrame->A_BI->rot);
+  Vec3d_rotateSelf(diff, (double (*)[3])this->refFrame->A_BI.rot);
 
   *I_r = diff[this->index];
 }
@@ -147,9 +147,9 @@ void Rcs::TaskDifferentialConstraint1D::computeXp(double* xp_res) const
   const double* I_v_B  = this->refBody->x_dot;
   const double* I_v_C  = this->ef->x_dot;
   const double* I_om_A = this->refFrame->omega;
-  const double* I_r_B  = this->refBody->A_BI->org;
-  const double* I_r_A  = this->refFrame->A_BI->org;
-  const double* I_r_C  = this->ef->A_BI->org;
+  const double* I_r_B  = this->refBody->A_BI.org;
+  const double* I_r_A  = this->refFrame->A_BI.org;
+  const double* I_r_C  = this->ef->A_BI.org;
 
   // refBody velocity
   double A_v_AB[3], A_v_AC[3], tmp1[3], tmp2[3], tmp3[3];
@@ -158,14 +158,14 @@ void Rcs::TaskDifferentialConstraint1D::computeXp(double* xp_res) const
   Vec3d_sub(tmp2, I_r_B, I_r_A);             // I_r_AB
   Vec3d_crossProduct(tmp3, I_om_A, tmp2);    // I_om_A x I_r_AB
   Vec3d_addSelf(tmp3, tmp1);                 // I_v_B - I_v_A + I_om_A x I_r_AB
-  Vec3d_rotate(A_v_AB, this->refFrame->A_BI->rot, tmp3);
+  Vec3d_rotate(A_v_AB, (double(*)[3])this->refFrame->A_BI.rot, tmp3);
 
   // effector velocity
   Vec3d_sub(tmp1, I_v_C, I_v_A);             // I_v_C - I_v_A
   Vec3d_sub(tmp2, I_r_C, I_r_A);             // I_r_AC
   Vec3d_crossProduct(tmp3, I_om_A, tmp2);    // I_om_A x I_r_AC
   Vec3d_addSelf(tmp3, tmp1);                 // I_v_C - I_v_A + I_om_A x I_r_AC
-  Vec3d_rotate(A_v_AC, this->refFrame->A_BI->rot, tmp3);
+  Vec3d_rotate(A_v_AC, (double(*)[3])this->refFrame->A_BI.rot, tmp3);
 
   *xp_res = A_v_AC[this->index] + A_v_AB[this->index];
 }

@@ -769,7 +769,7 @@ const HTr* Rcs::BulletSimulation::getPhysicsTransformPtr(const RcsBody* body) co
 
   if (bb == NULL)
   {
-    return body->A_BI;
+    return &body->A_BI;
   }
 
   return bb->getBodyTransformPtr();
@@ -789,7 +789,7 @@ void Rcs::BulletSimulation::setForce(const RcsBody* body, const double F[3],
     if (p != NULL)
     {
       double relPos[3];
-      Vec3d_sub(relPos, p, body->A_BI->org);
+      Vec3d_sub(relPos, p, body->A_BI.org);
 
       rigidBody->applyForce(btVector3(F[0], F[1], F[2]),
                             btVector3(relPos[0], relPos[1], relPos[2]));
@@ -819,7 +819,7 @@ void Rcs::BulletSimulation::applyImpulse(const RcsBody* body, const double F[3],
     if (p != NULL)
     {
       double relPos[3];
-      Vec3d_sub(relPos, p, body->A_BI->org);
+      Vec3d_sub(relPos, p, body->A_BI.org);
 
       rigidBody->applyImpulse(btVector3(F[0], F[1], F[2]),
                               btVector3(relPos[0], relPos[1], relPos[2]));
@@ -1045,7 +1045,7 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
         // Otherwise we use the kinematic transformation.
         else
         {
-          HTr_copy(&A_ParentI, rcsParent->A_BI);
+          HTr_copy(&A_ParentI, &rcsParent->A_BI);
         }
       }
       else
@@ -1345,7 +1345,7 @@ void Rcs::BulletSimulation::applyControl(double dt)
 
         if (rb)
         {
-          btBdy->setBodyTransform(rb->A_BI, dt);
+          btBdy->setBodyTransform(&rb->A_BI, dt);
         }
       }
     }

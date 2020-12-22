@@ -130,22 +130,22 @@ TaskPosition3D* TaskPosition3D::clone(RcsGraph* newGraph) const
 void TaskPosition3D::computeX(double* I_r) const
 {
   // Effector-fixed reference point in world coordinates
-  Vec3d_copy(I_r, this->ef ? this->ef->A_BI->org : Vec3d_zeroVec());
+  Vec3d_copy(I_r, this->ef ? this->ef->A_BI.org : Vec3d_zeroVec());
 
   // Transform to reference frame: ref_r = A_ref-I * (I_r - I_r_refBdy)
   if (this->refBody != NULL)
   {
-    Vec3d_subSelf(I_r, this->refBody->A_BI->org);     // I_r -= I_r_refBdy
+    Vec3d_subSelf(I_r, this->refBody->A_BI.org);     // I_r -= I_r_refBdy
 
     // refBody and refFrame, but they differ: refFrame_r = A_refFrame-I*I_r
     if ((this->refFrame != NULL) && (this->refFrame != this->refBody))
     {
-      Vec3d_rotateSelf(I_r, this->refFrame->A_BI->rot);
+      Vec3d_rotateSelf(I_r, (double(*)[3])this->refFrame->A_BI.rot);
     }
     // refBody and refFrame are the same: refFrame_r = A_refFrame-I*I_r
     else
     {
-      Vec3d_rotateSelf(I_r, this->refBody->A_BI->rot);
+      Vec3d_rotateSelf(I_r, (double(*)[3])this->refBody->A_BI.rot);
     }
   }
   // No refBody, but refFrame: Rotate into refFrame coordinates
@@ -154,7 +154,7 @@ void TaskPosition3D::computeX(double* I_r) const
     // Rotate into refFrame if it exists
     if (this->refFrame != NULL)
     {
-      Vec3d_rotateSelf(I_r, this->refFrame->A_BI->rot);
+      Vec3d_rotateSelf(I_r, (double(*)[3])this->refFrame->A_BI.rot);
     }
 
   }
@@ -177,7 +177,7 @@ void TaskPosition3D::computeXp_ik(double* x_dot) const
 
     if (this->refFrame != NULL)
     {
-      Vec3d_rotateSelf(x_dot, this->refFrame->A_BI->rot);
+      Vec3d_rotateSelf(x_dot, (double(*)[3])this->refFrame->A_BI.rot);
     }
   }
   else
@@ -186,18 +186,18 @@ void TaskPosition3D::computeXp_ik(double* x_dot) const
     Vec3d_sub(x_dot, I_xp_ef, I_xp_ref);
 
     double r_12[3], eul[3];
-    Vec3d_sub(r_12, this->ef ? this->ef->A_BI->org : Vec3d_zeroVec(),
-              this->refBody->A_BI->org);
+    Vec3d_sub(r_12, this->ef ? this->ef->A_BI.org : Vec3d_zeroVec(),
+              this->refBody->A_BI.org);
     Vec3d_crossProduct(eul, r_12, this->refBody->omega);
     Vec3d_addSelf(x_dot, eul);
 
     if (this->refFrame != NULL)
     {
-      Vec3d_rotateSelf(x_dot, this->refFrame->A_BI->rot);
+      Vec3d_rotateSelf(x_dot, (double(*)[3])this->refFrame->A_BI.rot);
     }
     else
     {
-      Vec3d_rotateSelf(x_dot, this->refBody->A_BI->rot);
+      Vec3d_rotateSelf(x_dot, (double(*)[3])this->refBody->A_BI.rot);
     }
   }
 

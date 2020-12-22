@@ -208,7 +208,7 @@ static bool testDistanceRandomly()
       b1.shape = RNALLOC(2, RcsShape*);
       b1.shape[0] = s1;
       b1.shape[1] = NULL;
-      b1.A_BI = &A_BI1;
+      b1.A_BI = A_BI1;
 
       osg::ref_ptr<Rcs::BodyNode> coll1 = new Rcs::BodyNode(&b1);
       coll1->setMaterial("RED");
@@ -221,7 +221,7 @@ static bool testDistanceRandomly()
       b2.shape = RNALLOC(2, RcsShape*);
       b2.shape[0] = s2;
       b2.shape[1] = NULL;
-      b2.A_BI = &A_BI2;
+      b2.A_BI = A_BI2;
 
       osg::ref_ptr<Rcs::BodyNode> coll2 = new Rcs::BodyNode(&b2);
       coll2->setMaterial("BLUE");
@@ -337,13 +337,11 @@ static void testDistance(int argc, char** argv)
   }
 
   RcsBody* b1 = RcsBody_create();
-  b1->A_BI = HTr_create();
-  Vec3d_setRandom(b1->A_BI->org, -0.2, -0.1);
+  Vec3d_setRandom(b1->A_BI.org, -0.2, -0.1);
   RcsBody_addShape(b1, RcsShape_createRandomShape(shapeType1));
 
   RcsBody* b2 = RcsBody_create();
-  b2->A_BI = HTr_create();
-  Vec3d_setRandom(b1->A_BI->org, 0.1, 0.2);
+  Vec3d_setRandom(b1->A_BI.org, 0.1, 0.2);
   RcsBody_addShape(b2, RcsShape_createRandomShape(shapeType2));
 
   double I_closestPts[6];
@@ -377,12 +375,12 @@ static void testDistance(int argc, char** argv)
     // TargetSetters
     bool sphTracker = b1->shape[0]->type==RCSSHAPE_POINT ? false : true;
     Rcs::TargetSetter* ts1 =
-      new Rcs::TargetSetter(b1->A_BI->org, b1->A_BI->rot, 0.5, sphTracker);
+      new Rcs::TargetSetter(b1->A_BI.org, b1->A_BI.rot, 0.5, sphTracker);
     viewer->add(ts1);
     viewer->add(ts1->getHandler());
     sphTracker = b2->shape[0]->type==RCSSHAPE_POINT ? false : true;
     Rcs::TargetSetter* ts2 =
-      new Rcs::TargetSetter(b2->A_BI->org, b2->A_BI->rot, 0.5, sphTracker);
+      new Rcs::TargetSetter(b2->A_BI.org, b2->A_BI.rot, 0.5, sphTracker);
     viewer->add(ts2);
     viewer->add(ts2->getHandler());
 
@@ -423,7 +421,7 @@ static void testDistance(int argc, char** argv)
     double dist;
 
     dist = RcsShape_distance(b1->shape[0], b2->shape[0],
-                             b1->A_BI, b2->A_BI, cp0, cp1, n01);
+                             &b1->A_BI, &b2->A_BI, cp0, cp1, n01);
 
     dt = Timer_getTime() - dt;
     pthread_mutex_unlock(&graphLock);

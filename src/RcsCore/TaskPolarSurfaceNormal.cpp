@@ -123,7 +123,7 @@ void Rcs::TaskPolarSurfaceNormal::computeX(double* x_curr) const
   RcsBody_distance(getRefBody(), getEffector(), NULL, NULL, a_des);
 
   // Get the current polar axis
-  const double* a_curr = getEffector()->A_BI->rot[direction];
+  const double* a_curr = getEffector()->A_BI.rot[direction];
 
   x_curr[0] = Vec3d_diffAngle(a_curr, a_des);
   x_curr[1] = 0.0;
@@ -150,7 +150,7 @@ void Rcs::TaskPolarSurfaceNormal::computeJ(MatNd* jacobian) const
   MatNd_reshape(jacobian, 2, this->graph->nJ);
 
   // Get the current Polar axis in world coordinates
-  double* a_curr = ef->A_BI->rot[this->direction];
+  const double* a_curr = ef->A_BI.rot[this->direction];
 
   // Compute the normal pointing from the refBdy to the effector. This is the
   // desired Polar axis in world coordinates.

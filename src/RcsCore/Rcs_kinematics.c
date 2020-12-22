@@ -62,12 +62,12 @@ void RcsGraph_bodyPoint(const RcsBody* b, const double b_p[3], double I_pt[3])
     return;
   }
 
-  Vec3d_copy(I_pt, b->A_BI->org);
+  Vec3d_copy(I_pt, b->A_BI.org);
 
   if (b_p != NULL)
   {
     double I_offset[3];
-    Vec3d_transRotate(I_offset, b->A_BI->rot, b_p);
+    Vec3d_transRotate(I_offset, (double(*)[3])b->A_BI.rot, b_p);
     Vec3d_addSelf(I_pt, I_offset);
   }
 
@@ -160,7 +160,7 @@ static void RcsGraph_addWorldPointJacobian(const RcsGraph* self,
                                            MatNd* J)
 {
   const double* I_r_IP = I_bodyPt ? I_bodyPt :
-                         (body ? body->A_BI->org : Vec3d_zeroVec());
+                         (body ? body->A_BI.org : Vec3d_zeroVec());
 
   // Find "driving" joint of the body
 #ifdef  OLD_TOPO
@@ -217,8 +217,8 @@ void RcsGraph_bodyPointJacobian(const RcsGraph* self,
   else
   {
     double I_bdyPt[3];
-    Vec3d_copy(I_bdyPt, body->A_BI->org);
-    Vec3d_transMulAndAdd(I_bdyPt, body->A_BI->org, body->A_BI->rot,
+    Vec3d_copy(I_bdyPt, body->A_BI.org);
+    Vec3d_transMulAndAdd(I_bdyPt, body->A_BI.org, (double(*)[3])body->A_BI.rot,
                          k_bdyPt);
     RcsGraph_worldPointJacobian(self, body, I_bdyPt, A_BI, J);
   }
@@ -244,11 +244,12 @@ static void RcsGraph_constMulAndAddBodyPointJacobian(const RcsGraph* self,
 
   // Convert body point into world coordinates
   double I_r_IP[3];
-  Vec3d_copy(I_r_IP, body->A_BI->org);
+  Vec3d_copy(I_r_IP, body->A_BI.org);
 
   if (k_bdyPt != NULL)
   {
-    Vec3d_transMulAndAdd(I_r_IP, body->A_BI->org, body->A_BI->rot, k_bdyPt);
+    Vec3d_transMulAndAdd(I_r_IP, body->A_BI.org, (double(*)[3])body->A_BI.rot,
+                         k_bdyPt);
   }
 
   // Find "driving" joint of the body
@@ -283,12 +284,12 @@ static void RcsGraph_computeJointToBodyPt(const RcsJoint* jnt,
                                           const double k_r[3],
                                           double I_r[3])
 {
-  Vec3d_sub(I_r, bdy->A_BI->org, jnt->A_JI.org);
+  Vec3d_sub(I_r, bdy->A_BI.org, jnt->A_JI.org);
 
   if (k_r != NULL)
   {
     double I_offset[3];
-    Vec3d_transRotate(I_offset, bdy->A_BI->rot, k_r);
+    Vec3d_transRotate(I_offset, (double (*)[3])bdy->A_BI.rot, k_r);
     Vec3d_addSelf(I_r, I_offset);
   }
 }
@@ -595,7 +596,7 @@ void RcsGraph_3dPosJacobian(const RcsGraph* self, const RcsBody* effector,
   if (refBdy == NULL)
   {
     RcsGraph_bodyPointJacobian(self, effector, NULL,
-                               refFrame ? refFrame->A_BI->rot : NULL, J);
+                               refFrame ? (double (*)[3]) refFrame->A_BI.rot : NULL, J);
     return;
   }
   // From here on, both refBdy and refFrame are valid bodies. We compute the
@@ -613,8 +614,8 @@ void RcsGraph_3dPosJacobian(const RcsGraph* self, const RcsBody* effector,
 
     // I_r12 = I_r2 - I_r1
     double r12[3];
-    Vec3d_sub(r12, effector ? effector->A_BI->org : Vec3d_zeroVec(),
-              refBdy->A_BI->org);
+    Vec3d_sub(r12, effector ? effector->A_BI.org : Vec3d_zeroVec(),
+              refBdy->A_BI.org);
 
     // I_r12 x I_JR1
     RcsGraph_rotationJacobian(self, refFrame, NULL, bufJ);
@@ -624,12 +625,12 @@ void RcsGraph_3dPosJacobian(const RcsGraph* self, const RcsBody* effector,
     // A_3I (I_JT2 - I_JT1 - I_r12 x I_JR2)
     if ((refFrame!=NULL) && (refFrame!=refBdy))
     {
-      MatNd_rotateSelf(J, refFrame->A_BI->rot);
+      MatNd_rotateSelf(J, (double (*)[3])refFrame->A_BI.rot);
     }
     // A_2I (I_JT2 - I_JT1 - I_r12 x I_JR2)
     else
     {
-      MatNd_rotateSelf(J, refBdy->A_BI->rot);
+      MatNd_rotateSelf(J, (double (*)[3])refBdy->A_BI.rot);
     }
 
     // Cleanup
@@ -665,7 +666,8 @@ void RcsGraph_3dPosHessian(const RcsGraph* self, const RcsBody* effector,
   {
     if (refFrame!=NULL)
     {
-      RcsGraph_bodyPointHessian(self, effector, NULL, refFrame->A_BI->rot, H);
+      RcsGraph_bodyPointHessian(self, effector, NULL,
+                                (double (*)[3])refFrame->A_BI.rot, H);
     }
     else
     {
@@ -708,7 +710,7 @@ void RcsGraph_3dPosHessian(const RcsGraph* self, const RcsBody* effector,
 
     // I_r_12
     double r12[3];
-    Vec3d_sub(r12, b2->A_BI->org, b1->A_BI->org);
+    Vec3d_sub(r12, b2->A_BI.org, b1->A_BI.org);
 
     // Term 1: del(A_3I)/del(q) (J2 - J1 + r12 x JR3)
     MatNd_columnCrossProduct(bufJ1, JR3, r12);
@@ -724,7 +726,7 @@ void RcsGraph_3dPosHessian(const RcsGraph* self, const RcsBody* effector,
       MatNd Jcross = MatNd_fromPtr(3, n, &bufH1->ele[i * n3]);
       MatNd_getColumn(&dqr12, i, J12);
       MatNd_columnCrossProduct(&Jcross, JR3, dqr12.ele);
-      MatNd_rotateSelf(&Jcross, b3->A_BI->rot);
+      MatNd_rotateSelf(&Jcross, (double (*)[3])b3->A_BI.rot);
     }
     MatNd_addSelf(H, bufH1);
 
@@ -735,9 +737,9 @@ void RcsGraph_3dPosHessian(const RcsGraph* self, const RcsBody* effector,
     MatNd_transposeSelf(H);
 
     // Term 3: A_3I (H2 - H1)
-    RcsGraph_bodyPointHessian(self, b2, NULL, b3->A_BI->rot, bufH1);
+    RcsGraph_bodyPointHessian(self, b2, NULL, (double (*)[3])b3->A_BI.rot, bufH1);
     MatNd_addSelf(H, bufH1);
-    RcsGraph_bodyPointHessian(self, b1, NULL, b3->A_BI->rot, bufH1);
+    RcsGraph_bodyPointHessian(self, b1, NULL, (double (*)[3])b3->A_BI.rot, bufH1);
     MatNd_subSelf(H, bufH1);
 
     // Term 4: A_3I ((r_12 x) HR3)
@@ -753,7 +755,7 @@ void RcsGraph_3dPosHessian(const RcsGraph* self, const RcsBody* effector,
         col[1] = HR3->ele[    nn + j * n + k];
         col[2] = HR3->ele[2 * nn + j * n + k];
         Vec3d_crossProduct(dst, r12, col);
-        Vec3d_rotateSelf(dst, b3->A_BI->rot);
+        Vec3d_rotateSelf(dst, (double (*)[3])b3->A_BI.rot);
         H->ele[         j * n + k] += dst[0];
         H->ele[    nn + j * n + k] += dst[1];
         H->ele[2 * nn + j * n + k] += dst[2];
@@ -827,7 +829,8 @@ void RcsGraph_3dOmegaJacobian(const RcsGraph* self, const RcsBody* effector,
            (RcsBody_isArticulated(self, refBdy)==false))
 #endif
   {
-    RcsGraph_rotationJacobian(self, effector, refBdy->A_BI->rot, J);
+    RcsGraph_rotationJacobian(self, effector,
+                              (double (*)[3])refBdy->A_BI.rot, J);
   }
   // Jacobian wrt. articulated reference: J = A_3I * (JR_2 - JR_1)
   else
@@ -843,7 +846,7 @@ void RcsGraph_3dOmegaJacobian(const RcsGraph* self, const RcsBody* effector,
     // A_3I (JR2 - JR1)
     if (refFrame != NULL)
     {
-      MatNd_rotateSelf(J, refFrame->A_BI->rot);
+      MatNd_rotateSelf(J, (double (*)[3])refFrame->A_BI.rot);
     }
   }
 
@@ -877,7 +880,8 @@ void RcsGraph_3dOmegaHessian(const RcsGraph* self, const RcsBody* effector,
 #endif
   {
     MatNd_reshape(H, n, n3);
-    RcsGraph_rotationHessian(self, effector, refBdy->A_BI->rot, H);
+    RcsGraph_rotationHessian(self, effector,
+                             (double (*)[3])refBdy->A_BI.rot, H);
   }
   // From here on, both refBdy and refFrame are valid bodies. We compute the
   // Jacobian wrt. articulated reference
@@ -914,10 +918,10 @@ void RcsGraph_3dOmegaHessian(const RcsGraph* self, const RcsBody* effector,
 
     // Term 2: A_3I (HR2 - HR1)
     RcsGraph_rotationHessian(self, effector,
-                             refFrame ? refFrame->A_BI->rot : NULL, bufH1);
+                             refFrame ? (double (*)[3])refFrame->A_BI.rot : NULL, bufH1);
     MatNd_addSelf(H, bufH1);
     RcsGraph_rotationHessian(self, refBdy,
-                             refFrame ? refFrame->A_BI->rot : NULL, bufH1);
+                             refFrame ? (double (*)[3])refFrame->A_BI.rot : NULL, bufH1);
     MatNd_subSelf(H, bufH1);
 
     // Clean up
@@ -943,8 +947,8 @@ double RcsGraph_COG(const RcsGraph* self, double r_cog[3])
   {
     if (BODY->m>0.0)
     {
-      Vec3d_transRotate(tmp, BODY->A_BI->rot, BODY->Inertia.org);// I_r_Ki-COMi
-      Vec3d_addSelf(tmp, BODY->A_BI->org);   // I_r_I-COMi
+      Vec3d_transRotate(tmp, BODY->A_BI.rot, BODY->Inertia.org);// I_r_Ki-COMi
+      Vec3d_addSelf(tmp, BODY->A_BI.org);   // I_r_I-COMi
       Vec3d_constMulSelf(tmp, BODY->m);
       Vec3d_addSelf(r_cog, tmp);
       m += BODY->m;
@@ -984,8 +988,8 @@ double RcsGraph_COG_Body(const RcsGraph* self, const RcsBody* body, double r_cog
   {
     if (BODY->m>0.0)
     {
-      Vec3d_transRotate(tmp, BODY->A_BI->rot, BODY->Inertia.org);// I_r_Ki-COMi
-      Vec3d_addSelf(tmp, BODY->A_BI->org);   // I_r_I-COMi
+      Vec3d_transRotate(tmp, BODY->A_BI.rot, BODY->Inertia.org);// I_r_Ki-COMi
+      Vec3d_addSelf(tmp, BODY->A_BI.org);   // I_r_I-COMi
       Vec3d_constMulSelf(tmp, BODY->m);
       Vec3d_addSelf(r_cog, tmp);
       m += BODY->m;
@@ -1701,7 +1705,8 @@ static void RcsGraph_dAdq_i(const RcsGraph* self,
   // Get rotation matrix from joint to body including A_q. This is
   // A_left = A_BI * A_Ijnt = A_BI * trans(A_jntI)
   double A_left[3][3];
-  Mat3d_mulTranspose(A_left, b->A_BI->rot, (double (*)[3]) jnt->A_JI.rot);
+  Mat3d_mulTranspose(A_left, (double(*)[3])b->A_BI.rot,
+                     (double(*)[3])jnt->A_JI.rot);
 
   // Partial derivative of joint's local rotation matrix. Argument jnt->dirIdx
   // holds the joints elementary axis (x, y or z).
@@ -1877,13 +1882,13 @@ double RcsGraph_pointFrustrumCost(const RcsBody* cam,
   if (bdy)
   {
     HTr A_CB;
-    HTr_invTransform(&A_CB, bdy->A_BI, cam->A_BI);
+    HTr_invTransform(&A_CB, &bdy->A_BI, &cam->A_BI);
     Vec3d_invTransform(p, &A_CB, bdy_p);
   }
   // If bdy is NULL, we transform bdy_p from the world frame to cam's frame
   else
   {
-    Vec3d_invTransform(p, cam->A_BI, bdy_p);
+    Vec3d_invTransform(p, &cam->A_BI, bdy_p);
   }
 
   // Angles phi1 in x-z plane and phi2 in x-y plane
@@ -1947,13 +1952,13 @@ void RcsGraph_pointFrustrumGradient(const RcsGraph* graph,
   if (bdy)
   {
     HTr A_CB;
-    HTr_invTransform(&A_CB, bdy->A_BI, cam->A_BI);
+    HTr_invTransform(&A_CB, &bdy->A_BI, &cam->A_BI);
     Vec3d_invTransform(p, &A_CB, bdy_p);
   }
   // If bdy is NULL, we transform bdy_p from the world frame to cam's frame
   else
   {
-    Vec3d_invTransform(p, cam->A_BI, bdy_p);
+    Vec3d_invTransform(p, &cam->A_BI, bdy_p);
   }
 
   // Angles phi1 in x-z plane and phi2 in x-y plane
@@ -2005,11 +2010,11 @@ void RcsGraph_pointFrustrumGradient(const RcsGraph* graph,
     // I_rp: Transform body-fixed point vector to world frame
     double I_rp[3];
     Vec3d_copy(I_rp, bdy_p);
-    Vec3d_transformSelf(I_rp, bdy->A_BI);
+    Vec3d_transformSelf(I_rp, &bdy->A_BI);
 
     // I_rp-I_rk: Delta vector from cam to point in world coords
     double I_dr[3];
-    const double* I_rk = cam->A_BI->org;
+    const double* I_rk = cam->A_BI.org;
     Vec3d_sub(I_dr, I_rp, I_rk);
 
     // JR_k x (I_rp-I_rk)
@@ -2018,7 +2023,7 @@ void RcsGraph_pointFrustrumGradient(const RcsGraph* graph,
 
     // dpdq = A_BI * (JT_kp + JR_k x (I_r2-I_r1))
     MatNd_add(dpdq, JT_kp, JR_k);
-    MatNd_rotateSelf(dpdq, cam->A_BI->rot);
+    MatNd_rotateSelf(dpdq, (double(*)[3])cam->A_BI.rot);
 
     MatNd_destroy(JT_k);
     MatNd_destroy(JT_p);
@@ -2029,7 +2034,7 @@ void RcsGraph_pointFrustrumGradient(const RcsGraph* graph,
   {
     RcsGraph_bodyPointJacobian(graph, cam, p, NULL, dpdq);
     MatNd_constMulSelf(dpdq, -1.0);
-    MatNd_rotateSelf(dpdq, cam->A_BI->rot);
+    MatNd_rotateSelf(dpdq, (double (*)[3])cam->A_BI.rot);
   }
 
   // Multiply gradients together
@@ -2190,7 +2195,7 @@ void RcsGraph_dEulerErrorDq(const RcsGraph* self, const RcsBody* b_act,
   Mat3d_setIdentity(Id);
   if (b_act)
   {
-    Mat3d_copy(A_ActI, b_act->A_BI->rot);
+    Mat3d_copy(A_ActI, (double (*)[3])b_act->A_BI.rot);
   }
   else
   {
@@ -2198,7 +2203,7 @@ void RcsGraph_dEulerErrorDq(const RcsGraph* self, const RcsBody* b_act,
   }
   if (b_des)
   {
-    Mat3d_copy(A_DesI, b_des->A_BI->rot);
+    Mat3d_copy(A_DesI, (double (*)[3])b_des->A_BI.rot);
   }
   else
   {

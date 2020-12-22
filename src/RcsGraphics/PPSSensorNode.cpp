@@ -141,7 +141,7 @@ Rcs::PPSSensorNode::PPSSensorNode(const RcsSensor* pps, bool debug)
 
   this->patPtr()->addChild(geode.get());
 
-  makeDynamic(pps->body->A_BI->org, pps->body->A_BI->rot);
+  makeDynamic(pps->body->A_BI.org, pps->body->A_BI.rot);
 }
 
 /*******************************************************************************

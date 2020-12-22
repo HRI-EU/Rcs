@@ -372,8 +372,8 @@ static void RcsBody_HVector(const RcsBody* bdy,
   // Transform inertia matrix into inertial frame:
   double I_IBuf[3][3];
   MatNd I_I = MatNd_fromPtr(3, 3, &I_IBuf[0][0]);
-  Mat3d_similarityTransform(I_IBuf, bdy->A_BI->rot,
-                            (double (*)[3])bdy->Inertia.rot);
+  Mat3d_similarityTransform(I_IBuf, (double(*)[3])bdy->A_BI.rot,
+                            (double(*)[3])bdy->Inertia.rot);
 
   // h_local(3,5) = (~om)*I*om;
   MatNd hPtr = MatNd_fromPtr(3, 1, &hVec->ele[3]);
@@ -404,7 +404,7 @@ static void RcsBody_massMatrix(const RcsBody* bdy, MatNd* MassMatrix)
 
   // Transform inertia matrix into inertial frame
   double I_I[3][3];
-  Mat3d_similarityTransform(I_I, bdy->A_BI->rot,
+  Mat3d_similarityTransform(I_I, (double (*)[3])bdy->A_BI.rot,
                             (double (*)[3])bdy->Inertia.rot);
 
   for (int i = 0; i < 3; i++)

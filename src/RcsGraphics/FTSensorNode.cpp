@@ -48,7 +48,7 @@
 Rcs::FTSensorNode::FTSensorNode(const RcsSensor* fts) :
   ArrowNode(),
   loadCell(fts),
-  A_BI(fts->body->A_BI)
+  A_BI(&fts->body->A_BI)
 {
   setName("FTSensorNode");
   makeDynamic();

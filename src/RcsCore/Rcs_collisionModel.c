@@ -624,8 +624,8 @@ double RcsCollisionMdl_cost(const RcsCollisionMdl* self)
     // Inverse exponential center distance
     if (self->sMixtureCost > 0.0)
     {
-      const double* center1 = PAIR->b1 ? PAIR->b1->A_BI->org : Vec3d_zeroVec();
-      const double* center2 = PAIR->b2 ? PAIR->b2->A_BI->org : Vec3d_zeroVec();
+      const double* center1 = PAIR->b1 ? PAIR->b1->A_BI.org : Vec3d_zeroVec();
+      const double* center2 = PAIR->b2 ? PAIR->b2->A_BI.org : Vec3d_zeroVec();
       double dCenters = Vec3d_distance(center1, center2);
 
       if (d <= 0.0)

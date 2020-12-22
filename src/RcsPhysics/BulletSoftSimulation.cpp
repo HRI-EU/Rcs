@@ -245,7 +245,7 @@ void BulletSoftSimulation::updateSoftMeshes()
     // make the body flip around and not keep consistent rotations if the
     // Eigenvalues change their order.
     HTr A_CI;
-    HTr_transform(&A_CI, rcsSoftBdy->A_BI, &softShape->A_CB);
+    HTr_transform(&A_CI, &rcsSoftBdy->A_BI, &softShape->A_CB);
 
     for (int j=0; j<sbi->m_faces.size(); ++j)
     {
@@ -375,7 +375,7 @@ void BulletSoftSimulation::createSoftBodies()
 
       // Here we need to transform all vertices with the shape's transform.
       HTr A_CI;
-      HTr_transform(&A_CI, BODY->A_BI, &SHAPE->A_CB);
+      HTr_transform(&A_CI, &BODY->A_BI, &SHAPE->A_CB);
       RcsMesh_transform(softMesh, A_CI.org, A_CI.rot);
       btSoftBody* softBdy = NULL;
 

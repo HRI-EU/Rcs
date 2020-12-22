@@ -127,7 +127,7 @@ void Rcs::TaskDistance3D::computeX(double* I_r) const
   double cpEf[3], cpRef[3];
   RcsBody_distance(this->refBody, this->ef, cpRef, cpEf, NULL);
   Vec3d_sub(I_r, cpEf, cpRef);
-  Vec3d_rotateSelf(I_r, this->refBody->A_BI->rot);
+  Vec3d_rotateSelf(I_r, (double(*)[3])this->refBody->A_BI.rot);
 }
 
 /*******************************************************************************
@@ -143,8 +143,10 @@ void Rcs::TaskDistance3D::computeJ(MatNd* jacobian) const
   MatNd_create2(J_ref, 3, graph->nJ);
   MatNd* J_ef = NULL;
   MatNd_create2(J_ef, 3, graph->nJ);
-  RcsGraph_worldPointJacobian(graph, refBody, cpRef, refBody->A_BI->rot, J_ref);
-  RcsGraph_worldPointJacobian(graph, ef, cpEf, refBody->A_BI->rot, J_ef);
+  RcsGraph_worldPointJacobian(graph, refBody, cpRef,
+                              (double(*)[3])refBody->A_BI.rot, J_ref);
+  RcsGraph_worldPointJacobian(graph, ef, cpEf,
+                              (double(*)[3])refBody->A_BI.rot, J_ef);
   MatNd_sub(jacobian, J_ef, J_ref);
 
   MatNd_destroy(J_ef);
@@ -170,8 +172,8 @@ void Rcs::TaskDistance3D::computeH(MatNd* H) const
 
   // Closest points in body coordinates k_p1 and k_p2 for the
   // closest point Jacobian Jp1 and Jp2
-  Vec3d_invTransformSelf(cpEf, ef->A_BI);
-  Vec3d_invTransformSelf(cpRef, refBody->A_BI);
+  Vec3d_invTransformSelf(cpEf, &ef->A_BI);
+  Vec3d_invTransformSelf(cpRef, &refBody->A_BI);
 
   const int n = graph->nJ, n3 = n * 3, nn = n * n;
   const RcsBody* b1 = this->refBody;
@@ -205,7 +207,7 @@ void Rcs::TaskDistance3D::computeH(MatNd* H) const
 
   // I_r_12
   double r12[3];
-  Vec3d_sub(r12, b2->A_BI->org, b1->A_BI->org);
+  Vec3d_sub(r12, b2->A_BI.org, b1->A_BI.org);
 
   // Term 1: del(A_3I)/del(q) (J2 - J1 + r12 x JR3)
   MatNd_columnCrossProduct(bufJ1, JR3, r12);
@@ -222,7 +224,7 @@ void Rcs::TaskDistance3D::computeH(MatNd* H) const
     MatNd Jcross = MatNd_fromPtr(3, n, &bufH1->ele[i * n3]);
     MatNd_getColumn(&dqr12, i, J12);
     MatNd_columnCrossProduct(&Jcross, JR3, dqr12.ele);
-    MatNd_rotateSelf(&Jcross, b3->A_BI->rot);
+    MatNd_rotateSelf(&Jcross, (double(*)[3])b3->A_BI.rot);
   }
   MatNd_addSelf(H, bufH1);
 
@@ -233,9 +235,9 @@ void Rcs::TaskDistance3D::computeH(MatNd* H) const
   MatNd_transposeSelf(H);
 
   // Term 3: A_3I (H2 - H1)
-  RcsGraph_bodyPointHessian(graph, b2, k_p2, b3->A_BI->rot, bufH1);
+  RcsGraph_bodyPointHessian(graph, b2, k_p2, (double(*)[3])b3->A_BI.rot, bufH1);
   MatNd_addSelf(H, bufH1);
-  RcsGraph_bodyPointHessian(graph, b1, k_p1, b3->A_BI->rot, bufH1);
+  RcsGraph_bodyPointHessian(graph, b1, k_p1, (double(*)[3])b3->A_BI.rot, bufH1);
   MatNd_subSelf(H, bufH1);
 
   // Term 4: A_3I ((r_12 x) HR3)
@@ -252,7 +254,7 @@ void Rcs::TaskDistance3D::computeH(MatNd* H) const
       col[1] = HR3->ele[    nn + jnk];
       col[2] = HR3->ele[2 * nn + jnk];
       Vec3d_crossProduct(dst, r12, col);
-      Vec3d_rotateSelf(dst, b3->A_BI->rot);
+      Vec3d_rotateSelf(dst, (double(*)[3])b3->A_BI.rot);
       H->ele[         jnk] += dst[0];
       H->ele[    nn + jnk] += dst[1];
       H->ele[2 * nn + jnk] += dst[2];

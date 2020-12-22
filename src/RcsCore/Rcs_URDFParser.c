@@ -272,9 +272,6 @@ static RcsBody* parseBodyURDF(xmlNode* node)
 
   RcsBody* body = RcsBody_create();
 
-  // Default transformation
-  body->A_BI = HTr_create();
-
   // Dynamic properties
   Mat3d_setZero(body->Inertia.rot);
 
@@ -1124,7 +1121,7 @@ RcsGraph* RcsGraph_fromURDFFile(const char* configFile)
     self->gBody[i].name      = RNALLOC(64, char);
     self->gBody[i].xmlName   = RNALLOC(64, char);
     self->gBody[i].suffix    = RNALLOC(64, char);
-    self->gBody[i].A_BI      = HTr_create();
+    HTr_setIdentity(&self->gBody[i].A_BI);
     HTr_setIdentity(&self->gBody[i].A_BP);
     HTr_setZero(&self->gBody[i].Inertia);
     sprintf(self->gBody[i].name, "GenericBody%d", i);

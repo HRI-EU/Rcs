@@ -112,7 +112,7 @@ void Rcs::TaskStaticEffort::getForceInWorldCoords(double f[3]) const
 {
   Vec3d_copy(f, this->sensor->rawData->ele);
   HTr A_SI;
-  HTr_copy(&A_SI, this->ef->A_BI);
+  HTr_copy(&A_SI, &this->ef->A_BI);
   HTr_transformSelf(&A_SI, this->sensor->offset);
   Vec3d_transRotateSelf(f, A_SI.rot);
 }

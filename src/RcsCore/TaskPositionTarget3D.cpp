@@ -107,13 +107,13 @@ Rcs::TaskPositionTarget3D* Rcs::TaskPositionTarget3D::clone(RcsGraph* newGraph) 
 void Rcs::TaskPositionTarget3D::updateRefBody() const
 {
   // Origin is in reference body
-  const double* refPos = refBody ? refBody->A_BI->org : Vec3d_zeroVec();
-  Vec3d_copy(goalBdy->A_BI->org, refPos);
+  const double* refPos = refBody ? refBody->A_BI.org : Vec3d_zeroVec();
+  Vec3d_copy(goalBdy->A_BI.org, refPos);
 
   // Orientation (x-axis of frame) points towards effector
   double dir[3];
-  Vec3d_sub(dir, this->ef->A_BI->org, refPos);
-  Mat3d_fromVec(goalBdy->A_BI->rot, dir, 0);
+  Vec3d_sub(dir, this->ef->A_BI.org, refPos);
+  Mat3d_fromVec(goalBdy->A_BI.rot, dir, 0);
 }
 
 /*******************************************************************************
@@ -200,7 +200,6 @@ RcsBody* Rcs::TaskPositionTarget3D::createBody()
   body->name        = String_clone("TaskPositionTarget3D::refFrame");
   body->xmlName     = String_clone(body->name);
   body->suffix      = String_clone(" ");
-  body->A_BI        = HTr_create();
 
   return body;
 }

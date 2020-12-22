@@ -879,7 +879,6 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
 
   // Create default transformation
   RcsBody* b = RcsBody_create();
-  b->A_BI = HTr_create();
 
   // Body name
   char msg[256];
@@ -1736,13 +1735,13 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
     self->gBody[i].name      = RNALLOC(64, char);
     self->gBody[i].xmlName   = RNALLOC(64, char);
     self->gBody[i].suffix    = RNALLOC(64, char);
-    self->gBody[i].A_BI      = HTr_create();
     self->gBody[i].id           = -1;
     self->gBody[i].parentId     = -1;
     self->gBody[i].firstChildId = -1;
     self->gBody[i].lastChildId  = -1;
     self->gBody[i].nextId       = -1;
     self->gBody[i].prevId       = -1;
+    HTr_setIdentity(&self->gBody[i].A_BI);
     HTr_setIdentity(&self->gBody[i].A_BP);
     HTr_setZero(&self->gBody[i].Inertia);
     sprintf(self->gBody[i].name, "GenericBody%d", i);

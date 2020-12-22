@@ -198,18 +198,18 @@ static double RcsSensor_computeForceCompensation(const RcsGraph* graph,
   // Calculate the gravity torque at the sensor that results from the COG of
   // the kinematic chain that comes after the sensor (in world coordinates)
   double t_gravity[3];
-  Vec3d_subSelf(I_r_cog_fts, fts->body->A_BI->org);
+  Vec3d_subSelf(I_r_cog_fts, fts->body->A_BI.org);
 
   double I_sensorOffset[3];
-  Vec3d_transRotate(I_sensorOffset, fts->body->A_BI->rot, fts->offset->org);
+  Vec3d_transRotate(I_sensorOffset, fts->body->A_BI.rot, fts->offset->org);
   Vec3d_subSelf(I_r_cog_fts, I_sensorOffset);
   Vec3d_crossProduct(t_gravity, I_r_cog_fts, f_gravity);
 
   // Rotate into sensor frame
-  Vec3d_rotateSelf(f_gravity, fts->body->A_BI->rot);
+  Vec3d_rotateSelf(f_gravity, fts->body->A_BI.rot);
   Vec3d_rotate(&S_f_compensation[0], fts->offset->rot, f_gravity);
 
-  Vec3d_rotateSelf(t_gravity, fts->body->A_BI->rot);
+  Vec3d_rotateSelf(t_gravity, fts->body->A_BI.rot);
   Vec3d_rotate(&S_f_compensation[3], fts->offset->rot, t_gravity);
 
   VecNd_constMulSelf(S_f_compensation, -1.0, 6);
@@ -748,7 +748,7 @@ bool RcsSensor_computePPS(RcsGraph* graph, const RcsSensor* self, MatNd* ppsResu
   // Determine the mount body transformation from physics
   HTr A_SI;
   const HTr* A_SB = self->offset ? self->offset : HTr_identity();
-  HTr_transform(&A_SI, self->body->A_BI, A_SB);
+  HTr_transform(&A_SI, &self->body->A_BI, A_SB);
 
   // calculate the maximum distance of the PPS elements to the mount body origin
   // used to check whether a shape can be completely ignored
@@ -854,7 +854,7 @@ bool RcsSensor_computePPS(RcsGraph* graph, const RcsSensor* self, MatNd* ppsResu
       // Ignore shapes that don't calculate distances and those that are
       // too far away anyhow
       if (((SHAPE->computeType & RCSSHAPE_COMPUTE_DISTANCE) != 0) &&
-          (RcsShape_boundingSphereDistance(A_SI.org, BODY->A_BI, SHAPE) < maxDist))
+          (RcsShape_boundingSphereDistance(A_SI.org, &BODY->A_BI, SHAPE) < maxDist))
       {
         for (unsigned int id = 0; id < dimension; ++id)
         {
@@ -870,7 +870,7 @@ bool RcsSensor_computePPS(RcsGraph* graph, const RcsSensor* self, MatNd* ppsResu
           const double* lineOrigin = MatNd_getRowPtr(lineOriginMat, id);
           double closestLinePt[3];
 
-          if (RcsShape_computeLineIntersection(lineOrigin, lineDir, BODY->A_BI,
+          if (RcsShape_computeLineIntersection(lineOrigin, lineDir, &BODY->A_BI,
                                                SHAPE, closestLinePt))
           {
             Vec3d_subSelf(closestLinePt, lineOrigin);

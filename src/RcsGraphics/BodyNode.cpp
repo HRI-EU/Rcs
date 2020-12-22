@@ -107,7 +107,8 @@ protected:
 *******************************************************************************/
 BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
   bdy(b),
-  A_BI(b->A_BI),
+  parent(NULL),
+  A_BI(&b->A_BI),
   ghostMode(false),
   dynamicMeshUpdate(false),
   refNode(false),
@@ -301,8 +302,7 @@ osg::Switch* BodyNode::addDebugInformation()
 
   }   // RCSBODY_TRAVERSE_JOINTS(this->bdy)
 
-#ifdef OLD_TOPO
-  if (this->bdy->parent)
+  if (this->parent)
   {
     // add a line between this and the previous body
     _debugLine = new osg::Vec3Array;
@@ -311,7 +311,7 @@ osg::Switch* BodyNode::addDebugInformation()
 
     // add the two body positions in local reference
     HTr A_12;
-    HTr_invTransform(&A_12, this->bdy->A_BI, this->bdy->parent->A_BI);
+    HTr_invTransform(&A_12, &this->bdy->A_BI, &this->parent->A_BI);
 
     _debugLine->push_back(osg::Vec3(0.0, 0.0, 0.0));
     _debugLine->push_back(osg::Vec3(A_12.org[0], A_12.org[1], A_12.org[2]));
@@ -323,9 +323,6 @@ osg::Switch* BodyNode::addDebugInformation()
     _debugLineGeometry->setPrimitiveSet(0, ps);
     geode->addDrawable(_debugLineGeometry.get());
   }
-#else
-  RFATAL("Implement me");
-#endif
 
   osg::StateSet* pStateSet = debugNode->getOrCreateStateSet();
 
@@ -592,7 +589,6 @@ void BodyNode::displayDebugInformation(bool visible)
       _debugNode->setAllChildrenOn();
     }
 
-    RLOG(0, "DISPLA DEBUG");
     this->initializeDebugInfo = true;
   }
   else
@@ -856,14 +852,13 @@ void BodyNode::updateCallback(osg::Node* node, osg::NodeVisitor* nv)
   }
 
   // Update debug lines
-#ifdef OLD_TOPO
-  if (debugInformationVisible() && (body()->parent) && (_debugLine.valid()))
+  if (debugInformationVisible() && (this->parent) && (_debugLine.valid()))
   {
     _debugLine->clear();
 
     // Add the two body positions in local reference
     HTr A_12;
-    HTr_invTransform(&A_12, body()->A_BI, body()->parent->A_BI);
+    HTr_invTransform(&A_12, &body()->A_BI, &parent->A_BI);
 
     _debugLine->push_back(osg::Vec3(0.0, 0.0, 0.0));
     _debugLine->push_back(osg::Vec3(A_12.org[0], A_12.org[1], A_12.org[2]));
@@ -874,9 +869,6 @@ void BodyNode::updateCallback(osg::Node* node, osg::NodeVisitor* nv)
     _debugLineGeometry->setVertexArray(_debugLine.get());
     _debugLineGeometry->setPrimitiveSet(0, ps);
   }
-#else
-  RLOG(4, "Needs update");
-#endif
 
   // Mesh dynamic update
   if (getDynamicMeshUpdate())
@@ -894,23 +886,12 @@ void BodyNode::updateCallback(osg::Node* node, osg::NodeVisitor* nv)
 
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void BodyNode::setParent(const RcsBody* newParent)
+{
+  this->parent = newParent;
+}
 
 }   // namespace Rcs

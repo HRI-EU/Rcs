@@ -305,7 +305,7 @@ const double* Rcs::TaskInclination::aRef() const
 {
   if (this->refBody != NULL)
   {
-    return this->refBody->A_BI->rot[this->refDirection];
+    return this->refBody->A_BI.rot[this->refDirection];
   }
   else
   {
@@ -320,7 +320,7 @@ const double* Rcs::TaskInclination::aEf(size_t num) const
 {
   RCHECK(num < effectorVec.size());
 
-  return effectorVec[num]->A_BI->rot[this->direction];
+  return effectorVec[num]->A_BI.rot[this->direction];
 }
 
 /*******************************************************************************

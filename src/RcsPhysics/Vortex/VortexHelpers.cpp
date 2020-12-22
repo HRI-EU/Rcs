@@ -634,8 +634,8 @@ Vx::VxConstraint* Rcs::createFixedJoint(Vx::VxPart* vxParent,
   }
 
   HTr A_childI, A_parentI;
-  HTr_copy(&A_childI, child->A_BI);
-  HTr_copy(&A_parentI, parent->A_BI);
+  HTr_copy(&A_childI, &child->A_BI);
+  HTr_copy(&A_parentI, &parent->A_BI);
 
   // We search through the sensors and look for load cells attached to
   // body child. If more than one load cell is found, we exit fatally.
@@ -656,8 +656,8 @@ Vx::VxConstraint* Rcs::createFixedJoint(Vx::VxPart* vxParent,
 
         // If a load cell exists, we consider it's offset
         // transformation for the fixed joint position and orientation.
-        HTr_transform(&A_childI, child->A_BI, SENSOR->offset);
-        HTr_transform(&A_parentI, parent->A_BI, SENSOR->offset);
+        HTr_transform(&A_childI, &child->A_BI, SENSOR->offset);
+        HTr_transform(&A_parentI, &parent->A_BI, SENSOR->offset);
       }
 
     }  // RCSGRAPH_TRAVERSE_SENSORS(graph)

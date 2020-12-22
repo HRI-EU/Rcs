@@ -185,6 +185,12 @@ bool GraphNode::init(const RcsGraph* g, bool resizeable,
     }
 
     osg::ref_ptr<Rcs::BodyNode> tn = new Rcs::BodyNode(BODY, 1.0, resizeable);
+#ifdef OLD_TOPO
+    tn->setParent(BODY->parent);
+#else
+    tn->setParent(RcsBody_getConstParent(g, BODY));
+#endif
+
     switchNode->addChild(tn.get());
   }
 
@@ -208,15 +214,15 @@ bool GraphNode::init(const RcsGraph* g, bool resizeable,
 #ifdef OLD_TOPO
         if (BODY->parent)
         {
-          ts->setReferenceFrame(BODY->parent->A_BI->org,
-                                BODY->parent->A_BI->rot);
+          ts->setReferenceFrame(BODY->parent->A_BI.org,
+                                BODY->parent->A_BI.rot);
         }
 #else
         if (BODY->parentId != -1)
         {
           RcsBody* parent_ = RcsBody_getParent((RcsGraph*)this->graph, BODY);
-          ts->setReferenceFrame(parent_->A_BI->org,
-                                parent_->A_BI->rot);
+          ts->setReferenceFrame(parent_->A_BI.org,
+                                parent_->A_BI.rot);
         }
 #endif
 

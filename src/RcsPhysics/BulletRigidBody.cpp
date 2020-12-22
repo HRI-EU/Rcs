@@ -392,16 +392,16 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
   // Compute the transformation from COM (Index P) frame to body frame
   // The principal axes of inertia correspond to the Eigenvectors
   double lambda[3], A_PB[3][3];
-  Mat3d_getEigenVectors(A_PB, lambda, (double (*)[3])bdy->Inertia.rot);
+  Mat3d_getEigenVectors(A_PB, lambda, (double(*)[3])bdy->Inertia.rot);
   Mat3d_transposeSelf(A_PB);
   RCHECK(Mat3d_isValid(A_PB));
 
   HTr A_PI;   // Rotation from COM to world: A_PI = A_PB*A_BI
-  Mat3d_mul(A_PI.rot, A_PB, bdy->A_BI->rot);
+  Mat3d_mul(A_PI.rot, A_PB, (double(*)[3])bdy->A_BI.rot);
 
   double I_r_com[3];
-  Vec3d_transRotate(I_r_com, bdy->A_BI->rot, bdy->Inertia.org);
-  Vec3d_add(A_PI.org, bdy->A_BI->org, I_r_com);
+  Vec3d_transRotate(I_r_com, (double(*)[3])bdy->A_BI.rot, bdy->Inertia.org);
+  Vec3d_add(A_PI.org, bdy->A_BI.org, I_r_com);
 
   btTransform bdyTrans = btTransformFromHTr(&A_PI);
   btDefaultMotionState* ms = new btDefaultMotionState(bdyTrans);
@@ -540,11 +540,11 @@ void Rcs::BulletRigidBody::calcHingeTrans(const RcsJoint* jnt,
                                           btVector3& pivot, btVector3& axis)
 {
   HTr A_PI;   // Rotation from world to COM: A_PI = A_PB*A_BI
-  Mat3d_mul(A_PI.rot, this->A_PB_.rot, body->A_BI->rot);
+  Mat3d_mul(A_PI.rot, this->A_PB_.rot, (double(*)[3])body->A_BI.rot);
 
   double I_r_com[3];
-  Vec3d_transRotate(I_r_com, body->A_BI->rot, body->Inertia.org);
-  Vec3d_add(A_PI.org, body->A_BI->org, I_r_com);
+  Vec3d_transRotate(I_r_com, (double(*)[3])body->A_BI.rot, body->Inertia.org);
+  Vec3d_add(A_PI.org, body->A_BI.org, I_r_com);
 
   // Transformation from physics body to joint in physics coordinates
   HTr A_JP;   // A_JP = A_JI*A_IP
@@ -572,11 +572,11 @@ void Rcs::BulletRigidBody::calcHingeTrans(const RcsJoint* jnt,
 btTransform Rcs::BulletRigidBody::calcSliderTrans(const RcsJoint* jnt)
 {
   HTr A_PI;   // Rotation from world to COM: A_PI = A_PB*A_BI
-  Mat3d_mul(A_PI.rot, this->A_PB_.rot, body->A_BI->rot);
+  Mat3d_mul(A_PI.rot, this->A_PB_.rot, (double(*)[3])body->A_BI.rot);
 
   double I_r_com[3];
-  Vec3d_transRotate(I_r_com, body->A_BI->rot, body->Inertia.org);
-  Vec3d_add(A_PI.org, body->A_BI->org, I_r_com);
+  Vec3d_transRotate(I_r_com, (double(*)[3])body->A_BI.rot, body->Inertia.org);
+  Vec3d_add(A_PI.org, body->A_BI.org, I_r_com);
 
   // Transformation from physics body to joint in physics coordinates
   HTr A_JP;   // A_JP = A_JI*A_IP
@@ -611,7 +611,7 @@ btTypedConstraint* Rcs::BulletRigidBody::createFixedJoint(const RcsGraph* graph)
 
   // Compute the fixed joint frame in world coordinates
   HTr A_JI;
-  HTr_copy(&A_JI, body->A_BI);
+  HTr_copy(&A_JI, &body->A_BI);
 
   // Lets search for load cells connected to the body. If we found one,
   // its transform is used for the fixed joint.
@@ -627,7 +627,7 @@ btTypedConstraint* Rcs::BulletRigidBody::createFixedJoint(const RcsGraph* graph)
 
       // If a load cell exists, we consider it's offset
       // transformation for the fixed joint position and orientation.
-      HTr_transform(&A_JI, body->A_BI, SENSOR->offset);
+      HTr_transform(&A_JI, &body->A_BI, SENSOR->offset);
       RLOGS(5, "Using load cell transform");
     }
 
@@ -847,7 +847,7 @@ void Rcs::BulletRigidBody::reset(const HTr* A_BI_)
   Vec3d_setZero(this->x_dot);
   Vec3d_setZero(this->omega);
 
-  setBodyTransform(A_BI_ ? A_BI_ : body->A_BI);
+  setBodyTransform(A_BI_ ? A_BI_ : &body->A_BI);
   clearForces();
   setLinearVelocity(btVector3(0.0, 0.0, 0.0));
   setAngularVelocity(btVector3(0.0, 0.0, 0.0));

@@ -315,9 +315,6 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
   // Allocate memory
   RcsBody* b = RcsBody_create();
 
-  // Default transformation
-  b->A_BI = HTr_create();
-
   // Body name
   strcpy(msg, "unnamed body");
 

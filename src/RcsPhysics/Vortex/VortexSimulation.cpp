@@ -767,42 +767,42 @@ bool Rcs::VortexSimulation::createCompositeBody(const RcsBody* body)
     {
       case RCSSHAPE_SSL:
         RLOG(5, "Creating SSL for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createCapsule(*sPtr, body->A_BI, material));
+        composite->addCollisionGeometry(createCapsule(*sPtr, &body->A_BI, material));
         break;
 
       case RCSSHAPE_MESH:
         RLOG(5, "Creating mesh for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createMesh(*sPtr, body->A_BI, material));
+        composite->addCollisionGeometry(createMesh(*sPtr, &body->A_BI, material));
         break;
 
       case RCSSHAPE_BOX:
         RLOG(5, "Creating box for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createBox(*sPtr, body->A_BI, material));
+        composite->addCollisionGeometry(createBox(*sPtr, &body->A_BI, material));
         break;
 
       case RCSSHAPE_SPHERE:
         RLOG(5, "Creating sphere for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createSphere(*sPtr, body->A_BI, material));
+        composite->addCollisionGeometry(createSphere(*sPtr, &body->A_BI, material));
         break;
 
       case RCSSHAPE_CYLINDER:
         RLOG(5, "Creating cylinder for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createCylinder(*sPtr, body->A_BI, material));
+        composite->addCollisionGeometry(createCylinder(*sPtr, &body->A_BI, material));
         break;
 
       case RCSSHAPE_SSR:
         RLOG(5, "Creating SSR for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createSSR(*sPtr, body->A_BI, material));
+        composite->addCollisionGeometry(createSSR(*sPtr, &body->A_BI, material));
         break;
 
       case RCSSHAPE_CONE:
         RLOG(5, "Creating cone for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createCone(*sPtr, body->A_BI, material));
+        composite->addCollisionGeometry(createCone(*sPtr, &body->A_BI, material));
         break;
 
       case RCSSHAPE_TORUS:
         RLOG(5, "Creating torus for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createTorus(*sPtr, body->A_BI, material));
+        composite->addCollisionGeometry(createTorus(*sPtr, &body->A_BI, material));
         break;
 
       default:
@@ -863,7 +863,7 @@ bool Rcs::VortexSimulation::createCompositeBody(const RcsBody* body)
   // which we could/should use to replace the default
   p->setCOMOffset(body->Inertia.org[0], body->Inertia.org[1], body->Inertia.org[2]);
   p->setName(body->name);
-  p->setTransform(VxTransform_fromHTr(body->A_BI));
+  p->setTransform(VxTransform_fromHTr(&body->A_BI));
 
   if (this->bodyLinearDamping >= 0.0)
   {
@@ -929,7 +929,7 @@ const HTr* Rcs::VortexSimulation::getPhysicsTransformPtr(const RcsBody* body) co
 
   if (vb == NULL)
   {
-    return body->A_BI;
+    return &body->A_BI;
   }
 
   return &vb->A_PI;
@@ -1053,12 +1053,12 @@ void Rcs::VortexSimulation::reset()
     {
       if (vxBdy->body->physicsSim == RCSBODY_PHYSICS_KINEMATIC)
       {
-        vxBdy->setTransformKinematic(VxTransform_fromHTr(vxBdy->body->A_BI),
+        vxBdy->setTransformKinematic(VxTransform_fromHTr(&vxBdy->body->A_BI),
                                      getIntegratorDt());
       }
       else
       {
-        vxBdy->setTransform(VxTransform_fromHTr(vxBdy->body->A_BI));
+        vxBdy->setTransform(VxTransform_fromHTr(&vxBdy->body->A_BI));
       }
 
       vxBdy->setAngularVelocity(Vx::VxVector3(0.0, 0.0, 0.0));
@@ -1634,7 +1634,7 @@ void Rcs::VortexSimulation::getJointAngles(MatNd* q, RcsStateType sType) const
         HTr* A_ParentI = vxBdy->body->parent ? vxBdy->body->parent->A_BI : NULL;
         RcsGraph_relativeRigidBodyDoFs(vxBdy->body, &pose, A_ParentI, q_i);
 #else
-        HTr* A_ParentI = vxBdy->body->parentId!=-1 ? getGraph()->bodies[vxBdy->body->parentId]->A_BI : NULL;
+        HTr* A_ParentI = vxBdy->body->parentId!=-1 ? &getGraph()->bodies[vxBdy->body->parentId]->A_BI : NULL;
         RcsGraph_relativeRigidBodyDoFs(getGraph(), vxBdy->body, &pose, A_ParentI, q_i);
 #endif
       }
@@ -1933,7 +1933,7 @@ bool Rcs::VortexSimulation::addBodyConstraints(RcsBody* body)
   {
     return false;
   }
-  applyTransform(body, body->A_BI);
+  applyTransform(body, &body->A_BI);
   return createJoint(body);
 }
 
@@ -2250,7 +2250,7 @@ void Rcs::VortexSimulation::applyControl(double dt)
       RCHECK_MSG(transformBdy, "This must never happen: body \"%s\" is not"
                  " contained in internalDesiredGraph", vxBdy->body->name);
 
-      vxBdy->setTransformKinematic(VxTransform_fromHTr(transformBdy->A_BI), dt);
+      vxBdy->setTransformKinematic(VxTransform_fromHTr(&transformBdy->A_BI), dt);
     }
 
   }

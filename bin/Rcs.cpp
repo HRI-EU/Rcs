@@ -1358,8 +1358,8 @@ int main(int argc, char** argv)
           // Calculate initial velocity vector from eye point to mouse tip
           double I_mouseCoords[3];
           viewer->getMouseTip(I_mouseCoords);
-          viewer->getCameraTransform(bdy->A_BI);
-          Vec3d_sub(bdy->x_dot, I_mouseCoords, bdy->A_BI->org);
+          viewer->getCameraTransform(&bdy->A_BI);
+          Vec3d_sub(bdy->x_dot, I_mouseCoords, bdy->A_BI.org);
           Vec3d_normalizeSelf(bdy->x_dot);
           Vec3d_constMulSelf(bdy->x_dot, 20.0);
 

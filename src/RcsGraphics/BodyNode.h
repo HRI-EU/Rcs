@@ -116,6 +116,7 @@ public:
   void setDynamicMeshUpdate(bool enabled);
   bool getDynamicMeshUpdate() const;
   void setMaterial(const std::string& material, double alpha=1.0);
+  void setParent(const RcsBody* parent);
 
 protected:
 
@@ -125,6 +126,7 @@ protected:
   osg::Switch* addDebugInformation();
 
   const RcsBody* bdy;
+  const RcsBody* parent;
   const HTr* A_BI;
   bool ghostMode;
   bool dynamicMeshUpdate;
