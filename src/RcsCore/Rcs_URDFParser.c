@@ -263,6 +263,9 @@ static int parseBodyURDF(xmlNode* node, RcsGraph* graph, int parentId)
   }
 
   RcsBody* body = RcsGraph_insertGraphBody(graph, parentId);
+
+
+
   getXMLNodePropertyStringN(node, "name", body->bdyXmlName, RCS_MAX_NAMELEN);
 
   if (strncmp(body->bdyXmlName, "GenericBody", 11) == 0)
@@ -275,6 +278,10 @@ static int parseBodyURDF(xmlNode* node, RcsGraph* graph, int parentId)
 
   // Fully qualified name
   snprintf(body->bdyName, RCS_MAX_NAMELEN, "%s", body->bdyXmlName);
+  RLOG(5, "Adding body %s (%d) with parent %s (%d)",
+       body->bdyName, body->id,
+       parentId<0?"NULL":graph->bodies[parentId].bdyName,
+       parentId);
 
   // Go one level deeper
   node = node->children;
@@ -886,11 +893,12 @@ int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
 
   while (linkNode != NULL)
   {
-    parentId = parseBodyURDF(linkNode, graph, parentId);
-    if (parentId != -1)
+    int tmp = parseBodyURDF(linkNode, graph, parentId);
+    if (tmp != -1)
     {
+      parentId = tmp;
       RcsBody* b = &graph->bodies[parentId];
-      RLOG(0, "Adding body %d: %s", parentId, b->bdyName);
+
       if (suffix != NULL)
       {
         char newName[RCS_MAX_NAMELEN];
@@ -959,7 +967,6 @@ int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
   {
     if (isXMLNodeNameNoCase(childNode, "joint"))
     {
-      //connectURDF(childNode, bdyVec, jntVec, suffix);
       connectURDF(childNode, graph, rootBodyId, jntVec, suffix);
     }
     childNode = childNode->next;

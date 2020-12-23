@@ -1307,12 +1307,12 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
 
     if (getXMLNodePropertyStringN(node, "prev", tmp, 32) > 0)
     {
-      RcsBody* pB = RcsGraph_getBodyByName(self, tmp);
-      if (pB)
+      RcsBody* parent = RcsGraph_getBodyByName(self, tmp);
+      if (parent)
       {
         RCHECK(level > 0);
-        root[level] = pB;
-        RLOG(9, "Setting root[%d] to \"%s\"", level, pB ? pB->bdyName : "NULL");
+        root[level] = parent;
+        RLOG(9, "Setting root[%d] to \"%s\"", level, parent ? parent->bdyName : "NULL");
       }
     }
 
@@ -1402,12 +1402,11 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
 
   else if (isXMLNodeName(node, "URDF"))
   {
-#ifdef OLD_TOPO
     // check if prev tag is provided --> first body of URDF graph will be
     // attached to it
-    char tmp[256] = "";
+    char tmp[RCS_MAX_FILENAMELEN] = "";
     RcsBody* pB = NULL;
-    if (getXMLNodePropertyStringN(node, "prev", tmp, 256) > 0)
+    if (getXMLNodePropertyStringN(node, "prev", tmp, RCS_MAX_FILENAMELEN) > 0)
     {
       pB = RcsGraph_getBodyByName(self, tmp);
       RCHECK_MSG(pB, "Body \"%s\" not found, which was specified as prev for"
@@ -1432,11 +1431,13 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     HTr_setIdentity(&A_local);
     getXMLNodePropertyHTr(node, "transform", &A_local);
     unsigned int dof = 0;
-    RcsBody* urdfRoot = RcsGraph_rootBodyFromURDFFile(graph, filename, ndExt,
-                                                      &A_local, &dof);
-    RCHECK_MSG(urdfRoot, "Couldn't get URDF root from file \"%s\"", filename);
+    int urdfRootId = RcsGraph_rootBodyFromURDFFile(self, filename, ndExt,
+                                                   &A_local, &dof);
+    RCHECK_MSG(urdfRootId!=-1, "Couldn't get URDF root from file \"%s\"", filename);
     self->dof += dof;
     self->q = MatNd_realloc(self->q, self->dof, 1);
+
+    RcsBody* urdfRoot = &self->bodies[urdfRootId];
 
     // There is no direct way to determine whether the root link should be fixed or free.
     // However, we can easily use a rgid_body_joints xml parameter to determine this.
@@ -1507,7 +1508,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
       {
         rbj0->A_JP = HTr_clone(&A_local);
         // since the group transform was already applied to the body, remove it there again
-        HTr_setIdentity(urdfRoot->A_BP);
+        HTr_setIdentity(&urdfRoot->A_BP);
       }
     }
     else if (urdfRoot->physicsSim != RCSBODY_PHYSICS_NONE)
@@ -1525,52 +1526,19 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
       }
     }
 
-
-    // If the URDF subree has a parent node, we attach the subgraph as the last
-    // child of it.
-    if (pB != NULL)
-    {
-      urdfRoot->parent = pB;
-
-      if (pB->firstChild != NULL)
-      {
-        pB->lastChild->next = urdfRoot;
-        urdfRoot->prev = pB->lastChild;
-        pB->lastChild = urdfRoot;
-      }
-      else
-      {
-        pB->firstChild = urdfRoot;
-        pB->lastChild = urdfRoot;
-      }
-    }
-    // If the URDF subree has no node, we attach the subgraph directly or
-    // as the last "next" of the graph's root.
-    else
-    {
-      if (self->root == NULL)
-      {
-        self->root = urdfRoot;
-      }
-      else
-      {
-        // Find last body on the first level
-        RcsBody* b = self->root;
-        while (b->next)
-        {
-          b = b->next;
-        }
-        b->next = urdfRoot;
-        urdfRoot->prev = b;
-      }
-    }
-
     RcsGraph_parseBodies(node->next, self, gCol, suffix,
                          parentGroup, A, firstInGroup, level, root, verbose);
-#else
-    RFATAL("Implement me");
-#endif
   }
+
+
+
+
+
+
+
+
+
+
   else // can be a body or some junk
   {
     RLOG(19, "Creating new body with root[%d] \"%s\"", level,
