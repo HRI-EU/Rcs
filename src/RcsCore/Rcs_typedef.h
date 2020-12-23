@@ -203,14 +203,6 @@ struct _RcsBody
   HTr A_BI;                         ///< Absolute transformation
   HTr Inertia;                      ///< Inertia tensor and local COG vector
 
-#ifdef OLD_TOPO
-  RcsBody* parent;        ///< Parent body
-  RcsBody* firstChild;    ///< First child body
-  RcsBody* lastChild;     ///< Last child body
-  RcsBody* next;          ///< Next sibling body
-  RcsBody* prev;          ///< Previous sibling body
-#endif
-
   int id;                 ///< Body id
   int parentId;           ///< Parent body
   int firstChildId;       ///< First child body

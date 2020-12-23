@@ -115,6 +115,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
       //Mat3d_fromEulerAngles2(child->A_BP->rot, M_PI_2, M_PI_2, 0.0);
     }
     RcsBody_addShape(child, createFrameShape(0.5));
+#warning "Replace RcsGraph_insertBody in Rcs_BVHParser"
     RcsGraph_insertBody(self, body, child);
     itemsMatched = fscanf(fd, "%63s", buf);   // Curly brace open
     RCHECK_MSG(itemsMatched==1, "Couldn't read curly brace open");
@@ -235,6 +236,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     snprintf(child->bdyName, RCS_MAX_NAMELEN, "%s", buf);
     HTr_setZero(&child->Inertia);
     RcsBody_addShape(child, createFrameShape(0.1));
+#warning "Replace RcsGraph_insertBody in Rcs_BVHParser"
     RcsGraph_insertBody(self, body, child);
 
     itemsMatched = fscanf(fd, "%63s", buf);   // Opening curly brace
@@ -470,6 +472,7 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
     HTr_setZero(&xyzRoot->Inertia);
     Mat3d_fromEulerAngles2(xyzRoot->A_BP.rot, M_PI_2, M_PI_2, 0.0);
     RcsBody_addShape(xyzRoot, createFrameShape(1.0));
+#warning "Replace RcsGraph_insertBody in Rcs_BVHParser"
     RcsGraph_insertBody(self, NULL, xyzRoot);
     bvhRoot = xyzRoot;
   }

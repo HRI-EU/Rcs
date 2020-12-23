@@ -2853,7 +2853,8 @@ void RcsGraph_insertBody(RcsGraph* graph, RcsBody* parent, RcsBody* body)
        body->parent ? body->parent->bdyName : "NULL",
        body->prev ? body->prev->bdyName : "NULL");
 #else
-  RcsGraph_insertBodyById(graph, parent, body);
+  RFATAL("Use other insert body function");
+  //RcsGraph_insertBodyById(graph, parent, body);
 #endif
 }
 
@@ -4136,4 +4137,67 @@ void RcsGraph_insertBodyById(RcsGraph* graph, RcsBody* parent, RcsBody* body)
   RLOG(0, "Inserted Body into Graph: name=%s id=%d parent=%d prev=%d next=%d first=%d last=%d",
        body->bdyName, body->id, body->parentId, body->prevId, body->nextId,
        body->firstChildId, body->lastChildId);
+}
+
+
+
+
+
+
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+RcsBody* RcsGraph_insertGraphBody(RcsGraph* graph, int parentId)
+{
+  // Initialize the next body from the graph's body array
+  graph->nBodies++;
+  graph->bodies = (RcsBody*) realloc(graph->bodies, graph->nBodies*sizeof(RcsBody));
+
+  // This must come after the realloc() call, since this might change the memory
+  // location of the bodies aray.
+  graph->root = &graph->bodies[0];
+  RcsBody* body = &graph->bodies[graph->nBodies-1];
+  RcsBody_init(body);
+  body->id = graph->nBodies-1;
+
+  // Special cases for inserting bodies without a parent. For the root body,
+  // there remains nothing to do
+  if (parentId == -1)
+  {
+    // Insert body on the root level as the last "next" neighbour of the root
+    if (graph->nBodies>1)
+    {
+      RcsBody* prev = &graph->bodies[0];
+      while (prev->nextId!=-1)
+      {
+        prev = &graph->bodies[prev->nextId];
+      }
+
+      body->id = graph->nBodies-1;
+      body->prevId = prev->id;
+      prev->nextId = body->id;
+    }
+  }
+  // From here, the body to be inserted has a parent
+  else
+  {
+    RcsBody* parent = &graph->bodies[parentId];
+
+    if (parent->lastChildId != -1)  // parent already has children
+    {
+      RcsBody* parentsLastChild = &graph->bodies[parent->lastChildId];
+      parentsLastChild->nextId = body->id;
+      body->prevId = parent->lastChildId;
+    }
+    else
+    {
+      parent->firstChildId = body->id;
+    }
+
+    body->parentId = parentId;
+    parent->lastChildId = body->id;
+  }
+
+  return body;
 }

@@ -860,57 +860,46 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
                                       RcsBody* root,
                                       bool verbose)
 {
-  RCHECK(self);
-  RCHECK(suffix);
-  RCHECK(A_group);
-
   // Return if node is not a body node
   if (!isXMLNodeName(bdyNode, "Body"))
   {
     return NULL;
   }
 
-  // Create default transformation
-  RcsBody* b = RcsBody_create();
+  RCHECK(self);
+  RCHECK(suffix);
+  RCHECK(A_group);
 
   // Body name
-  char msg[256];
-  snprintf(msg, 255, "body %d", self->nBodies);
+  char bdyName[RCS_MAX_NAMELEN];
+  snprintf(bdyName, RCS_MAX_NAMELEN, "body %d", self->nBodies);
 
   // The name as indicated in the xml file
-  getXMLNodePropertyStringN(bdyNode, "name", msg, 256);
-  RCHECK_MSG(strncmp(msg, "GenericBody", 11) != 0,
+  getXMLNodePropertyStringN(bdyNode, "name", bdyName, RCS_MAX_NAMELEN);
+  RCHECK_MSG(strncmp(bdyName, "GenericBody", 11) != 0,
              "The name \"GenericBody\" is reserved for internal use");
 
-  // Fully qualified name
-  snprintf(b->bdyXmlName, RCS_MAX_NAMELEN, "%s", msg);
-  snprintf(b->bdySuffix, RCS_MAX_NAMELEN, "%s", suffix);
-  snprintf(b->bdyName, RCS_MAX_NAMELEN, "%s%s", msg, suffix);
 
-
+  char msg[RCS_MAX_FILENAMELEN];
   RcsBody* parentBdy = root;
-  if (getXMLNodePropertyStringN(bdyNode, "prev", msg, 256) > 0)
+  if (getXMLNodePropertyStringN(bdyNode, "prev", msg, RCS_MAX_FILENAMELEN) > 0)
   {
     if (parentBdy && firstInGroup)
     {
       RLOG(1, "WARNING: \"prev\"-tag supplied in body \"%s\", but also in "
-           "group; body information will be overridden", b->bdyName);
+           "group; body information will be overridden", bdyName);
     }
 
     // If the body is the first in a group, we search its parent without the
     // group suffix. Otherwise, the suffix is appended to the name to be
     // searched. This way, we don't need to specify the suffix within a
     // group, so that the group can be used generically.
-
-
     if (!firstInGroup)
     {
       // first try to find the body with suffix
-      char* bodyNameWithSuffix = RNALLOC(strlen(msg) + strlen(suffix) + 1, char);
-      strcpy(bodyNameWithSuffix, msg);
-      strcat(bodyNameWithSuffix, suffix);
+      char bodyNameWithSuffix[RCS_MAX_NAMELEN];
+      snprintf(bodyNameWithSuffix, RCS_MAX_NAMELEN, "%s%s", msg, suffix);
       parentBdy = RcsGraph_getBodyByName(self, bodyNameWithSuffix);
-      RFREE(bodyNameWithSuffix);
     }
 
     if (!parentBdy)
@@ -921,16 +910,26 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
     }
   }
 
-  // This takes care of linking body indices and appending to graph's bodies
-  // arraay.
-  /* RcsGraph_insertBody(self, parentBdy, b); */
+  // Get the body with the given parent-id from the graph's body array. The
+  // RcsGraph_insertGraphBody() method already connects it.
+  RLOG(0, "Adding %s with parent %s (%s)", bdyName, parentBdy ? parentBdy->bdyName : "NULL", msg);
+  RcsBody* b = RcsGraph_insertGraphBody(self, parentBdy ? parentBdy->id : -1);
+
+  RLOG(5, "Inserted Body into Graph: name=%s id=%d parent=%d prev=%d next=%d first=%d last=%d",
+       bdyName, b->id, b->parentId, b->prevId, b->nextId,
+       b->firstChildId, b->lastChildId);
+
+  // Assign body names
+  snprintf(b->bdyXmlName, RCS_MAX_NAMELEN, "%s", bdyName);
+  snprintf(b->bdySuffix, RCS_MAX_NAMELEN, "%s", suffix);
+  snprintf(b->bdyName, RCS_MAX_NAMELEN, "%s%s", bdyName, suffix);
 
   // Relative vector from prev. body to body (in prev. body coords)
   // It is only created if the XML file transform is not the identity matrix.
   if (getXMLNodeProperty(bdyNode, "transform"))
   {
     bool success = !getXMLNodeProperty(bdyNode, "quat");
-    RCHECK_MSG(success, "\"quat\" is not allowed if \"quat\" exists.");
+    RCHECK_MSG(success, "\"quat\" is not allowed if \"transform\" exists.");
     getXMLNodePropertyHTr(bdyNode, "transform", &b->A_BP);
   }
 
@@ -942,8 +941,6 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
     success = getXMLNodePropertyQuat(bdyNode, "quat", b->A_BP.rot);
     getXMLNodePropertyVec3(bdyNode, "pos", b->A_BP.org);
   }
-
-
 
   // Physics simulation
   strcpy(msg, "none");
@@ -970,21 +967,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
     RFATAL("Unknown physics simulation type \"%s\"", msg);
   }
 
-  // Body color
-  char bColor[256] = "-";
-  if (defaultColor != NULL)
-  {
-    strcpy(bColor, defaultColor);
-  }
-  else
-  {
-    RLOG(4, "Default color is NULL!");
-  }
-  getXMLNodePropertyStringN(bdyNode, "color", bColor, 256);
-
-
-
-  // check if this is a rigid body that should be attached to the world
+  // Check if this is a rigid body that should be attached to the world
   // by six joints which can be set by sensor information or physics
   int nJoints = 0;
   bool hasRBJTag = getXMLNodeProperty(bdyNode, "rigid_body_joints");
@@ -1054,6 +1037,14 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
     }
 
   }
+
+
+
+  // Body color. The default color is the one specified in the bodie's xml
+  // description
+  char bColor[RCS_MAX_NAMELEN];
+  strcpy(bColor, defaultColor);
+  getXMLNodePropertyStringN(bdyNode, "color", bColor, RCS_MAX_NAMELEN);
 
   // Create all shapes. This must be done before computing the inertia tensor,
   // since this depends on the shapes.
@@ -1134,13 +1125,6 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
 
   // Reset the groups transform, it only must be applied to the first body.
   HTr_setIdentity(A_group);
-
-  // This takes care of linking body indices and appending to graph's bodies
-  // arraay.
-  RcsGraph_insertBody(self, parentBdy, b);
-  //RcsBody_destroy(b);
-  RFREE(b);
-
 
   // Search for sensors attached to the body
   xmlNodePtr sensorNode = bdyNode->children;
@@ -1297,9 +1281,9 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     snprintf(ndExt, 16, "%s%s", suffix, tmp);
 
     // Groups default color, inherited from current levels' color
-    char col[16];
-    snprintf(col, 16, "%s", gCol);
-    getXMLNodePropertyStringN(node, "color", col, 16);
+    char col[RCS_MAX_NAMELEN];
+    snprintf(col, RCS_MAX_NAMELEN, "%s", gCol);
+    getXMLNodePropertyStringN(node, "color", col, RCS_MAX_NAMELEN);
 
     REXEC(9)
     {

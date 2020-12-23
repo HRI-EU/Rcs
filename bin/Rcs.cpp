@@ -571,7 +571,7 @@ int main(int argc, char** argv)
           if (SENSOR->type==RCSSENSOR_PPS)
           {
             bool debug = RcsLogLevel > 0 ? true : false;
-            viewer->add(new Rcs::PPSSensorNode(SENSOR, debug));
+            viewer->add(new Rcs::PPSSensorNode(SENSOR, graph, debug));
           }
         }
 
@@ -1299,7 +1299,7 @@ int main(int argc, char** argv)
                                                       SENSOR->rawData->ele,
                                                       scaling));
               bool debug = RcsLogLevel > 0 ? true : false;
-              viewer->add(new Rcs::PPSSensorNode(SENSOR, debug));
+              viewer->add(new Rcs::PPSSensorNode(SENSOR, graph, debug));
             }
           }
 

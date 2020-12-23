@@ -341,6 +341,7 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
     parentBdy = RcsGraph_getBodyByName(self, buff);
   }
 
+#warning "Replace RcsGraph_insertBody in Rcs_graphOpenRaveParser"
   RcsGraph_insertBody(self, parentBdy, b);
 
   // check for translation

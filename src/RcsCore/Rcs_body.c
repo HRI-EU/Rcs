@@ -92,17 +92,14 @@ RcsBody* RcsBody_create()
 }
 
 /*******************************************************************************
- * See header.
+ * All names, the Inertia tensor and the joint and shape arrays are initialized
+ * to 0 through the memset call.
  ******************************************************************************/
 void RcsBody_init(RcsBody* b)
 {
   memset(b, 0, sizeof(RcsBody));
   HTr_setIdentity(&b->A_BP);
   HTr_setIdentity(&b->A_BI);
-  HTr_setZero(&b->Inertia);
-  memset(b->bdyName, 0, RCS_MAX_NAMELEN*(sizeof(char)));
-  memset(b->bdyXmlName, 0, RCS_MAX_NAMELEN*(sizeof(char)));
-  memset(b->bdySuffix, 0, RCS_MAX_NAMELEN*(sizeof(char)));
   b->id = -1;
   b->parentId = -1;
   b->firstChildId = -1;
