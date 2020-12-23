@@ -60,23 +60,21 @@
  * that the state vector has been set so that the joint values pointed to by
  * RcsJoint::q are up to date.
  ******************************************************************************/
-#ifdef OLD_TOPO
-static void RcsGraph_bodyKinematics(RcsBody* bdy, unsigned int* nJ,
-                                    const MatNd* q, const MatNd* q_dot)
-#else
-static void RcsGraph_bodyKinematics(RcsGraph* graph, RcsBody* bdy, unsigned int* nJ,
-                                    const MatNd* q, const MatNd* q_dot)
-#endif
+static void RcsGraph_bodyKinematics(RcsGraph* graph,
+                                    RcsBody* bdy,
+                                    unsigned int* nJ,
+                                    const MatNd* q,
+                                    const MatNd* q_dot)
 {
   // Copy last body transformation to current one
-#ifdef OLD_TOPO
-  HTr_copy(bdy->A_BI, bdy->parent ? bdy->parent->A_BI : HTr_identity());
-#else
+  if (bdy->parentId==-1)
   {
-    RcsBody* parent_ = RcsBody_getParent(graph, bdy);
-    HTr_copy(&bdy->A_BI, parent_ ? &parent_->A_BI : HTr_identity());
+    HTr_setIdentity(&bdy->A_BI);
   }
-#endif
+  else
+  {
+    HTr_copy(&bdy->A_BI, &graph->bodies[bdy->parentId].A_BI);
+  }
 
   // Set pointers to propagated elements
   HTr* A_VI   = &bdy->A_BI;
@@ -174,35 +172,23 @@ static void RcsGraph_bodyKinematics(RcsGraph* graph, RcsBody* bdy, unsigned int*
     double q_dot_i, oxr[3], om_i[3];
 
     // Linear velocity according to parent angular velocity
-#ifdef OLD_TOPO
-    if (bdy->parent == NULL)
-#else
     if (bdy->parentId == -1)
-#endif
     {
       Vec3d_setZero(bdy->x_dot);
       Vec3d_setZero(bdy->omega);
     }
     else
     {
+      RcsBody* parent = &graph->bodies[bdy->parentId];
+
       // Reset velocities for root bodies
-#ifdef OLD_TOPO
-      Vec3d_copy(bdy->x_dot, bdy->parent->x_dot);
-      Vec3d_copy(bdy->omega, bdy->parent->omega);
-#else
-      Vec3d_copy(bdy->x_dot, graph->bodies[bdy->parentId].x_dot);
-      Vec3d_copy(bdy->omega, graph->bodies[bdy->parentId].omega);
-#endif
+      Vec3d_copy(bdy->x_dot, parent->x_dot);
+      Vec3d_copy(bdy->omega, parent->omega);
 
       // Linear velocity term due to the parent's angular velocity
       double tmp[3];
-#ifdef OLD_TOPO
-      Vec3d_sub(tmp, bdy->A_BI->org, bdy->parent->A_BI->org);
-      Vec3d_crossProduct(oxr, bdy->parent->omega, tmp);
-#else
-      Vec3d_sub(tmp, bdy->A_BI.org, graph->bodies[bdy->parentId].A_BI.org);
-      Vec3d_crossProduct(oxr, graph->bodies[bdy->parentId].omega, tmp);
-#endif
+      Vec3d_sub(tmp, bdy->A_BI.org, parent->A_BI.org);
+      Vec3d_crossProduct(oxr, parent->omega, tmp);
       Vec3d_addSelf(bdy->x_dot, oxr);
     }
 
@@ -303,11 +289,8 @@ bool RcsGraph_setState(RcsGraph* self, const MatNd* q_, const MatNd* q_dot_)
   unsigned int nJ = 0;
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
-#ifdef OLD_TOPO
-    RcsGraph_bodyKinematics(BODY, &nJ, self->q,q_dot_ ? self->q_dot : NULL);
-#else
-    RcsGraph_bodyKinematics(self, BODY, &nJ, self->q, q_dot_ ? self->q_dot : NULL);
-#endif
+    RcsGraph_bodyKinematics(self, BODY, &nJ, self->q,
+                            q_dot_ ? self->q_dot : NULL);
   }
 
   // In most cases, nJ remains unchanged. We therefore only assign a new value
@@ -342,13 +325,8 @@ void RcsGraph_computeForwardKinematics(RcsGraph* self,
   self->nJ = 0;
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
-#ifdef OLD_TOPO
-    RcsGraph_bodyKinematics(BODY, &self->nJ,
-                            q ? q : self->q, q_dot ? q_dot : self->q_dot);
-#else
     RcsGraph_bodyKinematics(self, BODY, &self->nJ,
                             q ? q : self->q, q_dot ? q_dot : self->q_dot);
-#endif
   }
 
 }
@@ -576,11 +554,7 @@ double RcsGraph_massFromBody(const RcsGraph* self, const char* root)
 
   if (r)
   {
-#ifdef OLD_TOPO
-    RCSBODY_TRAVERSE_BODIES(r)
-#else
     RCSBODY_TRAVERSE_BODIES(self, r)
-#endif
     {
       m += BODY->m;
     }
@@ -1113,15 +1087,6 @@ RcsBody* RcsGraph_getBodyByName(const RcsGraph* self, const char* name)
     return (RcsBody*) &self->gBody[num];
   }
 
-#ifdef OLD_TOPO
-  RCSGRAPH_TRAVERSE_BODIES(self)
-  {
-    if (STREQ(name, BODY->bdyName))
-    {
-      return BODY;
-    }
-  }
-#else
   for (unsigned int i=0; i<self->nBodies; ++i)
   {
     if (STREQ(name, self->bodies[i].bdyName))
@@ -1129,7 +1094,6 @@ RcsBody* RcsGraph_getBodyByName(const RcsGraph* self, const char* name)
       return &self->bodies[i];
     }
   }
-#endif
 
   return NULL;
 }
@@ -1547,44 +1511,6 @@ void RcsGraph_writeDotFile(const RcsGraph* self, const char* filename)
   fprintf(fd, "node [fontname=\"fixed\"];\n");
   fprintf(fd, "edge [fontname=\"fixed\"];\n");
 
-#ifdef OLD_TOPO
-
-  // Body labels
-  int i = 0;   // Running body index
-  fprintf(fd, "-1[label=\"Root\" style=filled color=\"0.7 0.3 1\"];\n");
-  RCSGRAPH_TRAVERSE_BODIES(self)
-  {
-    fprintf(fd, "%d[label=\"%s (%d)\" ", i, BODY->bdyName, i);
-    i++;
-    fprintf(fd, "shape=box style=filled color=\"0.7 0.3 1\"];\n");
-  }
-  // Joint labels
-  int i_prev;
-  i = 0;   // Running body index
-  RCSGRAPH_TRAVERSE_BODIES(self)
-  {
-    i_prev = RcsBody_getIndex(self, BODY->parent); // Determine preceeding body
-
-    if (BODY->jnt)    // Body is connected to predecessor by joints
-    {
-      fprintf(fd, "%d->%d [label=\"", i_prev, i);
-      RCSBODY_TRAVERSE_JOINTS(BODY)
-      {
-        fprintf(fd, "%s%s \\n",
-                JNT->name, JNT->constrained ? " (constrained)" : "");
-      }
-      fprintf(fd, "\"];\n");
-    }
-    else     // Body is fixed to predecessor by fixed transformation
-    {
-      fprintf(fd, "%d->%d [label=\"Fixed\" ", i_prev, i);
-      fprintf(fd, "color=\"red\" fontcolor=\"red\"];\n");
-    }
-
-    i++;
-  }
-#else
-
   // Body labels
   fprintf(fd, "-1[label=\"Root\" style=filled color=\"0.7 0.3 1\"];\n");
   RCSGRAPH_TRAVERSE_BODIES(self)
@@ -1612,7 +1538,6 @@ void RcsGraph_writeDotFile(const RcsGraph* self, const char* filename)
       fprintf(fd, "color=\"red\" fontcolor=\"red\"];\n");
     }
   }
-#endif
 
   // File end
   fprintf(fd, "}\n");
@@ -2350,14 +2275,9 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src)
   // Create the sensors
   for (unsigned int i=0; i<src->nSensors; ++i)
   {
-    RcsSensor* ss = &src->sensors[i];
-    const char* sName = RcsSensor_name(ss->type);
-    RLOG(0, "Copying sensor %d of %d (%s %s %d)", i, src->nSensors, sName, ss->name, ss->bodyId);
-    RcsSensor_fprint(stderr, &src->sensors[i]);
     RcsSensor* s = RcsGraph_insertSensor(dst);
     RcsSensor_copy(s, &src->sensors[i]);
   }
-
 
   // Handle coupled joints
   RCSGRAPH_TRAVERSE_JOINTS(dst)
@@ -2506,14 +2426,6 @@ RcsBody* RcsGraph_linkGenericBody(RcsGraph* self, int bdyNum,
     HTr_setIdentity(&self->gBody[bdyNum].A_BP);
     HTr_setZero(&self->gBody[bdyNum].Inertia);
 
-#ifdef OLD_TOPO
-    self->gBody[bdyNum].parent     = NULL;
-    self->gBody[bdyNum].firstChild = NULL;
-    self->gBody[bdyNum].lastChild  = NULL;
-    self->gBody[bdyNum].next       = NULL;
-    self->gBody[bdyNum].prev       = NULL;
-#endif
-
     self->gBody[bdyNum].id           = -1;
     self->gBody[bdyNum].parentId     = -1;
     self->gBody[bdyNum].firstChildId = -1;
@@ -2551,14 +2463,6 @@ RcsBody* RcsGraph_linkGenericBody(RcsGraph* self, int bdyNum,
   self->gBody[bdyNum].A_BI              = b->A_BI;
   self->gBody[bdyNum].Inertia           = b->Inertia;
 
-#ifdef OLD_TOPO
-  self->gBody[bdyNum].parent            = b->parent;
-  self->gBody[bdyNum].firstChild        = b->firstChild;
-  self->gBody[bdyNum].lastChild         = b->lastChild;
-  self->gBody[bdyNum].next              = b->next;
-  self->gBody[bdyNum].prev              = b->prev;
-#endif
-
   self->gBody[bdyNum].id           = b->id;
   self->gBody[bdyNum].parentId     = b->parentId;
   self->gBody[bdyNum].firstChildId = b->firstChildId;
@@ -2578,7 +2482,6 @@ RcsBody* RcsGraph_linkGenericBody(RcsGraph* self, int bdyNum,
  ******************************************************************************/
 RcsBody* RcsGraph_getGenericBodyPtr(const RcsGraph* self, int bdyNum)
 {
-#ifdef OLD_TOPO
   char a[32];
   sprintf(a, "GenericBody%d", bdyNum);
   RcsBody* b = RcsGraph_getBodyByName(self, a);
@@ -2589,18 +2492,6 @@ RcsBody* RcsGraph_getGenericBodyPtr(const RcsGraph* self, int bdyNum)
   }
 
   return (RcsBody*) b->extraInfo;
-#else
-  RFATAL("Implement me");
-  return NULL;
-#endif
-}
-
-/*******************************************************************************
- * See header.
- ******************************************************************************/
-void RcsGraph_insertBody(RcsGraph* graph, RcsBody* parent, RcsBody* body)
-{
-  RFATAL("Obsolete");
 }
 
 /*******************************************************************************
@@ -3435,14 +3326,6 @@ bool RcsGraph_addBody(RcsGraph* graph, RcsBody* parent, RcsBody* body,
     RLOG(1, "Can't append NULL body");
     return false;
   }
-
-#ifdef OLD_TOPO
-  body->prev = NULL;
-  body->next = NULL;
-  body->firstChild = NULL;
-  body->lastChild = NULL;
-  body->parent = parent;
-#endif
 
   body->prevId = -1;
   body->nextId = -1;

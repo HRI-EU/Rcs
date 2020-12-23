@@ -239,9 +239,10 @@ struct _RcsSensor
   int bodyId;                  ///< Id of the body the sensor is attached to
   char name[RCS_MAX_NAMELEN];  ///< Name of the sensor
   HTr offset;                  ///< Transformation of the sensor mount point
-  char* extraInfo;             ///< Pressure array data
-  RcsTexel** texel;            ///< Array of texels for PPS sensors
+  unsigned int nTexels;        ///< Number of texels in texel array
+  RcsTexel* texel;             ///< Array of texels for PPS sensors
   MatNd* rawData;              ///< Raw sensor data array
+  char* extraInfo;             ///< Pressure array data
 };
 
 

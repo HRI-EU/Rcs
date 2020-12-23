@@ -161,15 +161,6 @@ RcsBody* RcsBody_getLastChild(const RcsBody* body);
   RCSBODY_TRAVERSE_JOINTS(BODY)
 
 /*! \ingroup RcsGraphTraversalFunctions
- *  \brief Traverses all sensors of the graph, starting from the root sensor.
- *         The sensors can be accessed with variable "SENSOR".
- */
-#ifdef OLD_TOPO
-#define RCSGRAPH_TRAVERSE_SENSORS(graph) \
-  for (RcsSensor *SENSOR = (graph)->sensor; SENSOR; SENSOR=SENSOR->next)
-#endif
-
-/*! \ingroup RcsGraphTraversalFunctions
  *  \brief Traverses all joints of a body, starting from the first one.
  *         The joints can be accessed with variable "JNT".
  */
@@ -191,14 +182,6 @@ RcsBody* RcsBody_getLastChild(const RcsBody* body);
 #define RCSPAIR_TRAVERSE(pairlist) \
   for (RcsPair **pPtr = (RcsPair**)(pairlist), *PAIR = *pPtr; *pPtr; \
        pPtr++, PAIR=*pPtr)
-
-/*! \ingroup RcsGraphTraversalFunctions
- *  \brief Traverses all shapes of a body, starting from the first one.
- *         The joints can be accessed with variable "SHAPE".
- */
-#define RCSSENSOR_TRAVERSE_TEXELS(sensor) \
-  for (RcsTexel **sPtr = (RcsTexel**)((sensor)->texel), *TEXEL = *sPtr; *sPtr; \
-       sPtr++, TEXEL=*sPtr)
 
 
 
@@ -492,20 +475,22 @@ RcsBody* RcsGraph_linkGenericBody(RcsGraph* self, int bdyNum,
 RcsBody* RcsGraph_getGenericBodyPtr(const RcsGraph* self, int bdyNum);
 
 /*! \ingroup RcsGraphFunctions
- *  \brief Adds the given body as the last child of parent, and connects all
- *         siblings etc. accordingly. If the parent body is NULL, the body
- *         is inserted as the last sibling on the top level of the graph. If
- *         the graph is empty, the body will straight be connected to its
- *         root.
+ *  \brief Adds memory for a new body to the graph, and connects the new
+ *         body to the parent body with the given id. If the parent body
+ *         id is -1, the body is inserted as the last sibling on the top
+ *         level of the graph. If the graph is empty, the body will straight
+ *         be connected to its root. This function is meant for building up
+ *         a graph.
  *
- *  \param[in] graph  Pointer to the graph to be extended with the body.
- *  \param[in] parent Pointer to the parent body (may be NULL)
- *  \param[in] body   Pointer to the body to be added. After adding, the graph
- *                    takes its ownership.
- * \return True for success, false otherwise (body is NULL). In the failure
- *         case, the graph is not modified.
+ *  \param[in] graph      Pointer to the graph to be extended with the body.
+ *  \param[in] parentId   Id of the parent body (may be -1)
+ *
+ *  \return Pointer to the created body. Please be careful to not store the
+ *          pointer address, since in consecutive calls to this function, the
+ *          memory might change its location due to realloc calls. To be safe,
+ *          always adress a body through its id:
+ *          RcsBody* bdy = &graph->bodies[bodyId];
  */
-void RcsGraph_insertBody(RcsGraph* graph, RcsBody* parent, RcsBody* body);
 RcsBody* RcsGraph_insertGraphBody(RcsGraph* graph, int parentId);
 
 /*! \ingroup RcsGraphFunctions

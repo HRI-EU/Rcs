@@ -199,6 +199,11 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 #define RNALLOC(nMemb, type) (type*) Rcs_calloc((nMemb), sizeof(type))
 
 /*! \ingroup RcsMacros
+ *  \brief Convenience macro around realloc.
+ */
+#define RREALLOC(ptr, nMemb, type) (type*) realloc(ptr, (nMemb)*sizeof(type));
+
+/*! \ingroup RcsMacros
  *  \brief Frees the heap memory.
  */
 #define RFREE(ptr) free((void*) (ptr))

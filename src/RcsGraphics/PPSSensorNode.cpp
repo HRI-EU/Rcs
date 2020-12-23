@@ -73,10 +73,12 @@ Rcs::PPSSensorNode::PPSSensorNode(const RcsSensor* pps, const RcsGraph* graph,
   osg::ref_ptr<osg::Geode> textGeode = new osg::Geode();
   int id = 0;
 
-  RCSSENSOR_TRAVERSE_TEXELS(pps)
+  for (unsigned int i=0; i<pps->nTexels; ++i)
   {
+    RcsTexel* txi = &pps->texel[i];
+
     // skip texels without proper normal
-    double length = Vec3d_getLength(TEXEL->normal);
+    double length = Vec3d_getLength(txi->normal);
     if (fabs(length) < 0.1)
     {
       continue;
@@ -84,19 +86,19 @@ Rcs::PPSSensorNode::PPSSensorNode(const RcsSensor* pps, const RcsGraph* graph,
 
     HTr relTrans;
     Vec3d_setZero(relTrans.org);
-    Mat3d_fromVec(relTrans.rot, TEXEL->normal, 2);
+    Mat3d_fromVec(relTrans.rot, txi->normal, 2);
     osg::ref_ptr<osg::Box> box = new osg::Box();
-    box->setHalfLengths(osg::Vec3(0.5*TEXEL->extents[0], 0.5*TEXEL->extents[1],
-                                  0.5*TEXEL->extents[2]));
-    box->setCenter(osg::Vec3(TEXEL->position[0], TEXEL->position[1],
-                             TEXEL->position[2]));
+    box->setHalfLengths(osg::Vec3(0.5*txi->extents[0], 0.5*txi->extents[1],
+                                  0.5*txi->extents[2]));
+    box->setCenter(osg::Vec3(txi->position[0], txi->position[1],
+                             txi->position[2]));
     box->setRotation(QuatFromHTr(&relTrans));
     osg::ref_ptr<osg::ShapeDrawable> shape = new osg::ShapeDrawable(box);
     geode->addDrawable(shape.get());
 
     if (debug==true)
     {
-      const double edgeLength = Vec3d_getLength(TEXEL->extents);
+      const double edgeLength = Vec3d_getLength(txi->extents);
 
       // Add a number on top of each texel
       if (fontFound==true)
@@ -110,8 +112,8 @@ Rcs::PPSSensorNode::PPSSensorNode(const RcsSensor* pps, const RcsGraph* graph,
         texelNumber->setFont(fontFile);
 
         double textPos[3];
-        Vec3d_constMulAndAdd(textPos, TEXEL->position, TEXEL->normal,
-                             1.5*TEXEL->extents[2]);
+        Vec3d_constMulAndAdd(textPos, txi->position, txi->normal,
+                             1.5*txi->extents[2]);
         texelNumber->setPosition(osg::Vec3(textPos[0], textPos[1], textPos[2]));
         texelNumber->setRotation(QuatFromHTr(&relTrans));
         texelNumber->setColor(colorFromString("RED"));
@@ -120,9 +122,9 @@ Rcs::PPSSensorNode::PPSSensorNode(const RcsSensor* pps, const RcsGraph* graph,
 
       // Show texel normals as arrows
       osg::ref_ptr<ArrowNode> an = new ArrowNode();
-      an->setPosition(TEXEL->position);
+      an->setPosition(txi->position);
       an->setRotation(relTrans.rot);
-      an->setDirection(TEXEL->normal);
+      an->setDirection(txi->normal);
       an->setRadius(0.05*edgeLength);
       an->setArrowLength(3.0*edgeLength);
       an->setMaterial("BLUE");
