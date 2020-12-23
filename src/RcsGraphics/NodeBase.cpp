@@ -407,7 +407,6 @@ void Rcs::NodeBase::setMaterial(const char* material, double alpha)
 {
   if (material==NULL)
   {
-    RLOG(1, "material is NULL - skipping!");
     return;
   }
 

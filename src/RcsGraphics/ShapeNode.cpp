@@ -68,16 +68,11 @@ static OpenThreads::Mutex _textureBufferMtx;
 
 
 
-static osg::ref_ptr<osg::Node> createMesh(const RcsShape* shape,
-                                          bool& meshFromOsgReader)
+static osg::ref_ptr<osg::Node> createMeshNode(const RcsShape* shape,
+                                              bool& meshFromOsgReader)
 {
   osg::ref_ptr<osg::Node> meshNode;
   meshFromOsgReader = false;
-
-  if (shape->meshFile==NULL)
-  {
-    return meshNode;   // is invalid: meshNode.isValid()==false
-  }
 
   // Little map that stores name-pointer pairs of mesh files. If
   // a mesh has already been loaded, we look up its pointer from
@@ -88,77 +83,58 @@ static osg::ref_ptr<osg::Node> createMesh(const RcsShape* shape,
   std::map<std::string, osg::ref_ptr<osg::Node> >::iterator it;
 
   _meshBufferMtx.lock();
-  for (it = _meshBuffer.begin() ; it != _meshBuffer.end(); ++it)
+  it = _meshBuffer.find(std::string(shape->meshFile));
+  if (it != _meshBuffer.end())
   {
-    if (it->first == shape->meshFile)
+    NLOG(0, "Creating MeshNode %s from _meshBuffer", shape->meshFile);
+    meshNode = it->second;
+    Rcs::MeshNode* mn = dynamic_cast<Rcs::MeshNode*>(meshNode.get());
+    if (mn)
     {
-      NLOG(0, "Mesh file \"%s\" already loaded", shape->meshFile);
-      meshNode = it->second;
-      //setNodeMaterial(shape->color, meshNode);
-      Rcs::MeshNode* mn = static_cast<Rcs::MeshNode*>(meshNode.get());
-
-      if ((mn != NULL) && (shape->color != NULL))
-      {
-        NLOG(0, "Setting color of body \"%s\" (%s) to \"%s\"",
-             getName().c_str(), shape->meshFile, shape->color);
-        mn->setMaterial(shape->color);
-      }
-
-      break;
+      mn->setMaterial(std::string(shape->color));
     }
-
+    _meshBufferMtx.unlock();
+    return meshNode;
   }
   _meshBufferMtx.unlock();
 
 
-
   // If no mesh was found in the _meshBuffer, we create it here.
-  if (!meshNode.valid())
+  NLOG(0, "NO mesh file \"%s\" loaded", shape->meshFile);
+  RcsMeshData* mesh = (RcsMeshData*)shape->userData;
+
+  // If there's a mesh attached to the shape, we create a MeshNode
+  // from it.
+  if (mesh && mesh->nFaces>0)
   {
-    NLOG(0, "NO mesh file \"%s\" loaded", shape->meshFile);
-    RcsMeshData* mesh = (RcsMeshData*)shape->userData;
-
-    // If there's a mesh attached to the shape, we create a MeshNode
-    // from it.
-    if (mesh && mesh->nFaces>0)
-    {
-      NLOG(0, "Creating MeshNode from shape (%s)",
-           shape->meshFile ? shape->meshFile : "NULL");
-
-      Rcs::MeshNode* mn = new Rcs::MeshNode(mesh->vertices,
-                                            mesh->nVertices,
-                                            mesh->faces, mesh->nFaces);
-
-      if (shape->color != NULL)
-      {
-        NLOG(0, "Setting color of body \"%s\" (%s) to \"%s\"",
-             getName().c_str(), shape->meshFile, shape->color);
-        mn->setMaterial(shape->color);
-      }
-
-      meshNode = mn;
-    }   // (mesh && mesh->nFaces>0)
-    // Otherwise, we use the OpenSceneGraph classes
-    else
-    {
-      // fixes loading of obj without normals (doesn't work for OSG 2.8)
-      osg::ref_ptr<osgDB::Options> options =
-        new osgDB::Options("generateFacetNormals=true noRotation=true");
-      meshNode = osgDB::readNodeFile(shape->meshFile, options.get());
-      meshFromOsgReader = true;
-
-      // We only add the non-MeshNodes to the buffer, and recreate
-      // everthing else. That's due to an issue with the color
-      // assignment for the mesh vertices. It somehow doesn't work. If
-      // anyone has an idea, it's appreciated.
-      if (meshNode.valid())
-      {
-        _meshBufferMtx.lock();
-        _meshBuffer[std::string(shape->meshFile)] = meshNode;
-        _meshBufferMtx.unlock();
-      }
-    }
+    NLOG(0, "Creating MeshNode from shape (%s)", shape->meshFile);
+    osg::ref_ptr<Rcs::MeshNode> mn;
+    mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
+                           mesh->faces, mesh->nFaces);
+    mn->setMaterial(shape->color);
+    return mn;
   }
+
+
+  // Otherwise, we use the OpenSceneGraph classes
+  // fixes loading of obj without normals (doesn't work for OSG 2.8)
+  NLOG(0, "Creating MeshNode from osg::NodeFileReader (%s)", shape->meshFile);
+  osg::ref_ptr<osgDB::Options> options;
+  options = new osgDB::Options("generateFacetNormals=true noRotation=true");
+  meshNode = osgDB::readNodeFile(shape->meshFile, options.get());
+  meshFromOsgReader = true;
+
+  // We only add the non-MeshNodes to the buffer, and recreate
+  // everthing else. That's due to an issue with the color
+  // assignment for the mesh vertices. It somehow doesn't work. If
+  // anyone has an idea, it's appreciated.
+  if (meshNode.valid())
+  {
+    _meshBufferMtx.lock();
+    _meshBuffer[std::string(shape->meshFile)] = meshNode;
+    _meshBufferMtx.unlock();
+  }
+
 
   return meshNode;
 }
@@ -376,7 +352,7 @@ ShapeNode::ShapeNode(const RcsShape* shape_, bool resizeable) : shape(shape_)
   RCHECK(shape);
   addShape(resizeable);
 
-  if (shape->textureFile)
+  if (strlen(shape->textureFile)>0)
   {
     addTexture(shape->textureFile);
   }
@@ -615,7 +591,7 @@ void ShapeNode::addShape(bool resizeable)
   else if (shape->type == RCSSHAPE_MESH)
   {
     bool meshFromOsgReader;
-    osg::ref_ptr<osg::Node> meshNode = createMesh(shape, meshFromOsgReader);
+    osg::ref_ptr<osg::Node> meshNode = createMeshNode(shape, meshFromOsgReader);
 
     if (meshNode.valid())
     {
@@ -674,7 +650,7 @@ void ShapeNode::addShape(bool resizeable)
   {
 #ifdef USE_OCTOMAP
     octomap::OcTree* tree;
-    if (shape->userData == NULL && shape->meshFile)
+    if (shape->userData == NULL)
     {
       tree = new octomap::OcTree(shape->meshFile);
     }
@@ -767,7 +743,7 @@ void ShapeNode::addTexture(const char* textureFile)
   _textureBufferMtx.lock();
   for (it = _textureBuffer.begin() ; it != _textureBuffer.end(); ++it)
   {
-    if (it->first == textureFile)
+    if (it->first == std::string(textureFile))
     {
       NLOG(0, "Texture file \"%s\" already loaded", textureFile);
       texture = it->second;

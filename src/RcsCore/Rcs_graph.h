@@ -539,7 +539,6 @@ RcsBody* RcsGraph_getGenericBodyPtr(const RcsGraph* self, int bdyNum);
  *         case, the graph is not modified.
  */
 void RcsGraph_insertBody(RcsGraph* graph, RcsBody* parent, RcsBody* body);
-void RcsGraph_insertBodyById(RcsGraph* graph, RcsBody* parent, RcsBody* body);
 RcsBody* RcsGraph_insertGraphBody(RcsGraph* graph, int parentId);
 
 /*! \ingroup RcsGraphFunctions

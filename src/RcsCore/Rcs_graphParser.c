@@ -912,10 +912,12 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
 
   // Get the body with the given parent-id from the graph's body array. The
   // RcsGraph_insertGraphBody() method already connects it.
-  RLOG(0, "Adding %s with parent %s (%s)", bdyName, parentBdy ? parentBdy->bdyName : "NULL", msg);
+  RLOG(5, "Adding %s with parent %s (%s)",
+       bdyName, parentBdy ? parentBdy->bdyName : "NULL", msg);
   RcsBody* b = RcsGraph_insertGraphBody(self, parentBdy ? parentBdy->id : -1);
 
-  RLOG(5, "Inserted Body into Graph: name=%s id=%d parent=%d prev=%d next=%d first=%d last=%d",
+  RLOG(5, "Inserted Body into Graph: name=%s id=%d parent=%d "
+       "prev=%d next=%d first=%d last=%d",
        bdyName, b->id, b->parentId, b->prevId, b->nextId,
        b->firstChildId, b->lastChildId);
 

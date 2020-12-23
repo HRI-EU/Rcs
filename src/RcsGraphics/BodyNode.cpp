@@ -44,6 +44,7 @@
 #include <Rcs_joint.h>
 #include <Rcs_macros.h>
 #include <Rcs_utils.h>
+#include <Rcs_shape.h>
 #include <MeshNode.h>
 
 #ifdef USE_OCTOMAP
@@ -131,6 +132,7 @@ BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
 
   RCSBODY_TRAVERSE_SHAPES(b)
   {
+    RLOG(5, "Creating ShapeNode for %s", RcsShape_name(SHAPE->type));
     osg::ref_ptr<ShapeNode> sni = new ShapeNode(SHAPE, resizeable);
     _shapeNodes.push_back(sni);
 

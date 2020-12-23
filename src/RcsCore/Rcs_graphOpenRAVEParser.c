@@ -310,39 +310,32 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
     return NULL;
   }
 
-  char msg[256];
-
-  // Allocate memory
-  RcsBody* b = RcsBody_create();
-
   // Body name
+  char msg[RCS_MAX_NAMELEN];
   strcpy(msg, "unnamed body");
 
   // The name as indicated in the xml file
-  getXMLNodePropertyStringN(bdyNode, "name", msg, 256);
+  getXMLNodePropertyStringN(bdyNode, "name", msg, RCS_MAX_NAMELEN);
   RCHECK_MSG(strncmp(msg, "GenericBody", 11) != 0,
              "The name \"GenericBody\" is reserved for internal use");
+
+  /// \todo Groups not yet supported by OpenRAVE parser
+  RcsBody* parentBdy = root;
+
+  // Find predecessor
+  xmlNodePtr child = getXMLChildByName(bdyNode, "offsetfrom");
+  if (child)
+  {
+    char buff[RCS_MAX_NAMELEN];
+    getXMLNodeString(child, buff);
+    parentBdy = RcsGraph_getBodyByName(self, buff);
+  }
+
+  RcsBody* b = RcsGraph_insertGraphBody(self, parentBdy ? parentBdy->id : -1);
 
   // Fully qualified name
   snprintf(b->bdyXmlName, RCS_MAX_NAMELEN, "%s", msg);
   snprintf(b->bdyName, RCS_MAX_NAMELEN, "%s", msg);
-
-  /// \todo (MM, Oct 2, 2013): Groups not yet supported by OpenRAVE parser
-
-  RcsBody* parentBdy = root;
-
-  // find predecessor
-  xmlNodePtr child = getXMLChildByName(bdyNode, "offsetfrom");
-  if (child)
-  {
-    char buff[256];
-    getXMLNodeString(child, buff);
-
-    parentBdy = RcsGraph_getBodyByName(self, buff);
-  }
-
-#warning "Replace RcsGraph_insertBody in Rcs_graphOpenRaveParser"
-  RcsGraph_insertBody(self, parentBdy, b);
 
   // check for translation
   child = getXMLChildByName(bdyNode, "Translation");
@@ -359,37 +352,20 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
     getXMLNodeQuat(child, b->A_BP.rot);
   }
 
-  /// \todo (MM, Oct 2, 2013): physics not supported yet
+  /// \todo Physics not supported yet
 
-#if 0
-  // Body color
-  char bColor[256] = "-";
-  if (defaultColor != NULL)
-  {
-    strcpy(bColor, defaultColor);
-  }
-  else
-  {
-    RLOG(4, "Default color is NULL!");
-  }
-  getXMLNodePropertyString(bdyNode, "color", bColor);
-
-#endif
-
-  /// \todo (MM, Oct 2, 2013): Rigid body joints not supported yet
+  /// \todo Rigid body joints not supported yet
 
   // Things one level deeper
   xmlNodePtr shapeNode = bdyNode->children;
 
   // Allocate memory for shape node lists
   b->shape = RNALLOC(getNumXMLNodes(shapeNode, "geom") + 1, RcsShape*);
-  RCHECK_PEDANTIC(b->shape);
 
   int shapeCount = 0;
 
   while (shapeNode != NULL)
   {
-    /// \todo (MM, Oct 2, 2013): Add shapes parsing
     b->shape[shapeCount] = RcsShape_createFromOpenRAVEXML(shapeNode, b);
 
     if (b->shape[shapeCount] != NULL)
@@ -457,7 +433,7 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
                "for body \"%s\". Shame on you!", b->bdyName);
   }
 
-  /// \todo (MM, Oct 2, 2013): Sensors are not supported yet
+  /// \todo: Sensors are not supported yet
 
   return b;
 }
@@ -539,6 +515,10 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
   // body's transformation
   if (bdy->jnt == jnt)
   {
+    if (!jnt->A_JP)
+    {
+      jnt->A_JP = HTr_create();
+    }
     /* jnt->A_JP = bdy->A_BP; */
     /* bdy->A_BP = NULL; */
     HTr_copy(jnt->A_JP, &bdy->A_BP);

@@ -184,6 +184,7 @@ bool GraphNode::init(const RcsGraph* g, bool resizeable,
       continue;
     }
 
+    RLOG(5, "Creating BodyNode for %s", BODY->bdyName);
     osg::ref_ptr<Rcs::BodyNode> tn = new Rcs::BodyNode(BODY, 1.0, resizeable);
 #ifdef OLD_TOPO
     tn->setParent(BODY->parent);
