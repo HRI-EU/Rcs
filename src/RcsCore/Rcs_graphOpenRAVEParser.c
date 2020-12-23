@@ -466,7 +466,7 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
   jnt->ctrlType = RCSJOINT_CTRL_POSITION;
 
   // first find body that the joint is attached to
-  /// \todo (MM, Oct 2, 2013): offsetfrom is used and Body nodes are ignored,
+  /// \todo: offsetfrom is used and Body nodes are ignored,
   // that may not be valid for all OpenRAVE files
   xmlNodePtr child = getXMLChildByName(node, "offsetfrom");
   RCHECK_MSG(child, "Couldn't find tag \"offsetfrom\"");
@@ -492,14 +492,9 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
   {
     jnt->name = RNALLOC(strlen("unnamed joint") + 1, char);
     strcpy(jnt->name, "unnamed joint");
-#ifdef OLD_TOPO
-    RLOG(4, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
-         "unnamed joint\"", bdy->bdyName, bdy->parent ? bdy->parent->bdyName : "NULL");
-#else
     RLOG(4, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
          "unnamed joint\"", bdy->bdyName,
          bdy->parentId!=-1 ? self->bodies[bdy->parentId].bdyName : "NULL");
-#endif
   }
 
   RLOG(5, "Inserting joint \"%s\" into body \"%s\"", jnt->name, bdy->bdyName);
@@ -519,20 +514,18 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
     {
       jnt->A_JP = HTr_create();
     }
-    /* jnt->A_JP = bdy->A_BP; */
-    /* bdy->A_BP = NULL; */
     HTr_copy(jnt->A_JP, &bdy->A_BP);
     HTr_setIdentity(&bdy->A_BP);
   }
 
-  /// \todo (MM, Oct 2, 2013): Groups are not supported yet
+  /// \todo: Groups are not supported yet
 
   // Joint constraint
-  /// \todo (MM, Oct 2, 2013): Constrained joints are not supported yet
+  /// \todo: Constrained joints are not supported yet
   jnt->constrained = false;
 
   // Joint type
-  /// \todo (MM, Oct 2, 2013): Currently only rotational joints are supported
+  /// \todo: Currently only rotational joints are supported
   xmlNodePtr axis_node = getXMLChildByName(node, "axis");
   RCHECK(axis_node);
 
@@ -631,7 +624,7 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
 
   jnt->q_init = jnt->q0;
 
-  /// \todo (MM, Oct 3, 2013): HGF coupled joint equations is not supported, this is just a workaround
+  /// \todo: HGF coupled joint equations is not supported, this is just a workaround
   // Coupled joint
   strLength = getXMLNodePropertyStringN(node, "coupledTo", NULL, 0);
 
@@ -656,7 +649,7 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
   }
 
 
-  /// \todo (MM, Oct 2, 2013): additional parameters like gearRatio and so on are not supported
+  /// \todo: additional parameters like gearRatio and so on are not supported
 
   if (verbose)
   {
@@ -680,7 +673,7 @@ RcsShape* RcsShape_createFromOpenRAVEXML(xmlNode* node, RcsBody* body)
   HTr_setIdentity(&shape->A_CB);
   shape->scale = 1.0;
 
-  /// \todo (MM, Oct 2, 2013): not all shape types are supported yet
+  /// \todo: not all shape types are supported yet
   char str[256];
   getXMLNodePropertyStringN(node, "type", str, 256);
   if (STRCASEEQ(str, "box"))

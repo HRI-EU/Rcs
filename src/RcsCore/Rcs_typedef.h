@@ -45,8 +45,8 @@ extern "C" {
 #include "Rcs_graph.h"
 
 #define RCS_GRAVITY          (9.81)
-#define RCS_MAX_NAMELEN      (256)
-#define RCS_MAX_FILENAMELEN  (512)
+#define RCS_MAX_NAMELEN      (64)
+#define RCS_MAX_FILENAMELEN  (256)
 
 typedef enum
 {

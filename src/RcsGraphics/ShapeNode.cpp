@@ -61,9 +61,7 @@
 namespace Rcs
 {
 
-static std::map<std::string, osg::ref_ptr<osg::Node> > _meshBuffer;
 static std::map<std::string, osg::ref_ptr<osg::Texture2D> > _textureBuffer;
-static OpenThreads::Mutex _meshBufferMtx;
 static OpenThreads::Mutex _textureBufferMtx;
 
 
@@ -71,6 +69,9 @@ static OpenThreads::Mutex _textureBufferMtx;
 static osg::ref_ptr<osg::Node> createMeshNode(const RcsShape* shape,
                                               bool& meshFromOsgReader)
 {
+  static std::map<std::string, osg::ref_ptr<osg::Node> > _meshBuffer;
+  static OpenThreads::Mutex _meshBufferMtx;
+
   osg::ref_ptr<osg::Node> meshNode;
   meshFromOsgReader = false;
 
@@ -78,7 +79,7 @@ static osg::ref_ptr<osg::Node> createMeshNode(const RcsShape* shape,
   // a mesh has already been loaded, we look up its pointer from
   // the map. Otherwise, we load the mesh and store its pointer
   // in the map.
-  // \todo(MG): Identical meshes with different colors don't work
+  // \todo: Identical meshes with different colors don't work
   // (only last assigned color is used). Please fix at some time
   std::map<std::string, osg::ref_ptr<osg::Node> >::iterator it;
 
@@ -112,6 +113,9 @@ static osg::ref_ptr<osg::Node> createMeshNode(const RcsShape* shape,
     mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
                            mesh->faces, mesh->nFaces);
     mn->setMaterial(shape->color);
+    _meshBufferMtx.lock();
+    _meshBuffer[std::string(shape->meshFile)] = mn;
+    _meshBufferMtx.unlock();
     return mn;
   }
 
@@ -727,7 +731,7 @@ void ShapeNode::addShape(bool resizeable)
 }
 
 /*******************************************************************************
- *
+ *\todo: Make separate texture buffer method similar to mesh buffer
  ******************************************************************************/
 void ShapeNode::addTexture(const char* textureFile)
 {

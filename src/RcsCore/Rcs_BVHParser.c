@@ -96,52 +96,58 @@ static RcsShape* createFrameShape(double scale)
 /*******************************************************************************
  *
  ******************************************************************************/
-static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
+static bool parseRecursive(char* buf, RcsGraph* self, int parentId, FILE* fd,
                            const double offset[3], double linearScaleToSI,
                            bool Z_up_x_forward)
 {
+  static int recursionDepth = 0;
+  RLOG(5, "[%d] ************* parseRecursive: parentid=%d", recursionDepth, parentId);
+  recursionDepth++;
+
   int itemsMatched = 0;
 
   if (STRCASEEQ(buf, "ROOT"))
   {
-    RcsBody* child = RcsBody_create();
+    RcsBody* child = RcsGraph_insertGraphBody(self, parentId);
     itemsMatched = fscanf(fd, "%63s", buf);   // Body name
     RCHECK_MSG(itemsMatched==1, "Couldn't read body name");
 
     snprintf(child->bdyName, RCS_MAX_NAMELEN, "%s", buf);
-    HTr_setZero(&child->Inertia);
-    if (Z_up_x_forward)
-    {
-      //Mat3d_fromEulerAngles2(child->A_BP->rot, M_PI_2, M_PI_2, 0.0);
-    }
     RcsBody_addShape(child, createFrameShape(0.5));
-#warning "Replace RcsGraph_insertBody in Rcs_BVHParser"
-    RcsGraph_insertBody(self, body, child);
     itemsMatched = fscanf(fd, "%63s", buf);   // Curly brace open
     RCHECK_MSG(itemsMatched==1, "Couldn't read curly brace open");
     itemsMatched = fscanf(fd, "%63s", buf);   // Next keyword
     RCHECK_MSG(itemsMatched==1, "Couldn't read next keyword");
 
     RLOG(5, "Recursing after ROOT with next keyword %s", buf);
-    parseRecursive(buf, self, child, fd, Vec3d_zeroVec(), linearScaleToSI,
+    parseRecursive(buf, self, child->id, fd, Vec3d_zeroVec(), linearScaleToSI,
                    Z_up_x_forward);
   }
-  else if (STRCASEEQ(buf, "OFFSET"))
+  else if (STRCASEEQ(buf, "JOINT"))
   {
-    double offs[3];
-    char bufStr[3][256];
-    itemsMatched = fscanf(fd, "%255s %255s %255s",
-                          bufStr[0], bufStr[1], bufStr[2]);
-    RCHECK_MSG(itemsMatched==3, "Couldn't read OFFSET");
-    offs[0] = String_toDouble_l(bufStr[0]);
-    offs[1] = String_toDouble_l(bufStr[1]);
-    offs[2] = String_toDouble_l(bufStr[2]);
-    Vec3d_constMulSelf(offs, linearScaleToSI);
+    itemsMatched = fscanf(fd, "%63s", buf);   // Joint link name
+    RCHECK_MSG(itemsMatched==1, "Couldn't read joint link name");
+
+    // Create a new body and recursively call this function again
+    RcsBody* child = RcsGraph_insertGraphBody(self, parentId);
+    snprintf(child->bdyName, RCS_MAX_NAMELEN, "%s", buf);
+    RcsBody_addShape(child, createFrameShape(0.1));
+
+    itemsMatched = fscanf(fd, "%63s", buf);   // Opening curly brace
+    RCHECK_MSG(itemsMatched==1, "Couldn't read opening curly brace");
     itemsMatched = fscanf(fd, "%63s", buf);   // Next keyword
     RCHECK_MSG(itemsMatched==1, "Couldn't read next keyword");
-    RLOG(5, "Recursing after OFFSET with next keyword %s", buf);
-    parseRecursive(buf, self, body, fd, offs, linearScaleToSI,
-                   Z_up_x_forward);
+    RLOG(5, "Recursing after JOINT with next keyword %s", buf);
+    bool success = parseRecursive(buf, self, child->id, fd, Vec3d_zeroVec(),
+                                  linearScaleToSI, Z_up_x_forward);
+    RCHECK(success);
+    itemsMatched = fscanf(fd, "%63s", buf);   // Closing curly brace
+    if (itemsMatched < 1)
+    {
+      RLOG(1, "Couldn't read closing curly brace");
+      recursionDepth--;
+      return false;
+    }
   }
   else if (STRCASEEQ(buf, "CHANNELS"))
   {
@@ -155,6 +161,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
       itemsMatched = fscanf(fd, "%63s", buf);   // direction
       RCHECK_MSG(itemsMatched==1, "Couldn't read channel %d", i);
 
+      RcsBody* body = &self->bodies[parentId];
       RcsJoint* jnt = RALLOC(RcsJoint);
       char a[128];
       snprintf(a, 128, "%s_jnt_%s", body->bdyName, buf);
@@ -214,6 +221,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
       else
       {
         RLOG(1, "Unknown direction \"%s\" of CHANNELS", buf);
+        recursionDepth--;
         return false;
       }
 
@@ -223,36 +231,25 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     itemsMatched = fscanf(fd, "%63s", buf);   // Next keyword
     RCHECK_MSG(itemsMatched==1, "Couldn't read next keyword");
     RLOG(5, "Recursing after CHANNELS with next keyword %s", buf);
-    parseRecursive(buf, self, body, fd, Vec3d_zeroVec(), linearScaleToSI,
+    parseRecursive(buf, self, parentId, fd, Vec3d_zeroVec(), linearScaleToSI,
                    Z_up_x_forward);
   }
-  else if (STRCASEEQ(buf, "JOINT"))
+  else if (STRCASEEQ(buf, "OFFSET"))
   {
-    itemsMatched = fscanf(fd, "%63s", buf);   // Joint link name
-    RCHECK_MSG(itemsMatched==1, "Couldn't read joint link name");
-
-    // Create a new body and recursively call this function again
-    RcsBody* child = RcsBody_create();
-    snprintf(child->bdyName, RCS_MAX_NAMELEN, "%s", buf);
-    HTr_setZero(&child->Inertia);
-    RcsBody_addShape(child, createFrameShape(0.1));
-#warning "Replace RcsGraph_insertBody in Rcs_BVHParser"
-    RcsGraph_insertBody(self, body, child);
-
-    itemsMatched = fscanf(fd, "%63s", buf);   // Opening curly brace
-    RCHECK_MSG(itemsMatched==1, "Couldn't read opening curly brace");
+    double offs[3];
+    char bufStr[3][256];
+    itemsMatched = fscanf(fd, "%255s %255s %255s",
+                          bufStr[0], bufStr[1], bufStr[2]);
+    RCHECK_MSG(itemsMatched==3, "Couldn't read OFFSET");
+    offs[0] = String_toDouble_l(bufStr[0]);
+    offs[1] = String_toDouble_l(bufStr[1]);
+    offs[2] = String_toDouble_l(bufStr[2]);
+    Vec3d_constMulSelf(offs, linearScaleToSI);
     itemsMatched = fscanf(fd, "%63s", buf);   // Next keyword
     RCHECK_MSG(itemsMatched==1, "Couldn't read next keyword");
     RLOG(5, "Recursing after OFFSET with next keyword %s", buf);
-    bool success = parseRecursive(buf, self, child, fd, Vec3d_zeroVec(),
-                                  linearScaleToSI, Z_up_x_forward);
-    RCHECK(success);
-    itemsMatched = fscanf(fd, "%63s", buf);   // Closing curly brace
-    if (itemsMatched < 1)
-    {
-      RLOG(1, "Couldn't read closing curly brace");
-      return false;
-    }
+    parseRecursive(buf, self, parentId, fd, offs, linearScaleToSI,
+                   Z_up_x_forward);
   }
   else if (STRCASEEQ(buf, "End"))
   {
@@ -292,11 +289,12 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
     shape->extents[1] = 0.1*len;
     shape->extents[2] = 0.1*len;
     strcpy(shape->color, "BLACK_RUBBER");
+    RcsBody* body = &self->bodies[parentId];
     RcsBody_addShape(body, shape);
 
 
     RLOG(5, "Recursing after END SITE with next keyword %s", buf);
-    parseRecursive(buf, self, body, fd, Vec3d_zeroVec(), linearScaleToSI,
+    parseRecursive(buf, self, parentId, fd, Vec3d_zeroVec(), linearScaleToSI,
                    Z_up_x_forward);
   }
 
@@ -305,26 +303,32 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
 
   if (STREQ(buf, "}"))
   {
+    recursionDepth--;
     return true;
   }
   else if (STREQ(buf, "MOTION"))
   {
+    recursionDepth--;
     return true;
   }
   else if (STREQ(buf, "Frames:"))
   {
+    recursionDepth--;
     return true;
   }
   else if (STREQ(buf, "Frame"))   // "Frame Time:"
   {
+    recursionDepth--;
     return true;
   }
   else
   {
-    parseRecursive(buf, self, body, fd, Vec3d_zeroVec(), linearScaleToSI,
+    RLOG(5, "Recursing after unknown keyword %s: parentId=%d", buf, parentId);
+    parseRecursive(buf, self, parentId, fd, Vec3d_zeroVec(), linearScaleToSI,
                    Z_up_x_forward);
   }
 
+  recursionDepth--;
   return true;
 }
 
@@ -333,16 +337,14 @@ static bool parseRecursive(char* buf, RcsGraph* self, RcsBody* body, FILE* fd,
  ******************************************************************************/
 static void addGeometry(RcsGraph* self)
 {
-#ifdef OLD_TOPO
-
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
-    if (STREQ(BODY->name, "BVHROOT"))
+    if (STREQ(BODY->bdyName, "BVHROOT"))
     {
       continue;
     }
 
-    RcsBody* CHILD = BODY->firstChild;
+    RcsBody* CHILD = RcsBody_getFirstChild(self, BODY);
 
     int rr = Math_getRandomInteger(0, 255);
     int gg = Math_getRandomInteger(0, 255);
@@ -353,14 +355,14 @@ static void addGeometry(RcsGraph* self)
 
     while (CHILD!=NULL)
     {
-      RLOG(5, "%s: Traversing child %s", BODY->name, CHILD->name);
+      RLOG(5, "%s: Traversing child %s", BODY->bdyName, CHILD->bdyName);
 
-      const double* I_p1 = BODY->A_BI->org;
-      const double* I_p2 = CHILD->A_BI->org;
+      const double* I_p1 = BODY->A_BI.org;
+      const double* I_p2 = CHILD->A_BI.org;
 
       double K_p1[3], K_p2[3], K_p12[3], K_center[3];
-      Vec3d_invTransform(K_p1, BODY->A_BI,I_p1);
-      Vec3d_invTransform(K_p2, BODY->A_BI,I_p2);
+      Vec3d_invTransform(K_p1, &BODY->A_BI,I_p1);
+      Vec3d_invTransform(K_p2, &BODY->A_BI,I_p2);
       Vec3d_sub(K_p12, K_p2, K_p1);
       Vec3d_constMulAndAdd(K_center, K_p1, K_p12, 0.5);
       double len = 0.8*Vec3d_getLength(K_p12);
@@ -375,10 +377,8 @@ static void addGeometry(RcsGraph* self)
       HTr_setIdentity(&shape->A_CB);
       shape->scale = 1.0;
       shape->type = RCSSHAPE_BOX;
-      shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
-      shape->extents[0] = 0.2*len;
-      shape->extents[1] = 0.2*len;
-      shape->extents[2] = len;
+      RcsShape_setComputeType(shape, RCSSHAPE_COMPUTE_GRAPHICS, true);
+      Vec3d_set(shape->extents, 0.2*len, 0.2*len, len);
       snprintf(shape->color, RCS_MAX_NAMELEN, "%s", color);
       Mat3d_fromVec(shape->A_CB.rot, K_p12, 2);
       Vec3d_copy(shape->A_CB.org, K_center);
@@ -390,19 +390,14 @@ static void addGeometry(RcsGraph* self)
       shape->scale = 1.0;
       shape->type = RCSSHAPE_SPHERE;
       shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
-      shape->extents[0] = 0.15*len;
-      shape->extents[1] = 0.15*len;
-      shape->extents[2] = 0.15*len;
+      Vec3d_set(shape->extents, 0.15*len, 0.15*len, 0.15*len);
       snprintf(shape->color, RCS_MAX_NAMELEN, "%s", color);
       RcsBody_addShape(BODY, shape);
 
-      CHILD=CHILD->next;
+      CHILD = RcsBody_getNext(self, CHILD);
     }
   }
 
-#else
-  RFATAL("Implement me");
-#endif
 }
 
 /*******************************************************************************
@@ -461,24 +456,20 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
 
   // Create an empty graph that will be propagated recursively
   RcsGraph* self = RALLOC(RcsGraph);
-  RCHECK(self);
   self->xmlFile = String_clone(fileName);
-  RcsBody* bvhRoot = self->root;
+  RcsBody* bvhRoot = NULL;
 
   if (Z_up_x_forward == true)
   {
-    RcsBody* xyzRoot = RcsBody_create();
+    RcsBody* xyzRoot = RcsGraph_insertGraphBody(self, -1);
     snprintf(xyzRoot->bdyName, RCS_MAX_NAMELEN, "%s", "BVHROOT");
-    HTr_setZero(&xyzRoot->Inertia);
     Mat3d_fromEulerAngles2(xyzRoot->A_BP.rot, M_PI_2, M_PI_2, 0.0);
     RcsBody_addShape(xyzRoot, createFrameShape(1.0));
-#warning "Replace RcsGraph_insertBody in Rcs_BVHParser"
-    RcsGraph_insertBody(self, NULL, xyzRoot);
     bvhRoot = xyzRoot;
   }
 
   // Start recursion with root link
-  success = parseRecursive(buf, self, bvhRoot, fd, Vec3d_zeroVec(),
+  success = parseRecursive(buf, self, bvhRoot ? bvhRoot->id : -1, fd, Vec3d_zeroVec(),
                            linearScaleToSI, Z_up_x_forward);
   RCHECK(success);
 

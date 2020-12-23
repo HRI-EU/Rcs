@@ -2789,73 +2789,7 @@ RcsBody* RcsGraph_getGenericBodyPtr(const RcsGraph* self, int bdyNum)
  ******************************************************************************/
 void RcsGraph_insertBody(RcsGraph* graph, RcsBody* parent, RcsBody* body)
 {
-#ifdef OLD_TOPO
-  if (body == NULL)
-  {
-    return;
-  }
-
-  // TODO for now only bodies without joints are supported
-  RCHECK_MSG(RcsBody_numJoints(body) == 0, "for now only bodies without "
-             "joints are supported");
-
-  // TODO for now only bodies without children or sibbling are supported
-  RCHECK_MSG(body->prev == NULL, "for now only bodies without sibbling are "
-             "supported - your body %s has a \"prev\" sibling: %s",
-             body->bdyName, body->prev->bdyName);
-  RCHECK_MSG(body->next == NULL, "for now only bodies without sibbling are "
-             "supported - your body %s has a \"next\" sibling: %s",
-             body->bdyName, body->next->bdyName);
-  RCHECK_MSG(body->firstChild == NULL, "for now only bodies without children "
-             "are supported - your body %s has a \"child\": %s",
-             body->bdyName, body->firstChild->bdyName);
-  RCHECK_MSG(body->lastChild == NULL, "for now only bodies without children "
-             "are supported - your body %s has a \"lastChild\": %s",
-             body->bdyName, body->lastChild->bdyName);
-
-  body->parent = parent;
-
-  if (parent != NULL)
-  {
-    if (parent->lastChild != NULL)  // parent already has children
-    {
-      parent->lastChild->next = body;
-      body->prev = parent->lastChild;
-    }
-    else
-    {
-      parent->firstChild = body;
-    }
-
-    parent->lastChild = body;
-  }
-  else
-  {
-    if (graph->root != NULL)
-    {
-      RcsBody* b = graph->root;
-      while (b->next)
-      {
-        b = b->next;
-      }
-
-      b->next = body;
-      body->prev = b;
-    }
-    else
-    {
-      graph->root = body;
-    }
-  }
-
-  RLOG(9, "Inserted Body into Graph: name=%s parent=%s prev=%s",
-       body->bdyName,
-       body->parent ? body->parent->bdyName : "NULL",
-       body->prev ? body->prev->bdyName : "NULL");
-#else
-  RFATAL("Use other insert body function");
-  //RcsGraph_insertBodyById(graph, parent, body);
-#endif
+  RFATAL("Obsolete");
 }
 
 /*******************************************************************************
@@ -2864,14 +2798,7 @@ void RcsGraph_insertBody(RcsGraph* graph, RcsBody* parent, RcsBody* body)
 void RcsGraph_insertJoint(RcsGraph* graph, RcsBody* body, RcsJoint* jnt)
 {
   graph->dof++;
-
-  if ((graph->q==NULL)|| (graph->q->m<graph->dof))
-  {
-    NLOG(9, "Resizing q to %d elements", graph->dof);
-    graph->q = MatNd_realloc(graph->q, graph->dof, 1);
-    RCHECK(graph->q);
-  }
-
+  graph->q = MatNd_realloc(graph->q, graph->dof, 1);
   jnt->jointIndex = graph->dof - 1;
 
   // Find last joint of body
@@ -2880,27 +2807,15 @@ void RcsGraph_insertJoint(RcsGraph* graph, RcsBody* body, RcsJoint* jnt)
   if (body->jnt == NULL)
   {
     body->jnt = jnt;
-    NLOG(9, "Added first joint \"%s\" to body \"%s\"", jnt->name, body->bdyName);
 
     // Find last joint of previous body
-#ifdef OLD_TOPO
-    if (body->parent != NULL)    // The body has a predecessor
-    {
-      RcsJoint* prevJnt = RcsBody_lastJointBeforeBody(body->parent);
-      body->jnt->prev = prevJnt;
-    }
-#else
-    if (body->parentId != -1)    // The body has a predecessor
-    {
-      RcsJoint* prevJnt = RcsBody_lastJointBeforeBodyById(graph, &graph->bodies[body->parentId]);
-      body->jnt->prev = prevJnt;
-    }
-#endif
-    else    // The body has no predecessor
+    if (body->parentId == -1)    // The body has no predecessor
     {
       body->jnt->prev = NULL;
-      NLOG(9, "First joint: Connected joint \"%s\" to the world",
-           body->jnt->name);
+    }
+    else    // The body has a predecessor
+    {
+      body->jnt->prev = RcsBody_lastJointBeforeBodyById(graph, &graph->bodies[body->parentId]);
     }
   }
   // If the joint is not the first joint of the body, we insert it between the
@@ -2946,20 +2861,6 @@ void RcsGraph_relativeRigidBodyDoFs(const RcsGraph* self,
     A_BI_body = &body->A_BI;
   }
 
-#ifdef OLD_TOPO
-  if (body->parent != NULL)
-  {
-    if (new_A_BI_parent != NULL)
-    {
-      A_BI_parent = new_A_BI_parent;
-    }
-    else
-    {
-      A_BI_parent = body->parent->A_BI;
-    }
-  }
-#else
-  // RFATAL("Needs new function signature");
   if (body->parentId != -1)
   {
     if (new_A_BI_parent != NULL)
@@ -2971,17 +2872,8 @@ void RcsGraph_relativeRigidBodyDoFs(const RcsGraph* self,
       A_BI_parent = &self->bodies[body->parentId].A_BI;
     }
   }
-#endif
 
-  /* if (body->A_BP != NULL) */
-  /* { */
   HTr_copy(&A_BP_body, &body->A_BP);
-  /* } */
-  /* else */
-  /* { */
-  /*   HTr_setIdentity(&A_BP_body); */
-  /* } */
-
   HTr trans;
   HTr_copy(&trans, A_BI_body);
 
