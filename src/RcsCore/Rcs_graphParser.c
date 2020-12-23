@@ -1432,7 +1432,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     HTr_setIdentity(&A_local);
     getXMLNodePropertyHTr(node, "transform", &A_local);
     unsigned int dof = 0;
-    RcsBody* urdfRoot = RcsGraph_rootBodyFromURDFFile(filename, ndExt,
+    RcsBody* urdfRoot = RcsGraph_rootBodyFromURDFFile(graph, filename, ndExt,
                                                       &A_local, &dof);
     RCHECK_MSG(urdfRoot, "Couldn't get URDF root from file \"%s\"", filename);
     self->dof += dof;

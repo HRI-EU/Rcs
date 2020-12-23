@@ -189,7 +189,6 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
       getXMLNodePropertyVecN(color_node, "rgba", rgba, 4);
 
       // create color string of form #RRGGBBAA
-      char color_string[10];
       snprintf(shape->color, 10, "#%2x%2x%2x%2x",
                (int)(rgba[0] * 255),
                (int)(rgba[1] * 255),
@@ -245,13 +244,13 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
 /*******************************************************************************
  * See http://wiki.ros.org/urdf/XML/link
  ******************************************************************************/
-static RcsBody* parseBodyURDF(xmlNode* node)
+static int parseBodyURDF(xmlNode* node, RcsGraph* graph, int parentId)
 {
   // Return if node is not a body node
   if (!isXMLNodeNameNoCase(node, "link"))
   {
     RLOG(5, "Parsing URDF body but xml node doesn't contain link information");
-    return NULL;
+    return -1;
   }
 
   // Body name as indicated in the xml file
@@ -260,20 +259,16 @@ static RcsBody* parseBodyURDF(xmlNode* node)
   if (len==0)
   {
     RLOG(4, "Body name not specified in URDF description");
-    return NULL;
+    return -1;
   }
 
-  RcsBody* body = RcsBody_create();
-
-  // Dynamic properties
-  Mat3d_setZero(body->Inertia.rot);
-
+  RcsBody* body = RcsGraph_insertGraphBody(graph, parentId);
   getXMLNodePropertyStringN(node, "name", body->bdyXmlName, RCS_MAX_NAMELEN);
 
   if (strncmp(body->bdyXmlName, "GenericBody", 11) == 0)
   {
     RLOG(4, "The name \"GenericBody\" is reserved for internal use");
-    return NULL;
+    return -1;
   }
 
   RLOG(5, "Creating body \"%s\"", body->bdyXmlName);
@@ -380,7 +375,7 @@ static RcsBody* parseBodyURDF(xmlNode* node)
     body->physicsSim = RCSBODY_PHYSICS_NONE;
   }
 
-  return body;
+  return body->id;
 }
 
 /*******************************************************************************
@@ -403,15 +398,18 @@ static RcsJoint* findJntByNameNoCase(const char* name, RcsJoint** jntVec)
 /*******************************************************************************
  *
  ******************************************************************************/
-static RcsBody* findBdyByNameNoCase(const char* name, RcsBody** bdyVec)
+static RcsBody* findBdyByNameNoCase(const char* name, RcsGraph* graph, int rootIdx)
 {
-  while (*bdyVec)
+  RCHECK(rootIdx>=0);
+  RCHECK(rootIdx<graph->nBodies);
+
+  for (int i=rootIdx; i<graph->nBodies; ++i)
   {
-    if (STRCASEEQ(name, (*bdyVec)->bdyName))
+    RcsBody* b = &graph->bodies[i];
+    if (STRCASEEQ(name, b->bdyName))
     {
-      return *bdyVec;
+      return b;
     }
-    bdyVec++;
   }
 
   return NULL;
@@ -539,10 +537,9 @@ RcsJoint* parseJointURDF(xmlNode* node)
  * URDF is a bit limited in the sense that there's only one actuated joint
  * between two links. This makes it simple.
  ******************************************************************************/
-static void connectURDF(xmlNode* node, RcsBody** bdyVec, RcsJoint** jntVec,
-                        const char* suffix)
+static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
+                        RcsJoint** jntVec, const char* suffix)
 {
-#ifdef OLD_TOPO
   char jointName[256] = "";
   unsigned len = getXMLNodePropertyStringN(node, "name", jointName, 256);
   RCHECK(len > 0);
@@ -558,7 +555,7 @@ static void connectURDF(xmlNode* node, RcsBody** bdyVec, RcsJoint** jntVec,
   {
     strcat(parentName, suffix);
   }
-  RcsBody* parentBody = findBdyByNameNoCase(parentName, bdyVec);
+  RcsBody* parentBody = findBdyByNameNoCase(parentName, graph, rootIdx);
   RCHECK_MSG(parentBody, "Parent body \"%s\" not found (joint "
              "definition \"%s\")", parentName, jointName);
 
@@ -568,7 +565,7 @@ static void connectURDF(xmlNode* node, RcsBody** bdyVec, RcsJoint** jntVec,
   {
     strcat(childName, suffix);
   }
-  RcsBody* childBody = findBdyByNameNoCase(childName, bdyVec);
+  RcsBody* childBody = findBdyByNameNoCase(childName, graph, rootIdx);
   RCHECK_MSG(childBody, "Child body \"%s\" not found (joint "
              "definition \"%s\")", childName, jointName);
 
@@ -588,26 +585,26 @@ static void connectURDF(xmlNode* node, RcsBody** bdyVec, RcsJoint** jntVec,
   {
     bool prismatic = STRCASEEQ(type, "prismatic");
 
-    // The child has only one parent
-    RCHECK(childBody->parent == NULL);
-    childBody->parent = parentBody;
+    /* // The child has only one parent */
+    /* RCHECK(childBody->parentId == -1); */
+    /* childBody->parentId = parentBody;   // parentBody exists (has been checked) */
 
-    // Child connectivity
-    // If it is the first child, child and last are the same
-    if (parentBody->firstChild == NULL)
-    {
-      parentBody->firstChild = childBody;
-      parentBody->lastChild = childBody;
-    }
-    // If there are already children, we need to consider the prev, next
-    // and last pointers
-    else
-    {
-      RcsBody* lastChild = parentBody->lastChild;
-      lastChild->next = childBody;
-      childBody->prev = lastChild;
-      parentBody->lastChild = childBody;
-    }
+    /* // Child connectivity */
+    /* // If it is the first child, child and last are the same */
+    /* if (parentBody->firstChild == NULL) */
+    /* { */
+    /*   parentBody->firstChild = childBody; */
+    /*   parentBody->lastChild = childBody; */
+    /* } */
+    /* // If there are already children, we need to consider the prev, next */
+    /* // and last pointers */
+    /* else */
+    /* { */
+    /*   RcsBody* lastChild = parentBody->lastChild; */
+    /*   lastChild->next = childBody; */
+    /*   childBody->prev = lastChild; */
+    /*   parentBody->lastChild = childBody; */
+    /* } */
 
     // Backward connection of joints
     char jntName[256] = "";
@@ -684,19 +681,19 @@ static void connectURDF(xmlNode* node, RcsBody** bdyVec, RcsJoint** jntVec,
         }
 
         // Apply transpose of this to child body
-        if (childBody->A_BP == NULL)
-        {
-          childBody->A_BP = HTr_create();
-          Mat3d_transpose(childBody->A_BP->rot, A_NJ);
-        }
+        /* if (childBody->A_BP == NULL) */
+        /* { */
+        /*   childBody->A_BP = HTr_create(); */
+        Mat3d_transpose(childBody->A_BP.rot, A_NJ);
+        /* } */
         // The relative transform is A_KN = A_BP*A_JN
-        else
-        {
-          RLOG(0, "TODO: Check axis transform for joint \"%s\"", jnt->name);
-          double A_JN[3][3];
-          Mat3d_transpose(A_JN, A_NJ);
-          Mat3d_postMulSelf(jnt->A_JP->rot, A_JN);
-        }
+        /* else */
+        /* { */
+        /* RLOG(0, "TODO: Check axis transform for joint \"%s\"", jnt->name); */
+        /* double A_JN[3][3]; */
+        /* Mat3d_transpose(A_JN, A_NJ); */
+        /* Mat3d_postMulSelf(jnt->A_JP->rot, A_JN); */
+        /* } */
       }    // Axis is skew
 
     }   // if (axisNode)
@@ -706,7 +703,7 @@ static void connectURDF(xmlNode* node, RcsBody** bdyVec, RcsJoint** jntVec,
 
     // Find previous ("driving") joint of the joint for the Jacobian
     // backward traversal.
-    RcsJoint* prevJnt = RcsBody_lastJointBeforeBody(parentBody);
+    RcsJoint* prevJnt = RcsBody_lastJointBeforeBodyById(graph, parentBody);
     jnt->prev = prevJnt;
     jnt->next = NULL;
 
@@ -724,42 +721,37 @@ static void connectURDF(xmlNode* node, RcsBody** bdyVec, RcsJoint** jntVec,
       Vec3d_setZero(rpy);
       getXMLNodePropertyVec3(originNode, "xyz", xyz);
       getXMLNodePropertyVec3(originNode, "rpy", rpy);
-      HTr A_rel;
-      HTr_fromURDFOrigin(&A_rel, rpy, xyz);
-      if (HTr_isIdentity(&A_rel)==false)
-      {
-        childBody->A_BP = HTr_clone(&A_rel);
-      }
+      HTr_fromURDFOrigin(&childBody->A_BP, rpy, xyz);
     }
 
-    // The child has only one parent
-    RCHECK(childBody->parent == NULL);
-    childBody->parent = parentBody;
+    /* // The child has only one parent */
+    /* RCHECK(childBody->parentId == NULL); */
+    /* childBody->parent = parentBody; */
 
-    // Child connectivity
-    // If it is the first child, child and last are the same
-    if (parentBody->firstChild == NULL)
-    {
-      parentBody->firstChild = childBody;
-      parentBody->lastChild = childBody;
-      childBody->prev = NULL;
-      childBody->next = NULL;
-    }
-    // If there are already children, we need to consider the prev, next
-    // and last pointers
-    else
-    {
-      RcsBody* lastChild = parentBody->firstChild;
+    /* // Child connectivity */
+    /* // If it is the first child, child and last are the same */
+    /* if (parentBody->firstChild == NULL) */
+    /* { */
+    /*   parentBody->firstChild = childBody; */
+    /*   parentBody->lastChild = childBody; */
+    /*   childBody->prev = NULL; */
+    /*   childBody->next = NULL; */
+    /* } */
+    /* // If there are already children, we need to consider the prev, next */
+    /* // and last pointers */
+    /* else */
+    /* { */
+    /*   RcsBody* lastChild = parentBody->firstChild; */
 
-      while (lastChild->next)
-      {
-        lastChild = lastChild->next;
-      }
-      RCHECK(lastChild);
-      lastChild->next = childBody;
-      childBody->prev = lastChild;
-      parentBody->lastChild = childBody;
-    }
+    /*   while (lastChild->next) */
+    /*   { */
+    /*     lastChild = lastChild->next; */
+    /*   } */
+    /*   RCHECK(lastChild); */
+    /*   lastChild->next = childBody; */
+    /*   childBody->prev = lastChild; */
+    /*   parentBody->lastChild = childBody; */
+    /* } */
 
     if (childBody->physicsSim == RCSBODY_PHYSICS_DYNAMIC)
     {
@@ -777,9 +769,7 @@ static void connectURDF(xmlNode* node, RcsBody** bdyVec, RcsJoint** jntVec,
   {
     RLOG(0, "Unknown joint type: %s", type);
   }
-#else
-  RFATAL("Implement me");
-#endif
+
 }
 
 /*******************************************************************************
@@ -854,12 +844,12 @@ static void RcsGraph_parseModelState(const char* modelName, xmlNodePtr node,
 /*******************************************************************************
  *
  ******************************************************************************/
-RcsBody* RcsGraph_rootBodyFromURDFFile(const char* filename,
-                                       const char* suffix,
-                                       const HTr* A_BP,
-                                       unsigned int* dof)
+int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
+                                  const char* filename,
+                                  const char* suffix,
+                                  const HTr* A_BP,
+                                  unsigned int* dof)
 {
-#ifdef OLD_TOPO
   // Read XML file
   xmlDocPtr doc;
   xmlNodePtr node = parseXMLFile(filename, "robot", &doc);
@@ -867,7 +857,7 @@ RcsBody* RcsGraph_rootBodyFromURDFFile(const char* filename,
   if (node == NULL)
   {
     RLOG(1, "Failed to parse XML-file \"%s\" - returning NULL", filename);
-    return NULL;
+    return -1;
   }
 
   // Name of the model
@@ -891,28 +881,26 @@ RcsBody* RcsGraph_rootBodyFromURDFFile(const char* filename,
   unsigned int numLinks = getNumXMLNodes(linkNode, "link");
   RLOG(5, "Found %d links", numLinks);
 
-  RcsBody** bdyVec = RNALLOC(numLinks+1, RcsBody*);
-  unsigned int bdyIdx = 0;
+  int parentId = -1;
+  int rootBodyId = graph->nBodies;
 
   while (linkNode != NULL)
   {
-    RcsBody* b = parseBodyURDF(linkNode);
-    if (b != NULL)
+    parentId = parseBodyURDF(linkNode, graph, parentId);
+    if (parentId != -1)
     {
-      RLOG(5, "Adding body %d: %s", bdyIdx, b->bdyName);
+      RcsBody* b = &graph->bodies[parentId];
+      RLOG(0, "Adding body %d: %s", parentId, b->bdyName);
       if (suffix != NULL)
       {
         char newName[RCS_MAX_NAMELEN];
-        snprintf(newName, RCS_MAX_NAMELEN, "%s%s", b->name, suffix);
-        snprintf(b->bdyName, RCS_MAX_NAMELEN, newName);
+        snprintf(newName, RCS_MAX_NAMELEN, "%s%s", b->bdyName, suffix);
+        snprintf(b->bdyName, RCS_MAX_NAMELEN, "%s", newName);
       }
 
-      RCHECK(bdyIdx<numLinks);
-      bdyVec[bdyIdx++] = b;
     }
     linkNode = linkNode->next;
   }
-  RCHECK_MSG(bdyIdx==numLinks, "%d != %d", bdyIdx, numLinks);
 
   // Parse all joints. We do this separately here for the same reason as
   // stated above for the link creation. The connection is done below.
@@ -971,7 +959,8 @@ RcsBody* RcsGraph_rootBodyFromURDFFile(const char* filename,
   {
     if (isXMLNodeNameNoCase(childNode, "joint"))
     {
-      connectURDF(childNode, bdyVec, jntVec, suffix);
+      //connectURDF(childNode, bdyVec, jntVec, suffix);
+      connectURDF(childNode, graph, rootBodyId, jntVec, suffix);
     }
     childNode = childNode->next;
   }
@@ -980,75 +969,72 @@ RcsBody* RcsGraph_rootBodyFromURDFFile(const char* filename,
   // Parse model state and apply values to each joints q0 and q_init.
   RcsGraph_parseModelState(modelName, node, jntVec, suffix);
 
-  // Create graph and find the root node. It is the first one without parent.
-  // Consecutive parent-less nodes are attached it in a prev-next style.
-  RcsBody* root = NULL;
-  RcsBody** bvPtr = bdyVec;
+  /* // Create graph and find the root node. It is the first one without parent. */
+  /* // Consecutive parent-less nodes are attached it in a prev-next style. */
+  /* RcsBody* root = NULL; */
+  /* RcsBody** bvPtr = bdyVec; */
 
-  while (*bvPtr)
-  {
-    // We found a top-level body with no parent
-    if ((*bvPtr)->parent==NULL)
-    {
-      // If root has not yet been assigned, we assign the first found top-
-      // level body as the root. This is arbitrary, also the consecutive
-      // top-level links could be assigned.
-      if (root==NULL)
-      {
-        root = *bvPtr;
-        RLOG(5, "Found root link: %s", root->name);
-      }
-      // If root has already been assigned, we assign the found top-level
-      // body as the last next-body on the top-level.
-      else  // root already exists
-      {
-        // Find last body on the first level
-        unsigned int nextCount = 0;
-        RcsBody* b = root;
-        while (b->next)
-        {
-          b = b->next;
-          nextCount++;
-        }
+  /* while (*bvPtr) */
+  /* { */
+  /*   // We found a top-level body with no parent */
+  /*   if ((*bvPtr)->parent==NULL) */
+  /*   { */
+  /*     // If root has not yet been assigned, we assign the first found top- */
+  /*     // level body as the root. This is arbitrary, also the consecutive */
+  /*     // top-level links could be assigned. */
+  /*     if (root==NULL) */
+  /*     { */
+  /*       root = *bvPtr; */
+  /*       RLOG(5, "Found root link: %s", root->name); */
+  /*     } */
+  /*     // If root has already been assigned, we assign the found top-level */
+  /*     // body as the last next-body on the top-level. */
+  /*     else  // root already exists */
+  /*     { */
+  /*       // Find last body on the first level */
+  /*       unsigned int nextCount = 0; */
+  /*       RcsBody* b = root; */
+  /*       while (b->next) */
+  /*       { */
+  /*         b = b->next; */
+  /*         nextCount++; */
+  /*       } */
 
-        // Connect new parent-less body with last ones
-        b->next = *bvPtr;
-        (*bvPtr)->prev = b;
+  /*       // Connect new parent-less body with last ones */
+  /*       b->next = *bvPtr; */
+  /*       (*bvPtr)->prev = b; */
 
-        RLOG(5, "Found the %d root link: %s (root is %s)",
-             nextCount+1, (*bvPtr)->name, root->name);
-      }
+  /*       RLOG(5, "Found the %d root link: %s (root is %s)", */
+  /*            nextCount+1, (*bvPtr)->name, root->name); */
+  /*     } */
 
-      // Apply relative transformation
-      RLOG(5, "Applying relative transformation");
-      if (A_BP != NULL)
-      {
-        if ((*bvPtr)->A_BP == NULL)
-        {
-          (*bvPtr)->A_BP = HTr_create();
-        }
+  /*     // Apply relative transformation */
+  /*     RLOG(5, "Applying relative transformation"); */
+  /*     if (A_BP != NULL) */
+  /*     { */
+  /*       if ((*bvPtr)->A_BP == NULL) */
+  /*       { */
+  /*         (*bvPtr)->A_BP = HTr_create(); */
+  /*       } */
 
-        HTr_transformSelf((*bvPtr)->A_BP, A_BP);
-      }
+  /*       HTr_transformSelf((*bvPtr)->A_BP, A_BP); */
+  /*     } */
 
-    }
+  /*   } */
 
-    bvPtr++;
-  }   // while (*bvPtr)
+  /*   bvPtr++; */
+  /* }   // while (*bvPtr) */
 
-  RCHECK_MSG(root, "Couldn't find root link in URFD model - did you "
+  // CHECK HERE A_BP!!!
+
+  RCHECK_MSG(rootBodyId != -1, "Couldn't find root link in URFD model - did you "
              "define a cyclic model?");
 
   // Clean up
   xmlFreeDoc(doc);
-  RFREE(bdyVec);
   RFREE(jntVec);
 
-  return root;
-#else
-  RFATAL("Implement me");
-  return NULL;
-#endif
+  return rootBodyId;
 }
 
 /*******************************************************************************
@@ -1075,7 +1061,8 @@ RcsGraph* RcsGraph_fromURDFFile(const char* configFile)
   }
 
   RcsGraph* self = RALLOC(RcsGraph);
-  self->root = RcsGraph_rootBodyFromURDFFile(filename, NULL, NULL, NULL);
+  int rootId = RcsGraph_rootBodyFromURDFFile(self, filename, NULL, NULL, NULL);
+  RCHECK(rootId==0);
 
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {
@@ -1116,9 +1103,14 @@ RcsGraph* RcsGraph_fromURDFFile(const char* configFile)
 
   // Check for consistency
   int errs=0, warnings=0;
-  bool success = RcsGraph_check(self, &errs, &warnings);
-  RCHECK_MSG(success, "Check for graph \"%s\" failed: %d errors %d warnings",
+  RcsGraph_check(self, &errs, &warnings);
+  RCHECK_MSG(errs==0, "Check for graph \"%s\" failed: %d errors %d warnings",
              self->xmlFile, errs, warnings);
+
+  if (warnings>0)
+  {
+    RLOG(1, "Found %d warnings for graph \"%s\"", warnings, self->xmlFile);
+  }
 
   return self;
 }

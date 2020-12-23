@@ -49,6 +49,7 @@ extern "C" {
  *         There is no assumption on the name of the configFile, however it is
  *         expected to be a valid urdf description file.
  *
+ *  \param[in,out] graph    Graph to be extended by URDF model
  *  \param[in] configFile   Full path of URDF configuration file. If it cannot
  *                          be accessed, NULL is returned, and a warning is
  *                          emitted on debug level 1.
@@ -59,12 +60,15 @@ extern "C" {
  *                          is NULL, it is ignored.
  *  \param[out] dof         Number of parsed degrees of freedom. If the pointer
  *                         is NULL, it is ignored.
- *  \return Root body of parsed graph, or NULL for failure.
+ *  \return Id of root body of parsed graph. It can be different from 0 if the
+ *          URDF graph is parsed as a sub-graph. In case of failure, -1 is
+ *          returned.
  */
-RcsBody* RcsGraph_rootBodyFromURDFFile(const char* configFile,
-                                       const char* suffix,
-                                       const HTr* A_BP,
-                                       unsigned int* dof);
+int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
+                                  const char* configFile,
+                                  const char* suffix,
+                                  const HTr* A_BP,
+                                  unsigned int* dof);
 
 /*! \brief Creates a complete RcsGraph given the configuration file. The file
  *         is searched in the resource path. There is no assumption on the
