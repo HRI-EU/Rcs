@@ -644,20 +644,21 @@ Vx::VxConstraint* Rcs::createFixedJoint(Vx::VxPart* vxParent,
   if (graph != NULL)
   {
 
-    RCSGRAPH_TRAVERSE_SENSORS(graph)
+    for (unsigned int i=0; i<graph->nSensors; ++i)
     {
+      RcsSensor* si = &graph->sensors[i];
 
-      if ((SENSOR->type==RCSSENSOR_LOAD_CELL) && (SENSOR->bodyId==child->id))
+      if ((si->type==RCSSENSOR_LOAD_CELL) && (si->bodyId==child->id))
       {
         RCHECK_MSG(loadCell==NULL, "Body \"%s\" has more than 1 load cells "
                    "attached", child->bdyName);
 
-        loadCell = SENSOR;
+        loadCell = si;
 
         // If a load cell exists, we consider it's offset
         // transformation for the fixed joint position and orientation.
-        HTr_transform(&A_childI, &child->A_BI, &SENSOR->offset);
-        HTr_transform(&A_parentI, &parent->A_BI, &SENSOR->offset);
+        HTr_transform(&A_childI, &child->A_BI, &si->offset);
+        HTr_transform(&A_parentI, &parent->A_BI, &si->offset);
       }
 
     }  // RCSGRAPH_TRAVERSE_SENSORS(graph)

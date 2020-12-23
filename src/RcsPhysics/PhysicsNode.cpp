@@ -104,11 +104,13 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   updateTransformPointers();
 
 
-  RCSGRAPH_TRAVERSE_SENSORS(sim_->getGraph())
+  for (unsigned int i=0; i<sim_->getGraph()->nSensors; ++i)
   {
-    if (SENSOR->type == RCSSENSOR_LOAD_CELL)
+    RcsSensor* si = &sim_->getGraph()->sensors[i];
+
+    if (si->type == RCSSENSOR_LOAD_CELL)
     {
-      osg::ref_ptr<FTSensorNode> ftn = new FTSensorNode(SENSOR, sim_->getGraph());
+      osg::ref_ptr<FTSensorNode> ftn = new FTSensorNode(si, sim_->getGraph());
       ftn->setTransformPtr(sim->getPhysicsTransformPtr(ftn->getMountBody()));
       pat->addChild(ftn.get());
     }

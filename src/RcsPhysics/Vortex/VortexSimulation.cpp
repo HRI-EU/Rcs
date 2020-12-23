@@ -375,27 +375,29 @@ void Rcs::VortexSimulation::updateSensors()
 
 
 
-  RCSGRAPH_TRAVERSE_SENSORS(getGraph())
+  for (unsigned int i=0; i<getGraph()->nSensors; ++i)
   {
-    switch (SENSOR->type)
+    RcsSensor* si = &getGraph()->sensors[i];
+
+    switch (si->type)
     {
       case RCSSENSOR_LOAD_CELL:
-        //updateFTS(SENSOR);
+        //updateFTS(si);
         break;
       case RCSSENSOR_JOINT_TORQUE:
-        updateJointTorqueSensor(SENSOR);
+        updateJointTorqueSensor(si);
         break;
       case RCSSENSOR_CONTACT_FORCE:
-        updateContactForceSensor(SENSOR);
+        updateContactForceSensor(si);
         break;
       case RCSSENSOR_PPS:
         if (getEnablePPS()==true)
         {
-          updatePPSSensor(SENSOR);
+          updatePPSSensor(si);
         }
         break;
       default:
-        RLOG(4, "No update function for sensor type %d", SENSOR->type);
+        RLOG(4, "No update function for sensor type %d", si->type);
     }
   }
 

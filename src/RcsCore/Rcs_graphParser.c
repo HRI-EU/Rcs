@@ -1134,8 +1134,8 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   {
     if (isXMLNodeName(sensorNode, "Sensor"))
     {
-      RcsSensor* sensor_i = RcsSensor_createFromXML(sensorNode, &self->bodies[self->nBodies-1]);
-      RcsGraph_addSensor(self, sensor_i);
+      RcsBody* mountBdy = &self->bodies[self->nBodies-1];
+      RcsSensor_initFromXML(sensorNode, mountBdy, self);
     }
     sensorNode = sensorNode->next;
   }

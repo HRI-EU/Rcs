@@ -616,18 +616,20 @@ btTypedConstraint* Rcs::BulletRigidBody::createFixedJoint(const RcsGraph* graph)
   // Lets search for load cells connected to the body. If we found one,
   // its transform is used for the fixed joint.
   RcsSensor* loadCell = NULL;
-  RCSGRAPH_TRAVERSE_SENSORS(graph)
+  for (unsigned int i=0; i<graph->nSensors; ++i)
   {
-    if ((SENSOR->type==RCSSENSOR_LOAD_CELL) && (SENSOR->bodyId==this->body->id))
+    RcsSensor* si = &graph->sensors[i];
+
+    if ((si->type==RCSSENSOR_LOAD_CELL) && (si->bodyId==this->body->id))
     {
       RCHECK_MSG(loadCell==NULL, "Body \"%s\" has more than 1 load cells "
                  "attached", body->bdyName);
 
-      loadCell = SENSOR;
+      loadCell = si;
 
       // If a load cell exists, we consider it's offset
       // transformation for the fixed joint position and orientation.
-      HTr_transform(&A_JI, &body->A_BI, &SENSOR->offset);
+      HTr_transform(&A_JI, &body->A_BI, &si->offset);
       RLOGS(5, "Using load cell transform");
     }
 

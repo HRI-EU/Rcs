@@ -518,42 +518,22 @@ void RcsGraph_destroy(RcsGraph* self)
   NLOG(5, "Deleting graph \"%s\" (addr 0x%x)",
        self->xmlFile, (unsigned int) self);
 
-  // Destroy all bodies
-#ifdef OLD_TOPO
-  RcsBody* b    = RcsBody_getLastInGraph(self);
-  RcsBody* prev = NULL;
-
-  while (b != NULL)
-  {
-    NLOG(0, "Deleting body \"%s\" (addr %p)", b->bdyName, b);
-    prev = RcsBody_depthFirstTraversalGetPrevious(b);
-    RcsBody_destroy(b);
-    b = prev;
-  }
-#else
-  // Just clear joints and shapes
+  // Destroy all bodies: Just clear joints and shapes
   for (unsigned int i=0; i<self->nBodies; ++i)
   {
     RcsBody_clear(&self->bodies[i]);
   }
   RFREE(self->bodies);
-#endif
 
   NLOG(0, "Deleted body list");
 
   // Destroy all sensors
-  RcsSensor* curr_sensor = self->sensor;
-  RcsSensor* next_sensor = NULL;
-
-  while (curr_sensor != NULL)
+  for (unsigned int i=0; i<self->nSensors; ++i)
   {
-    NLOG(0, "Deleting sensor \"%s\" (addr %p)",
-         curr_sensor->name, curr_sensor);
-    next_sensor = curr_sensor->next;
-    RcsSensor_destroy(curr_sensor);
-    curr_sensor = next_sensor;
+    RcsSensor_clear(&self->sensors[i]);
   }
-  NLOG(0, "Deleted sensor list");
+
+  NLOG(0, "Deleted sensor array");
 
   MatNd_destroy(self->q);
   MatNd_destroy(self->q_dot);
@@ -1296,18 +1276,17 @@ RcsJoint* RcsGraph_getJointByTruncatedName(const RcsGraph* self,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void RcsGraph_fprint(FILE* out, const RcsGraph* self)
+void RcsGraph_fprint(FILE* out, const RcsGraph* graph)
 {
-  RCSGRAPH_TRAVERSE_BODIES(self)
+  RCSGRAPH_TRAVERSE_BODIES(graph)
   {
     RcsBody_fprint(out, BODY);
   }
 
-  int numSensors = 0;
-  RCSGRAPH_TRAVERSE_SENSORS(self)
+  for (unsigned int i=0; i<graph->nSensors; ++i)
   {
-    fprintf(out, "Sensor %d:\n", numSensors++);
-    RcsSensor_fprint(out, SENSOR);
+    fprintf(out, "Sensor %d:\n", i);
+    RcsSensor_fprint(out, &graph->sensors[i]);
   }
 
 }
@@ -2268,7 +2247,7 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-static RcsGraph* RcsGraph_cloneById(const RcsGraph* src)
+RcsGraph* RcsGraph_clone(const RcsGraph* src)
 {
   if (src==NULL)
   {
@@ -2287,6 +2266,8 @@ static RcsGraph* RcsGraph_cloneById(const RcsGraph* src)
   dst->xmlFile = String_clone(src->xmlFile);
   dst->bodies = RNALLOC(src->nBodies, RcsBody);
   dst->nBodies = 0;
+  dst->sensors = RNALLOC(src->nSensors, RcsSensor);
+  dst->nSensors = 0;
 
   // Copy all bodies
   for (unsigned int i=0; i<src->nBodies; ++i)
@@ -2366,15 +2347,15 @@ static RcsGraph* RcsGraph_cloneById(const RcsGraph* src)
     RcsGraph_linkGenericBody(dst, i, gSrc ? gSrc->bdyName : "");
   }
 
-  // now, also create the sensors
-  dst->sensor = NULL;
-
-
-  RCSGRAPH_TRAVERSE_SENSORS(src)
+  // Create the sensors
+  for (unsigned int i=0; i<src->nSensors; ++i)
   {
-    RcsSensor* sensor = RcsSensor_clone(SENSOR, dst);
-    RCHECK(sensor);
-    RcsGraph_addSensor(dst, sensor);
+    RcsSensor* ss = &src->sensors[i];
+    const char* sName = RcsSensor_name(ss->type);
+    RLOG(0, "Copying sensor %d of %d (%s %s %d)", i, src->nSensors, sName, ss->name, ss->bodyId);
+    RcsSensor_fprint(stderr, &src->sensors[i]);
+    RcsSensor* s = RcsGraph_insertSensor(dst);
+    RcsSensor_copy(s, &src->sensors[i]);
   }
 
 
@@ -2399,176 +2380,6 @@ static RcsGraph* RcsGraph_cloneById(const RcsGraph* src)
   }
 
   return dst;
-}
-
-/*******************************************************************************
- * See header.
- ******************************************************************************/
-RcsGraph* RcsGraph_clone(const RcsGraph* src)
-{
-#ifdef OLD_TOPO
-  if (src==NULL)
-  {
-    return NULL;
-  }
-
-  RLOG(0, "CLONING GRAPH");
-  RcsGraph* dst = RALLOC(RcsGraph);
-  RCHECK(dst);
-
-  // Copy the full memory block
-  memmove(dst, src, sizeof(RcsGraph));
-
-  // Adjust pointers to local data
-  dst->q       = MatNd_clone(src->q);
-  dst->q_dot   = MatNd_clone(src->q_dot);
-  dst->xmlFile = String_clone(src->xmlFile);
-  dst->bodies = RNALLOC(src->nBodies, RcsBody*);
-  dst->nBodies = 0;
-
-  // Traverse the graph and create all elements
-  dst->root = NULL;
-
-  RCSGRAPH_TRAVERSE_BODIES(src)
-  {
-    // Make a copy of the body
-    RcsBody* b = RcsBody_create();
-    RcsBody_copy(b, BODY);
-
-    // to which body does the new one needs to be attached?
-    RcsBody* parent = NULL;
-
-    if (BODY->parent != NULL)
-    {
-      parent = RcsGraph_getBodyByName(dst, BODY->parent->bdyName);
-    }
-
-    // insert body into graph, the resulting graph structure will be the same
-    // as in src
-    RcsGraph_insertBody(dst, parent, b);
-
-    // Make a copy of all body joints and attach them to the body
-
-    // Determine the previous joint to which the body is connected. That's
-    // the relevant one for the backward chain connectivity
-    RcsJoint* prevJoint = RcsBody_lastJointBeforeBody(b->parent);
-
-    if (prevJoint != NULL)
-    {
-      prevJoint->next = NULL;
-    }
-
-    int nBdyJnts = 0;
-
-    RCSBODY_TRAVERSE_JOINTS(BODY)
-    {
-      RcsJoint* j = RALLOC(RcsJoint);
-      RcsJoint_copy(j, JNT);
-
-      // Connect forward chain.
-      if ((nBdyJnts!=0) && (prevJoint!=NULL))
-      {
-        prevJoint->next = j;
-      }
-
-      if (nBdyJnts == 0)
-      {
-        b->jnt = j;
-      }
-
-      // Connect backward chain.
-      j->prev = prevJoint;
-      prevJoint = j;
-      nBdyJnts++;
-      RLOG(6, "Copying joint %s of body %s - next is %s",
-           JNT->name, BODY->bdyName,
-           JNT->next ? JNT->next->name : "NULL");
-
-    }   // RCSBODY_TRAVERSE_JOINTS(BODY)
-
-    // Make a copy of all body shapes and attach them to the body
-    int nShapes = RcsBody_numShapes(BODY);
-    b->shape = RNALLOC(nShapes + 1, RcsShape*);
-    for (int i = 0; i < nShapes; i++)
-    {
-      b->shape[i] = RALLOC(RcsShape);
-      RcsShape_copy(b->shape[i], BODY->shape[i]);
-    }
-
-  }   // RCSGRAPH_TRAVERSE_BODIES(src)
-
-
-  // Initialize generic bodies. Here we allocate memory for names
-  // and body transforms. They are deleted once relinked to another
-  // body.
-  for (int i = 0; i < 10; i++)
-  {
-    RcsBody* gSrc = (RcsBody*) src->gBody[i].extraInfo;
-
-    memset(&dst->gBody[i], 0, sizeof(RcsBody));
-    dst->gBody[i].name      = RNALLOC(64, char);
-    dst->gBody[i].xmlName   = RNALLOC(64, char);
-    dst->gBody[i].suffix    = RNALLOC(64, char);
-
-    if (gSrc != NULL)
-    {
-      dst->gBody[i].A_BI      = HTr_create();
-      dst->gBody[i].A_BP      = HTr_create();
-      dst->gBody[i].Inertia   = HTr_create();
-      HTr_setZero(dst->gBody[i].Inertia);
-    }
-
-    sprintf(dst->gBody[i].name, "GenericBody%d", i);
-
-    RcsGraph_linkGenericBody(dst, i, gSrc ? gSrc->bdyName : "");
-  }
-
-  // now, also create the sensors
-  dst->sensor = NULL;
-
-
-
-  RCSGRAPH_TRAVERSE_SENSORS(src)
-  {
-    RLOG(0, "sensor");
-    RcsSensor* sensor = RcsSensor_clone(SENSOR, dst);
-    RCHECK(sensor);
-    RcsGraph_addSensor(dst, sensor);
-  }
-
-  RCSGRAPH_TRAVERSE_SENSORS(dst)
-  {
-    RLOG(0, "dst sensor");
-  }
-
-
-
-  // Handle coupled joints
-  RCSGRAPH_TRAVERSE_JOINTS(dst)
-  {
-    if ((JNT->coupledJointName!=NULL) && (JNT->couplingFactors!=NULL))
-    {
-      JNT->coupledTo = RcsGraph_getJointByName(dst, JNT->coupledJointName);
-      RCHECK_MSG(JNT->coupledTo, "Missing coupled joint \"%s\"",
-                 JNT->coupledJointName);
-    }
-  }
-
-
-  REXEC(4)
-  {
-    // Check for consistency
-    RCHECK_MSG(RcsGraph_check(dst, NULL, NULL),
-               "Consistency check for graph \"%s\" failed",
-               dst->xmlFile ? dst->xmlFile : "NULL");
-  }
-
-  RLOG(0, "DONE CLONING GRAPH");
-
-  return dst;
-#else
-  return RcsGraph_cloneById(src);
-#endif
 }
 
 /*******************************************************************************
@@ -2622,13 +2433,8 @@ void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src)
     }
 
     // Move on to next body
-#ifdef OLD_TOPO
-    dstPtr = RcsBody_depthFirstTraversalGetNext(dstPtr);
-    srcPtr = RcsBody_depthFirstTraversalGetNext(srcPtr);
-#else
     dstPtr = RcsBody_depthFirstTraversalGetNextById(dst, dstPtr);
     srcPtr = RcsBody_depthFirstTraversalGetNextById(src, srcPtr);
-#endif
   }
 
   dst->dof = src->dof;
@@ -2638,16 +2444,21 @@ void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src)
   MatNd_resizeCopy(&dst->q_dot, src->q_dot);
 
 
-
-  RcsSensor* dstSensorPtr = dst->sensor;
-  const RcsSensor* srcSensorPtr = src->sensor;
-
-  while (dstSensorPtr != NULL)
+  for (unsigned int i=0; i<dst->nSensors; ++i)
   {
-    RcsSensor_copy(dstSensorPtr, srcSensorPtr);
-    dstSensorPtr = dstSensorPtr->next;
-    srcSensorPtr = srcSensorPtr->next;
+    RcsSensor_clear(&dst->sensors[i]);
   }
+
+  dst->nSensors = 0;
+  dst->sensors = (RcsSensor*) realloc(dst->sensors, src->nSensors*sizeof(RcsSensor));
+  for (unsigned int i=0; i<src->nSensors; ++i)
+  {
+    RcsSensor* s = RcsGraph_insertSensor(dst);
+    RcsSensor_copy(s, &src->sensors[i]);
+  }
+
+
+
 
   // GenericBodies
   for (int i=0; i<10; ++i)
@@ -3501,13 +3312,13 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self, RcsBody* root,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-RcsSensor* RcsGraph_getSensorByName(const RcsGraph* self, const char* name)
+RcsSensor* RcsGraph_getSensorByName(const RcsGraph* graph, const char* name)
 {
-  RCSGRAPH_TRAVERSE_SENSORS(self)
+  for (unsigned int i=0; i<graph->nSensors; ++i)
   {
-    if (STREQ(name, SENSOR->name))
+    if (STREQ(name, graph->sensors[i].name))
     {
-      return SENSOR;
+      return &graph->sensors[i];
     }
   }
 
@@ -3935,13 +3746,8 @@ void RcsGraph_copyResizeableShapes(RcsGraph* dst, const RcsGraph* src,
       sDst++;
     }
 
-#ifdef OLD_TOPO
-    bSrc = RcsBody_depthFirstTraversalGetNext(bSrc);
-    bDst = RcsBody_depthFirstTraversalGetNext(bDst);
-#else
     bSrc = RcsBody_depthFirstTraversalGetNextById(src, bSrc);
     bDst = RcsBody_depthFirstTraversalGetNextById(dst, bDst);
-#endif
   }
   while (bSrc && bDst);
 }

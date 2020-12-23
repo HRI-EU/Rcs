@@ -260,14 +260,13 @@ double RcsSensor_computeFullForceCompensation(const RcsGraph* graph,
 /*******************************************************************************
  *
  ******************************************************************************/
-RcsSensor* RcsSensor_create(unsigned int type, const char* name,
-                            RcsBody* parentBody, HTr* offset,
-                            const char* extraInfo)
+void RcsSensor_init(RcsSensor* self,
+                    unsigned int type,
+                    const char* name,
+                    RcsBody* parentBody,
+                    HTr* offset,
+                    const char* extraInfo)
 {
-  RcsSensor* self = RALLOC(RcsSensor);
-  RCHECK(self);
-  RCHECK(parentBody);
-
   self->type = (RCSSENSOR_TYPE) type;
 
   if (parentBody && parentBody->bdySuffix)
@@ -281,11 +280,10 @@ RcsSensor* RcsSensor_create(unsigned int type, const char* name,
 
   self->bodyId = parentBody->id;
   HTr_copy(&self->offset, offset);
-  self->next = NULL;
   self->extraInfo = String_clone(extraInfo);
   self->rawData = MatNd_create(1, RcsSensor_dim(self));
 
-  return self;
+  RLOG(0, "initializing sensor %s with type %d", name, type);
 }
 
 /*******************************************************************************
@@ -296,7 +294,8 @@ RcsSensor* RcsSensor_create(unsigned int type, const char* name,
  *        - transform
  *        - extra_info
  ******************************************************************************/
-RcsSensor* RcsSensor_createFromXML(xmlNode* node, RcsBody* parentBody)
+RcsSensor* RcsSensor_initFromXML(xmlNode* node, RcsBody* parentBody,
+                                 RcsGraph* graph)
 {
   // Return if node is not a sensor node. This can deal with a NULL node
   if (!isXMLNodeName(node, "Sensor"))
@@ -356,8 +355,8 @@ RcsSensor* RcsSensor_createFromXML(xmlNode* node, RcsBody* parentBody)
   }
 
   // Create and return rcs sensor object
-  RcsSensor* sensor = RcsSensor_create(xml_type, name, parentBody,
-                                       &offset, extraInfo);
+  RcsSensor* sensor = RcsGraph_insertSensor(graph);
+  RcsSensor_init(sensor, xml_type, name, parentBody, &offset, extraInfo);
   RFREE(extraInfo);  // It's Ok to call free() on NULL
 
 
@@ -422,53 +421,56 @@ RcsSensor* RcsSensor_createFromXML(xmlNode* node, RcsBody* parentBody)
 /*******************************************************************************
  *
  ******************************************************************************/
-RcsSensor* RcsSensor_clone(const RcsSensor* src, const RcsGraph* dstGraph)
-{
-  if (src==NULL)
-  {
-    RLOG(4, "Cloning NULL sensor");
-    return NULL;
-  }
+/* RcsSensor* RcsSensor_clone(const RcsSensor* src, const RcsGraph* dstGraph) */
+/* { */
+/*   if (src==NULL) */
+/*   { */
+/*     RLOG(4, "Cloning NULL sensor"); */
+/*     return NULL; */
+/*   } */
 
-  RcsSensor* self = RALLOC(RcsSensor);
-  self->type = src->type;
-  snprintf(self->name, RCS_MAX_NAMELEN, "%s", src->name);
-  self->bodyId = src->bodyId;
-  HTr_copy(&self->offset, &src->offset);
-  self->extraInfo = String_clone(src->extraInfo);
-  self->rawData = MatNd_clone(src->rawData);
+/*   RcsSensor* self = RALLOC(RcsSensor); */
+/*   self->type = src->type; */
+/*   snprintf(self->name, RCS_MAX_NAMELEN, "%s", src->name); */
+/*   self->bodyId = src->bodyId; */
+/*   HTr_copy(&self->offset, &src->offset); */
+/*   self->extraInfo = String_clone(src->extraInfo); */
+/*   self->rawData = MatNd_clone(src->rawData); */
 
-  if (src->texel)
-  {
-    unsigned int nTexels = 0;
+/*   if (src->texel) */
+/*   { */
+/*     unsigned int nTexels = 0; */
 
-    for (RcsTexel** sPtr = src->texel; *sPtr; sPtr++)
-    {
-      nTexels++;
-    }
+/*     for (RcsTexel** sPtr = src->texel; *sPtr; sPtr++) */
+/*     { */
+/*       nTexels++; */
+/*     } */
 
-    if (nTexels > 0)
-    {
-      self->texel = RNALLOC(nTexels+1, RcsTexel*);
+/*     if (nTexels > 0) */
+/*     { */
+/*       self->texel = RNALLOC(nTexels+1, RcsTexel*); */
 
-      for (unsigned int i=0; i<nTexels; ++i)
-      {
-        self->texel[i] = RALLOC(RcsTexel);
-        memcpy(self->texel[i], src->texel[i], sizeof(RcsTexel));
-      }
+/*       for (unsigned int i=0; i<nTexels; ++i) */
+/*       { */
+/*         self->texel[i] = RALLOC(RcsTexel); */
+/*         memcpy(self->texel[i], src->texel[i], sizeof(RcsTexel)); */
+/*       } */
 
-    }
-  }
+/*     } */
+/*   } */
 
 
-  return self;
-}
+/*   return self; */
+/* } */
 
 /*******************************************************************************
  * Copies a RcsSensor data structure except for a few unknown members.
  ******************************************************************************/
 void RcsSensor_copy(RcsSensor* self, const RcsSensor* src)
 {
+  RCHECK(self);
+  RCHECK(src);
+  RcsSensor_fprint(stderr, self);
   self->type = src->type;
   self->bodyId = src->bodyId;
   snprintf(self->name, RCS_MAX_NAMELEN, "%s", src->name);
@@ -479,7 +481,7 @@ void RcsSensor_copy(RcsSensor* self, const RcsSensor* src)
 /*******************************************************************************
  *
  ******************************************************************************/
-void RcsSensor_destroy(RcsSensor* self)
+void RcsSensor_clear(RcsSensor* self)
 {
   if (self==NULL)
   {
@@ -499,6 +501,20 @@ void RcsSensor_destroy(RcsSensor* self)
 
     RFREE(self->texel);
   }
+
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void RcsSensor_destroy(RcsSensor* self)
+{
+  if (self==NULL)
+  {
+    return;
+  }
+
+  RcsSensor_clear(self);
 
   // Reset all internal memory
   memset(self, 0, sizeof(RcsSensor));
@@ -549,33 +565,14 @@ unsigned int RcsSensor_dim(RcsSensor* self)
 /*******************************************************************************
  *
  ******************************************************************************/
-void RcsGraph_addSensor(RcsGraph* self, RcsSensor* newSensor)
+RcsSensor* RcsGraph_insertSensor(RcsGraph* graph)
 {
-  if (newSensor == NULL)
-  {
-    return;
-  }
-
-  newSensor->next = NULL;
-
-  // check if its the first sensor and assign it
-  if (self->sensor == NULL)
-  {
-    self->sensor = newSensor;
-  }
-  else
-  {
-    RcsSensor* lastSensor = self->sensor;
-
-    // find the last of the existing sensors
-    while (lastSensor->next != NULL)
-    {
-      lastSensor = lastSensor->next;
-    }
-    // copy the new sensor pointer into the next pointer of the previously
-    // last sensor
-    lastSensor->next = newSensor;
-  }
+  graph->nSensors++;
+  graph->sensors = (RcsSensor*) realloc(graph->sensors, graph->nSensors*sizeof(RcsSensor));
+  RCHECK(graph->sensors);
+  RcsSensor* newSensor = &graph->sensors[graph->nSensors-1];
+  memset(newSensor, 0, sizeof(RcsSensor));
+  return newSensor;
 }
 
 /*******************************************************************************
@@ -606,13 +603,20 @@ void RcsSensor_fprint(FILE* out, const RcsSensor* s)
 
   fprintf(out, "\tRaw sensor data:\n\t");
 
-  for (unsigned int i = 1; i <= s->rawData->size; i++)
+  if (s->rawData)
   {
-    fprintf(out, "%+.3f ", s->rawData->ele[i-1]);
-    if (i%10==0)
+    for (unsigned int i = 1; i <= s->rawData->size; i++)
     {
-      fprintf(out, "\n\t");
+      fprintf(out, "%+.3f ", s->rawData->ele[i-1]);
+      if (i%10==0)
+      {
+        fprintf(out, "\n\t");
+      }
     }
+  }
+  else
+  {
+    fprintf(out, "NULL");
   }
 
   fprintf(out, "\n");

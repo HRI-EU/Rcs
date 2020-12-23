@@ -663,36 +663,6 @@ RcsBody* RcsBody_depthFirstTraversalGetNext(const RcsBody* body)
 #endif
 
 /*******************************************************************************
- * \todo Write documentation
- ******************************************************************************/
-#ifdef OLD_TOPO
-RcsBody* RcsBody_depthFirstTraversalGetPrevious(const RcsBody* body)
-{
-  if (!body || (!body->prev && !body->parent))
-  {
-    return NULL;
-  }
-
-  RcsBody* b = NULL;
-  if (body->prev)
-  {
-    b = body->prev;
-
-    while (b->lastChild)// What does this do?
-    {
-      b = b->lastChild;
-    }
-  }
-  else if (body->parent)
-  {
-    b = body->parent;
-  }
-
-  return b;
-}
-#endif
-
-/*******************************************************************************
  * See header.
  ******************************************************************************/
 RcsBody* RcsBody_getLastChild(const RcsBody* body)
@@ -2068,11 +2038,12 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
   }
 
   // Place the sensor's xml into the body description
-  RCSGRAPH_TRAVERSE_SENSORS(graph)
+  for (unsigned int i=0; i<graph->nSensors; ++i)
   {
-    if (SENSOR->bodyId==self->id)
+    const RcsSensor* si = &graph->sensors[i];
+    if (si->bodyId==self->id)
     {
-      RcsSensor_fprintXML(out, SENSOR);
+      RcsSensor_fprintXML(out, si);
     }
   }
 

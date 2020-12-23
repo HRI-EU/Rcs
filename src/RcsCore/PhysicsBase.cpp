@@ -37,6 +37,7 @@
 #include "PhysicsBase.h"
 #include "Rcs_typedef.h"
 #include "Rcs_macros.h"
+#include "Rcs_sensor.h"
 
 
 /*******************************************************************************
@@ -168,7 +169,7 @@ void Rcs::PhysicsBase::initGraph(const RcsGraph* graph_)
 }
 
 /*******************************************************************************
- *
+ * \todo: Copy texels
  ******************************************************************************/
 void Rcs::PhysicsBase::simulate(double dt, RcsGraph* graph, MatNd* q_ddot,
                                 MatNd* T, bool control)
@@ -176,15 +177,12 @@ void Rcs::PhysicsBase::simulate(double dt, RcsGraph* graph, MatNd* q_ddot,
   simulate(dt, graph->q, graph->q_dot, q_ddot, T, control);
 
   // Copy sensors
-  RcsSensor* dstSensorPtr = graph->sensor;
-  const RcsSensor* srcSensorPtr = internalDesiredGraph->sensor;
+  RCHECK(graph->nSensors==internalDesiredGraph->nSensors);
 
-  while (dstSensorPtr != NULL)
+  for (unsigned int i=0; i<graph->nSensors; ++i)
   {
-    RCHECK(srcSensorPtr);
-    MatNd_copy(dstSensorPtr->rawData, srcSensorPtr->rawData);
-    dstSensorPtr = dstSensorPtr->next;
-    srcSensorPtr = srcSensorPtr->next;
+    RCHECK(graph->sensors[i].type==internalDesiredGraph->sensors[i].type);
+    RcsSensor_copy(&graph->sensors[i], &internalDesiredGraph->sensors[i]);
   }
 
 }

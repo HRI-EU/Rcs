@@ -238,7 +238,6 @@ struct _RcsSensor
   RCSSENSOR_TYPE type;         ///< Sensor type, see enum RCSSENSOR_TYPE
   int bodyId;                  ///< Id of the body the sensor is attached to
   char name[RCS_MAX_NAMELEN];  ///< Name of the sensor
-  RcsSensor* next;             ///< Pointer to next sensor, NULL otherwise
   HTr offset;                  ///< Transformation of the sensor mount point
   char* extraInfo;             ///< Pressure array data
   RcsTexel** texel;            ///< Array of texels for PPS sensors
@@ -251,10 +250,12 @@ struct _RcsGraph
 {
   RcsBody* root;          ///< Pointer to root body
   RcsBody* bodies;        ///< Array of bodies
+  unsigned int nBodies;   ///< Number of bodies in the graph
+  RcsSensor* sensors;     ///< Array of sensors
+  unsigned int nSensors;  ///< Number of sensors in the graph
   RcsBody gBody[10];      ///< Generic bodies
   unsigned int dof;       ///< Number of degrees of freedom
   unsigned int nJ;        ///< Number of unconstrained degrees of freedom
-  unsigned int nBodies;   ///< Number of bodies in the graph
   MatNd* q;               ///< Array of joint values
   MatNd* q_dot;           ///< Array of joint velocity values
   char* xmlFile;          ///< Configuration file name (full path)

@@ -58,14 +58,14 @@ extern "C" {
 /*! \ingroup RcsSensorFunctions
  *  \brief Returns pointer to a newly allocated sensor object.
  */
-RcsSensor* RcsSensor_create(unsigned int type, const char* name,
-                            RcsBody* parent_body, HTr* offset,
-                            const char* extraInfo);
+void RcsSensor_init(RcsSensor* self, unsigned int type, const char* name,
+                    RcsBody* parentBody, HTr* offset, const char* extraInfo);
 
 /*! \ingroup RcsSensorFunctions
  *  \brief Creates a RcsSensor from an xml node.
  */
-RcsSensor* RcsSensor_createFromXML(xmlNode* node, RcsBody* parentBody);
+RcsSensor* RcsSensor_initFromXML(xmlNode* node, RcsBody* parentBody,
+                                 RcsGraph* graph);
 
 /*! \ingroup RcsSensorFunctions
  *  \brief Clone a sensor. The mount body of the cloned sensor points to the
@@ -81,7 +81,7 @@ RcsSensor* RcsSensor_createFromXML(xmlNode* node, RcsBody* parentBody);
  *  \param[in] graph  Graph the sensor refers to. Must be valid.
  *  \return Pointer to cloned sensor, or NULL if src is NULL.
  */
-RcsSensor* RcsSensor_clone(const RcsSensor* src, const RcsGraph* graph);
+/* RcsSensor* RcsSensor_clone(const RcsSensor* src, const RcsGraph* graph); */
 
 /*! \ingroup RcsSensorFunctions
  *  \brief Shallow copy of all members except for these pointers:
@@ -96,7 +96,12 @@ void RcsSensor_copy(RcsSensor* dst, const RcsSensor* src);
  *  \brief Adds the given sensor to the linked list of sensors. If newSensor
  *         is NULL, the function returns without doing anything.
  */
-void RcsGraph_addSensor(RcsGraph* self, RcsSensor* newSensor);
+RcsSensor* RcsGraph_insertSensor(RcsGraph* self);
+
+/*! \ingroup RcsSensorFunctions
+ *  \brief Deletes the sensor internal memory only.
+ */
+void RcsSensor_clear(RcsSensor* self);
 
 /*! \ingroup RcsSensorFunctions
  *  \brief Deletes the sensor and frees all memory if given pointer is not

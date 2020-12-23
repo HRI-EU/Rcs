@@ -566,12 +566,14 @@ int main(int argc, char** argv)
         kc = new Rcs::KeyCatcher();
         viewer->add(kc);
 
-        RCSGRAPH_TRAVERSE_SENSORS(graph)
+        for (unsigned int i=0; i<graph->nSensors; ++i)
         {
-          if (SENSOR->type==RCSSENSOR_PPS)
+          RcsSensor* si = &graph->sensors[i];
+
+          if (si->type==RCSSENSOR_PPS)
           {
             bool debug = RcsLogLevel > 0 ? true : false;
-            viewer->add(new Rcs::PPSSensorNode(SENSOR, graph, debug));
+            viewer->add(new Rcs::PPSSensorNode(si, graph, debug));
           }
         }
 
@@ -1289,17 +1291,19 @@ int main(int argc, char** argv)
           std::vector<Rcs::PPSGui::Entry> ppsEntries;
           double scaling = 1.0;
 
-          RCSGRAPH_TRAVERSE_SENSORS(graph)
+          for (unsigned int i=0; i<graph->nSensors; ++i)
           {
-            if (SENSOR->type==RCSSENSOR_PPS)
+            RcsSensor* si = &graph->sensors[i];
+
+            if (si->type==RCSSENSOR_PPS)
             {
-              ppsEntries.push_back(Rcs::PPSGui::Entry(SENSOR->name,
-                                                      SENSOR->rawData->m,
-                                                      SENSOR->rawData->n,
-                                                      SENSOR->rawData->ele,
+              ppsEntries.push_back(Rcs::PPSGui::Entry(si->name,
+                                                      si->rawData->m,
+                                                      si->rawData->n,
+                                                      si->rawData->ele,
                                                       scaling));
               bool debug = RcsLogLevel > 0 ? true : false;
-              viewer->add(new Rcs::PPSSensorNode(SENSOR, graph, debug));
+              viewer->add(new Rcs::PPSSensorNode(si, graph, debug));
             }
           }
 
@@ -1628,9 +1632,9 @@ int main(int argc, char** argv)
         {
           RMSGS("Printing out sensors");
 
-          RCSGRAPH_TRAVERSE_SENSORS(graph)
+          for (unsigned int i=0; i<graph->nSensors; ++i)
           {
-            RcsSensor_fprint(stdout, SENSOR);
+            RcsSensor_fprint(stdout, &graph->sensors[i]);
           }
 
           sim->print();
@@ -2133,16 +2137,14 @@ int main(int argc, char** argv)
           }
           else
           {
-            // Compute at least the sensor values
-            // Copy sensors
-            RcsSensor* dstSensorPtr = controller.getGraph()->sensor;
-            const RcsSensor* srcSensorPtr = sim->getGraph()->sensor;
+            RcsGraph* dstGraph = controller.getGraph();
+            const RcsGraph* srcGraph = sim->getGraph();
+            RCHECK(dstGraph->nSensors==srcGraph->nSensors);
 
-            while (dstSensorPtr != NULL)
+            for (unsigned int i=0; i<dstGraph->nSensors; ++i)
             {
-              MatNd_copy(dstSensorPtr->rawData, srcSensorPtr->rawData);
-              dstSensorPtr = dstSensorPtr->next;
-              srcSensorPtr = srcSensorPtr->next;
+              RCHECK(dstGraph->sensors[i].type==srcGraph->sensors[i].type);
+              RcsSensor_copy(&dstGraph->sensors[i], &srcGraph->sensors[i]);
             }
           }
         }

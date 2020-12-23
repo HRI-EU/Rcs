@@ -1475,23 +1475,25 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
  ******************************************************************************/
 void Rcs::BulletSimulation::updateSensors()
 {
-  RCSGRAPH_TRAVERSE_SENSORS(getGraph())
+  for (unsigned int i=0; i<getGraph()->nSensors; ++i)
   {
-    switch (SENSOR->type)
+    RcsSensor* si = &getGraph()->sensors[i];
+
+    switch (si->type)
     {
       case RCSSENSOR_LOAD_CELL:
-        updateLoadcell(SENSOR);
+        updateLoadcell(si);
         break;
 
       case RCSSENSOR_PPS:
         if (getEnablePPS()==true)
         {
-          updatePPSSensor(SENSOR);
+          updatePPSSensor(si);
         }
         break;
 
       default:
-        NLOG(5, "No update function for sensor type %d", SENSOR->type);
+        NLOG(5, "No update function for sensor type %d", si->type);
     }
   }
 
@@ -1867,11 +1869,7 @@ bool Rcs::BulletSimulation::updatePPSSensor(RcsSensor* sensor)
 
   }   // for (int i=0; i<numManifolds; i++)
 
-#ifdef OLD_TOPO
-  return RcsSensor_computePPS(sensor, sensor->rawData, contactForce);
-#else
   return RcsSensor_computePPS(getGraph(), sensor, sensor->rawData, contactForce);
-#endif
 }
 
 /*******************************************************************************

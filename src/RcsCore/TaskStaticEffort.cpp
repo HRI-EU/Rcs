@@ -197,12 +197,13 @@ bool Rcs::TaskStaticEffort::isValid(xmlNode* node, const RcsGraph* graph)
   int nSensors = 0;
   RcsSensor* foundSensor = NULL;
 
-  RCSGRAPH_TRAVERSE_SENSORS(graph)
+  for (unsigned int i=0; i<graph->nSensors; ++i)
   {
-    if (STREQ(SENSOR->name, msg))
+    if (STREQ(graph->sensors[i].name, msg))
     {
       nSensors++;
-      foundSensor = SENSOR;
+      foundSensor = &graph->sensors[i];
+      break;
     }
   }
 

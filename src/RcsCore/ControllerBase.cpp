@@ -1811,8 +1811,10 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
   MatNd_create2(pinvJF, this->graph->nJ, 1);
 
 
-  RCSGRAPH_TRAVERSE_SENSORS(this->graph)
+  for (unsigned int i=0; i<graph->nSensors; ++i)
   {
+    RcsSensor* SENSOR = &graph->sensors[i];
+
     if (SENSOR->type != RCSSENSOR_LOAD_CELL)
     {
       continue;
