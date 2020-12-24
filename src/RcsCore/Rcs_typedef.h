@@ -260,7 +260,6 @@ struct _RcsGraph
   MatNd* q;               ///< Array of joint values
   MatNd* q_dot;           ///< Array of joint velocity values
   char* xmlFile;          ///< Configuration file name (full path)
-  RcsSensor* sensor;      ///< Pointer to the first registered sensor
 
   void* userData;         ///< To append extensions
 };

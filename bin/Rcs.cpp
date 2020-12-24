@@ -476,6 +476,13 @@ int main(int argc, char** argv)
         printf("%d: %s\n", i, graph->bodies[i].bdyName);
       }
 
+      RLOG(0, "Newest traversal:");
+      count1 = 0;
+      RCSGRAPH_FOREACH_BODY(graph)
+      {
+        printf("%d: %s\n", count1++, BODY->bdyName);
+      }
+
       if (graph == NULL)
       {
         RMSG("Failed to create graph from file \"%s\" - exiting", xmlFileName);
@@ -566,14 +573,12 @@ int main(int argc, char** argv)
         kc = new Rcs::KeyCatcher();
         viewer->add(kc);
 
-        for (unsigned int i=0; i<graph->nSensors; ++i)
+        RCSGRAPH_FOREACH_SENSOR(graph)
         {
-          RcsSensor* si = &graph->sensors[i];
-
-          if (si->type==RCSSENSOR_PPS)
+          if (SENSOR->type==RCSSENSOR_PPS)
           {
             bool debug = RcsLogLevel > 0 ? true : false;
-            viewer->add(new Rcs::PPSSensorNode(si, graph, debug));
+            viewer->add(new Rcs::PPSSensorNode(SENSOR, graph, debug));
           }
         }
 
@@ -619,11 +624,7 @@ int main(int argc, char** argv)
           dtSim = Timer_getSystemTime() - dtSim;
           if (comBase != NULL)
           {
-#ifdef OLD_TOPO
-            mass = RcsGraph_COG_Body(comBase, r_com);
-#else
             mass = RcsGraph_COG_Body(graph, comBase, r_com);
-#endif
           }
           else
           {
@@ -787,11 +788,7 @@ int main(int argc, char** argv)
                  child ? child->bdyName : "NULL", childName.c_str(),
                  parent ? parent->bdyName : "NULL", parentName.c_str());
 
-#ifdef OLD_TOPO
-            bool success = RcsBody_attachToBody(graph, child, parent, NULL);
-#else
             bool success = RcsBody_attachToBodyById(graph, child, parent, NULL);
-#endif
             RMSG("%s changing body attachement",
                  success ? "SUCCESS" : "FAILURE");
 
@@ -964,22 +961,14 @@ int main(int argc, char** argv)
                    success ? "SUCCEEDED" : "FAILED");
             }
 
-#ifdef OLD_TOPO
-            RcsBody* first = RcsBody_depthFirstTraversalGetNext(graph->root);
-#else
             RcsBody* first = RcsBody_depthFirstTraversalGetNextById(graph, graph->root);
-#endif
 
             while (first)
             {
               bool success = RcsBody_mergeWithParent(graph, first->bdyName);
               RMSG("%s to merge body %s with root",
                    success ? "SUCCEEDED" : "FAILED", first->bdyName);
-#ifdef OLD_TOPO
-              first = RcsBody_depthFirstTraversalGetNext(graph->root);
-#else
               first = RcsBody_depthFirstTraversalGetNextById(graph, graph->root);
-#endif
               RMSG("Next body to merge: \"%s\"", first ? first->bdyName : "NULL");
               RPAUSE();
             }
@@ -1291,19 +1280,17 @@ int main(int argc, char** argv)
           std::vector<Rcs::PPSGui::Entry> ppsEntries;
           double scaling = 1.0;
 
-          for (unsigned int i=0; i<graph->nSensors; ++i)
+          RCSGRAPH_FOREACH_SENSOR(graph)
           {
-            RcsSensor* si = &graph->sensors[i];
-
-            if (si->type==RCSSENSOR_PPS)
+            if (SENSOR->type==RCSSENSOR_PPS)
             {
-              ppsEntries.push_back(Rcs::PPSGui::Entry(si->name,
-                                                      si->rawData->m,
-                                                      si->rawData->n,
-                                                      si->rawData->ele,
+              ppsEntries.push_back(Rcs::PPSGui::Entry(SENSOR->name,
+                                                      SENSOR->rawData->m,
+                                                      SENSOR->rawData->n,
+                                                      SENSOR->rawData->ele,
                                                       scaling));
               bool debug = RcsLogLevel > 0 ? true : false;
-              viewer->add(new Rcs::PPSSensorNode(si, graph, debug));
+              viewer->add(new Rcs::PPSSensorNode(SENSOR, graph, debug));
             }
           }
 
@@ -1632,9 +1619,9 @@ int main(int argc, char** argv)
         {
           RMSGS("Printing out sensors");
 
-          for (unsigned int i=0; i<graph->nSensors; ++i)
+          RCSGRAPH_FOREACH_SENSOR(graph)
           {
-            RcsSensor_fprint(stdout, &graph->sensors[i]);
+            RcsSensor_fprint(stdout, SENSOR);
           }
 
           sim->print();

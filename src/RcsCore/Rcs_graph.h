@@ -106,6 +106,10 @@ extern "C" {
  *
  */
 
+RcsSensor* RcsSensor_first(RcsGraph* graph);
+RcsSensor* RcsSensor_last(RcsGraph* graph);
+RcsBody* RcsBody_first(RcsGraph* graph);
+RcsBody* RcsBody_last(RcsGraph* graph);
 RcsBody* RcsBody_getLastChildById(const RcsGraph* graph, RcsBody* b);
 
 /*! \ingroup RcsGraphTraversalFunctions
@@ -183,6 +187,13 @@ RcsBody* RcsBody_getLastChild(const RcsBody* body);
   for (RcsPair **pPtr = (RcsPair**)(pairlist), *PAIR = *pPtr; *pPtr; \
        pPtr++, PAIR=*pPtr)
 
+#define RCSGRAPH_FOREACH_SENSOR(graph) \
+  for (RcsSensor *S0 = RcsSensor_first(graph), *S1 = RcsSensor_last(graph), \
+       *SENSOR = S0; SENSOR<=S1; SENSOR++)
+
+#define RCSGRAPH_FOREACH_BODY(graph) \
+  for (RcsBody *B0 = RcsBody_first(graph), *B1 = RcsBody_last(graph), \
+       *BODY = B0; BODY<=B1; BODY++)
 
 
 

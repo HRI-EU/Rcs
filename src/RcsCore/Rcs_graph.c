@@ -51,6 +51,7 @@
 #include <float.h>
 
 
+
 /*******************************************************************************
  * This function computes the body kinematics for one body of the kinematics
  * chain. It propagates the transformation of the previous body through all
@@ -2278,6 +2279,20 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src)
     RcsSensor* s = RcsGraph_insertSensor(dst);
     RcsSensor_copy(s, &src->sensors[i]);
   }
+
+
+
+  RCSGRAPH_FOREACH_SENSOR(dst)
+  {
+    RLOG(0, "SENSOR: %s", SENSOR->name);
+  }
+
+  for (unsigned int i=0; i<src->nSensors; ++i)
+  {
+    RLOG(0, "Sensor: %s", src->sensors[i].name);
+  }
+
+
 
   // Handle coupled joints
   RCSGRAPH_TRAVERSE_JOINTS(dst)

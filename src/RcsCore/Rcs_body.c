@@ -2947,3 +2947,19 @@ bool RcsBody_attachToBodyById(RcsGraph* graph, RcsBody* body, RcsBody* target,
 
   return true;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsBody* RcsBody_first(RcsGraph* graph)
+{
+  return &graph->bodies[0];
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsBody* RcsBody_last(RcsGraph* graph)
+{
+  return &graph->bodies[graph->nBodies-1];
+}
