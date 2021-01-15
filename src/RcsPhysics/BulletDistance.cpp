@@ -260,7 +260,7 @@ static btConvexShape* createShape(const RcsShape* sh, HTr* A_SB)
 
     case RCSSHAPE_MESH:
     {
-      RcsMeshData* mesh = (RcsMeshData*) sh->userData;
+      RcsMeshData* mesh = sh->mesh;
 
       if (mesh == NULL)
       {

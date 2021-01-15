@@ -230,7 +230,7 @@ public:
   */
   bool removeBody(const char* name);
 
-  bool addBody(const RcsBody* body);
+  bool addBody(const RcsGraph* graph, const RcsBody* body);
 
   bool deactivateBody(const char* name);
   bool activateBody(const char* name, const HTr* A_BI=NULL);

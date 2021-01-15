@@ -83,7 +83,7 @@ static void setSoftMaterial(btSoftBody* softBdy, int materialId)
     }
     break;
 
-    case 1:
+    case 1:// "cloth"
     {
       softBdy->m_cfg.kDF = 0.9; // dynamic friction
       softBdy->m_cfg.kDP = 0.01;// damping
@@ -108,7 +108,7 @@ static void setSoftMaterial(btSoftBody* softBdy, int materialId)
     }
     break;
 
-    case 2:
+    case 2:// "cloth2"
     {
       softBdy->m_cfg.kMT = 0.0;// Pose matching coefficient [0,1]
       softBdy->m_cfg.kVCF = 1.0;// Velocities correction factor (Baumgarte)
@@ -129,18 +129,20 @@ static void setSoftMaterial(btSoftBody* softBdy, int materialId)
       material->m_kLST = 1.0;  // Linear stiffness coefficient [0,1]
       material->m_kAST = 1.0;  // Area/Angular stiffness coefficient [0,1]
 
-      //softBdy->m_cfg.kDF = 0.9; // dynamic friction
-      //softBdy->m_cfg.kDP = 0.01;// damping
-      //softBdy->m_cfg.kMT = 0.00;// Pose matching coefficient [0,1]  was 0.05
-      //softBdy->m_cfg.kVCF = 0.1;// Velocities correction factor (Baumgarte)
-      //softBdy->m_cfg.kVC = 0.0;// Volume conversation coefficient [0,+inf]
+      softBdy->m_cfg.kDF = 0.0; // dynamic friction
+      softBdy->m_cfg.kDP = 0.1;// damping
+      softBdy->m_cfg.kMT = 0.;// Pose matching coefficient [0,1]  was 0.05
+      softBdy->m_cfg.kVCF = 0.1;// Velocities correction factor (Baumgarte)
+      softBdy->m_cfg.kVC = 0.0;// Volume conversation coefficient [0,+inf]
       softBdy->m_cfg.piterations = 250;
       softBdy->m_cfg.citerations = 100;
       softBdy->m_cfg.diterations = 100;
 
-      //softBdy->m_cfg.kCHR = 1.0;   // Rigid contacts hardness [0,1]
-      //softBdy->m_cfg.kKHR = 1.0;   // Kinetic contacts hardness [0,1]
-      //softBdy->m_cfg.kSHR = 1.0;   // Soft contacts hardness [0,1]
+      // softBdy->m_cfg.kAHR = 1.0;   // Anchor hardness
+
+      // softBdy->m_cfg.kCHR = 1.0;   // Rigid contacts hardness [0,1]
+      // softBdy->m_cfg.kKHR = 1.0;   // Kinetic contacts hardness [0,1]
+      // softBdy->m_cfg.kSHR = 1.0;   // Soft contacts hardness [0,1]
     }
     break;
 
@@ -218,10 +220,12 @@ void BulletSoftSimulation::updateSoftMeshes()
   for (int i=0; i<arr.size(); ++i)
   {
     btSoftBody* sbi = arr[i];
-    RcsBody* rcsSoftBdy = (RcsBody*) sbi->getUserPointer();
+    int bodyId = sbi->getUserIndex();
+    RcsBody* rcsSoftBdy = RCSBODY_BY_ID(getGraph(), bodyId);
+    RCHECK(rcsSoftBdy);
     RcsShape* softShape = rcsSoftBdy->shape[0];
     RCHECK(softShape->type==RCSSHAPE_MESH);
-    RcsMeshData* dstMesh = (RcsMeshData*) softShape->userData;
+    RcsMeshData* dstMesh = softShape->mesh;
 
     const size_t nValues = 3*sbi->m_faces.size();
     dstMesh->vertices = (double*) realloc(dstMesh->vertices,
@@ -271,9 +275,9 @@ void BulletSoftSimulation::updateSoftMeshes()
       Vec3d_set(vtx1, v1[0], v1[1], v1[2]);
       Vec3d_set(vtx2, v2[0], v2[1], v2[2]);
 
-      RCHECK_MSG(Vec3d_isFinite(vtx0), "%s", rcsSoftBdy->bdyName);
-      RCHECK_MSG(Vec3d_isFinite(vtx1), "%s", rcsSoftBdy->bdyName);
-      RCHECK_MSG(Vec3d_isFinite(vtx2), "%s", rcsSoftBdy->bdyName);
+      RCHECK_MSG(Vec3d_isFinite(vtx0), "%s", rcsSoftBdy->name);
+      RCHECK_MSG(Vec3d_isFinite(vtx1), "%s", rcsSoftBdy->name);
+      RCHECK_MSG(Vec3d_isFinite(vtx2), "%s", rcsSoftBdy->name);
 
       // Transformation from world into shape's frame so that parent-child
       // relations in the graphics scene graph are preserved. The vertices
@@ -363,8 +367,8 @@ void BulletSoftSimulation::createSoftBodies()
         continue;
       }
 
-      RLOG(5, "Creating soft body for %s", BODY->bdyName);
-      RcsMeshData* softMesh = (RcsMeshData*)SHAPE->userData;
+      RLOG(5, "Creating soft body for %s", BODY->name);
+      RcsMeshData* softMesh = SHAPE->mesh;
 
       if (softMesh == NULL)
       {
@@ -424,8 +428,8 @@ void BulletSoftSimulation::createSoftBodies()
       }
 
       // For all parameters, see btSoftBody.h (struct Config)
-      RCHECK_MSG(softBdy, "Failed to create soft body for %s", BODY->bdyName);
-      RCHECK_MSG(BODY->m>0.0, "Soft body %s has zero mass", BODY->bdyName);
+      RCHECK_MSG(softBdy, "Failed to create soft body for %s", BODY->name);
+      RCHECK_MSG(BODY->m>0.0, "Soft body %s has zero mass", BODY->name);
 
       int materialId = 0;
       if (STRCASEEQ(SHAPE->material, "cloth"))
@@ -436,13 +440,17 @@ void BulletSoftSimulation::createSoftBodies()
       {
         materialId = 2;
       }
+      else if (STRCASEEQ(SHAPE->material, "cloth3"))
+      {
+        materialId = 3;
+      }
 
       setSoftMaterial(softBdy, materialId);
 
       softBdy->randomizeConstraints();
       softBdy->setTotalMass(BODY->m, true);
-      softBdy->getCollisionShape()->setMargin(0.00);
-      softBdy->setUserPointer((void*) BODY);
+      softBdy->getCollisionShape()->setMargin(0.0);
+      softBdy->setUserIndex(BODY->id);
       btSoftBodyHelpers::ReoptimizeLinkOrder(softBdy);
 
       // Link soft body to parent if it exists and the body physics type is
@@ -451,13 +459,13 @@ void BulletSoftSimulation::createSoftBodies()
 
       if (parent)
       {
-        RLOG_CPP(5, "Body " << BODY->bdyName << " has "
+        RLOG_CPP(5, "Body " << BODY->name << " has "
                  << softBdy->m_nodes.size() << " nodes (" << softMesh->nFaces
                  << " faces " << softMesh->nVertices << " vertices) ");
 
         RCHECK(BODY->physicsSim==RCSBODY_PHYSICS_FIXED);
-        std::map<const RcsBody*, Rcs::BulletRigidBody*>::iterator it;
-        it = bdyMap.find(parent);
+        std::map<int, Rcs::BulletRigidBody*>::iterator it;
+        it = bdyMap.find(parent->id);
         RCHECK(it!=bdyMap.end());
         BulletRigidBody* bParent = it->second;
 
@@ -466,22 +474,21 @@ void BulletSoftSimulation::createSoftBodies()
       }
 
       // Link rigid child bodies to soft parent
-      //RcsBody* child = BODY->firstChild;
       RcsBody* child = RcsBody_getFirstChild(getGraph(), BODY);
 
       while (child)
       {
         RCHECK(child->physicsSim==RCSBODY_PHYSICS_FIXED);
-        std::map<const RcsBody*, Rcs::BulletRigidBody*>::iterator it;
-        it = bdyMap.find(child);
-        RCHECK(it!=bdyMap.end());
+        std::map<int, Rcs::BulletRigidBody*>::iterator it;
+        it = bdyMap.find(child->id);
+        RCHECK_MSG(it!=bdyMap.end(), "Failed to find body \"%s\" (id %d)",
+                   child->name, child->id);
         BulletRigidBody* bChild = it->second;
 
         int anchoredVertices = connectSoftToRigidBody(softBdy, bChild);
         RLOG(5, "Anchored %d vertices to child %s",
-             anchoredVertices, child->bdyName);
+             anchoredVertices, child->name);
 
-        //child = child->next;
         child = RcsBody_getNext(getGraph(), child);
       }
 
@@ -507,14 +514,14 @@ void BulletSoftSimulation::convertShapesToMesh()
       // and continue.
       if (SHAPE->type == RCSSHAPE_MESH)
       {
-        RcsMeshData* shapeMesh = (RcsMeshData*)SHAPE->userData;
+        RcsMeshData* shapeMesh = SHAPE->mesh;
 
         if (shapeMesh)
         {
           RLOG(5, "Mesh %s has %d vertices and %d facecs",
-               BODY->bdyName, shapeMesh->nVertices, shapeMesh->nFaces);
+               BODY->name, shapeMesh->nVertices, shapeMesh->nFaces);
           int nDuplicates = RcsMesh_compressVertices(shapeMesh, 1.0e-8);
-          RLOG(5, "Reduced mesh by %d duplicates - now %d vertices and %d facecs",
+          RLOG(5, "Reduced mesh by %d duplicates - now %d vertices and %d faces",
                nDuplicates, shapeMesh->nVertices, shapeMesh->nFaces);
         }
         continue;
@@ -527,20 +534,21 @@ void BulletSoftSimulation::convertShapesToMesh()
       if (shapeMesh)
       {
         RLOG(5, "Mesh %s has %d vertices and %d facecs",
-             BODY->bdyName, shapeMesh->nVertices, shapeMesh->nFaces);
+             BODY->name, shapeMesh->nVertices, shapeMesh->nFaces);
         int nDuplicates = RcsMesh_compressVertices(shapeMesh, 1.0e-8);
-        RLOG(5, "Reduced mesh by %d duplicates - now %d vertices and %d facecs",
+        RLOG(5, "Reduced mesh by %d duplicates - now %d vertices and %d faces",
              nDuplicates, shapeMesh->nVertices, shapeMesh->nFaces);
 
-        SHAPE->userData = (void*) shapeMesh;
-        snprintf(SHAPE->meshFile, RCS_MAX_FILENAMELEN, "%s", RcsShape_name(SHAPE->type));
+        SHAPE->mesh = shapeMesh;
+        snprintf(SHAPE->meshFile, RCS_MAX_FILENAMELEN, "%s",
+                 RcsShape_name(SHAPE->type));
         SHAPE->type = RCSSHAPE_MESH;
         SHAPE->computeType = RCSSHAPE_COMPUTE_SOFTPHYSICS;
       }
       else
       {
         RLOG(0, "Failed to convert shape %s of body %s",
-             RcsShape_name(SHAPE->type), BODY->bdyName);
+             RcsShape_name(SHAPE->type), BODY->name);
       }
 
     }   // RCSBODY_TRAVERSE_SHAPES

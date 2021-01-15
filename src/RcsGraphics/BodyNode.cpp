@@ -43,6 +43,7 @@
 #include <Rcs_typedef.h>
 #include <Rcs_joint.h>
 #include <Rcs_macros.h>
+#include <Rcs_timer.h>
 #include <Rcs_utils.h>
 #include <Rcs_shape.h>
 #include <MeshNode.h>
@@ -106,17 +107,19 @@ protected:
  *                             |
  *                             ---> capsule, box, etc (osg::Capsule ...)
 *******************************************************************************/
-BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
-  bdy(b),
-  parent(NULL),
-  A_BI(&b->A_BI),
+BodyNode::BodyNode(const RcsBody* b, const RcsGraph* graph, float scale,
+                   bool resizeable) :
+  graphPtr(graph),
+  A_BI_(NULL),
+  bdyId(b ? b->id : -1),
+  parentId(-1),
   ghostMode(false),
   dynamicMeshUpdate(false),
   refNode(false),
   initializeDebugInfo(false)
 {
-  RCHECK(this->bdy);
-  setName(this->bdy->bdyName ? this->bdy->bdyName : "Unnamed body");
+  RCHECK(this->bdyId != -1);
+  setName(body()->name);
 
   _nodeSwitch = new osg::Switch();
   addChild(_nodeSwitch.get());
@@ -136,25 +139,25 @@ BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
     osg::ref_ptr<ShapeNode> sni = new ShapeNode(SHAPE, resizeable);
     _shapeNodes.push_back(sni);
 
-    if ((SHAPE->computeType & RCSSHAPE_COMPUTE_DISTANCE) != 0)
+    if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_DISTANCE))
     {
-      _collisionNode->addChild(sni);
+      _collisionNode->addChild(sni.get());
     }
 
-    if ((SHAPE->computeType & RCSSHAPE_COMPUTE_GRAPHICS) != 0)
+    if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_GRAPHICS))
     {
-      _graphicsNode->addChild(sni);
+      _graphicsNode->addChild(sni.get());
     }
 
-    if ((SHAPE->computeType & RCSSHAPE_COMPUTE_PHYSICS) != 0 ||
-        (SHAPE->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) != 0)
+    if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_PHYSICS) ||
+        RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_SOFTPHYSICS))
     {
-      _physicsNode->addChild(sni);
+      _physicsNode->addChild(sni.get());
     }
 
-    if ((SHAPE->computeType & RCSSHAPE_COMPUTE_DEPTHBUFFER) != 0)
+    if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_DEPTHBUFFER))
     {
-      _depthNode->addChild(sni);
+      _depthNode->addChild(sni.get());
     }
 
   }
@@ -176,13 +179,18 @@ BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
 
 
   // Assign the initial transformation to the node
-  if (HTr_isValid(this->A_BI))
+  const HTr* A_BI = getTransformPtr();
+  if (HTr_isValid(A_BI))
   {
-    setTransformation(this->A_BI);
+    setTransformation(A_BI);
   }
   else
   {
     RLOG(4, "Invalid transform in \"%s\"", getName().c_str());
+    REXEC(4)
+    {
+      HTr_fprint(stderr, A_BI);
+    }
   }
 
   // Switch off all coordinate frames per default
@@ -195,8 +203,9 @@ BodyNode::BodyNode(const RcsBody* b, float scale, bool resizeable) :
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-osg::Switch* BodyNode::addDebugInformation()
+osg::Switch* BodyNode::addDebugInformation(const RcsGraph* graph)
 {
+  RCHECK(graph);
   osg::ref_ptr<osg::TessellationHints> hints = new osg::TessellationHints;
   hints->setDetailRatio(0.5f);
 
@@ -249,12 +258,14 @@ osg::Switch* BodyNode::addDebugInformation()
   setNodeMaterial("RED", geode);
   geode->addDrawable(shape);
 
+  const RcsBody* bdy = body();
+
   // add a small sphere representing the COM of the body
-  if (this->bdy->m > 0.0)
+  if (bdy->m > 0.0)
   {
     osg::Geode* comGeode = new osg::Geode();
     setNodeMaterial("BLUE", comGeode);
-    const double* cg = this->bdy->Inertia.org;
+    const double* cg = bdy->Inertia.org;
     osg::Sphere* sph = new osg::Sphere(osg::Vec3(cg[0], cg[1], cg[2]), 1.01*r);
     osg::ShapeDrawable* shape = new osg::ShapeDrawable(sph, hints.get());
     comGeode->addDrawable(shape);
@@ -262,7 +273,7 @@ osg::Switch* BodyNode::addDebugInformation()
   }
 
   // Add a small cylinder for each joint
-  RCSBODY_TRAVERSE_JOINTS(this->bdy)
+  RCSBODY_FOREACH_JOINT(graph, bdy)
   {
     if (!RcsJoint_isRotation(JNT))
     {
@@ -304,7 +315,7 @@ osg::Switch* BodyNode::addDebugInformation()
 
   }   // RCSBODY_TRAVERSE_JOINTS(this->bdy)
 
-  if (this->parent)
+  if (this->parentId != -1)
   {
     // add a line between this and the previous body
     _debugLine = new osg::Vec3Array;
@@ -313,7 +324,7 @@ osg::Switch* BodyNode::addDebugInformation()
 
     // add the two body positions in local reference
     HTr A_12;
-    HTr_invTransform(&A_12, &this->bdy->A_BI, &this->parent->A_BI);
+    HTr_invTransform(&A_12, &bdy->A_BI, &parent()->A_BI);
 
     _debugLine->push_back(osg::Vec3(0.0, 0.0, 0.0));
     _debugLine->push_back(osg::Vec3(A_12.org[0], A_12.org[1], A_12.org[2]));
@@ -668,7 +679,23 @@ void BodyNode::setMaterial(const std::string& material, double alpha)
  ******************************************************************************/
 const RcsBody* BodyNode::body() const
 {
-  return this->bdy;
+  return RCSBODY_BY_ID(this->graphPtr, bdyId);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+int BodyNode::bodyId() const
+{
+  return this->bdyId;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+const RcsBody* BodyNode::parent() const
+{
+  return RCSBODY_BY_ID(this->graphPtr, parentId);
 }
 
 /*******************************************************************************
@@ -684,16 +711,15 @@ const char* BodyNode::className() const
  ******************************************************************************/
 const HTr* BodyNode::getTransformPtr() const
 {
-  return this->A_BI;
+  return this->A_BI_ ? this->A_BI_ : &body()->A_BI;
 }
 
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void BodyNode::setTransformPtr(const HTr* A_BI_)
+void BodyNode::setTransformPtr(const HTr* A_BI)
 {
-  RCHECK_MSG(A_BI_ != NULL, "BodyNode \"%s\": pointer is NULL", body()->bdyName);
-  this->A_BI = A_BI_;
+  this->A_BI_ = A_BI;
 }
 
 /*******************************************************************************
@@ -800,11 +826,11 @@ void BodyNode::updateDynamicMeshes()
       continue;
     }
 
-    RcsMeshData* meshDat = (RcsMeshData*) SHAPE->userData;
+    RcsMeshData* meshDat = SHAPE->mesh;
 
     if (meshDat == NULL)
     {
-      RLOG(1, "Body \"%s\" has mesh shape without RcsMeshData", body()->bdyName);
+      RLOG(1, "Body \"%s\" has mesh shape without RcsMeshData", body()->name);
       continue;
     }
 
@@ -848,19 +874,19 @@ void BodyNode::updateCallback(osg::Node* node, osg::NodeVisitor* nv)
   // graph here, since this function is called within the update callback.
   if (initializeDebugInfo && (!_debugNode.valid()))
   {
-    _debugNode = addDebugInformation();
+    _debugNode = addDebugInformation(graphPtr);
     _debugNode->setAllChildrenOn();
     addChild(_debugNode.get());
   }
 
   // Update debug lines
-  if (debugInformationVisible() && (this->parent) && (_debugLine.valid()))
+  if (debugInformationVisible() && (this->parentId!=-1) && (_debugLine.valid()))
   {
     _debugLine->clear();
 
     // Add the two body positions in local reference
     HTr A_12;
-    HTr_invTransform(&A_12, &body()->A_BI, &parent->A_BI);
+    HTr_invTransform(&A_12, &body()->A_BI, &parent()->A_BI);
 
     _debugLine->push_back(osg::Vec3(0.0, 0.0, 0.0));
     _debugLine->push_back(osg::Vec3(A_12.org[0], A_12.org[1], A_12.org[2]));
@@ -881,10 +907,14 @@ void BodyNode::updateCallback(osg::Node* node, osg::NodeVisitor* nv)
   // Dynamic shape update. We call it from here, since several ShapeNode
   // references might have been added, and we only want to update the one
   // instance instead of every reference.
+  double t_ds = Timer_getSystemTime();
   for (size_t i=0; i<_shapeNodes.size(); ++i)
   {
+    RLOG(6, "%s", body()->name);
     _shapeNodes[i]->updateDynamicShapes();
   }
+  t_ds = Timer_getSystemTime() - t_ds;
+  RLOG(6, "Dynamic shape update took %f msec", 1.0e3*t_ds);
 
 }
 
@@ -893,7 +923,7 @@ void BodyNode::updateCallback(osg::Node* node, osg::NodeVisitor* nv)
  ******************************************************************************/
 void BodyNode::setParent(const RcsBody* newParent)
 {
-  this->parent = newParent;
+  this->parentId = newParent ? newParent->id : -1;
 }
 
 }   // namespace Rcs

@@ -37,6 +37,7 @@
 #include "Rcs_URDFParser.h"
 #include "EulerAngles.h"
 #include "Rcs_body.h"
+#include "Rcs_joint.h"
 #include "Rcs_macros.h"
 #include "Rcs_Mat3d.h"
 #include "Rcs_parser.h"
@@ -148,12 +149,11 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
     }
     else
     {
-      RcsMeshData* mesh = RcsMesh_createFromFile(shape->meshFile);
-      if (mesh==NULL)
+      shape->mesh = RcsMesh_createFromFile(shape->meshFile);
+      if (shape->mesh==NULL)
       {
         RLOG(4, "Couldn't create mesh for file \"%s\"", shape->meshFile);
       }
-      shape->userData = (void*) mesh;
     }
 
     double scale_3d[3] = {1.0, 1.0, 1.0};
@@ -163,9 +163,9 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
 
     shape->scale = scale_3d[0];
 
-    if ((RcsMeshData*) shape->userData)
+    if (shape->mesh && (shape->scale!=1.0))
     {
-      RcsMesh_scale((RcsMeshData*) shape->userData, shape->scale);
+      RcsMesh_scale(shape->mesh, shape->scale);
     }
   }
   else
@@ -215,7 +215,7 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
       else
       {
         RLOG(4, "Texture file \"%s\" in body \"%s\" not found!",
-             str, body->bdyName);
+             str, body->name);
       }
     }
   }
@@ -277,10 +277,10 @@ static int parseBodyURDF(xmlNode* node, RcsGraph* graph, int parentId)
   RLOG(5, "Creating body \"%s\"", body->bdyXmlName);
 
   // Fully qualified name
-  snprintf(body->bdyName, RCS_MAX_NAMELEN, "%s", body->bdyXmlName);
+  snprintf(body->name, RCS_MAX_NAMELEN, "%s", body->bdyXmlName);
   RLOG(5, "Adding body %s (%d) with parent %s (%d)",
-       body->bdyName, body->id,
-       parentId<0?"NULL":graph->bodies[parentId].bdyName,
+       body->name, body->id,
+       parentId<0?"NULL":graph->bodies[parentId].name,
        parentId);
 
   // Go one level deeper
@@ -353,7 +353,7 @@ static int parseBodyURDF(xmlNode* node, RcsGraph* graph, int parentId)
   if ((Mat3d_getFrobeniusnorm(body->Inertia.rot)>0.0) && (body->m<=0.0))
   {
     RLOG(4, "You specified a non-zero inertia but a zero mass for body \"%s\"."
-         " Shame on you!", body->bdyName);
+         " Shame on you!", body->name);
   }
 
   // Rigid body joints not supported
@@ -367,7 +367,7 @@ static int parseBodyURDF(xmlNode* node, RcsGraph* graph, int parentId)
     if (numCollisionShapes == 0)
     {
       RLOG(1, "You specified a non-zero mass but no collision shapes for body "
-           "\"%s\". It will not work in physics simulations", body->bdyName);
+           "\"%s\". It will not work in physics simulations", body->name);
       body->physicsSim = RCSBODY_PHYSICS_NONE;
     }
   }
@@ -408,12 +408,12 @@ static RcsJoint* findJntByNameNoCase(const char* name, RcsJoint** jntVec)
 static RcsBody* findBdyByNameNoCase(const char* name, RcsGraph* graph, int rootIdx)
 {
   RCHECK(rootIdx>=0);
-  RCHECK(rootIdx<graph->nBodies);
+  RCHECK(rootIdx<(int)graph->nBodies);
 
-  for (int i=rootIdx; i<graph->nBodies; ++i)
+  for (int i=rootIdx; i<(int)graph->nBodies; ++i)
   {
     RcsBody* b = &graph->bodies[i];
-    if (STRCASEEQ(name, b->bdyName))
+    if (STRCASEEQ(name, b->name))
     {
       return b;
     }
@@ -439,10 +439,13 @@ RcsJoint* parseJointURDF(xmlNode* node)
   int len = getXMLNodeBytes(node, "name");
   RCHECK_MSG(len>0, "Joint name not specified in URDF description");
 
+  // We create the memory here since for fixed joints, none is needed
+  RcsJoint* jnt = RALLOC(RcsJoint);
+  RcsJoint_init(jnt);
+
   // Relative transformation: "origin" (NULL if not specified means identity
   // transform)
   xmlNodePtr originNode = getXMLChildByName(node, "origin");
-  HTr* A_JP = NULL;
   if (originNode)
   {
     double xyz[3], rpy[3];
@@ -450,30 +453,14 @@ RcsJoint* parseJointURDF(xmlNode* node)
     Vec3d_setZero(rpy);
     getXMLNodePropertyVec3(originNode, "xyz", xyz);
     getXMLNodePropertyVec3(originNode, "rpy", rpy);
-    A_JP = HTr_create();
-    HTr_fromURDFOrigin(A_JP, rpy, xyz);
+    HTr_fromURDFOrigin(&jnt->A_JP, rpy, xyz);
   }
-
-  // We create the memory here since for fixed joints, none is needed
-  RcsJoint* jnt = RALLOC(RcsJoint);
-  jnt->name = RNALLOC(len, char);
-  getXMLNodePropertyStringN(node, "name", jnt->name, len);
+  getXMLNodePropertyStringN(node, "name", jnt->name, RCS_MAX_NAMELEN);
   jnt->weightJL = 1.0;
   jnt->weightCA = 1.0;
   jnt->weightMetric = 1.0;
   jnt->ctrlType = RCSJOINT_CTRL_POSITION;
   jnt->constrained = false;
-  HTr_setIdentity(&jnt->A_JI);
-
-  if (A_JP!=NULL)
-  {
-    // We only create a relative transform if it is not identity.
-    if (HTr_isIdentity(A_JP)==false)
-    {
-      jnt->A_JP = HTr_clone(A_JP);
-    }
-    RFREE(A_JP);
-  }
 
   // limits tag
   xmlNodePtr limitNode = getXMLChildByName(node, "limit");
@@ -515,11 +502,10 @@ RcsJoint* parseJointURDF(xmlNode* node)
   if (mimicNode)
   {
     // Coupled to is required
-    char coupledTo[256] = "";
-    len = getXMLNodePropertyStringN(mimicNode, "joint", coupledTo, 256);
+    len = getXMLNodePropertyStringN(mimicNode, "joint", jnt->coupledJntName,
+                                    RCS_MAX_NAMELEN);
     RCHECK_MSG(len > 0, "Couldn't find tag \"joint\" in mimic joint %s",
                jnt->name);
-    jnt->coupledJointName = String_clone(coupledTo);
 
     // Here we force-set the constraint of the joint. This invalidates the
     // joint coupling projection. The joint is not treated in the inverse
@@ -528,12 +514,12 @@ RcsJoint* parseJointURDF(xmlNode* node)
     jnt->constrained = true;
 
     // Multiplier is optional (default: 1.0)
-    jnt->couplingFactors = MatNd_create(1, 1);
-    MatNd_setElementsTo(jnt->couplingFactors, 1.0);
-    getXMLNodePropertyDouble(mimicNode, "multiplier", jnt->couplingFactors->ele);
+    jnt->couplingPoly[0] = 1.0;
+    jnt->nCouplingCoeff = 1;
+    getXMLNodePropertyDouble(mimicNode, "multiplier", &jnt->couplingPoly[0]);
 
     RLOG(5, "Joint \"%s\" coupled to \"%s\" with factor %lf",
-         jnt->name, jnt->coupledJointName, *jnt->couplingFactors->ele);
+         jnt->name, jnt->coupledJntName, jnt->couplingPoly[0]);
   }
 
   return jnt;
@@ -614,14 +600,14 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
     /* } */
 
     // Backward connection of joints
-    char jntName[256] = "";
-    getXMLNodePropertyStringN(node, "name", jntName, 256);
+    char name[256] = "";
+    getXMLNodePropertyStringN(node, "name", name, 256);
     if (suffix != NULL)
     {
-      strcat(jntName, suffix);
+      strcat(name, suffix);
     }
-    RcsJoint* jnt = findJntByNameNoCase(jntName, jntVec);
-    RCHECK_MSG(jnt, "Joint \"%s\" not found", jntName);
+    RcsJoint* jnt = findJntByNameNoCase(name, jntVec);
+    RCHECK_MSG(jnt, "Joint \"%s\" not found", name);
 
     // Relative rotation.
     jnt->dirIdx = 2;   // URDF joint direction default is x
@@ -677,17 +663,10 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
         Mat3d_fromVec(A_NJ, axis_xyz, jnt->dirIdx);
 
         // The relative transform is A_NV = A_NJ*A_JV
-        if (jnt->A_JP != NULL)
-        {
-          Mat3d_preMulSelf(jnt->A_JP->rot, A_NJ);
-        }
-        else
-        {
-          jnt->A_JP = HTr_create();
-          Mat3d_copy(jnt->A_JP->rot, A_NJ);
-        }
+        Mat3d_preMulSelf(jnt->A_JP.rot, A_NJ);
 
         // Apply transpose of this to child body
+        RFATAL("Fix this");
         /* if (childBody->A_BP == NULL) */
         /* { */
         /*   childBody->A_BP = HTr_create(); */
@@ -706,13 +685,13 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
     }   // if (axisNode)
 
     // Bodie's "driving" joint
-    childBody->jnt = jnt;
+    childBody->jntId = jnt->id;
 
     // Find previous ("driving") joint of the joint for the Jacobian
     // backward traversal.
-    RcsJoint* prevJnt = RcsBody_lastJointBeforeBodyById(graph, parentBody);
-    jnt->prev = prevJnt;
-    jnt->next = NULL;
+    RcsJoint* prevJnt = RcsBody_lastJointBeforeBody(graph, parentBody);
+    jnt->prevId = prevJnt ? prevJnt->id : -1;
+    jnt->nextId = -1;
 
   }   // if (STRCASEEQ(type, "revolute") || STRCASEEQ(type, "continuous"))
 
@@ -827,14 +806,14 @@ static void RcsGraph_parseModelState(const char* modelName, xmlNodePtr node,
       {
         if (isXMLNodeNameNoCase(jntStateNode, "joint_state"))
         {
-          char jntName[256] = "";
-          getXMLNodePropertyStringN(jntStateNode, "joint", jntName, 256);
+          char name[256] = "";
+          getXMLNodePropertyStringN(jntStateNode, "joint", name, 256);
           if (suffix != NULL)
           {
-            strcat(jntName, suffix);
+            strcat(name, suffix);
           }
-          RcsJoint* jnt = findJntByNameNoCase(jntName, jntVec);
-          RCHECK_MSG(jnt, "Joint \"%s\" not found", jntName);
+          RcsJoint* jnt = findJntByNameNoCase(name, jntVec);
+          RCHECK_MSG(jnt, "Joint \"%s\" not found", name);
           getXMLNodePropertyDouble(jntStateNode, "position", &jnt->q_init);
           jnt->q0 = jnt->q_init;
         }
@@ -902,8 +881,8 @@ int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
       if (suffix != NULL)
       {
         char newName[RCS_MAX_NAMELEN];
-        snprintf(newName, RCS_MAX_NAMELEN, "%s%s", b->bdyName, suffix);
-        snprintf(b->bdyName, RCS_MAX_NAMELEN, "%s", newName);
+        snprintf(newName, RCS_MAX_NAMELEN, "%s%s", b->name, suffix);
+        snprintf(b->name, RCS_MAX_NAMELEN, "%s", newName);
       }
 
     }
@@ -927,22 +906,16 @@ int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
       RLOG(5, "Adding joint %d: %s", jntIdx, j->name);
       if (suffix != NULL)
       {
-        size_t nameLen = strlen(j->name) + strlen(suffix) + 1;
-        char* newName = RNALLOC(nameLen, char);
-        strcpy(newName, j->name);
-        strcat(newName, suffix);
-        String_copyOrRecreate(&j->name, newName);
-        RFREE(newName);
+        char newName[RCS_MAX_NAMELEN];
+        snprintf(newName, RCS_MAX_NAMELEN, "%s%s", j->name, suffix);
+        snprintf(j->name, RCS_MAX_NAMELEN, "%s", newName);
 
         // Also need to add the suffix to the coupledJointName
-        if (j->coupledJointName != NULL)
+        if (strlen(j->coupledJntName) != 0)
         {
-          size_t nameLen = strlen(j->coupledJointName) + strlen(suffix) + 1;
-          char* newName = RNALLOC(nameLen, char);
-          strcpy(newName, j->coupledJointName);
-          strcat(newName, suffix);
-          String_copyOrRecreate(&j->coupledJointName, newName);
-          RFREE(newName);
+          char newName[RCS_MAX_NAMELEN];
+          snprintf(newName, RCS_MAX_NAMELEN, "%s%s", j->coupledJntName, suffix);
+          snprintf(j->coupledJntName, RCS_MAX_NAMELEN, "%s", newName);
         }
       }
       RCHECK(jntIdx<numJnts);
@@ -1068,6 +1041,7 @@ RcsGraph* RcsGraph_fromURDFFile(const char* configFile)
   }
 
   RcsGraph* self = RALLOC(RcsGraph);
+  snprintf(self->cfgFile, RCS_MAX_FILENAMELEN, "%s", configFile);
   int rootId = RcsGraph_rootBodyFromURDFFile(self, filename, NULL, NULL, NULL);
   RCHECK(rootId==0);
 
@@ -1092,15 +1066,12 @@ RcsGraph* RcsGraph_fromURDFFile(const char* configFile)
   // Create state vectors
   self->q  = MatNd_create(self->dof, 1);
   self->q_dot = MatNd_create(self->dof, 1);
-  self->xmlFile = String_clone(configFile);
 
   // Initialize generic bodies. Here we allocate memory for names and body
   // transforms. They are deleted once relinked to another body.
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < RCS_NUM_GENERIC_BODIES; i++)
   {
-    memset(&self->gBody[i], 0, sizeof(RcsBody));
-    RcsBody_init(&self->gBody[i]);
-    snprintf(self->gBody[i].bdyName, RCS_MAX_NAMELEN, "GenericBody%d", i);
+    self->gBody[i] = -1;
   }
 
   // Order joint indices according to depth-first traversal and compute
@@ -1112,11 +1083,11 @@ RcsGraph* RcsGraph_fromURDFFile(const char* configFile)
   int errs=0, warnings=0;
   RcsGraph_check(self, &errs, &warnings);
   RCHECK_MSG(errs==0, "Check for graph \"%s\" failed: %d errors %d warnings",
-             self->xmlFile, errs, warnings);
+             self->cfgFile, errs, warnings);
 
   if (warnings>0)
   {
-    RLOG(1, "Found %d warnings for graph \"%s\"", warnings, self->xmlFile);
+    RLOG(1, "Found %d warnings for graph \"%s\"", warnings, self->cfgFile);
   }
 
   return self;

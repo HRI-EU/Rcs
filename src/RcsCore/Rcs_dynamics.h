@@ -49,6 +49,12 @@ extern "C" {
  *
  */
 
+typedef struct
+{
+  RcsGraph* graph;
+  MatNd* F_ext;
+
+} DirDynParams;
 
 /*! \ingroup RcsKineticsFunctions
  *  \brief Integrator with step width adaptation using a 2nd-3rd order

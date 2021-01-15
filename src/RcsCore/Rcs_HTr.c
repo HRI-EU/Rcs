@@ -171,6 +171,7 @@ bool HTr_isValid(const HTr* A)
 
   if (A == NULL)
   {
+    RLOG(4, "A is NULL");
     return false;
   }
 

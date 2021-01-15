@@ -37,6 +37,7 @@
 #include <RcsViewer.h>
 #include <COSNode.h>
 #include <ArrowNode.h>
+#include <SphereNode.h>
 #include <VertexArrayNode.h>
 #include <GraphNode.h>
 #include <KeyCatcher.h>
@@ -482,7 +483,27 @@ static void testOsgViewer()
     rootnode = new osg::Group;
   }
 
-  rootnode->addChild(new Rcs::COSNode());
+  if (argP.hasArgument("-frame", "Add coordinate system to origin"))
+  {
+    rootnode->addChild(new Rcs::COSNode());
+  }
+
+  if (argP.hasArgument("-primitives", "Add 3 osg shape primitives"))
+  {
+    osg::ref_ptr<osg::ShapeDrawable> s1 = new osg::ShapeDrawable;
+    s1->setShape(new osg::Box(osg::Vec3(-3.0f, 0.0f, 0.0f), 2.0f, 2.0f, 1.0f));
+    osg::ref_ptr<osg::ShapeDrawable> s2 = new osg::ShapeDrawable;
+    s2->setShape(new osg::Cone(osg::Vec3(0.0f, 0.0f, 0.0f), 1.0f, 1.0f));
+    s2->setColor(osg::Vec4(0.0f, 1.0f, 0.0f, 1.0f));
+    osg::ref_ptr<osg::ShapeDrawable> s3 = new osg::ShapeDrawable;
+    s3->setShape(new osg::Sphere(osg::Vec3(3.0f, 0.0f, 0.0f), 1.0f));
+    s3->setColor(osg::Vec4(0.0f, 0.0f, 1.0f, 1.0f));
+    osg::ref_ptr<osg::Geode> root = new osg::Geode;
+    root->addDrawable(s1.get());
+    root->addDrawable(s2.get());
+    root->addDrawable(s3.get());
+    rootnode->addChild(root.get());
+  }
 
   // Light grayish blue universe
   if (argP.hasArgument("-clearNode", "Test ClearNode"))
@@ -503,8 +524,9 @@ static void testOsgViewer()
   if (argP.hasArgument("-smallFeatures", "Test small feature culling"))
   {
     RLOG(1, "Test small feature culling enabled");
-    viewer->getCamera()->setCullingMode(viewer->getCamera()->getCullingMode() &
-                                        ~osg::CullSettings::SMALL_FEATURE_CULLING);
+    osg::Camera* cam = viewer->getCamera();
+    cam->setCullingMode(cam->getCullingMode() &
+                        ~osg::CullSettings::SMALL_FEATURE_CULLING);
   }
 
   // Light model: We switch off the default viewer light, and configure two
@@ -583,7 +605,12 @@ static void testOsgViewer()
 
   if (argP.hasArgument("-graph", "Add GraphNode"))
   {
-    RcsGraph* graph = RcsGraph_create("config/xml/DexBot/LBR.xml");
+    char xmlFileName[256] = "LBR.xml";
+    char directory[256] = "config/xml/DexBot";
+    argP.getArgument("-f", xmlFileName, "Configuration file name");
+    argP.getArgument("-dir", directory, "Configuration file directory");
+    Rcs_addResourcePath(directory);
+    RcsGraph* graph = RcsGraph_create(xmlFileName);
     RCHECK(graph);
     osg::ref_ptr<Rcs::GraphNode> gn = new Rcs::GraphNode(graph);
     rootnode->addChild(gn.get());
@@ -594,9 +621,24 @@ static void testOsgViewer()
   {
     RcsGraph* graph = RcsGraph_create("config/xml/DexBot/LBR.xml");
     RCHECK(graph);
-    RCHECK(graph->root);
-    osg::ref_ptr<Rcs::BodyNode> gn = new Rcs::BodyNode(graph->root);
+    RcsBody* rootBdy = RCSBODY_BY_ID(graph, graph->rootId);
+    osg::ref_ptr<Rcs::BodyNode> gn = new Rcs::BodyNode(rootBdy, graph);
     rootnode->addChild(gn.get());
+  }
+
+
+  if (argP.hasArgument("-shape", "Add ShapeNode"))
+  {
+    RcsShape shape;
+    memset(&shape, 0, sizeof(RcsShape));
+    HTr_setIdentity(&shape.A_CB);
+    shape.A_CB.org[2] = 1.0;
+    shape.type = RCSSHAPE_BOX;
+    shape.scale = 1.0;
+    shape.computeType = RCSSHAPE_COMPUTE_GRAPHICS;
+    Vec3d_set(shape.extents, 0.5, 0.3, 01.1);
+    osg::ref_ptr<Rcs::ShapeNode> sn = new Rcs::ShapeNode(&shape, false);
+    rootnode->addChild(sn.get());
   }
 
 
@@ -1156,6 +1198,7 @@ void test_dynamicShapeResizing()
                    "(default is %s)", directory);
   bool native = argP.hasArgument("-native", "osg::Capsule test only");
   bool pause = argP.hasArgument("-pause", "Pause before each frame");
+  bool valgrind = argP.hasArgument("-valgrind", "Stop after 10 frames");
   Rcs_addResourcePath(directory.c_str());
 
   RcsGraph* graph = RcsGraph_create(xmlFileName.c_str());
@@ -1192,14 +1235,27 @@ void test_dynamicShapeResizing()
 
   double time = 0.0, dt = 0.01;
 
+  std::vector<std::vector<double>> xyz;
+
+  RCSGRAPH_TRAVERSE_BODIES(graph)
+  {
+    RCSBODY_TRAVERSE_SHAPES(BODY)
+    {
+      xyz.push_back(std::vector<double>(SHAPE->extents, SHAPE->extents+3));
+    }
+  }
+
+
+
   while (runLoop)
   {
 
+    int idx = 0;
     RCSGRAPH_TRAVERSE_BODIES(graph)
     {
       RCSBODY_TRAVERSE_SHAPES(BODY)
       {
-        Vec3d_setElementsTo(SHAPE->extents, fabs(cos(time)));
+        Vec3d_constMul(SHAPE->extents, xyz[idx++].data(), fabs(cos(time)));
       }
     }
 
@@ -1225,10 +1281,91 @@ void test_dynamicShapeResizing()
     viewer.frame();
     time += dt;
     Timer_waitDT(dt);
-    RPAUSE_DL(1);
+    RPAUSE_DL(5);
+
+    if (valgrind && (time>10.0*dt))
+    {
+      runLoop = false;
+    }
   }
 
   RcsGraph_destroy(graph);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void test_meshNormals()
+{
+  double extents[3];
+  Vec3d_set(extents, 1.0, 0.5, 0.2);
+  unsigned int segments = 16;
+
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-x", &extents[0], "X-dimension (default is %f)",
+                   extents[0]);
+  argP.getArgument("-y", &extents[1], "Y-dimension (default is %f)",
+                   extents[1]);
+  argP.getArgument("-z", &extents[2], "Z-dimension (default is %f)",
+                   extents[2]);
+  argP.getArgument("-segments", &segments, "Segments (default is %d)",
+                   segments);
+
+  RcsMeshData* mesh = RcsMesh_createSSR(extents, segments);
+  //RcsMeshData* mesh = RcsMesh_createSphere(0.25, segments);
+  //RcsMeshData* mesh = RcsMesh_createBox(extents);
+
+
+
+  Rcs::MeshNode* mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
+                                        mesh->faces, mesh->nFaces);
+
+  double* normals = RcsMesh_createNormalArray(mesh);
+
+  MatNd* nVecs = MatNd_create(2*mesh->nVertices, 3);
+
+  for (unsigned int i=0; i<mesh->nVertices; ++i)
+  {
+    double* p0 = MatNd_getRowPtr(nVecs, 2*i);
+    double* p1 = MatNd_getRowPtr(nVecs, 2*i+1);
+
+    const double* vi = &mesh->vertices[3*i];
+    const double* ni = &normals[3*i];
+
+    // p0 is vertex position
+    Vec3d_copy(p0, vi);
+    Vec3d_constMulAndAdd(p1, vi, ni, 0.2);
+  }
+
+
+  Rcs::Viewer* viewer = new Rcs::Viewer();
+  viewer->add(mn);
+  viewer->add(new Rcs::COSNode());
+  viewer->add(new Rcs::VertexArrayNode(nVecs));
+  viewer->runInThread();
+
+  RPAUSE();
+
+  delete viewer;
+
+  MatNd_destroy(nVecs);
+  RcsMesh_destroy(mesh);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void test_sphereNode()
+{
+  Rcs::SphereNode* sn = new Rcs::SphereNode();
+  Rcs::Viewer* viewer = new Rcs::Viewer();
+  viewer->add(sn);
+  viewer->add(new Rcs::COSNode());
+  viewer->runInThread();
+
+  RPAUSE();
+
+  delete viewer;
 }
 
 /*******************************************************************************
@@ -1276,6 +1413,8 @@ int main(int argc, char** argv)
       printf("\t\t19   Test pyramid mesh\n");
       printf("\t\t20   Test frustum mesh\n");
       printf("\t\t21   Test dynamic shape resizing\n");
+      printf("\t\t22   Test mesh normal computation\n");
+      printf("\t\t23   Test SphereNode\n");
       printf("\n");
       printf("\t\tYou can write the meshes to a file with -f\n");
       break;
@@ -1400,6 +1539,18 @@ int main(int argc, char** argv)
     case 21:
     {
       test_dynamicShapeResizing();
+      break;
+    }
+
+    case 22:
+    {
+      test_meshNormals();
+      break;
+    }
+
+    case 23:
+    {
+      test_sphereNode();
       break;
     }
 

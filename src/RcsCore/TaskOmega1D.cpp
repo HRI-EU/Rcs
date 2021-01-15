@@ -152,8 +152,8 @@ void Rcs::TaskOmega1D::computeJ(MatNd* jacobian) const
   // Compute the relative angular velocity Jacobian
   MatNd* J1 = NULL;
   MatNd_create2(J1, 3, this->graph->nJ);
-  RcsGraph_3dOmegaJacobian(this->graph, this->ef, this->refBody,
-                           this->refFrame, J1);
+  RcsGraph_3dOmegaJacobian(this->graph, getEffector(), getRefBody(),
+                           getRefFrame(), J1);
 
   // Copy the row to the result
   MatNd_reshape(jacobian, 1, this->graph->nJ);
@@ -172,8 +172,8 @@ void Rcs::TaskOmega1D::computeH(MatNd* hessian) const
   // Compute the relative angular velocity Hessian
   MatNd* H3 = NULL;
   MatNd_create2(H3, 3*nq, nq);
-  RcsGraph_3dOmegaHessian(this->graph, this->ef, this->refBody, this->refFrame,
-                          H3);
+  RcsGraph_3dOmegaHessian(this->graph, getEffector(), getRefBody(),
+                          getRefFrame(), H3);
 
   // Copy the row to the result
   MatNd_reshape(H3, 3, nqSqr);

@@ -97,6 +97,7 @@ Vx::VxConstraint* createFixedJoint(Vx::VxPart* parent,
 
 Vx::VxConstraint* createJoint1D(Vx::VxPart* parent,
                                 Vx::VxPart* child,
+                                const RcsJoint* jnt,
                                 const double jointLockStiffness,
                                 const double jointLockDamping,
                                 const double jointMotorLoss,

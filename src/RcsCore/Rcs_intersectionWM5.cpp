@@ -550,11 +550,6 @@ extern "C" {
         RLOG(4, "MESH intersection not implemented");
         return false;
       }
-      case RCSSHAPE_GPISF:
-      {
-        RLOG(4, "GPISF intersection not implemented");
-        return false;
-      }
       case RCSSHAPE_OCTREE:
       {
         RLOG(4, "OCTREE intersection not implemented");

@@ -48,7 +48,8 @@
 /*******************************************************************************
  *
  ******************************************************************************/
-Rcs::BulletHingeJoint::BulletHingeJoint(RcsJoint* jnt, double q0,
+Rcs::BulletHingeJoint::BulletHingeJoint(const RcsGraph* graph_,
+                                        int jntId, double q0,
                                         btRigidBody& rbA, btRigidBody& rbB,
                                         const btVector3& pivotInA,
                                         const btVector3& pivotInB,
@@ -58,12 +59,13 @@ Rcs::BulletHingeJoint::BulletHingeJoint(RcsJoint* jnt, double q0,
   BulletJointBase(),
   btHingeConstraint(rbA, rbB, pivotInA, pivotInB, axisInA, axisInB,
                     useReferenceFrameA),
-  rcsJoint(jnt), hingeAngleCurr(0.0), hingeAnglePrev(0.0),
+  graph(graph_), rcsJointId(jntId), hingeAngleCurr(0.0), hingeAnglePrev(0.0),
   jointAngleCurr(0.0), jointAnglePrev(0.0), jointVelocity(0.0),
   jointVelocityPrev(0.0), jointAcceleration(0.0), flipAngle(0.0), offset(0.0),
   jf()
 {
-  RCHECK(RcsJoint_isRotation(rcsJoint));
+  const RcsJoint* jnt = RCSJOINT_BY_ID(graph, jntId);
+  RCHECK(RcsJoint_isRotation(jnt));
 
   this->offset = getConstraintPos() - q0;
   this->hingeAngleCurr = getConstraintPos();
@@ -90,7 +92,15 @@ Rcs::BulletHingeJoint::BulletHingeJoint(RcsJoint* jnt, double q0,
   setJointPosition(q0, 1.0);
 
   // Limit joint movement to RsJoint range
-  setJointLimit(true, jnt->q_min, jnt->q_max);
+  if (jnt->q_max - jnt->q_min < 2.0*M_PI)
+  {
+    setJointLimit(true, jnt->q_min, jnt->q_max);
+  }
+  else
+  {
+    RLOG(1, "Joint %s has range > 360 deg (%.3f deg), disabling joint limits",
+         jnt->name, RCS_RAD2DEG(jnt->q_max-jnt->q_min));
+  }
 }
 
 /*******************************************************************************
@@ -111,10 +121,18 @@ double Rcs::BulletHingeJoint::getJointPosition() const
 /*******************************************************************************
  *
  ******************************************************************************/
+const RcsJoint* Rcs::BulletHingeJoint::getJoint() const
+{
+  return RCSJOINT_BY_ID(graph, this->rcsJointId);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void Rcs::BulletHingeJoint::setJointPosition(double angle, double dt)
 {
   enableMotor(true);
-  double maxImpulse = Math_clip(rcsJoint->maxTorque*dt, 0.0, 1.0);
+  double maxImpulse = Math_clip(getJoint()->maxTorque*dt, 0.0, 1.0);
   setMaxMotorImpulse(maxImpulse);
   setMotorTarget(angle+this->offset-this->flipAngle, dt);
 }
@@ -124,19 +142,19 @@ void Rcs::BulletHingeJoint::setJointPosition(double angle, double dt)
  ******************************************************************************/
 void Rcs::BulletHingeJoint::setJointTorque(double torque, double dt)
 {
-  RcsJoint* jnt = this->rcsJoint;
+  const RcsJoint* jnt = getJoint();
 
-  if (jnt->coupledTo != NULL)
+  if (jnt->coupledToId != -1)
   {
     RLOGS(1, "Joint \"%s\" is coupled to joint %s - not supported",
-          jnt->name, jnt->coupledTo->name);
+          jnt->name, RCSJOINT_BY_ID(this->graph, jnt->coupledToId)->name);
     return;
   }
 
 #if 1
   enableMotor(false);
 
-  torque = Math_clip(torque, -rcsJoint->maxTorque, rcsJoint->maxTorque);
+  torque = Math_clip(torque, -jnt->maxTorque, jnt->maxTorque);
 
   NLOGS(0, "Setting torque for joint \"%s\" to %g Nm",
         jnt ? jnt->name : "NULL", torque);
@@ -196,7 +214,7 @@ void Rcs::BulletHingeJoint::setJointLimit(bool enable,
   else
   {
     RLOG(1, "[%s]: Joint limits outside [-2*pi ... 2*pi] not supported",
-         rcsJoint->name);
+         getJoint()->name);
   }
 }
 
@@ -221,7 +239,7 @@ double Rcs::BulletHingeJoint::getJointAcceleration() const
  ******************************************************************************/
 unsigned int Rcs::BulletHingeJoint::getJointIndex() const
 {
-  return rcsJoint->jointIndex;
+  return rcsJointId;
 }
 
 /*******************************************************************************
@@ -263,7 +281,8 @@ void Rcs::BulletHingeJoint::update(double dt)
  ******************************************************************************/
 double Rcs::BulletHingeJoint::getJointTorque() const
 {
-  if (!STREQ(rcsJoint->name, "lbr_joint_5_L"))
+  RFATAL("Fixme");
+  if (!STREQ(getJoint()->name, "lbr_joint_5_L"))
   {
     return 0.0;
   }
@@ -273,9 +292,11 @@ double Rcs::BulletHingeJoint::getJointTorque() const
 
   if (jf==NULL)
   {
-    RLOG(1, "No joint feedback found for joint \"%s\"", rcsJoint->name);
+    RLOG(1, "No joint feedback found for joint \"%s\"", getJoint()->name);
     return 0.0;
   }
+
+  const RcsJoint* rcsJoint = getJoint();
 
   // Force and torque in world coordinates to the COM of the attached body
   double F_A[3], F_B[3], M_B[3];//, M_A[3];
@@ -294,7 +315,7 @@ double Rcs::BulletHingeJoint::getJointTorque() const
   M_B[2] = jf->m_appliedTorqueBodyB.z();
 
   // Rotate forces and torques into joint's frame of reference
-  HTr* A_JI = &rcsJoint->A_JI;
+  const HTr* A_JI = &rcsJoint->A_JI;
   //Vec3d_rotateSelf (F_A, A_JI->rot);
   //Vec3d_rotateSelf (F_B, A_JI->rot);
   //Vec3d_rotateSelf (M_A, A_JI->rot);
@@ -326,7 +347,7 @@ double Rcs::BulletHingeJoint::getJointTorque() const
   double torque = Vec3d_innerProduct(jAxis, M_J);
 
   // Rotate torque vector into joint frame
-  Vec3d_rotateSelf(M_J, A_JI->rot);
+  Vec3d_rotateSelf(M_J, (double(*)[3])A_JI->rot);
 
   RLOG(0, "torque = %f %f %f (%f)", M_J[0], M_J[1], M_J[2], torque);
 

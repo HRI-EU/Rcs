@@ -102,3 +102,15 @@ This project is licensed under the BSD 4-clause license - see the [LICENSE.md](L
 ## Disclaimer
 
 The copyright holders are not liable for any damage(s) incurred due to improper use of Rcs.
+
+## TODO
+
+- void Rcs_setIKState(RcsGraph* self, const double* x) obsolete?
+- Strange in Rcs_gradientTests.c:
+  RCSGRAPH_TRAVERSE_BODIES(self)
+  {
+    if (BODY->jntId != -1)
+    {
+      b = BODY;
+    }
+  }

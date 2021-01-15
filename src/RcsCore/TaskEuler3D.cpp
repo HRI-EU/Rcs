@@ -112,7 +112,7 @@ Rcs::TaskEuler3D* Rcs::TaskEuler3D::clone(RcsGraph* newGraph) const
  ******************************************************************************/
 void Rcs::TaskEuler3D::computeX(double* x_res) const
 {
-  computeEulerAngles(x_res, this->ef, this->refBody);
+  computeEulerAngles(x_res, getEffector(), getRefBody());
 }
 
 /*******************************************************************************
@@ -221,8 +221,8 @@ void Rcs::TaskEuler3D::computeFfXpp(double* omegap_des,
  ******************************************************************************/
 void Rcs::TaskEuler3D::computeJ(MatNd* jacobian) const
 {
-  RcsGraph_3dOmegaJacobian(this->graph, this->ef, this->refBody, this->refFrame,
-                           jacobian);
+  RcsGraph_3dOmegaJacobian(this->graph, getEffector(), getRefBody(),
+                           getRefFrame(), jacobian);
 }
 
 /*******************************************************************************
@@ -230,8 +230,8 @@ void Rcs::TaskEuler3D::computeJ(MatNd* jacobian) const
  ******************************************************************************/
 void Rcs::TaskEuler3D::computeH(MatNd* hessian) const
 {
-  RcsGraph_3dOmegaHessian(this->graph, this->ef, this->refBody,
-                          this->refFrame, hessian);
+  RcsGraph_3dOmegaHessian(this->graph, getEffector(), getRefBody(),
+                          getRefFrame(), hessian);
 }
 
 /*******************************************************************************

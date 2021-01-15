@@ -459,29 +459,35 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   // moves with the camera, so that there are no dark spots whereever
   // the mouse manipulator moves to.
 
-  // Disable default light
-  rootnode->getOrCreateStateSet()->setMode(GL_LIGHT0, osg::StateAttribute::OFF);
+  if (fancy)
+  {
+    // Disable default light
+    rootnode->getOrCreateStateSet()->setMode(GL_LIGHT0, osg::StateAttribute::OFF);
 
-  // Light source that moves with the camera
-  this->cameraLight = new osg::LightSource;
-  cameraLight->getLight()->setLightNum(1);
-  cameraLight->getLight()->setPosition(osg::Vec4(0.0, 0.0, 10.0, 1.0));
-  cameraLight->getLight()->setSpecular(osg::Vec4(1.0, 1.0, 1.0, 1.0));
-  rootnode->addChild(cameraLight.get());
-  rootnode->getOrCreateStateSet()->setMode(GL_LIGHT1, osg::StateAttribute::ON);
+    // Light source that moves with the camera
+    this->cameraLight = new osg::LightSource;
+    cameraLight->getLight()->setLightNum(1);
+    cameraLight->getLight()->setPosition(osg::Vec4(0.0, 0.0, 10.0, 1.0));
+    cameraLight->getLight()->setSpecular(osg::Vec4(1.0, 1.0, 1.0, 1.0));
+    rootnode->addChild(cameraLight.get());
+    rootnode->getOrCreateStateSet()->setMode(GL_LIGHT1, osg::StateAttribute::ON);
 
-  // Light source that shines down
-  osg::ref_ptr<osg::LightSource> sunlight = new osg::LightSource;
-  sunlight->getLight()->setLightNum(2);
-  sunlight->getLight()->setPosition(osg::Vec4(0.0, 0.0, 10.0, 1.0));
-  rootnode->addChild(sunlight.get());
-  rootnode->getOrCreateStateSet()->setMode(GL_LIGHT2, osg::StateAttribute::ON);
+  }
 
   // Shadow map scene. We use the sunlight to case shadows.
   this->shadowScene = new osgShadow::ShadowedScene;
   osg::ref_ptr<osgShadow::ShadowMap> sm = new osgShadow::ShadowMap;
   sm->setTextureSize(osg::Vec2s(2048, 2048));
-  sm->setLight(sunlight->getLight());
+  if (fancy)
+  {
+    // Light source that shines down
+    osg::ref_ptr<osg::LightSource> sunlight = new osg::LightSource;
+    sunlight->getLight()->setLightNum(2);
+    sunlight->getLight()->setPosition(osg::Vec4(0.0, 0.0, 10.0, 1.0));
+    rootnode->addChild(sunlight.get());
+    rootnode->getOrCreateStateSet()->setMode(GL_LIGHT2, osg::StateAttribute::ON);
+    sm->setLight(sunlight->getLight());
+  }
   sm->setPolygonOffset(osg::Vec2(-0.7, 0.0));
   sm->setAmbientBias(osg::Vec2(0.7, 0.3));   // values need to sum up to 1.0
 

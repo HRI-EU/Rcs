@@ -101,13 +101,13 @@ void RcsBody_copy(RcsBody* dst, const RcsBody* src);
 * \param[in] src        Body to be cloned.
 *  \return Clone of the body, or NULL on failure.
 */
-RcsBody* RcsBody_clone(const RcsBody* src);
+/* RcsBody* RcsBody_clone(const RcsBody* src); */
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns the number of joints by which the body is attached to its
  *         predecessor. If body is NULL, the function returns 0.
  */
-unsigned int RcsBody_numJoints(const RcsBody* body);
+unsigned int RcsBody_numJoints(const RcsGraph* graph, const RcsBody* body);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns the number of shapes attached to the body. If self is NULL,
@@ -152,13 +152,6 @@ unsigned int RcsBody_removeShapes(RcsBody* self);
 RcsBody* RcsBody_getLastInGraph(const RcsGraph* self);
 
 /*! \ingroup RcsBodyFunctions
- *  \brief Returns the graph's root body, by first traversing the bodie's
- *         parents, and then the bodie's previous bodies. If the body is
- *         NULL, the function also returns NULL.
- */
-RcsBody* RcsBody_getGraphRoot(const RcsBody* self);
-
-/*! \ingroup RcsBodyFunctions
  *  \brief Attaches body to a target body. It is not supported to attach a body
  *          to a target body that is a generic body. In this case, the function
  *          returns false. If the body is a generic body, the function
@@ -174,15 +167,17 @@ RcsBody* RcsBody_getGraphRoot(const RcsBody* self);
  *  \return True for success, false if body is NULL or the target is a
  *          GenericBody.
  */
-bool RcsBody_attachToBody(RcsGraph* graph, RcsBody* body, RcsBody* target,
-                          const HTr* A_BP);
-bool RcsBody_attachToBodyById(RcsGraph* graph, RcsBody* body, RcsBody* target,
-                              const HTr* A_BP);
+/* bool RcsBody_attachToBody(RcsGraph* graph, RcsBody* body, RcsBody* target, */
+/*                           const HTr* A_BP); */
+/* bool RcsBody_attachToBodyById(RcsGraph* graph, RcsBody* body, RcsBody* target, */
+/*                               const HTr* A_BP); */
+bool RcsBody_attachToBodyId(RcsGraph* graph, int bodyId, int targetId);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns true if child is a child of parent, false otherwise.
  */
-bool RcsBody_isChild(const RcsBody* possibleChild,
+bool RcsBody_isChild(const RcsGraph* graph,
+                     const RcsBody* possibleChild,
                      const RcsBody* possibleParent);
 
 /*! \ingroup RcsBodyFunctions
@@ -195,11 +190,7 @@ bool RcsBody_isLeaf(const RcsBody* bdy);
  *         least one unconstrained joint, false otherwise. If self is NULL,
  *         the function returns false.
  */
-#ifdef  OLD_TOPO
-bool RcsBody_isArticulated(const RcsBody* self);
-#else
 bool RcsBody_isArticulated(const RcsGraph* graph, const RcsBody* self);
-#endif
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns true if the body is part of the graph, false otherwise.
@@ -209,7 +200,7 @@ bool RcsBody_isInGraph(const RcsBody* self, const RcsGraph* graph);
 /*! \ingroup RcsBodyFunctions
  *  \brief Prints out the body to a file descriptor.
  */
-void RcsBody_fprint(FILE* fd, const RcsBody* b);
+void RcsBody_fprint(FILE* fd, const RcsBody* b, const RcsGraph* graph);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns the volume of the body including all shapes in cubic
@@ -331,10 +322,8 @@ void RcsBody_collisionHessian(const RcsGraph* self, const RcsBody* b1,
  *         NULL, the function returns NULL. If there is no driving joint,
  *         the function returns NULL.
  */
-#ifdef  OLD_TOPO
-RcsJoint* RcsBody_lastJointBeforeBody(const RcsBody* body);
-#endif
-RcsJoint* RcsBody_lastJointBeforeBodyById(const RcsGraph* graph, const RcsBody* body);
+RcsJoint* RcsBody_lastJointBeforeBody(const RcsGraph* graph,
+                                      const RcsBody* body);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Creates and initializes the 6 joints associated to a rigid body
@@ -387,7 +376,7 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph);
  *
  *  \return true if the body has 6 joints in the order xyzabc, false otherwise.
  */
-bool RcsBody_isFloatingBase(const RcsBody* self);
+bool RcsBody_isFloatingBase(const RcsGraph* graph, const RcsBody* self);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Merges the body with its parent so that the kinematic and dynamic
@@ -413,9 +402,16 @@ void RcsBody_computeAABB(const RcsBody* body,
 
 /*! \ingroup RcsBodyFunctions
  *  \brief This convenience function creates a sphere with the given mass and
- *         radius that can be added to a physics engine. The caller is
- *         responsible to free the returned memory.
+ *         radius that can be added to a physics engine. The sphere is created
+ *         in the graph's body array, six rigid body dofs are created in the
+ *         graph's joint array. The sphere is created as the last body on the
+ *         root level of the graph. It means that the body and joint indices
+ *         of all other bodies and joints remain unchanged. Please note that
+ *         after calling this function, the structure of the graph has changed,
+ *         and potential q-space arrays also need updating. See the function
+ *         \ref RcsGraph_addBodyDofs() for details.
  *
+ *  \param[in] graph    Graph in which the sphere is to be created
  *  \param[in] pos      Initial position of the sphere. This rigid body joint's
  *                      q0 members will be initialized with this.
  *  \param[in] mass     Sphere mass in [kg]
@@ -423,7 +419,7 @@ void RcsBody_computeAABB(const RcsBody* body,
  *  \return Body with the given properties. The function will always succeed,
  *          even if weird values (e.g. negative mass) is given as input.
  */
-RcsBody* RcsBody_createBouncingSphere(const double pos[3],
+RcsBody* RcsBody_createBouncingSphere(RcsGraph* graph, const double pos[3],
                                       double mass, double radius);
 
 /*! \ingroup RcsBodyFunctions
@@ -461,7 +457,7 @@ bool RcsBody_boxify(RcsBody* self, int computeType);
  *  \param[in,out] self     Body to be reshaped.
  *  \param[in] scale        Scaling factor.
  */
-void RcsBody_scale(RcsBody* self, double scale);
+void RcsBody_scale(RcsGraph* graph, RcsBody* self, double scale);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Determines the number of distance calculations carried out between

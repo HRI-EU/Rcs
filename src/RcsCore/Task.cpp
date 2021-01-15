@@ -84,10 +84,10 @@ void Rcs::Task::Parameters::setParameters(const double minVal_,
  ******************************************************************************/
 Rcs::Task::Task():
   graph(NULL),
-  ef(NULL),
-  refBody(NULL),
-  refFrame(NULL),
   tsr(NULL),
+  effectorId(-1),
+  refBodyId(-1),
+  refFrameId(-1),
   taskDim(0)
 {
 }
@@ -100,10 +100,10 @@ Rcs::Task::Task(const std::string& className_,
                 RcsGraph* graph_,
                 int dim):
   graph(graph_),
-  ef(NULL),
-  refBody(NULL),
-  refFrame(NULL),
   tsr(NULL),
+  effectorId(-1),
+  refBodyId(-1),
+  refFrameId(-1),
   taskDim(dim),
   className(className_)
 {
@@ -112,8 +112,8 @@ Rcs::Task::Task(const std::string& className_,
 
   // parse the xml node
   // Task name
-  char taskName[64] = "Unnamed task";
-  getXMLNodePropertyStringN(node, "name", taskName, 64);
+  char taskName[RCS_MAX_NAMELEN] = "Unnamed task";
+  getXMLNodePropertyStringN(node, "name", taskName, RCS_MAX_NAMELEN);
   this->name.assign(taskName);
 
   // initialize parameter list with default values
@@ -123,46 +123,61 @@ Rcs::Task::Task(const std::string& className_,
   }
 
   // Parse end effectors
-  char msg[265] = "";
+  char msg[RCS_MAX_NAMELEN] = "";
 
   // Effector
-  if (getXMLNodePropertyStringN(node, "effector", msg, 256))
+  if (getXMLNodePropertyStringN(node, "effector", msg, RCS_MAX_NAMELEN))
   {
-    this->ef = RcsGraph_getBodyByName(graph, msg);
+    const RcsBody* ef = RcsGraph_getBodyByName(graph, msg);
 
-    if (this->ef == NULL)
+    if (ef == NULL)
     {
       RLOG(1, "Effector \"%s\" doesn't exist!", msg);
+      this->effectorId = -1;
+    }
+    else
+    {
+      this->effectorId = ef->id;
     }
   }
 
   // Reference body
-  if (getXMLNodePropertyStringN(node, "refBdy", msg, 256) ||
-      getXMLNodePropertyStringN(node, "refBody", msg, 256))
+  if (getXMLNodePropertyStringN(node, "refBdy", msg, RCS_MAX_NAMELEN) ||
+      getXMLNodePropertyStringN(node, "refBody", msg, RCS_MAX_NAMELEN))
   {
-    this->refBody = RcsGraph_getBodyByName(graph, msg);
+    const RcsBody* refBody = RcsGraph_getBodyByName(graph, msg);
 
-    if (this->refBody == NULL)
+    if (refBody == NULL)
     {
       RLOG(1, "Reference body \"%s\" doesn't exist!", msg);
+      this->refBodyId = -1;
+    }
+    else
+    {
+      this->refBodyId = refBody->id;
     }
   }
 
   // Reference frame body
-  if (getXMLNodePropertyStringN(node, "refFrame", msg, 256))
+  if (getXMLNodePropertyStringN(node, "refFrame", msg, RCS_MAX_NAMELEN))
   {
-    this->refFrame = RcsGraph_getBodyByName(graph, msg);
+    const RcsBody* refFrame = RcsGraph_getBodyByName(graph, msg);
 
-    if (this->refFrame == NULL)
+    if (refFrame == NULL)
     {
       RLOG(1, "Reference frame body \"%s\" doesn't exist!", msg);
+      this->refFrameId = -1;
+    }
+    else
+    {
+      this->refFrameId = refFrame->id;
     }
   }
 
   // in case no reference frame was given, set it to the reference body
-  if (this->refFrame == NULL)
+  if (this->refFrameId == -1)
   {
-    this->refFrame = this->refBody;
+    this->refFrameId = this->refBodyId;
   }
 
   // Go through all children and look for TaskRegion
@@ -197,10 +212,10 @@ Rcs::Task::Task(const std::string& className_,
  * Copy constructor doing deep copying
  ******************************************************************************/
 Rcs::Task::Task(const Task& copyFromMe, RcsGraph* newGraph):
-  ef(NULL),
-  refBody(NULL),
-  refFrame(NULL),
   tsr(copyFromMe.tsr ? copyFromMe.tsr->clone() : NULL),
+  effectorId(-1),
+  refBodyId(-1),
+  refFrameId(-1),
   taskDim(copyFromMe.taskDim),
   name(copyFromMe.name),
   className(copyFromMe.className),
@@ -208,41 +223,43 @@ Rcs::Task::Task(const Task& copyFromMe, RcsGraph* newGraph):
 {
   this->graph = newGraph ? newGraph : copyFromMe.graph;
 
-  // End effectors
-  if (newGraph != NULL)
+  // If the task is created with a new graph, we don't assume that the body
+  // topology is the same as in the task we copy from. Therefore we retrieve
+  // the task's bodies by name lookup.
+  if (newGraph)
   {
-    if (copyFromMe.getEffector() != NULL)
+    const RcsBody* ef = copyFromMe.getEffector();
+    if (ef)
     {
-      setEffector(RcsGraph_getBodyByName(newGraph, copyFromMe.ef->bdyName));
+      setEffector(RcsGraph_getBodyByName(newGraph, ef->name));
     }
 
-    if (copyFromMe.getRefBody() != NULL)
+    const RcsBody* refBdy = copyFromMe.getRefBody();
+    if (refBdy)
     {
-      setRefBody(RcsGraph_getBodyByName(newGraph, copyFromMe.refBody->bdyName));
+      setRefBody(RcsGraph_getBodyByName(newGraph, refBdy->name));
     }
 
-    if (copyFromMe.getRefFrame() != NULL)
+    const RcsBody* refFrame = copyFromMe.getRefFrame();
+    if (refFrame)
     {
-      setRefFrame(RcsGraph_getBodyByName(newGraph, copyFromMe.refFrame->bdyName));
+      setRefFrame(RcsGraph_getBodyByName(newGraph, refFrame->name));
     }
   }
   else
   {
-    setEffector(copyFromMe.getEffector());
-    setRefBody(copyFromMe.getRefBody());
-    setRefFrame(copyFromMe.getRefFrame());
+    effectorId = copyFromMe.effectorId;
+    refBodyId = copyFromMe.refBodyId;
+    refFrameId = copyFromMe.refFrameId;
   }
 }
 
 /*******************************************************************************
- * Destructor
+ * Destructor. Calling delete on NULL is safe.
  ******************************************************************************/
 Rcs::Task::~Task()
 {
-  if (this->tsr)
-  {
-    delete this->tsr;
-  }
+  delete this->tsr;
 }
 
 /*******************************************************************************
@@ -296,17 +313,17 @@ void Rcs::Task::print() const
 
   if (getEffector())
   {
-    printf("Effector: \"%s\"\n", getEffector()->bdyName);
+    printf("Effector: \"%s\"\n", getEffector()->name);
   }
 
   if (getRefBody())
   {
-    printf("Reference body: \"%s\"\n", getRefBody()->bdyName);
+    printf("Reference body: \"%s\"\n", getRefBody()->name);
   }
 
   if (getRefFrame())
   {
-    printf("Reference frame: \"%s\"\n", getRefFrame()->bdyName);
+    printf("Reference frame: \"%s\"\n", getRefFrame()->name);
   }
 }
 
@@ -1117,15 +1134,15 @@ void Rcs::Task::projectTaskForce(MatNd* ft_task,
   double I_ft[6];
   MatNd I_ft_ = MatNd_fromPtr(6, 1, I_ft);
   VecNd_copy(I_ft, S_ft, 6);
-  Vec3d_transRotateSelf(&I_ft[0], (double (*)[3])loadCell->offset.rot);
+  Vec3d_transRotateSelf(&I_ft[0], (double (*)[3])loadCell->A_SB.rot);
   Vec3d_transRotateSelf(&I_ft[0], loadCellBdy->A_BI.rot);
-  Vec3d_transRotateSelf(&I_ft[3], (double (*)[3])loadCell->offset.rot);
+  Vec3d_transRotateSelf(&I_ft[3], (double (*)[3])loadCell->A_SB.rot);
   Vec3d_transRotateSelf(&I_ft[3], loadCellBdy->A_BI.rot);
 
   // Compute the sensor Jacobian
   MatNd* J_sensor = NULL;
   MatNd_create2(J_sensor, 6, this->graph->nJ);
-  RcsGraph_bodyPointJacobian(getGraph(), loadCellBdy, loadCell->offset.org,
+  RcsGraph_bodyPointJacobian(getGraph(), loadCellBdy, loadCell->A_SB.org,
                              NULL, J_sensor);
   MatNd_reshape(J_sensor, 6, this->graph->nJ);
   MatNd J_rot = MatNd_fromPtr(3, this->graph->nJ, MatNd_getRowPtr(J_sensor, 3));
@@ -1160,7 +1177,7 @@ void Rcs::Task::projectTaskForce(MatNd* ft_task,
  ******************************************************************************/
 const RcsBody* Rcs::Task::getEffector() const
 {
-  return this->ef;
+  return RCSBODY_BY_ID(this->graph, this->effectorId);
 }
 
 /*******************************************************************************
@@ -1168,7 +1185,7 @@ const RcsBody* Rcs::Task::getEffector() const
  ******************************************************************************/
 const RcsBody* Rcs::Task::getRefBody() const
 {
-  return this->refBody;
+  return RCSBODY_BY_ID(this->graph, this->refBodyId);
 }
 
 /*******************************************************************************
@@ -1176,7 +1193,7 @@ const RcsBody* Rcs::Task::getRefBody() const
  ******************************************************************************/
 const RcsBody* Rcs::Task::getRefFrame() const
 {
-  return this->refFrame;
+  return RCSBODY_BY_ID(this->graph, this->refFrameId);
 }
 
 /*******************************************************************************
@@ -1184,7 +1201,7 @@ const RcsBody* Rcs::Task::getRefFrame() const
  ******************************************************************************/
 void Rcs::Task::setEffector(const RcsBody* effector)
 {
-  this->ef = effector;
+  this->effectorId = effector ? effector->id : -1;
 }
 
 /*******************************************************************************
@@ -1192,7 +1209,7 @@ void Rcs::Task::setEffector(const RcsBody* effector)
  ******************************************************************************/
 void Rcs::Task::setRefBody(const RcsBody* referenceBody)
 {
-  this->refBody = referenceBody;
+  this->refBodyId = referenceBody ? referenceBody->id : -1;
 }
 
 /*******************************************************************************
@@ -1200,7 +1217,7 @@ void Rcs::Task::setRefBody(const RcsBody* referenceBody)
  ******************************************************************************/
 void Rcs::Task::setRefFrame(const RcsBody* referenceFrame)
 {
-  this->refFrame = referenceFrame;
+  this->refFrameId = referenceFrame ? referenceFrame->id : -1;
 }
 
 /*******************************************************************************
@@ -1258,12 +1275,16 @@ void Rcs::Task::computeEulerAngles(double* ea,
  ******************************************************************************/
 void Rcs::Task::computeOmega(double* omega_curr) const
 {
-  Vec3d_copy(omega_curr, this->ef ? this->ef->omega : Vec3d_zeroVec());
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+  const RcsBody* refFrame = getRefFrame();
 
-  if (this->refBody != NULL)
+  Vec3d_copy(omega_curr, ef ? ef->omega : Vec3d_zeroVec());
+
+  if (refBody != NULL)
   {
-    Vec3d_subSelf(omega_curr, this->refBody->omega);
-    Vec3d_rotateSelf(omega_curr, (double (*)[3])this->refFrame->A_BI.rot);
+    Vec3d_subSelf(omega_curr, refBody->omega);
+    Vec3d_rotateSelf(omega_curr, (double (*)[3])refFrame->A_BI.rot);
   }
 
 }
@@ -1282,13 +1303,13 @@ bool Rcs::Task::checkBody(xmlNode* node, const char* tag,
 
   // If the tag exists, we read it out and check if the body exists in the
   // graph.
-  char bdyName[256] = "";
-  getXMLNodePropertyStringN(node, tag, bdyName, 256);
-  RcsBody* bdy = RcsGraph_getBodyByName(graph, bdyName);
+  char name[256] = "";
+  getXMLNodePropertyStringN(node, tag, name, 256);
+  RcsBody* bdy = RcsGraph_getBodyByName(graph, name);
 
   if (bdy == NULL)
   {
-    RLOG(3, "Task \"%s\": %s \"%s\" not found", taskName, tag, bdyName);
+    RLOG(3, "Task \"%s\": %s \"%s\" not found", taskName, tag, name);
     return false;
   }
 
@@ -1321,17 +1342,17 @@ void Rcs::Task::toXMLBody(FILE* out) const
 {
   if (getEffector())
   {
-    fprintf(out, " effector=\"%s\"", getEffector()->bdyName);
+    fprintf(out, " effector=\"%s\"", getEffector()->name);
   }
 
   if (getRefBody())
   {
-    fprintf(out, " refBdy=\"%s\"", getRefBody()->bdyName);
+    fprintf(out, " refBdy=\"%s\"", getRefBody()->name);
   }
 
   if (getRefFrame() && (getRefFrame()!= getRefBody()))
   {
-    fprintf(out, " refFrame=\"%s\"", getRefFrame()->bdyName);
+    fprintf(out, " refFrame=\"%s\"", getRefFrame()->name);
   }
 
 }

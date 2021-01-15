@@ -146,10 +146,10 @@ static void test_softBody(int argc, char** argv)
 
       // If we found a mesh for the shape, we create a MeshNode and add it
       // to the map. Otherwise, we emit a warning on the default debug level.
-      RcsMeshData* mesh = (RcsMeshData*)SHAPE->userData;
+      RcsMeshData* mesh = SHAPE->mesh;
       if (mesh)
       {
-        RLOG(0, "Found mesh for body %s", BODY->bdyName);
+        RLOG(0, "Found mesh for body %s", BODY->name);
         osg::ref_ptr<Rcs::MeshNode> mn;
         mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
                                mesh->faces, mesh->nFaces);
@@ -158,7 +158,7 @@ static void test_softBody(int argc, char** argv)
       }
       else
       {
-        RLOG(0, "Failed to add mesh for body %s", BODY->bdyName);
+        RLOG(0, "Failed to add mesh for body %s", BODY->name);
       }
     }
   }

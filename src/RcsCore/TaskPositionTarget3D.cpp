@@ -44,56 +44,54 @@
 #include "Rcs_math.h"
 #include "Rcs_kinematics.h"
 
+namespace Rcs
+{
 
-static Rcs::TaskFactoryRegistrar<Rcs::TaskPositionTarget3D> registrar("XYZ_TARGET");
+static TaskFactoryRegistrar<TaskPositionTarget3D> registrar("XYZ_TARGET");
 
 
 /*******************************************************************************
  * Constructor based on xml parsing
  ******************************************************************************/
-Rcs::TaskPositionTarget3D::TaskPositionTarget3D(const std::string& className_,
-                                                xmlNode* node,
-                                                RcsGraph* _graph,
-                                                int dim):
+TaskPositionTarget3D::TaskPositionTarget3D(const std::string& className_,
+                                           xmlNode* node,
+                                           RcsGraph* _graph,
+                                           int dim):
   TaskPosition3D(className_, node, _graph, dim)
 {
-  this->goalBdy = createBody();
-  this->refFrame = this->goalBdy;
+  this->goalBdyId = createBody();
 }
 
 /*******************************************************************************
  * Copy constructor doing deep copying
  ******************************************************************************/
-Rcs::TaskPositionTarget3D::TaskPositionTarget3D(const TaskPositionTarget3D& src):
+TaskPositionTarget3D::TaskPositionTarget3D(const TaskPositionTarget3D& src):
   TaskPosition3D(src)
 {
-  this->goalBdy = createBody();
-  this->refFrame = this->goalBdy;
+  this->goalBdyId = createBody();
 }
 
 /*******************************************************************************
  * Copy constructor doing deep copying
  ******************************************************************************/
-Rcs::TaskPositionTarget3D::TaskPositionTarget3D(const TaskPositionTarget3D& src,
-                                                RcsGraph* newGraph):
-  TaskPosition3D(src, newGraph)
+TaskPositionTarget3D::TaskPositionTarget3D(const TaskPositionTarget3D& src,
+                                           RcsGraph* newGraph):
+  TaskPosition3D(src, newGraph), goalBdyId(src.goalBdyId)
 {
-  this->goalBdy = createBody();
-  this->refFrame = this->goalBdy;
+  this->goalBdyId = createBody();
 }
 
 /*******************************************************************************
  * Destructor
  ******************************************************************************/
-Rcs::TaskPositionTarget3D::~TaskPositionTarget3D()
+TaskPositionTarget3D::~TaskPositionTarget3D()
 {
-  RcsBody_destroy(this->goalBdy);
 }
 
 /*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskPositionTarget3D* Rcs::TaskPositionTarget3D::clone(RcsGraph* newGraph) const
+TaskPositionTarget3D* TaskPositionTarget3D::clone(RcsGraph* newGraph) const
 {
   TaskPositionTarget3D* cpy = new TaskPositionTarget3D(*this, newGraph);
   cpy->updateRefBody();
@@ -104,15 +102,19 @@ Rcs::TaskPositionTarget3D* Rcs::TaskPositionTarget3D::clone(RcsGraph* newGraph) 
 /*******************************************************************************
  * Set refBody transformation to point from reference towards effector
  ******************************************************************************/
-void Rcs::TaskPositionTarget3D::updateRefBody() const
+void TaskPositionTarget3D::updateRefBody() const
 {
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+  RcsBody* goalBdy = RCSBODY_BY_ID(getGraph(), goalBdyId);
+
   // Origin is in reference body
   const double* refPos = refBody ? refBody->A_BI.org : Vec3d_zeroVec();
   Vec3d_copy(goalBdy->A_BI.org, refPos);
 
   // Orientation (x-axis of frame) points towards effector
   double dir[3];
-  Vec3d_sub(dir, this->ef->A_BI.org, refPos);
+  Vec3d_sub(dir, ef->A_BI.org, refPos);
   Mat3d_fromVec(goalBdy->A_BI.rot, dir, 0);
 }
 
@@ -128,7 +130,7 @@ void Rcs::TaskPositionTarget3D::updateRefBody() const
  *
  *       ref_r = A_ref-I * (I_r - I_r_refBdy)
  ******************************************************************************/
-void Rcs::TaskPositionTarget3D::computeX(double* I_r) const
+void TaskPositionTarget3D::computeX(double* I_r) const
 {
   updateRefBody();
 
@@ -142,9 +144,9 @@ void Rcs::TaskPositionTarget3D::computeX(double* I_r) const
 /*******************************************************************************
  * Computes the delta in task space for the differential kinematics
  ******************************************************************************/
-void Rcs::TaskPositionTarget3D::computeDX(double* dx,
-                                          const double* x_des,
-                                          const double* x_curr) const
+void TaskPositionTarget3D::computeDX(double* dx,
+                                     const double* x_des,
+                                     const double* x_curr) const
 {
   double d_des = x_des[0];
 
@@ -163,7 +165,7 @@ void Rcs::TaskPositionTarget3D::computeDX(double* dx,
  *
  * ref_xp = A_ref-I * (I_xp_ef - I_xp_ref)
  ******************************************************************************/
-void Rcs::TaskPositionTarget3D::computeXp_ik(double* xp_res) const
+void TaskPositionTarget3D::computeXp_ik(double* xp_res) const
 {
   updateRefBody();
   TaskPosition3D::computeXp_ik(xp_res);
@@ -173,7 +175,7 @@ void Rcs::TaskPositionTarget3D::computeXp_ik(double* xp_res) const
  * Computes current task Jacobian to parameter jacobian. See
  * RcsGraph_3dPosJacobian() for details.
  ******************************************************************************/
-void Rcs::TaskPositionTarget3D::computeJ(MatNd* jacobian) const
+void TaskPositionTarget3D::computeJ(MatNd* jacobian) const
 {
   updateRefBody();
   TaskPosition3D::computeJ(jacobian);
@@ -183,7 +185,7 @@ void Rcs::TaskPositionTarget3D::computeJ(MatNd* jacobian) const
  * Computes current task Hessian to parameter hessian. See
  * RcsGraph_3dPosHessian() for details.
  ******************************************************************************/
-void Rcs::TaskPositionTarget3D::computeH(MatNd* hessian) const
+void TaskPositionTarget3D::computeH(MatNd* hessian) const
 {
   updateRefBody();
   TaskPosition3D::computeH(hessian);
@@ -193,13 +195,14 @@ void Rcs::TaskPositionTarget3D::computeH(MatNd* hessian) const
  * Computes current task Hessian to parameter hessian. See
  * RcsGraph_3dPosHessian() for details.
  ******************************************************************************/
-RcsBody* Rcs::TaskPositionTarget3D::createBody()
+int TaskPositionTarget3D::createBody()
 {
-  RcsBody* body = RcsBody_create();
+  //RcsBody* body = RcsBody_create();
+  RcsBody* body = RcsGraph_insertGraphBody(getGraph(), -1);
 
-  snprintf(body->bdyName, RCS_MAX_NAMELEN, "%s", "TaskPositionTarget3D::refFrame");
+  snprintf(body->name, RCS_MAX_NAMELEN, "%s", "TaskPositionTarget3D::refFrame");
 
-  return body;
+  return body->id;
 }
 
 /*******************************************************************************
@@ -208,11 +211,11 @@ RcsBody* Rcs::TaskPositionTarget3D::createBody()
  ******************************************************************************/
 static void calcTaskKinematics(MatNd* x, const MatNd* q, void* params)
 {
-  Rcs::TaskPositionTarget3D* task = (Rcs::TaskPositionTarget3D*)params;
+  TaskPositionTarget3D* task = (TaskPositionTarget3D*)params;
   RcsGraph* graph = RcsGraph_clone(task->getGraph());
   RcsGraph_setState(graph, q, NULL);
 
-  Rcs::TaskPositionTarget3D* taskCpy = task->clone(graph);
+  TaskPositionTarget3D* taskCpy = task->clone(graph);
   taskCpy->computeX(x->ele);
 
   delete taskCpy;
@@ -222,10 +225,10 @@ static void calcTaskKinematics(MatNd* x, const MatNd* q, void* params)
 /*******************************************************************************
  * See header
  ******************************************************************************/
-bool Rcs::TaskPositionTarget3D::testJacobian(double errorLimit,
-                                             double delta,
-                                             bool relativeError,
-                                             bool verbose)
+bool TaskPositionTarget3D::testJacobian(double errorLimit,
+                                        double delta,
+                                        bool relativeError,
+                                        bool verbose)
 {
   MatNd* J = MatNd_create(3, getGraph()->nJ);
   MatNd* J_fd = MatNd_create(3, getGraph()->nJ);
@@ -263,18 +266,18 @@ bool Rcs::TaskPositionTarget3D::testJacobian(double errorLimit,
  ******************************************************************************/
 static void calcTaskJacobian(MatNd* J, const MatNd* q, void* params)
 {
-  Rcs::TaskPositionTarget3D* task = (Rcs::TaskPositionTarget3D*)params;
+  TaskPositionTarget3D* task = (TaskPositionTarget3D*)params;
   RcsGraph* graph = RcsGraph_clone(task->getGraph());
   RcsGraph_setState(graph, q, NULL);
 
-  Rcs::TaskPositionTarget3D* taskCpy = task->clone(graph);
+  TaskPositionTarget3D* taskCpy = task->clone(graph);
   taskCpy->computeJ(J);
   MatNd_reshape(J, 3*taskCpy->getGraph()->nJ, 1);
   delete taskCpy;
   RcsGraph_destroy(graph);
 }
 
-bool Rcs::TaskPositionTarget3D::testHessian(bool verbose)
+bool TaskPositionTarget3D::testHessian(bool verbose)
 {
   MatNd* H = MatNd_create(3*getGraph()->nJ, getGraph()->nJ);
   MatNd* H_fd = MatNd_create(3*getGraph()->nJ, getGraph()->nJ);
@@ -323,9 +326,9 @@ bool Rcs::TaskPositionTarget3D::testHessian(bool verbose)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-bool Rcs::TaskPositionTarget3D::isValid(xmlNode* node, const RcsGraph* graph)
+bool TaskPositionTarget3D::isValid(xmlNode* node, const RcsGraph* graph)
 {
-  bool success = Rcs::Task::isValid(node, graph, "XYZ_TARGET");
+  bool success = Task::isValid(node, graph, "XYZ_TARGET");
 
   char tag[256] = "";
   unsigned int len = getXMLNodePropertyStringN(node, "refFrame", tag, 256);
@@ -344,3 +347,5 @@ bool Rcs::TaskPositionTarget3D::isValid(xmlNode* node, const RcsGraph* graph)
 
   return success;
 }
+
+}   // namespace Rcs

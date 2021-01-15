@@ -74,12 +74,13 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
       const RcsBody* bdy = RcsGraph_getBodyByName(_graph, tmp.c_str());
       RCHECK_MSG(bdy, "Can't find body \"%s\" for jntsVec", tmp.c_str());
       setEffector(bdy);
-      const RcsJoint* jPtr = bdy->jnt;
+      const RcsJoint* jPtr = RCSJOINT_BY_ID(_graph, bdy->jntId);
 
       while (jPtr)
       {
         jntsVec.push_back(std::string(jPtr->name));
-        jPtr = jPtr->next;
+        //jPtr = jPtr->next;
+        jPtr = RCSJOINT_BY_ID(_graph, jPtr->nextId);
       }
     }
   }
@@ -99,12 +100,12 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
       const RcsBody* bdy = RcsGraph_getBodyByName(_graph, tmp.c_str());
       RCHECK_MSG(bdy, "Can't find body \"%s\" for refJntsVec", tmp.c_str());
       setRefBody(bdy);
-      const RcsJoint* jPtr = bdy->jnt;
+      const RcsJoint* jPtr = RCSJOINT_BY_ID(_graph, bdy->jntId);
 
       while (jPtr)
       {
         refJntsVec.push_back(std::string(jPtr->name));
-        jPtr = jPtr->next;
+        jPtr = RCSJOINT_BY_ID(graph, jPtr->nextId);//jPtr->next;
       }
     }
   }
@@ -201,20 +202,20 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
 /*******************************************************************************
  * Explicit construction using rigid body joint links
  ******************************************************************************/
-Rcs::TaskJoints::TaskJoints(const RcsBody* effector,  RcsGraph* graph):
-  CompositeTask(graph)
+Rcs::TaskJoints::TaskJoints(const RcsBody* effector, RcsGraph* graph_):
+  CompositeTask(graph_)
 {
   setClassName("Joints");
   setEffector(effector);
-  const unsigned int nJoints = RcsBody_numJoints(effector);
-  RCHECK_MSG(nJoints>0, "Body \"%s\"", effector ? effector->bdyName : "NULL");
+  const unsigned int nJoints = RcsBody_numJoints(graph, effector);
+  RCHECK_MSG(nJoints>0, "Body \"%s\"", effector ? effector->name : "NULL");
 
-  const RcsJoint* jEf = effector->jnt;
+  const RcsJoint* jEf = RCSJOINT_BY_ID(graph_, effector->jntId);
 
   for (unsigned int i = 0; i < nJoints; ++i)
   {
     addTask(new TaskJoint(graph, jEf, NULL, 1.0));
-    jEf = jEf->next;
+    jEf = RCSJOINT_BY_ID(graph, jEf->nextId);//jEf->next;
   }
 }
 
@@ -222,33 +223,34 @@ Rcs::TaskJoints::TaskJoints(const RcsBody* effector,  RcsGraph* graph):
  * Explicit construction using rigid body joint links
  ******************************************************************************/
 Rcs::TaskJoints::TaskJoints(const RcsBody* effector, const RcsBody* refBdy,
-                            RcsGraph* graph) :
-  CompositeTask(graph)
+                            RcsGraph* graph_) :
+  CompositeTask(graph_)
 {
   setClassName("Joints");
   setEffector(effector);
   setRefBody(refBdy);
-  const unsigned int nJoints = RcsBody_numJoints(effector);
-  RCHECK_MSG(nJoints > 0, "Body \"%s\"", effector ? effector->bdyName : "NULL");
+  const unsigned int nJoints = RcsBody_numJoints(graph, effector);
+  RCHECK_MSG(nJoints > 0, "Body \"%s\"", effector ? effector->name : "NULL");
 
   if (refBdy)
   {
-    RCHECK(nJoints == RcsBody_numJoints(refBdy));
+    RCHECK(nJoints == RcsBody_numJoints(graph, refBdy));
   }
 
-  const RcsJoint* jEf = effector->jnt;
-  const RcsJoint* jRef = refBdy ? refBdy->jnt : NULL;
+  const RcsJoint* jEf = RCSJOINT_BY_ID(graph_, effector->jntId);
+  //const RcsJoint* jRef = refBdy ? refBdy->jnt : NULL;
+  const RcsJoint* jRef = refBdy ? RCSJOINT_BY_ID(graph_, refBdy->jntId) : NULL;
 
   RLOG(0, "Creating %d joints task between %s and %s", nJoints,
-       effector->bdyName, refBdy ? refBdy->bdyName : "NULL");
+       effector->name, refBdy ? refBdy->name : "NULL");
 
   for (unsigned int i = 0; i < nJoints; ++i)
   {
     addTask(new TaskJoint(graph, jEf, jRef, -1.0));
-    jEf = jEf->next;
+    jEf = RCSJOINT_BY_ID(graph, jEf->nextId);
     if (jRef)
     {
-      jRef = jRef->next;
+      jRef = RCSJOINT_BY_ID(graph, jRef->nextId);
     }
   }
 }
@@ -508,12 +510,12 @@ bool Rcs::TaskJoints::isValid(xmlNode* node, const RcsGraph* graph)
       }
       else
       {
-        const RcsJoint* jPtr = bdy->jnt;
+        const RcsJoint* jPtr = RCSJOINT_BY_ID(graph, bdy->jntId);
 
         while (jPtr)
         {
           jntVec.push_back(std::string(jPtr->name));
-          jPtr = jPtr->next;
+          jPtr = RCSJOINT_BY_ID(graph, jPtr->nextId);
         }
       }
     }
@@ -566,12 +568,12 @@ bool Rcs::TaskJoints::isValid(xmlNode* node, const RcsGraph* graph)
       }
       else
       {
-        const RcsJoint* jPtr = bdy->jnt;
+        const RcsJoint* jPtr = RCSJOINT_BY_ID(graph, bdy->jntId);
 
         while (jPtr)
         {
           refJntVec.push_back(std::string(jPtr->name));
-          jPtr = jPtr->next;
+          jPtr = RCSJOINT_BY_ID(graph, jPtr->nextId);
         }
       }
     }

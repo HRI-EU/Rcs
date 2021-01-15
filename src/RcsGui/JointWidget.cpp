@@ -203,7 +203,7 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
 
       if (graph != NULL)
       {
-        if (JNT->coupledTo == NULL)
+        if (JNT->coupledToId == -1)
         {
           connect(check_constraints[i], SIGNAL(clicked()),
                   SLOT(setConstraint()));
@@ -380,7 +380,7 @@ void JointWidget::setJoint(void)
 
   RCSGRAPH_TRAVERSE_JOINTS(_constGraph)
   {
-    if ((JNT->constrained || _alwaysWriteToQ) && (!JNT->coupledTo) && (i < jsc_q.size()))
+    if ((JNT->constrained || _alwaysWriteToQ) && (JNT->coupledToId==-1) && (i < jsc_q.size()))
     {
       _q_des->ele[JNT->jointIndex] = jsc_q[i]->getSliderValue();
     }

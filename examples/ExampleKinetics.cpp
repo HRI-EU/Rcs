@@ -208,7 +208,10 @@ int main(int argc, char** argv)
       VecNd_copy(z->ele, graph->q->ele, n);
       MatNd qp = MatNd_fromPtr(n, 1, &z->ele[n]);
       MatNd* F_ext = MatNd_create(n, 1);
-      graph->userData = (void*) F_ext;
+      DirDynParams params;
+      params.graph = graph;
+      params.F_ext = F_ext;
+      //graph->userData = (void*) F_ext;
       MatNd* err = MatNd_create(2 * n, 1);
       for (int i = 0; i < n; i++)
       {
@@ -262,13 +265,13 @@ int main(int argc, char** argv)
         if (STREQ(integrator, "Fehlberg"))
         {
           nSteps = integration_t1_t2(Rcs_directDynamicsIntegrationStep,
-                                     (void*) graph, 2*n, time, time+dt,
+                                     (void*) &params, 2*n, time, time+dt,
                                      &dt_opt, z->ele, z->ele, err->ele);
         }
         else if (STREQ(integrator, "Euler"))
         {
           integration_euler(Rcs_directDynamicsIntegrationStep,
-                            (void*) graph, 2 * n, dt, z->ele, z->ele);
+                            (void*) &params, 2 * n, dt, z->ele, z->ele);
         }
         else
         {

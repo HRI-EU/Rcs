@@ -105,6 +105,7 @@ TaskRegionBoundingBox.cpp
 TaskRegionBoxInterval.cpp
 TaskRegionFactory.cpp
 TaskSpaceBlender.cpp
+TaskSleeve.cpp
 )
 
 IF(WIN32)

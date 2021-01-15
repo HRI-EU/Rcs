@@ -57,6 +57,11 @@ class BulletDebugDrawer;
 
 /*! \ingroup RcsPhysics
  *  \brief Bullet physics simulation class.
+ *
+ *  To consider:
+ *  - currently joint limits do not work for joints with ranges larger than
+ *    360 degrees. This is checked during construction, and a warning is
+ *    issued on debug level 1.
  */
 class BulletSimulation : public PhysicsBase
 {
@@ -169,7 +174,7 @@ public:
   virtual BulletRigidBody* getRigidBody(const RcsBody* bdy) const;
   virtual void getWorldBoundingBox(btVector3& aabbMin,
                                    btVector3& aabbMax) const;
-  virtual bool addBody(const RcsBody* body);
+  virtual bool addBody(const RcsGraph* graph, const RcsBody* body);
   virtual bool removeBody(const char* name);
   virtual bool deactivateBody(const char* name);
   virtual bool activateBody(const char* name, const HTr* A_BI = NULL);
@@ -212,8 +217,8 @@ protected:
   btDefaultCollisionConfiguration* collisionConfiguration;
   mutable pthread_mutex_t mtx;
   double lastDt;
-  std::map<const RcsBody*, BulletRigidBody*> bdyMap;
-  std::map<const RcsJoint*, BulletJointBase*> jntMap;
+  std::map<int, BulletRigidBody*> bdyMap;
+  std::map<int, BulletJointBase*> jntMap;
   std::map<std::string, BulletRigidBody*> deactivatedBodies;
 
 
@@ -222,7 +227,7 @@ protected:
   double dragAnchor[3];
 
   BulletDebugDrawer* debugDrawer;
-  char* physicsConfigFile;
+  std::string physicsConfigFile;
 
   double rigidBodyLinearDamping;
   double rigidBodyAngularDamping;

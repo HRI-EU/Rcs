@@ -195,16 +195,16 @@ static double RcsSensor_computeForceCompensation(const RcsGraph* graph,
   Vec3d_subSelf(I_r_cog_fts, ftsBdy->A_BI.org);
 
   double I_sensorOffset[3];
-  Vec3d_transRotate(I_sensorOffset, ftsBdy->A_BI.rot, fts->offset.org);
+  Vec3d_transRotate(I_sensorOffset, ftsBdy->A_BI.rot, fts->A_SB.org);
   Vec3d_subSelf(I_r_cog_fts, I_sensorOffset);
   Vec3d_crossProduct(t_gravity, I_r_cog_fts, f_gravity);
 
   // Rotate into sensor frame
   Vec3d_rotateSelf(f_gravity, ftsBdy->A_BI.rot);
-  Vec3d_rotate(&S_f_compensation[0], (double(*)[3])fts->offset.rot, f_gravity);
+  Vec3d_rotate(&S_f_compensation[0], (double(*)[3])fts->A_SB.rot, f_gravity);
 
   Vec3d_rotateSelf(t_gravity, ftsBdy->A_BI.rot);
-  Vec3d_rotate(&S_f_compensation[3], (double(*)[3])fts->offset.rot, t_gravity);
+  Vec3d_rotate(&S_f_compensation[3], (double(*)[3])fts->A_SB.rot, t_gravity);
 
   VecNd_constMulSelf(S_f_compensation, -1.0, 6);
 
@@ -253,8 +253,7 @@ void RcsSensor_init(RcsSensor* self,
                     unsigned int type,
                     const char* name,
                     RcsBody* parentBody,
-                    HTr* offset,
-                    const char* extraInfo)
+                    HTr* A_SB)
 {
   self->type = (RCSSENSOR_TYPE) type;
 
@@ -268,140 +267,8 @@ void RcsSensor_init(RcsSensor* self,
   }
 
   self->bodyId = parentBody->id;
-  HTr_copy(&self->offset, offset);
-  self->extraInfo = String_clone(extraInfo);
+  HTr_copy(&self->A_SB, A_SB);
   self->rawData = MatNd_create(1, RcsSensor_dim(self));
-}
-
-/*******************************************************************************
- * Allocates memory and initializes a RcsSensor data structure from
- *        an XML node. Here's the parsed tags:
- *        - name
- *        - type: LOADCELL, JOINTTORQUE, CONTACTFORCE, PPS
- *        - transform
- *        - extra_info
- ******************************************************************************/
-RcsSensor* RcsSensor_initFromXML(xmlNode* node, RcsBody* parentBody,
-                                 RcsGraph* graph)
-{
-  // Return if node is not a sensor node. This can deal with a NULL node
-  if (!isXMLNodeName(node, "Sensor"))
-  {
-    return NULL;
-  }
-
-  // read sensor name
-  char name[RCS_MAX_NAMELEN] = "unnamed sensor";
-  getXMLNodePropertyStringN(node, "name", name, RCS_MAX_NAMELEN);
-  RLOG(5, "found new sensor node \"%s\" attached to body \"%s\"",
-       name, parentBody ? parentBody->bdyName : "NULL");
-
-  // read sensor type
-  char buffer[100];
-  int xml_type = -1;
-  strcpy(buffer, "unknown type");
-  getXMLNodePropertyStringN(node, "type", buffer, 100);
-
-  if (STRCASEEQ(buffer, "LOADCELL"))
-  {
-    xml_type = RCSSENSOR_LOAD_CELL;
-  }
-  else if (STRCASEEQ(buffer, "JOINTTORQUE"))
-  {
-    xml_type = RCSSENSOR_JOINT_TORQUE;
-  }
-  else if (STRCASEEQ(buffer, "CONTACTFORCE"))
-  {
-    xml_type = RCSSENSOR_CONTACT_FORCE;
-  }
-  else if (STRCASEEQ(buffer, "PPS"))
-  {
-    xml_type = RCSSENSOR_PPS;
-  }
-  else
-  {
-    RFATAL("Unknown sensor type \"%s\"", buffer);
-  }
-
-  // read relative offset transformation
-  HTr offset;
-  HTr_setIdentity(&offset);
-  if (getXMLNodeProperty(node, "transform"))
-  {
-    getXMLNodePropertyHTr(node, "transform", &offset);
-  }
-
-  // read extraInfo
-  char* extraInfo = NULL;
-  unsigned int nBytes = getXMLNodeBytes(node, "extra_info");
-
-  if (nBytes>0)
-  {
-    extraInfo = RNALLOC(nBytes, char);
-    getXMLNodePropertyStringN(node, "extra_info", extraInfo, nBytes);
-  }
-
-  // Create and return rcs sensor object
-  RcsSensor* sensor = RcsGraph_insertSensor(graph);
-  RcsSensor_init(sensor, xml_type, name, parentBody, &offset, extraInfo);
-  RFREE(extraInfo);  // It's Ok to call free() on NULL
-
-
-
-  // Create texels
-  if (sensor->type==RCSSENSOR_PPS)
-  {
-    int xy[2];
-    xy[0] = sensor->rawData->m;
-    xy[1] = sensor->rawData->n;
-
-    getXMLNodePropertyIntN(node, "dimensions", xy, 2);
-    sensor->rawData = MatNd_realloc(sensor->rawData, xy[0], xy[1]);
-
-    double extents[3];
-    Vec3d_setZero(extents);
-    getXMLNodePropertyVec3(node, "extents", extents);
-
-    node = node->children;
-
-    // Allocate memory for shape node lists
-    sensor->nTexels = getNumXMLNodes(node, "Texel") + 1;
-    sensor->texel = RNALLOC(sensor->nTexels, RcsTexel);
-
-    int texelCount = 0;
-
-    while (node != NULL)
-    {
-      if (isXMLNodeName(node, "Texel"))
-      {
-        RcsTexel* texel = &sensor->texel[texelCount];
-        getXMLNodePropertyVec3(node, "position", texel->position);
-        getXMLNodePropertyVec3(node, "normal", texel->normal);
-        Vec3d_copy(texel->extents, extents);
-        getXMLNodePropertyVec3(node, "extents", texel->extents);
-        texelCount++;
-        REXEC(4)
-        {
-          if (Vec3d_sqrLength(texel->extents)==0.0)
-          {
-            RMSG("Found zero size texel in sensor \"%s\"", sensor->name);
-          }
-        }
-      }
-
-      node = node->next;
-    }
-
-    if (texelCount>0)
-    {
-      RCHECK_MSG(xy[0]*xy[1]==texelCount, "[%s]: %d * %d != %d", sensor->name,
-                 xy[0], xy[1], texelCount);
-    }
-  }   // End create texels
-
-
-
-  return sensor;
 }
 
 /*******************************************************************************
@@ -412,7 +279,7 @@ void RcsSensor_copy(RcsSensor* self, const RcsSensor* src)
   self->type = src->type;
   self->bodyId = src->bodyId;
   snprintf(self->name, RCS_MAX_NAMELEN, "%s", src->name);
-  HTr_copy(&self->offset, &src->offset);
+  HTr_copy(&self->A_SB, &src->A_SB);
   MatNd_resizeCopy(&self->rawData, src->rawData);
   self->nTexels = src->nTexels;
   if (src->nTexels>0)
@@ -433,7 +300,6 @@ void RcsSensor_clear(RcsSensor* self)
     return;
   }
 
-  RFREE(self->extraInfo);
   RFREE(self->texel);
   MatNd_destroy(self->rawData);
 }
@@ -479,14 +345,7 @@ unsigned int RcsSensor_dim(RcsSensor* self)
   }
   else if (self->type == RCSSENSOR_PPS)
   {
-    unsigned int dim = 0;
-    MatNd* ppsParams = MatNd_createFromString(self->extraInfo);
-    if (ppsParams != NULL)
-    {
-      dim = ppsParams->n;
-      MatNd_destroy(ppsParams);
-    }
-    return dim;
+    return self->nTexels;
   }
   else
   {
@@ -526,9 +385,9 @@ void RcsSensor_fprint(FILE* out, const RcsSensor* s)
 
   fprintf(out, "\tAttached to body with id %d\n", s->bodyId);
 
-  if (!HTr_isIdentity(&s->offset))
+  if (!HTr_isIdentity(&s->A_SB))
   {
-    HTr_fprint(out, &s->offset);
+    HTr_fprint(out, &s->A_SB);
   }
   else
   {
@@ -566,6 +425,7 @@ void RcsSensor_fprint(FILE* out, const RcsSensor* s)
 void RcsSensor_fprintXML(FILE* out, const RcsSensor* self)
 {
   char buf[256];
+  bool ppsExtentsEqual = true;
 
   fprintf(out, "    <Sensor name=\"%s\" ", self->name);
 
@@ -585,6 +445,30 @@ void RcsSensor_fprintXML(FILE* out, const RcsSensor* self)
 
     case RCSSENSOR_PPS:
       fprintf(out, "type=\"PPS\" ");
+      if (self->nTexels>0)
+      {
+        double* extents0 = self->texel[0].extents;
+        for (unsigned int i=1; i<self->nTexels; ++i)
+        {
+          if (!Vec3d_isEqual(extents0, self->texel[i].extents, 1.0e-8))
+          {
+            ppsExtentsEqual = false;
+            break;
+          }
+        }
+
+        fprintf(out, "dimensions=\"%d %d\" ",
+                self->rawData->m, self->rawData->n);
+
+        if (ppsExtentsEqual)
+        {
+          fprintf(out, "extents=\"%s ", String_fromDouble(buf, extents0[0], 6));
+          fprintf(out, "%s ", String_fromDouble(buf, extents0[1], 6));
+          fprintf(out, "%s\" ", String_fromDouble(buf, extents0[2], 6));
+        }
+
+      }
+
       break;
 
     default:
@@ -594,8 +478,8 @@ void RcsSensor_fprintXML(FILE* out, const RcsSensor* self)
   // Relative transformation only if non-zero elements exist
   {
     double trf[6];
-    Vec3d_copy(&trf[0], self->offset.org);
-    Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->offset.rot);
+    Vec3d_copy(&trf[0], self->A_SB.org);
+    Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->A_SB.rot);
     Vec3d_constMulSelf(&trf[3], 180.0 / M_PI);
 
     if (VecNd_maxAbsEle(trf, 6) > 1.0e-8)
@@ -610,24 +494,32 @@ void RcsSensor_fprintXML(FILE* out, const RcsSensor* self)
   }
 
   // PPS parameter string
-  if (self->extraInfo != NULL)
+  if (self->nTexels>0)
   {
-    fprintf(out, "extra_info=\"%s\" ", self->extraInfo);
     fprintf(out, ">\n");
 
-    MatNd* offsetNormal = MatNd_createFromString(self->extraInfo);
-    MatNd_transposeSelf(offsetNormal);
-
-    for (unsigned int i=0; i<offsetNormal->m; ++i)
+    for (unsigned int i=0; i<self->nTexels; ++i)
     {
-      const double* val = MatNd_getRowPtr(offsetNormal, i);
+      const double* val = self->texel[i].position;
       fprintf(out, "      <Texel position=\"");
       fprintf(out, "%s ", String_fromDouble(buf, val[0], 6));
       fprintf(out, "%s ", String_fromDouble(buf, val[1], 6));
-      fprintf(out, "%s\" normal=\"", String_fromDouble(buf, val[2], 6));
-      fprintf(out, "%s ", String_fromDouble(buf, val[3], 6));
-      fprintf(out, "%s ", String_fromDouble(buf, val[4], 6));
-      fprintf(out, "%s\" />\n", String_fromDouble(buf, val[5], 6));
+      fprintf(out, "%s\" ", String_fromDouble(buf, val[2], 6));
+
+      val = self->texel[i].normal;
+      fprintf(out, "normal=\"%s ", String_fromDouble(buf, val[0], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, val[1], 6));
+      fprintf(out, "%s\" ", String_fromDouble(buf, val[2], 6));
+
+      if (!ppsExtentsEqual)
+      {
+        val = self->texel[i].extents;
+        fprintf(out, "extents=\"%s ", String_fromDouble(buf, val[0], 6));
+        fprintf(out, "%s ", String_fromDouble(buf, val[1], 6));
+        fprintf(out, "%s\" ", String_fromDouble(buf, val[2], 6));
+      }
+
+      fprintf(out, "/>\n");
     }
 
     fprintf(out, "    </Sensor>\n");
@@ -669,7 +561,7 @@ bool RcsSensor_computePPS(RcsGraph* graph,
 
   // Determine the mount body transformation from physics
   HTr A_SI;
-  HTr_transform(&A_SI, &sensorBdy->A_BI, &self->offset);
+  HTr_transform(&A_SI, &sensorBdy->A_BI, &self->A_SB);
 
   // calculate the maximum distance of the PPS elements to the mount body origin
   // used to check whether a shape can be completely ignored
@@ -818,15 +710,15 @@ bool RcsSensor_computePPS(RcsGraph* graph,
 /*******************************************************************************
  *
  ******************************************************************************/
-RcsSensor* RcsSensor_first(RcsGraph* graph)
+RcsSensor* RcsSensor_first(const RcsGraph* graph)
 {
-  return &graph->sensors[0];
+  return (graph->nSensors>0) ? &graph->sensors[0] : NULL;
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-RcsSensor* RcsSensor_last(RcsGraph* graph)
+RcsSensor* RcsSensor_last(const RcsGraph* graph)
 {
-  return &graph->sensors[graph->nSensors-1];
+  return (graph->nSensors>0) ? &graph->sensors[graph->nSensors-1] : NULL;
 }

@@ -106,6 +106,10 @@ public:
    */
   const RcsJoint* getJoint() const;
 
+  /*! \brief Returns the joint index corresponding to the q-vector
+   */
+  int getJointIndex() const;
+
   /*! \brief Returns the pointer to the reference joint
    */
   const RcsJoint* getRefJoint() const;
@@ -158,8 +162,8 @@ protected:
    */
   virtual void toXMLBody(FILE* out) const;
 
-  const RcsJoint* joint;    //!< Joint for single joint tasks
-  const RcsJoint* refJoint; //!< Relative joint
+  int jointId;     //!< Joint id for single joint tasks
+  int  refJointId; //!< Relative joint id
   double refGain;
 };
 

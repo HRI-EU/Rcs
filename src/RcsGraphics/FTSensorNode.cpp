@@ -74,11 +74,11 @@ bool Rcs::FTSensorNode::frameCallback()
   double pos[3], dir[3];
 
   Vec3d_transRotate(pos, (double (*)[3]) this->A_BI->rot,
-                    this->loadCell->offset.org);
+                    this->loadCell->A_SB.org);
   Vec3d_addSelf(pos, this->A_BI->org);
 
   Vec3d_copy(dir, this->loadCell->rawData->ele);
-  Vec3d_transRotateSelf(dir, (double(*)[3])this->loadCell->offset.rot);
+  Vec3d_transRotateSelf(dir, (double(*)[3])this->loadCell->A_SB.rot);
   Vec3d_transRotateSelf(dir, (double(*)[3]) this->A_BI->rot);
   Vec3d_constMulSelf(dir, 0.01);   // 1kg = 10cm
 

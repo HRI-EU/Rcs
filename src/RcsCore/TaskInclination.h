@@ -134,10 +134,11 @@ public:
 private:
   const double* aRef() const;
   const double* aEf(size_t num) const;
+  const RcsBody* getEffectorVec(size_t num) const;
 
   int direction;
   int refDirection;
-  std::vector<const RcsBody*> effectorVec;
+  std::vector<int> effectorVec;
 };
 
 }

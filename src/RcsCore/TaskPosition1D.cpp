@@ -195,7 +195,7 @@ void Rcs::TaskPosition1D::computeJ(MatNd* jacobian) const
  ******************************************************************************/
 void Rcs::TaskPosition1D::computeH(MatNd* hessian) const
 {
-  RcsGraph_1dPosHessian(this->graph, this->ef, this->refBody, this->refFrame,
+  RcsGraph_1dPosHessian(this->graph, getEffector(), getRefBody(), getRefFrame(),
                         this->index, hessian);
 }
 

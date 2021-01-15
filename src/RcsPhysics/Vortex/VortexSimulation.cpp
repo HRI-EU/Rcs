@@ -89,6 +89,7 @@ static Rcs::PhysicsFactoryRegistrar<Rcs::VortexSimulation> physics(className);
  * Constructor from Graph & Config file
  ******************************************************************************/
 Rcs::VortexSimulation::VortexSimulation() :
+  PhysicsBase(),
   trafoUpdateLock(NULL),
   integratorDt(RCSVORTEX_DEFAULT_INTEGRATOR_DT),
   bodyLinearDamping(-1.0),
@@ -619,13 +620,13 @@ void Rcs::VortexSimulation::disableCollision(const RcsBody* b0,
 
   if (part0==NULL)
   {
-    RLOG(5, "No VxPart found in body \"%s\"", b0->bdyName);
+    RLOG(5, "No VxPart found in body \"%s\"", b0->name);
     return;
   }
 
   if (part1==NULL)
   {
-    RLOG(5, "No VxPart found in body \"%s\"", b1->bdyName);
+    RLOG(5, "No VxPart found in body \"%s\"", b1->name);
     return;
   }
 
@@ -706,32 +707,28 @@ bool Rcs::VortexSimulation::createCompositeBody(const RcsBody* body)
   if (body->physicsSim == false)
   {
     NLOG(1, "Body \"%s\": physicsSim is false - skipping VxPart creation",
-         body->bdyName);
+         body->name);
     return false;
   }
 
   if (body->shape == NULL)
   {
-    RLOG(1, "Body \"%s\" has no shape attached - skipping", body->bdyName);
+    RLOG(1, "Body \"%s\" has no shape attached - skipping", body->name);
     return false;
   }
 
-#ifdef OLD_TOPO
-  Vx::VxPart* parentPrt = body->parent ? getPartPtr(body->parent) : NULL;
-#else
   Vx::VxPart* parentPrt = getPartPtrById(body->parentId);
-#endif
 
   if ((body->physicsSim == RCSBODY_PHYSICS_DYNAMIC) &&
       (body->rigid_body_joints==false) &&
       (parentPrt==NULL))
   {
     RLOG(1, "Body \"%s\" needs rigid body joints! It is simulated dynamically "
-         "and has no parent part", body->bdyName);
+         "and has no parent part", body->name);
     return false;
   }
 
-  RLOG(5, "Creating body \"%s\"", body->bdyName);
+  RLOG(5, "Creating body \"%s\"", body->name);
 
   // Traverse through shapes
   RcsShape** sPtr = &body->shape[0];
@@ -761,49 +758,49 @@ bool Rcs::VortexSimulation::createCompositeBody(const RcsBody* body)
     {
       RLOG(1, "%s shape of body \"%s\" has unknown material \"%s\", setting "
            "it to default material",
-           RcsShape_name((*sPtr)->type), body->bdyName, materialName);
+           RcsShape_name((*sPtr)->type), body->name, materialName);
     }
 
     // create shape objects with the given material id
     switch ((*sPtr)->type)
     {
       case RCSSHAPE_SSL:
-        RLOG(5, "Creating SSL for object \"%s\"", body->bdyName);
+        RLOG(5, "Creating SSL for object \"%s\"", body->name);
         composite->addCollisionGeometry(createCapsule(*sPtr, &body->A_BI, material));
         break;
 
       case RCSSHAPE_MESH:
-        RLOG(5, "Creating mesh for object \"%s\"", body->bdyName);
+        RLOG(5, "Creating mesh for object \"%s\"", body->name);
         composite->addCollisionGeometry(createMesh(*sPtr, &body->A_BI, material));
         break;
 
       case RCSSHAPE_BOX:
-        RLOG(5, "Creating box for object \"%s\"", body->bdyName);
+        RLOG(5, "Creating box for object \"%s\"", body->name);
         composite->addCollisionGeometry(createBox(*sPtr, &body->A_BI, material));
         break;
 
       case RCSSHAPE_SPHERE:
-        RLOG(5, "Creating sphere for object \"%s\"", body->bdyName);
+        RLOG(5, "Creating sphere for object \"%s\"", body->name);
         composite->addCollisionGeometry(createSphere(*sPtr, &body->A_BI, material));
         break;
 
       case RCSSHAPE_CYLINDER:
-        RLOG(5, "Creating cylinder for object \"%s\"", body->bdyName);
+        RLOG(5, "Creating cylinder for object \"%s\"", body->name);
         composite->addCollisionGeometry(createCylinder(*sPtr, &body->A_BI, material));
         break;
 
       case RCSSHAPE_SSR:
-        RLOG(5, "Creating SSR for object \"%s\"", body->bdyName);
+        RLOG(5, "Creating SSR for object \"%s\"", body->name);
         composite->addCollisionGeometry(createSSR(*sPtr, &body->A_BI, material));
         break;
 
       case RCSSHAPE_CONE:
-        RLOG(5, "Creating cone for object \"%s\"", body->bdyName);
+        RLOG(5, "Creating cone for object \"%s\"", body->name);
         composite->addCollisionGeometry(createCone(*sPtr, &body->A_BI, material));
         break;
 
       case RCSSHAPE_TORUS:
-        RLOG(5, "Creating torus for object \"%s\"", body->bdyName);
+        RLOG(5, "Creating torus for object \"%s\"", body->name);
         composite->addCollisionGeometry(createTorus(*sPtr, &body->A_BI, material));
         break;
 
@@ -820,7 +817,7 @@ bool Rcs::VortexSimulation::createCompositeBody(const RcsBody* body)
   if (composite->getCollisionGeometries().size() == 0)
   {
     RLOG(1, "Failed to create Vortex representation of body \"%s\": No shapes",
-         body->bdyName);
+         body->name);
     delete composite;
     return false;
   }
@@ -864,7 +861,7 @@ bool Rcs::VortexSimulation::createCompositeBody(const RcsBody* body)
   // the COM is also calculated from the mesh by setMassAndInertia if the inertia tensor is zero
   // which we could/should use to replace the default
   p->setCOMOffset(body->Inertia.org[0], body->Inertia.org[1], body->Inertia.org[2]);
-  p->setName(body->bdyName);
+  p->setName(body->name);
   p->setTransform(VxTransform_fromHTr(&body->A_BI));
 
   if (this->bodyLinearDamping >= 0.0)
@@ -889,7 +886,7 @@ bool Rcs::VortexSimulation::createCompositeBody(const RcsBody* body)
   // Add to universe
   universe->addPart(p);
 
-  RLOG(5, "Created body \"%s\"", body->bdyName);
+  RLOG(5, "Created body \"%s\"", body->name);
 
   return true;
 }
@@ -1129,7 +1126,7 @@ void Rcs::VortexSimulation::setForce(const RcsBody* body,
   }
   else
   {
-    NLOG(1, "Could not find a physical body for RcsBody '%s'", body->bdyName);
+    NLOG(1, "Could not find a physical body for RcsBody '%s'", body->name);
   }
 }
 
@@ -1158,7 +1155,7 @@ void Rcs::VortexSimulation::applyImpulse(const RcsBody* body,
   }
   else
   {
-    NLOG(1, "Could not find a physical body for RcsBody '%s'", body->bdyName);
+    NLOG(1, "Could not find a physical body for RcsBody '%s'", body->name);
   }
 }
 
@@ -1183,7 +1180,7 @@ void Rcs::VortexSimulation::applyForce(const RcsBody* body,
       // Reset body damping
       RcsBody* dragBody = (RcsBody*) this->b_ext->getUserDataPtr();
       RCHECK(dragBody);
-      NLOG(0, "%s Damping reset to linear=%g angular=%g", dragBody->bdyName,
+      NLOG(0, "%s Damping reset to linear=%g angular=%g", dragBody->name,
            this->bodyLinearDamping, this->bodyAngularDamping);
       if (dragBody->rigid_body_joints==true)
       {
@@ -1211,7 +1208,7 @@ void Rcs::VortexSimulation::applyForce(const RcsBody* body,
   // required for stability reasons.
   if ((body->rigid_body_joints==true) && (this->b_ext==NULL))
   {
-    NLOG(0, "Setting body %s damping to linear=%g angular=%g",  body->bdyName,
+    NLOG(0, "Setting body %s damping to linear=%g angular=%g",  body->name,
          10.0*this->bodyLinearDamping, 100.0*this->bodyAngularDamping);
     vxBdy->setLinearVelocityDamping(10000.0*this->bodyLinearDamping);
     vxBdy->setAngularVelocityDamping(1000.0*this->bodyAngularDamping);
@@ -1224,7 +1221,7 @@ void Rcs::VortexSimulation::applyForce(const RcsBody* body,
 
   NLOG(0, "Applying F = %5.3f %5.3f %5.3f at %5.3f %5.3f %5.3f "
        "to body \"%s\"", this->F_ext[0], this->F_ext[1], this->F_ext[2],
-       this->r_ext[0], this->r_ext[1], this->r_ext[2], body->bdyName);
+       this->r_ext[0], this->r_ext[1], this->r_ext[2], body->name);
 }
 
 /*******************************************************************************
@@ -1236,7 +1233,7 @@ void Rcs::VortexSimulation::applyTransform(const RcsBody* body, const HTr* A_BI)
 
   if (vxBdy == NULL)
   {
-    RLOG(1, "No VxPart found in body \"%s\"", body ? body->bdyName : "NULL");
+    RLOG(1, "No VxPart found in body \"%s\"", body ? body->name : "NULL");
     return;
   }
 
@@ -1255,12 +1252,12 @@ void Rcs::VortexSimulation::applyLinearVelocity(const RcsBody* body,
 
   if (vxBdy == NULL)
   {
-    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->bdyName : "NULL");
+    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->name : "NULL");
     return;
   }
 
   NLOG(0, "Setting linear velocity of body \"%s\" to (%.3f, %.3f, %.3f)",
-       body->bdyName, v[0], v[1], v[2]);
+       body->name, v[0], v[1], v[2]);
 
   pthread_mutex_lock(&this->extForceLock);
   vxBdy->setLinearVelocity(Vx::VxVector3(v));
@@ -1277,7 +1274,7 @@ void Rcs::VortexSimulation::getLinearVelocity(const RcsBody* body,
 
   if (vxBdy == NULL)
   {
-    RLOG(1, "Body \"%s\": Couldn't get velocity", body ? body->bdyName : "NULL");
+    RLOG(1, "Body \"%s\": Couldn't get velocity", body ? body->name : "NULL");
     return;
   }
 
@@ -1301,7 +1298,7 @@ void Rcs::VortexSimulation::applyAngularVelocity(const RcsBody* body,
   }
 
   NLOG(0, "Setting angular velocity of body \"%s\" to (%.3f, %.3f, %.3f)",
-       body->bdyName, v[0], v[1], v[2]);
+       body->name, v[0], v[1], v[2]);
 
   pthread_mutex_lock(&this->extForceLock);
   vxBdy->setAngularVelocity(Vx::VxVector3(v));
@@ -1318,7 +1315,7 @@ void Rcs::VortexSimulation::getAngularVelocity(const RcsBody* body,
 
   if (vxBdy == NULL)
   {
-    RLOG(1, "Body \"%s\": Couldn't get velocity", body ? body->bdyName : "NULL");
+    RLOG(1, "Body \"%s\": Couldn't get velocity", body ? body->name : "NULL");
     return;
   }
 
@@ -1357,11 +1354,7 @@ bool Rcs::VortexSimulation::createJoint(const RcsBody* body)
     return false;
   }
 
-#ifdef OLD_TOPO
-  Vx::VxPart* part0 = body->parent ? getPartPtr(body->parent) : NULL;
-#else
   Vx::VxPart* part0 = getPartPtrById(body->parentId);
-#endif
   Vx::VxPart* part1 = getPartPtr(body);
 
   switch (body->physicsSim)
@@ -1369,7 +1362,7 @@ bool Rcs::VortexSimulation::createJoint(const RcsBody* body)
 
     case RCSBODY_PHYSICS_KINEMATIC:
     {
-      RCHECK_MSG(part1, "No VxPart for body \"%s\"", body->bdyName);
+      RCHECK_MSG(part1, "No VxPart for body \"%s\"", body->name);
       part1->setControl(Vx::VxPart::kControlAnimated);
     }
     break;
@@ -1382,26 +1375,28 @@ bool Rcs::VortexSimulation::createJoint(const RcsBody* body)
         {
           RLOG(1, "%s has no previous VxPart, therefore needs rigid body "
                "joints. Did you forget to add the rigid_body_joints flag?",
-               body->bdyName);
+               body->name);
         }
         break;
       }
+      unsigned int nJnts = RcsBody_numJoints(getGraph(), body);
 
-      if (RcsBody_numJoints(body) != 1)
+      if (nJnts != 1)
       {
-        if (body->rigid_body_joints && RcsBody_numJoints(body) == 6)
+        if (body->rigid_body_joints && nJnts == 6)
         {
           break;
         }
         else
         {
           RFATAL("%s has %d joints - only one is currently supported",
-                 body->bdyName, RcsBody_numJoints(body));
+                 body->name, nJnts);
         }
       }
 
-      double qInit = MatNd_get(getGraph()->q, body->jnt->jointIndex, 0);
-      Vx::VxConstraint* vJnt = createJoint1D(part0, part1,
+      RcsJoint* bdyJoint = RcsBody_getJoint(body, getGraph());
+      double qInit = MatNd_get(getGraph()->q, bdyJoint->jointIndex, 0);
+      Vx::VxConstraint* vJnt = createJoint1D(part0, part1, bdyJoint,
                                              this->jointLockStiffness,
                                              this->jointLockDamping,
                                              this->jointMotorLoss,
@@ -1410,30 +1405,28 @@ bool Rcs::VortexSimulation::createJoint(const RcsBody* body)
       {
         universe->disablePairIntersect(part0, part1);
         universe->addConstraint(vJnt);
-        vJnt->setUserDataPtr(body->jnt);
+        vJnt->setUserDataPtr(bdyJoint);
       }
 
-      NLOG(0, "Created revolute joint for body \"%s\"", body->bdyName);
+      NLOG(0, "Created revolute joint for body \"%s\"", body->name);
     }
     break;
 
     case RCSBODY_PHYSICS_FIXED:
     {
-#ifdef OLD_TOPO
-      if (body->parent == NULL)
-#else
       if (body->parentId == -1)
-#endif
       {
         RLOG(1, "Can't create fixed joint for body \"%s\": Parent is NULL",
-             body->bdyName);
+             body->name);
         break;
       }
 
-      if (RcsBody_numJoints(body) != 0)
+      const unsigned int nJnts = RcsBody_numJoints(getGraph(), body);
+
+      if (nJnts != 0)
       {
         RLOG(1, "Can't create fixed joint for body \"%s\": Has %d joints "
-             "(should be 0)", body->bdyName, RcsBody_numJoints(body));
+             "(should be 0)", body->name, nJnts);
         break;
       }
 
@@ -1446,17 +1439,13 @@ bool Rcs::VortexSimulation::createJoint(const RcsBody* body)
         universe->disablePairIntersect(part0, part1);
         universe->addConstraint(vJnt);
         NLOG(0, "Created fixed joint (VxRPRO) between %s - %s",
-             body->parent->bdyName, body->bdyName);
+             body->parent->name, body->name);
       }
       else
       {
-#ifdef OLD_TOPO
+        const RcsBody* parent = RCSBODY_BY_ID(getGraph(), body->parentId);
         RLOG(4, "Creating fixed joint between \"%s\" and \"%s\" failed",
-             body->paren ? body->parent->bdyName : "NULL", body->bdyName);
-#else
-        RLOG(4, "Creating fixed joint between \"%s\" and \"%s\" failed",
-             body->parentId!=-1 ? getGraph()->bodies[body->parentId].bdyName : "NULL", body->bdyName);
-#endif
+             parent ? parent->name : "NULL", body->name);
       }
     }
     break;
@@ -1631,14 +1620,10 @@ void Rcs::VortexSimulation::getJointAngles(MatNd* q, RcsStateType sType) const
       {
         HTr pose;
         HTr_fromVxTransform(&pose, vxBdy->getTransform());
-        double* q_i = &q->ele[vxBdy->body->jnt->jointIndex];
-#ifdef OLD_TOPO
-        HTr* A_ParentI = vxBdy->body->parent ? vxBdy->body->parent->A_BI : NULL;
-        RcsGraph_relativeRigidBodyDoFs(vxBdy->body, &pose, A_ParentI, q_i);
-#else
+        RcsJoint* bdyJnt = RcsBody_getJoint(vxBdy->body, getGraph());;
+        double* q_i = &q->ele[bdyJnt->jointIndex];
         HTr* A_ParentI = vxBdy->body->parentId!=-1 ? &getGraph()->bodies[vxBdy->body->parentId].A_BI : NULL;
         RcsGraph_relativeRigidBodyDoFs(getGraph(), vxBdy->body, &pose, A_ParentI, q_i);
-#endif
       }
 
     }
@@ -1714,7 +1699,8 @@ void Rcs::VortexSimulation::getJointVelocities(MatNd* q_dot,
         Vx::VxVector3 linearVelocity = vxBdy->getLinearVelocity();
         Vx::VxVector3 angularVelocity = vxBdy->getAngularVelocity();
 
-        double* q6 = &q_dot->ele[vxBdy->body->jnt->jointIndex];
+        RcsJoint* bdyJnt = RcsBody_getJoint(vxBdy->body, getGraph());;
+        double* q6 = &q_dot->ele[bdyJnt->jointIndex];
         linearVelocity.get<double>(q6, q6+1, q6+2);
         angularVelocity.get<double>(q6+3, q6+4, q6+5);
       }
@@ -1803,26 +1789,18 @@ void Rcs::VortexSimulation::getPhysicsTransform(HTr* A_BI,
   // a physics body and in that case compute the relative transformation.
   else
   {
-#ifdef OLD_TOPO
-    Vx::VxPart* vxParent = getPartPtr(body->parent);
-#else
     Vx::VxPart* vxParent = getPartPtrById(body->parentId);
-#endif
 
     // If there is no parent in the physics or if there are joints between
     // body and parent, we give up.
-#ifdef OLD_TOPO
-    const RcsJoint* parentJnt = body->parent->jnt;
-#else
     const RcsBody* parent = RcsBody_getConstParent(getGraph(), body);
-    const RcsJoint* parentJnt = parent ? parent->jnt : NULL;
-#endif
+    const RcsJoint* parentJnt = RcsBody_getJoint(parent, getGraph());
 
     if ((vxParent==NULL) || (parentJnt!=NULL))
     {
       HTr_setIdentity(A_BI);
       RLOG(1, "Couldn't get physics transformation of body \"%s\"",
-           body ? body->bdyName : "NULL");
+           body ? body->name : "NULL");
     }
     else
     {
@@ -1860,15 +1838,11 @@ bool Rcs::VortexSimulation::removeJoint(RcsBody* body)
     return false;
   }
 
-#ifdef OLD_TOPO
-  Vx::VxPart* part0 = body->parent ? getPartPtr(body->parent) : NULL;
-#else
   Vx::VxPart* part0 = getPartPtrById(body->parentId);
-#endif
 
   if (part0 == NULL)
   {
-    RLOG(1, "%s has no prev. VxPart", body->bdyName);
+    RLOG(1, "%s has no prev. VxPart", body->name);
     return false;
   }
 
@@ -1878,7 +1852,7 @@ bool Rcs::VortexSimulation::removeJoint(RcsBody* body)
 
   for (auto it = constraints.begin(); it != constraints.end(); ++it)
   {
-    if ((*it)->getUserDataPtr() == body->jnt)
+    if ((*it)->getUserDataPtr() == RcsBody_getJoint(body, getGraph()))
     {
       vJnt = *it;
       break;
@@ -1891,7 +1865,9 @@ bool Rcs::VortexSimulation::removeJoint(RcsBody* body)
     universe->enablePairIntersect(part0, part1);
     universe->removeConstraint(vJnt);
     delete vJnt;
-    RLOG(0, "Removed joint for body \"%s\" (Joint \"%s\")", body->bdyName, body->jnt ? body->jnt->name : "NULL");
+    RcsJoint* bdyJnt = RcsBody_getJoint(body, getGraph());
+    RLOG(0, "Removed joint for body \"%s\" (Joint \"%s\")", body->name,
+         bdyJnt ? bdyJnt->name : "NULL");
 
     return true;
   }
@@ -1915,7 +1891,7 @@ bool Rcs::VortexSimulation::removeBodyConstraints(RcsBody* body)
   }
   else
   {
-    RLOG(1, "Couldn't reset dynamics of part \"%s\"", body->bdyName);
+    RLOG(1, "Couldn't reset dynamics of part \"%s\"", body->name);
   }
 
   return success;
@@ -2079,8 +2055,7 @@ bool Rcs::VortexSimulation::updateContactForceSensor(RcsSensor* sensor)
   }
 
   HTr A_SI;
-  const HTr* A_SB = &sensor->offset;
-  HTr_transform(&A_SI, &part->A_PI, A_SB);
+  HTr_transform(&A_SI, &part->A_PI, &sensor->A_SB);
 
   double forceVec[3], sensorNormal[3] = {1.0, 0.0, 0.0};
   Vec3d_transRotateSelf(sensorNormal, A_SI.rot);
@@ -2256,10 +2231,10 @@ void Rcs::VortexSimulation::applyControl(double dt)
     if ((vxBdy!=NULL) && (vxBdy->body->physicsSim==RCSBODY_PHYSICS_KINEMATIC))
     {
       RcsBody* transformBdy = RcsGraph_getBodyByName(getGraph(),
-                                                     vxBdy->body->bdyName);
+                                                     vxBdy->body->name);
 
       RCHECK_MSG(transformBdy, "This must never happen: body \"%s\" is not"
-                 " contained in internalDesiredGraph", vxBdy->body->bdyName);
+                 " contained in internalDesiredGraph", vxBdy->body->name);
 
       vxBdy->setTransformKinematic(VxTransform_fromHTr(&transformBdy->A_BI), dt);
     }
@@ -2425,7 +2400,7 @@ void Rcs::VortexSimulation::print() const
   {
     const RcsBody* bdy_i = it->first;
     VortexBody* vbdy_i = it->second;
-    printf("Body %s - %s\n", bdy_i->bdyName, vbdy_i->body->bdyName);
+    printf("Body %s - %s\n", bdy_i->name, vbdy_i->body->name);
     it++;
   }
 }
@@ -2704,14 +2679,14 @@ bool Rcs::VortexSimulation::removeBody(const char* name)
 
   if (!RcsBody_isLeaf(bdy))
   {
-    RLOG(1, "Can't delete non-leaf body \"%s\" - skipping removal", bdy->bdyName);
+    RLOG(1, "Can't delete non-leaf body \"%s\" - skipping removal", bdy->name);
     return false;
   }
 
   VortexBody* part = getPartPtr(bdy);
   if (part == NULL)
   {
-    RLOG(1, "Can't find VxPart for body \"%s\" - skipping removal", bdy->bdyName);
+    RLOG(1, "Can't find VxPart for body \"%s\" - skipping removal", bdy->name);
     return false;
   }
 
@@ -2746,31 +2721,42 @@ bool Rcs::VortexSimulation::removeBody(const char* name)
 /*******************************************************************************
  *
  ******************************************************************************/
-bool Rcs::VortexSimulation::addBody(const RcsBody* body)
+bool Rcs::VortexSimulation::addBody(const RcsGraph* graph, const RcsBody* body_)
 {
-  RLOG(5, "Creating Vortex part for \"%s\"", body->bdyName);
+  RLOG(5, "Creating Vortex part for \"%s\"", body_->name);
 
   pthread_mutex_lock(&this->extForceLock);
 
-  RcsBody* cpyOfBody = RcsBody_clone(body);
-  RCHECK(cpyOfBody);
+  RLOG(5, "Copying graph body");
+  RcsBody* body = RcsGraph_insertGraphBody(getGraph(), body_->parentId);
+  RcsBody_copy(body, body_);
 
-#ifdef OLD_TOPO
-  cpyOfBody->parent = RcsGraph_getBodyByName(getGraph(), body->bdyName);
-#else
-  RFATAL("Fix me");
-#endif
+  // Make a copy of all body shapes and attach them to the body
+  int nShapes = RcsBody_numShapes(body_);
+  body->shape = RNALLOC(nShapes + 1, RcsShape*);
+  for (int i = 0; i < nShapes; i++)
+  {
+    body->shape[i] = RcsShape_clone(body_->shape[i]);
+  }
 
-  bool success = createCompositeBody(cpyOfBody);
+  // Create the joints into the simulation's body.
+  RCSBODY_FOREACH_JOINT(graph, body_)
+  {
+    RcsJoint* newJnt = RcsGraph_insertGraphJoint(getGraph(), body->id);
+    RcsJoint_copy(newJnt, JNT);
+  }
 
-  createJoint(cpyOfBody);
+  RLOG(5, "Creating Vortex body");
+  bool success = createCompositeBody(body);
+
+  createJoint(body);
 
   MatNd* arrBuf[3];
   arrBuf[0] = this->q_des;
   arrBuf[1] = this->q_dot_des;
   arrBuf[2] = this->T_des;
 
-  unsigned int nJoints = RcsBody_numJoints(cpyOfBody);
+  unsigned int nJoints = RcsBody_numJoints(getGraph(), body);
 
   if (nJoints > 0)
   {
@@ -2779,17 +2765,13 @@ bool Rcs::VortexSimulation::addBody(const RcsBody* body)
     this->q_dot_des = MatNd_realloc(this->q_dot_des, getGraph()->dof, 1);
   }
 
-#ifdef OLD_TOPO
-  RcsGraph_addBody(getGraph(), cpyOfBody->parent, cpyOfBody, arrBuf, 3);
-#else
-  RFATAL("Fix me");
-#endif
+  RcsGraph_addBodyDofs(getGraph(), NULL, body, arrBuf, 3);
 
 
   pthread_mutex_unlock(&this->extForceLock);
 
   RLOG(5, "%s adding \"%s\" to Vortex universe",
-       success ? "SUCCESS" : "FAILURE", body->bdyName);
+       success ? "SUCCESS" : "FAILURE", body->name);
 
   return success;
 }
@@ -2809,7 +2791,7 @@ bool Rcs::VortexSimulation::deactivateBody(const char* name)
 
   if (!RcsBody_isLeaf(bdy))
   {
-    RLOG(1, "Can't deactivate non-leaf body \"%s\" - skipping", bdy->bdyName);
+    RLOG(1, "Can't deactivate non-leaf body \"%s\" - skipping", bdy->name);
     return false;
   }
 
@@ -2817,7 +2799,7 @@ bool Rcs::VortexSimulation::deactivateBody(const char* name)
   if (part == NULL)
   {
     RLOG(1, "Can't find VxPart for body \"%s\" - skipping deactivation",
-         bdy->bdyName);
+         bdy->name);
     return false;
   }
 
@@ -2825,7 +2807,7 @@ bool Rcs::VortexSimulation::deactivateBody(const char* name)
 
   if (nowMyPart == NULL)
   {
-    RLOG(1, "Can't find VxPart \"%s\" in universe", bdy->bdyName);
+    RLOG(1, "Can't find VxPart \"%s\" in universe", bdy->name);
     return false;
 
   }

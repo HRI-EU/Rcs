@@ -34,51 +34,75 @@
 
 *******************************************************************************/
 
-#ifndef RCS_SPHERENODE_H
-#define RCS_SPHERENODE_H
+#ifndef RCS_TASKSLEEVE_H
+#define RCS_TASKSLEEVE_H
 
-#include "NodeBase.h"
+#include "TaskGenericIK.h"
 
-#include <osg/Shape>
 
 namespace Rcs
 {
-/*!
- * \ingroup RcsGraphics
- */
-class SphereNode: public NodeBase
-{
 
+class TaskSleeve: public TaskGenericIK
+{
 public:
 
-  SphereNode();
-
-  SphereNode(const double pos[3],
-             const double radius,
-             bool resizeable=false);
-
-  /*! \brief Only works if the class has been instantiated with the resizeable
-   *         flag.
+  /*! Constructor based on xml parsing
    */
-  void setRadius(double radius);
+  TaskSleeve(const std::string& className, xmlNode* node,
+             RcsGraph* graph, int dim=3);
 
-  static void SpherifiedCube(osg::Geometry* geometry, unsigned int divisions);
+  /*! \brief Copy constructor doing deep copying with optional new graph
+   *         pointer
+   */
+  TaskSleeve(const TaskSleeve& copyFromMe, RcsGraph* newGraph=NULL);
 
+  /*! Destructor
+   */
+  virtual ~TaskSleeve();
+
+  /*!
+   * \brief Virtual copy constructor with optional new graph.
+   */
+  virtual TaskSleeve* clone(RcsGraph* newGraph=NULL) const;
+
+  /*! \brief Computes the Polar Angles between reference body and effector.
+   */
+  virtual void computeX(double* polarAngles) const;
+
+  virtual void computeDX(double* dx, const double* x_des,
+                         const double* x_curr) const;
+
+  /*! \brief This Jacobian
+   */
+  virtual void computeJ(MatNd* jacobian) const;
+
+  /*! \brief This Hessian
+   */
+  virtual void computeH(MatNd* hessian) const;
+
+  /*! \brief Returns true if the task is specified correctly
+   */
+  static bool isValid(xmlNode* node, const RcsGraph* graph);
 
 protected:
 
-  void init(const double pos[3],
-            const double radius,
-            bool resizeable);
-  void init2(const double pos[3],
-             const double radius,
-             bool resizeable);
-  void init3(const double pos[3],
-             const double radius,
-             bool resizeable);
-  osg::ref_ptr<osg::Sphere> sphere;
+  /*! \brief Additionally writes the axis direction into the output stream.
+   */
+  void toXMLBody(FILE* out) const;
+
+  void computeFrame(double A[3][3]) const;
+
+  void computeContactNormal(double n[3]) const;
+
+  const RcsBody* getShoulder() const;
+  const RcsBody* getElbow() const;
+  const RcsBody* getWrist() const;
+  const RcsBody* getSlider() const;
+
+  int slideBdyId;
 };
 
-}   // namespace Rcs
+}
 
-#endif // RCS_SPHERENODE_H
+#endif // RCS_TASKSLEEVE_H

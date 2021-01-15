@@ -163,18 +163,14 @@ static void RcsGraph_addWorldPointJacobian(const RcsGraph* self,
                          (body ? body->A_BI.org : Vec3d_zeroVec());
 
   // Find "driving" joint of the body
-#ifdef  OLD_TOPO
-  RcsJoint* jnt = RcsBody_lastJointBeforeBody(body);
-#else
-  RcsJoint* jnt = RcsBody_lastJointBeforeBodyById(self, body);
-#endif
+  RcsJoint* jnt = RcsBody_lastJointBeforeBody(self, body);
 
   // Traverse backwards through the joints
   while (jnt != NULL)
   {
     computeWorldPointJacobianForJoint(jnt, A_BI, I_r_IP,
                                       &J->ele[jnt->jacobiIndex], J->n);
-    jnt = jnt->prev;
+    jnt = RCSJOINT_BY_ID(self, jnt->prevId);
   }
 
 }
@@ -253,11 +249,7 @@ static void RcsGraph_constMulAndAddBodyPointJacobian(const RcsGraph* self,
   }
 
   // Find "driving" joint of the body
-#ifdef  OLD_TOPO
-  RcsJoint* jnt = RcsBody_lastJointBeforeBody(body);
-#else
-  RcsJoint* jnt = RcsBody_lastJointBeforeBodyById(self, body);
-#endif
+  RcsJoint* jnt = RcsBody_lastJointBeforeBody(self, body);
 
   // Traverse backwards through the joints
   double col[3];
@@ -270,7 +262,7 @@ static void RcsGraph_constMulAndAddBodyPointJacobian(const RcsGraph* self,
       J->ele[jnt->jacobiIndex+2*J->n] += multiplier*col[2];
     }
 
-    jnt = jnt->prev;
+    jnt = RCSJOINT_BY_ID(self, jnt->prevId);
   }
 
 }
@@ -331,11 +323,7 @@ void RcsGraph_bodyPointHessian(const RcsGraph* self,
   MatNd_reshapeAndSetZero(H, 3*n, n);
 
   // Find last joint of previous body (which has joints)
-#ifdef  OLD_TOPO
-  RcsJoint* jnt_j = RcsBody_lastJointBeforeBody(b);
-#else
-  RcsJoint* jnt_j = RcsBody_lastJointBeforeBodyById(self, b);
-#endif
+  RcsJoint* jnt_j = RcsBody_lastJointBeforeBody(self, b);
 
   if (jnt_j == NULL)
   {
@@ -348,7 +336,7 @@ void RcsGraph_bodyPointHessian(const RcsGraph* self,
     // Skip constrained joints
     if (jnt_j->constrained)
     {
-      jnt_j = jnt_j->prev;
+      jnt_j = RCSJOINT_BY_ID(self, jnt_j->prevId);
       continue;
     }
 
@@ -359,7 +347,7 @@ void RcsGraph_bodyPointHessian(const RcsGraph* self,
     {
       if (jnt_k->constrained == true)
       {
-        jnt_k = jnt_k->prev;
+        jnt_k = RCSJOINT_BY_ID(self, jnt_k->prevId);
         continue;
       }
 
@@ -383,7 +371,7 @@ void RcsGraph_bodyPointHessian(const RcsGraph* self,
       }
       else // rot-trans or trans-trans makes zero entry
       {
-        jnt_k = jnt_k->prev;
+        jnt_k = RCSJOINT_BY_ID(self, jnt_k->prevId);
         continue;
       }
 
@@ -398,10 +386,10 @@ void RcsGraph_bodyPointHessian(const RcsGraph* self,
         H->ele[i*nn + jnt_k->jacobiIndex*n + jnt_j->jacobiIndex] = sj[i];
       }
 
-      jnt_k = jnt_k->prev;
+      jnt_k = RCSJOINT_BY_ID(self, jnt_k->prevId);
     }
 
-    jnt_j = jnt_j->prev;
+    jnt_j = RCSJOINT_BY_ID(self, jnt_j->prevId);
   }
 
 }
@@ -445,18 +433,14 @@ void RcsGraph_rotationJacobian(const RcsGraph* self,
   }
 
   // Find the last joint of the previous body which has joints
-#ifdef  OLD_TOPO
-  RcsJoint* jnt = RcsBody_lastJointBeforeBody(b);
-#else
-  RcsJoint* jnt = RcsBody_lastJointBeforeBodyById(self, b);
-#endif
+  RcsJoint* jnt = RcsBody_lastJointBeforeBody(self, b);
 
   // Traverse backwards through the joints
   while (jnt != NULL)
   {
     if ((jnt->constrained == true) || (RcsJoint_isRotation(jnt)==false))
     {
-      jnt = jnt->prev;
+      jnt = RCSJOINT_BY_ID(self, jnt->prevId);
       continue;
     }
 
@@ -473,7 +457,7 @@ void RcsGraph_rotationJacobian(const RcsGraph* self,
       MatNd_setColumn(J, jnt->jacobiIndex, jntDir, 3);
     }
 
-    jnt = jnt->prev;
+    jnt = RCSJOINT_BY_ID(self, jnt->prevId);
   }
 
 }
@@ -499,11 +483,7 @@ void RcsGraph_rotationHessian(const RcsGraph* self,
   MatNd_reshapeAndSetZero(H, n*3, n);
 
   // Find last joint of previous body (which has joints)
-#ifdef  OLD_TOPO
-  RcsJoint* jnt_j = RcsBody_lastJointBeforeBody(b);
-#else
-  RcsJoint* jnt_j = RcsBody_lastJointBeforeBodyById(self, b);
-#endif
+  RcsJoint* jnt_j = RcsBody_lastJointBeforeBody(self, b);
 
   if (jnt_j == NULL)
   {
@@ -516,7 +496,7 @@ void RcsGraph_rotationHessian(const RcsGraph* self,
     // Skip non-rotation and constrained joints
     if ((jnt_j->constrained==true) || (RcsJoint_isRotation(jnt_j)==false))
     {
-      jnt_j = jnt_j->prev;
+      jnt_j = RCSJOINT_BY_ID(self, jnt_j->prevId);
       continue;
     }
 
@@ -544,10 +524,10 @@ void RcsGraph_rotationHessian(const RcsGraph* self,
         }
       }
 
-      jnt_k = jnt_k->prev;
+      jnt_k = RCSJOINT_BY_ID(self, jnt_k->prevId);
     }
 
-    jnt_j = jnt_j->prev;
+    jnt_j = RCSJOINT_BY_ID(self, jnt_j->prevId);
   }
 
 }
@@ -823,11 +803,7 @@ void RcsGraph_3dOmegaJacobian(const RcsGraph* self, const RcsBody* effector,
   }
   // Jacobian wrt. static reference frame: J = A_2I * JR_2
   else if ((refBdy!=NULL) && (refFrame==refBdy) &&
-#ifdef  OLD_TOPO
-           (RcsBody_isArticulated(refBdy)==false))
-#else
            (RcsBody_isArticulated(self, refBdy)==false))
-#endif
   {
     RcsGraph_rotationJacobian(self, effector,
                               (double (*)[3])refBdy->A_BI.rot, J);
@@ -873,11 +849,7 @@ void RcsGraph_3dOmegaHessian(const RcsGraph* self, const RcsBody* effector,
   }
   // Hessian wrt. static reference frame
   else if ((refBdy!=NULL) && (refFrame==refBdy) &&
-#ifdef  OLD_TOPO
-           (RcsBody_isArticulated(refBdy)==false))
-#else
            (RcsBody_isArticulated(self, refBdy)==false))
-#endif
   {
     MatNd_reshape(H, n, n3);
     RcsGraph_rotationHessian(self, effector,
@@ -970,21 +942,14 @@ double RcsGraph_COG(const RcsGraph* self, double r_cog[3])
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-#ifdef OLD_TOPO
-double RcsGraph_COG_Body(const RcsBody* body, double r_cog[3])
-#else
-double RcsGraph_COG_Body(const RcsGraph* self, const RcsBody* body, double r_cog[3])
-#endif
+double RcsGraph_COG_Body(const RcsGraph* self, const RcsBody* body,
+                         double r_cog[3])
 {
   double tmp[3], m = 0.0;
 
   Vec3d_setZero(r_cog);
 
-#ifdef OLD_TOPO
-  RCSBODY_TRAVERSE_BODIES((RcsBody*) body)
-#else
   RCSBODY_TRAVERSE_BODIES((RcsGraph*) self, (RcsBody*) body)
-#endif
   {
     if (BODY->m>0.0)
     {
@@ -1052,11 +1017,7 @@ void RcsGraph_COGJacobian_Body(const RcsGraph* self, const RcsBody* body,
   MatNd_reshape(J_cog, 3, self->nJ);
   MatNd_setZero(J_cog);
 
-#ifdef OLD_TOPO
-  RCSBODY_TRAVERSE_BODIES((RcsBody*) body)
-#else
   RCSBODY_TRAVERSE_BODIES(self, (RcsBody*) body)
-#endif
   {
     if (BODY->m > 0.0)
     {
@@ -1132,11 +1093,7 @@ void RcsGraph_computeCOGHessian_Body(const RcsGraph* self, const RcsBody* body,
   MatNd_reshape(H, 3*n, n);
   MatNd_setZero(H);
 
-#ifdef OLD_TOPO
-  RCSBODY_TRAVERSE_BODIES((RcsBody*) body)
-#else
   RCSBODY_TRAVERSE_BODIES(self, (RcsBody*) body)
-#endif
   {
     if (BODY->m > 0.0)
     {
@@ -1171,11 +1128,7 @@ void RcsGraph_computeCOGHessian_Body_(const RcsGraph* self, const RcsBody* body,
   MatNd_reshape(H, 3*n, n);
   MatNd_setZero(H);
 
-#ifdef OLD_TOPO
-  RCSBODY_TRAVERSE_BODIES((RcsBody*) body)
-#else
   RCSBODY_TRAVERSE_BODIES(self, (RcsBody*) body)
-#endif
   {
     if (BODY->m > 0.0)
     {
@@ -1293,7 +1246,7 @@ double RcsGraph_jointLimitBorderCost(const RcsGraph* self, double freeRatio,
 
     // Coupled joints don't contribute. Limit avoidance is the master joint's
     // job.
-    if (JNT->coupledTo != NULL)
+    if (JNT->coupledToId != -1)
     {
       continue;
     }
@@ -1406,7 +1359,7 @@ void RcsGraph_jointLimitBorderGradient(const RcsGraph* self,
 
     // Coupled joints don't contribute. Limit avoidance is the master joint's
     // job.
-    if (JNT->coupledTo != NULL)
+    if (JNT->coupledToId != -1)
     {
       continue;
     }
@@ -1487,7 +1440,7 @@ void RcsGraph_jointLimitBorderHessian(const RcsGraph* self,
 
     // Coupled joints don't contribute. Limit avoidance is the master joint's
     // job.
-    if (JNT->coupledTo != NULL)
+    if (JNT->coupledToId != -1)
     {
       continue;
     }
@@ -1796,18 +1749,14 @@ void RcsGraph_dAdq(const RcsGraph* self, const RcsBody* b, double* dAdq,
     return;
   }
 
-#ifdef  OLD_TOPO
-  const RcsJoint* jnt = RcsBody_lastJointBeforeBody(b);
-#else
-  const RcsJoint* jnt = RcsBody_lastJointBeforeBodyById(self, b);
-#endif
+  const RcsJoint* jnt = RcsBody_lastJointBeforeBody(self, b);
 
   while (jnt != NULL)
   {
 
     if ((jnt->constrained==true) || (RcsJoint_isRotation(jnt)==false))
     {
-      jnt = jnt->prev;
+      jnt = RCSJOINT_BY_ID(self, jnt->prevId);
       continue;
     }
 
@@ -1827,7 +1776,7 @@ void RcsGraph_dAdq(const RcsGraph* self, const RcsBody* b, double* dAdq,
       }
     }
 
-    jnt = jnt->prev;
+    jnt = RCSJOINT_BY_ID(self, jnt->prevId);
   }
 
 }
@@ -1855,7 +1804,7 @@ void RcsGraph_dAdq(const RcsGraph* self, const RcsBody* b, double* dAdq,
 ******************************************************************************/
 
 double RcsGraph_pointFrustrumCost(const RcsBody* cam,
-                                  const RcsBody* body,
+                                  const RcsBody* bdy,
                                   double theta1,
                                   double theta2,
                                   double ratio1,
@@ -1865,17 +1814,6 @@ double RcsGraph_pointFrustrumCost(const RcsBody* cam,
   RCHECK(cam);
 
   double p[3];   // Point in camera's coordinates
-
-  const RcsBody* bdy = NULL;
-  // check if body is GenericBody
-  if (STRNEQ(body->bdyName, "GenericBody", 11))
-  {
-    bdy = (RcsBody*) body->extraInfo;
-  }
-  else
-  {
-    bdy = body;
-  }
 
   // If bdy exists, array bdy_p is assumed to be given in the bdy's frame. We
   // then transform it from bdy's frame to cam's frame
@@ -1907,7 +1845,7 @@ double RcsGraph_pointFrustrumCost(const RcsBody* cam,
   {
     if (bdy)
     {
-      RMSG("Cost for body %s is %f", bdy->bdyName, cost);
+      RMSG("Cost for body %s is %f", bdy->name, cost);
     }
   }
 
@@ -1924,7 +1862,7 @@ double RcsGraph_pointFrustrumCost(const RcsBody* cam,
 
 void RcsGraph_pointFrustrumGradient(const RcsGraph* graph,
                                     const RcsBody* cam,
-                                    const RcsBody* body,
+                                    const RcsBody* bdy,
                                     double theta1,
                                     double theta2,
                                     double ratio1,
@@ -1935,17 +1873,6 @@ void RcsGraph_pointFrustrumGradient(const RcsGraph* graph,
   RCHECK(cam);
 
   double p[3];   // Point vector in camera's coordinates
-
-  const RcsBody* bdy = NULL;
-  // check if body is GenericBody
-  if (STRNEQ(body->bdyName, "GenericBody", 11))
-  {
-    bdy = (RcsBody*) body->extraInfo;
-  }
-  else
-  {
-    bdy = body;
-  }
 
   // If bdy exists, array bdy_p is assumed to be given in the bdy's frame. We
   // then transform it from bdy's frame to cam's frame
@@ -2055,7 +1982,7 @@ void RcsGraph_pointFrustrumGradient(const RcsGraph* graph,
   {
     if (bdy)
     {
-      RMSG("Gradient for body %s (cam is %s)", bdy->bdyName, cam->bdyName);
+      RMSG("Gradient for body %s (cam is %s)", bdy->name, cam->name);
       MatNd_printDigits(grad, 2);
     }
   }

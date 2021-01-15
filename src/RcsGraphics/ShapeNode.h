@@ -40,7 +40,7 @@
 #include <Rcs_graph.h>
 #include <NodeBase.h>
 
-#include <osg/PositionAttitudeTransform>
+#include <osg/MatrixTransform>
 
 #include <vector>
 
@@ -59,22 +59,19 @@ public:
 protected:
   virtual ~ShapeNode();
   void addShape(bool resizeable);
-  void addTexture(const char* textureFile);
-  void setMaterial(const char* color, osg::Node* node);
-  void addGeometry(osg::Shape* s);
-  void addDrawable(osg::Drawable* d);
+  bool addTexture(const char* textureFile);
 
   struct ShapeUpdater : public osg::Referenced
   {
     ShapeUpdater(ShapeNode* node);
-    void addGeometry(osg::Shape* s);
     void addDrawable(osg::Drawable* d);
+    void addSubNode(osg::Node* nd);
     const RcsShape* shape();
     void updateDynamicShapes();
 
     ShapeNode* shapeNode;
-    std::vector<osg::Shape*> geometry;
-    std::vector<osg::Drawable*> drawable;
+    osg::ref_ptr<osg::Drawable> drawable;
+    osg::ref_ptr<osg::Node> subNode;
     double extents[3];
     HTr A_CB;
   };

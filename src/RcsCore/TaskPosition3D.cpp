@@ -129,32 +129,36 @@ TaskPosition3D* TaskPosition3D::clone(RcsGraph* newGraph) const
  ******************************************************************************/
 void TaskPosition3D::computeX(double* I_r) const
 {
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+  const RcsBody* refFrame = getRefFrame();
+
   // Effector-fixed reference point in world coordinates
-  Vec3d_copy(I_r, this->ef ? this->ef->A_BI.org : Vec3d_zeroVec());
+  Vec3d_copy(I_r, ef ? ef->A_BI.org : Vec3d_zeroVec());
 
   // Transform to reference frame: ref_r = A_ref-I * (I_r - I_r_refBdy)
-  if (this->refBody != NULL)
+  if (refBody != NULL)
   {
-    Vec3d_subSelf(I_r, this->refBody->A_BI.org);     // I_r -= I_r_refBdy
+    Vec3d_subSelf(I_r, refBody->A_BI.org);     // I_r -= I_r_refBdy
 
     // refBody and refFrame, but they differ: refFrame_r = A_refFrame-I*I_r
-    if ((this->refFrame != NULL) && (this->refFrame != this->refBody))
+    if ((refFrame != NULL) && (refFrame != refBody))
     {
-      Vec3d_rotateSelf(I_r, (double(*)[3])this->refFrame->A_BI.rot);
+      Vec3d_rotateSelf(I_r, (double(*)[3])refFrame->A_BI.rot);
     }
     // refBody and refFrame are the same: refFrame_r = A_refFrame-I*I_r
     else
     {
-      Vec3d_rotateSelf(I_r, (double(*)[3])this->refBody->A_BI.rot);
+      Vec3d_rotateSelf(I_r, (double(*)[3])refBody->A_BI.rot);
     }
   }
   // No refBody, but refFrame: Rotate into refFrame coordinates
   else
   {
     // Rotate into refFrame if it exists
-    if (this->refFrame != NULL)
+    if (refFrame != NULL)
     {
-      Vec3d_rotateSelf(I_r, (double(*)[3])this->refFrame->A_BI.rot);
+      Vec3d_rotateSelf(I_r, (double(*)[3])refFrame->A_BI.rot);
     }
 
   }
@@ -169,35 +173,38 @@ void TaskPosition3D::computeX(double* I_r) const
  ******************************************************************************/
 void TaskPosition3D::computeXp_ik(double* x_dot) const
 {
-  const double* I_xp_ef = this->ef ? this->ef->x_dot : Vec3d_zeroVec();
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+  const RcsBody* refFrame = getRefFrame();
 
-  if (this->refBody == NULL)
+  const double* I_xp_ef = ef ? ef->x_dot : Vec3d_zeroVec();
+
+  if (!refBody)
   {
     Vec3d_copy(x_dot, I_xp_ef);
 
-    if (this->refFrame != NULL)
+    if (refFrame)
     {
-      Vec3d_rotateSelf(x_dot, (double(*)[3])this->refFrame->A_BI.rot);
+      Vec3d_rotateSelf(x_dot, (double(*)[3])refFrame->A_BI.rot);
     }
   }
   else
   {
-    const double* I_xp_ref = this->refBody->x_dot;
+    const double* I_xp_ref = refBody->x_dot;
     Vec3d_sub(x_dot, I_xp_ef, I_xp_ref);
 
     double r_12[3], eul[3];
-    Vec3d_sub(r_12, this->ef ? this->ef->A_BI.org : Vec3d_zeroVec(),
-              this->refBody->A_BI.org);
-    Vec3d_crossProduct(eul, r_12, this->refBody->omega);
+    Vec3d_sub(r_12, ef ? ef->A_BI.org : Vec3d_zeroVec(), refBody->A_BI.org);
+    Vec3d_crossProduct(eul, r_12, refBody->omega);
     Vec3d_addSelf(x_dot, eul);
 
-    if (this->refFrame != NULL)
+    if (refFrame)
     {
-      Vec3d_rotateSelf(x_dot, (double(*)[3])this->refFrame->A_BI.rot);
+      Vec3d_rotateSelf(x_dot, (double(*)[3])refFrame->A_BI.rot);
     }
     else
     {
-      Vec3d_rotateSelf(x_dot, (double(*)[3])this->refBody->A_BI.rot);
+      Vec3d_rotateSelf(x_dot, (double(*)[3])refBody->A_BI.rot);
     }
   }
 
@@ -209,8 +216,8 @@ void TaskPosition3D::computeXp_ik(double* x_dot) const
  ******************************************************************************/
 void TaskPosition3D::computeJ(MatNd* jacobian) const
 {
-  RcsGraph_3dPosJacobian(this->graph, this->ef, this->refBody, this->refFrame,
-                         jacobian);
+  RcsGraph_3dPosJacobian(this->graph, getEffector(), getRefBody(),
+                         getRefFrame(), jacobian);
 }
 
 /*******************************************************************************
@@ -219,8 +226,8 @@ void TaskPosition3D::computeJ(MatNd* jacobian) const
  ******************************************************************************/
 void TaskPosition3D::computeH(MatNd* hessian) const
 {
-  RcsGraph_3dPosHessian(this->graph, this->ef, this->refBody, this->refFrame,
-                        hessian);
+  RcsGraph_3dPosHessian(this->graph, getEffector(), getRefBody(),
+                        getRefFrame(), hessian);
 }
 
 /*******************************************************************************

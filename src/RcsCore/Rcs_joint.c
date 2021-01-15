@@ -44,12 +44,28 @@
 
 
 
-/******************************************************************************
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void RcsJoint_init(RcsJoint* self)
+{
+  memset(self, 0, sizeof(RcsJoint));
+  HTr_setIdentity(&self->A_JP);
+  HTr_setIdentity(&self->A_JI);
+  self->id = -1;
+  self->prevId = -1;
+  self->nextId = -1;
+  self->coupledToId = -1;
+  self->jointIndex = -1;
+  self->jacobiIndex = -1;
+  self->type = -1;
+  self->speedLimit = DBL_MAX;
+  self->accLimit = DBL_MAX;
+}
 
-  \brief See header.
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 bool RcsJoint_isRotation(const RcsJoint* joint)
 {
   if (joint == NULL)
@@ -100,7 +116,7 @@ bool RcsJoint_isTranslation(const RcsJoint* joint)
 
 ******************************************************************************/
 
-void RcsJoint_fprint(FILE* out, const RcsJoint* jnt)
+void RcsJoint_fprint(FILE* out, const RcsJoint* jnt, const RcsGraph* graph)
 {
   if (jnt==NULL)
   {
@@ -153,14 +169,22 @@ void RcsJoint_fprint(FILE* out, const RcsJoint* jnt)
           jnt->A_JI.rot[jnt->dirIdx][1],
           jnt->A_JI.rot[jnt->dirIdx][2]);
 
-  fprintf(out, "\tprev. joint  = %s\n", jnt->prev ? jnt->prev->name : "NULL");
-  fprintf(out, "\tnext  joint  = %s\n", jnt->next ? jnt->next->name : "NULL");
-  fprintf(out, "\tJacobi index = %d\n", jnt->jacobiIndex);
-  fprintf(out, "\tA_JP         = %s\n", jnt->A_JP ? "" : "NULL");
+  const RcsJoint* prevJnt = RCSJOINT_BY_ID(graph, jnt->prevId);
+  const RcsJoint* nextJnt = RCSJOINT_BY_ID(graph, jnt->nextId);
 
-  if (jnt->A_JP != NULL)
+  fprintf(out, "\tprev. joint  = %s\n", prevJnt ? prevJnt->name : "NULL");
+  fprintf(out, "\tnext  joint  = %s\n", nextJnt ? nextJnt->name : "NULL");
+  fprintf(out, "\tJacobi index = %d\n", jnt->jacobiIndex);
+  fprintf(out, "\tq-index = %d\n", jnt->jointIndex);
+  fprintf(out, "\tid = %d\n", jnt->id);
+  fprintf(out, "\tA_JP         = ");
+  if (HTr_isIdentity(&jnt->A_JP))
   {
-    HTr_fprint(out, jnt->A_JP);
+    fprintf(out, "Identity");
+  }
+  else
+  {
+    HTr_fprint(out, &jnt->A_JP);
   }
 
   fprintf(out, "\tA_JI         = ");
@@ -242,19 +266,6 @@ const char* RcsJoint_typeName(int type)
 
 void RcsJoint_destroy(RcsJoint* self)
 {
-  if (self == NULL)
-  {
-    NLOG(1, "Joint is NULL - returning");
-    return;
-  }
-
-  RFREE(self->name);
-  RFREE(self->A_JP);
-  RFREE(self->coupledJointName);
-  MatNd_destroy(self->couplingFactors);
-
-  memset(self, 0, sizeof(RcsJoint));
-
   RFREE(self);
 }
 
@@ -262,61 +273,24 @@ void RcsJoint_destroy(RcsJoint* self)
 
 /******************************************************************************
 
-  \brief Makes a deep copy of a RcsJoint data structure. Some pointers can't
-         be assigned in this context. This are
-
-         RcsJoint* prev;
-         RcsJoint* next;
-         RcsJoint* coupledJoint;
-         void* extraInfo;
-
-         These are handled on the level of the graph copy.
+  \brief Makes a deep copy of a RcsJoint data structure except for the
+         connection ids (id, prevId, nextId, coupledToId).
 
 ******************************************************************************/
 
 void RcsJoint_copy(RcsJoint* dst, const RcsJoint* src)
 {
-  String_copyOrRecreate(&dst->name, src->name);
-  dst->q0 = src->q0;
-  dst->q_init = src->q_init;
-  dst->q_min = src->q_min;
-  dst->q_max = src->q_max;
-  dst->weightJL = src->weightJL;
-  dst->weightCA = src->weightCA;
-  dst->weightMetric = src->weightMetric;
-  dst->constrained = src->constrained;
-  dst->type = src->type;
-  dst->dirIdx = src->dirIdx;
-  dst->jointIndex = src->jointIndex;
-  dst->jacobiIndex= src->jacobiIndex;
-  HTr_copyOrRecreate(&dst->A_JP, src->A_JP);
-  HTr_copy(&dst->A_JI, &src->A_JI);
-  dst->maxTorque = src->maxTorque;
-  dst->speedLimit = src->speedLimit;
-  dst->accLimit = src->accLimit;
-  dst->decLimit = src->decLimit;
-  dst->ctrlType = src->ctrlType;
-  String_copyOrRecreate(&dst->coupledJointName, src->coupledJointName);
+  int id = dst->id;
+  int prevId = dst->prevId;
+  int nextId = dst->nextId;
+  int coupledToId = dst->coupledToId;
 
-  if (src->couplingFactors==NULL)
-  {
-    if (dst->couplingFactors != NULL)
-    {
-      MatNd_reshape(dst->couplingFactors, 0, 0);
-    }
-  }
-  else
-  {
-    if (dst->couplingFactors==NULL)
-    {
-      dst->couplingFactors = MatNd_clone(src->couplingFactors);
-    }
-    else
-    {
-      MatNd_resizeCopy(&dst->couplingFactors, src->couplingFactors);
-    }
-  }
+  memcpy(dst, src, sizeof(RcsJoint));
 
+  dst->id = id;
+  dst->prevId = prevId;
+  dst->nextId = nextId;
+  dst->coupledToId = coupledToId;
 }
 
 
@@ -332,14 +306,15 @@ void RcsJoint_copy(RcsJoint* dst, const RcsJoint* src)
 ******************************************************************************/
 
 static double RcsJoint_calcCouplingPolynomial(const double q_master,
-                                              const MatNd* coeff)
+                                              const double* coeff,
+                                              unsigned int nCoeff)
 {
-  const int orderM1 = coeff->m-1;
+  const int orderM1 = nCoeff-1;
   double q_slave = 0.0;
 
   for (int i=0; i<=orderM1; i++)
   {
-    q_slave += coeff->ele[i] * pow(q_master, (int)orderM1-i);
+    q_slave += coeff[i] * pow(q_master, (int)orderM1-i);
   }
 
   return q_slave;
@@ -354,14 +329,15 @@ static double RcsJoint_calcCouplingPolynomial(const double q_master,
 ******************************************************************************/
 
 static double RcsJoint_calcCouplingPolynomialDerivative(const double q_master,
-                                                        const MatNd* coeff)
+                                                        const double* coeff,
+                                                        unsigned int nCoeff)
 {
-  const unsigned int orderM1 = coeff->m-1;
+  const unsigned int orderM1 = nCoeff-1;
   double dq_slave = 0.0;
 
   for (unsigned int i=0; i<orderM1; i++)
   {
-    dq_slave += (orderM1-i)*coeff->ele[i] * pow(q_master, (int)(orderM1-1-i));
+    dq_slave += (orderM1-i)*coeff[i] * pow(q_master, (int)(orderM1-1-i));
   }
 
   return dq_slave;
@@ -375,10 +351,11 @@ static double RcsJoint_calcCouplingPolynomialDerivative(const double q_master,
 
 ******************************************************************************/
 
-double RcsJoint_computeSlaveJointAngle(const RcsJoint* slave,
+double RcsJoint_computeSlaveJointAngle(const RcsGraph* graph,
+                                       const RcsJoint* slave,
                                        const double q_master)
 {
-  const RcsJoint* master = slave->coupledTo;
+  const RcsJoint* master = RCSJOINT_BY_ID(graph, slave->coupledToId);
   double q_slave = 0.0;
 
   if (master==NULL)
@@ -387,10 +364,9 @@ double RcsJoint_computeSlaveJointAngle(const RcsJoint* slave,
     return 0.0;
   }
 
-  if (slave->couplingFactors->size == 1)
+  if (slave->nCouplingCoeff == 1)
   {
-    q_slave = slave->q_init +
-              slave->couplingFactors->ele[0] * (q_master - master->q_init);
+    q_slave = slave->q_init + slave->couplingPoly[0]*(q_master-master->q_init);
   }
   else
   {
@@ -399,24 +375,25 @@ double RcsJoint_computeSlaveJointAngle(const RcsJoint* slave,
     if (q_master < master->q_min)
     {
       const double sens =
-        RcsJoint_calcCouplingPolynomialDerivative(master->q_min -
-                                                  master->q_init,
-                                                  slave->couplingFactors);
+        RcsJoint_calcCouplingPolynomialDerivative(master->q_min-master->q_init,
+                                                  slave->couplingPoly,
+                                                  slave->nCouplingCoeff);
       q_slave = slave->q_min - sens*(master->q_min - q_master);
     }
     else if (q_master > master->q_max)
     {
       const double sens =
-        RcsJoint_calcCouplingPolynomialDerivative(master->q_max -
-                                                  master->q_init,
-                                                  slave->couplingFactors);
+        RcsJoint_calcCouplingPolynomialDerivative(master->q_max-master->q_init,
+                                                  slave->couplingPoly,
+                                                  slave->nCouplingCoeff);
       q_slave = slave->q_max + sens*(q_master - master->q_max);
     }
     else
     {
       q_slave = slave->q_init +
-                RcsJoint_calcCouplingPolynomial(q_master - master->q_init,
-                                                slave->couplingFactors);
+                RcsJoint_calcCouplingPolynomial(q_master-master->q_init,
+                                                slave->couplingPoly,
+                                                slave->nCouplingCoeff);
     }
 
   }
@@ -432,11 +409,12 @@ double RcsJoint_computeSlaveJointAngle(const RcsJoint* slave,
 
 ******************************************************************************/
 
-double RcsJoint_computeSlaveJointVelocity(const RcsJoint* slave,
+double RcsJoint_computeSlaveJointVelocity(const RcsGraph* graph,
+                                          const RcsJoint* slave,
                                           const double q_master,
                                           const double q_dot_master)
 {
-  const RcsJoint* master = slave->coupledTo;
+  const RcsJoint* master = RCSJOINT_BY_ID(graph, slave->coupledToId);
   double q_dot_slave = 0.0;
 
   if (master==NULL)
@@ -446,16 +424,17 @@ double RcsJoint_computeSlaveJointVelocity(const RcsJoint* slave,
   }
 
   // Linear scaling of velocity
-  if (slave->couplingFactors->size == 1)
+  if (slave->nCouplingCoeff == 1)
   {
-    q_dot_slave = slave->couplingFactors->ele[0]*q_dot_master;
+    q_dot_slave = slave->couplingPoly[0]*q_dot_master;
   }
   // Clip to work range
   else
   {
     const double q_ltd = Math_clip(q_master, master->q_min, master->q_max);
     const double s =
-      RcsJoint_calcCouplingPolynomialDerivative(q_ltd, slave->couplingFactors);
+      RcsJoint_calcCouplingPolynomialDerivative(q_ltd, slave->couplingPoly,
+                                                slave->nCouplingCoeff);
     q_dot_slave = s*q_dot_master;
   }
 
@@ -470,7 +449,7 @@ double RcsJoint_computeSlaveJointVelocity(const RcsJoint* slave,
 
 ******************************************************************************/
 
-void RcsJoint_fprintXML(FILE* out, const RcsJoint* self)
+void RcsJoint_fprintXML(FILE* out, const RcsJoint* self, const RcsGraph* graph)
 {
   char buf[256];
   const double scaleToXML = RcsJoint_isRotation(self) ? (180.0/M_PI) : 1.0;
@@ -532,11 +511,11 @@ void RcsJoint_fprintXML(FILE* out, const RcsJoint* self)
       RFATAL("Unknown control type: %d", self->ctrlType);
   }
 
-  if (self->A_JP != NULL)
+  if (!HTr_isIdentity(&self->A_JP))
   {
     double trf[6];
-    Vec3d_copy(&trf[0], self->A_JP->org);
-    Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->A_JP->rot);
+    Vec3d_copy(&trf[0], self->A_JP.org);
+    Mat3d_toEulerAngles(&trf[3], (double (*)[3]) self->A_JP.rot);
     Vec3d_constMulSelf(&trf[3], 180.0 / M_PI);
 
     if (VecNd_maxAbsEle(trf, 6) > 1.0e-8)
@@ -592,19 +571,19 @@ void RcsJoint_fprintXML(FILE* out, const RcsJoint* self)
       RFATAL("Unknown control type: %d", self->ctrlType);
   }
 
-  if (self->coupledTo != NULL)
+  if (self->coupledToId != -1)
   {
-    fprintf(out, "coupledTo=\"%s\" ", self->coupledTo->name);
+    RcsJoint* cpldTo = RCSJOINT_BY_ID(graph, self->coupledToId);
+    fprintf(out, "coupledTo=\"%s\" ", cpldTo->name);
   }
 
-  if (self->couplingFactors != NULL)
+  if (self->nCouplingCoeff > 0)
   {
     fprintf(out, "couplingFactor=\"");
 
-    for (unsigned int i=0; i<self->couplingFactors->m; i++)
+    for (unsigned int i=0; i<self->nCouplingCoeff; i++)
     {
-      fprintf(out, "%s ",
-              String_fromDouble(buf, MatNd_get(self->couplingFactors, i, 0), 6));
+      fprintf(out, "%s ", String_fromDouble(buf, self->couplingPoly[i], 6));
     }
 
     fprintf(out, "\"");
@@ -668,10 +647,7 @@ int RcsJoint_getDirectionIndex(const RcsJoint* self)
  ******************************************************************************/
 void RcsJoint_scale(RcsJoint* joint, double scale)
 {
-  if (joint->A_JP)
-  {
-    Vec3d_constMulSelf(joint->A_JP->org, scale);
-  }
+  Vec3d_constMulSelf(joint->A_JP.org, scale);
 
   if (RcsJoint_isTranslation(joint) == true)
   {
@@ -683,4 +659,44 @@ void RcsJoint_scale(RcsJoint* joint, double scale)
     joint->q_max = joint->q0 + scale*upperRange;
   }
 
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsJoint* RcsJoint_first(const RcsGraph* graph)
+{
+  return graph->dof > 0 ? &graph->joints[0] : NULL;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsJoint* RcsJoint_last(const RcsGraph* graph)
+{
+  return graph->dof > 0 ? &graph->joints[graph->dof-1] : NULL;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsJoint* RcsJoint_next(const RcsJoint* joint, const RcsGraph* graph)
+{
+  return RCSJOINT_BY_ID(graph, joint->nextId);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsJoint* RcsJoint_prev(const RcsJoint* joint, const RcsGraph* graph)
+{
+  return RCSJOINT_BY_ID(graph, joint->prevId);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsJoint* RcsJoint_master(const RcsJoint* joint, const RcsGraph* graph)
+{
+  return RCSJOINT_BY_ID(graph, joint->coupledToId);
 }

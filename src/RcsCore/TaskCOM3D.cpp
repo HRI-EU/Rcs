@@ -92,22 +92,21 @@ Rcs::TaskCOM3D* Rcs::TaskCOM3D::clone(RcsGraph* newGraph) const
  ******************************************************************************/
 void Rcs::TaskCOM3D::computeX(double* x_res) const
 {
-  if (this->ef)
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+
+  if (ef)
   {
-#ifdef OLD_TOPO
-    RcsGraph_COG_Body(this->ef, x_res);
-#else
-    RcsGraph_COG_Body(this->graph, this->ef, x_res);
-#endif
+    RcsGraph_COG_Body(this->graph, ef, x_res);
   }
   else
   {
     RcsGraph_COG(this->graph, x_res);
   }
 
-  if (this->refBody)  // ref_r = A_ref-I * (I_r - I_r_refBody)
+  if (refBody)  // ref_r = A_ref-I * (I_r - I_r_refBody)
   {
-    Vec3d_subSelf(x_res, this->refBody->A_BI.org);    // I_r -= I_r_refBody
+    Vec3d_subSelf(x_res, refBody->A_BI.org);    // I_r -= I_r_refBody
     Vec3d_rotateSelf(x_res, (double (*)[3])refBody->A_BI.rot); // ref_r = A_ref_I*I_r
   }
 }
@@ -121,9 +120,10 @@ void Rcs::TaskCOM3D::computeJ(MatNd* jacobian) const
   MatNd_create2(J_cog, 3, this->graph->nJ);
 
   // Compute COG Jacobian and COG
-  if (this->ef != NULL)
+  const RcsBody* ef = getEffector();
+  if (ef != NULL)
   {
-    RcsGraph_COGJacobian_Body(this->graph, this->ef, J_cog);
+    RcsGraph_COGJacobian_Body(this->graph, ef, J_cog);
   }
   else
   {
@@ -132,49 +132,40 @@ void Rcs::TaskCOM3D::computeJ(MatNd* jacobian) const
 
   // If a reference body is given, we need to consider both its linear and
   // angular velocity: J = JT_cog - JT_ref + JR_ref x (I_cog-I_ref)
-  if (this->refBody != NULL)
+  const RcsBody* refBody = getRefBody();
+  if (refBody != NULL)
   {
-
-#ifdef  OLD_TOPO
-    if (RcsBody_isArticulated(this->refBody)==false)
-#else
-    if (RcsBody_isArticulated(this->graph, this->refBody)==false)
-#endif
+    if (RcsBody_isArticulated(this->graph, refBody)==false)
     {
-      MatNd_rotateSelf(J_cog, (double (*)[3])this->refBody->A_BI.rot);
+      MatNd_rotateSelf(J_cog, (double (*)[3])refBody->A_BI.rot);
     }
     else
     {
       // J = JT_cog - JT_ref
       MatNd* J_rel = NULL;
       MatNd_create2(J_rel, 3, this->graph->nJ);
-      RcsGraph_bodyPointJacobian(this->graph, this->refBody, NULL, NULL,
-                                 J_rel);
+      RcsGraph_bodyPointJacobian(this->graph, refBody, NULL, NULL, J_rel);
       MatNd_subSelf(J_cog, J_rel);
 
       // J = J + JR_ref x (I_cog-I_ref)
       double tmp[3], I_r_cog[3];
-      RcsGraph_rotationJacobian(this->graph, this->refBody, NULL, J_rel);
+      RcsGraph_rotationJacobian(this->graph, refBody, NULL, J_rel);
 
-      if (this->ef != NULL)
+      if (ef != NULL)
       {
-#ifdef OLD_TOPO
-        RcsGraph_COG_Body(this->ef, I_r_cog);
-#else
-        RcsGraph_COG_Body(this->graph, this->ef, I_r_cog);
-#endif
+        RcsGraph_COG_Body(this->graph, ef, I_r_cog);
       }
       else
       {
         RcsGraph_COG(this->graph, I_r_cog);
       }
 
-      Vec3d_sub(tmp, I_r_cog, this->refBody->A_BI.org);
+      Vec3d_sub(tmp, I_r_cog, refBody->A_BI.org);
       MatNd_columnCrossProductSelf(J_rel, tmp);
       MatNd_addSelf(J_cog, J_rel);
 
       // J = A_ref-I * J
-      MatNd_rotateSelf(J_cog, (double (*)[3])this->refBody->A_BI.rot);
+      MatNd_rotateSelf(J_cog, (double (*)[3])refBody->A_BI.rot);
 
       MatNd_destroy(J_rel);
     }
@@ -193,25 +184,23 @@ void Rcs::TaskCOM3D::computeH(MatNd* H) const
 {
   MatNd_reshape(H, 3*this->graph->nJ, this->graph->nJ);
 
-  if (this->ef != NULL)
+  const RcsBody* ef = getEffector();
+  if (ef != NULL)
   {
-    RcsGraph_computeCOGHessian_Body(this->graph, this->ef, H);
+    RcsGraph_computeCOGHessian_Body(this->graph, ef, H);
   }
   else
   {
     RcsGraph_computeCOGHessian(this->graph, H->ele);
   }
 
-  if (this->refBody != NULL)
+  const RcsBody* refBody = getRefBody();
+  if (refBody != NULL)
   {
-#ifdef  OLD_TOPO
-    if (RcsBody_isArticulated(this->refBody)==false)
-#else
-    if (RcsBody_isArticulated(this->graph, this->refBody)==false)
-#endif
+    if (RcsBody_isArticulated(this->graph, refBody)==false)
     {
       MatNd_reshape(H, 3, this->graph->nJ*this->graph->nJ);
-      MatNd_rotateSelf(H, (double (*)[3])this->refBody->A_BI.rot);
+      MatNd_rotateSelf(H, (double (*)[3])refBody->A_BI.rot);
       MatNd_reshape(H, 3*this->graph->nJ, this->graph->nJ);
     }
     else

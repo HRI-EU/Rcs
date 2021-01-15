@@ -335,7 +335,7 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
 
   // Fully qualified name
   snprintf(b->bdyXmlName, RCS_MAX_NAMELEN, "%s", msg);
-  snprintf(b->bdyName, RCS_MAX_NAMELEN, "%s", msg);
+  snprintf(b->name, RCS_MAX_NAMELEN, "%s", msg);
 
   // check for translation
   child = getXMLChildByName(bdyNode, "Translation");
@@ -397,11 +397,11 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
     {
       getXMLNodeVecN(total_node, &b->m, 1);
       RCHECK_MSG(b->m >= 0.0, "Body \"%s\" has negative mass: %f",
-                 b->bdyName, b->m);
+                 b->name, b->m);
     }
     else
     {
-      RLOG(4, "Couldn't find node \"total\" for body \"%s\"", b->bdyName);
+      RLOG(4, "Couldn't find node \"total\" for body \"%s\"", b->name);
     }
 
     // get cog
@@ -430,7 +430,7 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
   if (Mat3d_getFrobeniusnorm(b->Inertia.rot) > 0.0)
   {
     RCHECK_MSG(b->m > 0.0, "You specified a non-zero inertia but a zero mass "
-               "for body \"%s\". Shame on you!", b->bdyName);
+               "for body \"%s\". Shame on you!", b->name);
   }
 
   /// \todo: Sensors are not supported yet
@@ -442,7 +442,6 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
                                          const double* q0)
 {
   char msg[256];
-  RcsJoint* jnt  = NULL;
   bool verbose = false;
   int strLength = 0;
 
@@ -453,17 +452,6 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
     return NULL;
   }
 
-
-  jnt = RNALLOC(1, RcsJoint);
-  RCHECK_PEDANTIC(jnt);
-
-  jnt->weightJL = 1.0;
-  jnt->weightCA = 1.0;
-  jnt->weightMetric = 1.0;
-  jnt->maxTorque = 1.0;
-  jnt->speedLimit = DBL_MAX;
-  jnt->accLimit = DBL_MAX;
-  jnt->ctrlType = RCSJOINT_CTRL_POSITION;
 
   // first find body that the joint is attached to
   /// \todo: offsetfrom is used and Body nodes are ignored,
@@ -478,43 +466,44 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
   RcsBody* bdy = RcsGraph_getBodyByName(self, buff);
   RCHECK(bdy);
 
-  HTr_setIdentity(&jnt->A_JI);
+  /* RcsJoint* jnt  = RALLOC(RcsJoint); */
+  /* RcsJoint_init(jnt); */
+  RcsJoint* jnt = RcsGraph_insertGraphJoint(self, bdy->id);
+
+  jnt->weightJL = 1.0;
+  jnt->weightCA = 1.0;
+  jnt->weightMetric = 1.0;
+  jnt->maxTorque = 1.0;
+  jnt->ctrlType = RCSJOINT_CTRL_POSITION;
 
   //  Joint name
   strLength = getXMLNodePropertyStringN(node, "name", NULL, 0);
 
   if (strLength > 0)
   {
-    jnt->name = RNALLOC(strLength + 1, char);
-    getXMLNodePropertyStringN(node, "name", jnt->name, strLength);
+    getXMLNodePropertyStringN(node, "name", jnt->name, RCS_MAX_NAMELEN);
   }
   else
   {
-    jnt->name = RNALLOC(strlen("unnamed joint") + 1, char);
-    strcpy(jnt->name, "unnamed joint");
+    snprintf(jnt->name, RCS_MAX_NAMELEN, "%s", "unnamed joint");
     RLOG(4, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
-         "unnamed joint\"", bdy->bdyName,
-         bdy->parentId!=-1 ? self->bodies[bdy->parentId].bdyName : "NULL");
+         "unnamed joint\"", bdy->name,
+         bdy->parentId!=-1 ? self->bodies[bdy->parentId].name : "NULL");
   }
 
-  RLOG(5, "Inserting joint \"%s\" into body \"%s\"", jnt->name, bdy->bdyName);
-  RcsGraph_insertJoint(self, bdy, jnt);
+  RLOG(5, "Inserted joint \"%s\" into body \"%s\"", jnt->name, bdy->name);
 
   if (verbose == true)
   {
-    RMSG("%s: dof = %d", bdy->bdyName, jnt->jointIndex);
+    RMSG("Body %s: Adding joint with id = %d", bdy->name, jnt->id);
   }
 
   // joints in OpenRAVE format don't have transformations, but we have
   // thus the first joint in the list of joints of the body, takes over the
   // body's transformation
-  if (bdy->jnt == jnt)
+  if (bdy->jntId == jnt->id)
   {
-    if (!jnt->A_JP)
-    {
-      jnt->A_JP = HTr_create();
-    }
-    HTr_copy(jnt->A_JP, &bdy->A_BP);
+    HTr_copy(&jnt->A_JP, &bdy->A_BP);
     HTr_setIdentity(&bdy->A_BP);
   }
 
@@ -613,7 +602,8 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
 
     if ((jnt->q0 < jnt->q_min) || (jnt->q0 > jnt->q_max))
     {
-      RLOGS(1, "initial value not between q_min and q_max for joint \"%s\": q0 is set the half of the range", jnt->name);
+      RLOGS(1, "initial value not between q_min and q_max for joint \"%s\": q0"
+            "is set the half of the range", jnt->name);
       jnt->q0 = (jnt->q_max + jnt->q_min) / 2.0;
     }
   }
@@ -630,8 +620,7 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
 
   if (strLength > 0)
   {
-    jnt->coupledJointName = RNALLOC(strLength + 1, char);
-    getXMLNodePropertyStringN(node, "coupledTo", jnt->coupledJointName, strLength);
+    getXMLNodePropertyStringN(node, "coupledTo", jnt->coupledJntName, RCS_MAX_NAMELEN);
 
     unsigned int polyGrad = getXMLNodeNumStrings(node, "couplingFactor");
     if (polyGrad == 0)
@@ -642,10 +631,8 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
     RCHECK_MSG((polyGrad == 1) || (polyGrad == 5) || (polyGrad == 9),
                "Currently only polynomials of order 1 or 5 or 9 are "
                "supported, and not %d parameters", polyGrad);
-    jnt->couplingFactors = MatNd_create(polyGrad, 1);
-    MatNd_setElementsTo(jnt->couplingFactors, 1.0);
-    getXMLNodePropertyVecN(node, "couplingFactor",
-                           jnt->couplingFactors->ele, polyGrad);
+    getXMLNodePropertyVecN(node, "couplingFactor", jnt->couplingPoly, polyGrad);
+    jnt->nCouplingCoeff = polyGrad;
   }
 
 

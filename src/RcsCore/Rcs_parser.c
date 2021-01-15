@@ -380,8 +380,7 @@ unsigned int getXMLNodePropertyStringN(xmlNodePtr node, const char* tag,
       RLOG(1, "Parsing tag \"%s\" requires %d bytes, you provide %d",
            tag, len, n);
     }
-    strncpy(str, (const char*) txt, n);
-    str[n-1] = '\0';
+    snprintf(str, n, "%s", (const char*) txt);
   }
 
   xmlFree(txt);

@@ -59,7 +59,7 @@ Rcs::IkSolverConstraintRMR::IkSolverConstraintRMR(Rcs::ControllerBase* ctrl) :
     RCSPAIR_TRAVERSE(controller->getCollisionMdl()->pair)
     {
       RLOG(5, "Adding distance constraint between \"%s\" and \"%s\"",
-           PAIR->b1->bdyName, PAIR->b2->bdyName);
+           PAIR->b1->name, PAIR->b2->name);
       Task* ti = new TaskDistance(controller->getGraph(), PAIR->b1, PAIR->b2);
       RCHECK(ti->getDim() == 1);
       controller->add(ti);
@@ -70,7 +70,7 @@ Rcs::IkSolverConstraintRMR::IkSolverConstraintRMR(Rcs::ControllerBase* ctrl) :
   // Append active set constraints for joint limits
   RCSGRAPH_TRAVERSE_JOINTS(controller->getGraph())
   {
-    if (JNT->constrained || JNT->coupledTo)
+    if (JNT->constrained || (JNT->coupledToId!=-1))
     {
       continue;
     }
@@ -181,7 +181,7 @@ void Rcs::IkSolverConstraintRMR::solveRightInverse(MatNd* dq_des,
 
     if (TaskJoint* jntTask = dynamic_cast<TaskJoint*>(controller->getTask(i)))
     {
-      const int jIdx = jntTask->getJoint()->jointIndex;
+      const int jIdx = jntTask->getJointIndex();
       const double x = controller->getGraph()->q->ele[jIdx] + dq_des->ele[jIdx];
       const double q_min = jntTask->getJoint()->q_min + RCS_DEG2RAD(2.0);
       const double q_max = jntTask->getJoint()->q_max - RCS_DEG2RAD(2.0);
@@ -222,7 +222,7 @@ void Rcs::IkSolverConstraintRMR::solveRightInverse(MatNd* dq_des,
         dx->ele[xIdx] = (penetration > baumgarteLimit) ? 0.9*(penetration-baumgarteLimit)+0.1*baumgarteLimit : 0.0;
         nViolations++;
         RLOG(5, "Applying distance constraint %s - %s at violation depth %f mm",
-             distTsk->getEffector()->bdyName, distTsk->getRefBody()->bdyName,
+             distTsk->getEffector()->name, distTsk->getRefBody()->name,
              1000.0*(x-eps));
       }
     }   // "Distance"

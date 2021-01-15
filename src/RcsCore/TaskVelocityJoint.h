@@ -45,7 +45,7 @@ namespace Rcs
 /*! \ingroup RcsTask
  * \brief This tasks allows to set a joint velocity.
  */
-class TaskVelocityJoint: public Rcs::TaskJoint
+class TaskVelocityJoint: public TaskJoint
 {
 public:
 

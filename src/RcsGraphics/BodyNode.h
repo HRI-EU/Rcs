@@ -82,7 +82,8 @@ class BodyNode: public osg::PositionAttitudeTransform
 
 public:
 
-  BodyNode(const RcsBody* bdy, float scale = 1.0f, bool resizeable = true);
+  BodyNode(const RcsBody* bdy, const RcsGraph* graph, float scale = 1.0f,
+           bool resizeable = true);
   virtual const char* className() const;
   void setTransformation(const HTr* A_BI);
   void displayCollisionNode(bool visibility = true);
@@ -107,6 +108,8 @@ public:
   void setAlpha(float alpha, osg::Node* node);
   bool setTexture(std::string textureFile);
   const RcsBody* body() const;
+  const RcsBody* parent() const;
+  int bodyId() const;
   const HTr* getTransformPtr() const;
   void setTransformPtr(const HTr* A_BI);
   void hide();
@@ -123,11 +126,12 @@ protected:
   void updateCallback(osg::Node* node, osg::NodeVisitor* nv);
   void updateDynamicMeshes();
   virtual ~BodyNode();
-  osg::Switch* addDebugInformation();
+  osg::Switch* addDebugInformation(const RcsGraph* graph);
 
-  const RcsBody* bdy;
-  const RcsBody* parent;
-  const HTr* A_BI;
+  const RcsGraph* graphPtr;
+  const HTr* A_BI_;
+  int bdyId;
+  int parentId;
   bool ghostMode;
   bool dynamicMeshUpdate;
   bool refNode;

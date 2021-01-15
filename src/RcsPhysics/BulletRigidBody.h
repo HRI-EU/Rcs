@@ -58,35 +58,80 @@ public:
 
 private:
   const HTr* getBodyTransformPtr() const;
-  static BulletRigidBody* create(const RcsBody* body,
+
+  /*! \brief Factory method for creating a BulletRigidBody instance. It reads
+   *         all Bullet-related parameters from the config file and sets them
+   *         to the body. Further, all Bullet shapes are created and attached
+   *         to the BulletRigidBody.
+   *
+   *  \return Pointer to class instance in case of success, NULL otherwise:
+   *          - bdy is NULL
+   *          - bdy has physicsSim flag disabled
+   *          - bdy has no shapes
+   */
+  static BulletRigidBody* create(const RcsGraph* graph,
+                                 const RcsBody* body,
                                  const PhysicsConfig* config);
+
   BulletRigidBody(const btRigidBody::btRigidBodyConstructionInfo& rbInfo,
-                  const RcsBody* body);
+                  const RcsGraph* graph, const RcsBody* body);
   virtual ~BulletRigidBody();
 
   void clearCompoundShapes();
-  void calcHingeTrans(const RcsJoint* jnt, btVector3& pivot, btVector3& axis);
-  btTransform calcSliderTrans(const RcsJoint* jnt);
-  btTypedConstraint* createFixedJoint(const RcsGraph* graph);
+  btFixedConstraint* createFixedJoint(const RcsGraph* graph);
   btTypedConstraint* createJoint(const RcsGraph* graph);
   void updateBodyTransformFromPhysics();
   void setParentBody(BulletRigidBody* parent);
+
+
+  /*! \brief Determines the transformation of the Bullet rigid body. Its
+   *         origin is the bodie's center of mass, and the rotation is
+   *         aligned with the inertia tensor. See implementation for
+   *         details.
+   */
   void getPhysicsTransform(HTr* A_PI) const;
   void reset(const HTr* A_BI=NULL);
+
+  /*! \brief Creates and returns a Bullet collision shape from the RcsShape.
+   *         Only shapes with enables physics compute types are considered.
+   *         For RcsShapes with a mesh that has more vertices as specified in
+   *         argument convexHullVertexLimit, the mesh will be condensed into
+   *         a convex hull. That's why the argument sh is not a const pointer.
+   */
   static btCollisionShape* createShape(RcsShape* sh,
                                        btTransform& relTrans,
                                        const RcsBody* body,
                                        unsigned int convexHullVertexLimit);
+
   btCollisionShape* getShape(const RcsShape* shape);
+
+  /*! \brief Returns the RcsBody pointer. It is read from the graph by the
+   *         stored body-id, so that there is no dangling pointer in case
+   *         new bodies are added and the body array is re-allocated.
+   */
   const RcsBody* getBodyPtr() const;
+
+  /*! \brief Returns the RcsBodie's name. It is safely determined through
+   *         the body-id.
+   */
+  const char* getBodyName() const;
+
+  /*! \brief Calculate hinge point and axis in Bullet body coordinates.
+   */
+  void calcHingeTrans(const RcsJoint* jnt, btVector3& pivot, btVector3& axis);
+
+  /*! \brief Calculate slider transformation in Bullet body coordinates.
+   */
+  btTransform calcSliderTrans(const RcsJoint* jnt);
+
   void setBodyTransform(const HTr* A_BI);
   void setBodyTransform(const HTr* A_BI, double dt);
-  const char* getBodyName() const;
 
   // Obsolete
   void getLocalBodyTransform(HTr* A_PB) const;
 
-  const RcsBody* body;     // Pointer to corresponding graph's body
+  const RcsGraph* graph;   // Pointer to simulation's graph
+  int bodyId;              // Id of corresponding graph's body
   BulletRigidBody* parent; // Depth-first parent body
   HTr A_PB_;               // From body frame to physics frame
   HTr A_BI_;               // From world frame to body frame
@@ -95,6 +140,7 @@ private:
   double omega[3];
   btJointFeedback jf;
   bool linearJointForceLimit;
+  btFixedConstraint* fixedJnt;   // NULL if body not attached to fixed joint
 };
 
 }   // namespace Rcs

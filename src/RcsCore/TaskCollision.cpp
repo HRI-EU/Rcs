@@ -62,7 +62,7 @@ Rcs::TaskCollision::TaskCollision(const std::string& className_,
   }
 
   // Parse XML file:
-  char bdyName[256];
+  char name[256];
 
   // default distance threshold
   double defaultThreshold = 0.1;
@@ -101,17 +101,17 @@ Rcs::TaskCollision::TaskCollision(const std::string& className_,
       memset(this->pair[nPairs], 0, sizeof(RcsPair));
 
       // body1
-      int len = getXMLNodePropertyStringN(child, "body1", bdyName, 256);
+      int len = getXMLNodePropertyStringN(child, "body1", name, 256);
       RCHECK_MSG(len, "\"body1\" not found in pair %d", nPairs);
-      RcsBody* b = RcsGraph_getBodyByName(this->graph, bdyName);
-      RCHECK_MSG(b, "Body \"%s\" doesn't exist!", bdyName);
+      RcsBody* b = RcsGraph_getBodyByName(this->graph, name);
+      RCHECK_MSG(b, "Body \"%s\" doesn't exist!", name);
       this->pair[nPairs]->b1 = b;
 
       // body2
-      len = getXMLNodePropertyStringN(child, "body2", bdyName, 256);
+      len = getXMLNodePropertyStringN(child, "body2", name, 256);
       RCHECK_MSG(len, "\"body2\" not found in pair %d", nPairs);
-      b = RcsGraph_getBodyByName(this->graph, bdyName);
-      RCHECK_MSG(b, "Body \"%s\" doesn't exist!", bdyName);
+      b = RcsGraph_getBodyByName(this->graph, name);
+      RCHECK_MSG(b, "Body \"%s\" doesn't exist!", name);
       this->pair[nPairs]->b2 = b;
 
       // other pair parameters
@@ -126,8 +126,8 @@ Rcs::TaskCollision::TaskCollision(const std::string& className_,
       REXEC(1)
       {
         RMSG("Pair %d: \"%s\" - \"%s\"", nPairs,
-             this->pair[nPairs]->b1->bdyName,
-             this->pair[nPairs]->b2->bdyName);
+             this->pair[nPairs]->b1->name,
+             this->pair[nPairs]->b2->name);
         RMSG("DistanceThreshold = %g", this->pair[nPairs]->dThreshold);
         RMSG("Distance weight is %g", this->pair[nPairs]->weight);
       }
@@ -194,8 +194,8 @@ void Rcs::TaskCollision::copyCollisionModel(RcsPair** srcPair,
     if (newGraph)
     {
       this->pair[nPairs]->graph = newGraph;
-      this->pair[nPairs]->b1 = RcsGraph_getBodyByName(newGraph, PAIR->b1->bdyName);
-      this->pair[nPairs]->b2 = RcsGraph_getBodyByName(newGraph, PAIR->b2->bdyName);
+      this->pair[nPairs]->b1 = RcsGraph_getBodyByName(newGraph, PAIR->b1->name);
+      this->pair[nPairs]->b2 = RcsGraph_getBodyByName(newGraph, PAIR->b2->name);
     }
     else
     {

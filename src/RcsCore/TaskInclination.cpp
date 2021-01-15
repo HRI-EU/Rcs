@@ -109,7 +109,7 @@ Rcs::TaskInclination::TaskInclination(const std::string& className,
   {
     const RcsBody* ef_i = RcsGraph_getBodyByName(graph, vec[i].c_str());
     RCHECK(ef_i);
-    this->effectorVec.push_back(ef_i);
+    this->effectorVec.push_back(ef_i->id);
   }
 
   REXEC(5)
@@ -118,7 +118,7 @@ Rcs::TaskInclination::TaskInclination(const std::string& className,
 
     for (size_t i=0; i<effectorVec.size(); ++i)
     {
-      RMSG("Effector %zu is \"%s\"", i, effectorVec[i]->bdyName);
+      RMSG("Effector %zu is \"%s\"", i, getEffectorVec(i)->name);
     }
   }
 
@@ -131,16 +131,9 @@ Rcs::TaskInclination::TaskInclination(const TaskInclination& copyFromMe,
                                       RcsGraph* newGraph):
   TaskGenericIK(copyFromMe, newGraph),
   direction(copyFromMe.direction),
-  refDirection(copyFromMe.refDirection)
+  refDirection(copyFromMe.refDirection),
+  effectorVec(copyFromMe.effectorVec)
 {
-  this->effectorVec.clear();
-
-  for (size_t i=0; i<copyFromMe.effectorVec.size(); ++i)
-  {
-    const RcsBody* bdy =
-      RcsGraph_getBodyByName(newGraph, copyFromMe.effectorVec[i]->bdyName);
-    this->effectorVec.push_back(bdy);
-  }
 }
 
 /*******************************************************************************
@@ -199,8 +192,8 @@ void Rcs::TaskInclination::computeJ(MatNd* jacobian) const
 
   for (size_t i=0; i<effectorVec.size(); ++i)
   {
-    RcsGraph_3dOmegaJacobian(this->graph, this->effectorVec[i],
-                             this->refBody, NULL, JR);
+    RcsGraph_3dOmegaJacobian(this->graph, getEffectorVec(i),
+                             getRefBody(), NULL, JR);
 
     computeRotationAxis(a_rot->ele, i);
     MatNd_mulAndAddSelf(jacobian, a_rot, JR);
@@ -239,15 +232,15 @@ void Rcs::TaskInclination::computeH(MatNd* hessian) const
     // I_a_rot^T(q) * I_HR
     double lengthRot = computeRotationAxis(a_rot->ele, i);
 
-    RcsGraph_3dOmegaHessian(this->graph, this->effectorVec[i],
-                            this->refBody, NULL, HR);
+    RcsGraph_3dOmegaHessian(this->graph, getEffectorVec(i),
+                            getRefBody(), NULL, HR);
     MatNd_reshape(HR, 3, this->graph->nJ*this->graph->nJ);
     MatNd_reshape(hessian, 1, this->graph->nJ*this->graph->nJ);
     MatNd_mulAndAddSelf(hessian, a_rot, HR);
 
     // d/dq(a_rot^T(q)) * JR
-    RcsGraph_3dOmegaJacobian(this->graph, this->effectorVec[i],
-                             this->refBody, NULL, JR);
+    RcsGraph_3dOmegaJacobian(this->graph, getEffectorVec(i),
+                             getRefBody(), NULL, JR);
 
     MatNd_copyRow(JR_a, 0, JR, 1);
     MatNd_constMulSelf(JR_a, -1.0);
@@ -303,9 +296,11 @@ double Rcs::TaskInclination::computeRotationAxis(double a_rot[3], size_t num) co
  ******************************************************************************/
 const double* Rcs::TaskInclination::aRef() const
 {
-  if (this->refBody != NULL)
+  const RcsBody* refBody = getRefBody();
+
+  if (refBody)
   {
-    return this->refBody->A_BI.rot[this->refDirection];
+    return refBody->A_BI.rot[this->refDirection];
   }
   else
   {
@@ -320,7 +315,15 @@ const double* Rcs::TaskInclination::aEf(size_t num) const
 {
   RCHECK(num < effectorVec.size());
 
-  return effectorVec[num]->A_BI.rot[this->direction];
+  return getEffectorVec(num)->A_BI.rot[this->direction];
+}
+
+/*******************************************************************************
+ * Returns a pointer to the effector num.
+ ******************************************************************************/
+const RcsBody* Rcs::TaskInclination::getEffectorVec(size_t num) const
+{
+  return RCSBODY_BY_ID(getGraph(), this->effectorVec[num]);
 }
 
 /*******************************************************************************

@@ -48,7 +48,7 @@
 #include <osg/PolygonMode>
 
 
-typedef std::list< osg::ref_ptr<Rcs::BodyNode> > GraphNodeList;
+typedef std::vector< osg::ref_ptr<Rcs::BodyNode> > GraphNodeList;
 
 
 /*******************************************************************************
@@ -156,7 +156,7 @@ bool GraphNode::init(const RcsGraph* g, bool resizeable,
 
   if (frameHandler.valid())
   {
-    RLOG(1, "GraphNode for %s already initialized - skipping", graph->xmlFile);
+    RLOG(1, "GraphNode for %s already initialized - skipping", graph->cfgFile);
     return false;
   }
 
@@ -184,13 +184,9 @@ bool GraphNode::init(const RcsGraph* g, bool resizeable,
       continue;
     }
 
-    RLOG(5, "Creating BodyNode for %s", BODY->bdyName);
-    osg::ref_ptr<Rcs::BodyNode> tn = new Rcs::BodyNode(BODY, 1.0, resizeable);
-#ifdef OLD_TOPO
-    tn->setParent(BODY->parent);
-#else
-    tn->setParent(RcsBody_getConstParent(g, BODY));
-#endif
+    RLOG(5, "Creating BodyNode for %s", BODY->name);
+    osg::ref_ptr<Rcs::BodyNode> tn = new Rcs::BodyNode(BODY, g, 1.0, resizeable);
+    tn->setParent(RCSBODY_BY_ID(g, BODY->parentId));
 
     switchNode->addChild(tn.get());
   }
@@ -200,32 +196,25 @@ bool GraphNode::init(const RcsGraph* g, bool resizeable,
     // Add target setters
     RCSGRAPH_TRAVERSE_BODIES(this->graph)
     {
-      RLOG(5, "Scanning body \"%s\" for rigid body joints", BODY->bdyName);
+      RLOG(5, "Scanning body \"%s\" for rigid body joints", BODY->name);
 
       /// \todo: Implement for rigid bodies with parent body
       if (BODY->rigid_body_joints==true)
       {
-        RLOG(5, "Adding TargetSetter for body %s", BODY->bdyName);
+        RLOG(5, "Adding TargetSetter for body %s", BODY->name);
 
-        RCHECK(BODY->jnt);
-        double* x = &graph->q->ele[BODY->jnt->jointIndex];
-        double* a = &graph->q->ele[BODY->jnt->jointIndex+3];
-        RLOG(5, "index is %d", BODY->jnt->jointIndex);
+        RcsJoint* bdyJoint = RCSJOINT_BY_ID(this->graph, BODY->jntId);
+        RCHECK(bdyJoint);
+        double* x = &graph->q->ele[bdyJoint->jointIndex];
+        double* a = &graph->q->ele[bdyJoint->jointIndex+3];
+        RLOG(5, "index is %d", bdyJoint->jointIndex);
         osg::ref_ptr<Rcs::TargetSetter> ts = new Rcs::TargetSetter(x, a);
-#ifdef OLD_TOPO
-        if (BODY->parent)
-        {
-          ts->setReferenceFrame(BODY->parent->A_BI.org,
-                                BODY->parent->A_BI.rot);
-        }
-#else
         if (BODY->parentId != -1)
         {
           RcsBody* parent_ = RcsBody_getParent((RcsGraph*)this->graph, BODY);
           ts->setReferenceFrame(parent_->A_BI.org,
                                 parent_->A_BI.rot);
         }
-#endif
 
         addChild(ts.get());
       }   // if(BODY->rigid_body_joints==true)
@@ -656,7 +645,8 @@ const RcsGraph* GraphNode::getGraphPtr() const
 BodyNode* GraphNode::addBodyNode(const RcsBody* body, double scale,
                                  bool resizeable, pthread_mutex_t* mtx)
 {
-  osg::ref_ptr<BodyNode> bNd = new BodyNode(body, scale, resizeable);
+  osg::ref_ptr<BodyNode> bNd = new BodyNode(body, getGraphPtr(),
+                                            scale, resizeable);
 
   if (mtx != NULL)
   {
@@ -697,13 +687,13 @@ bool GraphNode::removeBodyNode(const RcsBody* body)
       bool success = switchNode->removeChild(node);
       if (success == false)
       {
-        RLOG(4, "BodyNode %s is not child of GraphNode - skipping", body->bdyName);
+        RLOG(4, "BodyNode %s is not child of GraphNode - skipping", body->name);
       }
       return true;
     }
   }
 
-  RLOG(4, "BodyNode %s is not child of GraphNode - skipping", body->bdyName);
+  RLOG(4, "BodyNode %s is not child of GraphNode - skipping", body->name);
 
   return false;
 }
@@ -731,14 +721,14 @@ bool GraphNode::removeBodyNode(BodyNode* bdyNode)
       if (success == false)
       {
         RLOG(4, "BodyNode %s is not child of GraphNode - skipping",
-             bdyNode->body()->bdyName);
+             bdyNode->body()->name);
       }
       return true;
     }
   }
 
   RLOG(4, "BodyNode %s is not child of GraphNode - skipping",
-       bdyNode->body()->bdyName);
+       bdyNode->body()->name);
 
   return false;
 }
@@ -795,7 +785,7 @@ bool GraphNode::hideBodyNode(const RcsBody* body)
   for (li = bnv.nodes.begin(); li != bnv.nodes.end(); ++li)
   {
     Rcs::BodyNode* node = (*li).get();
-    if (node->body() == body)
+    if (node->bodyId() == body->id)
     {
       node->displayGraphicsNode(false);
       return true;
@@ -831,11 +821,7 @@ bool GraphNode::hideSubGraph(const RcsBody* bdy)
     return false;
   }
 
-#ifdef OLD_TOPO
-  RCSBODY_TRAVERSE_BODIES((RcsBody*)bdy)
-#else
   RCSBODY_TRAVERSE_BODIES(this->graph, (RcsBody*)bdy)
-#endif
   {
     hideBodyNode(BODY);
   }
@@ -1043,7 +1029,7 @@ bool Rcs::GraphNode::callback(const osgGA::GUIEventAdapter& ea,
         {
           RMSG("%s [%.3f   %.3f   %.3f]", nd->getName().c_str(),
                pt[0], pt[1], pt[2]);
-          RcsBody_fprint(stdout, nd->body());
+          RcsBody_fprint(stdout, nd->body(), getGraphPtr());
         }
       }
 

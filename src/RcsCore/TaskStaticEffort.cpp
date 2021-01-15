@@ -112,8 +112,8 @@ void Rcs::TaskStaticEffort::getForceInWorldCoords(double f[3]) const
 {
   Vec3d_copy(f, this->sensor->rawData->ele);
   HTr A_SI;
-  HTr_copy(&A_SI, &this->ef->A_BI);
-  HTr_transformSelf(&A_SI, &this->sensor->offset);
+  HTr_copy(&A_SI, &getEffector()->A_BI);
+  HTr_transformSelf(&A_SI, &this->sensor->A_SB);
   Vec3d_transRotateSelf(f, A_SI.rot);
 }
 
@@ -125,8 +125,8 @@ void Rcs::TaskStaticEffort::computeX(double* x_res) const
   double fbuf[3];
   MatNd f = MatNd_fromPtr(3, 1, fbuf);
   getForceInWorldCoords(f.ele);
-  *x_res = RcsGraph_staticEffort(this->graph, this->ef, &f, this->W,
-                                 this->sensor->offset.org);
+  *x_res = RcsGraph_staticEffort(this->graph, getEffector(), &f, this->W,
+                                 this->sensor->A_SB.org);
 }
 
 /*******************************************************************************
@@ -138,8 +138,8 @@ void Rcs::TaskStaticEffort::computeJ(MatNd* dH) const
   double fbuf[3];
   MatNd f = MatNd_fromPtr(3, 1, fbuf);
   getForceInWorldCoords(f.ele);
-  RcsGraph_staticEffortGradient(this->graph, this->ef, &f, this->W,
-                                this->sensor->offset.org, dH);
+  RcsGraph_staticEffortGradient(this->graph, getEffector(), &f, this->W,
+                                this->sensor->A_SB.org, dH);
   MatNd_reshape(dH, 1, this->graph->nJ);
 }
 
@@ -150,7 +150,7 @@ void Rcs::TaskStaticEffort::computeJ(MatNd* dH) const
  ******************************************************************************/
 void Rcs::TaskStaticEffort::computeH(MatNd* hessian) const
 {
-  RFATAL("Not yetimplemented");
+  RFATAL("Not yet implemented");
 }
 
 /*******************************************************************************

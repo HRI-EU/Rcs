@@ -116,10 +116,14 @@ void Rcs::TaskDifferentialConstraint1D::computeX(double* I_r) const
 {
   double F_x_ef[3], F_x_ref[3], diff[3];
 
-  Vec3d_sub(F_x_ef, this->ef->A_BI.org, this->refFrame->A_BI.org);
-  Vec3d_sub(F_x_ref, this->refBody->A_BI.org, this->refFrame->A_BI.org);
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+  const RcsBody* refFrame = getRefFrame();
+
+  Vec3d_sub(F_x_ef, ef->A_BI.org, refFrame->A_BI.org);
+  Vec3d_sub(F_x_ref, refBody->A_BI.org, refFrame->A_BI.org);
   Vec3d_add(diff, F_x_ef, F_x_ref);
-  Vec3d_rotateSelf(diff, (double (*)[3])this->refFrame->A_BI.rot);
+  Vec3d_rotateSelf(diff, (double (*)[3])refFrame->A_BI.rot);
 
   *I_r = diff[this->index];
 }
@@ -143,13 +147,16 @@ void Rcs::TaskDifferentialConstraint1D::computeX(double* I_r) const
  ******************************************************************************/
 void Rcs::TaskDifferentialConstraint1D::computeXp(double* xp_res) const
 {
-  const double* I_v_A  = this->refFrame->x_dot;
-  const double* I_v_B  = this->refBody->x_dot;
-  const double* I_v_C  = this->ef->x_dot;
-  const double* I_om_A = this->refFrame->omega;
-  const double* I_r_B  = this->refBody->A_BI.org;
-  const double* I_r_A  = this->refFrame->A_BI.org;
-  const double* I_r_C  = this->ef->A_BI.org;
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+  const RcsBody* refFrame = getRefFrame();
+  const double* I_v_A  = refFrame->x_dot;
+  const double* I_v_B  = refBody->x_dot;
+  const double* I_v_C  = ef->x_dot;
+  const double* I_om_A = refFrame->omega;
+  const double* I_r_B  = refBody->A_BI.org;
+  const double* I_r_A  = refFrame->A_BI.org;
+  const double* I_r_C  = ef->A_BI.org;
 
   // refBody velocity
   double A_v_AB[3], A_v_AC[3], tmp1[3], tmp2[3], tmp3[3];
@@ -158,14 +165,14 @@ void Rcs::TaskDifferentialConstraint1D::computeXp(double* xp_res) const
   Vec3d_sub(tmp2, I_r_B, I_r_A);             // I_r_AB
   Vec3d_crossProduct(tmp3, I_om_A, tmp2);    // I_om_A x I_r_AB
   Vec3d_addSelf(tmp3, tmp1);                 // I_v_B - I_v_A + I_om_A x I_r_AB
-  Vec3d_rotate(A_v_AB, (double(*)[3])this->refFrame->A_BI.rot, tmp3);
+  Vec3d_rotate(A_v_AB, (double(*)[3])refFrame->A_BI.rot, tmp3);
 
   // effector velocity
   Vec3d_sub(tmp1, I_v_C, I_v_A);             // I_v_C - I_v_A
   Vec3d_sub(tmp2, I_r_C, I_r_A);             // I_r_AC
   Vec3d_crossProduct(tmp3, I_om_A, tmp2);    // I_om_A x I_r_AC
   Vec3d_addSelf(tmp3, tmp1);                 // I_v_C - I_v_A + I_om_A x I_r_AC
-  Vec3d_rotate(A_v_AC, (double(*)[3])this->refFrame->A_BI.rot, tmp3);
+  Vec3d_rotate(A_v_AC, (double(*)[3])refFrame->A_BI.rot, tmp3);
 
   *xp_res = A_v_AC[this->index] + A_v_AB[this->index];
 }
@@ -184,6 +191,10 @@ void Rcs::TaskDifferentialConstraint1D::computeXp(double* xp_res) const
  ******************************************************************************/
 void Rcs::TaskDifferentialConstraint1D::computeJ(MatNd* jacobian) const
 {
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+  const RcsBody* refFrame = getRefFrame();
+
   MatNd* J_buf = NULL;
   MatNd_create2(J_buf, 1, graph->nJ);
 
@@ -199,6 +210,10 @@ void Rcs::TaskDifferentialConstraint1D::computeJ(MatNd* jacobian) const
  ***************************************************************************/
 void Rcs::TaskDifferentialConstraint1D::computeH(MatNd* hessian) const
 {
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+  const RcsBody* refFrame = getRefFrame();
+
   MatNd* H_buf = NULL;
   MatNd_create2(H_buf, 1, this->graph->nJ*this->graph->nJ);
 
@@ -268,7 +283,7 @@ bool Rcs::TaskDifferentialConstraint1D::isValid(xmlNode* node,
   {
     RLOG(3, "Task \"%s\": Bodies must be different, but effector=\"%s\", "
          "refBdy=\"%s\" and refFrame=\"%s\"",
-         taskName, ef->bdyName, refBdy->bdyName, refFrame->bdyName);
+         taskName, ef->name, refBdy->name, refFrame->name);
 
   }
 

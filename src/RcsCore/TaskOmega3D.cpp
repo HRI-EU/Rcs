@@ -113,8 +113,8 @@ Rcs::TaskOmega3D* Rcs::TaskOmega3D::clone(RcsGraph* newGraph) const
  ******************************************************************************/
 void Rcs::TaskOmega3D::computeJ(MatNd* jacobian) const
 {
-  RcsGraph_3dOmegaJacobian(this->graph, this->ef, this->refBody,
-                           this->refFrame, jacobian);
+  RcsGraph_3dOmegaJacobian(this->graph, getEffector(), getRefBody(),
+                           getRefFrame(), jacobian);
 }
 
 /*******************************************************************************
@@ -122,8 +122,8 @@ void Rcs::TaskOmega3D::computeJ(MatNd* jacobian) const
  ******************************************************************************/
 void Rcs::TaskOmega3D::computeH(MatNd* hessian) const
 {
-  RcsGraph_3dOmegaHessian(this->graph, this->ef, this->refBody, this->refFrame,
-                          hessian);
+  RcsGraph_3dOmegaHessian(this->graph, getEffector(), getRefBody(),
+                          getRefFrame(), hessian);
 }
 
 /*******************************************************************************

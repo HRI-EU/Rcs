@@ -92,7 +92,6 @@ double RcsShape_computeVolume(const RcsShape* self)
     case RCSSHAPE_NONE:
     case RCSSHAPE_REFFRAME:
     case RCSSHAPE_POINT:
-    case RCSSHAPE_MARKER:
     {
       break;
     }
@@ -114,7 +113,7 @@ double RcsShape_computeVolume(const RcsShape* self)
     }
     case RCSSHAPE_MESH:
     {
-      v = RcsMesh_computeVolume((RcsMeshData*) self->userData);
+      v = RcsMesh_computeVolume(self->mesh);
       break;
     }
     case RCSSHAPE_BOX:
@@ -137,12 +136,6 @@ double RcsShape_computeVolume(const RcsShape* self)
       v = M_PI / 3.0 * pow(self->extents[0], 2) * self->extents[2];
       break;
     }
-    case RCSSHAPE_GPISF:
-    {
-      // TODO
-      RLOG(5, "GPISF volume computation not implemented");
-      break;
-    }
     case RCSSHAPE_TORUS:
     {
       v = (M_PI*pow(self->extents[2]/2, 2))*(2.0*M_PI*self->extents[0]);
@@ -150,7 +143,8 @@ double RcsShape_computeVolume(const RcsShape* self)
     }
     case RCSSHAPE_OCTREE:
     {
-      v = Rcs_getOctreeVolume(self->userData);
+      //v = Rcs_getOctreeVolume(self->userData);
+      RFATAL("Currently no Octree support");
       break;
     }
     default:
@@ -186,7 +180,7 @@ RcsMeshData* RcsShape_createMesh(const RcsShape* self)
     }
     case RCSSHAPE_MESH:
     {
-      mesh = RcsMesh_clone((RcsMeshData*) self->userData);
+      mesh = RcsMesh_clone(self->mesh);
       break;
     }
     case RCSSHAPE_BOX:
@@ -350,11 +344,10 @@ static void RcsShape_capsuleInertia(double I[3], double density, double r,
 static void RcsShape_meshInertia(double I_diag[3], const RcsShape* self,
                                  double density)
 {
-  RcsMeshData* mesh = (RcsMeshData*) self->userData;
-  if (mesh != NULL)
+  if (self->mesh)
   {
     double I[3][3], com[3];
-    RcsMesh_computeInertia(mesh, I, com);
+    RcsMesh_computeInertia(self->mesh, I, com);
     Vec3d_set(I_diag, I[0][0], I[1][1], I[2][2]);
     Vec3d_constMulSelf(I_diag, density);
   }
@@ -399,7 +392,6 @@ void RcsShape_computeInertiaTensor(const RcsShape* self, const double density,
     case RCSSHAPE_NONE:
     case RCSSHAPE_REFFRAME:
     case RCSSHAPE_POINT:
-    case RCSSHAPE_MARKER:
       break;
     case RCSSHAPE_MESH:
       RcsShape_meshInertia(I_diag, self, density);
@@ -519,11 +511,6 @@ double RcsShape_boundingSphereDistance(const double Pt[3],
       RLOG(4, "OCTREE not implemented");
       return Math_infinity();
     }
-    case RCSSHAPE_GPISF:
-    {
-      RLOG(4, "GPISF not implemented");
-      return Math_infinity();
-    }
     default:
     {
       RFATAL("Unknown shape type %d", shape->type);
@@ -545,17 +532,13 @@ void RcsShape_destroy(RcsShape* self)
   if (self->type == RCSSHAPE_OCTREE)
   {
     // We assume userData is an Octomap type
-    Rcs_destroyOctree(self->userData);
-  }
-
-  if (self->type == RCSSHAPE_MARKER)
-  {
-    RFREE((int*) self->userData);
+    // Rcs_destroyOctree(self->userData);
+    RFATAL("No Octree support currently");
   }
 
   if (self->type == RCSSHAPE_MESH)
   {
-    RcsMesh_destroy((RcsMeshData*) self->userData);
+    RcsMesh_destroy(self->mesh);
   }
 
   memset(self, 0, sizeof(RcsShape));
@@ -577,11 +560,9 @@ const char* RcsShape_name(int shapeType)
                              "RCSSHAPE_REFFRAME",
                              "RCSSHAPE_SPHERE",
                              "RCSSHAPE_CONE",
-                             "RCSSHAPE_GPISF",
                              "RCSSHAPE_TORUS",
                              "RCSSHAPE_OCTREE",
                              "RCSSHAPE_POINT",
-                             "RCSSHAPE_MARKER",
                              "Unknown shape type"
                             };
   const char* ptr = NULL;
@@ -615,23 +596,17 @@ const char* RcsShape_name(int shapeType)
     case RCSSHAPE_CONE:
       ptr = sName[8];
       break;
-    case RCSSHAPE_GPISF:
+    case RCSSHAPE_TORUS:
       ptr = sName[9];
       break;
-    case RCSSHAPE_TORUS:
+    case RCSSHAPE_OCTREE:
       ptr = sName[10];
       break;
-    case RCSSHAPE_OCTREE:
+    case RCSSHAPE_POINT:
       ptr = sName[11];
       break;
-    case RCSSHAPE_POINT:
-      ptr = sName[12];
-      break;
-    case RCSSHAPE_MARKER:
-      ptr = sName[13];
-      break;
     default:
-      ptr = sName[13];
+      ptr = sName[12];
       break;
   }
 
@@ -644,48 +619,23 @@ const char* RcsShape_name(int shapeType)
 void RcsShape_copy(RcsShape* dst, const RcsShape* src)
 {
   // Copy the members that are not pointing to somewhere
-  dst->type = src->type;
-  HTr_copy(&dst->A_CB, &src->A_CB);
-  Vec3d_copy(dst->extents, src->extents);
-  dst->scale = src->scale;
-  dst->computeType = src->computeType;
-  dst->resizeable = src->resizeable;
-
-  // Copy or re-create string members
-  snprintf(dst->meshFile, RCS_MAX_FILENAMELEN, "%s", src->meshFile);
-  snprintf(dst->textureFile, RCS_MAX_FILENAMELEN, "%s", src->textureFile);
-  snprintf(dst->color, RCS_MAX_NAMELEN, "%s", src->color);
-  snprintf(dst->material, RCS_MAX_NAMELEN, "%s", src->material);
+  RcsMeshData* tmp = dst->mesh;
+  memcpy(dst, src, sizeof(RcsShape));
+  dst->mesh = tmp;
 
   switch (dst->type)
   {
     // Load Octree from file
     case RCSSHAPE_OCTREE:
-      Rcs_destroyOctree(dst->userData);
-      dst->userData = Rcs_loadOctree(dst->meshFile);
+      // Rcs_destroyOctree(dst->userData);
+      // dst->userData = Rcs_loadOctree(dst->meshFile);
+      RFATAL("No Octree support currently");
       break;
-
-    // Copy marker id
-    case RCSSHAPE_MARKER:
-    {
-      RCHECK_MSG(src->userData, "Found marker shape with NULL userData"
-                 " - shouldcontain the marker id as integer value");
-
-      if (dst->userData == NULL)
-      {
-        dst->userData = RALLOC(int);
-      }
-      int* marker_id = (int*) dst->userData;
-      *marker_id = *((int*) src->userData);
-    }
-    break;
 
     case RCSSHAPE_MESH:
     {
-      RcsMeshData* dstMesh = (RcsMeshData*) dst->userData;
-      RcsMesh_destroy(dstMesh);   // Does nothing if dstMesh is NULL
-      dstMesh = RcsMesh_clone((RcsMeshData*) src->userData);
-      dst->userData = (void*) dstMesh;
+      RcsMesh_destroy(dst->mesh);   // Does nothing if dstMesh is NULL
+      dst->mesh = RcsMesh_clone(src->mesh);
     }
     break;
 
@@ -759,9 +709,6 @@ void RcsShape_fprint(FILE* out, const RcsShape* s)
   fprintf(out, "\ttextureFile: \"%s\"\n", s->textureFile);
   fprintf(out, "\tcolor      : \"%s\"\n", s->color);
   fprintf(out, "\tmaterial   : \"%s\"\n", s->material);
-
-  // User data
-  fprintf(out, "\tuserData %s\n", s->userData ? "exists" : "is NULL");
 }
 
 /*******************************************************************************
@@ -807,10 +754,6 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
       fprintf(out, "type=\"CONE\" ");
       break;
 
-    case RCSSHAPE_GPISF:
-      fprintf(out, "type=\"GPISF\" ");
-      break;
-
     case RCSSHAPE_TORUS:
       fprintf(out, "type=\"TORUS\" ");
       break;
@@ -821,13 +764,6 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
 
     case RCSSHAPE_POINT:
       fprintf(out, "type=\"POINT\" ");
-      break;
-
-    case RCSSHAPE_MARKER:
-      fprintf(out, "type=\"MARKER\" ");
-      RCHECK_MSG(self->userData, "Found marker shape with NULL userData"
-                 " - should contain the marker id as integer value");
-      fprintf(out, "id=\"%d\" ", *((int*) self->userData));
       break;
 
     default:
@@ -925,14 +861,7 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
   // Mesh file
   if (strlen(self->meshFile)>0)
   {
-    if (self->type==RCSSHAPE_GPISF)
-    {
-      fprintf(out, "gpFile=\"%s\" ", self->meshFile);
-    }
-    else
-    {
-      fprintf(out, "meshFile=\"%s\" ", self->meshFile);
-    }
+    fprintf(out, "meshFile=\"%s\" ", self->meshFile);
   }
 
   // Texture file
@@ -985,18 +914,19 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
   if (shapeType==RCSSHAPE_MESH)
   {
     strcpy(shape->meshFile, "Cylinder");
-    shape->userData = (RcsMeshData*) RcsMesh_createCylinder(0.2, 1.0, 32);
+    shape->mesh = RcsMesh_createCylinder(0.2, 1.0, 32);
   }
 
   if (shapeType==RCSSHAPE_OCTREE)
   {
-    const char* sit = getenv("SIT");
-    if (sit!=NULL)
-    {
-      snprintf(shape->meshFile, RCS_MAX_FILENAMELEN,
-               "%s\\Data\\RobotMeshes\\1.0\\data\\Octrees\\octree.bt", sit);
-      shape->userData = Rcs_loadOctree(shape->meshFile);
-    }
+    RFATAL("No Octree support currently");
+    /* const char* sit = getenv("SIT"); */
+    /* if (sit!=NULL) */
+    /* { */
+    /*   snprintf(shape->meshFile, RCS_MAX_FILENAMELEN, */
+    /*            "%s\\Data\\RobotMeshes\\1.0\\data\\Octrees\\octree.bt", sit); */
+    /*   shape->userData = Rcs_loadOctree(shape->meshFile); */
+    /* } */
   }
 
   return shape;
@@ -1512,209 +1442,194 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
 {
   // RCSSHAPE_NONE
   {
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance
+    RcsShape_noDistance,                // 0  RCSSHAPE_NONE
+    RcsShape_noDistance,                // 1  RCSSHAPE_SSL
+    RcsShape_noDistance,                // 2  RCSSHAPE_SSR
+    RcsShape_noDistance,                // 3  RCSSHAPE_MESH
+    RcsShape_noDistance,                // 4  RCSSHAPE_BOX
+    RcsShape_noDistance,                // 5  RCSSHAPE_CYLINDER
+    RcsShape_noDistance,                // 6  RCSSHAPE_REFFRAME
+    RcsShape_noDistance,                // 7  RCSSHAPE_SPHERE
+    RcsShape_noDistance,                // 8  RCSSHAPE_CONE
+    RcsShape_noDistance,                // 9  RCSSHAPE_TORUS
+    RcsShape_noDistance,                // 10 RCSSHAPE_OCTREE
+    RcsShape_noDistance                 // 11 RCSSHAPE_POINT
   },
 
   // RCSSHAPE_SSL
   {
-    RcsShape_noDistance,                // RCSSHAPE_NONE
-    RcsShape_closestSSLToSSL,           // RCSSHAPE_SSL
-    RcsShape_noDistance,                // RCSSHAPE_SSR
-    RcsShape_noDistance,                // RCSSHAPE_MESH
-    RcsShape_noDistance,                // RCSSHAPE_BOX
-    RcsShape_noDistance,                // RCSSHAPE_CYLINDER
-    RcsShape_noDistance,                // RCSSHAPE_REFFRAME
-    RcsShape_closestSSLToSphere,        // RCSSHAPE_SPHERE
-    RcsShape_noDistance,                // RCSSHAPE_CONE
-    RcsShape_noDistance,                // RCSSHAPE_GPISF
-    RcsShape_noDistance,                // RCSSHAPE_TORUS
-    RcsShape_noDistance,                // RCSSHAPE_OCTREE
-    RcsShape_closestSSLToPoint,         // RCSSHAPE_POINT
-    RcsShape_noDistance                 // RCSSHAPE_MARKER
+    RcsShape_noDistance,                // 0  RCSSHAPE_NONE
+    RcsShape_closestSSLToSSL,           // 1  RCSSHAPE_SSL
+    RcsShape_noDistance,                // 2  RCSSHAPE_SSR
+    RcsShape_noDistance,                // 3  RCSSHAPE_MESH
+    RcsShape_noDistance,                // 4  RCSSHAPE_BOX
+    RcsShape_noDistance,                // 5  RCSSHAPE_CYLINDER
+    RcsShape_noDistance,                // 6  RCSSHAPE_REFFRAME
+    RcsShape_closestSSLToSphere,        // 7  RCSSHAPE_SPHERE
+    RcsShape_noDistance,                // 8  RCSSHAPE_CONE
+    RcsShape_noDistance,                // 9  RCSSHAPE_TORUS
+    RcsShape_noDistance,                // 10 RCSSHAPE_OCTREE
+    RcsShape_closestSSLToPoint          // 11 RCSSHAPE_POINT
   },
 
   // RCSSHAPE_SSR
   {
-    RcsShape_noDistance,                // RCSSHAPE_NONE
-    RcsShape_noDistance,                // RCSSHAPE_SSL
-    RcsShape_noDistance,                // RCSSHAPE_SSR
-    RcsShape_noDistance,                // RCSSHAPE_MESH
-    RcsShape_noDistance,                // RCSSHAPE_BOX
-    RcsShape_noDistance,                // RCSSHAPE_CYLINDER
-    RcsShape_noDistance,                // RCSSHAPE_REFFRAME
-    RcsShape_noDistance,                // RCSSHAPE_SPHERE
-    RcsShape_noDistance,                // RCSSHAPE_CONE
-    RcsShape_noDistance,                // RCSSHAPE_GPISF
-    RcsShape_noDistance,                // RCSSHAPE_TORUS
-    RcsShape_noDistance,                // RCSSHAPE_OCTREE
-    RcsShape_closestSSRToPoint,         // RCSSHAPE_POINT
-    RcsShape_noDistance                 // RCSSHAPE_MARKER
+    RcsShape_noDistance,                // 0  RCSSHAPE_NONE
+    RcsShape_noDistance,                // 1  RCSSHAPE_SSL
+    RcsShape_noDistance,                // 2  RCSSHAPE_SSR
+    RcsShape_noDistance,                // 3  RCSSHAPE_MESH
+    RcsShape_noDistance,                // 4  RCSSHAPE_BOX
+    RcsShape_noDistance,                // 5  RCSSHAPE_CYLINDER
+    RcsShape_noDistance,                // 6  RCSSHAPE_REFFRAME
+    RcsShape_noDistance,                // 7  RCSSHAPE_SPHERE
+    RcsShape_noDistance,                // 8  RCSSHAPE_CONE
+    RcsShape_noDistance,                // 9  RCSSHAPE_TORUS
+    RcsShape_noDistance,                // 10 RCSSHAPE_OCTREE
+    RcsShape_closestSSRToPoint          // 11 RCSSHAPE_POINT
   },
 
   // RCSSHAPE_MESH
   {
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance
+    RcsShape_noDistance,                // 0  RCSSHAPE_NONE
+    RcsShape_noDistance,                // 1  RCSSHAPE_SSL
+    RcsShape_noDistance,                // 2  RCSSHAPE_SSR
+    RcsShape_noDistance,                // 3  RCSSHAPE_MESH
+    RcsShape_noDistance,                // 4  RCSSHAPE_BOX
+    RcsShape_noDistance,                // 5  RCSSHAPE_CYLINDER
+    RcsShape_noDistance,                // 6  RCSSHAPE_REFFRAME
+    RcsShape_noDistance,                // 7  RCSSHAPE_SPHERE
+    RcsShape_noDistance,                // 8  RCSSHAPE_CONE
+    RcsShape_noDistance,                // 9  RCSSHAPE_TORUS
+    RcsShape_noDistance,                // 10 RCSSHAPE_OCTREE
+    RcsShape_noDistance                 // 11 RCSSHAPE_POINT
   },
 
   // RCSSHAPE_BOX
   {
-    RcsShape_noDistance,                // RCSSHAPE_NONE
-    RcsShape_noDistance,                // RCSSHAPE_SSL
-    RcsShape_noDistance,                // RCSSHAPE_SSR
-    RcsShape_noDistance,                // RCSSHAPE_MESH
-    RcsShape_noDistance,                // RCSSHAPE_BOX
-    RcsShape_noDistance,                // RCSSHAPE_CYLINDER
-    RcsShape_noDistance,                // RCSSHAPE_REFFRAME
-    RcsShape_closestBoxToSphere,        // RCSSHAPE_SPHERE
-    RcsShape_noDistance,                // RCSSHAPE_CONE
-    RcsShape_noDistance,                // RCSSHAPE_GPISF
-    RcsShape_noDistance,                // RCSSHAPE_TORUS
-    RcsShape_noDistance,                // RCSSHAPE_OCTREE
-    RcsShape_closestBoxToPoint,         // RCSSHAPE_POINT
-    RcsShape_noDistance                 // RCSSHAPE_MARKER
+    RcsShape_noDistance,                // 0  RCSSHAPE_NONE
+    RcsShape_noDistance,                // 1  RCSSHAPE_SSL
+    RcsShape_noDistance,                // 2  RCSSHAPE_SSR
+    RcsShape_noDistance,                // 3  RCSSHAPE_MESH
+    RcsShape_noDistance,                // 4  RCSSHAPE_BOX
+    RcsShape_noDistance,                // 5  RCSSHAPE_CYLINDER
+    RcsShape_noDistance,                // 6  RCSSHAPE_REFFRAME
+    RcsShape_closestBoxToSphere,        // 7  RCSSHAPE_SPHERE
+    RcsShape_noDistance,                // 8  RCSSHAPE_CONE
+    RcsShape_noDistance,                // 9  RCSSHAPE_TORUS
+    RcsShape_noDistance,                // 10 RCSSHAPE_OCTREE
+    RcsShape_closestBoxToPoint          // 11 RCSSHAPE_POINT
   },
 
   // RCSSHAPE_CYLINDER
   {
-    RcsShape_noDistance,                // RCSSHAPE_NONE
-    RcsShape_noDistance,                // RCSSHAPE_SSL
-    RcsShape_noDistance,                // RCSSHAPE_SSR
-    RcsShape_noDistance,                // RCSSHAPE_MESH
-    RcsShape_noDistance,                // RCSSHAPE_BOX
-    RcsShape_noDistance,                // RCSSHAPE_CYLINDER
-    RcsShape_noDistance,                // RCSSHAPE_REFFRAME
-    RcsShape_noDistance,                // RCSSHAPE_SPHERE
-    RcsShape_noDistance,                // RCSSHAPE_CONE
-    RcsShape_noDistance,                // RCSSHAPE_GPISF
-    RcsShape_noDistance,                // RCSSHAPE_TORUS
-    RcsShape_noDistance,                // RCSSHAPE_OCTREE
-    RcsShape_closestCylinderToPoint,    // RCSSHAPE_POINT
-    RcsShape_noDistance                 // RCSSHAPE_MARKER
+    RcsShape_noDistance,                // 0  RCSSHAPE_NONE
+    RcsShape_noDistance,                // 1  RCSSHAPE_SSL
+    RcsShape_noDistance,                // 2  RCSSHAPE_SSR
+    RcsShape_noDistance,                // 3  RCSSHAPE_MESH
+    RcsShape_noDistance,                // 4  RCSSHAPE_BOX
+    RcsShape_noDistance,                // 5  RCSSHAPE_CYLINDER
+    RcsShape_noDistance,                // 6  RCSSHAPE_REFFRAME
+    RcsShape_noDistance,                // 7  RCSSHAPE_SPHERE
+    RcsShape_noDistance,                // 8  RCSSHAPE_CONE
+    RcsShape_noDistance,                // 9  RCSSHAPE_TORUS
+    RcsShape_noDistance,                // 10 RCSSHAPE_OCTREE
+    RcsShape_closestCylinderToPoint     // 11 RCSSHAPE_POINT
   },
 
   // RCSSHAPE_REFFRAME
   {
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance
+    RcsShape_noDistance,                // 0  RCSSHAPE_NONE
+    RcsShape_noDistance,                // 1  RCSSHAPE_SSL
+    RcsShape_noDistance,                // 2  RCSSHAPE_SSR
+    RcsShape_noDistance,                // 3  RCSSHAPE_MESH
+    RcsShape_noDistance,                // 4  RCSSHAPE_BOX
+    RcsShape_noDistance,                // 5  RCSSHAPE_CYLINDER
+    RcsShape_noDistance,                // 6  RCSSHAPE_REFFRAME
+    RcsShape_noDistance,                // 7  RCSSHAPE_SPHERE
+    RcsShape_noDistance,                // 8  RCSSHAPE_CONE
+    RcsShape_noDistance,                // 9  RCSSHAPE_TORUS
+    RcsShape_noDistance,                // 10 RCSSHAPE_OCTREE
+    RcsShape_noDistance                 // 11 RCSSHAPE_POINT
   },
 
   // RCSSHAPE_SPHERE
   {
-    RcsShape_noDistance,                // RCSSHAPE_NONE
-    RcsShape_closestSphereToSSL,        // RCSSHAPE_SSL
-    RcsShape_noDistance,                // RCSSHAPE_SSR
-    RcsShape_noDistance,                // RCSSHAPE_MESH
-    RcsShape_closestSphereToBox,        // RCSSHAPE_BOX
-    RcsShape_noDistance,                // RCSSHAPE_CYLINDER
-    RcsShape_noDistance,                // RCSSHAPE_REFFRAME
-    RcsShape_closestSphereToSphere,     // RCSSHAPE_SPHERE
-    RcsShape_closestSphereToCone,       // RCSSHAPE_CONE
-    RcsShape_noDistance,                // RCSSHAPE_GPISF
-    RcsShape_noDistance,                // RCSSHAPE_TORUS
-    RcsShape_noDistance,                // RCSSHAPE_OCTREE
-    RcsShape_closestSphereToPoint,      // RCSSHAPE_POINT
-    RcsShape_noDistance                 // RCSSHAPE_MARKER
+    RcsShape_noDistance,                // 0  RCSSHAPE_NONE
+    RcsShape_closestSphereToSSL,        // 1  RCSSHAPE_SSL
+    RcsShape_noDistance,                // 2  RCSSHAPE_SSR
+    RcsShape_noDistance,                // 3  RCSSHAPE_MESH
+    RcsShape_closestSphereToBox,        // 4  RCSSHAPE_BOX
+    RcsShape_noDistance,                // 5  RCSSHAPE_CYLINDER
+    RcsShape_noDistance,                // 6  RCSSHAPE_REFFRAME
+    RcsShape_closestSphereToSphere,     // 7  RCSSHAPE_SPHERE
+    RcsShape_closestSphereToCone,       // 8  RCSSHAPE_CONE
+    RcsShape_noDistance,                // 9  RCSSHAPE_TORUS
+    RcsShape_noDistance,                // 10 RCSSHAPE_OCTREE
+    RcsShape_closestSphereToPoint       // 11 RCSSHAPE_POINT
   },
 
   // RCSSHAPE_CONE
   {
-    RcsShape_noDistance,                // RCSSHAPE_NONE
-    RcsShape_noDistance,                // RCSSHAPE_SSL
-    RcsShape_noDistance,                // RCSSHAPE_SSR
-    RcsShape_noDistance,                // RCSSHAPE_MESH
-    RcsShape_noDistance,                // RCSSHAPE_BOX
-    RcsShape_noDistance,                // RCSSHAPE_CYLINDER
-    RcsShape_noDistance,                // RCSSHAPE_REFFRAME
-    RcsShape_closestConeToSphere,       // RCSSHAPE_SPHERE
-    RcsShape_noDistance,                // RCSSHAPE_CONE
-    RcsShape_noDistance,                // RCSSHAPE_GPISF
-    RcsShape_noDistance,                // RCSSHAPE_TORUS
-    RcsShape_noDistance,                // RCSSHAPE_OCTREE
-    RcsShape_closestConeToPoint,        // RCSSHAPE_POINT
-    RcsShape_noDistance                 // RCSSHAPE_MARKER
-  },
-
-  // RCSSHAPE_GPISF
-  {
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance
+    RcsShape_noDistance,                // 0  RCSSHAPE_NONE
+    RcsShape_noDistance,                // 1  RCSSHAPE_SSL
+    RcsShape_noDistance,                // 2  RCSSHAPE_SSR
+    RcsShape_noDistance,                // 3  RCSSHAPE_MESH
+    RcsShape_noDistance,                // 4  RCSSHAPE_BOX
+    RcsShape_noDistance,                // 5  RCSSHAPE_CYLINDER
+    RcsShape_noDistance,                // 6  RCSSHAPE_REFFRAME
+    RcsShape_closestConeToSphere,       // 7  RCSSHAPE_SPHERE
+    RcsShape_noDistance,                // 8  RCSSHAPE_CONE
+    RcsShape_noDistance,                 // 9  RCSSHAPE_TORUS
+    RcsShape_noDistance,                // 10 RCSSHAPE_OCTREE
+    RcsShape_closestConeToPoint         // 11 RCSSHAPE_POINT
   },
 
   // RCSSHAPE_TORUS
   {
-    RcsShape_noDistance,                // RCSSHAPE_NONE
-    RcsShape_noDistance,                // RCSSHAPE_SSL
-    RcsShape_noDistance,                // RCSSHAPE_SSR
-    RcsShape_noDistance,                // RCSSHAPE_MESH
-    RcsShape_noDistance,                // RCSSHAPE_BOX
-    RcsShape_noDistance,                // RCSSHAPE_CYLINDER
-    RcsShape_noDistance,                // RCSSHAPE_REFFRAME
-    RcsShape_noDistance,                // RCSSHAPE_SPHERE
-    RcsShape_noDistance,                // RCSSHAPE_CONE
-    RcsShape_noDistance,                // RCSSHAPE_GPISF
-    RcsShape_noDistance,                // RCSSHAPE_TORUS
-    RcsShape_noDistance,                // RCSSHAPE_OCTREE
-    RcsShape_noDistance,                // RCSSHAPE_POINT
-    RcsShape_noDistance                 // RCSSHAPE_MARKER
+    RcsShape_noDistance,                // 0  RCSSHAPE_NONE
+    RcsShape_noDistance,                // 1  RCSSHAPE_SSL
+    RcsShape_noDistance,                // 2  RCSSHAPE_SSR
+    RcsShape_noDistance,                // 3  RCSSHAPE_MESH
+    RcsShape_noDistance,                // 4  RCSSHAPE_BOX
+    RcsShape_noDistance,                // 5  RCSSHAPE_CYLINDER
+    RcsShape_noDistance,                // 6  RCSSHAPE_REFFRAME
+    RcsShape_noDistance,                // 7  RCSSHAPE_SPHERE
+    RcsShape_noDistance,                // 8  RCSSHAPE_CONE
+    RcsShape_noDistance,                // 9  RCSSHAPE_TORUS
+    RcsShape_noDistance,                // 10 RCSSHAPE_OCTREE
+    RcsShape_noDistance                 // 11 RCSSHAPE_POINT
   },
 
   // RCSSHAPE_OCTREE
   {
-    RcsShape_noDistance,                // RCSSHAPE_NONE
-    RcsShape_noDistance,                // RCSSHAPE_SSL
-    RcsShape_noDistance,                // RCSSHAPE_SSR
-    RcsShape_noDistance,                // RCSSHAPE_MESH
-    RcsShape_noDistance,                // RCSSHAPE_BOX
-    RcsShape_noDistance,                // RCSSHAPE_CYLINDER
-    RcsShape_noDistance,                // RCSSHAPE_REFFRAME
-    RcsShape_noDistance,                // RCSSHAPE_SPHERE
-    RcsShape_noDistance,                // RCSSHAPE_CONE
-    RcsShape_noDistance,                // RCSSHAPE_GPISF
-    RcsShape_noDistance,                // RCSSHAPE_TORUS
-    RcsShape_noDistance,                // RCSSHAPE_OCTREE
-    RcsShape_noDistance,                // RCSSHAPE_POINT
-    RcsShape_noDistance                 // RCSSHAPE_MARKER
+    RcsShape_noDistance,                // 0  RCSSHAPE_NONE
+    RcsShape_noDistance,                // 1  RCSSHAPE_SSL
+    RcsShape_noDistance,                // 2  RCSSHAPE_SSR
+    RcsShape_noDistance,                // 3  RCSSHAPE_MESH
+    RcsShape_noDistance,                // 4  RCSSHAPE_BOX
+    RcsShape_noDistance,                // 5  RCSSHAPE_CYLINDER
+    RcsShape_noDistance,                // 6  RCSSHAPE_REFFRAME
+    RcsShape_noDistance,                // 7  RCSSHAPE_SPHERE
+    RcsShape_noDistance,                // 8  RCSSHAPE_CONE
+    RcsShape_noDistance,                // 9  RCSSHAPE_TORUS
+    RcsShape_noDistance,                // 10 RCSSHAPE_OCTREE
+    RcsShape_noDistance,                // 11 RCSSHAPE_POINT
   },
 
   // RCSSHAPE_POINT
   {
-    RcsShape_noDistance,                // RCSSHAPE_NONE
-    RcsShape_closestPointToSSL,         // RCSSHAPE_SSL
-    RcsShape_closestPointToSSR,         // RCSSHAPE_SSR
-    RcsShape_noDistance,                // RCSSHAPE_MESH
-    RcsShape_closestPointToBox,         // RCSSHAPE_BOX
-    RcsShape_closestPointToCylinder,    // RCSSHAPE_CYLINDER
-    RcsShape_noDistance,                // RCSSHAPE_REFFRAME
-    RcsShape_closestPointToSphere,      // RCSSHAPE_SPHERE
-    RcsShape_closestPointToCone,        // RCSSHAPE_CONE
-    RcsShape_noDistance,                // RCSSHAPE_GPISF
-    RcsShape_noDistance,                // RCSSHAPE_TORUS
-    RcsShape_noDistance,                // RCSSHAPE_OCTREE
-    RcsShape_closestPointToPoint,       // RCSSHAPE_POINT
-    RcsShape_noDistance                 // RCSSHAPE_MARKER
-  },
-
-  // RCSSHAPE_MARKER
-  {
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance, RcsShape_noDistance,
-    RcsShape_noDistance, RcsShape_noDistance
+    RcsShape_noDistance,                // 0  RCSSHAPE_NONE
+    RcsShape_closestPointToSSL,         // 1  RCSSHAPE_SSL
+    RcsShape_closestPointToSSR,         // 2  RCSSHAPE_SSR
+    RcsShape_noDistance,                // 3  RCSSHAPE_MESH
+    RcsShape_closestPointToBox,         // 4  RCSSHAPE_BOX
+    RcsShape_closestPointToCylinder,    // 5  RCSSHAPE_CYLINDER
+    RcsShape_noDistance,                // 6  RCSSHAPE_REFFRAME
+    RcsShape_closestPointToSphere,      // 7  RCSSHAPE_SPHERE
+    RcsShape_closestPointToCone,        // 8  RCSSHAPE_CONE
+    RcsShape_noDistance,                // 9  RCSSHAPE_TORUS
+    RcsShape_noDistance,                // 10 RCSSHAPE_OCTREE
+    RcsShape_closestPointToPoint        // 11 RCSSHAPE_POINT
   }
 
 };
@@ -1858,8 +1773,7 @@ void RcsShape_fprintDistanceFunctions(FILE* out)
 
   for (int i=0; i<RCSSHAPE_SHAPE_MAX; ++i)
   {
-    if ((i==RCSSHAPE_NONE) || (i==RCSSHAPE_REFFRAME) || (i==RCSSHAPE_GPISF) ||
-        (i==RCSSHAPE_MARKER))
+    if ((i==RCSSHAPE_NONE) || (i==RCSSHAPE_REFFRAME))
     {
       continue;
     }
@@ -1870,8 +1784,7 @@ void RcsShape_fprintDistanceFunctions(FILE* out)
 
   for (int i=0; i<RCSSHAPE_SHAPE_MAX; ++i)
   {
-    if ((i==RCSSHAPE_NONE) || (i==RCSSHAPE_REFFRAME) || (i==RCSSHAPE_GPISF) ||
-        (i==RCSSHAPE_MARKER))
+    if ((i==RCSSHAPE_NONE) || (i==RCSSHAPE_REFFRAME))
     {
       continue;
     }
@@ -1884,8 +1797,7 @@ void RcsShape_fprintDistanceFunctions(FILE* out)
 
     for (int j=0; j<RCSSHAPE_SHAPE_MAX; ++j)
     {
-      if ((j==RCSSHAPE_NONE) || (j==RCSSHAPE_REFFRAME) || (j==RCSSHAPE_GPISF)
-          || (j==RCSSHAPE_MARKER))
+      if ((j==RCSSHAPE_NONE) || (j==RCSSHAPE_REFFRAME))
       {
         continue;
       }
@@ -1902,16 +1814,14 @@ void RcsShape_fprintDistanceFunctions(FILE* out)
   /*
   for (int i=0; i<RCSSHAPE_SHAPE_MAX; ++i)
   {
-   if ((i==RCSSHAPE_NONE) || (i==RCSSHAPE_REFFRAME) || (i==RCSSHAPE_GPISF) ||
-       (i==RCSSHAPE_MARKER))
+   if ((i==RCSSHAPE_NONE) || (i==RCSSHAPE_REFFRAME))
    {
      continue;
    }
 
    for (int j=0; j<RCSSHAPE_SHAPE_MAX; ++j)
    {
-     if ((j==RCSSHAPE_NONE) || (j==RCSSHAPE_REFFRAME) || (j==RCSSHAPE_GPISF) ||
-         (j==RCSSHAPE_MARKER))
+     if ((j==RCSSHAPE_NONE) || (j==RCSSHAPE_REFFRAME))
      {
        continue;
      }
@@ -1930,14 +1840,16 @@ void RcsShape_fprintDistanceFunctions(FILE* out)
  ******************************************************************************/
 void* RcsShape_addOctree(RcsShape* self, const char* fileName)
 {
-  self->userData = Rcs_loadOctree(self->meshFile);
+  RFATAL("No Octree support currently");
+  return NULL;
+  /* self->userData = Rcs_loadOctree(self->meshFile); */
 
-  if (self->userData == NULL)
-  {
-    RLOG(1, "Failed to load Octree file \"%s\"", self->meshFile);
-  }
+  /* if (self->userData == NULL) */
+  /* { */
+  /*   RLOG(1, "Failed to load Octree file \"%s\"", self->meshFile); */
+  /* } */
 
-  return self->userData;
+  /* return self->userData; */
 }
 
 /*******************************************************************************
@@ -1953,7 +1865,6 @@ void RcsShape_computeAABB(const RcsShape* shape,
     case RCSSHAPE_NONE:
     case RCSSHAPE_REFFRAME:
     case RCSSHAPE_POINT:
-    case RCSSHAPE_MARKER:
     {
       Vec3d_setZero(xyzMin);
       Vec3d_setZero(xyzMax);
@@ -1975,7 +1886,7 @@ void RcsShape_computeAABB(const RcsShape* shape,
     }
     case RCSSHAPE_MESH:
     {
-      RcsMesh_computeAABB((RcsMeshData*)shape->userData, xyzMin, xyzMax);
+      RcsMesh_computeAABB(shape->mesh, xyzMin, xyzMax);
       break;
     }
     case RCSSHAPE_BOX:
@@ -2027,9 +1938,9 @@ void RcsShape_scale(RcsShape* shape, double scale)
   Vec3d_constMulSelf(shape->extents, scale);
   shape->scale *= scale;
 
-  if (shape->type==RCSSHAPE_MESH && shape->userData)
+  if (shape->type==RCSSHAPE_MESH && shape->mesh)
   {
-    RcsMesh_scale((RcsMeshData*) shape->userData, scale);
+    RcsMesh_scale(shape->mesh, scale);
   }
 }
 

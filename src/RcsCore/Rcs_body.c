@@ -106,6 +106,7 @@ void RcsBody_init(RcsBody* b)
   b->lastChildId = -1;
   b->nextId = -1;
   b->prevId = -1;
+  b->jntId = -1;
 }
 
 /*******************************************************************************
@@ -126,8 +127,6 @@ void RcsBody_destroy(RcsBody* self)
  ******************************************************************************/
 void RcsBody_clear(RcsBody* self)
 {
-  RcsJoint* jnt, *next;
-
   if (self == NULL)
   {
     NLOG(1, "Body is NULL - returning");
@@ -135,16 +134,18 @@ void RcsBody_clear(RcsBody* self)
   }
 
   // Destroy all associated joints
-  jnt  = self->jnt;
-  next = NULL;
+  /* RcsJoint* jnt, *next; */
 
-  while (jnt)
-  {
-    NLOG(0, "Deleting joint \"%s\"", jnt->name);
-    next = jnt->next;
-    RcsJoint_destroy(jnt);
-    jnt = next;
-  }
+  /* jnt  = self->jnt; */
+  /* next = NULL; */
+
+  /* while (jnt) */
+  /* { */
+  /*   NLOG(0, "Deleting joint \"%s\"", jnt->name); */
+  /*   next = jnt->next; */
+  /*   RcsJoint_destroy(jnt); */
+  /*   jnt = next; */
+  /* } */
 
   // Destroy all associated shapes
   NLOG(0, "Starting to delete shapes");
@@ -165,16 +166,16 @@ void RcsBody_clear(RcsBody* self)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-unsigned int RcsBody_numJoints(const RcsBody* self)
+unsigned int RcsBody_numJoints(const RcsGraph* graph, const RcsBody* self)
 {
   unsigned int nJoints = 0;
 
-  if (self == NULL)
+  if ((self==NULL) || (self->jntId==-1))
   {
     return 0;
   }
 
-  RCSBODY_TRAVERSE_JOINTS(self)
+  RCSBODY_FOREACH_JOINT(graph, self)
   {
     nJoints++;
   }
@@ -305,410 +306,115 @@ bool RcsBody_removeShape(RcsBody* self, unsigned int idx)
  ******************************************************************************/
 RcsBody* RcsBody_getLastInGraph(const RcsGraph* self)
 {
-#ifdef OLD_TOPO
-  RcsBody* b = self->root;
+  RcsBody* b = RCSBODY_BY_ID(self, self->rootId);
+  RcsBody* next = RCSBODY_BY_ID(self, b->nextId);
+  RcsBody* lastChild = RCSBODY_BY_ID(self, b->lastChildId);
 
-  while (b && (b->next || b->lastChild))
+  while (b && (next || lastChild))
   {
-    if (b->next)
+    if (next)
     {
-      b = b->next;
+      b = next;
     }
     else
     {
-      b = b->lastChild;
+      b = lastChild;
     }
+
+    next = RCSBODY_BY_ID(self, b->nextId);
+    lastChild = RCSBODY_BY_ID(self, b->lastChildId);
   }
 
   return b;
-#else
-  RFATAL("Implement me");
-  return NULL;
-#endif
 }
 
 /*******************************************************************************
- * See header.
- ******************************************************************************/
-RcsBody* RcsBody_getGraphRoot(const RcsBody* self)
-{
-#ifdef OLD_TOPO
-  if (self==NULL)
-  {
-    return NULL;
-  }
-
-  while (self->parent)  // Go up to the level 0
-  {
-    self = self->parent;
-  }
-
-  while (self->prev)  // Go left to the root node
-  {
-    self = self->prev;
-  }
-
-  return (RcsBody*) self;
-#else
-  RFATAL("Implement me");
-  return NULL;
-#endif
-}
-
-/*******************************************************************************
- * See header.
- ******************************************************************************/
-bool RcsBody_attachToBody(RcsGraph* graph, RcsBody* body, RcsBody* target,
-                          const HTr* A_BP)
-{
-#ifdef OLD_TOPO
-  if (body == NULL)
-  {
-    RLOG(1, "Body to attach is NULL");
-    return false;
-  }
-
-  // We disallow attaching bodies to generic bodies
-  if (target != NULL)
-  {
-    if (STRNEQ(target->bdyName, "GenericBody", 11))
-    {
-      RLOG(1, "Cannot connect body %s to a GenericBody", body->bdyName);
-      return false;
-    }
-  }
-
-  // If the body to attach is a generic body, we attach the body it is
-  // pointing to
-  if (STRNEQ(body->bdyName, "GenericBody", 11))
-  {
-    RcsBody* bPtr = (RcsBody*) body->extraInfo;
-    RCHECK(bPtr);
-
-    if (bPtr->parent == target)
-    {
-      return true; // Nothing to do
-    }
-
-    RcsBody_attachToBody(graph, bPtr, target, A_BP);
-
-    // Important: This needs to be reseted manually here, since the address
-    // of prev, next, parent, child and last might be changed
-    body->parent     = bPtr->parent;
-    body->firstChild = bPtr->firstChild;
-    body->lastChild  = bPtr->lastChild;
-    body->next       = bPtr->next;
-    body->prev       = bPtr->prev;
-
-    // the following two lines are needed in case re-attaching a body also
-    // leads to a change of joint configuration
-    // (e.g., the rigid_body_joints are removed as a free floating body is
-    //  attached to a robot gripper)
-    body->jnt      = bPtr->jnt;
-    body->rigid_body_joints = bPtr->rigid_body_joints;
-
-    NLOG(0, "Attached generic body \"%s\" (pointing to \"%s\") to body"
-         " \"%s\"", body->bdyName, bPtr ? bPtr->bdyName : "NULL",
-         target ? target->bdyName : "NULL");
-    return true;
-  }
-
-  if ((body->parent==target) && (target!=NULL))
-  {
-    return true; // Nothing to do
-  }
-
-  // take the body and children out of the graph TODO maybe put this in a
-  // separate method
-  if (body->prev)
-  {
-    body->prev->next = body->next;
-  }
-
-  if (body->next)
-  {
-    body->next->prev = body->prev;
-  }
-
-  if (body->parent)
-  {
-    if (body->parent->firstChild == body)
-    {
-      body->parent->firstChild = body->next;
-    }
-    if (body->parent->lastChild == body)
-    {
-      body->parent->lastChild = body->prev;
-    }
-  }
-
-  body->next = NULL;
-  body->prev = NULL;
-
-  // put it into the new position
-  body->parent = target;
-  if (target)
-  {
-    if (target->lastChild)
-    {
-      target->lastChild->next = body;
-      body->prev = target->lastChild;
-    }
-    else
-    {
-      target->firstChild = body;
-    }
-
-    target->lastChild = body;
-  }
-  else
-  {
-    RcsBody* t = graph->root;
-    if (t)
-    {
-      while (t->next)
-      {
-        t = t->next;
-      }
-      t->next = body;
-      body->prev = t;
-    }
-    else
-    {
-      graph->root = body;
-    }
-  }
-
-  if (target != NULL)
-  {
-    if (body->A_BP == NULL)
-    {
-      body->A_BP = HTr_create();
-    }
-
-    if (!A_BP)
-    {
-      // Calculate the new A_BP = A_BI * (A_VI)'
-      HTr_invTransform(body->A_BP, target->A_BI, body->A_BI);
-    }
-    else
-    {
-      HTr_copy(body->A_BP, A_BP);
-    }
-  }
-  else   // no target, but A_BP
-  {
-    if (A_BP != NULL)
-    {
-      if (body->A_BP == NULL)
-      {
-        body->A_BP = HTr_clone(A_BP);
-      }
-      else
-      {
-        HTr_copy(body->A_BP, A_BP);
-      }
-    }
-  }
-
-  // Connect the joints
-  if (body->jnt != NULL)
-  {
-    if (body->parent)
-    {
-      body->jnt->prev = RcsBody_lastJointBeforeBody(body->parent);
-    }
-    else
-    {
-      body->jnt->prev = NULL;
-    }
-
-    // Set all rigid body joints to 0. The relative transformation is already
-    // handled with A_BP
-    if (body->rigid_body_joints == true)
-    {
-      RcsJoint* jPtr = body->jnt;
-      while (jPtr->next != NULL)
-      {
-        MatNd_set(graph->q, jPtr->jointIndex, 0, 0.0);
-        jPtr = jPtr->next;
-      }
-    }
-
-  }
-
-  NLOG(0, "Attached %s to %s",
-       body->bdyName, target ? target->bdyName : "NULL");
-
-  return true;
-#else
-  RFATAL("Implement me");
-  return NULL;
-#endif
-}
-
-/*******************************************************************************
- *
- * Makes a deep copy of a RcsBody data structure. The field extraInfo is
- * skipped. The following fields can only get updated on the level of the graph:
- *
- * RcsBody *prev
- * RcsBody *next
- * RcsShape **shape
- * RcsJoint *jnt
  *
  ******************************************************************************/
 void RcsBody_copy(RcsBody* dst, const RcsBody* src)
 {
+  dst->A_BP = src->A_BP;
+  dst->A_BI = src->A_BI;
   dst->m = src->m;
   dst->rigid_body_joints = src->rigid_body_joints;
   dst->physicsSim = src->physicsSim;
   Vec3d_copy(dst->x_dot, src->x_dot);
   Vec3d_copy(dst->omega, src->omega);
   dst->confidence = src->confidence;
-
-  snprintf(dst->bdyName,  RCS_MAX_NAMELEN,   "%s", src->bdyName);
+  snprintf(dst->name,  RCS_MAX_NAMELEN,   "%s", src->name);
   snprintf(dst->bdySuffix,  RCS_MAX_NAMELEN, "%s", src->bdySuffix);
   snprintf(dst->bdyXmlName, RCS_MAX_NAMELEN, "%s", src->bdyXmlName);
-
-  dst->A_BP = src->A_BP;
-  dst->A_BI = src->A_BI;
   dst->Inertia = src->Inertia;
 }
 
 /*******************************************************************************
 * See header.
 ******************************************************************************/
-RcsBody* RcsBody_clone(const RcsBody* src)
-{
-  if (src == NULL)
-  {
-    return NULL;
-  }
+/* RcsBody* RcsBody_clone(const RcsBody* src) */
+/* { */
+/*   if (src == NULL) */
+/*   { */
+/*     return NULL; */
+/*   } */
 
-  // Make a copy of the body.
-  RcsBody* newBody = RcsBody_create();
-  RcsBody_copy(newBody, src);
+/*   // Make a copy of the body. */
+/*   RcsBody* newBody = RcsBody_create(); */
+/*   RcsBody_copy(newBody, src); */
 
-  // Make a copy of all body shapes and attach them to the body
-  int nShapes = RcsBody_numShapes(src);
-  newBody->shape = RNALLOC(nShapes + 1, RcsShape*);
-  for (int i = 0; i < nShapes; i++)
-  {
-    newBody->shape[i] = RALLOC(RcsShape);
-    RcsShape_copy(newBody->shape[i], src->shape[i]);
-  }
+/*   // Make a copy of all body shapes and attach them to the body */
+/*   int nShapes = RcsBody_numShapes(src); */
+/*   newBody->shape = RNALLOC(nShapes + 1, RcsShape*); */
+/*   for (int i = 0; i < nShapes; i++) */
+/*   { */
+/*     newBody->shape[i] = RALLOC(RcsShape); */
+/*     RcsShape_copy(newBody->shape[i], src->shape[i]); */
+/*   } */
 
-  // Make a copy of all body joints and attach them to the body
-  RcsJoint* prevJoint = NULL;
+/*   // Make a copy of all body joints and attach them to the body */
+/*   RcsJoint* prevJoint = NULL; */
 
-  RCSBODY_TRAVERSE_JOINTS(src)
-  {
-    RcsJoint* j = RALLOC(RcsJoint);
-    RcsJoint_copy(j, JNT);
+/*   RCSBODY_TRAVERSE_JOINTS(src) */
+/*   { */
+/*     RcsJoint* j = RALLOC(RcsJoint); */
+/*     RcsJoint_copy(j, JNT); */
 
-    // Connect joints that belong to body. All outside body connections are
-    // not handled here.
-    if (prevJoint == NULL)
-    {
-      newBody->jnt = j;
-    }
-    else
-    {
-      j->prev = prevJoint;
-      prevJoint->next = j;
-    }
+/*     // Connect joints that belong to body. All outside body connections are */
+/*     // not handled here. */
+/*     if (prevJoint == NULL) */
+/*     { */
+/*       newBody->jnt = j; */
+/*     } */
+/*     else */
+/*     { */
+/*       j->prev = prevJoint; */
+/*       prevJoint->next = j; */
+/*     } */
 
-    prevJoint = j;
-  }   // RCSBODY_TRAVERSE_JOINTS(BODY)
+/*     prevJoint = j; */
+/*   }   // RCSBODY_TRAVERSE_JOINTS(BODY) */
 
-  return newBody;
-}
-
-/*******************************************************************************
- * See header.
- ******************************************************************************/
-#ifdef OLD_TOPO
-RcsBody* RcsBody_depthFirstTraversalGetNext(const RcsBody* body)
-{
-  if (body==NULL)
-  {
-    return NULL;
-  }
-
-  if (body->firstChild)
-  {
-    return body->firstChild;
-  }
-
-  if (body->next)
-  {
-    return body->next;
-  }
-
-  RcsBody* body2 = body->parent;
-
-  while (body2)
-  {
-    if (body2->next)
-    {
-      return body2->next;
-    }
-
-    body2 = body2->parent;
-  }
-
-  return NULL;
-}
-#endif
+/*   return newBody; */
+/* } */
 
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-RcsBody* RcsBody_getLastChild(const RcsBody* body)
-{
-#ifdef OLD_TOPO
-  if (!body)
-  {
-    return NULL;
-  }
-
-  RcsBody* b = (RcsBody*) body;
-  while (b->lastChild)
-  {
-    b = b->lastChild;
-  }
-
-  return b;
-#else
-  RFATAL("Implement me");
-  return NULL;
-#endif
-}
-
-/*******************************************************************************
- * See header.
- ******************************************************************************/
-bool RcsBody_isChild(const RcsBody* possibleChild,
+bool RcsBody_isChild(const RcsGraph* graph,
+                     const RcsBody* possibleChild,
                      const RcsBody* possibleParent)
 {
-#ifdef OLD_TOPO
-  const RcsBody* b = possibleChild->parent;
+  const RcsBody* b = RCSBODY_BY_ID(graph, possibleChild->parentId);
 
   while (b)
   {
-    if (b == possibleParent)
+    if (b->id == possibleParent->id)
     {
       return true;
     }
-    b = b->parent;
+    b = RCSBODY_BY_ID(graph, b->parentId);
   }
 
   return false;
-#else
-  RFATAL("Implement me");
-  return false;
-#endif
 }
 
 /*******************************************************************************
@@ -716,55 +422,37 @@ bool RcsBody_isChild(const RcsBody* possibleChild,
  ******************************************************************************/
 bool RcsBody_isLeaf(const RcsBody* bdy)
 {
-#ifdef OLD_TOPO
-  if (bdy->firstChild==NULL)
+  if (bdy->firstChildId==-1)
   {
     return true;
   }
 
   return false;
-#else
-  RFATAL("Implement me");
-  return false;
-#endif
 }
 
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-#ifdef  OLD_TOPO
-bool RcsBody_isArticulated(const RcsBody* self)
-{
-  RcsJoint* jnt = RcsBody_lastJointBeforeBody(self);
-
-  while (jnt)
-  {
-    if (!jnt->constrained)
-    {
-      return true;
-    }
-    jnt = jnt->prev;
-  }
-
-  return false;
-}
-#else
 bool RcsBody_isArticulated(const RcsGraph* graph, const RcsBody* self)
 {
-  RcsJoint* jnt = RcsBody_lastJointBeforeBodyById(graph, self);
+  RcsJoint* jnt = RcsBody_lastJointBeforeBody(graph, self);
 
-  while (jnt)
+  if (!jnt)
+  {
+    return false;
+  }
+
+  while (jnt->prevId!=-1)
   {
     if (!jnt->constrained)
     {
       return true;
     }
-    jnt = jnt->prev;
+    jnt = &graph->joints[jnt->prevId];
   }
 
   return false;
 }
-#endif
 
 /*******************************************************************************
  * See header.
@@ -785,9 +473,8 @@ bool RcsBody_isInGraph(const RcsBody* self, const RcsGraph* graph)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void RcsBody_fprint(FILE* out, const RcsBody* b)
+void RcsBody_fprint(FILE* out, const RcsBody* b, const RcsGraph* graph)
 {
-#ifdef OLD_TOPO
   if (b == NULL)
   {
     RLOG(1, "Body doesn't exist");
@@ -796,24 +483,25 @@ void RcsBody_fprint(FILE* out, const RcsBody* b)
 
   // Body name
   fprintf(out, "[RcsGraph_fprintBody():%d] \n\tBody \"%s\"\n",
-          __LINE__, b->bdyName);
+          __LINE__, b->name);
 
   // Previous body name
-  if (b->parent)
+  const RcsBody* parentBdy = RCSBODY_BY_ID(graph, b->parentId);
+  if (parentBdy)
   {
-    fprintf(out, "\tis connected to \"%s\"\n", b->parent->bdyName);
+    fprintf(out, "\tis connected to \"%s\"\n", parentBdy->name);
   }
   else
   {
-    fprintf(out, "\tis root node\n");
+    fprintf(out, "\tis root-level node\n");
   }
 
   // Next body name
-  const RcsBody* attachedBody = RcsBody_depthFirstTraversalGetNext(b);
+  const RcsBody* attachedBody = RcsBody_depthFirstTraversalGetNextById(graph, b);
 
   if (attachedBody!=NULL)
   {
-    fprintf(out, "\thas body \"%s\" attached\n", attachedBody->bdyName);
+    fprintf(out, "\thas body \"%s\" attached\n", attachedBody->name);
   }
   else
   {
@@ -821,12 +509,12 @@ void RcsBody_fprint(FILE* out, const RcsBody* b)
   }
 
   // Number of joints
-  int nJoints = RcsBody_numJoints(b);
+  int nJoints = RcsBody_numJoints(graph, b);
   fprintf(out, "\thas %d joints\n", nJoints);
 
   // Print out joint names
   nJoints = 0;
-  RCSBODY_TRAVERSE_JOINTS(b)
+  RCSBODY_FOREACH_JOINT(graph, b)
   {
     fprintf(out, "\t - joint %d is \"%s\" with type %s",
             nJoints, JNT->name, RcsJoint_typeName(JNT->type));
@@ -841,9 +529,9 @@ void RcsBody_fprint(FILE* out, const RcsBody* b)
     }
     fprintf(out, "\t   q index: %d, Jacobi index: %d",
             JNT->jointIndex, JNT->jacobiIndex);
-    if (JNT->coupledTo)
+    if (JNT->coupledToId!=-1)
     {
-      fprintf(out, ", coupled to %s\n", JNT->coupledJointName);
+      fprintf(out, ", coupled to %s\n", JNT->coupledJntName);
     }
     fprintf(out, "\n");
 
@@ -881,41 +569,42 @@ void RcsBody_fprint(FILE* out, const RcsBody* b)
   }
 
   // Velocities
-  fprintf(out, "\n\tx_dot: %f %f %f\n", b->x_dot[0], b->x_dot[2], b->x_dot[2]);
-  fprintf(out, "\n\tomega: %f %f %f\n", b->omega[0], b->omega[2], b->omega[2]);
+  fprintf(out, "\tx_dot: %f %f %f\n", b->x_dot[0], b->x_dot[2], b->x_dot[2]);
+  fprintf(out, "\tomega: %f %f %f\n", b->omega[0], b->omega[2], b->omega[2]);
 
   // Confidence
-  fprintf(out, "\n\tConfidence: %f\n", b->confidence);
+  fprintf(out, "\tConfidence: %f\n", b->confidence);
 
   // Absolute transformation
   fprintf(out, "\n\tAbsolute transformation:\n");
-  HTr_fprint(out, b->A_BI);
+  HTr_fprint(out, &b->A_BI);
   double ea[3];
-  Mat3d_toEulerAngles(ea, b->A_BI->rot);
+  Mat3d_toEulerAngles(ea, (double(*)[3])b->A_BI.rot);
   fprintf(out, "\n\tEuler angles:%f %f %f [deg]\n",
           RCS_RAD2DEG(ea[0]), RCS_RAD2DEG(ea[1]), RCS_RAD2DEG(ea[2]));
 
   // Relative transformation
-  fprintf(out, "\n\tRelative transformation:\n");
-  if (b->A_BP)
+  fprintf(out, "\n\tRelative transformation: ");
+  if (!HTr_isIdentity(&b->A_BP))
   {
-    HTr_fprint(out, b->A_BP);
-    Mat3d_toEulerAngles(ea, b->A_BP->rot);
+    fprintf(out, "\n");
+    HTr_fprint(out, &b->A_BP);
+    Mat3d_toEulerAngles(ea, (double(*)[3])b->A_BP.rot);
     fprintf(out, "\n\tEuler angles:%f %f %f [deg]\n",
             RCS_RAD2DEG(ea[0]), RCS_RAD2DEG(ea[1]), RCS_RAD2DEG(ea[2]));
   }
   else
   {
-    fprintf(out, "\n\tIdentity\n");
+    fprintf(out, "Identity\n");
   }
 
   // Inertia tensor
-  fprintf(out, "\n\n\tInertia tensor and COM offset:\n");
-  HTr_fprint(out, b->Inertia);
+  fprintf(out, "\n\tInertia tensor and COM offset:\n");
+  HTr_fprint(out, &b->Inertia);
 
 
   // Shapes
-  fprintf(out, "\thas %d shapes\n", RcsBody_numShapes(b));
+  fprintf(out, "\n\tBody has %d shapes:\n", RcsBody_numShapes(b));
 
   if (b->shape != NULL)
   {
@@ -926,9 +615,6 @@ void RcsBody_fprint(FILE* out, const RcsBody* b)
   }
 
   fprintf(out, "\n\n");
-#else
-  RFATAL("Implement me");
-#endif
 }
 
 /*******************************************************************************
@@ -941,7 +627,7 @@ static void RcsBody_computeLocalCOM(const RcsBody* self, double* r_com)
 
   if (self->m == 0.0)
   {
-    NLOG(5, "Body \"%s\" has zero mass - local COM is (0 0 0)", self->bdyName);
+    NLOG(5, "Body \"%s\" has zero mass - local COM is (0 0 0)", self->name);
     return;
   }
 
@@ -949,7 +635,7 @@ static void RcsBody_computeLocalCOM(const RcsBody* self, double* r_com)
 
   if (v_bdy == 0.0)
   {
-    NLOG(5, "Body \"%s\" has zero volume - local COM is (0 0 0)", self->bdyName);
+    NLOG(5, "Body \"%s\" has zero volume - local COM is (0 0 0)", self->name);
     return;
   }
 
@@ -990,7 +676,7 @@ void RcsBody_computeInertiaTensor(const RcsBody* self, HTr* I)
 
   if (self->m == 0.0)
   {
-    RLOG(5, "Mass of body \"%s\" is 0: Inertia tensor set to 0", self->bdyName);
+    RLOG(5, "Mass of body \"%s\" is 0: Inertia tensor set to 0", self->name);
     return;
   }
 
@@ -998,7 +684,7 @@ void RcsBody_computeInertiaTensor(const RcsBody* self, HTr* I)
 
   if (v_bdy == 0.0)
   {
-    RLOG(5, "Volume of body \"%s\" is 0: Inertia tensor set to 0", self->bdyName);
+    RLOG(5, "Volume of body \"%s\" is 0: Inertia tensor set to 0", self->name);
     return;
   }
 
@@ -1116,7 +802,7 @@ double RcsBody_distance(const RcsBody* b1,
   if (d_closest == Math_infinity())
   {
     RLOG(5, "Body \"%s\" - \"%s\": distance is INFINITY",
-         b1->bdyName, b2->bdyName);
+         b1->name, b2->name);
   }
 
   return d_closest;
@@ -1273,8 +959,8 @@ void RcsBody_distanceGradient(const RcsGraph* self,
   if (d == 0.0)
   {
     RLOG(4, "Closest points of bodies \"%s\" and \"%s\" coincide - assuming "
-         "distance gradient to be zero", b1 ? b1->bdyName : "NULL",
-         b2 ? b2->bdyName : "NULL");
+         "distance gradient to be zero", b1 ? b1->name : "NULL",
+         b2 ? b2->name : "NULL");
     MatNd_reshapeAndSetZero(dDdq, 1, self->nJ);
     MatNd_destroy(J1);
     MatNd_destroy(J2);
@@ -1349,7 +1035,7 @@ void RcsBody_distanceHessian(const RcsGraph* self,
   if (d == 0.0)
   {
     RLOG(4, "Closest points of bodies \"%s\" and \"%s\" coincide - assuming "
-         "distance Hessian to be zero", b1->bdyName, b2->bdyName);
+         "distance Hessian to be zero", b1->name, b2->name);
     MatNd_destroy(J1);
     MatNd_destroy(J2);
     return;
@@ -1451,7 +1137,7 @@ double RcsBody_collisionCost(const RcsBody* b1,
   {
     cost += -2.0 * s * dClosestPts / db + s;
 
-    RLOG(6, "Collision[C]: <%s - %s>: %f\n", b1->bdyName, b2->bdyName, dClosestPts);
+    RLOG(6, "Collision[C]: <%s - %s>: %f\n", b1->name, b2->name, dClosestPts);
   }
   else
   {
@@ -1463,7 +1149,7 @@ double RcsBody_collisionCost(const RcsBody* b1,
     cost += s / db * (db - dClosestPts);
 #endif
 
-    RLOG(6, "Collision[N]: <%s - %s>: %f\n", b1->bdyName, b2->bdyName, dClosestPts);
+    RLOG(6, "Collision[N]: <%s - %s>: %f\n", b1->name, b2->name, dClosestPts);
   }
 
 
@@ -1771,67 +1457,38 @@ void RcsBody_collisionHessian(const RcsGraph* self,
  * That should cover all cases.
  *
  ******************************************************************************/
-#ifdef  OLD_TOPO
-RcsJoint* RcsBody_lastJointBeforeBody(const RcsBody* body)
+RcsJoint* RcsBody_lastJointBeforeBody(const RcsGraph* graph,
+                                      const RcsBody* body)
 {
   if (body == NULL)
   {
     return NULL;
   }
 
-  RcsJoint* jnt = body->jnt;
+  RcsJoint* jnt = RCSJOINT_BY_ID(graph, body->jntId);
 
   // If the body is not attached to any joint, we traverse its parents until
-  // we find one that's driven by a joint. If we reach the root, it means that
-  // the chain does not comprise any joint. In this case, we return NULL.
+  // we find one that's driven by a joint.
   while (jnt == NULL)
   {
-    if (body->parent == NULL)
-    {
-      return NULL;
-    }
-
-    body = body->parent;
-    jnt = body->jnt;
-  }
-
-  // If we found a joint, we traverse its successors up to the last one
-  while (jnt->next)
-  {
-    jnt = jnt->next;
-  }
-
-  return jnt;
-}
-#endif
-
-RcsJoint* RcsBody_lastJointBeforeBodyById(const RcsGraph* graph, const RcsBody* body)
-{
-  if (body == NULL)
-  {
-    return NULL;
-  }
-
-  RcsJoint* jnt = body->jnt;
-
-  // If the body is not attached to any joint, we traverse its parents until
-  // we find one that's driven by a joint. If we reach the root, it means that
-  // the chain does not comprise any joint. In this case, we return NULL.
-  while (jnt == NULL)
-  {
+    // If we reach the root, it means that the chain does not comprise any
+    // joint. In this case, we return NULL.
     if (body->parentId == -1)
     {
       return NULL;
     }
 
     body = &graph->bodies[body->parentId];
-    jnt = body->jnt;
+    jnt = RCSJOINT_BY_ID(graph, body->jntId);
   }
 
+  RCHECK(jnt);// \todo: Not needed
+
   // If we found a joint, we traverse its successors up to the last one
-  while (jnt->next)
+  while (jnt->nextId!=-1)
   {
-    jnt = jnt->next;
+    RCHECK_MSG(jnt->nextId<(int)graph->dof, "%d %d", jnt->nextId, graph->dof);
+    jnt = &graph->joints[jnt->nextId];
   }
 
   return jnt;
@@ -1858,16 +1515,19 @@ RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* b,
                                           const double q_rbj[6],
                                           const int indexOrdering[6])
 {
+  RCHECK(b);
   RcsJoint* jnt0 = NULL;
 
   for (int i = 0; i < 6; i++)
   {
-    RcsJoint* jnt = RNALLOC(1, RcsJoint);
-    RcsGraph_insertJoint(self, b, jnt);
-    HTr_setIdentity(&jnt->A_JI);
-    jnt->name =
-      RNALLOC(strlen(b->bdyName) + strlen("_rigidBodyJnt") + 1 + 1, char);
-    sprintf(jnt->name, "%s_rigidBodyJnt%d", b->bdyName, i);
+    RcsJoint* jnt = RcsGraph_insertGraphJoint(self, b->id);
+
+    int nchars = snprintf(jnt->name, RCS_MAX_NAMELEN, "%s_rigidBodyJnt%d",
+                          b->name, i);
+    if (nchars>=RCS_MAX_NAMELEN)
+    {
+      RLOG(1, "Joint name truncation happened: %s", jnt->name);
+    }
     jnt->constrained = true;
 
     RCHECK((indexOrdering[i]>=0) && (indexOrdering[i]<6));
@@ -1923,19 +1583,12 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
 {
   char buf[256];
 
-  fprintf(out, "  <Body name=\"%s\" ", self->bdyName);
+  fprintf(out, "  <Body name=\"%s\" ", self->name);
 
-#ifdef OLD_TOPO
-  if (self->parent != NULL)
-  {
-    fprintf(out, "prev=\"%s\" ", self->parent->bdyName);
-  }
-#else
   if (self->parentId != -1)
   {
-    fprintf(out, "prev=\"%s\" ", graph->bodies[self->parentId].bdyName);
+    fprintf(out, "prev=\"%s\" ", graph->bodies[self->parentId].name);
   }
-#endif
 
   if (!HTr_isIdentity(&self->A_BP))
   {
@@ -2024,9 +1677,9 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
   // End body tag
   fprintf(out, ">\n");
 
-  RCSBODY_TRAVERSE_JOINTS(self)
+  RCSBODY_FOREACH_JOINT(graph, self)
   {
-    RcsJoint_fprintXML(out, JNT);
+    RcsJoint_fprintXML(out, JNT, graph);
   }
 
   if (self->shape != NULL)
@@ -2053,7 +1706,7 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-bool RcsBody_isFloatingBase(const RcsBody* self)
+bool RcsBody_isFloatingBase(const RcsGraph* graph, const RcsBody* self)
 {
   if (self == NULL)
   {
@@ -2069,7 +1722,7 @@ bool RcsBody_isFloatingBase(const RcsBody* self)
   desiredOrder[5] = RCSJOINT_ROT_Z;
 
   unsigned int nJoints = 0;
-  RCSBODY_TRAVERSE_JOINTS(self)
+  RCSBODY_FOREACH_JOINT(graph, self)
   {
     if (nJoints > 5)
     {
@@ -2115,7 +1768,7 @@ bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName)
 
   if (body->jnt != NULL)
   {
-    RLOG(4, "Can't merge body %s - it has joints", body->bdyName);
+    RLOG(4, "Can't merge body %s - it has joints", body->name);
     return false;
   }
 
@@ -2281,7 +1934,7 @@ bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName)
   MatNd* qVec[2];
   qVec[0] = graph->q;
   qVec[1] = graph->q_dot;
-  RcsGraph_removeBody(graph, body->bdyName, qVec, 2);
+  RcsGraph_removeBody(graph, body->name, qVec, 2);
 
   return true;
 #else
@@ -2333,7 +1986,7 @@ void RcsBody_computeAABB(const RcsBody* self,
 /*******************************************************************************
 * See header.
 ******************************************************************************/
-RcsBody* RcsBody_createBouncingSphere(const double pos[3],
+RcsBody* RcsBody_createBouncingSphere(RcsGraph* graph, const double pos[3],
                                       double mass, double radius)
 {
   static int sphereCount = 0;
@@ -2345,82 +1998,24 @@ RcsBody* RcsBody_createBouncingSphere(const double pos[3],
   sphere->scale = 1.0;
   sphere->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
   sphere->computeType |= RCSSHAPE_COMPUTE_PHYSICS;
-  strcpy(sphere->material, "default");
+  strcpy(sphere->material, "bouncy");
   strcpy(sphere->color, "YELLOW");
 
-  RcsBody* bdy = RcsBody_create();
+  RcsBody* bdy = RcsGraph_insertGraphBody(graph, -1);
   bdy->shape = RNALLOC(2, RcsShape*);
   bdy->shape[0] = sphere;
   bdy->shape[1] = NULL;
-  snprintf(bdy->bdyName, RCS_MAX_NAMELEN, "BouncingSphere_%d", sphereCount);
+  snprintf(bdy->name, RCS_MAX_NAMELEN, "BouncingSphere_%d", sphereCount);
   bdy->m = mass;
   bdy->physicsSim = RCSBODY_PHYSICS_DYNAMIC;
-  RcsBody_computeInertiaTensor(bdy, &bdy->Inertia);
-  double q_rbj[6];
-  VecNd_setZero(q_rbj, 6);
-  Vec3d_copy(q_rbj, pos);
-
   bdy->rigid_body_joints = true;
+  RcsBody_computeInertiaTensor(bdy, &bdy->Inertia);
+  Vec3d_copy(bdy->A_BI.org, pos);
 
-  for (int i = 0; i < 6; i++)
-  {
-    RcsJoint* jnt = RNALLOC(1, RcsJoint);
-    HTr_setIdentity(&jnt->A_JI);
-    jnt->name =
-      RNALLOC(strlen(bdy->bdyName) + strlen("_rigidBodyJnt") + 1 + 1, char);
-    sprintf(jnt->name, "%s_rigidBodyJnt%d", bdy->bdyName, i);
-    jnt->constrained = true;
-
-    switch (i)
-    {
-      case 0:
-        bdy->jnt = jnt;
-        jnt->type = RCSJOINT_TRANS_X;
-        jnt->dirIdx = 0;
-        jnt->prev = NULL;
-        break;
-      case 1:
-        jnt->type = RCSJOINT_TRANS_Y;
-        jnt->dirIdx = 1;
-        jnt->prev = bdy->jnt;
-        jnt->prev->next = jnt;
-        break;
-      case 2:
-        jnt->type = RCSJOINT_TRANS_Z;
-        jnt->dirIdx = 2;
-        jnt->prev = bdy->jnt->next;
-        jnt->prev->next = jnt;
-        break;
-      case 3:
-        jnt->type = RCSJOINT_ROT_X;
-        jnt->dirIdx = 0;
-        jnt->prev = bdy->jnt->next->next;
-        jnt->prev->next = jnt;
-        break;
-      case 4:
-        jnt->type = RCSJOINT_ROT_Y;
-        jnt->dirIdx = 1;
-        jnt->prev = bdy->jnt->next->next->next;
-        jnt->prev->next = jnt;
-        break;
-      case 5:
-        jnt->type = RCSJOINT_ROT_Z;
-        jnt->dirIdx = 2;
-        jnt->prev = bdy->jnt->next->next->next->next;
-        jnt->prev->next = jnt;
-        jnt->next = NULL;
-        break;
-      default:
-        RFATAL("Joint type is \"%s\" (%d)", RcsJoint_typeName(i), i);
-    }
-
-    jnt->q0 = q_rbj[i];
-    jnt->q_max = q_rbj[i] + 2.0*M_PI;
-    jnt->q_min = q_rbj[i] - 2.0*M_PI;
-    jnt->q_init = q_rbj[i];
-    jnt->weightMetric = 1.0;
-  }
-
+  double q6[6];
+  Vec3d_copy(q6, pos);
+  Vec3d_setZero(&q6[3]);
+  bdy->jntId = RcsBody_createRBJ(graph, bdy, q6)->id;
   sphereCount++;
 
   return bdy;
@@ -2432,22 +2027,14 @@ RcsBody* RcsBody_createBouncingSphere(const double pos[3],
  ******************************************************************************/
 bool RcsBody_removeJoints(RcsBody* self, RcsGraph* graph)
 {
-  if (!RcsBody_isInGraph(self, graph))
-  {
-    RLOG(4, "Body \"%s\" not found in graph - skipping joint removal",
-         self ? self->bdyName : "NULL");
-    return false;
-  }
-
+  // Update body relative transform to predecessor considering the sequence of
+  // transforms of all body joints.
   HTr A_JB;
   HTr_setIdentity(&A_JB);
 
-  RCSBODY_TRAVERSE_JOINTS(self)
+  RCSBODY_FOREACH_JOINT(graph, self)
   {
-    if (JNT->A_JP)
-    {
-      HTr_transformSelf(&A_JB, JNT->A_JP);
-    }
+    HTr_transformSelf(&A_JB, &JNT->A_JP);
 
     double qi = MatNd_get(graph->q, JNT->jointIndex, 0);
 
@@ -2464,34 +2051,33 @@ bool RcsBody_removeJoints(RcsBody* self, RcsGraph* graph)
     }
   }
 
-  // Update body relative transform to predecessor
-  /* if (self->A_BP) */
-  /* { */
   HTr_transformSelf(&self->A_BP, &A_JB);
-  /* } */
-  /* else */
-  /* { */
-  /*   self->A_BP = HTr_clone(&A_JB); */
-  /* } */
 
-  // Remove all joints
-  unsigned int nJoints = RcsBody_numJoints(self);
-  unsigned int ji = 0;
-  RcsJoint** jArr = RNALLOC(nJoints, RcsJoint*);
 
-  RCSBODY_TRAVERSE_JOINTS(self)
+
+  // Mark all body joints invalid using RcsJoint_init()
+  self->jntId = -1;
+  RCSBODY_FOREACH_JOINT(graph, self)
   {
-    jArr[ji] = JNT;
-    ji++;
+    RcsJoint_init(JNT);
   }
 
-  for (unsigned int i = 0; i < nJoints; ++i)
+
+
+  // Connect child-bodies backwards joint connection to the closest parent
+  // joints.
+  const RcsJoint* bodiesPrevJnt = RcsBody_lastJointBeforeBody(graph, self);
+  int prevId = bodiesPrevJnt ? bodiesPrevJnt->id : -1;
+  RcsBody* child = RCSBODY_BY_ID(graph, self->firstChildId);
+
+  while (child)
   {
-    RcsJoint_destroy(jArr[i]);
+    child->prevId = prevId;
+    child = RCSBODY_BY_ID(graph, child->nextId);
   }
 
-  RFREE(jArr);
-  self->jnt = NULL;
+
+  // Update q-arrays and indices
   RcsGraph_makeJointsConsistent(graph);
 
   return true;
@@ -2512,7 +2098,7 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
   if (self->shape == NULL)
   {
     RLOG(4, "Body \"%s\" has no shapes attached - skipping boxify",
-         self->bdyName);
+         self->name);
     return false;
   }
 
@@ -2551,7 +2137,7 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
   if (shapeIdx == 0)
   {
     RLOG(4, "Body \"%s\" has no shape to boxify for computeType %d",
-         self->bdyName, computeType);
+         self->name, computeType);
     MatNd_destroy(vertices);
     return false;
   }
@@ -2565,7 +2151,7 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
 
   if (success==false)
   {
-    RLOG(4, "Failed to compute enclosing box for body \"%s\"", self->bdyName);
+    RLOG(4, "Failed to compute enclosing box for body \"%s\"", self->name);
     MatNd_destroy(vertices);
     return false;
   }
@@ -2595,11 +2181,11 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
 /*******************************************************************************
  *
  ******************************************************************************/
-void RcsBody_scale(RcsBody* bdy, double scale)
+void RcsBody_scale(RcsGraph* graph, RcsBody* bdy, double scale)
 {
   Vec3d_constMulSelf(bdy->A_BP.org, scale);
 
-  RCSBODY_TRAVERSE_JOINTS(bdy)
+  RCSBODY_FOREACH_JOINT(graph, bdy)
   {
     RcsJoint_scale(JNT, scale);
   }
@@ -2657,56 +2243,32 @@ int RcsBody_getNumDistanceQueries(const RcsBody* b1, const RcsBody* b2)
  ******************************************************************************/
 RcsBody* RcsBody_getPrev(RcsGraph* graph, RcsBody* body)
 {
-#ifdef OLD_TOPO
-  return body->prev;
-#else
-  return ((body->prevId == -1) ? NULL : (&graph->bodies[body->prevId]));
-#endif
+  return RCSBODY_BY_ID(graph, body->prevId);
 }
 
 RcsBody* RcsBody_getNext(RcsGraph* graph, RcsBody* body)
 {
-#ifdef OLD_TOPO
-  return body->next;
-#else
-  return ((body->nextId == -1) ? NULL : (&graph->bodies[body->nextId]));
-#endif
+  return RCSBODY_BY_ID(graph, body->nextId);
 }
 
 RcsBody* RcsBody_getParent(RcsGraph* graph, RcsBody* body)
 {
-#ifdef OLD_TOPO
-  return body->parent;
-#else
-  return ((body->parentId == -1) ? NULL : (&graph->bodies[body->parentId]));
-#endif
+  return RCSBODY_BY_ID(graph, body->parentId);
 }
 
 const RcsBody* RcsBody_getConstParent(const RcsGraph* graph, const RcsBody* body)
 {
-#ifdef OLD_TOPO
-  return body->parent;
-#else
-  return ((body->parentId == -1) ? NULL : (&graph->bodies[body->parentId]));
-#endif
+  return RCSBODY_BY_ID(graph, body->parentId);
 }
 
 RcsBody* RcsBody_getFirstChild(RcsGraph* graph, RcsBody* body)
 {
-#ifdef OLD_TOPO
-  return body->firstChild;
-#else
-  return ((body->firstChildId == -1) ? NULL : (&graph->bodies[body->firstChildId]));
-#endif
+  return RCSBODY_BY_ID(graph, body->firstChildId);
 }
 
 RcsBody* RcsBody_getLastChild_(RcsGraph* graph, RcsBody* body)
 {
-#ifdef OLD_TOPO
-  return body->lastChild;
-#else
-  return ((body->lastChildId == -1) ? NULL : (&graph->bodies[body->lastChildId]));
-#endif
+  return RCSBODY_BY_ID(graph, body->lastChildId);
 }
 
 RcsBody* RcsBody_depthFirstTraversalGetNextById(const RcsGraph* graph,
@@ -2719,13 +2281,13 @@ RcsBody* RcsBody_depthFirstTraversalGetNextById(const RcsGraph* graph,
 
   if (body->firstChildId!=-1)
   {
-    //RLOG(0, "First child: %s", graph->bodies[body->firstChildId]->bdyName);
+    //RLOG(0, "First child: %s", graph->bodies[body->firstChildId]->name);
     return &graph->bodies[body->firstChildId];
   }
 
   if (body->nextId != -1)
   {
-    //RLOG(0, "Next: %s", graph->bodies[body->nextId]->bdyName);
+    //RLOG(0, "Next: %s", graph->bodies[body->nextId]->name);
     return &graph->bodies[body->nextId];
   }
 
@@ -2735,7 +2297,7 @@ RcsBody* RcsBody_depthFirstTraversalGetNextById(const RcsGraph* graph,
   {
     if (body2->nextId != -1)
     {
-      //RLOG(0, "Second next: %s", graph->bodies[body2->nextId]->bdyName);
+      //RLOG(0, "Second next: %s", graph->bodies[body2->nextId]->name);
       return &graph->bodies[body2->nextId];
     }
 
@@ -2759,127 +2321,95 @@ RcsBody* RcsBody_getLastChildById(const RcsGraph* graph, RcsBody* b)
 
   while (b->lastChildId != -1)
   {
-    RCHECK(graph);
-    RCHECK(graph->nBodies);
-    RCHECK(b->lastChildId<graph->nBodies);
     b = &graph->bodies[b->lastChildId];
   }
 
   return b;
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsBody* RcsBody_first(const RcsGraph* graph)
+{
+  return graph->nBodies > 0 ? &graph->bodies[0] : NULL;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsBody* RcsBody_last(const RcsGraph* graph)
+{
+  return graph->nBodies > 0 ? &graph->bodies[graph->nBodies-1] : NULL;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsJoint* RcsBody_getJoint(const RcsBody* b, const RcsGraph* graph)
+{
+  if (b==NULL)
+  {
+    return NULL;
+  }
+
+  return RCSJOINT_BY_ID(graph, b->jntId);
+}
 
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-bool RcsBody_attachToBodyById(RcsGraph* graph, RcsBody* body, RcsBody* target,
-                              const HTr* A_BP)
+bool RcsBody_attachToBodyId(RcsGraph* graph, int bodyId, int targetId)
 {
-  if (body == NULL)
+  RcsBody* body = RCSBODY_BY_ID(graph, bodyId);
+
+  if (!body)
   {
-    RLOG(1, "Body to attach is NULL");
+    RLOG(1, "Body to attach does not exist (id=%d)", bodyId);
     return false;
   }
 
-  RLOG(0, "Attaching %s to %s", body->bdyName, target ? target->bdyName : "NULL");
+  RcsBody* target = RCSBODY_BY_ID(graph, targetId);
 
-  // We disallow attaching bodies to generic bodies
-  if (target != NULL)
-  {
-    if (STRNEQ(target->bdyName, "GenericBody", 11))
-    {
-      RLOG(1, "Cannot connect body %s to a GenericBody", body->bdyName);
-      return false;
-    }
-  }
-
-  // If the body to attach is a generic body, we attach the body it is
-  // pointing to
-  if (STRNEQ(body->bdyName, "GenericBody", 11))
-  {
-    RcsBody* bPtr = (RcsBody*)body->extraInfo;
-    RCHECK(bPtr);
-
-    if (bPtr->parentId == target->id)
-    {
-      return true; // Nothing to do
-    }
-
-    RcsBody_attachToBodyById(graph, bPtr, target, A_BP);
-
-    // Important: This needs to be reseted manually here, since the address
-    // of prev, next, parent, child and last might be changed
-    /*body->parent = bPtr->parent;
-    body->firstChild = bPtr->firstChild;
-    body->lastChild = bPtr->lastChild;
-    body->next = bPtr->next;
-    body->prev = bPtr->prev;*/
-    RcsBody* parent_ = RcsBody_getParent(graph, bPtr);
-    RcsBody* first_ = RcsBody_getFirstChild(graph, bPtr);
-    RcsBody* last_ = RcsBody_getLastChild_(graph, bPtr);
-    RcsBody* next_ = RcsBody_getNext(graph, bPtr);
-    RcsBody* prev_ = RcsBody_getPrev(graph, bPtr);
-    body->parentId = parent_ ? parent_->id : -1;
-    body->firstChildId = first_ ? first_->id : -1;
-    body->lastChildId = last_ ? last_->id : -1;
-    body->nextId = next_ ? next_->id : -1;
-    body->prevId = prev_ ? prev_->id : -1;
-
-    // the following two lines are needed in case re-attaching a body also
-    // leads to a change of joint configuration
-    // (e.g., the rigid_body_joints are removed as a free floating body is
-    //  attached to a robot gripper)
-    body->jnt = bPtr->jnt;
-    body->rigid_body_joints = bPtr->rigid_body_joints;
-
-    NLOG(0, "Attached generic body \"%s\" (pointing to \"%s\") to body"
-         " \"%s\"", body->bdyName, bPtr ? bPtr->bdyName : "NULL",
-         target ? target->bdyName : "NULL");
-    return true;
-  }
-
-  if ((target != NULL) && (body->parentId == target->id))
+  if (body->parentId==targetId)
   {
     return true; // Nothing to do
   }
 
   // take the body and children out of the graph TODO maybe put this in a
   // separate method
-  RcsBody* prev_ = RcsBody_getPrev(graph, body);
-  RcsBody* next_ = RcsBody_getNext(graph, body);
-  RcsBody* parent_ = RcsBody_getParent(graph, body);
-
-  if (prev_)
+  RcsBody* bPrev = RCSBODY_BY_ID(graph, body->prevId);
+  if (bPrev)
   {
-    prev_->nextId = next_ ? next_->id : -1;
+    bPrev->nextId = body->nextId;
   }
 
-  if (next_)
+  RcsBody* bNext = RCSBODY_BY_ID(graph, body->nextId);
+  if (bNext)
   {
-    next_->prevId = prev_ ? prev_->id : -1;
+    bNext->prevId = body->prevId;
   }
 
-  if (parent_)
+  RcsBody* bParent = RCSBODY_BY_ID(graph, body->parentId);
+  if (bParent)
   {
-    if (parent_->firstChildId == body->id)
+    if (bParent->firstChildId == bodyId)
     {
-      parent_->firstChildId = next_ ? next_->id : -1;
+      bParent->firstChildId = body->nextId;
     }
-    if (parent_->lastChildId == body->id)
+    if (bParent->lastChildId == bodyId)
     {
-      parent_->lastChildId = prev_ ? prev_->id : -1;
+      bParent->lastChildId = body->prevId;
     }
   }
 
   body->nextId = -1;
   body->prevId = -1;
 
-
   // put it into the new position
-
   if (target)
   {
-    body->parentId = target->id;
+    body->parentId = targetId;
 
     if (target->lastChildId != -1)
     {
@@ -2888,78 +2418,48 @@ bool RcsBody_attachToBodyById(RcsGraph* graph, RcsBody* body, RcsBody* target,
     }
     else
     {
-      target->firstChildId = body->id;
+      target->firstChildId = bodyId;
     }
 
-    target->lastChildId = body->id;
+    target->lastChildId = bodyId;
   }
   else
   {
     body->parentId = -1;
 
-    RcsBody* t = &graph->bodies[0];
-    while (t->nextId != -1)
+    RcsBody* t = &graph->bodies[graph->rootId];
+    while (t->nextId!=-1)
     {
-      t = &graph->bodies[t->nextId];
+      t = RCSBODY_BY_ID(graph, t->nextId);
     }
     t->nextId = body->id;
     body->prevId = t->id;
   }
 
-  if (target != NULL)
+  if (target)
   {
-    if (!A_BP)
-    {
-      // Calculate the new A_BP = A_BI * (A_VI)'
-      HTr_invTransform(&body->A_BP, &target->A_BI, &body->A_BI);
-    }
-    else
-    {
-      HTr_copy(&body->A_BP, A_BP);
-    }
+    HTr_invTransform(&body->A_BP, &target->A_BI, &body->A_BI);
   }
-  else   // no target, but A_BP
+  else
   {
-    if (A_BP != NULL)
-    {
-      HTr_copy(&body->A_BP, A_BP);
-    }
+    HTr_copy(&body->A_BP, &body->A_BI);   // Leave where it is
   }
 
   // Connect the joints
-  if (body->jnt)
+  if (body->jntId!=-1)
   {
-    body->jnt->prev = RcsBody_lastJointBeforeBodyById(graph, target);
+    RcsJoint* bdyJoint = &graph->joints[body->jntId];
+    RcsJoint* parentJnt = RcsBody_lastJointBeforeBody(graph, target);
+    bdyJoint->prevId = parentJnt ? parentJnt->id : -1;
 
     // Set all rigid body joints to 0. The relative transformation is already
     // handled with A_BP
-    if (body->rigid_body_joints == true)
+    if (body->rigid_body_joints)
     {
-      RcsJoint* jPtr = body->jnt;
-      while (jPtr->next != NULL)
-      {
-        MatNd_set(graph->q, jPtr->jointIndex, 0, 0.0);
-        jPtr = jPtr->next;
-      }
+      VecNd_setZero(&graph->q->ele[bdyJoint->jointIndex], 6);
     }
 
   }
 
   return true;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-RcsBody* RcsBody_first(RcsGraph* graph)
-{
-  return &graph->bodies[0];
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-RcsBody* RcsBody_last(RcsGraph* graph)
-{
-  return &graph->bodies[graph->nBodies-1];
 }

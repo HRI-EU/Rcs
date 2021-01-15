@@ -51,7 +51,7 @@ class BulletHingeJoint : public BulletJointBase, public btHingeConstraint
 {
 public:
 
-  BulletHingeJoint(RcsJoint* jnt, double q0,
+  BulletHingeJoint(const RcsGraph* graph, int jntId, double q0,
                    btRigidBody& rbA, btRigidBody& rbB,
                    const btVector3& pivotInA, const btVector3& pivotInB,
                    const btVector3& axisInA, const btVector3& axisInB,
@@ -74,10 +74,12 @@ public:
 protected:
 
   double getConstraintPos();
+  const RcsJoint* getJoint() const;
 
 private:
 
-  RcsJoint* rcsJoint;
+  const RcsGraph* graph;
+  int rcsJointId;
   double hingeAngleCurr;
   double hingeAnglePrev;
   double jointAngleCurr;

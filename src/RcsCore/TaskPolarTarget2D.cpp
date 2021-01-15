@@ -122,7 +122,7 @@ void Rcs::TaskPolarTarget2D::computeX(double* x_curr) const
 
   // Compute the current polar axis
   double A_ER[3][3];
-  computeRelativeRotationMatrix(A_ER, this->ef, this->refBody);
+  computeRelativeRotationMatrix(A_ER, getEffector(), getRefBody());
   const double* a_curr = A_ER[this->direction];
 
   x_curr[0] = Vec3d_diffAngle(a_curr, a_des);
@@ -220,8 +220,8 @@ void Rcs::TaskPolarTarget2D::computeJ(MatNd* jacobian) const
   // Compute the angular velocity Jacobian
   MatNd* JR2 = NULL;
   MatNd_create2(JR2, 3, this->graph->nJ);
-  RcsGraph_3dOmegaJacobian(this->graph, this->ef, this->refBody,
-                           this->refFrame, JR2);
+  RcsGraph_3dOmegaJacobian(this->graph, getEffector(), getRefBody(),
+                           getRefFrame(), JR2);
 
   // Compute S-frame
   double A_SR[3][3];
@@ -250,8 +250,8 @@ void Rcs::TaskPolarTarget2D::computeH(MatNd* hessian) const
   MatNd* H_omega = NULL;
   MatNd_create2(H_omega, 3*nq, nq);
 
-  RcsGraph_3dOmegaHessian(this->graph, this->ef, this->refBody, this->refFrame,
-                          H_omega);
+  RcsGraph_3dOmegaHessian(this->graph, getEffector(), getRefBody(),
+                          getRefFrame(), H_omega);
 
   // Compute S-frame
   double A_SR[3][3];
@@ -323,7 +323,7 @@ void Rcs::TaskPolarTarget2D::computeSlerpFrame(double A_SR[3][3],
 {
   // Compute current Polar axis
   double A_ER[3][3];
-  computeRelativeRotationMatrix(A_ER, this->ef, this->refBody);
+  computeRelativeRotationMatrix(A_ER, getEffector(), getRefBody());
   double* a_curr = A_ER[this->direction];
 
   // Compute the desired polar axis

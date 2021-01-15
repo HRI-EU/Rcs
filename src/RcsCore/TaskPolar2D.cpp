@@ -128,7 +128,7 @@ Rcs::TaskPolar2D* Rcs::TaskPolar2D::clone(RcsGraph* newGraph) const
 void Rcs::TaskPolar2D::computeX(double* polarAngles) const
 {
   double A_ER[3][3];
-  computeRelativeRotationMatrix(A_ER, this->ef, this->refBody);
+  computeRelativeRotationMatrix(A_ER, getEffector(), getRefBody());
   Vec3d_getPolarAngles(polarAngles, A_ER[this->direction]);
 }
 
@@ -140,7 +140,7 @@ void Rcs::TaskPolar2D::computeXp(double* phip) const
   double R_om[3], A_ER[3][3], H[2][3];
 
   computeOmega(R_om);
-  computeRelativeRotationMatrix(A_ER, this->ef, this->refBody);
+  computeRelativeRotationMatrix(A_ER, getEffector(), getRefBody());
   Vec3d_getPolarVelocityMatrix(H, A_ER[this->direction]);
 
   // TODO: Do we need to account for the direction vector here? Plase check.
@@ -169,7 +169,7 @@ void Rcs::TaskPolar2D::computeDXp(double* dOmega,
   MatNd arrLambda = MatNd_fromPtr(1, 1, &lambda);
 
   // Compute the current angular velocity in the end effector frame
-  computeRelativeRotationMatrix(A_ER, this->ef, this->refBody);
+  computeRelativeRotationMatrix(A_ER, getEffector(), getRefFrame());
   computeOmega(E_om);
   Vec3d_rotateSelf(E_om, A_ER);
 
@@ -219,8 +219,8 @@ void Rcs::TaskPolar2D::computeJ(MatNd* jacobian) const
 {
   MatNd* JR2 = NULL;
   MatNd_create2(JR2, 3, this->graph->nJ);
-  RcsGraph_3dOmegaJacobian(this->graph, this->ef, this->refBody,
-                           this->ef, JR2);
+  RcsGraph_3dOmegaJacobian(this->graph, getEffector(), getRefBody(),
+                           getEffector(), JR2);
   MatNd_reshape(jacobian, 2, this->graph->nJ);
 
   switch (this->direction)
@@ -261,8 +261,8 @@ void Rcs::TaskPolar2D::computeH(MatNd* hessian) const
   MatNd* H_omega = NULL;
   MatNd_create2(H_omega, 3*nq, nq);
 
-  RcsGraph_3dOmegaHessian(this->graph, this->ef, this->refBody,
-                          this->ef, H_omega);
+  RcsGraph_3dOmegaHessian(this->graph, getEffector(), getRefBody(),
+                          getEffector(), H_omega);
 
   MatNd_reshape(H_omega, 3*nq, nq);
   MatNd_reshape(hessian, 2*nq, nq);
@@ -294,7 +294,7 @@ void Rcs::TaskPolar2D::computeH(MatNd* hessian) const
 void Rcs::TaskPolar2D::computeDX(double* dx_ik, const double* polar_des) const
 {
   double A_ER[3][3];
-  computeRelativeRotationMatrix(A_ER, this->ef, this->refBody);
+  computeRelativeRotationMatrix(A_ER, getEffector(), getRefBody());
   Vec3d_getPolarErrorFromDirection(dx_ik, polar_des, A_ER, this->direction);
 }
 

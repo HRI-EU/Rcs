@@ -36,10 +36,12 @@
 
 #include "ShapeNode.h"
 
-#include <COSNode.h>
-#include <MeshNode.h>
-#include <TorusNode.h>
-#include <SSRNode.h>
+#include "COSNode.h"
+#include "MeshNode.h"
+#include "TorusNode.h"
+#include "SSRNode.h"
+#include "CapsuleNode.h"
+#include "RcsViewer.h"
 
 #include <Rcs_typedef.h>
 #include <Rcs_macros.h>
@@ -101,8 +103,8 @@ static osg::ref_ptr<osg::Node> createMeshNode(const RcsShape* shape,
 
 
   // If no mesh was found in the _meshBuffer, we create it here.
-  NLOG(0, "NO mesh file \"%s\" loaded", shape->meshFile);
-  RcsMeshData* mesh = (RcsMeshData*)shape->userData;
+  NLOG(0, "No mesh file \"%s\" loaded", shape->meshFile);
+  RcsMeshData* mesh = shape->mesh;
 
   // If there's a mesh attached to the shape, we create a MeshNode
   // from it.
@@ -110,8 +112,7 @@ static osg::ref_ptr<osg::Node> createMeshNode(const RcsShape* shape,
   {
     NLOG(0, "Creating MeshNode from shape (%s)", shape->meshFile);
     osg::ref_ptr<Rcs::MeshNode> mn;
-    mn = new Rcs::MeshNode(mesh->vertices, mesh->nVertices,
-                           mesh->faces, mesh->nFaces);
+    mn = new Rcs::MeshNode(mesh);
     mn->setMaterial(shape->color);
     _meshBufferMtx.lock();
     _meshBuffer[std::string(shape->meshFile)] = mn;
@@ -157,14 +158,14 @@ ShapeNode::ShapeUpdater::ShapeUpdater(ShapeNode* node) : shapeNode(node)
   HTr_copy(&this->A_CB, &node->shape->A_CB);
 }
 
-void ShapeNode::ShapeUpdater::addGeometry(osg::Shape* s)
-{
-  geometry.push_back(s);
-}
-
 void ShapeNode::ShapeUpdater::addDrawable(osg::Drawable* d)
 {
-  drawable.push_back(d);
+  drawable = d;
+}
+
+void ShapeNode::ShapeUpdater::addSubNode(osg::Node* nd)
+{
+  subNode = nd;
 }
 
 const RcsShape* ShapeNode::ShapeUpdater::shape()
@@ -196,140 +197,45 @@ void ShapeNode::ShapeUpdater::updateDynamicShapes()
 
   switch (shape()->type)
   {
-    // Here we adjust the size of the SSR. It is assumed that the
-    // shape pointers point to the shapes in the order of their
-    // creation (4 capsules and 1 box):
-    // 1. Capsule: Front y-direction
-    // 2. Capsule: Back y-direction
-    // 3. Capsule: Right x-direction
-    // 4. Capsule: Left x-direction
-    // 5. Box
     case RCSSHAPE_SSR:
     {
-      std::vector<osg::Shape*>::iterator sit;
-      int index = 0;
-      double r  = 0.5*extents[2];
-      double lx = extents[0];
-      double ly = extents[1];
-
-      for (sit = geometry.begin(); sit != geometry.end(); ++sit)
-      {
-
-        switch (index)
-        {
-          case 0:
-          {
-            osg::Capsule* c = static_cast<osg::Capsule*>(*sit);
-            c->setCenter(osg::Vec3(-lx / 2.0, 0.0, 0.0));
-            c->setHeight(ly);
-            c->setRadius(r);
-          }
-          break;
-
-          case 1:
-          {
-            osg::Capsule* c = static_cast<osg::Capsule*>(*sit);
-            c->setCenter(osg::Vec3(lx / 2.0, 0.0, 0.0));
-            c->setHeight(ly);
-            c->setRadius(r);
-          }
-          break;
-
-          case 2:
-          {
-            osg::Capsule* c = static_cast<osg::Capsule*>(*sit);
-            c->setCenter(osg::Vec3(0.0, ly / 2.0, 0.0));
-            c->setHeight(lx);
-            c->setRadius(r);
-          }
-          break;
-
-          case 3:
-          {
-            osg::Capsule* c = static_cast<osg::Capsule*>(*sit);
-            c->setCenter(osg::Vec3(0.0, -ly / 2.0, 0.0));
-            c->setHeight(lx);
-            c->setRadius(r);
-          }
-          break;
-
-          case 4:
-          {
-            osg::Box* b = static_cast<osg::Box*>(*sit);
-            b->setHalfLengths(osg::Vec3(0.5 * lx, 0.5 * ly, r));
-          }
-          break;
-
-          default:
-            RLOG(1, "Capsule index out of range: %d", index);
-        }   // switch(index)
-
-        index++;
-
-      }   // for(sit=...
-
-      // "Dirty" the shapes bounding box to adjust bounding box
-      std::vector<osg::Drawable*>::iterator dit;
-
-      for (dit = drawable.begin(); dit != drawable.end(); ++dit)
-      {
-        (*dit)->dirtyBound();
-      }
-
-    }   // case RCSSHAPE_SSR
+      SSRGeometry* geo = dynamic_cast<SSRGeometry*>(drawable.get());
+      geo->update(extents);
+    }
     break;
 
     case RCSSHAPE_SSL:
     {
-      osg::Capsule* c = static_cast<osg::Capsule*>(geometry.front());
-      c->setCenter(osg::Vec3(0.0, 0.0, extents[2]/2.0));
-      c->setHeight(extents[2]);
-      c->setRadius(extents[0]);
-      drawable.front()->dirtyBound();
+      CapsuleGeometry* geo = dynamic_cast<CapsuleGeometry*>(subNode.get());
+      geo->update(extents[0], extents[2]);
     }
     break;
 
     case RCSSHAPE_CYLINDER:
-    {
-      osg::Cylinder* c = static_cast<osg::Cylinder*>(geometry.front());
-      c->setHeight(extents[2]);
-      c->setRadius(extents[0]);
-      drawable.front()->dirtyBound();
-    }
-    break;
-
     case RCSSHAPE_CONE:
     {
-      osg::Cone* c = static_cast<osg::Cone*>(geometry.front());
-      c->setHeight(extents[2]);
-      c->setRadius(extents[0]);
-      drawable.front()->dirtyBound();
+      shapeNode->setScale(osg::Vec3(extents[0], extents[0], extents[2]));
     }
     break;
 
     case RCSSHAPE_SPHERE:
     {
-      osg::Sphere* s = static_cast<osg::Sphere*>(geometry.front());
-      s->setRadius(extents[0]);
-      drawable.front()->dirtyBound();
+      shapeNode->setScale(osg::Vec3(extents[0], extents[0], extents[0]));
     }
     break;
 
     case RCSSHAPE_BOX:
     {
-      osg::Box* b = static_cast<osg::Box*>(geometry.front());
-      b->setHalfLengths(osg::Vec3(0.5*extents[0], 0.5*extents[1],
-                                  0.5*extents[2]));
-      drawable.front()->dirtyBound();
+      shapeNode->setScale(osg::Vec3(extents[0], extents[1], extents[2]));
     }
     break;
 
     case RCSSHAPE_TORUS:
     {
-      osg::Geometry* geo = dynamic_cast<osg::Geometry*>(drawable.front());
+      osg::Geometry* geo = dynamic_cast<osg::Geometry*>(drawable.get());
       RCHECK(geo);
       TorusNode::resize(extents[0], extents[2], geo);
-      drawable.front()->dirtyBound();
+      drawable->dirtyBound();
     }
     break;
 
@@ -340,9 +246,12 @@ void ShapeNode::ShapeUpdater::updateDynamicShapes()
 }
 
 /*******************************************************************************
- * Recursively adds the bodies collision shapes to the node.
+ * Recursively adds the bodies collision shapes to the node. We use a
+ * MatrixTransform since this allows to set the OpenGL modes to rescale
+ * normals in case of applying a scale. For PAT nodes, this didn't seem to
+ * work.
  *
- * ShapeNode (osg::PositionAttitudeTransform) with A_CB relative to body
+ * ShapeNode (osg::MatrixTransform) with A_CB relative to body
  *     |
  *     ---> geode (osg::Geode)
  *               |
@@ -360,6 +269,7 @@ ShapeNode::ShapeNode(const RcsShape* shape_, bool resizeable) : shape(shape_)
   {
     addTexture(shape->textureFile);
   }
+
 }
 
 /*******************************************************************************
@@ -368,12 +278,13 @@ ShapeNode::ShapeNode(const RcsShape* shape_, bool resizeable) : shape(shape_)
 void ShapeNode::addShape(bool resizeable)
 {
   osg::ref_ptr<osg::TessellationHints> hints = new osg::TessellationHints;
-  hints->setDetailRatio(2.0);
   osg::ref_ptr<osg::Geode> geode = new osg::Geode();
   const double* ext = shape->extents;
 
   if (resizeable || shape->resizeable)
   {
+    resizeable = true;
+    hints->setDetailRatio(0.5);
     shapeUpdater = new ShapeUpdater(this);
   }
 
@@ -382,9 +293,9 @@ void ShapeNode::addShape(bool resizeable)
   // Thus, it'd be better to enable depth sorting selectively
 
   // Set render bin to depthsorted in order to handle transparency correctly
-  osg::StateSet* state_set = geode->getOrCreateStateSet();
-  state_set->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
-  geode->setStateSet(state_set);
+  osg::StateSet* ss = geode->getOrCreateStateSet();
+  ss->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+  geode->setStateSet(ss);
 
   // Relative orientation of shape wrt. body
   setPosition(osg::Vec3(shape->A_CB.org[0], shape->A_CB.org[1],
@@ -398,17 +309,30 @@ void ShapeNode::addShape(bool resizeable)
   if (shape->type == RCSSHAPE_SSL)
   {
     double r = ext[0], length = ext[2];
-    osg::Capsule* caps = new osg::Capsule(osg::Vec3(0.0, 0.0, 0.5*length), r, length);
-    osg::ref_ptr<osg::Drawable> sd = new osg::ShapeDrawable(caps, hints.get());
-    geode->addDrawable(sd);
-    setMaterial(shape->color, geode.get());
+    int nSeg = shapeUpdater.valid() ? 16 : 32;
+    osg::ref_ptr<osg::Group> cap = new CapsuleGeometry(r, length, resizeable, nSeg);
+    setNodeMaterial(shape->color, cap.get());
+    addChild(cap.get());
 
-    // Add the information for dynamic resizing
     if (shapeUpdater.valid())
     {
-      sd->setUseDisplayList(false);
-      shapeUpdater->addGeometry(caps);
-      shapeUpdater->addDrawable(sd);
+      shapeUpdater->addSubNode(cap.get());
+    }
+  }
+
+  ///////////////////////////////////////////
+  // Add a sphere swept rectangle to the node
+  ///////////////////////////////////////////
+  else if (shape->type == RCSSHAPE_SSR)
+  {
+    int nSeg = shapeUpdater.valid() ? 6 : 12;
+    osg::ref_ptr<SSRGeometry> g = new SSRGeometry(ext, nSeg);
+    geode->addDrawable(g.get());
+    setNodeMaterial(shape->color, geode.get());
+    if (shapeUpdater.valid())
+    {
+      shapeUpdater->addDrawable(g.get());
+      g->setUseDisplayList(false);
     }
 
   }
@@ -418,18 +342,14 @@ void ShapeNode::addShape(bool resizeable)
   /////////////////////////////////
   else if (shape->type == RCSSHAPE_BOX)
   {
-    osg::Box* box = new osg::Box(osg::Vec3(), ext[0], ext[1], ext[2]);
-    osg::ref_ptr<osg::Drawable> sd = new osg::ShapeDrawable(box, hints.get());
+    osg::Box* box = new osg::Box(osg::Vec3(), 1.0);
+    osg::ShapeDrawable* sd = new osg::ShapeDrawable(box, hints.get());
+    sd->setUseDisplayList(!resizeable);
+    setScale(osg::Vec3(ext[0], ext[1], ext[2]));
+    ss->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
+    ss->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
     geode->addDrawable(sd);
-    setMaterial(shape->color, geode.get());
-
-    if (shapeUpdater.valid())
-    {
-      shapeUpdater->addGeometry(box);
-      shapeUpdater->addDrawable(sd);
-      sd->setUseDisplayList(false);
-    }
-
+    setNodeMaterial(shape->color, geode.get());
   }
 
   /////////////////////////////////
@@ -437,113 +357,14 @@ void ShapeNode::addShape(bool resizeable)
   /////////////////////////////////
   else if (shape->type == RCSSHAPE_SPHERE)
   {
-    osg::Sphere* sphere = new osg::Sphere(osg::Vec3(), shape->extents[0]);
-    osg::ref_ptr<osg::Drawable> sd = new osg::ShapeDrawable(sphere, hints.get());
+    osg::Sphere* sphere = new osg::Sphere(osg::Vec3(), 1.0);
+    osg::Drawable* sd = new osg::ShapeDrawable(sphere, hints.get());
+    sd->setUseDisplayList(!resizeable);
     geode->addDrawable(sd);
-    setMaterial(shape->color, geode.get());
-
-    if (shapeUpdater.valid())
-    {
-      shapeUpdater->addGeometry(sphere);
-      shapeUpdater->addDrawable(sd);
-      sd->setUseDisplayList(false);
-    }
-
-  }
-
-  ///////////////////////////////////////////
-  // Add a sphere swept rectangle to the node
-  ///////////////////////////////////////////
-  else if (shape->type == RCSSHAPE_SSR)
-  {
-    // If the shape is not resizeable, we create a nice mesh, which in
-    // wireframe mode looks a lot better than the capsule composite.
-    if ((resizeable==false) && (shape->resizeable==false))
-    {
-      RcsMeshData* mesh = RcsMesh_createSSR(shape->extents, 64);
-
-      // Assign vertices
-      osg::ref_ptr<osg::Vec3Array> v = new osg::Vec3Array;
-      for (unsigned int i = 0; i < mesh->nVertices; i++)
-      {
-        const double* vi = &mesh->vertices[3*i];
-        v->push_back(osg::Vec3(vi[0], vi[1], vi[2]));
-      }
-
-      // Assign index array
-      osg::ref_ptr<osg::UIntArray> f = new osg::UIntArray;
-      for (unsigned int i = 0; i < 3 * mesh->nFaces; i++)
-      {
-        f->push_back(mesh->faces[i]);
-      }
-
-      osg::ref_ptr<osg::TriangleMesh> triMesh = new osg::TriangleMesh;
-      triMesh->setDataVariance(osg::Object::DYNAMIC);
-      triMesh->setVertices(v.get());
-      triMesh->setIndices(f.get());
-
-      osg::ref_ptr<osg::Drawable> sd = new osg::ShapeDrawable(triMesh.get());
-      geode->addDrawable(sd);
-      setMaterial(shape->color, geode.get());
-
-      RcsMesh_destroy(mesh);
-    }
-    // If the shape is resizeable, we create a capsule box composite,
-    // which we can conveniently resize if needed.
-    else
-    {
-      double r  = 0.5*ext[2];
-      double lx = ext[0];
-      double ly = ext[1];
-
-      osg::ref_ptr<osg::CompositeShape> compoShape = new osg::CompositeShape;
-
-      // Side 1: Front y-direction
-      osg::Capsule* cSSR1 =
-        new osg::Capsule(osg::Vec3(-lx / 2.0, 0.0, 0.0), r, ly);
-      cSSR1->setRotation(osg::Quat(osg::inDegrees(90.0f),
-                                   osg::Vec3(1.0f, 0.0f, 0.0f)));
-      compoShape->addChild(cSSR1);
-
-      // Side 2: Back y-direction
-      osg::Capsule* cSSR2 =
-        new osg::Capsule(osg::Vec3(lx / 2.0, 0.0, 0.0), r, ly);
-      cSSR2->setRotation(osg::Quat(osg::inDegrees(90.0f),
-                                   osg::Vec3(1.0f, 0.0f, 0.0f)));
-      compoShape->addChild(cSSR2);
-
-      // Side 3: Right x-direction
-      osg::Capsule* cSSR3 =
-        new osg::Capsule(osg::Vec3(0.0, ly / 2.0, 0.0), r, lx);
-      cSSR3->setRotation(osg::Quat(osg::inDegrees(90.0f),
-                                   osg::Vec3(0.0f, 1.0f, 0.0f)));
-      compoShape->addChild(cSSR3);
-
-      // Side 4: Left x-direction
-      osg::Capsule* cSSR4 =
-        new osg::Capsule(osg::Vec3(0.0, -ly / 2.0, 0.0), r, lx);
-      cSSR4->setRotation(osg::Quat(osg::inDegrees(90.0f),
-                                   osg::Vec3(0.0f, 1.0f, 0.0f)));
-      compoShape->addChild(cSSR4);
-
-      // Box part
-      osg::Box* bSSR = new osg::Box(osg::Vec3(), lx, ly, 2.0 * r);
-      compoShape->addChild(bSSR);
-
-      osg::ref_ptr<osg::Drawable> sd = new osg::ShapeDrawable(compoShape.get(), hints.get());
-      geode->addDrawable(sd);
-      sd->setUseDisplayList(false);
-      setMaterial(shape->color, geode.get());
-
-      // Add the information for dynamic resizing
-      shapeUpdater->addGeometry(cSSR1);
-      shapeUpdater->addGeometry(cSSR2);
-      shapeUpdater->addGeometry(cSSR3);
-      shapeUpdater->addGeometry(cSSR4);
-      shapeUpdater->addGeometry(bSSR);
-      shapeUpdater->addDrawable(sd);
-    }   // resizeable
-
+    setNodeMaterial(shape->color, geode.get());
+    setScale(osg::Vec3(ext[0], ext[0], ext[0]));
+    ss->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
+    ss->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
   }
 
   /////////////////////////////
@@ -551,18 +372,14 @@ void ShapeNode::addShape(bool resizeable)
   /////////////////////////////
   else if (shape->type == RCSSHAPE_CYLINDER)
   {
-    osg::Cylinder* cylinder = new osg::Cylinder(osg::Vec3(), ext[0], ext[2]);
-    osg::ref_ptr<osg::Drawable> sd = new osg::ShapeDrawable(cylinder, hints.get());
+    osg::Cylinder* cylinder = new osg::Cylinder(osg::Vec3(), 1.0, 1.0);
+    osg::Drawable* sd = new osg::ShapeDrawable(cylinder, hints.get());
+    sd->setUseDisplayList(!resizeable);
     geode->addDrawable(sd);
-    setMaterial(shape->color, geode.get());
-
-    if (shapeUpdater.valid())
-    {
-      shapeUpdater->addGeometry(cylinder);
-      shapeUpdater->addDrawable(sd);
-      sd->setUseDisplayList(false);
-    }
-
+    setNodeMaterial(shape->color, geode.get());
+    setScale(osg::Vec3(ext[0], ext[0], ext[2]));
+    ss->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
+    ss->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
   }
 
   /////////////////////////////
@@ -571,22 +388,18 @@ void ShapeNode::addShape(bool resizeable)
   else if (shape->type == RCSSHAPE_CONE)
   {
     osg::Cone* cone = new osg::Cone();
-    cone->setRadius(shape->extents[0]);
-    cone->setHeight(shape->extents[2]);
+    cone->setRadius(1.0);
+    cone->setHeight(1.0);
     // For some reason the cone shape is shifted along the z-axis by the
     // below compensated base offset value.
     cone->setCenter(osg::Vec3(0.0f, 0.0f, -cone->getBaseOffset()));
-    osg::ref_ptr<osg::Drawable> sd = new osg::ShapeDrawable(cone, hints.get());
+    osg::Drawable* sd = new osg::ShapeDrawable(cone, hints.get());
+    sd->setUseDisplayList(!resizeable);
     geode->addDrawable(sd);
-    setMaterial(shape->color, geode.get());
-
-    if (shapeUpdater.valid())
-    {
-      shapeUpdater->addGeometry(cone);
-      shapeUpdater->addDrawable(sd);
-      sd->setUseDisplayList(false);
-    }
-
+    setNodeMaterial(shape->color, geode.get());
+    setScale(osg::Vec3(ext[0], ext[0], ext[2]));
+    ss->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
+    ss->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
   }
 
   /////////////////////////////
@@ -608,9 +421,11 @@ void ShapeNode::addShape(bool resizeable)
       if (meshFromOsgReader == true)
       {
         setScale(osg::Vec3(shape->scale, shape->scale, shape->scale));
+        ss->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
+        ss->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
       }
 
-      setMaterial(shape->color, this);
+      setNodeMaterial(shape->color, this);
     }
 
   }
@@ -643,7 +458,7 @@ void ShapeNode::addShape(bool resizeable)
       g->setUseDisplayList(false);
     }
 
-    setMaterial(shape->color, geode.get());
+    setNodeMaterial(shape->color, geode.get());
   }
 
 
@@ -701,22 +516,9 @@ void ShapeNode::addShape(bool resizeable)
   else if (shape->type == RCSSHAPE_POINT)
   {
     osg::Sphere* sphere = new osg::Sphere(osg::Vec3(), 0.005);
-    osg::ref_ptr<osg::Drawable> sd = new osg::ShapeDrawable(sphere, hints.get());
+    osg::Drawable* sd = new osg::ShapeDrawable(sphere, hints.get());
     geode->addDrawable(sd);
-    setMaterial(shape->color, geode.get());
-  }
-
-  /////////////////////////////////
-  // RCSSHAPE_MARKER
-  /////////////////////////////////
-  else if (shape->type == RCSSHAPE_MARKER)
-  {
-    NLOG(5, "Adding marker %d id %d of \"%s\" with length %f ", shapeCount,
-         *((int*)shape->userData), getName().c_str(), shape->extents[2]);
-    osg::Box* box = new osg::Box(osg::Vec3(), ext[2], ext[2], 0.001);
-    osg::ref_ptr<osg::Drawable> sd = new osg::ShapeDrawable(box, hints.get());
-    geode->addDrawable(sd);
-    setMaterial(shape->color, geode.get());
+    setNodeMaterial(shape->color, geode.get());
   }
 
   ////////////////////////
@@ -733,8 +535,10 @@ void ShapeNode::addShape(bool resizeable)
 /*******************************************************************************
  *\todo: Make separate texture buffer method similar to mesh buffer
  ******************************************************************************/
-void ShapeNode::addTexture(const char* textureFile)
+bool ShapeNode::addTexture(const char* textureFile)
 {
+  bool success = false;
+
   // read the texture file
   osg::ref_ptr<osg::Texture2D> texture;
 
@@ -795,7 +599,7 @@ void ShapeNode::addTexture(const char* textureFile)
     // this would extend previous setting, e.g. by color settings
     for (size_t i = 0; i < getNumChildren(); i++)
     {
-      osg::StateSet* state_set = getChild(i)->getOrCreateStateSet();
+      osg::StateSet* ss = getChild(i)->getOrCreateStateSet();
       osg::Material* material = new osg::Material;
       material->setAmbient(osg::Material::FRONT_AND_BACK,
                            osg::Vec4(0.6, 0.6, 0.6, 1.0));
@@ -804,12 +608,19 @@ void ShapeNode::addTexture(const char* textureFile)
       material->setSpecular(osg::Material::FRONT_AND_BACK,
                             osg::Vec4(0.3, 0.3, 0.3, 1.0));
       material->setShininess(osg::Material::FRONT_AND_BACK, 100.0);
-      state_set->setAttributeAndModes(material,
+      ss->setAttributeAndModes(material,
+                               osg::StateAttribute::OVERRIDE |
+                               osg::StateAttribute::ON);
+      ss->setTextureAttributeAndModes(0, texture.get(),
                                       osg::StateAttribute::OVERRIDE |
                                       osg::StateAttribute::ON);
-      state_set->setTextureAttributeAndModes(0, texture.get(),
-                                             osg::StateAttribute::OVERRIDE |
-                                             osg::StateAttribute::ON);
+
+      success = true;
+      ss->setMode(GL_LIGHTING,
+                  osg::StateAttribute::PROTECTED |
+                  osg::StateAttribute::OFF);
+      setNodeMask(getNodeMask() & ~CastsShadowTraversalMask);
+      setNodeMask(getNodeMask() & ~ReceivesShadowTraversalMask);
     }
     //      // Create a new StateSet with default settings
     //      // this means the old color settings are overridden
@@ -822,18 +633,12 @@ void ShapeNode::addTexture(const char* textureFile)
     //      // Associate this state set with the Geode
     //      geode->setStateSet(stateOne);
   }
+
+  return success;
 }
 
 ShapeNode::~ShapeNode()
 {
-}
-
-void ShapeNode::setMaterial(const char* color, osg::Node* node)
-{
-  if (color)
-  {
-    setNodeMaterial(color, node);
-  }
 }
 
 void ShapeNode::displayFrames(bool visibility)

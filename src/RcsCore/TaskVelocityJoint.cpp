@@ -62,7 +62,7 @@ Rcs::TaskVelocityJoint::TaskVelocityJoint(const std::string& className,
   // re-initialize parameters
   if (getClassName()=="Jointd")
   {
-    if (RcsJoint_isTranslation(this->joint) == true)
+    if (RcsJoint_isTranslation(getJoint()) == true)
     {
       resetParameter(Parameters(-1.0, 1.0, 1.0, "Vel. [m]"));
     }
@@ -104,7 +104,7 @@ Rcs::TaskVelocityJoint* Rcs::TaskVelocityJoint::clone(RcsGraph* newGraph) const
  ******************************************************************************/
 void Rcs::TaskVelocityJoint::computeX(double* x_res) const
 {
-  x_res[0] = MatNd_get(this->graph->q_dot, this->joint->jointIndex, 0);
+  x_res[0] = MatNd_get(this->graph->q_dot, this->jointId, 0);
 }
 
 /*******************************************************************************
@@ -121,7 +121,7 @@ void Rcs::TaskVelocityJoint::computeDX(double* dx, const double* x_des) const
 void Rcs::TaskVelocityJoint::computeDXp(double* delta_q_dot,
                                         const double* q_dot_des) const
 {
-  double q_dot_curr = MatNd_get(this->graph->q_dot, this->joint->jointIndex, 0);
+  double q_dot_curr = MatNd_get(this->graph->q_dot, this->jointId, 0);
   *delta_q_dot = *q_dot_des - q_dot_curr;
 }
 
@@ -132,13 +132,13 @@ bool Rcs::TaskVelocityJoint::isValid(xmlNode* node, const RcsGraph* graph)
 {
   bool success = Rcs::Task::isValid(node, graph, "Jointd");
 
-  char taskName[256];
+  char taskName[RCS_MAX_NAMELEN];
   strcpy(taskName, "unnamed task");
-  getXMLNodePropertyStringN(node, "name", taskName, 256);
+  getXMLNodePropertyStringN(node, "name", taskName, RCS_MAX_NAMELEN);
 
   // Check if joint exists
-  char tag[256] = "";
-  int len = getXMLNodePropertyStringN(node, "jnt", tag, 256);
+  char tag[RCS_MAX_NAMELEN] = "";
+  int len = getXMLNodePropertyStringN(node, "jnt", tag, RCS_MAX_NAMELEN);
 
   if (len==0)
   {

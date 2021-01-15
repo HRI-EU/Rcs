@@ -754,13 +754,22 @@ protected:
    *         to assume that it is not modified during "normal" processing.
    */
   RcsGraph* graph;          //!< Underlying graph representation
-  const RcsBody* ef;        //!< Effector
-  const RcsBody* refBody;   //!< Reference body
-  const RcsBody* refFrame;  //!< Reference frame body
   TaskRegion* tsr;          //!< Task space region
 
 
 private:
+
+  /*! \brief Id of end effector body within graph, -1 for none
+   */
+  int effectorId;
+
+  /*! \brief Id of reference body within graph, -1 for none
+   */
+  int refBodyId;
+
+  /*! \brief Id of reference frame within graph, -1 for none
+   */
+  int refFrameId;
 
   /*! \brief Dimension relevant for IK calculation
    */

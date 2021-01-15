@@ -132,9 +132,9 @@ public:
 
 private:
 
-  static RcsBody* createBody();
+  int createBody();
   void updateRefBody() const;
-  RcsBody* goalBdy;
+  int goalBdyId;
 
   TaskPositionTarget3D();
   TaskPositionTarget3D& operator=(const TaskPositionTarget3D&);

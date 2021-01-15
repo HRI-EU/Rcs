@@ -51,7 +51,7 @@ class BulletSliderJoint : public BulletJointBase, public btSliderConstraint
 {
 public:
 
-  BulletSliderJoint(RcsJoint* jnt, double q0,
+  BulletSliderJoint(const RcsGraph* graph, int jntId, double q0,
                     btRigidBody& rbA, btRigidBody& rbB,
                     const btTransform& frameInA, const btTransform& frameInB,
                     bool useReferenceFrameA, bool withForceLimit);
@@ -73,10 +73,12 @@ public:
 protected:
 
   double getConstraintPos();
+  const RcsJoint* getJoint() const;
 
 private:
 
-  RcsJoint* rcsJoint;
+  const RcsGraph* graph;
+  int rcsJointId;
   double constraintPosCurr;
   double constraintPosPrev;
   double jointPosCurr;

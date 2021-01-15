@@ -150,7 +150,7 @@ void Rcs::TaskPolarSurfaceNormal::computeJ(MatNd* jacobian) const
   MatNd_reshape(jacobian, 2, this->graph->nJ);
 
   // Get the current Polar axis in world coordinates
-  const double* a_curr = ef->A_BI.rot[this->direction];
+  const double* a_curr = getEffector()->A_BI.rot[this->direction];
 
   // Compute the normal pointing from the refBdy to the effector. This is the
   // desired Polar axis in world coordinates.
@@ -182,7 +182,7 @@ void Rcs::TaskPolarSurfaceNormal::computeJ(MatNd* jacobian) const
   // Compute the angular velocity Jacobian
   MatNd* JR2 = NULL;
   MatNd_create2(JR2, 3, this->graph->nJ);
-  RcsGraph_rotationJacobian(this->graph, this->ef, NULL, JR2);
+  RcsGraph_rotationJacobian(this->graph, getEffector(), NULL, JR2);
   MatNd_mul(jacobian, proj, JR2);
 
   MatNd_destroy(proj);

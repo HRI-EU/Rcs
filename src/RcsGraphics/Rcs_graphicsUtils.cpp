@@ -44,6 +44,7 @@
 #include <RcsViewer.h>
 
 #include <osg/LightModel>
+#include <osg/PolygonMode>
 #include <osg/ShapeDrawable>
 #include <osgShadow/ShadowTexture>
 #include <osgShadow/SoftShadowMap>
@@ -51,6 +52,7 @@
 #include <osg/Geode>
 #include <osg/Geometry>
 #include <osgUtil/LineSegmentIntersector>
+#include <osgUtil/SmoothingVisitor>
 #include <osgDB/ReadFile>
 
 #include <iomanip>
@@ -750,7 +752,8 @@ bool setNodeMaterial(const std::string& matString, osg::Node* node,
                     osg::StateAttribute::ON);
 
   // removes artifacts inside of transparent objects
-  stateset->setMode(GL_CULL_FACE, osg::StateAttribute::ON);
+  // Disabled since otherwise no backfaces are visible
+  //   stateset->setMode(GL_CULL_FACE, osg::StateAttribute::ON);
 
   stateset->setAttributeAndModes(material.get(),
                                  osg::StateAttribute::OVERRIDE |
@@ -1273,5 +1276,149 @@ osg::Node* findNamedNodeRecursive(osg::Node* root, std::string nodeName)
   root->accept(nf);
   return nf.getNode();
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+osg::Geometry* createGeometryFromMesh(const RcsMeshData* mesh)
+{
+  osg::Geometry* geometry = new osg::Geometry;
+  createGeometryFromMesh(geometry, mesh);
+  return geometry;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void createGeometryFromMesh(osg::Geometry* geometry, const RcsMeshData* mesh)
+{
+  double* meshNormals = RcsMesh_createNormalArray(mesh);
+
+  osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
+  osg::ref_ptr<osg::Vec3Array> normals = new osg::Vec3Array;
+  const double* v1, *v2, *v3, *n1, *n2, *n3;
+
+  // Since the mesh is represented by face lists, we need to "linearize"
+  // the arrays here during construction.
+  for (size_t i=0; i<mesh->nFaces; ++i)
+  {
+    unsigned int fidx0 = 3*mesh->faces[i*3+0];
+    unsigned int fidx1 = 3*mesh->faces[i*3+1];
+    unsigned int fidx2 = 3*mesh->faces[i*3+2];
+
+    RCHECK_MSG(fidx0<3*mesh->nVertices, "%d %d", fidx0, 3*mesh->nVertices);
+    RCHECK_MSG(fidx1<3*mesh->nVertices, "%d %d", fidx1, 3*mesh->nVertices);
+    RCHECK_MSG(fidx2<3*mesh->nVertices, "%d %d", fidx2, 3*mesh->nVertices);
+
+    v1 = &mesh->vertices[3*mesh->faces[i*3+0]];
+    v2 = &mesh->vertices[3*mesh->faces[i*3+1]];
+    v3 = &mesh->vertices[3*mesh->faces[i*3+2]];
+    vertices->push_back(osg::Vec3(v1[0], v1[1], v1[2]));
+    vertices->push_back(osg::Vec3(v2[0], v2[1], v2[2]));
+    vertices->push_back(osg::Vec3(v3[0], v3[1], v3[2]));
+
+    n1 = &meshNormals[3*mesh->faces[i*3+0]];
+    n2 = &meshNormals[3*mesh->faces[i*3+1]];
+    n3 = &meshNormals[3*mesh->faces[i*3+2]];
+    normals->push_back(osg::Vec3(n1[0], n1[1], n1[2]));
+    normals->push_back(osg::Vec3(n2[0], n2[1], n2[2]));
+    normals->push_back(osg::Vec3(n3[0], n3[1], n3[2]));
+  }
+
+  // Prepare geometry node
+  geometry->setVertexArray(vertices);
+  geometry->setNormalArray(normals);
+  geometry->setNormalBinding(osg::Geometry::BIND_PER_VERTEX);
+  geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES, 0,
+                                                vertices->size()));
+
+  RFREE(meshNormals);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool updateGeometryFromMesh(osg::Geometry* geometry, const RcsMeshData* mesh)
+{
+  osg::Vec3Array* v = static_cast<osg::Vec3Array*>(geometry->getVertexArray());
+  const double* v1, *v2, *v3;
+  size_t idx = 0;
+
+  // We assume that the vertex normals remain unchanged and skip them here.
+  for (unsigned int i = 0; i < mesh->nFaces; i++)
+  {
+    const unsigned int fidx0 = 3*mesh->faces[i*3+0];
+    const unsigned int fidx1 = 3*mesh->faces[i*3+1];
+    const unsigned int fidx2 = 3*mesh->faces[i*3+2];
+
+    RCHECK_MSG(fidx0<3*mesh->nVertices, "%d %d", fidx0, 3*mesh->nVertices);
+    RCHECK_MSG(fidx1<3*mesh->nVertices, "%d %d", fidx1, 3*mesh->nVertices);
+    RCHECK_MSG(fidx2<3*mesh->nVertices, "%d %d", fidx2, 3*mesh->nVertices);
+
+    v1 = &mesh->vertices[fidx0];
+    v2 = &mesh->vertices[fidx1];
+    v3 = &mesh->vertices[fidx2];
+    (*v)[idx++] = (osg::Vec3(v1[0], v1[1], v1[2]));
+    (*v)[idx++] = (osg::Vec3(v2[0], v2[1], v2[2]));
+    (*v)[idx++] = (osg::Vec3(v3[0], v3[1], v3[2]));
+  }
+
+  return true;
+}
+
+
+
+
+
+bool updateGeometryFromMesh2(osg::Geometry* geometry, const RcsMeshData* mesh)
+{
+  osg::Vec3Array* v = static_cast<osg::Vec3Array*>(geometry->getVertexArray());
+
+  //v->resize(mesh->nVertices);
+
+  for (unsigned int i = 0; i < mesh->nVertices; i++)
+  {
+    const double* vi = &mesh->vertices[i*3];
+    (*v)[i].set(vi[0], vi[1], vi[2]);
+  }
+
+  geometry->dirtyBound();
+
+  return true;
+}
+
+osg::Geometry* createGeometryFromMesh2(const RcsMeshData* mesh)
+{
+  osg::Geometry* geometry = new osg::Geometry;
+  createGeometryFromMesh2(geometry, mesh);
+  return geometry;
+}
+
+
+void createGeometryFromMesh2(osg::Geometry* geometry, const RcsMeshData* mesh)
+{
+  osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array(mesh->nVertices);
+
+  for (unsigned int i = 0; i < mesh->nVertices; i++)
+  {
+    const double* vi = &mesh->vertices[i * 3];
+    (*vertices)[i].set(vi[0], vi[1], vi[2]);
+  }
+
+  osg::ref_ptr<osg::DrawElementsUInt> indices = new osg::DrawElementsUInt(GL_TRIANGLES, 3*mesh->nFaces);
+
+  for (unsigned int i = 0; i < 3*mesh->nFaces; i++)
+  {
+    (*indices)[i] = mesh->faces[i];
+  }
+
+  geometry->setVertexArray(vertices.get());
+  geometry->addPrimitiveSet(indices.get());
+  osgUtil::SmoothingVisitor::smooth(*geometry, M_PI_4);
+}
+
+
+
+
 
 } // namespace Rcs

@@ -48,6 +48,7 @@
 #include <Rcs_macros.h>
 #include <Rcs_math.h>
 #include <Rcs_body.h>
+#include <Rcs_shape.h>
 #include <Rcs_joint.h>
 #include <Rcs_sensor.h>
 #include <Rcs_utils.h>
@@ -66,8 +67,10 @@ static const char className[] = "Bullet";
 static Rcs::PhysicsFactoryRegistrar<Rcs::BulletSimulation> physics(className);
 
 
-typedef std::map<const RcsJoint*, Rcs::BulletJointBase*>::iterator hinge_it;
-typedef std::map<const RcsBody*, Rcs::BulletRigidBody*>::iterator body_it;
+typedef std::map<int, Rcs::BulletJointBase*>::iterator hinge_it;
+typedef std::map<int, Rcs::BulletJointBase*>::const_iterator hinge_cit;
+typedef std::map<int, Rcs::BulletRigidBody*>::iterator body_it;
+typedef std::map<int, Rcs::BulletRigidBody*>::const_iterator body_cit;
 
 struct MyCollisionDispatcher : public btCollisionDispatcher
 {
@@ -137,8 +140,8 @@ void Rcs::BulletSimulation::MyNearCallbackEnabled(btBroadphasePair& collisionPai
         (rb1->getBodyPtr()->rigid_body_joints==false && parent1))
     {
 
-      if ((RcsBody_isChild(rb0->getBodyPtr(), rb1->getBodyPtr())) ||
-          (RcsBody_isChild(rb1->getBodyPtr(), rb0->getBodyPtr())))
+      if ((RcsBody_isChild(myCD.graphPtr, rb0->getBodyPtr(), rb1->getBodyPtr())) ||
+          (RcsBody_isChild(myCD.graphPtr, rb1->getBodyPtr(), rb0->getBodyPtr())))
       {
         NLOG(1, "Skipping %s - %s", rb0->getBodyName(), rb1->getBodyName());
         return;
@@ -174,7 +177,6 @@ Rcs::BulletSimulation::BulletSimulation() :
   lastDt(0.001),
   dragBody(NULL),
   debugDrawer(NULL),
-  physicsConfigFile(NULL),
   rigidBodyLinearDamping(0.1),
   rigidBodyAngularDamping(0.9),
   jointedBodyLinearDamping(0.0),
@@ -198,7 +200,6 @@ Rcs::BulletSimulation::BulletSimulation(const RcsGraph* graph_,
   lastDt(0.001),
   dragBody(NULL),
   debugDrawer(NULL),
-  physicsConfigFile(NULL),
   rigidBodyLinearDamping(0.1),
   rigidBodyAngularDamping(0.9),
   jointedBodyLinearDamping(0.0),
@@ -225,7 +226,6 @@ Rcs::BulletSimulation::BulletSimulation(const RcsGraph* graph_,
   lastDt(0.001),
   dragBody(NULL),
   debugDrawer(NULL),
-  physicsConfigFile(NULL),
   rigidBodyLinearDamping(0.1),
   rigidBodyAngularDamping(0.9),
   jointedBodyLinearDamping(0.0),
@@ -249,14 +249,14 @@ Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe):
   lastDt(copyFromMe.lastDt),
   dragBody(NULL),
   debugDrawer(NULL),
-  physicsConfigFile(NULL),
+  physicsConfigFile(copyFromMe.physicsConfigFile),
   rigidBodyLinearDamping(copyFromMe.rigidBodyLinearDamping),
   rigidBodyAngularDamping(copyFromMe.rigidBodyAngularDamping),
   jointedBodyLinearDamping(copyFromMe.jointedBodyLinearDamping),
   jointedBodyAngularDamping(copyFromMe.jointedBodyAngularDamping)
 {
   pthread_mutex_init(&this->mtx, NULL);
-  PhysicsConfig config(copyFromMe.physicsConfigFile);
+  PhysicsConfig config(copyFromMe.physicsConfigFile.c_str());
   initPhysics(&config);
 }
 
@@ -275,14 +275,14 @@ Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe,
   lastDt(copyFromMe.lastDt),
   dragBody(NULL),
   debugDrawer(NULL),
-  physicsConfigFile(NULL),
+  physicsConfigFile(copyFromMe.physicsConfigFile),
   rigidBodyLinearDamping(copyFromMe.rigidBodyLinearDamping),
   rigidBodyAngularDamping(copyFromMe.rigidBodyAngularDamping),
   jointedBodyLinearDamping(copyFromMe.jointedBodyLinearDamping),
   jointedBodyAngularDamping(copyFromMe.jointedBodyAngularDamping)
 {
   pthread_mutex_init(&this->mtx, NULL);
-  PhysicsConfig config(copyFromMe.physicsConfigFile);
+  PhysicsConfig config(copyFromMe.physicsConfigFile.c_str());
   initPhysics(&config);
 }
 
@@ -350,11 +350,6 @@ Rcs::BulletSimulation::~BulletSimulation()
   }
 
   pthread_mutex_destroy(&this->mtx);
-
-  if (this->physicsConfigFile != NULL)
-  {
-    RFREE(this->physicsConfigFile);
-  }
 }
 
 /*******************************************************************************
@@ -407,8 +402,8 @@ void Rcs::BulletSimulation::setNearCallback(btNearCallback nearCallback)
 void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
 {
   RCHECK_MSG(getGraph(), "Graph not yet created. Did you call init()?");
-
-  this->physicsConfigFile = String_clone(config->getConfigFileName());
+  RCHECK(config->getConfigFileName());
+  this->physicsConfigFile = std::string(config->getConfigFileName());
 
   // lookup bullet config node
   xmlNodePtr bulletParams = getXMLChildByName(config->getXMLRootNode(),
@@ -416,7 +411,7 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
   if (bulletParams == NULL)
   {
     RLOG(1, "Physics configuration file %s did not contain a "
-         "\"bullet parameters\" node!", this->physicsConfigFile);
+         "\"bullet parameters\" node!", this->physicsConfigFile.c_str());
   }
 
   // Create discrete dynamics world etc. This function is overwritten in the
@@ -439,9 +434,9 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
   // Create physics for RcsGraph
   RCSGRAPH_TRAVERSE_BODIES(getGraph())
   {
-    RLOGS(5, "Creating bullet body for \"%s\"", BODY->bdyName);
+    RLOGS(5, "Creating bullet body for \"%s\"", BODY->name);
 
-    BulletRigidBody* btBody = BulletRigidBody::create(BODY, config);
+    BulletRigidBody* btBody = BulletRigidBody::create(getGraph(), BODY, config);
 
     if (btBody!=NULL)
     {
@@ -455,17 +450,9 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
         btBody->setDamping(jointedBodyLinearDamping, jointedBodyAngularDamping);
       }
 
-      bdyMap[BODY] = btBody;
+      bdyMap[BODY->id] = btBody;
 
-#ifdef OLD_TOPO
-      body_it it = bdyMap.find(BODY->parent);
-#else
-      body_it it = bdyMap.end();
-      if (BODY->parentId!=-1)
-      {
-        it = bdyMap.find(&getGraph()->bodies[BODY->parentId]);
-      }
-#endif
+      body_it it = bdyMap.find(BODY->parentId);
 
       if (it!=bdyMap.end())
       {
@@ -481,16 +468,13 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
       {
         // Fixed joints don't have a RcsJoint pointer, this must be checked
         // before applying the offset
-        if (BODY->jnt!=NULL)
+        if (BODY->jntId!=-1)
         {
           BulletJointBase* jBase = dynamic_cast<BulletJointBase*>(jnt);
 
           if (jBase != NULL)
           {
-            jntMap[BODY->jnt] = jBase;
-            RLOGS(5, "Joint %s has value %f (%f)",
-                  BODY->jnt->name, jBase->getJointPosition(),
-                  getGraph()->q->ele[BODY->jnt->jointIndex]);
+            jntMap[BODY->jntId] = jBase;
           }
         }
 
@@ -500,7 +484,7 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
     }
 
     RLOGS(5, "%s adding \"%s\" to Bullet universe",
-          btBody ? "SUCCESS" : "FAILURE", BODY->bdyName);
+          btBody ? "SUCCESS" : "FAILURE", BODY->name);
   }
 
   // Create ground plane
@@ -639,7 +623,7 @@ void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
   updateSensors();
 
 
-
+  // Copy bullet's transformations into the BulletRigidBody instances.
   for (body_it it=bdyMap.begin(); it!=bdyMap.end(); ++it)
   {
     Rcs::BulletRigidBody* btBdy = it->second;
@@ -647,7 +631,7 @@ void Rcs::BulletSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
   }
 
 
-
+  // Memorize joint reated values in joint classes
   for (hinge_it it = jntMap.begin(); it != jntMap.end(); ++it)
   {
     Rcs::BulletJointBase* hinge = it->second;
@@ -741,8 +725,8 @@ void Rcs::BulletSimulation::reset()
 
     if (btBdy==NULL)
     {
-      const RcsBody* rb = it->first;
-      RCHECK_MSG(btBdy, "%s", rb ? rb->bdyName : "NULL");
+      const RcsBody* rb = RCSBODY_BY_ID(getGraph(), it->first);
+      RCHECK_MSG(btBdy, "%s", rb ? rb->name : "NULL");
     }
 
     btBdy->reset();
@@ -801,7 +785,7 @@ void Rcs::BulletSimulation::setForce(const RcsBody* body, const double F[3],
   }
   else
   {
-    RLOG(1, "Could not find a physical body for RcsBody: \"%s\"", body->bdyName);
+    RLOG(1, "Could not find a physical body for RcsBody: \"%s\"", body->name);
   }
 }
 
@@ -831,7 +815,7 @@ void Rcs::BulletSimulation::applyImpulse(const RcsBody* body, const double F[3],
   }
   else
   {
-    RLOG(1, "Could not find a physical body for RcsBody: '%s'", body->bdyName);
+    RLOG(1, "Could not find a physical body for RcsBody: '%s'", body->name);
   }
 }
 
@@ -889,7 +873,7 @@ void Rcs::BulletSimulation::applyLinearVelocity(const RcsBody* body,
 
   if (bdy == NULL)
   {
-    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->bdyName : "NULL");
+    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->name : "NULL");
     return;
   }
 
@@ -906,7 +890,7 @@ void Rcs::BulletSimulation::applyAngularVelocity(const RcsBody* body,
 
   if (bdy == NULL)
   {
-    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->bdyName : "NULL");
+    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->name : "NULL");
     return;
   }
 
@@ -923,7 +907,7 @@ void Rcs::BulletSimulation::getLinearVelocity(const RcsBody* body,
 
   if (bdy == NULL)
   {
-    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->bdyName : "NULL");
+    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->name : "NULL");
     return;
   }
 
@@ -943,7 +927,7 @@ void Rcs::BulletSimulation::getAngularVelocity(const RcsBody* body,
 
   if (bdy == NULL)
   {
-    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->bdyName : "NULL");
+    RLOG(1, "Body \"%s\": Couldn't set velocity", body ? body->name : "NULL");
     return;
   }
 
@@ -1005,20 +989,18 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
 #endif
 
   // Then update all rigid body dofs
-  std::map<const RcsBody*, Rcs::BulletRigidBody*>::const_iterator it;
-
-  for (it=bdyMap.begin(); it!=bdyMap.end(); ++it)
+  for (body_cit it=bdyMap.begin(); it!=bdyMap.end(); ++it)
   {
-    const RcsBody* rb = it->first;
+    const RcsBody* rb = RCSBODY_BY_ID(getGraph(), it->first);
 
     if (rb->rigid_body_joints == true)
       //if (RcsBody_isFloatingBase(rb) == true)
     {
       Rcs::BulletRigidBody* btBdy = it->second;
-      RCHECK_MSG(btBdy, "%s", rb->bdyName);
+      RCHECK_MSG(btBdy, "%s", rb->name);
       HTr A_BI;
       btBdy->getBodyTransform(&A_BI);
-      const RcsJoint* jnt = rb->jnt;
+      const RcsJoint* jnt = RCSJOINT_BY_ID(getGraph(), rb->jntId);
       int idx = (type==RcsStateFull) ? jnt->jointIndex : jnt->jacobiIndex;
       RCHECK_MSG(idx>=0 && idx<(int)getGraph()->dof, "Joint \"%s\": idx = %d",
                  jnt ? jnt->name : "NULL", idx);
@@ -1030,13 +1012,13 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
       // relative between two bodies.
       HTr A_ParentI;
       //RcsBody* rcsParent = rb->parent;
-      const RcsBody* rcsParent = RcsBody_getConstParent(getGraph(), rb);
+      const RcsBody* rcsParent = RCSBODY_BY_ID(getGraph(), rb->parentId);
 
       if (rcsParent != NULL)
       {
         Rcs::BulletRigidBody* btParent = getRigidBody(rcsParent);
 
-        // If the parent body is simulated in Bullet, we take it's sumulated
+        // If the parent body is simulated in Bullet, we take it's simulated
         // transformation.
         if (btParent != NULL)
         {
@@ -1068,11 +1050,9 @@ void Rcs::BulletSimulation::getJointVelocities(MatNd* q_dot,
   MatNd_reshape(q_dot, (type==RcsStateFull) ? getGraph()->dof : getGraph()->nJ, 1);
 
   // First update all hinge joints
-  std::map<const RcsJoint*, Rcs::BulletJointBase*>::const_iterator it;
-
-  for (it = jntMap.begin(); it != jntMap.end(); ++it)
+  for (hinge_cit it = jntMap.begin(); it != jntMap.end(); ++it)
   {
-    const RcsJoint* rj = it->first;
+    const RcsJoint* rj = RCSJOINT_BY_ID(getGraph(), it->first);
     Rcs::BulletJointBase* hinge = it->second;
 
     if (hinge != NULL)
@@ -1091,27 +1071,20 @@ void Rcs::BulletSimulation::getJointVelocities(MatNd* q_dot,
 
   // Update the rigid body dofs. Since they are constrained, it is only done
   // for the full state vector.
-  std::map<const RcsBody*, Rcs::BulletRigidBody*>::const_iterator it2;
-
-  for (it2=bdyMap.begin(); it2!=bdyMap.end(); ++it2)
+  for (body_cit it2=bdyMap.begin(); it2!=bdyMap.end(); ++it2)
   {
-    const RcsBody* rb = it2->first;
+    const RcsBody* rb = RCSBODY_BY_ID(getGraph(), it2->first);
 
     if (rb->rigid_body_joints == true)
     {
       Rcs::BulletRigidBody* btBdy = it2->second;
-      RcsJoint* jnt = rb->jnt;
+      RcsJoint* jnt = RCSJOINT_BY_ID(getGraph(), rb->jntId);
       MatNd_set(q_dot, jnt->jointIndex, 0, btBdy->x_dot[0]);
-      jnt = jnt->next;
-      MatNd_set(q_dot, jnt->jointIndex, 0, btBdy->x_dot[1]);
-      jnt = jnt->next;
-      MatNd_set(q_dot, jnt->jointIndex, 0, btBdy->x_dot[2]);
-      jnt = jnt->next;
-      MatNd_set(q_dot, jnt->jointIndex, 0, btBdy->omega[0]);
-      jnt = jnt->next;
-      MatNd_set(q_dot, jnt->jointIndex, 0, btBdy->omega[1]);
-      jnt = jnt->next;
-      MatNd_set(q_dot, jnt->jointIndex, 0, btBdy->omega[2]);
+      MatNd_set(q_dot, jnt->jointIndex+1, 0, btBdy->x_dot[1]);
+      MatNd_set(q_dot, jnt->jointIndex+2, 0, btBdy->x_dot[2]);
+      MatNd_set(q_dot, jnt->jointIndex+3, 0, btBdy->omega[0]);
+      MatNd_set(q_dot, jnt->jointIndex+4, 0, btBdy->omega[1]);
+      MatNd_set(q_dot, jnt->jointIndex+5, 0, btBdy->omega[2]);
     }
   }
 
@@ -1197,7 +1170,7 @@ void Rcs::BulletSimulation::getPhysicsTransform(HTr* A_BI,
   else
   {
     RLOG(1, "Couldn't get physics transformation of body \"%s\"",
-         body ? body->bdyName : "NULL");
+         body ? body->name : "NULL");
   }
 }
 
@@ -1230,7 +1203,7 @@ void Rcs::BulletSimulation::setJointLimits(bool enable)
 
     if (enable==true)
     {
-      const RcsJoint* jnt = it->first;
+      const RcsJoint* jnt = RCSJOINT_BY_ID(getGraph(), it->first);
       hinge->setJointLimit(enable, jnt->q_min, jnt->q_max);
     }
     else
@@ -1330,34 +1303,22 @@ size_t Rcs::BulletSimulation::getNumberOfContacts() const
 void Rcs::BulletSimulation::applyControl(double dt)
 {
   // Apply transformations to all kinematic bodies
-  if (!bdyMap.empty())
+  for (body_cit it = bdyMap.begin(); it!=bdyMap.end(); ++it)
   {
-    std::map<const RcsBody*, Rcs::BulletRigidBody*>::const_iterator it;
-
-    for (it = bdyMap.begin(); it!=bdyMap.end(); ++it)
+    BulletRigidBody* btBdy = it->second;
+    if (btBdy->isStaticOrKinematicObject())
     {
-      BulletRigidBody* btBdy = it->second;
-      if (btBdy && btBdy->isStaticOrKinematicObject())
-      {
-        const RcsBody* rb_ = it->first;
-        const RcsBody* rb = RcsGraph_getBodyByName(getGraph(),
-                                                   rb_->bdyName);
-
-        if (rb)
-        {
-          btBdy->setBodyTransform(&rb->A_BI, dt);
-        }
-      }
+      const RcsBody* rb = RCSBODY_BY_ID(getGraph(), it->first);
+      btBdy->setBodyTransform(&rb->A_BI, dt);
     }
-
   }
 
 
 
   // Set desired joint controls
-  for (hinge_it it = jntMap.begin(); it != jntMap.end(); ++it)
+  for (hinge_cit it = jntMap.begin(); it != jntMap.end(); ++it)
   {
-    const RcsJoint* JNT = it->first;
+    const RcsJoint* JNT = RCSJOINT_BY_ID(getGraph(), it->first);
     Rcs::BulletJointBase* hinge = it->second;
 
     if (JNT->ctrlType==RCSJOINT_CTRL_TORQUE)
@@ -1391,17 +1352,16 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
 
   if (rb == NULL)
   {
-    RLOG(5, "No BulletRigidBody found for RcsBody \"%s\"", ftsBdy->bdyName);
+    RLOG(5, "No BulletRigidBody found for RcsBody \"%s\"", ftsBdy->name);
     return false;
   }
 
-  btFixedConstraint* jnt =
-    static_cast<btFixedConstraint*>(rb->getUserPointer());
+  btFixedConstraint* jnt =rb->fixedJnt;
 
   if (jnt == NULL)
   {
     RLOG(1, "Load cell of body \"%s\" is not attached to joint",
-         ftsBdy->bdyName);
+         ftsBdy->name);
     return false;
   }
 
@@ -1409,14 +1369,14 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
 
   if (jf==NULL)
   {
-    RLOG(1, "No joint feedback found for RcsBody \"%s\"", ftsBdy->bdyName);
+    RLOG(1, "No joint feedback found for RcsBody \"%s\"", ftsBdy->name);
     return false;
   }
 
   if (fts->rawData->size<6)
   {
     RLOG(1, "Data size mismatch for loadcell in  RcsBody \"%s\": size is %d",
-         ftsBdy->bdyName, fts->rawData->size);
+         ftsBdy->name, fts->rawData->size);
     return false;
   }
 
@@ -1441,7 +1401,7 @@ bool Rcs::BulletSimulation::updateLoadcell(const RcsSensor* fts)
   Rcs::HTrFromBtTransform(&A_FI, A_FI_);
 
   // Sensor frame: A_SI = A_SB * A_BI
-  const HTr* A_SB = &fts->offset; // Body -> Sensor
+  const HTr* A_SB = &fts->A_SB; // Body -> Sensor
   HTr A_SI, A_BI;
   rbA.getBodyTransform(&A_BI);
   HTr_transform(&A_SI, &A_BI, A_SB);
@@ -1504,14 +1464,12 @@ void Rcs::BulletSimulation::updateSensors()
  ******************************************************************************/
 Rcs::BulletRigidBody* Rcs::BulletSimulation::getRigidBody(const RcsBody* bdy) const
 {
-  if (bdy == NULL)
+  if (bdy==NULL)
   {
     return NULL;
   }
 
-  std::map<const RcsBody*, Rcs::BulletRigidBody*>::const_iterator it;
-
-  it = bdyMap.find(bdy);
+  body_cit it = bdyMap.find(bdy->id);
 
   if (it==bdyMap.end())
   {
@@ -1533,9 +1491,7 @@ Rcs::BulletJointBase* Rcs::BulletSimulation::getHinge(const RcsJoint* jnt) const
     return NULL;
   }
 
-  std::map<const RcsJoint*, Rcs::BulletJointBase*>::const_iterator it;
-
-  it = jntMap.find(jnt);
+  hinge_cit it = jntMap.find(jnt->id);
 
   if (it!=jntMap.end())
   {
@@ -1557,14 +1513,12 @@ void Rcs::BulletSimulation::print() const
 
   if (bdyMap.empty()==false)
   {
-    std::map<const RcsBody*, Rcs::BulletRigidBody*>::const_iterator it;
-
-    for (it = bdyMap.begin(); it!=bdyMap.end(); ++it)
+    for (body_cit it = bdyMap.begin(); it!=bdyMap.end(); ++it)
     {
-      const RcsBody* rb = it->first;
+      const RcsBody* rb =  RCSBODY_BY_ID(getGraph(), it->first);
       BulletRigidBody* btBdy = it->second;
       printf("%d: %s - %s   friction: %f\n", bdyCount++,
-             rb ? rb->bdyName : "NULL", btBdy ? btBdy->getBodyName() : "NULL",
+             rb ? rb->name : "NULL", btBdy ? btBdy->getBodyName() : "NULL",
              btBdy ? btBdy->getFriction(): 0.0);
     }
   }
@@ -1859,7 +1813,7 @@ bool Rcs::BulletSimulation::updatePPSSensor(RcsSensor* sensor)
                       pt.m_lateralFrictionDir2[i]*pt.m_appliedImpulseLateral2)/this->lastDt;
         }
 
-        NLOG(1, "Adding f[%s,%d]=%f %f %f", sensor->body->bdyName, j,
+        NLOG(1, "Adding f[%s,%d]=%f %f %f", sensor->body->name, j,
              force[0], force[1], force[2]);
 
         Vec3d_constMulAndAddSelf(contactForce, force, signOfForce);
@@ -1885,9 +1839,7 @@ bool Rcs::BulletSimulation::removeBody(const char* name)
     return false;
   }
 
-  std::map<const RcsBody*, Rcs::BulletRigidBody*>::iterator it;
-
-  it = bdyMap.find(bdy);
+  body_it it = bdyMap.find(bdy->id);
 
   if (it==bdyMap.end())
   {
@@ -1918,32 +1870,43 @@ bool Rcs::BulletSimulation::removeBody(const char* name)
 /*******************************************************************************
  *
  ******************************************************************************/
-bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
+bool Rcs::BulletSimulation::addBody(const RcsGraph* graph, const RcsBody* body_)
 {
-  RLOG(5, "Creating bullet body for \"%s\"", body_ ? body_->bdyName : "NULL");
+  RLOG(5, "Creating bullet body for \"%s\"", body_ ? body_->name : "NULL");
 
-  PhysicsConfig config(this->physicsConfigFile);
+  PhysicsConfig config(this->physicsConfigFile.c_str());
 
   lock();
 
-  RcsBody* body = RcsBody_clone(body_);
-  RCHECK(body);
+  RLOG(5, "Copying graph body");
+  RcsBody* body = RcsGraph_insertGraphBody(getGraph(), body_->parentId);
+  RcsBody_copy(body, body_);
+
+  // Make a copy of all body shapes and attach them to the body
+  int nShapes = RcsBody_numShapes(body_);
+  body->shape = RNALLOC(nShapes + 1, RcsShape*);
+  for (int i = 0; i < nShapes; i++)
+  {
+    body->shape[i] = RcsShape_clone(body_->shape[i]);
+  }
+
+  // Create the joints into the simulation's body.
+  RCSBODY_FOREACH_JOINT(graph, body_)
+  {
+    RcsJoint* newJnt = RcsGraph_insertGraphJoint(getGraph(), body->id);
+    RcsJoint_copy(newJnt, JNT);
+  }
 
 
-#ifdef OLD_TOPO
-  body->parent = RcsGraph_getBodyByName(getGraph(), body->bdyName);  // This must be body->parent->bdyName
-  RCHECK(parent);// HACK
-#else
-  // Nothing to do, already handled by parentId
-#endif
-
-  BulletRigidBody* btBody = BulletRigidBody::create(body, &config);
+  RLOG(5, "Creating BulletRigidBody");
+  BulletRigidBody* btBody = BulletRigidBody::create(getGraph(), body, &config);
   RCHECK(btBody);
 
   // Continuous collision detection
   // btBody->setCcdSweptSphereRadius(0.05);
   // btBody->setCcdMotionThreshold(0.0);
 
+  RLOG(5, "Applying damping");
   if (btBody != NULL)
   {
     // apply configured damping
@@ -1956,42 +1919,36 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
       btBody->setDamping(jointedBodyLinearDamping, jointedBodyAngularDamping);
     }
 
-    bdyMap[body] = btBody;
+    bdyMap[body->id] = btBody;
 
-#ifdef OLD_TOPO
-    body_it it = bdyMap.find(body->parent);
-#else
-    body_it it = bdyMap.end();
-
-    if (body->parentId!=-1)
-    {
-      it = bdyMap.find(&getGraph()->bodies[body->parentId]);
-    }
-#endif
+    body_it it = bdyMap.find(body->parentId);
 
     if (it != bdyMap.end())
     {
       btBody->setParentBody(it->second);
     }
 
+    RLOG(5, "Adding to dynamicsworld");
     dynamicsWorld->addRigidBody(btBody);
 
     btTypedConstraint* jnt = btBody->createJoint(getGraph());
+    RCHECK(jnt==NULL);
 
     if (jnt != NULL)
     {
       // Fixed joints don't have a RcsJoint pointer, this must be checked
       // before applying the offset
-      if (body->jnt != NULL)
+      if (body->jntId != -1)
       {
         BulletJointBase* jBase = dynamic_cast<BulletJointBase*>(jnt);
 
         if (jBase != NULL)
         {
-          jntMap[body->jnt] = jBase;
+          jntMap[body->jntId] = jBase;
+          const RcsJoint* bodyJnt = RCSJOINT_BY_ID(getGraph(), body->jntId);
           RLOGS(5, "Joint %s has value %f (%f)",
-                body->jnt->name, jBase->getJointPosition(),
-                MatNd_get(getGraph()->q, body->jnt->jointIndex, 0));
+                bodyJnt->name, jBase->getJointPosition(),
+                MatNd_get(getGraph()->q, bodyJnt->jointIndex, 0));
         }
       }
 
@@ -2006,7 +1963,7 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
   arrBuf[1] = this->q_dot_des;
   arrBuf[2] = this->T_des;
 
-  unsigned int nJoints = RcsBody_numJoints(body);
+  unsigned int nJoints = RcsBody_numJoints(getGraph(), body);
 
   if (nJoints > 0)
   {
@@ -2015,17 +1972,12 @@ bool Rcs::BulletSimulation::addBody(const RcsBody* body_)
     this->q_dot_des = MatNd_realloc(this->q_dot_des, getGraph()->dof, 1);
   }
 
-#ifdef OLD_TOPO
-  RcsGraph_addBody(getGraph(), body->parent, body, arrBuf, 3);
-#else
-  // \todo: Must it be body->parent->name???
-  RcsGraph_addBody(getGraph(), RcsGraph_getBodyByName(getGraph(), body->bdyName), body, arrBuf, 3);
-#endif
+  RcsGraph_addBodyDofs(getGraph(), NULL, body, arrBuf, 3);
 
   unlock();
 
-  RLOG(1, "%s adding \"%s\" to Bullet universe",
-       btBody ? "SUCCESS" : "FAILURE", body->bdyName);
+  RLOG(5, "%s adding \"%s\" to Bullet universe",
+       btBody ? "SUCCESS" : "FAILURE", body->name);
 
   return true;
 }
@@ -2045,11 +1997,11 @@ bool Rcs::BulletSimulation::deactivateBody(const char* name)
 
   if (!RcsBody_isLeaf(bdy))
   {
-    RLOG(1, "Can't deactivate non-leaf body \"%s\" - skipping", bdy->bdyName);
+    RLOG(1, "Can't deactivate non-leaf body \"%s\" - skipping", bdy->name);
     return false;
   }
 
-  body_it it = bdyMap.find(bdy);
+  body_it it = bdyMap.find(bdy->id);
   BulletRigidBody* part = NULL;
 
   if (it != bdyMap.end())
@@ -2059,7 +2011,7 @@ bool Rcs::BulletSimulation::deactivateBody(const char* name)
   else
   {
     RLOG(1, "Can't find BulletRigidBody for body \"%s\" - skipping deactivation",
-         bdy->bdyName);
+         bdy->name);
     return false;
   }
 
@@ -2096,7 +2048,7 @@ bool Rcs::BulletSimulation::activateBody(const char* name, const HTr* A_BI)
 
   dynamicsWorld->addRigidBody(part);
 
-  bdyMap[bdy] = part;
+  bdyMap[bdy->id] = part;
   deactivatedBodies.erase(it);
 
   return true;
@@ -2111,11 +2063,20 @@ bool Rcs::BulletSimulation::check() const
 
   if (!bdyMap.empty())
   {
-    std::map<const RcsBody*, Rcs::BulletRigidBody*>::const_iterator it;
-
-    for (it = bdyMap.begin(); it != bdyMap.end(); ++it)
+    for (body_cit it = bdyMap.begin(); it != bdyMap.end(); ++it)
     {
-      // const RcsBody* rb = it->first;
+      if (it->first==-1)
+      {
+        RLOG(1, "Found bdyMap key with -1");
+        success = false;
+      }
+
+      if (it->second==NULL)
+      {
+        RLOG(1, "Found bdyMap value with NULL");
+        success = false;
+      }
+
       BulletRigidBody* btBdy = it->second;
 
       // Here we check that objects that are labelled static or dynamic in

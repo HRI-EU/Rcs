@@ -48,7 +48,8 @@
 /*******************************************************************************
  *
  ******************************************************************************/
-Rcs::BulletSliderJoint::BulletSliderJoint(RcsJoint* jnt, double q0,
+Rcs::BulletSliderJoint::BulletSliderJoint(const RcsGraph* graph_,
+                                          int jntId, double q0,
                                           btRigidBody& rbA, btRigidBody& rbB,
                                           const btTransform& frameInA,
                                           const btTransform& frameInB,
@@ -56,11 +57,12 @@ Rcs::BulletSliderJoint::BulletSliderJoint(RcsJoint* jnt, double q0,
                                           bool enableForceLimit):
   BulletJointBase(),
   btSliderConstraint(rbA, rbB, frameInA, frameInB, useReferenceFrameA),
-  rcsJoint(jnt), constraintPosCurr(0.0), constraintPosPrev(0.0),
-  jointPosCurr(0.0), jointPosPrev(0.0), jointVelocity(0.0),
-  jointVelocityPrev(0.0), jointAcceleration(0.0), offset(0.0), jf(),
-  withForceLimit(enableForceLimit)
+  graph(graph_), rcsJointId(jntId), constraintPosCurr(0.0),
+  constraintPosPrev(0.0), jointPosCurr(0.0), jointPosPrev(0.0),
+  jointVelocity(0.0), jointVelocityPrev(0.0), jointAcceleration(0.0),
+  offset(0.0), jf(), withForceLimit(enableForceLimit)
 {
+  const RcsJoint* rcsJoint = getJoint();
   RCHECK(RcsJoint_isTranslation(rcsJoint));
 
   // The below line would be ideal, unfortunately getLinearPos() Is not
@@ -75,13 +77,13 @@ Rcs::BulletSliderJoint::BulletSliderJoint(RcsJoint* jnt, double q0,
   this->jointPosCurr = constraintPosCurr - this->offset;
   this->jointPosPrev = this->jointPosCurr;
 
-  if ((jnt->ctrlType == RCSJOINT_CTRL_POSITION) ||
-      (jnt->ctrlType == RCSJOINT_CTRL_VELOCITY))
+  if ((rcsJoint->ctrlType == RCSJOINT_CTRL_POSITION) ||
+      (rcsJoint->ctrlType == RCSJOINT_CTRL_VELOCITY))
   {
-    RLOG(5, "Enabling motor for joint %s", jnt->name);
+    RLOG(5, "Enabling motor for joint %s", rcsJoint->name);
     if (withForceLimit)
     {
-      setJointLimit(true, jnt->q_min, jnt->q_max);
+      setJointLimit(true, rcsJoint->q_min, rcsJoint->q_max);
     }
     else
     {
@@ -90,7 +92,7 @@ Rcs::BulletSliderJoint::BulletSliderJoint(RcsJoint* jnt, double q0,
   }
   else
   {
-    setJointLimit(true, jnt->q_min, jnt->q_max);
+    setJointLimit(true, rcsJoint->q_min, rcsJoint->q_max);
   }
 
   // Disallow the rotation around the slider axis
@@ -146,7 +148,7 @@ double Rcs::BulletSliderJoint::getJointTorque() const
  ******************************************************************************/
 unsigned int Rcs::BulletSliderJoint::getJointIndex() const
 {
-  return rcsJoint->jointIndex;
+  return getJoint()->jointIndex;
 }
 
 /*******************************************************************************
@@ -178,7 +180,7 @@ void Rcs::BulletSliderJoint::setJointPosition(double angle, double dt)
   if (withForceLimit)
   {
     setPoweredLinMotor(true);
-    setMaxLinMotorForce(rcsJoint->maxTorque);
+    setMaxLinMotorForce(getJoint()->maxTorque);
     double vel = (angle-getJointPosition())/dt;
     vel = Math_clip(vel, -0.5, 0.5);
     setTargetLinMotorVelocity(vel);
@@ -195,12 +197,15 @@ void Rcs::BulletSliderJoint::setJointPosition(double angle, double dt)
  ******************************************************************************/
 void Rcs::BulletSliderJoint::setJointTorque(double torque, double dt)
 {
+  const RcsJoint* rcsJoint = getJoint();
+
   setJointLimit(false, 1.0, -1.0);
 
-  if (rcsJoint->coupledTo != NULL)
+  if (rcsJoint->coupledToId != -1)
   {
     RLOGS(1, "Joint \"%s\" is coupled to joint %s - not supported",
-          rcsJoint->name, rcsJoint->coupledTo->name);
+          rcsJoint->name,
+          RCSJOINT_BY_ID(graph, rcsJoint->coupledToId)->name);
     return;
   }
 
@@ -282,4 +287,12 @@ bool Rcs::BulletSliderJoint::isHinge() const
 bool Rcs::BulletSliderJoint::isSlider() const
 {
   return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+const RcsJoint* Rcs::BulletSliderJoint::getJoint() const
+{
+  return RCSJOINT_BY_ID(graph, this->rcsJointId);
 }

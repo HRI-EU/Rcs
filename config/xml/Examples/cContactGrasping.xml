@@ -47,6 +47,7 @@ usage="
 &#xA;  Here is how to start an example:
 &#xA;  
 &#xA;  bin/Rcs -m 5 -f config\xml\Examples\cContactGrasping.xml -algo 1 -lambda 0.001 -alpha 0
+&#xA;  
 " >
 
   <Graph name="Default" >

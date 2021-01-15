@@ -40,6 +40,8 @@
 
 #include "Rcs_bool.h"
 
+#include <stdio.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,7 +90,17 @@ RcsMeshData* RcsMesh_createFromFile(const char* fileName);
 void RcsMesh_print(const RcsMeshData* mesh);
 
 /*! \ingroup RcsMeshFunctions
- *  \brief Performs some checks on the mesh.
+ *  \brief Prints out the mesh vertex and face lists to a file.
+ *
+ *  \param[in] mesh Valid mesh data. If the argument is NULL, a warning is
+ *             emitted on debug level 4, and nothing is printed.
+ */
+void RcsMesh_fprint(FILE* out, const RcsMeshData* mesh);
+
+/*! \ingroup RcsMeshFunctions
+ *  \brief Performs some checks on the mesh:
+ *         - Largest face index < number of vertices
+ *         - The three face indices of each single face must be different
  *
  *  \param[in] mesh Mesh data to be checked
  *  \return true for passed, false for something is wrong. The reason is
@@ -103,6 +115,18 @@ bool RcsMesh_check(const RcsMeshData* mesh);
  *  \param[in] mesh Mesh data
  */
 RcsMeshData* RcsMesh_clone(const RcsMeshData* mesh);
+
+/*! \ingroup RcsMeshFunctions
+ *  \brief Makes a deep copy of src into dst. The vertex and face arrays will
+ *         be re-allocated in case the memory of the src mesh is not large
+ *         enough. The function will not re-allocate memory if the size of the
+ *         src mesh arrays are smaller than the ones of dst.
+ *
+ *  \param[in,out] dst    Mesh data the src mesh will be copied to. Must not
+ *                        be NULL.
+ *  \param[in]     src    Mesh data to be copied from. Must not be NULL.
+ */
+void RcsMesh_copy(RcsMeshData* dst, const RcsMeshData* src);
 
 /*! \ingroup RcsMeshFunctions
  *  \brief Deletes all created memory.
@@ -143,7 +167,12 @@ RcsMeshData* RcsMesh_fromVertices(const double* vertices,
                                   unsigned int numVertices);
 
 /*! \ingroup RcsMeshFunctions
- *  \brief Writes the mesh to the given file name as a binary stl file.
+ *  \brief Writes the mesh to the given file name. Depending on the file suffix,
+ *         the mesh is written in the corresponding file format. Currently
+ *         these formats are supported:
+ *         - .stl
+ *         - .obj
+ *         - .tri
  *
  *  \param[in] mesh       Mesh data
  *  \param[in] fileName   Name of the output file
@@ -299,7 +328,7 @@ RcsMeshData* RcsMesh_createSphereSegment(double radius,
 RcsMeshData* RcsMesh_createSphere(double radius, unsigned int segments);
 
 /*! \ingroup RcsMeshFunctions
- *  \brief Creates a sphere.
+ *  \brief Creates a capsule.
  *
  *  \param[in] radius           Capsule radius
  *  \param[in] height           Distance of ball points
@@ -309,6 +338,19 @@ RcsMeshData* RcsMesh_createSphere(double radius, unsigned int segments);
  */
 RcsMeshData* RcsMesh_createCapsule(double radius, double height,
                                    unsigned int segments);
+
+/*! \ingroup RcsMeshFunctions
+ *  \brief Copies a capsule into the given mesh. The passed mesh must have
+ *         enough memory for vertices and faces as required, this is not being
+ *         checked.
+ *
+ *  \param[in] mesh             Mesh data or NULl, see above.
+ *  \param[in] radius           Capsule radius
+ *  \param[in] height           Distance of ball points
+ *  \param[in] segments         Tesselation
+ */
+void RcsMesh_copyCapsule(RcsMeshData* mesh, double radius,
+                         double height, unsigned int segments);
 
 /*! \ingroup RcsMeshFunctions
  *  \brief Creates a cone with the given dimensions. The cone axis is aligned
@@ -348,6 +390,18 @@ RcsMeshData* RcsMesh_createTorus(double radius, double thickness,
 RcsMeshData* RcsMesh_createSSR(const double extents[3], unsigned int segments);
 
 /*! \ingroup RcsMeshFunctions
+ *  \brief Copies a sphere-swept rectangle into the given mesh. The passed mesh
+ *         must have enough memory for vertices and faces as required, this is
+ *         not being checked.
+ *
+ *  \param[in] mesh             Mesh data or NULl, see above.
+ *  \param[in] extents          Dimensions, see RCSSHAPE_SSR
+ *  \param[in] segments         Tesselation
+ */
+void RcsMesh_copySSR(RcsMeshData* mesh, const double extents[3],
+                     unsigned int segments);
+
+/*! \ingroup RcsMeshFunctions
  *  \brief Creates a four-sided pyramid with side lengths y and y, and height z.
  *
  *  \param[in] x   Side length 1 of base rectangle
@@ -385,6 +439,24 @@ RcsMeshData* RcsMesh_createFrustum(double fovX, double fovY, double h);
  *  \param[out] com Center of mass
  */
 void RcsMesh_computeInertia(RcsMeshData* mesh, double I[3][3], double com[3]);
+
+/*! \ingroup RcsMeshFunctions
+ *  \brief Creates and returns a normal array. The dimensions are 3*nVertices,
+ *         and the normals are ordered to be the rows of a nVertices x 3
+ *         matrix. The function goes through all faces and computes the
+ *         face normal. For each vertex, each face's contribution will be
+ *         added, so that vertices with neighboring faces get a shared normal
+ *         direction. This is a bit debatable for meshes that are not smooth.
+ *         Some sources recommend distinguishing between small and large
+ *         angles between faces, or weighting the normals with the face area.
+ *         We do none of these things and keep it for later.
+ *
+ *  \param[in] mesh Mesh data. If it is invalid, the behavior is undefined.
+ *  \return Normal array with nVertices x 3 elements. The caller takes
+ *          ownership of the returned array and is responsible for its
+ *          deletion.
+ */
+double* RcsMesh_createNormalArray(const RcsMeshData* mesh);
 
 
 #ifdef __cplusplus

@@ -199,22 +199,22 @@ bool Rcs::TaskPositionForce3D::isValid(xmlNode* node, const RcsGraph* graph)
   // Check is the task has a sensor
   if (getXMLNodeProperty(node, "sensor")==true)
   {
-    char tmp[64] = "";
-    getXMLNodePropertyStringN(node, "sensor", tmp, 64);
+    char tmp[RCS_MAX_NAMELEN] = "";
+    getXMLNodePropertyStringN(node, "sensor", tmp, RCS_MAX_NAMELEN);
     RcsSensor* fts = RcsGraph_getSensorByName(graph, tmp);
 
     if (fts == NULL)
     {
       success = false;
-      char taskName[256] = "";
-      getXMLNodePropertyStringN(node, "name", taskName, 256);
+      char taskName[RCS_MAX_NAMELEN] = "";
+      getXMLNodePropertyStringN(node, "name", taskName, RCS_MAX_NAMELEN);
       RLOG(3, "Task \"%s\" has no sensor \"%s\"", taskName, tmp);
     }
     else if (fts->type != RCSSENSOR_LOAD_CELL)
     {
       success = false;
-      char taskName[256] = "";
-      getXMLNodePropertyStringN(node, "name", taskName, 256);
+      char taskName[RCS_MAX_NAMELEN] = "";
+      getXMLNodePropertyStringN(node, "name", taskName, RCS_MAX_NAMELEN);
       RLOG(3, "Task \"%s\": Sensor \"%s\" is not of type RCSSENSOR_LOAD_CELL",
            taskName, fts->name);
     }

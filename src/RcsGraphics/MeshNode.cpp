@@ -42,10 +42,11 @@
 #include <Rcs_mesh.h>
 
 #include <osg/Material>
+#include <osgUtil/SmoothingVisitor>
 
 #include <fstream>
 
-
+#if 0
 
 /*******************************************************************************
  *
@@ -81,12 +82,22 @@ Rcs::MeshNode::MeshNode(const char* meshFile) : NodeBase()
 /*******************************************************************************
  *
  ******************************************************************************/
+Rcs::MeshNode::MeshNode(const RcsMeshData* mesh) :
+  NodeBase()
+{
+  init();
+  setMesh2(mesh->vertices, mesh->nVertices, mesh->faces, mesh->nFaces);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 Rcs::MeshNode::MeshNode(const double* vertices, unsigned int numVertices,
                         const unsigned int* faces, unsigned int numFaces) :
   NodeBase()
 {
   init();
-  setMesh(vertices, numVertices, faces, numFaces);
+  setMesh2(vertices, numVertices, faces, numFaces);
 }
 
 /*******************************************************************************
@@ -141,3 +152,122 @@ void Rcs::MeshNode::clear()
 {
   geode->removeDrawables(0, geode->getNumDrawables());
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::MeshNode::setMesh2(const double* vertices, unsigned int numVertices,
+                             const unsigned int* faces, unsigned int numFaces)
+{
+  RcsMeshData mesh;
+  mesh.vertices = (double*) vertices;
+  mesh.faces = (unsigned int*) faces;
+  mesh.nVertices = numVertices;
+  mesh.nFaces = numFaces;
+
+  osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
+  geometry->setUseDisplayList(false);
+  geometry->setUseVertexBufferObjects(true);
+
+  createGeometryFromMesh2(geometry, &mesh);
+  this->geode->addDrawable(geometry.get());
+}
+
+#else
+
+namespace Rcs
+{
+
+MeshNode::MeshNode(const char* meshFile)
+{
+  RcsMeshData* mesh = RcsMesh_createFromFile(meshFile);
+  init(mesh);
+  RcsMesh_destroy(mesh);
+}
+
+MeshNode::MeshNode(const RcsMeshData* mesh)
+{
+  init(mesh);
+}
+
+MeshNode::~MeshNode()
+{
+}
+MeshNode::MeshNode(const double* vertices, unsigned int numVertices,
+                   const unsigned int* faces, unsigned int numFaces)
+{
+  RcsMeshData mesh;
+  mesh.nVertices = numVertices;
+  mesh.vertices = (double*)vertices;
+  mesh.nFaces = numFaces;
+  mesh.faces = (unsigned int*)faces;
+  init(&mesh);
+}
+
+void MeshNode::init(const RcsMeshData* mesh)
+{
+  this->meshGeo = Rcs::createGeometryFromMesh2(mesh);
+  meshGeo->setUseVertexBufferObjects(true);
+  meshGeo->setUseDisplayList(false);
+  meshGeo->setDataVariance(osg::Object::DYNAMIC);
+  osg::StateSet* ss = getOrCreateStateSet();
+  ss->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
+  ss->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
+  addDrawable(meshGeo.get());
+}
+
+void MeshNode::setMesh(const double* vertices, unsigned int numVertices,
+                       const unsigned int* faces, unsigned int numFaces)
+{
+  RcsMeshData mesh;
+  mesh.nVertices = numVertices;
+  mesh.vertices = (double*)vertices;
+  mesh.nFaces = numFaces;
+  mesh.faces = (unsigned int*)faces;
+  update(&mesh);
+}
+
+void MeshNode::update(const RcsMeshData* mesh)
+{
+  //osg::Vec3Array* v = static_cast<osg::Vec3Array*>(meshGeo->getVertexArray());
+  osg::ref_ptr<osg::Vec3Array> v = new osg::Vec3Array(mesh->nVertices);
+
+  bool numVerticesChanged = (v->size() == mesh->nVertices) ? false : true;
+
+  if (numVerticesChanged)
+  {
+    v->resize(mesh->nVertices);
+  }
+
+  for (unsigned int i = 0; i < mesh->nVertices; i++)
+  {
+    const double* vi = &mesh->vertices[i * 3];
+    (*v)[i].set(vi[0], vi[1], vi[2]);
+  }
+
+  meshGeo->setVertexArray(v.get());
+
+
+  //if (numVerticesChanged)
+  {
+    osg::ref_ptr<osg::DrawElementsUInt> indices = new osg::DrawElementsUInt(GL_TRIANGLES, 3 * mesh->nFaces);
+
+    for (unsigned int i = 0; i < 3 * mesh->nFaces; i++)
+    {
+      (*indices)[i] = mesh->faces[i];
+    }
+    meshGeo->setPrimitiveSet(0, indices.get());
+    osgUtil::SmoothingVisitor::smooth(*meshGeo, M_PI_4);
+  }
+
+  meshGeo->dirtyBound();
+}
+
+void MeshNode::setMaterial(const std::string& material, double alpha)
+{
+  setNodeMaterial(material, this, alpha);
+}
+
+}   // namespace Rcs
+
+#endif

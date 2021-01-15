@@ -245,15 +245,15 @@ bool Rcs::TaskPositionForce1D::isValid(xmlNode* node, const RcsGraph* graph)
     if (fts == NULL)
     {
       success = false;
-      char taskName[256] = "";
-      getXMLNodePropertyStringN(node, "name", taskName, 256);
+      char taskName[RCS_MAX_NAMELEN] = "";
+      getXMLNodePropertyStringN(node, "name", taskName, RCS_MAX_NAMELEN);
       RLOG(3, "Task \"%s\" has no sensor \"%s\"", taskName, tmp);
     }
     else if (fts->type != RCSSENSOR_LOAD_CELL)
     {
       success = false;
-      char taskName[256] = "";
-      getXMLNodePropertyStringN(node, "name", taskName, 256);
+      char taskName[RCS_MAX_NAMELEN] = "";
+      getXMLNodePropertyStringN(node, "name", taskName, RCS_MAX_NAMELEN);
       RLOG(3, "Task \"%s\": Sensor \"%s\" is not of type RCSSENSOR_LOAD_CELL",
            taskName, fts->name);
     }

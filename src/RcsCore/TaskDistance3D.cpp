@@ -93,8 +93,8 @@ Rcs::TaskDistance3D::TaskDistance3D(RcsGraph* graph_,
 {
   this->graph = graph_;
   setClassName("Distance3D");
-  setName("Dist3D " + std::string(effector ? effector->bdyName : "NULL") + "-"
-          + std::string(refBdy ? refBdy->bdyName : "NULL"));
+  setName("Dist3D " + std::string(effector ? effector->name : "NULL") + "-"
+          + std::string(refBdy ? refBdy->name : "NULL"));
   setDim(3);
   setEffector(effector);
   setRefBody(refBdy);
@@ -125,9 +125,12 @@ Rcs::TaskDistance3D* Rcs::TaskDistance3D::clone(RcsGraph* newGraph) const
 void Rcs::TaskDistance3D::computeX(double* I_r) const
 {
   double cpEf[3], cpRef[3];
-  RcsBody_distance(this->refBody, this->ef, cpRef, cpEf, NULL);
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+
+  RcsBody_distance(refBody, ef, cpRef, cpEf, NULL);
   Vec3d_sub(I_r, cpEf, cpRef);
-  Vec3d_rotateSelf(I_r, (double(*)[3])this->refBody->A_BI.rot);
+  Vec3d_rotateSelf(I_r, (double(*)[3])refBody->A_BI.rot);
 }
 
 /*******************************************************************************
@@ -136,7 +139,10 @@ void Rcs::TaskDistance3D::computeX(double* I_r) const
 void Rcs::TaskDistance3D::computeJ(MatNd* jacobian) const
 {
   double cpEf[3], cpRef[3], nRE[3];
-  RcsBody_distance(this->refBody, this->ef, cpRef, cpEf, nRE);
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+
+  RcsBody_distance(refBody, ef, cpRef, cpEf, nRE);
 
   // Delta Jacobian: Jp_ef-Jp_ef
   MatNd* J_ref = NULL;
@@ -168,7 +174,10 @@ void Rcs::TaskDistance3D::computeH(MatNd* H) const
 {
   // Closest points on effector and reference body in world coordinates
   double cpEf[3], cpRef[3], nRE[3];
-  RcsBody_distance(this->refBody, this->ef, cpRef, cpEf, nRE);
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+
+  RcsBody_distance(refBody, ef, cpRef, cpEf, nRE);
 
   // Closest points in body coordinates k_p1 and k_p2 for the
   // closest point Jacobian Jp1 and Jp2
@@ -176,9 +185,9 @@ void Rcs::TaskDistance3D::computeH(MatNd* H) const
   Vec3d_invTransformSelf(cpRef, &refBody->A_BI);
 
   const int n = graph->nJ, n3 = n * 3, nn = n * n;
-  const RcsBody* b1 = this->refBody;
-  const RcsBody* b2 = this->ef;
-  const RcsBody* b3 = this->refBody;
+  const RcsBody* b1 = refBody;
+  const RcsBody* b2 = ef;
+  const RcsBody* b3 = refBody;
   const double* k_p2 = cpEf;
   const double* k_p1 = cpRef;
 

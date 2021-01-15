@@ -38,6 +38,7 @@
 #define RCS_GRAPHICSUTILS_H
 
 #include <Rcs_HTr.h>
+#include <Rcs_mesh.h>
 
 #include <osg/PositionAttitudeTransform>
 #include <osg/LightSource>
@@ -407,6 +408,14 @@ std::vector<T*> findChildrenOfType(osg::Group* root)
   root->accept(nf);
   return nf.getNodes();
 }
+
+osg::Geometry* createGeometryFromMesh(const RcsMeshData* mesh);
+void createGeometryFromMesh(osg::Geometry* geo, const RcsMeshData* mesh);
+bool updateGeometryFromMesh(osg::Geometry* geometry, const RcsMeshData* mesh);
+osg::Geometry* createGeometryFromMesh2(const RcsMeshData* mesh);
+void createGeometryFromMesh2(osg::Geometry* geo, const RcsMeshData* mesh);
+bool updateGeometryFromMesh2(osg::Geometry* geometry, const RcsMeshData* mesh);
+
 }   // namespace Rcs
 
 

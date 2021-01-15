@@ -204,6 +204,8 @@ void Rcs::COSNode::init(float scale, float lengthX, float lengthY,
   stateset->setMode(GL_LIGHTING,
                     osg::StateAttribute::PROTECTED |
                     osg::StateAttribute::OFF);
+  stateset->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
+  stateset->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
 }
 
 

@@ -273,13 +273,13 @@ Rcs::TaskGenericEuler3D::TaskGenericEuler3D(RcsGraph* graph_,
   if (effector != NULL)
   {
     taskName += std::string(" ");
-    taskName += std::string(effector->bdyName);
+    taskName += std::string(effector->name);
   }
 
   if (refBdy != NULL)
   {
     taskName += std::string("-");
-    taskName += std::string(refBdy->bdyName);
+    taskName += std::string(refBdy->name);
   }
 
   setName(taskName);
@@ -446,7 +446,7 @@ Rcs::TaskGenericEuler3D* Rcs::TaskGenericEuler3D::clone(RcsGraph* newGraph) cons
 
 void Rcs::TaskGenericEuler3D::computeX(double* x_res) const
 {
-  computeEulerAngles(x_res, this->ef, this->refBody, this->eulerOrder);
+  computeEulerAngles(x_res, getEffector(), getRefBody(), this->eulerOrder);
 }
 
 /*******************************************************************************
@@ -461,8 +461,8 @@ void Rcs::TaskGenericEuler3D::computeX(double* x_res) const
  ******************************************************************************/
 void Rcs::TaskGenericEuler3D::computeJ(MatNd* jacobian) const
 {
-  RcsGraph_3dOmegaJacobian(this->graph, this->ef, this->refBody, this->refFrame,
-                           jacobian);
+  RcsGraph_3dOmegaJacobian(this->graph, getEffector(), getRefBody(),
+                           getRefFrame(), jacobian);
 }
 
 /*******************************************************************************
@@ -470,8 +470,8 @@ void Rcs::TaskGenericEuler3D::computeJ(MatNd* jacobian) const
  ******************************************************************************/
 void Rcs::TaskGenericEuler3D::computeH(MatNd* hessian) const
 {
-  RcsGraph_3dOmegaHessian(this->graph, this->ef, this->refBody,
-                          this->refFrame, hessian);
+  RcsGraph_3dOmegaHessian(this->graph, getEffector(), getRefBody(),
+                          getRefFrame(), hessian);
 }
 
 /*******************************************************************************

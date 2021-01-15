@@ -95,7 +95,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_SSL:
     {
-      RLOG(5, "Creating SSL for object \"%s\"", body->bdyName);
+      RLOG(5, "Creating SSL for object \"%s\"", body->name);
 
       // Local transformation from body frame into collision geometry frame:
       // We have to consider the offset to make the ball end to the
@@ -113,7 +113,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_CONE:
     {
-      RLOG(5, "Creating cone for object \"%s\"", body->bdyName);
+      RLOG(5, "Creating cone for object \"%s\"", body->name);
       bShape = new btConeShapeZ(btScalar(sh->extents[0]),
                                 btScalar(sh->extents[2]));
       bShape->setMargin(0.0);
@@ -131,7 +131,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_SPHERE:
     {
-      RLOG(5, "Creating sphere for object \"%s\"", body->bdyName);
+      RLOG(5, "Creating sphere for object \"%s\"", body->name);
       bShape = new btSphereShape(btScalar(sh->extents[0]));
       setMargin(bShape);
       break;
@@ -139,7 +139,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_CYLINDER:
     {
-      RLOG(5, "Creating CYLINDER for object \"%s\"", body->bdyName);
+      RLOG(5, "Creating CYLINDER for object \"%s\"", body->name);
       btVector3 halfExt(btScalar(sh->extents[0]), btScalar(sh->extents[0]),
                         btScalar(0.5*sh->extents[2]));
       bShape = new btCylinderShapeZ(halfExt);
@@ -149,7 +149,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_BOX:
     {
-      RLOG(5, "Creating BOX for object \"%s\"", body->bdyName);
+      RLOG(5, "Creating BOX for object \"%s\"", body->name);
       btVector3 halfExt(0.5*sh->extents[0], 0.5*sh->extents[1],
                         btScalar(0.5*sh->extents[2]));
       bShape = new btBoxShape(halfExt);
@@ -159,7 +159,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_SSR:
     {
-      RLOG(5, "Creating SSR for object \"%s\"", body->bdyName);
+      RLOG(5, "Creating SSR for object \"%s\"", body->name);
       btVector3 positions[4];
       btScalar radi[4];
       btScalar hx = sh->extents[0];
@@ -183,7 +183,7 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_TORUS:
     {
-      RLOG(5, "Creating TORUS for object \"%s\"", body->bdyName);
+      RLOG(5, "Creating TORUS for object \"%s\"", body->name);
       btCompoundShape* compound = new btCompoundShape();
       bShape = compound;
       const int nSlices = 16;
@@ -229,12 +229,12 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
 
     case RCSSHAPE_MESH:
     {
-      RLOG(5, "Creating MESH for object \"%s\"", body->bdyName);
-      RcsMeshData* mesh = (RcsMeshData*) sh->userData;
+      RLOG(5, "Creating MESH for object \"%s\"", body->name);
+      RcsMeshData* mesh = sh->mesh;
 
       if (mesh==NULL)
       {
-        RLOG(4, "[%s]: Failed to find or create mesh", body->bdyName);
+        RLOG(4, "[%s]: Failed to find or create mesh", body->name);
         break;
       }
 
@@ -242,17 +242,18 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
       if (mesh->nVertices>convexHullVertexLimit)
       {
         RLOG(5, "[%s]: Compressing mesh with %u vertices (limit: %u)",
-             body->bdyName, mesh->nVertices, convexHullVertexLimit);
+             body->name, mesh->nVertices, convexHullVertexLimit);
         btConvexHullShape* hull = meshToCompressedHull(mesh);
-        sh->userData = hullToMesh(hull);   // and link the compressed one
+        sh->mesh = hullToMesh(hull);   // and link the compressed one
 
-        if (sh->userData != NULL)
+        if (sh->mesh != NULL)
         {
           RcsMesh_destroy(mesh);             // Delete original mesh
         }
         else
         {
-          sh->userData = mesh;
+          RLOG(1, "Failed to compress mesh to convex hull");
+          sh->mesh = mesh;
         }
         bShape = hull;
       }
@@ -279,7 +280,8 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
  *
  ******************************************************************************/
 //! \todo Compound shape principal axis transform
-Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
+Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsGraph* graph,
+                                                   const RcsBody* bdy,
                                                    const PhysicsConfig* config)
 {
   if (bdy == NULL)
@@ -290,13 +292,13 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
 
   if (bdy->physicsSim == RCSBODY_PHYSICS_NONE)
   {
-    RLOG(5, "Body \"%s\": physicsSim is not set - skipping part", bdy->bdyName);
+    RLOG(5, "Body \"%s\": physicsSim is not set - skipping part", bdy->name);
     return NULL;
   }
 
   if (RcsBody_numShapes(bdy) == 0)
   {
-    RLOG(1, "Body \"%s\" has no shape attached - skipping", bdy->bdyName);
+    RLOG(1, "Body \"%s\" has no shape attached - skipping", bdy->name);
     return NULL;
   }
 
@@ -367,7 +369,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
     }
     else
     {
-      RLOG(4, "Skipping shape for body %s", bdy->bdyName);
+      RLOG(4, "Skipping shape for body %s", bdy->name);
     }
 
     sPtr++;
@@ -379,7 +381,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
   {
     if (!hasSoftShape)
     {
-      RLOG(1, "Body %s: Compound shape has 0 bodies", bdy->bdyName);
+      RLOG(1, "Body %s: Compound shape has 0 bodies", bdy->name);
     }
 
     delete cSh;
@@ -422,25 +424,25 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
   {
     // We set the collision flags to kinematic so that the body will
     btRigidBody::btRigidBodyConstructionInfo rbInfo(0.0, ms, cSh);
-    btBody = new BulletRigidBody(rbInfo, bdy);
+    btBody = new BulletRigidBody(rbInfo, graph, bdy);
     btBody->setCollisionFlags(btBody->getCollisionFlags() |
                               btCollisionObject::CF_KINEMATIC_OBJECT);
   }
   else
   {
     btRigidBody::btRigidBodyConstructionInfo rbc(bdy->m, ms, cSh, bdyInertia);
-    btBody = new BulletRigidBody(rbc, bdy);
+    btBody = new BulletRigidBody(rbc, graph, bdy);
 
     REXEC(5)
     {
-      RLOG(0, "%s inertia before: %f %f %f", bdy->bdyName,
+      RLOG(0, "%s inertia before: %f %f %f", bdy->name,
            bdyInertia[0], bdyInertia[1], bdyInertia[2]);
 
       btVector3 bulletInertia = btBody->getLocalInertia();
-      RLOG(0, "%s inertia from Bullet: %f %f %f", bdy->bdyName,
+      RLOG(0, "%s inertia from Bullet: %f %f %f", bdy->name,
            bulletInertia[0], bulletInertia[1], bulletInertia[2]);
       cSh->calculateLocalInertia(bdy->m, bulletInertia);
-      RLOG(0, "%s shape inertia from Bullet: %f %f %f", bdy->bdyName,
+      RLOG(0, "%s shape inertia from Bullet: %f %f %f", bdy->name,
            bulletInertia[0], bulletInertia[1], bulletInertia[2]);
     }
   }
@@ -489,19 +491,19 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
   if (bdy->rigid_body_joints)
   {
     btVector3 linFac, angFac;
-    const RcsJoint* rbj = bdy->jnt;
+    const RcsJoint* rbj = RCSJOINT_BY_ID(graph, bdy->jntId);
 
     linFac[0] = rbj->weightMetric;
-    rbj = rbj->next;
+    rbj = RCSJOINT_BY_ID(graph, rbj->nextId);
     linFac[1] = rbj->weightMetric;
-    rbj = rbj->next;
+    rbj = RCSJOINT_BY_ID(graph, rbj->nextId);
     linFac[2] = rbj->weightMetric;
-    rbj = rbj->next;
+    rbj = RCSJOINT_BY_ID(graph, rbj->nextId);
 
     angFac[0] = rbj->weightMetric;
-    rbj = rbj->next;
+    rbj = RCSJOINT_BY_ID(graph, rbj->nextId);
     angFac[1] = rbj->weightMetric;
-    rbj = rbj->next;
+    rbj = RCSJOINT_BY_ID(graph, rbj->nextId);
     angFac[2] = rbj->weightMetric;
 
     btBody->setLinearFactor(linFac);
@@ -519,7 +521,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsBody* bdy,
  ******************************************************************************/
 const RcsBody* Rcs::BulletRigidBody::getBodyPtr() const
 {
-  return this->body;
+  return &graph->bodies[this->bodyId];
 }
 
 /*******************************************************************************
@@ -527,7 +529,7 @@ const RcsBody* Rcs::BulletRigidBody::getBodyPtr() const
  ******************************************************************************/
 const char* Rcs::BulletRigidBody::getBodyName() const
 {
-  return this->body ? this->body->bdyName : "NULL";
+  return getBodyPtr()->name;
 }
 
 /*******************************************************************************
@@ -537,8 +539,11 @@ const char* Rcs::BulletRigidBody::getBodyName() const
  * before calling this function.
  ******************************************************************************/
 void Rcs::BulletRigidBody::calcHingeTrans(const RcsJoint* jnt,
-                                          btVector3& pivot, btVector3& axis)
+                                          btVector3& pivot,
+                                          btVector3& axis)
 {
+  const RcsBody* body = getBodyPtr();
+
   HTr A_PI;   // Rotation from world to COM: A_PI = A_PB*A_BI
   Mat3d_mul(A_PI.rot, this->A_PB_.rot, (double(*)[3])body->A_BI.rot);
 
@@ -571,6 +576,8 @@ void Rcs::BulletRigidBody::calcHingeTrans(const RcsJoint* jnt,
  ******************************************************************************/
 btTransform Rcs::BulletRigidBody::calcSliderTrans(const RcsJoint* jnt)
 {
+  const RcsBody* body = getBodyPtr();
+
   HTr A_PI;   // Rotation from world to COM: A_PI = A_PB*A_BI
   Mat3d_mul(A_PI.rot, this->A_PB_.rot, (double(*)[3])body->A_BI.rot);
 
@@ -605,8 +612,10 @@ btTransform Rcs::BulletRigidBody::calcSliderTrans(const RcsJoint* jnt)
  * Here we use the sensor's transform to align the fixed joint axes. This
  * allows to read the FT values directly.
  ******************************************************************************/
-btTypedConstraint* Rcs::BulletRigidBody::createFixedJoint(const RcsGraph* graph)
+btFixedConstraint* Rcs::BulletRigidBody::createFixedJoint(const RcsGraph* graph)
 {
+  const RcsBody* body = getBodyPtr();
+
   btTransform frameInW, frameInA, frameInB;
 
   // Compute the fixed joint frame in world coordinates
@@ -620,16 +629,16 @@ btTypedConstraint* Rcs::BulletRigidBody::createFixedJoint(const RcsGraph* graph)
   {
     RcsSensor* si = &graph->sensors[i];
 
-    if ((si->type==RCSSENSOR_LOAD_CELL) && (si->bodyId==this->body->id))
+    if ((si->type==RCSSENSOR_LOAD_CELL) && (si->bodyId==body->id))
     {
       RCHECK_MSG(loadCell==NULL, "Body \"%s\" has more than 1 load cells "
-                 "attached", body->bdyName);
+                 "attached", body->name);
 
       loadCell = si;
 
       // If a load cell exists, we consider it's offset
       // transformation for the fixed joint position and orientation.
-      HTr_transform(&A_JI, &body->A_BI, &si->offset);
+      HTr_transform(&A_JI, &body->A_BI, &si->A_SB);
       RLOGS(5, "Using load cell transform");
     }
 
@@ -656,7 +665,9 @@ btTypedConstraint* Rcs::BulletRigidBody::createFixedJoint(const RcsGraph* graph)
   jnt->setParam(BT_CONSTRAINT_ERP, 0.8, 4);
   jnt->setParam(BT_CONSTRAINT_ERP, 0.8, 5);
 
-  setUserPointer((void*) jnt);
+  RCHECK_MSG(this->fixedJnt==NULL, "Fixed joint of body \"%s\" has already "
+             "been created - this is the second time", getBodyName());
+  this->fixedJnt = jnt;
 
   return jnt;
 }
@@ -673,6 +684,8 @@ btTypedConstraint* Rcs::BulletRigidBody::createJoint(const RcsGraph* graph)
     return NULL;
   }
 
+  const RcsBody* body = getBodyPtr();
+
   if ((body->physicsSim != RCSBODY_PHYSICS_DYNAMIC) &&
       (body->physicsSim != RCSBODY_PHYSICS_FIXED))
   {
@@ -682,7 +695,7 @@ btTypedConstraint* Rcs::BulletRigidBody::createJoint(const RcsGraph* graph)
   }
 
   // Fixed constraint
-  if (RcsBody_numJoints(body)==0)
+  if (RcsBody_numJoints(graph, body)==0)
   {
     RLOG(5, "Creating fixed joint between \"%s\" and \"%s\"",
          getBodyName(), parent->getBodyName());
@@ -690,26 +703,29 @@ btTypedConstraint* Rcs::BulletRigidBody::createJoint(const RcsGraph* graph)
     return createFixedJoint(graph);
   }
 
-  if (RcsBody_numJoints(body) != 1)
+  if (RcsBody_numJoints(graph, body) != 1)
   {
     RLOG(1, "Skipping joint: found %d joints in body %s (should be 1)",
-         RcsBody_numJoints(body), getBodyName());
+         RcsBody_numJoints(graph, body), getBodyName());
     return NULL;
   }
 
   btTypedConstraint* joint = NULL;
 
   // Create hinge joint
-  if (RcsJoint_isRotation(body->jnt))
+  //const RcsJoint* bodyJnt = RCSJOINT_BY_ID(graph, body->jntId);
+  const RcsJoint* bodyJnt = RcsBody_getJoint(body, graph);
+
+  if (RcsJoint_isRotation(bodyJnt))
   {
     btVector3 pivotInA, pivotInB, axisInA, axisInB;
     bool useReferenceFrameA = false;
 
-    calcHingeTrans(body->jnt, pivotInA, axisInA);
-    parent->calcHingeTrans(body->jnt, pivotInB, axisInB);
+    calcHingeTrans(bodyJnt, pivotInA, axisInA);
+    parent->calcHingeTrans(bodyJnt, pivotInB, axisInB);
 
-    joint = new BulletHingeJoint(body->jnt,
-                                 graph->q->ele[body->jnt->jointIndex],
+    joint = new BulletHingeJoint(graph, bodyJnt->id,
+                                 graph->q->ele[bodyJnt->jointIndex],
                                  *this, *parent, pivotInA, pivotInB,
                                  axisInA, axisInB, useReferenceFrameA);
   }
@@ -717,11 +733,11 @@ btTypedConstraint* Rcs::BulletRigidBody::createJoint(const RcsGraph* graph)
   else
   {
     bool useReferenceFrameA = false;
-    btTransform frameInA = calcSliderTrans(body->jnt);
-    btTransform frameInB = parent->calcSliderTrans(body->jnt);
+    btTransform frameInA = calcSliderTrans(bodyJnt);
+    btTransform frameInB = parent->calcSliderTrans(bodyJnt);
 
-    joint = new BulletSliderJoint(body->jnt,
-                                  graph->q->ele[body->jnt->jointIndex],
+    joint = new BulletSliderJoint(graph, bodyJnt->id,
+                                  graph->q->ele[bodyJnt->jointIndex],
                                   *this, *parent,
                                   frameInA, frameInB,
                                   useReferenceFrameA,
@@ -744,7 +760,7 @@ void Rcs::BulletRigidBody::getBodyTransform(HTr* A_BI) const
 
   // Origin: I_r_IB = I_r_IP - A_IB*B_r_BP
   //                = A_PI.org - transpose(A_BI)*body->Inertia->org
-  const double* B_r_BP = body->Inertia.org;
+  const double* B_r_BP = getBodyPtr()->Inertia.org;
   Vec3d_transRotate(A_BI->org, A_BI->rot, B_r_BP);
   Vec3d_constMulSelf(A_BI->org, -1.0);
   Vec3d_addSelf(A_BI->org, A_PI.org);
@@ -849,7 +865,7 @@ void Rcs::BulletRigidBody::reset(const HTr* A_BI_)
   Vec3d_setZero(this->x_dot);
   Vec3d_setZero(this->omega);
 
-  setBodyTransform(A_BI_ ? A_BI_ : &body->A_BI);
+  setBodyTransform(A_BI_ ? A_BI_ : &getBodyPtr()->A_BI);
   clearForces();
   setLinearVelocity(btVector3(0.0, 0.0, 0.0));
   setAngularVelocity(btVector3(0.0, 0.0, 0.0));
@@ -870,8 +886,10 @@ void Rcs::BulletRigidBody::setParentBody(BulletRigidBody* p)
  *
  ******************************************************************************/
 Rcs::BulletRigidBody::BulletRigidBody(const btRigidBody::btRigidBodyConstructionInfo& rbInfo,
+                                      const RcsGraph* graph_,
                                       const RcsBody* body_) :
-  btRigidBody(rbInfo), body(body_), parent(NULL), jf()
+  btRigidBody(rbInfo), graph(graph_), bodyId(body_->id), parent(NULL), jf(),
+  linearJointForceLimit(true), fixedJnt(NULL)
 {
   HTr_setIdentity(&this->A_PB_);
   HTr_setIdentity(&this->A_BI_);

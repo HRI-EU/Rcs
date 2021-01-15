@@ -44,9 +44,12 @@ extern "C" {
 
 #include "Rcs_graph.h"
 
-#define RCS_GRAVITY          (9.81)
-#define RCS_MAX_NAMELEN      (64)
-#define RCS_MAX_FILENAMELEN  (256)
+
+#define RCS_GRAVITY              (9.81)
+#define RCS_MAX_NAMELEN          (64)
+#define RCS_MAX_FILENAMELEN      (256)
+#define RCS_MAX_COUPLING_COEFF   (8)
+#define RCS_NUM_GENERIC_BODIES   (10)
 
 typedef enum
 {
@@ -68,7 +71,6 @@ typedef enum
 
 struct _RcsJoint
 {
-  char* name;          ///< Joint name
   double q0;           ///< Joint center position
   double q_init;       ///< Initial joint center position
   double q_min;        ///< Lower joint limit
@@ -81,19 +83,22 @@ struct _RcsJoint
   int dirIdx;          ///< 0 for x-, 1 for y- and 2 for z-direction
   int jointIndex;      ///< Index in the q vector, set during initial parsing
   int jacobiIndex;     ///< Corresponding column in Jacobian
-  HTr* A_JP;           ///< Relative transformation
+  HTr A_JP;            ///< Relative transformation
   HTr A_JI;            ///< Absolute transformation
   double maxTorque;    ///< Max. torque for physics (default is 1.0)
   double speedLimit;   ///< Speed limit (default is DBL_MAX)
   double accLimit;     ///< Acceleration limit (default is DBL_MAX)
   double decLimit;     ///< Deceleration limit (default is DBL_MAX)
   int ctrlType;        ///< See RCSJOINT_CTRL_TYPE
-  char* coupledJointName;
-  MatNd* couplingFactors;
+  char name[RCS_MAX_NAMELEN];///< Joint name
+  char coupledJntName[RCS_MAX_NAMELEN];
+  double couplingPoly[RCS_MAX_COUPLING_COEFF];
+  unsigned int nCouplingCoeff;
 
-  RcsJoint* prev;      ///< Previous joint
-  RcsJoint* next;      ///< Next joint
-  RcsJoint* coupledTo; ///< Joint to which this one is coupled
+  int id;          ///< This joint's id
+  int prevId;      ///< Previous joint
+  int nextId;      ///< Next joint
+  int coupledToId; ///< Joint to which this one is coupled
 };
 
 
@@ -109,12 +114,10 @@ typedef enum
   RCSSHAPE_REFFRAME  = 6,   ///< Reference coordinate system
   RCSSHAPE_SPHERE    = 7,   ///< Sphere
   RCSSHAPE_CONE      = 8,   ///< Cone
-  RCSSHAPE_GPISF     = 9,   ///< Implicite surface
-  RCSSHAPE_TORUS     = 10,  ///< Torus
-  RCSSHAPE_OCTREE    = 11,  ///< Octree
-  RCSSHAPE_POINT     = 12,  ///< Point
-  RCSSHAPE_MARKER    = 13,  ///< Marker
-  RCSSHAPE_SHAPE_MAX = 14   ///< max. number of shape types
+  RCSSHAPE_TORUS     = 9,   ///< Torus
+  RCSSHAPE_OCTREE    = 10,  ///< Octree
+  RCSSHAPE_POINT     = 11,  ///< Point
+  RCSSHAPE_SHAPE_MAX = 12   ///< max. number of shape types
 
 } RCSSHAPE_TYPE;
 
@@ -145,7 +148,71 @@ struct _RcsShape
   char color[RCS_MAX_NAMELEN];           ///< Color of shape primitives
   char material[RCS_MAX_NAMELEN];        ///< Physics material of the shape
 
-  void* userData;       ///< For user extensions
+  RcsMeshData* mesh;
+};
+
+
+
+typedef enum
+{
+  RCSBODY_PHYSICS_NONE       = 0,   ///< No physics simulation
+  RCSBODY_PHYSICS_KINEMATIC  = 1,   ///< Body attached to transform
+  RCSBODY_PHYSICS_DYNAMIC    = 2,   ///< Dynamics simulation
+  RCSBODY_PHYSICS_FIXED      = 3    ///< Body attached to previous
+
+} RCSBODY_PHYSICS_SIMULATION_TYPE;
+
+
+struct _RcsBody
+{
+  int id;                           ///< Body id
+  int parentId;                     ///< Parent body
+  int firstChildId;                 ///< First child body
+  int lastChildId;                  ///< Last child body
+  int nextId;                       ///< Next sibling body
+  int prevId;                       ///< Previous sibling body
+  int jntId;                        ///< Joint to which body is attached
+  HTr A_BP;                         ///< Relative transformation
+  HTr A_BI;                         ///< Absolute transformation
+  double m;                         ///< Body mass
+  bool rigid_body_joints;           ///< Has 6 rigid body dof
+  int physicsSim;                   ///< see RCSBODY_PHYSICS_SIMULATION_TYPE
+  double x_dot[3];                  ///< Bodie's lin. velocity in world coords
+  double omega[3];                  ///< Bodie's ang. velocity in world coords
+  double confidence;                ///< Obsolete
+  char name[RCS_MAX_NAMELEN];       ///< Fully qualified name including suffix
+  char bdyXmlName[RCS_MAX_NAMELEN]; ///< Name of the body from xml file
+  char bdySuffix[RCS_MAX_NAMELEN];  ///< Group suffix of the body
+  HTr Inertia;                      ///< Inertia tensor and local COG vector
+  RcsShape** shape;                 ///< Geometric shapes of the body
+};
+
+
+typedef enum
+{
+  RCSSENSOR_CUSTOM = 0,             ///< Use this type for self made sensors
+  RCSSENSOR_LOAD_CELL,              ///< Measuring forces and torques
+  RCSSENSOR_JOINT_TORQUE,           ///< Joint torque or force
+  RCSSENSOR_CONTACT_FORCE,          ///< Artificial skin sensor
+  RCSSENSOR_PPS                     ///< Artificial skin sensor array
+} RCSSENSOR_TYPE;
+
+struct _RcsTexel
+{
+  double position[3];               ///< Texel position in sensor frame
+  double normal[3];                 ///< Texel unit normal in sensor frame
+  double extents[3];                ///< Texel side lengths xyz (z is thickness)
+};
+
+struct _RcsSensor
+{
+  RCSSENSOR_TYPE type;              ///< Sensor type, see enum RCSSENSOR_TYPE
+  int bodyId;                       ///< Body if the sensor is attached to
+  char name[RCS_MAX_NAMELEN];       ///< Name of the sensor
+  HTr A_SB;                         ///< Transformation from body to sensor mount
+  unsigned int nTexels;             ///< Number of texels in texel array
+  RcsTexel* texel;                  ///< Array of texels for PPS sensors
+  MatNd* rawData;                   ///< Raw sensor data array
 };
 
 
@@ -177,92 +244,46 @@ struct _RcsCollisionMdl
 
 
 
-typedef enum
-{
-  RCSBODY_PHYSICS_NONE       = 0,   ///< No physics simulation
-  RCSBODY_PHYSICS_KINEMATIC  = 1,   ///< Body attached to transform
-  RCSBODY_PHYSICS_DYNAMIC    = 2,   ///< Dynamics simulation
-  RCSBODY_PHYSICS_FIXED      = 3    ///< Body attached to previous
-
-} RCSBODY_PHYSICS_SIMULATION_TYPE;
-
-
-struct _RcsBody
-{
-  double m;                         ///< Body mass
-  bool rigid_body_joints;           ///< Has 6 rigid body dof
-  int physicsSim;                   ///< see RCSBODY_PHYSICS_SIMULATION_TYPE
-  double x_dot[3];                  ///< Bodie's lin. velocity in world coords
-  double omega[3];                  ///< Bodie's ang. velocity in world coords
-  double confidence;                ///< Obsolete
-  char bdyName[RCS_MAX_NAMELEN];    ///< Fully qualified name including suffix
-  char bdyXmlName[RCS_MAX_NAMELEN]; ///< Name of the body from xml file
-  char bdySuffix[RCS_MAX_NAMELEN];  ///< Group suffix of the body
-
-  HTr A_BP;                         ///< Relative transformation
-  HTr A_BI;                         ///< Absolute transformation
-  HTr Inertia;                      ///< Inertia tensor and local COG vector
-
-  int id;                 ///< Body id
-  int parentId;           ///< Parent body
-  int firstChildId;       ///< First child body
-  int lastChildId;        ///< Last child body
-  int nextId;             ///< Next sibling body
-  int prevId;             ///< Previous sibling body
-
-  RcsShape** shape;       ///< Shapes of the body for collision detection
-  RcsJoint* jnt;          ///< Joint to which body is attached
-
-  void* extraInfo;        ///< For generic bodies
-};
-
-
-typedef enum
-{
-  RCSSENSOR_CUSTOM = 0,      ///< Use this type for self made sensors
-  RCSSENSOR_LOAD_CELL,       ///< Measuring forces and torques
-  RCSSENSOR_JOINT_TORQUE,    ///< Retrieve the current torque acting in a joint
-  RCSSENSOR_CONTACT_FORCE,   ///< Artificial skin sensor
-  RCSSENSOR_PPS              ///< Artificial skin sensor array
-} RCSSENSOR_TYPE;
-
-struct _RcsTexel
-{
-  double position[3];    ///< Texel position in sensor frame
-  double normal[3];      ///< Texel unit normal in sensor frame
-  double extents[3];     ///< Texel side lengths xyz
-};
-
-struct _RcsSensor
-{
-  RCSSENSOR_TYPE type;         ///< Sensor type, see enum RCSSENSOR_TYPE
-  int bodyId;                  ///< Id of the body the sensor is attached to
-  char name[RCS_MAX_NAMELEN];  ///< Name of the sensor
-  HTr offset;                  ///< Transformation of the sensor mount point
-  unsigned int nTexels;        ///< Number of texels in texel array
-  RcsTexel* texel;             ///< Array of texels for PPS sensors
-  MatNd* rawData;              ///< Raw sensor data array
-  char* extraInfo;             ///< Pressure array data
-};
-
-
-
 struct _RcsGraph
 {
-  RcsBody* root;          ///< Pointer to root body
+  int rootId;             ///< Id of root body
+  RcsJoint* joints;       ///< Array of dof joints
+  unsigned int dof;       ///< Number of degrees of freedom
   RcsBody* bodies;        ///< Array of bodies
   unsigned int nBodies;   ///< Number of bodies in the graph
   RcsSensor* sensors;     ///< Array of sensors
   unsigned int nSensors;  ///< Number of sensors in the graph
-  RcsBody gBody[10];      ///< Generic bodies
-  unsigned int dof;       ///< Number of degrees of freedom
   unsigned int nJ;        ///< Number of unconstrained degrees of freedom
   MatNd* q;               ///< Array of joint values
   MatNd* q_dot;           ///< Array of joint velocity values
-  char* xmlFile;          ///< Configuration file name (full path)
-
-  void* userData;         ///< To append extensions
+  char cfgFile[RCS_MAX_FILENAMELEN]; ///< Configuration file name (full path)
+  int gBody[RCS_NUM_GENERIC_BODIES]; ///< Generic bodies
 };
+
+
+
+#define RCSJOINT_BY_ID(graph, id) ((id)==-1 ? NULL : &(graph)->joints[id])
+#define RCSBODY_BY_ID(graph, id)  ((id)==-1 ? NULL : &(graph)->bodies[id])
+
+#undef RCSGRAPH_FOREACH_SENSOR
+#define RCSGRAPH_FOREACH_SENSOR(graph)                                          \
+  for (RcsSensor *S0 = (graph)->nSensors>0 ? &(graph)->sensors[0] : NULL,       \
+       *S1 = (graph)->nSensors>0 ? &(graph)->sensors[graph->nSensors-1] : NULL, \
+       *SENSOR = S0; SENSOR && SENSOR<=S1; SENSOR++)
+
+#undef RCSGRAPH_FOREACH_BODY
+#define RCSGRAPH_FOREACH_BODY(graph)                                            \
+  for (RcsBody *B0 = (graph)->nBodies>0 ? &(graph)->bodies[0] : NULL,           \
+       *B1 = (graph)->nBodies>0 ? &(graph)->bodies[(graph)->nBodies-1] : NULL,  \
+       *BODY = B0; BODY && BODY<=B1; BODY++)
+
+#undef RCSJOINT_TRAVERSE_FORWARD
+#define RCSJOINT_TRAVERSE_FORWARD(graph, joint)                                 \
+  for (RcsJoint* JNT = (joint); JNT; JNT = RCSJOINT_BY_ID(graph, JNT->nextId))
+
+#undef RCSBODY_FOREACH_JOINT
+#define RCSBODY_FOREACH_JOINT(graph, body)                                      \
+  RCSJOINT_TRAVERSE_FORWARD(graph, RCSJOINT_BY_ID((graph), (body)->jntId))
 
 
 #ifdef __cplusplus

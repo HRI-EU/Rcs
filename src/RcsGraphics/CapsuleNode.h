@@ -39,45 +39,66 @@
 
 #include "NodeBase.h"
 
-#include <osg/Shape>
+#include <Rcs_mesh.h>
+
+#include <osg/Geode>
+#include <osg/Geometry>
 
 namespace Rcs
 {
 /*!
  * \ingroup RcsGraphics
  */
+
+class CapsuleGeometry : public osg::Group
+{
+public:
+  CapsuleGeometry(double radius, double length, bool resizeable=false,
+                  unsigned int nSegments=16);
+  virtual ~CapsuleGeometry();
+  void update(double radius, double length);
+  double getRadius() const;
+  double getLength() const;
+
+private:
+
+  void initMesh(unsigned int nSegments);
+  void initPrimitive();
+
+  osg::ref_ptr<osg::PositionAttitudeTransform> top, bottom, hull;
+  double radius;
+  double length;
+};
+
+
+
 class CapsuleNode: public NodeBase
 {
 
 public:
 
-  CapsuleNode();
-
   CapsuleNode(const double ballPoint[3],
               double A_KI[3][3],
-              const double radius,
-              const double length,
+              double radius,
+              double length,
               bool resizeable=false);
 
   /*! \brief Only works if the class has been instantiated with the resizeable
    *         flag.
    */
-  void setHeight(double height);
+  void setLength(double length);
 
   /*! \brief Only works if the class has been instantiated with the resizeable
    *         flag.
    */
   void setRadius(double radius);
 
-  void setCenter(double x, double y, double z);
-
-
 protected:
 
-  osg::ref_ptr<osg::Capsule> capsule;
+  osg::ref_ptr<Rcs::CapsuleGeometry> capsule;
 };
+
 
 }   // namespace Rcs
 
 #endif // RCS_CAPSULENODE_H
-

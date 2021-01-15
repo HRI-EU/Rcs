@@ -50,7 +50,7 @@
 
 #include <float.h>
 
-
+//#define TRANSFORM_ROOT_NEXT
 
 /*******************************************************************************
  *
@@ -77,9 +77,9 @@ static bool RcsGraph_parseModelState(xmlNodePtr node, RcsGraph* self,
         {
           if (isXMLNodeNameNoCase(jntStateNode, "joint_state"))
           {
-            char jntName[256] = "";
-            getXMLNodePropertyStringN(jntStateNode, "joint", jntName, 256);
-            RcsJoint* jnt = RcsGraph_getJointByName(self, jntName);
+            char name[256] = "";
+            getXMLNodePropertyStringN(jntStateNode, "joint", name, 256);
+            RcsJoint* jnt = RcsGraph_getJointByName(self, name);
             if (jnt != NULL)
             {
               double q;
@@ -88,7 +88,7 @@ static bool RcsGraph_parseModelState(xmlNodePtr node, RcsGraph* self,
 
               if (hasTag==true)
               {
-                if (jnt->coupledJointName != NULL)
+                if (jnt->coupledToId != -1)
                 {
                   RLOG(4, "You are setting the state of a kinematically coupled"
                        " joint (\"%s\") - this has no effect", jnt->name);
@@ -106,9 +106,9 @@ static bool RcsGraph_parseModelState(xmlNodePtr node, RcsGraph* self,
                 // ones.
                 RCSGRAPH_TRAVERSE_JOINTS(self)
                 {
-                  if (JNT->coupledTo == jnt)
+                  if (JNT->coupledToId == jnt->id)
                   {
-                    q = RcsJoint_computeSlaveJointAngle(JNT, q);
+                    q = RcsJoint_computeSlaveJointAngle(self, JNT, q);
                     JNT->q0 = q;
                     self->q->ele[JNT->jointIndex] = q;
                   }
@@ -126,7 +126,7 @@ static bool RcsGraph_parseModelState(xmlNodePtr node, RcsGraph* self,
             }  // if (jnt != NULL)
             else
             {
-              RLOG(4, "Joint \"%s\" not found", jntName);
+              RLOG(4, "Joint \"%s\" not found", name);
             }
           }
 
@@ -142,9 +142,129 @@ static bool RcsGraph_parseModelState(xmlNodePtr node, RcsGraph* self,
   return success;
 }
 
+
 /*******************************************************************************
-* Shape for distance computation.
-******************************************************************************/
+ * Allocates memory and initializes a RcsSensor data structure from
+ *        an XML node. Here's the parsed tags:
+ *        - name
+ *        - type: LOADCELL, JOINTTORQUE, CONTACTFORCE, PPS
+ *        - transform
+ ******************************************************************************/
+static RcsSensor* RcsSensor_initFromXML(xmlNode* node, RcsBody* parentBody,
+                                        RcsGraph* graph)
+{
+  // Return if node is not a sensor node. This can deal with a NULL node
+  if (!isXMLNodeName(node, "Sensor"))
+  {
+    return NULL;
+  }
+
+  // read sensor name
+  char name[RCS_MAX_NAMELEN] = "unnamed sensor";
+  getXMLNodePropertyStringN(node, "name", name, RCS_MAX_NAMELEN);
+  RLOG(5, "found new sensor node \"%s\" attached to body \"%s\"",
+       name, parentBody ? parentBody->name : "NULL");
+
+  // read sensor type
+  char buffer[RCS_MAX_NAMELEN];
+  int xml_type = -1;
+  strcpy(buffer, "unknown type");
+  getXMLNodePropertyStringN(node, "type", buffer, RCS_MAX_NAMELEN);
+
+  if (STRCASEEQ(buffer, "LOADCELL"))
+  {
+    xml_type = RCSSENSOR_LOAD_CELL;
+  }
+  else if (STRCASEEQ(buffer, "JOINTTORQUE"))
+  {
+    xml_type = RCSSENSOR_JOINT_TORQUE;
+  }
+  else if (STRCASEEQ(buffer, "CONTACTFORCE"))
+  {
+    xml_type = RCSSENSOR_CONTACT_FORCE;
+  }
+  else if (STRCASEEQ(buffer, "PPS"))
+  {
+    xml_type = RCSSENSOR_PPS;
+  }
+  else
+  {
+    RFATAL("Unknown sensor type \"%s\"", buffer);
+  }
+
+  // read relative offset transformation
+  HTr A_SB;
+  HTr_setIdentity(&A_SB);
+  if (getXMLNodeProperty(node, "transform"))
+  {
+    getXMLNodePropertyHTr(node, "transform", &A_SB);
+  }
+
+  // Create and return rcs sensor object
+  RcsSensor* sensor = RcsGraph_insertSensor(graph);
+  RcsSensor_init(sensor, xml_type, name, parentBody, &A_SB);
+
+
+
+  // Create texels
+  if (sensor->type==RCSSENSOR_PPS)
+  {
+    int xy[2];
+    xy[0] = sensor->rawData->m;
+    xy[1] = sensor->rawData->n;
+
+    getXMLNodePropertyIntN(node, "dimensions", xy, 2);
+    sensor->rawData = MatNd_realloc(sensor->rawData, xy[0], xy[1]);
+
+    double extents[3];
+    Vec3d_setZero(extents);
+    getXMLNodePropertyVec3(node, "extents", extents);
+
+    node = node->children;
+
+    // Allocate memory for shape node lists
+    sensor->nTexels = getNumXMLNodes(node, "Texel");
+    sensor->texel = RNALLOC(sensor->nTexels+1, RcsTexel);
+
+    int texelCount = 0;
+
+    while (node != NULL)
+    {
+      if (isXMLNodeName(node, "Texel"))
+      {
+        RcsTexel* texel = &sensor->texel[texelCount];
+        getXMLNodePropertyVec3(node, "position", texel->position);
+        getXMLNodePropertyVec3(node, "normal", texel->normal);
+        Vec3d_copy(texel->extents, extents);
+        getXMLNodePropertyVec3(node, "extents", texel->extents);
+        texelCount++;
+        REXEC(4)
+        {
+          if (Vec3d_sqrLength(texel->extents)==0.0)
+          {
+            RMSG("Found zero size texel in sensor \"%s\"", sensor->name);
+          }
+        }
+      }
+
+      node = node->next;
+    }
+
+    if (texelCount>0)
+    {
+      RCHECK_MSG(xy[0]*xy[1]==texelCount, "[%s]: %d * %d != %d", sensor->name,
+                 xy[0], xy[1], texelCount);
+    }
+  }   // End create texels
+
+
+
+  return sensor;
+}
+
+/*******************************************************************************
+ * Shape for distance computation.
+ ******************************************************************************/
 static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
                                    const char* bodyColor)
 {
@@ -194,10 +314,6 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   {
     shape->type = RCSSHAPE_CONE;
   }
-  else if (STREQ(str, "GPISF"))
-  {
-    shape->type = RCSSHAPE_GPISF;
-  }
   else if (STREQ(str, "TORUS"))
   {
     shape->type = RCSSHAPE_TORUS;
@@ -209,10 +325,6 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   else if (STREQ(str, "POINT"))
   {
     shape->type = RCSSHAPE_POINT;
-  }
-  else if (STREQ(str, "MARKER"))
-  {
-    shape->type = RCSSHAPE_MARKER;
   }
   else
   {
@@ -299,14 +411,6 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
     physics = false;
   }
 
-  // Marker are usually invisible and don not interact with anything
-  if (shape->type == RCSSHAPE_MARKER)
-  {
-    graphics = false;
-    distance = false;
-    physics = false;
-  }
-
   getXMLNodePropertyBoolString(node, "distance", &distance);
   getXMLNodePropertyBoolString(node, "physics", &physics);
   getXMLNodePropertyBoolString(node, "graphics", &graphics);
@@ -334,13 +438,6 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
     shape->computeType |= RCSSHAPE_COMPUTE_DEPTHBUFFER;
   }
 
-  // Marker id
-  if (shape->type == RCSSHAPE_MARKER)
-  {
-    shape->userData = RALLOC(int);
-    getXMLNodePropertyInt(node, "id", (int*)shape->userData);
-  }
-
   shape->resizeable = false;
   getXMLNodePropertyBoolString(node, "resizeable", &shape->resizeable);
 
@@ -349,7 +446,8 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 
   if (strLength > 0)
   {
-    char fileName[RCS_MAX_FILENAMELEN] = "-", fullName[512] = "-";
+    char fileName[RCS_MAX_FILENAMELEN] = "";
+    char fullName[RCS_MAX_FILENAMELEN] = "";
     RCHECK((shape->type == RCSSHAPE_MESH) || (shape->type == RCSSHAPE_OCTREE));
     getXMLNodePropertyStringN(node, "meshFile", fileName, RCS_MAX_FILENAMELEN);
     Rcs_getAbsoluteFileName(fileName, fullName);
@@ -369,44 +467,23 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
         {
           RcsMesh_scale(mesh, shape->scale);
         }
-        shape->userData = (void*)mesh;
+        shape->mesh = mesh;
       }
     }
     else
     {
       RLOG(4, "[%s]: Mesh file \"%s\" (\"%s\") not found!",
-           body->bdyName, fileName, fullName);
+           body->name, fileName, fullName);
     }
 
     if (shape->type == RCSSHAPE_OCTREE)
     {
-      shape->userData = RcsShape_addOctree(shape, shape->meshFile);
-      if (shape->userData == NULL)
-      {
-        RLOG(1, "Failed to load Octree file \"%s\"", shape->meshFile);
-      }
-    }
-
-  }
-
-  // GP ISF file
-  strLength = getXMLNodeBytes(node, "gpFile");
-
-  if (strLength > 0)
-  {
-    RCHECK_MSG(strlen(shape->meshFile) == 0, "GPISF shape has meshfile tag !!!");
-    char fileName[RCS_MAX_FILENAMELEN] = "-", fullName[512] = "-";
-    RCHECK(shape->type == RCSSHAPE_GPISF);
-    getXMLNodePropertyStringN(node, "gpFile", fileName, RCS_MAX_FILENAMELEN);
-    Rcs_getAbsoluteFileName(fileName, fullName);
-
-    if (File_exists(fullName) == true)
-    {
-      snprintf(shape->meshFile, RCS_MAX_FILENAMELEN, "%s", fullName);
-    }
-    else
-    {
-      RLOG(4, "GP file \"%s\" not found!", fileName);
+      RFATAL("Currently disabled");
+      /* shape->userData = RcsShape_addOctree(shape, shape->meshFile); */
+      /* if (shape->userData == NULL) */
+      /* { */
+      /*   RLOG(1, "Failed to load Octree file \"%s\"", shape->meshFile); */
+      /* } */
     }
 
   }
@@ -424,7 +501,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
     }
     else
     {
-      RLOG(4, "Texture file \"%s\" in body \"%s\" not found!", str, body->bdyName);
+      RLOG(4, "Texture file \"%s\" in body \"%s\" not found!", str, body->name);
     }
 
   }
@@ -446,12 +523,12 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
         (getXMLNodeProperty(node, "from2Points") == false))
     {
       bool success = getXMLNodeProperty(node, "length");
-      RCHECK_MSG(success, "%s has no \"length\" tag", body->bdyName);
+      RCHECK_MSG(success, "%s has no \"length\" tag", body->name);
       success = getXMLNodeProperty(node, "radius");
-      RCHECK_MSG(success, "%s has no \"radius\" tag", body->bdyName);
+      RCHECK_MSG(success, "%s has no \"radius\" tag", body->name);
       success = !getXMLNodeProperty(node, "extents");
       RCHECK_MSG(success, "%s has \"extents\" tag but expects \"length\"",
-                 body->bdyName);
+                 body->name);
     }
 
     // Lets be pedantic with the configuration file: Disallow "extents"
@@ -459,11 +536,11 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
     if (shape->type == RCSSHAPE_SPHERE)
     {
       bool success = !getXMLNodeProperty(node, "length");
-      RCHECK_MSG(success, "Found length specifier in sphere: %s", body->bdyName);
+      RCHECK_MSG(success, "Found length specifier in sphere: %s", body->name);
       success = getXMLNodeProperty(node, "radius");
-      RCHECK_MSG(success, "%s", body->bdyName);
+      RCHECK_MSG(success, "%s", body->name);
       success = !getXMLNodeProperty(node, "extents");
-      RCHECK_MSG(success, "Found extents specifier in sphere: %s", body->bdyName);
+      RCHECK_MSG(success, "Found extents specifier in sphere: %s", body->name);
     }
 
     // Lets be pedantic with the configuration file: Disallow "radius"
@@ -471,9 +548,9 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
     if (shape->type == RCSSHAPE_SSR)
     {
       bool success = !getXMLNodeProperty(node, "length");
-      RCHECK_MSG(success, "SSR of body \"%s\" has length tag!", body->bdyName);
+      RCHECK_MSG(success, "SSR of body \"%s\" has length tag!", body->name);
       success = !getXMLNodeProperty(node, "radius");
-      RCHECK_MSG(success, "SSR of body \"%s\" has radius tag!", body->bdyName);
+      RCHECK_MSG(success, "SSR of body \"%s\" has radius tag!", body->name);
     }
 
     // Lets be pedantic with the configuration file: Disallow "extents"
@@ -481,12 +558,12 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
     if (shape->type == RCSSHAPE_TORUS)
     {
       bool success = getXMLNodeProperty(node, "length");
-      RCHECK_MSG(success, "TORUS of body \"%s\" has not length!", body->bdyName);
+      RCHECK_MSG(success, "TORUS of body \"%s\" has not length!", body->name);
       success = getXMLNodeProperty(node, "radius");
       RCHECK_MSG(success, "TORUS of body \"%s\" has no radius tag!",
-                 body->bdyName);
+                 body->name);
       success = !getXMLNodeProperty(node, "extents");
-      RCHECK_MSG(success, "TORUS of body \"%s\" has extents tag", body->bdyName);
+      RCHECK_MSG(success, "TORUS of body \"%s\" has extents tag", body->name);
     }
 
   }   // REXEC(1)
@@ -505,96 +582,68 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
 {
   char msg[256];
   double ka[3];
-  RcsJoint* jnt = NULL;
   bool verbose = false;
   unsigned int strLength = 0;
 
   RCHECK(HTr_isValid(A_group));
 
-  jnt = RNALLOC(1, RcsJoint);
-  RCHECK_PEDANTIC(jnt);
-
-  RcsGraph_insertJoint(self, b, jnt);
+  RcsJoint* jnt = RcsGraph_insertGraphJoint(self, b->id);
 
   if (verbose == true)
   {
-    RMSG("%s: dof = %d", b->bdyName, jnt->jointIndex);
+    RMSG("Body %s: inserting joint with id = %d", b->name, jnt->id);
   }
-
-  HTr_setIdentity(&jnt->A_JI);
 
   //  Joint name
   strLength = getXMLNodeBytes(node, "name");
 
   if (strLength > 0)
   {
-    unsigned int nBytes = strLength + strlen(suffix) + 1;
-    jnt->name = RNALLOC(nBytes, char);
-    getXMLNodePropertyStringN(node, "name", jnt->name, nBytes);
-    strcat(jnt->name, suffix);
+    char tmp[RCS_MAX_NAMELEN]="";
+    getXMLNodePropertyStringN(node, "name", tmp, RCS_MAX_NAMELEN);
+    snprintf(jnt->name, RCS_MAX_NAMELEN, "%s%s", tmp, suffix);
   }
   else
   {
-    jnt->name = RNALLOC(strlen("unnamed joint") + strlen(suffix) + 8 + 1, char);
-    strcpy(jnt->name, "unnamed joint");
-    strcat(jnt->name, suffix);
-
     static int uniqueId = 0;
-    char uniqueIdStr[8];
-    snprintf(uniqueIdStr, 8, " %d", uniqueId++);
-    strcat(jnt->name, uniqueIdStr);
+    snprintf(jnt->name, RCS_MAX_NAMELEN, "unnamed joint%s %d",
+             suffix, uniqueId++);
 
-#ifdef OLD_TOPO
-    RLOG(5, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
-         "unnamed joint\"", b->bdyName, b->parent ? b->parent->bdyName : "NULL");
-#endif
+    REXEC(5)
+    {
+      RLOG(5, "A joint of body \"%s\" has no name - using \"unnamed joint\"",
+           b->name);
+    }
+  }
+
+  NLOG(0, "Inserted Joint into Graph: name=%s id=%d prevId=%d nextId=%d",
+       jnt->name, jnt->id, jnt->prevId, jnt->nextId);
+  if (jnt->prevId!=-1)
+  {
+    RcsJoint* pjnt = RCSJOINT_BY_ID(self, jnt->prevId);
+    RLOG(5, "   prev Joint: name=%s id=%d prevId=%d nextId=%d",
+         pjnt->name, pjnt->id, pjnt->prevId, pjnt->nextId);
   }
 
   // Relative transformation from prev. body to joint (in prev. body coords)
-  // It is only created if the XML file transform is not the identity matrix.
-  if (getXMLNodeProperty(node, "transform"))
-  {
-    HTr A_BP;
-    getXMLNodePropertyHTr(node, "transform", &A_BP);
-    if (!HTr_isIdentity(&A_BP))
-    {
-      jnt->A_JP = HTr_clone(&A_BP);
-    }
-  }
+  getXMLNodePropertyHTr(node, "transform", &jnt->A_JP);
 
   // check if the quat tag exists and if yes, transform is not allowed
   if (getXMLNodeProperty(node, "quat"))
   {
     bool success = !getXMLNodeProperty(node, "transform");
     RCHECK_MSG(success, "\"transform\" is not allowed if \"quat\" exists.");
-
-    HTr A_BP;
-    HTr_setIdentity(&A_BP);
-    success = getXMLNodePropertyQuat(node, "quat", A_BP.rot);
-    getXMLNodePropertyVec3(node, "pos", A_BP.org);
-    if (!HTr_isIdentity(&A_BP))
-    {
-      jnt->A_JP = HTr_clone(&A_BP);
-    }
+    getXMLNodePropertyQuat(node, "quat", jnt->A_JP.rot);
+    getXMLNodePropertyVec3(node, "pos", jnt->A_JP.org);
   }
 
-  if (b->jnt == jnt) // the joint is the first joint of the body
+  if (b->jntId == jnt->id) // the joint is the first joint of the body
   {
     // Here we apply the groups transform to the first joint of the body.
-    if (HTr_isIdentity(A_group) == false)
+    HTr_transformSelf(&jnt->A_JP, A_group);
+    if (verbose && (HTr_isIdentity(A_group) == false))
     {
-      if (!jnt->A_JP)
-      {
-        jnt->A_JP = HTr_clone(A_group);
-      }
-      else
-      {
-        HTr_transformSelf(jnt->A_JP, A_group);
-      }
-      if (verbose)
-      {
-        RMSG("Applied group transform to joint \"%s\"", jnt->name);
-      }
+      RMSG("Applied group transform to joint \"%s\"", jnt->name);
     }
   }
 
@@ -606,7 +655,7 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
   {
     if (verbose)
     {
-      RMSG("%s: Joint (%s):   ", b->bdyName, msg);
+      RMSG("%s: Joint (%s):   ", b->name, msg);
     }
 
     if (STREQ(msg, "TransX"))
@@ -710,7 +759,7 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
     RCHECK_MSG(success,
                "Tag \"weight\" has changed to \"weightJL\" - please update "
                "your xml file (body \"%s\", joint \"%s\")",
-               b->bdyName, jnt->name);
+               b->name, jnt->name);
   }
 
   // Joint weight. That's used to multply the joint limit gradient,
@@ -810,10 +859,9 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
 
   if (strLength > 0)
   {
-    unsigned int nBytes = strLength + strlen(suffix) + 1;
-    jnt->coupledJointName = RNALLOC(nBytes, char);
-    getXMLNodePropertyStringN(node, "coupledTo", jnt->coupledJointName, nBytes);
-    strcat(jnt->coupledJointName, suffix);
+    getXMLNodePropertyStringN(node, "coupledTo", jnt->coupledJntName,
+                              RCS_MAX_NAMELEN);
+    strcat(jnt->coupledJntName, suffix);
 
     unsigned int polyGrad = getXMLNodeNumStrings(node, "couplingFactor");
     if (polyGrad == 0)
@@ -824,17 +872,16 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
     RCHECK_MSG((polyGrad == 1) || (polyGrad == 5) || (polyGrad == 9),
                "Currently only polynomials of order 1 or 5 or 9 are "
                "supported, and not %d parameters", polyGrad);
-    jnt->couplingFactors = MatNd_create(polyGrad, 1);
-    MatNd_setElementsTo(jnt->couplingFactors, 1.0);
+    jnt->nCouplingCoeff = polyGrad;
     getXMLNodePropertyVecN(node, "couplingFactor",
-                           jnt->couplingFactors->ele, polyGrad);
+                           jnt->couplingPoly, polyGrad);
 
     // Check if a range is given, because it will later be overwritten
     bool hasRangeTag = getXMLNodeProperty(node, "range");
     if (hasRangeTag == true)
     {
       RLOG(5, "Joint \"%s\" has a range, even though it is coupled to "
-           "another joint (\"%s\")", jnt->name, jnt->coupledJointName);
+           "another joint (\"%s\")", jnt->name, jnt->coupledJntName);
     }
   }
 
@@ -871,14 +918,17 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   RCHECK(A_group);
 
   // Body name
-  char bdyName[RCS_MAX_NAMELEN];
-  snprintf(bdyName, RCS_MAX_NAMELEN, "body %d", self->nBodies);
+  char name[RCS_MAX_NAMELEN];
+  snprintf(name, RCS_MAX_NAMELEN, "body %d", self->nBodies);
 
   // The name as indicated in the xml file
-  getXMLNodePropertyStringN(bdyNode, "name", bdyName, RCS_MAX_NAMELEN);
-  RCHECK_MSG(strncmp(bdyName, "GenericBody", 11) != 0,
+  getXMLNodePropertyStringN(bdyNode, "name", name, RCS_MAX_NAMELEN);
+  RCHECK_MSG(strncmp(name, "GenericBody", 11) != 0,
              "The name \"GenericBody\" is reserved for internal use");
 
+
+  /* RLOG(0, "Body %s: firstInGroup is %s", */
+  /*      name, firstInGroup ? "TRUE" : "FALSE"); */
 
   char msg[RCS_MAX_FILENAMELEN];
   RcsBody* parentBdy = root;
@@ -887,7 +937,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
     if (parentBdy && firstInGroup)
     {
       RLOG(1, "WARNING: \"prev\"-tag supplied in body \"%s\", but also in "
-           "group; body information will be overridden", bdyName);
+           "group; body information will be overridden", name);
     }
 
     // If the body is the first in a group, we search its parent without the
@@ -913,18 +963,18 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   // Get the body with the given parent-id from the graph's body array. The
   // RcsGraph_insertGraphBody() method already connects it.
   RLOG(5, "Adding %s with parent %s (%s)",
-       bdyName, parentBdy ? parentBdy->bdyName : "NULL", msg);
+       name, parentBdy ? parentBdy->name : "NULL", msg);
   RcsBody* b = RcsGraph_insertGraphBody(self, parentBdy ? parentBdy->id : -1);
 
   RLOG(5, "Inserted Body into Graph: name=%s id=%d parent=%d "
        "prev=%d next=%d first=%d last=%d",
-       bdyName, b->id, b->parentId, b->prevId, b->nextId,
+       name, b->id, b->parentId, b->prevId, b->nextId,
        b->firstChildId, b->lastChildId);
 
   // Assign body names
-  snprintf(b->bdyXmlName, RCS_MAX_NAMELEN, "%s", bdyName);
+  snprintf(b->bdyXmlName, RCS_MAX_NAMELEN, "%s", name);
   snprintf(b->bdySuffix, RCS_MAX_NAMELEN, "%s", suffix);
-  snprintf(b->bdyName, RCS_MAX_NAMELEN, "%s%s", bdyName, suffix);
+  snprintf(b->name, RCS_MAX_NAMELEN, "%s%s", name, suffix);
 
   // Relative vector from prev. body to body (in prev. body coords)
   // It is only created if the XML file transform is not the identity matrix.
@@ -1005,11 +1055,11 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
 
       default:
         RFATAL("Tag \"rigid_body_joints\" of body \"%s\" has %d entries"
-               " - should be 6 or 1", b->bdyName, nStr);
+               " - should be 6 or 1", b->name, nStr);
     }
 
     NLOG(5, "[%s]: Found %d strings in rigid_body_joint tag \"%s\", flag is "
-         "%s", b->bdyName, nStr, "rigid_body_joints",
+         "%s", b->name, nStr, "rigid_body_joints",
          b->rigid_body_joints ? "true" : "false");
 
     RcsJoint* rbj0 = RcsBody_createRBJ(self, b, q_rbj);
@@ -1020,7 +1070,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
     if (nStr == 12)
     {
       unsigned int checkRbjNum = 0;
-      for (RcsJoint* JNT = rbj0; JNT; JNT = JNT->next)
+      RCSJOINT_TRAVERSE_FORWARD(self, rbj0)
       {
         JNT->weightMetric = q_rbj[6 + checkRbjNum];
         checkRbjNum++;
@@ -1033,11 +1083,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
     // construction. If there is a transformation coming from a group, it needs
     // to be applied to the first of the six rigid body joints. We can simply
     // clone it.
-    if (HTr_isIdentity(A_group) == false)
-    {
-      rbj0->A_JP = HTr_clone(A_group);
-    }
-
+    HTr_copy(&rbj0->A_JP, A_group);
   }
 
 
@@ -1092,7 +1138,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
       (getXMLNodeProperty(bdyNode, "cogVector") == false))
   {
     RLOGS(5, "You specified an inertia but not a cogVector in body \"%s\"",
-          b->bdyName);
+          b->name);
   }
 
   // Connect the body to the previous one by his joints.
@@ -1122,11 +1168,15 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   if ((nJoints == 0) && (HTr_isIdentity(A_group) == false))
   {
     HTr_transformSelf(&b->A_BP, A_group);
-    RLOG(5, "Transformed body \"%s\"", b->bdyName);
+    RLOG(5, "Transformed body \"%s\"", b->name);
   }
 
   // Reset the groups transform, it only must be applied to the first body.
+  // \todo: This must go. All bodies without parent (the ones on root level
+  //        next to the level's root) must be transformed.
+#ifndef TRANSFORM_ROOT_NEXT
   HTr_setIdentity(A_group);
+#endif
 
   // Search for sensors attached to the body
   xmlNodePtr sensorNode = bdyNode->children;
@@ -1250,7 +1300,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
         }
         else
         {
-          RcsBody* l = RcsGraph_linkGenericBody(self, i, b->bdyName);
+          RcsBody* l = RcsGraph_linkGenericBody(self, i, b->name);
 
           if (l == NULL)
           {
@@ -1258,7 +1308,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
           }
           else
           {
-            RLOG(5, "%s now points to \"%s\"", a, l->bdyName);
+            RLOG(5, "%s now points to \"%s\"", a, l->name);
           }
         }
       }
@@ -1291,7 +1341,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     {
       RMSG("[Level %d -> %d]: \n\tNew group \"%s\" with root \"%s\" "
            "and color \"%s\"", level, level + 1, tmp,
-           root[level] ? root[level]->bdyName : "NULL", col);
+           root[level] ? root[level]->name : "NULL", col);
 
       fprintf(stderr, "\tA_prev             %5.3f   %5.3f   %5.3f\n",
               A->org[0], A->org[1], A->org[2]);
@@ -1312,7 +1362,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
       {
         RCHECK(level > 0);
         root[level] = parent;
-        RLOG(9, "Setting root[%d] to \"%s\"", level, parent ? parent->bdyName : "NULL");
+        RLOG(9, "Setting root[%d] to \"%s\"", level, parent ? parent->name : "NULL");
       }
     }
 
@@ -1474,11 +1524,11 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
 
         default:
           RFATAL("Tag \"rigid_body_joints\" of body \"%s\" has %d entries"
-                 " - should be 6 or 1", urdfRoot->bdyName, nRBJTagStr);
+                 " - should be 6 or 1", urdfRoot->name, nRBJTagStr);
       }
 
       NLOG(5, "[%s]: Found %d strings in rigid_body_joint tag \"%s\", flag is "
-           "%s", urdfRoot->bdyName, nStr, "rigid_body_joints",
+           "%s", urdfRoot->name, nStr, "rigid_body_joints",
            urdfRoot->rigid_body_joints ? "true" : "false");
     }
     // create rigid body joints if requested
@@ -1492,7 +1542,9 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
       if (nRBJTagStr == 12)
       {
         unsigned int checkRbjNum = 0;
-        for (RcsJoint* JNT = rbj0; JNT; JNT = JNT->next)
+        //for (RcsJoint* JNT = rbj0; JNT; JNT = JNT->next)
+        //for (RcsJoint* JNT = rbj0; JNT; JNT = (JNT->nextId==-1) ? NULL : &self->joints[JNT->nextId])
+        RCSJOINT_TRAVERSE_FORWARD(self, rbj0)
         {
           JNT->weightMetric = q_rbj[6 + checkRbjNum];
           checkRbjNum++;
@@ -1506,7 +1558,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
       // clone it.
       if (HTr_isIdentity(&A_local) == false)
       {
-        rbj0->A_JP = HTr_clone(&A_local);
+        HTr_copy(&rbj0->A_JP, &A_local);
         // since the group transform was already applied to the body, remove it there again
         HTr_setIdentity(&urdfRoot->A_BP);
       }
@@ -1542,7 +1594,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
   else // can be a body or some junk
   {
     RLOG(19, "Creating new body with root[%d] \"%s\"", level,
-         (level > 0) ? (root[level] ? root[level]->bdyName : "NULL") : "NULL");
+         (level > 0) ? (root[level] ? root[level]->name : "NULL") : "NULL");
 
     RcsBody* nr = NULL;
 
@@ -1550,16 +1602,23 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
                                A, firstInGroup, level,
                                root[level], verbose);
 
+#ifndef TRANSFORM_ROOT_NEXT
     if (nr)
     {
       firstInGroup = false;
     }
-
+#else
+    if (firstInGroup && !node->next)
+    {
+      firstInGroup = false;
+      HTr_setIdentity(A);
+    }
+#endif
     RcsGraph_parseBodies(node->next, self, gCol, suffix,
                          parentGroup, A, firstInGroup, level, root, verbose);
 
     RLOG(19, "Falling back - root[%d] \"%s\"",
-         level, root[level] ? root[level]->bdyName : "NULL");
+         level, root[level] ? root[level]->name : "NULL");
   }
 
 
@@ -1585,7 +1644,7 @@ bool RcsGraph_setModelStateFromXML(RcsGraph* self, const char* modelStateName,
 
   // Read XML file
   xmlDocPtr doc;
-  xmlNodePtr node = parseXMLFile(self->xmlFile, "Graph", &doc);
+  xmlNodePtr node = parseXMLFile(self->cfgFile, "Graph", &doc);
 
   if (node == NULL)
   {
@@ -1620,7 +1679,7 @@ bool RcsGraph_getModelStateFromXML(MatNd* q, const RcsGraph* self,
 
   // Read XML file
   xmlDocPtr doc;
-  xmlNodePtr node = parseXMLFile(copyOfGraph->xmlFile, "Graph", &doc);
+  xmlNodePtr node = parseXMLFile(copyOfGraph->cfgFile, "Graph", &doc);
 
   if (node == NULL)
   {
@@ -1653,8 +1712,7 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
   // Get memory for the graph. We initialize the body array with a few entries.
   // The RcsGraph_insertBody() takes care of reallocating it if needed.
   RcsGraph* self = RALLOC(RcsGraph);
-  self->xmlFile = String_clone("Created_from_xml_node");
-  self->bodies = RNALLOC(10, RcsBody);
+  strcpy(self->cfgFile, "Created_from_xml_node");
 
 
   // This is the arrays for the state vectors and velocities. We need to
@@ -1671,11 +1729,9 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
   // Initialize generic bodies. Here we allocate memory for names and body
   // transforms. They are deleted once relinked to another body. We initialize
   // it before parsing, since they can already be linked in the xml files.
-  for (int i = 0; i < 10; i++)
+  for (int i = 0; i < RCS_NUM_GENERIC_BODIES; i++)
   {
-    memset(&self->gBody[i], 0, sizeof(RcsBody));
-    RcsBody_init(&self->gBody[i]);
-    snprintf(self->gBody[i].bdyName, RCS_MAX_NAMELEN, "GenericBody%d", i);
+    self->gBody[i] = -1;
   }
 
   RcsGraph_parseBodies(node, self, "DEFAULT", "", "",

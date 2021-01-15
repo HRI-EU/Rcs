@@ -48,7 +48,7 @@
 #include <GraphNode.h>
 #include <SphereNode.h>
 #include <ArrowNode.h>
-#include <CapsuleNode.h>
+#include <SphereNode.h>
 #include <HUD.h>
 #include <VertexArrayNode.h>
 #include <KeyCatcher.h>
@@ -203,36 +203,42 @@ static bool testDistanceRandomly()
       viewer.add(sp1);
       viewer.add(sp2);
 
-      RcsBody b1;
-      memset(&b1, 0, sizeof(RcsBody));
-      b1.shape = RNALLOC(2, RcsShape*);
-      b1.shape[0] = s1;
-      b1.shape[1] = NULL;
-      b1.A_BI = A_BI1;
+      RcsGraph* graph = RALLOC(RcsGraph);
+      RcsGraph_insertGraphBody(graph, -1);
+      RcsGraph_insertGraphBody(graph, -1);
 
-      osg::ref_ptr<Rcs::BodyNode> coll1 = new Rcs::BodyNode(&b1);
+      RcsBody* b1 = &graph->bodies[0];
+      b1->shape = RNALLOC(2, RcsShape*);
+      b1->shape[0] = s1;
+      b1->shape[1] = NULL;
+
+      osg::ref_ptr<Rcs::BodyNode> coll1 = new Rcs::BodyNode(b1, graph);
       coll1->setMaterial("RED");
       coll1->displayCollisionNode(true);
       coll1->displayGraphicsNode(false);
       coll1->displayPhysicsNode(false);
+      coll1->setTransformPtr(&A_BI1);
 
-      RcsBody b2;
-      memset(&b2, 0, sizeof(RcsBody));
-      b2.shape = RNALLOC(2, RcsShape*);
-      b2.shape[0] = s2;
-      b2.shape[1] = NULL;
-      b2.A_BI = A_BI2;
+      RcsBody* b2 = &graph->bodies[1];
+      b2->shape = RNALLOC(2, RcsShape*);
+      b2->shape[0] = s2;
+      b2->shape[1] = NULL;
 
-      osg::ref_ptr<Rcs::BodyNode> coll2 = new Rcs::BodyNode(&b2);
+      osg::ref_ptr<Rcs::BodyNode> coll2 = new Rcs::BodyNode(b2, graph);
       coll2->setMaterial("BLUE");
       coll2->displayCollisionNode(true);
       coll2->displayGraphicsNode(false);
       coll2->displayPhysicsNode(false);
+      coll2->setTransformPtr(&A_BI2);
       viewer.add(coll1);
       viewer.add(coll2);
 
       viewer.runInThread();
       RPAUSE();
+
+      RcsGraph_destroy(graph);
+      s1 = NULL;
+      s2 = NULL;
     }
 
     RLOG(2, "Distance test %s: %f %f", success_i ? "SUCCEEDED" : "FAILED",
@@ -336,12 +342,16 @@ static void testDistance(int argc, char** argv)
     return;
   }
 
-  RcsBody* b1 = RcsBody_create();
+  RcsGraph* graph = RALLOC(RcsGraph);
+  RcsGraph_insertGraphBody(graph, -1);
+  RcsGraph_insertGraphBody(graph, -1);
+  RcsBody* b1 = &graph->bodies[0];
+  RcsBody* b2 = &graph->bodies[1];
+
   Vec3d_setRandom(b1->A_BI.org, -0.2, -0.1);
   RcsBody_addShape(b1, RcsShape_createRandomShape(shapeType1));
 
-  RcsBody* b2 = RcsBody_create();
-  Vec3d_setRandom(b1->A_BI.org, 0.1, 0.2);
+  Vec3d_setRandom(b2->A_BI.org, 0.1, 0.2);
   RcsBody_addShape(b2, RcsShape_createRandomShape(shapeType2));
 
   double I_closestPts[6];
@@ -365,8 +375,8 @@ static void testDistance(int argc, char** argv)
     viewer->add(hud.get());
 
     // BodyNodes
-    Rcs::BodyNode* bNd1 = new Rcs::BodyNode(b1, 1.0, false);
-    Rcs::BodyNode* bNd2 = new Rcs::BodyNode(b2, 1.0, false);
+    Rcs::BodyNode* bNd1 = new Rcs::BodyNode(b1, graph, 1.0, false);
+    Rcs::BodyNode* bNd2 = new Rcs::BodyNode(b2, graph, 1.0, false);
     bNd1->setGhostMode(true, "RED");
     bNd2->setGhostMode(true, "GREEN");
     viewer->add(bNd1);
@@ -391,14 +401,12 @@ static void testDistance(int argc, char** argv)
     cpLine->setPointSize(2.0);
     viewer->add(cpLine);
 
-    Rcs::CapsuleNode* sphereCP0 =
-      new Rcs::CapsuleNode(cp0, NULL, 0.015, 0.0);
+    Rcs::SphereNode* sphereCP0 = new Rcs::SphereNode(cp0, 0.015);
     sphereCP0->makeDynamic(cp0);
     sphereCP0->setMaterial("RED");
     viewer->add(sphereCP0);
 
-    Rcs::CapsuleNode* sphereCP1 =
-      new Rcs::CapsuleNode(cp1, NULL, 0.015, 0.0);
+    Rcs::SphereNode* sphereCP1 = new Rcs::SphereNode(cp1, 0.015);
     sphereCP1->makeDynamic(cp1);
     sphereCP1->setMaterial("RED");
     viewer->add(sphereCP1);
@@ -456,13 +464,12 @@ static void testDistance(int argc, char** argv)
 
 
   // Clean up
-  RcsBody_destroy(b1);
-  RcsBody_destroy(b2);
-
   if (!valgrind)
   {
     delete viewer;
   }
+
+  RcsGraph_destroy(graph);
 
   pthread_mutex_destroy(&graphLock);
 }
@@ -577,7 +584,7 @@ static void testPolygon(int argc, char** argv)
   Rcs::TargetSetter* ts = new Rcs::TargetSetter(pt, ang, 0.5, false);
   viewer->add(ts);
 
-  Rcs::CapsuleNode* pn = new Rcs::CapsuleNode(pt, Id, 0.025, 0.0);
+  Rcs::SphereNode* pn = new Rcs::SphereNode(pt, 0.025);
   pn->setMaterial("GREEN");
   pn->makeDynamic(pt);
   pn->setWireframe(false);
@@ -586,7 +593,7 @@ static void testPolygon(int argc, char** argv)
   double cpPoly[3], nPoly[3];
   Vec3d_setZero(cpPoly);
   Vec3d_setZero(nPoly);
-  Rcs::CapsuleNode* cn = new Rcs::CapsuleNode(cpPoly, Id, 0.025, 0.0);
+  Rcs::SphereNode* cn = new Rcs::SphereNode(cpPoly, 0.025);
   cn->makeDynamic(cpPoly);
   cn->setMaterial("RED");
   cn->setWireframe(false);
@@ -596,7 +603,7 @@ static void testPolygon(int argc, char** argv)
   Slider1Dof::create(&s, &s, "s", -0.1, 0.0, 1.1, 0.01, mtx);
   double ps[3];
   Vec3d_set(ps, poly[0][0], poly[0][1], 0.0);
-  Rcs::CapsuleNode* sn = new Rcs::CapsuleNode(ps, Id, 0.03, 0.0);
+  Rcs::SphereNode* sn = new Rcs::SphereNode(ps, 0.03);
   sn->setMaterial("BLUE");
   sn->makeDynamic(ps);
   sn->setWireframe(false);
@@ -724,8 +731,7 @@ static void testRayLinesegIntersection2D(int argc, char** argv)
   viewer->add(ts1);
   viewer->add(ts1->getHandler());
 
-  Rcs::CapsuleNode* intrsctNd =
-    new Rcs::CapsuleNode(intersectPt, NULL, 0.015, 0.0);
+  Rcs::SphereNode* intrsctNd = new Rcs::SphereNode(intersectPt, 0.015);
   intrsctNd->makeDynamic(intersectPt);
   intrsctNd->setWireframe(false);
   intrsctNd->setMaterial("RED");

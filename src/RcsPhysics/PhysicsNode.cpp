@@ -49,7 +49,7 @@
 #include <Rcs_basicMath.h>
 #include <KeyCatcherBase.h>
 #include <FTSensorNode.h>
-#include <CapsuleNode.h>
+#include <SphereNode.h>
 #include <BoxNode.h>
 
 
@@ -424,7 +424,7 @@ void Rcs::PhysicsNode::setDisplayMode(int mode)
       {
         cnd->show();
       }
-      RLOG(5, "Showing both transforms");
+      RLOG(0, "Showing both transforms");
       break;
     case 1:   // Graph only
       setPhysicsTransform(false);
@@ -434,7 +434,7 @@ void Rcs::PhysicsNode::setDisplayMode(int mode)
       {
         cnd->hide();
       }
-      RLOG(5, "Showing graph transform only");
+      RLOG(0, "Showing graph transform only");
       break;
     case 2:   // Physics only
       setPhysicsTransform(true);
@@ -443,7 +443,7 @@ void Rcs::PhysicsNode::setDisplayMode(int mode)
       {
         cnd->show();
       }
-      RLOG(5, "Showing physics transform only");
+      RLOG(0, "Showing physics transform only");
       break;
     default:
       RLOG(1, "Unhandled display mode %d", displayMode);
@@ -503,8 +503,7 @@ void Rcs::PhysicsNode::showBodyCOMs()
     if (rb != NULL)
     {
       const double* pos = rb->getCOMTransformPtr()->org;
-      osg::ref_ptr<Rcs::CapsuleNode> cn = new Rcs::CapsuleNode(pos, NULL,
-                                                               0.025, 0.0);
+      osg::ref_ptr<Rcs::SphereNode> cn = new Rcs::SphereNode(pos, 0.025);
       cn->makeDynamic(pos);
       addChild(cn.get());
     }
@@ -520,7 +519,7 @@ void Rcs::PhysicsNode::updateTransformPointers()
   RCSGRAPH_TRAVERSE_BODIES(physicsNd->getGraphPtr())
   {
     const RcsBody* simBdy = RcsGraph_getBodyByName(modelNd->getGraphPtr(),
-                                                   BODY->bdyName);
+                                                   BODY->name);
     const HTr* physicsTrf = sim->getPhysicsTransformPtr(simBdy);
     physicsNd->setBodyTransformPtr(BODY, physicsTrf);
   }
@@ -546,7 +545,7 @@ void Rcs::PhysicsNode::addBodyNode(const RcsBody* body)
   modelNd->addBodyNode(body, 1.0, false);
   BodyNode* node = physicsNd->addBodyNode(body, 1.0, false);
 
-  const RcsBody* simBdy = RcsGraph_getBodyByName(sim->getGraph(), body->bdyName);
+  const RcsBody* simBdy = RcsGraph_getBodyByName(sim->getGraph(), body->name);
   const HTr* physicsTrf = sim->getPhysicsTransformPtr(simBdy);
   node->setTransformPtr(physicsTrf);
 }

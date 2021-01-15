@@ -39,8 +39,6 @@
 
 #include <Rcs_graph.h>
 
-#include <libxml/tree.h>
-
 
 
 #ifdef __cplusplus
@@ -59,13 +57,7 @@ extern "C" {
  *  \brief Returns pointer to a newly allocated sensor object.
  */
 void RcsSensor_init(RcsSensor* self, unsigned int type, const char* name,
-                    RcsBody* parentBody, HTr* offset, const char* extraInfo);
-
-/*! \ingroup RcsSensorFunctions
- *  \brief Creates a RcsSensor from an xml node.
- */
-RcsSensor* RcsSensor_initFromXML(xmlNode* node, RcsBody* parentBody,
-                                 RcsGraph* graph);
+                    RcsBody* parentBody, HTr* offset);
 
 /*! \ingroup RcsSensorFunctions
  *  \brief Clone a sensor. The mount body of the cloned sensor points to the
@@ -196,13 +188,8 @@ void RcsSensor_fprintXML(FILE* out, const RcsSensor* self);
  *         \ref RcsSensor_dim()), and filled with the calculated pressure
  *         values, and true is returned.
  */
-#ifdef OLD_TOPO
-bool RcsSensor_computePPS(const RcsSensor* self, MatNd* ppsResult,
-                          const double contactForce[3]);
-#else
-bool RcsSensor_computePPS(RcsGraph* graph, const RcsSensor* self, MatNd* ppsResult,
-                          const double contactForce[3]);
-#endif
+bool RcsSensor_computePPS(RcsGraph* graph, const RcsSensor* self,
+                          MatNd* ppsResult, const double contactForce[3]);
 
 /*! \ingroup RcsSensorFunctions
  *  \brief Returns the name of the sensor (see enum RCSSENSOR_TYPE)

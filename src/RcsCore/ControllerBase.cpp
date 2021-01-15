@@ -182,7 +182,7 @@ bool Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
     else if (isXMLNodeName(node, "Graph"))
     {
       RCHECK_MSG(this->graph==NULL, "Found xml tag <Graph>, but already graph"
-                 " loaded graph from file \"%s\"", graph->xmlFile);
+                 " loaded graph from file \"%s\"", graph->cfgFile);
       this->graph = RcsGraph_createFromXmlNode(node);
       RCHECK_MSG(this->graph, "Failed to create inlined graph");
     }
@@ -589,7 +589,7 @@ RcsGraph* Rcs::ControllerBase::getGraph() const
  ******************************************************************************/
 std::string Rcs::ControllerBase::getGraphFileName() const
 {
-  return std::string(graph->xmlFile);
+  return std::string(graph->cfgFile);
 }
 
 /*******************************************************************************
@@ -1637,15 +1637,15 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
   double I_ft[6];
   MatNd I_ft_ = MatNd_fromPtr(6, 1, I_ft);
   VecNd_copy(I_ft, S_ft, 6);
-  Vec3d_transRotateSelf(&I_ft[0], loadCell->offset->rot);
+  Vec3d_transRotateSelf(&I_ft[0], loadCell->A_SB->rot);
   Vec3d_transRotateSelf(&I_ft[0], loadCell->body->A_BI->rot);
-  Vec3d_transRotateSelf(&I_ft[3], loadCell->offset->rot);
+  Vec3d_transRotateSelf(&I_ft[3], loadCell->A_SB->rot);
   Vec3d_transRotateSelf(&I_ft[3], loadCell->body->A_BI->rot);
 
   // Compute the sensor Jacobian
   MatNd* J_sensor = NULL;
   MatNd_create2(J_sensor, 6, this->graph->nJ);
-  RcsGraph_bodyPointJacobian(getGraph(), loadCell->body, loadCell->offset->org,
+  RcsGraph_bodyPointJacobian(getGraph(), loadCell->body, loadCell->A_SB->org,
                              NULL, J_sensor);
   MatNd_reshape(J_sensor, 6, this->graph->nJ);
   MatNd J_rot = MatNd_fromPtr(3, this->graph->nJ, MatNd_getRowPtr(J_sensor, 3));
@@ -1692,15 +1692,15 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
   double I_ft[6];
   MatNd I_ft_ = MatNd_fromPtr(6, 1, I_ft);
   VecNd_copy(I_ft, S_ft, 6);
-  Vec3d_transRotateSelf(&I_ft[0], loadCell->offset->rot);
+  Vec3d_transRotateSelf(&I_ft[0], loadCell->A_SB->rot);
   Vec3d_transRotateSelf(&I_ft[0], loadCell->body->A_BI->rot);
-  Vec3d_transRotateSelf(&I_ft[3], loadCell->offset->rot);
+  Vec3d_transRotateSelf(&I_ft[3], loadCell->A_SB->rot);
   Vec3d_transRotateSelf(&I_ft[3], loadCell->body->A_BI->rot);
 
   // Compute the sensor Jacobian
   MatNd* J_sensor = NULL;
   MatNd_create2(J_sensor, 6, this->graph->nJ);
-  RcsGraph_bodyPointJacobian(getGraph(), loadCell->body, loadCell->offset->org,
+  RcsGraph_bodyPointJacobian(getGraph(), loadCell->body, loadCell->A_SB->org,
                              NULL, J_sensor);
   MatNd_reshape(J_sensor, 6, this->graph->nJ);
   MatNd J_rot = MatNd_fromPtr(3, this->graph->nJ, MatNd_getRowPtr(J_sensor, 3));
@@ -1845,14 +1845,14 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
     MatNd I_ft_ = MatNd_fromPtr(6, 1, I_ft);
     VecNd_copy(I_ft, S_ft_f, 6);
     RcsBody* loadCellBdy = &graph->bodies[loadCell->bodyId];
-    Vec3d_transRotateSelf(&I_ft[0], loadCell->offset.rot);
+    Vec3d_transRotateSelf(&I_ft[0], loadCell->A_SB.rot);
     Vec3d_transRotateSelf(&I_ft[0], loadCellBdy->A_BI.rot);
-    Vec3d_transRotateSelf(&I_ft[3], loadCell->offset.rot);
+    Vec3d_transRotateSelf(&I_ft[3], loadCell->A_SB.rot);
     Vec3d_transRotateSelf(&I_ft[3], loadCellBdy->A_BI.rot);
 
     // Compute the sensor Jacobian
     RcsGraph_bodyPointJacobian(getGraph(), loadCellBdy,
-                               loadCell->offset.org, NULL, J_sensor);
+                               loadCell->A_SB.org, NULL, J_sensor);
     MatNd_reshape(J_sensor, 6, this->graph->nJ);
     MatNd J_rot = MatNd_fromPtr(3, this->graph->nJ,
                                 MatNd_getRowPtr(J_sensor, 3));
@@ -1936,7 +1936,7 @@ bool Rcs::ControllerBase::add(const ControllerBase* other,
 
       if (otherTasks[i]->getEffector())
       {
-        newName.assign(otherTasks[i]->getEffector()->bdyName);
+        newName.assign(otherTasks[i]->getEffector()->name);
       }
 
       if (suffix)
@@ -1956,7 +1956,7 @@ bool Rcs::ControllerBase::add(const ControllerBase* other,
 
       if (otherTasks[i]->getRefBody())
       {
-        newName.assign(otherTasks[i]->getRefBody()->bdyName);
+        newName.assign(otherTasks[i]->getRefBody()->name);
       }
 
       if (suffix)
@@ -1976,7 +1976,7 @@ bool Rcs::ControllerBase::add(const ControllerBase* other,
 
       if (otherTasks[i]->getRefFrame())
       {
-        newName.assign(otherTasks[i]->getRefFrame()->bdyName);
+        newName.assign(otherTasks[i]->getRefFrame()->name);
       }
 
       if (suffix)
@@ -2328,9 +2328,9 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
     // Transform sensor values into world coordinates
     double* I_ft = &ft_sensor->ele[6*nLoadCells];
     VecNd_copy(I_ft, S_ft_f, 6);
-    Vec3d_transRotateSelf(&I_ft[0], loadCell->offset->rot);
+    Vec3d_transRotateSelf(&I_ft[0], loadCell->A_SB->rot);
     Vec3d_transRotateSelf(&I_ft[0], loadCell->body->A_BI->rot);
-    Vec3d_transRotateSelf(&I_ft[3], loadCell->offset->rot);
+    Vec3d_transRotateSelf(&I_ft[3], loadCell->A_SB->rot);
     Vec3d_transRotateSelf(&I_ft[3], loadCell->body->A_BI->rot);
 
     // VecNd_printComment("I_ft", &I_ft[0], 6);
@@ -2339,7 +2339,7 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
     MatNd J_trans = MatNd_fromPtr(3, J_sensor->n,
                                   MatNd_getRowPtr(J_sensor, 6*nLoadCells));
     RcsGraph_bodyPointJacobian(getGraph(), loadCell->body,
-                               loadCell->offset->org, NULL, &J_trans);
+                               loadCell->A_SB->org, NULL, &J_trans);
     MatNd J_rot = MatNd_fromPtr(3, J_sensor->n,
                                 MatNd_getRowPtr(J_sensor, 6*nLoadCells+3));
     RcsGraph_rotationJacobian(getGraph(), loadCell->body, NULL, &J_rot);

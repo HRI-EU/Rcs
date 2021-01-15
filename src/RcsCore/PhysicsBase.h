@@ -398,6 +398,11 @@ public:
 
   virtual bool initialize(const RcsGraph* g, const PhysicsConfig* config) = 0;
 
+  /*! \brief Adds a body to the simulation. The function returns true on
+   *         success, false otherwise.
+   */
+  virtual bool addBody(const RcsGraph* graph, const RcsBody* body) = 0;
+
   /*! \brief Creates a physicsConfig class instance and calls
    *         \ref initialize(const RcsGraph*, const PhysicsConfig*)
    *
@@ -545,11 +550,6 @@ public:
   /*! \brief Returns true if tactile sensors are computed, false otherwise.
    */
   virtual bool getEnablePPS() const;
-
-  /*! \brief Adds a body to the simulation. The function returns true on
-   *         success, false otherwise.
-   */
-  virtual bool addBody(const RcsBody* body);
 
   /*! \brief Removes a body from the simulation. The function returns true on
    *         success, false otherwise.

@@ -39,6 +39,8 @@
 
 #include "NodeBase.h"
 
+#include <Rcs_mesh.h>
+
 #include <osg/Geode>
 #include <osg/ShapeDrawable>
 
@@ -56,16 +58,20 @@ namespace Rcs
  *           to or more than 3*numVertices integer values. The function
  *           setMesh replaces the current mesh with the new one.
  */
+#if 0
 class MeshNode : public NodeBase
 {
 public:
 
   MeshNode();
   MeshNode(const char* meshFile);
+  MeshNode(const RcsMeshData* mesh);
   MeshNode(const double* vertices, unsigned int numVertices,
            const unsigned int* faces, unsigned int numFaces);
   void setMesh(const double* vertices, unsigned int numVertices,
                const unsigned int* faces, unsigned int numFaces);
+  void setMesh2(const double* vertices, unsigned int numVertices,
+                const unsigned int* faces, unsigned int numFaces);
   void clear();
 
 protected:
@@ -73,6 +79,32 @@ protected:
   osg::ref_ptr<osg::Geode> geode;
   void init();
 };
+
+
+#else
+
+class MeshNode : public osg::Geode
+{
+public:
+
+  MeshNode(const char* meshFile);
+  MeshNode(const RcsMeshData* mesh);
+  MeshNode(const double* vertices, unsigned int numVertices,
+           const unsigned int* faces, unsigned int numFaces);
+  virtual ~MeshNode();
+  virtual void init(const RcsMeshData* mesh);
+  virtual void update(const RcsMeshData* mesh);
+  virtual void setMesh(const double* vertices, unsigned int numVertices,
+                       const unsigned int* faces, unsigned int numFaces);
+  virtual void setMaterial(const std::string& material, double alpha=1.0);
+
+private:
+
+  osg::ref_ptr<osg::Geometry> meshGeo;
+};
+
+#endif
+
 
 }   // namespace Rcs
 

@@ -146,7 +146,7 @@ Rcs::TaskEuler1D* Rcs::TaskEuler1D::clone(RcsGraph* newGraph) const
 void Rcs::TaskEuler1D::computeX(double* x_res) const
 {
   double ea[3];
-  Rcs::TaskEuler3D::computeEulerAngles(ea, this->ef, this->refBody);
+  Rcs::TaskEuler3D::computeEulerAngles(ea, getEffector(), getRefBody());
   *x_res = ea[this->index];
 }
 
@@ -210,15 +210,18 @@ void Rcs::TaskEuler1D::computeXpp(double* eapp_i, const MatNd* q_ddot) const
  ******************************************************************************/
 void Rcs::TaskEuler1D::computeJ(MatNd* jacobian) const
 {
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+  const RcsBody* refFrame = getRefFrame();
+
   // Compute the relative angular velocity Jacobian
   MatNd* J1 = NULL;
   MatNd_create2(J1, 3, this->graph->nJ);
-  RcsGraph_3dOmegaJacobian(this->graph, this->ef, this->refBody,
-                           this->refFrame, J1);
+  RcsGraph_3dOmegaJacobian(this->graph, ef, refBody, refFrame, J1);
 
   // Compute the current rotation matrix
   double A_curr[3][3];
-  computeRelativeRotationMatrix(A_curr, this->ef, this->refBody);
+  computeRelativeRotationMatrix(A_curr, ef, refBody);
 
   // Get Euler angles and set up matrix H (for world-fixed omega:
   // dot(ea) = H * I_om)

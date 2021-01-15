@@ -95,15 +95,18 @@ Rcs::TaskDistance::TaskDistance(RcsGraph* graph_,
   RCHECK(refBdy);
   RCHECK_MSG(nQueries>0, "The body pair %s - %s has no distance query. Did "
              "you include any shape with enabled distance flag?",
-             effector->bdyName, refBdy->bdyName);
+             effector->name, refBdy->name);
 
   this->graph = graph_;
   setClassName("Distance");
-  setName("Distance " + std::string(effector ? effector->bdyName : "NULL") + "-"
-          + std::string(refBdy ? refBdy->bdyName : "NULL"));
+  setName("Distance " + std::string(effector ? effector->name : "NULL") + "-"
+          + std::string(refBdy ? refBdy->name : "NULL"));
   setEffector(effector);
   setRefBody(refBdy);
-  setRefFrame(refFrame ? refFrame : refBdy);
+  if (!getRefFrame())
+  {
+    setRefFrame(refBdy);
+  }
   setDim(1);
   resetParameter(Parameters(-0.1, 1.0, 1.0, "Distance [m]"));
 }
@@ -128,7 +131,7 @@ Rcs::TaskDistance* Rcs::TaskDistance::clone(RcsGraph* newGraph) const
  ******************************************************************************/
 void Rcs::TaskDistance::computeX(double* x_res) const
 {
-  x_res[0] = RcsBody_distance(this->refBody, this->ef, NULL, NULL, NULL);
+  x_res[0] = RcsBody_distance(getRefBody(), getEffector(), NULL, NULL, NULL);
 }
 
 /*******************************************************************************
@@ -145,12 +148,14 @@ void Rcs::TaskDistance::computeDX(double* dx_ik,
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskDistance::computeJ(MatNd* jacobian) const
+void Rcs::TaskDistance::computeJ(MatNd* J) const
 {
   double cpEf[3], cpRef[3], nRE[3];
-  RcsBody_distance(this->refBody, this->ef, cpRef, cpEf, nRE);
-  RcsBody_distanceGradient(graph, this->refBody, this->ef, true,
-                           cpRef, cpEf, nRE, jacobian);
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+
+  RcsBody_distance(refBody, ef, cpRef, cpEf, nRE);
+  RcsBody_distanceGradient(graph, refBody, ef, true, cpRef, cpEf, nRE, J);
 }
 
 /*******************************************************************************
@@ -159,10 +164,12 @@ void Rcs::TaskDistance::computeJ(MatNd* jacobian) const
 void Rcs::TaskDistance::computeH(MatNd* hessian) const
 {
   double cpEf[3], cpRef[3], nRE[3];
-  RcsBody_distance(this->refBody, this->ef, cpRef, cpEf, nRE);
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+
+  RcsBody_distance(refBody, ef, cpRef, cpEf, nRE);
   MatNd_reshapeAndSetZero(hessian, graph->nJ, graph->nJ);
-  RcsBody_distanceHessian(graph, this->refBody, this->ef, true,
-                          cpRef, cpEf, hessian->ele);
+  RcsBody_distanceHessian(graph, refBody, ef, true, cpRef, cpEf, hessian->ele);
 }
 
 /*******************************************************************************

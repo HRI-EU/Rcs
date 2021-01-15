@@ -7,14 +7,14 @@
   </Body>
 
   <Body name="m3" prev="lwa-base" color="COPPER" mass="3.6" physics="dynamic" >
-    <Joint name="base-m3" type="RotZ" transform="0 0 0.120 0 0 0" range="-180 0 180" speedLimit="25" weightMetric="0.05" weightJL="10" kd="10" />
+    <Joint name="base-m3" type="RotZ" transform="0 0 0.120 0 0 0" range="-170 0 170" speedLimit="25" weightMetric="0.05" weightJL="10" kd="10" />
     <Shape type="CYLINDER" radius="0.06" length="0.14" graphics="true" distance="false" />
     <Shape type="MESH" meshFile="Schunk/3385031117_vbe_1212_x.tri" transform="0.11 0 0 0 -90 0" physics="true"/>
     <Shape type="SSL" radius="0.09" length="0.05" graphics="false" distance="true" transform="0 0 -0.02 0 0 0" physics="false"/>
  </Body>
 
   <Body name="m4" prev="m3" color="JADE_S" mass="3.6" physics="dynamic" >
-    <Joint name="m3-m4" type="RotZ" range="-270 -90 90" transform="0.175 0 0 0 90 0"  speedLimit="25" weightMetric="0.05" weightJL="10" kd="10" />
+    <Joint name="m3-m4" type="RotZ" range="-260 -90 80" transform="0.175 0 0 0 90 0"  speedLimit="25" weightMetric="0.05" weightJL="10" kd="10" />
     <Shape type="CYLINDER" radius="0.062" length="0.14" graphics="true" distance="false" transform="0 0 0.01 0 0 0" physics="true"/>
     <Shape type="MESH" meshFile="Schunk/3385038117_vbe_1210_x.tri" transform="0 0 0.08 0 0 180" physics="true"/>
     <Shape type="SSL" radius="0.062" length="0.14" transform="0 0 -0.06 0 0 0" graphics="false" distance="true" physics="false"/>
@@ -28,7 +28,7 @@
   </Body>
 
   <Body name="m6" prev="m5" color="BRONZE" mass="2.0" physics="dynamic" >
-    <Joint name="m5-m6" type="RotZ" range="-270 -90 90" transform="0.1515 0 0 0 90 0" speedLimit="24" weightMetric="0.05" weightJL="10" kd="10" />
+    <Joint name="m5-m6" type="RotZ" range="-260 -90 80" transform="0.1515 0 0 0 90 0" speedLimit="24" weightMetric="0.05" weightJL="10" kd="10" />
     <Shape type="CYLINDER" radius="0.052" length="0.118" graphics="true" distance="false" transform="0 0 0.015 0 0 0" />
     <Shape type="CYLINDER" color="BLUE" radius="0.052" length="0.060" graphics="true" distance="false" transform="0 0 0.103 0 0 0" />
     <Shape type="MESH" meshFile="Schunk/3385038417_vbe_1008_x.tri" transform="0 0 0.14 0 0 180" physics="true"/>
@@ -43,7 +43,7 @@
   </Body>
 
   <Body name="m8" prev="m7" color="COPPER" mass="1.2" physics="dynamic" >
-    <Joint name="m7-m8" type="RotZ" range="-360 -180 0" transform="0.12575 0 0 0 90 0" speedLimit="27" weightMetric="0.05" weightJL="10" kd="10" />
+    <Joint name="m7-m8" type="RotZ" range="-350 -180 0" transform="0.12575 0 0 0 90 0" speedLimit="27" weightMetric="0.05" weightJL="10" kd="10" />
     <Shape type="CYLINDER" radius="0.042" length="0.0965" graphics="true" distance="false" transform="0 0 0.01 0 0 0" />
     <Shape type="CYLINDER" color="BLUE" radius="0.042" length="0.040" graphics="true" distance="false" transform="0 0 0.07825 0 0 0" />
     <Shape type="MESH" meshFile="Schunk/3385038717_vbe_0806_x.tri" transform="0 0 0.10 0 0 180" physics="true"/>

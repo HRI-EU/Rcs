@@ -53,9 +53,8 @@ public:
 
   virtual ~TorusNode();
 
-  /*!
-   * \brief Creates a osg::Geode that holds the vertices and normals of the
-   *        torus
+  /*! \brief Creates a osg::Geometry that holds the vertices and normals of the
+   *         torus.
    */
   static osg::ref_ptr<osg::Geometry> createGeometry(double radius,
                                                     double thickness,

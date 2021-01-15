@@ -119,8 +119,8 @@ Rcs::TaskDistance1D::TaskDistance1D(RcsGraph* graph_,
       RFATAL("Unsupported index %d - should be 0, 1 or 2", idx);
   }
 
-  setName("Dist1D " + std::string(effector ? effector->bdyName : "NULL") + "-"
-          + std::string(refBdy ? refBdy->bdyName : "NULL"));
+  setName("Dist1D " + std::string(effector ? effector->name : "NULL") + "-"
+          + std::string(refBdy ? refBdy->name : "NULL"));
   setDim(1);
   resetParameter(Parameters(-1.0, 1.0, 1.0, "Dist [m]"));
 }

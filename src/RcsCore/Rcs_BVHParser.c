@@ -112,7 +112,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, int parentId, FILE* fd,
     itemsMatched = fscanf(fd, "%63s", buf);   // Body name
     RCHECK_MSG(itemsMatched==1, "Couldn't read body name");
 
-    snprintf(child->bdyName, RCS_MAX_NAMELEN, "%s", buf);
+    snprintf(child->name, RCS_MAX_NAMELEN, "%s", buf);
     RcsBody_addShape(child, createFrameShape(0.5));
     itemsMatched = fscanf(fd, "%63s", buf);   // Curly brace open
     RCHECK_MSG(itemsMatched==1, "Couldn't read curly brace open");
@@ -130,7 +130,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, int parentId, FILE* fd,
 
     // Create a new body and recursively call this function again
     RcsBody* child = RcsGraph_insertGraphBody(self, parentId);
-    snprintf(child->bdyName, RCS_MAX_NAMELEN, "%s", buf);
+    snprintf(child->name, RCS_MAX_NAMELEN, "%s", buf);
     RcsBody_addShape(child, createFrameShape(0.1));
 
     itemsMatched = fscanf(fd, "%63s", buf);   // Opening curly brace
@@ -162,18 +162,19 @@ static bool parseRecursive(char* buf, RcsGraph* self, int parentId, FILE* fd,
       RCHECK_MSG(itemsMatched==1, "Couldn't read channel %d", i);
 
       RcsBody* body = &self->bodies[parentId];
-      RcsJoint* jnt = RALLOC(RcsJoint);
-      char a[128];
-      snprintf(a, 128, "%s_jnt_%s", body->bdyName, buf);
-      jnt->name = String_clone(a);
+      RcsJoint* jnt = RcsGraph_insertGraphJoint(self, body->id);
+      int nchars = snprintf(jnt->name, RCS_MAX_NAMELEN, "%s_jnt_%s", body->name, buf);
+      if (nchars>=RCS_MAX_NAMELEN)
+      {
+        RLOG(1, "Joint name truncation happened: %s", jnt->name);
+      }
       jnt->weightJL = 1.0;
       jnt->weightMetric = 1.0;
       jnt->ctrlType = RCSJOINT_CTRL_POSITION;
 
       if ((i==0) && (Vec3d_sqrLength(offset)>0.0))
       {
-        jnt->A_JP = HTr_create();
-        Vec3d_copy(jnt->A_JP->org, offset);
+        Vec3d_copy(jnt->A_JP.org, offset);
       }
 
       if (STRNCASEEQ(buf, "Xposition", 63))
@@ -225,7 +226,6 @@ static bool parseRecursive(char* buf, RcsGraph* self, int parentId, FILE* fd,
         return false;
       }
 
-      RcsGraph_insertJoint(self, body, jnt);
     }
 
     itemsMatched = fscanf(fd, "%63s", buf);   // Next keyword
@@ -339,7 +339,7 @@ static void addGeometry(RcsGraph* self)
 {
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
-    if (STREQ(BODY->bdyName, "BVHROOT"))
+    if (STREQ(BODY->name, "BVHROOT"))
     {
       continue;
     }
@@ -355,7 +355,7 @@ static void addGeometry(RcsGraph* self)
 
     while (CHILD!=NULL)
     {
-      RLOG(5, "%s: Traversing child %s", BODY->bdyName, CHILD->bdyName);
+      RLOG(5, "%s: Traversing child %s", BODY->name, CHILD->name);
 
       const double* I_p1 = BODY->A_BI.org;
       const double* I_p2 = CHILD->A_BI.org;
@@ -456,13 +456,13 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
 
   // Create an empty graph that will be propagated recursively
   RcsGraph* self = RALLOC(RcsGraph);
-  self->xmlFile = String_clone(fileName);
+  snprintf(self->cfgFile, RCS_MAX_FILENAMELEN, "%s", fileName);
   RcsBody* bvhRoot = NULL;
 
   if (Z_up_x_forward == true)
   {
     RcsBody* xyzRoot = RcsGraph_insertGraphBody(self, -1);
-    snprintf(xyzRoot->bdyName, RCS_MAX_NAMELEN, "%s", "BVHROOT");
+    snprintf(xyzRoot->name, RCS_MAX_NAMELEN, "%s", "BVHROOT");
     Mat3d_fromEulerAngles2(xyzRoot->A_BP.rot, M_PI_2, M_PI_2, 0.0);
     RcsBody_addShape(xyzRoot, createFrameShape(1.0));
     bvhRoot = xyzRoot;
@@ -485,27 +485,25 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
   // components that are mentioned in the CHANNEL keyword.
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
-    RCSBODY_TRAVERSE_JOINTS(BODY)
+    RCSBODY_FOREACH_JOINT(self, BODY)
     {
-      if (BODY->jnt->A_JP == NULL)
-      {
-        continue;
-      }
+      RCHECK(BODY->jntId!=-1);
+      RcsJoint* bdyJoint = &self->joints[BODY->jntId];
 
       if (JNT->type == RCSJOINT_TRANS_X)
       {
-        MatNd_set(self->q, JNT->jointIndex, 0, BODY->jnt->A_JP->org[0]);
-        BODY->jnt->A_JP->org[0] = 0.0;
+        MatNd_set(self->q, JNT->jointIndex, 0, bdyJoint->A_JP.org[0]);
+        bdyJoint->A_JP.org[0] = 0.0;
       }
       else if (JNT->type == RCSJOINT_TRANS_Y)
       {
-        MatNd_set(self->q, JNT->jointIndex, 0, BODY->jnt->A_JP->org[1]);
-        BODY->jnt->A_JP->org[1] = 0.0;
+        MatNd_set(self->q, JNT->jointIndex, 0, bdyJoint->A_JP.org[1]);
+        bdyJoint->A_JP.org[1] = 0.0;
       }
       else if (JNT->type == RCSJOINT_TRANS_Z)
       {
-        MatNd_set(self->q, JNT->jointIndex, 0, BODY->jnt->A_JP->org[2]);
-        BODY->jnt->A_JP->org[2] = 0.0;
+        MatNd_set(self->q, JNT->jointIndex, 0, bdyJoint->A_JP.org[2]);
+        bdyJoint->A_JP.org[2] = 0.0;
       }
     }
   }

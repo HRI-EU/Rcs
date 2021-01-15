@@ -456,17 +456,8 @@ bool Rcs::PhysicsBase::removeBody(const char* name)
 }
 
 /*******************************************************************************
-*
-******************************************************************************/
-bool Rcs::PhysicsBase::addBody(const RcsBody* body)
-{
-  RLOG(0, "Implement or overwrite me");
-  return false;
-}
-
-/*******************************************************************************
-*
-******************************************************************************/
+ *
+ ******************************************************************************/
 bool Rcs::PhysicsBase::deactivateBody(const char* name)
 {
   RLOG(0, "Implement or overwrite me");
@@ -474,8 +465,8 @@ bool Rcs::PhysicsBase::deactivateBody(const char* name)
 }
 
 /*******************************************************************************
-*
-******************************************************************************/
+ *
+ ******************************************************************************/
 bool Rcs::PhysicsBase::activateBody(const char* name, const HTr* A_BI)
 {
   RLOG(0, "Implement or overwrite me");
@@ -483,8 +474,8 @@ bool Rcs::PhysicsBase::activateBody(const char* name, const HTr* A_BI)
 }
 
 /*******************************************************************************
-*
-******************************************************************************/
+ *
+ ******************************************************************************/
 bool Rcs::PhysicsBase::check() const
 {
   return true;
@@ -510,7 +501,7 @@ void Rcs::PhysicsBase::resetRigidBodies()
         (BODY->physicsSim==RCSBODY_PHYSICS_KINEMATIC ||
          BODY->physicsSim==RCSBODY_PHYSICS_DYNAMIC))
     {
-      RCSBODY_TRAVERSE_JOINTS(BODY)
+      RCSBODY_FOREACH_JOINT(internalDesiredGraph, BODY)
       {
         MatNd_set(internalDesiredGraph->q, JNT->jointIndex, 0, JNT->q_init);
         MatNd_set(internalDesiredGraph->q_dot, JNT->jointIndex, 0, 0.0);

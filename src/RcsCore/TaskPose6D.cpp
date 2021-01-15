@@ -105,13 +105,13 @@ Rcs::TaskPose6D::TaskPose6D(RcsGraph* graph_,
   if (effector != NULL)
   {
     taskName += std::string(" ");
-    taskName += std::string(effector->bdyName);
+    taskName += std::string(effector->name);
   }
 
   if (refBdy != NULL)
   {
     taskName += std::string("-");
-    taskName += std::string(refBdy->bdyName);
+    taskName += std::string(refBdy->name);
   }
 
   setName(taskName);

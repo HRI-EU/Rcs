@@ -553,10 +553,9 @@ Vx::VxCollisionGeometry* Rcs::createMesh(const RcsShape* sh, const HTr* A_KI,
     return cg;
   }
 
-  if (sh->userData != NULL)
+  if (sh->mesh != NULL)
   {
-    const RcsMeshData* mesh = (const RcsMeshData*) sh->userData;
-    Vx::VxTriangleMeshBVTree* triMesh = createMeshFromData(mesh);
+    Vx::VxTriangleMeshBVTree* triMesh = createMeshFromData(sh->mesh);
 
     if (triMesh==NULL)
     {
@@ -651,14 +650,14 @@ Vx::VxConstraint* Rcs::createFixedJoint(Vx::VxPart* vxParent,
       if ((si->type==RCSSENSOR_LOAD_CELL) && (si->bodyId==child->id))
       {
         RCHECK_MSG(loadCell==NULL, "Body \"%s\" has more than 1 load cells "
-                   "attached", child->bdyName);
+                   "attached", child->name);
 
         loadCell = si;
 
         // If a load cell exists, we consider it's offset
         // transformation for the fixed joint position and orientation.
-        HTr_transform(&A_childI, &child->A_BI, &si->offset);
-        HTr_transform(&A_parentI, &parent->A_BI, &si->offset);
+        HTr_transform(&A_childI, &child->A_BI, &si->A_SB);
+        HTr_transform(&A_parentI, &parent->A_BI, &si->A_SB);
       }
 
     }  // RCSGRAPH_TRAVERSE_SENSORS(graph)
@@ -708,6 +707,7 @@ Vx::VxConstraint* Rcs::createFixedJoint(Vx::VxPart* vxParent,
  ******************************************************************************/
 Vx::VxConstraint* Rcs::createJoint1D(Vx::VxPart* part0,
                                      Vx::VxPart* part1,
+                                     const RcsJoint* jnt,
                                      const double jointLockStiffness,
                                      const double jointLockDamping,
                                      const double jointMotorLoss,
@@ -720,9 +720,10 @@ Vx::VxConstraint* Rcs::createJoint1D(Vx::VxPart* part0,
     return NULL;
   }
 
-  const RcsBody* child = (const RcsBody*) part1->getUserDataPtr();
+  //const RcsBody* child = (const RcsBody*) part1->getUserDataPtr();
 
-  if (child->jnt==NULL)
+  //if (child->jnt==NULL)
+  if (jnt==NULL)
   {
     RLOG(1, "Creation of joint between \"%s\" and \"%s\" failed: "
          "Bodies are not connected with RcsJoint!",
@@ -730,7 +731,7 @@ Vx::VxConstraint* Rcs::createJoint1D(Vx::VxPart* part0,
     return NULL;
   }
 
-  RcsJoint* jnt = child->jnt;
+  //RcsJoint* jnt = child->jnt;
   Vx::VxVector3 anchor(jnt->A_JI.org);
   Vx::VxVector3 axis(jnt->A_JI.rot[jnt->dirIdx]);
   axis *= -1.0;

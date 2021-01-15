@@ -99,7 +99,7 @@
 #include <PhysicsNode.h>
 #include <GraphNode.h>
 #include <FTSensorNode.h>
-#include <CapsuleNode.h>
+#include <SphereNode.h>
 #include <HUD.h>
 #include <VertexArrayNode.h>
 #include <PPSSensorNode.h>
@@ -345,6 +345,7 @@ int main(int argc, char** argv)
 
       RMSG("Writing graph to dot file \"RcsGraph.dot\"");
       RcsGraph_writeDotFile(graph, "RcsGraph.dot");
+      RcsGraph_writeDotFileDfsTraversal(graph, "RcsGraphDFS.dot");
 
       RMSG("Writing graph to xml file \"graph.xml\"");
       FILE* out = fopen("graph.xml", "w+");
@@ -455,32 +456,35 @@ int main(int argc, char** argv)
 
       RcsGraph* graph = RcsGraph_create(xmlFileName);
 
-      RLOG(0, "Original traversal:");
-      int count1 = 0;
-      RCSGRAPH_TRAVERSE_BODIES(graph)
+      REXEC(1)
       {
-        printf("%d: %s - %d: %s\n", count1, BODY->bdyName,
-               graph->bodies[count1].id, graph->bodies[count1].bdyName);
-        RcsBody* body = BODY;
-        RLOG(0, "name=%s id=%d parent=%d prev=%d next=%d first=%d last=%d",
-             body->bdyName, body->id, body->parentId, body->prevId, body->nextId,
-             body->firstChildId, body->lastChildId);
-        count1++;
-      }
-      RLOG(0, "Done traversal:");
+        RLOG(0, "Original traversal:");
+        int count1 = 0;
+        RCSGRAPH_TRAVERSE_BODIES(graph)
+        {
+          printf("%d: %s - %d: %s\n", count1, BODY->name,
+                 graph->bodies[count1].id, graph->bodies[count1].name);
+          RcsBody* body = BODY;
+          RLOG(0, "name=%s id=%d parent=%d prev=%d next=%d first=%d last=%d",
+               body->name, body->id, body->parentId, body->prevId, body->nextId,
+               body->firstChildId, body->lastChildId);
+          count1++;
+        }
+        RLOG(0, "Done original traversal");
 
-      RLOG(0, "New traversal:");
-      count1 = 0;
-      for (unsigned int i=0; i<graph->nBodies; ++i)
-      {
-        printf("%d: %s\n", i, graph->bodies[i].bdyName);
-      }
+        RLOG(0, "New traversal:");
+        count1 = 0;
+        for (unsigned int i=0; i<graph->nBodies; ++i)
+        {
+          printf("%d: %s\n", i, graph->bodies[i].name);
+        }
 
-      RLOG(0, "Newest traversal:");
-      count1 = 0;
-      RCSGRAPH_FOREACH_BODY(graph)
-      {
-        printf("%d: %s\n", count1++, BODY->bdyName);
+        RLOG(0, "Newest traversal:");
+        count1 = 0;
+        RCSGRAPH_FOREACH_BODY(graph)
+        {
+          printf("%d: %s\n", count1++, BODY->name);
+        }
       }
 
       if (graph == NULL)
@@ -490,7 +494,7 @@ int main(int argc, char** argv)
       }
 
       char bvhFile[256];
-      strcpy(bvhFile, graph->xmlFile);
+      strcpy(bvhFile, graph->cfgFile);
       argP.getArgument("-bvhFile", bvhFile, "BVH file "
                        "(default is \"%s\")", bvhFile);
 
@@ -516,8 +520,12 @@ int main(int argc, char** argv)
         double t_copy = Timer_getSystemTime();
         graph = RcsGraph_clone(graph2);
         t_copy = Timer_getSystemTime() - t_copy;
-        RcsGraph_destroy(graph2);
+        RMSG("Cloning graph took %.3f msec", t_copy*1.0e3);
+        t_copy = Timer_getSystemTime();
+        RcsGraph_copy(graph, graph2);
+        t_copy = Timer_getSystemTime() - t_copy;
         RMSG("Copying graph took %.3f msec", t_copy*1.0e3);
+        RcsGraph_destroy(graph2);
       }
 
       const RcsBody* comBase = RcsGraph_getBodyByName(graph, comRef);
@@ -535,7 +543,7 @@ int main(int argc, char** argv)
 
       Rcs::KeyCatcher* kc = NULL;
       Rcs::GraphNode* gn  = NULL;
-      Rcs::CapsuleNode* comNd = NULL;
+      Rcs::SphereNode* comNd = NULL;
       Rcs::HUD* hud = NULL;
       Rcs::Viewer* viewer = NULL;
 
@@ -547,7 +555,7 @@ int main(int argc, char** argv)
         gn->toggleReferenceFrames();
         viewer->add(gn);
 
-        comNd = new Rcs::CapsuleNode(r_com, Id, 0.05, 0.0);
+        comNd = new Rcs::SphereNode(r_com, 0.05);
         comNd->makeDynamic(r_com);
         comNd->setMaterial("RED");
         comNd->toggleWireframe();
@@ -712,9 +720,9 @@ int main(int argc, char** argv)
               RMSG("No BodyNode found under mouse");
               continue;
             }
-            RMSG("Removing body \"%s\" under mouse", bNd->body()->bdyName);
+            RMSG("Removing body \"%s\" under mouse", bNd->body()->name);
             pthread_mutex_lock(&graphLock);
-            bool ok = RcsGraph_removeBody(graph, bNd->body()->bdyName, NULL, 0);
+            bool ok = RcsGraph_removeBody(graph, bNd->body()->name, NULL, 0);
             if (ok)
             {
               ok = gn->removeBodyNode(bNd);
@@ -740,7 +748,7 @@ int main(int argc, char** argv)
             RCSGRAPH_TRAVERSE_BODIES(graph)
             {
               bool success = RcsBody_removeJoints(BODY, graph);
-              RLOG(1, "Removing all joints of a body %s %s", BODY->bdyName,
+              RLOG(1, "Removing all joints of a body %s %s", BODY->name,
                    success ? "SUCCEEDED" : "FAILED");
             }
             pthread_mutex_unlock(&graphLock);
@@ -785,10 +793,11 @@ int main(int argc, char** argv)
             RcsBody* child = RcsGraph_getBodyByName(graph, childName.c_str());
             RcsBody* parent = RcsGraph_getBodyByName(graph, parentName.c_str());
             RLOG(0, "Attaching \"%s\" (%s) to \"%s\" (%s)",
-                 child ? child->bdyName : "NULL", childName.c_str(),
-                 parent ? parent->bdyName : "NULL", parentName.c_str());
+                 child ? child->name : "NULL", childName.c_str(),
+                 parent ? parent->name : "NULL", parentName.c_str());
 
-            bool success = RcsBody_attachToBodyById(graph, child, parent, NULL);
+            //bool success = RcsBody_attachToBodyById(graph, child, parent, NULL);
+            bool success = RcsBody_attachToBodyId(graph, child?child->id:-1, parent?parent->id:-1);
             RMSG("%s changing body attachement",
                  success ? "SUCCESS" : "FAILURE");
 
@@ -829,7 +838,7 @@ int main(int argc, char** argv)
               bool success = RcsBody_boxify(BODY, RCSSHAPE_COMPUTE_GRAPHICS+
                                             RCSSHAPE_COMPUTE_PHYSICS);
               RLOG(0, "%s boxifying body %s", success ? "SUCCESS" : "FAILURE",
-                   BODY->bdyName);
+                   BODY->name);
             }
             gn = new Rcs::GraphNode(graph);
             pthread_mutex_unlock(&graphLock);
@@ -888,22 +897,22 @@ int main(int argc, char** argv)
             int nBodiesMergeable = 0;
             RCSGRAPH_TRAVERSE_BODIES(graph)
             {
-              if (BODY->jnt==NULL && BODY!=graph->root)
+              if (BODY->jntId==-1 && BODY->id!=graph->rootId)
               {
-                printf("   %s\n", BODY->bdyName);
+                printf("   %s\n", BODY->name);
                 nBodiesMergeable++;
               }
             }
 
             if (nBodiesMergeable>0)
             {
-              std::string bdyName;
+              std::string name;
               printf("Enter body to merge: ");
-              std::cin >> bdyName;
+              std::cin >> name;
               pthread_mutex_lock(&graphLock);
-              bool success = RcsBody_mergeWithParent(graph, bdyName.c_str());
+              bool success = RcsBody_mergeWithParent(graph, name.c_str());
               RMSG("%s merging body %s", success ? "SUCCEEDED" : "FAILED",
-                   bdyName.c_str());
+                   name.c_str());
               if (success==true)
               {
                 FILE* fd = fopen("merged.xml", "w+");
@@ -957,19 +966,20 @@ int main(int argc, char** argv)
             RCSGRAPH_TRAVERSE_BODIES(graph)
             {
               bool success = RcsBody_removeJoints(BODY, graph);
-              RMSG("Removing all joints of a body %s %s", BODY->bdyName,
+              RMSG("Removing all joints of a body %s %s", BODY->name,
                    success ? "SUCCEEDED" : "FAILED");
             }
 
-            RcsBody* first = RcsBody_depthFirstTraversalGetNextById(graph, graph->root);
+            RcsBody* rootBdy = RCSBODY_BY_ID(graph, graph->rootId);
+            RcsBody* first = RcsBody_depthFirstTraversalGetNextById(graph, rootBdy);
 
             while (first)
             {
-              bool success = RcsBody_mergeWithParent(graph, first->bdyName);
+              bool success = RcsBody_mergeWithParent(graph, first->name);
               RMSG("%s to merge body %s with root",
-                   success ? "SUCCEEDED" : "FAILED", first->bdyName);
-              first = RcsBody_depthFirstTraversalGetNextById(graph, graph->root);
-              RMSG("Next body to merge: \"%s\"", first ? first->bdyName : "NULL");
+                   success ? "SUCCEEDED" : "FAILED", first->name);
+              first = RcsBody_depthFirstTraversalGetNextById(graph, rootBdy);
+              RMSG("Next body to merge: \"%s\"", first ? first->name : "NULL");
               RPAUSE();
             }
 
@@ -986,7 +996,7 @@ int main(int argc, char** argv)
 
         sprintf(hudText, "Graph \"%s\"\nDof: %d nJ: %d\n"
                 "Forward kinematics step: %.1f ms\n",
-                graph->xmlFile, graph->dof, graph->nJ, dtSim*1000.0);
+                graph->cfgFile, graph->dof, graph->nJ, dtSim*1000.0);
 
         if (bvhTraj!=NULL)
         {
@@ -1344,14 +1354,16 @@ int main(int argc, char** argv)
         }
         else if (kc && kc->getAndResetKey('k'))
         {
-          RcsBody* bdy = RcsBody_createBouncingSphere(Vec3d_zeroVec(),
+          // Create a new body in the camera position.
+          HTr A_camI;
+          viewer->getCameraTransform(&A_camI);
+          RcsBody* bdy = RcsBody_createBouncingSphere(graph, A_camI.org,
                                                       shootMass, 0.05);
 
-          // Calculate initial velocity vector from eye point to mouse tip
+          // Calculate initial velocity vector from eye point to mouse tip.
           double I_mouseCoords[3];
           viewer->getMouseTip(I_mouseCoords);
-          viewer->getCameraTransform(&bdy->A_BI);
-          Vec3d_sub(bdy->x_dot, I_mouseCoords, bdy->A_BI.org);
+          Vec3d_sub(bdy->x_dot, I_mouseCoords, A_camI.org);
           Vec3d_normalizeSelf(bdy->x_dot);
           Vec3d_constMulSelf(bdy->x_dot, 20.0);
 
@@ -1359,7 +1371,7 @@ int main(int argc, char** argv)
           RLOG(1, "RcsGraph_addBody");
 
           RLOG(1, "Adding body to simulation");
-          bool ok = sim->addBody(bdy);
+          bool ok = sim->addBody(graph, bdy);
 
           if (ok)
           {
@@ -1373,14 +1385,15 @@ int main(int argc, char** argv)
             arrBuf[4] = q0;
             arrBuf[5] = T_gravity;
 
-            ok = RcsGraph_addBody(graph, NULL, bdy, arrBuf, 6);
+            ok = RcsGraph_addBodyDofs(graph, NULL, bdy, arrBuf, 6);
 
             RLOG(1, "Adding body to graphics");
             simNode->addBodyNode(bdy);
           }
           pthread_mutex_unlock(&graphLock);
 
-          RMSG("%s adding body \"%s\"", ok ? "SUCCEEDED" : "FAILED", bdy->bdyName);
+          RMSG("%s adding body \"%s\"",
+               ok ? "SUCCEEDED" : "FAILED", bdy->name);
 
           bodyAdded = true;
         }
@@ -1452,15 +1465,15 @@ int main(int argc, char** argv)
             RMSG("No BodyNode found under mouse");
             continue;
           }
-          std::string bdyName = std::string(bNd->body()->bdyName);
+          std::string name = std::string(bNd->body()->name);
 
-          RMSG("Removing body \"%s\" under mouse", bdyName.c_str());
+          RMSG("Removing body \"%s\" under mouse", name.c_str());
           pthread_mutex_lock(&graphLock);
-          bool ok = sim->removeBody(bdyName.c_str());
+          bool ok = sim->removeBody(name.c_str());
 
           if (ok)
           {
-            ok = simNode->removeBodyNode(bdyName.c_str()) && ok;
+            ok = simNode->removeBodyNode(name.c_str()) && ok;
 
             MatNd* arrBuf[6];
             arrBuf[0] = q_curr;
@@ -1470,11 +1483,11 @@ int main(int argc, char** argv)
             arrBuf[4] = q0;
             arrBuf[5] = T_gravity;
 
-            ok = RcsGraph_removeBody(graph, bdyName.c_str(), arrBuf, 6) && ok;
+            ok = RcsGraph_removeBody(graph, name.c_str(), arrBuf, 6) && ok;
           }
           pthread_mutex_unlock(&graphLock);
           RMSG("%s removing body \"%s\"", ok ? "SUCCEEDED" : "FAILED",
-               bdyName.c_str());
+               name.c_str());
         }
         else if (kc && kc->getAndResetKey('a'))
         {
@@ -1484,18 +1497,18 @@ int main(int argc, char** argv)
             RMSG("No BodyNode found under mouse");
             continue;
           }
-          std::string bdyName = std::string(bNd->body()->bdyName);
+          std::string name = std::string(bNd->body()->name);
 
-          RMSG("Deactivating body \"%s\" under mouse", bdyName.c_str());
+          RMSG("Deactivating body \"%s\" under mouse", name.c_str());
           pthread_mutex_lock(&graphLock);
-          bool ok = sim->deactivateBody(bdyName.c_str());
+          bool ok = sim->deactivateBody(name.c_str());
           if (ok)
           {
             bNd->setGhostMode(true, "WHITE");
           }
           pthread_mutex_unlock(&graphLock);
           RMSG("%s deactivating body \"%s\"", ok ? "SUCCEEDED" : "FAILED",
-               bdyName.c_str());
+               name.c_str());
         }
         else if (kc && kc->getAndResetKey('A'))
         {
@@ -1505,14 +1518,14 @@ int main(int argc, char** argv)
             RMSG("No BodyNode found under mouse");
             continue;
           }
-          std::string bdyName = std::string(bNd->body()->bdyName);
+          std::string name = std::string(bNd->body()->name);
 
-          RMSG("Activating body \"%s\" under mouse", bdyName.c_str());
+          RMSG("Activating body \"%s\" under mouse", name.c_str());
           pthread_mutex_lock(&graphLock);
           HTr A_BI;
           HTr_copy(&A_BI, bNd->getTransformPtr());
           A_BI.org[2] += 0.2;
-          bool ok = sim->activateBody(bdyName.c_str(), &A_BI);
+          bool ok = sim->activateBody(name.c_str(), &A_BI);
           if (ok)
           {
             bNd->setGhostMode(false);
@@ -1520,7 +1533,7 @@ int main(int argc, char** argv)
 
           pthread_mutex_unlock(&graphLock);
           RMSG("%s activating body \"%s\"", ok ? "SUCCEEDED" : "FAILED",
-               bdyName.c_str());
+               name.c_str());
         }
         else if (kc && kc->getAndResetKey('m'))
         {
@@ -1701,9 +1714,12 @@ int main(int argc, char** argv)
         }
 
         sprintf(hudText, "[%s]: Sim-step: %.1f ms\nSim time: %.1f (%.1f) sec\n"
+                "Bodies: %d   Joints: %d\n"
                 "Gravity compensation: %s\nDisplaying %s",
                 sim->getClassName(), dtSim*1000.0, sim->time(),
-                Timer_get(timer), gravComp ? "ON" : "OFF",
+                Timer_get(timer),
+                sim->getGraph()->nBodies, sim->getGraph()->dof,
+                gravComp ? "ON" : "OFF",
                 simNode ? simNode->getDisplayModeStr() : "nothing");
 
         if (hud != NULL)
@@ -1758,7 +1774,7 @@ int main(int argc, char** argv)
     case 5:
     {
       Rcs::KeyCatcherBase::registerKey("q", "Quit");
-      Rcs::KeyCatcherBase::registerKey("T", "Run controller test");
+      Rcs::KeyCatcherBase::registerKey("t", "Run controller test");
       Rcs::KeyCatcherBase::registerKey(" ", "Toggle pause");
       Rcs::KeyCatcherBase::registerKey("a", "Change IK algorithm");
       Rcs::KeyCatcherBase::registerKey("d", "Write q-vector to q.dat");
@@ -1773,6 +1789,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("f", "Toggle physics feedback");
       Rcs::KeyCatcherBase::registerKey("p", "Print controller info on console");
       Rcs::KeyCatcherBase::registerKey("H", "Toggle HUD");
+      Rcs::KeyCatcherBase::registerKey("k", "Toggle GraphNode");
 
       int algo = 0;
       double alpha = 0.05, lambda = 1.0e-8, tmc = 0.1, dt = 0.01, dt_calc = 0.0;
@@ -1795,8 +1812,8 @@ int main(int argc, char** argv)
       argP.getArgument("-dir", directory);
       argP.getArgument("-tmc", &tmc, "Filter time constant for sliders");
       argP.getArgument("-dt", &dt, "Sampling time interval (default: %f)", dt);
-      argP.getArgument("-clipLimit", &clipLimit, "Clip limit for dx (default"
-                       "is %f)", clipLimit);
+      argP.getArgument("-clipLimit", &clipLimit, "Clip limit for dx (default "
+                       "is DBL_MAX)");
       argP.getArgument("-staticEffort", effortBdyName,
                        "Body to map static effort");
       argP.getArgument("-physics_config", physicsCfg, "Configuration file name"
@@ -1821,6 +1838,8 @@ int main(int argc, char** argv)
       bool initToQ0 = argP.hasArgument("-setDefaultStateFromInit", "Set the "
                                        "joint center defaults from the initial"
                                        " state");
+      bool testCopying = argP.hasArgument("-copy", "Test copying");
+      bool noHud = argP.hasArgument("-noHud", "Don't show HUD");
 
       Rcs_addResourcePath(directory);
 
@@ -1833,6 +1852,12 @@ int main(int argc, char** argv)
 
       // Create controller
       Rcs::ControllerBase controller(xmlFileName);
+
+      if (testCopying)
+      {
+        Rcs::ControllerBase tmp(controller);
+        controller = tmp;
+      }
 
       if (initToQ0)
       {
@@ -1909,8 +1934,8 @@ int main(int argc, char** argv)
       Rcs::Viewer* v           = NULL;
       Rcs::KeyCatcher* kc      = NULL;
       Rcs::GraphNode* gn       = NULL;
-      Rcs::PhysicsNode* simNode  = NULL;
-      Rcs::HUD* hud            = NULL;
+      Rcs::PhysicsNode* simNode = NULL;
+      osg::ref_ptr<Rcs::HUD> hud;
       Rcs::BodyPointDragger* dragger = NULL;
       Rcs::VertexArrayNode* cn = NULL;
       char hudText[2056];
@@ -1920,11 +1945,16 @@ int main(int argc, char** argv)
         v       = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
         kc      = new Rcs::KeyCatcher();
         gn      = new Rcs::GraphNode(controller.getGraph());
-        hud     = new Rcs::HUD();
+
+        if (!noHud)
+        {
+          hud     = new Rcs::HUD();
+          v->add(hud);
+        }
+
         dragger = new Rcs::BodyPointDragger();
         dragger->scaleDragForce(scaleDragForce);
         v->add(gn);
-        v->add(hud);
         v->add(kc);
         v->add(dragger);
 
@@ -2148,9 +2178,9 @@ int main(int argc, char** argv)
         {
           runLoop = false;
         }
-        else if (kc->getAndResetKey('H'))
+        else if (kc && kc->getAndResetKey('H'))
         {
-          if (hud)
+          if (hud.valid())
           {
             hud->toggle();
           }
@@ -2165,7 +2195,7 @@ int main(int argc, char** argv)
 
           RLOGS(0, "Switching to IK algorithm %d", algo);
         }
-        else if (kc && kc->getAndResetKey('T'))
+        else if (kc && kc->getAndResetKey('t'))
         {
           RLOGS(0, "Running controller test");
           pthread_mutex_lock(&graphLock);
@@ -2200,6 +2230,14 @@ int main(int argc, char** argv)
           RMSG("Resetting");
           RcsGraph_setDefaultState(controller.getGraph());
         }
+        else if (kc && kc->getAndResetKey('k'))
+        {
+          if (gn)
+          {
+            RMSG("Toggling GraphNode");
+            gn->toggle();
+          }
+        }
         else if (kc && kc->getAndResetKey('C') && cn)
         {
           RMSG("Toggle closest points visualization");
@@ -2224,16 +2262,16 @@ int main(int argc, char** argv)
             RMSG("No BodyNode found under mouse");
             continue;
           }
-          std::string bdyName = std::string(bNd->body()->bdyName);
+          std::string name = std::string(bNd->body()->name);
 
-          RMSG("Removing body \"%s\" under mouse", bdyName.c_str());
+          RMSG("Removing body \"%s\" under mouse", name.c_str());
           pthread_mutex_lock(&graphLock);
           bool ok = true;
 
           if (sim)
           {
             RLOG(0, "Removing from simulator");
-            ok = sim->removeBody(bdyName.c_str());
+            ok = sim->removeBody(name.c_str());
           }
 
           if (ok)
@@ -2243,36 +2281,36 @@ int main(int argc, char** argv)
             arrBuf[1] = q_dot_des;
 
             RLOG(0, "Removing from graph");
-            ok = RcsGraph_removeBody(controller.getGraph(), bdyName.c_str(),
+            ok = RcsGraph_removeBody(controller.getGraph(), name.c_str(),
                                      arrBuf, 2) && ok;
 
             if (ok && simNode)
             {
               RLOG(0, "Removing from simNode");
-              ok = simNode->removeBodyNode(bdyName.c_str()) && ok;
+              ok = simNode->removeBodyNode(name.c_str()) && ok;
             }
 
             if (ok && gn)
             {
               RLOG(0, "Removing from GraphNode");
-              ok = gn->removeBodyNode(bdyName.c_str()) && ok;
+              ok = gn->removeBodyNode(name.c_str()) && ok;
             }
 
           }
           pthread_mutex_unlock(&graphLock);
           RMSG("%s removing body \"%s\"", ok ? "SUCCEEDED" : "FAILED",
-               bdyName.c_str());
+               name.c_str());
         }
         else if (kc && kc->getAndResetKey('E'))
         {
-          std::string bdyName;
+          std::string name;
           RMSG("Linking GenericBody");
           printf("Enter body to link against: ");
-          std::cin >> bdyName;
+          std::cin >> name;
 
           RcsBody* lb = RcsGraph_linkGenericBody(controller.getGraph(),
-                                                 0, bdyName.c_str());
-          RMSG("Linked against \"%s\"", lb ? lb->bdyName : "NULL");
+                                                 0, name.c_str());
+          RMSG("Linked against \"%s\"", lb ? lb->name : "NULL");
         }
         else if (kc && kc->getAndResetKey('v'))
         {
@@ -2323,13 +2361,13 @@ int main(int argc, char** argv)
                                       effortBdy, &F_effort3, NULL, NULL),
                 poseOK ? "VALID" : "VIOLATES LIMITS");
 
-        if (hud != NULL)
+        if (hud.valid())
         {
           hud->setText(hudText);
         }
         else
         {
-          std::cout << hudText;
+          RLOG_CPP(1, "Hud text: " << hudText);
         }
 
         if ((valgrind==true) && (loopCount>10))
@@ -2790,7 +2828,7 @@ int main(int argc, char** argv)
 
       RCSGRAPH_TRAVERSE_JOINTS(controller.getGraph())
       {
-        JNT->coupledTo = NULL;
+        JNT->coupledToId = -1;
       }
       RcsGraph_setState(controller.getGraph(), NULL, NULL);
 
@@ -3064,21 +3102,18 @@ int main(int argc, char** argv)
 
       if (fileExtension==NULL)
       {
-        strcpy(dotFileDfs, dotFile);
-        strcat(dotFileDfs, "DFS");
+        snprintf(dotFileDfs, 256, "%s%s", dotFile, "DFS");
       }
       else
       {
-        snprintf(dotFileDfs, strlen(dotFile)-strlen(fileExtension)+1, "%s", dotFile);
-        strcat(dotFileDfs, "DFS");
-        strcat(dotFileDfs, fileExtension);
+        snprintf(dotFileDfs, 256, "%s%s%s", dotFile, "DFS", fileExtension);
       }
 
       argP.getArgument("-attachTo", attachTo, "Body to attach graph");
 
       if (!argP.hasArgument("-f"))
       {
-        strcpy(xmlFileName, "WAM-only.xml");
+        strcpy(xmlFileName, "WAM-arm-primitives.xml");
       }
 
       if (!argP.hasArgument("-dir"))

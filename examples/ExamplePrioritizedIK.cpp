@@ -232,7 +232,7 @@ int main(int argc, char** argv)
       {
         RCSGRAPH_TRAVERSE_JOINTS(controller.getGraph())
         {
-          JNT->coupledTo = NULL;
+          JNT->coupledToId = -1;
         }
         RcsGraph_setState(controller.getGraph(), NULL, NULL);
         RCHECK(RcsGraph_countCoupledJoints(controller.getGraph()) == 0);

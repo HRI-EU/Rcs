@@ -573,20 +573,15 @@ int main(int argc, char** argv)
           if (failure == true)
           {
             RLOG(0, "Body %s: x_dot = %.4f %.4f %.4f   om = %.4f %.4f %.4f",
-                 BODY->bdyName,
+                 BODY->name,
                  BODY->x_dot[0], BODY->x_dot[1], BODY->x_dot[2],
                  BODY->omega[0], BODY->omega[1], BODY->omega[2]);
-#ifdef OLD_TOPO
-            RLOG(0, "Parent is %s",
-                 BODY->parent ? BODY->parent->bdyName : "NULL");
-#else
-            RLOG(0, "Parent is %s",
-                 BODY->parentId!=-1 ? graph->bodies[BODY->parentId].bdyName : "NULL");
-#endif
+            const RcsBody* parent = RcsBody_getParent(graph, BODY);
+            RLOG(0, "Parent is %s", parent ? parent->name : "NULL");
 
             REXEC(3)
             {
-              RcsBody_fprint(stderr, BODY);
+              RcsBody_fprint(stderr, BODY, graph);
             }
 
             REXEC(4)
@@ -687,11 +682,12 @@ int main(int argc, char** argv)
               size_t nCoupledJoints = 0;
               RCSGRAPH_TRAVERSE_JOINTS(graph)
               {
-                JNT->coupledTo = NULL;
-                if (JNT->coupledJointName != NULL)
+                if (JNT->coupledToId != -1)
                 {
-                  RFREE(JNT->coupledJointName);
-                  JNT->coupledJointName = NULL;
+                  JNT->coupledToId = -1;
+                  strcpy(JNT->coupledJntName, "");
+                  JNT->nCouplingCoeff = 0;
+                  VecNd_setZero(JNT->couplingPoly, RCS_MAX_COUPLING_COEFF);
                   nCoupledJoints++;
                 }
               }
@@ -902,7 +898,7 @@ int main(int argc, char** argv)
 
       RcsGraph* graph = RcsGraph_create(xmlFileName);
       RCHECK(graph);
-      strcpy(rootBdy, graph->root->bdyName);
+      strcpy(rootBdy, RCSBODY_BY_ID(graph, graph->rootId)->name);
       argP.getArgument("-root", rootBdy, "Name of body to start traversals ("
                        "default is %s)", rootBdy);
 
@@ -928,29 +924,21 @@ int main(int argc, char** argv)
       RMSG("RCSGRAPH_TRAVERSE_BODIES");
       RCSGRAPH_TRAVERSE_BODIES(graph)
       {
-        std::cout << bdyCount++ << " " << BODY->bdyName << std::endl;
+        std::cout << bdyCount++ << " " << BODY->name << std::endl;
       }
 
       bdyCount = 0;
       RMSG("RCSBODY_TRAVERSE_BODIES");
-#ifdef OLD_TOPO
-      RCSBODY_TRAVERSE_BODIES(traversalRoot)
-#else
       RCSBODY_TRAVERSE_BODIES(graph, traversalRoot)
-#endif
       {
-        std::cout << bdyCount++ << " " << BODY->bdyName << std::endl;
+        std::cout << bdyCount++ << " " << BODY->name << std::endl;
       }
 
       bdyCount = 0;
       RMSG("RCSBODY_TRAVERSE_CHILD_BODIES");
-#ifdef OLD_TOPO
-      RCSBODY_TRAVERSE_CHILD_BODIES(traversalRoot)
-#else
       RCSBODY_TRAVERSE_CHILD_BODIES(graph, traversalRoot)
-#endif
       {
-        std::cout << bdyCount++ << " " << BODY->bdyName << std::endl;
+        std::cout << bdyCount++ << " " << BODY->name << std::endl;
       }
 
 

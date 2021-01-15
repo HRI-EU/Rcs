@@ -35,153 +35,62 @@
 *******************************************************************************/
 
 #include "SSRNode.h"
+#include "Rcs_graphicsUtils.h"
 
-#include <Rcs_mesh.h>
+#include <Rcs_Vec3d.h>
 
 #include <osg/Geode>
 #include <osg/ShapeDrawable>
+#include <osg/Geometry>
 
 
 
-Rcs::SSRNode::SSRNode(const double center[3], double A_KI[3][3],
-                      const double extent[2], const double r,
-                      bool resizeable) : NodeBase()
+namespace Rcs
 {
-  init(center, A_KI, extent, r, resizeable);
+
+SSRGeometry::SSRGeometry(const double xyz[3], unsigned int nSegments) :
+  mesh(NULL), nSeg(nSegments)
+{
+  Vec3d_copy(this->extents, xyz);
+  this->mesh = RcsMesh_createSSR(xyz, nSegments);
+  createGeometryFromMesh2(this, mesh);
 }
 
-void Rcs::SSRNode::initMesh(const double center[3], double A_KI[3][3],
-                            const double extent[2], const double r,
-                            bool resizeable)
+SSRGeometry::~SSRGeometry()
+{
+  RcsMesh_destroy(this->mesh);
+}
+
+void SSRGeometry::update(const double xyz[3])
+{
+  if (!Vec3d_isEqual(extents, xyz, 0.0))
+  {
+    Vec3d_copy(this->extents, xyz);
+    RcsMesh_copySSR(mesh, extents, nSeg);
+    updateGeometryFromMesh2(this, mesh);
+    dirtyBound();
+  }
+}
+
+
+
+
+
+SSRNode::SSRNode(const double center[3], double A_KI[3][3],
+                 const double extent[2], const double r,
+                 bool resizeable) : NodeBase()
 {
   setName("SSRNode");
 
-  // Create the triangle mesh
   double xyz[3];
-  xyz[0] = extent[0];
-  xyz[1] = extent[1];
-  xyz[2] = 2.0*r;
-  RcsMeshData* mesh = RcsMesh_createSSR(xyz, 32);
-
-
-  // Assign vertices
-  osg::ref_ptr<osg::Vec3Array> v = new osg::Vec3Array;
-  for (unsigned int i = 0; i < mesh->nVertices; i++)
-  {
-    const double* vi = &mesh->vertices[3*i];
-    v->push_back(osg::Vec3(vi[0], vi[1], vi[2]));
-  }
-
-  // Assign index array
-  osg::ref_ptr<osg::UIntArray> f = new osg::UIntArray;
-  for (unsigned int i = 0; i < 3 * mesh->nFaces; i++)
-  {
-    f->push_back(mesh->faces[i]);
-  }
-
-  osg::ref_ptr<osg::TriangleMesh> triMesh = new osg::TriangleMesh;
-  triMesh->setDataVariance(osg::Object::DYNAMIC);
-  triMesh->setVertices(v.get());
-  triMesh->setIndices(f.get());
-
-  osg::ref_ptr<osg::ShapeDrawable> sh = new osg::ShapeDrawable(triMesh.get());
+  Vec3d_set(xyz, extent[0], extent[1], 2.0*r);
+  osg::ref_ptr<osg::Geometry> g = new SSRGeometry(xyz, 16);
+  g->setUseDisplayList(!resizeable);
   osg::ref_ptr<osg::Geode> geode = new osg::Geode();
-  geode->addDrawable(sh.get());
+  geode->addDrawable(g.get());
   this->patPtr()->addChild(geode.get());
-
-  RcsMesh_destroy(mesh);
-
-  if (center != NULL)
-  {
-    setPosition(center);
-  }
-
-  if (A_KI != NULL)
-  {
-    setRotation(A_KI);
-  }
+  setPosition(center);   // Can cope with NULL
+  setRotation(A_KI);
 }
 
-void Rcs::SSRNode::init(const double center[3], double A_KI[3][3],
-                        const double extent[2], const double r,
-                        bool resizeable)
-{
-  setName("SSRNode");
-  osg::Geode* geode = new osg::Geode();
-  osg::ref_ptr<osg::TessellationHints> hints = new osg::TessellationHints;
-  hints->setDetailRatio(0.5f);
-
-  double lx = extent[0];
-  double ly = extent[1];
-
-  // Side 1: Front y-direction
-  osg::Capsule* cSSR1 =
-    new osg::Capsule(osg::Vec3(-lx / 2.0, 0.0, 0.0), r, ly);
-  cSSR1->setRotation(osg::Quat(osg::inDegrees(90.0f),
-                               osg::Vec3(1.0f, 0.0f, 0.0f)));
-  osg::ShapeDrawable* sdrC1 = new osg::ShapeDrawable(cSSR1, hints.get());
-  if (resizeable==true)
-  {
-    sdrC1->setUseDisplayList(false);
-  }
-  geode->addDrawable(sdrC1);
-
-  // Side 2: Back y-direction
-  osg::Capsule* cSSR2 =
-    new osg::Capsule(osg::Vec3(lx / 2.0, 0.0, 0.0), r, ly);
-  cSSR2->setRotation(osg::Quat(osg::inDegrees(90.0f),
-                               osg::Vec3(1.0f, 0.0f, 0.0f)));
-  osg::ShapeDrawable* sdrC2 = new osg::ShapeDrawable(cSSR2, hints.get());
-  if (resizeable==true)
-  {
-    sdrC2->setUseDisplayList(false);
-  }
-  geode->addDrawable(sdrC2);
-
-  // Side 3: Right x-direction
-  osg::Capsule* cSSR3 =
-    new osg::Capsule(osg::Vec3(0.0, ly / 2.0, 0.0), r, lx);
-  cSSR3->setRotation(osg::Quat(osg::inDegrees(90.0f),
-                               osg::Vec3(0.0f, 1.0f, 0.0f)));
-  osg::ShapeDrawable* sdrC3 = new osg::ShapeDrawable(cSSR3, hints.get());
-  if (resizeable==true)
-  {
-    sdrC3->setUseDisplayList(false);
-  }
-  geode->addDrawable(sdrC3);
-
-  // Side 4: Left x-direction
-  osg::Capsule* cSSR4 =
-    new osg::Capsule(osg::Vec3(0.0, -ly / 2.0, 0.0), r, lx);
-  cSSR4->setRotation(osg::Quat(osg::inDegrees(90.0f),
-                               osg::Vec3(0.0f, 1.0f, 0.0f)));
-  osg::ShapeDrawable* sdrC4 = new osg::ShapeDrawable(cSSR4, hints.get());
-  if (resizeable==true)
-  {
-    sdrC4->setUseDisplayList(false);
-  }
-  geode->addDrawable(sdrC4);
-
-  // Box part
-  osg::Box* bSSR =
-    new osg::Box(osg::Vec3(0.0, 0.0, 0.0), lx, ly, 2.0 * r);
-  osg::ShapeDrawable* sdrBox = new osg::ShapeDrawable(bSSR, hints.get());
-  if (resizeable==true)
-  {
-    sdrBox->setUseDisplayList(false);
-  }
-  geode->addDrawable(sdrBox);
-  this->patPtr()->addChild(geode);
-
-  if (center != NULL)
-  {
-    setPosition(center);
-  }
-
-  if (A_KI != NULL)
-  {
-    setRotation(A_KI);
-  }
-
-  setWireframe(true);
-}
+}   // namespace Rcs

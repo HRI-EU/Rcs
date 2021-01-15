@@ -58,22 +58,20 @@ extern "C" {
 void RcsJoint_destroy(RcsJoint* self);
 
 /*! \ingroup RcsJointFunctions
- *  \brief Makes a deep copy of a RcsJoint data structure. Some pointers
- *         can't be assigned in this context. This are
- *         <br>
- *         - RcsJoint *prev
- *         - RcsJoint *next
- *         - RcsJoint *coupledJoint
- *         - void* extraInfo
- *         <br>
- *         These are left unchanged and need to be handled separately.
+ *  \brief Initializes all members to zero, and the transformations to identity
+ */
+void RcsJoint_init(RcsJoint* self);
+
+/*! \ingroup RcsJointFunctions
+ *  \brief Makes a deep copy of a RcsJoint data structure except for the
+ *         connection ids (id, prevId, nextId, coupledToId).
  */
 void RcsJoint_copy(RcsJoint* dst, const RcsJoint* src);
 
 /*! \ingroup RcsJointFunctions
  *  \brief Prints the joint data to a file descriptor.
  */
-void RcsJoint_fprint(FILE* out, const RcsJoint* self);
+void RcsJoint_fprint(FILE* out, const RcsJoint* self, const RcsGraph* graph);
 
 /*! \ingroup RcsJointFunctions
  *  \brief Returns true if the joint is a rotational joint, false otherwise.
@@ -100,20 +98,6 @@ void RcsJoint_fprintType(FILE* out, const RcsJoint* jnt);
 const char* RcsJoint_typeName(int type);
 
 /*! \ingroup RcsJointFunctions
- *  \brief Return joint angle of salve joint with respect to master joint
- *         angle. This function computes a polynomial in the form <br>
- *         q_sl = p0*q_m^4 + p1*q_m^3 + p2*q_m^2 + p3*q_m + p4
- */
-/* double RcsJoint_calcSlaveJointAngle(const double q_master, */
-/*                                     const double depend_coef[4]); */
-
-/*! \ingroup RcsJointFunctions
- *  \brief Return sensitivity of salve joint with respect to master joint.
- */
-/* double RcsJoint_calcSlaveJointSensitive(const double q_master, */
-/*                                         const double depend_coef[4]); */
-
-/*! \ingroup RcsJointFunctions
  *  \brief Returns the joint position of the salve joint with respect to
  *         master joint position.
  *
@@ -136,7 +120,8 @@ const char* RcsJoint_typeName(int type);
  *         If the coefficients are of polynomial degree other than 1 or 5,
  *         the function exits with a fatal error.
  */
-double RcsJoint_computeSlaveJointAngle(const RcsJoint* slave,
+double RcsJoint_computeSlaveJointAngle(const RcsGraph* graph,
+                                       const RcsJoint* slave,
                                        const double q_master);
 
 /*! \ingroup RcsJointFunctions
@@ -144,7 +129,8 @@ double RcsJoint_computeSlaveJointAngle(const RcsJoint* slave,
  *         velocity. This function works in the samee way as
  *         RcsJoint_computeSlaveJointAngle().
  */
-double RcsJoint_computeSlaveJointVelocity(const RcsJoint* slave,
+double RcsJoint_computeSlaveJointVelocity(const RcsGraph* graph,
+                                          const RcsJoint* slave,
                                           const double q_master,
                                           const double qp_master);
 
@@ -153,7 +139,7 @@ double RcsJoint_computeSlaveJointVelocity(const RcsJoint* slave,
  *         descriptor. Both arguments are assumed to be not NULL. Otherwise,
  *         the function exits with a fatal error.
  */
-void RcsJoint_fprintXML(FILE* out, const RcsJoint* self);
+void RcsJoint_fprintXML(FILE* out, const RcsJoint* self, const RcsGraph* graph);
 
 /*! \ingroup RcsJointFunctions
  *  \brief Returns the joint's index in an array of RcsGraph::dof elements. If

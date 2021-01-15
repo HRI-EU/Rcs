@@ -39,12 +39,29 @@
 
 #include "NodeBase.h"
 
+#include <Rcs_mesh.h>
+
+#include <osg/Geometry>
+
+
+
 namespace Rcs
 {
 
-/**
- * \ingroup RcsGraphics
- */
+
+class SSRGeometry : public osg::Geometry
+{
+public:
+  SSRGeometry(const double extents[3], unsigned int nSegments=16);
+  virtual ~SSRGeometry();
+  void update(const double extents[3]);
+
+private:
+  RcsMeshData* mesh;
+  double extents[3];
+  unsigned int nSeg;
+};
+
 class SSRNode: public NodeBase
 {
 
@@ -55,19 +72,8 @@ public:
           const double extent[2],
           const double radius,
           bool resizeable=false);
-
-private:
-
-  void init(const double center[3], double A_KI[3][3],
-            const double extent[2], const double r,
-            bool resizeable);
-
-  void initMesh(const double center[3], double A_KI[3][3],
-                const double extent[2], const double r,
-                bool resizeable);
 };
 
 }   // namespace Rcs
 
 #endif // RCS_SSRNODE_H
-

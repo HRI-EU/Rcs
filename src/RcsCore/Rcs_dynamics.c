@@ -819,8 +819,9 @@ void Rcs_directDynamicsIntegrationStep(const double* x,
                                        double* xp,
                                        double dt)
 {
-  RcsGraph* graph = (RcsGraph*) param;
-  MatNd* F_ext    = (MatNd*) graph->userData;
+  DirDynParams* p = (DirDynParams*) param;
+  RcsGraph* graph = p->graph;
+  MatNd* F_ext    = p->F_ext;
   int n           = graph->nJ;
   MatNd q         = MatNd_fromPtr(n, 1, (double*) &x[0]);
   MatNd q_dot     = MatNd_fromPtr(n, 1, (double*) &x[n]);
@@ -832,7 +833,7 @@ void Rcs_directDynamicsIntegrationStep(const double* x,
   // integrated and drift away.
   RCSGRAPH_TRAVERSE_JOINTS(graph)
   {
-    if (JNT->coupledTo != NULL)
+    if (JNT->coupledToId != -1)
     {
       q_dot.ele[JNT->jacobiIndex] = 0.0;
     }
