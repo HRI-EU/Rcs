@@ -2672,6 +2672,22 @@ RcsSensor* RcsGraph_getSensorByName(const RcsGraph* graph, const char* name)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+int RcsGraph_getSensorIdByName(const RcsGraph* graph, const char* name)
+{
+  for (unsigned int i=0; i<graph->nSensors; ++i)
+  {
+    if (STREQ(graph->sensors[i].name, name))
+    {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void RcsGraph_scale(RcsGraph* graph, double scale)
 {
   double origin[3];

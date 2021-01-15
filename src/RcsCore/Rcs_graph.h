@@ -1109,7 +1109,13 @@ void RcsGraph_writeDotFile(const RcsGraph* self, const char* filename);
 void RcsGraph_writeDotFileDfsTraversal(const RcsGraph* self,
                                        const char* filename);
 
-RcsMeshData* RcsGraph_meshify(const RcsGraph* self, double scale, char computeType);
+/*! \ingroup RcsGraphFunctions
+ *  \brief Creates a mesh of the overall graph by traversing through all bodies
+ *         and shapes. The mesh will be scaled with the given scale factor.
+ */
+RcsMeshData* RcsGraph_meshify(const RcsGraph* self, double scale,
+                              char computeType);
+
 
 ///@}
 
@@ -1129,6 +1135,11 @@ RcsMeshData* RcsGraph_meshify(const RcsGraph* self, double scale, char computeTy
  */
 RcsSensor* RcsGraph_getSensorByName(const RcsGraph* self, const char* name);
 
+/*! \ingroup RcsGraphFunctions
+ *  \brief Returns the id of the first sensor with the indicated name. If no
+ *         matching sensor is found, -1 will be returned.
+ */
+int RcsGraph_getSensorIdByName(const RcsGraph* graph, const char* name);
 
 ///@}
 
