@@ -3229,9 +3229,17 @@ void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src)
     bDst->shape = shTmp;
 
     // Make a copy of all body shapes and attach them to the body
-    int nShapes = RcsBody_numShapes(&src->bodies[i]);
-    bDst->shape = RREALLOC(bDst->shape, nShapes+1, RcsShape*);
-    for (int i = 0; i < nShapes; i++)
+    int nSrcShapes = RcsBody_numShapes(&src->bodies[i]);
+    int nDstShapes = RcsBody_numShapes(&dst->bodies[i]);
+
+    if (nDstShapes < nSrcShapes)
+    {
+      bDst->shape = RREALLOC(bDst->shape, nSrcShapes + 1, RcsShape*);
+      memset(&bDst->shape[nDstShapes], 0,
+             (nSrcShapes-nDstShapes+1)*sizeof(RcsShape*));
+    }
+
+    for (int i = 0; i < nSrcShapes; i++)
     {
       if (bDst->shape[i] == NULL)
       {

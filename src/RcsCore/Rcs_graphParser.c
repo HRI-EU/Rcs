@@ -904,7 +904,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
                                       HTr* A_group,
                                       bool firstInGroup,
                                       int level,
-                                      RcsBody* root,
+                                      int rootId,
                                       bool verbose)
 {
   // Return if node is not a body node
@@ -916,6 +916,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   RCHECK(self);
   RCHECK(suffix);
   RCHECK(A_group);
+  RcsBody* root = RCSBODY_BY_ID(self, rootId);
 
   // Body name
   char name[RCS_MAX_NAMELEN];
@@ -1223,7 +1224,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
                                  HTr* A,
                                  bool firstInGroup,
                                  int level,
-                                 RcsBody* root[RCSGRAPH_MAX_GROUPDEPTH],
+                                 int rootId[RCSGRAPH_MAX_GROUPDEPTH],
                                  bool verbose)
 {
   if (node == NULL)
@@ -1271,7 +1272,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     }
 
     RcsGraph_parseBodies(node->children, self, gCol, suffix,
-                         parentGroup, A, firstInGroup, level, root, verbose);
+                         parentGroup, A, firstInGroup, level, rootId, verbose);
 
     // After we parsed the children of the graph, the graph has been
     // initialized: We reset the firstInGroup flag. This will lead to
@@ -1280,7 +1281,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     RLOG(9, "Ascending from Graph node - firstInGroup is false");
     firstInGroup = false;
     RcsGraph_parseBodies(node->next, self, gCol, suffix,
-                         parentGroup, A, firstInGroup, level, root, verbose);
+                         parentGroup, A, firstInGroup, level, rootId, verbose);
 
     // Then we look for the generic bodies and link them accordingly
     for (int i = 0; i < 10; i++)
@@ -1339,9 +1340,10 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
 
     REXEC(9)
     {
+      const RcsBody* levelRoot = RCSBODY_BY_ID(self, rootId[level]);
       RMSG("[Level %d -> %d]: \n\tNew group \"%s\" with root \"%s\" "
            "and color \"%s\"", level, level + 1, tmp,
-           root[level] ? root[level]->name : "NULL", col);
+           levelRoot ? levelRoot->name : "NULL", col);
 
       fprintf(stderr, "\tA_prev             %5.3f   %5.3f   %5.3f\n",
               A->org[0], A->org[1], A->org[2]);
@@ -1352,7 +1354,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     }
 
     // Copy current root node and descend one level
-    root[level + 1] = root[level];
+    rootId[level + 1] = rootId[level];
     level++;
 
     if (getXMLNodePropertyStringN(node, "prev", tmp, 32) > 0)
@@ -1361,13 +1363,13 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
       if (parent)
       {
         RCHECK(level > 0);
-        root[level] = parent;
+        rootId[level] = parent->id;
         RLOG(9, "Setting root[%d] to \"%s\"", level, parent ? parent->name : "NULL");
       }
     }
 
     RcsGraph_parseBodies(node->children, self, col, ndExt,
-                         pGroupSuffix, &A_group, true, level, root,
+                         pGroupSuffix, &A_group, true, level, rootId,
                          verbose);
 
     RLOG(9, "[Level %d -> %d]: back from group \"%s\"", level, level - 1, tmp);
@@ -1378,7 +1380,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     strcpy(ndExt, suffix);
 
     RcsGraph_parseBodies(node->next, self, gCol, ndExt,
-                         parentGroup, A, firstInGroup, level, root, verbose);
+                         parentGroup, A, firstInGroup, level, rootId, verbose);
   }
 
 
@@ -1436,7 +1438,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     RFREE(q0);
 
     RcsGraph_parseBodies(node->next, self, gCol, suffix,
-                         parentGroup, A, firstInGroup, level, root, verbose);
+                         parentGroup, A, firstInGroup, level, rootId, verbose);
   }
 
 
@@ -1579,7 +1581,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     }
 
     RcsGraph_parseBodies(node->next, self, gCol, suffix,
-                         parentGroup, A, firstInGroup, level, root, verbose);
+                         parentGroup, A, firstInGroup, level, rootId, verbose);
   }
 
 
@@ -1593,14 +1595,15 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
 
   else // can be a body or some junk
   {
+    const RcsBody* levelRoot = RCSBODY_BY_ID(self, rootId[level]);
     RLOG(19, "Creating new body with root[%d] \"%s\"", level,
-         (level > 0) ? (root[level] ? root[level]->name : "NULL") : "NULL");
+         (level > 0) ? (levelRoot ? levelRoot->name : "NULL") : "NULL");
 
     RcsBody* nr = NULL;
 
     nr = RcsBody_createFromXML(self, node, gCol, suffix, parentGroup,
                                A, firstInGroup, level,
-                               root[level], verbose);
+                               rootId[level], verbose);
 
 #ifndef TRANSFORM_ROOT_NEXT
     if (nr)
@@ -1615,10 +1618,10 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     }
 #endif
     RcsGraph_parseBodies(node->next, self, gCol, suffix,
-                         parentGroup, A, firstInGroup, level, root, verbose);
+                         parentGroup, A, firstInGroup, level, rootId, verbose);
 
     RLOG(19, "Falling back - root[%d] \"%s\"",
-         level, root[level] ? root[level]->name : "NULL");
+         level, levelRoot ? levelRoot->name : "NULL");
   }
 
 
@@ -1723,8 +1726,11 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
   // Recurse through bodies
   HTr A_rel;
   HTr_setIdentity(&A_rel);
-  RcsBody* root[RCSGRAPH_MAX_GROUPDEPTH];
-  memset(root, 0, RCSGRAPH_MAX_GROUPDEPTH * sizeof(RcsBody*));
+  int rootId[RCSGRAPH_MAX_GROUPDEPTH];
+  for (unsigned int i=0; i<RCSGRAPH_MAX_GROUPDEPTH; ++i)
+  {
+    rootId[i] = 0;
+  }
 
   // Initialize generic bodies. Here we allocate memory for names and body
   // transforms. They are deleted once relinked to another body. We initialize
@@ -1735,7 +1741,7 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
   }
 
   RcsGraph_parseBodies(node, self, "DEFAULT", "", "",
-                       &A_rel, false, 0, root, false);
+                       &A_rel, false, 0, rootId, false);
 
   // Create velocity vector. It is done here since self->dof has been
   // computed during parsing.

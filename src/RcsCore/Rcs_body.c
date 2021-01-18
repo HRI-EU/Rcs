@@ -1516,7 +1516,7 @@ RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* b,
                                           const int indexOrdering[6])
 {
   RCHECK(b);
-  RcsJoint* jnt0 = NULL;
+  int jntId0 = -1;
 
   for (int i = 0; i < 6; i++)
   {
@@ -1535,7 +1535,7 @@ RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* b,
     switch (indexOrdering[i])
     {
       case 0:
-        jnt0 = jnt;
+        jntId0 = jnt->id;
         jnt->type = RCSJOINT_TRANS_X;
         jnt->dirIdx = 0;
         break;
@@ -1573,7 +1573,7 @@ RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* b,
     jnt->maxTorque = DBL_MAX;
   }
 
-  return jnt0;
+  return RCSJOINT_BY_ID(self, jntId0);
 }
 
 /*******************************************************************************
@@ -2359,7 +2359,7 @@ RcsJoint* RcsBody_getJoint(const RcsBody* b, const RcsGraph* graph)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-bool RcsBody_attachToBodyId(RcsGraph* graph, int bodyId, int targetId)
+bool RcsBody_attachToBodyId_org(RcsGraph* graph, int bodyId, int targetId)
 {
   RcsBody* body = RCSBODY_BY_ID(graph, bodyId);
 
@@ -2457,6 +2457,157 @@ bool RcsBody_attachToBodyId(RcsGraph* graph, int bodyId, int targetId)
     if (body->rigid_body_joints)
     {
       VecNd_setZero(&graph->q->ele[bdyJoint->jointIndex], 6);
+    }
+
+  }
+
+  return true;
+}
+
+/*******************************************************************************
+ * Transformation from body to world coordinates
+ *
+ * A_1I   = A_12 * A_2I
+ * I_r_1 = I_r_2 + A_I2 * 2_r_21
+ *
+ * A_1I   = A_21^T * A_2I
+ * I_r_1 = I_r_2 - A_1I^T * 1_r_12
+ ******************************************************************************/
+void HTr_transform2(HTr* A_1I, const HTr* A_2I, const HTr* A_21)
+{
+  Mat3d_transposeMul(A_1I->rot, (double(*)[3]) A_21->rot, (double(*)[3]) A_2I->rot);
+  Vec3d_transRotate(A_1I->org, (double(*)[3]) A_1I->rot, A_21->org);
+  Vec3d_constMulSelf(A_1I->org, -1.0);
+  Vec3d_addSelf(A_1I->org, A_2I->org);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool RcsBody_attachToBodyId(RcsGraph* graph, int bodyId, int targetId)
+{
+  RcsBody* body = RCSBODY_BY_ID(graph, bodyId);
+
+  if (!body)
+  {
+    RLOG(1, "Body to attach does not exist (id=%d)", bodyId);
+    return false;
+  }
+
+  RcsBody* target = RCSBODY_BY_ID(graph, targetId);
+
+  if (body->parentId==targetId)
+  {
+    return true; // Nothing to do
+  }
+
+  // take the body and children out of the graph TODO maybe put this in a
+  // separate method
+  RcsBody* bPrev = RCSBODY_BY_ID(graph, body->prevId);
+  if (bPrev)
+  {
+    bPrev->nextId = body->nextId;
+  }
+
+  RcsBody* bNext = RCSBODY_BY_ID(graph, body->nextId);
+  if (bNext)
+  {
+    bNext->prevId = body->prevId;
+  }
+
+  RcsBody* bParent = RCSBODY_BY_ID(graph, body->parentId);
+  if (bParent)
+  {
+    if (bParent->firstChildId == bodyId)
+    {
+      bParent->firstChildId = body->nextId;
+    }
+    if (bParent->lastChildId == bodyId)
+    {
+      bParent->lastChildId = body->prevId;
+    }
+  }
+
+  body->nextId = -1;
+  body->prevId = -1;
+
+  // put it into the new position
+  if (target)
+  {
+    body->parentId = targetId;
+
+    if (target->lastChildId != -1)
+    {
+      graph->bodies[target->lastChildId].nextId = body->id;
+      body->prevId = target->lastChildId;
+    }
+    else
+    {
+      target->firstChildId = bodyId;
+    }
+
+    target->lastChildId = bodyId;
+  }
+  else
+  {
+    body->parentId = -1;
+
+    RcsBody* t = &graph->bodies[graph->rootId];
+    while (t->nextId!=-1)
+    {
+      t = RCSBODY_BY_ID(graph, t->nextId);
+    }
+    t->nextId = body->id;
+    body->prevId = t->id;
+  }
+
+  // If the body has no rigid body joints, we compute the relative transform
+  // so that the attached body will not undergo any jump. This might not be
+  // correct in case the body to be attached has joints with relative
+  // transforms. \todo: Check and possibly do similar as below in the case of
+  // rigid body dofs.
+  if (!body->rigid_body_joints)
+  {
+  if (target)
+  {
+    HTr_invTransform(&body->A_BP, &target->A_BI, &body->A_BI);
+  }
+  else
+  {
+    HTr_copy(&body->A_BP, &body->A_BI);   // Leave where it is
+  }
+  }
+
+  // Connect the joints
+  if (body->jntId!=-1)
+  {
+    RcsJoint* bdyJoint = &graph->joints[body->jntId];
+    RcsJoint* parentJnt = RcsBody_lastJointBeforeBody(graph, target);
+    bdyJoint->prevId = parentJnt ? parentJnt->id : -1;
+
+    // Set all rigid body joints to 0. The relative transformation is already
+    // handled with A_BP
+    if (body->rigid_body_joints)
+    {
+      // We compute the rigid body joint so that the attached body will not
+      // undergo any jump. For this, we need to consider the relative transform
+      // of the body to be attached, since it is applied after the rigid body
+      // joints. We therefore compute the fame before the relative transform
+      // (A_1I) and calculate the rigid body dofs based on the relative
+      // transformation between the frame A_1I and the parent's frame.
+      HTr A_1I, tmp;
+      HTr_transform2(&A_1I, &body->A_BI, &body->A_BP);
+
+      if (target)
+      {
+        HTr_invTransform(&tmp, &target->A_BI, &A_1I);
+      }
+      else
+      {
+        HTr_copy(&tmp, &A_1I);   // Leave where it is
+      }
+
+      HTr_to6DVector(&graph->q->ele[bdyJoint->jointIndex], &tmp);
     }
 
   }

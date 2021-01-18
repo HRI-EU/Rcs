@@ -282,12 +282,15 @@ void RcsSensor_copy(RcsSensor* self, const RcsSensor* src)
   HTr_copy(&self->A_SB, &src->A_SB);
   MatNd_resizeCopy(&self->rawData, src->rawData);
   self->nTexels = src->nTexels;
-  if (src->nTexels>0)
+
+  // Only realloc if memory increases
+  if (src->nTexels>self->nTexels)
   {
     self->texel = RREALLOC(self->texel, src->nTexels, RcsTexel);
-    memcpy(self->texel, src->texel, src->nTexels*sizeof(RcsTexel));
   }
 
+  self->nTexels = src->nTexels;
+  memcpy(self->texel, src->texel, src->nTexels*sizeof(RcsTexel));
 }
 
 /*******************************************************************************

@@ -784,7 +784,7 @@ int main(int argc, char** argv)
           else if (kc->getAndResetKey('a'))
           {
             std::string parentName, childName;
-            RMSG("Changing body childName");
+            RMSG("Changing body attachement");
             printf("Enter body to attach (child): ");
             std::cin >> childName;
             printf("Enter attachement (parent) body: ");
@@ -796,15 +796,17 @@ int main(int argc, char** argv)
                  child ? child->name : "NULL", childName.c_str(),
                  parent ? parent->name : "NULL", parentName.c_str());
 
-            //bool success = RcsBody_attachToBodyById(graph, child, parent, NULL);
             bool success = RcsBody_attachToBodyId(graph, child?child->id:-1, parent?parent->id:-1);
-            RMSG("%s changing body attachement",
-                 success ? "SUCCESS" : "FAILURE");
+            RMSG("%s changing attachement", success ? "SUCCESS" : "FAILURE");
 
             RcsGraph_fprintJointRecursion(stdout, graph, parentName.c_str());
             RcsGraph_toXML("graph.xml", graph);
             RcsGraph_writeDotFile(graph, dotFile);
+            RCHECK(RcsGraph_check(graph, NULL, NULL));
 
+
+            REXEC(1)
+            {
             char osCmd[256];
             sprintf(osCmd, "dotty %s&", dotFile);
             int err = system(osCmd);
@@ -812,6 +814,7 @@ int main(int argc, char** argv)
             if (err == -1)
             {
               RMSG("Couldn't start dot file viewer!");
+              }
             }
 
 

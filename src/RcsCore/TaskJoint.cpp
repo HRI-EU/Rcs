@@ -218,11 +218,11 @@ Rcs::TaskJoint* Rcs::TaskJoint::clone(RcsGraph* newGraph) const
  ******************************************************************************/
 void Rcs::TaskJoint::computeX(double* x_res) const
 {
-  x_res[0] = MatNd_get(this->graph->q, this->jointId, 0);
+  x_res[0] = MatNd_get(this->graph->q, getJointIndex(), 0);
 
   if (this->refJointId != -1)
   {
-    x_res[0] += refGain*MatNd_get(this->graph->q, this->refJointId, 0);
+    x_res[0] += refGain*MatNd_get(this->graph->q, getRefJoint()->jointIndex, 0);
   }
 }
 
@@ -285,7 +285,7 @@ int Rcs::TaskJoint::getJointIndex() const
  ******************************************************************************/
 const RcsJoint* Rcs::TaskJoint::getRefJoint() const
 {
-  return &graph->joints[this->refJointId];
+  return RCSJOINT_BY_ID(graph, this->refJointId);
 }
 
 /*******************************************************************************
