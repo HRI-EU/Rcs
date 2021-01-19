@@ -39,10 +39,7 @@ usage="
 &#xA;  slider. A value of 0 will drag it to the shoulder, a value of 1 will
 &#xA;  drag it to the wrist. The second slider component is the lateral offset
 &#xA;  of the plane spanned by shoulder-elbow-wrist. The third one is the 
-&#xA;  closest distance of the drag point to the arm's shapes. The kinematics
-&#xA;  is not exact, therefore it only works for the drag point below the
-&#xA;  arm's geometry. For changing it to above, the third component of the dx
-&#xA;  vector must be negated in the TaskSleeve.cpp.
+&#xA;  closest distance of the drag point to the arm's shapes.
 &#xA;  
 &#xA;  Here is how to start an example:
 &#xA;  
@@ -66,13 +63,13 @@ usage="
       <Shape type="FRAME" scale="0.5" />
     </Body>
 
-    <Body name="UpperArm" prev="Body" physics="kinematic" mass=".1" >
+    <Body name="UpperArm" prev="Body" physics="dynamic" mass=".1" >
       <Joint name="shoulder" type="RotY" range="-170 150 170" />
       <Shape type="SSL" color="RED" radius="0.06" length="0.9" physics="false" distance="true" graphics="true" />
       <Shape type="SSL" color="RED_TRANS" radius="0.08" length="0.9" graphics="false" distance="false" material="object" />
     </Body>
 
-    <Body name="ForeArm" prev="UpperArm" physics="kinematic" mass=".1" >
+    <Body name="ForeArm" prev="UpperArm" physics="dynamic" mass=".1" >
       <Joint name="elbow" type="RotY" range="-170 -60 170" transform="0 0 0.9 0 0 0" />
       <Shape type="SSL" color="GREEN" radius="0.06" length="0.9" physics="false" graphics="true" distance="true" />
       <Shape type="SSL" color="GREEN_TRANS" radius="0.08" length="0.9" graphics="false" distance="false" material="object" />

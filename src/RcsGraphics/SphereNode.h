@@ -70,12 +70,6 @@ protected:
   void init(const double pos[3],
             const double radius,
             bool resizeable);
-  void init2(const double pos[3],
-             const double radius,
-             bool resizeable);
-  void init3(const double pos[3],
-             const double radius,
-             bool resizeable);
   osg::ref_ptr<osg::Sphere> sphere;
 };
 

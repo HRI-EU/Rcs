@@ -1800,6 +1800,12 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
            BODY->name);
     }
 
+    if (strlen(BODY->name) == 0)
+    {
+      nErrors++;
+      RLOG(1, "Found body with empty body name");
+    }
+
     if (BODY->rigid_body_joints)
     {
       // Test if rigid body has 6 joints

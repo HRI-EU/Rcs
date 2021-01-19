@@ -281,7 +281,6 @@ void RcsSensor_copy(RcsSensor* self, const RcsSensor* src)
   snprintf(self->name, RCS_MAX_NAMELEN, "%s", src->name);
   HTr_copy(&self->A_SB, &src->A_SB);
   MatNd_resizeCopy(&self->rawData, src->rawData);
-  self->nTexels = src->nTexels;
 
   // Only realloc if memory increases
   if (src->nTexels>self->nTexels)

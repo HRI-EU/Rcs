@@ -525,6 +525,10 @@ int main(int argc, char** argv)
         RcsGraph_copy(graph, graph2);
         t_copy = Timer_getSystemTime() - t_copy;
         RMSG("Copying graph took %.3f msec", t_copy*1.0e3);
+        t_copy = Timer_getSystemTime();
+        RcsGraph_setState(graph2, NULL, NULL);
+        t_copy = Timer_getSystemTime() - t_copy;
+        RMSG("Forward kinematics took %.3f msec", t_copy*1.0e3);
         RcsGraph_destroy(graph2);
       }
 
@@ -807,13 +811,13 @@ int main(int argc, char** argv)
 
             REXEC(1)
             {
-            char osCmd[256];
-            sprintf(osCmd, "dotty %s&", dotFile);
-            int err = system(osCmd);
+              char osCmd[256];
+              sprintf(osCmd, "dotty %s&", dotFile);
+              int err = system(osCmd);
 
-            if (err == -1)
-            {
-              RMSG("Couldn't start dot file viewer!");
+              if (err == -1)
+              {
+                RMSG("Couldn't start dot file viewer!");
               }
             }
 

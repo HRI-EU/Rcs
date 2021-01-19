@@ -445,6 +445,7 @@ void RcsGraph_bodyTorque(const RcsGraph* self, const RcsBody* body,
  *           previous frame, not static axis representation), and NULL or
  *           identity relative transforms
  *         - duplicate body names
+ *         - body names with zero size (empty ones like "")
  *         - joint indices out of range
  *         - Jacobian indices out of range
  *         - joint direction index out of range

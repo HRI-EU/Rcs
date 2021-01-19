@@ -811,10 +811,10 @@ double RcsBody_distance(const RcsBody* b1,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-double RcsBody_distanceToPoint(const RcsBody* body,
-                               const double I_pt[3],
-                               double I_cpBdy[3],
-                               double I_nBdyPt[3])
+double RcsBody_distanceToPoint_org(const RcsBody* body,
+                                   const double I_pt[3],
+                                   double I_cpBdy[3],
+                                   double I_nBdyPt[3])
 {
   RcsShape* ptShape = RALLOC(RcsShape);
 
@@ -839,6 +839,34 @@ double RcsBody_distanceToPoint(const RcsBody* body,
   RcsBody_destroy(ptBdy);
 
   return d;
+}
+
+/*******************************************************************************
+ * Create a temporary body with a point shape, then call the body distance
+ * function.
+ ******************************************************************************/
+double RcsBody_distanceToPoint(const RcsBody* body,
+                               const double I_pt[3],
+                               double I_cpBdy[3],
+                               double I_nBdyPt[3])
+{
+  RcsShape ptShape;
+  memset(&ptShape, 0, sizeof(RcsShape));
+  ptShape.type = RCSSHAPE_POINT;
+  HTr_setIdentity(&ptShape.A_CB);
+  ptShape.scale = 1.0;
+  ptShape.computeType |= RCSSHAPE_COMPUTE_DISTANCE;
+
+  RcsBody ptBdy;
+  RcsBody_init(&ptBdy);
+  Vec3d_copy(ptBdy.A_BI.org, I_pt);
+
+  RcsShape* shapeVec[2];
+  shapeVec[0] = &ptShape;
+  shapeVec[1] = NULL;
+  ptBdy.shape = shapeVec;
+
+  return RcsBody_distance(body, &ptBdy, I_cpBdy, NULL, I_nBdyPt);
 }
 
 /*******************************************************************************
@@ -2357,114 +2385,6 @@ RcsJoint* RcsBody_getJoint(const RcsBody* b, const RcsGraph* graph)
 }
 
 /*******************************************************************************
- * See header.
- ******************************************************************************/
-bool RcsBody_attachToBodyId_org(RcsGraph* graph, int bodyId, int targetId)
-{
-  RcsBody* body = RCSBODY_BY_ID(graph, bodyId);
-
-  if (!body)
-  {
-    RLOG(1, "Body to attach does not exist (id=%d)", bodyId);
-    return false;
-  }
-
-  RcsBody* target = RCSBODY_BY_ID(graph, targetId);
-
-  if (body->parentId==targetId)
-  {
-    return true; // Nothing to do
-  }
-
-  // take the body and children out of the graph TODO maybe put this in a
-  // separate method
-  RcsBody* bPrev = RCSBODY_BY_ID(graph, body->prevId);
-  if (bPrev)
-  {
-    bPrev->nextId = body->nextId;
-  }
-
-  RcsBody* bNext = RCSBODY_BY_ID(graph, body->nextId);
-  if (bNext)
-  {
-    bNext->prevId = body->prevId;
-  }
-
-  RcsBody* bParent = RCSBODY_BY_ID(graph, body->parentId);
-  if (bParent)
-  {
-    if (bParent->firstChildId == bodyId)
-    {
-      bParent->firstChildId = body->nextId;
-    }
-    if (bParent->lastChildId == bodyId)
-    {
-      bParent->lastChildId = body->prevId;
-    }
-  }
-
-  body->nextId = -1;
-  body->prevId = -1;
-
-  // put it into the new position
-  if (target)
-  {
-    body->parentId = targetId;
-
-    if (target->lastChildId != -1)
-    {
-      graph->bodies[target->lastChildId].nextId = body->id;
-      body->prevId = target->lastChildId;
-    }
-    else
-    {
-      target->firstChildId = bodyId;
-    }
-
-    target->lastChildId = bodyId;
-  }
-  else
-  {
-    body->parentId = -1;
-
-    RcsBody* t = &graph->bodies[graph->rootId];
-    while (t->nextId!=-1)
-    {
-      t = RCSBODY_BY_ID(graph, t->nextId);
-    }
-    t->nextId = body->id;
-    body->prevId = t->id;
-  }
-
-  if (target)
-  {
-    HTr_invTransform(&body->A_BP, &target->A_BI, &body->A_BI);
-  }
-  else
-  {
-    HTr_copy(&body->A_BP, &body->A_BI);   // Leave where it is
-  }
-
-  // Connect the joints
-  if (body->jntId!=-1)
-  {
-    RcsJoint* bdyJoint = &graph->joints[body->jntId];
-    RcsJoint* parentJnt = RcsBody_lastJointBeforeBody(graph, target);
-    bdyJoint->prevId = parentJnt ? parentJnt->id : -1;
-
-    // Set all rigid body joints to 0. The relative transformation is already
-    // handled with A_BP
-    if (body->rigid_body_joints)
-    {
-      VecNd_setZero(&graph->q->ele[bdyJoint->jointIndex], 6);
-    }
-
-  }
-
-  return true;
-}
-
-/*******************************************************************************
  * Transformation from body to world coordinates
  *
  * A_1I   = A_12 * A_2I
@@ -2473,9 +2393,10 @@ bool RcsBody_attachToBodyId_org(RcsGraph* graph, int bodyId, int targetId)
  * A_1I   = A_21^T * A_2I
  * I_r_1 = I_r_2 - A_1I^T * 1_r_12
  ******************************************************************************/
-void HTr_transform2(HTr* A_1I, const HTr* A_2I, const HTr* A_21)
+static void HTr_transform2(HTr* A_1I, const HTr* A_2I, const HTr* A_21)
 {
-  Mat3d_transposeMul(A_1I->rot, (double(*)[3]) A_21->rot, (double(*)[3]) A_2I->rot);
+  Mat3d_transposeMul(A_1I->rot, (double(*)[3]) A_21->rot,
+                     (double(*)[3]) A_2I->rot);
   Vec3d_transRotate(A_1I->org, (double(*)[3]) A_1I->rot, A_21->org);
   Vec3d_constMulSelf(A_1I->org, -1.0);
   Vec3d_addSelf(A_1I->org, A_2I->org);
@@ -2568,14 +2489,14 @@ bool RcsBody_attachToBodyId(RcsGraph* graph, int bodyId, int targetId)
   // rigid body dofs.
   if (!body->rigid_body_joints)
   {
-  if (target)
-  {
-    HTr_invTransform(&body->A_BP, &target->A_BI, &body->A_BI);
-  }
-  else
-  {
-    HTr_copy(&body->A_BP, &body->A_BI);   // Leave where it is
-  }
+    if (target)
+    {
+      HTr_invTransform(&body->A_BP, &target->A_BI, &body->A_BI);
+    }
+    else
+    {
+      HTr_copy(&body->A_BP, &body->A_BI);   // Leave where it is
+    }
   }
 
   // Connect the joints
