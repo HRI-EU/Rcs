@@ -58,10 +58,11 @@ SimpleSlider::SimpleSlider(double lowerBound,
                            QWidget* parent)
   : QWidget(parent), zeroPos(zeroPos_), scaleFactor(scaleFactor_)
 {
-  QHBoxLayout* sliderLayout = new QHBoxLayout;
+  QHBoxLayout* sliderLayout = new QHBoxLayout(this);
 
   qwtslider = new QwtSlider(this);
   qwtslider->setFixedWidth(200);
+  qwtslider->setScalePosition(QwtSlider::NoScale);
 #if QWT_VERSION < 0x060102
   qwtslider->setRange(lowerBound*scaleFactor, upperBound*scaleFactor,
                       0.01, // Fraction of the interval length
@@ -74,14 +75,14 @@ SimpleSlider::SimpleSlider(double lowerBound,
 #endif
   qwtslider->setValue(zeroPos*scaleFactor);
 
-  QPushButton* button_reset = new QPushButton("Reset");
-  button_reset->setFixedWidth(30);
-  button_reset->setFixedHeight(15);
+  QPushButton* button_reset = new QPushButton("Reset", this);
+  button_reset->setFixedWidth(50);
+  button_reset->setFixedHeight(20);
   connect(button_reset, SIGNAL(clicked()), SLOT(slider_reset()));
 
-  QPushButton* button_null = new QPushButton("Null");
-  button_null->setFixedWidth(30);
-  button_null->setFixedHeight(15);
+  QPushButton* button_null = new QPushButton("Null", this);
+  button_null->setFixedWidth(40);
+  button_null->setFixedHeight(20);
   connect(button_null, SIGNAL(clicked()), SLOT(slider_null()));
 
   sliderLayout->addWidget(button_null);

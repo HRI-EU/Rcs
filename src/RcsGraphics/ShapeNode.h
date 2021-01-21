@@ -40,20 +40,41 @@
 #include <Rcs_graph.h>
 #include <NodeBase.h>
 
-#include <osg/MatrixTransform>
-
 #include <vector>
 
 
 namespace Rcs
 {
 
+/*! \ingroup RcsGraphics
+ *  \brief Node to display a RcsShape. The class has a flag to indicate if the
+ *         node is resizeable or not. We do this since resizeable shapes often
+ *         lead to a performance overhead when transferring data from CPU to
+ *         GPU. If the node is updateable, the update function will be called
+ *         during the viewer's update traversal, and it will check if the
+ *         shape parameters have changed. Updating is done for the shape's
+ *         relative transformation to the body (RcsShape::A_CB), the extents
+ *         and the color.
+ *
+ *         Here is the node structure of this node:
+ *
+ *         ShapeNode (osg::PositionAttitudeTransform) relative to body
+ *              |
+ *              ---> geode (osg::Geode)
+ *                        |
+ *                        ---> sd (osg::Drawable)
+ *                               |
+ *                               ---> capsule, box, etc (osg::Capsule ...)
+ *
+ *        In a few cases (Meshes etc.), the Drawable is replaced by a
+ *        osg::Geometry.
+ */
 class ShapeNode : public osg::PositionAttitudeTransform
 {
 public:
   ShapeNode(const RcsShape* shape, bool resizeable);
-  void displayFrames(bool visibility = true);
-  void toggleFrames();
+  void displayFrame(bool visibility = true);
+  void toggleFrame();
   void updateDynamicShapes();
 
 protected:
@@ -74,10 +95,11 @@ protected:
     osg::ref_ptr<osg::Node> subNode;
     double extents[3];
     HTr A_CB;
+    std::string color;
   };
 
   const RcsShape* shape;
-  std::vector<osg::ref_ptr<NodeBase>> frames;
+  osg::ref_ptr<NodeBase> frame;
   osg::ref_ptr<ShapeUpdater> shapeUpdater;
 };
 

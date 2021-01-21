@@ -295,7 +295,7 @@ void MatNdWidget::init(MatNd* mat_, const MatNd* dispMat_,
   setWindowTitle(title ? title : windowTitle);
 
   // The layout for the overall task widget
-  QGridLayout* matLayout = new QGridLayout();
+  QGridLayout* matLayout = new QGridLayout(this);
 
   // Add a slider instance for each array element
   for (unsigned int i = 0; i < this->mat->m; i++)

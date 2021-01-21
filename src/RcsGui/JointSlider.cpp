@@ -57,9 +57,7 @@ JointSlider::JointSlider(double lower_bound,
                          double zero_pos,
                          double upper_bound,
                          double scaleFactor,
-                         QWidget* parent,
-                         const char* /*name*/)
-  : QWidget(parent)
+                         QWidget* parent) : QWidget(parent)
 {
   char a[32];
   _scaleFactor = scaleFactor;
@@ -74,19 +72,19 @@ JointSlider::JointSlider(double lower_bound,
     _lb -= 1.0e-8;
   }
 
-  QHBoxLayout* stateBoxLayout = new QHBoxLayout;
+  QHBoxLayout* stateBoxLayout = new QHBoxLayout(this);
+
+  // Slider with command and current values
+  sl = new SimpleSlider(lower_bound, zero_pos, upper_bound, scaleFactor, this);
 
   // Label for lower bound joint value
   snprintf(a, 31, " %5.1f", lower_bound * _scaleFactor);
-  QLabel* label_lb = new QLabel(a);
+  QLabel* label_lb = new QLabel(a, this);
   label_lb->setFont(QFont("Helvetica", 8, QFont::Bold));
-  label_lb->setFixedWidth(30);
-
-  // Slider with command and current values
-  sl = new SimpleSlider(lower_bound, zero_pos, upper_bound, scaleFactor);
+  //label_lb->setFixedWidth(30);
 
   // Bar for left joint range
-  t1 = new QwtThermo();
+  t1 = new QwtThermo(this);
   t1->setFixedWidth((int)(-200.0 * _lb / (_ub - _lb)));
   t1->setBorderWidth(1);
   t1->setPipeWidth(4);
@@ -105,7 +103,7 @@ JointSlider::JointSlider(double lower_bound,
   t1->setValue(_lb);
 
   // Bar for right joint range
-  t2 = new QwtThermo();
+  t2 = new QwtThermo(this);
   t2->setFixedWidth((int)(200.0 * _ub / (_ub - _lb)));
   t2->setBorderWidth(1);
   t2->setPipeWidth(4);
@@ -126,12 +124,12 @@ JointSlider::JointSlider(double lower_bound,
 
   // Label for upper bound joint value
   snprintf(a, 31, " %5.1f", upper_bound * _scaleFactor);
-  QLabel* label_ub = new QLabel(a);
+  QLabel* label_ub = new QLabel(a, this);
   label_ub->setFont(QFont("Helvetica", 8, QFont::Bold));
-  label_ub->setFixedWidth(30);
+  //label_ub->setFixedWidth(30);
 
-  stateBoxLayout->addWidget(label_lb, Qt::AlignLeft);
   stateBoxLayout->addWidget(sl, Qt::AlignLeft);
+  stateBoxLayout->addWidget(label_lb, Qt::AlignLeft);
   stateBoxLayout->addWidget(t1, Qt::AlignLeft);
   stateBoxLayout->addWidget(t2, Qt::AlignLeft);
   stateBoxLayout->addWidget(label_ub, Qt::AlignLeft);

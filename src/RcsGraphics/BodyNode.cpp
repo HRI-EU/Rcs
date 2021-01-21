@@ -571,7 +571,7 @@ void BodyNode::displayReferenceNode(bool visible)
 
   for (size_t i=0; i<_shapeNodes.size(); ++i)
   {
-    _shapeNodes[i]->displayFrames(visible);
+    _shapeNodes[i]->displayFrame(visible);
   }
 }
 

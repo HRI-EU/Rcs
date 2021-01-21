@@ -104,8 +104,8 @@ int JointWidget::create(RcsGraph* graph, pthread_mutex_t* graphLock,
   *_passive = passive;
 
   VoidPointerList* p = new VoidPointerList;
-  p->ptr[0] = (void*)graph;
-  p->ptr[1] = (void*)graph;
+  p->ptr[0] = (void*) graph;
+  p->ptr[1] = (void*) graph;
   p->ptr[2] = (void*) graphLock;
   p->ptr[3] = (void*) q_des;
   p->ptr[4] = (void*) q_curr;
@@ -131,13 +131,13 @@ int JointWidget::create(const RcsGraph* graph, pthread_mutex_t* graphLock,
   *_passive = passive;
 
   VoidPointerList* p = new VoidPointerList;
-  p->ptr[0] = (void*)NULL;
-  p->ptr[1] = (void*)graph;
-  p->ptr[2] = (void*)graphLock;
-  p->ptr[3] = (void*)q_des;
-  p->ptr[4] = (void*)q_curr;
-  p->ptr[5] = (void*)_alwaysWriteToQ;
-  p->ptr[6] = (void*)_passive;
+  p->ptr[0] = (void*) NULL;
+  p->ptr[1] = (void*) graph;
+  p->ptr[2] = (void*) graphLock;
+  p->ptr[3] = (void*) q_des;
+  p->ptr[4] = (void*) q_curr;
+  p->ptr[5] = (void*) _alwaysWriteToQ;
+  p->ptr[6] = (void*) _passive;
 
   int handle = RcsGuiFactory_requestGUI(stateGui, p);
 
@@ -171,6 +171,7 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
   RLOG(5, "Creating Widget with %d dof", _constGraph->dof);
 
   setWindowTitle("RCS Joint Control");
+  setObjectName("Rcs::JointWidget");
 
   QWidget* scrollWidget = new QWidget(this);
 
@@ -190,14 +191,14 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
     //
     // Checkboxes for constraints
     //
-    QGridLayout* constraintsLayout = new QGridLayout;
+    QGridLayout* constraintsLayout = new QGridLayout(this);
 
     int i = 0;
     RCSGRAPH_TRAVERSE_JOINTS(_constGraph)
     {
       RLOG(5, "Creating Widget for joint \"%s\"", JNT->name);
 
-      QCheckBox* cc = new QCheckBox(JNT->name);
+      QCheckBox* cc = new QCheckBox(JNT->name, this);
       cc->setChecked(JNT->constrained);
       check_constraints.push_back(cc);
 
@@ -214,13 +215,13 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
         check_constraints[i]->setEnabled(false);
       }
 
-      QLCDNumber* lcd_cmd = new QLCDNumber(7);
+      QLCDNumber* lcd_cmd = new QLCDNumber(7, this);
       lcd_cmd->setAutoFillBackground(true);
       lcd_cmd->setFixedHeight(20);
       lcd_cmd->setPalette(palette);
       lcd_q_cmd.push_back(lcd_cmd);
 
-      QLCDNumber* lcd_act = new QLCDNumber(7);
+      QLCDNumber* lcd_act = new QLCDNumber(7, this);
       lcd_act->setAutoFillBackground(true);
       lcd_act->setFixedHeight(20);
       lcd_act->setPalette(palette);
@@ -233,7 +234,8 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
       double qi = MatNd_get(_q_des, JNT->jointIndex, 0);
       double scaleFactor = RcsJoint_isRotation(JNT) ? 180.0/M_PI : 1000.0;
 
-      JointSlider* jsl = new JointSlider(lb-0.1*range, qi, ub+0.1*range, scaleFactor);
+      JointSlider* jsl = new JointSlider(lb-0.1*range, qi, ub+0.1*range,
+                                         scaleFactor, this);
       jsc_q.push_back(jsl);
 
       if (passive == false)
@@ -251,6 +253,11 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
       i++;
     }   // for(i=0;i<_dof;i++)
 
+    constraintsLayout->setColumnStretch(0, 0);
+    constraintsLayout->setColumnStretch(1, 0);
+    constraintsLayout->setColumnStretch(2, 0);
+    constraintsLayout->setColumnStretch(3, 1);
+
 
     scrollWidget->setLayout(constraintsLayout);
 
@@ -259,10 +266,10 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
   else
   {
     RLOG(4, "No joints in graph - skipping state widget");
-    QLabel* label = new QLabel("no joints in graph");
+    QLabel* label = new QLabel("no joints in graph", this);
     QFont font("Helvetica", 12, QFont::Bold);
     label->setFont(font);
-    QHBoxLayout* layout = new QHBoxLayout;
+    QHBoxLayout* layout = new QHBoxLayout(this);
     layout->addWidget(label);
     scrollWidget->setLayout(layout);
   }
@@ -273,6 +280,7 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
   scrollWidget->resize(scrollWidget->sizeHint());
   setWidget(scrollWidget);
   setWidgetResizable(true);
+  resize(1000, height());
 
   //
   // 25 Hz timer callback
@@ -289,6 +297,7 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
  ******************************************************************************/
 JointWidget::~JointWidget()
 {
+  RLOG(5, "JointWidget deleted");
 }
 
 /*******************************************************************************

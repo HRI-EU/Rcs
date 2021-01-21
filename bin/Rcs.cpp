@@ -1998,8 +1998,6 @@ int main(int argc, char** argv)
               Rcs::ControllerWidgetBase::create(&controller, a_des,
                                                 x_des, x_curr, mtx);
             }
-            // Rcs::ControllerWidgetBase::create(&controller, a_des,
-            //                                   x_des, x_curr, mtx);
           }
         }
         else

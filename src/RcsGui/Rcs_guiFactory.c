@@ -91,6 +91,7 @@ void RcsGuiFactory_shutdown()
     //    printf("terminated GuiFactory thread\n");
 
     RCSGUIFACTORY_THREAD_VALID = false;
+    memset(RCSGUIFACTORY_HANDLE, 0, MAX_GUIS*sizeof(void*));
   }
 }
 

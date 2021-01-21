@@ -156,6 +156,7 @@ ShapeNode::ShapeUpdater::ShapeUpdater(ShapeNode* node) : shapeNode(node)
 {
   Vec3d_copy(this->extents, node->shape->extents);
   HTr_copy(&this->A_CB, &node->shape->A_CB);
+  color = std::string(node->shape->color);
 }
 
 void ShapeNode::ShapeUpdater::addDrawable(osg::Drawable* d)
@@ -184,6 +185,13 @@ void ShapeNode::ShapeUpdater::updateDynamicShapes()
                                      shape()->A_CB.org[1],
                                      shape()->A_CB.org[2]));
     shapeNode->setAttitude(QuatFromHTr(&shape()->A_CB));
+  }
+
+  // Apply new color once changed
+  if (!STREQ(shape()->color, this->color.c_str()))
+  {
+    color = std::string(shape()->color);
+    setNodeMaterial(color, shapeNode);
   }
 
   // If the extents didn't change, step to the next geode.
@@ -235,7 +243,7 @@ void ShapeNode::ShapeUpdater::updateDynamicShapes()
       osg::Geometry* geo = dynamic_cast<osg::Geometry*>(drawable.get());
       RCHECK(geo);
       TorusNode::resize(extents[0], extents[2], geo);
-      drawable->dirtyBound();
+      geo->dirtyBound();
     }
     break;
 
@@ -246,10 +254,7 @@ void ShapeNode::ShapeUpdater::updateDynamicShapes()
 }
 
 /*******************************************************************************
- * Recursively adds the bodies collision shapes to the node. We use a
- * MatrixTransform since this allows to set the OpenGL modes to rescale
- * normals in case of applying a scale. For PAT nodes, this didn't seem to
- * work.
+ * Recursively adds the bodies collision shapes to the node.
  *
  * ShapeNode (osg::MatrixTransform) with A_CB relative to body
  *     |
@@ -441,7 +446,7 @@ void ShapeNode::addShape(bool resizeable)
                                   shape->A_CB.org[2]));
     cFrame->setRotation(QuatFromHTr(&shape->A_CB));
     addChild(cFrame.get());
-    frames.push_back(cFrame);
+    frame = cFrame;
   }
 
   /////////////////////////////
@@ -641,29 +646,27 @@ ShapeNode::~ShapeNode()
 {
 }
 
-void ShapeNode::displayFrames(bool visibility)
+void ShapeNode::displayFrame(bool visibility)
 {
-  if (visibility==true)
+  if (frame.valid())
   {
-    for (size_t i=0; i<frames.size(); ++i)
+    if (visibility==true)
     {
-      frames[i]->show();
+      frame->show();
+    }
+    else
+    {
+      frame->hide();
     }
   }
-  else
-  {
-    for (size_t i=0; i<frames.size(); ++i)
-    {
-      frames[i]->hide();
-    }
-  }
+
 }
 
-void ShapeNode::toggleFrames()
+void ShapeNode::toggleFrame()
 {
-  for (size_t i=0; i<frames.size(); ++i)
+  if (frame.valid())
   {
-    frames[i]->toggle();
+    frame->toggle();
   }
 }
 

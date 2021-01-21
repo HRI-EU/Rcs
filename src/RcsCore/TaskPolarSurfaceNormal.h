@@ -131,7 +131,9 @@ public:
 
 protected:
 
+  const RcsBody* closestSurfaceBody() const;
   void computePolarNormal(double polarAngs[2]) const;
+  std::vector<int> surfaceBodies;
   int direction;
   double gainDX;
 };

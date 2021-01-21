@@ -39,6 +39,7 @@
 #include "Rcs_typedef.h"
 #include "Rcs_macros.h"
 #include "Rcs_parser.h"
+#include "Rcs_stlParser.h"
 #include "Rcs_math.h"
 #include "Rcs_kinematics.h"
 #include "Rcs_body.h"
@@ -85,6 +86,15 @@ Rcs::TaskPolarSurfaceNormal::TaskPolarSurfaceNormal(const std::string& className
   // sometimes needed to scale it down to avoid jitter due to the contact
   // normal updates.
   getXMLNodePropertyDouble(node, "gainDX", &this->gainDX);
+
+  std::vector<std::string> surfBodies = getXMLNodePropertyVecSTLString(node, "surfaceBodies");
+
+  for (size_t i=0; i<surfBodies.size(); ++i)
+  {
+    const RcsBody* bi = RcsGraph_getBodyByName(getGraph(), surfBodies[i].c_str());
+    RCHECK(bi);
+    this->surfaceBodies.push_back(bi->id);
+  }
 }
 
 /*******************************************************************************
@@ -118,9 +128,9 @@ Rcs::TaskPolarSurfaceNormal* Rcs::TaskPolarSurfaceNormal::clone(RcsGraph* newGra
  ******************************************************************************/
 void Rcs::TaskPolarSurfaceNormal::computeX(double* x_curr) const
 {
-  // Compute the normal pointing from the refBdy to the effector
+  // Compute the normal pointing from the closest surface body to the effector
   double a_des[3];
-  RcsBody_distance(getRefBody(), getEffector(), NULL, NULL, a_des);
+  RcsBody_distance(closestSurfaceBody(), getEffector(), NULL, NULL, a_des);
 
   // Get the current polar axis
   const double* a_curr = getEffector()->A_BI.rot[direction];
@@ -152,10 +162,10 @@ void Rcs::TaskPolarSurfaceNormal::computeJ(MatNd* jacobian) const
   // Get the current Polar axis in world coordinates
   const double* a_curr = getEffector()->A_BI.rot[this->direction];
 
-  // Compute the normal pointing from the refBdy to the effector. This is the
-  // desired Polar axis in world coordinates.
+  // Compute the normal pointing from the closest surface body to the effector.
+  // This is the desired Polar axis in world coordinates.
   double a_des[3];
-  RcsBody_distance(getRefBody(), getEffector(), NULL, NULL, a_des);
+  RcsBody_distance(closestSurfaceBody(), getEffector(), NULL, NULL, a_des);
 
   double rotAxis[3];
   Vec3d_crossProduct(rotAxis, a_curr, a_des);
@@ -204,29 +214,45 @@ void Rcs::TaskPolarSurfaceNormal::computePolarNormal(double polarAngs[2]) const
 /*******************************************************************************
  *
  ******************************************************************************/
+const RcsBody* Rcs::TaskPolarSurfaceNormal::closestSurfaceBody() const
+{
+  if (surfaceBodies.empty())
+  {
+    return getRefBody();
+  }
+
+  const RcsBody* surfBdy = RCSBODY_BY_ID(getGraph(), surfaceBodies[0]);
+  const RcsBody* closestBdy = surfBdy;
+  double d = RcsBody_distance(surfBdy, getEffector(), NULL, NULL, NULL);
+
+  for (size_t i=1; i<surfaceBodies.size(); ++i)
+  {
+    surfBdy = RCSBODY_BY_ID(getGraph(), surfaceBodies[i]);
+    double d_i = RcsBody_distance(surfBdy, getEffector(), NULL, NULL, NULL);
+    if (d_i < d)
+    {
+      closestBdy = surfBdy;
+    }
+  }
+
+  return closestBdy;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 bool Rcs::TaskPolarSurfaceNormal::isValid(xmlNode* node, const RcsGraph* graph)
 {
   std::vector<std::string> cVars;
   cVars.push_back("POLAR_SURFACE_X");
   cVars.push_back("POLAR_SURFACE_Y");
   cVars.push_back("POLAR_SURFACE_Z");
-  bool success = Rcs::Task::isValid(node, graph, cVars);
+  bool success = Task::isValid(node, graph, cVars);
+
+  return true;
 
   char taskName[256] = "Unnamed task";
   getXMLNodePropertyStringN(node, "name", taskName, 256);
-
-  // Check if axis direction is X, Y or Z
-  char text[256] = "Z";
-  getXMLNodePropertyStringN(node, "axisDirection", text, 256);
-
-  if ((!STRCASEEQ(text, "X")) &&
-      (!STRCASEEQ(text, "Y")) &&
-      (!STRCASEEQ(text, "Z")))
-  {
-    RLOG(3, "Task \"%s\": Axis direction not [0...2]: %s",
-         taskName, text);
-    success = false;
-  }
 
   // Check if there is a distance function called between effector and refBdy
   char name1[265] = "", name2[265] = "";

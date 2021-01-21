@@ -39,6 +39,7 @@
 #include "Rcs_typedef.h"
 #include "Rcs_macros.h"
 #include "Rcs_utils.h"
+#include "Rcs_parser.h"
 
 
 static Rcs::TaskFactoryRegistrar<Rcs::TaskCOM1D> registrar1("COGX");
@@ -56,21 +57,33 @@ Rcs::TaskCOM1D::TaskCOM1D(const std::string& className,
                           int dim):
   Rcs::TaskCOM3D(className, node, _graph, dim), index(0)
 {
+  bool hide = false;
+  getXMLNodePropertyBoolString(node, "hide", &hide);
+
+  double guiMin = -2.5, guiMax = 2.5;
+  getXMLNodePropertyDouble(node, "guiMin", &guiMin);
+  getXMLNodePropertyDouble(node, "guiMax", &guiMax);
+
+  if (hide)
+  {
+    guiMin = 0.0;
+    guiMax = 0.0;
+  }
 
   if (className=="COGX")
   {
     this->index = 0;
-    resetParameter(Parameters(-2.5, 2.5, 1.0, "X Position [m]"));
+    resetParameter(Parameters(guiMin, guiMax, 1.0, "X Position [m]"));
   }
   else if (className=="COGY")
   {
     this->index = 1;
-    resetParameter(Parameters(-2.5, 2.5, 1.0, "Y Position [m]"));
+    resetParameter(Parameters(guiMin, guiMax, 1.0, "Y Position [m]"));
   }
   else if (className=="COGZ")
   {
     this->index = 2;
-    resetParameter(Parameters(-2.5, 2.5, 1.0, "Z Position [m]"));
+    resetParameter(Parameters(guiMin, guiMax, 1.0, "Z Position [m]"));
   }
 
 }

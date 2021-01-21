@@ -187,7 +187,8 @@ void Rcs::TaskSleeve::computeDX(double* dx,
   double n[3], A[3][3];
   computeContactNormal(n);
   computeFrame(A);
-  dx[2] *= Vec3d_innerProduct(n, A[2]);
+  dx[2] *= Math_dsign(Vec3d_innerProduct(n, A[2]));
+  Vec3d_constMulSelf(dx, 0.1);
 }
 
 /*******************************************************************************

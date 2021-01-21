@@ -46,9 +46,8 @@
 namespace Rcs
 {
 
-/*!
- * \ingroup RcsGraphics
- * \brief Node to display an RcsGraph data structure.
+/*! \ingroup RcsGraphics
+ *   \brief Node to display an RcsGraph data structure.
  *
  *        A number of keys are associatde with a function if pressed in the
  *        viewer window:

@@ -47,23 +47,20 @@
 
 extern bool RCSGUIFACTORY_INIT;
 
-// This is in RcsGuiFactory.c and only is needed here and nowhere else.
+// The implementation of this function is in RcsGuiFactory.c and only is
+// needed here and nowhere else.
 extern "C" {
   void RcsGuiFactory_update();
 }
 
 
 
-/******************************************************************************
-
-  \brief This runs the Qt event loop. It doesn't return and should be
-         run in a separate thread. This function needs to be here since
-         it executes C++ Qt stuff. If another QApplication is running,
-         its event loop will be used and no new QApplication is
-         created.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * This runs the Qt event loop. It doesn't return and should be run in a
+ * separate thread. This function needs to be here since it executes C++ Qt
+ * stuff. If another QApplication is running, its event loop will be used and
+ * no new QApplication is created.
+ ******************************************************************************/
 void* RcsGuiFactory_thread(void*)
 {
   int argc = 1;
@@ -105,14 +102,10 @@ void* RcsGuiFactory_thread(void*)
   return (void*)NULL;
 }
 
-
-
-/******************************************************************************
-
-  \brief Creates the GUI factory thread. It needs to be "extern C"
-         for name mangling reasons.
-
-******************************************************************************/
+/*******************************************************************************
+ * Creates the GUI factory thread. It needs to be "extern C" for name mangling
+ * reasons.
+ ******************************************************************************/
 
 extern "C" {
 
@@ -126,7 +119,6 @@ extern "C" {
 
     // RCSGUIFACTORY_THREAD_VALID = true;
     pthread_create(&RCSGUIFACTORY_THREAD, NULL, RcsGuiFactory_thread, NULL);
-    // pthread_detach(RCSGUIFACTORY_THREAD);
   }
 
   bool RcsGuiFactory_setQtStyle(const char* style)
@@ -167,14 +159,9 @@ extern "C" {
 
 }
 
-
-/******************************************************************************
-
-  \brief GuiFactory class. It just creates a timer callback for its
-         update function.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * GuiFactory class. It just creates a timer callback for its update function.
+ ******************************************************************************/
 GuiFactory::GuiFactory() : QObject()
 {
   QTimer* timer = new QTimer(this);
@@ -182,50 +169,34 @@ GuiFactory::GuiFactory() : QObject()
   timer->start(40);
 }
 
-
-
-/******************************************************************************
-
-  \brief Destructor for GuiFactory class.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * We only delete widgets without parent, since the Qt memory management is
+ * taking care about child widgets.  We can delete all parent-less widgets
+ * here, since the event loop is stopped at this point. The pointers of the
+ * deleted instances are set to NULL subsequently in the
+ * RcsGuiFactory_shutdown() method.
+ ******************************************************************************/
 GuiFactory::~GuiFactory()
 {
-  RLOGS(5, "Destroying GuiFactory and all GUIs created...");
+  RLOG(5, "Destroying GuiFactory and all GUIs created...");
 
-  // first we check for widgets that have a parent and do not delete them
-  // manually, but just ignore them
-  std::list<QWidget*> children_to_be_destroyed;
   for (int i = 0; i < MAX_GUIS; i++)
   {
     QWidget* w = (QWidget*)RcsGuiFactory_getPointerDirectly(i);
-    if (w && !w->parent())
+    if (w && (!w->parent()))
     {
-      children_to_be_destroyed.push_back(w);
+      RLOG_CPP(5, "Deleting widget " << w->objectName().toStdString());
+      delete w;
     }
   }
 
-  std::list<QWidget*>::iterator it = children_to_be_destroyed.begin();
-  for (it = children_to_be_destroyed.begin();
-       it != children_to_be_destroyed.end(); ++it)
-  {
-    RLOGS(6, "Destroying widget \"%s\"",
-          (*it)->windowTitle().toStdString().c_str());
-    //delete *it;
-    (*it)->deleteLater();
-  }
-
-  RLOGS(5, "Done destroying GuiFactory and all GUIs created...");
+  RLOG(5, "Done destroying GuiFactory and all GUIs created...");
 }
 
-/******************************************************************************
-
-  \brief Calls the RcsGuiFactory_update() function, such checking for
-         new GUI requests.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * Calls the RcsGuiFactory_update() function, such checking for new GUI
+ * requests.
+ ******************************************************************************/
 void GuiFactory::update()
 {
   RcsGuiFactory_update();

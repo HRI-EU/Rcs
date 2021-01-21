@@ -56,8 +56,7 @@ public:
               double zeroPos,
               double upperBound,
               double scaleFactor = 1.0,
-              QWidget* parent = 0,
-              const char* name = 0);
+              QWidget* parent = 0);
   void   setValue(double val);
   void   setSliderValue(double val);
   double getSliderValue(void);

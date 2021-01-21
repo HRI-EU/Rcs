@@ -61,6 +61,8 @@ void RcsJoint_init(RcsJoint* self)
   self->type = -1;
   self->speedLimit = DBL_MAX;
   self->accLimit = DBL_MAX;
+  self->decLimit = DBL_MAX;
+  self->maxTorque = DBL_MAX;
 }
 
 /*******************************************************************************
