@@ -2508,7 +2508,7 @@ static double RcsShape_closestSphereToCylinder(const RcsShape* sphere,
   // Point on sphere surface: cp_sphere = cp_point + radius_sphere*n
   Vec3d_constMulAndAddSelf(I_cp1, I_n, sphere->extents[0]);
 
-  return dist;
+  return dist-sphere->extents[0];
 }
 
 /*******************************************************************************
