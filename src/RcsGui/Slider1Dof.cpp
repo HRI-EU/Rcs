@@ -146,14 +146,17 @@ Slider1Dof::Slider1Dof(double* q_des_,
   RCHECK(this->q_des);
   RCHECK(this->q_curr);
 
+  setWindowTitle("Slider1Dof");
+  setObjectName("Rcs::Slider1Dof");
+
   // 25 Hz timer callback for q_curr updates
   QTimer* timer = new QTimer(this);
 
   // Name label
-  QLabel* lb_name = name ? new QLabel(name) : NULL;
+  QLabel* lb_name = name ? new QLabel(name, this) : NULL;
 
   // Palette for lcd numbers
-  this->lcd1 = new QLCDNumber(6);
+  this->lcd1 = new QLCDNumber(6, this);
   QPalette palette = this->lcd1->palette();
   palette.setColor(QPalette::Normal, QPalette::Foreground, Qt::red);
   palette.setColor(QPalette::Normal, QPalette::Background, Qt::black);
@@ -170,7 +173,7 @@ Slider1Dof::Slider1Dof(double* q_des_,
   this->lcd1->display(zeroPos);
 
   // Current value
-  this->lcd2 = new QLCDNumber(6);
+  this->lcd2 = new QLCDNumber(6, this);
   this->lcd2->setAutoFillBackground(true);
   this->lcd2->setPalette(palette);
   this->lcd2->display(zeroPos);
@@ -187,30 +190,34 @@ Slider1Dof::Slider1Dof(double* q_des_,
   this->slider->setLowerBound(lowerBound_);
   this->slider->setUpperBound(upperBound_);
 #endif
+  this->slider->setOrientation(Qt::Horizontal);
+  //this->slider->setFixedWidth(200);
   this->slider->setValue(zeroPos);
   connect(this->slider, SIGNAL(valueChanged(double)), SLOT(updateLcd1()));
 
   // Reset button
-  this->button_reset = new QPushButton("Reset");
+  this->button_reset = new QPushButton("Reset", this);
   this->button_reset->setFixedWidth(50);
   connect(this->button_reset, SIGNAL(clicked()), SLOT(sliderReset()));
 
   // Null button
-  this->button_null = new QPushButton("Null");
+  this->button_null = new QPushButton("Null", this);
   this->button_null->setFixedWidth(50);
   connect(this->button_null, SIGNAL(clicked()), SLOT(sliderNull()));
 
-  QHBoxLayout* FormLayout = new QHBoxLayout(this);
+  QHBoxLayout* hbox = new QHBoxLayout(this);
   if (lb_name)
   {
-    FormLayout->addWidget(lb_name);
+    hbox->addWidget(lb_name);
   }
-  FormLayout->insertStretch(1);
-  FormLayout->addWidget(this->lcd1);
-  FormLayout->addWidget(this->lcd2);
-  FormLayout->addWidget(this->button_null);
-  FormLayout->addWidget(this->button_reset);
-  FormLayout->addWidget(this->slider);
+  hbox->addWidget(this->lcd1);
+  hbox->addWidget(this->lcd2);
+  hbox->addWidget(this->button_null);
+  hbox->addWidget(this->button_reset);
+  hbox->addWidget(this->slider);
+  //hbox->addStretch();
+
+  setLayout(hbox);
 
   setFrameStyle(QFrame::NoFrame | QFrame::Plain);
   setFixedHeight(40);
