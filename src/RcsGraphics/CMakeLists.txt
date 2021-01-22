@@ -45,6 +45,7 @@ SET(RCS_GRAPHICS_SRCS
   TransformTrace.cpp
   VectorFieldNode.cpp
   VertexArrayNode.cpp
+  ExtrudedPolygonNode.cpp
   )
 
 ADD_LIBRARY(RcsGraphics ${LIBRARY_LINKING_TYPE} ${RCS_GRAPHICS_SRCS})
