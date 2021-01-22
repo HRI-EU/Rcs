@@ -297,7 +297,7 @@ static bool RcsMesh_toOBJFile(const RcsMeshData* mesh,
   for (unsigned int i=0; i<mesh->nFaces; ++i)
   {
     const unsigned int* f = &mesh->faces[i*3];
-    fprintf(fd, "f %u %u %u\n", f[0], f[1], f[2]);
+    fprintf(fd, "f %u %u %u\n", f[0]+1, f[1]+1, f[2]+1);
   }
 
   return true;
@@ -783,11 +783,11 @@ bool RcsMesh_readObjFile(const char* fileName, RcsMeshData* mesh)
       {
         char tmp[32];
         String_chopOff(tmp, buf[1], "//");
-        mesh->faces[fCount] = atoi(tmp);
+        mesh->faces[fCount] = atoi(tmp) - 1;
         String_chopOff(tmp, buf[2], "//");
-        mesh->faces[fCount + 1] = atoi(tmp);
+        mesh->faces[fCount + 1] = atoi(tmp) - 1;
         String_chopOff(tmp, buf[3], "//");
-        mesh->faces[fCount + 2] = atoi(tmp);
+        mesh->faces[fCount + 2] = atoi(tmp) - 1;
         RLOG(5, "face=%d %d %d",
              mesh->faces[fCount],
              mesh->faces[fCount + 1],
