@@ -479,16 +479,28 @@ static void testDistance(int argc, char** argv)
  ******************************************************************************/
 static void testPolygon(int argc, char** argv)
 {
-  double radius = 0.25;
-  double height = 1.0;
+  double radius = 0.25, height = 1.0, r_min = 0.3, r_max = 1.0, gridSize = 0.0;
+  unsigned int nVertices = 25;
+  unsigned int nWaves = 4;
   std::string polyFileName;
 
   Rcs::CmdLineParser argP(argc, argv);
   argP.getArgument("-radius", &radius, "Radius (default is %g)", radius);
   argP.getArgument("-height", &height, "Height (default is %g)", height);
+  argP.getArgument("-r_min", &r_min, "Min. radius for random shape "
+                   "(default is %g)", r_min);
+  argP.getArgument("-r_max", &r_max, "Max. radius for random shape "
+                   "(default is %g)", r_max);
+  argP.getArgument("-height", &height, "Height (default is %g)", height);
   bool simpleGraphics = argP.hasArgument("-simpleGraphics", "OpenGL without fan"
                                          "cy stuff (shadows, anti-aliasing)");
   argP.getArgument("-f", &polyFileName, "Polygon file name");
+  argP.getArgument("-nv", &nVertices, "Number of vertices for random shape "
+                   "(default: %d)", nVertices);
+  argP.getArgument("-nWaves", &nWaves, "Number of waves for random shape "
+                   "(default: %d)", nWaves);
+  argP.getArgument("-grid", &gridSize, "Force random polygon to grid");
+
 
   // Initialize GUI and OSG mutex
   pthread_mutex_t graphLock;
@@ -509,7 +521,6 @@ static void testPolygon(int argc, char** argv)
 
   MatNd* polyArr = NULL;
   double (*poly)[2];
-  unsigned int nVertices = 0;
   int vidx = 0;
 
   if (polyFileName.empty())
@@ -528,6 +539,17 @@ static void testPolygon(int argc, char** argv)
     poly[4][1] = -0.5*height;
     nVertices = 5;
     RCHECK(Math_checkPolygon2D(poly, nVertices-1));
+  }
+  else if (polyFileName=="random")
+  {
+    polyArr = MatNd_create(nVertices+1, 2);
+    poly = (double (*)[2])polyArr->ele;
+    Math_createRandomPolygon2D(poly, nVertices, nWaves, r_min, r_max);
+
+    if (gridSize>0.0)
+    {
+      Math_boxifyPolygon2D(poly, nVertices, gridSize);
+    }
   }
   else
   {
@@ -556,6 +578,7 @@ static void testPolygon(int argc, char** argv)
     new Rcs::VertexArrayNode(polyArr, osg::PrimitiveSet::LINE_LOOP);
 
   Rcs::Viewer* viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
+  viewer->setShadowEnabled(false);
   viewer->setBackgroundColor("DARKRED");
   viewer->add(vn);
 

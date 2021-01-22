@@ -469,62 +469,14 @@ public:
 
 
 
-
-
-protected:
-
-  /*! \brief Called from the KeyHandler's update function.
+  /*!
+   * @name Non-thread-safe scene graph modifications
+   *
+   * Using these functions requires making sure that they are called
+   * non-concurrently to the rendering.
    */
-  bool handle(const osgGA::GUIEventAdapter& ea,
-              osgGA::GUIActionAdapter& aa);
 
-  void handleUserEvents(const osg::Referenced* userEvent);
-
-  static void* ViewerThread(void* arg);
-  void create(bool fancy, bool startupWithShadow);
-  void init();
-  void setSceneData(osg::Node* node);
-  bool isInitialized() const;
-  bool isThreadRunning() const;
-  bool isRealized() const;
-
-  double fps;
-  float mouseX;
-  float mouseY;
-  float normalizedMouseX;
-  float normalizedMouseY;
-
-  mutable pthread_mutex_t* mtxFrameUpdate;
-  bool threadRunning;
-  double updateFreq;
-  bool initialized;
-  bool wireFrame;
-  bool shadowsEnabled;
-
-  unsigned int llx, lly, sizeX, sizeY;
-  bool cartoonEnabled;
-  bool threadStopped;
-  bool leftMouseButtonPressed;
-  bool rightMouseButtonPressed;
-  pthread_t frameThread;
-
-  // osg node members
-  osg::ref_ptr<osgViewer::Viewer> viewer;
-  osg::ref_ptr<osgShadow::ShadowedScene> shadowScene;
-  osg::ref_ptr<osg::LightSource> cameraLight;
-  osg::ref_ptr<osg::Group> rootnode;
-  osg::ref_ptr<osg::ClearNode> clearNode;
-  osg::ref_ptr<KeyHandler> keyHandler;
-  osg::Matrix startView;
-
-  // Event handling of user events. We buffer them in a separate vector so that
-  // they can be published before the viewer is realized.
-  std::vector<osg::ref_ptr<osg::Referenced>> userEventStack;
-  OpenThreads::Mutex userEventMtx;
-
-
-
-private:
+  ///@{
 
   /*! \brief Adds a node to the rootNode. This function must not be called
    *         concurrently with the viewer's frame update.
@@ -574,11 +526,66 @@ private:
    */
   int removeAllNodesInternal();
 
+  ///@}
+
+
+
+protected:
+
   /*! \brief Adds a custom event to the internal user event queue. This is
    *         protected by the userEventMtx in order to avoid concurrent
    *         access with the frame() function.
    */
   void addUserEvent(osg::Referenced* userEvent);
+
+  /*! \brief Called from the KeyHandler's update function.
+   */
+  bool handle(const osgGA::GUIEventAdapter& ea,
+              osgGA::GUIActionAdapter& aa);
+
+  void handleUserEvents(const osg::Referenced* userEvent);
+
+  static void* ViewerThread(void* arg);
+  void create(bool fancy, bool startupWithShadow);
+  void init();
+  void setSceneData(osg::Node* node);
+  bool isInitialized() const;
+  bool isThreadRunning() const;
+  bool isRealized() const;
+
+  double fps;
+  float mouseX;
+  float mouseY;
+  float normalizedMouseX;
+  float normalizedMouseY;
+
+  mutable pthread_mutex_t* mtxFrameUpdate;
+  bool threadRunning;
+  double updateFreq;
+  bool initialized;
+  bool wireFrame;
+  bool shadowsEnabled;
+
+  unsigned int llx, lly, sizeX, sizeY;
+  bool cartoonEnabled;
+  bool threadStopped;
+  bool leftMouseButtonPressed;
+  bool rightMouseButtonPressed;
+  pthread_t frameThread;
+
+  // osg node members
+  osg::ref_ptr<osgViewer::Viewer> viewer;
+  osg::ref_ptr<osgShadow::ShadowedScene> shadowScene;
+  osg::ref_ptr<osg::LightSource> cameraLight;
+  osg::ref_ptr<osg::Group> rootnode;
+  osg::ref_ptr<osg::ClearNode> clearNode;
+  osg::ref_ptr<KeyHandler> keyHandler;
+  osg::Matrix startView;
+
+  // Event handling of user events. We buffer them in a separate vector so that
+  // they can be published before the viewer is realized.
+  std::vector<osg::ref_ptr<osg::Referenced>> userEventStack;
+  OpenThreads::Mutex userEventMtx;
 };
 
 

@@ -75,6 +75,8 @@ namespace Rcs
  *        by setting the shape's resizeable attribute in the xml description to
  *        true. In this case, the OpenGL display lists are enabled, and an
  *        update callback to update the geometries is enabled.
+ *
+ *        The name of the node corresponds to the name of the body.
  */
 class BodyNode: public osg::PositionAttitudeTransform
 {
