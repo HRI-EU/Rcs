@@ -1,0 +1,85 @@
+<Graph name="DefaultPose" resourcePath="${SIT}/Data/RobotMeshes/1.0/data" >
+
+  <Body name="j2n7s300_link_base" physics="fixed" mass="0.46784" inertia="0.000951271 0 0   -0 0.000951271 0   -0 -0 0.000374272" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/base.STL" color="#cad1edff" />
+  </Body>
+
+  <Body name="j2n7s300_link_1" prev="j2n7s300_link_base" physics="dynamic" mass="0.7477" inertia="0.00152032 0 0   -0 0.00152032 0   -0 -0 0.00059816" >
+    <Joint name="j2n7s300_joint_1" range="-36 0 360" type="RotZ" transform="0 0 0.15675 180 0 180" torqueLimit="40" speedLimit="36" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/shoulder.STL" color="#cad1edff" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/ring_big.STL" />
+  </Body>
+
+  <Body name="j2n7s300_link_2" prev="j2n7s300_link_1" physics="dynamic" mass="0.8447" inertia="0.00247074 0 0   -0 0.000380115 0   -0 -0 0.00247074" >
+    <Joint name="j2n7s300_joint_2" range="47 180 313" type="RotZ" transform="0 0.0016 -0.11875 90 0 -180" torqueLimit="80" speedLimit="36" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/arm_half_1.STL" color="#cad1edff" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/ring_big.STL" />
+  </Body>
+
+  <Body name="j2n7s300_link_3" prev="j2n7s300_link_2" physics="dynamic" mass="0.8447" inertia="0.00247074 0 0   -0 0.00247074 0   -0 -0 0.000380115" >
+    <Joint name="j2n7s300_joint_3" range="-360 0 360" type="RotZ" transform="0 -0.205 0 -90 0 -180" torqueLimit="40" speedLimit="36" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/arm_half_2.STL" color="#cad1edff" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/ring_big.STL" />
+  </Body>
+
+  <Body name="j2n7s300_link_4" prev="j2n7s300_link_3" physics="dynamic" mass="0.6763" inertia="0.00142022 0 0   -0 0.000304335 0   -0 -0 0.00142022" >
+    <Joint name="j2n7s300_joint_4" range="30 180 330" type="RotZ" transform="0 0 -0.205 -90 0 -180" torqueLimit="40" speedLimit="36" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/forearm.STL" color="#cad1edff" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/ring_small.STL" />
+  </Body>
+
+  <Body name="j2n7s300_link_5" prev="j2n7s300_link_4" physics="dynamic" mass="0.426367" inertia="7.73497e-05 0 0   -0 7.73497e-05 0   -0 -0 0.0001428" >
+    <Joint name="j2n7s300_joint_5" range="-360 0 360" type="RotZ" transform="0 0.2073 -0.0114 90 0 -180" torqueLimit="20" speedLimit="48" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/wrist.STL" color="#cad1edff" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/ring_small.STL" />
+  </Body>
+
+  <Body name="j2n7s300_link_6" prev="j2n7s300_link_5" physics="dynamic" mass="0.426367" inertia="7.73497e-05 0 0   -0 7.73497e-05 0   -0 -0 0.0001428" >
+    <Joint name="j2n7s300_joint_6" range="65 180 295" type="RotZ" transform="0 -0.03703 -0.06414 -60 0 -180" torqueLimit="20" speedLimit="48" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/wrist.STL" color="#cad1edff" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/ring_small.STL" />
+  </Body>
+
+  <Body name="j2n7s300_link_7" prev="j2n7s300_link_6" physics="dynamic" mass="0.99" inertia="0.000345324 0 0   -0 0.000345324 0   -0 -0 0.0005816" >
+    <Joint name="j2n7s300_joint_7" range="-360 0 360" type="RotZ" transform="0 -0.03703 -0.06414 -60 0 -180" torqueLimit="20" speedLimit="48" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/hand_3finger.STL" color="#cad1edff" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/ring_small.STL" />
+  </Body>
+
+  <Body name="j2n7s300_end_effector" prev="j2n7s300_link_7" transform="0 0 -0.16 -180 0 -90" >
+    <noShape type="FRAME" scale="0.2" />
+  </Body>
+
+  <Body name="j2n7s300_link_finger_1" prev="j2n7s300_link_7" physics="dynamic" mass="0.01" inertia="7.89997e-07 0 0   -0 7.89997e-07 0   -0 -0 8e-08" >
+    <Joint name="j2n7s300_joint_finger_1" range="0 43.258314 86.516627" type="RotZ" transform="0.00279 0.03126 -0.11467 -90 -77.9 37.2" torqueLimit="2" speedLimit="57.29578" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/finger_proximal.STL" color="#cad1edff" />
+  </Body>
+
+  <Body name="j2n7s300_link_finger_tip_1" prev="j2n7s300_link_finger_1" physics="dynamic" mass="0.01" inertia="7.89997e-07 0 0   -0 7.89997e-07 0   -0 -0 8e-08" >
+    <Joint name="j2n7s300_joint_finger_tip_1" range="0 57.29578 114.591559" type="RotZ" transform="0.044 -0.003 0 0 0 0" torqueLimit="2" speedLimit="57.29578" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/finger_distal.STL" color="#cad1edff" />
+  </Body>
+
+  <Body name="j2n7s300_link_finger_2" prev="j2n7s300_link_7" physics="dynamic" mass="0.01" inertia="7.89997e-07 0 0   -0 7.89997e-07 0   -0 -0 8e-08" >
+    <Joint name="j2n7s300_joint_finger_2" range="0 43.258314 86.516627" type="RotZ" transform="0.02226 -0.02707 -0.11482 -90 79.42 37.2" torqueLimit="2" speedLimit="57.29578" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/finger_proximal.STL" color="#cad1edff" />
+  </Body>
+
+  <Body name="j2n7s300_link_finger_tip_2" prev="j2n7s300_link_finger_2" physics="dynamic" mass="0.01" inertia="7.89997e-07 0 0   -0 7.89997e-07 0   -0 -0 8e-08" >
+    <Joint name="j2n7s300_joint_finger_tip_2" range="0 57.29578 114.591559" type="RotZ" transform="0.044 -0.003 0 0 0 0" torqueLimit="2" speedLimit="57.29578" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/finger_distal.STL" color="#cad1edff" />
+  </Body>
+
+  <Body name="j2n7s300_link_finger_3" prev="j2n7s300_link_7" physics="dynamic" mass="0.01" inertia="7.89997e-07 0 0   -0 7.89997e-07 0   -0 -0 8e-08" >
+    <Joint name="j2n7s300_joint_finger_3" range="0 43.258314 86.516627" type="RotZ" transform="-0.02226 -0.02707 -0.11482 90 79.42 -142.8" torqueLimit="2" speedLimit="57.29578" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/finger_proximal.STL" color="#cad1edff" />
+  </Body>
+
+  <Body name="j2n7s300_link_finger_tip_3" prev="j2n7s300_link_finger_3" physics="dynamic" mass="0.01" inertia="7.89997e-07 0 0   -0 7.89997e-07 0   -0 -0 8e-08" >
+    <Joint name="j2n7s300_joint_finger_tip_3" range="0 57.29578 114.591559" type="RotZ" transform="0.044 -0.003 0 0 0 0" torqueLimit="2" speedLimit="57.29578" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" meshFile="kinova_description/meshes/finger_distal.STL" color="#cad1edff" />
+  </Body>
+
+<model_state model="DefaultPose" time_stamp="">
+</model_state>
+</Graph>

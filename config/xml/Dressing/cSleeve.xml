@@ -60,13 +60,13 @@ usage="
 
     <Body name="Body" rigid_body_joints="0 0 1.5 0 0 0" physics="kinematic" mass=".1" >
       <Shape type="SPHERE" color="PEWTER" radius="0.1" graphics="true" material="object" />
-      <Shape type="FRAME" scale="0.5" />
     </Body>
 
     <Body name="UpperArm" prev="Body" physics="dynamic" mass=".1" >
       <Joint name="shoulder" type="RotY" range="-170 150 170" />
       <Shape type="SSL" color="RED" radius="0.06" length="0.9" physics="false" distance="true" graphics="true" />
       <Shape type="SSL" color="RED_TRANS" radius="0.08" length="0.9" graphics="false" distance="false" material="object" />
+      <Shape type="FRAME" scale="0.5" />
     </Body>
 
     <Body name="ForeArm" prev="UpperArm" physics="dynamic" mass=".1" >
