@@ -2496,7 +2496,6 @@ static double RcsShape_closestSphereToCylinder(const RcsShape* sphere,
                                                double I_cp2[3],
                                                double I_n[3])
 {
-  RLOG(0, "AAA");
   double dist = Rcs_distancePointCylinder(A_sphere->org, A_cylinder,
                                           cylinder->extents[2],
                                           cylinder->extents[0],
@@ -2939,9 +2938,9 @@ static bool setWildMagicDistanceFunctions()
   //success = RcsShape_setDistanceFunction(RCSSHAPE_CYLINDER, RCSSHAPE_SSL,
   //                                       RcsShape_closestCylinderToSSL)
   //          && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_CYLINDER, RCSSHAPE_SPHERE,
-                                         RcsShape_closestCylinderToSphere)
-            && success;
+  // success = RcsShape_setDistanceFunction(RCSSHAPE_CYLINDER, RCSSHAPE_SPHERE,
+  //                                        RcsShape_closestCylinderToSphere)
+  //           && success;
   //success = RcsShape_setDistanceFunction(RCSSHAPE_CYLINDER, RCSSHAPE_POINT,
   //                                       RcsShape_closestCylinderToSphere)
   //          && success;
@@ -2949,9 +2948,9 @@ static bool setWildMagicDistanceFunctions()
   // SPHERE
   //success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_BOX,
   //                                       RcsShape_closestSSLToBox) && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_CYLINDER,
-                                         RcsShape_closestSphereToCylinder)
-            && success;
+  // success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_CYLINDER,
+  //                                        RcsShape_closestSphereToCylinder)
+  //           && success;
   //success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_CONE,
   //                                       RcsShape_closestSphereToCone)
   //          && success;

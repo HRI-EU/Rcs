@@ -1297,6 +1297,46 @@ static double RcsShape_closestCylinderToPoint(const RcsShape* cyl,
 }
 
 /*******************************************************************************
+ * Computes the distance between a sphere and a cylinder shape primitives.
+ ******************************************************************************/
+static double RcsShape_closestSphereToCylinder(const RcsShape* sphere,
+                                               const RcsShape* cylinder,
+                                               const HTr* A_sphere,
+                                               const HTr* A_cylinder,
+                                               double I_cp1[3],
+                                               double I_cp2[3],
+                                               double I_n12[3])
+{
+  double dist = RcsShape_closestPointToCylinder(sphere, cylinder,
+                                                A_sphere, A_cylinder,
+                                                I_cp1, I_cp2, I_n12);
+
+  // Point on sphere surface: cp_sphere = cp_point + radius_sphere*n
+  Vec3d_constMulAndAddSelf(I_cp1, I_n12, sphere->extents[0]);
+
+  return dist - sphere->extents[0];
+}
+
+/*******************************************************************************
+ * Computes the distance between a cylinder and a sphere shape primitives.
+ ******************************************************************************/
+static double RcsShape_closestCylinderToSphere(const RcsShape* cylinder,
+                                               const RcsShape* sphere,
+                                               const HTr* A_cylinder,
+                                               const HTr* A_sphere,
+                                               double I_cp2[3],
+                                               double I_cp1[3],
+                                               double I_n[3])
+{
+  double dist = RcsShape_closestSphereToCylinder(sphere, cylinder, A_sphere,
+                                                 A_cylinder, I_cp1, I_cp2, I_n);
+
+  // revert the normal, because we are calling the reverse method
+  Vec3d_constMulSelf(I_n, -1.0);
+  return dist;
+}
+
+/*******************************************************************************
  *
  ******************************************************************************/
 static double RcsShape_closestPointToBox(const RcsShape* point,
@@ -1529,7 +1569,7 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
     RcsShape_noDistance,                // 4  RCSSHAPE_BOX
     RcsShape_noDistance,                // 5  RCSSHAPE_CYLINDER
     RcsShape_noDistance,                // 6  RCSSHAPE_REFFRAME
-    RcsShape_noDistance,                // 7  RCSSHAPE_SPHERE
+    RcsShape_closestCylinderToSphere,   // 7  RCSSHAPE_SPHERE
     RcsShape_noDistance,                // 8  RCSSHAPE_CONE
     RcsShape_noDistance,                // 9  RCSSHAPE_TORUS
     RcsShape_noDistance,                // 10 RCSSHAPE_OCTREE
@@ -1559,7 +1599,7 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
     RcsShape_noDistance,                // 2  RCSSHAPE_SSR
     RcsShape_noDistance,                // 3  RCSSHAPE_MESH
     RcsShape_closestSphereToBox,        // 4  RCSSHAPE_BOX
-    RcsShape_noDistance,                // 5  RCSSHAPE_CYLINDER
+    RcsShape_closestSphereToCylinder,   // 5  RCSSHAPE_CYLINDER
     RcsShape_noDistance,                // 6  RCSSHAPE_REFFRAME
     RcsShape_closestSphereToSphere,     // 7  RCSSHAPE_SPHERE
     RcsShape_closestSphereToCone,       // 8  RCSSHAPE_CONE
@@ -1579,7 +1619,7 @@ RcsShapeDistFunc[RCSSHAPE_SHAPE_MAX][RCSSHAPE_SHAPE_MAX] =
     RcsShape_noDistance,                // 6  RCSSHAPE_REFFRAME
     RcsShape_closestConeToSphere,       // 7  RCSSHAPE_SPHERE
     RcsShape_noDistance,                // 8  RCSSHAPE_CONE
-    RcsShape_noDistance,                 // 9  RCSSHAPE_TORUS
+    RcsShape_noDistance,                // 9  RCSSHAPE_TORUS
     RcsShape_noDistance,                // 10 RCSSHAPE_OCTREE
     RcsShape_closestConeToPoint         // 11 RCSSHAPE_POINT
   },
