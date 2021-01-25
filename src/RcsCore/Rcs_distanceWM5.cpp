@@ -2508,7 +2508,7 @@ static double RcsShape_closestSphereToCylinder(const RcsShape* sphere,
   // Point on sphere surface: cp_sphere = cp_point + radius_sphere*n
   Vec3d_constMulAndAddSelf(I_cp1, I_n, sphere->extents[0]);
 
-  return dist;
+  return dist-sphere->extents[0];
 }
 
 /*******************************************************************************
@@ -2938,9 +2938,9 @@ static bool setWildMagicDistanceFunctions()
   //success = RcsShape_setDistanceFunction(RCSSHAPE_CYLINDER, RCSSHAPE_SSL,
   //                                       RcsShape_closestCylinderToSSL)
   //          && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_CYLINDER, RCSSHAPE_SPHERE,
-                                         RcsShape_closestCylinderToSphere)
-            && success;
+  // success = RcsShape_setDistanceFunction(RCSSHAPE_CYLINDER, RCSSHAPE_SPHERE,
+  //                                        RcsShape_closestCylinderToSphere)
+  //           && success;
   //success = RcsShape_setDistanceFunction(RCSSHAPE_CYLINDER, RCSSHAPE_POINT,
   //                                       RcsShape_closestCylinderToSphere)
   //          && success;
@@ -2948,9 +2948,9 @@ static bool setWildMagicDistanceFunctions()
   // SPHERE
   //success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_BOX,
   //                                       RcsShape_closestSSLToBox) && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_CYLINDER,
-                                         RcsShape_closestSphereToCylinder)
-            && success;
+  // success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_CYLINDER,
+  //                                        RcsShape_closestSphereToCylinder)
+  //           && success;
   //success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_CONE,
   //                                       RcsShape_closestSphereToCone)
   //          && success;

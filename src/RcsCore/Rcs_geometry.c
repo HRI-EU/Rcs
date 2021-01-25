@@ -414,6 +414,74 @@ double Math_signedAreaPolygon2D(double polygon[][2],
 }
 
 /*******************************************************************************
+ * From: https://stackoverflow.com/questions/54828017/c-create-random-shaped-blob-objects
+ *
+ * 1. Take N, the number of waves you'd like.
+ * 2. Define float arrays amps[N] and phases[N].
+ * 3. Pick a random number between 0 and 1/(2N) for each amps[i] and between
+ *    0 and 2*Pi for each phases[i].
+ * 4. For each angle alpha (in radians), calculate
+ *      radius = 1 + sum[i=0 to N-1] amps[i] * cos((i+1)*alpha + phases[i])
+ *      x = cos(alpha)*radius;
+ *      y = sin(alpha)*radius;
+ ******************************************************************************/
+void Math_createRandomPolygon2D(double polygon[][2],
+                                unsigned int nVertices,
+                                unsigned int nWaves,
+                                double r_min,
+                                double r_max)
+{
+  double* amps = RNALLOC(nWaves, double);
+  double* phases = RNALLOC(nWaves, double);
+  double sumAmps = 0.0;
+
+  for (unsigned int i=0; i<nWaves; ++i)
+  {
+    amps[i] = Math_getRandomNumber(0.0, 1.0/(2.0*nWaves));
+    phases[i] = Math_getRandomNumber(0.0, 2.0*M_PI);
+    sumAmps += amps[i];
+  }
+
+  double angStep = 2.0*M_PI/nVertices;
+
+  for (int a=0; a<nVertices; ++a)
+  {
+    double alpha = a*angStep;
+
+    double r = sumAmps;
+    for (unsigned int i=0; i<nWaves; ++i)
+    {
+      r += amps[i] * cos((i+1)*alpha + phases[i]);
+    }
+
+    // Force into interval [r_min...r_max]
+    r = r_min + r*(r_max-r_min);
+
+    polygon[a][0] = r*cos(alpha);
+    polygon[a][1] = r*sin(alpha);
+  }
+
+  RFREE(amps);
+  RFREE(phases);
+}
+
+/*******************************************************************************
+ * Force vertices onto closest location on grid
+ ******************************************************************************/
+void Math_boxifyPolygon2D(double polygon[][2],
+                          unsigned int nVertices,
+                          double gridSize)
+{
+
+  for (unsigned int i=0; i<nVertices; ++i)
+  {
+    polygon[i][0] = gridSize*round(polygon[i][0]/gridSize);
+    polygon[i][1] = gridSize*round(polygon[i][1]/gridSize);
+  }
+
+}
+
+/*******************************************************************************
  * Signed area of polygon. Negative: clockwise ordering
  ******************************************************************************/
 bool Math_isPolygonClockwise(double polygon[][2],

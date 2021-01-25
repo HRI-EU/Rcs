@@ -151,6 +151,34 @@ double Math_signedAreaPolygon2D(double polygon[][2],
                                 unsigned int nVertices);
 
 /*! \ingroup RcsBasicMathFunctions
+ *  \brief Creates a random polygon. The function computes Polar coordinates
+ *         around a circle, and superposes randomized trigonometric
+ *         expressions with random amplitudes and phases.
+ *
+ *  \param[out] polygon    Polygon vertices
+ *  \param[in]  nVertices  Number of polygon vertices.
+ *  \param[in]  nWaves     Number of modes of the superposed terms. The higher
+ *                         nWaves, the more curvy the polygon.
+ *  \param[in]  rmin       Minimum radius, no vertex will be below this.
+ *  \param[in]  rmax       Maximum radius, no vertex will be above this.
+ */
+void Math_createRandomPolygon2D(double polygon[][2], unsigned int nVertices,
+                                unsigned int nWaves, double rmin, double rmax);
+
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Forces all vertices to lie on a grid of the given grid size. The
+ *         number of vertices remains unchanged. This function does not take
+ *         care of duplicate vertices.
+ *
+ *  \param[out] polygon    Polygon vertices
+ *  \param[in]  nVertices  Number of polygon vertices.
+ *  \param[in]  gridSize   Size of the grid the vertices will be projected on.
+ */
+void Math_boxifyPolygon2D(double polygon[][2],
+                          unsigned int nVertices,
+                          double gridSize);
+
+/*! \ingroup RcsBasicMathFunctions
  *  \brief Computes the winding of a 2d polygon. It does not need to be convex.
  *
  *  \param[in]  polygon    Polygon vertices
