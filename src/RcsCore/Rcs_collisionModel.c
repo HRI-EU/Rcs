@@ -176,8 +176,8 @@ RcsCollisionMdl* RcsCollisionModel_createFromXML(const RcsGraph* graph,
       pair[nPairs] = RALLOC(RcsPair);
       pair[nPairs]->dThreshold = defaultThreshold;
       pair[nPairs]->weight = 1.0;
-      pair[nPairs]->b1 = bdy1;
-      pair[nPairs]->b2 = bdy2;
+      pair[nPairs]->b1 = bdy1->id;
+      pair[nPairs]->b2 = bdy2->id;
 
       pair[nPairs]->cp1 = MatNd_getRowPtr(self->cp, 2 * nPairs);
       pair[nPairs]->cp2 = MatNd_getRowPtr(self->cp, 2 * nPairs + 1);
@@ -191,7 +191,7 @@ RcsCollisionMdl* RcsCollisionModel_createFromXML(const RcsGraph* graph,
 
       RLOG(5, "Collision pair %d is \"%s\" - \"%s\"\n"
            "\tDistance threshold =  %g\n\tDistance weight is %g",
-           nPairs, pair[nPairs]->b1->name, pair[nPairs]->b2->name,
+           nPairs, bdy1->name, bdy2->name,
            pair[nPairs]->dThreshold, pair[nPairs]->weight);
 
       nPairs++;
@@ -230,10 +230,10 @@ void RcsCollisionModel_compute(RcsCollisionMdl* self)
 
   RCSPAIR_TRAVERSE(self->pair)
   {
-    NLOG(0, "Computing distance between \"%s\" and \"%s\"",
-         PAIR->b1->name, PAIR->b2->name);
-    PAIR->distance = RcsBody_distance(PAIR->b1, PAIR->b2,
-                                      PAIR->cp1, PAIR->cp2, PAIR->n1);
+    const RcsBody* b1 = RCSBODY_BY_ID(self->graph, PAIR->b1);
+    const RcsBody* b2 = RCSBODY_BY_ID(self->graph, PAIR->b2);
+    NLOG(0, "Computing distance between \"%s\" and \"%s\"", b1->name, b2->name);
+    PAIR->distance = RcsBody_distance(b1, b2, PAIR->cp1, PAIR->cp2, PAIR->n1);
   }
 
 }
@@ -278,9 +278,11 @@ void RcsCollisionModel_fprintCollisions(FILE* fd, const RcsCollisionMdl* self,
 
     if ((*pPtr)->distance<=distanceThreshold)
     {
-      fprintf(stderr, "\t[%d]   %s", k,
-              (*pPtr)->b1 ? (*pPtr)->b1->name : "NULL");
-      fprintf(stderr, "\t\t%s", (*pPtr)->b2 ? (*pPtr)->b2->name : "NULL");
+      const RcsBody* b1 = RCSBODY_BY_ID(self->graph, (*pPtr)->b1);
+      const RcsBody* b2 = RCSBODY_BY_ID(self->graph, (*pPtr)->b2);
+
+      fprintf(stderr, "\t[%d]   %s", k, b1 ? b1->name : "NULL");
+      fprintf(stderr, "\t\t%s", b2 ? b2->name : "NULL");
       fprintf(stderr, "\tdistance = %.6f   ", (*pPtr)->distance);
       const double* cp1 = (*pPtr)->cp1;
       const double* cp2 = (*pPtr)->cp2;
@@ -327,9 +329,11 @@ void RcsCollisionModel_fprint(FILE* fd, const RcsCollisionMdl* self)
     int k = 0;
     while (*pPtr)
     {
-      fprintf(fd, "\t[%d]   %s",
-              k, (*pPtr)->b1 ? (*pPtr)->b1->name : "NULL");
-      fprintf(fd, "\t\t%s", (*pPtr)->b2 ? (*pPtr)->b2->name : "NULL");
+      const RcsBody* b1 = RCSBODY_BY_ID(self->graph, (*pPtr)->b1);
+      const RcsBody* b2 = RCSBODY_BY_ID(self->graph, (*pPtr)->b2);
+
+      fprintf(fd, "\t[%d]   %s", k, b1 ? b1->name : "NULL");
+      fprintf(fd, "\t\t%s", b2 ? b2->name : "NULL");
       fprintf(fd, "\n\tdistance = %.6f   weight=%.3f   dThreshold=%.3f\n",
               (*pPtr)->distance, (*pPtr)->weight, (*pPtr)->dThreshold);
 
@@ -361,8 +365,12 @@ void RcsCollisionModel_destroy(RcsCollisionMdl* self)
   {
     while (self->pair[i])
     {
-      RLOG(5, "Deleting collision pair %d: \"%s\" - \"%s\"",
-           i, self->pair[i]->b1->name, self->pair[i]->b2->name);
+      REXEC(5)
+      {
+        const RcsBody* b1 = RCSBODY_BY_ID(self->graph, self->pair[i]->b1);
+        const RcsBody* b2 = RCSBODY_BY_ID(self->graph, self->pair[i]->b2);
+        RLOG(5, "Deleting pair %d: \"%s\" - \"%s\"", i, b1->name, b2->name);
+      }
       RFREE(self->pair[i]);
       self->pair[i] = NULL;
       i++;
@@ -425,22 +433,23 @@ RcsCollisionMdl* RcsCollisionModel_clone(const RcsCollisionMdl* src,
     for (int i = 0; i < nCPairs; i++)
     {
       dst->pair[i] = RALLOC(RcsPair);
-      dst->pair[i]->b1 = NULL;
-      dst->pair[i]->b2 = NULL;
+      dst->pair[i]->b1 = -1;
+      dst->pair[i]->b2 = -1;
 
-      if (src->pair[i]->b1 != NULL)
+      if (src->pair[i]->b1 != -1)
       {
-        dst->pair[i]->b1 =
-          RcsGraph_getBodyByName(dst->graph, src->pair[i]->b1->name);
+        const RcsBody* srcBdy = RCSBODY_BY_ID(src->graph, src->pair[i]->b1);
+        const RcsBody* bdy = RcsGraph_getBodyByName(dst->graph, srcBdy->name);
+        dst->pair[i]->b1 = bdy ? bdy->id  :-1;
       }
 
-      if (src->pair[i]->b2 != NULL)
+      if (src->pair[i]->b2 != -1)
       {
-        dst->pair[i]->b2 =
-          RcsGraph_getBodyByName(dst->graph, src->pair[i]->b2->name);
+        const RcsBody* srcBdy = RCSBODY_BY_ID(src->graph, src->pair[i]->b2);
+        const RcsBody* bdy = RcsGraph_getBodyByName(dst->graph, srcBdy->name);
+        dst->pair[i]->b2 = bdy ? bdy->id  :-1;
       }
 
-      dst->pair[i]->graph = dst->graph;
       dst->pair[i]->weight = src->pair[i]->weight;
       dst->pair[i]->dThreshold = src->pair[i]->dThreshold;
       dst->pair[i]->distance = src->pair[i]->distance;
@@ -493,7 +502,7 @@ bool RcsCollisionMdl_getPointers(const RcsCollisionMdl* self,
 
   RCSPAIR_TRAVERSE(self->pair)
   {
-    if ((PAIR->b1 == b1) && (PAIR->b2 == b2))
+    if ((PAIR->b1 == b1->id) && (PAIR->b2 == b2->id))
     {
       NLOG(5, "Getting distance pointers between \"%s\" and \"%s\""
            " in correct order", PAIR->b1->name, PAIR->b2->name);
@@ -501,7 +510,7 @@ bool RcsCollisionMdl_getPointers(const RcsCollisionMdl* self,
       *cp1 = (PAIR->cp1);
       *cp2 = (PAIR->cp2);
     }
-    else if ((PAIR->b1 == b2) && (PAIR->b2 == b1))
+    else if ((PAIR->b1 == b2->id) && (PAIR->b2 == b1->id))
     {
       NLOG(5, "Getting distance pointers between \"%s\" and \"%s\""
            " in reverse order", PAIR->b1->name, PAIR->b2->name);
@@ -598,8 +607,10 @@ double RcsCollisionMdl_cost(const RcsCollisionMdl* self)
     // Inverse exponential center distance
     if (self->sMixtureCost > 0.0)
     {
-      const double* center1 = PAIR->b1 ? PAIR->b1->A_BI.org : Vec3d_zeroVec();
-      const double* center2 = PAIR->b2 ? PAIR->b2->A_BI.org : Vec3d_zeroVec();
+      const RcsBody* b1 = RCSBODY_BY_ID(self->graph, PAIR->b1);
+      const RcsBody* b2 = RCSBODY_BY_ID(self->graph, PAIR->b2);
+      const double* center1 = b1 ? b1->A_BI.org : Vec3d_zeroVec();
+      const double* center2 = b2 ? b2->A_BI.org : Vec3d_zeroVec();
       double dCenters = Vec3d_distance(center1, center2);
 
       if (d <= 0.0)
@@ -645,7 +656,6 @@ void RcsCollisionMdl_gradient(const RcsCollisionMdl* self, MatNd* grad)
   {
     const double dLimit = PAIR->dThreshold;
     const double d  = PAIR->distance;
-    const double w  = PAIR->weight;
 
     // If the distance is larger than the threshold, the gradient is zero.
     if (d > dLimit)
@@ -653,10 +663,13 @@ void RcsCollisionMdl_gradient(const RcsCollisionMdl* self, MatNd* grad)
       continue;
     }
 
+    const double w  = PAIR->weight;
+    const RcsBody* b1 = RCSBODY_BY_ID(self->graph, PAIR->b1);
+    const RcsBody* b2 = RCSBODY_BY_ID(self->graph, PAIR->b2);
     bool repelling = (d >= 0.0) ? true : false;
     double dgpDdp;
 
-    RcsBody_distanceGradient(self->graph, PAIR->b1, PAIR->b2, repelling,
+    RcsBody_distanceGradient(self->graph, b1, b2, repelling,
                              PAIR->cp1, PAIR->cp2, PAIR->n1, dDpdq);
 
     if (d < 0)
@@ -678,10 +691,10 @@ void RcsCollisionMdl_gradient(const RcsCollisionMdl* self, MatNd* grad)
       double I_p1_center[3], I_p2_center[3], dgcDdc, dgcDdp, dCenters;
 
       // Partial derivative of cost with respect to dCenters
-      dCenters = RcsBody_centerDistance(PAIR->b1, PAIR->b2, NULL, NULL,
+      dCenters = RcsBody_centerDistance(b1, b2, NULL, NULL,
                                         I_p1_center, I_p2_center);
 
-      RcsBody_distanceGradient(self->graph, PAIR->b1, PAIR->b2, true,
+      RcsBody_distanceGradient(self->graph, b1, b2, true,
                                I_p1_center, I_p2_center, NULL, dDcdq);
 
       // dgc/ddc
@@ -795,7 +808,7 @@ bool RcsCollisionMdl_isEqual(const RcsCollisionMdl* self,
     {
       RcsPair* p1 = self->pair[i];
       RcsPair* p2 = other->pair[i];
-      bool isPairEqual = RcsPair_isEqual(p1, p2, eps);
+      bool isPairEqual = RcsPair_isEqual(p1, p2, self->graph, other->graph, eps);
 
       if (isPairEqual==false)
       {
@@ -819,79 +832,85 @@ bool RcsCollisionMdl_isEqual(const RcsCollisionMdl* self,
 /*******************************************************************************
  *
  ******************************************************************************/
-void RcsPair_fprint(FILE* fd, const RcsPair* self)
-{
-  if (fd == NULL)
-  {
-    RLOG(3, "You are trying to print a collision model to a NULL file "
-         "descriptor - ignoring");
-    return;
-  }
+/* void RcsPair_fprint(FILE* fd, const RcsPair* self, const RcsCollisionMdl* cmdl) */
+/* { */
+/*   if (fd == NULL) */
+/*   { */
+/*     RLOG(3, "You are trying to print a collision model to a NULL file " */
+/*          "descriptor - ignoring"); */
+/*     return; */
+/*   } */
 
-  fprintf(fd, "[%s: %s(%d)]: ", __FILE__, __FUNCTION__, __LINE__);
+/*   fprintf(fd, "[%s: %s(%d)]: ", __FILE__, __FUNCTION__, __LINE__); */
 
-  if (self == NULL)
-  {
-    fprintf(fd, "The pair is NULL\n");
-    return;
-  }
+/*   if (self == NULL) */
+/*   { */
+/*     fprintf(fd, "The pair is NULL\n"); */
+/*     return; */
+/*   } */
 
-  fprintf(fd, "Pair \"%s\" - \"%s\":\n",
-          self->b1 ? self->b1->name : "NULL",
-          self->b2 ? self->b2->name : "NULL");
-  fprintf(fd, "\tdThreshold = %.6f ", self->dThreshold);
-  fprintf(fd, "weight = %.6f ", self->weight);
-  fprintf(fd, "d = %.6f\n", self->distance);
-  fprintf(fd, "\tcp1 = %.6f %.6f %.6f\n", self->cp1[0], self->cp1[1], self->cp1[2]);
-  fprintf(fd, "\tcp2 = %.6f %.6f %.6f\n", self->cp2[0], self->cp2[1], self->cp2[2]);
-  fprintf(fd, "\tn1  = %.6f %.6f %.6f\n", self->n1[0],  self->n1[1],  self->n1[2]);
-}
+/*   const RcsBody* b1 = RCSBODY_BY_ID(cmdl->graph, self->b1); */
+/*   const RcsBody* b2 = RCSBODY_BY_ID(cmdl->graph, self->b2); */
 
-/*******************************************************************************
- *
- ******************************************************************************/
-void RcsPair_printCollisionModel(FILE* fd, RcsPair** pPtr)
-{
-  if (!fd)
-  {
-    RLOG(1, "You are trying to print a collision model to a NULL file "
-         "descriptor - ignoring");
-    return;
-  }
-
-  fprintf(fd, "[%s: %s(%d)]: ", __FILE__, __FUNCTION__, __LINE__);
-
-  if (pPtr)
-  {
-    fprintf(fd, "The collision model consists of\n");
-
-    int k = 0;
-    while (*pPtr)
-    {
-      fprintf(fd, "\t[%d]   %s", k, (*pPtr)->b1->name);
-      fprintf(fd, "\t\t%s\n", (*pPtr)->b2->name);
-      pPtr++;
-      k++;
-    }
-  }
-  else
-  {
-    fprintf(fd, "No collision defined!\n");
-  }
-
-}
+/*   fprintf(fd, "Pair \"%s\" - \"%s\":\n", */
+/*           b1 ? b1->name : "NULL", b2 ? b2->name : "NULL"); */
+/*   fprintf(fd, "\tdThreshold = %.6f ", self->dThreshold); */
+/*   fprintf(fd, "weight = %.6f ", self->weight); */
+/*   fprintf(fd, "d = %.6f\n", self->distance); */
+/*   fprintf(fd, "\tcp1 = %.6f %.6f %.6f\n", self->cp1[0], self->cp1[1], self->cp1[2]); */
+/*   fprintf(fd, "\tcp2 = %.6f %.6f %.6f\n", self->cp2[0], self->cp2[1], self->cp2[2]); */
+/*   fprintf(fd, "\tn1  = %.6f %.6f %.6f\n", self->n1[0],  self->n1[1],  self->n1[2]); */
+/* } */
 
 /*******************************************************************************
  *
  ******************************************************************************/
-bool RcsPair_isEqual(const RcsPair* p1, const RcsPair* p2, double eps)
+/* void RcsPair_printCollisionModel(FILE* fd, RcsPair** pPtr) */
+/* { */
+/*   if (!fd) */
+/*   { */
+/*     RLOG(1, "You are trying to print a collision model to a NULL file " */
+/*          "descriptor - ignoring"); */
+/*     return; */
+/*   } */
+
+/*   fprintf(fd, "[%s: %s(%d)]: ", __FILE__, __FUNCTION__, __LINE__); */
+
+/*   if (pPtr) */
+/*   { */
+/*     fprintf(fd, "The collision model consists of\n"); */
+
+/*     int k = 0; */
+/*     while (*pPtr) */
+/*     { */
+/*       const RcsBody* b1 = RCSBODY_BY_ID((*pPtr)->graph, (*pPtr)->b1); */
+/*       const RcsBody* b2 = RCSBODY_BY_ID((*pPtr)->graph, (*pPtr)->b2); */
+
+/*       fprintf(fd, "\t[%d]   %s", k, b1 ? b1->name : "NULL"); */
+/*       fprintf(fd, "\t\t%s\n", b2 ? b2->name : "NULL"); */
+/*       pPtr++; */
+/*       k++; */
+/*     } */
+/*   } */
+/*   else */
+/*   { */
+/*     fprintf(fd, "No collision defined!\n"); */
+/*   } */
+
+/* } */
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool RcsPair_isEqual(const RcsPair* p1, const RcsPair* p2,
+                     const RcsGraph* g1, const RcsGraph* g2, double eps)
 {
   bool isPairEqual = true;
 
-  const char* nameP11 = p1->b1 ? p1->b1->name : "NULL";
-  const char* nameP12 = p1->b2 ? p1->b2->name : "NULL";
-  const char* nameP21 = p2->b1 ? p2->b1->name : "NULL";
-  const char* nameP22 = p2->b2 ? p2->b2->name : "NULL";
+  const char* nameP11 = RCSBODY_NAME_BY_ID(g1, p1->b1);
+  const char* nameP12 = RCSBODY_NAME_BY_ID(g1, p1->b2);
+  const char* nameP21 = RCSBODY_NAME_BY_ID(g2, p2->b1);
+  const char* nameP22 = RCSBODY_NAME_BY_ID(g2, p2->b2);
 
   if (!STREQ(nameP11, nameP21))
   {
@@ -976,8 +995,8 @@ bool RcsCollisionMdl_removePair(RcsCollisionMdl* self,
   {
     RLOGS(2, "Can't remove pair \"%s\" - \"%s\" from collision model: "
           "Has no pairs",
-          pair->b1 ? pair->b1->name : "NULL",
-          pair->b2 ? pair->b2->name : "NULL");
+          RCSBODY_NAME_BY_ID(self->graph, pair->b1),
+          RCSBODY_NAME_BY_ID(self->graph, pair->b2));
     return false;
   }
 
@@ -997,8 +1016,8 @@ bool RcsCollisionMdl_removePair(RcsCollisionMdl* self,
   if (pairIdx == -1)
   {
     RLOGS(2, "Pair \"%s\" - \"%s\" not found in collision model",
-          pair->b1 ? pair->b1->name : "NULL",
-          pair->b2 ? pair->b2->name : "NULL");
+          RCSBODY_NAME_BY_ID(self->graph, pair->b1),
+          RCSBODY_NAME_BY_ID(self->graph, pair->b2));
     return false;
   }
 
@@ -1075,8 +1094,8 @@ bool RcsCollisionMdl_setPairWeightByName(RcsCollisionMdl* self,
 
   RCSPAIR_TRAVERSE(self->pair)
   {
-    if (((b1==PAIR->b1) && (b2==PAIR->b2)) ||
-        ((b1==PAIR->b2) && (b2==PAIR->b1)))
+    if (((b1->id==PAIR->b1) && (b2->id==PAIR->b2)) ||
+        ((b1->id==PAIR->b2) && (b2->id==PAIR->b1)))
     {
       PAIR->weight = weight;
     }

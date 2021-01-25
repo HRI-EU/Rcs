@@ -219,9 +219,9 @@ struct _RcsSensor
 
 struct _RcsPair
 {
-  const RcsBody* b1;     ///< First body
-  const RcsBody* b2;     ///< Second body
-  const RcsGraph* graph; ///< Graph to which bodies belong
+  int b1;                ///< First body id
+  int b2;                ///< Second body id
+  //const RcsGraph* graph; ///< Graph to which bodies belong
   double weight;         ///< Weighting factor for distance
   double dThreshold;     ///< Distance threshold
   double distance;       ///< Shortest distance between b1 and b2
@@ -264,6 +264,7 @@ struct _RcsGraph
 
 #define RCSJOINT_BY_ID(graph, id) ((id)==-1 ? NULL : &(graph)->joints[id])
 #define RCSBODY_BY_ID(graph, id)  ((id)==-1 ? NULL : &(graph)->bodies[id])
+#define RCSBODY_NAME_BY_ID(graph, id)  ((id)==-1 ? "NULL ": (graph)->bodies[id].name)
 
 #undef RCSGRAPH_FOREACH_SENSOR
 #define RCSGRAPH_FOREACH_SENSOR(graph)                                          \

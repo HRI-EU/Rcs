@@ -194,7 +194,7 @@ bool RcsCollisionMdl_setPairWeightByName(RcsCollisionMdl* self,
  *  \brief Prints the collision model to the console. If self or fd is NULL,
  *         the function issues a warning on debug level 1 and returns.
  */
-void RcsPair_printCollisionModel(FILE* fd, RcsPair** pPtr);
+//void RcsPair_printCollisionModel(FILE* fd, RcsPair** pPtr);
 
 /*! \ingroup RcsCollisionMdlFunctions
  *  \brief Prints information of all pairs that have a distance of equal or
@@ -208,7 +208,7 @@ void RcsCollisionModel_fprintCollisions(FILE* fd, const RcsCollisionMdl* self,
  *  \brief Prints the joint data to a file descriptor. All arguments may
  *         be NULL.
  */
-void RcsPair_fprint(FILE* out, const RcsPair* self);
+//void RcsPair_fprint(FILE* out, const RcsPair* self, const RcsCollisionMdl* cmdl);
 
 /*! \ingroup RcsCollisionMdlFunctions
  *  \brief Returns true if all parameters of the pairss are the
@@ -216,7 +216,8 @@ void RcsPair_fprint(FILE* out, const RcsPair* self);
  *         permissable error for values, such as distances or closest
  *         point coordinates.
  */
-bool RcsPair_isEqual(const RcsPair* self, const RcsPair* other, double eps);
+bool RcsPair_isEqual(const RcsPair* p1, const RcsPair* p2,
+                     const RcsGraph* g1, const RcsGraph* g2, double eps);
 
 
 #ifdef __cplusplus

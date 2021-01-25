@@ -134,6 +134,7 @@ DynamicDataPlot::DynamicDataPlot(MatNd* mat_, const char* title,
 
 DynamicDataPlot::~DynamicDataPlot()
 {
+  delete this->curve;
 }
 
 void DynamicDataPlot::timerEvent(QTimerEvent*)

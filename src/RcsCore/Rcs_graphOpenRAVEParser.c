@@ -625,8 +625,7 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
       polyGrad = 1;
     }
     RLOG(5, "Coupled joint \"%s\" has %d parameters", jnt->name, polyGrad);
-    RCHECK_MSG((polyGrad == 1) || (polyGrad == 5) || (polyGrad == 9),
-               "Currently only polynomials of order 1 or 5 or 9 are "
+    RCHECK_MSG(polyGrad == 1, "Currently only polynomials of order 1 are "
                "supported, and not %d parameters", polyGrad);
     getXMLNodePropertyVecN(node, "couplingFactor", jnt->couplingPoly, polyGrad);
     jnt->nCouplingCoeff = polyGrad;

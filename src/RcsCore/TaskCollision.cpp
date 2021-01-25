@@ -105,14 +105,14 @@ Rcs::TaskCollision::TaskCollision(const std::string& className_,
       RCHECK_MSG(len, "\"body1\" not found in pair %d", nPairs);
       RcsBody* b = RcsGraph_getBodyByName(this->graph, name);
       RCHECK_MSG(b, "Body \"%s\" doesn't exist!", name);
-      this->pair[nPairs]->b1 = b;
+      this->pair[nPairs]->b1 = b->id;
 
       // body2
       len = getXMLNodePropertyStringN(child, "body2", name, 256);
       RCHECK_MSG(len, "\"body2\" not found in pair %d", nPairs);
       b = RcsGraph_getBodyByName(this->graph, name);
       RCHECK_MSG(b, "Body \"%s\" doesn't exist!", name);
-      this->pair[nPairs]->b2 = b;
+      this->pair[nPairs]->b2 = b->id;
 
       // other pair parameters
       this->pair[nPairs]->dThreshold = defaultThreshold;
@@ -126,8 +126,8 @@ Rcs::TaskCollision::TaskCollision(const std::string& className_,
       REXEC(1)
       {
         RMSG("Pair %d: \"%s\" - \"%s\"", nPairs,
-             this->pair[nPairs]->b1->name,
-             this->pair[nPairs]->b2->name);
+             RCSBODY_NAME_BY_ID(this->graph, this->pair[nPairs]->b1),
+             RCSBODY_NAME_BY_ID(this->graph, this->pair[nPairs]->b2));
         RMSG("DistanceThreshold = %g", this->pair[nPairs]->dThreshold);
         RMSG("Distance weight is %g", this->pair[nPairs]->weight);
       }
@@ -193,13 +193,15 @@ void Rcs::TaskCollision::copyCollisionModel(RcsPair** srcPair,
     this->pair[nPairs]->distance = PAIR->distance;
     if (newGraph)
     {
-      this->pair[nPairs]->graph = newGraph;
-      this->pair[nPairs]->b1 = RcsGraph_getBodyByName(newGraph, PAIR->b1->name);
-      this->pair[nPairs]->b2 = RcsGraph_getBodyByName(newGraph, PAIR->b2->name);
+      const char* nameB1 = RCSBODY_NAME_BY_ID(this->graph, PAIR->b1);
+      const char* nameB2 = RCSBODY_NAME_BY_ID(this->graph, PAIR->b2);
+      const RcsBody* b1 = RcsGraph_getBodyByName(newGraph, nameB1);
+      const RcsBody* b2 = RcsGraph_getBodyByName(newGraph, nameB2);
+      this->pair[nPairs]->b1 = b1 ? b1->id : -1;
+      this->pair[nPairs]->b2 = b2 ? b2->id : -1;
     }
     else
     {
-      this->pair[nPairs]->graph = PAIR->graph;
       this->pair[nPairs]->b1 = PAIR->b1;
       this->pair[nPairs]->b2 = PAIR->b2;
     }
@@ -241,8 +243,9 @@ void Rcs::TaskCollision::computeX(double* x_res) const
 
   RCSPAIR_TRAVERSE(this->pair)
   {
-    *x_res += PAIR->weight * RcsBody_collisionCost(PAIR->b1, PAIR->b2,
-                                                   PAIR->dThreshold);
+    const RcsBody* b1 = RCSBODY_BY_ID(this->graph, PAIR->b1);
+    const RcsBody* b2 = RCSBODY_BY_ID(this->graph, PAIR->b2);
+    *x_res += PAIR->weight * RcsBody_collisionCost(b1, b2, PAIR->dThreshold);
   }
 
 }
@@ -260,7 +263,9 @@ void Rcs::TaskCollision::computeJ(MatNd* dH) const
 
   RCSPAIR_TRAVERSE(this->pair)
   {
-    RcsBody_collisionGradient(this->graph, PAIR->b1, PAIR->b2,
+    const RcsBody* b1 = RCSBODY_BY_ID(this->graph, PAIR->b1);
+    const RcsBody* b2 = RCSBODY_BY_ID(this->graph, PAIR->b2);
+    RcsBody_collisionGradient(this->graph, b1, b2,
                               PAIR->dThreshold, dHi, &status);
     MatNd_constMulSelf(dHi, PAIR->weight);   // HACK
     MatNd_addSelf(dH, dHi);

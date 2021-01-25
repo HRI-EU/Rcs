@@ -58,9 +58,11 @@ Rcs::IkSolverConstraintRMR::IkSolverConstraintRMR(Rcs::ControllerBase* ctrl) :
   {
     RCSPAIR_TRAVERSE(controller->getCollisionMdl()->pair)
     {
+      const RcsBody* b1 = RCSBODY_BY_ID(controller->getGraph(), PAIR->b1);
+      const RcsBody* b2 = RCSBODY_BY_ID(controller->getGraph(), PAIR->b2);
       RLOG(5, "Adding distance constraint between \"%s\" and \"%s\"",
-           PAIR->b1->name, PAIR->b2->name);
-      Task* ti = new TaskDistance(controller->getGraph(), PAIR->b1, PAIR->b2);
+           b1->name, b2->name);
+      Task* ti = new TaskDistance(controller->getGraph(), b1, b2);
       RCHECK(ti->getDim() == 1);
       controller->add(ti);
       augmentedTasks.push_back(ti);
