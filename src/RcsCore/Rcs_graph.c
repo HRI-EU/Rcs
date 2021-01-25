@@ -1790,20 +1790,51 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
 
   // Check for
   //  - body name truncations
+  //  - file name truncations in all shapes
   //  - correctness of rigid body joints
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
-    if (strlen(BODY->name) >= RCS_MAX_NAMELEN)
+    if (strlen(BODY->name) >= RCS_MAX_NAMELEN-1)
     {
       nErrors++;
-      RLOG(1, "Body \"%s\" very likely has a truncated name",
-           BODY->name);
+      RLOG(1, "Body \"%s\" very likely has a truncated name", BODY->name);
     }
 
     if (strlen(BODY->name) == 0)
     {
       nErrors++;
       RLOG(1, "Found body with empty body name");
+    }
+
+    RCSBODY_TRAVERSE_SHAPES(BODY)
+    {
+      if (strlen(SHAPE->meshFile) >= RCS_MAX_FILENAMELEN-1)
+      {
+        nErrors++;
+        RLOG(1, "Shape of body \"%s\" very likely has a truncated mesh file: %s",
+             BODY->name, SHAPE->meshFile);
+      }
+
+      if (strlen(SHAPE->textureFile) >= RCS_MAX_FILENAMELEN-1)
+      {
+        nWarnings++;
+        RLOG(1, "Shape of body \"%s\" very likely has a truncated texture file:"
+             "%s", BODY->name, SHAPE->textureFile);
+      }
+
+      if (strlen(SHAPE->color) >= RCS_MAX_NAMELEN-1)
+      {
+        nWarnings++;
+        RLOG(1, "Shape of body \"%s\" very likely has a truncated color:"
+             "%s", BODY->name, SHAPE->color);
+      }
+
+      if (strlen(SHAPE->material) >= RCS_MAX_NAMELEN-1)
+      {
+        nWarnings++;
+        RLOG(1, "Shape of body \"%s\" very likely has a truncated material:"
+             "%s", BODY->name, SHAPE->material);
+      }
     }
 
     if (BODY->rigid_body_joints)
@@ -1906,11 +1937,10 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
   {
     numJoints++;
 
-    if (strlen(JNT->name) >= RCS_MAX_NAMELEN)
+    if (strlen(JNT->name) >= RCS_MAX_NAMELEN-1)
     {
       nWarnings++;
-      RLOG(1, "Joint \"%s\" very likely has a truncated name",
-           JNT->name);
+      RLOG(1, "Joint \"%s\" very likely has a truncated name", JNT->name);
     }
 
     if ((JNT->q0<JNT->q_min) && (JNT->coupledToId==-1))
@@ -2804,7 +2834,7 @@ void RcsGraph_addRandomGeometry(RcsGraph* self)
     int rr = Math_getRandomInteger(0, 255);
     int gg = Math_getRandomInteger(0, 255);
     int bb = Math_getRandomInteger(0, 255);
-    char color[256];
+    char color[RCS_MAX_NAMELEN];
     sprintf(color, "#%02x%02x%02xff", rr, gg, bb);
 
 

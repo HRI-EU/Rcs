@@ -126,8 +126,14 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
 
       if (hgrDir != NULL)
       {
-        snprintf(meshFileFull, RCS_MAX_FILENAMELEN-10, "%s%s%s", hgrDir,
-                 "/Data/RobotMeshes/1.0/data/", &meshFile[10]);
+        int nBytes = snprintf(meshFileFull, RCS_MAX_FILENAMELEN, "%s%s%s",
+                              hgrDir, "/Data/RobotMeshes/1.0/data/",
+                              &meshFile[10]);
+        if (nBytes>=RCS_MAX_NAMELEN)
+        {
+          RLOG(1, "File name truncation happened: %s", meshFileFull);
+        }
+
       }
 
       if (File_exists(meshFileFull)==false)
@@ -181,7 +187,7 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
   if (material_node)
   {
     xmlNodePtr color_node = getXMLChildByName(material_node, "color");
-    xmlNodePtr texture_node = getXMLChildByName(material_node, "texture");
+    xmlNodePtr texNode = getXMLChildByName(material_node, "texture");
 
     if (color_node)
     {
@@ -201,13 +207,13 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
       strcpy(shape->color, "DEFAULT");
     }
 
-    if (texture_node)
+    if (texNode)
     {
       // Texture file
-      char str[256] = "";
-      getXMLNodePropertyStringN(texture_node, "filename", str, 256);
+      char str[RCS_MAX_FILENAMELEN] = "";
+      getXMLNodePropertyStringN(texNode, "filename", str, RCS_MAX_FILENAMELEN);
 
-      char fullname[512] = "";
+      char fullname[RCS_MAX_FILENAMELEN] = "";
       if (Rcs_getAbsoluteFileName(str, fullname))
       {
         snprintf(shape->textureFile, RCS_MAX_FILENAMELEN, "%s", fullname);

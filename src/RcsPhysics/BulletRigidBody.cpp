@@ -490,7 +490,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsGraph* graph,
   // constrain the rigid body movement in any of the 6 directions.
   if (bdy->rigid_body_joints)
   {
-    btVector3 linFac, angFac;
+    btVector3 linFac(1.0, 1.0, 1.0), angFac(1.0, 1.0, 1.0);
     const RcsJoint* rbj = RCSJOINT_BY_ID(graph, bdy->jntId);
 
     linFac[0] = rbj->weightMetric;

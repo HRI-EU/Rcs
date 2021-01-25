@@ -493,8 +493,8 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 
   if (strLength > 0)
   {
-    getXMLNodePropertyStringN(node, "textureFile", str, 256);
-    char fullname[512];
+    getXMLNodePropertyStringN(node, "textureFile", str, RCS_MAX_FILENAMELEN);
+    char fullname[RCS_MAX_FILENAMELEN];
     if (Rcs_getAbsoluteFileName(str, fullname))
     {
       snprintf(shape->textureFile, RCS_MAX_FILENAMELEN, "%s", fullname);
@@ -931,9 +931,9 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   /* RLOG(0, "Body %s: firstInGroup is %s", */
   /*      name, firstInGroup ? "TRUE" : "FALSE"); */
 
-  char msg[RCS_MAX_FILENAMELEN];
+  char msg[RCS_MAX_NAMELEN];
   RcsBody* parentBdy = root;
-  if (getXMLNodePropertyStringN(bdyNode, "prev", msg, RCS_MAX_FILENAMELEN) > 0)
+  if (getXMLNodePropertyStringN(bdyNode, "prev", msg, RCS_MAX_NAMELEN) > 0)
   {
     if (parentBdy && firstInGroup)
     {
@@ -1319,7 +1319,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
   }
   else if (isXMLNodeName(node, "Group"))
   {
-    char ndExt[16], tmp[32] = "", pGroupSuffix[16];
+    char ndExt[32], tmp[32] = "", pGroupSuffix[32];
 
     // Propagation of group transformation to next level
     HTr A_local, A_group;
@@ -1330,8 +1330,8 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
 
     // New extension = suffix + new group name
     getXMLNodePropertyStringN(node, "name", tmp, 32);
-    snprintf(pGroupSuffix, 16, "%s", suffix);
-    snprintf(ndExt, 16, "%s%s", suffix, tmp);
+    snprintf(pGroupSuffix, 32, "%s", suffix);
+    snprintf(ndExt, 32, "%s%s", suffix, tmp);
 
     // Groups default color, inherited from current levels' color
     char col[RCS_MAX_NAMELEN];

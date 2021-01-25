@@ -205,7 +205,7 @@ void RcsGraph_createBodiesFromOpenRAVEFile(RcsGraph* self, RcsBody* parent,
                                            unsigned int nq)
 {
   // Determine absolute file name of config file and copy the XML file name
-  char filename[256] = "";
+  char filename[RCS_MAX_FILENAMELEN] = "";
   bool fileExists = Rcs_getAbsoluteFileName(configFile, filename);
 
   if (fileExists==false)
@@ -252,8 +252,7 @@ void RcsGraph_createBodiesFromOpenRAVENode(RcsGraph* self, RcsBody* parent,
 
   if (kinbody_node== NULL)
   {
-    char msg[256];
-    strcpy(msg, "-");
+    char msg[RCS_MAX_NAMELEN] = "";
     getXMLNodeName(node, msg);
     RFATAL("Couldn't find child node \"KinBody\" from node \"%s\"", msg);
   }
@@ -385,8 +384,8 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
 
   if (mass_node)
   {
-    char buff[256];
-    getXMLNodePropertyStringN(mass_node, "type", buff, 256);
+    char buff[RCS_MAX_NAMELEN];
+    getXMLNodePropertyStringN(mass_node, "type", buff, RCS_MAX_NAMELEN);
 
     // we only support custom mass types for now
     RCHECK(STREQ(buff, "custom"));
@@ -441,12 +440,12 @@ RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody
 RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
                                          const double* q0)
 {
-  char msg[256];
+  char msg[RCS_MAX_NAMELEN];
   bool verbose = false;
   int strLength = 0;
 
   // if type is fix, we do not create the joint
-  getXMLNodePropertyStringN(node, "type", msg, 256);
+  getXMLNodePropertyStringN(node, "type", msg, RCS_MAX_NAMELEN);
   if (STREQ(msg, "fix"))
   {
     return NULL;
@@ -460,14 +459,12 @@ RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
   RCHECK_MSG(child, "Couldn't find tag \"offsetfrom\"");
 
 
-  char buff[256];
+  char buff[RCS_MAX_NAMELEN];
   getXMLNodeString(child, buff);
 
   RcsBody* bdy = RcsGraph_getBodyByName(self, buff);
   RCHECK(bdy);
 
-  /* RcsJoint* jnt  = RALLOC(RcsJoint); */
-  /* RcsJoint_init(jnt); */
   RcsJoint* jnt = RcsGraph_insertGraphJoint(self, bdy->id);
 
   jnt->weightJL = 1.0;
@@ -661,8 +658,8 @@ RcsShape* RcsShape_createFromOpenRAVEXML(xmlNode* node, RcsBody* body)
   shape->scale = 1.0;
 
   /// \todo: not all shape types are supported yet
-  char str[256];
-  getXMLNodePropertyStringN(node, "type", str, 256);
+  char str[RCS_MAX_NAMELEN];
+  getXMLNodePropertyStringN(node, "type", str, RCS_MAX_NAMELEN);
   if (STRCASEEQ(str, "box"))
   {
     shape->type = RCSSHAPE_BOX;
@@ -841,7 +838,7 @@ RcsShape* RcsShape_createFromOpenRAVEXML(xmlNode* node, RcsBody* body)
   }
 
   // Mesh file
-  char fileName[256] = "-";
+  char fileName[RCS_MAX_FILENAMELEN] = "-";
   child = getXMLChildByName(node, "render");
   if (child==NULL)
   {
@@ -851,7 +848,7 @@ RcsShape* RcsShape_createFromOpenRAVEXML(xmlNode* node, RcsBody* body)
 
   if (strLength > 0)
   {
-    char fullName[512] = "-";
+    char fullName[RCS_MAX_FILENAMELEN] = "-";
     RCHECK(shape->type == RCSSHAPE_MESH);
     Rcs_getAbsoluteFileName(fileName, fullName);
     snprintf(shape->meshFile, RCS_MAX_FILENAMELEN, "%s", fullName);

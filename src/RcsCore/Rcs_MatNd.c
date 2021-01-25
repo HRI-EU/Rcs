@@ -608,7 +608,7 @@ bool MatNd_gnuplot2(const char* title, const MatNd* self)
   {
     return false;
   }
-  RLOG(0, "A");
+
   char gpCmd[4096], gpCmd_col[512];
   if (title != NULL)
   {
@@ -618,7 +618,7 @@ bool MatNd_gnuplot2(const char* title, const MatNd* self)
   {
     strcpy(gpCmd, "set grid\n\nplot ");
   }
-  RLOG(0, "b");
+
   for (unsigned int i=1; i<=self->n; i++)
   {
     RLOG(0, "row %d from %d", i, self->n);
@@ -632,16 +632,15 @@ bool MatNd_gnuplot2(const char* title, const MatNd* self)
     }
   }
   strcat(gpCmd, "\n");
-  RLOG(0, "c");
+
 
   FILE* outDat = fopen(gpFileName, "w+");
   RCHECK_MSG(outDat, "Couldn't open file \"%s\"", gpFileName);
   fprintf(outDat, "%s", gpCmd);
   fflush(outDat);
   fclose(outDat);
-  RLOG(0, "d");
 
-  char sysCallStr[256];
+  char sysCallStr[300];
 
 #if defined(_MSC_VER)
   sprintf(sysCallStr, "wgnuplot.exe -persist %s", gpFileName);
@@ -649,7 +648,6 @@ bool MatNd_gnuplot2(const char* title, const MatNd* self)
   sprintf(sysCallStr, "/usr/bin/gnuplot -persist %s", gpFileName);
 #endif
   int err = system(sysCallStr);
-  RLOG(0, "e");
 
   if (err == -1)
   {
@@ -723,7 +721,7 @@ bool MatNd_gnuplot(const char* title, const MatNd* self)
   fflush(outDat);
   fclose(outDat);
 
-  char sysCallStr[256];
+  char sysCallStr[300];
 
 #if defined(_MSC_VER)
   sprintf(sysCallStr, "START \"\" wgnuplot.exe -persist %s &", gpFileName);

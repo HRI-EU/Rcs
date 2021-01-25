@@ -45,7 +45,7 @@
 typedef std::vector<std::string> StringList;
 typedef StringList::iterator StringListIt;
 
-static StringList* RCSRESOURCEPATH = NULL;
+static StringList RCSRESOURCEPATH;
 
 // If str is not ended by the delimiter, it is added. Otherwise, nothing
 // is done. We distinguish between Windows and Linux delimiters.
@@ -76,25 +76,7 @@ extern "C" {
    ****************************************************************************/
   void Rcs_clearResourcePath(void)
   {
-    if (!RCSRESOURCEPATH)
-    {
-      return;
-    }
-    RCSRESOURCEPATH->clear();
-    delete (RCSRESOURCEPATH);
-    RCSRESOURCEPATH = NULL;
-  }
-
-  /*****************************************************************************
-   *
-   ****************************************************************************/
-  void Rcs_initResourcePath(void)
-  {
-    if (!RCSRESOURCEPATH)
-    {
-      RCSRESOURCEPATH = new StringList;
-      atexit(Rcs_clearResourcePath);
-    }
+    RCSRESOURCEPATH.clear();
   }
 
   /*****************************************************************************
@@ -108,15 +90,12 @@ extern "C" {
       return false;
     }
 
-    // Create data on initial call
-    Rcs_initResourcePath();
-
     // Check if the path is already contained in the vector
     StringListIt it;
     std::string pathStr = std::string(path);
     addDelim(pathStr);
 
-    for (it = RCSRESOURCEPATH->begin(); it != RCSRESOURCEPATH->end(); ++it)
+    for (it = RCSRESOURCEPATH.begin(); it != RCSRESOURCEPATH.end(); ++it)
     {
       if (*it == pathStr)
       {
@@ -128,7 +107,7 @@ extern "C" {
     // Add resource path
     if (strlen(path) > 0)
     {
-      RCSRESOURCEPATH->push_back(pathStr);
+      RCSRESOURCEPATH.push_back(pathStr);
       RLOG(6, "Added path \"%s\" to resource paths", path);
     }
 
@@ -146,14 +125,11 @@ extern "C" {
       return false;
     }
 
-    // Create data on initial call
-    Rcs_initResourcePath();
-
     // Check if the path is already contained in the vector
     StringListIt it;
     std::string pathStr = std::string(path);
     addDelim(pathStr);
-    for (it = RCSRESOURCEPATH->begin(); it != RCSRESOURCEPATH->end(); ++it)
+    for (it = RCSRESOURCEPATH.begin(); it != RCSRESOURCEPATH.end(); ++it)
     {
       if (*it == pathStr)
       {
@@ -163,7 +139,7 @@ extern "C" {
     }
 
     // Add resource path
-    RCSRESOURCEPATH->insert(RCSRESOURCEPATH->begin(), pathStr);
+    RCSRESOURCEPATH.insert(RCSRESOURCEPATH.begin(), pathStr);
     RLOG(6, "Added path \"%s\" to resource path list", path);
 
     return true;
@@ -174,16 +150,12 @@ extern "C" {
    ****************************************************************************/
   const char* Rcs_getResourcePath(unsigned int index)
   {
-    if (!RCSRESOURCEPATH)
-    {
-      return NULL;
-    }
-    if (index >= RCSRESOURCEPATH->size())
+    if (index >= RCSRESOURCEPATH.size())
     {
       return NULL;
     }
 
-    return RCSRESOURCEPATH->at(index).c_str();
+    return RCSRESOURCEPATH.at(index).c_str();
   }
 
   /*****************************************************************************
@@ -211,15 +183,9 @@ extern "C" {
       NLOG(6, "Didn't find file \"%s\" in relative path", fileName);
     }
 
-    if (!RCSRESOURCEPATH)
-    {
-      NLOG(6, "Resource path doesn't exist yet - returning false");
-      return false;
-    }
-
     StringListIt it;
 
-    for (it = RCSRESOURCEPATH->begin(); it != RCSRESOURCEPATH->end(); ++it)
+    for (it = RCSRESOURCEPATH.begin(); it != RCSRESOURCEPATH.end(); ++it)
     {
       std::string fullName = *it + std::string(fileName);
 
@@ -272,16 +238,9 @@ extern "C" {
       RLOG(6, "Didn't find file \"%s\" in relative path", fileName);
     }
 
-    if (!RCSRESOURCEPATH)
-    {
-      RLOG(6, "Resource path doesn't exist yet - returning false");
-      return false;
-    }
-
-
     StringListIt it;
 
-    for (it = RCSRESOURCEPATH->begin(); it != RCSRESOURCEPATH->end(); ++it)
+    for (it = RCSRESOURCEPATH.begin(); it != RCSRESOURCEPATH.end(); ++it)
     {
       std::string fullName = *it + std::string(fileName);
 
@@ -314,16 +273,12 @@ extern "C" {
    ****************************************************************************/
   void Rcs_printResourcePath(void)
   {
-    if (!RCSRESOURCEPATH)
-    {
-      return;
-    }
     StringListIt it;
     int k = 0;
 
     fprintf(stderr, "[%s]:\n", __FUNCTION__);
 
-    for (it = RCSRESOURCEPATH->begin(); it != RCSRESOURCEPATH->end(); ++it)
+    for (it = RCSRESOURCEPATH.begin(); it != RCSRESOURCEPATH.end(); ++it)
     {
       std::string str = *it;
       fprintf(stderr, "Path[%d] = \"%s\"\n", k, str.c_str());

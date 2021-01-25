@@ -446,6 +446,8 @@ void RcsGraph_bodyTorque(const RcsGraph* self, const RcsBody* body,
  *           identity relative transforms
  *         - duplicate body names
  *         - body names with zero size (empty ones like "")
+ *         - body name truncation
+ *         - shape mesh file truncation
  *         - joint indices out of range
  *         - Jacobian indices out of range
  *         - joint direction index out of range
@@ -459,6 +461,7 @@ void RcsGraph_bodyTorque(const RcsGraph* self, const RcsBody* body,
  *         - joint centers out of range
  *         - joint positions out of range
  *         - bodies with finite inertia have a mass > 0
+ *         - shape texture file, color or material truncation
  *
  *  \param[in]     self      Pointer to the graph to be checked.
  *  \param[in,out] nErrors   If not NULL, the error count will be copied here.

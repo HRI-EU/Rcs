@@ -2082,6 +2082,7 @@ RcsMeshData* RcsMesh_createFrustum(double fovX, double fovY, double h)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+#if 0
 static RcsMeshData* RcsMesh_createRectangle(double x, double y)
 {
   RcsMeshData* mesh = RALLOC(RcsMeshData);
@@ -2090,6 +2091,7 @@ static RcsMeshData* RcsMesh_createRectangle(double x, double y)
   RcsMesh_appendRectangle(mesh, x, y, NULL, NULL);
   return mesh;
 }
+#endif
 
 /*******************************************************************************
  *
