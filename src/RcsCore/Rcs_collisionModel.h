@@ -106,32 +106,6 @@ RcsCollisionMdl* RcsCollisionModel_clone(const RcsCollisionMdl* self,
                                          const RcsGraph* newGraph);
 
 /*! \ingroup RcsCollisionMdlFunctions
- *  \brief Given a RcsCollisionMdl data structure and two bodies b1 and b2,
- *         this function sets the pointers cp1, cp2, n1 and d to point to the
- *         memory within the collision model. If the body combination b1 - b2
- *         does not exist (the function also checks for b2 - b1), the
- *         pointers remain unchanged and false is returned. In case of
- *         success, true is returned.
- *
- *         Here's an example:
-\verbatim
-           double *cpR=NULL, *cpE=NULL, *n=NULL, *d=NULL;
-           bool success =
-             RcsCollisionMdl_getPointers(cMdl, refBdy, &cpR,
-                                         effector, &cpE, &n, &d);
-           RCHECK(success);
-           RMSG("cpR = [%g %g %g]", cpR[0], cpR[1], cpR[2]);
-           RMSG("cpE = [%g %g %g]", cpE[0], cpE[1], cpE[2]);
-           RMSG("n   = [%g %g %g]", n[0], n[1], n[2]);
-           RMSG("distance = %g", *d);
-\endverbatim
- */
-bool RcsCollisionMdl_getPointers(const RcsCollisionMdl* self,
-                                 const RcsBody* b1, const double** cp1,
-                                 const RcsBody* b2, const double** cp2,
-                                 const double** n1, const double** d);
-
-/*! \ingroup RcsCollisionMdlFunctions
  *  \brief Returns the minimum distance inside the collision model. If self
  *         is NULL, DBL_MAX will be returned.
  */
@@ -170,54 +144,12 @@ bool RcsCollisionMdl_isEqual(const RcsCollisionMdl* self,
                              double eps);
 
 /*! \ingroup RcsCollisionMdlFunctions
- *  \brief Removes the collision pair from the model, and updates all
- *         indices and pointers. If the pair is not found, the function
- *         returns false. The pair will be deleted. if the collision
- *         model has no pairs, the function returns false.
- */
-bool RcsCollisionMdl_removePair(RcsCollisionMdl* self,
-                                const RcsPair* pair);
-
-/*! \ingroup RcsCollisionMdlFunctions
- *  \brief Sets the weight value of the given body pair to the given value.
- *         The bodies do not need to be in the same order as in the pair. If
- *         several pairs with the same body combinations exist in the model,
- *         the first one is used. If no pair is found, the function returns
- *         false, true otherwise. If one or both bodies don't exist in the
- *         graph of the collision model, the function returns false.
- */
-bool RcsCollisionMdl_setPairWeightByName(RcsCollisionMdl* self,
-                                         const char* bdy1, const char* bdy2,
-                                         double weight);
-
-/*! \ingroup RcsCollisionMdlFunctions
- *  \brief Prints the collision model to the console. If self or fd is NULL,
- *         the function issues a warning on debug level 1 and returns.
- */
-//void RcsPair_printCollisionModel(FILE* fd, RcsPair** pPtr);
-
-/*! \ingroup RcsCollisionMdlFunctions
  *  \brief Prints information of all pairs that have a distance of equal or
  *         less than argument distanceThreshold. All pointer arguments
  *         may be NULL.
  */
 void RcsCollisionModel_fprintCollisions(FILE* fd, const RcsCollisionMdl* self,
                                         double distanceThreshold);
-
-/*! \ingroup RcsCollisionMdlFunctions
- *  \brief Prints the joint data to a file descriptor. All arguments may
- *         be NULL.
- */
-//void RcsPair_fprint(FILE* out, const RcsPair* self, const RcsCollisionMdl* cmdl);
-
-/*! \ingroup RcsCollisionMdlFunctions
- *  \brief Returns true if all parameters of the pairss are the
- *         same. The underlying graph may be different. Value eps is the
- *         permissable error for values, such as distances or closest
- *         point coordinates.
- */
-bool RcsPair_isEqual(const RcsPair* p1, const RcsPair* p2,
-                     const RcsGraph* g1, const RcsGraph* g2, double eps);
 
 
 #ifdef __cplusplus

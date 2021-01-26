@@ -205,14 +205,6 @@ RcsBody* RcsBody_getLastChildById(const RcsGraph* graph, RcsBody* b);
   for (RcsShape **sPtr = (RcsShape**)((body)->shape), *SHAPE = *sPtr; *sPtr; \
        sPtr++, SHAPE=*sPtr)
 
-/*! \ingroup RcsGraphTraversalFunctions
- *  \brief Traverses all pairs from a pair list, starting from the first one.
- *         The pairs can be accessed with variable "PAIR".
- */
-#define RCSPAIR_TRAVERSE(pairlist) \
-  for (RcsPair **pPtr = (RcsPair**)(pairlist), *PAIR = *pPtr; *pPtr; \
-       pPtr++, PAIR=*pPtr)
-
 #define RCSGRAPH_FOREACH_SENSOR(graph) \
   for (RcsSensor *S0 = RcsSensor_first(graph), *SENSOR = S0, *S1 = RcsSensor_last(graph); \
        SENSOR && SENSOR<=S1; SENSOR++)

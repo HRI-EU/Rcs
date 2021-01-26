@@ -56,8 +56,9 @@ Rcs::IkSolverConstraintRMR::IkSolverConstraintRMR(Rcs::ControllerBase* ctrl) :
   // Append active set constraints for collisions
   if (controller->getCollisionMdl())
   {
-    RCSPAIR_TRAVERSE(controller->getCollisionMdl()->pair)
+    for (unsigned int i=0; i<controller->getCollisionMdl()->nPairs; ++i)
     {
+      const RcsPair* PAIR = &controller->getCollisionMdl()->pair[i];
       const RcsBody* b1 = RCSBODY_BY_ID(controller->getGraph(), PAIR->b1);
       const RcsBody* b2 = RCSBODY_BY_ID(controller->getGraph(), PAIR->b2);
       RLOG(5, "Adding distance constraint between \"%s\" and \"%s\"",

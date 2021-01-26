@@ -347,9 +347,9 @@ void ControllerWidgetBase::displayAct()
 
   lock();
   snprintf(a, 256, "Dofs: %d/%d  Tasks: %zu",
-          _controller->getGraph()->nJ,
-          _controller->getGraph()->dof,
-          _controller->getTaskDim());
+           _controller->getGraph()->nJ,
+           _controller->getGraph()->dof,
+           _controller->getTaskDim());
   unlock();
 
   this->label_stats->setText(a);

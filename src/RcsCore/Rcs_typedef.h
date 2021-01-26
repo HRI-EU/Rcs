@@ -221,13 +221,12 @@ struct _RcsPair
 {
   int b1;                ///< First body id
   int b2;                ///< Second body id
-  //const RcsGraph* graph; ///< Graph to which bodies belong
   double weight;         ///< Weighting factor for distance
   double dThreshold;     ///< Distance threshold
   double distance;       ///< Shortest distance between b1 and b2
-  double* cp1;           ///< Closest point on body 1
-  double* cp2;           ///< Closest point on body 2
-  double* n1;            ///< Unit normal on body 1 (pointing outwards)
+  int cp1;               ///< Row number of closest point on body 1
+  int cp2;               ///< Row number of closest point on body 2
+  int n1;                ///< Unit normal on body 1 (pointing outwards)
 };
 
 
@@ -235,7 +234,8 @@ struct _RcsPair
 struct _RcsCollisionMdl
 {
   const RcsGraph* graph;   ///< Graph to which bodies belong
-  RcsPair** pair;          ///< List of collision pairs
+  RcsPair* pair;           ///< Array of collision pairs
+  unsigned int nPairs;     ///< Number of pairs
   MatNd* cp;               ///< Closest points in alternating order
   MatNd* n1;               ///< Unit normal on body 1 (pointing outwards)
   double sMixtureCost;     ///< Factor that multiplies the center distances

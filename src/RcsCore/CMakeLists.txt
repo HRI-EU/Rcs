@@ -55,7 +55,7 @@ Rcs_VecNd.c
 SensorComponent.cpp
 SolverRAC.cpp
 TaskAngularMomentum3D.cpp
-TaskCollision.cpp
+#TaskCollision.cpp
 TaskCOM1D.cpp
 TaskCOM3D.cpp
 Task.cpp
