@@ -109,17 +109,17 @@ DynamicDataPlot::DynamicDataPlot(MatNd* mat_, const char* title,
   canvasPalette.setColor(QPalette::Foreground, QColor(131, 131, 131));
   canvas->setPalette(canvasPalette);
 
-  plot = new QwtPlot;
+  this->plot = new QwtPlot;
   plot->setTitle(title);
   plot->setCanvasBackground(Qt::white);
   plot->setCanvas(canvas);
 
-  curve = new QwtPlotCurve;
+  this->curve = new QwtPlotCurve;
   curve->attach(plot);
   curve->setTitle(title);
   curve->setPen(Qt::blue, 2), curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
 
-  QwtPlotGrid* grid = new QwtPlotGrid();
+  this->grid = new QwtPlotGrid();
   grid->setMajorPen(QPen(Qt::DotLine));
   grid->attach(plot);
 
@@ -135,6 +135,7 @@ DynamicDataPlot::DynamicDataPlot(MatNd* mat_, const char* title,
 DynamicDataPlot::~DynamicDataPlot()
 {
   delete this->curve;
+  delete this->grid;
 }
 
 void DynamicDataPlot::timerEvent(QTimerEvent*)

@@ -40,8 +40,6 @@
 #include <KeyCatcherBase.h>
 #include <osgGA/GUIEventHandler>
 
-#include <pthread.h>
-
 
 
 namespace Rcs
@@ -54,7 +52,6 @@ class KeyCatcher : public osgGA::GUIEventHandler, public KeyCatcherBase
 public:
 
   KeyCatcher();
-  virtual ~KeyCatcher();
   virtual bool getAndResetKey(char c);
   virtual bool getAndResetKey(int i);
   bool getKey(const char key);
@@ -66,7 +63,10 @@ public:
 private:
 
   bool _charPressed[256];
-  pthread_mutex_t _lock;
+  mutable OpenThreads::Mutex mutex;
+  KeyCatcher& operator=(const KeyCatcher&);
+  KeyCatcher(const KeyCatcher&);
+  virtual ~KeyCatcher();
 };
 
 

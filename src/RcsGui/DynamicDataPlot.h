@@ -45,6 +45,7 @@
 
 class QwtPlot;
 class QwtPlotCurve;
+class QwtPlotGrid;
 
 namespace Rcs
 {
@@ -72,6 +73,7 @@ private:
 
   QwtPlot*      plot;
   QwtPlotCurve* curve;
+  QwtPlotGrid* grid;
 
   const MatNd* mat;
 };

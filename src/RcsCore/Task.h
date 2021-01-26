@@ -163,7 +163,7 @@ public:
   /*! \brief Copy constructor doing deep copying with optional new graph
    *         pointer
    */
-  Task(const Task& copyFromMe, RcsGraph* newGraph=NULL);
+  Task(const Task& copyFromMe, RcsGraph* newGraph);
 
   /*! \brief Destructor
    */
@@ -775,9 +775,16 @@ private:
    */
   unsigned int taskDim;
 
-  /*! \brief Private assignment operator to avoid it being used
+  /*! \brief Private assignment operator to avoid multiple deletes of pointer
+   *         memory.
    */
   Task& operator = (const Task&);
+
+  /*! \brief Private copy constructor to avoid multiple deletes of pointer
+   *         memory.
+   */
+  Task(const Task& copyFromMe);
+
 
   /*! \brief Name of the task
    */

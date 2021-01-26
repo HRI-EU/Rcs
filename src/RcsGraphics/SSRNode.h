@@ -53,25 +53,30 @@ class SSRGeometry : public osg::Geometry
 {
 public:
   SSRGeometry(const double extents[3], unsigned int nSegments=16);
-  virtual ~SSRGeometry();
   void update(const double extents[3]);
 
 private:
   RcsMeshData* mesh;
   double extents[3];
   unsigned int nSeg;
+  virtual ~SSRGeometry();
+  SSRGeometry& operator=(const SSRGeometry&);
+  SSRGeometry(const SSRGeometry&);
 };
 
 class SSRNode: public NodeBase
 {
 
 public:
-
   SSRNode(const double center[3],
           double A_KI[3][3],
           const double extent[2],
           const double radius,
           bool resizeable=false);
+
+private:
+  SSRNode& operator=(const SSRNode&);
+  SSRNode(const SSRNode&);
 };
 
 }   // namespace Rcs

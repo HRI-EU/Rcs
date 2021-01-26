@@ -53,7 +53,6 @@ using namespace Rcs;
 
 KeyCatcher::KeyCatcher()
 {
-  pthread_mutex_init(&_lock, NULL);
   for (int i = 0; i < 256; i++)
   {
     _charPressed[i] = false;
@@ -75,7 +74,6 @@ KeyCatcher::KeyCatcher()
 
 KeyCatcher::~KeyCatcher()
 {
-  pthread_mutex_destroy(&_lock);
 }
 
 
@@ -100,9 +98,9 @@ bool KeyCatcher::handle(const osgGA::GUIEventAdapter& ea,
       if ((ea.getKey() >= 65) && (ea.getKey() <= 90))
       {
         unsigned int asciiCode =  ea.getKey();
-        pthread_mutex_lock(&_lock);
+        mutex.lock();
         _charPressed[asciiCode] = !_charPressed[asciiCode];
-        pthread_mutex_unlock(&_lock);
+        mutex.unlock();
         RLOG(5, "Toggled %c (%u)", asciiCode, asciiCode);
         return false;
       }
@@ -111,9 +109,9 @@ bool KeyCatcher::handle(const osgGA::GUIEventAdapter& ea,
       else if ((ea.getKey() >= 97) && (ea.getKey() <= 122))
       {
         unsigned int asciiCode =  ea.getKey();
-        pthread_mutex_lock(&_lock);
+        mutex.lock();
         _charPressed[asciiCode] = !_charPressed[asciiCode];
-        pthread_mutex_unlock(&_lock);
+        mutex.unlock();
         RLOG(5, "Toggled %c (%u)", asciiCode, asciiCode);
         return false;
       }
@@ -129,9 +127,9 @@ bool KeyCatcher::handle(const osgGA::GUIEventAdapter& ea,
       else if (ea.getKey() == 13)
       {
         unsigned int asciiCode =  ea.getKey();
-        pthread_mutex_lock(&_lock);
+        mutex.lock();
         _charPressed[asciiCode] = !_charPressed[asciiCode];
-        pthread_mutex_unlock(&_lock);
+        mutex.unlock();
         RLOG(5, "Toggled Enter (%u)", asciiCode);
         return false;
       }
@@ -148,9 +146,9 @@ bool KeyCatcher::handle(const osgGA::GUIEventAdapter& ea,
         unsigned int asciiCode =  ea.getKey();
         if (asciiCode < 256)
         {
-          pthread_mutex_lock(&_lock);
+          mutex.lock();
           _charPressed[asciiCode] = !_charPressed[asciiCode];
-          pthread_mutex_unlock(&_lock);
+          mutex.unlock();
           RLOG(5, "Toggled %c (%u)", asciiCode, asciiCode);
         }
         else
@@ -182,9 +180,8 @@ bool KeyCatcher::handle(const osgGA::GUIEventAdapter& ea,
 
 bool KeyCatcher::getKey(const char key)
 {
-  pthread_mutex_lock(&_lock);
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(mutex);
   bool isPressed = _charPressed[(unsigned int) key];
-  pthread_mutex_unlock(&_lock);
   return isPressed;
 }
 
@@ -198,10 +195,9 @@ bool KeyCatcher::getKey(const char key)
 
 bool KeyCatcher::getAndResetKey(char c)
 {
-  pthread_mutex_lock(&_lock);
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(mutex);
   bool isPressed = _charPressed[(unsigned int) c];
   _charPressed[(unsigned int) c] = false;
-  pthread_mutex_unlock(&_lock);
   return isPressed;
 }
 
@@ -213,10 +209,9 @@ bool KeyCatcher::getAndResetKey(char c)
 
 bool KeyCatcher::getAndResetKey(int i)
 {
-  pthread_mutex_lock(&_lock);
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(mutex);
   bool isPressed = _charPressed[(unsigned int) i];
   _charPressed[(unsigned int) i] = false;
-  pthread_mutex_unlock(&_lock);
   return isPressed;
 }
 
@@ -235,9 +230,8 @@ void KeyCatcher::setKey(const char key)
     RLOG(0, "Key %c (ASCII %u) out of ASCII range - ignoring", key, key);
   }
 
-  pthread_mutex_lock(&_lock);
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(mutex);
   _charPressed[(unsigned int) key] = true;
-  pthread_mutex_unlock(&_lock);
 }
 
 
@@ -253,9 +247,9 @@ void KeyCatcher::resetKey(const char key)
   if ((unsigned int) key >= 256)
   {
     RLOG(0, "Key %c (ASCII %u) out of ASCII range - ignoring", key, key);
+    return;
   }
 
-  pthread_mutex_lock(&_lock);
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(mutex);
   _charPressed[(unsigned int) key] = false;
-  pthread_mutex_unlock(&_lock);
 }

@@ -1848,30 +1848,24 @@ bool Rcs::VortexSimulation::removeJoint(RcsBody* body)
     return false;
   }
 
-  Vx::VxConstraint* vJnt = NULL;
-
   const Vx::VxConstraintSet& constraints = universe->getConstraints();
 
   for (auto it = constraints.begin(); it != constraints.end(); ++it)
   {
-    if ((*it)->getUserDataPtr() == RcsBody_getJoint(body, getGraph()))
+    Vx::VxConstraint* ci = *it;
+    RcsJoint* bdyJnt = (RcsJoint*) ci->getUserDataPtr();
+
+    if (bdyJnt == RcsBody_getJoint(body, getGraph()))
     {
-      vJnt = *it;
-      break;
+      Vx::VxPart* part1 = getPartPtr(body);
+      universe->enablePairIntersect(part0, part1);
+      universe->removeConstraint(ci);
+      delete ci;
+      RLOG(0, "Removed joint for body \"%s\" (Joint \"%s\")", body->name,
+           bdyJnt ? bdyJnt->name : "NULL");
+
+      return true;
     }
-  }
-
-  if (vJnt != NULL)
-  {
-    Vx::VxPart* part1 = getPartPtr(body);
-    universe->enablePairIntersect(part0, part1);
-    universe->removeConstraint(vJnt);
-    delete vJnt;
-    RcsJoint* bdyJnt = RcsBody_getJoint(body, getGraph());
-    RLOG(0, "Removed joint for body \"%s\" (Joint \"%s\")", body->name,
-         bdyJnt ? bdyJnt->name : "NULL");
-
-    return true;
   }
 
   return false;
