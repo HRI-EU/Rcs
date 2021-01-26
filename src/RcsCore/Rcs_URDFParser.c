@@ -131,7 +131,7 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
         int nBytes = snprintf(meshFileFull, RCS_MAX_FILENAMELEN, "%s%s%s",
                               hgrDir, "/Data/RobotMeshes/1.0/data/",
                               &meshFile[10]);
-        if (nBytes>=RCS_MAX_NAMELEN)
+        if (nBytes>=RCS_MAX_NAMELEN-1)
         {
           RLOG(1, "File name truncation happened: %s", meshFileFull);
         }

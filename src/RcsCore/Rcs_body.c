@@ -1545,7 +1545,7 @@ RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* b,
 
     int nchars = snprintf(jnt->name, RCS_MAX_NAMELEN, "%s_rigidBodyJnt%d",
                           b->name, i);
-    if (nchars>=RCS_MAX_NAMELEN)
+    if (nchars>=RCS_MAX_NAMELEN-1)
     {
       RLOG(1, "Joint name truncation happened: %s", jnt->name);
     }
@@ -1673,25 +1673,16 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
   // are sometimes pretty small.
   if (Mat3d_maxAbsEle((double (*)[3])self->Inertia.rot) > 0.0)
   {
-    int len = snprintf(buf, 256, "inertia=\"%g %g %g   %g %g %g   %g %g %g",
-                       self->Inertia.rot[0][0],
-                       self->Inertia.rot[0][1],
-                       self->Inertia.rot[0][2],
-                       self->Inertia.rot[1][0],
-                       self->Inertia.rot[1][1],
-                       self->Inertia.rot[1][2],
-                       self->Inertia.rot[2][0],
-                       self->Inertia.rot[2][1],
-                       self->Inertia.rot[2][2]);
-
-    if (len < 256)
-    {
-      fprintf(out, "%s\" ", buf);
-    }
-    else
-    {
-      RLOG(4, "Failed to write inertia to xml: 256 characters exceeded");
-    }
+    fprintf(out, "inertia=\"%g %g %g   %g %g %g   %g %g %g\" ",
+            self->Inertia.rot[0][0],
+            self->Inertia.rot[0][1],
+            self->Inertia.rot[0][2],
+            self->Inertia.rot[1][0],
+            self->Inertia.rot[1][1],
+            self->Inertia.rot[1][2],
+            self->Inertia.rot[2][0],
+            self->Inertia.rot[2][1],
+            self->Inertia.rot[2][2]);
   }
 
   // End body tag

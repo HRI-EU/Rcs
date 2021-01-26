@@ -164,7 +164,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, int parentId, FILE* fd,
       RcsBody* body = &self->bodies[parentId];
       RcsJoint* jnt = RcsGraph_insertGraphJoint(self, body->id);
       int nchars = snprintf(jnt->name, RCS_MAX_NAMELEN, "%s_jnt_%s", body->name, buf);
-      if (nchars>=RCS_MAX_NAMELEN)
+      if (nchars>=RCS_MAX_NAMELEN-1)
       {
         RLOG(1, "Joint name truncation happened: %s", jnt->name);
       }
