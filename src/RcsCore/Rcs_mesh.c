@@ -1508,11 +1508,13 @@ void RcsMesh_copy(RcsMeshData* dst, const RcsMeshData* src)
   if (dst->nVertices < src->nVertices)
   {
     dst->vertices = RREALLOC(dst->vertices, 3*dst->nVertices, double);
+    RCHECK(dst->vertices);
   }
 
   if (dst->nFaces < src->nFaces)
   {
     dst->faces = RREALLOC(dst->faces, 3*dst->nFaces, unsigned int);
+    RCHECK(dst->faces);
   }
 
   dst->nVertices = dst->nVertices;
@@ -1662,9 +1664,11 @@ void RcsMesh_add(RcsMeshData* mesh, const RcsMeshData* other)
 
   size_t vMem = 3*(mesh->nVertices+other->nVertices)*sizeof(double);
   mesh->vertices = (double*) realloc(mesh->vertices, vMem);
+  RCHECK(mesh->vertices);
 
   size_t fMem = 3*(mesh->nFaces+other->nFaces)*sizeof(unsigned int);
   mesh->faces = (unsigned int*) realloc(mesh->faces, fMem);
+  RCHECK(mesh->faces);
 
   memcpy(&mesh->vertices[3*mesh->nVertices], other->vertices,
          3*other->nVertices*sizeof(double));

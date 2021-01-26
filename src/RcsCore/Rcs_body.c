@@ -133,20 +133,6 @@ void RcsBody_clear(RcsBody* self)
     return;
   }
 
-  // Destroy all associated joints
-  /* RcsJoint* jnt, *next; */
-
-  /* jnt  = self->jnt; */
-  /* next = NULL; */
-
-  /* while (jnt) */
-  /* { */
-  /*   NLOG(0, "Deleting joint \"%s\"", jnt->name); */
-  /*   next = jnt->next; */
-  /*   RcsJoint_destroy(jnt); */
-  /*   jnt = next; */
-  /* } */
-
   // Destroy all associated shapes
   NLOG(0, "Starting to delete shapes");
   if (self->shape != NULL)
@@ -306,7 +292,7 @@ bool RcsBody_removeShape(RcsBody* self, unsigned int idx)
  ******************************************************************************/
 RcsBody* RcsBody_getLastInGraph(const RcsGraph* self)
 {
-  RcsBody* b = RCSBODY_BY_ID(self, self->rootId);
+  RcsBody* b = &self->bodies[self->rootId];
   RcsBody* next = RCSBODY_BY_ID(self, b->nextId);
   RcsBody* lastChild = RCSBODY_BY_ID(self, b->lastChildId);
 
@@ -722,6 +708,8 @@ double RcsBody_distance(const RcsBody* b1,
                         double cp2[3],
                         double n[3])
 {
+  RCHECK(b1 && b2);
+
   if ((b1->shape==NULL) || (b2->shape==NULL))
   {
     RFATAL("Body has no shape in distance computation");
@@ -1550,6 +1538,11 @@ RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* b,
   {
     RcsJoint* jnt = RcsGraph_insertGraphJoint(self, b->id);
 
+    if (i==0)
+    {
+      jntId0 = jnt->id;
+    }
+
     int nchars = snprintf(jnt->name, RCS_MAX_NAMELEN, "%s_rigidBodyJnt%d",
                           b->name, i);
     if (nchars>=RCS_MAX_NAMELEN)
@@ -1563,7 +1556,6 @@ RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* b,
     switch (indexOrdering[i])
     {
       case 0:
-        jntId0 = jnt->id;
         jnt->type = RCSJOINT_TRANS_X;
         jnt->dirIdx = 0;
         break;
@@ -1601,7 +1593,7 @@ RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* b,
     jnt->maxTorque = DBL_MAX;
   }
 
-  return RCSJOINT_BY_ID(self, jntId0);
+  return &self->joints[jntId0];
 }
 
 /*******************************************************************************

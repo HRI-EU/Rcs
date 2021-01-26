@@ -218,6 +218,7 @@ const RcsBody* Rcs::TaskPolarSurfaceNormal::closestSurfaceBody() const
 {
   if (surfaceBodies.empty())
   {
+    RCHECK(getRefBody());
     return getRefBody();
   }
 
@@ -231,6 +232,7 @@ const RcsBody* Rcs::TaskPolarSurfaceNormal::closestSurfaceBody() const
     double d_i = RcsBody_distance(surfBdy, getEffector(), NULL, NULL, NULL);
     if (d_i < d)
     {
+      RCHECK(surfBdy);
       closestBdy = surfBdy;
     }
   }

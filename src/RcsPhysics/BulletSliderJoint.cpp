@@ -62,6 +62,7 @@ Rcs::BulletSliderJoint::BulletSliderJoint(const RcsGraph* graph_,
   jointVelocity(0.0), jointVelocityPrev(0.0), jointAcceleration(0.0),
   offset(0.0), jf(), withForceLimit(enableForceLimit)
 {
+  RCHECK(rcsJointId!=-1);
   const RcsJoint* rcsJoint = getJoint();
   RCHECK(RcsJoint_isTranslation(rcsJoint));
 
@@ -294,5 +295,5 @@ bool Rcs::BulletSliderJoint::isSlider() const
  ******************************************************************************/
 const RcsJoint* Rcs::BulletSliderJoint::getJoint() const
 {
-  return RCSJOINT_BY_ID(graph, this->rcsJointId);
+  return &graph->joints[this->rcsJointId];
 }

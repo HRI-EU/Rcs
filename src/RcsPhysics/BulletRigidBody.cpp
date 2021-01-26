@@ -492,18 +492,24 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsGraph* graph,
   {
     btVector3 linFac(1.0, 1.0, 1.0), angFac(1.0, 1.0, 1.0);
     const RcsJoint* rbj = RCSJOINT_BY_ID(graph, bdy->jntId);
+    RCHECK(rbj);
 
     linFac[0] = rbj->weightMetric;
     rbj = RCSJOINT_BY_ID(graph, rbj->nextId);
+    RCHECK(rbj);
     linFac[1] = rbj->weightMetric;
     rbj = RCSJOINT_BY_ID(graph, rbj->nextId);
+    RCHECK(rbj);
     linFac[2] = rbj->weightMetric;
     rbj = RCSJOINT_BY_ID(graph, rbj->nextId);
+    RCHECK(rbj);
 
     angFac[0] = rbj->weightMetric;
     rbj = RCSJOINT_BY_ID(graph, rbj->nextId);
+    RCHECK(rbj);
     angFac[1] = rbj->weightMetric;
     rbj = RCSJOINT_BY_ID(graph, rbj->nextId);
+    RCHECK(rbj);
     angFac[2] = rbj->weightMetric;
 
     btBody->setLinearFactor(linFac);

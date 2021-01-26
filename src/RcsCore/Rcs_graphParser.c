@@ -872,6 +872,7 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
     RCHECK_MSG((polyGrad == 1) || (polyGrad == 5) || (polyGrad == 9),
                "Currently only polynomials of order 1 or 5 or 9 are "
                "supported, and not %d parameters", polyGrad);
+    RCHECK(polyGrad<=8);
     jnt->nCouplingCoeff = polyGrad;
     getXMLNodePropertyVecN(node, "couplingFactor",
                            jnt->couplingPoly, polyGrad);

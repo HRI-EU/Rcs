@@ -993,14 +993,13 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
   {
     const RcsBody* rb = RCSBODY_BY_ID(getGraph(), it->first);
 
-    if (rb->rigid_body_joints == true)
-      //if (RcsBody_isFloatingBase(rb) == true)
+    if (rb && rb->rigid_body_joints == true)
     {
       Rcs::BulletRigidBody* btBdy = it->second;
       RCHECK_MSG(btBdy, "%s", rb->name);
       HTr A_BI;
       btBdy->getBodyTransform(&A_BI);
-      const RcsJoint* jnt = RCSJOINT_BY_ID(getGraph(), rb->jntId);
+      const RcsJoint* jnt = &getGraph()->joints[rb->jntId];
       int idx = (type==RcsStateFull) ? jnt->jointIndex : jnt->jacobiIndex;
       RCHECK_MSG(idx>=0 && idx<(int)getGraph()->dof, "Joint \"%s\": idx = %d",
                  jnt ? jnt->name : "NULL", idx);
@@ -1052,7 +1051,7 @@ void Rcs::BulletSimulation::getJointVelocities(MatNd* q_dot,
   // First update all hinge joints
   for (hinge_cit it = jntMap.begin(); it != jntMap.end(); ++it)
   {
-    const RcsJoint* rj = RCSJOINT_BY_ID(getGraph(), it->first);
+    const RcsJoint* rj = &getGraph()->joints[it->first];
     Rcs::BulletJointBase* hinge = it->second;
 
     if (hinge != NULL)
@@ -1075,10 +1074,10 @@ void Rcs::BulletSimulation::getJointVelocities(MatNd* q_dot,
   {
     const RcsBody* rb = RCSBODY_BY_ID(getGraph(), it2->first);
 
-    if (rb->rigid_body_joints == true)
+    if (rb && rb->rigid_body_joints == true)
     {
       Rcs::BulletRigidBody* btBdy = it2->second;
-      RcsJoint* jnt = RCSJOINT_BY_ID(getGraph(), rb->jntId);
+      RcsJoint* jnt = &getGraph()->joints[rb->jntId];
       MatNd_set(q_dot, jnt->jointIndex, 0, btBdy->x_dot[0]);
       MatNd_set(q_dot, jnt->jointIndex+1, 0, btBdy->x_dot[1]);
       MatNd_set(q_dot, jnt->jointIndex+2, 0, btBdy->x_dot[2]);
@@ -1203,7 +1202,7 @@ void Rcs::BulletSimulation::setJointLimits(bool enable)
 
     if (enable==true)
     {
-      const RcsJoint* jnt = RCSJOINT_BY_ID(getGraph(), it->first);
+      const RcsJoint* jnt = &getGraph()->joints[it->first];
       hinge->setJointLimit(enable, jnt->q_min, jnt->q_max);
     }
     else
@@ -1318,7 +1317,7 @@ void Rcs::BulletSimulation::applyControl(double dt)
   // Set desired joint controls
   for (hinge_cit it = jntMap.begin(); it != jntMap.end(); ++it)
   {
-    const RcsJoint* JNT = RCSJOINT_BY_ID(getGraph(), it->first);
+    const RcsJoint* JNT = &getGraph()->joints[it->first];
     Rcs::BulletJointBase* hinge = it->second;
 
     if (JNT->ctrlType==RCSJOINT_CTRL_TORQUE)
@@ -1872,7 +1871,7 @@ bool Rcs::BulletSimulation::removeBody(const char* name)
  ******************************************************************************/
 bool Rcs::BulletSimulation::addBody(const RcsGraph* graph, const RcsBody* body_)
 {
-  RLOG(5, "Creating bullet body for \"%s\"", body_ ? body_->name : "NULL");
+  RLOG(5, "Creating bullet body for \"%s\"", body_->name);
 
   PhysicsConfig config(this->physicsConfigFile.c_str());
 

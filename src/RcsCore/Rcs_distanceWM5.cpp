@@ -1322,6 +1322,7 @@ void Rcs_copyPointIfCloser2D(const double distance_temp,
  * radius. Vectors cp0 and cp1 hold the closest points of the distance query.
  * They may be NULL.
  ******************************************************************************/
+#if 0
 static double Rcs_distancePointCylinder(const double p[3],
                                         const HTr* A_cylinder,
                                         double height,
@@ -1371,7 +1372,7 @@ static double Rcs_distancePointCylinder(const double p[3],
 
   return distance;
 }
-
+#endif
 
 /*******************************************************************************
  * Computes the distance between a point and a cone. The cone's transformation
@@ -2480,50 +2481,6 @@ static inline double RcsShape_closestCylinderToSSL(const RcsShape* cylinder,
 {
   double dist = RcsShape_closestSSLToCylinder(ssl, cylinder, A_ssl, A_cylinder,
                                               I_cp1, I_cp2, I_n);
-  // revert the normal, because we are calling the reverse method
-  Vec3d_constMulSelf(I_n, -1.0);
-  return dist;
-}
-
-/*******************************************************************************
- * Computes the distance between a sphere and a cylinder shape primitives.
- ******************************************************************************/
-static double RcsShape_closestSphereToCylinder(const RcsShape* sphere,
-                                               const RcsShape* cylinder,
-                                               const HTr* A_sphere,
-                                               const HTr* A_cylinder,
-                                               double I_cp1[3],
-                                               double I_cp2[3],
-                                               double I_n[3])
-{
-  double dist = Rcs_distancePointCylinder(A_sphere->org, A_cylinder,
-                                          cylinder->extents[2],
-                                          cylinder->extents[0],
-                                          I_cp1, I_cp2);
-
-  // Normal vector on sphere
-  Vec3d_sub(I_n, I_cp2, I_cp1);
-  Vec3d_normalizeSelf(I_n);
-
-  // Point on sphere surface: cp_sphere = cp_point + radius_sphere*n
-  Vec3d_constMulAndAddSelf(I_cp1, I_n, sphere->extents[0]);
-
-  return dist-sphere->extents[0];
-}
-
-/*******************************************************************************
- * Computes the distance between a cylinder and a sphere shape primitives.
- ******************************************************************************/
-static double RcsShape_closestCylinderToSphere(const RcsShape* cylinder,
-                                               const RcsShape* sphere,
-                                               const HTr* A_cylinder,
-                                               const HTr* A_sphere,
-                                               double I_cp2[3],
-                                               double I_cp1[3],
-                                               double I_n[3])
-{
-  double dist = RcsShape_closestSphereToCylinder(sphere, cylinder, A_sphere,
-                                                 A_cylinder, I_cp1, I_cp2, I_n);
   // revert the normal, because we are calling the reverse method
   Vec3d_constMulSelf(I_n, -1.0);
   return dist;

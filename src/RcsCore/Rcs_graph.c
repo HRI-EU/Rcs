@@ -928,13 +928,14 @@ bool RcsGraph_copyRigidBodyDofs(MatNd* q, const RcsGraph* self,
 
   RCSGRAPH_FOREACH_BODY(self)
   {
-    if ((BODY->rigid_body_joints==false) || (BODY->id==-1))
+    if ((BODY->rigid_body_joints==false) || (BODY->jntId==-1) || (BODY->id==-1))
     {
       continue;
     }
 
-    double* q_dst = &q->ele[RCSJOINT_BY_ID(self, BODY->jntId)->jointIndex];
-    double* q_src = &src->ele[RCSJOINT_BY_ID(self, BODY->jntId)->jointIndex];
+    const RcsJoint* bdyJnt = RCSJOINT_BY_ID(self, BODY->jntId);
+    double* q_dst = &q->ele[bdyJnt->jointIndex];
+    double* q_src = &src->ele[bdyJnt->jointIndex];
 
     for (unsigned int i=0; i<6; i++)
     {
@@ -1850,6 +1851,14 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
 
       // Test if joints are in order transX-transY-transZ-rotX-rotY-rotZ
       RcsJoint* jnt = RCSJOINT_BY_ID(self, BODY->jntId);
+
+      if (jnt==NULL)
+      {
+        nErrors++;
+        RLOG(1, "Body \"%s\" with rigid body joint has jntId -1", BODY->name);
+        continue;
+      }
+
       int desiredOrder[6] = { RCSJOINT_TRANS_X,
                               RCSJOINT_TRANS_Y,
                               RCSJOINT_TRANS_Z,
@@ -1887,7 +1896,7 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
         }
 
         //jnt = jnt->next;
-        jnt = (jnt->nextId==-1) ? NULL : &self->joints[jnt->nextId];
+        jnt = &self->joints[jnt->nextId];
       }
 
     }
@@ -2286,22 +2295,13 @@ void RcsGraph_relativeRigidBodyDoFs(const RcsGraph* self,
 bool RcsGraph_setRigidBodyDoFs(RcsGraph* self, const RcsBody* body,
                                const double angles[6])
 {
-  if (self==NULL)
-  {
-    return false;
-  }
-
-  if (body==NULL)
-  {
-    return false;
-  }
-
-  if (body->rigid_body_joints==false)
+  if ((self==NULL) || (body==NULL) || (body->rigid_body_joints==false))
   {
     return false;
   }
 
   const RcsJoint* bdyJnt = RCSJOINT_BY_ID(self, body->jntId);
+  RCHECK(bdyJnt);
   VecNd_copy(&self->q->ele[bdyJnt->jointIndex], angles, 6);
 
   return true;
@@ -2798,9 +2798,24 @@ bool RcsGraph_removeBody(RcsGraph* self, const char* name,
     nextBdy->prevId = bdy->prevId;
   }
 
+  // In case we remove the root, there are a few cases to consider.
   if (bdy->id == self->rootId)
   {
-    self->rootId = nextBdy ? nextBdy->id : RcsBody_getFirstChild(self, bdy)->id;
+    self->rootId = nextBdy ? nextBdy->id : bdy->firstChildId;
+
+    if (nextBdy)
+    {
+      self->rootId = nextBdy->id;
+      // The children of the previous root must be moved to the root's next.
+      if (bdy->firstChildId != -1)
+      {
+        RFATAL("Not yet implemented");
+      }
+    }
+    else
+    {
+      self->rootId = bdy->firstChildId;
+    }
   }
 
   // In case the body is attached to its parent by one or more joints, we need
@@ -3075,7 +3090,8 @@ RcsBody* RcsGraph_insertGraphBody(RcsGraph* graph, int parentId)
   if (!body)
   {
     graph->nBodies++;
-    graph->bodies = (RcsBody*) realloc(graph->bodies, graph->nBodies*sizeof(RcsBody));
+    graph->bodies = RREALLOC(graph->bodies, graph->nBodies, RcsBody);
+    RCHECK(graph->bodies);
 
     // This must come after the realloc() call, since this might change the memory
     // location of the bodies aray.
@@ -3135,7 +3151,8 @@ RcsJoint* RcsGraph_insertGraphJoint(RcsGraph* graph, int bodyId)
 
   graph->dof++;
   graph->q = MatNd_realloc(graph->q, graph->dof, 1);
-  graph->joints = (RcsJoint*) realloc(graph->joints, graph->dof*sizeof(RcsJoint));
+  graph->joints = RREALLOC(graph->joints, graph->dof, RcsJoint);
+  RCHECK(graph->joints);
   RcsJoint* newJoint = &graph->joints[graph->dof-1];
   RcsJoint_init(newJoint);
   newJoint->id = graph->dof - 1;
@@ -3241,7 +3258,8 @@ void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src)
   // memory increased.
   if (src->dof > dst->dof)
   {
-    dst->joints = (RcsJoint*) realloc(dst->joints, src->dof);
+    dst->joints = RREALLOC(dst->joints, src->dof, RcsJoint);
+    RCHECK(dst->joints);
   }
   dst->dof = src->dof;
   memcpy(dst->joints, src->joints, dst->dof*sizeof(RcsJoint));
@@ -3251,6 +3269,7 @@ void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src)
   if (src->nBodies > dst->nBodies)
   {
     dst->bodies = RREALLOC(dst->bodies, src->nBodies, RcsBody);
+    RCHECK(dst->bodies);
   }
   dst->nBodies = src->nBodies;
 
@@ -3271,6 +3290,7 @@ void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src)
     if (nDstShapes < nSrcShapes)
     {
       bDst->shape = RREALLOC(bDst->shape, nSrcShapes + 1, RcsShape*);
+      RCHECK(bDst->shape);
       memset(&bDst->shape[nDstShapes], 0,
              (nSrcShapes-nDstShapes+1)*sizeof(RcsShape*));
     }
@@ -3306,6 +3326,7 @@ void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src)
   if (src->nSensors > dst->nSensors)
   {
     dst->sensors = RREALLOC(dst->sensors, src->nSensors, RcsSensor);
+    RCHECK(dst->sensors);
   }
   dst->nSensors = src->nSensors;
 
@@ -3339,6 +3360,7 @@ void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src)
     {
       dst->sensors[i].texel = RREALLOC(dst->sensors[i].texel,
                                        dst->sensors[i].nTexels, RcsTexel);
+      RCHECK(dst->sensors[i].texel);
       memcpy(&dst->sensors[i].texel, &src->sensors[i].texel,
              dst->sensors[i].nTexels*sizeof(RcsTexel));
       RCHECK_MSG(dst->sensors[i].nTexels ==
@@ -3390,7 +3412,7 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self,
     return false;
   }
 
-  RcsBody* otherRoot = RCSBODY_BY_ID(other, other->rootId);
+  RcsBody* otherRoot = &other->bodies[other->rootId];
   if (otherRoot->nextId != -1)
   {
     RcsBody* otherRootNext = &other->bodies[otherRoot->nextId];
@@ -3526,14 +3548,17 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self,
   // memory blocks gain ownership over the shapes, meshes etc.
   RLOG(5, "Copying memory blocks");
   self->bodies = RREALLOC(self->bodies, self->nBodies+other->nBodies, RcsBody);
+  RCHECK(self->bodies);
   memcpy(self->bodies+self->nBodies, other->bodies,
          other->nBodies*sizeof(RcsBody));
 
   self->joints = RREALLOC(self->joints, self->dof+other->dof, RcsJoint);
+  RCHECK(self->joints);
   memcpy(self->joints+self->dof, other->joints, other->dof*sizeof(RcsJoint));
 
   self->sensors = RREALLOC(self->sensors,
                            self->nSensors+other->nSensors, RcsSensor);
+  RCHECK(self->sensors);
   memcpy(self->sensors+self->nSensors, other->sensors,
          other->nSensors*sizeof(RcsSensor));
 

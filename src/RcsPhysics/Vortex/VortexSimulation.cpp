@@ -1620,7 +1620,8 @@ void Rcs::VortexSimulation::getJointAngles(MatNd* q, RcsStateType sType) const
       {
         HTr pose;
         HTr_fromVxTransform(&pose, vxBdy->getTransform());
-        RcsJoint* bdyJnt = RcsBody_getJoint(vxBdy->body, getGraph());;
+        RcsJoint* bdyJnt = RcsBody_getJoint(vxBdy->body, getGraph());
+        RCHECK(bdyJnt);
         double* q_i = &q->ele[bdyJnt->jointIndex];
         HTr* A_ParentI = vxBdy->body->parentId!=-1 ? &getGraph()->bodies[vxBdy->body->parentId].A_BI : NULL;
         RcsGraph_relativeRigidBodyDoFs(getGraph(), vxBdy->body, &pose, A_ParentI, q_i);
@@ -1699,7 +1700,8 @@ void Rcs::VortexSimulation::getJointVelocities(MatNd* q_dot,
         Vx::VxVector3 linearVelocity = vxBdy->getLinearVelocity();
         Vx::VxVector3 angularVelocity = vxBdy->getAngularVelocity();
 
-        RcsJoint* bdyJnt = RcsBody_getJoint(vxBdy->body, getGraph());;
+        RcsJoint* bdyJnt = RcsBody_getJoint(vxBdy->body, getGraph());
+        RCHECK(bdyJnt);
         double* q6 = &q_dot->ele[bdyJnt->jointIndex];
         linearVelocity.get<double>(q6, q6+1, q6+2);
         angularVelocity.get<double>(q6+3, q6+4, q6+5);

@@ -64,6 +64,7 @@ Rcs::BulletHingeJoint::BulletHingeJoint(const RcsGraph* graph_,
   jointVelocityPrev(0.0), jointAcceleration(0.0), flipAngle(0.0), offset(0.0),
   jf()
 {
+  RCHECK(rcsJointId != -1);
   const RcsJoint* jnt = RCSJOINT_BY_ID(graph, jntId);
   RCHECK(RcsJoint_isRotation(jnt));
 
@@ -123,7 +124,7 @@ double Rcs::BulletHingeJoint::getJointPosition() const
  ******************************************************************************/
 const RcsJoint* Rcs::BulletHingeJoint::getJoint() const
 {
-  return RCSJOINT_BY_ID(graph, this->rcsJointId);
+  return &graph->joints[this->rcsJointId];
 }
 
 /*******************************************************************************
@@ -239,7 +240,7 @@ double Rcs::BulletHingeJoint::getJointAcceleration() const
  ******************************************************************************/
 unsigned int Rcs::BulletHingeJoint::getJointIndex() const
 {
-  return rcsJointId;
+  return getJoint()->jointIndex;
 }
 
 /*******************************************************************************

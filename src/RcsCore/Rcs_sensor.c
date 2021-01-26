@@ -266,7 +266,7 @@ void RcsSensor_init(RcsSensor* self,
     snprintf(self->name, RCS_MAX_NAMELEN, "%s", name);
   }
 
-  self->bodyId = parentBody->id;
+  self->bodyId = parentBody ? parentBody->id : -1;
   HTr_copy(&self->A_SB, A_SB);
   self->rawData = MatNd_create(1, RcsSensor_dim(self));
 }
@@ -286,6 +286,7 @@ void RcsSensor_copy(RcsSensor* self, const RcsSensor* src)
   if (src->nTexels>self->nTexels)
   {
     self->texel = RREALLOC(self->texel, src->nTexels, RcsTexel);
+    RCHECK(self->texel);
   }
 
   self->nTexels = src->nTexels;

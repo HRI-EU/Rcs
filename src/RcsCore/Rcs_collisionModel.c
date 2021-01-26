@@ -138,12 +138,13 @@ RcsCollisionMdl* RcsCollisionModel_createFromXML(const RcsGraph* graph,
       if (getXMLNodePropertyStringN(lnode, "body1", bdyName, 64))
       {
         bdy1 = RcsGraph_getBodyByName(graph, bdyName);
-        if (bdy1 == NULL)
-        {
-          RLOG(4, "Body 1 \"%s\" doesn't exist - skipping pair %d", bdyName, pairIdx);
-          lnode = lnode->next;
-          continue;
-        }
+      }
+
+      if (bdy1 == NULL)
+      {
+        RLOG(4, "Body 1 \"%s\" doesn't exist - skipping pair %d", bdyName, pairIdx);
+        lnode = lnode->next;
+        continue;
       }
 
       // body2
@@ -152,12 +153,13 @@ RcsCollisionMdl* RcsCollisionModel_createFromXML(const RcsGraph* graph,
       if (getXMLNodePropertyStringN(lnode, "body2", bdyName, 64))
       {
         bdy2 = RcsGraph_getBodyByName(graph, bdyName);
-        if (bdy2 == NULL)
-        {
-          RLOG(4, "Body 2 \"%s\" doesn't exist - skipping pair %d", bdyName, pairIdx);
-          lnode = lnode->next;
-          continue;
-        }
+      }
+
+      if (bdy2 == NULL)
+      {
+        RLOG(4, "Body 2 \"%s\" doesn't exist - skipping pair %d", bdyName, pairIdx);
+        lnode = lnode->next;
+        continue;
       }
 
       // collision pair

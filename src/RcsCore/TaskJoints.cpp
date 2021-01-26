@@ -207,16 +207,12 @@ Rcs::TaskJoints::TaskJoints(const RcsBody* effector, RcsGraph* graph_):
 {
   setClassName("Joints");
   setEffector(effector);
-  const unsigned int nJoints = RcsBody_numJoints(graph, effector);
-  RCHECK_MSG(nJoints>0, "Body \"%s\"", effector ? effector->name : "NULL");
 
-  const RcsJoint* jEf = RCSJOINT_BY_ID(graph_, effector->jntId);
-
-  for (unsigned int i = 0; i < nJoints; ++i)
+  RCSBODY_FOREACH_JOINT(graph_, effector)
   {
-    addTask(new TaskJoint(graph, jEf, NULL, 1.0));
-    jEf = RCSJOINT_BY_ID(graph, jEf->nextId);//jEf->next;
+    addTask(new TaskJoint(graph, JNT, NULL, 1.0));
   }
+
 }
 
 /*******************************************************************************
@@ -232,27 +228,17 @@ Rcs::TaskJoints::TaskJoints(const RcsBody* effector, const RcsBody* refBdy,
   const unsigned int nJoints = RcsBody_numJoints(graph, effector);
   RCHECK_MSG(nJoints > 0, "Body \"%s\"", effector ? effector->name : "NULL");
 
-  if (refBdy)
-  {
-    RCHECK(nJoints == RcsBody_numJoints(graph, refBdy));
-  }
-
-  const RcsJoint* jEf = RCSJOINT_BY_ID(graph_, effector->jntId);
-  //const RcsJoint* jRef = refBdy ? refBdy->jnt : NULL;
   const RcsJoint* jRef = refBdy ? RCSJOINT_BY_ID(graph_, refBdy->jntId) : NULL;
 
-  RLOG(0, "Creating %d joints task between %s and %s", nJoints,
-       effector->name, refBdy ? refBdy->name : "NULL");
-
-  for (unsigned int i = 0; i < nJoints; ++i)
+  RCSBODY_FOREACH_JOINT(graph_, effector)
   {
-    addTask(new TaskJoint(graph, jEf, jRef, -1.0));
-    jEf = RCSJOINT_BY_ID(graph, jEf->nextId);
+    addTask(new TaskJoint(graph, JNT, jRef, 1.0));
     if (jRef)
     {
       jRef = RCSJOINT_BY_ID(graph, jRef->nextId);
     }
   }
+
 }
 
 /*******************************************************************************
