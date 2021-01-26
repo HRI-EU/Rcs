@@ -42,6 +42,8 @@
 #include "Rcs_basicMath.h"
 #include "Rcs_VecNd.h"
 
+#include <cfloat>
+
 
 namespace Rcs
 {

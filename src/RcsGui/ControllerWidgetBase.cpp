@@ -175,18 +175,17 @@ ControllerWidgetBase::ControllerWidgetBase(const ControllerBase* cntrl,
   setFrameShape(QFrame::NoFrame);
 
   // The layout for the overall task widget
-  QVBoxLayout* taskLayout = new QVBoxLayout();
+  QVBoxLayout* taskLayout = new QVBoxLayout(this);
 
   // Widget for controller related sliders and some information
   QVBoxLayout* sliderLayout = new QVBoxLayout;
   sliderLayout->setMargin(1);
   sliderLayout->setSpacing(1);
-
   sliderLayout->addWidget(boxKinematicsInfo());
   sliderLayout->addWidget(boxControllerButtons());
 
   // Add layout to widget
-  QGroupBox* gbox_controllerSliders = new QGroupBox(tr("Controller settings"));
+  QGroupBox* gbox_controllerSliders = new QGroupBox(tr("Controller settings"), this);
   gbox_controllerSliders->setStyleSheet("QGroupBox { font-weight: bold; }");
   gbox_controllerSliders->setLayout(sliderLayout);
   taskLayout->addWidget(gbox_controllerSliders, 0, 0);
@@ -294,13 +293,13 @@ QGroupBox* ControllerWidgetBase::boxKinematicsInfo()
   QHBoxLayout* layout = new QHBoxLayout;
 
   // Label with kinematics information
-  this->label_stats = new QLabel();
+  this->label_stats = new QLabel(this);
   this->label_stats->setFrameStyle(QFrame::Panel | QFrame::Sunken);
 
   layout->addWidget(this->label_stats, Qt::AlignLeft);
   layout->addStretch();
 
-  QGroupBox* gbox = new QGroupBox();
+  QGroupBox* gbox = new QGroupBox(this);
   gbox->setLayout(layout);
 
   return gbox;
@@ -316,17 +315,17 @@ QGroupBox* ControllerWidgetBase::boxControllerButtons()
   StatsLayout->setAlignment(Qt::AlignLeft);
 
   // Check box to display active / all tasks
-  QCheckBox* check_activeTasks = new QCheckBox("Show only active tasks");
+  QCheckBox* check_activeTasks = new QCheckBox("Show only active tasks", this);
   check_activeTasks->setChecked(true);
   StatsLayout->addWidget(check_activeTasks);
 
   // Check box to make GUI active or passive
-  this->check_active_gui = new QCheckBox("GUI Active");
+  this->check_active_gui = new QCheckBox("GUI Active", this);
   check_active_gui->setChecked(!showOnly);
   StatsLayout->addWidget(this->check_active_gui);
 
   // Add layout to widget
-  QGroupBox* gbox_controllerButtons = new QGroupBox();
+  QGroupBox* gbox_controllerButtons = new QGroupBox(this);
   gbox_controllerButtons->setLayout(StatsLayout);
 
   // Connect functionality

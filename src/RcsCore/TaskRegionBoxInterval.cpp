@@ -44,6 +44,8 @@
 #include "Rcs_typedef.h"
 #include "Rcs_kinematics.h"
 
+#include <cfloat>
+
 
 namespace Rcs
 {
@@ -137,17 +139,17 @@ void TaskRegionBoxInterval::computeDX(const Task* task, double* dx,
 
     }
 
-      // Limit so that dx does not bring us out
-      double x_next = x_curr[i] + dx[i];
+    // Limit so that dx does not bring us out
+    double x_next = x_curr[i] + dx[i];
 
-      if (x_next < x_lb)
-      {
-        dx[i] += x_lb - x_next;
-      }
-      else if (x_next > x_ub)
-      {
-        dx[i] += x_ub - x_next;
-      }
+    if (x_next < x_lb)
+    {
+      dx[i] += x_lb - x_next;
+    }
+    else if (x_next > x_ub)
+    {
+      dx[i] += x_ub - x_next;
+    }
 
   }
 
