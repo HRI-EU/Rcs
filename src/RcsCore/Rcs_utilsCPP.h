@@ -113,4 +113,13 @@ bool String_hasEnding(const std::string& fullString,
 bool String_startsWith(const std::string& fullString,
                        const std::string& beginning);
 
+std::vector<std::pair<double,double>> Math_snapToGridPolygon2D(double polygon[][2],
+                                                               unsigned int nVertices,
+                                                               double gridSize);
+
+std::vector<std::pair<double,double>> Math_quadsFromPolygon2D(double polygon[][2],
+                                                              unsigned int nVertices,
+                                                              double gridSize);
+
+
 #endif   // RCS_UTILSCPP_H

@@ -45,6 +45,7 @@
 #include <Rcs_body.h>
 #include <Rcs_shape.h>
 #include <Rcs_utils.h>
+#include <Rcs_utilsCPP.h>
 #include <GraphNode.h>
 #include <SphereNode.h>
 #include <ArrowNode.h>
@@ -522,6 +523,7 @@ static void testPolygon(int argc, char** argv)
   MatNd* polyArr = NULL;
   double (*poly)[2];
   int vidx = 0;
+  std::vector<std::pair<double,double>> grid;
 
   if (polyFileName.empty())
   {
@@ -548,7 +550,8 @@ static void testPolygon(int argc, char** argv)
 
     if (gridSize>0.0)
     {
-      Math_boxifyPolygon2D(poly, nVertices, gridSize);
+      //Math_boxifyPolygon2D(poly, nVertices, gridSize);
+      grid = Math_snapToGridPolygon2D(poly, nVertices, gridSize);
     }
   }
   else
@@ -588,6 +591,83 @@ static void testPolygon(int argc, char** argv)
     new Rcs::VertexArrayNode(&polyArr2, osg::PrimitiveSet::POINTS);
   vn2->setPointSize(15);
   viewer->add(vn2);
+
+  if (!grid.empty())
+  {
+    MatNd* polyArr3 = MatNd_create(grid.size(), 2);
+
+    for (size_t i=0; i<grid.size(); ++i)
+    {
+      MatNd_set(polyArr3, i, 0, grid[i].first);
+      MatNd_set(polyArr3, i, 1, grid[i].second);
+    }
+
+    Rcs::VertexArrayNode* vn3 =
+      new Rcs::VertexArrayNode(polyArr3, osg::PrimitiveSet::LINE_LOOP);
+    vn3->setMaterial("YELLOW");
+    viewer->add(vn3);
+    Rcs::VertexArrayNode* vn4 =
+      new Rcs::VertexArrayNode(polyArr3, osg::PrimitiveSet::POINTS);
+    vn4->setPointSize(15);
+    vn4->setMaterial("YELLOW");
+    viewer->add(vn4);
+
+    const int xLines = 10;
+    MatNd* gridHor = MatNd_create(2*xLines, 3);
+    for (int i=-xLines; i<xLines; i=i+2)
+    {
+      MatNd_set(gridHor, i+xLines, 0, -xLines*gridSize+0.5*gridSize);
+      MatNd_set(gridHor, i+xLines, 1, gridSize*(i/2)+0.5*gridSize);
+      MatNd_set(gridHor, i+xLines+1, 0, xLines*gridSize+0.5*gridSize);
+      MatNd_set(gridHor, i+xLines+1, 1, gridSize*(i/2)+0.5*gridSize);
+    }
+
+    Rcs::VertexArrayNode* vn5 =
+      new Rcs::VertexArrayNode(gridHor, osg::PrimitiveSet::LINES);
+    vn5->setMaterial("GRAY");
+    viewer->add(vn5);
+
+    MatNd* gridUp = MatNd_clone(gridHor);
+    for (unsigned int i=0; i<gridUp->m; ++i)
+    {
+      MatNd_swapElements(gridUp, i, 0, i, 1);
+    }
+
+    Rcs::VertexArrayNode* vn6 =
+      new Rcs::VertexArrayNode(gridUp, osg::PrimitiveSet::LINES);
+    vn6->setMaterial("GRAY");
+    viewer->add(vn6);
+
+
+    {
+      std::vector<std::pair<double,double>> quads = Math_quadsFromPolygon2D(poly, nVertices, gridSize);
+      MatNd* quadsArr = MatNd_create(quads.size(), 3);
+
+      for (size_t i=0; i<quads.size(); ++i)
+      {
+        MatNd_set(quadsArr, i, 0, quads[i].first);
+        MatNd_set(quadsArr, i, 1, quads[i].second);
+      }
+
+
+      MatNd_printCommentDigits("quadsArr", quadsArr, 4);
+
+      Rcs::VertexArrayNode* vn7 =
+        new Rcs::VertexArrayNode(quadsArr, osg::PrimitiveSet::QUADS);
+      vn7->setMaterial("GREEN");
+      viewer->add(vn7);
+
+
+      // Rcs::VertexArrayNode* vn8 =
+      //   new Rcs::VertexArrayNode(quadsArr, osg::PrimitiveSet::POINTS);
+      // vn8->setMaterial("GREEN");
+      // vn8->setPointSize(25);
+      // viewer->add(vn8);
+    }
+
+
+
+  }
 
   // Visualize re-sampled polygon
   // const unsigned int nvOut = 8*nVertices;

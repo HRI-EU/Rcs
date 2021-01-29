@@ -1994,11 +1994,10 @@ void RcsShape_computeAABB(const RcsShape* shape,
 void RcsShape_scale(RcsShape* shape, double scale)
 {
   Vec3d_constMulSelf(shape->A_CB.org, scale);
-
   Vec3d_constMulSelf(shape->extents, scale);
   Vec3d_constMulSelf(shape->scale3d, scale);
 
-  if (shape->type==RCSSHAPE_MESH && shape->mesh)
+  if ((shape->type==RCSSHAPE_MESH) && shape->mesh)
   {
     RcsMesh_scale(shape->mesh, scale);
   }

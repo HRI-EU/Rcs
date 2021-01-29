@@ -43,6 +43,7 @@
 #include "Rcs_macros.h"
 
 #include <limits.h>
+#include <float.h>
 
 
 
@@ -414,7 +415,8 @@ double Math_signedAreaPolygon2D(double polygon[][2],
 }
 
 /*******************************************************************************
- * From: https://stackoverflow.com/questions/54828017/c-create-random-shaped-blob-objects
+ * Inspired by the pseudocode from:
+ * https://stackoverflow.com/questions/54828017/c-create-random-shaped-blob-objects
  *
  * 1. Take N, the number of waves you'd like.
  * 2. Define float arrays amps[N] and phases[N].
@@ -424,6 +426,10 @@ double Math_signedAreaPolygon2D(double polygon[][2],
  *      radius = 1 + sum[i=0 to N-1] amps[i] * cos((i+1)*alpha + phases[i])
  *      x = cos(alpha)*radius;
  *      y = sin(alpha)*radius;
+ *
+ * This function extends the above algorithm by projecting the vertices
+ * strictly into the interval given by r_min and r_max. There will always be at
+ * least one point with r_min, and one with r_max.
  ******************************************************************************/
 void Math_createRandomPolygon2D(double polygon[][2],
                                 unsigned int nVertices,
@@ -443,22 +449,60 @@ void Math_createRandomPolygon2D(double polygon[][2],
   }
 
   double angStep = 2.0*M_PI/nVertices;
+  double minAmp = DBL_MAX, maxAmp = 0.0;
 
-  for (int a=0; a<nVertices; ++a)
+  // In this first iteration, we determine the min and max amplitudes for the
+  // set of points. These are used in a scaling model to map the vertices
+  // into the interval given by r_min and r_max.
+  for (unsigned int a=0; a<nVertices; ++a)
   {
-    double alpha = a*angStep;
+    double alpha = a*angStep, r = sumAmps;
+    for (unsigned int i=0; i<nWaves; ++i)
+    {
+      r += amps[i] * cos((i+1)*alpha + phases[i]);
+    }
 
-    double r = sumAmps;
+    minAmp = fmin(minAmp, r);
+    maxAmp = fmax(maxAmp, r);
+  }
+
+
+
+  // Linear regression of a line model:
+  // r_scaled = A*r + B . The parameters compute from:
+  //   r_max = A*maxAmp + B
+  //   r_min = B*minAmp + B
+  double A = (r_max-r_min)/(maxAmp-minAmp);
+  double B = r_max - A*maxAmp;
+
+  for (unsigned int a=0; a<nVertices; ++a)
+  {
+    double alpha = a*angStep, r = sumAmps;
     for (unsigned int i=0; i<nWaves; ++i)
     {
       r += amps[i] * cos((i+1)*alpha + phases[i]);
     }
 
     // Force into interval [r_min...r_max]
-    r = r_min + r*(r_max-r_min);
+    r = A*r+B;
 
     polygon[a][0] = r*cos(alpha);
     polygon[a][1] = r*sin(alpha);
+  }
+
+
+  REXEC(1)
+  {
+    // Test:
+    double rmax2 = 0.0, rmin2 = DBL_MAX;
+    for (unsigned int a=0; a<nVertices; ++a)
+    {
+      double r = sqrt(polygon[a][0]*polygon[a][0]+polygon[a][1]*polygon[a][1]);
+      rmin2 = fmin(rmin2, r);
+      rmax2 = fmax(rmax2, r);
+    }
+
+    RLOG(0, "minAmp=%f maxAmp=%f  rmin2=%f rmax2=%f", minAmp, maxAmp, rmin2, rmax2);
   }
 
   RFREE(amps);
@@ -489,7 +533,7 @@ bool Math_isPolygonClockwise(double polygon[][2],
 {
   double area = Math_signedAreaPolygon2D(polygon, nVertices);
 
-  return (area < 0);
+  return (area < 0) ? true : false;
 }
 
 /*******************************************************************************

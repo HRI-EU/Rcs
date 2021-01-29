@@ -245,3 +245,216 @@ std::vector<std::string> String_split(const std::string& toBeSplitted,
 
   return splittedString;
 }
+
+
+
+
+
+#include "Rcs_geometry.h"
+#include <utility>
+#include <set>
+
+
+std::pair<int,int> getGridCell(const double xy[2], double gridSize)
+{
+  double sgnX = xy[0] >= 0.0 ? 1.0 : -1.0;
+  double sgnY = xy[1] >= 0.0 ? 1.0 : -1.0;
+
+  double gridX = int((0.5*gridSize*sgnX + xy[0])/gridSize);
+  double gridY = int((0.5*gridSize*sgnY + xy[1])/gridSize);
+
+  std::pair<int,int> cell(lround(gridX),lround(gridY));
+
+  return cell;
+}
+
+std::vector<std::pair<double,double>> getCellVertices(int x, int y, double gridSize)
+{
+  double cntr[2];
+  cntr[0] = gridSize*x;
+  cntr[1] = gridSize*y;
+
+  std::vector<std::pair<double,double>> verts;
+
+  const double halfEdge = 0.5*gridSize;
+  verts.push_back(std::pair<double,double>(cntr[0]+halfEdge, cntr[1]+halfEdge));
+  verts.push_back(std::pair<double,double>(cntr[0]-halfEdge, cntr[1]+halfEdge));
+  verts.push_back(std::pair<double,double>(cntr[0]-halfEdge, cntr[1]-halfEdge));
+  verts.push_back(std::pair<double,double>(cntr[0]+halfEdge, cntr[1]-halfEdge));
+
+  return verts;
+}
+
+struct polyVertCompare
+{
+  bool operator()(std::pair<double,double> a, std::pair<double,double> b) const
+  {
+    double phiA = atan2(a.first, a.second);
+    double phiB = atan2(b.first, b.second);
+
+    if (phiA==phiB)
+    {
+      double lenA = a.first*a.first + a.second*a.second;
+      double lenB = b.first*b.first + b.second*b.second;
+
+      if (lenA!=lenB)
+      {
+        // phiA += 1.0e-8*lenA;
+        // phiB += 1.0e-8*lenB;
+
+        if (lenA<lenB)
+        {
+          phiA -= 1.0e-8;
+        }
+        else
+        {
+          phiB -= 1.0e-8;
+        }
+      }
+
+
+    }
+
+    return phiA<phiB;
+  }
+};
+
+
+void test()
+{
+  double xy[2];
+  xy[0] = 0.0;
+  xy[1] = 0.0;
+  std::pair<int,int> ci = getGridCell(xy, 1.0);
+  RLOG(0, "cell[%f, %f] = %d %d", xy[0], xy[1], ci.first, ci.second);
+
+  xy[0] = -1.0e-8;
+  xy[1] = 0.0;
+  ci = getGridCell(xy, 1.0);
+  RLOG(0, "cell[%f, %f] = %d %d", xy[0], xy[1], ci.first, ci.second);
+
+  xy[0] = 0.0;
+  xy[1] = -1.0e-8;
+  ci = getGridCell(xy, 1.0);
+  RLOG(0, "cell[%f, %f] = %d %d", xy[0], xy[1], ci.first, ci.second);
+
+  xy[0] = 0.49;
+  xy[1] = 0.49;
+  ci = getGridCell(xy, 1.0);
+  RLOG(0, "cell[%f, %f] = %d %d", xy[0], xy[1], ci.first, ci.second);
+
+  xy[0] = -0.49;
+  xy[1] = -0.49;
+  ci = getGridCell(xy, 1.0);
+  RLOG(0, "cell[%f, %f] = %d %d", xy[0], xy[1], ci.first, ci.second);
+
+  xy[0] = 0.49;
+  xy[1] = -0.01;
+  ci = getGridCell(xy, 1.0);
+  RLOG(0, "cell[%f, %f] = %d %d", xy[0], xy[1], ci.first, ci.second);
+
+  xy[0] = 0.0;
+  xy[1] = 2.49;
+  ci = getGridCell(xy, 1.0);
+  RLOG(0, "cell[%f, %f] = %d %d", xy[0], xy[1], ci.first, ci.second);
+
+  xy[0] = 0.0;
+  xy[1] = 2.51;
+  ci = getGridCell(xy, 1.0);
+  RLOG(0, "cell[%f, %f] = %d %d", xy[0], xy[1], ci.first, ci.second);
+
+  xy[0] = 0.0;
+  xy[1] = -2.49;
+  ci = getGridCell(xy, 1.0);
+  RLOG(0, "cell[%f, %f] = %d %d", xy[0], xy[1], ci.first, ci.second);
+
+  xy[0] = 0.0;
+  xy[1] = -2.51;
+  ci = getGridCell(xy, 1.0);
+  RLOG(0, "cell[%f, %f] = %d %d", xy[0], xy[1], ci.first, ci.second);
+
+
+
+  xy[1] = 0.0;
+  xy[0] = 2.49;
+  ci = getGridCell(xy, 1.0);
+  RLOG(0, "cell[%f, %f] = %d %d", xy[0], xy[1], ci.first, ci.second);
+
+  xy[1] = 0.0;
+  xy[0] = 2.51;
+  ci = getGridCell(xy, 1.0);
+  RLOG(0, "cell[%f, %f] = %d %d", xy[0], xy[1], ci.first, ci.second);
+
+  xy[1] = 0.0;
+  xy[0] = -2.49;
+  ci = getGridCell(xy, 1.0);
+  RLOG(0, "cell[%f, %f] = %d %d", xy[0], xy[1], ci.first, ci.second);
+
+  xy[1] = 0.0;
+  xy[0] = -2.51;
+  ci = getGridCell(xy, 1.0);
+  RLOG(0, "cell[%f, %f] = %d %d", xy[0], xy[1], ci.first, ci.second);
+}
+
+std::vector<std::pair<double,double>> Math_snapToGridPolygon2D(double polygon[][2],
+                                                               unsigned int nVertices,
+                                                               double gridSize)
+{
+  std::set<std::pair<double,double>, polyVertCompare> s;
+  //std::set<std::pair<double,double>> s;
+
+  for (unsigned int i=0; i<nVertices; ++i)
+  {
+    std::pair<int,int> cell = getGridCell(polygon[i], gridSize);
+    std::vector<std::pair<double,double>> vi = getCellVertices(cell.first, cell.second, gridSize);
+
+    for (size_t j=0; j<vi.size(); ++j)
+    {
+      // RLOG(0, "vi = %f %f", vi[j].first, vi[j].second);
+      s.insert(vi[j]);
+    }
+  }
+
+  std::set<std::pair<double,double>, polyVertCompare>::iterator it;
+  std::vector<std::pair<double,double>> result;
+
+  for (it = s.begin(); it != s.end(); ++it)
+  {
+    std::pair<double,double> pi = *it;
+
+    double pt[2];
+    pt[0] = pi.first;
+    pt[1] = pi.second;
+
+    int ioa = Math_pointInsideOrOnPolygon2D(pt, polygon, nVertices);
+
+    if (ioa%2==0 || ioa==-1)
+    {
+      result.push_back(pi);
+    }
+
+  }
+
+  return result;
+}
+
+std::vector<std::pair<double,double>> Math_quadsFromPolygon2D(double polygon[][2],
+                                                              unsigned int nVertices,
+                                                              double gridSize)
+{
+  std::vector<std::pair<double,double>> result;
+
+  for (unsigned int i=0; i<nVertices; ++i)
+  {
+    std::pair<int,int> cell = getGridCell(polygon[i], gridSize);
+    std::vector<std::pair<double,double>> vi = getCellVertices(cell.first, cell.second, gridSize);
+
+    for (size_t j=0; j<vi.size(); ++j)
+    {
+      result.push_back(vi[j]);
+    }
+  }
+
+
+  return result;
+}
