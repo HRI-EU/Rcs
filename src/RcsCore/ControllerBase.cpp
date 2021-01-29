@@ -2585,6 +2585,8 @@ void Rcs::ControllerBase::print() const
     tasks[i]->print();
   }
 
+  RcsCollisionModel_fprint(stderr, this->cMdl);
+
   printUsage(this->xmlFile);
 }
 

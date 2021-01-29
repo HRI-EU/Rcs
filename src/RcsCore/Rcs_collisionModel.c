@@ -224,7 +224,7 @@ void RcsCollisionModel_compute(RcsCollisionMdl* self)
 
     double* cp1 = MatNd_getRowPtr(self->cp, PAIR->cp1);
     double* cp2 = MatNd_getRowPtr(self->cp, PAIR->cp2);
-    double* n1 = MatNd_getRowPtr(self->cp, PAIR->n1);
+    double* n1 = MatNd_getRowPtr(self->n1, PAIR->n1);
     PAIR->distance = RcsBody_distance(b1, b2, cp1, cp2, n1);
   }
 
@@ -320,8 +320,10 @@ void RcsCollisionModel_fprint(FILE* fd, const RcsCollisionMdl* self)
 
       fprintf(fd, "\t[%d]   %s", i, b1 ? b1->name : "NULL");
       fprintf(fd, "\t\t%s", b2 ? b2->name : "NULL");
-      fprintf(fd, "\n\tdistance = %.6f   weight=%.3f   dThreshold=%.3f\n",
+      fprintf(fd, "\n\tdistance = %.6f   weight=%.3f   dThreshold=%.3f",
               pair->distance, pair->weight, pair->dThreshold);
+      fprintf(fd, "   cp1 = %d   cp2 = %d   n = %d", pair->cp1, pair->cp2, pair->n1);
+      fprintf(fd, "\n");
     }
   }
   else
@@ -329,6 +331,8 @@ void RcsCollisionModel_fprint(FILE* fd, const RcsCollisionMdl* self)
     fprintf(fd, "No pairs in collision model!\n");
   }
 
+  MatNd_printCommentDigits("Closest points", self->cp, 4);
+  MatNd_printCommentDigits("normals", self->n1, 4);
 }
 
 /*******************************************************************************

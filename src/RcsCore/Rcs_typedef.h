@@ -139,7 +139,7 @@ struct _RcsShape
   int type;             ///< SSL, SSR or other
   HTr A_CB;             ///< Relative transformation from body
   double extents[3];    ///< Geometrical parameters
-  double scale;         ///< Scale factor for meshes (applied after parsing)
+  double scale3d[3];    ///< Scale factor for meshes (applied after parsing)
   bool resizeable;      ///< For visualization and copying
   char computeType;     ///< Bitmask, see RCSSHAPE_COMPUTE_TYPE
 

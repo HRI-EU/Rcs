@@ -275,13 +275,9 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   }
 
   // Allocate memory and set defaults
-  RcsShape* shape = RALLOC(RcsShape);
-  RCHECK_PEDANTIC(shape);
-  HTr_setIdentity(&shape->A_CB);
-  shape->scale = 1.0;
-
-  char str[256];
-  getXMLNodePropertyStringN(node, "type", str, 256);
+  RcsShape* shape = RcsShape_create();
+  char str[RCS_MAX_FILENAMELEN];
+  getXMLNodePropertyStringN(node, "type", str, RCS_MAX_FILENAMELEN);
   if (STREQ(str, "SSL"))
   {
     shape->type = RCSSHAPE_SSL;
@@ -343,7 +339,26 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   getXMLNodePropertyDouble(node, "radius", &shape->extents[0]);
   getXMLNodePropertyDouble(node, "length", &shape->extents[2]);
   getXMLNodePropertyHTr(node, "transform", &shape->A_CB);
-  getXMLNodePropertyDouble(node, "scale", &shape->scale);
+
+  unsigned int scaleDim = getXMLNodeNumStrings(node, "scale");
+
+  if (scaleDim==1)
+  {
+    double scale1d = 1.0;
+    getXMLNodePropertyDouble(node, "scale", &scale1d);
+    Vec3d_setElementsTo(shape->scale3d, scale1d);
+  }
+  else if (scaleDim==3)
+  {
+    getXMLNodePropertyVec3(node, "scale", shape->scale3d);
+  }
+  else
+  {
+    RLOG(1, "Non-supported number of entries in attribute \"scale\": %d "
+         "- should be 1 or 3", scaleDim);
+  }
+
+
 
   // check if the from2Points tag exists and if yes, transform is not allowed
   // to exist
@@ -463,9 +478,9 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
         {
           RLOG(4, "Failed to add mesh \"%s\" to shape", shape->meshFile);
         }
-        else if (shape->scale != 1.0)
+        else if ((shape->scale3d[0]!=1.0) || (shape->scale3d[1]!=1.0) || (shape->scale3d[2]!=1.0))
         {
-          RcsMesh_scale(mesh, shape->scale);
+          RcsMesh_scale3D(mesh, shape->scale3d);
         }
         shape->mesh = mesh;
       }

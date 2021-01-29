@@ -38,6 +38,7 @@
 #include "EulerAngles.h"
 #include "Rcs_body.h"
 #include "Rcs_joint.h"
+#include "Rcs_shape.h"
 #include "Rcs_macros.h"
 #include "Rcs_Mat3d.h"
 #include "Rcs_parser.h"
@@ -71,7 +72,7 @@ static void HTr_fromURDFOrigin(HTr* A, double rpy[3], double xyz[3])
 static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
 {
   // Allocate memory and set defaults
-  RcsShape* shape = RALLOC(RcsShape);
+  RcsShape* shape = RcsShape_create();
 
   // origin (identity if not specified)
   double xyz[3], rpy[3];
@@ -85,9 +86,6 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
   }
 
   HTr_fromURDFOrigin(&shape->A_CB, rpy, xyz);
-
-  // default scale
-  shape->scale = 1.0;
 
   // geometry
   xmlNodePtr geometry_node = getXMLChildByName(node, "geometry");
@@ -164,16 +162,14 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
       }
     }
 
-    double scale_3d[3] = {1.0, 1.0, 1.0};
-    getXMLNodePropertyVec3(geometry_type_node, "scale", scale_3d);
-    RCHECK_MSG(scale_3d[0] == scale_3d[1] && scale_3d[0] == scale_3d[2],
-               "Only uniform scaling is supported in Rcs");
+    getXMLNodePropertyVec3(geometry_type_node, "scale", shape->scale3d);
 
-    shape->scale = scale_3d[0];
-
-    if (shape->mesh && (shape->scale!=1.0))
+    if (shape->mesh &&
+        ((shape->scale3d[0]!=1.0) ||
+         (shape->scale3d[1]!=1.0) ||
+         (shape->scale3d[2]!=1.0)))
     {
-      RcsMesh_scale(shape->mesh, shape->scale);
+      RcsMesh_scale3D(shape->mesh, shape->scale3d);
     }
   }
   else

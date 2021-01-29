@@ -81,9 +81,8 @@ static bool findKeyword(const char* keyword, FILE* fd)
  ******************************************************************************/
 static RcsShape* createFrameShape(double scale)
 {
-  RcsShape* shape = RALLOC(RcsShape);
-  HTr_setIdentity(&shape->A_CB);
-  shape->scale = scale;
+  RcsShape* shape = RcsShape_create();
+  Vec3d_setElementsTo(shape->scale3d, scale);
   shape->type = RCSSHAPE_REFFRAME;
   shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
   shape->extents[0] = 0.9;
@@ -101,7 +100,6 @@ static bool parseRecursive(char* buf, RcsGraph* self, int parentId, FILE* fd,
                            bool Z_up_x_forward)
 {
   static int recursionDepth = 0;
-  RLOG(5, "[%d] ************* parseRecursive: parentid=%d", recursionDepth, parentId);
   recursionDepth++;
 
   int itemsMatched = 0;
@@ -280,9 +278,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, int parentId, FILE* fd,
       len = 0.01;
     }
 
-    RcsShape* shape = RALLOC(RcsShape);
-    HTr_setIdentity(&shape->A_CB);
-    shape->scale = 1.0;
+    RcsShape* shape = RcsShape_create();
     shape->type = RCSSHAPE_SPHERE;
     shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
     shape->extents[0] = 0.1*len;
@@ -373,9 +369,7 @@ static void addGeometry(RcsGraph* self)
       }
 
       // Box from parent to child
-      RcsShape* shape = RALLOC(RcsShape);
-      HTr_setIdentity(&shape->A_CB);
-      shape->scale = 1.0;
+      RcsShape* shape = RcsShape_create();
       shape->type = RCSSHAPE_BOX;
       RcsShape_setComputeType(shape, RCSSHAPE_COMPUTE_GRAPHICS, true);
       Vec3d_set(shape->extents, 0.2*len, 0.2*len, len);
@@ -385,9 +379,7 @@ static void addGeometry(RcsGraph* self)
       RcsBody_addShape(BODY, shape);
 
       // Sphere at parent origin
-      shape = RALLOC(RcsShape);
-      HTr_setIdentity(&shape->A_CB);
-      shape->scale = 1.0;
+      shape = RcsShape_create();
       shape->type = RCSSHAPE_SPHERE;
       shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
       Vec3d_set(shape->extents, 0.15*len, 0.15*len, 0.15*len);
@@ -704,10 +696,8 @@ bool RcsGraph_beautifyHumanModelBVH(RcsGraph* graph,
   }
 
   // Head
-  RcsShape* shape = RALLOC(RcsShape);
-  HTr_setIdentity(&shape->A_CB);
+  RcsShape* shape = RcsShape_create();
   Vec3d_set(shape->A_CB.org, 0.0, 0.12, 0.0);
-  shape->scale = 1.0;
   shape->type = RCSSHAPE_SPHERE;
   shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
   Vec3d_set(shape->extents, 0.12, 0.0, 0.0);

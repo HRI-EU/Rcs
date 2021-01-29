@@ -87,7 +87,12 @@ static osg::ref_ptr<osg::Node> createMeshNode(const RcsShape* shape,
 
   _meshBufferMtx.lock();
   it = _meshBuffer.find(std::string(shape->meshFile));
-  if (it != _meshBuffer.end())
+
+  bool isScaled = (shape->scale3d[0]!=1.0) ||
+                  (shape->scale3d[1]!=1.0) ||
+                  (shape->scale3d[2]!=1.0);
+
+  if ((it!=_meshBuffer.end()) && (!isScaled))
   {
     NLOG(0, "Creating MeshNode %s from _meshBuffer", shape->meshFile);
     meshNode = it->second;
@@ -425,7 +430,7 @@ void ShapeNode::addShape(bool resizeable)
       // with the physics simulator).
       if (meshFromOsgReader == true)
       {
-        setScale(osg::Vec3(shape->scale, shape->scale, shape->scale));
+        setScale(osg::Vec3(shape->scale3d[0], shape->scale3d[1], shape->scale3d[2]));
         ss->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
         ss->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
       }
@@ -440,7 +445,7 @@ void ShapeNode::addShape(bool resizeable)
   ////////////////////////////////////////////////
   else if (shape->type == RCSSHAPE_REFFRAME)
   {
-    osg::ref_ptr<COSNode> cFrame = new COSNode(shape->scale,
+    osg::ref_ptr<COSNode> cFrame = new COSNode(shape->scale3d[0],
                                                ext[0], ext[1], ext[2]);
     cFrame->setPosition(osg::Vec3(shape->A_CB.org[0], shape->A_CB.org[1],
                                   shape->A_CB.org[2]));

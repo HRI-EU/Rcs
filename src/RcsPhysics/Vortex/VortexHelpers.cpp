@@ -404,7 +404,7 @@ Vx::VxCollisionGeometry* Rcs::createTorus(const RcsShape* sh,
  * Creates a tri-mesh from a tri-file.
  ******************************************************************************/
 static Vx::VxTriangleMeshBVTree* createMeshFromTriFile(const char* meshFile,
-                                                       const double scaling)
+                                                       const double scaling[3])
 {
   // Check for NULL pointer argument
   if (meshFile == NULL)
@@ -466,19 +466,19 @@ static Vx::VxTriangleMeshBVTree* createMeshFromTriFile(const char* meshFile,
     RCHECK_MSG(vertexIdx1<nVertices, "%d   %d", vertexIdx1, nVertices);
     RCHECK_MSG(vertexIdx2<nVertices, "%d   %d", vertexIdx2, nVertices);
 
-    Vx::VxReal3 v0 = { scaling* vertices[3*vertexIdx0],
-                       scaling* vertices[3*vertexIdx0+1],
-                       scaling* vertices[3*vertexIdx0+2]
+    Vx::VxReal3 v0 = { scaling[0]* vertices[3*vertexIdx0],
+                       scaling[1]* vertices[3*vertexIdx0+1],
+                       scaling[2]* vertices[3*vertexIdx0+2]
                      };
 
-    Vx::VxReal3 v1 = { scaling* vertices[3*vertexIdx1],
-                       scaling* vertices[3*vertexIdx1+1],
-                       scaling* vertices[3*vertexIdx1+2]
+    Vx::VxReal3 v1 = { scaling[0]* vertices[3*vertexIdx1],
+                       scaling[1]* vertices[3*vertexIdx1+1],
+                       scaling[2]* vertices[3*vertexIdx1+2]
                      };
 
-    Vx::VxReal3 v2 = { scaling* vertices[3*vertexIdx2],
-                       scaling* vertices[3*vertexIdx2+1],
-                       scaling* vertices[3*vertexIdx2+2]
+    Vx::VxReal3 v2 = { scaling[0]* vertices[3*vertexIdx2],
+                       scaling[1]* vertices[3*vertexIdx2+1],
+                       scaling[2]* vertices[3*vertexIdx2+2]
                      };
 
     triMesh->addTriangleByVertexCopy(v0, v1, v2);
@@ -580,8 +580,11 @@ Vx::VxCollisionGeometry* Rcs::createMesh(const RcsShape* sh, const HTr* A_KI,
     const bool merged = true;
     const double mergedEpsilon = 1e-5;
     const bool flipNormals = false;
+    RCHECK_MSG((sh->scale3d[0]==sh->scale3d[1]) &&
+               (sh->scale3d[0]==sh->scale3d[1]),
+               "Can't create Vortex mesh with non-uniform scaling");
     Vx::VxTriangleMeshBVTree* triMesh =
-      new Vx::VxTriangleMeshBVTree(sh->meshFile, sh->scale, merged,
+      new Vx::VxTriangleMeshBVTree(sh->meshFile, sh->scale3d[0], merged,
                                    mergedEpsilon, flipNormals);
     RCHECK_MSG(triMesh, "Trimesh failed from \"%s\"", sh->meshFile);
 
@@ -591,7 +594,7 @@ Vx::VxCollisionGeometry* Rcs::createMesh(const RcsShape* sh, const HTr* A_KI,
   else
   {
     Vx::VxTriangleMeshBVTree* triMesh =
-      createMeshFromTriFile(sh->meshFile, sh->scale);
+      createMeshFromTriFile(sh->meshFile, sh->scale3d);
     RCHECK(triMesh);
     cg = new Vx::VxCollisionGeometry(triMesh, material,
                                      VxTransform_fromHTr(&sh->A_CB));

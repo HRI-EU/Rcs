@@ -39,11 +39,11 @@
 #include "Rcs_typedef.h"
 #include "Rcs_body.h"
 #include "Rcs_joint.h"
-
-#include <Rcs_macros.h>
-#include <Rcs_utils.h>
-#include <Rcs_resourcePath.h>
-#include <Rcs_math.h>
+#include "Rcs_shape.h"
+#include "Rcs_macros.h"
+#include "Rcs_utils.h"
+#include "Rcs_resourcePath.h"
+#include "Rcs_math.h"
 
 #include <float.h>
 
@@ -651,10 +651,7 @@ RcsShape* RcsShape_createFromOpenRAVEXML(xmlNode* node, RcsBody* body)
   }
 
   // Allocate memory and set defaults
-  RcsShape* shape = RALLOC(RcsShape);
-  RCHECK_PEDANTIC(shape);
-  HTr_setIdentity(&shape->A_CB);
-  shape->scale = 1.0;
+  RcsShape* shape = RcsShape_create();
 
   /// \todo: not all shape types are supported yet
   char str[RCS_MAX_NAMELEN];
@@ -716,7 +713,9 @@ RcsShape* RcsShape_createFromOpenRAVEXML(xmlNode* node, RcsBody* body)
   getXMLNodeQuat(child, shape->A_CB.rot);
 
   child = getXMLChildByName(node, "scale");
-  getXMLNodeVecN(child, &shape->scale, 1);
+  double scale1d = 1.0;
+  getXMLNodeVecN(child, &scale1d, 1);
+  Vec3d_setElementsTo(shape->scale3d, scale1d);
 
   /// \todo (AH, Jan 27, 2014): rotationaxis parsing should be removed assumptions and cleaned up.
   child = node->children;

@@ -2873,9 +2873,7 @@ void RcsGraph_addRandomGeometry(RcsGraph* self)
       }
 
       // Box from parent to child
-      RcsShape* shape = RALLOC(RcsShape);
-      HTr_setIdentity(&shape->A_CB);
-      shape->scale = 1.0;
+      RcsShape* shape = RcsShape_create();
       shape->type = RCSSHAPE_BOX;
       shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
       shape->extents[0] = 0.2*len;
@@ -2887,9 +2885,7 @@ void RcsGraph_addRandomGeometry(RcsGraph* self)
       RcsBody_addShape(BODY, shape);
 
       // Sphere at parent origin
-      shape = RALLOC(RcsShape);
-      HTr_setIdentity(&shape->A_CB);
-      shape->scale = 1.0;
+      shape = RcsShape_create();
       shape->type = RCSSHAPE_SPHERE;
       shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
       shape->extents[0] = 0.15*len;

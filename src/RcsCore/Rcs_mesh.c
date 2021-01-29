@@ -1634,6 +1634,19 @@ void RcsMesh_scale(RcsMeshData* mesh, double scale)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+void RcsMesh_scale3D(RcsMeshData* mesh, const double scale[3])
+{
+  for (unsigned int i=0; i<3*mesh->nVertices; i=i+3)
+  {
+    mesh->vertices[i+0] *= scale[0];
+    mesh->vertices[i+1] *= scale[1];
+    mesh->vertices[i+2] *= scale[2];
+  }
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void RcsMesh_shift(RcsMeshData* mesh, double x, double y, double z)
 {
   for (unsigned int i=0; i<3*mesh->nVertices; i=i+3)

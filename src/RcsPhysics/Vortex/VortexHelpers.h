@@ -57,8 +57,6 @@ public:
   HTr A_PI;
 };
 
-//Rcs::VortexBody* getPartPtr2(const RcsBody* body);
-
 Vx::VxTransform VxTransform_fromHTr(const HTr* A_KI);
 
 void HTr_fromVxTransform(HTr* A_KI, const Vx::VxTransform tm);

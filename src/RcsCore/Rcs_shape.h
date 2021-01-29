@@ -210,6 +210,14 @@ void RcsShape_fprint(FILE* out, const RcsShape* s);
 void RcsShape_fprintXML(FILE* out, const RcsShape* self);
 
 /*! \ingroup RcsShapeFunctions
+ *  \brief Creates an empty shape with everything zeroed except for these
+ *         defaults:
+ *         - scale3d is (1, 1, 1)
+ *         - A_CB is identity transform
+ */
+RcsShape* RcsShape_create();
+
+/*! \ingroup RcsShapeFunctions
  *  \brief Creates a shape of the given type with random parameters. Used for
  *         distance function testing.
  */

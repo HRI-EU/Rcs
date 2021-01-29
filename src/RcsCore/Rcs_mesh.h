@@ -216,6 +216,16 @@ void RcsMesh_computeAABB(const RcsMeshData* mesh,
 void RcsMesh_scale(RcsMeshData* mesh, double scale);
 
 /*! \ingroup RcsMeshFunctions
+ *  \brief This function scales all vertices of the mesh with the given scale
+ *         factors for each element.
+ *
+ *  \param[in] mesh       Mesh data, must be not NULL.
+ *  \param[in] scale      Scaling factors for x, y, and z-direction. All
+ *                        vertices are multiplied with the corresponding value.
+ */
+void RcsMesh_scale3D(RcsMeshData* mesh, const double scale[3]);
+
+/*! \ingroup RcsMeshFunctions
  *  \brief Adds a mesh to another one.
  *
  *  \param[in] mesh       Mesh data to be extended by other.

@@ -797,39 +797,6 @@ double RcsBody_distance(const RcsBody* b1,
 }
 
 /*******************************************************************************
- * See header.
- ******************************************************************************/
-double RcsBody_distanceToPoint_org(const RcsBody* body,
-                                   const double I_pt[3],
-                                   double I_cpBdy[3],
-                                   double I_nBdyPt[3])
-{
-  RcsShape* ptShape = RALLOC(RcsShape);
-
-  ptShape->type = RCSSHAPE_POINT;
-  HTr_setIdentity(&ptShape->A_CB);
-  Vec3d_setZero(ptShape->extents);
-  ptShape->scale = 1.0;
-  ptShape->computeType |= RCSSHAPE_COMPUTE_DISTANCE;
-
-
-  RcsBody* ptBdy = RcsBody_create();
-  ptBdy->shape = RNALLOC(2, RcsShape*);
-  ptBdy->shape[0] = ptShape;
-  ptBdy->shape[1] = NULL;
-  Vec3d_copy(ptBdy->A_BI.org, I_pt);
-
-  double tmp[3];
-  double d = RcsBody_distance(body, ptBdy, I_cpBdy, tmp, I_nBdyPt);
-
-  // We don't need to destroy the shape here, that's done by the bodie's
-  // destroy function automatically.
-  RcsBody_destroy(ptBdy);
-
-  return d;
-}
-
-/*******************************************************************************
  * Create a temporary body with a point shape, then call the body distance
  * function.
  ******************************************************************************/
@@ -842,7 +809,7 @@ double RcsBody_distanceToPoint(const RcsBody* body,
   memset(&ptShape, 0, sizeof(RcsShape));
   ptShape.type = RCSSHAPE_POINT;
   HTr_setIdentity(&ptShape.A_CB);
-  ptShape.scale = 1.0;
+  Vec3d_setElementsTo(ptShape.scale3d, 1.0);
   ptShape.computeType |= RCSSHAPE_COMPUTE_DISTANCE;
 
   RcsBody ptBdy;
@@ -2001,12 +1968,10 @@ RcsBody* RcsBody_createBouncingSphere(RcsGraph* graph, const double pos[3],
                                       double mass, double radius)
 {
   static int sphereCount = 0;
-  RcsShape* sphere = RALLOC(RcsShape);
+  RcsShape* sphere = RcsShape_create();
 
   sphere->type = RCSSHAPE_SPHERE;
-  HTr_setIdentity(&sphere->A_CB);
   Vec3d_setElementsTo(sphere->extents, radius);
-  sphere->scale = 1.0;
   sphere->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
   sphere->computeType |= RCSSHAPE_COMPUTE_PHYSICS;
   strcpy(sphere->material, "bouncy");
@@ -2154,7 +2119,7 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
   }
 
   MatNd_reshape(vertices, 8*shapeIdx, 3);
-  RcsShape* boxShape = RALLOC(RcsShape);
+  RcsShape* boxShape = RcsShape_create();
   boxShape->type = RCSSHAPE_BOX;
 
   bool success = Rcs_computeOrientedBox(&boxShape->A_CB, boxShape->extents,
@@ -2167,7 +2132,6 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
     return false;
   }
 
-  boxShape->scale = 1.0;
   boxShape->computeType = computeType;
 
   // Replace body shapes with enclosing box

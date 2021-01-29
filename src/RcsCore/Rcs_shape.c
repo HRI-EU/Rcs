@@ -683,7 +683,8 @@ void RcsShape_fprint(FILE* out, const RcsShape* s)
           s->extents[0], s->extents[1], s->extents[2]);
 
   // Scale
-  fprintf(out, "\tScale: %f\n", s->scale);
+  fprintf(out, "\tScale: %f %f %f\n",
+          s->scale3d[0], s->scale3d[1], s->scale3d[2]);
 
   // Compute type
   fprintf(out, "\tCompute type: ");
@@ -835,9 +836,19 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
   }
 
   // Scale
-  if (self->scale != 1.0)
+  if ((self->scale3d[0]!=1.0) || (self->scale3d[1]!=1.0) || (self->scale3d[2]!=1.0))
   {
-    fprintf(out, "scale=\"%s\" ", String_fromDouble(buf, self->scale, 6));
+    if ((self->scale3d[0]==self->scale3d[1]) &&
+        (self->scale3d[0]==self->scale3d[2]))
+    {
+      fprintf(out, "scale=\"%s\" ", String_fromDouble(buf, self->scale3d[0], 6));
+    }
+    else
+    {
+      fprintf(out, "scale=\"%s ", String_fromDouble(buf, self->scale3d[0], 6));
+      fprintf(out, "%s ", String_fromDouble(buf, self->scale3d[1], 6));
+      fprintf(out, "%s\" ", String_fromDouble(buf, self->scale3d[2], 6));
+    }
   }
 
   // Relative transformation only if non-zero elements exist
@@ -890,6 +901,17 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
 /*******************************************************************************
  * Create a shape with random properties
  ******************************************************************************/
+RcsShape* RcsShape_create()
+{
+  RcsShape* shape = RALLOC(RcsShape);
+  Vec3d_setElementsTo(shape->scale3d, 1.0);
+  HTr_setIdentity(&shape->A_CB);
+  return shape;
+}
+
+/*******************************************************************************
+ * Create a shape with random properties
+ ******************************************************************************/
 RcsShape* RcsShape_createRandomShape(int shapeType)
 {
   if ((shapeType<=RCSSHAPE_NONE) || (shapeType>=RCSSHAPE_SHAPE_MAX))
@@ -899,8 +921,7 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
   }
 
   // Allocate memory and set defaults
-  RcsShape* shape = RALLOC(RcsShape);
-  shape->scale = 1.0;
+  RcsShape* shape = RcsShape_create();
   shape->type = shapeType;
   shape->resizeable = true;
   Vec3d_setRandom(shape->extents, 0.1, 0.3);
@@ -938,9 +959,8 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
  ******************************************************************************/
 RcsShape* RcsShape_createFrameShape(double scale)
 {
-  RcsShape* shape = RALLOC(RcsShape);
-  HTr_setIdentity(&shape->A_CB);
-  shape->scale = scale;
+  RcsShape* shape = RcsShape_create();
+  Vec3d_setElementsTo(shape->scale3d, scale);
   shape->type = RCSSHAPE_REFFRAME;
   shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
   shape->resizeable = false;
@@ -1742,7 +1762,7 @@ double RcsShape_distanceToPoint(const RcsShape* shape,
   ptShape.type = RCSSHAPE_POINT;
   Mat3d_setIdentity(ptShape.A_CB.rot);
   Vec3d_copy(ptShape.A_CB.org, I_pt);
-  ptShape.scale = 1.0;
+  Vec3d_setElementsTo(ptShape.scale3d, 1.0);
   ptShape.computeType = RCSSHAPE_COMPUTE_DISTANCE;
 
   double tmp1[3], tmp2[3], tmp3[3];
@@ -1976,7 +1996,7 @@ void RcsShape_scale(RcsShape* shape, double scale)
   Vec3d_constMulSelf(shape->A_CB.org, scale);
 
   Vec3d_constMulSelf(shape->extents, scale);
-  shape->scale *= scale;
+  Vec3d_constMulSelf(shape->scale3d, scale);
 
   if (shape->type==RCSSHAPE_MESH && shape->mesh)
   {

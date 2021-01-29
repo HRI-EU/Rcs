@@ -273,7 +273,10 @@ static btConvexShape* createShape(const RcsShape* sh, HTr* A_SB)
       for (unsigned int i=0; i<mesh->nVertices; ++i)
       {
         const double* vi = &mesh->vertices[i*3];
-        chShape->addPoint(sh->scale*btVector3(vi[0], vi[1], vi[2]), false);
+        //chShape->addPoint(sh->scale*btVector3(vi[0], vi[1], vi[2]), false);
+        chShape->addPoint(btVector3(sh->scale3d[0]*vi[0],
+                                    sh->scale3d[1]*vi[1],
+                                    sh->scale3d[2]*vi[2]), false);
       }
 
       const double collisionMargin = 0.002;   // 2 mm
@@ -434,7 +437,7 @@ static double RcsShape_distanceTorusShape(const RcsShape* torus,
     RcsShape capsule;
     memset(&capsule, 0, sizeof(RcsShape));
     HTr_setIdentity(&capsule.A_CB);
-    capsule.scale = 1.0;
+    Vec3d_setElementsTo(capsule.scale3d, 1.0);
     capsule.computeType = RCSSHAPE_COMPUTE_DISTANCE;
     capsule.type = RCSSHAPE_SSL;
     capsule.extents[0] = 0.5*torus->extents[2];

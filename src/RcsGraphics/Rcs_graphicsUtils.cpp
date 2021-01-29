@@ -1414,7 +1414,32 @@ void createGeometryFromMesh2(osg::Geometry* geometry, const RcsMeshData* mesh)
 
   geometry->setVertexArray(vertices.get());
   geometry->addPrimitiveSet(indices.get());
+
+#if 1
   osgUtil::SmoothingVisitor::smooth(*geometry, M_PI_4);
+#else
+  double* meshNormals = RcsMesh_createNormalArray(mesh);
+  osg::ref_ptr<osg::Vec3Array> normals = new osg::Vec3Array;
+  const double* n1, *n2, *n3;
+
+  // Since the mesh is represented by face lists, we need to "linearize"
+  // the arrays here during construction.
+  for (size_t i=0; i<mesh->nFaces; ++i)
+  {
+    unsigned int fidx0 = 3*mesh->faces[i*3+0];
+    unsigned int fidx1 = 3*mesh->faces[i*3+1];
+    unsigned int fidx2 = 3*mesh->faces[i*3+2];
+
+    n1 = &meshNormals[3*mesh->faces[i*3+0]];
+    n2 = &meshNormals[3*mesh->faces[i*3+1]];
+    n3 = &meshNormals[3*mesh->faces[i*3+2]];
+    normals->push_back(osg::Vec3(n1[0], n1[1], n1[2]));
+    normals->push_back(osg::Vec3(n2[0], n2[1], n2[2]));
+    normals->push_back(osg::Vec3(n3[0], n3[1], n3[2]));
+  }
+  geometry->setNormalArray(normals);
+  geometry->setNormalBinding(osg::Geometry::BIND_PER_VERTEX);
+#endif
 }
 
 
