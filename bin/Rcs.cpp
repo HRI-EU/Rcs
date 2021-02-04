@@ -865,6 +865,7 @@ int main(int argc, char** argv)
             bool collisionVisible = gn->collisionModelVisible();
             bool graphicsVisible = gn->graphicsModelVisible();
             bool physicsVisible = gn->physicsModelVisible();
+            bool depthVisible = gn->depthModelVisible();
             bool framesVisible = gn->referenceFramesVisible();
             bool ghostVisible = gn->getGhostMode();
             bool wireframeVisible = gn->getWireframe();
@@ -883,6 +884,7 @@ int main(int argc, char** argv)
               gn->displayGraphicsModel(graphicsVisible);
               gn->displayPhysicsModel(physicsVisible);
               gn->displayCollisionModel(collisionVisible);
+              gn->displayDepthModel(depthVisible);
               gn->displayReferenceFrames(framesVisible);
               gn->setGhostMode(ghostVisible);
               gn->showWireframe(wireframeVisible);
