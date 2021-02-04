@@ -342,20 +342,23 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 
   unsigned int scaleDim = getXMLNodeNumStrings(node, "scale");
 
-  if (scaleDim==1)
+  if (scaleDim > 0)
   {
-    double scale1d = 1.0;
-    getXMLNodePropertyDouble(node, "scale", &scale1d);
-    Vec3d_setElementsTo(shape->scale3d, scale1d);
-  }
-  else if (scaleDim==3)
-  {
-    getXMLNodePropertyVec3(node, "scale", shape->scale3d);
-  }
-  else
-  {
-    RLOG(1, "Non-supported number of entries in attribute \"scale\": %d "
-         "- should be 1 or 3", scaleDim);
+    if (scaleDim==1)
+    {
+      double scale1d = 1.0;
+      getXMLNodePropertyDouble(node, "scale", &scale1d);
+      Vec3d_setElementsTo(shape->scale3d, scale1d);
+    }
+    else if (scaleDim==3)
+    {
+      getXMLNodePropertyVec3(node, "scale", shape->scale3d);
+    }
+    else
+    {
+      RLOG(1, "Non-supported number of entries in attribute \"scale\": %d "
+           "- should be 1 or 3", scaleDim);
+    }
   }
 
 

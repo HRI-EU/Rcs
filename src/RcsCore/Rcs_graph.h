@@ -1142,8 +1142,10 @@ void RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q);
  *         can then be visualized with for instance "dotty" or any
  *         other graphviz capable visualization tool. The file will be written
  *         in the same directory as the xml graph file.
- */
-void RcsGraph_writeDotFile(const RcsGraph* self, const char* filename);
+ *
+ *  \return True for success, false if the file could not be written.
+  */
+bool RcsGraph_writeDotFile(const RcsGraph* self, const char* filename);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Writes the depth-first-traversal structure of the graph to a file in
@@ -1151,8 +1153,16 @@ void RcsGraph_writeDotFile(const RcsGraph* self, const char* filename);
  *         instance "dotty" or any other graphviz capable visualization tool.
  *         The file will be written in the same directory as the xml graph file.
  */
-void RcsGraph_writeDotFileDfsTraversal(const RcsGraph* self,
+bool RcsGraph_writeDotFileDfsTraversal(const RcsGraph* self,
                                        const char* filename);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Writes the graph to a xml file in the Rcs standard format. The graph
+ *         can then be visualized with for instance Rcs test mode 2.
+ *
+ *  \return True for success, false if the file could not be written.
+ */
+bool RcsGraph_writeXmlFile(const RcsGraph* self, const char* filename);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Creates a mesh of the overall graph by traversing through all bodies

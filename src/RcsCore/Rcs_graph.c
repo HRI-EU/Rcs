@@ -1427,11 +1427,27 @@ void RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void RcsGraph_writeDotFile(const RcsGraph* self, const char* filename)
+bool RcsGraph_writeDotFile(const RcsGraph* self, const char* filename)
 {
-  RCHECK(filename);
+  if (filename==NULL)
+  {
+    RLOG(4, "File name is NULL");
+    return false;
+  }
+
+  if (self==NULL)
+  {
+    RLOG(4, "Couldn't write NULL graph to file \"%s\"", filename);
+    return false;
+  }
+
   FILE* fd = fopen(filename, "w+");
-  RCHECK_MSG(fd, "Couldn't open file \"%s\"", filename);
+
+  if (fd==NULL)
+  {
+    RLOG(4, "Couldn't open file \"%s\"", filename);
+    return false;
+  }
 
   // File header
   fprintf(fd, "digraph G {\nbgcolor=\"white\"\n");
@@ -1470,18 +1486,37 @@ void RcsGraph_writeDotFile(const RcsGraph* self, const char* filename)
   // File end
   fprintf(fd, "}\n");
   fclose(fd);
+
+  return true;
 }
 
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void RcsGraph_writeDotFileDfsTraversal(const RcsGraph* self,
+bool RcsGraph_writeDotFileDfsTraversal(const RcsGraph* self,
                                        const char* filename)
 {
-  int i = 0;
-  RCHECK(filename);
+  if (filename==NULL)
+  {
+    RLOG(4, "File name is NULL");
+    return false;
+  }
+
+  if (self==NULL)
+  {
+    RLOG(4, "Couldn't write NULL graph to file \"%s\"", filename);
+    return false;
+  }
+
   FILE* fd = fopen(filename, "w+");
-  RCHECK_MSG(fd, "Couldn't open file \"%s\"", filename);
+
+  if (fd==NULL)
+  {
+    RLOG(4, "Couldn't open file \"%s\"", filename);
+    return false;
+  }
+
+  int i = 0;
 
   // File header
   fprintf(fd, "digraph G {\nbgcolor=\"white\"\n");
@@ -1557,6 +1592,38 @@ void RcsGraph_writeDotFileDfsTraversal(const RcsGraph* self,
   // File end
   fprintf(fd, "}\n");
   fclose(fd);
+
+  return true;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool RcsGraph_writeXmlFile(const RcsGraph* self, const char* filename)
+{
+  if (filename==NULL)
+  {
+    RLOG(4, "File name is NULL");
+    return false;
+  }
+
+  if (self==NULL)
+  {
+    RLOG(4, "Couldn't write NULL graph to file \"%s\"", filename);
+    return false;
+  }
+
+  FILE* fd = fopen(filename, "w+");
+
+  if (fd==NULL)
+  {
+    return false;
+  }
+
+  RcsGraph_fprintXML(fd, self);
+  fclose(fd);
+
+  return true;
 }
 
 /*******************************************************************************
@@ -2383,7 +2450,6 @@ int RcsGraph_coupledJointMatrix(const RcsGraph* self, MatNd* A, MatNd* invA)
 {
   int nCoupledJoints = 0, nq = self->nJ;
   MatNd* H = NULL, *colSum = NULL;
-
   MatNd_create2(H, nq, nq);
   MatNd_create2(colSum, 1, nq);
 
@@ -3536,6 +3602,7 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self,
       char newName[RCS_MAX_NAMELEN];
       snprintf(newName, RCS_MAX_NAMELEN, "%s%s", sensor->name, suffix);
       snprintf(sensor->name, RCS_MAX_NAMELEN, "%s", newName);
+      sensor->bodyId += (sensor->bodyId==-1) ? 0 : self->nBodies;
     }
   }
 

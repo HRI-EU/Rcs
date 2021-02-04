@@ -257,7 +257,7 @@ void MatNd_createLike2(MatNd* dst, const MatNd* src);
  */
 #define MatNd_fromStack(self,rows,cols)                           \
   {                                                               \
-    unsigned int size = (rows)*(cols) == 0 ? 1 : (rows)*(cols);         \
+    unsigned int size = (rows)*(cols) == 0 ? 1 : (rows)*(cols);   \
     self = (MatNd*) alloca(sizeof(MatNd) + size*sizeof(double));  \
     MATND_COUNT_ALLOCA_BYTES_ROW_X_COL(rows,cols);                \
     self->ele = (double*) (self + 1);                             \

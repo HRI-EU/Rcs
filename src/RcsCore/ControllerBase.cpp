@@ -1899,6 +1899,9 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
   return add(&other, suffix, A_BP);
 }
 
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 bool Rcs::ControllerBase::add(const ControllerBase* other,
                               const char* suffix,
                               const HTr* A_BP)
