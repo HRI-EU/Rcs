@@ -1725,9 +1725,9 @@ double RcsShape_distance(const RcsShape* s1,
                          const RcsShape* s2,
                          const HTr* A_B1I,
                          const HTr* A_B2I,
-                         double I_cp1[3],
-                         double I_cp2[3],
-                         double I_n[3])
+                         double I_cp1_[3],
+                         double I_cp2_[3],
+                         double I_n_[3])
 {
   // Get distance function pointer for shape pair
   RcsDistanceFunction func = RcsShapeDistFunc[s1->type][s2->type];
@@ -1739,11 +1739,28 @@ double RcsShape_distance(const RcsShape* s1,
   HTr_transform(&A_C1I, A_B1I, &s1->A_CB);
   HTr_transform(&A_C2I, A_B2I, &s2->A_CB);
 
-  RCHECK_MSG(I_cp1, "%s-%s", RcsShape_name(s1->type), RcsShape_name(s2->type));
-  RCHECK_MSG(I_cp2, "%s-%s", RcsShape_name(s1->type), RcsShape_name(s2->type));
-  RCHECK_MSG(I_n, "%s-%s", RcsShape_name(s1->type), RcsShape_name(s2->type));
-
+  // We create local arrays for closest points and normals here for two
+  // reasons. Firstly, we enable to call this function with NULL arguments.
+  // Secondly, we make sure that the function can be called with the same
+  // argument arrays without breaking the computation, e.g.
+  // RcsShape_distance(..., tmp, tmp, tmp);
+  double I_cp1[3], I_cp2[3], I_n[3];
   double d = func(s1, s2, &A_C1I, &A_C2I, I_cp1, I_cp2, I_n);
+
+  if (I_cp1_)
+  {
+    Vec3d_copy(I_cp1_, I_cp1);
+  }
+
+  if (I_cp2_)
+  {
+    Vec3d_copy(I_cp2_, I_cp2);
+  }
+
+  if (I_n_)
+  {
+    Vec3d_copy(I_n_, I_n);
+  }
 
   return d;
 }
