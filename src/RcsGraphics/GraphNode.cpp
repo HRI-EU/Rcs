@@ -382,6 +382,23 @@ void GraphNode::displayCollisionModel(bool visibility)
 }
 
 /*******************************************************************************
+ * Show / hide the collision model.
+ ******************************************************************************/
+void GraphNode::displayDepthModel(bool visibility)
+{
+  GraphNodeList::iterator li;
+  BodyNodeVisitor bnv;
+  this->accept(bnv);
+
+  for (li = bnv.nodes.begin(); li != bnv.nodes.end(); ++li)
+  {
+    Rcs::BodyNode* nd = (*li).get();
+    nd->displayDepthNode(visibility);
+  }
+
+}
+
+/*******************************************************************************
  * Show / hide the reference frames.
  ******************************************************************************/
 void GraphNode::displayReferenceFrames(bool visibility)
@@ -444,6 +461,24 @@ bool GraphNode::physicsModelVisible() const
   for (unsigned int i=0; i< bnVec.size(); ++i)
   {
     if (bnVec[i]->physicsNodeVisible() == true)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool GraphNode::depthModelVisible() const
+{
+  std::vector<const BodyNode*> bnVec = getBodyNodes();
+
+  for (unsigned int i=0; i< bnVec.size(); ++i)
+  {
+    if (bnVec[i]->depthNodeVisible() == true)
     {
       return true;
     }

@@ -133,6 +133,7 @@ public:
   void displayCollisionModel(bool visibility=true);
   void displayGraphicsModel(bool visibility=true);
   void displayPhysicsModel(bool visibility=true);
+  void displayDepthModel(bool visibility=true);
   void displayReferenceFrames(bool visibility=true);
 
   /*! \brief Returns true if the overall node is visible, false otherwise.
@@ -150,6 +151,10 @@ public:
   /*! \brief Returns true if the physics model is visible, false otherwise.
    */
   bool physicsModelVisible() const;
+
+  /*! \brief Returns true if the depth model is visible, false otherwise.
+   */
+  bool depthModelVisible() const;
 
   /*! \brief Returns true if the debug information is visible, false otherwise.
    */
