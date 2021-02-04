@@ -114,7 +114,7 @@ osg::Geometry* createExtrusion(osg::Vec3Array* vertices,
 // public:
 
 ExtrudedPolygonNode::ExtrudedPolygonNode(const MatNd* poly2D,
-                                         const double extrudeDir[3])
+                                         const double extrudeDir[3]) : NodeBase()
 {
   osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
   for (unsigned int i=0; i<poly2D->m; i++)
