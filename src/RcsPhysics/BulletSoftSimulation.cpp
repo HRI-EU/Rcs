@@ -455,7 +455,8 @@ void BulletSoftSimulation::createSoftBodies()
 
       // Link soft body to parent if it exists and the body physics type is
       // fixed
-      const RcsBody* parent = RcsBody_getConstParent(getGraph(), BODY);
+      //const RcsBody* parent = RcsBody_getConstParent(getGraph(), BODY);
+      const RcsBody* parent = RCSBODY_BY_ID(getGraph(), BODY->parentId);
 
       if (parent)
       {

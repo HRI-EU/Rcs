@@ -2052,8 +2052,8 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
   // Check for body connection consistencs
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
-    RcsBody* first = RcsBody_getFirstChild((RcsGraph*)self, BODY);
-    RcsBody* last = RcsBody_getLastChild_((RcsGraph*)self, BODY);
+    RcsBody* first = RCSBODY_BY_ID(self, BODY->firstChildId);
+    RcsBody* last = RCSBODY_BY_ID(self, BODY->lastChildId);
 
     if (first && (first->prevId!=-1))
     {

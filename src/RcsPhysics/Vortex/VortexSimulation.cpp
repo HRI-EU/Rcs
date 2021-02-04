@@ -1795,7 +1795,8 @@ void Rcs::VortexSimulation::getPhysicsTransform(HTr* A_BI,
 
     // If there is no parent in the physics or if there are joints between
     // body and parent, we give up.
-    const RcsBody* parent = RcsBody_getConstParent(getGraph(), body);
+    //const RcsBody* parent = RcsBody_getConstParent(getGraph(), body);
+    const RcsBody* parent = RCSBODY_BY_ID(getGraph(), body->parentId);
     const RcsJoint* parentJnt = RcsBody_getJoint(parent, getGraph());
 
     if ((vxParent==NULL) || (parentJnt!=NULL))

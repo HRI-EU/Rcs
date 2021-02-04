@@ -2221,31 +2221,41 @@ RcsBody* RcsBody_getPrev(RcsGraph* graph, RcsBody* body)
   return RCSBODY_BY_ID(graph, body->prevId);
 }
 
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 RcsBody* RcsBody_getNext(RcsGraph* graph, RcsBody* body)
 {
   return RCSBODY_BY_ID(graph, body->nextId);
 }
 
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 RcsBody* RcsBody_getParent(RcsGraph* graph, RcsBody* body)
 {
   return RCSBODY_BY_ID(graph, body->parentId);
 }
 
-const RcsBody* RcsBody_getConstParent(const RcsGraph* graph, const RcsBody* body)
-{
-  return RCSBODY_BY_ID(graph, body->parentId);
-}
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 RcsBody* RcsBody_getFirstChild(RcsGraph* graph, RcsBody* body)
 {
   return RCSBODY_BY_ID(graph, body->firstChildId);
 }
 
-RcsBody* RcsBody_getLastChild_(RcsGraph* graph, RcsBody* body)
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+RcsBody* RcsBody_getLastChild(RcsGraph* graph, RcsBody* body)
 {
   return RCSBODY_BY_ID(graph, body->lastChildId);
 }
 
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 RcsBody* RcsBody_depthFirstTraversalGetNextById(const RcsGraph* graph,
                                                 const RcsBody* body)
 {
@@ -2256,30 +2266,25 @@ RcsBody* RcsBody_depthFirstTraversalGetNextById(const RcsGraph* graph,
 
   if (body->firstChildId!=-1)
   {
-    //RLOG(0, "First child: %s", graph->bodies[body->firstChildId]->name);
     return &graph->bodies[body->firstChildId];
   }
 
   if (body->nextId != -1)
   {
-    //RLOG(0, "Next: %s", graph->bodies[body->nextId]->name);
     return &graph->bodies[body->nextId];
   }
 
-  RcsBody* body2 = (body->parentId != -1) ? &graph->bodies[body->parentId] : NULL;
+  RcsBody* body2 = RCSBODY_BY_ID(graph, body->parentId);
 
   while (body2)
   {
     if (body2->nextId != -1)
     {
-      //RLOG(0, "Second next: %s", graph->bodies[body2->nextId]->name);
       return &graph->bodies[body2->nextId];
     }
 
-    body2 = (body2->parentId != -1) ? &graph->bodies[body2->parentId] : NULL;
+    body2 = RCSBODY_BY_ID(graph, body2->parentId);
   }
-
-  //RLOG(0, "Nullinger - no parent");
 
   return NULL;
 }
@@ -2287,7 +2292,7 @@ RcsBody* RcsBody_depthFirstTraversalGetNextById(const RcsGraph* graph,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-RcsBody* RcsBody_getLastChildById(const RcsGraph* graph, RcsBody* b)
+RcsBody* RcsBody_getLastLeaf(const RcsGraph* graph, RcsBody* b)
 {
   if (!b)
   {

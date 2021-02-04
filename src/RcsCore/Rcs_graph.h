@@ -106,30 +106,74 @@ extern "C" {
  *
  */
 
+/*! \ingroup RcsSensorFunctions
+ *  \brief Returns pointer to the first sensor in the graph's sensor array. It
+ *         is the sensor with id=0. If no sensor have been added, the function
+ *         returns NULL. Implementation in Rcs_sensor.c
+ */
 RcsSensor* RcsSensor_first(const RcsGraph* graph);
+
+/*! \ingroup RcsSensorFunctions
+ *  \brief Returns pointer to the last sensor in the graph's sensor array. It
+ *         is the sensor with id=RcsGraph::nSensors-1. If no sensor have been
+ *         added, the function returns NULL. Implementation in Rcs_sensor.c
+ */
 RcsSensor* RcsSensor_last(const RcsGraph* graph);
+
+/*! \ingroup RcsBodyFunctions
+ *  \brief Returns a pointer to the first body in the body's memory array. It
+ *         is the body with id=0. If no bodies have been added, the function
+ *         returns NULL. Note that the body with id=0 is not necessarily the
+ *         root body. Implementation in Rcs_body.c
+ */
 RcsBody* RcsBody_first(const RcsGraph* graph);
+
+/*! \ingroup RcsBodyFunctions
+ *  \brief Returns a pointer to the last body in the body's memory array. It is
+ *         the body with id=nBodies-1. This function is needed for connection
+ *         related computations. Implementation in Rcs_body.c
+ */
 RcsBody* RcsBody_last(const RcsGraph* graph);
+
+/*! \ingroup RcsBodyFunctions
+ *  \brief Returns a pointer to the joint with the id RcsBody::jntId. If it is
+ *         -1, the function returns NULL. Implementation in Rcs_body.c.
+ */
 RcsJoint* RcsBody_getJoint(const RcsBody* b, const RcsGraph* graph);
 
 /*! \ingroup RcsJointFunctions
- *  \brief Returns the first joint in the joint's memory array. It is the
- *         joint with id=0. This function is needed for connection related
- *         computations, and not for q-array indexing. Implementation in
- *         Rcs_joint.c
+ *  \brief Returns a pointer to the first joint in the graph's joint array. It
+ *         is the joint with id=0. This function is needed for connection
+ *         related computations, and not for q-array indexing. Implementation
+ *         in Rcs_joint.c.
  */
 RcsJoint* RcsJoint_first(const RcsGraph* graph);
 
 /*! \ingroup RcsJointFunctions
-*  \brief Returns the last joint in the joint's memory array. It is the
-*         joint with id=dof-1. This function is needed for connection
-*         related computations, and not for q-array indexing. Implementation
- *        in Rcs_joint.c
-*/
+ *  \brief Returns a pointer to the last joint in the graph's joint array. It
+ *         is the joint with id=dof-1. This function is needed for connection
+ *         related computations, and not for q-array indexing. Implementation
+ *         in Rcs_joint.c.
+ */
 RcsJoint* RcsJoint_last(const RcsGraph* graph);
 
+/*! \ingroup RcsJointFunctions
+ *  \brief Returns a pointer to the joint next in the kinematic chain. This
+ *         forward chain ends at each RcsBody.
+ */
 RcsJoint* RcsJoint_next(const RcsJoint* joint, const RcsGraph* graph);
+
+/*! \ingroup RcsJointFunctions
+ *  \brief Returns a pointer to the parent joint in the kinematic chain. This
+ *         backward chain will end in the root of the graph.
+ */
 RcsJoint* RcsJoint_prev(const RcsJoint* joint, const RcsGraph* graph);
+
+/*! \ingroup RcsJointFunctions
+ *  \brief Returns a pointer to the master joint of the given joint. The master
+ *         joint only exists if the joint has been kinematically coupled to it.
+ *         Otherwise, the function returns NULL.
+ */
 RcsJoint* RcsJoint_master(const RcsJoint* joint, const RcsGraph* graph);
 
 /*! \ingroup RcsGraphTraversalFunctions
@@ -141,27 +185,30 @@ RcsBody* RcsBody_depthFirstTraversalGetNextById(const RcsGraph* graph,
                                                 const RcsBody* body);
 
 /*! \ingroup RcsGraphTraversalFunctions
- *  \brief Returns the leaf-node that comes last in a depth-first traversal.
+ *  \brief Returns the leaf-node that comes last in a depth-first traversal
+ *         starting from the body b. If b is the final leaf, b will be
+ *         returned. If b is NULL, the function retuens NULL.
  */
-RcsBody* RcsBody_getLastChildById(const RcsGraph* graph, RcsBody* b);
+RcsBody* RcsBody_getLastLeaf(const RcsGraph* graph, RcsBody* b);
 
 /*! \ingroup RcsGraphTraversalFunctions
  *  \brief Depth-first traversal through all bodies of the graph, starting
  *         from the root body. The bodies can be accessed with variable
  *         "BODY".
  */
-#define RCSGRAPH_TRAVERSE_BODIES(graph) \
-  for (RcsBody* BODY = &(graph)->bodies[graph->rootId]; BODY; \
+#define RCSGRAPH_TRAVERSE_BODIES(graph)                                    \
+  for (RcsBody* BODY = &(graph)->bodies[graph->rootId]; BODY;              \
        BODY = RcsBody_depthFirstTraversalGetNextById(graph, BODY))
 
 /*! \ingroup RcsGraphTraversalFunctions
  *  \brief Loops through the given body and its children, depth-first. The
  *         "next" bodies of body are not considered.
  */
-#define RCSBODY_TRAVERSE_BODIES(graph, body)     \
-  for (RcsBody* BODY = (body),                \
-       *LAST = RcsBody_depthFirstTraversalGetNextById((graph), RcsBody_getLastChildById((graph), BODY)); \
-       BODY && BODY != LAST; \
+#define RCSBODY_TRAVERSE_BODIES(graph, body)                               \
+  for (RcsBody* BODY = (body),                                             \
+       *LAST_LEAF = RcsBody_getLastLeaf((graph), BODY),                    \
+       *LAST = RcsBody_depthFirstTraversalGetNextById((graph), LAST_LEAF); \
+       BODY && BODY != LAST;                                               \
        BODY = RcsBody_depthFirstTraversalGetNextById((graph),BODY))
 
 /*! \ingroup RcsGraphTraversalFunctions
@@ -169,52 +216,54 @@ RcsBody* RcsBody_getLastChildById(const RcsGraph* graph, RcsBody* b);
  *         except that the body argument itself will not be traversed, but
  *         only its children.
  */
-#define RCSBODY_TRAVERSE_CHILD_BODIES(graph, body)                             \
+#define RCSBODY_TRAVERSE_CHILD_BODIES(graph, body)                              \
   for (RcsBody* BODY = RcsBody_depthFirstTraversalGetNextById((graph), (body)), \
-       *LAST = RcsBody_depthFirstTraversalGetNextById((graph), RcsBody_getLastChildById((graph), body)); \
-       BODY && BODY != LAST;                                            \
+       *LAST_LEAF = RcsBody_getLastLeaf((graph), BODY),                         \
+       *LAST = RcsBody_depthFirstTraversalGetNextById((graph), LAST_LEAF);      \
+       BODY && BODY != LAST;                                                    \
        BODY = RcsBody_depthFirstTraversalGetNextById((graph), BODY))
 
 /*! \ingroup RcsGraphTraversalFunctions
  *  \brief Traverses the joint and all "next" joints of it.
  *         The joints can be accessed with variable "JNT".
  */
-#define RCSJOINT_TRAVERSE_FORWARD(graph, joint)                    \
+#define RCSJOINT_TRAVERSE_FORWARD(graph, joint) \
   for (RcsJoint* JNT = (joint); JNT; JNT = RcsJoint_next(JNT, (graph)))
 
 /*! \ingroup RcsGraphTraversalFunctions
  *  \brief Traverses all joints of a body, starting from the first one.
  *         The joints can be accessed with variable "JNT".
  */
-#define RCSBODY_FOREACH_JOINT(graph, body)                    \
+#define RCSBODY_FOREACH_JOINT(graph, body) \
   RCSJOINT_TRAVERSE_FORWARD((graph), RcsBody_getJoint((body),(graph)))
 
 /*! \ingroup RcsGraphTraversalFunctions
  *  \brief Traverses all joints of the graph, starting from the root body.
  *         The joints can be accessed with variable "JNT".
  */
-#define RCSGRAPH_TRAVERSE_JOINTS(graph)         \
-  RCSGRAPH_TRAVERSE_BODIES((graph)) \
+#define RCSGRAPH_TRAVERSE_JOINTS(graph)\
+  RCSGRAPH_TRAVERSE_BODIES((graph))    \
   RCSBODY_FOREACH_JOINT((graph),(BODY))
 
 /*! \ingroup RcsGraphTraversalFunctions
 *  \brief Traverses all shapes of a body, starting from the first one.
 *         The joints can be accessed with variable "SHAPE".
 */
-#define RCSBODY_TRAVERSE_SHAPES(body) \
+#define RCSBODY_TRAVERSE_SHAPES(body)                                        \
   for (RcsShape **sPtr = (RcsShape**)((body)->shape), *SHAPE = *sPtr; *sPtr; \
        sPtr++, SHAPE=*sPtr)
 
-#define RCSGRAPH_FOREACH_SENSOR(graph) \
-  for (RcsSensor *S0 = RcsSensor_first(graph), *SENSOR = S0, *S1 = RcsSensor_last(graph); \
+#define RCSGRAPH_FOREACH_SENSOR(graph)                                       \
+  for (RcsSensor *S0 = RcsSensor_first(graph), *SENSOR = S0,                 \
+       *S1 = RcsSensor_last(graph);                                          \
        SENSOR && SENSOR<=S1; SENSOR++)
 
-#define RCSGRAPH_FOREACH_BODY(graph) \
-  for (RcsBody *B0 = RcsBody_first(graph), *B1 = RcsBody_last(graph), \
+#define RCSGRAPH_FOREACH_BODY(graph)                                         \
+  for (RcsBody *B0 = RcsBody_first(graph), *B1 = RcsBody_last(graph),        \
        *BODY = B0; BODY && BODY<=B1; BODY++)
 
-#define RCSGRAPH_FOREACH_JOINT(graph) \
-  for (RcsJoint *J0 = RcsJoint_first(graph), *J1 = RcsJoint_last(graph), \
+#define RCSGRAPH_FOREACH_JOINT(graph)                                        \
+  for (RcsJoint *J0 = RcsJoint_first(graph), *J1 = RcsJoint_last(graph),     \
        *JNT = J0; JNT && JNT<=J1; JNT++)
 
 

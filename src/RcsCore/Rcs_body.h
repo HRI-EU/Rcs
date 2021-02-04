@@ -473,17 +473,31 @@ void RcsBody_scale(RcsGraph* graph, RcsBody* self, double scale);
  */
 int RcsBody_getNumDistanceQueries(const RcsBody* b1, const RcsBody* b2);
 
+/*! \ingroup RcsBodyFunctions
+ *  \brief Returns a pointer to the body referred to by RcsBody::prevId.
+ */
 RcsBody* RcsBody_getPrev(RcsGraph* graph, RcsBody* body);
 
+/*! \ingroup RcsBodyFunctions
+ *  \brief Returns a pointer to the body referred to by RcsBody::nextId.
+ */
 RcsBody* RcsBody_getNext(RcsGraph* graph, RcsBody* body);
 
+/*! \ingroup RcsBodyFunctions
+ *  \brief Returns a pointer to the body referred to by RcsBody::parentId.
+ */
 RcsBody* RcsBody_getParent(RcsGraph* graph, RcsBody* body);
 
-const RcsBody* RcsBody_getConstParent(const RcsGraph* graph, const RcsBody* body);
-
+/*! \ingroup RcsBodyFunctions
+ *  \brief Returns a pointer to the body referred to by RcsBody::firstChildId.
+ */
 RcsBody* RcsBody_getFirstChild(RcsGraph* graph, RcsBody* body);
 
-RcsBody* RcsBody_getLastChild_(RcsGraph* graph, RcsBody* body);
+/*! \ingroup RcsBodyFunctions
+ *  \brief Returns a pointer to the body referred to by RcsBody::lastChildId.
+ */
+RcsBody* RcsBody_getLastChild(RcsGraph* graph, RcsBody* body);
+
 
 #ifdef __cplusplus
 }
