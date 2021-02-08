@@ -424,6 +424,7 @@ int main(int argc, char** argv)
                                        "(no Qt Gui)");
       bool playBVH = argP.hasArgument("-bvh", "Play bvh file");
       bool noHud = argP.hasArgument("-noHud", "Don't show HUD");
+      bool randomGraph = argP.hasArgument("-random", "Create randomized graph");
 
       Rcs_addResourcePath(directory);
 
@@ -454,7 +455,16 @@ int main(int argc, char** argv)
         break;
       }
 
-      RcsGraph* graph = RcsGraph_create(xmlFileName);
+      RcsGraph* graph = NULL;
+
+      if (randomGraph)
+      {
+        graph = RcsGraph_createRandom(30, 5);
+      }
+      else
+      {
+        graph = RcsGraph_create(xmlFileName);
+      }
 
       REXEC(1)
       {

@@ -131,8 +131,8 @@ void RcsBody_addShape(RcsBody* self, RcsShape* shape);
  *  \brief Destroys the idx-th shape of the body, and packs the other shapes
  *         so that there is no NULL gap in the array.
  *
- *  \return True for success, false otherwies (e.g. there is no idx shapes in the
- *          array)
+ *  \return True for success, false otherwies (e.g. there is no idx shapes in
+ *          the array)
  */
 bool RcsBody_removeShape(RcsBody* self, unsigned int idx);
 

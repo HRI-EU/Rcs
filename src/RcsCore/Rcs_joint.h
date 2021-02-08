@@ -63,6 +63,15 @@ void RcsJoint_destroy(RcsJoint* self);
 void RcsJoint_init(RcsJoint* self);
 
 /*! \ingroup RcsJointFunctions
+ *  \brief Sets the joint to random settings:
+ *         - q0, q_init, q_min and q_max are set to consistend random values
+ *         - WeightJL  and weightMetric between 0.25 and 1.25
+ *         - random relative transform to predecessor
+ *         - Constraint for every 10th joint
+ */
+void RcsJoint_setRandom(RcsJoint* self);
+
+/*! \ingroup RcsJointFunctions
  *  \brief Makes a deep copy of a RcsJoint data structure except for the
  *         connection ids (id, prevId, nextId, coupledToId).
  */

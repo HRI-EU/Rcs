@@ -1879,7 +1879,7 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
       if (strlen(SHAPE->meshFile) >= RCS_MAX_FILENAMELEN-1)
       {
         nErrors++;
-        RLOG(1, "Shape of body \"%s\" very likely has a truncated mesh file: %s",
+        RLOG(1, "Shape of body \"%s\" likely has a truncated mesh file: %s",
              BODY->name, SHAPE->meshFile);
       }
 
@@ -3147,16 +3147,16 @@ RcsBody* RcsGraph_insertGraphBody(RcsGraph* graph, int parentId)
   }
 
   // No free memory block has been found, so we allocate a new one. The call to
-  // realloc might possibly change the pointer adress of RcsGraph::bodies, so we
-  // need to re-assign the root pointer.
+  // realloc might possibly change the pointer adress of RcsGraph::bodies, so
+  // we need to re-assign the root pointer.
   if (!body)
   {
     graph->nBodies++;
     graph->bodies = RREALLOC(graph->bodies, graph->nBodies, RcsBody);
     RCHECK(graph->bodies);
 
-    // This must come after the realloc() call, since this might change the memory
-    // location of the bodies aray.
+    // This must come after the realloc() call, since this might change the
+    // memory location of the bodies aray.
     body = &graph->bodies[graph->nBodies-1];
     RcsBody_init(body);
     body->id = graph->nBodies-1;
@@ -3219,6 +3219,7 @@ RcsJoint* RcsGraph_insertGraphJoint(RcsGraph* graph, int bodyId)
   RcsJoint_init(newJoint);
   newJoint->id = graph->dof - 1;
   newJoint->jointIndex = graph->dof - 1;
+  snprintf(newJoint->name, RCS_MAX_NAMELEN, "joint_%d", newJoint->id);
 
   // Find last joint of body
 
@@ -3234,7 +3235,8 @@ RcsJoint* RcsGraph_insertGraphJoint(RcsGraph* graph, int bodyId)
     }
     else    // The body has a predecessor
     {
-      const RcsJoint* lastJnt = RcsBody_lastJointBeforeBody(graph, &graph->bodies[body->parentId]);
+      const RcsBody* parent = &graph->bodies[body->parentId];
+      const RcsJoint* lastJnt = RcsBody_lastJointBeforeBody(graph, parent);
       newJoint->prevId = lastJnt ? lastJnt->id : -1;
     }
 
@@ -3690,4 +3692,106 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self,
   RLOG(5, "Done RcsGraph_appendCopyOfGraph()");
 
   return true;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+RcsBody* RcsGraph_insertRandomBody(RcsGraph* graph, int parentId)
+{
+  RcsBody* bdy = RcsGraph_insertGraphBody(graph, parentId);
+
+  HTr_setRandom(&bdy->A_BP);
+  Vec3d_constMulSelf(bdy->A_BP.org, 0.1);   // Scale to +/- 0.1m
+  bdy->m = Math_getRandomNumber(0.0, 1.0);
+  bdy->physicsSim = Math_getRandomBool();
+  Vec3d_setRandom(bdy->Inertia.org, 0.1, 0.9);
+  bdy->Inertia.rot[0][0] = Math_getRandomNumber(0.1, 1.0);
+  bdy->Inertia.rot[1][1] = Math_getRandomNumber(0.1, 1.0);
+  bdy->Inertia.rot[2][2] = Math_getRandomNumber(0.1, 1.0);
+  snprintf(bdy->name, RCS_MAX_NAMELEN, "body_%d", bdy->id);
+
+  int nShapes = Math_getRandomInteger(1, 5);
+
+  for (int i=0; i<nShapes; ++i)
+  {
+    int shapeType = Math_getRandomInteger(1, RCSSHAPE_SHAPE_MAX-1);
+    RcsShape* shape = RcsShape_createRandomShape(shapeType);
+    RcsBody_addShape(bdy, shape);
+  }
+
+  // For each 10th joint, we create a rigid body joint
+  int createRBJ = Math_getRandomInteger(1, 10);
+  bdy->rigid_body_joints = createRBJ==5 ? true : false;
+
+  if (bdy->rigid_body_joints)
+  {
+    double q_rbj[6];
+    VecNd_setRandom(q_rbj, -0.2, 0.2, 6);
+    RcsBody_createRBJ(graph, bdy, q_rbj);
+  }
+  else
+  {
+    const int nJoints = Math_getRandomInteger(0, 8);
+
+    for (int i=0; i<nJoints; ++i)
+    {
+      RcsJoint* jnt = RcsGraph_insertGraphJoint(graph, bdy->id);
+      RcsJoint_setRandom(jnt);
+    }
+  }
+
+  return bdy;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+RcsGraph* RcsGraph_createRandom(unsigned int nBodies, unsigned int branching)
+{
+  RcsGraph* graph = RALLOC(RcsGraph);
+  strcpy(graph->cfgFile, "Random graph");
+  int parentId = -1;
+
+  for (unsigned int i=0; i<nBodies; ++i)
+  {
+    RcsBody* bdy = RcsGraph_insertRandomBody(graph, parentId);
+
+    unsigned int branchMe = Math_getRandomInteger(0, branching);
+
+    if (branchMe==0)
+    {
+      parentId = Math_getRandomInteger(-1, graph->nBodies-1);
+    }
+    else
+    {
+      parentId = bdy->id;
+    }
+
+  }
+
+  graph->q = MatNd_create(graph->dof, 1);
+  graph->q_dot = MatNd_create(graph->dof, 1);
+
+  RCSGRAPH_FOREACH_JOINT(graph)
+  {
+    const double qi = Math_getRandomNumber(JNT->q_min, JNT->q_max);
+    MatNd_set(graph->q, JNT->jointIndex, 0, qi);
+  }
+
+  MatNd_setRandom(graph->q_dot, -100.0, 100.0);
+
+  RcsGraph_setState(graph, graph->q, graph->q_dot);
+  RcsGraph_addRandomGeometry(graph);
+
+  int nWarnings=0, nErrors=0;
+  bool success = RcsGraph_check(graph, &nErrors, &nWarnings);
+
+  if (!success)
+  {
+    RFATAL("Created random graph with %d errors and %d warnings",
+           nErrors, nWarnings);
+  }
+
+  return graph;
 }

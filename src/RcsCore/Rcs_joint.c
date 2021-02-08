@@ -68,6 +68,32 @@ void RcsJoint_init(RcsJoint* self)
 /*******************************************************************************
  *
  ******************************************************************************/
+void RcsJoint_setRandom(RcsJoint* self)
+{
+  self->type = Math_getRandomInteger(0, 5);
+  self->dirIdx = self->type % 3;
+  self->q0 = Math_getRandomNumber(-0.5, 0.5);
+  self->q_init = Math_getRandomNumber(-0.25, 0.25);
+  self->q_min = Math_getRandomNumber(-1.0, -0.51);
+  self->q_max = Math_getRandomNumber(0.51, 1.0);
+  self->weightJL = Math_getRandomNumber(0.25, 1.25);
+  self->weightMetric = Math_getRandomNumber(0.25, 1.25);
+  HTr_setRandom(&self->A_JP);
+  Vec3d_constMulSelf(self->A_JP.org, 0.1);   // Scale to +/- 0.1m
+  self->constrained = false;
+
+  // Every ten-th joint is constrained
+  int oneOutOfTen = Math_getRandomInteger(0, 10);
+
+  if (oneOutOfTen==5)
+  {
+    self->constrained = true;
+  }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 bool RcsJoint_isRotation(const RcsJoint* joint)
 {
   if (joint == NULL)

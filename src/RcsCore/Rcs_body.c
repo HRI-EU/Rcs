@@ -2374,7 +2374,7 @@ bool RcsBody_attachToBodyId(RcsGraph* graph, int bodyId, int targetId)
     return true; // Nothing to do
   }
 
-  // take the body and children out of the graph TODO maybe put this in a
+  // Take the body and children out of the graph TODO maybe put this in a
   // separate method
   RcsBody* bPrev = RCSBODY_BY_ID(graph, body->prevId);
   if (bPrev)

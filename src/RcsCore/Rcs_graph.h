@@ -216,11 +216,11 @@ RcsBody* RcsBody_getLastLeaf(const RcsGraph* graph, RcsBody* b);
  *         except that the body argument itself will not be traversed, but
  *         only its children.
  */
-#define RCSBODY_TRAVERSE_CHILD_BODIES(graph, body)                              \
-  for (RcsBody* BODY = RcsBody_depthFirstTraversalGetNextById((graph), (body)), \
-       *LAST_LEAF = RcsBody_getLastLeaf((graph), BODY),                         \
-       *LAST = RcsBody_depthFirstTraversalGetNextById((graph), LAST_LEAF);      \
-       BODY && BODY != LAST;                                                    \
+#define RCSBODY_TRAVERSE_CHILD_BODIES(graph, body)                             \
+  for (RcsBody* BODY = RcsBody_depthFirstTraversalGetNextById((graph), (body)),\
+       *LAST_LEAF = RcsBody_getLastLeaf((graph), BODY),                        \
+       *LAST = RcsBody_depthFirstTraversalGetNextById((graph), LAST_LEAF);     \
+       BODY && BODY != LAST;                                                   \
        BODY = RcsBody_depthFirstTraversalGetNextById((graph), BODY))
 
 /*! \ingroup RcsGraphTraversalFunctions
@@ -285,6 +285,14 @@ RcsBody* RcsBody_getLastLeaf(const RcsGraph* graph, RcsBody* b);
  *         for a seamless usage.
  */
 RcsGraph* RcsGraph_create(const char* filename);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Creates a random graph with the given amount of bodies and the
+ *         given branching factor. The branching factor determines after how
+ *         many added bodies a branch will be created.
+ */
+RcsGraph* RcsGraph_createRandom(unsigned int nBodies,
+                                unsigned int branchingFactor);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Destroys an instance of a graph. The function does nothing if
@@ -568,7 +576,29 @@ RcsBody* RcsGraph_getGenericBodyPtr(const RcsGraph* self, int bdyNum);
 RcsBody* RcsGraph_insertGraphBody(RcsGraph* graph, int parentId);
 
 /*! \ingroup RcsGraphFunctions
- *  \brief Please explain.
+ *  \brief Adds a random body to the graph. It will have 1-5 random shapes
+ *         attached (See RcsShape_createRandomShape()), and will be connected
+ *         to the parent body with either six rigid body joints or with
+ *         1-8 randomly created joints.
+ *
+ *  \param[in] graph      Pointer to the graph to be extended with the body.
+ *  \param[in] parentId   Id of the parent body (may be -1)
+ *
+ *  \return Pointer to the created random body.
+ */
+RcsBody* RcsGraph_insertRandomBody(RcsGraph* graph, int parentId);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Adds memory for a new joint to the graph, and connects the new
+ *         joint to to last joint of the body with the given id. If the body
+ *         with bodyId does not exist, the function exits fatally.
+ *         be connected to its root. This function is meant for building up
+ *         a graph.
+ *
+ *  \param[in] graph      Pointer to the graph to be extended with the joint.
+ *  \param[in] bodyId     Id of the body the new joint is added to.
+ *
+ *  \return Pointer to the created joint.
  */
 RcsJoint* RcsGraph_insertGraphJoint(RcsGraph* graph, int bodyId);
 

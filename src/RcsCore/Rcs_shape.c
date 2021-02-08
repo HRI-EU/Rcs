@@ -920,6 +920,11 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
     return NULL;
   }
 
+  if (shapeType==RCSSHAPE_OCTREE)
+  {
+    shapeType = RCSSHAPE_BOX;
+  }
+
   // Allocate memory and set defaults
   RcsShape* shape = RcsShape_create();
   shape->type = shapeType;
@@ -927,6 +932,11 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
   Vec3d_setRandom(shape->extents, 0.1, 0.3);
   Vec3d_setRandom(shape->A_CB.org, -0.1, 0.1);
   Mat3d_setRandomRotation(shape->A_CB.rot);
+
+  int rr = Math_getRandomInteger(0, 255);
+  int gg = Math_getRandomInteger(0, 255);
+  int bb = Math_getRandomInteger(0, 255);
+  sprintf(shape->color, "#%02x%02x%02xff", rr, gg, bb);
 
   shape->computeType |= RCSSHAPE_COMPUTE_DISTANCE;
   shape->computeType |= RCSSHAPE_COMPUTE_PHYSICS;

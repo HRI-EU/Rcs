@@ -209,7 +209,7 @@ struct _RcsSensor
   RCSSENSOR_TYPE type;              ///< Sensor type, see enum RCSSENSOR_TYPE
   int bodyId;                       ///< Body if the sensor is attached to
   char name[RCS_MAX_NAMELEN];       ///< Name of the sensor
-  HTr A_SB;                         ///< Transformation from body to sensor mount
+  HTr A_SB;                         ///< Transformation from body to sensor
   unsigned int nTexels;             ///< Number of texels in texel array
   RcsTexel* texel;                  ///< Array of texels for PPS sensors
   MatNd* rawData;                   ///< Raw sensor data array
@@ -264,26 +264,27 @@ struct _RcsGraph
 
 #define RCSJOINT_BY_ID(graph, id) ((id)==-1 ? NULL : &(graph)->joints[id])
 #define RCSBODY_BY_ID(graph, id)  ((id)==-1 ? NULL : &(graph)->bodies[id])
-#define RCSBODY_NAME_BY_ID(graph, id)  ((id)==-1 ? "NULL ": (graph)->bodies[id].name)
+#define RCSBODY_NAME_BY_ID(graph, id)  \
+  ((id)==-1 ? "NULL ": (graph)->bodies[id].name)
 
 #undef RCSGRAPH_FOREACH_SENSOR
-#define RCSGRAPH_FOREACH_SENSOR(graph)                                          \
-  for (RcsSensor *S0 = (graph)->nSensors>0 ? &(graph)->sensors[0] : NULL,       \
-       *S1 = (graph)->nSensors>0 ? &(graph)->sensors[graph->nSensors-1] : NULL, \
+#define RCSGRAPH_FOREACH_SENSOR(graph)                                         \
+  for (RcsSensor *S0 = (graph)->nSensors>0 ? &(graph)->sensors[0] : NULL,      \
+       *S1 = (graph)->nSensors>0 ? &(graph)->sensors[graph->nSensors-1] : NULL,\
        *SENSOR = S0; SENSOR && SENSOR<=S1; SENSOR++)
 
 #undef RCSGRAPH_FOREACH_BODY
-#define RCSGRAPH_FOREACH_BODY(graph)                                            \
-  for (RcsBody *B0 = (graph)->nBodies>0 ? &(graph)->bodies[0] : NULL,           \
-       *B1 = (graph)->nBodies>0 ? &(graph)->bodies[(graph)->nBodies-1] : NULL,  \
+#define RCSGRAPH_FOREACH_BODY(graph)                                           \
+  for (RcsBody *B0 = (graph)->nBodies>0 ? &(graph)->bodies[0] : NULL,          \
+       *B1 = (graph)->nBodies>0 ? &(graph)->bodies[(graph)->nBodies-1] : NULL, \
        *BODY = B0; BODY && BODY<=B1; BODY++)
 
 #undef RCSJOINT_TRAVERSE_FORWARD
-#define RCSJOINT_TRAVERSE_FORWARD(graph, joint)                                 \
+#define RCSJOINT_TRAVERSE_FORWARD(graph, joint)                                \
   for (RcsJoint* JNT = (joint); JNT; JNT = RCSJOINT_BY_ID(graph, JNT->nextId))
 
 #undef RCSBODY_FOREACH_JOINT
-#define RCSBODY_FOREACH_JOINT(graph, body)                                      \
+#define RCSBODY_FOREACH_JOINT(graph, body)                                     \
   RCSJOINT_TRAVERSE_FORWARD(graph, RCSJOINT_BY_ID((graph), (body)->jntId))
 
 
