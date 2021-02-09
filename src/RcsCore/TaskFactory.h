@@ -64,34 +64,24 @@ namespace Rcs
  *         Task* task = TaskFactory::createTask(descr, graph);
  *
  *         This will construct a Position3d task with the given end effector.
- *         How cool isn't it?
+ *         How cool, isn't it?
  */
 class TaskFactory
 {
+  template<typename T>
+  friend class TaskFactoryRegistrar;
+
 public:
 
-  typedef Task* (*TaskCreateFunction)(std::string className,
-                                      xmlNode* node,
-                                      RcsGraph* graph);
-
-  typedef bool (*TaskCheckFunction)(xmlNode* node,
-                                    const RcsGraph* graph);
-
-  /*! \brief Get the single instance of the factory
-   *  \return singleton instance
-   */
-  static TaskFactory* instance();
-
   /*! \brief Creates a new Task by name using the appropriate registered
-   *        construction function.
+   *         construction function.
    *
-   * \param className The name with which the task is registered at the
-   *        factory
-   * \param node The xml node used for parsing the task
-   * \param graph The underlying graph for the kinematics
-   * \return New task instance
+   *  \param node The xml node used for parsing the task. The class name is
+   *              extracted from the xml node.
+   *  \param graph The underlying graph for the kinematics
+   *  \return New task instance
    */
-  Task* createTask(std::string className, xmlNode* node, RcsGraph* graph);
+  static Task* createTask(xmlNode* node, RcsGraph* graph);
 
   /*! \brief Convenience method to create a task from a string.
    *
@@ -99,21 +89,12 @@ public:
    *  \param graph The underlying graph for the kinematics
    *  \return New task instance, or NULL in case it can't be constructed.
    */
-  static Task* createTask(const char* xmlStr, RcsGraph* graph);
-
-  /*! \brief Registers a new function for creating tasks. You should not
-   *        need to call this function directly. Instead us the
-   *        TaskFactoryRegistrar by adding the following line to your
-   *        implementation:
-   *        "static Rcs::TaskFactoryRegistrar<Rcs::Task> task("name");"
-   */
-  void registerTaskFunctions(std::string name,
-                             TaskCreateFunction createFunction,
-                             TaskCheckFunction checkFunction);
+  static Task* createTask(std::string xmlStr, RcsGraph* graph);
+  static Task* createRandomTask(std::string className, RcsGraph* graph);
 
   /*! \brief Prints the list of all registered tasks to stdout.
    */
-  void printRegisteredTasks() const;
+  static void printRegisteredTasks();
 
   /*! \brief Checks if the task described by the xml node and the
    *        underlying graph is valid.
@@ -121,31 +102,49 @@ public:
    */
   static bool isValid(xmlNode* node, const RcsGraph* graph);
 
+
 private:
+
+  typedef Task* (*TaskBuilder)(std::string className, xmlNode* node,
+                               RcsGraph* graph);
+
+  typedef Task* (*RandomTaskBuilder)(std::string className, RcsGraph* graph);
+
+  typedef bool (*TaskChecker)(xmlNode* node, const RcsGraph* graph);
+
+  std::map<std::string, TaskChecker> checkFuncMap;
+  std::map<std::string, TaskBuilder> createFuncMap;
+  std::map<std::string, RandomTaskBuilder> rndBuilderMap;
 
   /*! \brief Private constructor because TaskFactory is a singleton
    */
   TaskFactory();
 
-  /*! \brief Checks if the task described by the xml node and the
-   *        underlying graph, along with the className, is valid.
-   *
-   * \return true for valid, false otherwise.
+  /*! \brief Get the single instance of the factory
+   *  \return singleton instance
    */
-  bool checkTask(const std::string& className,
-                 xmlNode* node,
-                 const RcsGraph* graph);
+  static TaskFactory* instance();
 
-  std::map<std::string, TaskCheckFunction>  checkFunctionMap;
-  std::map<std::string, TaskCreateFunction> createFunctionMap;
+  /*! \brief Registers a new function for creating tasks. You should not
+   *        need to call this function directly. Instead us the
+   *        TaskFactoryRegistrar by adding the following line to your
+   *        implementation:
+   *        "static Rcs::TaskFactoryRegistrar<Rcs::Task> task("name");"
+   */
+  void registerTaskFunctions(std::string name, TaskBuilder builder,
+                             TaskChecker checker, RandomTaskBuilder rndBuilder);
 };
 
 
 
 
 
-/*! \brief This class is inspired by the MPFactoryRegistrar and follows the
- *        same concepts.
+/*! \brief Registrar class that registers tasks in the TaskFactory. The
+ *         registrar constructors are typically called as static instantiations
+ *         on the file scope of a task. For each task, a map from the task's
+ *         class name to a construction and checking function is added. These
+ *         are used by the TaskFactory to decide which instance to construct
+ *         based on the class name.
  */
 template<class T>
 class TaskFactoryRegistrar
@@ -153,33 +152,52 @@ class TaskFactoryRegistrar
 public:
 
   /*! \brief Registers a new task with a given name
-   * \param className The name that is used for instantiating a new task
-   *        by name
+   *  \param className The name that is used for instantiating a new task
+   *         by name
    */
   TaskFactoryRegistrar(std::string className)
   {
-    // Register the function to create and check the task
-    TaskFactory* tf = TaskFactory::instance();
-    tf->registerTaskFunctions(className, &TaskFactoryRegistrar::create,
-                              &T::isValid);
+    TaskFactory::instance()->registerTaskFunctions(className, &create, &check,
+                                                   &createRandom);
   }
 
+
+private:
+
+
+
   /*! \brief This function creates a new task of type T passing the given
-   *        variables to the respective constructor
-   *
-   * \param className String identifier for task
-   * \param node XML node for the task
-   * \param graph Pointer to tasks's RcsGraph structure
-   * \return New task instance of type T
-   */
-  static Task* create(std::string className, xmlNode* node,
-                      RcsGraph* graph)
+  *         variables to the respective constructor
+  *
+  *  \param className String identifier for task
+  *  \param node XML node for the task
+  *  \param graph Pointer to tasks's RcsGraph structure
+  *  \return New task instance of type T
+  */
+  static Task* create(std::string className, xmlNode* node, RcsGraph* graph)
   {
     return new T(className, node, graph);
   }
 
+  static Task* createRandom(std::string className, RcsGraph* graph)
+  {
+    return T::createRandom(className, graph);
+  }
+
+  /*! \brief This function returns the result of the isValid() function of a
+   *         task of type T.
+   *
+   *  \param node XML node for the task
+   *  \param graph Pointer to tasks's RcsGraph structure
+   *  \return True for the task being valid, false otherwise.
+   */
+  static bool check(xmlNode* node, const RcsGraph* graph)
+  {
+    return T::isValid(node, graph);
+  }
+
 };
 
-}
+}   // namespace Rcs
 
 #endif // RCS_TASKFACTORY_H

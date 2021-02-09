@@ -296,7 +296,7 @@ int main(int argc, char** argv)
 
       REXEC(3)
       {
-        Rcs::TaskFactory::instance()->printRegisteredTasks();
+        Rcs::TaskFactory::printRegisteredTasks();
         Rcs::TaskRegionFactory::instance()->printRegisteredTaskRegions();
         Rcs::PhysicsFactory::print();
         RcsShape_fprintDistanceFunctions(stdout);

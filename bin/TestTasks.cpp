@@ -41,6 +41,7 @@
 #include <Rcs_timer.h>
 #include <Rcs_typedef.h>
 #include <Rcs_math.h>
+#include <TaskFactory.h>
 #include <IkSolverRMR.h>
 #include <PhysicsNode.h>
 #include <HUD.h>
@@ -239,6 +240,47 @@ static void testBlendingLeftInverse(int argc, char** argv)
 /*******************************************************************************
  *
  ******************************************************************************/
+static void testRandomTasks(int argc, char** argv)
+{
+  RcsGraph* graph = RcsGraph_createRandom(30, 5);
+  Rcs::ControllerBase controller(graph);
+  Rcs::Task* task = Rcs::TaskFactory::createRandomTask("XYZ", graph);
+  RLOG(0, "Build task of type %s", task ? task->getClassName().c_str(): "NULL");
+  if (task)
+  {
+    controller.add(task);
+  }
+  task = Rcs::TaskFactory::createRandomTask("ABC", graph);
+  RLOG(0, "Build task of type %s", task ? task->getClassName().c_str(): "NULL");
+  if (task)
+  {
+    controller.add(task);
+  }
+  task = Rcs::TaskFactory::createRandomTask("X", graph);
+  RLOG(0, "Build task of type %s", task ? task->getClassName().c_str(): "NULL");
+  if (task)
+  {
+    controller.add(task);
+  }
+  task = Rcs::TaskFactory::createRandomTask("Y", graph);
+  RLOG(0, "Build task of type %s", task ? task->getClassName().c_str(): "NULL");
+  if (task)
+  {
+    controller.add(task);
+  }
+  task = Rcs::TaskFactory::createRandomTask("Joint", graph);
+  RLOG(0, "Build task of type %s", task ? task->getClassName().c_str(): "NULL");
+  if (task)
+  {
+    controller.add(task);
+  }
+
+  controller.toXML("RandomController.xml");
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 int main(int argc, char** argv)
 {
   RMSG("Starting Rcs...");
@@ -273,12 +315,19 @@ int main(int argc, char** argv)
       printf("\t-m");
       printf("\t0   Print this message\n");
       printf("\t\t1   Test blending with left inverse\n");
+      printf("\t\t2   Test random task creation\n");
       break;
     }
 
     case 1:
     {
       testBlendingLeftInverse(argc, argv);
+      break;
+    }
+
+    case 2:
+    {
+      testRandomTasks(argc, argv);
       break;
     }
 

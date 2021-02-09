@@ -34,20 +34,19 @@
 
 *******************************************************************************/
 
-
-/*******************************************************************************
-
-  \todo:
-  - Check if new registered task overwrites className of previous one
-  - createTask() doesn't need className argument, it is already in xml node
-
-*******************************************************************************/
-
 #include "TaskFactory.h"
 #include "Rcs_macros.h"
 #include "Rcs_parser.h"
+#include "Rcs_stlParser.h"
 
 
+
+/*******************************************************************************
+ * Private destructor
+ ******************************************************************************/
+Rcs::TaskFactory::TaskFactory()
+{
+}
 
 /*******************************************************************************
  * Returns singleton instance pointer
@@ -59,37 +58,14 @@ Rcs::TaskFactory* Rcs::TaskFactory::instance()
 }
 
 /*******************************************************************************
- * Private destructor
- ******************************************************************************/
-Rcs::TaskFactory::TaskFactory()
-{
-}
-
-/*******************************************************************************
  * Creates the task for className and the given graph and xml content
  ******************************************************************************/
-Rcs::Task* Rcs::TaskFactory::createTask(const char* xmlStr, RcsGraph* graph)
+Rcs::Task* Rcs::TaskFactory::createTask(std::string str, RcsGraph* graph)
 {
+  const char* xmlStr = str.c_str();
   xmlDocPtr doc;
   xmlNodePtr node = parseXMLMemory(xmlStr, strlen(xmlStr), &doc);
-
-  if (node == NULL)
-  {
-    RLOG(1, "Can't create task from NULL xmlStr");
-    return NULL;
-  }
-
-  if (getXMLNodeProperty(node, "controlVariable") == false)
-  {
-    RLOG(1, "Task \n\n\"%s\"\n\n has no control variable tag", xmlStr);
-    return NULL;
-  }
-
-  char className[256] = "";
-  getXMLNodePropertyStringN(node, "controlVariable", className, 256);
-
-  Rcs::Task* task = instance()->createTask(className, node, graph);
-
+  Rcs::Task* task = createTask(node, graph);
   xmlFreeDoc(doc);
 
   return task;
@@ -98,21 +74,19 @@ Rcs::Task* Rcs::TaskFactory::createTask(const char* xmlStr, RcsGraph* graph)
 /*******************************************************************************
  * Creates the task for className and the given graph and xml content
  ******************************************************************************/
-Rcs::Task* Rcs::TaskFactory::createTask(std::string className,
-                                        xmlNode* node,
+Rcs::Task* Rcs::TaskFactory::createTask(xmlNode* node,
                                         RcsGraph* graph)
 {
-  Rcs::Task* task = NULL;
+  TaskFactory* tf = TaskFactory::instance();
+  std::string cVar = getXMLNodePropertySTLString(node, "controlVariable");
 
+  // Find name in the registry and call factory method.
+  std::map<std::string, TaskBuilder>::iterator itCreate;
+  itCreate = tf->createFuncMap.find(cVar);
 
-  // find name in the registry and call factory method.
-  std::map<std::string, TaskCreateFunction>::iterator itCreate;
-  itCreate = createFunctionMap.find(className);
-
-  if (itCreate == createFunctionMap.end())
+  if (itCreate == tf->createFuncMap.end())
   {
-    RLOG(1, "Unknown task type \"%s\" in TaskFactory::createTask",
-         className.c_str());
+    RLOG_CPP(1, "Unknown task type \"" << cVar << "\"");
     REXEC(4)
     {
       printRegisteredTasks();
@@ -121,37 +95,57 @@ Rcs::Task* Rcs::TaskFactory::createTask(std::string className,
   }
 
 
-  // First we check if the task is valid or not. If it is invalid, we
-  // return NULL.
-  std::map<std::string, TaskCheckFunction>::iterator it1;
-  it1 = checkFunctionMap.find(className);
+  // First we check if the task is valid or not.
+  std::map<std::string, TaskChecker>::iterator it1;
+  it1 = tf->checkFuncMap.find(cVar);
 
-  if (it1 == checkFunctionMap.end())
+  if (it1 == tf->checkFuncMap.end())
   {
-    RLOG(1, "Task type \"%s\" has no check function - skipping",
-         className.c_str());
+    RLOG(1, "Task type \"%s\" has no check function - skipping", cVar.c_str());
     return NULL;
   }
   else
   {
-    RLOG(5, "Checking task of type \"%s\"", className.c_str());
+    RLOG(5, "Checking task of type \"%s\"", cVar.c_str());
     bool success = it1->second(node, graph);
 
     if (success == false)
     {
-      RLOG(1, "Task of type \"%s\" is invalid - skipping",
-           className.c_str());
+      RLOG(1, "Task of type \"%s\" is invalid - skipping", cVar.c_str());
       return NULL;
     }
   }
 
-  RLOG(5, "Creating task of type \"%s\" in TaskFactory::createTask",
-       className.c_str());
-  task = itCreate->second(className, node, graph);
+  RLOG_CPP(5, "Creating task of type \"" << cVar << "\"");
 
-  return task;
+  return itCreate->second(cVar, node, graph);
 }
 
+/*******************************************************************************
+ * Creates the task for className and the given graph and xml content
+ ******************************************************************************/
+Rcs::Task* Rcs::TaskFactory::createRandomTask(std::string cVar, RcsGraph* graph)
+{
+  TaskFactory* tf = TaskFactory::instance();
+
+  // Find name in the registry and call factory method.
+  std::map<std::string, RandomTaskBuilder>::iterator itCreate;
+  itCreate = tf->rndBuilderMap.find(cVar);
+
+  if (itCreate == tf->rndBuilderMap.end())
+  {
+    RLOG_CPP(1, "Unknown task type \"" << cVar << "\"");
+    REXEC(4)
+    {
+      printRegisteredTasks();
+    }
+    return NULL;
+  }
+
+
+
+  return itCreate->second(cVar, graph);
+}
 
 /*******************************************************************************
  * This function is called through the registrat class. This happens before
@@ -159,13 +153,14 @@ Rcs::Task* Rcs::TaskFactory::createTask(std::string className,
  * since the debug level has at that point not yet been parsed.
  ******************************************************************************/
 void Rcs::TaskFactory::registerTaskFunctions(std::string name,
-                                             TaskCreateFunction createFunction,
-                                             TaskCheckFunction checkFunction)
+                                             TaskBuilder createFunction,
+                                             TaskChecker checkFunction,
+                                             RandomTaskBuilder rndBuilder)
 {
   // Register check function for task of the type given in "name"
-  std::map<std::string, TaskCheckFunction>::const_iterator it2;
+  std::map<std::string, TaskChecker>::const_iterator it2;
 
-  for (it2 = checkFunctionMap.begin(); it2 != checkFunctionMap.end(); ++it2)
+  for (it2 = checkFuncMap.begin(); it2 != checkFuncMap.end(); ++it2)
   {
     // If the check function has already been registered for a task with a
     // different  create-function, this means that the class with the given
@@ -173,7 +168,7 @@ void Rcs::TaskFactory::registerTaskFunctions(std::string name,
     // to catch it at compile time, therefore we'll exit in the registration
     // procedure (That's before main() is called)
     if ((checkFunction == it2->second) &&
-        (createFunction != createFunctionMap[it2->first]))
+        (createFunction != createFuncMap[it2->first]))
     {
       RFATAL("Task of class \"%s\" has same test function adress as task "
              "class \"%s\" - did you implement a \"isValid()\" function "
@@ -181,48 +176,58 @@ void Rcs::TaskFactory::registerTaskFunctions(std::string name,
     }
   }
 
-  checkFunctionMap[name] = checkFunction;
+  // Check if there is already an entry with the passed class name. If yes, we
+  // emit a warning on debug level 1.
+  std::map<std::string, TaskBuilder>::iterator itCreate;
+  itCreate = createFuncMap.find(name);
 
+  if (itCreate != createFuncMap.end())
+  {
+    RLOG(1, "Task type \"%s\" will be overwritten!", name.c_str());
+  }
 
-
-  // Register create function for task of the type given in "name"
-  createFunctionMap[name] = createFunction;
+  // Register create and check functions for task of the type given in "name"
+  checkFuncMap[name] = checkFunction;
+  createFuncMap[name] = createFunction;
+  rndBuilderMap[name] = rndBuilder;
 }
 
 
 /*******************************************************************************
  * Prints all registered tasks to the console
  ******************************************************************************/
-void Rcs::TaskFactory::printRegisteredTasks() const
+void Rcs::TaskFactory::printRegisteredTasks()
 {
+  TaskFactory* tf = TaskFactory::instance();
+
   RMSG("TaskFactory: registered tasks are");
-  std::map<std::string, TaskCreateFunction>::const_iterator it;
-  for (it = createFunctionMap.begin(); it != createFunctionMap.end(); ++it)
+  std::map<std::string, TaskBuilder>::const_iterator it;
+  for (it = tf->createFuncMap.begin(); it != tf->createFuncMap.end(); ++it)
   {
     printf("%s\n", it->first.c_str());
   }
 
-  RLOGS(10, "=== Registered checks:");
-  std::map<std::string, TaskCheckFunction>::const_iterator it2;
-  for (it2 = checkFunctionMap.begin(); it2 != checkFunctionMap.end(); ++it2)
+  RLOGS(5, "=== Registered check functions:");
+  std::map<std::string, TaskChecker>::const_iterator it2;
+  for (it2 = tf->checkFuncMap.begin(); it2 != tf->checkFuncMap.end(); ++it2)
   {
-    RLOG_CPP(10, "Function: " << it2->first << " address: " << it2->second);
+    RLOG_CPP(5, "Function: " << it2->first << " address: " << it2->second);
   }
+
+  std::map<std::string, RandomTaskBuilder>::const_iterator it3;
+  for (it3 = tf->rndBuilderMap.begin(); it3 != tf->rndBuilderMap.end(); ++it3)
+  {
+    RLOG_CPP(0, "Function: " << it3->first << " address: " << it3->second);
+  }
+
 
 }
 
-
 /*******************************************************************************
- * Check function for task types - goes through checkFunctionMap. This must not
- * be a static function, since we can't access private members through the
- * instance() function.
+ * Factory method for checking of validity
  ******************************************************************************/
-bool Rcs::TaskFactory::checkTask(const std::string& className,
-                                 xmlNode* node,
-                                 const RcsGraph* graph)
+bool Rcs::TaskFactory::isValid(xmlNode* node, const RcsGraph* graph)
 {
-  bool success = false;
-
   // Check if tag is of type "Task"
   if (isXMLNodeName(node, "Task") == false)
   {
@@ -231,53 +236,27 @@ bool Rcs::TaskFactory::checkTask(const std::string& className,
   }
 
   // Get the task name
-  char taskName[256];
-  strcpy(taskName, "unnamed task");
-  getXMLNodePropertyStringN(node, "name", taskName, 256);
+  std::string taskName = getXMLNodePropertySTLString(node, "name");
 
   // Check if a control variable is defined
   if (getXMLNodeProperty(node, "controlVariable") == false)
   {
-    RLOG(4, "Task \"%s\" has no control variable", taskName);
-    return false;
-  }
-
-  // Check if the control variable matches the className
-  // \todo: That doesn't make sense, since this function is called with
-  // the className being the controlVariable.
-  char cVar[64] = "";
-  getXMLNodePropertyStringN(node, "controlVariable", cVar, 64);
-  if (std::string(cVar) != className)
-  {
-    RLOG(4, "Task \"%s\": className (\"%s\") does not match XML tag "
-         "controlVariable (\"%s\")", taskName, className.c_str(), cVar);
+    RLOG(4, "Task \"%s\" has no control variable", taskName.c_str());
     return false;
   }
 
   // Call class's check function
-  std::map<std::string, TaskCheckFunction>::iterator it;
-  it = checkFunctionMap.find(className);
+  std::string className = getXMLNodePropertySTLString(node, "controlVariable");
+  std::map<std::string, TaskChecker>::iterator it;
+  it = TaskFactory::instance()->checkFuncMap.find(className);
 
-  if (it == checkFunctionMap.end())
+  if (it == TaskFactory::instance()->checkFuncMap.end())
   {
     RLOG(1, "Task type \"%s\" has no check function", className.c_str());
-  }
-  else
-  {
-    RLOG(5, "Checking task of type \"%s\"", className.c_str());
-    success = it->second(node, graph);
+    return false;
   }
 
-  return success;
-}
+  RLOG(5, "Checking task of type \"%s\"", className.c_str());
 
-/*****************************************************************************
- * Factory method for checking of validity
- ****************************************************************************/
-bool Rcs::TaskFactory::isValid(xmlNode* node, const RcsGraph* graph)
-{
-  char cVar[256] = "";
-  getXMLNodePropertyStringN(node, "controlVariable", cVar, 256);
-
-  return Rcs::TaskFactory::instance()->checkTask(cVar, node, graph);
+  return it->second(node, graph);
 }

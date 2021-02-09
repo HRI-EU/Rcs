@@ -162,7 +162,8 @@ bool Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
       // Create the new task, and add it to the task list
       if (getXMLNodePropertySTLString(node, "controlVariable", txt))
       {
-        add(TaskFactory::instance()->createTask(txt, node, graph));
+        //add(TaskFactory::createTask(txt, node, graph));
+        add(TaskFactory::createTask(node, graph));
       }
       else
       {
@@ -217,7 +218,7 @@ bool Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
  ******************************************************************************/
 Rcs::ControllerBase::ControllerBase(RcsGraph* graph):
   graph(graph),
-  ownsGraph(false),
+  ownsGraph(true),
   xmlRootNode(NULL),
   xmlDoc(NULL),
   cMdl(NULL),

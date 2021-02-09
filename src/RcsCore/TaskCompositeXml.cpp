@@ -37,6 +37,7 @@
 #include "TaskCompositeXml.h"
 #include "TaskFactory.h"
 #include "Rcs_parser.h"
+#include "Rcs_stlParser.h"
 
 
 static Rcs::TaskFactoryRegistrar<Rcs::TaskCompositeXml> registrar("Composite");
@@ -50,8 +51,6 @@ Rcs::TaskCompositeXml::TaskCompositeXml(const std::string& className_,
                                         RcsGraph* _graph):
   CompositeTask(className_, node, _graph)
 {
-  char txt[256] = "";
-
   // Descend one level in XML parsing to find Task et al.
   node = node->children;
 
@@ -59,10 +58,9 @@ Rcs::TaskCompositeXml::TaskCompositeXml(const std::string& className_,
   {
     if (isXMLNodeName(node, "Task"))
     {
-      strcpy(txt, "");
-      getXMLNodePropertyStringN(node, "controlVariable", txt, 256);
-      Task* ti = TaskFactory::instance()->createTask(std::string(txt), node,
-                                                     (RcsGraph*)graph);
+      // std::string cVar = getXMLNodePropertySTLString(node, "controlVariable");
+      // Task* ti = TaskFactory::createTask(cVar, node, graph);
+      Task* ti = TaskFactory::createTask(node, graph);
       addTask(ti);
     }
 
@@ -95,7 +93,6 @@ Rcs::TaskCompositeXml* Rcs::TaskCompositeXml::clone(RcsGraph* newGraph) const
 bool Rcs::TaskCompositeXml::isValid(xmlNode* node, const RcsGraph* graph)
 {
   bool success = true;
-  char txt[256] = "";
 
   // Descend one level in XML parsing to find sub-tasks of the composite task.
   node = node->children;
@@ -104,13 +101,12 @@ bool Rcs::TaskCompositeXml::isValid(xmlNode* node, const RcsGraph* graph)
   {
     if (isXMLNodeName(node, "Task"))
     {
-      strcpy(txt, "");
-      getXMLNodePropertyStringN(node, "controlVariable", txt, 256);
+      //std::string txt = getXMLNodePropertySTLString(node, "controlVariable");
 
       // The createTask function performs a validity check of the task. If we
       // get a NULL pointer here, it means that the task is invalid.
-      Task* ti = TaskFactory::instance()->createTask(std::string(txt), node,
-                                                     (RcsGraph*)graph);
+      // Task* ti = TaskFactory::createTask(txt, node, (RcsGraph*)graph);
+      Task* ti = TaskFactory::createTask(node, (RcsGraph*)graph);
 
       if (ti == NULL)
       {

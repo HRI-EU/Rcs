@@ -260,6 +260,8 @@ public:
   static bool isValid(xmlNode* node, const RcsGraph* graph,
                       const std::vector<std::string>& className);
 
+  static Task* createRandom(std::string className, RcsGraph* graph);
+
   TaskRegion* getTaskRegion();
 
   /**

@@ -35,6 +35,7 @@
 *******************************************************************************/
 
 #include "Task.h"
+#include "TaskFactory.h"
 #include "TaskRegionFactory.h"
 #include "Rcs_macros.h"
 #include "Rcs_parser.h"
@@ -1111,6 +1112,53 @@ bool Rcs::Task::isValid(xmlNode* node, const RcsGraph* graph,
   success = checkBody(node, "refFrame", graph, taskName) && success;
 
   return success;
+}
+
+/*******************************************************************************
+ * See header
+ ******************************************************************************/
+Rcs::Task* Rcs::Task::createRandom(std::string className, RcsGraph* graph)
+{
+  int rndId = Math_getRandomInteger(-1, graph->nBodies-1);
+  const RcsBody* ef = RCSBODY_BY_ID(graph, rndId);
+  rndId = Math_getRandomInteger(-1, graph->nBodies-1);
+  const RcsBody* refBdy = RCSBODY_BY_ID(graph, rndId);
+  rndId = Math_getRandomInteger(-1, graph->nBodies-1);
+  int rnd10 = Math_getRandomInteger(0, 10);
+  const RcsBody* refFrame = rnd10==0 ? RCSBODY_BY_ID(graph, rndId) : refBdy;
+
+  std::string tStr = "<Task name=\"Random\" ";
+  tStr += "controlVariable=\"" + className + "\" ";
+  if (ef)
+  {
+    tStr += "effector=\"" + std::string(ef->name) + "\" ";
+  }
+  if (refBdy)
+  {
+    tStr += "refBdy=\"" + std::string(refBdy->name) + "\" ";
+  }
+  if (refFrame && refFrame!=refBdy)
+  {
+    tStr += "refFrame=\"" + std::string(refFrame->name) + "\" ";
+  }
+
+  tStr += " />";
+
+  Task* task = TaskFactory::createTask(tStr, graph);
+
+  if (!task)
+  {
+    RLOG(1, "createRandom() not working for task of type \"%s\":\n[%s]",
+         className.c_str(), tStr.c_str());
+    return NULL;
+  }
+
+  for (unsigned int i = 0; i < task->getDim(); i++)
+  {
+    task->addParameter(Parameters(-1.0, 1.0, 1.0, "unnamed"));
+  }
+
+  return task;
 }
 
 /*******************************************************************************

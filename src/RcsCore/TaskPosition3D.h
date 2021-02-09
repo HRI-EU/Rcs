@@ -80,7 +80,7 @@ namespace Rcs
  *
  *  Example:
  *  \code
- *    <Task name="Hand XYZ" controlVariable="XYZ" effector="HandTip" active="true" />
+ *    <Task name="Pos" controlVariable="XYZ" effector="Hand" active="true" />
  *  \endcode
  */
 class TaskPosition3D: public TaskGenericIK

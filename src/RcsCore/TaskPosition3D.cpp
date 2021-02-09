@@ -42,6 +42,7 @@
 #include "Rcs_utils.h"
 #include "Rcs_VecNd.h"
 #include "Rcs_Vec3d.h"
+#include "Rcs_basicMath.h"
 #include "Rcs_kinematics.h"
 
 
