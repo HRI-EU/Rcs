@@ -32,19 +32,17 @@ name = "Rcs"
 
 version = "1.0"
 
-category="Libraries"
+category = "Libraries"
 
 sqLevel = "basic"
 
-sqOptOutRules    = [ 'GEN04', 'C02', 'C06' ]
+sqOptOutRules    = [ 'GEN04' ]
 
-sqComments       = { 'GEN04': 'Copyright header with BSD license not recognized by quality checker',
-                     'C02': 'Link guards not to be used in Cpp headers ',
-                     'C06': 'inline in template declarations should be ok '}
+sqComments       = { 'GEN04': 'Copyright header with BSD license not recognized by quality checker'}
 
-SQ_12 = [ 'build/bionic64/bin/TestMath -m -1 -numTests 10 -dl 1',
-          'build/bionic64/bin/Rcs -m 3 -iter 10 -dl 1 -valgrind',
-          'build/bionic64/bin/Rcs -m 6 -valgrind -nTests 10 -dl 1']
+SQ_12 = [ 'build/${MAKEFILE_PLATFORM}/bin/TestMath -m -1 -numTests 10 -dl 1',
+          'build/${MAKEFILE_PLATFORM}/bin/Rcs -m 3 -iter 10 -dl 1 -valgrind',
+          'build/${MAKEFILE_PLATFORM}/bin/Rcs -m 6 -valgrind -nTests 10 -dl 1']
 
 
 

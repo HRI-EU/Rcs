@@ -1153,6 +1153,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("a", "Deactivate body under mouse");
       Rcs::KeyCatcherBase::registerKey("A", "Activate body under mouse");
       Rcs::KeyCatcherBase::registerKey("Q", "Write current q to model_state");
+      Rcs::KeyCatcherBase::registerKey("t", "Run physics test for step");
 
       double dt = 0.005, tmc = 0.01, damping = 2.0, shootMass = 1.0;
       char hudText[2056] = "";
@@ -1370,6 +1371,10 @@ int main(int argc, char** argv)
         else if (kc && kc->getAndResetKey('Q'))
         {
           RcsGraph_fprintModelState(stdout, graph, graph->q);
+        }
+        else if (kc && kc->getAndResetKey('t'))
+        {
+          sim->check();
         }
         else if (kc && kc->getAndResetKey('k'))
         {
@@ -1806,7 +1811,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("E", "Link generic body");
       Rcs::KeyCatcherBase::registerKey("v", "Write current q to model_state");
       Rcs::KeyCatcherBase::registerKey("f", "Toggle physics feedback");
-      Rcs::KeyCatcherBase::registerKey("p", "Print controller info on console");
+      Rcs::KeyCatcherBase::registerKey("p", "Print to console and file");
       Rcs::KeyCatcherBase::registerKey("H", "Toggle HUD");
       Rcs::KeyCatcherBase::registerKey("k", "Toggle GraphNode");
 
@@ -2337,6 +2342,7 @@ int main(int argc, char** argv)
         else if (kc && kc->getAndResetKey('p'))
         {
           controller.print();
+          controller.toXML("cAction.xml");
         }
 
         else if (kc && kc->getAndResetKey('f'))
