@@ -53,6 +53,7 @@
 #include <Rcs_sensor.h>
 #include <Rcs_utils.h>
 #include <Rcs_parser.h>
+#include <Rcs_kinematics.h>
 
 #include <BulletDynamics/MLCPSolvers/btDantzigSolver.h>
 #include <BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h>
@@ -1034,7 +1035,12 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
         HTr_setIdentity(&A_ParentI);
       }
 
+      // Simply project relative transform on 6d vector. This leads to jumps
+      // in the angles when leaving the Euler Angles representation ranges.
+      // Alternatively, we could determine the angular velocity and integrate
+      // it.
       RcsGraph_relativeRigidBodyDoFs(getGraph(), rb, &A_BI, &A_ParentI, &q->ele[idx]);
+
     }   // if (rb->rigid_body_joints == true)
   }
 
@@ -1046,7 +1052,8 @@ void Rcs::BulletSimulation::getJointAngles(MatNd* q, RcsStateType type) const
 void Rcs::BulletSimulation::getJointVelocities(MatNd* q_dot,
                                                RcsStateType type) const
 {
-  MatNd_reshape(q_dot, (type==RcsStateFull) ? getGraph()->dof : getGraph()->nJ, 1);
+  int nq = (type==RcsStateFull) ? getGraph()->dof : getGraph()->nJ;
+  MatNd_reshape(q_dot, nq, 1);
 
   // First update all hinge joints
   for (hinge_cit it = jntMap.begin(); it != jntMap.end(); ++it)
@@ -1057,13 +1064,12 @@ void Rcs::BulletSimulation::getJointVelocities(MatNd* q_dot,
     if (hinge != NULL)
     {
       int idx = (type==RcsStateFull) ? rj->jointIndex : rj->jacobiIndex;
-      RCHECK_MSG(idx>=0 && idx<(int)getGraph()->dof, "Joint \"%s\": idx = %d",
-                 rj ? rj->name : "NULL", idx);
-      q_dot->ele[idx] = hinge->getJointVelocity();
-    }
-    else
-    {
-      RLOG(5, "Skipping Updating %s", rj ? rj->name : "NULL");
+
+      if (idx!=-1)
+      {
+        q_dot->ele[idx] = hinge->getJointVelocity();
+      }
+
     }
 
   }
@@ -1076,14 +1082,21 @@ void Rcs::BulletSimulation::getJointVelocities(MatNd* q_dot,
 
     if (rb && rb->rigid_body_joints == true)
     {
-      Rcs::BulletRigidBody* btBdy = it2->second;
-      RcsJoint* jnt = &getGraph()->joints[rb->jntId];
-      MatNd_set(q_dot, jnt->jointIndex, 0, btBdy->x_dot[0]);
-      MatNd_set(q_dot, jnt->jointIndex+1, 0, btBdy->x_dot[1]);
-      MatNd_set(q_dot, jnt->jointIndex+2, 0, btBdy->x_dot[2]);
-      MatNd_set(q_dot, jnt->jointIndex+3, 0, btBdy->omega[0]);
-      MatNd_set(q_dot, jnt->jointIndex+4, 0, btBdy->omega[1]);
-      MatNd_set(q_dot, jnt->jointIndex+5, 0, btBdy->omega[2]);
+      const Rcs::BulletRigidBody* btBdy = it2->second;
+      const RcsJoint* jnt = &getGraph()->joints[rb->jntId];
+      int idx = (type==RcsStateFull) ? jnt->jointIndex : jnt->jacobiIndex;
+
+      if (idx = -1)
+      {
+        continue;
+      }
+
+      MatNd_set(q_dot, idx, 0, btBdy->x_dot[0]);
+      MatNd_set(q_dot, idx+1, 0, btBdy->x_dot[1]);
+      MatNd_set(q_dot, idx+2, 0, btBdy->x_dot[2]);
+      MatNd_set(q_dot, idx+3, 0, btBdy->omega[0]);
+      MatNd_set(q_dot, idx+4, 0, btBdy->omega[1]);
+      MatNd_set(q_dot, idx+5, 0, btBdy->omega[2]);
     }
   }
 
@@ -2009,8 +2022,8 @@ bool Rcs::BulletSimulation::deactivateBody(const char* name)
   }
   else
   {
-    RLOG(1, "Can't find BulletRigidBody for body \"%s\" - skipping deactivation",
-         bdy->name);
+    RLOG(1, "Can't find BulletRigidBody for body \"%s\" - skipping "
+         "deactivation", bdy->name);
     return false;
   }
 
@@ -2033,7 +2046,8 @@ bool Rcs::BulletSimulation::activateBody(const char* name, const HTr* A_BI)
     return false;
   }
 
-  std::map<std::string, BulletRigidBody*>::iterator it = deactivatedBodies.find(std::string(name));
+  std::map<std::string, BulletRigidBody*>::iterator it;
+  it = deactivatedBodies.find(std::string(name));
 
   if (it == deactivatedBodies.end())
   {
@@ -2060,6 +2074,31 @@ bool Rcs::BulletSimulation::check() const
 {
   bool success = true;
 
+  // Check for valid pairs in joint map
+  if (!jntMap.empty())
+  {
+    for (hinge_cit it = jntMap.begin(); it != jntMap.end(); ++it)
+    {
+      if ((it->first<0) || (it->first>=(int)getGraph()->dof))
+      {
+        RLOG_CPP(1, "Joint id out of range: " << it->first);
+        success = false;
+      }
+
+      Rcs::BulletJointBase* hinge = it->second;
+
+      if (hinge == NULL)
+      {
+        RLOG_CPP(1, "Bullet joint for id  " << it->first << " is NULL "
+                 << getGraph()->joints[it->first].name);
+        success = false;
+      }
+
+    }
+
+  }
+
+
   if (!bdyMap.empty())
   {
     for (body_cit it = bdyMap.begin(); it != bdyMap.end(); ++it)
@@ -2070,13 +2109,14 @@ bool Rcs::BulletSimulation::check() const
         success = false;
       }
 
-      if (it->second==NULL)
-      {
-        RLOG(1, "Found bdyMap value with NULL");
-        success = false;
-      }
-
       BulletRigidBody* btBdy = it->second;
+
+      if (btBdy==NULL)
+      {
+        RLOG(1, "Found bdyMap value with NULL at id %d", it->first);
+        success = false;
+        continue;
+      }
 
       // Here we check that objects that are labelled static or dynamic in
       // Bullet correspond to an RcsBody with the RCSBODY_PHYSICS_KINEMATIC
@@ -2101,6 +2141,48 @@ bool Rcs::BulletSimulation::check() const
       //       " into the Bullet bdyMap", btBdy->getBodyName());
       //  success = false;
       //}
+
+      // Check velocity vector forward kinematics against body velocities from
+      // physics.
+      const RcsBody* bdy = btBdy->getBodyPtr();
+
+      RcsGraph* tmp = RcsGraph_clone(getGraph());
+      RCHECK(tmp);
+      MatNd* q_dot = MatNd_create(tmp->nJ, 1);
+      MatNd* J_lin = MatNd_create(3, tmp->nJ);
+      MatNd* J_rot = MatNd_create(3, tmp->nJ);
+      MatNd* x_dot = MatNd_create(3, 1);
+      MatNd* omega = MatNd_create(3, 1);
+
+      getJointAngles(tmp->q);
+      RcsGraph_setState(tmp, NULL, NULL);
+      getJointVelocities(q_dot, RcsStateIK);
+      RcsGraph_rotationJacobian(tmp, bdy, NULL, J_rot);
+      RcsGraph_worldPointJacobian(tmp, bdy, NULL, NULL, J_lin);
+      MatNd_mul(x_dot, J_lin, q_dot);
+      MatNd_mul(omega, J_rot, q_dot);
+
+      REXEC(1)
+      {
+        RLOG(0, "Body %s:", btBdy->getBodyName());
+        RLOG(0, "x_dot: [%f %f %f] vs [%f %f %f] err=%.2f %%",
+             x_dot->ele[0], x_dot->ele[1], x_dot->ele[2],
+             btBdy->x_dot[0], btBdy->x_dot[1], btBdy->x_dot[2],
+             100.0*Vec3d_distance(x_dot->ele, btBdy->x_dot)/(Vec3d_getLength(btBdy->x_dot)+0.001));
+
+        RLOG(0, "omega: [%f %f %f] vs [%f %f %f] err=%.2f %%",
+             omega->ele[0], omega->ele[1], omega->ele[2],
+             btBdy->omega[0], btBdy->omega[1], btBdy->omega[2],
+             100.0*Vec3d_distance(omega->ele, btBdy->omega)/(Vec3d_getLength(btBdy->omega)+0.001));
+      }
+
+      MatNd_destroy(q_dot);
+      MatNd_destroy(J_lin);
+      MatNd_destroy(J_rot);
+      MatNd_destroy(x_dot);
+      MatNd_destroy(omega);
+
+      RcsGraph_destroy(tmp);
     }
 
   }

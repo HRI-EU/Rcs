@@ -843,24 +843,62 @@ void Rcs::BulletRigidBody::setBodyTransform(const HTr* A_BI_des, double dt)
 
 /*******************************************************************************
  * Called from BulletSimulation::simulate()
+ * \todo: Velocities are in world coordinates, and not in the parent's frame.
  ******************************************************************************/
 void Rcs::BulletRigidBody::updateBodyTransformFromPhysics()
 {
   getBodyTransform(&this->A_BI_);
   getPhysicsTransform(&this->A_PI_);
+  getBodyVelocity(this->x_dot, this->omega);
+}
 
-  if (!isStaticOrKinematicObject())
+/*******************************************************************************
+ * Called from BulletSimulation::simulate()
+ * \todo: Velocities are in world coordinates, and not in the parent's frame.
+ ******************************************************************************/
+void Rcs::BulletRigidBody::getRelativeBodyVelocity(double xp[3], double om[3],
+                                                   const BulletRigidBody* other) const
+{
+  if (isStaticOrKinematicObject())
   {
-    btVector3 linearVelocity = getLinearVelocity();
-    btVector3 angularVelocity = getAngularVelocity();
-
-    for (int i=0; i<3; ++i)
-    {
-      this->x_dot[i] = linearVelocity[i];
-      this->omega[i] = angularVelocity[i];
-    }
-
+    Vec3d_setZero(xp);
+    Vec3d_setZero(om);
+    return;
   }
+
+  // These are in world coordinates.
+  getBodyVelocity(xp, om);
+
+  // x_dot = A_1I * (x_dot_2 - x_dot_1 + r_12 x omega_1)
+  // where 1 is other and 2 is body.
+  if (other)
+  {
+    // Get bodie's current simulated transformation
+    HTr A_curr;
+    getBodyTransform(&A_curr);
+
+    // These are also in world coordinates.
+    double otherLinVel[3], otherAngVel[3];
+    other->getBodyVelocity(otherLinVel, otherAngVel);
+    Vec3d_subSelf(xp, otherLinVel);
+    Vec3d_subSelf(om, otherAngVel);
+
+    // Compute the Euler term r_12 x omega_1.
+    HTr A_otherI;
+    other->getBodyTransform(&A_otherI);
+
+    // We evaluate the cross product in the world frame. It doesn't matter
+    // which frame we choose as long as it is consistent.
+    double r_12[3], eul[3];
+    Vec3d_sub(r_12, A_curr.org, A_otherI.org);
+    Vec3d_crossProduct(eul, r_12, otherAngVel);
+    Vec3d_addSelf(xp, eul);
+
+    // Rotate linear and angular velocities into other's frame.
+    Vec3d_transRotateSelf(xp, A_otherI.rot);
+    Vec3d_transRotateSelf(om, A_otherI.rot);
+  }
+
 }
 
 /*******************************************************************************
@@ -990,4 +1028,47 @@ btCollisionShape* Rcs::BulletRigidBody::getShape(const RcsShape* shape)
   }
 
   return NULL;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+const Rcs::BulletRigidBody* Rcs::BulletRigidBody::getParent() const
+{
+  return this->parent;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::BulletRigidBody::getBodyVelocity(double linVel[3],
+                                           double angVel[3]) const
+{
+  if (isStaticOrKinematicObject())
+  {
+    Vec3d_setZero(linVel);
+    Vec3d_setZero(angVel);
+    return;
+  }
+
+  btVector3 linearVelocity = getLinearVelocity();
+  btVector3 angularVelocity = getAngularVelocity();
+
+  for (int i=0; i<3; ++i)
+  {
+    linVel[i] = linearVelocity[i];
+    angVel[i] = angularVelocity[i];
+  }
+
+  // We need to change base to the body reference frame for the linear
+  // velociy vector. The Euler term must be considered:
+  // B_x_dot = P_x_dot + om x r_PB
+  HTr A_BI, A_PI;
+  getBodyTransform(&A_BI);
+  getPhysicsTransform(&A_PI);
+
+  double I_r_PB[3], eul[3];
+  Vec3d_sub(I_r_PB, A_BI.org, A_PI.org);
+  Vec3d_crossProduct(eul, angVel, I_r_PB);
+  Vec3d_addSelf(linVel, eul);
 }

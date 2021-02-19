@@ -55,6 +55,10 @@ class BulletRigidBody : public btRigidBody
 public:
   void getBodyTransform(HTr* A_BI) const;
   const HTr* getCOMTransformPtr() const;
+  void getRelativeBodyVelocity(double x_dot[3], double omega[3],
+                               const BulletRigidBody* other) const;
+  void getBodyVelocity(double x_dot[3], double omega[3]) const;
+  const BulletRigidBody* getParent() const;
 
 private:
   const HTr* getBodyTransformPtr() const;
