@@ -54,7 +54,7 @@
 #include <osgGA/TrackballManipulator>
 
 #include <iostream>
-
+#include <cstring>
 
 #if !defined (_MSC_VER)
 
@@ -1008,6 +1008,8 @@ void* Viewer::ViewerThread(void* arg)
     Timer_usleep(dt);
   }
 
+  RLOG(5, "Exiting frame thread");
+
   return NULL;
 }
 
@@ -1176,8 +1178,20 @@ void Viewer::stopUpdateThread()
     return;
   }
 
+  RLOG(5, "Joining thread");
   this->threadRunning = false;
-  pthread_join(frameThread, NULL);
+
+  int res = pthread_join(frameThread, NULL);
+
+  if (res!=0)
+  {
+    RLOG(1, "Error joining thread: %s (%d)", strerror(res), res);
+  }
+  else
+  {
+    RLOG(5, "... done joining thread");
+  }
+
   threadStopped = true;
   this->initialized = false;
 }
@@ -1489,6 +1503,8 @@ bool Viewer::handle(const osgGA::GUIEventAdapter& ea,
     /////////////////////////////////////////////////////////////////
     case (osgGA::GUIEventAdapter::CLOSE_WINDOW):
     {
+      // \todo: Check if this is a problem die to dead-locking when
+      //        running threaded
       stopUpdateThread();
       break;
     }
