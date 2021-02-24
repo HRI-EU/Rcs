@@ -2401,10 +2401,10 @@ void ViaPointSequencePlotter::plot(const ViaPointSequence& via,
 
     fprintf(this->pipe,
             "set grid\nplot \"%s\" u 1:2 w l title \"x\", \"%s\" u 1:3 w l"
-            " title \"x_dot\", \"%s\" u 1:4 w l title \"x_ddot\", \"%s\" "
-            "u 1:2 w p pointsize 3 title \"x_via\", \"%s\" u 1:2 w p pointsize"
-            " 3 title \"x_dot_via\", \"%s\" u 1:2 w p pointsize 3 title"
-            " \"x_ddot_via\"\n",
+            " title \"x_{dot}\", \"%s\" u 1:4 w l title \"x_{ddot}\", \"%s\" "
+            "u 1:2 w p pointsize 3 title \"x_{via}\", \"%s\" u 1:2 w p pointsize"
+            " 3 title \"x_{dot,via}\", \"%s\" u 1:2 w p pointsize 3 title"
+            " \"x_{ddot,via}\"\n",
             trajFile, trajFile, trajFile, viaPosFile, viaVelFile, viaAccFile);
   }
   else
@@ -2558,10 +2558,10 @@ void ViaPointSequencePlotter::plot2(const ViaPointSequence& via,
 
     fprintf(this->pipe,
             "plot \"%s\" u 1:2 w l title \"x\", \"%s\" u 1:3 w l"
-            " title \"x_dot\", \"%s\" u 1:4 w l title \"x_ddot\", \"%s\" "
-            "u 1:2 w p pointsize 3 title \"x_via\", \"%s\" u 1:2 w p pointsize"
-            " 3 title \"x_dot_via\", \"%s\" u 1:2 w p pointsize 3 title"
-            " \"x_ddot_via\"\n",
+            " title \"x_{dot}\", \"%s\" u 1:4 w l title \"x_{ddot}\", \"%s\" "
+            "u 1:2 w p pointsize 3 title \"x_{via}\", \"%s\" u 1:2 w p pointsize"
+            " 3 title \"x_{dot,via}\", \"%s\" u 1:2 w p pointsize 3 title"
+            " \"x_{ddot,via}\"\n",
             trajFile, trajFile, trajFile, viaPosFile, viaVelFile, viaAccFile);
   }
   else
@@ -2585,7 +2585,7 @@ void ViaPointSequencePlotter::plot2(const ViaPointSequence& via,
       }
 
       fprintf(this->pipe, "plot '-' w l title \"x\", "
-              "'-' w p pointsize 3 title \"x_via\"\n");
+              "'-' w p pointsize 3 title \"x_{via}\"\n");
 
       for (unsigned int i=0; i<traj->m; ++i)
       {
@@ -2615,8 +2615,8 @@ void ViaPointSequencePlotter::plot2(const ViaPointSequence& via,
       }
 
       fprintf(this->pipe,
-              "plot \"%s\" u 1:3 w l title \"x_dot\", "
-              "\"%s\" u 1:2  title \"x_dot_via\" w p pointsize 3\n",
+              "plot \"%s\" u 1:3 w l title \"x_{dot}\", "
+              "\"%s\" u 1:2  title \"x_{dot,via}\" w p pointsize 3\n",
               trajFile, viaVelFile);
     }
 
@@ -2629,8 +2629,8 @@ void ViaPointSequencePlotter::plot2(const ViaPointSequence& via,
       }
 
       fprintf(this->pipe,
-              "plot \"%s\" u 1:4 w l title \"x_ddot\", "
-              "\"%s\" u 1:2  title \"x_ddot_via\" w p pointsize 3\n",
+              "plot \"%s\" u 1:4 w l title \"x_{ddot}\", "
+              "\"%s\" u 1:2  title \"x_{ddot,via}\" w p pointsize 3\n",
               trajFile, viaAccFile);
     }
   }
