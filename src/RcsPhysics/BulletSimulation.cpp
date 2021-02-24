@@ -1086,7 +1086,7 @@ void Rcs::BulletSimulation::getJointVelocities(MatNd* q_dot,
       const RcsJoint* jnt = &getGraph()->joints[rb->jntId];
       int idx = (type==RcsStateFull) ? jnt->jointIndex : jnt->jacobiIndex;
 
-      if (idx = -1)
+      if (idx == -1)
       {
         continue;
       }
