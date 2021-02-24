@@ -66,8 +66,7 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
   // an "effector" attribute and add all body joints
   if (jntsVec.empty())
   {
-    std::string tmp;
-    getXMLNodePropertySTLString(node, "effector", tmp);
+    std::string tmp = getXMLNodePropertySTLString(node, "effector");
 
     if (!tmp.empty())
     {
@@ -79,7 +78,6 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
       while (jPtr)
       {
         jntsVec.push_back(std::string(jPtr->name));
-        //jPtr = jPtr->next;
         jPtr = RCSJOINT_BY_ID(_graph, jPtr->nextId);
       }
     }
@@ -90,13 +88,14 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
 
   // If atribute "refJnts" does not exist or contain anything, we look
   // for a "refBdy" attribute and add all body joints
+  bool hasRefBdy = false;
   if (refJntsVec.empty())
   {
-    std::string tmp;
-    getXMLNodePropertySTLString(node, "refBdy", tmp);
+    std::string tmp = getXMLNodePropertySTLString(node, "refBdy");
 
     if (!tmp.empty())
     {
+      hasRefBdy = true;
       const RcsBody* bdy = RcsGraph_getBodyByName(_graph, tmp.c_str());
       RCHECK_MSG(bdy, "Can't find body \"%s\" for refJntsVec", tmp.c_str());
       setRefBody(bdy);
@@ -105,7 +104,7 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
       while (jPtr)
       {
         refJntsVec.push_back(std::string(jPtr->name));
-        jPtr = RCSJOINT_BY_ID(graph, jPtr->nextId);//jPtr->next;
+        jPtr = RCSJOINT_BY_ID(graph, jPtr->nextId);
       }
     }
   }
@@ -116,7 +115,7 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
   }
 
   double* refGains = new double[jntsVec.size()];
-  VecNd_setElementsTo(refGains, 1.0, jntsVec.size());
+  VecNd_setElementsTo(refGains, hasRefBdy ? -1.0 : 1.0, jntsVec.size());
 
   unsigned int nStrings = getXMLNodeNumStrings(node, "refGains");
 
@@ -146,6 +145,7 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
   }
 
   delete [] refGains;
+
   // Re-initialize parameters
   if (getClassName() == "Joints")
   {
