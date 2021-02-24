@@ -97,26 +97,18 @@ const char* Rcs_getResourcePath(unsigned int index);
  *  \brief For a given file name, the absolute file name is searched in the
  *         resource path list. The first match is copied to absFileName,
  *         and "true" is returned. If it is not found, absFileName is not
- *         changed, and "false" is returned. The function searches first in
- *         the current directory, and then through the resource paths in
- *         their order. If fileName is NULL, false is returned.
+ *         changed, and "false" is returned. The function searches through the
+ *         resource paths in the order they have been added, and then in
+ *         the current directory. In case absFileName is NULL, no copying takes
+ *         place.
+ *
+ *  \return True if a path has been found, false if not, or if fileName is NULL.
  */
 bool Rcs_getAbsoluteFileName(const char* fileName, char* absFileName);
 
 /*! \ingroup ResourcePathFunctions
- *  \brief For a given file name, the absolute path is searched in the
- *         resource path list. The first match is copied to absPath,
- *         and "true" is returned. If it is not found, absPath is not
- *         changed, and "false" is returned. The function searches first in
- *         the current directory, and then through the resource paths in
- *         their order. If fileName or absPath is NULL, false is returned, and
- *         a warning is issued on debug level 4.
- */
-bool Rcs_getAbsolutePath(const char* fileName, char* absPath);
-
-/*! \ingroup ResourcePathFunctions
- *  \brief Returns true if the file is found in all resource paths, false
- *         otherwise.
+ *  \brief Returns true if the file is found in any of the resource paths or in
+ *         the current directory, false otherwise.
  */
 bool Rcs_fileInResourcePath(const char* fileName);
 

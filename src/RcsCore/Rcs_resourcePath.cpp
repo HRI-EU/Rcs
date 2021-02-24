@@ -168,33 +168,15 @@ extern "C" {
       return false;
     }
 
-    if (File_exists(fileName))
-    {
-      NLOG(6, "Found file \"%s\" in relative path", fileName);
-
-      if (absFileName != NULL)
-      {
-        strcpy(absFileName, fileName);
-      }
-      return true;
-    }
-    else
-    {
-      NLOG(6, "Didn't find file \"%s\" in relative path", fileName);
-    }
-
     StringListIt it;
 
+    // First check all resource paths.
     for (it = RCSRESOURCEPATH.begin(); it != RCSRESOURCEPATH.end(); ++it)
     {
       std::string fullName = *it + std::string(fileName);
 
-      NLOG(6, "Searching file in \"%s\"", fullName.c_str());
-
       if (File_exists(fullName.c_str()))
       {
-        NLOG(6, "Found file \"%s\" in path \"%s\"", fileName, fullName.c_str());
-
         if (absFileName != NULL)
         {
           strcpy(absFileName, fullName.c_str());
@@ -203,59 +185,15 @@ extern "C" {
       }
     }
 
-    NLOG(6, "Didn't find file \"%s\" in resource paths", fileName);
-
-    return false;
-  }
-
-  /*****************************************************************************
-   *
-   ****************************************************************************/
-  bool Rcs_getAbsolutePath(const char* fileName, char* absPath)
-  {
-    if (fileName == NULL)
-    {
-      RLOG(4, "fileName is NULL - returning false");
-      return false;
-    }
-
-    if (absPath == NULL)
-    {
-      RLOG(4, "absPath is NULL - returning false");
-      return false;
-    }
-
-    // Check if file is in relative path
-    RLOG(6, "Searching file \"%s\" in relative path", fileName);
+    // Then check current directory.
     if (File_exists(fileName))
     {
-      RLOG(6, "Found file \"%s\" in relative path", fileName);
-      strcpy(absPath, "");
+      if (absFileName != NULL)
+      {
+        strcpy(absFileName, fileName);
+      }
       return true;
     }
-    else
-    {
-      RLOG(6, "Didn't find file \"%s\" in relative path", fileName);
-    }
-
-    StringListIt it;
-
-    for (it = RCSRESOURCEPATH.begin(); it != RCSRESOURCEPATH.end(); ++it)
-    {
-      std::string fullName = *it + std::string(fileName);
-
-      RLOG(6, "Searching file in \"%s\"", fullName.c_str());
-
-      if (File_exists(fullName.c_str()))
-      {
-        RLOG(6, "Found file \"%s\" in path \"%s\"",
-             fileName, fullName.c_str());
-        strcpy(absPath, (*it).c_str());
-        return true;
-      }
-    }
-
-    RLOG(6, "Didn't find file \"%s\" in resource paths", fileName);
 
     return false;
   }
