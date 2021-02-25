@@ -38,7 +38,6 @@
 #define RCS_INTERSECTIONWM5_H
 
 #include "Rcs_HTr.h"
-#include "Rcs_body.h"
 
 #include <stdlib.h>
 

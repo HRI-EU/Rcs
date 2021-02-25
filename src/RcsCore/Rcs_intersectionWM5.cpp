@@ -70,13 +70,14 @@ typedef Wm5::Vector3d Vec3;
  *
  ******************************************************************************/
 template <typename T>
-bool Rcs_findLineIntersections(double* closestLinePt, T intrsec,
-                               const double linePt[3],
-                               const bool testImplemented=true)
+static bool intersectsLine(double* closestLinePt, T intrsec,
+                           const double linePt[3],
+                           const bool testImplemented=true)
 {
 
-  if (testImplemented && closestLinePt==NULL) //intrsec.Test() is e.g. not implemented for cylinders
+  if (testImplemented && (closestLinePt==NULL))
   {
+    //intrsec.Test() is e.g. not implemented for cylinders
     if (!intrsec.Test())
     {
       return false;
@@ -116,11 +117,9 @@ bool Rcs_findLineIntersections(double* closestLinePt, T intrsec,
 }
 
 /*******************************************************************************
- *! \ingroup DistanceFunctions
- *  \brief Computes the intersection between a line given by a point and a
- *         direction and a box. The function returns true if both intersect,
- *         and stores the closest intersection point in closestLinePt (if it
- *         is not NULL).
+ * Computes the intersection between a line given by a point and a direction
+ * and a box. The function returns true if both intersect, and stores the
+ * closest intersection point in closestLinePt (if it is not NULL).
  ******************************************************************************/
 bool Rcs_intersectionLineBox(const double linePt[3],
                              const double lineDir[3],
@@ -141,17 +140,14 @@ bool Rcs_intersectionLineBox(const double linePt[3],
 
   Wm5::IntrLine3Box3d intrsec(line, box);
 
-  return Rcs_findLineIntersections<Wm5::IntrLine3Box3d>(closestLinePt, intrsec,
-                                                        linePt);
+  return intersectsLine<Wm5::IntrLine3Box3d>(closestLinePt, intrsec,
+                                             linePt);
 }
 
 /*******************************************************************************
- *! \ingroup DistanceFunctions
- *  \brief Computes the intersection between a line given by a point and a
- *         direction and a cylinder. The function returns true if both
- *         intersect, and stores the closest intersection point in
- *         closestLinePt (if it is not NULL).
- *
+ * Computes the intersection between a line given by a point and a direction
+ * and a cylinder. The function returns true if both intersect, and stores the
+ * closest intersection point in closestLinePt (if it is not NULL).
  ******************************************************************************/
 bool Rcs_intersectionLineCylinder(const double linePt[3],
                                   const double lineDir[3],
@@ -173,18 +169,15 @@ bool Rcs_intersectionLineCylinder(const double linePt[3],
 
   Wm5::IntrLine3Cylinder3d intrsec(line, cylinder);
 
-  return Rcs_findLineIntersections<Wm5::IntrLine3Cylinder3d>(closestLinePt,
-                                                             intrsec, linePt,
-                                                             false);
+  return intersectsLine<Wm5::IntrLine3Cylinder3d>(closestLinePt,
+                                                  intrsec, linePt,
+                                                  false);
 }
 
 /*******************************************************************************
- *! \ingroup DistanceFunctions
- *  \brief Computes the intersection between a line given by a point and a
- *         direction and a SSL/capsule. The function returns true if both
- *         intersect, and stores the closest intersection point in
- *         closestLinePt (if it is not NULL).
- *
+ * Computes the intersection between a line given by a point and a direction
+ * and a SSL/capsule. The function returns true if both intersect, and stores
+ * the closest intersection point in closestLinePt (if it is not NULL).
  ******************************************************************************/
 bool Rcs_intersectionLineSSL(const double linePt[3],
                              const double lineDir[3],
@@ -207,17 +200,14 @@ bool Rcs_intersectionLineSSL(const double linePt[3],
 
   Wm5::IntrLine3Capsule3d intrsec(line, capsule);
 
-  return Rcs_findLineIntersections<Wm5::IntrLine3Capsule3d>(closestLinePt,
-                                                            intrsec, linePt);
+  return intersectsLine<Wm5::IntrLine3Capsule3d>(closestLinePt,
+                                                 intrsec, linePt);
 }
 
 /*******************************************************************************
- *! \ingroup DistanceFunctions
- *  \brief Computes the intersection between a line given by a point and a
- *         direction and a sphere. The function returns true if both
- *         intersect, and stores the closest intersection point in
- *         closestLinePt (if it is not NULL).
- *
+ * Computes the intersection between a line given by a point and a direction
+ * and a sphere. The function returns true if both intersect, and stores the
+ * closest intersection point in closestLinePt (if it is not NULL).
  ******************************************************************************/
 bool Rcs_intersectionLineSphere(const double linePt[3],
                                 const double lineDir[3],
@@ -235,17 +225,14 @@ bool Rcs_intersectionLineSphere(const double linePt[3],
 
   Wm5::IntrLine3Sphere3d intrsec(line, sphere);
 
-  return Rcs_findLineIntersections<Wm5::IntrLine3Sphere3d>(closestLinePt,
-                                                           intrsec, linePt);
+  return intersectsLine<Wm5::IntrLine3Sphere3d>(closestLinePt,
+                                                intrsec, linePt);
 }
 
 /*******************************************************************************
- *! \ingroup DistanceFunctions
- *  \brief Computes the intersection between a line given by a point and a
- *         direction and a torus. The function returns true if both intersect,
- *         and stores the closest intersection point in closestLinePt (if it
- *         is not NULL).
- *
+ * Computes the intersection between a line given by a point and a direction
+ * and a torus. The function returns true if both intersect, and stores the
+ * closest intersection point in closestLinePt (if it is not NULL).
  ******************************************************************************/
 bool Rcs_intersectionLineTorus(const double linePt[3],
                                const double lineDir[3],
@@ -270,10 +257,10 @@ bool Rcs_intersectionLineTorus(const double linePt[3],
 
   Wm5::IntrLine3Torus3d intrsec(line, torus);
 
-  bool res = Rcs_findLineIntersections<Wm5::IntrLine3Torus3d>(closestLinePt,
-                                                              intrsec,
-                                                              linePtTrafo,
-                                                              false);
+  bool res = intersectsLine<Wm5::IntrLine3Torus3d>(closestLinePt,
+                                                   intrsec,
+                                                   linePtTrafo,
+                                                   false);
 
   if (closestLinePt && res)
   {
@@ -283,12 +270,9 @@ bool Rcs_intersectionLineTorus(const double linePt[3],
 }
 
 /*******************************************************************************
- *! \ingroup DistanceFunctions
- *  \brief Computes the intersection between a line given by a point and a
- *         direction and a cone. The function returns true if both
- *         intersect, and stores the closest intersection point in
- *         closestLinePt (if it is not NULL).
- *
+ * Computes the intersection between a line given by a point and a direction
+ * and a cone. The function returns true if both intersect, and stores the
+ * closest intersection point in closestLinePt (if it is not NULL).
  ******************************************************************************/
 bool Rcs_intersectionLineCone(const double linePt[3],
                               const double lineDir[3],
@@ -305,7 +289,7 @@ bool Rcs_intersectionLineCone(const double linePt[3],
 
   for (size_t id = 0; id < 3; id++)
   {
-    vertex[id] = A_cone->org[id]+.75*height*A_cone->rot[2][id];
+    vertex[id] = A_cone->org[id]+0.75*height*A_cone->rot[2][id];
   }
 
   // Cone
@@ -322,9 +306,12 @@ bool Rcs_intersectionLineCone(const double linePt[3],
   // be closer, which needs to be checked additionally
   double temp_closestLinePt[3];
 
-  bool temp_return = Rcs_findLineIntersections<Wm5::IntrLine3Cone3d>(temp_closestLinePt, intrsec, linePt, false);
+  bool res = intersectsLine<Wm5::IntrLine3Cone3d>(temp_closestLinePt,
+                                                  intrsec, linePt,
+                                                  false);
 
-  if (Vec3d_distance(temp_closestLinePt,vertex)>sqrt(height*height + radius*radius) || !temp_return)
+  if (Vec3d_distance(temp_closestLinePt,vertex) >
+      sqrt(height*height + radius*radius) || (!res))
   {
     return false;
   }
@@ -341,20 +328,27 @@ bool Rcs_intersectionLineCone(const double linePt[3],
       base[id] = A_cone->org[id]-.25*height*A_cone->rot[2][id];
     }
 
-    Wm5::Plane3d plane(Vec3(A_cone->rot[2][0], A_cone->rot[2][1], A_cone->rot[2][2]), Vec3(base[0], base[1], base[2]));
+    Wm5::Plane3d plane(Vec3(A_cone->rot[2][0], A_cone->rot[2][1],
+                            A_cone->rot[2][2]),
+                       Vec3(base[0], base[1], base[2]));
 
     Wm5::IntrLine3Plane3d intrsec_base(line, plane);
 
     double base_closestLinePt[3];
 
-    if (intrsec_base.Find() && intrsec_base.GetIntersectionType() != Wm5::Intersector<double,Wm5::Vector3<double> >::IT_LINE)  // ignore if line is parallel to plane
+    // ignore if line is parallel to plane
+    if (intrsec_base.Find() && intrsec_base.GetIntersectionType() != Wm5::Intersector<double,Wm5::Vector3<double> >::IT_LINE)
     {
       // intersection point
-      Vec3d_constMulAndAdd(base_closestLinePt, linePt, lineDir, intrsec_base.GetLineParameter());
+      Vec3d_constMulAndAdd(base_closestLinePt, linePt, lineDir,
+                           intrsec_base.GetLineParameter());
 
-      if (Vec3d_distance(base_closestLinePt,base)<radius) // restrict plane to circle
+      // restrict plane to circle
+      if (Vec3d_distance(base_closestLinePt,base)<radius)
       {
-        if (Vec3d_distance(base_closestLinePt,linePt)<Vec3d_distance(temp_closestLinePt,linePt)) // check whether actually closer than other point
+        // check whether actually closer than other point
+        if (Vec3d_distance(base_closestLinePt,linePt) <
+            Vec3d_distance(temp_closestLinePt,linePt))
         {
           Vec3d_copy(closestLinePt, base_closestLinePt);
         }
@@ -366,12 +360,9 @@ bool Rcs_intersectionLineCone(const double linePt[3],
 }
 
 /*******************************************************************************
- *! \ingroup DistanceFunctions
- *  \brief Computes the intersection between a line given by a point and a
- *         direction and a SSR. The function returns true if both intersect,
- *         and stores the closest intersection point in closestLinePt (if it
- *         is not NULL).
- *
+ * Computes the intersection between a line given by a point and a direction
+ * and a SSR. The function returns true if both intersect, and stores the
+ * closest intersection point in closestLinePt (if it is not NULL).
  ******************************************************************************/
 bool Rcs_intersectionLineSSR(const double linePt[3],
                              const double lineDir[3],
@@ -381,20 +372,25 @@ bool Rcs_intersectionLineSSR(const double linePt[3],
 {
   double temp_closestLinePt[3];
 
-  bool temp_return = Rcs_intersectionLineBox(linePt, lineDir, A_ssr,
-                                             extentsSSR, closestLinePt);
-  if (closestLinePt==NULL && temp_return)  // if we only want to detect an intersection we are done
+  bool res = Rcs_intersectionLineBox(linePt, lineDir, A_ssr,
+                                     extentsSSR, closestLinePt);
+  if (closestLinePt==NULL && res)
   {
+    // if we only want to detect an intersection we are done
     return true;
   }
 
-  if (closestLinePt && temp_return)
+  if (closestLinePt && res)
   {
     Vec3d_copy(temp_closestLinePt, closestLinePt);
   }
 
   // calculate the positions of all 4 corners
-  double corners[4][3] = { {extentsSSR[0]/2., extentsSSR[1]/2., 0.}, {extentsSSR[0]/2., -extentsSSR[1]/2., 0.}, {-extentsSSR[0]/2., -extentsSSR[1]/2., 0.}, {-extentsSSR[0]/2., extentsSSR[1]/2., 0.} };
+  double corners[4][3] = { {extentsSSR[0]/2.0, extentsSSR[1]/2.0, 0.0},
+    {extentsSSR[0]/2.0, -extentsSSR[1]/2.0, 0.0},
+    {-extentsSSR[0]/2.0, -extentsSSR[1]/2.0, 0.0},
+    {-extentsSSR[0]/2.0, extentsSSR[1]/2.0, 0.0}
+  };
 
   for (size_t id = 0; id < 4; id++)
   {
@@ -403,51 +399,52 @@ bool Rcs_intersectionLineSSR(const double linePt[3],
   }
 
   // now we check for intersections with the 4 SSL/capsules
-  Wm5::Line3d line(Vec3(linePt[0], linePt[1], linePt[2]), Vec3(lineDir[0], lineDir[1], lineDir[2]));
+  Wm5::Line3d line(Vec3(linePt[0], linePt[1], linePt[2]),
+                   Vec3(lineDir[0], lineDir[1], lineDir[2]));
 
   for (size_t id = 0; id < 4; id++)
   {
     size_t id2 = (id+1 > 3) ? 0: id+1;
 
-    Wm5::Segment3d capSegment(Vec3(corners[id][0], corners[id][1], corners[id][2]),
-                              Vec3(corners[id2][0], corners[id2][1], corners[id2][2]));
+    Wm5::Segment3d cap(Vec3(corners[id][0], corners[id][1], corners[id][2]),
+                       Vec3(corners[id2][0], corners[id2][1], corners[id2][2]));
 
-    Wm5::Capsule3d capsule(capSegment, extentsSSR[2]/2.);
+    Wm5::Capsule3d capsule(cap, extentsSSR[2]/2.);
 
     Wm5::IntrLine3Capsule3d intrsec(line, capsule);
 
-    if (Rcs_findLineIntersections<Wm5::IntrLine3Capsule3d>(closestLinePt, intrsec, linePt))
+    if (intersectsLine<Wm5::IntrLine3Capsule3d>(closestLinePt, intrsec, linePt))
     {
       if (closestLinePt==NULL)
       {
         return true;
       }
 
-      if (!temp_return) // first intersection point
+      if (!res) // first intersection point
       {
         Vec3d_copy(temp_closestLinePt, closestLinePt);
-        temp_return = true; // keep track of detected intersection
+        res = true; // keep track of detected intersection
       }
-      else if (Vec3d_distance(closestLinePt,linePt)<Vec3d_distance(temp_closestLinePt,linePt)) // compare to previous intersection point
+      // compare to previous intersection point
+      else if (Vec3d_distance(closestLinePt,linePt) <
+               Vec3d_distance(temp_closestLinePt,linePt))
       {
         Vec3d_copy(temp_closestLinePt, closestLinePt);
       }
     }
   }
 
-  if (closestLinePt && temp_return)
+  if (closestLinePt && res)
   {
     Vec3d_copy(closestLinePt, temp_closestLinePt);
   }
 
-  return temp_return;
+  return res;
 }
 
 /*******************************************************************************
- *! \ingroup DistanceFunctions
- *  \brief Computes the intersection between a plane given by a point and a
- *         direction and a cylinder. The function returns true if both
- *         intersect.
+ * Computes the intersection between a plane given by a point and a direction
+ * and a cylinder. The function returns true if both intersect.
  *
  * Compute extremes of signed distance Dot(N,X)-d for points on the
  * cylinder. These are
@@ -653,7 +650,8 @@ extern "C" {
  ******************************************************************************/
 extern "C" {
 
-  bool Rcs_computeOrientedBox(HTr* A_box, double extents[3], const double* points, unsigned int nPoints)
+  bool Rcs_computeOrientedBox(HTr* A_box, double extents[3],
+                              const double* points, unsigned int nPoints)
   {
     bool success = true;
 
@@ -704,8 +702,8 @@ extern "C" {
                                         const RcsShape* shape,
                                         double closestLinePt[3])
   {
-    RLOG(4, "RcsShape_computeLineIntersection requires GeometricTools library - "
-         "not available");
+    RLOG(4, "RcsShape_computeLineIntersection requires GeometricTools library"
+         " - not available");
     return false;
   }
 
@@ -717,7 +715,8 @@ extern "C" {
     return NULL;
   }
 
-  bool Rcs_computeOrientedBox(HTr* A_box, double extents[3], const double* points, unsigned int nPoints)
+  bool Rcs_computeOrientedBox(HTr* A_box, double extents[3],
+                              const double* points, unsigned int nPoints)
   {
     RLOG(4, "Rcs_computeOrientedBox requires GeometricTools library - "
          "not available");
