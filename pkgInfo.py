@@ -44,7 +44,9 @@ SQ_12 = [ 'build/${MAKEFILE_PLATFORM}/bin/TestMath -m -1 -numTests 10 -dl 1',
           'build/${MAKEFILE_PLATFORM}/bin/Rcs -m 3 -iter 10 -dl 1 -valgrind',
           'build/${MAKEFILE_PLATFORM}/bin/Rcs -m 6 -valgrind -nTests 10 -dl 1']
 
+gitOriginForCIA  = 'git@dmz-gitlab.honda-ri.de:GeneralRobotics/Rcs.git'
 
+gitBranch = 'develop'
 
 
 # EOF
