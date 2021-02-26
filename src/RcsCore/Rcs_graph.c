@@ -3621,11 +3621,14 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self,
   RCHECK(self->joints);
   memcpy(self->joints+self->dof, other->joints, other->dof*sizeof(RcsJoint));
 
-  self->sensors = RREALLOC(self->sensors,
-                           self->nSensors+other->nSensors, RcsSensor);
-  RCHECK(self->sensors);
-  memcpy(self->sensors+self->nSensors, other->sensors,
-         other->nSensors*sizeof(RcsSensor));
+  if (other->nSensors>0)
+  {
+    self->sensors = RREALLOC(self->sensors,
+                             self->nSensors+other->nSensors, RcsSensor);
+    RCHECK(self->sensors);
+    memcpy(self->sensors+self->nSensors, other->sensors,
+           other->nSensors*sizeof(RcsSensor));
+  }
 
   RLOG(5, "Adjusting dof from %d to %d", self->dof, self->dof+other->dof);
   self->dof += other->dof;
