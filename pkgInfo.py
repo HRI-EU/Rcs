@@ -32,21 +32,20 @@ name = "Rcs"
 
 version = "1.0"
 
-category="Libraries"
+category = "Libraries"
 
 sqLevel = "basic"
 
-sqOptOutRules    = [ 'GEN04', 'C02', 'C06' ]
+SQ_12 = [ 'build/${MAKEFILE_PLATFORM}/bin/TestMath -m -1 -numTests 10 -dl 1',
+          'build/${MAKEFILE_PLATFORM}/bin/Rcs -m 3 -iter 10 -dl 1 -valgrind',
+          'build/${MAKEFILE_PLATFORM}/bin/Rcs -m 6 -valgrind -nTests 10 -dl 1']
 
-sqComments       = { 'GEN04': 'Copyright header with BSD license not recognized by quality checker',
-                     'C02': 'Link guards not to be used in Cpp headers ',
-                     'C06': 'inline in template declarations should be ok '}
+copyright        = { '.': 'Copyright (c) 2017, Honda Research Institute Europe GmbH.',
+                     './src/RcsCore/SegFaultHandler.h': 'This code is in the public domain.' }
 
-SQ_12 = [ 'build/bionic64/bin/TestMath -m -1 -numTests 10 -dl 1',
-          'build/bionic64/bin/Rcs -m 3 -iter 10 -dl 1 -valgrind',
-          'build/bionic64/bin/Rcs -m 6 -valgrind -nTests 10 -dl 1']
+gitOriginForCIA  = 'git@dmz-gitlab.honda-ri.de:GeneralRobotics/Rcs.git'
 
-
+gitBranchForCIA = 'develop'
 
 
 # EOF
