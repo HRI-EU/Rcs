@@ -108,6 +108,49 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
 bool RcsGraph_beautifyHumanModelBVH(RcsGraph* graph,
                                     double linearScaleToSI);
 
+/*! \ingroup RcsGraphFunctions
+ *  \brief Computes the REBA score according to text book with a few
+ *         assumptions. The graph must contain the bodies according to a
+ *         BVH file in the correct conventions. The arm scores will be
+ *         calculated for both arms, and the REBA score is computed for
+ *         both of them. The function returns the higher score.
+ *         The coupling and activity scores are currently not considered.
+ *
+ *         These bodies must exist:
+ *         - Hips
+ *         - Chest
+ *         - Neck
+ *         - Base
+ *         - LeftToe
+ *         - RightToe
+ *         - LeftHip
+ *         - LeftKnee
+ *         - RightHip
+ *         - RightKnee
+ *
+ *         The bodie's z-axis is pointing forward, the y-axis is pointing up.
+ *
+ *         These joints must exist:
+ *         - Neck_jnt_Xrotation (tilt)
+ *         - Neck_jnt_Yrotation (twist)
+ *         - Neck_jnt_Zrotation (pan)
+ *         - RightShoulder_jnt_Yrotation (flexion)
+ *         - LeftShoulder_jnt_Yrotation
+ *         - RightShoulder_jnt_Zrotation (abduction)
+ *         - LeftShoulder_jnt_Zrotation
+ *         - RightWrist_jnt_Zrotation (flexion)
+ *         - LeftWrist_jnt_Zrotation
+ *         - RightWrist_jnt_Yrotation (abduction)
+ *         - LeftWrist_jnt_Yrotation
+ *         - RightWrist_jnt_Xrotation (twist)
+ *         - LeftWrist_jnt_Xrotation
+ *
+ *  \param[in]  graph  Graph corresponding to BVH file.
+ *  \return REBA score.
+ */
+int RcsGraph_computeREBA(const RcsGraph* graph);
+
+
 #ifdef __cplusplus
 }
 #endif

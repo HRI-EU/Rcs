@@ -763,3 +763,469 @@ bool RcsGraph_beautifyHumanModelBVH(RcsGraph* graph,
 
   return true;
 }
+
+
+
+
+
+
+#include "Rcs_kinematics.h"
+
+
+
+
+
+static int computeNeckScore(const RcsGraph* graph,
+                            double outOfZeroThresholdInDeg)
+{
+  int neckScore = 0;
+  const RcsJoint* neck = RcsGraph_getJointByName(graph, "Neck_jnt_Xrotation");
+  RCHECK(neck);
+  double neckAngleInDeg = RCS_RAD2DEG(graph->q->ele[neck->jointIndex]);
+  RLOG(5, "Neck angle is %f deg", neckAngleInDeg);
+
+  // Flexion / extension
+  if (neckAngleInDeg<-outOfZeroThresholdInDeg)
+  {
+    neckScore = 2;
+  }
+  else if (neckAngleInDeg>20.0)
+  {
+    neckScore = 2;
+  }
+  else if ((neckAngleInDeg>10.0) && (neckAngleInDeg<20.0))
+  {
+    neckScore = 1;
+  }
+
+  // Neck twist adjust
+  neck = RcsGraph_getJointByName(graph, "Neck_jnt_Yrotation");
+  RCHECK(neck);
+  neckAngleInDeg = RCS_RAD2DEG(graph->q->ele[neck->jointIndex]);
+  if (fabs(neckAngleInDeg)>outOfZeroThresholdInDeg)
+  {
+    neckScore++;
+  }
+
+  // Neck side adjust
+  neck = RcsGraph_getJointByName(graph, "Neck_jnt_Zrotation");
+  RCHECK(neck);
+  neckAngleInDeg = RCS_RAD2DEG(graph->q->ele[neck->jointIndex]);
+  if (fabs(neckAngleInDeg)>outOfZeroThresholdInDeg)
+  {
+    neckScore++;
+  }
+
+  return Math_iClip(neckScore, 1, 3);
+}
+
+static int computeTrunkScore(const RcsGraph* graph,
+                             double outOfZeroThresholdInDeg)
+{
+  int trunkScore = 1;
+
+  // Base frame
+  const RcsBody* hips = RcsGraph_getBodyByName(graph, "Hips");
+
+  // First spine body that bends
+  const RcsBody* chest = RcsGraph_getBodyByName(graph, "Chest");
+
+  // Last spine body that bends
+  const RcsBody* neck = RcsGraph_getBodyByName(graph, "Neck");
+  RCHECK(hips && chest && neck);
+
+  // Flexion - extension
+  double spine_up[3];
+  Vec3d_sub(spine_up, neck->A_BI.org, chest->A_BI.org);
+  Vec3d_rotateSelf(spine_up, (double (*)[3])hips->A_BI.rot);
+  double angInDeg = RCS_RAD2DEG(atan2(spine_up[2], spine_up[1]));
+  RLOG(5, "Chest angle is %f deg", angInDeg);
+
+  if (angInDeg<-outOfZeroThresholdInDeg)
+  {
+    trunkScore = 2;
+  }
+  else if ((angInDeg>outOfZeroThresholdInDeg) && (angInDeg<=20.0))
+  {
+    trunkScore = 2;
+  }
+  else if ((angInDeg>20.0) && (angInDeg<=60.0))
+  {
+    trunkScore = 3;
+  }
+  else if (angInDeg>60.0)
+  {
+    trunkScore = 4;
+  }
+
+  // Trunk side bending
+  angInDeg = RCS_RAD2DEG(atan2(spine_up[0], spine_up[1]));
+  RLOG(5, "Sideways chest angle is %f deg", angInDeg);
+
+  if (fabs(angInDeg)>outOfZeroThresholdInDeg)
+  {
+    trunkScore += 1;
+  }
+
+  // Trunk twist
+  double neck_fwd[3];
+  Vec3d_rotate(neck_fwd, (double (*)[3])hips->A_BI.rot, neck->A_BI.rot[2]);
+  neck_fwd[1] = 0;
+  angInDeg = RCS_RAD2DEG(Vec3d_diffAngle(neck_fwd, Vec3d_ez()));
+  RLOG(5, "Twist chest angle is %f deg", angInDeg);
+  if (fabs(angInDeg)>outOfZeroThresholdInDeg)
+  {
+    trunkScore += 1;
+  }
+
+  return Math_iClip(trunkScore, 1, 5);
+}
+
+static int computeLegScore(const RcsGraph* graph,
+                           double outOfZeroThresholdInDeg)
+{
+  const double footLiftThreshold = 0.05;
+  int legScore = 1;
+
+  // Base frame. The floor is in the x-z plane.
+  const RcsBody* base = RcsGraph_getBodyByName(graph, "Base");
+  const RcsBody* leftToe = RcsGraph_getBodyByName(graph, "LeftToe");
+  const RcsBody* rightToe = RcsGraph_getBodyByName(graph, "RightToe");
+  RCHECK(base && leftToe && rightToe);
+
+  // COM in base frame
+  double r_cog[3];
+  RcsGraph_COG_Body(graph, base, r_cog);
+  Vec3d_rotateSelf(r_cog, (double (*)[3])base->A_BI.rot);
+  r_cog[1] = 0.0;
+
+  // Foot locations in base frame
+  double b_footL[3], b_footR[3];
+  Vec3d_rotate(b_footL, (double (*)[3])base->A_BI.rot, leftToe->A_BI.org);
+  Vec3d_rotate(b_footR, (double (*)[3])base->A_BI.rot, rightToe->A_BI.org);
+
+  // If one foot is lifted, we consider it as unilateral weight bearing
+  if ((b_footL[1] >= footLiftThreshold) && (b_footR[1]<footLiftThreshold))
+  {
+    RLOG(5, "Left foot lifted");
+    RCHECK(b_footR[1]<footLiftThreshold);
+    legScore++;
+  }
+  else if ((b_footR[1] >= footLiftThreshold) && (b_footL[1] < footLiftThreshold))
+  {
+    RLOG(5, "Right foot lifted");
+    RCHECK(b_footL[1]<footLiftThreshold);
+    legScore++;
+  }
+  else if ((b_footR[1]>=footLiftThreshold) && (b_footL[1]>=footLiftThreshold))
+  {
+    RLOG(5, "Oh no, no feet on the ground!");
+  }
+  // Check COM balance
+  else
+  {
+    b_footL[1] = 0.0;
+    b_footR[1] = 0.0;
+
+    double d1 = Vec3d_distance(b_footL, r_cog);
+    double d2 = Vec3d_distance(b_footR, r_cog);
+    RLOG(5, "Leg-com distance: d1=%f   d2=%f", d1, d2);
+
+    // We consider unilateral weight bearing if the com is 0.1m closer to one
+    // of the feet than to the other one.
+    if (fabs(d1-d2)>0.1)
+    {
+      legScore++;
+    }
+  }
+
+
+  const RcsBody* leftHip = RcsGraph_getBodyByName(graph, "LeftHip");
+  const RcsBody* leftKnee = RcsGraph_getBodyByName(graph, "LeftKnee");
+  const RcsBody* rightHip = RcsGraph_getBodyByName(graph, "RightHip");
+  const RcsBody* rightKnee = RcsGraph_getBodyByName(graph, "RightKnee");
+  RCHECK(leftHip && leftKnee && rightHip && rightKnee);
+  double andInDegL = Vec3d_diffAngle(leftHip->A_BI.rot[1], leftKnee->A_BI.rot[1]);
+  double andInDegR = Vec3d_diffAngle(rightHip->A_BI.rot[1], rightKnee->A_BI.rot[1]);
+  double andInDeg = RCS_RAD2DEG(fmax(andInDegL, andInDegR));
+  RLOG(5, "Max leg angle: %f", andInDeg);
+
+  if (andInDeg>60.0)
+  {
+    legScore += 2;
+  }
+  else if (andInDeg>30.0)
+  {
+    legScore++;
+  }
+
+  return Math_iClip(legScore, 1, 4);
+}
+
+static int computeUpperArmScore(const RcsGraph* graph,
+                                double outOfZeroThresholdInDeg,
+                                bool rightArm)
+{
+  int score = 1;
+  const RcsJoint* shoulder = NULL;
+  double angSign = 1.0;
+
+  if (rightArm)
+  {
+    shoulder = RcsGraph_getJointByName(graph, "RightShoulder_jnt_Yrotation");
+  }
+  else
+  {
+    shoulder = RcsGraph_getJointByName(graph, "LeftShoulder_jnt_Yrotation");
+    angSign = -1.0;
+  }
+
+  RCHECK(shoulder);
+
+  // Flexion - extension
+  double angInDeg = RCS_RAD2DEG(angSign*graph->q->ele[shoulder->jointIndex]);
+
+  if (angInDeg<-20.0)
+  {
+    score = 2;
+  }
+  else if ((angInDeg>=20.0) && (angInDeg<45.0))
+  {
+    score = 2;
+  }
+  else if ((angInDeg>=45.0) && (angInDeg<90.0))
+  {
+    score = 3;
+  }
+  else if (angInDeg>=90.0)
+  {
+    score = 4;
+  }
+
+  RLOG(5, "%s shoulder: %f", rightArm ? "Right" : "Left", angInDeg);
+
+
+
+  // Abduction
+  const double abductionThresholdInDeg = 40.0;
+
+  if (rightArm)
+  {
+    shoulder = RcsGraph_getJointByName(graph, "RightShoulder_jnt_Zrotation");
+  }
+  else
+  {
+    shoulder = RcsGraph_getJointByName(graph, "LeftShoulder_jnt_Zrotation");
+  }
+
+  angInDeg = RCS_RAD2DEG(angSign*graph->q->ele[shoulder->jointIndex]);
+  if (angInDeg<-abductionThresholdInDeg)
+  {
+    RLOG(5, "%s: Adding abduction penalty with angle %f", rightArm ? "Right" : "Left", angInDeg);
+    score++;
+  }
+
+  return score;
+}
+
+static int computeLowerArmScore(const RcsGraph* graph,
+                                double outOfZeroThresholdInDeg,
+                                bool rightArm)
+{
+  // LeftElbow_jnt_Yrotation:  Straight arm=0    folded=-180
+  // RightElbow_jnt_Yrotation: Straight arm=0    folded=+180
+  int score = 1;
+  const RcsJoint* elbow = NULL;
+  double angSign = 1.0;
+
+  if (rightArm)
+  {
+    elbow = RcsGraph_getJointByName(graph, "RightElbow_jnt_Yrotation");
+  }
+  else
+  {
+    elbow = RcsGraph_getJointByName(graph, "LeftElbow_jnt_Yrotation");
+    angSign = -1.0;
+  }
+
+  RCHECK(elbow);
+
+  // Flexion - extension
+  double angInDeg = RCS_RAD2DEG(angSign*graph->q->ele[elbow->jointIndex]);
+
+  if ((angInDeg<60.0) || (angInDeg>100.0))
+  {
+    score = 2;
+  }
+
+  return score;
+}
+
+static int computeWristScore(const RcsGraph* graph,
+                             double outOfZeroThresholdInDeg,
+                             bool rightArm)
+{
+  // LeftWrist_jnt_Zrotation, RightWrist_jnt_Zrotation
+  int score = 1;
+  const RcsJoint* wrist = NULL;
+
+  if (rightArm)
+  {
+    wrist = RcsGraph_getJointByName(graph, "RightWrist_jnt_Zrotation");
+  }
+  else
+  {
+    wrist = RcsGraph_getJointByName(graph, "LeftWrist_jnt_Zrotation");
+  }
+
+  RCHECK(wrist);
+
+  // Flexion - extension
+  double angInDeg = RCS_RAD2DEG(graph->q->ele[wrist->jointIndex]);
+
+  if (fabs(angInDeg)>15.0)
+  {
+    score = 2;
+  }
+
+  // Penalty for bending
+  const double bendingThreshold = 10.0;
+  if (rightArm)
+  {
+    wrist = RcsGraph_getJointByName(graph, "RightWrist_jnt_Yrotation");
+  }
+  else
+  {
+    wrist = RcsGraph_getJointByName(graph, "LeftWrist_jnt_Yrotation");
+  }
+
+  angInDeg = RCS_RAD2DEG(graph->q->ele[wrist->jointIndex]);
+
+  if (fabs(angInDeg)>bendingThreshold)
+  {
+    score++;
+  }
+
+
+  // Penalty for twisting
+  const double twistingThreshold = 45.0;
+  if (rightArm)
+  {
+    wrist = RcsGraph_getJointByName(graph, "RightWrist_jnt_Xrotation");
+  }
+  else
+  {
+    wrist = RcsGraph_getJointByName(graph, "LeftWrist_jnt_Xrotation");
+  }
+
+  angInDeg = RCS_RAD2DEG(graph->q->ele[wrist->jointIndex]);
+
+  if (fabs(angInDeg)>twistingThreshold)
+  {
+    score++;
+  }
+
+  return Math_iClip(score, 1, 3);
+}
+
+// BVH-model according to documentation
+int RcsGraph_computeREBA(const RcsGraph* graph)
+{
+  const double outOfZeroThresholdInDeg = 5.0;
+  int reba = 0;
+
+  int neckScore = computeNeckScore(graph, outOfZeroThresholdInDeg);
+  int trunkScore = computeTrunkScore(graph, outOfZeroThresholdInDeg);
+  int legScore = computeLegScore(graph, outOfZeroThresholdInDeg);
+
+  // First index: neck, second index trunk, third index legs
+  static const int tableA[3][5][4] =
+  {
+    { {1,2,3,4},
+      {2,3,4,5},
+      {2,4,5,6},
+      {3,5,6,7},
+      {4,6,7,8}
+    },
+    { {1,2,3,4},
+      {3,4,5,6},
+      {3,4,5,7},
+      {5,6,7,8},
+      {6,7,8,9}
+    },
+    { {3,3,5,6},
+      {4,5,6,7},
+      {5,6,7,8},
+      {6,7,8,9},
+      {7,8,9,9}
+    }
+  };
+
+  // Test table lookup
+  /* for (int i=0; i<3; ++i) */
+  /*   for (int j=0; j<5; ++j) */
+  /*     for (int k=0; k<4; ++k) */
+  /*     { */
+  /*       RLOG(0, "score[%d][%d][%d] = %d", i, j, k, tableA[i][j][k]); */
+  /*     } */
+
+  int scoreA = tableA[neckScore-1][trunkScore-1][legScore-1];
+
+
+
+  int rightUpperArmScore = computeUpperArmScore(graph, outOfZeroThresholdInDeg, true);
+  int leftUpperArmScore = computeUpperArmScore(graph, outOfZeroThresholdInDeg, false);
+
+  int rightLowerArmScore = computeLowerArmScore(graph, outOfZeroThresholdInDeg, true);
+  int leftLowerArmScore = computeLowerArmScore(graph, outOfZeroThresholdInDeg, false);
+
+  int rightWristScore = computeWristScore(graph, outOfZeroThresholdInDeg, true);
+  int leftWristScore = computeWristScore(graph, outOfZeroThresholdInDeg, false);
+
+
+  // lower arm - upper arm - wrist
+  const int tableB[2][6][3] =
+  {
+    { {1,2,2},
+      {1,2,3},
+      {3,4,5},
+      {4,5,5},
+      {6,7,8},
+      {7,8,8}
+    },
+    { {1,2,3},
+      {2,3,4},
+      {4,5,5},
+      {5,6,7},
+      {7,8,8},
+      {8,9,9}
+    }
+  };
+
+  int scoreB_right = tableB[rightLowerArmScore-1][rightUpperArmScore-1][rightWristScore-1];
+  int scoreB_left = tableB[leftLowerArmScore-1][leftUpperArmScore-1][leftWristScore-1];
+
+
+  static const int tableC[12][12] =
+  {
+    { 1, 1, 1, 2, 3, 3, 4, 5, 6, 7, 7, 7},
+    { 1, 2, 2, 3, 4, 4, 5, 6, 6, 7, 7, 8},
+    { 2, 3, 3, 3, 4, 5, 6, 7, 7, 8, 8, 8},
+    { 3, 4, 4, 4, 5, 6, 7, 8, 8, 9, 9, 9},
+    { 4, 4, 4, 5, 6, 7, 8, 8, 9, 9, 9, 9},
+    { 6, 6, 6, 7, 8, 8, 9, 9,10,10,10,10},
+    { 7, 7, 7, 8, 9, 9, 9,10,10,11,11,11},
+    { 8, 8, 8, 9,10,10,10,10,10,11,11,11},
+    { 9, 9, 9,10,10,10,11,11,11,12,12,12},
+    {10,10,10,11,11,11,11,12,12,12,12,12},
+    {11,11,11,11,12,12,12,12,12,12,12,12},
+    {12,12,12,12,12,12,12,12,12,12,12,12}
+  };
+
+  int reba_right = tableC[scoreA][scoreB_right];
+  int reba_left = tableC[scoreA][scoreB_left];
+
+  reba = reba_right > reba_left ? reba_right : reba_left;
+
+  return reba;
+}
