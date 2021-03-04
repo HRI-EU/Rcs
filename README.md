@@ -97,7 +97,7 @@ In case you don't have a Vortex license, you can in certain cases apply for the 
 
 ## License
 
-This project is licensed under the BSD 4-clause license - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the BSD 3-clause license - see the [LICENSE.md](LICENSE.md) file for details
 
 ## Disclaimer
 

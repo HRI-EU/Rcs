@@ -1,7 +1,6 @@
 ################################################################################
 #
-#  Copyright (c) 2017, Honda Research Institute Europe GmbH.
-#  All rights reserved.
+#  Copyright (c) 2017, Honda Research Institute Europe GmbH
 #
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions are met:
@@ -13,11 +12,7 @@
 #     this list of conditions and the following disclaimer in the documentation
 #     and/or other materials provided with the distribution.
 #
-#  3. All advertising materials mentioning features or use of this software
-#     must display the following acknowledgement: This product includes
-#     software developed by the Honda Research Institute Europe GmbH.
-#
-#  4. Neither the name of the copyright holder nor the names of its
+#  3. Neither the name of the copyright holder nor the names of its
 #     contributors may be used to endorse or promote products derived from
 #     this software without specific prior written permission.
 #
