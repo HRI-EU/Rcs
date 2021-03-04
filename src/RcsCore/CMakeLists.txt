@@ -86,6 +86,7 @@ TaskPolarSurfaceNormal.cpp
 TaskPose5D.cpp
 TaskPose6D.cpp
 TaskPosition1D.cpp
+TaskPosition2D.cpp
 TaskPosition3D.cpp
 TaskPositionForce1D.cpp
 TaskPositionForce3D.cpp

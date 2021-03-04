@@ -1,6 +1,6 @@
 <Controller graph="gScenario.xml" >
 
-  <Task name="Right Hand XYZ"   controlVariable="XYZ"   effector="RightHandTip" active="true" />
+  <Task name="Right Hand XYZ"   controlVariable="XY"   effector="RightHandTip" active="true" />
   <Task name="Right Hand ABC"   controlVariable="ABC"   effector="RightHandTip" />
   <Task name="Right Hand Polar" controlVariable="POLAR" effector="RightHandTip" axisDirection="Z" />
 

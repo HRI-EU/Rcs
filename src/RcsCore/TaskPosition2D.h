@@ -31,50 +31,72 @@
 
 *******************************************************************************/
 
-#ifndef RCS_TASKCOM3D_H
-#define RCS_TASKCOM3D_H
+#ifndef RCS_TASKPOSITION2D_H
+#define RCS_TASKPOSITION2D_H
 
-#include "TaskGenericIK.h"
-
+#include "TaskPosition3D.h"
 
 namespace Rcs
 {
+
 /*! \ingroup RcsTask
- *  \brief This tasks allows to set a 3D position (XYZ) of the overal center
- *         of mass.
+ *  \brief This tasks allows to set a 2D position (XY, XZ, or YZ) of an
+ *         effector.
  *
- *  The position can also be relative to another body and reference frame.
+ *  The task calls the methods of TaskPosition3D, and extracts the components
+ *  of the arrays that correspond to the given indices.
+ *
+ *  Example:
+ *  \code
+ *    <Task name="Hand XY" controlVariable="XY" effector="Hand" active="true" />
+ *  \endcode
  */
-class TaskCOM3D: public TaskGenericIK
+class TaskPosition2D: public Rcs::TaskPosition3D
 {
 public:
 
   /*! Constructor based on xml parsing
    */
-  TaskCOM3D(const std::string& className, xmlNode* node, RcsGraph* graph,
-            int dim=3);
+  TaskPosition2D(const std::string& className, xmlNode* node,
+                 RcsGraph* graph, int dim=2);
 
   /*! \brief Copy constructor doing deep copying with optional new graph
    *         pointer
    */
-  TaskCOM3D(const TaskCOM3D& copyFromMe, RcsGraph* newGraph=NULL);
+  TaskPosition2D(const TaskPosition2D& copyFromFe, RcsGraph* newGraph=NULL);
+
+  /*! Constructor based on graph and effectors.
+   */
+  TaskPosition2D(const std::string& className, RcsGraph* graph,
+                 const RcsBody* effector=NULL, const RcsBody* refBdy=NULL,
+                 const RcsBody* refFrame=NULL);
 
   /*! Destructor
    */
-  virtual ~TaskCOM3D();
+  virtual ~TaskPosition2D();
 
-  /*!
-   * \brief Virtual copy constructor with optional new graph
+  /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual TaskCOM3D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskPosition2D* clone(RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable
    *
-   *  The result is written to parameter \e x_res.
+   *  Reuse implementation of TaskPosition3D, but select only relevant
+   *  component
    */
   virtual void computeX(double* x_res) const;
 
+  /*! \brief Computes the current velocity component in task space:
+   *         \f$
+   *         \mathbf{\dot{x} = A_{ref-I} (_I \dot{x}_{ef} - _I \dot{x}_{ref}) }
+   *         \f$
+   */
+  virtual void computeXp_ik(double* xp) const;
+
   /*! \brief Computes current task Jacobian to parameter \e jacobian
+   *
+   *  Reuse implementation of TaskPosition3D, but select only relevant
+   *  component
    */
   virtual void computeJ(MatNd* jacobian) const;
 
@@ -83,11 +105,15 @@ public:
   virtual void computeH(MatNd* hessian) const;
 
   /*! \brief Returns true if the task is specified correctly, false
-   *         otherwise. The task is always valid.
+   *         otherwise. The following checks are performed:
+   *         - XML tag "effector" corresponds to body in graph
+   *         - XML tag "controlVariable" is "X", "Y", "Z" or "CylZ"
    */
   static bool isValid(xmlNode* node, const RcsGraph* graph);
-};
 
+protected:
+  int index1, index2;
+};
 }
 
-#endif // RCS_TASKCOM3D_H
+#endif // RCS_TASKPOSITION2D_H

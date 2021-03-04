@@ -1,36 +1,33 @@
 /*******************************************************************************
 
-  Copyright (c) 2017, Honda Research Institute Europe GmbH.
-  All rights reserved.
+  Copyright (c) 2017, Honda Research Institute Europe GmbH
 
   Redistribution and use in source and binary forms, with or without
-  modification, are permitted provided that the following conditions are met:
+  modification, are permitted provided that the following conditions are
+  met:
 
   1. Redistributions of source code must retain the above copyright notice,
      this list of conditions and the following disclaimer.
 
-  2. Redistributions in binary form must reproduce the above copyright notice,
-     this list of conditions and the following disclaimer in the documentation
-     and/or other materials provided with the distribution.
+  2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the distribution.
 
-  3. All advertising materials mentioning features or use of this software
-     must display the following acknowledgement: This product includes
-     software developed by the Honda Research Institute Europe GmbH.
-
-  4. Neither the name of the copyright holder nor the names of its
+  3. Neither the name of the copyright holder nor the names of its
      contributors may be used to endorse or promote products derived from
      this software without specific prior written permission.
 
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER "AS IS" AND ANY EXPRESS OR
-  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-  IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT, INDIRECT,
-  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
-  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+  IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+  THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+  PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *******************************************************************************/
 
@@ -521,6 +518,10 @@ int main(int argc, char** argv)
                "graph has %d dof", bvhTraj->n, graph->dof);
           MatNd_destroy(bvhTraj);
           bvhTraj = NULL;
+        }
+        else if (!bvhTraj)
+        {
+          bvhTraj = MatNd_createFromFile(bvhFile);
         }
       }
 
@@ -1014,7 +1015,7 @@ int main(int argc, char** argv)
         }   // KeyCatcher
 
         sprintf(hudText, "Graph \"%s\"\nDof: %d nJ: %d\n"
-                "Forward kinematics step: %.1f ms\n",
+                "Forward kinematics step: %.1f ms",
                 graph->cfgFile, graph->dof, graph->nJ, dtSim*1000.0);
 
         if (bvhTraj!=NULL)
@@ -2343,6 +2344,21 @@ int main(int argc, char** argv)
         {
           controller.print();
           controller.toXML("cAction.xml");
+        }
+        else if (kc && kc->getAndResetKey('j'))
+        {
+          MatNd* q5 = MatNd_clone(controller.getGraph()->q);
+          MatNd_transposeSelf(q5);
+          MatNd_printDims("q5 a", q5);
+          q5->m = 5;
+          q5->n /= 5;
+          MatNd_printDims("q5 b", q5);
+          MatNd* plot = MatNd_create(500, q5->n);
+          MatNd_printDims("plot", plot);
+          MatNd_interpolateRows(plot, q5);
+          MatNd_toFile(plot, "plot.dat");
+          MatNd_destroy(plot);
+          MatNd_destroy(q5);
         }
 
         else if (kc && kc->getAndResetKey('f'))
