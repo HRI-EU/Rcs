@@ -1738,14 +1738,15 @@ int main(int argc, char** argv)
           RLOG(1, "Step");
         }
 
-        sprintf(hudText, "[%s]: Sim-step: %.1f ms\nSim time: %.1f (%.1f) sec\n"
-                "Bodies: %d   Joints: %d\n"
-                "Gravity compensation: %s\nDisplaying %s",
-                sim->getClassName(), dtSim*1000.0, sim->time(),
-                Timer_get(timer),
-                sim->getGraph()->nBodies, sim->getGraph()->dof,
-                gravComp ? "ON" : "OFF",
-                simNode ? simNode->getDisplayModeStr() : "nothing");
+        snprintf(hudText, 2056,
+                 "[%s]: Sim-step: %.1f ms\nSim time: %.1f (%.1f) sec\n"
+                 "Bodies: %d   Joints: %d\n"
+                 "Gravity compensation: %s\nDisplaying %s",
+                 sim->getClassName(), dtSim*1000.0, sim->time(),
+                 Timer_get(timer),
+                 sim->getGraph()->nBodies, sim->getGraph()->dof,
+                 gravComp ? "ON" : "OFF",
+                 simNode ? simNode->getDisplayModeStr() : "nothing");
 
         if (hud != NULL)
         {
@@ -1830,8 +1831,8 @@ int main(int argc, char** argv)
       argP.getArgument("-algo", &algo, "IK algorithm: 0: left inverse, 1: "
                        "right inverse (default is %d)", algo);
       argP.getArgument("-alpha", &alpha,
-                       "Null space scaling factor (default is %f)", alpha);
-      argP.getArgument("-lambda", &lambda, "Regularization (default is %f)",
+                       "Null space scaling factor (default is %g)", alpha);
+      argP.getArgument("-lambda", &lambda, "Regularization (default is %g)",
                        lambda);
       argP.getArgument("-f", xmlFileName);
       argP.getArgument("-dir", directory);
@@ -2195,6 +2196,13 @@ int main(int argc, char** argv)
 
         dt_calc = Timer_getTime() - dt_calc;
 
+        // Compute inside mutex, otherwise clicking activation boxes in the Gui
+        // can lead to crashes.
+        double manipIdx = controller.computeManipulabilityCost(a_des);
+        double staticEff = RcsGraph_staticEffort(controller.getGraph(),
+                                                 effortBdy, &F_effort3,
+                                                 NULL, NULL);
+
         pthread_mutex_unlock(&graphLock);
 
         if (kc && kc->getAndResetKey('q'))
@@ -2381,24 +2389,22 @@ int main(int argc, char** argv)
           snprintf(timeStr, 64, "%.1f us", 1.0e6*dt_calc);
         }
 
-        sprintf(hudText, "IK calculation: %s\ndof: %d nJ: %d "
-                "nqr: %d nx: %d\nJL-cost: %.6f dJL-cost: %.6f %s %s"
-                "\nalgo: %d lambda:%g alpha: %g tmc: %.3f\n"
-                "Manipulability index: %.6f\n"
-                "Static effort: %.6f\n"
-                "Robot pose %s",
-                timeStr, controller.getGraph()->dof,
-                controller.getGraph()->nJ, ikSolver->getInternalDof(),
-                (int) controller.getActiveTaskDim(a_des),
-                jlCost, dJlCost,
-                ikSolver->getDeterminant()==0.0?"SINGULAR":"",
-                ((dJlCost > 1.0e-8) && (MatNd_getNorm(dx_des) == 0.0)) ?
-                "COST INCREASE" : "",
-                algo, lambda, alpha, tmc,
-                controller.computeManipulabilityCost(a_des),
-                RcsGraph_staticEffort(controller.getGraph(),
-                                      effortBdy, &F_effort3, NULL, NULL),
-                poseOK ? "VALID" : "VIOLATES LIMITS");
+        snprintf(hudText, 2056,
+                 "IK calculation: %s\ndof: %d nJ: %d "
+                 "nqr: %d nx: %d\nJL-cost: %.6f dJL-cost: %.6f %s %s"
+                 "\nalgo: %d lambda:%g alpha: %g tmc: %.3f\n"
+                 "Manipulability index: %.6f\n"
+                 "Static effort: %.6f\n"
+                 "Robot pose %s",
+                 timeStr, controller.getGraph()->dof,
+                 controller.getGraph()->nJ, ikSolver->getInternalDof(),
+                 (int) controller.getActiveTaskDim(a_des),
+                 jlCost, dJlCost,
+                 ikSolver->getDeterminant()==0.0?"SINGULAR":"",
+                 ((dJlCost > 1.0e-8) && (MatNd_getNorm(dx_des) == 0.0)) ?
+                 "COST INCREASE" : "",
+                 algo, lambda, alpha, tmc, manipIdx, staticEff,
+                 poseOK ? "VALID" : "VIOLATES LIMITS");
 
         if (hud.valid())
         {

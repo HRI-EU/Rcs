@@ -1381,7 +1381,7 @@ void Rcs::Task::toXMLStart(FILE* out) const
     fprintf(out, "name=\"%s\" ", getName().c_str());
   }
 
-  fprintf(out, "controlVariable= \"%s\"", getClassName().c_str());
+  fprintf(out, "controlVariable=\"%s\"", getClassName().c_str());
 }
 
 /*******************************************************************************
