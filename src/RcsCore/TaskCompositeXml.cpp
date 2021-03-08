@@ -55,8 +55,6 @@ Rcs::TaskCompositeXml::TaskCompositeXml(const std::string& className_,
   {
     if (isXMLNodeName(node, "Task"))
     {
-      // std::string cVar = getXMLNodePropertySTLString(node, "controlVariable");
-      // Task* ti = TaskFactory::createTask(cVar, node, graph);
       Task* ti = TaskFactory::createTask(node, graph);
       addTask(ti);
     }
@@ -81,6 +79,23 @@ Rcs::TaskCompositeXml::TaskCompositeXml(const Rcs::TaskCompositeXml& copyFromMe,
 Rcs::TaskCompositeXml* Rcs::TaskCompositeXml::clone(RcsGraph* newGraph) const
 {
   return new Rcs::TaskCompositeXml(*this, newGraph);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::TaskCompositeXml::toXML(FILE* out, bool activation) const
+{
+  Task::toXMLStart(out);
+  fprintf(out, " active=\"%s\" >\n", activation ? "true" : "false");
+
+  for (size_t i=0; i<getNumberOfTasks(); ++i)
+  {
+    fprintf(out, "  ");
+    getSubTask(i)->toXML(out, activation);
+  }
+
+  fprintf(out, "</Task>\n");
 }
 
 /*******************************************************************************

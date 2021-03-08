@@ -73,6 +73,11 @@ public:
    */
   TaskCompositeXml* clone(RcsGraph* newGraph=NULL) const;
 
+  /*! \brief Writes the specific task's xml representation to a file
+   *         desriptor. Here it is the vector of sub-tasks.
+   */
+  virtual void toXML(FILE* out, bool activation=true) const;
+
   /*! \brief Traverses the node's children and tries to instantiate each task.
   *          If none of them fails, the function returns true, otherwise false.
    */

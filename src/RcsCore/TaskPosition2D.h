@@ -107,7 +107,7 @@ public:
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise. The following checks are performed:
    *         - XML tag "effector" corresponds to body in graph
-   *         - XML tag "controlVariable" is "X", "Y", "Z" or "CylZ"
+   *         - XML tag "controlVariable" is "XY", "XZ" or "YZ"
    */
   static bool isValid(xmlNode* node, const RcsGraph* graph);
 

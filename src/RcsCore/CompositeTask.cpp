@@ -344,42 +344,6 @@ void Rcs::CompositeTask::selectionTrafo(double* S_trans, const double* S) const
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::CompositeTask::setEffector(const RcsBody* effector)
-{
-  Task::setEffector(effector);
-  for (size_t i=0; i<subTask.size(); ++i)
-  {
-    subTask[i]->setEffector(effector);
-  }
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-void Rcs::CompositeTask::setRefBody(const RcsBody* referenceBody)
-{
-  Task::setRefBody(referenceBody);
-  for (size_t i=0; i<subTask.size(); ++i)
-  {
-    subTask[i]->setRefBody(referenceBody);
-  }
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-void Rcs::CompositeTask::setRefFrame(const RcsBody* referenceFrame)
-{
-  Task::setRefFrame(referenceFrame);
-  for (size_t i=0; i<subTask.size(); ++i)
-  {
-    subTask[i]->setRefFrame(referenceFrame);
-  }
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
 const Rcs::Task* Rcs::CompositeTask::getSubTask(size_t index) const
 {
   return this->subTask[index];
@@ -421,7 +385,8 @@ size_t Rcs::CompositeTask::getNumberOfTasks() const
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::CompositeTask::toXML(FILE* out) const
+void Rcs::CompositeTask::toXML(FILE* out, bool activation) const
 {
-  RFATAL("Implement me");
+  //RFATAL("Implement me in your derived class \"%s\"", getClassName().c_str());
+  Task::toXML(out, activation);
 }

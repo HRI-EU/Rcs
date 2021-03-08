@@ -1897,113 +1897,88 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+const RcsBody* getBodyWithSuffix(const RcsBody* bdy, std::string suffix, const RcsGraph* graph)
+{
+  if (bdy==NULL)
+  {
+    return NULL;
+  }
+
+  std::string newName = std::string(bdy->name) + suffix;
+
+  return RcsGraph_getBodyByName(graph, newName.c_str());
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
 bool Rcs::ControllerBase::add(const ControllerBase* other,
-                              const char* suffix,
+                              const char* suffixPtr,
                               const HTr* A_BP)
 {
   bool success = RcsGraph_appendCopyOfGraph(getGraph(), NULL, other->getGraph(),
-                                            suffix, A_BP);
+                                            suffixPtr, A_BP);
 
   if (success == false)
   {
     return false;
   }
 
-  const std::vector<Task*>& otherTasks = other->taskVec();
-  const size_t otherTasksSize = otherTasks.size();
-
-  if (otherTasksSize == 0)
+  std::string suffix;
+  if (suffixPtr)
   {
-    return true;
+    suffix = std::string(suffixPtr);
   }
 
-  for (size_t i=0; i<otherTasksSize; ++i)
+  const std::vector<Task*>& otherTasks = other->taskVec();
+
+  for (size_t i=0; i<otherTasks.size(); ++i)
   {
     Task* copyOfOtherTask = otherTasks[i]->clone(this->graph);
 
     // Set the new task's name uniquely considering the suffix. We only do this
     // if the task has a name so that unnamed tasks don't show up in the GUIs
-    if (suffix && (!otherTasks[i]->getName().empty()))
+    // \todo: Should go into a task-specific function
+    if (!otherTasks[i]->getName().empty())
     {
-      copyOfOtherTask->setName(otherTasks[i]->getName() + std::string(suffix));
+      copyOfOtherTask->setName(otherTasks[i]->getName() + suffix);
     }
 
-    const RcsBody* effector = copyOfOtherTask->getEffector();
-    if (effector != NULL)
+    // \todo: Should go into a task-specific function
+    copyOfOtherTask->setEffector(getBodyWithSuffix(copyOfOtherTask->getEffector(), suffix, getGraph()));
+    copyOfOtherTask->setRefBody(getBodyWithSuffix(copyOfOtherTask->getRefBody(), suffix, getGraph()));
+    copyOfOtherTask->setRefFrame(getBodyWithSuffix(copyOfOtherTask->getRefFrame(), suffix, getGraph()));
+
+    // Reassign sub-tasks in CompositeTask
+    // \todo: Should go into a task-specific function
+    if (dynamic_cast<CompositeTask*>(copyOfOtherTask))
     {
-      std::string newName;
+      CompositeTask* cTask = dynamic_cast<CompositeTask*>(copyOfOtherTask);
 
-      if (otherTasks[i]->getEffector())
+      for (size_t i=0; i<cTask->getNumberOfTasks(); ++i)
       {
-        newName.assign(otherTasks[i]->getEffector()->name);
+        Task* ti = cTask->getSubTask(i);
+        ti->setEffector(getBodyWithSuffix(ti->getEffector(), suffix, getGraph()));
+        ti->setRefBody(getBodyWithSuffix(ti->getRefBody(), suffix, getGraph()));
+        ti->setRefFrame(getBodyWithSuffix(ti->getRefFrame(), suffix, getGraph()));
       }
 
-      if (suffix)
-      {
-        newName.append(suffix);
-      }
-
-      effector = RcsGraph_getBodyByName(this->graph, newName.c_str());
-      RCHECK_MSG(effector, "Not found: %s", newName.c_str());
-      copyOfOtherTask->setEffector(effector);
-    }
-
-    const RcsBody* refBdy = copyOfOtherTask->getRefBody();
-    if (refBdy != NULL)
-    {
-      std::string newName;
-
-      if (otherTasks[i]->getRefBody())
-      {
-        newName.assign(otherTasks[i]->getRefBody()->name);
-      }
-
-      if (suffix)
-      {
-        newName.append(suffix);
-      }
-
-      refBdy = RcsGraph_getBodyByName(this->graph, newName.c_str());
-      RCHECK_MSG(refBdy, "Not found: %s", newName.c_str());
-      copyOfOtherTask->setRefBody(refBdy);
-    }
-
-    const RcsBody* refFrame = copyOfOtherTask->getRefFrame();
-    if (refFrame != NULL)
-    {
-      std::string newName;
-
-      if (otherTasks[i]->getRefFrame())
-      {
-        newName.assign(otherTasks[i]->getRefFrame()->name);
-      }
-
-      if (suffix)
-      {
-        newName.append(suffix);
-      }
-
-      refFrame = RcsGraph_getBodyByName(this->graph, newName.c_str());
-      RCHECK_MSG(refFrame, "Not found: %s", newName.c_str());
-      copyOfOtherTask->setRefFrame(refFrame);
     }
 
     // Rename joint names for TaskJoint
+    // \todo: Should go into a task-specific function
     if (dynamic_cast<TaskJoint*>(copyOfOtherTask))
     {
       TaskJoint* jntTask = dynamic_cast<TaskJoint*>(copyOfOtherTask);
-      std::string newName = std::string(jntTask->getJoint()->name);
-      if (suffix)
-      {
-        newName.append(suffix);
-      }
+      std::string newName = std::string(jntTask->getJoint()->name) + suffix;
       jntTask->setJoint(RcsGraph_getJointByName(getGraph(), newName.c_str()));
       RCHECK_MSG(jntTask->getJoint(), "Not found: joint %s", newName.c_str());
     }
 
     // Rename joint names for TaskJoints
+    // \todo: Should go into a task-specific function
     if (dynamic_cast<TaskJoints*>(copyOfOtherTask))
     {
       RLOG(5, "Copying joints task %s", copyOfOtherTask->getName().c_str());
@@ -2013,11 +1988,7 @@ bool Rcs::ControllerBase::add(const ControllerBase* other,
       {
         TaskJoint* jntTask = dynamic_cast<TaskJoint*>(jntsTask->getSubTask(i));
         RCHECK(jntTask);
-        std::string newName = std::string(jntTask->getJoint()->name);
-        if (suffix)
-        {
-          newName.append(suffix);
-        }
+        std::string newName = std::string(jntTask->getJoint()->name) + suffix;
         jntTask->setJoint(RcsGraph_getJointByName(getGraph(), newName.c_str()));
         RCHECK_MSG(jntTask->getJoint(), "Not found: joint %s", newName.c_str());
       }

@@ -147,18 +147,6 @@ public:
   virtual void forceTrafo(double* ft_task) const;
   virtual void selectionTrafo(double* S_trans, const double* S) const;
 
-  /*! \brief Sets the effector body to all sub-tasks.
-   */
-  virtual void setEffector(const RcsBody* effector);
-
-  /*! \brief Sets the reference body to all sub-tasks.
-   */
-  virtual void setRefBody(const RcsBody* referenceBody);
-
-  /*! \brief Sets the reference frame body to all sub-tasks.
-   */
-  virtual void setRefFrame(const RcsBody* referenceFrame);
-
   /*! \brief Returns the index-th task of the composite task. If index is out
    *         of range, the default exception for accessing vector elements
    *         out of range will be thrown.
@@ -178,9 +166,10 @@ public:
   virtual size_t getNumberOfTasks() const;
 
   /*! \brief Writes the specific task's xml representation to a file
-   *         desriptor. Here it is the vector of sub-tasks.
+   *         desriptor. This one just exits fatally to be reminded that
+   *         the derived class needs to implement it.
    */
-  virtual void toXML(FILE* out) const;
+  virtual void toXML(FILE* out, bool activation=true) const;
 
 protected:
 
