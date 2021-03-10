@@ -725,3 +725,24 @@ RcsJoint* RcsJoint_master(const RcsJoint* joint, const RcsGraph* graph)
 {
   return RCSJOINT_BY_ID(graph, joint->coupledToId);
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+int RcsJoint_getNonCoupledParentId(const RcsGraph* graph,
+                                   const RcsJoint* jnt)
+{
+  if (jnt->coupledToId!=-1)
+  {
+    return jnt->coupledToId;
+  }
+
+  RcsJoint* jPtr = (RcsJoint*) jnt;
+
+  while (jPtr->coupledToId!=-1)
+  {
+    jPtr = &graph->joints[jPtr->coupledToId];
+  }
+
+  return jPtr->id;
+}

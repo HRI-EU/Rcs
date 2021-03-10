@@ -171,6 +171,18 @@ int RcsJoint_getDirectionIndex(const RcsJoint* self);
  */
 void RcsJoint_scale(RcsJoint* joint, double scale);
 
+/*! \ingroup RcsJointFunctions
+ *  \brief Scales the geometry of the joint.
+ *
+ *  \param[in] graph    Graph containing the joint
+ *  \param[in] joint    Joint whose non-coupled parent is to be found
+ *  \return Closest parent joint that it not kinematically coupled to another
+ *          one, or NULL if none exists.
+ */
+int RcsJoint_getNonCoupledParentId(const RcsGraph* graph,
+                                   const RcsJoint* jnt);
+
+
 
 #ifdef __cplusplus
 }
