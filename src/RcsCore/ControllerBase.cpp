@@ -1941,9 +1941,9 @@ bool Rcs::ControllerBase::add(const ControllerBase* other,
     // Set the new task's name uniquely considering the suffix. We only do this
     // if the task has a name so that unnamed tasks don't show up in the GUIs
     // \todo: Should go into a task-specific function
-    if (!otherTasks[i]->getName().empty())
+    if (!copyOfOtherTask->getName().empty())
     {
-      copyOfOtherTask->setName(otherTasks[i]->getName() + suffix);
+      copyOfOtherTask->setName(copyOfOtherTask->getName() + suffix);
     }
 
     // \todo: Should go into a task-specific function

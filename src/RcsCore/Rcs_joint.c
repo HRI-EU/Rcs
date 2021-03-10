@@ -49,6 +49,9 @@ void RcsJoint_init(RcsJoint* self)
   memset(self, 0, sizeof(RcsJoint));
   HTr_setIdentity(&self->A_JP);
   HTr_setIdentity(&self->A_JI);
+  self->weightJL = 1.0;
+  self->weightCA = 1.0;
+  self->weightMetric = 1.0;
   self->id = -1;
   self->prevId = -1;
   self->nextId = -1;
