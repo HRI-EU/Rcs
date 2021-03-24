@@ -1404,7 +1404,7 @@ bool testCurveFitting(int argc, char** argv)
     fflush(outDat);
     fclose(outDat);
 
-    int err = system("/usr/bin/gnuplot -persist postpro.gnu");
+    int err = system("gnuplot -persist postpro.gnu");
 
     if (err == -1)
     {
@@ -1412,7 +1412,7 @@ bool testCurveFitting(int argc, char** argv)
     }
     else
     {
-      RMSGS("/usr/bin/gnuplot -persist /tmp/postpro.gnu");
+      RMSGS("gnuplot -persist postpro.gnu");
     }
   }
 
@@ -2365,19 +2365,19 @@ bool testInterpolation(int argc, char** argv)
     MatNd_set(compare, i, 3, MatNd_get(interpolatePoly, i, 0));
   }
 
-  MatNd_toFile(compare, "/tmp/out.dat");
+  MatNd_toFile(compare, "out.dat");
 
-  const char* gpCmd = "set grid\nplot \"/tmp/out.dat\" u 1:2 w lp title "
-                      "\"raw\", \"/tmp/out.dat\" u 1:3 w lp title \"linear\""
-                      ", \"/tmp/out.dat\" u 1:4 w "
+  const char* gpCmd = "set grid\nplot \"out.dat\" u 1:2 w lp title "
+                      "\"raw\", \"out.dat\" u 1:3 w lp title \"linear\""
+                      ", \"out.dat\" u 1:4 w "
                       "lp title \"5th order polynomial\"\n";
-  FILE* outDat = fopen("/tmp/postpro.gnu", "w+");
+  FILE* outDat = fopen("postpro.gnu", "w+");
   RCHECK(outDat);
   fprintf(outDat, gpCmd);
   fflush(outDat);
   fclose(outDat);
 
-  int err = system("/usr/bin/gnuplot -persist /tmp/postpro.gnu");
+  int err = system("gnuplot -persist postpro.gnu");
 
   if (err == -1)
   {
@@ -2385,7 +2385,7 @@ bool testInterpolation(int argc, char** argv)
   }
   else
   {
-    RMSGS("/usr/bin/gnuplot -persist /tmp/postpro.gnu");
+    RMSGS("gnuplot -persist postpro.gnu");
   }
 
   MatNd_destroy(compare);
@@ -2431,18 +2431,18 @@ bool testMovingMeanFilter(int argc, char** argv)
     MatNd_set(compare, i, 2, MatNd_get(filt, i, 0));
   }
 
-  MatNd_toFile(compare, "/tmp/out.dat");
+  MatNd_toFile(compare, "out.dat");
 
-  const char* gpCmd = "set grid\nplot \"/tmp/out.dat\" u 1:2 w l title"
-                      " \"raw\", \"/tmp/out.dat\" u 1:3 w lp "
+  const char* gpCmd = "set grid\nplot \"out.dat\" u 1:2 w l title"
+                      " \"raw\", \"out.dat\" u 1:3 w lp "
                       "title \"filtered\"\n";
-  FILE* outDat = fopen("/tmp/postpro.gnu", "w+");
+  FILE* outDat = fopen("postpro.gnu", "w+");
   RCHECK(outDat);
   fprintf(outDat, gpCmd);
   fflush(outDat);
   fclose(outDat);
 
-  int err = system("/usr/bin/gnuplot -persist /tmp/postpro.gnu");
+  int err = system("gnuplot -persist postpro.gnu");
 
   if (err == -1)
   {
@@ -2450,7 +2450,7 @@ bool testMovingMeanFilter(int argc, char** argv)
   }
   else
   {
-    RMSGS("/usr/bin/gnuplot -persist /tmp/postpro.gnu");
+    RMSGS("gnuplot -persist postpro.gnu");
   }
 
   MatNd_destroy(compare);
@@ -2489,19 +2489,19 @@ bool testMinJerkTrj(int argc, char** argv)
     MatNd_set(plot, i, 2, MatNd_get(s_dot, i, 0));
   }
 
-  MatNd_toFile(plot, "/tmp/testMinJerkTrj.dat");
+  MatNd_toFile(plot, "testMinJerkTrj.dat");
 
   const char* gpCmd = "set grid\nset title \"Morasso & Mussa-Ivaldi model\"\n"
-                      "plot \"/tmp/testMinJerkTrj.dat\" u 1:2 w l "
-                      "title \"s\", \"/tmp/testMinJerkTrj.dat\" u 1:3 w lp "
+                      "plot \"testMinJerkTrj.dat\" u 1:2 w l "
+                      "title \"s\", \"testMinJerkTrj.dat\" u 1:3 w lp "
                       "title \"s_dot\"\n";
-  FILE* outDat = fopen("/tmp/postpro.gnu", "w+");
+  FILE* outDat = fopen("postpro.gnu", "w+");
   RCHECK(outDat);
   fprintf(outDat, gpCmd);
   fflush(outDat);
   fclose(outDat);
 
-  int err = system("/usr/bin/gnuplot -persist /tmp/postpro.gnu");
+  int err = system("gnuplot -persist postpro.gnu");
 
   if (err == -1)
   {
@@ -2509,7 +2509,7 @@ bool testMinJerkTrj(int argc, char** argv)
   }
   else
   {
-    RMSGS("/usr/bin/gnuplot -persist /tmp/postpro.gnu");
+    RMSGS("gnuplot -persist postpro.gnu");
   }
 
   REXEC(1)
@@ -2565,19 +2565,19 @@ bool testMinJerkTrjPoly(int argc, char** argv)
     MatNd_set(plot, i, 2, MatNd_get(plot, i, 2)/len_sdot);
   }
 
-  MatNd_toFile(plot, "/tmp/testMinJerkTrj2.dat");
+  MatNd_toFile(plot, "testMinJerkTrj2.dat");
 
   const char* gpCmd = "set grid\nset title \"5th order polynomial\"\n"
-                      "plot \"/tmp/testMinJerkTrj2.dat\" u 1:2 w l "
-                      "title \"s\", \"/tmp/testMinJerkTrj2.dat\" u 1:3 "
+                      "plot \"testMinJerkTrj2.dat\" u 1:2 w l "
+                      "title \"s\", \"testMinJerkTrj2.dat\" u 1:3 "
                       "w lp title \"s_dot\"\n";
-  FILE* outDat = fopen("/tmp/postpro2.gnu", "w+");
+  FILE* outDat = fopen("postpro2.gnu", "w+");
   RCHECK(outDat);
   fprintf(outDat, gpCmd);
   fflush(outDat);
   fclose(outDat);
 
-  int err = system("/usr/bin/gnuplot -persist /tmp/postpro2.gnu");
+  int err = system("gnuplot -persist postpro2.gnu");
 
   if (err == -1)
   {
@@ -2585,7 +2585,7 @@ bool testMinJerkTrjPoly(int argc, char** argv)
   }
   else
   {
-    RMSGS("/usr/bin/gnuplot -persist /tmp/postpro2.gnu");
+    RMSGS("gnuplot -persist postpro2.gnu");
   }
 
   REXEC(1)
@@ -2688,19 +2688,19 @@ bool testArcLengthInterpolation(int argc, char** argv)
 
 
 
-  MatNd_toFile(plot, "/tmp/testArcLengthInterpolation2.dat");
+  MatNd_toFile(plot, "testArcLengthInterpolation2.dat");
 
   const char* gpCmd =
-    "set grid\nplot \"/tmp/testArcLengthInterpolation2.dat\" u 1:2 w lp "
-    "title \"x\", \"/tmp/testArcLengthInterpolation2.dat\" u 3:4 w p title"
+    "set grid\nplot \"testArcLengthInterpolation2.dat\" u 1:2 w lp "
+    "title \"x\", \"testArcLengthInterpolation2.dat\" u 3:4 w p title"
     " \"x_mj\"\n";
-  FILE* outDat = fopen("/tmp/postpro.gnu", "w+");
+  FILE* outDat = fopen("postpro.gnu", "w+");
   RCHECK(outDat);
   fprintf(outDat, gpCmd);
   fflush(outDat);
   fclose(outDat);
 
-  int err = system("/usr/bin/gnuplot -persist /tmp/postpro.gnu");
+  int err = system("gnuplot -persist postpro.gnu");
 
   if (err == -1)
   {
@@ -2708,7 +2708,7 @@ bool testArcLengthInterpolation(int argc, char** argv)
   }
   else
   {
-    RMSGS("/usr/bin/gnuplot -persist /tmp/postpro.gnu");
+    RMSGS("gnuplot -persist postpro.gnu");
   }
 
 
@@ -2851,21 +2851,21 @@ bool testFilters1D(int argc, char** argv)
     MatNd_set(plot, i+1, 4, median);
   }
 
-  MatNd_toFile(plot, "/tmp/out.dat");
+  MatNd_toFile(plot, "out.dat");
 
-  const char* gpCmd = "set grid\nplot \"/tmp/out.dat\" u 1 w l title"
-                      " \"2nd order filter\", \"/tmp/out.dat\" u 2 w l"
-                      " title \"ramp\", \"/tmp/out.dat\" u 3 w l"
-                      " title \"filtered ramp\", \"/tmp/out.dat\" u 4 w l "
-                      "title \"linear ramp\", \"/tmp/out.dat\" u 5 w l title "
+  const char* gpCmd = "set grid\nplot \"out.dat\" u 1 w l title"
+                      " \"2nd order filter\", \"out.dat\" u 2 w l"
+                      " title \"ramp\", \"out.dat\" u 3 w l"
+                      " title \"filtered ramp\", \"out.dat\" u 4 w l "
+                      "title \"linear ramp\", \"out.dat\" u 5 w l title "
                       "\"median filter\"\n";
-  FILE* outDat = fopen("/tmp/postpro.gnu", "w+");
+  FILE* outDat = fopen("postpro.gnu", "w+");
   RCHECK(outDat);
   fprintf(outDat, gpCmd);
   fflush(outDat);
   fclose(outDat);
 
-  int err = system("/usr/bin/gnuplot -persist /tmp/postpro.gnu");
+  int err = system("gnuplot -persist postpro.gnu");
 
   if (err == -1)
   {
@@ -2873,7 +2873,7 @@ bool testFilters1D(int argc, char** argv)
   }
   else
   {
-    RMSGS("/usr/bin/gnuplot -persist /tmp/postpro.gnu");
+    RMSGS("gnuplot -persist postpro.gnu");
   }
 
   MatNd_destroy(plot);
@@ -2938,7 +2938,7 @@ bool testFiltersND(int argc, char** argv)
 
   }
 
-  MatNd_toFile(plot, "/tmp/out.dat");
+  MatNd_toFile(plot, "out.dat");
 
   char gpCmd[4096];
   char tmp[256];
@@ -2948,21 +2948,21 @@ bool testFiltersND(int argc, char** argv)
 
   for (unsigned int i=0; i<dim; i++)
   {
-    sprintf(tmp, "\"/tmp/out.dat\" u %u w l title \"2nd order filter[%u]\", ",
+    sprintf(tmp, "\"out.dat\" u %u w l title \"2nd order filter[%u]\", ",
             i+1, i);
     strcat(gpCmd, tmp);
-    sprintf(tmp, "\"/tmp/out.dat\" u %u w l title \"ramp[%u]\", ",
+    sprintf(tmp, "\"out.dat\" u %u w l title \"ramp[%u]\", ",
             dim+i+1, i);
     strcat(gpCmd, tmp);
 
     if (i != dim-1)
     {
-      sprintf(tmp, "\"/tmp/out.dat\" u %u w l title \"ramp filter[%u]\", ",
+      sprintf(tmp, "\"out.dat\" u %u w l title \"ramp filter[%u]\", ",
               2*dim+i+1, i);
     }
     else
     {
-      sprintf(tmp, "\"/tmp/out.dat\" u %u w l title \"ramp filter[%u]\"",
+      sprintf(tmp, "\"out.dat\" u %u w l title \"ramp filter[%u]\"",
               2*dim+i+1, i);
     }
 
@@ -2970,13 +2970,13 @@ bool testFiltersND(int argc, char** argv)
     idxCount++;
   }
 
-  FILE* outDat = fopen("/tmp/postpro.gnu", "w+");
+  FILE* outDat = fopen("postpro.gnu", "w+");
   RCHECK(outDat);
   fprintf(outDat, gpCmd);
   fflush(outDat);
   fclose(outDat);
 
-  int err = system("/usr/bin/gnuplot -persist /tmp/postpro.gnu");
+  int err = system("gnuplot -persist postpro.gnu");
 
   if (err == -1)
   {
@@ -2984,7 +2984,7 @@ bool testFiltersND(int argc, char** argv)
   }
   else
   {
-    RMSGS("/usr/bin/gnuplot -persist /tmp/postpro.gnu");
+    RMSGS("gnuplot -persist postpro.gnu");
   }
 
   MatNd_destroy(plot);
@@ -3208,11 +3208,7 @@ bool testDTW(int argc, char** argv)
   MatNd_destroy(weight);
 
   char gpCmd[256];
-#if defined (_MSC_VER)
-  sprintf(gpCmd, "wgnuplot.exe -persist %sdtw.gnu", dataDir);
-#else
   sprintf(gpCmd, "gnuplot -persist %sdtw.gnu", dataDir);
-#endif
 
   int err = system(gpCmd);
 

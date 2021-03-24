@@ -306,6 +306,18 @@ void Math_Cart2Cyl(const double p[3], double* radialDist, double* azimuth,
  */
 void Math_dCyldCart(double dCyldCart[3][3], const double cart[3]);
 
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Calls gnuplot with the given command. The function opens a pipe to
+ *         gnuplot and sends the given command. The command "gnuplot" must be
+ *         present in the environment path variable. The function blocks until
+ *         the gnuplot window is closed. Works for Visual Studio and Linux.
+ *
+ *  \param[in] gnuplotCommand  Command line to be executed inside gnuplot.
+ *  \return True for success, false otherwise:
+ *          - pipe could not be opened
+ *          - gnuplotCommand is NULL
+ */
+bool Math_gnuplot(const char* gnuplotCommand);
 ///@}
 
 

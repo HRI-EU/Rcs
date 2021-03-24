@@ -981,3 +981,30 @@ void Math_finiteDifferenceDerivative(MatNd* dfdq,
   MatNd_destroy(dx);
   MatNd_destroy(dq);
 }
+
+/*******************************************************************************
+ * See header
+ ******************************************************************************/
+bool Math_gnuplot(const char* plotCommand)
+{
+  if (plotCommand == NULL)
+  {
+    RLOG(1, "Plot command string is NULL - not plotting");
+    return false;
+  }
+
+  FILE* pipe = popen("gnuplot", "w");
+
+  if (!pipe)
+  {
+    RLOG(1, "Failed to open gnuplot via pipe - not plotting");
+    return false;
+  }
+
+  fputs(plotCommand, pipe);
+  fputs("\npause mouse close\n", pipe);
+  fflush(pipe);
+  pclose(pipe);
+
+  return true;
+}
