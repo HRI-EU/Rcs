@@ -397,7 +397,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 
   // Compute type
   bool distance = true, graphics = true, physics = true, softPhysics = false;
-  bool depth=false;
+  bool depth=false, contact=false;
 
   // Physics computation is not carried out for non-physics objects by default.
   if (body->physicsSim == RCSBODY_PHYSICS_NONE)
@@ -431,6 +431,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   getXMLNodePropertyBoolString(node, "graphics", &graphics);
   getXMLNodePropertyBoolString(node, "softPhysics", &softPhysics);
   getXMLNodePropertyBoolString(node, "depth", &depth);
+  getXMLNodePropertyBoolString(node, "contact", &contact);
 
   if (distance == true)
   {
@@ -451,6 +452,10 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   if (depth == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_DEPTHBUFFER;
+  }
+  if (contact == true)
+  {
+    shape->computeType |= RCSSHAPE_COMPUTE_CONTACT;
   }
 
   shape->resizeable = false;

@@ -112,14 +112,7 @@ int main(int argc, char** argv)
   pthread_mutex_t graphLock;
   pthread_mutex_init(&graphLock, NULL);
 
-  // Add search path for meshes etc.
-  const char* hgr = getenv("SIT");
-  if (hgr != NULL)
-  {
-    std::string meshDir = std::string(hgr) +
-                          std::string("/Data/RobotMeshes/1.0/data");
-    Rcs_addResourcePath(meshDir.c_str());
-  }
+  // Add search path for colors, fonts etc.
 
   Rcs_addResourcePath("config");
 
@@ -202,14 +195,14 @@ int main(int argc, char** argv)
 
       argP.getArgument("-dt", &dt);
       MatNd* z = MatNd_create(2*n, 1);
-      VecNd_copy(z->ele, graph->q->ele, n);
+      MatNd zq = MatNd_fromPtr(n, 1, z->ele);
+      RcsGraph_stateVectorToIK(graph, graph->q, &zq);
       MatNd qp = MatNd_fromPtr(n, 1, &z->ele[n]);
       MatNd* F_ext = MatNd_create(n, 1);
       DirDynParams params;
       params.graph = graph;
       params.F_ext = F_ext;
-      //graph->userData = (void*) F_ext;
-      MatNd* err = MatNd_create(2 * n, 1);
+      MatNd* err = MatNd_create(2*n, 1);
       for (int i = 0; i < n; i++)
       {
         err->ele[i]     = 1.0e-2;
@@ -268,7 +261,7 @@ int main(int argc, char** argv)
         else if (STREQ(integrator, "Euler"))
         {
           integration_euler(Rcs_directDynamicsIntegrationStep,
-                            (void*) &params, 2 * n, dt, z->ele, z->ele);
+                            (void*) &params, 2*n, dt, z->ele, z->ele);
         }
         else
         {
@@ -282,8 +275,7 @@ int main(int argc, char** argv)
 
         sprintf(hudText, "Direct dynamics simulation\nTime: %.3f (%.3f)   "
                 "dof: %d\ndt: %.3f dt_opt: %.3f\n%d steps took %.1f msec"
-                "\n[%s]   Energy: %.3f Damping: %.1f\n"
-                "G-comp: %d h-comp: %d\n",
+                "\n[%s]   Energy: %.3f Damping: %.1f\nG-comp: %d h-comp: %d\n",
                 time, Timer_getTime() - t0, n, dt, dt_opt, nSteps,
                 dtCompute*1.0e3, integrator, E, damping, gCancel, hCancel);
 

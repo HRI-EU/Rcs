@@ -1428,7 +1428,7 @@ int main(int argc, char** argv)
           MatNd_setZero(q_dot_curr);
           pthread_mutex_lock(&graphLock);
           RcsGraph_setState(graph, q0, q_dot_curr);
-          sim->reset();
+          sim->reset(q0);
           MatNd_copy(q_des, graph->q);
           MatNd_copy(q_des_f, graph->q);
           if (jw != NULL)

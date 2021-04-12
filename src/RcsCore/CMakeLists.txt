@@ -11,6 +11,7 @@ IkSolverConstraintRMR.cpp
 IkSolverPrioRMR.cpp
 IkSolverRMR.cpp
 KeyCatcherBase.cpp
+KineticSimulation.cpp
 MotionControlLayer.cpp
 PeriodicCallback.cpp
 PhysicsBase.cpp

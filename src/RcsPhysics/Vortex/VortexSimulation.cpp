@@ -1030,6 +1030,7 @@ void Rcs::VortexSimulation::simulate(double dt,
 void Rcs::VortexSimulation::reset()
 {
   MatNd_copy(this->q_des, getGraph()->q);
+  MatNd_setZero(getGraph()->q_dot);
   MatNd_setZero(this->q_dot_des);
   MatNd_setZero(this->T_des);
 

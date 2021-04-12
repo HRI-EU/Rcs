@@ -44,6 +44,7 @@
 #include <Rcs_typedef.h>
 #include <Rcs_macros.h>
 #include <Rcs_basicMath.h>
+#include <KineticSimulation.h>
 #include <KeyCatcherBase.h>
 #include <FTSensorNode.h>
 #include <SphereNode.h>
@@ -211,6 +212,7 @@ bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
   // In case the graph is resizeable, bodies might be replaced on the fly. To
   // make sure we always point to the correct ones, we update the transformation
   // pointers before each iteration.
+  // \todo: Should this go into the FRAME event case?
   if (resizeable==true && modelNd->isVisible())
   {
     updateTransformPointers();
@@ -220,6 +222,10 @@ bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
 
   switch (ea.getEventType())
   {
+    case (osgGA::GUIEventAdapter::FRAME):
+    {
+      break;
+    }
     case (osgGA::GUIEventAdapter::KEYDOWN):
     {
       /////////////////////////////////////////////////////////////

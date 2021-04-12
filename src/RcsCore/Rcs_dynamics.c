@@ -481,14 +481,12 @@ double RcsGraph_computeKineticTerms(const RcsGraph* graph,
   }
   else
   {
-    MatNd_reshape(M, n, n);
-    MatNd_setZero(M);
+    MatNd_reshapeAndSetZero(M, n, n);
   }
 
   if (h != NULL)
   {
-    MatNd_reshape(h, n, 1);
-    MatNd_setZero(h);
+    MatNd_reshapeAndSetZero(h, n, 1);
   }
 
   if (F_gravity != NULL)
