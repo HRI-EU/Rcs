@@ -118,8 +118,8 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   pat->addChild(draggerNd.get());
 
 #if defined (USE_BULLET)
-  Rcs::BulletSimulation* bSim = dynamic_cast<Rcs::BulletSimulation*>(sim_);
-  if (bSim != NULL)
+  Rcs::BulletSimulation* bSim = dynamic_cast<Rcs::BulletSimulation*>(sim);
+  if (bSim)
   {
     KeyCatcherBase::registerKey("d", "Toggle debug viewer", "PhysicsNode");
     BulletDebugDrawer* gDebugDrawer = new BulletDebugDrawer();
@@ -128,6 +128,21 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
     pat->addChild(gDebugDrawer);
   }
 #endif
+
+  // For the KineticSimulator, we display the contact points as small spheres.
+  Rcs::KineticSimulation* neSim = dynamic_cast<Rcs::KineticSimulation*>(sim);
+  if (neSim)
+  {
+    osg::ref_ptr<osg::Group> pointContacts = new osg::Group();
+
+    for (size_t i=0; i<neSim->contact.size(); ++i)
+    {
+      const double* pos = neSim->contact[i].x_contact;
+      osg::ref_ptr<Rcs::SphereNode> cn = new Rcs::SphereNode(pos, 0.005);
+      cn->makeDynamic(pos);
+      pat->addChild(cn.get());
+    }
+  }
 
   setDisplayMode(2);
 

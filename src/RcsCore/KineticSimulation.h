@@ -167,7 +167,7 @@ public:
   virtual void setControlInput(const MatNd* q_des, const MatNd* q_dot_des,
                                const MatNd* T_des);
 
-protected:
+  // protected:
 
   struct FrictionContactPoint
   {

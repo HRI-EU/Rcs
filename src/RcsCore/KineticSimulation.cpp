@@ -642,9 +642,8 @@ void KineticSimulation::integrationStep(const double* x, void* param,
     // Compute friction contact speeds
     double* xp_contact_i = &xp_c.ele[3 * i];
     const double* x_contact_i = &x_c.ele[3*i];
-    //const double* x_attach_i = kSim->contact[i].bdy->A_BI.org;
     HTr A_CI;
-    HTr_transform(&A_CI, &kSim->contact[i].bdy->A_BI, &kSim->contact[i].bdy->shape[kSim->contact[i].shapeIdx]->A_CB);
+    HTr_transform(&A_CI, &cBdy->A_BI, &cSh->A_CB);
     const double* x_attach_i = A_CI.org;
 
     kSim->contact[i].computeContactSpeed(xp_contact_i, dt, x_contact_i,
