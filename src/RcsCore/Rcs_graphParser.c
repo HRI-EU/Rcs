@@ -456,6 +456,14 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   if (contact == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_CONTACT;
+
+    double mu = 1.0;
+    double stiffness = 2.0e4;
+    double z0 = 0.0;
+    getXMLNodePropertyDouble(node, "staticFriction", &mu);
+    getXMLNodePropertyDouble(node, "stiffness", &stiffness);
+    getXMLNodePropertyDouble(node, "height", &z0);
+    Vec3d_set(shape->scale3d, mu, stiffness, z0);
   }
 
   shape->resizeable = false;

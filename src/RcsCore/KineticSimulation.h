@@ -36,6 +36,8 @@
 
 #include "PhysicsBase.h"
 
+#include <string>
+
 
 
 namespace Rcs
@@ -167,6 +169,9 @@ public:
   virtual void setControlInput(const MatNd* q_des, const MatNd* q_dot_des,
                                const MatNd* T_des);
 
+  virtual bool setParameter(ParameterCategory category,
+                            const char* name, const char* type, double value);
+
   // protected:
 
   struct FrictionContactPoint
@@ -200,6 +205,7 @@ public:
 
   MatNd* draggerTorque;
   std::vector<FrictionContactPoint> contact;
+  std::string integrator;
 };
 
 }   // namespace Rcs

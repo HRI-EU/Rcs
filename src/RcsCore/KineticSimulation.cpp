@@ -50,7 +50,8 @@ static PhysicsFactoryRegistrar<KineticSimulation> physics(className);
 /*******************************************************************************
  * Constructor.
  ******************************************************************************/
-KineticSimulation::KineticSimulation() : PhysicsBase(), draggerTorque(NULL)
+KineticSimulation::KineticSimulation() : PhysicsBase(), draggerTorque(NULL),
+  integrator("Euler")
 {
 }
 
@@ -58,7 +59,7 @@ KineticSimulation::KineticSimulation() : PhysicsBase(), draggerTorque(NULL)
  * Constructor.
  ******************************************************************************/
 KineticSimulation::KineticSimulation(const RcsGraph* graph_) :
-  PhysicsBase(graph_), draggerTorque(NULL)
+  PhysicsBase(graph_), draggerTorque(NULL), integrator("Euler")
 {
   this->draggerTorque = MatNd_createLike(graph_->q);
   MatNd_reshape(this->draggerTorque, getGraph()->nJ, 1);
@@ -68,7 +69,7 @@ KineticSimulation::KineticSimulation(const RcsGraph* graph_) :
  * Copy constructor.
  ******************************************************************************/
 KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe) :
-  PhysicsBase(copyFromMe), draggerTorque(NULL)
+  PhysicsBase(copyFromMe), draggerTorque(NULL), integrator("Euler")
 {
   this->draggerTorque = MatNd_clone(copyFromMe.draggerTorque);
   MatNd_reshape(this->draggerTorque, getGraph()->nJ, 1);
@@ -79,7 +80,7 @@ KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe) :
  ******************************************************************************/
 KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe,
                                      const RcsGraph* newGraph) :
-  PhysicsBase(copyFromMe, newGraph), draggerTorque(NULL)
+  PhysicsBase(copyFromMe, newGraph), draggerTorque(NULL), integrator("Euler")
 {
   this->draggerTorque = MatNd_clone(copyFromMe.draggerTorque);
   MatNd_reshape(this->draggerTorque, getGraph()->nJ, 1);
@@ -107,6 +108,7 @@ KineticSimulation::~KineticSimulation()
  ******************************************************************************/
 bool KineticSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
 {
+  integrator = "Euler";
   initGraph(g);
   if (this->draggerTorque==NULL)
   {
@@ -123,7 +125,11 @@ bool KineticSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
     {
       if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_CONTACT))
       {
-        contact.push_back(FrictionContactPoint(BODY, shapeIdx));
+        double mu = SHAPE->scale3d[0];
+        double stiffness = SHAPE->scale3d[1];
+        double z0 = SHAPE->scale3d[2];
+        contact.push_back(FrictionContactPoint(BODY, shapeIdx,
+                                               mu, stiffness, z0));
       }
 
       shapeIdx++;
@@ -156,6 +162,7 @@ void KineticSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
 
   const int n = getGraph()->nJ;
   const int nc = contact.size();
+  const int nz = 2*n+3*nc;
   double dt_opt = dt;// \todo: Fix this
   MatNd* z = MatNd_create(2*n+3*nc, 1);
   MatNd zq = MatNd_fromPtr(n, 1, &z->ele[0]);
@@ -191,29 +198,32 @@ void KineticSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
   DirDynParams params;
   params.graph = getGraph();
   params.F_ext = F_ext;
-  const char* integrator = "Euler";
 
-  if (STREQ(integrator, "Fehlberg"))
+  if (integrator == "Fehlberg")
   {
-    MatNd* err = MatNd_create(2 * n, 1);
-    for (int i = 0; i < n; i++)
-    {
-      err->ele[i] = 1.0e-2;
-      err->ele[i + n] = 1.0e-3;
-    }
+    MatNd* err = MatNd_create(nz, 1);
+    MatNd err_q  = MatNd_fromPtr(n, 1, &err->ele[0]);
+    MatNd err_qp = MatNd_fromPtr(n, 1, &err->ele[n]);
+    MatNd err_xc = MatNd_fromPtr(3*nc, 1, &err->ele[2*n]);
 
-    int nSteps = integration_t1_t2(Rcs_directDynamicsIntegrationStep,
-                                   (void*)&params, 2*n, time(), time()+dt,
+    MatNd_setElementsTo(&err_xc, DBL_MAX);
+    MatNd_setElementsTo(&err_q,  1.0e-1);
+    MatNd_setElementsTo(&err_qp, 1.0e-2);
+
+    int nSteps = integration_t1_t2(integrationStep, (void*)this, nz, time(), time()+dt,
                                    &dt_opt, z->ele, z->ele, err->ele);
+    // int nSteps = integration_t1_t2(Rcs_directDynamicsIntegrationStep,
+    //                                (void*)&params, 2*n, time(), time()+dt,
+    //                                &dt_opt, z->ele, z->ele, err->ele);
     MatNd_destroy(err);
 
-    RLOG(1, "Adaptive integration took %d steps", nSteps);
+    RLOG(0, "Adaptive integration took %d steps", nSteps);
   }
-  else if (STREQ(integrator, "Euler"))
+  else if (integrator == "Euler")
   {
     //integration_euler(Rcs_directDynamicsIntegrationStep,
     // (void*)&params, 2 * n, dt, z->ele, z->ele);
-    integration_euler(integrationStep, (void*)this, 2*n+3*nc, dt, z->ele, z->ele);
+    integration_euler(integrationStep, (void*)this, nz, dt, z->ele, z->ele);
   }
   else
   {
@@ -507,6 +517,30 @@ void KineticSimulation::getJointCompliance(MatNd* stiffness,
 bool KineticSimulation::addBody(const RcsGraph* graph, const RcsBody* body)
 {
   RFATAL("FIXME");
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool KineticSimulation::setParameter(ParameterCategory category,
+                                     const char* name, const char* type,
+                                     double value)
+{
+  switch (category)
+  {
+    case Simulation:
+      if (STREQ(type, "Integrator"))
+      {
+        this->integrator = std::string(name);
+        RLOG_CPP(1, "Changed integrator to " << this->integrator);
+      }
+      break;
+
+    default:
+      break;
+  }
+
+  return true;
 }
 
 /*******************************************************************************
