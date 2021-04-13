@@ -93,6 +93,7 @@
 #include <TaskFactory.h>
 #include <TaskRegionFactory.h>
 #include <PhysicsFactory.h>
+#include <KineticSimulation.h>
 #include <PhysicsNode.h>
 #include <GraphNode.h>
 #include <FTSensorNode.h>
@@ -1159,6 +1160,7 @@ int main(int argc, char** argv)
       double dt = 0.005, tmc = 0.01, damping = 2.0, shootMass = 1.0;
       char hudText[2056] = "";
       char physicsEngine[32] = "Bullet";
+      std::string integrator = "Euler";
       char physicsCfg[128] = "config/physics/physics.xml";
       char bgColor[64] = "LIGHT_GRAYISH_GREEN";
       strcpy(xmlFileName, "gScenario.xml");
@@ -1202,6 +1204,8 @@ int main(int argc, char** argv)
                        "(default is \"%f\")", shootMass);
       argP.getArgument("-bgColor", bgColor, "Background color (default is "
                        "\"%s\")", bgColor);
+      argP.getArgument("-i", &integrator, "Integrator for Newton-Euler "
+                       "simulatio (default is \"%s\")", integrator.c_str());
       getModel(directory, xmlFileName);
 
       if (argP.hasArgument("-h"))
@@ -1256,6 +1260,8 @@ int main(int argc, char** argv)
         RcsGraph_destroy(graph2);
       }
 
+      sim->setParameter(Rcs::PhysicsBase::Simulation, integrator.c_str(),
+                        "Integrator", 0.0);
       if (disableCollisions==true)
       {
         sim->disableCollisions();
@@ -1341,6 +1347,8 @@ int main(int argc, char** argv)
           RPAUSE_MSG("Hit enter to continue iteration %u", loopCount);
         }
 
+        pthread_mutex_lock(&graphLock);
+
         //////////////////////////////////////////////////////////////
         // Keycatcher
         /////////////////////////////////////////////////////////////////
@@ -1379,6 +1387,8 @@ int main(int argc, char** argv)
         }
         else if (kc && kc->getAndResetKey('k'))
         {
+          RLOG(1, "RcsGraph_addBody");
+
           // Create a new body in the camera position.
           HTr A_camI;
           viewer->getCameraTransform(&A_camI);
@@ -1391,9 +1401,6 @@ int main(int argc, char** argv)
           Vec3d_sub(bdy->x_dot, I_mouseCoords, A_camI.org);
           Vec3d_normalizeSelf(bdy->x_dot);
           Vec3d_constMulSelf(bdy->x_dot, 20.0);
-
-          pthread_mutex_lock(&graphLock);
-          RLOG(1, "RcsGraph_addBody");
 
           RLOG(1, "Adding body to simulation");
           bool ok = sim->addBody(graph, bdy);
@@ -1409,13 +1416,12 @@ int main(int argc, char** argv)
             arrBuf[3] = q_des_f;
             arrBuf[4] = q0;
             arrBuf[5] = T_gravity;
-
             ok = RcsGraph_addBodyDofs(graph, NULL, bdy, arrBuf, 6);
 
             RLOG(1, "Adding body to graphics");
             simNode->addBodyNode(bdy);
+            simNode->updateTransformPointers();
           }
-          pthread_mutex_unlock(&graphLock);
 
           RMSG("%s adding body \"%s\"",
                ok ? "SUCCEEDED" : "FAILED", bdy->name);
@@ -1426,7 +1432,6 @@ int main(int argc, char** argv)
         {
           RMSGS("Resetting physics");
           MatNd_setZero(q_dot_curr);
-          pthread_mutex_lock(&graphLock);
           RcsGraph_setState(graph, q0, q_dot_curr);
           sim->reset(q0);
           MatNd_copy(q_des, graph->q);
@@ -1445,13 +1450,11 @@ int main(int argc, char** argv)
               jw->reset(graph->q);
             }
           }
-          pthread_mutex_unlock(&graphLock);
         }
         else if (kc && kc->getAndResetKey('o'))
         {
           RMSGS("Resetting physics");
           MatNd_setZero(q_dot_curr);
-          pthread_mutex_lock(&graphLock);
           MatNd_copy(graph->q, q0);
           MatNd* q_rnd = MatNd_create(graph->dof, 1);
           MatNd_setRandom(q_rnd, -RCS_DEG2RAD(25.0), RCS_DEG2RAD(25.0));
@@ -1465,7 +1468,6 @@ int main(int argc, char** argv)
           {
             jw->reset(graph->q);
           }
-          pthread_mutex_unlock(&graphLock);
         }
         else if (kc && kc->getAndResetKey('j'))
         {
@@ -1493,7 +1495,6 @@ int main(int argc, char** argv)
           std::string name = std::string(bNd->body()->name);
 
           RMSG("Removing body \"%s\" under mouse", name.c_str());
-          pthread_mutex_lock(&graphLock);
           bool ok = sim->removeBody(name.c_str());
 
           if (ok)
@@ -1510,7 +1511,6 @@ int main(int argc, char** argv)
 
             ok = RcsGraph_removeBody(graph, name.c_str(), arrBuf, 6) && ok;
           }
-          pthread_mutex_unlock(&graphLock);
           RMSG("%s removing body \"%s\"", ok ? "SUCCEEDED" : "FAILED",
                name.c_str());
         }
@@ -1525,13 +1525,11 @@ int main(int argc, char** argv)
           std::string name = std::string(bNd->body()->name);
 
           RMSG("Deactivating body \"%s\" under mouse", name.c_str());
-          pthread_mutex_lock(&graphLock);
           bool ok = sim->deactivateBody(name.c_str());
           if (ok)
           {
             bNd->setGhostMode(true, "WHITE");
           }
-          pthread_mutex_unlock(&graphLock);
           RMSG("%s deactivating body \"%s\"", ok ? "SUCCEEDED" : "FAILED",
                name.c_str());
         }
@@ -1546,7 +1544,6 @@ int main(int argc, char** argv)
           std::string name = std::string(bNd->body()->name);
 
           RMSG("Activating body \"%s\" under mouse", name.c_str());
-          pthread_mutex_lock(&graphLock);
           HTr A_BI;
           HTr_copy(&A_BI, bNd->getTransformPtr());
           A_BI.org[2] += 0.2;
@@ -1556,25 +1553,27 @@ int main(int argc, char** argv)
             bNd->setGhostMode(false);
           }
 
-          pthread_mutex_unlock(&graphLock);
           RMSG("%s activating body \"%s\"", ok ? "SUCCEEDED" : "FAILED",
                name.c_str());
         }
         else if (kc && kc->getAndResetKey('m'))
         {
           RMSGS("Enter physics parameter:");
-          int category;
+          int categoryInt;
           std::string type, name;
           double value;
-          printf("Enter category: (0: Simulation 1: Material 2: Body)");
-          std::cin >> category;
-          printf("Enter type:");
+          printf("Enter category (0: Simulation 1: Material 2: Body): ");
+          std::cin >> categoryInt;
+          printf("Enter type: ");
           std::cin >> type;
-          printf("Enter name:");
+          printf("Enter name: ");
           std::cin >> name;
-          printf("Enter value:");
+          printf("Enter value: ");
           std::cin >> value;
-          bool pSuccess = sim->setParameter((Rcs::PhysicsBase::ParameterCategory)category, name.c_str(), type.c_str(), value);
+          Rcs::PhysicsBase::ParameterCategory category;
+          category = (Rcs::PhysicsBase::ParameterCategory) categoryInt;
+          bool pSuccess = sim->setParameter(category, name.c_str(),
+                                            type.c_str(), value);
           RMSGS("%s physics parameters",
                 pSuccess ? "Successfully applied" : "Failed to apply");
         }
@@ -1591,7 +1590,6 @@ int main(int argc, char** argv)
           int displayMode = simNode->getDisplayMode();
           viewer->removeNode(simNode);
           simNode = NULL;
-          pthread_mutex_lock(&graphLock);
           double t_reload2 = Timer_getSystemTime();
           RcsGraph_destroy(graph);
           graph = RcsGraph_create(xmlFileName);
@@ -1648,7 +1646,6 @@ int main(int argc, char** argv)
             RLOG(1, "Couldn't create graph - skipping osg "
                  "node and physics simulation");
           }
-          pthread_mutex_unlock(&graphLock);
           t_reload = Timer_getSystemTime() - t_reload;
           RMSG("... took %.2f msec (%.2f msec simulation only)",
                1000.0*t_reload, 1000.0*t_reload2);
@@ -1670,7 +1667,6 @@ int main(int argc, char** argv)
           RLOG(1, "Step");
         }
 
-        pthread_mutex_lock(&graphLock);
 
 
 
@@ -1747,6 +1743,22 @@ int main(int argc, char** argv)
                  sim->getGraph()->nBodies, sim->getGraph()->dof,
                  gravComp ? "ON" : "OFF",
                  simNode ? simNode->getDisplayModeStr() : "nothing");
+        Rcs::KineticSimulation* kSim = dynamic_cast<Rcs::KineticSimulation*>(sim);
+        if (kSim)
+        {
+          char neText[128];
+          if (kSim->integrator=="Euler")
+          {
+            snprintf(neText, 128, "\nIntegrator: Euler   Energy: %.4f",
+                     kSim->energy);
+          }
+          else if (kSim->integrator=="Fehlberg")
+          {
+            snprintf(neText, 128, "\nIntegrator: Fehlberg   Energy: %.4f   step: %f",
+                     kSim->energy, kSim->dt_opt);
+          }
+          strcat(hudText, neText);
+        }
 
         if (hud != NULL)
         {

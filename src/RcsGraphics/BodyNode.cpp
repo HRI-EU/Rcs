@@ -104,7 +104,7 @@ protected:
  *                             |
  *                             ---> capsule, box, etc (osg::Capsule ...)
 *******************************************************************************/
-BodyNode::BodyNode(const RcsBody* b, const RcsGraph* graph, float scale,
+BodyNode::BodyNode(const RcsBody* b, const RcsGraph* graph, double scale,
                    bool resizeable) :
   graphPtr(graph),
   A_BI_(NULL),

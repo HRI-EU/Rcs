@@ -190,7 +190,7 @@ public:
                              const double x_attach[3],
                              const double xp_attach[3]) const;
 
-    const RcsBody* bdy;       // Contact body
+    int bdyId;                // Contact body
     int shapeIdx;             // Index of bodie's contacting shape
     double mu;                // Coulomb friction coefficient
     double k_p;               // Spring coefficient
@@ -206,6 +206,8 @@ public:
   MatNd* draggerTorque;
   std::vector<FrictionContactPoint> contact;
   std::string integrator;
+  double energy;
+  double dt_opt;
 };
 
 }   // namespace Rcs

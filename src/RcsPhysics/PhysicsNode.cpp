@@ -133,8 +133,6 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   Rcs::KineticSimulation* neSim = dynamic_cast<Rcs::KineticSimulation*>(sim);
   if (neSim)
   {
-    osg::ref_ptr<osg::Group> pointContacts = new osg::Group();
-
     for (size_t i=0; i<neSim->contact.size(); ++i)
     {
       const double* pos = neSim->contact[i].x_contact;

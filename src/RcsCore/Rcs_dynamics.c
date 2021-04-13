@@ -256,6 +256,7 @@ int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
   static int init = 1;
   double t  = t1;
   double dt = *dt_opt;
+  double dt_in = dt;
   double* x1  = RNALLOC(nz, double);
   double* err = RNALLOC(nz, double);
 
@@ -289,6 +290,7 @@ int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
       {
         max_fehler = ALMOST_ZERO;
       }
+
       if (max_fehler <= 1.0)
       {
         t += dt;
@@ -334,6 +336,11 @@ int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
 
   RFREE(x1);
   RFREE(err);
+
+  if (*dt_opt > dt_in)
+  {
+    *dt_opt = dt_in;
+  }
 
   return anzahl_integrationsschritte;
 }
@@ -584,7 +591,7 @@ void RcsGraph_computeGravityTorque(const RcsGraph* graph,
   RcsGraph_COGJacobian(graph, J_cog_tp);
   MatNd_transposeSelf(J_cog_tp);
   MatNd* F_g = NULL;
-  MatNd_create2(F_g, 3,1);
+  MatNd_create2(F_g, 3, 1);
   MatNd_set(F_g, 2, 0, -RcsGraph_mass(graph)*RCS_GRAVITY);
   MatNd_mul(T_gravity, J_cog_tp, F_g);
 

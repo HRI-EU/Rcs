@@ -1971,6 +1971,7 @@ RcsBody* RcsBody_createBouncingSphere(RcsGraph* graph, const double pos[3],
   Vec3d_setElementsTo(sphere->extents, radius);
   sphere->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
   sphere->computeType |= RCSSHAPE_COMPUTE_PHYSICS;
+  sphere->computeType |= RCSSHAPE_COMPUTE_CONTACT;
   strcpy(sphere->material, "bouncy");
   strcpy(sphere->color, "YELLOW");
 

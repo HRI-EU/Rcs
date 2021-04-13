@@ -942,7 +942,6 @@ void GraphNode::setBodyTransformPtr(const RcsBody* body, const HTr* A_BI)
       nd->setTransformPtr(A_BI);
     }
   }
-
 }
 
 /*******************************************************************************

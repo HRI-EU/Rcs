@@ -58,6 +58,7 @@ public:
   void addBodyNode(const RcsBody* body);
   bool removeBodyNode(const char* body);
   bool setDebugDrawer(bool enable);
+  void updateTransformPointers();
 
   /*! \brief Adds a wireframe box to show the considered bounding box for the
    *         simulation. This is specific for Bullet and will do nothing if
@@ -76,7 +77,6 @@ protected:
   virtual bool eventCallback(const osgGA::GUIEventAdapter& ea,
                              osgGA::GUIActionAdapter& aa);
 
-  void updateTransformPointers();
 
 public:
   GraphNode* modelNd;

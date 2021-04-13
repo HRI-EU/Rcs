@@ -38,7 +38,9 @@
 #include "Rcs_dynamics.h"
 #include "Rcs_kinematics.h"
 #include "Rcs_math.h"
+#include "Rcs_body.h"
 #include "Rcs_shape.h"
+#include "Rcs_joint.h"
 
 
 namespace Rcs
@@ -51,7 +53,7 @@ static PhysicsFactoryRegistrar<KineticSimulation> physics(className);
  * Constructor.
  ******************************************************************************/
 KineticSimulation::KineticSimulation() : PhysicsBase(), draggerTorque(NULL),
-  integrator("Euler")
+  integrator("Euler"), energy(0.0), dt_opt(0.0)
 {
 }
 
@@ -59,7 +61,8 @@ KineticSimulation::KineticSimulation() : PhysicsBase(), draggerTorque(NULL),
  * Constructor.
  ******************************************************************************/
 KineticSimulation::KineticSimulation(const RcsGraph* graph_) :
-  PhysicsBase(graph_), draggerTorque(NULL), integrator("Euler")
+  PhysicsBase(graph_), draggerTorque(NULL), integrator("Euler"), energy(0.0),
+  dt_opt(0.0)
 {
   this->draggerTorque = MatNd_createLike(graph_->q);
   MatNd_reshape(this->draggerTorque, getGraph()->nJ, 1);
@@ -69,7 +72,8 @@ KineticSimulation::KineticSimulation(const RcsGraph* graph_) :
  * Copy constructor.
  ******************************************************************************/
 KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe) :
-  PhysicsBase(copyFromMe), draggerTorque(NULL), integrator("Euler")
+  PhysicsBase(copyFromMe), draggerTorque(NULL), integrator("Euler"),
+  energy(0.0), dt_opt(0.0)
 {
   this->draggerTorque = MatNd_clone(copyFromMe.draggerTorque);
   MatNd_reshape(this->draggerTorque, getGraph()->nJ, 1);
@@ -80,7 +84,9 @@ KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe) :
  ******************************************************************************/
 KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe,
                                      const RcsGraph* newGraph) :
-  PhysicsBase(copyFromMe, newGraph), draggerTorque(NULL), integrator("Euler")
+  PhysicsBase(copyFromMe, newGraph), draggerTorque(NULL),
+  integrator(copyFromMe.integrator), energy(copyFromMe.energy),
+  dt_opt(copyFromMe.dt_opt)
 {
   this->draggerTorque = MatNd_clone(copyFromMe.draggerTorque);
   MatNd_reshape(this->draggerTorque, getGraph()->nJ, 1);
@@ -135,6 +141,17 @@ bool KineticSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
       shapeIdx++;
     }
   }
+  // Remove kinematic constraints from all bodies with rigid body dofs
+  RCSGRAPH_TRAVERSE_BODIES(getGraph())
+  {
+    if (BODY->rigid_body_joints)
+    {
+      RCSBODY_FOREACH_JOINT(getGraph(), BODY)
+      {
+        JNT->constrained = false;
+      }
+    }
+  }
 
   return true;
 }
@@ -160,11 +177,15 @@ void KineticSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
 
   incrementTime(dt);
 
+  if (dt_opt==0.0)
+  {
+    dt_opt = dt;
+  }
+
   const int n = getGraph()->nJ;
   const int nc = contact.size();
   const int nz = 2*n+3*nc;
-  double dt_opt = dt;// \todo: Fix this
-  MatNd* z = MatNd_create(2*n+3*nc, 1);
+  MatNd* z = MatNd_create(nz, 1);
   MatNd zq = MatNd_fromPtr(n, 1, &z->ele[0]);
   MatNd zqd = MatNd_fromPtr(n, 1, &z->ele[n]);
   MatNd zc = MatNd_fromPtr(nc, 3, &z->ele[2*n]);
@@ -209,7 +230,7 @@ void KineticSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
     MatNd_setElementsTo(&err_xc, DBL_MAX);
     MatNd_setElementsTo(&err_q,  1.0e-1);
     MatNd_setElementsTo(&err_qp, 1.0e-2);
-
+    RLOG(0, "dt_opt = %f", dt_opt);
     int nSteps = integration_t1_t2(integrationStep, (void*)this, nz, time(), time()+dt,
                                    &dt_opt, z->ele, z->ele, err->ele);
     // int nSteps = integration_t1_t2(Rcs_directDynamicsIntegrationStep,
@@ -217,7 +238,7 @@ void KineticSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
     //                                &dt_opt, z->ele, z->ele, err->ele);
     MatNd_destroy(err);
 
-    RLOG(0, "Adaptive integration took %d steps", nSteps);
+    RLOG(1, "Adaptive integration took %d steps", nSteps);
   }
   else if (integrator == "Euler")
   {
@@ -227,7 +248,7 @@ void KineticSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
   }
   else
   {
-    RFATAL("Unknonw integrator: \"%s\"", integrator);
+    RFATAL("Unknonw integrator: \"%s\"", integrator.c_str());
   }
 
   // Copy integrated state back into graph ...
@@ -346,7 +367,11 @@ void KineticSimulation::applyTransform(const RcsBody* body, const HTr* A_BI)
 void KineticSimulation::applyLinearVelocity(const RcsBody* body,
                                             const double v[3])
 {
-  RFATAL("FIXME");
+  if (RcsBody_isFloatingBase(getGraph(), body))
+  {
+    const RcsJoint* jnt = &getGraph()->joints[body->jntId];
+    Vec3d_copy(&getGraph()->q_dot->ele[jnt->jointIndex], v);
+  }
 }
 
 /*******************************************************************************
@@ -355,7 +380,11 @@ void KineticSimulation::applyLinearVelocity(const RcsBody* body,
 void KineticSimulation::applyAngularVelocity(const RcsBody* body,
                                              const double omega[3])
 {
-  RFATAL("FIXME");
+  if (RcsBody_isFloatingBase(getGraph(), body))
+  {
+    const RcsJoint* jnt = &getGraph()->joints[body->jntId];
+    Vec3d_copy(&getGraph()->q_dot->ele[jnt->jointIndex+3], omega);
+  }
 }
 
 /*******************************************************************************
@@ -364,7 +393,7 @@ void KineticSimulation::applyAngularVelocity(const RcsBody* body,
 void KineticSimulation::getLinearVelocity(const RcsBody* body,
                                           double v[3]) const
 {
-  RFATAL("FIXME");
+  Vec3d_copy(v, getGraph()->bodies[body->id].x_dot);
 }
 
 /*******************************************************************************
@@ -373,15 +402,15 @@ void KineticSimulation::getLinearVelocity(const RcsBody* body,
 void KineticSimulation::getAngularVelocity(const RcsBody* body,
                                            double omega[3]) const
 {
-  RFATAL("FIXME");
+  Vec3d_copy(omega, getGraph()->bodies[body->id].omega);
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-void KineticSimulation::setJointTorque(const MatNd* T_des)
+void KineticSimulation::setJointTorque(const MatNd* T)
 {
-  RFATAL("FIXME");
+  MatNd_copy(this->T_des, T);
 }
 
 /*******************************************************************************
@@ -514,9 +543,73 @@ void KineticSimulation::getJointCompliance(MatNd* stiffness,
 /*******************************************************************************
  *
  ******************************************************************************/
-bool KineticSimulation::addBody(const RcsGraph* graph, const RcsBody* body)
+bool KineticSimulation::addBody(const RcsGraph* graph, const RcsBody* body_)
 {
-  RFATAL("FIXME");
+  RLOG(5, "Creating body for \"%s\"", body_->name);
+  RcsBody* body = RcsGraph_insertGraphBody(getGraph(), body_->parentId);
+  RcsBody_copy(body, body_);
+
+  // Make a copy of all body shapes and attach them to the body
+  int nShapes = RcsBody_numShapes(body_);
+  body->shape = RNALLOC(nShapes + 1, RcsShape*);
+  for (int i = 0; i < nShapes; i++)
+  {
+    body->shape[i] = RcsShape_clone(body_->shape[i]);
+  }
+
+  // Create the joints into the simulation's body.
+  RCSBODY_FOREACH_JOINT(graph, body_)
+  {
+    RcsJoint* newJnt = RcsGraph_insertGraphJoint(getGraph(), body->id);
+    RcsJoint_copy(newJnt, JNT);
+  }
+
+  MatNd* arrBuf[4];
+  arrBuf[0] = this->q_des;
+  arrBuf[1] = this->q_dot_des;
+  arrBuf[2] = this->T_des;
+  arrBuf[3] = this->draggerTorque;
+
+  unsigned int nJoints = RcsBody_numJoints(getGraph(), body);
+
+  if (nJoints > 0)
+  {
+    MatNd_realloc(this->T_des, getGraph()->dof, 1);
+    MatNd_realloc(this->q_des, getGraph()->dof, 1);
+    MatNd_realloc(this->q_dot_des, getGraph()->dof, 1);
+    MatNd_realloc(this->draggerTorque, getGraph()->dof, 1);
+  }
+
+  // If a floating base body is added, we remove its constraints so that the
+  // dof go into the EoM.
+  if (body->rigid_body_joints)
+  {
+    RCSBODY_FOREACH_JOINT(getGraph(), body)
+    {
+      JNT->constrained = false;
+    }
+  }
+
+
+  RcsGraph_addBodyDofs(getGraph(), NULL, body, arrBuf, 4);
+  this->draggerTorque->m = getGraph()->nJ;
+
+  RCSBODY_TRAVERSE_SHAPES(body)
+  {
+    int shapeIdx = 0;
+    if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_CONTACT))
+    {
+      contact.push_back(FrictionContactPoint(body, shapeIdx));
+    }
+    shapeIdx++;
+  }
+
+  applyLinearVelocity(body, body->x_dot);
+  applyAngularVelocity(body, body->omega);
+
+  RLOG(5, "SUCCESS adding \"%s\" to simulation", body->name);
+
+  return true;
 }
 
 /*******************************************************************************
@@ -664,7 +757,7 @@ void KineticSimulation::integrationStep(const double* x, void* param,
   // Compute the velocities of the attachement points
   for (int i = 0; i < nc; i++)
   {
-    const RcsBody* cBdy = kSim->contact[i].bdy;
+    const RcsBody* cBdy = &graph->bodies[kSim->contact[i].bdyId];
     const RcsShape* cSh = cBdy->shape[kSim->contact[i].shapeIdx];
     RcsGraph_bodyPointJacobian(graph, cBdy, cSh->A_CB.org, NULL, J);
 
@@ -686,13 +779,6 @@ void KineticSimulation::integrationStep(const double* x, void* param,
     kSim->contact[i].computeContactForce(F_i.ele, x_contact_i,
                                          x_attach_i, xp_attach_i);
 
-    RLOG(2, "%s: Contact point: %f %f %f", kSim->contact[i].bdy->name,
-         x_contact_i[0], x_contact_i[1], x_contact_i[2]);
-    RLOG(2, "Attachement point: %f %f %f",
-         x_attach_i[0], x_attach_i[1], x_attach_i[2]);
-    RLOG(1, "F: %f %f %f (%f)", F_i.ele[0], F_i.ele[1], F_i.ele[2], x_contact_i[2]);
-    RLOG(1, "xp: %f %f %f", xp_contact_i[0], xp_contact_i[1], xp_contact_i[2]);
-
     // Project contact forces into joint space
     MatNd_transposeSelf(J);
     MatNd_mulAndAddSelf(M_contact, J, &F_i);
@@ -708,7 +794,7 @@ void KineticSimulation::integrationStep(const double* x, void* param,
   MatNd_destroy(T_des_ik);
 
   // Compute accelerations
-  Rcs_directDynamics(graph, M_contact, kSim->draggerTorque, &qpp);
+  kSim->energy = Rcs_directDynamics(graph, M_contact, kSim->draggerTorque, &qpp);
 
   if (MatNd_isNAN(&qpp) == true)
   {
@@ -750,11 +836,11 @@ void KineticSimulation::integrationStep(const double* x, void* param,
 
 *******************************************************************************/
 KineticSimulation::FrictionContactPoint::FrictionContactPoint(const RcsBody* bdy_, int shapeIdx_, double mu_, double k_p_, double z0_) :
-  bdy(bdy_), shapeIdx(shapeIdx_), mu(mu_), k_p(k_p_), k_v(sqrt(4.0*k_p_)), z0(z0_)
+  bdyId(bdy_->id), shapeIdx(shapeIdx_), mu(mu_), k_p(k_p_), k_v(sqrt(4.0*k_p_)), z0(z0_)
 {
   // Initialize contact point with attachement point coordinates
   HTr A_CI;
-  HTr_transform(&A_CI, &bdy->A_BI, &bdy->shape[shapeIdx]->A_CB);
+  HTr_transform(&A_CI, &bdy_->A_BI, &bdy_->shape[shapeIdx]->A_CB);
   Vec3d_copy(x_contact, A_CI.org);
   Vec3d_setZero(f_contact);
 }
