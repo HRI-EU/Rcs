@@ -60,6 +60,7 @@ typedef struct
  *         different equations of motion will lead to trouble...
  *
  *  \param[in] FCN      Evaluation function for the differential equations
+ *  \param[in] param    Pointer to your use-case specific data
  *  \param[in] nz       Number of differential equations
  *  \param[in] t1       Integration start time
  *  \param[in] t2       Integration end time
@@ -78,6 +79,7 @@ int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
  *  \brief Euler single step integrator.
  *
  *  \param[in] FCN      Evaluation function for the differential equations
+ *  \param[in] param    Pointer to your use-case specific data
  *  \param[in] nz       Number of differential equations
  *  \param[in] dt       Integration interval
  *  \param[in] x        State at t

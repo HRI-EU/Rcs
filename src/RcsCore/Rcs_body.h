@@ -87,20 +87,6 @@ void RcsBody_clear(RcsBody* self);
 void RcsBody_copy(RcsBody* dst, const RcsBody* src);
 
 /*! \ingroup RcsBodyFunctions
-*  \brief Returns a clone of the body, and relates it to the graph. The
-*         following elements are cloned:
-*         - All body joints.
-*         - All body shapes.
-*         The following elements need to be considered for fully linking the
-*         body into a new graph: Joint connection to prev. body and from next
-*         body, coupled joints, body depth first pointers.
-*
-* \param[in] src        Body to be cloned.
-*  \return Clone of the body, or NULL on failure.
-*/
-/* RcsBody* RcsBody_clone(const RcsBody* src); */
-
-/*! \ingroup RcsBodyFunctions
  *  \brief Returns the number of joints by which the body is attached to its
  *         predecessor. If body is NULL, the function returns 0.
  */
@@ -150,24 +136,17 @@ RcsBody* RcsBody_getLastInGraph(const RcsGraph* self);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Attaches body to a target body. It is not supported to attach a body
- *          to a target body that is a generic body. In this case, the function
- *          returns false. If the body is a generic body, the function
+ *         to a target body that is a generic body. In this case, the function
+ *         returns false. If the body is a generic body, the function
  *         attaches the body it is pointing to.
  *
- *  \param[in,out] graph   RcsGraph whose structure is to be changed
- *  \param[in]     body    RcsBody that is going to be attached to the target
- *  \param[in]     target  RcsBody which will have the body as child. If it is
- *                         NULL, body will be attached to the root.
- *  \param[in]     A_BP    Relative transformation from target to body. If it
- *                         is NULL, the current relative transformation between
- *                         body and target is used.
+ *  \param[in,out] graph       RcsGraph whose structure is to be changed
+ *  \param[in]     bodyId      Id of RcsBody to be attached to the target
+ *  \param[in]     targetId    Id of RcsBody which will have the body as child.
+ *                             If it isNULL, body will be attached to the root.
  *  \return True for success, false if body is NULL or the target is a
  *          GenericBody.
  */
-/* bool RcsBody_attachToBody(RcsGraph* graph, RcsBody* body, RcsBody* target, */
-/*                           const HTr* A_BP); */
-/* bool RcsBody_attachToBodyById(RcsGraph* graph, RcsBody* body, RcsBody* target, */
-/*                               const HTr* A_BP); */
 bool RcsBody_attachToBodyId(RcsGraph* graph, int bodyId, int targetId);
 
 /*! \ingroup RcsBodyFunctions
@@ -451,6 +430,7 @@ bool RcsBody_boxify(RcsBody* self, int computeType);
  *         Since it is not accessible from the RcsBody, this is done separately
  *         in RcsGraph_scale(). The mass and inertia properties are not scaled.
  *
+ *  \param[in] graph        Graph that contains the body
  *  \param[in,out] self     Body to be reshaped.
  *  \param[in] scale        Scaling factor.
  */

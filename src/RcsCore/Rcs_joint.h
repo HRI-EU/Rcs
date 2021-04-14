@@ -180,7 +180,7 @@ void RcsJoint_scale(RcsJoint* joint, double scale);
  *          one, or NULL if none exists.
  */
 int RcsJoint_getNonCoupledParentId(const RcsGraph* graph,
-                                   const RcsJoint* jnt);
+                                   const RcsJoint* joint);
 
 
 

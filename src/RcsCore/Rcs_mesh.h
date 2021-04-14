@@ -89,6 +89,7 @@ void RcsMesh_print(const RcsMeshData* mesh);
 /*! \ingroup RcsMeshFunctions
  *  \brief Prints out the mesh vertex and face lists to a file.
  *
+ *  \param[in] out Valid file descriptor (not checked).
  *  \param[in] mesh Valid mesh data. If the argument is NULL, a warning is
  *             emitted on debug level 4, and nothing is printed.
  */

@@ -57,22 +57,6 @@ void RcsSensor_init(RcsSensor* self, unsigned int type, const char* name,
                     RcsBody* parentBody, HTr* offset);
 
 /*! \ingroup RcsSensorFunctions
- *  \brief Clone a sensor. The mount body of the cloned sensor points to the
- *         elements of dstGraph. The next meber is set to NULL. It is
- *         connected in the RcsGraph_addSensor() function. The reason is the
- *         sensor naming: Other than for the RcsBodies, we don't enforce a
- *         unique naming of sensors. Therefore the RcsGraph_getSensorByName()
- *         is ont guaranteed to find the sensor we are looking for in case
- *         of several sensors having the same name.
- *
- *  \param[in] src    Sensor to be cloned. If it is NULL, the function
- *                    returns NULL.
- *  \param[in] graph  Graph the sensor refers to. Must be valid.
- *  \return Pointer to cloned sensor, or NULL if src is NULL.
- */
-/* RcsSensor* RcsSensor_clone(const RcsSensor* src, const RcsGraph* graph); */
-
-/*! \ingroup RcsSensorFunctions
  *  \brief Shallow copy of all members except for these pointers:
  *         - next
  *         - body
@@ -109,6 +93,7 @@ unsigned int RcsSensor_dim(RcsSensor* self);
  *         elements are the forces, the indices 3-5 comprise the torques, all
  *         represented in the sensor's frame of reference.
  *
+ *  \param[in] graph  Pointer to RcsGraph containing the sensor
  *  \param[in] fts    Load cell sensor. If the sensor is not of type
  *                    RCSSENSOR_LOAD_CELL, the function will exit with a
  *                    fatal error

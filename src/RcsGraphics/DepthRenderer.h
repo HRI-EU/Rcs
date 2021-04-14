@@ -65,6 +65,8 @@ public:
    *
    * \param[in] width Width of the depth image in pixels
    * \param[in] height Height of the depth image in pixels
+   * \param[in] near Camera distance to near plane in meters
+   * \param[in] far Camera distance to far plane in meters
    */
   DepthRenderer(unsigned int width=640, unsigned int height=480,
                 double near=0.1, double far=10.0);
