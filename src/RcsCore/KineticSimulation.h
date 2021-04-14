@@ -49,10 +49,110 @@ namespace Rcs
  *  This library implements a dynamics simulation class that integrates the
  *  rigid body equations of motion. It also implements a point contact model
  *  based on a spring-damper model.
-*/
+ *
+ *  The equations of motion can be integrated with two different integrators.
+ *  The default is an Euler one-step integration. It is very efficient, but is
+ *  sensitive to stiff contacts or large mass ratios. In such cases, the
+ *  integration time step should be selected very small.
+ *
+ *  The second integrator is a Runge-Kutta-Fehlberg integrator with adaptive
+ *  step size adaptation. It performs an error checking by comparing the
+ *  integration results of a second- and a third-order integration, and adapts
+ *  the simulation time step such as to not exceed a given error bounds. This
+ *  makes it very robust, but less computationally efficient due to computing
+ *  the EoM several times. In systems with stiff contacts, one might feel a
+ *  slow-down in certain situations.
+ *
+ *  Another feature of this class is the decomposition of the EoM into free and
+ *  constrained partitions. This allows to model systems with kinematically
+ *  moving joints that still react dynamically to ground reaction forces.
+ *  Another example is a system with mixed kinematic and dynamic joints, such
+ *  as a humanoid robot with position-controlled legs and free-swinging
+ *  (or torque-controlled) arms. The decomposition is performed automatically
+ *  based on each joints's ctrlType variable: if this is position or velocity,
+ *  the dof is in the constrained partition. If it is torque, it is in the free
+ *  partition. Algorithmically, we decompose the standard EoM
+ *
+ *      M qdd - h = F
+ *
+ *  into
+ *
+ *      / M00   M10 \  / qdd_f \     / h_f \      / F_f \
+ *      |           |  |       |  =  |      | +   |     |
+ *      \ M10   M11 /  \ qdd_c /     \ h_c /      \ F_c /
+ *
+ *  We then solve for the free accelerations under consideration of the
+ *  constrained ones:
+ *
+ *      qdd_f = inv(M00) (h_f + F_f - M10 qdd_c)
+ *
+ *  qdd_c contains joints that are position- or velocity-controlled, qdd_f
+ *  contains the ones that are torque controlled. If a body has the property
+ *  rigid_body_joints set to true, the class will internally set all joints to
+ *  torque-controlled.
+ *
+ */
 class KineticSimulation : public PhysicsBase
 {
 public:
+
+  /*!
+   * @name CreationAndDestruction
+   *
+   * Creation and destruction
+   */
+
+  ///@{
+
+  /*! \brief Empty default constructor. All members are initialized to NULL.
+   *         The initialize() function needs to be called to properly
+   *         initialize the class.
+   */
+  KineticSimulation();
+
+  /*! \brief Base class constructor.
+   *
+   *  \param[in] graph   Graph that the simulation should be build on.
+   */
+  KineticSimulation(const RcsGraph* graph);
+
+  /*! \brief Copy constructor
+   *
+   *  \param[in] copyFromMe   Simulation instance to be copied from.
+   */
+  KineticSimulation(const KineticSimulation& copyFromMe);
+
+  /*! \brief Copy constructor. The configuration state vector will not be set
+   *         from the graph of copyFromMe, but will be the one of newGraph.
+   *         If they must be equal, this needs to be ensured by the caller. The
+   *         graph will never be modified within the physics simulation.
+   *
+   *  \param[in] copyFromMe   Simulation instance to be copied from.
+   *  \param[in] newGraph     RcsGraph to refer to.
+   */
+  KineticSimulation(const KineticSimulation& copyFromMe,
+                    const RcsGraph* newGraph);
+
+  /*! \brief Assignment operator for deep copying everything.
+   */
+  KineticSimulation& operator = (const KineticSimulation&);
+
+  /*! \brief Virtual destructor to allow overloading.
+   */
+  virtual ~KineticSimulation();
+
+
+  ///@}
+
+
+
+  /*!
+   * @name PureVirtualMethods
+   *
+   * Pure virtual methods inherited from parent class.
+   */
+
+  ///@{
 
   virtual void step(double dt);
 
@@ -122,57 +222,74 @@ public:
 
   virtual bool addBody(const RcsGraph* graph, const RcsBody* body);
 
+  ///@}
 
 
 
-
-
-
-
-  /*! \brief Empty default constructor. All members are initialized to NULL.
-   *         The initialize() function needs to be called to properly
-   *         initialize the class.
-   */
-  KineticSimulation();
-
-  /*! \brief Base class constructor.
+  /*!
+   * @name OverwrittenMethods
    *
-   *  \param[in] graph   Graph that the simulation should be build on.
+   * Methods overwriting parent class methods.
    */
-  KineticSimulation(const RcsGraph* graph);
 
-  /*! \brief Copy constructor
-   *
-   *  \param[in] copyFromMe   Simulation instance to be copied from.
-   */
-  KineticSimulation(const KineticSimulation& copyFromMe);
-
-  /*! \brief Copy constructor. The configuration state vector will not be set
-   *         from the graph of copyFromMe, but will be the one of newGraph.
-   *         If they must be equal, this needs to be ensured by the caller. The
-   *         graph will never be modified within the physics simulation.
-   *
-   *  \param[in] copyFromMe   Simulation instance to be copied from.
-   *  \param[in] newGraph     RcsGraph to refer to.
-   */
-  KineticSimulation(const KineticSimulation& copyFromMe,
-                    const RcsGraph* newGraph);
-
-  /*! \brief Assignment operator for deep copying everything.
-   */
-  KineticSimulation& operator = (const KineticSimulation&);
-
-  /*! \brief Virtual destructor to allow overloading.
-   */
-  virtual ~KineticSimulation();
+  ///@{
 
   virtual void setControlInput(const MatNd* q_des, const MatNd* q_dot_des,
                                const MatNd* T_des);
 
+  /*! \brief Function for setting physics parameter. The function is thread-
+   *         safe. All strings are interpreted case insensitive. The following
+   *         parmeter types are supported:
+   *
+   *         - category "Simulation":
+   *           - type: Integrator
+   *           - name: Fehlberg or Euler
+   *           - value: Doesn't matter (use 0.0 for instance)
+   *
+   *  \param[in] category   See enum ParameterCategory
+   *  \param[in] name   Parameter name, such as "SoftMaterial".
+   *  \param[in] type   Parameter type, such as "Restitution".
+   *  \param[in] value  Value the parameter should be assigned with
+   *  \return true for success, false otherwise. There is no failure case yet.
+   */
   virtual bool setParameter(ParameterCategory category,
                             const char* name, const char* type, double value);
 
-  // protected:
+
+  ///@}
+
+
+
+  /*!
+   * @name ClassSpecificMethods
+   *
+   * Methods for this class only.
+   */
+
+  ///@{
+
+  /*! \brief Returns the overall (kinetic and potential) energy of the system.
+   *         If the system has no dissipating terms (e.g. contacts with damping
+   *         or joint velocity damping), the total energy should be constant.
+   */
+  virtual double getEnergy() const;
+
+  /*! \brief Returns the intetrator currently used in the simulate() method.
+   *         Currently, Euler and Fehlberg are supported.
+   */
+  virtual std::string getIntegrator() const;
+
+  /*! \brief Returns the adapted integration time step. It is only adapted when
+   *         the Fehlberg integrator is used. Otherwise, it will correspond to
+   *         the dt passed to the simulate() method.
+   */
+  virtual double getAdaptedDt() const;
+
+  ///@}
+
+
+
+public:
 
   struct FrictionContactPoint
   {
@@ -200,13 +317,17 @@ public:
     double f_contact[3];      // Contact force in world coordinates
   };
 
+  std::vector<FrictionContactPoint> contact;
+
+protected:
+
   static void integrationStep(const double* x, void* param, double* xp,
                               double dt);
-  static double dirdyn(const RcsGraph* graph, const MatNd* F_ext,
-                       const MatNd* F_jnt, MatNd* q_ddot);
+  double dirdyn(const RcsGraph* graph, const MatNd* F_ext,
+                const MatNd* F_jnt, MatNd* q_ddot);
 
   MatNd* draggerTorque;
-  std::vector<FrictionContactPoint> contact;
+  MatNd* jointTorque;
   std::string integrator;
   double energy;
   double dt_opt;

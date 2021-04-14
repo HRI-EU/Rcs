@@ -1274,6 +1274,7 @@ int main(int argc, char** argv)
       MatNd* q_curr = MatNd_clone(graph->q);
       MatNd* q_dot_curr = MatNd_create(graph->dof, 1);
       MatNd* T_gravity = MatNd_create(graph->dof, 1);
+      MatNd* T_curr = MatNd_create(graph->dof, 1);
       RcsGraph_computeGravityTorque(graph, T_gravity);
       MatNd_constMulSelf(T_gravity, -1.0);
 
@@ -1409,14 +1410,15 @@ int main(int argc, char** argv)
           {
             RLOG(1, "Adding body to graph");
 
-            MatNd* arrBuf[6];
+            MatNd* arrBuf[7];
             arrBuf[0] = q_curr;
             arrBuf[1] = q_dot_curr;
             arrBuf[2] = q_des;
             arrBuf[3] = q_des_f;
             arrBuf[4] = q0;
             arrBuf[5] = T_gravity;
-            ok = RcsGraph_addBodyDofs(graph, NULL, bdy, arrBuf, 6);
+            arrBuf[6] = T_curr;
+            ok = RcsGraph_addBodyDofs(graph, NULL, bdy, arrBuf, 7);
 
             RLOG(1, "Adding body to graphics");
             simNode->addBodyNode(bdy);
@@ -1501,15 +1503,16 @@ int main(int argc, char** argv)
           {
             ok = simNode->removeBodyNode(name.c_str()) && ok;
 
-            MatNd* arrBuf[6];
+            MatNd* arrBuf[7];
             arrBuf[0] = q_curr;
             arrBuf[1] = q_dot_curr;
             arrBuf[2] = q_des;
             arrBuf[3] = q_des_f;
             arrBuf[4] = q0;
             arrBuf[5] = T_gravity;
+            arrBuf[6] = T_curr;
 
-            ok = RcsGraph_removeBody(graph, name.c_str(), arrBuf, 6) && ok;
+            ok = RcsGraph_removeBody(graph, name.c_str(), arrBuf, 7) && ok;
           }
           RMSG("%s removing body \"%s\"", ok ? "SUCCEEDED" : "FAILED",
                name.c_str());
@@ -1632,6 +1635,8 @@ int main(int argc, char** argv)
             MatNd_resizeCopy(&q_des_f, graph->q);
             MatNd_resizeCopy(&q_curr, graph->q);
             MatNd_resizeCopy(&q_dot_curr, graph->q_dot);
+            T_curr = MatNd_realloc(T_curr, graph->dof, 1);
+            MatNd_setZero(T_curr);
             T_gravity = MatNd_realloc(T_gravity, graph->dof, 1);
             RcsGraph_computeGravityTorque(graph, T_gravity);
             MatNd_constMulSelf(T_gravity, -1.0);
@@ -1715,6 +1720,11 @@ int main(int argc, char** argv)
         double dtSim = Timer_getTime();
         sim->simulate(dt, graph, NULL, NULL, !skipControl);
         sim->getJointAngles(q_curr);
+        sim->getJointTorque(T_curr);
+        REXEC(1)
+        {
+          MatNd_printCommentDigits("T_curr", T_curr, 4);
+        }
         dtSim = Timer_getTime() - dtSim;
 
 
@@ -1748,15 +1758,15 @@ int main(int argc, char** argv)
         if (kSim)
         {
           char neText[128];
-          if (kSim->integrator=="Euler")
+          if (kSim->getIntegrator()=="Euler")
           {
             snprintf(neText, 128, "\nIntegrator: Euler   Energy: %.4f",
-                     kSim->energy);
+                     kSim->getEnergy());
           }
-          else if (kSim->integrator=="Fehlberg")
+          else if (kSim->getIntegrator()=="Fehlberg")
           {
             snprintf(neText, 128, "\nIntegrator: Fehlberg   Energy: %.4f   step: %f",
-                     kSim->energy, kSim->dt_opt);
+                     kSim->getEnergy(), kSim->getAdaptedDt());
           }
           strcat(hudText, neText);
         }
@@ -1801,6 +1811,7 @@ int main(int argc, char** argv)
       MatNd_destroy(q_curr);
       MatNd_destroy(q_dot_curr);
       MatNd_destroy(T_gravity);
+      MatNd_destroy(T_curr);
 
       delete sim;
       RcsGraph_destroy(graph);

@@ -256,7 +256,6 @@ int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
   static int init = 1;
   double t  = t1;
   double dt = *dt_opt;
-  double dt_in = dt;
   double* x1  = RNALLOC(nz, double);
   double* err = RNALLOC(nz, double);
 
@@ -264,7 +263,11 @@ int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
 
   do
   {
+    // dt_opt is assigned before clamping dt to the interval, since the step
+    // size adaptation shall be performed based on the error bounds only, and
+    // not based on any clamping.
     *dt_opt = dt;
+
     if (t + dt > t2)
     {
       dt = t2 - t;
@@ -336,11 +339,6 @@ int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
 
   RFREE(x1);
   RFREE(err);
-
-  /* if (*dt_opt > dt_in) */
-  /* { */
-  /*   *dt_opt = dt_in; */
-  /* } */
 
   return anzahl_integrationsschritte;
 }

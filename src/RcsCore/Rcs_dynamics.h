@@ -58,6 +58,16 @@ typedef struct
  *         Runge-Kutta-Fehlberg method. It uses currently some static
  *         variables and is not reentrant. Calling this function with
  *         different equations of motion will lead to trouble...
+ *
+ *  \param[in] FCN      Evaluation function for the differential equations
+ *  \param[in] nz       Number of differential equations
+ *  \param[in] t1       Integration start time
+ *  \param[in] t2       Integration end time
+ *  \param[in] dt_opt   optimal integration step size
+ *  \param[in] x        State at t
+ *  \param[out] x2      State at t t2
+ *  \param[in] maxErr   Permissable integration error per dimension
+ *  \return Number of integration steps
  */
 int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
                       void* param, int nz, double t1, double t2,
@@ -66,12 +76,12 @@ int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
 
 /*! \ingroup RcsKineticsFunctions
  *  \brief Euler single step integrator.
- *         <br>
- *         - FCN   : differential equations function
- *         - nz    : number of differential equations
- *         - dt    : Integration interval
- *         - x     : initial state vector
- *         - x2    : state vector after integration
+ *
+ *  \param[in] FCN      Evaluation function for the differential equations
+ *  \param[in] nz       Number of differential equations
+ *  \param[in] dt       Integration interval
+ *  \param[in] x        State at t
+ *  \param[out] x2      State vector after integration
  */
 void integration_euler(void (*FCN)(const double*, void*, double*, double),
                        void* param,
