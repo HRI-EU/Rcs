@@ -144,14 +144,18 @@ bool KineticSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
   // Remove kinematic constraints from all bodies with rigid body dofs
   RCSGRAPH_TRAVERSE_BODIES(getGraph())
   {
-    if (BODY->rigid_body_joints)
+    //if (BODY->rigid_body_joints)
+    if (RcsBody_isFloatingBase(getGraph(), BODY))
     {
       RCSBODY_FOREACH_JOINT(getGraph(), BODY)
       {
         JNT->constrained = false;
+        JNT->weightMetric = 1.0;
+        JNT->ctrlType = RCSJOINT_CTRL_TORQUE;
       }
     }
   }
+  RcsGraph_setState(getGraph(), NULL, NULL);
 
   return true;
 }
@@ -182,9 +186,7 @@ void KineticSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
     dt_opt = dt;
   }
 
-  const int n = getGraph()->nJ;
-  const int nc = contact.size();
-  const int nz = 2*n+3*nc;
+  const int n = getGraph()->nJ, nc = contact.size(), nz = 2*n+3*nc;
   MatNd* z = MatNd_create(nz, 1);
   MatNd zq = MatNd_fromPtr(n, 1, &z->ele[0]);
   MatNd zqd = MatNd_fromPtr(n, 1, &z->ele[n]);
@@ -205,17 +207,6 @@ void KineticSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
   RcsGraph_stateVectorToIK(getGraph(), this->T_des, F_ext);
   MatNd_subSelf(F_ext, this->draggerTorque);
 
-  // Joint speed damping: M Kv(qp_des - qp)
-  const double damping = 1.0;
-  MatNd* MM = MatNd_create(n, n);
-  RcsGraph_computeMassMatrix(getGraph(), MM);
-  MatNd* Fi = MatNd_create(n, 1);
-  MatNd_mul(Fi, MM, &zqd);
-  MatNd_constMulSelf(Fi, -damping);
-  MatNd_addSelf(F_ext, Fi);
-  MatNd_destroy(Fi);
-  MatNd_destroy(MM);
-
   DirDynParams params;
   params.graph = getGraph();
   params.F_ext = F_ext;
@@ -230,20 +221,13 @@ void KineticSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
     MatNd_setElementsTo(&err_xc, DBL_MAX);
     MatNd_setElementsTo(&err_q,  1.0e-1);
     MatNd_setElementsTo(&err_qp, 1.0e-2);
-    RLOG(0, "dt_opt = %f", dt_opt);
-    int nSteps = integration_t1_t2(integrationStep, (void*)this, nz, time(), time()+dt,
-                                   &dt_opt, z->ele, z->ele, err->ele);
-    // int nSteps = integration_t1_t2(Rcs_directDynamicsIntegrationStep,
-    //                                (void*)&params, 2*n, time(), time()+dt,
-    //                                &dt_opt, z->ele, z->ele, err->ele);
+    integration_t1_t2(integrationStep, (void*)this, nz, time(), time()+dt,
+                      &dt_opt, z->ele, z->ele, err->ele);
     MatNd_destroy(err);
 
-    RLOG(1, "Adaptive integration took %d steps", nSteps);
   }
   else if (integrator == "Euler")
   {
-    //integration_euler(Rcs_directDynamicsIntegrationStep,
-    // (void*)&params, 2 * n, dt, z->ele, z->ele);
     integration_euler(integrationStep, (void*)this, nz, dt, z->ele, z->ele);
   }
   else
@@ -288,6 +272,9 @@ void KineticSimulation::reset()
 
   // Update also the internal desired graph for the rigid body transforms.
   setControlInput(this->q_des, this->q_dot_des, this->T_des);
+
+  // This leads to assigning dt_opt=dt in the next simulation step
+  this->dt_opt = 0.0;
 }
 
 /*******************************************************************************
@@ -783,6 +770,19 @@ void KineticSimulation::integrationStep(const double* x, void* param,
     MatNd_transposeSelf(J);
     MatNd_mulAndAddSelf(M_contact, J, &F_i);
   }
+  // Joint speed damping: M Kv(qp_des - qp) with qp_des = 0
+  // \todo:
+  // - Distinguish between rigid body dofs and articulated joints
+  // - Mass matrix gets computed twice. Maybe callback from inside dirdyn?
+  const double damping = 1.0;
+  MatNd* MM = MatNd_create(nq, nq);
+  RcsGraph_computeMassMatrix(graph, MM);
+  MatNd* Fi = MatNd_create(nq, 1);
+  MatNd_mul(Fi, MM, &qp);
+  MatNd_constMulSelf(Fi, -damping);
+  MatNd_addSelf(M_contact, Fi);
+  MatNd_destroy(Fi);
+  MatNd_destroy(MM);
 
   // Transfer joint velocities
   memmove(&xp[0], qp.ele, nq * sizeof(double));
@@ -794,7 +794,8 @@ void KineticSimulation::integrationStep(const double* x, void* param,
   MatNd_destroy(T_des_ik);
 
   // Compute accelerations
-  kSim->energy = Rcs_directDynamics(graph, M_contact, kSim->draggerTorque, &qpp);
+  //kSim->energy = Rcs_directDynamics(graph, M_contact, kSim->draggerTorque, &qpp);
+  kSim->energy = dirdyn(graph, M_contact, kSim->draggerTorque, &qpp);
 
   if (MatNd_isNAN(&qpp) == true)
   {
@@ -814,6 +815,174 @@ void KineticSimulation::integrationStep(const double* x, void* param,
   // Cleanup
   MatNd_destroy(J);
   MatNd_destroy(M_contact);
+}
+
+/*******************************************************************************
+ *
+ *   Solves the multibody equations of motion for the joint
+ *   accelerations:
+ *
+ *   M(q) q_ddot + h(q,q_dot) + F_gravity + F_ext = F_jnt
+ *
+ *   The signs follow the equations of the Springer handbook of robotics,
+ *   but not the variable names.
+ *
+ *   q, q_dot, q_ddot: Generalized coordinates, velocities and accelerations
+ *               The dimension is graph->nJ (number of unconstrained dof)
+ *   M:          Mass and inertia matrix
+ *   F_gravity:  Gravity force projected on generalized coordinates
+ *   h:          Coriolis vector
+ *   F_ext:      External forces projected on generalized coordinates
+ *   F_jnt:      Joint torque vector
+ *
+ *   Currently F_jnt is projected on all unconstrained degrees of
+ *   freedom. Arrays F_ext and F_jnt can be pointers to NULL. In this
+ *   case, they are assumed to be zero.
+ *
+ *   The function returns the overall energy of the system. It will
+ *   warn on debug level 1 if
+ *   - the Cholesky decomposition failed
+ *   - one of the elements of q_ddot is not finite
+ *
+ ******************************************************************************/
+static void getSubVec(MatNd* dst, const MatNd* src, const std::vector<int>& idx)
+{
+  RCHECK(src->n==1);
+  MatNd_reshape(dst, idx.size(), 1);
+
+  for (size_t i = 0; i < idx.size(); ++i)
+  {
+    RCHECK(idx[i]<(int)src->m);
+    dst->ele[i] = src->ele[idx[i]];
+  }
+}
+
+static void getSubVec(MatNd* dst, const std::vector<int>& idx)
+{
+  MatNd* src = MatNd_clone(dst);
+  getSubVec(dst, src, idx);
+  MatNd_destroy(src);
+}
+
+static void getSubMat(MatNd* dst, const MatNd* src,
+                      const std::vector<int>& rowIdx,
+                      const std::vector<int>& colIdx)
+{
+  MatNd_reshape(dst, rowIdx.size(), colIdx.size());
+
+  for (size_t i = 0; i < rowIdx.size(); ++i)
+  {
+    MatNd srcRow = MatNd_getRowViewTranspose(src, rowIdx[i]);
+    MatNd dstRow = MatNd_getRowViewTranspose(dst, i);
+    getSubVec(&dstRow, &srcRow, colIdx);
+  }
+}
+
+static void getSubMat(MatNd* dst, const MatNd* src, const std::vector<int>& idx)
+{
+  RCHECK(src->m == src->n);
+  getSubMat(dst, src, idx, idx);
+}
+
+#define EOM_DECOMPOSE
+
+double KineticSimulation::dirdyn(const RcsGraph* graph,
+                                 const MatNd* F_ext,
+                                 const MatNd* F_jnt,
+                                 MatNd* q_ddot)
+{
+  int n = graph->nJ;
+  MatNd* M = MatNd_create(n, n);
+  MatNd* F_gravity = MatNd_create(n, 1);
+  MatNd* h = MatNd_create(n, 1);
+  MatNd* b = MatNd_create(n, 1);
+
+  // Compute mass matrix, h-vector and gravity forces
+  double E = RcsGraph_computeKineticTerms(graph, M, h, F_gravity);
+
+  // Solve direct dynamics for joint accelerations
+  MatNd_addSelf(b, F_gravity);
+  MatNd_addSelf(b, F_ext);
+  MatNd_subSelf(b, F_jnt);
+  MatNd_addSelf(b, h);
+
+
+
+  // Matrix decomposition into torque and position controlled partitions
+#if defined (EOM_DECOMPOSE)
+  std::vector<int> pIdx, tIdx;
+  RCSGRAPH_TRAVERSE_JOINTS(graph)
+  {
+    if (JNT->constrained)
+    {
+      continue;
+    }
+
+    switch (JNT->ctrlType)
+    {
+      case RCSJOINT_CTRL_POSITION:
+      case RCSJOINT_CTRL_VELOCITY:
+        pIdx.push_back(JNT->jacobiIndex);
+        break;
+
+      case RCSJOINT_CTRL_TORQUE:
+        tIdx.push_back(JNT->jacobiIndex);
+        break;
+
+      default:
+        RFATAL("Unknown joint type %d", JNT->ctrlType);
+    }
+
+  }
+
+  MatNd* M00 = MatNd_create(tIdx.size(), tIdx.size());
+  MatNd* M01 = MatNd_create(tIdx.size(), pIdx.size());
+
+  getSubMat(M00, M, tIdx);
+  getSubMat(M01, M, tIdx, pIdx);
+
+  MatNd* qpp_f = MatNd_clone(q_ddot);
+  MatNd* qpp_c = MatNd_clone(q_ddot);
+  getSubVec(qpp_f, tIdx);
+  getSubVec(qpp_c, pIdx);
+  getSubVec(b, tIdx);
+  MatNd* Mqpp_c = MatNd_create(tIdx.size(), 1);
+  MatNd_mul(Mqpp_c, M01, qpp_c);
+  MatNd_subSelf(b, Mqpp_c);
+  MatNd* q_ddot_f = MatNd_createLike(b);
+  double det = MatNd_choleskySolve(q_ddot_f, M00, b);
+
+  MatNd_reshape(q_ddot, n, 1);
+  for (size_t i = 0; i < tIdx.size(); ++i)
+  {
+    q_ddot->ele[tIdx[i]] = q_ddot_f->ele[i];
+  }
+
+  MatNd_destroyN(6, M00, M01, qpp_f, qpp_c, Mqpp_c, q_ddot_f);
+#else
+  MatNd_reshape(q_ddot, n, 1);
+  double det = MatNd_choleskySolve(q_ddot, M, b);
+#endif
+
+  // Warn if something seriously goes wrong.
+  if (det == 0.0)
+  {
+    RLOG(2, "Couldn't solve direct dynamics - determinant is 0");
+  }
+
+  if (MatNd_isINF(q_ddot))
+  {
+    MatNd_setZero(q_ddot);
+    RPAUSE_MSG("q_ddot has infinite values - det was %g", det);
+  }
+
+  // Clean up
+  MatNd_destroy(M);
+  MatNd_destroy(F_gravity);
+  MatNd_destroy(h);
+  MatNd_destroy(b);
+
+  return E;
 }
 
 

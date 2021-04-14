@@ -1660,6 +1660,7 @@ int main(int argc, char** argv)
           }
 
           sim->print();
+          RcsGraph_toXML("gSim.xml", sim->getGraph());
         }   // if (kc && ...)
 
         if (valgrind)

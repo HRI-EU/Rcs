@@ -202,6 +202,8 @@ public:
 
   static void integrationStep(const double* x, void* param, double* xp,
                               double dt);
+  static double dirdyn(const RcsGraph* graph, const MatNd* F_ext,
+                       const MatNd* F_jnt, MatNd* q_ddot);
 
   MatNd* draggerTorque;
   std::vector<FrictionContactPoint> contact;

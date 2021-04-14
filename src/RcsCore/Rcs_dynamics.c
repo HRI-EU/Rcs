@@ -337,10 +337,10 @@ int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
   RFREE(x1);
   RFREE(err);
 
-  if (*dt_opt > dt_in)
-  {
-    *dt_opt = dt_in;
-  }
+  /* if (*dt_opt > dt_in) */
+  /* { */
+  /*   *dt_opt = dt_in; */
+  /* } */
 
   return anzahl_integrationsschritte;
 }
