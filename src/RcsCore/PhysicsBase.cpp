@@ -475,7 +475,21 @@ bool Rcs::PhysicsBase::activateBody(const char* name, const HTr* A_BI)
  ******************************************************************************/
 bool Rcs::PhysicsBase::check() const
 {
-  return true;
+  int nWarnings, nErrors;
+  RcsGraph_check(internalDesiredGraph, &nErrors, &nWarnings);
+
+  bool success = (nErrors == 0) ? true : false;
+
+  const MatNd* x = T_des;
+  success = x && (x->m == internalDesiredGraph->dof) && (x->n == 1) && success;
+
+  x = q_des;
+  success = x && (x->m == internalDesiredGraph->dof) && (x->n == 1) && success;
+
+  x = q_dot_des;
+  success = x && (x->m == internalDesiredGraph->dof) && (x->n == 1) && success;
+
+  return success;
 }
 
 /*******************************************************************************

@@ -53,7 +53,7 @@ static PhysicsFactoryRegistrar<KineticSimulation> physics(className);
  * Constructor.
  ******************************************************************************/
 KineticSimulation::KineticSimulation() : PhysicsBase(), draggerTorque(NULL),
-  jointTorque(NULL), integrator("Euler"), energy(0.0), dt_opt(0.0)
+  jointTorque(NULL), integrator("Fehlberg"), energy(0.0), dt_opt(0.0)
 {
 }
 
@@ -62,7 +62,7 @@ KineticSimulation::KineticSimulation() : PhysicsBase(), draggerTorque(NULL),
  ******************************************************************************/
 KineticSimulation::KineticSimulation(const RcsGraph* graph_) :
   PhysicsBase(graph_), draggerTorque(NULL), jointTorque(NULL),
-  integrator("Euler"), energy(0.0), dt_opt(0.0)
+  integrator("Fehlberg"), energy(0.0), dt_opt(0.0)
 {
   initialize(graph_, NULL);
 }
@@ -71,8 +71,8 @@ KineticSimulation::KineticSimulation(const RcsGraph* graph_) :
  * Copy constructor.
  ******************************************************************************/
 KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe) :
-  PhysicsBase(copyFromMe), draggerTorque(NULL), integrator("Euler"),
-  energy(0.0), dt_opt(0.0)
+  PhysicsBase(copyFromMe), draggerTorque(NULL),
+  integrator(copyFromMe.integrator), energy(0.0), dt_opt(0.0)
 {
   this->draggerTorque = MatNd_create(getGraph()->nJ, 1);
   MatNd_reshapeCopy(this->draggerTorque, copyFromMe.draggerTorque);
@@ -96,9 +96,21 @@ KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe,
 /*******************************************************************************
  * Assignment operator.
  ******************************************************************************/
-KineticSimulation& KineticSimulation::operator= (const KineticSimulation& copyFromMe)
+KineticSimulation& KineticSimulation::operator= (const KineticSimulation& other)
 {
-  RFATAL("FIXME");
+  // check for self-assignment by comparing the address of the
+  // implicit object and the parameter
+  if (this == &other)
+  {
+    return *this;
+  }
+
+  PhysicsBase::operator =(other);
+  MatNd_resizeCopy(&this->draggerTorque, other.draggerTorque);
+  MatNd_resizeCopy(&this->jointTorque, other.jointTorque);
+  this->integrator = other.integrator;
+  this->energy = other.energy;
+  this->dt_opt = other.dt_opt;
   return *this;
 }
 
@@ -116,7 +128,6 @@ KineticSimulation::~KineticSimulation()
  ******************************************************************************/
 bool KineticSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
 {
-  integrator = "Euler";
   initGraph(g);
   if (this->draggerTorque==NULL)
   {
@@ -522,7 +533,7 @@ void KineticSimulation::setJointLimits(bool enable)
  ******************************************************************************/
 KineticSimulation* KineticSimulation::clone(RcsGraph* newGraph) const
 {
-  RFATAL("FIXME");
+  return new KineticSimulation(*this, newGraph);
 }
 
 /*******************************************************************************
@@ -798,7 +809,7 @@ void KineticSimulation::integrationStep(const double* x, void* param,
 
   // Compute accelerations
   //kSim->energy = Rcs_directDynamics(graph, M_contact, kSim->draggerTorque, &qpp);
-  kSim->energy = kSim->dirdyn(graph, M_contact, kSim->draggerTorque, &qpp);
+  kSim->energy = kSim->dirdyn(graph, M_contact, kSim->draggerTorque, &qpp, dt);
 
   if (MatNd_isNAN(&qpp) == true)
   {
@@ -892,7 +903,8 @@ static void getSubMat(MatNd* dst, const MatNd* src, const std::vector<int>& idx)
 double KineticSimulation::dirdyn(const RcsGraph* graph,
                                  const MatNd* F_ext,
                                  const MatNd* F_jnt,
-                                 MatNd* q_ddot)
+                                 MatNd* q_ddot,
+                                 double dt)
 {
   int n = graph->nJ;
   MatNd* M = MatNd_create(n, n);
@@ -904,12 +916,24 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   double E = RcsGraph_computeKineticTerms(graph, M, h, F_gravity);
 
   // Joint speed damping: M Kv(qp_des - qp) with qp_des = 0
-  // \todo: Distinguish between rigid body dofs and articulated joints, and
-  //        provide interface on per-joint basis
-  const double damping = 1.0;
+  // We consider all bodies with six joints as floating and do not apply any
+  // damping.
+  // \todo: Provide interface on per-joint basis
+  const double damping = 5.0;
   MatNd* Fi = MatNd_create(n, 1);
-  MatNd* qp_ik = MatNd_create(n, 1);
-  RcsGraph_stateVectorToIK(graph, graph->q_dot, qp_ik);
+  MatNd* qp_ik = MatNd_clone(graph->q_dot);
+
+  RCSGRAPH_TRAVERSE_BODIES(graph)
+  {
+    if (RcsBody_numJoints(graph, BODY)==6)
+    {
+      const RcsJoint* ji = RCSJOINT_BY_ID(graph, BODY->jntId);
+      RCHECK(ji);
+      VecNd_setZero(&qp_ik->ele[ji->jointIndex], 6);
+    }
+  }
+
+  RcsGraph_stateVectorToIKSelf(graph, qp_ik);
   MatNd_mul(Fi, M, qp_ik);
   MatNd_constMulSelf(Fi, -damping);
   MatNd_addSelf(b, Fi);
@@ -961,7 +985,40 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   MatNd* qpp_f = MatNd_clone(q_ddot);
   MatNd* qpp_c = MatNd_clone(q_ddot);
   getSubVec(qpp_f, tIdx);
+  // Here we need to compute the desired accelerations from the current state
+  // and the desired position, and project it onto the constrained elements.
   getSubVec(qpp_c, pIdx);
+  MatNd_setZero(qpp_c);
+
+  MatNd* tmp = MatNd_create(graph->nJ, 1);
+  RCSGRAPH_TRAVERSE_JOINTS(graph)
+  {
+    if (JNT->jacobiIndex == -1)
+    {
+      continue;
+    }
+
+    if (JNT->ctrlType == RCSJOINT_CTRL_POSITION)
+    {
+      double q_des_i = this->q_des->ele[JNT->jointIndex];
+      double q_curr_i = graph->q->ele[JNT->jointIndex];
+      double qp_curr_i = graph->q_dot->ele[JNT->jointIndex];
+      double qpp_i = 2.0 * (q_des_i - q_curr_i - qp_curr_i*dt) / (dt*dt);
+      tmp->ele[JNT->jacobiIndex] = 0.01*qpp_i;
+
+      // aq = -kp*(q-q_des)  -kd*qp_curr
+      double kp = 100.0;
+      double kd = 0.5*sqrt(4.0*kp);
+      tmp->ele[JNT->jacobiIndex] = -kp*(q_curr_i- q_des_i) - kd*qp_curr_i;
+    }
+    else if (JNT->ctrlType == RCSJOINT_CTRL_VELOCITY)
+    {
+      RFATAL("Implement me");
+    }
+  }
+  getSubVec(tmp, pIdx);
+  MatNd_copy(qpp_c, tmp);
+  MatNd_destroy(tmp);
   getSubVec(b_f, tIdx);
   MatNd* Mqpp_c = MatNd_create(tIdx.size(), 1);
   MatNd_mul(Mqpp_c, M01, qpp_c);
@@ -973,6 +1030,10 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   for (size_t i = 0; i < tIdx.size(); ++i)
   {
     q_ddot->ele[tIdx[i]] = q_ddot_f->ele[i];
+  }
+  for (size_t i = 0; i < pIdx.size(); ++i)
+  {
+    q_ddot->ele[pIdx[i]] = qpp_c->ele[i];
   }
 
   MatNd_destroyN(7, M00, M01, qpp_f, qpp_c, Mqpp_c, q_ddot_f, b_f);

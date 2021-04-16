@@ -1160,7 +1160,7 @@ int main(int argc, char** argv)
       double dt = 0.005, tmc = 0.01, damping = 2.0, shootMass = 1.0;
       char hudText[2056] = "";
       char physicsEngine[32] = "Bullet";
-      std::string integrator = "Euler";
+      std::string integrator = "Fehlberg";
       char physicsCfg[128] = "config/physics/physics.xml";
       char bgColor[64] = "LIGHT_GRAYISH_GREEN";
       strcpy(xmlFileName, "gScenario.xml");
@@ -1840,6 +1840,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("p", "Print to console and file");
       Rcs::KeyCatcherBase::registerKey("H", "Toggle HUD");
       Rcs::KeyCatcherBase::registerKey("k", "Toggle GraphNode");
+      Rcs::KeyCatcherBase::registerKey("S", "Reset physics");
 
       int algo = 0;
       double alpha = 0.05, lambda = 1.0e-8, tmc = 0.1, dt = 0.01, dt_calc = 0.0;
@@ -1890,6 +1891,8 @@ int main(int argc, char** argv)
                                        " state");
       bool testCopying = argP.hasArgument("-copy", "Test copying");
       bool noHud = argP.hasArgument("-noHud", "Don't show HUD");
+      bool posCntrl = argP.hasArgument("-posCntrl",
+                                       "Enforce position control with physics");
 
       Rcs_addResourcePath(directory);
 
@@ -1958,15 +1961,18 @@ int main(int argc, char** argv)
       {
         simGraph = RcsGraph_clone(controller.getGraph());
 
-        RCSGRAPH_TRAVERSE_JOINTS(simGraph)
+        if (posCntrl)
         {
-          if ((JNT->ctrlType == RCSJOINT_CTRL_VELOCITY) ||
-              (JNT->ctrlType == RCSJOINT_CTRL_TORQUE))
+          RCSGRAPH_TRAVERSE_JOINTS(simGraph)
           {
-            JNT->ctrlType = RCSJOINT_CTRL_POSITION;
+            if ((JNT->ctrlType == RCSJOINT_CTRL_VELOCITY) ||
+                (JNT->ctrlType == RCSJOINT_CTRL_TORQUE))
+            {
+              JNT->ctrlType = RCSJOINT_CTRL_POSITION;
+            }
           }
+          RcsGraph_setState(simGraph, NULL, NULL);
         }
-        RcsGraph_setState(simGraph, NULL, NULL);
 
         sim = Rcs::PhysicsFactory::create(physicsEngine, simGraph, physicsCfg);
 
@@ -2377,26 +2383,18 @@ int main(int argc, char** argv)
           controller.print();
           controller.toXML("cAction.xml");
         }
-        else if (kc && kc->getAndResetKey('j'))
-        {
-          MatNd* q5 = MatNd_clone(controller.getGraph()->q);
-          MatNd_transposeSelf(q5);
-          MatNd_printDims("q5 a", q5);
-          q5->m = 5;
-          q5->n /= 5;
-          MatNd_printDims("q5 b", q5);
-          MatNd* plot = MatNd_create(500, q5->n);
-          MatNd_printDims("plot", plot);
-          MatNd_interpolateRows(plot, q5);
-          MatNd_toFile(plot, "plot.dat");
-          MatNd_destroy(plot);
-          MatNd_destroy(q5);
-        }
-
         else if (kc && kc->getAndResetKey('f'))
         {
           physicsFeedback = !physicsFeedback;
           RMSG("Physics feedback is %s", physicsFeedback ? "ON" : "OFF");
+        }
+        else if (kc && kc->getAndResetKey('S'))
+        {
+          if (sim)
+          {
+            RMSG("Resetting simulation");
+            sim->reset(controller.getGraph()->q);
+          }
         }
 
         char timeStr[64] = "";

@@ -86,8 +86,9 @@ namespace Rcs
  *
  *      qdd_f = inv(M00) (h_f + F_f - M10 qdd_c)
  *
- *  qdd_c contains joints that are position- or velocity-controlled, qdd_f
- *  contains the ones that are torque controlled. If a body has the property
+ *  qdd_c contains desired accelerations for joints that are position- or
+ *  velocity-controlled, qdd_f contains the ones that are torque controlled
+ *  and are responding to gravity and forces. If a body has the property
  *  rigid_body_joints set to true, the class will internally set all joints to
  *  torque-controlled.
  *
@@ -324,7 +325,7 @@ protected:
   static void integrationStep(const double* x, void* param, double* xp,
                               double dt);
   double dirdyn(const RcsGraph* graph, const MatNd* F_ext,
-                const MatNd* F_jnt, MatNd* q_ddot);
+                const MatNd* F_jnt, MatNd* q_ddot, double dt);
 
   MatNd* draggerTorque;
   MatNd* jointTorque;

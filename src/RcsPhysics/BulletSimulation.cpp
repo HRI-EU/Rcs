@@ -2069,7 +2069,7 @@ bool Rcs::BulletSimulation::activateBody(const char* name, const HTr* A_BI)
  ******************************************************************************/
 bool Rcs::BulletSimulation::check() const
 {
-  bool success = true;
+  bool success = PhysicsBase::check();
 
   // Check for valid pairs in joint map
   if (!jntMap.empty())

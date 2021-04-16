@@ -387,9 +387,25 @@ public:
    */
   virtual PhysicsBase* clone(RcsGraph* newGraph=NULL) const = 0;
 
+  /*! \brief Set stiffness and damping for position-controlled joints.
+   *
+   *  \param[in] stiffness  Array of dimension RcsGraph::dof x 1 holding the
+   *                        desired stiffness values.
+   *  \param[in] damping    Array of dimension RcsGraph::dof x 1 holding the
+   *                        desired damping values, or NULL. In the latter case,
+   *                        no damping values are applied.
+   */
   virtual void setJointCompliance(const MatNd* stiffness,
                                   const MatNd* damping=NULL) = 0;
 
+  /*! \brief Get stiffness and damping for position-controlled joints.
+   *
+   *  \param[in] stiffness  Array of dimension RcsGraph::dof x 1 holding the
+   *                        desired stiffness values.
+   *  \param[in] damping    Array of dimension RcsGraph::dof x 1 holding the
+   *                        desired damping values, or NULL. In the latter case,
+   *                        no damping values are applied.
+   */
   virtual void getJointCompliance(MatNd* stiffness,
                                   MatNd* damping=NULL) const = 0;
 
@@ -400,13 +416,6 @@ public:
    */
   virtual bool addBody(const RcsGraph* graph, const RcsBody* body) = 0;
 
-  /*! \brief Creates a physicsConfig class instance and calls
-   *         \ref initialize(const RcsGraph*, const PhysicsConfig*)
-   *
-   *  \param[in] graph          Underlying RcsGraph structure
-   *  \param[in] physicsCfgFile Physics configuration file or NULL
-   */
-  virtual bool initialize(const RcsGraph* graph, const char* physicsCfgFile);
 
 
 
@@ -414,19 +423,6 @@ public:
 
 
 
-
-  /*! \brief Function for setting physics parameter. The concrete implementation
-   *         depends on the derieved physics class. This classes implementation
-   *         is empty.
-   *
-   *  \param[in] category   See enum ParameterCategory
-   *  \param[in] name       Parameter name, such as "SoftMaterial".
-   *  \param[in] type       Parameter type, such as "Restitution".
-   *  \param[in] value      Value the parameter should be assigned with
-   *  \return true for success, false otherwise
-   */
-  virtual bool setParameter(ParameterCategory category,
-                            const char* name, const char* type, double value);
 
   /*! \brief Empty default constructor. All members are initialized to NULL.
    *         The initialize() function needs to be called to properly
@@ -463,6 +459,26 @@ public:
   /*! \brief Virtual destructor to allow overloading.
    */
   virtual ~PhysicsBase();
+  /*! \brief Creates a physicsConfig class instance and calls
+   *         \ref initialize(const RcsGraph*, const PhysicsConfig*)
+   *
+   *  \param[in] graph          Underlying RcsGraph structure
+   *  \param[in] physicsCfgFile Physics configuration file or NULL
+   */
+  virtual bool initialize(const RcsGraph* graph, const char* physicsCfgFile);
+
+  /*! \brief Function for setting physics parameter. The concrete implementation
+   *         depends on the derieved physics class. This classes implementation
+   *         is empty.
+   *
+   *  \param[in] category   See enum ParameterCategory
+   *  \param[in] name       Parameter name, such as "SoftMaterial".
+   *  \param[in] type       Parameter type, such as "Restitution".
+   *  \param[in] value      Value the parameter should be assigned with
+   *  \return true for success, false otherwise
+   */
+  virtual bool setParameter(ParameterCategory category,
+                            const char* name, const char* type, double value);
 
   /*! \brief Copies the given control inputs to the class's internal control
    *         input arrays. Each of the arguments that is NULL will be ignored.
