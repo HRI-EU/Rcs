@@ -113,11 +113,9 @@ bool RcsJoint_isRotation(const RcsJoint* joint)
 
 
 
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
+/*******************************************************************************
+ *
+ ******************************************************************************/
 
 bool RcsJoint_isTranslation(const RcsJoint* joint)
 {
@@ -138,11 +136,9 @@ bool RcsJoint_isTranslation(const RcsJoint* joint)
 
 
 
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
+/*******************************************************************************
+ *
+ ******************************************************************************/
 
 void RcsJoint_fprint(FILE* out, const RcsJoint* jnt, const RcsGraph* graph)
 {
@@ -221,11 +217,9 @@ void RcsJoint_fprint(FILE* out, const RcsJoint* jnt, const RcsGraph* graph)
 
 
 
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
+/*******************************************************************************
+ *
+ ******************************************************************************/
 
 void RcsJoint_fprintType(FILE* out, const RcsJoint* jnt)
 {
@@ -236,15 +230,13 @@ void RcsJoint_fprintType(FILE* out, const RcsJoint* jnt)
 
 
 
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
+/*******************************************************************************
+ *
+ ******************************************************************************/
 
 const char* RcsJoint_typeName(int type)
 {
-  static char tStr[][256] =
+  static char tStr[][32] =
   {
     "RCSJOINT_ROT_X",
     "RCSJOINT_ROT_Y",
@@ -286,11 +278,9 @@ const char* RcsJoint_typeName(int type)
 
 
 
-/******************************************************************************
-
-   \brief Destroys and frees all memory for a joint.
-
-******************************************************************************/
+/*******************************************************************************
+ *
+ ******************************************************************************/
 
 void RcsJoint_destroy(RcsJoint* self)
 {
@@ -299,12 +289,10 @@ void RcsJoint_destroy(RcsJoint* self)
 
 
 
-/******************************************************************************
-
-  \brief Makes a deep copy of a RcsJoint data structure except for the
-         connection ids (id, prevId, nextId, coupledToId).
-
-******************************************************************************/
+/*******************************************************************************
+ * Makes a deep copy of a RcsJoint data structure except for the
+ * connection ids (id, prevId, nextId, coupledToId).
+ ******************************************************************************/
 
 void RcsJoint_copy(RcsJoint* dst, const RcsJoint* src)
 {
@@ -325,13 +313,11 @@ void RcsJoint_copy(RcsJoint* dst, const RcsJoint* src)
 
 /******************************************************************************
 
-  \brief Return joint angle of salve joint with respect to master joint angle
-         analytical solution for Asimo version2.0 elbow joint (should be
-         generalized)
-
-         q_sl = Sum_i=0^order(param[i]*q_master^(order-1-i)
-
-******************************************************************************/
+ * Return joint angle of salve joint with respect to master joint angle
+ * analytical solution for Asimo version2.0 elbow joint (should be generalized)
+ *
+ * q_sl = Sum_i=0^order(param[i]*q_master^(order-1-i)
+ ******************************************************************************/
 
 static double RcsJoint_calcCouplingPolynomial(const double q_master,
                                               const double* coeff,
@@ -350,11 +336,9 @@ static double RcsJoint_calcCouplingPolynomial(const double q_master,
 
 
 
-/******************************************************************************
-
-  \brief Calculates the derivative of RcsJoint_calcCouplingPolynomial()
-
-******************************************************************************/
+/*******************************************************************************
+ * Calculates the derivative of RcsJoint_calcCouplingPolynomial()
+ ******************************************************************************/
 
 static double RcsJoint_calcCouplingPolynomialDerivative(const double q_master,
                                                         const double* coeff,
@@ -373,11 +357,9 @@ static double RcsJoint_calcCouplingPolynomialDerivative(const double q_master,
 
 
 
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
+/*******************************************************************************
+ *
+ ******************************************************************************/
 
 double RcsJoint_computeSlaveJointAngle(const RcsGraph* graph,
                                        const RcsJoint* slave,
@@ -431,11 +413,9 @@ double RcsJoint_computeSlaveJointAngle(const RcsGraph* graph,
 
 
 
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
+/*******************************************************************************
+ *
+ ******************************************************************************/
 
 double RcsJoint_computeSlaveJointVelocity(const RcsGraph* graph,
                                           const RcsJoint* slave,
@@ -471,11 +451,9 @@ double RcsJoint_computeSlaveJointVelocity(const RcsGraph* graph,
 
 
 
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
+/*******************************************************************************
+ *
+ ******************************************************************************/
 
 void RcsJoint_fprintXML(FILE* out, const RcsJoint* self, const RcsGraph* graph)
 {
@@ -622,11 +600,9 @@ void RcsJoint_fprintXML(FILE* out, const RcsJoint* self, const RcsGraph* graph)
 
 
 
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
+/*******************************************************************************
+ *
+ ******************************************************************************/
 
 int RcsJoint_getJointIndex(const RcsJoint* self)
 {
@@ -635,11 +611,9 @@ int RcsJoint_getJointIndex(const RcsJoint* self)
 
 
 
-/******************************************************************************
-
-\brief See header.
-
-******************************************************************************/
+/*******************************************************************************
+ *
+ ******************************************************************************/
 
 int RcsJoint_getDirectionIndex(const RcsJoint* self)
 {

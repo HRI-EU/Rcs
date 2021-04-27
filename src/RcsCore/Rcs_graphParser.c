@@ -397,7 +397,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 
   // Compute type
   bool distance = true, graphics = true, physics = true, softPhysics = false;
-  bool depth=false, contact=false;
+  bool depth=false, contact=false, attachment = false;
 
   // Physics computation is not carried out for non-physics objects by default.
   if (body->physicsSim == RCSBODY_PHYSICS_NONE)
@@ -432,6 +432,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   getXMLNodePropertyBoolString(node, "softPhysics", &softPhysics);
   getXMLNodePropertyBoolString(node, "depth", &depth);
   getXMLNodePropertyBoolString(node, "contact", &contact);
+  getXMLNodePropertyBoolString(node, "attachment", &attachment);
 
   if (distance == true)
   {
@@ -457,13 +458,21 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   {
     shape->computeType |= RCSSHAPE_COMPUTE_CONTACT;
 
-    double mu = 1.0;
-    double stiffness = 2.0e4;
-    double z0 = 0.0;
+    double mu = 1.0, stiffness = 2.0e4, z0 = 0.0;
     getXMLNodePropertyDouble(node, "staticFriction", &mu);
     getXMLNodePropertyDouble(node, "stiffness", &stiffness);
     getXMLNodePropertyDouble(node, "height", &z0);
     Vec3d_set(shape->scale3d, mu, stiffness, z0);
+  }
+  if (attachment == true)
+  {
+    shape->computeType |= RCSSHAPE_COMPUTE_ATTACHMENT;
+    double stiffness = 2.0e4;
+    getXMLNodePropertyDouble(node, "stiffness", &stiffness);
+    double damping = 0.5*sqrt(4.0*stiffness);
+    getXMLNodePropertyDouble(node, "damping", &damping);
+    Vec3d_set(shape->scale3d, stiffness, damping, 0.0);
+    getXMLNodePropertyStringN(node, "body", shape->meshFile, RCS_MAX_FILENAMELEN);
   }
 
   shape->resizeable = false;

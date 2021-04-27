@@ -4640,7 +4640,7 @@ void MatNd_rowLerp(MatNd* dst, const MatNd* src, const double s)
     return;
   }
 
-  if (s <= 0)
+  if (s <= 0.0)
   {
     MatNd_fromArray(dst, MatNd_getRowPtr(src, 0), cols);
     return;

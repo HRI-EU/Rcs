@@ -127,7 +127,8 @@ typedef enum
   RCSSHAPE_COMPUTE_GRAPHICS     = 4,   ///< Graphics visualization
   RCSSHAPE_COMPUTE_CONTACT      = 8,   ///< Contact simulation
   RCSSHAPE_COMPUTE_SOFTPHYSICS  = 16,  ///< Soft physics simulation
-  RCSSHAPE_COMPUTE_DEPTHBUFFER  = 32   ///< Depth buffer simulation
+  RCSSHAPE_COMPUTE_DEPTHBUFFER  = 32,  ///< Depth buffer simulation
+  RCSSHAPE_COMPUTE_ATTACHMENT   = 64   ///< Spring damper connection
 
 } RCSSHAPE_COMPUTE_TYPE;
 

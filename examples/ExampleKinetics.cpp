@@ -519,45 +519,7 @@ int main(int argc, char** argv)
         ////////////////////////////////////////////////////////////
         // Compute inverse dynamics
         ////////////////////////////////////////////////////////////
-#if 0
-        // Mass matrix, gravity load and h-vector
-        RcsGraph_computeKineticTerms(graph, M, h, g);
-
-        // aq = -kp*(q-q_des)
-        MatNd_reshape(aq, graph->dof, 1);
-        MatNd_sub(aq, q_curr, q_des);
-        RcsGraph_stateVectorToIKSelf(graph, aq);
-        MatNd_constMulSelf(aq, -kp);
-
-        // aq = aq  -kd*qp_curr + kd*qp_des
-        RcsGraph_stateVectorToIK(graph, graph->q_dot, qp_ik);
-        RcsGraph_stateVectorToIKSelf(graph, qp_des);
-        RcsGraph_stateVectorToIKSelf(graph, qpp_des);
-        MatNd_constMulAndAddSelf(aq, qp_ik, -kd);
-        MatNd_constMulAndAddSelf(aq, qp_des, kd);
-
-        // aq = aq + qpp_des
-        MatNd_addSelf(aq, qpp_des);
-
-        // Set the speed of the kinematic and constrained joints to zero
-        RCSGRAPH_TRAVERSE_JOINTS(graph)
-        {
-          if ((JNT->ctrlType!=RCSJOINT_CTRL_TORQUE) ||
-              (JNT->constrained==true))
-          {
-            MatNd_set(aq, JNT->jacobiIndex, 0, 0.0);
-          }
-        }
-
-        // Add gravity and coriolis compensation: u += h + Fg
-        // u = M*aq + h + g
-        MatNd_reshape(T_des, graph->nJ, 1);
-        MatNd_mul(T_des, M, aq);   // Tracking error
-        MatNd_subSelf(T_des, h);   // Cancellation of coriolis forces
-        MatNd_subSelf(T_des, g);   // Cancellation of gravity forces
-#else
         Rcs::ControllerBase::computeInvDynJointSpace(T_des, graph, q_des, kp);
-#endif
 
         // Check for torque limit violations
         unsigned int torqueLimitsViolated = 0;

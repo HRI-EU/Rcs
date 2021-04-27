@@ -162,7 +162,6 @@ bool KineticSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
   // Remove kinematic constraints from all bodies with rigid body dofs
   RCSGRAPH_TRAVERSE_BODIES(getGraph())
   {
-    //if (BODY->rigid_body_joints)
     if (RcsBody_isFloatingBase(getGraph(), BODY))
     {
       RCSBODY_FOREACH_JOINT(getGraph(), BODY)
@@ -797,6 +796,49 @@ void KineticSimulation::integrationStep(const double* x, void* param,
     MatNd_transposeSelf(J);
     MatNd_mulAndAddSelf(M_contact, J, &F_i);
   }
+  // Spring forces
+#if 1
+  RCSGRAPH_FOREACH_BODY(graph)
+  {
+    RCSBODY_TRAVERSE_SHAPES(BODY)
+    {
+      if (!RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_ATTACHMENT))
+      {
+        continue;
+      }
+
+      const RcsBody* anchor = RcsGraph_getBodyByName(graph, SHAPE->meshFile);
+      RCHECK_MSG(anchor, "Not found: \"%s\"", SHAPE->meshFile);
+      const double* x_anchor = anchor->A_BI.org;
+      const double* xp_anchor = anchor->x_dot;
+
+      // Compute the velocities of the spring point
+      HTr A_CI;
+      HTr_transform(&A_CI, &BODY->A_BI, &SHAPE->A_CB);
+      const double* x_spring = A_CI.org;
+      double xp_spring_[3];
+      MatNd xp_spring = MatNd_fromPtr(3, 1, xp_spring_);
+      RcsGraph_bodyPointJacobian(graph, BODY, SHAPE->A_CB.org, NULL, J);
+      MatNd_mul(&xp_spring, J, &qp);
+
+      // Compute spring force
+      double f[3];
+      const double stiffness = SHAPE->scale3d[0];
+      const double damping = SHAPE->scale3d[1];
+      for (int i = 0; i < 3; ++i)
+      {
+        f[i] = stiffness*(x_anchor[i]-x_spring[i]) +
+               damping*(xp_anchor[i]-xp_spring_[i]);
+      }
+
+      // Project contact forces into joint space
+      RLOG(1, "%s: f=%.3f %.3f %.3f", BODY->name, f[0], f[1], f[2]);
+      MatNd F_i = MatNd_fromPtr(3, 1, f);
+      MatNd_transposeSelf(J);
+      MatNd_mulAndAddSelf(M_contact, J, &F_i);
+    }
+  }
+#endif
 
   // Transfer joint velocities
   memmove(&xp[0], qp.ele, nq * sizeof(double));
@@ -1013,7 +1055,9 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
     }
     else if (JNT->ctrlType == RCSJOINT_CTRL_VELOCITY)
     {
-      RFATAL("Implement me");
+      double qp_curr_i = graph->q_dot->ele[JNT->jointIndex];
+      double qp_des_i = this->q_dot_des->ele[JNT->jointIndex];
+      tmp->ele[JNT->jacobiIndex] = (qp_des_i-qp_curr_i)/dt;
     }
   }
   getSubVec(tmp, pIdx);
@@ -1051,7 +1095,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   if (MatNd_isINF(q_ddot))
   {
     MatNd_setZero(q_ddot);
-    RPAUSE_MSG("q_ddot has infinite values - det was %g", det);
+    RLOG(1, "q_ddot has infinite values - det was %g", det);
   }
 
   // Memorize joint torques.

@@ -464,7 +464,7 @@ int main(int argc, char** argv)
         graph = RcsGraph_create(xmlFileName);
       }
 
-      REXEC(1)
+      REXEC(5)
       {
         RLOG(0, "Original traversal:");
         int count1 = 0;
@@ -513,6 +513,7 @@ int main(int argc, char** argv)
         bvhTraj = RcsGraph_createTrajectoryFromBVHFile(graph, bvhFile,
                                                        &dtStep, 0.01,
                                                        M_PI/180.0);
+
         if (bvhTraj && (bvhTraj->n!=graph->dof))
         {
           RLOG(1, "Mismatch in bvh array dimensions: found %d columns, but "
@@ -1850,7 +1851,7 @@ int main(int argc, char** argv)
       strcpy(xmlFileName, "cAction.xml");
       strcpy(directory, "config/xml/DexBot");
       char effortBdyName[256] = "";
-      char physicsEngine[32] = "Bullet";
+      std::string physicsEngine;
       char physicsCfg[128] = "config/physics/physics.xml";
 
       argP.getArgument("-algo", &algo, "IK algorithm: 0: left inverse, 1: "
@@ -1869,8 +1870,8 @@ int main(int argc, char** argv)
                        "Body to map static effort");
       argP.getArgument("-physics_config", physicsCfg, "Configuration file name"
                        " for physics (default is %s)", physicsCfg);
-      argP.getArgument("-physicsEngine", physicsEngine,
-                       "Physics engine (default is \"%s\")", physicsEngine);
+      argP.getArgument("-physicsEngine", &physicsEngine, "Physics engine "
+                       "(default is \"%s\")", physicsEngine.c_str());
       argP.getArgument("-scaleDragForce", &scaleDragForce, "Scale factor for"
                        " mouse dragger (default is \"%f\")", scaleDragForce);
       bool ffwd = argP.hasArgument("-ffwd", "Feed-forward dx only");
@@ -1885,7 +1886,6 @@ int main(int argc, char** argv)
                                          "null space");
       bool constraintIK = argP.hasArgument("-constraintIK", "Use constraint IK"
                                            " solver");
-      bool physics = argP.hasArgument("-physics", "Use physics simulation");
       bool initToQ0 = argP.hasArgument("-setDefaultStateFromInit", "Set the "
                                        "joint center defaults from the initial"
                                        " state");
@@ -1957,7 +1957,7 @@ int main(int argc, char** argv)
       RcsGraph* simGraph = NULL;
       bool physicsFeedback = false;
 
-      if (physics)
+      if (Rcs::PhysicsFactory::hasEngine(physicsEngine.c_str()))
       {
         simGraph = RcsGraph_clone(controller.getGraph());
 
@@ -1974,12 +1974,13 @@ int main(int argc, char** argv)
           RcsGraph_setState(simGraph, NULL, NULL);
         }
 
-        sim = Rcs::PhysicsFactory::create(physicsEngine, simGraph, physicsCfg);
+        sim = Rcs::PhysicsFactory::create(physicsEngine.c_str(),
+                                          simGraph, physicsCfg);
 
         if (sim==NULL)
         {
           Rcs::PhysicsFactory::print();
-          RLOG(1, "Couldn't create physics engine \"%s\"", physicsEngine);
+          RLOG_CPP(1, "Couldn't create physics \"" << physicsEngine << "\"");
           RcsGraph_destroy(simGraph);
           simGraph = NULL;
         }
@@ -1988,12 +1989,12 @@ int main(int argc, char** argv)
 
       // Create visualization
       Rcs::Viewer* v           = NULL;
-      Rcs::KeyCatcher* kc      = NULL;
-      Rcs::GraphNode* gn       = NULL;
-      Rcs::PhysicsNode* simNode = NULL;
+      osg::ref_ptr<Rcs::KeyCatcher> kc;
+      osg::ref_ptr<Rcs::GraphNode> gn;
+      osg::ref_ptr<Rcs::PhysicsNode> simNode;
       osg::ref_ptr<Rcs::HUD> hud;
-      Rcs::BodyPointDragger* dragger = NULL;
-      Rcs::VertexArrayNode* cn = NULL;
+      osg::ref_ptr<Rcs::BodyPointDragger> dragger;
+      osg::ref_ptr<Rcs::VertexArrayNode> cn;
       char hudText[2056];
 
       if (valgrind==false)
@@ -2010,15 +2011,15 @@ int main(int argc, char** argv)
 
         dragger = new Rcs::BodyPointDragger();
         dragger->scaleDragForce(scaleDragForce);
-        v->add(gn);
-        v->add(kc);
-        v->add(dragger);
+        v->add(gn.get());
+        v->add(kc.get());
+        v->add(dragger.get());
 
         if (sim)
         {
           simNode = new Rcs::PhysicsNode(sim);
           gn->setGhostMode(true, "RED");
-          v->add(simNode);
+          v->add(simNode.get());
         }
 
         if (controller.getCollisionMdl() != NULL)
@@ -2026,7 +2027,7 @@ int main(int argc, char** argv)
           cn = new Rcs::VertexArrayNode(controller.getCollisionMdl()->cp,
                                         osg::PrimitiveSet::LINES, "RED");
           cn->toggle();
-          v->add(cn);
+          v->add(cn.get());
         }
 
         v->runInThread(mtx);
@@ -2198,7 +2199,7 @@ int main(int argc, char** argv)
 
         if (sim)
         {
-          sim->setControlInput(controller.getGraph()->q, NULL, NULL);
+          sim->setControlInput(controller.getGraph()->q, q_dot_des, NULL);
           sim->simulate(dt, simGraph);
           RcsGraph_setState(simGraph, NULL, NULL);
           if (physicsFeedback)
