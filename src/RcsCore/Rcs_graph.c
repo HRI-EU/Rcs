@@ -58,8 +58,8 @@
  * that the state vector has been set so that the joint values pointed to by
  * RcsJoint::q are up to date.
  ******************************************************************************/
-static void RcsGraph_bodyKinematics(RcsBody* bdy, unsigned int* nJ,
-                                    const MatNd* q, const MatNd* q_dot)
+static void RcsGraph_internalBodyKinematics(RcsBody* bdy, unsigned int* nJ,
+                                            const MatNd* q, const MatNd* q_dot)
 {
   // Copy last body transformation to current one
   HTr_copy(bdy->A_BI, bdy->parent ? bdy->parent->A_BI : HTr_identity());
@@ -122,15 +122,20 @@ static void RcsGraph_bodyKinematics(RcsBody* bdy, unsigned int* nJ,
 
     // If the joint is constrained, set the Jacobian index of the joint
     // invalid (-1). Otherwise, set the Jacobian index of the joint to the
-    // latest active joint.
-    if (j->constrained == true)
+    // latest active joint. We only do this if the argument nJ is given. This
+    // allows to use this function starting from any other body than root with
+    // passing nJ as NULL.
+    if (nJ != NULL)
     {
-      j->jacobiIndex = -1;
-    }
-    else
-    {
-      j->jacobiIndex = *nJ;
-      *nJ = *nJ + 1;
+      if (j->constrained == true)
+      {
+        j->jacobiIndex = -1;
+      }
+      else
+      {
+        j->jacobiIndex = *nJ;
+        *nJ = *nJ + 1;
+      }
     }
 
     // Remember previous transform and propagate to next joint
@@ -275,7 +280,7 @@ bool RcsGraph_setState(RcsGraph* self, const MatNd* q_, const MatNd* q_dot_)
   unsigned int nJ = 0;
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
-    RcsGraph_bodyKinematics(BODY, &nJ, self->q,q_dot_ ? self->q_dot : NULL);
+    RcsGraph_internalBodyKinematics(BODY, &nJ, self->q,q_dot_ ? self->q_dot : NULL);
   }
 
   // In most cases, nJ remains unchanged. We therefore only assign a new value
@@ -310,8 +315,41 @@ void RcsGraph_computeForwardKinematics(RcsGraph* self,
   self->nJ = 0;
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
-    RcsGraph_bodyKinematics(BODY, &self->nJ,
-                            q ? q : self->q, q_dot ? q_dot : self->q_dot);
+    RcsGraph_internalBodyKinematics(BODY, &self->nJ,
+                                    q ? q : self->q, q_dot ? q_dot : self->q_dot);
+  }
+
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void RcsGraph_computeBodyKinematics(RcsGraph* self, RcsBody* bdy,
+                                    const MatNd* q, const MatNd* q_dot,
+                                    bool subTree)
+{
+  if (q != NULL)
+  {
+    RCHECK(q->m == self->dof);
+  }
+
+  if (q_dot != NULL)
+  {
+    RCHECK(q_dot->m == self->dof);
+  }
+
+  if (subTree)
+  {
+    RCSBODY_TRAVERSE_BODIES(bdy)
+    {
+      RcsGraph_internalBodyKinematics(BODY, NULL, q ? q : self->q,
+                                      q_dot ? q_dot : self->q_dot);
+    }
+  }
+  else
+  {
+    RcsGraph_internalBodyKinematics(bdy, NULL, q ? q : self->q,
+                                    q_dot ? q_dot : self->q_dot);
   }
 
 }

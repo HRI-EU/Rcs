@@ -295,6 +295,32 @@ void RcsGraph_computeForwardKinematics(RcsGraph* self, const MatNd* q,
                                        const MatNd* q_dot);
 
 /*! \ingroup RcsGraphFunctions
+ *  \brief Computes the forward kinematics starting from a given body of the
+ *         graph. The body will be initialized with the state of its parent
+ *         or with identity if it has no parent. If the argument subTree is
+ *         false, just the body and its joints will undergo a forward
+ *         kinematics calculation. If subTree is true, the forward kinematics
+ *         will be computed starting from the body in a depth-first way. The
+ *         traversal will not go through the bodie's neighbors. The state
+ *         vectors q and q_dot may be NULL, or must be of dimension
+ *         RcsGraph::dof x 1. In the first case, the graph's internal q- and
+ *         q_dot vectors are used. In the latter case, the passed arrays are
+ *         used. They will not be copied into the graph's vectors. This is
+ *         similar to RcsGraph_computeForwardKinematics, and different to
+ *         RcsGraph_setState.
+ *
+ *  \param[in] self    The graph containing the body
+ *  \param[in] bdy     Start body for traversal
+ *  \param[in] q       Joint vector of dimension RcsGraph::dof x 1, or NULL
+ *  \param[in] q_dot   Joint velocity vector of dimension RcsGraph::dof x 1,
+ *                     or NULL
+ *  \param[in] subTree Traverse subtree if true, compute body only if false
+ */
+void RcsGraph_computeBodyKinematics(RcsGraph* self, RcsBody* bdy,
+                                    const MatNd* q, const MatNd* q_dot,
+                                    bool subTree);
+
+/*! \ingroup RcsGraphFunctions
  *  \brief Sets the state default state vector, computes the forward
  *         kinematics and recomputes the index vector for the accelerated
  *         Jacobian computation. The default state vector corresponds to

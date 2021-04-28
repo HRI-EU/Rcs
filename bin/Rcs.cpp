@@ -395,9 +395,11 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("H", "Toggle HUD");
 
       double dtSim = 0.0, dtStep = 0.04;
+      int fwdKinType = 0;
       char hudText[512] = "", comRef[64] = "";
       char dotFile[256] = "RcsGraph.dot";
       char bgColor[64] = "LIGHT_GRAYISH_GREEN";
+      std::string fKinBdyName;
       strcpy(xmlFileName, "gScenario.xml");
       strcpy(directory, "config/xml/DexBot");
       getModel(directory, xmlFileName);
@@ -413,6 +415,10 @@ int main(int argc, char** argv)
                        "root)");
       argP.getArgument("-bgColor", bgColor, "Background color (default is "
                        "\"%s\")", bgColor);
+      argP.getArgument("-fKin", &fwdKinType, "Forward kinematics: 0: all dof,"
+                       "1: sub tree, 2: body only (default is %d)", fwdKinType);
+      argP.getArgument("-fKinBdy", &fKinBdyName, "Forward kinematics start "
+                       "body (default is none)");
       bool testCopy = argP.hasArgument("-copy", "Test graph copying");
       bool resizeable = argP.hasArgument("-resizeable", "Adjust visualization "
                                          "of shapes dynamically");
@@ -590,7 +596,31 @@ int main(int argc, char** argv)
           }
 
           dtSim = Timer_getSystemTime();
-          RcsGraph_setState(graph, NULL, NULL);
+
+          switch (fwdKinType)
+          {
+            case 0:
+              RcsGraph_setState(graph, NULL, NULL);
+              break;
+
+            case 1:
+            {
+              RcsBody* fkBdy = RcsGraph_getBodyByName(graph, fKinBdyName.c_str());
+              RcsGraph_computeBodyKinematics(graph, fkBdy, NULL, NULL, true);
+            }
+            break;
+
+            case 2:
+            {
+              RcsBody* fkBdy = RcsGraph_getBodyByName(graph, fKinBdyName.c_str());
+              RcsGraph_computeBodyKinematics(graph, fkBdy, NULL, NULL, false);
+            }
+            break;
+
+            default:
+              RFATAL("No forward kinematics mode %d", fwdKinType);
+          }
+
           dtSim = Timer_getSystemTime() - dtSim;
           if (comBase != NULL)
           {
