@@ -832,7 +832,6 @@ void KineticSimulation::integrationStep(const double* x, void* param,
       }
 
       // Project contact forces into joint space
-      RLOG(1, "%s: f=%.3f %.3f %.3f", BODY->name, f[0], f[1], f[2]);
       MatNd F_i = MatNd_fromPtr(3, 1, f);
       MatNd_transposeSelf(J);
       MatNd_mulAndAddSelf(M_contact, J, &F_i);
