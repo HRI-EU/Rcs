@@ -126,14 +126,17 @@ static void RcsGraph_bodyKinematics(RcsGraph* graph,
     // If the joint is constrained, set the Jacobian index of the joint
     // invalid (-1). Otherwise, set the Jacobian index of the joint to the
     // latest active joint.
-    if (j->constrained == true)
+    if (nJ)
     {
-      j->jacobiIndex = -1;
-    }
-    else
-    {
-      j->jacobiIndex = *nJ;
-      *nJ = *nJ + 1;
+      if (j->constrained == true)
+      {
+        j->jacobiIndex = -1;
+      }
+      else
+      {
+        j->jacobiIndex = *nJ;
+        *nJ = *nJ + 1;
+      }
     }
 
     // Remember previous transform and propagate to next joint
@@ -312,6 +315,39 @@ void RcsGraph_computeForwardKinematics(RcsGraph* self,
   {
     RcsGraph_bodyKinematics(self, BODY, &self->nJ,
                             q ? q : self->q, q_dot ? q_dot : self->q_dot);
+  }
+
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void RcsGraph_computeBodyKinematics(RcsGraph* self, RcsBody* bdy,
+                                    const MatNd* q, const MatNd* q_dot,
+                                    bool subTree)
+{
+  if (q != NULL)
+  {
+    RCHECK(q->m == self->dof);
+  }
+
+  if (q_dot != NULL)
+  {
+    RCHECK(q_dot->m == self->dof);
+  }
+
+  if (subTree)
+  {
+    RCSBODY_TRAVERSE_BODIES(self, bdy)
+    {
+      RcsGraph_bodyKinematics(self, BODY, NULL, q ? q : self->q,
+                              q_dot ? q_dot : self->q_dot);
+    }
+  }
+  else
+  {
+    RcsGraph_bodyKinematics(self, bdy, NULL, q ? q : self->q,
+                            q_dot ? q_dot : self->q_dot);
   }
 
 }
