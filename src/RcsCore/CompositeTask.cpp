@@ -346,6 +346,8 @@ void Rcs::CompositeTask::selectionTrafo(double* S_trans, const double* S) const
  ******************************************************************************/
 void Rcs::CompositeTask::setEffector(const RcsBody* effector)
 {
+  Task::setEffector(effector);
+
   for (size_t i=0; i<subTask.size(); ++i)
   {
     subTask[i]->setEffector(effector);
