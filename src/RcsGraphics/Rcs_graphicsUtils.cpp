@@ -239,6 +239,12 @@ const char* materialDefs =
                     <Specular R="0.1" G="0.1" B="0.1" A="1.0"/>
                     </MaterialDefinition>
 
+                    <MaterialDefinition Name="BRICKRED" Shininess="10.0">
+                    <Ambient R="0.1" G="0.0" B="0.0" A="1.0"/>
+                    <Diffuse R="0.5569" G="0.1059" B="0.1059" A="1.0"/>
+                    <Specular R="0.1" G="0.1" B="0.1" A="1.0"/>
+                    </MaterialDefinition>
+
                     <MaterialDefinition Name="ORANGE" Shininess="100.0">
                     <Ambient R="0.2" G="0.1" B="0.1" A="1.0"/>
                     <Diffuse R="1.0" G="0.5" B="0.0" A="1.0"/>
@@ -249,6 +255,12 @@ const char* materialDefs =
                     <Ambient R="0.0" G="0.2" B="0.0" A="1.0"/>
                     <Diffuse R="0.0" G="1.0" B="0.0" A="1.0"/>
                     <Specular R="0.2" G="0.2" B="0.2" A="1.0"/>
+                    </MaterialDefinition>
+
+                    <MaterialDefinition Name="DARKGREEN" Shininess="10.0">
+                    <Ambient R="0.0" G="0.1" B="0.0" A="1.0"/>
+                    <Diffuse R="0.2353" G="0.3843" B="0.2235" A="1.0"/>
+                    <Specular R="0.1" G="0.1" B="0.1" A="1.0"/>
                     </MaterialDefinition>
 
                     <MaterialDefinition Name="BLUE" Shininess="100.0">
