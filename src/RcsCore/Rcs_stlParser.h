@@ -66,6 +66,7 @@ size_t getXMLNodePropertySTLString(xmlNodePtr node, const char* tag,
  */
 std::string getXMLNodePropertySTLString(xmlNodePtr node, const char* tag);
 
+
 /*! \ingroup RcsParserFunctions
  *  \brief Reads multiple words from xml node into a vector of STL strings
  *
@@ -102,6 +103,7 @@ std::vector<std::string> getXMLNodePropertyVecSTLString(xmlNodePtr node,
  */
 std::vector<double> getXMLNodePropertyVecSTLDouble(xmlNodePtr node,
                                                    const char* tag);
+
 
 /*! \ingroup RcsParserFunctions
  *  \brief Reads multiple double values from xml node into a STL vector

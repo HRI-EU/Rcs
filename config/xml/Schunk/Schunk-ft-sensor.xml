@@ -1,7 +1,7 @@
 <Graph name="Schunk F/T Sensor" >
 
   <Body name="SchunkFTS" mass="1.92" cogVector="0 0 0.08" physics="fixed" >
-    <Shape type="CYLINDER" color="BLUE" radius="0.033" length="0.041146" graphics="true" distance="false" transform="0 0 0.02 0 0 0" />
+    <Shape type="CYLINDER" color="BLUE" radius="0.033" waslength="0.041146" length="0.02" graphics="true" distance="false" transform="0 0 0.02 0 0 0" />
     <Sensor type="LOADCELL" name="WristLoadCellSchunk" />
   </Body>
 

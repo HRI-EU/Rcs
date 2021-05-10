@@ -55,7 +55,7 @@
     <Shape type="CYLINDER" radius="0.03" length="0.086" graphics="true" distance="false" />
     <Shape type="MESH" meshFile="Schunk/3385031717_vbe_0606_x.tri" transform="0.08 0 0 180 -90 0" physics="true"/>
     <Shape type="CYLINDER" radius="0.032" length="0.016" transform="0.095 0 0 0 90 0" graphics="true" distance="false" />
-    <Shape type="CYLINDER" color="BLUE" radius="0.032" length="0.041146" graphics="true" distance="false" transform="0.123573 0 0 0 90 0" />
+    <Shape type="CYLINDER" color="BLUE" radius="0.032" waslength="0.041146" length="0.02" graphics="true" distance="false" transform="0.123573 0 0 0 90 0" />
     <Shape type="SSL" radius="0.08" length="0.055" graphics="false" distance="true" transform="0 0 -0.03 0 0 0" physics="false"/>
   </Body>
 

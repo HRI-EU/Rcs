@@ -346,7 +346,7 @@ bool RcsGraph_setModelStateFromXML(RcsGraph* self, const char* modelStateName,
  *  \brief Reads the model state from a graph. The function opens the xml file
  *         corresponding to the graph's xmlFileName. It then reads all values
  *         with an xml tag "joint_state". All other values remain unchanged.
- *         The qrray q will be reshaped to the correct dimensions.
+ *         The array q will be reshaped to the correct dimensions.
  */
 bool RcsGraph_getModelStateFromXML(MatNd* q, const RcsGraph* self,
                                    const char* modelStateName, int timeStamp);

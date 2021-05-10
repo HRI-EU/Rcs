@@ -49,6 +49,8 @@
 
 //#define TRANSFORM_ROOT_NEXT
 
+
+
 /*******************************************************************************
  *
  ******************************************************************************/
@@ -62,8 +64,8 @@ static bool RcsGraph_parseModelState(xmlNodePtr node, RcsGraph* self,
   {
     if (isXMLNodeNameNoCase(node, "model_state"))
     {
-      char stateName[64] = "";
-      getXMLNodePropertyStringN(node, "model", stateName, 64);
+      char stateName[RCS_MAX_NAMELEN] = "";
+      getXMLNodePropertyStringN(node, "model", stateName, RCS_MAX_NAMELEN);
 
       if (STREQ(mdlName, stateName))
       {
@@ -74,8 +76,9 @@ static bool RcsGraph_parseModelState(xmlNodePtr node, RcsGraph* self,
         {
           if (isXMLNodeNameNoCase(jntStateNode, "joint_state"))
           {
-            char name[256] = "";
-            getXMLNodePropertyStringN(jntStateNode, "joint", name, 256);
+            char name[RCS_MAX_NAMELEN] = "";
+            getXMLNodePropertyStringN(jntStateNode, "joint", name,
+                                      RCS_MAX_NAMELEN);
             RcsJoint* jnt = RcsGraph_getJointByName(self, name);
             if (jnt != NULL)
             {

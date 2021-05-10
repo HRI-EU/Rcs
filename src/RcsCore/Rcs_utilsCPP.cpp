@@ -455,3 +455,141 @@ std::vector<std::pair<double,double>> Math_quadsFromPolygon2D(double polygon[][2
 
   return result;
 }
+
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+#include "Rcs_parser.h"
+#include "Rcs_stlParser.h"
+#include "Rcs_typedef.h"
+#include "Rcs_joint.h"
+
+std::vector<std::pair<int,double>> RcsGraph_readModelState(xmlNodePtr node,
+                                                           const RcsGraph* self,
+                                                           const std::string& mdlName)
+{
+  std::vector<std::pair<int,double>> result;
+  node = node->children;
+
+  // Traverse all nodes
+  while (node != NULL)
+  {
+    // Only consider nodes with attribute "model_state"
+    if (!isXMLNodeNameNoCase(node, "model_state"))
+    {
+      node = node->next;
+      continue;
+    }
+
+    std::string name = Rcs::getXMLNodePropertySTLString(node, "model");
+
+    // Only consider nodes with the given mdlName
+    if (name != mdlName)
+    {
+      node = node->next;
+      continue;
+    }
+
+    xmlNodePtr jsNode = node->children;
+
+    while (jsNode)
+    {
+      if (!isXMLNodeNameNoCase(jsNode, "joint_state"))
+      {
+        jsNode = jsNode->next;
+        continue;
+      }
+
+      name = Rcs::getXMLNodePropertySTLString(jsNode, "joint");
+      RcsJoint* jnt = RcsGraph_getJointByName(self, name.c_str());
+      if (jnt == NULL)
+      {
+        RLOG(4, "Joint \"%s\" not found", name.c_str());
+        jsNode = jsNode->next;
+        continue;
+      }
+
+      double q;
+      bool hasPos = getXMLNodePropertyDouble(jsNode, "position", &q);
+
+      if (hasPos)
+      {
+        if (jnt->coupledToId != -1)
+        {
+          RLOG(4, "You are setting the state of a kinematically coupled"
+               " joint (\"%s\") - this has no effect", jnt->name);
+        }
+
+        // We don't overwrite the q_init value here, since it has
+        // influence on the coupled joints.
+        q *= RcsJoint_isRotation(jnt) ? (M_PI/180.0) : 1.0;
+        std::pair<int,double> si(jnt->jointIndex, q);
+        result.push_back(si);
+
+      }   // if (hasPos==true)
+
+      double qd;
+      bool hasVel = getXMLNodePropertyDouble(jsNode, "velocity", &qd);
+
+      if (hasVel)
+      {
+        RLOG(1, "Parsing velocities in model_state not yet supported");
+      }
+
+
+      jsNode = jsNode->next;
+    }
+
+    node = node->next;
+  }
+
+
+
+  return result;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+std::vector<std::string> RcsGraph_getModelStateNames(const RcsGraph* graph)
+{
+  std::vector<std::string> result;
+
+  if (graph==NULL)
+  {
+    return result;
+  }
+
+  // Read XML file
+  xmlDocPtr doc;
+  xmlNodePtr node = parseXMLFile(graph->cfgFile, "Graph", &doc);
+
+  if ((node==NULL) || (node->children==NULL))
+  {
+    xmlFreeDoc(doc);
+    return result;
+  }
+
+  node = node->children;
+
+
+  while (node != NULL)
+  {
+    if (!isXMLNodeNameNoCase(node, "model_state"))
+    {
+      node = node->next;
+      continue;
+    }
+
+    std::string stateName;
+    int len = Rcs::getXMLNodePropertySTLString(node, "model", stateName);
+    RCHECK_MSG(len>0, "Tag \"mode_state\" lacks \"model\" attribute");
+    result.push_back(stateName);
+    node = node->next;
+  }
+
+  xmlFreeDoc(doc);
+
+  return result;
+}

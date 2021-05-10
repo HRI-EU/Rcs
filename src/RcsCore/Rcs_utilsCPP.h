@@ -34,6 +34,10 @@
 #ifndef RCS_UTILSCPP_H
 #define RCS_UTILSCPP_H
 
+#include "Rcs_graph.h"
+
+#include <libxml/tree.h>
+
 #include <string>
 #include <vector>
 #include <list>
@@ -118,5 +122,10 @@ std::vector<std::pair<double,double>> Math_quadsFromPolygon2D(double polygon[][2
                                                               unsigned int nVertices,
                                                               double gridSize);
 
+std::vector<std::pair<int,double>> RcsGraph_readModelState(xmlNodePtr node,
+                                                           const RcsGraph* self,
+                                                           const std::string& mdlName);
+
+std::vector<std::string> RcsGraph_getModelStateNames(const RcsGraph* graph);
 
 #endif   // RCS_UTILSCPP_H
