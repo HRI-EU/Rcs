@@ -462,11 +462,62 @@ public:
   std::string getDefaultBackgroundColor() const;
 
   ///@}
+  
+  /*!
+   * @name Internals
+   */
+  
+  ///@{
+  /*! \brief Adds a node to the rootNode. This function must not be called
+   *         concurrently with the viewer's frame update.
+   *
+   * \return node   Node to be added. Can also be of certain derived types
+   *                such as camera etc.
+   */
+  bool addInternal(osg::Node* node);
 
+  /*! \brief Adds a node to a parent. This function must not be called
+   *         concurrently with the viewer's frame update.
+   *
+   *  \return parent Group node the node is to be attached to.
+   *  \return node   Node to be added. Can also be of certain derived types
+   *                 such as camera etc.
+   */
+  bool addInternal(osg::Group* parent, osg::Node* child);
 
+  /*! \brief Removes the node from the viewer's scene graph. This is called
+   *         from inside the locked frame() call so that there is no
+   *         concurrency issue.
+   *
+   *  \return True for success, false otherwise: node is NULL, or not found in
+   *          the viewer's scenegraph. The scenegraph is searched through all
+   *          levels. The frame mutex is internally set around the scenegraph
+   *          modification so that threading issues can be avoided.
+   */
+  bool removeInternal(osg::Node* node);
 
+  /*! \brief Removes all nodes with the given name from the viewer's scene
+   *         graph. This is called from inside the locked frame() call so that
+   *         there is no concurrency issue.
+   *
+   *  \return Number of nodes removed.
+   */
+  int removeInternal(std::string nodeName);
 
+  /*! \brief Removes all nodes with the given name from the parent node.
+   *
+   *  \return Number of nodes removed.
+   */
+  int removeInternal(osg::Node* parent, std::string nodeName);
 
+  /*! \brief Removes all nodes from the rootNode.
+   *
+   *  \return Number of nodes removed.
+   */
+  int removeAllNodesInternal();
+  
+  ///@}
+  
 
 protected:
 
@@ -522,54 +573,6 @@ protected:
 
 
 private:
-
-  /*! \brief Adds a node to the rootNode. This function must not be called
-   *         concurrently with the viewer's frame update.
-   *
-   * \return node   Node to be added. Can also be of certain derived types
-   *                such as camera etc.
-   */
-  bool addInternal(osg::Node* node);
-
-  /*! \brief Adds a node to a parent. This function must not be called
-   *         concurrently with the viewer's frame update.
-   *
-   *  \return parent Group node the node is to be attached to.
-   *  \return node   Node to be added. Can also be of certain derived types
-   *                 such as camera etc.
-   */
-  bool addInternal(osg::Group* parent, osg::Node* child);
-
-  /*! \brief Removes the node from the viewer's scene graph. This is called
-   *         from inside the locked frame() call so that there is no
-   *         concurrency issue.
-   *
-   *  \return True for success, false otherwise: node is NULL, or not found in
-   *          the viewer's scenegraph. The scenegraph is searched through all
-   *          levels. The frame mutex is internally set around the scenegraph
-   *          modification so that threading issues can be avoided.
-   */
-  bool removeInternal(osg::Node* node);
-
-  /*! \brief Removes all nodes with the given name from the viewer's scene
-   *         graph. This is called from inside the locked frame() call so that
-   *         there is no concurrency issue.
-   *
-   *  \return Number of nodes removed.
-   */
-  int removeInternal(std::string nodeName);
-
-  /*! \brief Removes all nodes with the given name from the parent node.
-   *
-   *  \return Number of nodes removed.
-   */
-  int removeInternal(osg::Node* parent, std::string nodeName);
-
-  /*! \brief Removes all nodes from the rootNode.
-   *
-   *  \return Number of nodes removed.
-   */
-  int removeAllNodesInternal();
 
   /*! \brief Adds a custom event to the internal user event queue. This is
    *         protected by the userEventMtx in order to avoid concurrent
