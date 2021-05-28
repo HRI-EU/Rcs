@@ -50,7 +50,8 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskDistance1D> registrar3("DistanceZ");
 Rcs::TaskDistance1D::TaskDistance1D(const std::string& className_,
                                     xmlNode* node,
                                     RcsGraph* _graph,
-                                    int dim):
+                                    int dim,
+                                    float scaleFactor):
   TaskDistance3D(className_, node, _graph, dim), index(-1)
 {
   double guiMax = 2.5, guiMin = -2.5;
@@ -64,17 +65,17 @@ Rcs::TaskDistance1D::TaskDistance1D(const std::string& className_,
   if (getClassName()=="DistanceX")
   {
     this->index = 0;
-    resetParameter(Parameters(guiMin, guiMax, 1.0, "X [m]"));
+    resetParameter(Parameters(guiMin, guiMax, scaleFactor, "X [m]"));
   }
   else if (getClassName()=="DistanceY")
   {
     this->index = 1;
-    resetParameter(Parameters(guiMin, guiMax, 1.0, "Y [m]"));
+    resetParameter(Parameters(guiMin, guiMax, scaleFactor, "Y [m]"));
   }
   else if (getClassName()=="DistanceZ")
   {
     this->index = 2;
-    resetParameter(Parameters(guiMin, guiMax, 1.0, "Z [m]"));
+    resetParameter(Parameters(guiMin, guiMax, scaleFactor, "Z [m]"));
   }
 
 }
@@ -95,7 +96,8 @@ Rcs::TaskDistance1D::TaskDistance1D(const TaskDistance1D& copyFromMe,
 Rcs::TaskDistance1D::TaskDistance1D(RcsGraph* graph_,
                                     const RcsBody* effector,
                                     const RcsBody* refBdy,
-                                    int idx) :
+                                    int idx,
+                                    float scaleFactor) :
   TaskDistance3D(graph_, effector, refBdy), index(idx)
 {
   switch (idx)
@@ -119,7 +121,7 @@ Rcs::TaskDistance1D::TaskDistance1D(RcsGraph* graph_,
   setName("Dist1D " + std::string(effector ? effector->name : "NULL") + "-"
           + std::string(refBdy ? refBdy->name : "NULL"));
   setDim(1);
-  resetParameter(Parameters(-1.0, 1.0, 1.0, "Dist [m]"));
+  resetParameter(Parameters(-1.0, 1.0, scaleFactor, "Dist [m]"));
 }
 
 /*******************************************************************************

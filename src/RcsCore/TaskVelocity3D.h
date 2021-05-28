@@ -53,12 +53,14 @@ public:
   /*! Constructor based on graph and effectors.
    */
   TaskVelocity3D(RcsGraph* graph, const RcsBody* effector,
-                 const RcsBody* refBdy, const RcsBody* refFrame);
+                 const RcsBody* refBdy, const RcsBody* refFrame,
+                 float scaleFactor=1.0);
 
   /*! Constructor based on xml parsing
    */
   TaskVelocity3D(const std::string& className, xmlNode* node,
-                 RcsGraph* graph, int dim=1);
+                 RcsGraph* graph, int dim=1,
+                 float scaleFactor=1.0);
 
   /*! \brief Copy constructor doing deep copying with optional new graph
    *         pointer

@@ -87,7 +87,7 @@ public:
   /*! Constructor based on xml parsing.
    */
   TaskPosition3D(const std::string& className, xmlNode* node,
-                 RcsGraph* graph, int dim=3);
+                 RcsGraph* graph, int dim=3, float scaleFactor=1.0);
 
   /*! \brief Copy constructor doing deep copying with optional new graph
    *         pointer.
@@ -97,7 +97,8 @@ public:
   /*! Constructor based on graph and effectors.
    */
   TaskPosition3D(RcsGraph* graph, const RcsBody* effector,
-                 const RcsBody* refBdy, const RcsBody* refFrame);
+                 const RcsBody* refBdy, const RcsBody* refFrame,
+                 float scaleFactor=1.0);
 
   /*! Destructor.
    */

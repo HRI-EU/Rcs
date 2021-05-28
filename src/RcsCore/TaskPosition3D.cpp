@@ -54,7 +54,8 @@ static TaskFactoryRegistrar<TaskPosition3D> registrar("XYZ");
 TaskPosition3D::TaskPosition3D(const std::string& className,
                                xmlNode* node,
                                RcsGraph* graph_,
-                               int dim) :
+                               int dim,
+                               float scaleFactor) :
   TaskGenericIK(className, node, graph_, dim)
 {
   if (getClassName() == "XYZ")
@@ -72,9 +73,9 @@ TaskPosition3D::TaskPosition3D(const std::string& className,
       Vec3d_setZero(guiMax);
     }
 
-    resetParameter(Parameters(guiMin[0], guiMax[0], 1.0, "X [m]"));
-    addParameter(Parameters(guiMin[1], guiMax[1], 1.0, "Y [m]"));
-    addParameter(Parameters(guiMin[2], guiMax[2], 1.0, "Z [m]"));
+    resetParameter(Parameters(guiMin[0], guiMax[0], scaleFactor, "X [m]"));
+    addParameter(Parameters(guiMin[1], guiMax[1], scaleFactor, "Y [m]"));
+    addParameter(Parameters(guiMin[2], guiMax[2], scaleFactor, "Z [m]"));
   }
 }
 
@@ -93,7 +94,8 @@ TaskPosition3D::TaskPosition3D(const TaskPosition3D& src,
 TaskPosition3D::TaskPosition3D(RcsGraph* graph_,
                                const RcsBody* effector,
                                const RcsBody* refBdy,
-                               const RcsBody* refFrame) : TaskGenericIK()
+                               const RcsBody* refFrame,
+                               float scaleFactor) : TaskGenericIK()
 {
   this->graph = graph_;
   setClassName("XYZ");
@@ -101,9 +103,9 @@ TaskPosition3D::TaskPosition3D(RcsGraph* graph_,
   setEffector(effector);
   setRefBody(refBdy);
   setRefFrame(refFrame ? refFrame : refBdy);
-  resetParameter(Parameters(-2.5, 2.5, 1.0, "X Position [m]"));
-  addParameter(Parameters(-2.5, 2.5, 1.0, "Y Position [m]"));
-  addParameter(Parameters(-2.5, 2.5, 1.0, "Z Position [m]"));
+  resetParameter(Parameters(-2.5, 2.5, scaleFactor, "X Position [m]"));
+  addParameter(Parameters(-2.5, 2.5, scaleFactor, "Y Position [m]"));
+  addParameter(Parameters(-2.5, 2.5, scaleFactor, "Z Position [m]"));
 }
 
 /*******************************************************************************

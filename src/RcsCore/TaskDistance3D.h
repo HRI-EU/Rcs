@@ -58,7 +58,7 @@ public:
   /*! Constructor based on xml parsing.
    */
   TaskDistance3D(const std::string& className, xmlNode* node,
-                 RcsGraph* graph, int dim=3);
+                 RcsGraph* graph, int dim=3, float scaleFactor=1.0);
 
   /*! \brief Copy constructor doing deep copying with optional new graph
    *         pointer.
@@ -68,7 +68,7 @@ public:
   /*! Constructor based on graph and effectors.
   */
   TaskDistance3D(RcsGraph* graph, const RcsBody* effector,
-                 const RcsBody* refBdy);
+                 const RcsBody* refBdy, float scaleFactor=1.0);
 
   /*! Destructor.
    */

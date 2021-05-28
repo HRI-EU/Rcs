@@ -54,7 +54,8 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskVelocity1D> registrar3("Zd");
 Rcs::TaskVelocity1D::TaskVelocity1D(const std::string& taskType,
                                     xmlNode* node,
                                     RcsGraph* _graph,
-                                    int dim):
+                                    int dim,
+                                    float scaleFactor):
   TaskPosition1D(taskType, node, _graph, dim)
 {
   double guiMax = 1.0, guiMin = -1.0;
@@ -67,17 +68,17 @@ Rcs::TaskVelocity1D::TaskVelocity1D(const std::string& taskType,
 
   if (taskType=="Xd")
   {
-    resetParameter(Parameters(guiMin, guiMax, 1.0, "X Velocity [m/s]"));
+    resetParameter(Parameters(guiMin, guiMax, scaleFactor, "X Velocity [m/s]"));
     this->index = 0;
   }
   else if (taskType=="Yd")
   {
-    resetParameter(Parameters(guiMin, guiMax, 1.0, "Y Velocity [m/s]"));
+    resetParameter(Parameters(guiMin, guiMax, scaleFactor, "Y Velocity [m/s]"));
     this->index = 1;
   }
   else if (taskType=="Zd")
   {
-    resetParameter(Parameters(guiMin, guiMax, 1.0, "Z Velocity [m/s]"));
+    resetParameter(Parameters(guiMin, guiMax, scaleFactor, "Z Velocity [m/s]"));
     this->index = 2;
   }
 }
@@ -89,23 +90,24 @@ Rcs::TaskVelocity1D::TaskVelocity1D(const std::string& className,
                                     RcsGraph* graph,
                                     const RcsBody* effector,
                                     const RcsBody* refBdy,
-                                    const RcsBody* refFrame):
+                                    const RcsBody* refFrame,
+                                    float scaleFactor=1.0):
   TaskPosition1D(className, graph, effector, refBdy, refFrame)
 {
   if (getClassName()=="Xd")
   {
     this->index = 0;
-    resetParameter(Task::Parameters(-1.0, 1.0, 1.0, "X Velocity [m/s]"));
+    resetParameter(Task::Parameters(-1.0, 1.0, scaleFactor, "X Velocity [m/s]"));
   }
   else if (getClassName()=="Yd")
   {
     this->index = 1;
-    resetParameter(Task::Parameters(-1.0, 1.0, 1.0, "Y Velocity [m/s]"));
+    resetParameter(Task::Parameters(-1.0, 1.0, scaleFactor, "Y Velocity [m/s]"));
   }
   else if (getClassName()=="Zd")
   {
     this->index = 2;
-    resetParameter(Task::Parameters(-1.0, 1.0, 1.0, "Z Velocity [m/s]"));
+    resetParameter(Task::Parameters(-1.0, 1.0, scaleFactor, "Z Velocity [m/s]"));
   }
 }
 

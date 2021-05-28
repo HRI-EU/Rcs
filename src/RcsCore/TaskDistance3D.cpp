@@ -54,7 +54,8 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskDistance3D> registrar("Distance3D");
 Rcs::TaskDistance3D::TaskDistance3D(const std::string& className_,
                                     xmlNode* node,
                                     RcsGraph* _graph,
-                                    int dim):
+                                    int dim,
+                                    float scaleFactor):
   TaskGenericIK(className_, node, _graph, dim)
 {
   if (getClassName()=="Distance3D")
@@ -65,9 +66,9 @@ Rcs::TaskDistance3D::TaskDistance3D(const std::string& className_,
     getXMLNodePropertyVec3(node, "guiMax", guiMax);
     getXMLNodePropertyVec3(node, "guiMin", guiMin);
 
-    resetParameter(Task::Parameters(guiMin[0], guiMax[0], 1.0, "X [m]"));
-    addParameter(Task::Parameters(guiMin[1], guiMax[1], 1.0, "Y [m]"));
-    addParameter(Task::Parameters(guiMin[2], guiMax[2], 1.0, "Z [m]"));
+    resetParameter(Task::Parameters(guiMin[0], guiMax[0], scaleFactor, "X [m]"));
+    addParameter(Task::Parameters(guiMin[1], guiMax[1], scaleFactor, "Y [m]"));
+    addParameter(Task::Parameters(guiMin[2], guiMax[2], scaleFactor, "Z [m]"));
   }
 
 }
@@ -86,7 +87,8 @@ Rcs::TaskDistance3D::TaskDistance3D(const TaskDistance3D& src,
  ******************************************************************************/
 Rcs::TaskDistance3D::TaskDistance3D(RcsGraph* graph_,
                                     const RcsBody* effector,
-                                    const RcsBody* refBdy) : TaskGenericIK()
+                                    const RcsBody* refBdy,
+                                    float scaleFactor) : TaskGenericIK()
 {
   this->graph = graph_;
   setClassName("Distance3D");
@@ -96,9 +98,9 @@ Rcs::TaskDistance3D::TaskDistance3D(RcsGraph* graph_,
   setEffector(effector);
   setRefBody(refBdy);
   setRefFrame(refBdy);
-  resetParameter(Task::Parameters(-1.0, 1.0, 1.0, "X [m]"));
-  addParameter(Task::Parameters(-1.0, 1.0, 1.0, "Y [m]"));
-  addParameter(Task::Parameters(-1.0, 1.0, 1.0, "Z [m]"));
+  resetParameter(Task::Parameters(-1.0, 1.0, scaleFactor, "X [m]"));
+  addParameter(Task::Parameters(-1.0, 1.0, scaleFactor, "Y [m]"));
+  addParameter(Task::Parameters(-1.0, 1.0, scaleFactor, "Z [m]"));
 }
 
 /*******************************************************************************

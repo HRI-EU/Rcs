@@ -50,15 +50,18 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskVelocity3D> registrar("XYZd");
 /*******************************************************************************
  * Constructor based on graph and effectors.
  ******************************************************************************/
-Rcs::TaskVelocity3D::TaskVelocity3D(RcsGraph* graph, const RcsBody* effector,
-                                    const RcsBody* refBdy, const RcsBody* refFrame):
+Rcs::TaskVelocity3D::TaskVelocity3D(RcsGraph* graph,
+                                    const RcsBody* effector,
+                                    const RcsBody* refBdy,
+                                    const RcsBody* refFrame,
+                                    float scaleFactor):
   TaskPosition3D(graph, effector, refBdy, refFrame)
 {
   setClassName("XYZd");
 
-  resetParameter(Parameters(-10., 10., 1.0, "X Velocity [m/s]"));
-  addParameter(Parameters(-1.0, 1.0, 1.0, "Y Velocity [m/s]"));
-  addParameter(Parameters(-1.0, 1.0, 1.0, "Z Velocity [m/s]"));
+  resetParameter(Parameters(-10., 10., scaleFactor, "X Velocity [m/s]"));
+  addParameter(Parameters(-1.0, 1.0, scaleFactor, "Y Velocity [m/s]"));
+  addParameter(Parameters(-1.0, 1.0, scaleFactor, "Z Velocity [m/s]"));
 
   Vec3d_setZero(velocity_des_temp);
 }
@@ -69,15 +72,16 @@ Rcs::TaskVelocity3D::TaskVelocity3D(RcsGraph* graph, const RcsBody* effector,
 Rcs::TaskVelocity3D::TaskVelocity3D(const std::string& taskType,
                                     xmlNode* node,
                                     RcsGraph* _graph,
-                                    int dim):
+                                    int dim,
+                                    float scaleFactor):
   TaskPosition3D(taskType, node, _graph, dim)
 {
 
   if (getClassName()=="XYZd")
   {
-    resetParameter(Parameters(-10., 10., 1.0, "X Velocity [m/s]"));
-    addParameter(Parameters(-1.0, 1.0, 1.0, "Y Velocity [m/s]"));
-    addParameter(Parameters(-1.0, 1.0, 1.0, "Z Velocity [m/s]"));
+    resetParameter(Parameters(-10., 10., scaleFactor, "X Velocity [m/s]"));
+    addParameter(Parameters(-1.0, 1.0, scaleFactor, "Y Velocity [m/s]"));
+    addParameter(Parameters(-1.0, 1.0, scaleFactor, "Z Velocity [m/s]"));
   }
 
   Vec3d_setZero(velocity_des_temp);
