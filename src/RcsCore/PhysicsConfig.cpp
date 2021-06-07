@@ -235,6 +235,24 @@ void PhysicsMaterial::setRestitution(double value)
   setDouble("restitution", value);
 }
 
+double PhysicsMaterial::getSlip() const
+{
+  double value = 0.0;
+  bool success = getDouble("slip", value);
+  if (!success)
+  {
+    char a[256] = "unnamed material";
+    getMaterialName(a);
+    RLOG(1, "slip not found in material \"%s\"", a);
+  }
+  return value;
+}
+
+void PhysicsMaterial::setSlip(double value)
+{
+  setDouble("slip", value);
+}
+
 // utility to check the material name
 static bool isMaterialName(xmlNodePtr materialNode, const char* nameToCheck)
 {
