@@ -159,6 +159,8 @@ public:
   void setRollingFrictionCoefficient(double value);
   double getRestitution() const;
   void setRestitution(double value);
+  double getSlip() const;
+  void setSlip(double value);
 };
 
 /*!

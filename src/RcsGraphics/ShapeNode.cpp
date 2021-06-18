@@ -307,37 +307,21 @@ void ShapeNode::ShapeUpdater::updateDynamicShapes()
     break;
 
     case RCSSHAPE_CYLINDER:
-    {
-      osg::Cylinder* c = static_cast<osg::Cylinder*>(geometry.front());
-      c->setHeight(extents[2]);
-      c->setRadius(extents[0]);
-      drawable.front()->dirtyBound();
-    }
-    break;
-
     case RCSSHAPE_CONE:
     {
-      osg::Cone* c = static_cast<osg::Cone*>(geometry.front());
-      c->setHeight(extents[2]);
-      c->setRadius(extents[0]);
-      drawable.front()->dirtyBound();
+      shapeNode->setScale(osg::Vec3(extents[0], extents[0], extents[2]));
     }
     break;
 
     case RCSSHAPE_SPHERE:
     {
-      osg::Sphere* s = static_cast<osg::Sphere*>(geometry.front());
-      s->setRadius(extents[0]);
-      drawable.front()->dirtyBound();
+      shapeNode->setScale(osg::Vec3(extents[0], extents[0], extents[0]));
     }
     break;
 
     case RCSSHAPE_BOX:
     {
-      osg::Box* b = static_cast<osg::Box*>(geometry.front());
-      b->setHalfLengths(osg::Vec3(0.5*extents[0], 0.5*extents[1],
-                                  0.5*extents[2]));
-      drawable.front()->dirtyBound();
+      shapeNode->setScale(osg::Vec3(extents[0], extents[1], extents[2]));
     }
     break;
 
@@ -434,18 +418,14 @@ void ShapeNode::addShape(bool resizeable)
   /////////////////////////////////
   else if (shape->type == RCSSHAPE_BOX)
   {
-    osg::Box* box = new osg::Box(osg::Vec3(), ext[0], ext[1], ext[2]);
-    osg::ref_ptr<osg::Drawable> sd = new osg::ShapeDrawable(box, hints.get());
+    osg::Box* box = new osg::Box(osg::Vec3(), 1.0);
+    osg::ShapeDrawable* sd = new osg::ShapeDrawable(box, hints.get());
+    sd->setUseDisplayList(!resizeable);
+    setScale(osg::Vec3(ext[0], ext[1], ext[2]));
+    state_set->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
+    state_set->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
     geode->addDrawable(sd);
-    setMaterial(shape->color, geode.get());
-
-    if (shapeUpdater.valid())
-    {
-      shapeUpdater->addGeometry(box);
-      shapeUpdater->addDrawable(sd);
-      sd->setUseDisplayList(false);
-    }
-
+    setNodeMaterial(shape->color, geode.get());
   }
 
   /////////////////////////////////
@@ -453,18 +433,14 @@ void ShapeNode::addShape(bool resizeable)
   /////////////////////////////////
   else if (shape->type == RCSSHAPE_SPHERE)
   {
-    osg::Sphere* sphere = new osg::Sphere(osg::Vec3(), shape->extents[0]);
-    osg::ref_ptr<osg::Drawable> sd = new osg::ShapeDrawable(sphere, hints.get());
+    osg::Sphere* sphere = new osg::Sphere(osg::Vec3(), 1.0);
+    osg::Drawable* sd = new osg::ShapeDrawable(sphere, hints.get());
+    sd->setUseDisplayList(!resizeable);
     geode->addDrawable(sd);
-    setMaterial(shape->color, geode.get());
-
-    if (shapeUpdater.valid())
-    {
-      shapeUpdater->addGeometry(sphere);
-      shapeUpdater->addDrawable(sd);
-      sd->setUseDisplayList(false);
-    }
-
+    setNodeMaterial(shape->color, geode.get());
+    setScale(osg::Vec3(ext[0], ext[0], ext[0]));
+    state_set->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
+    state_set->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
   }
 
   ///////////////////////////////////////////
@@ -567,18 +543,14 @@ void ShapeNode::addShape(bool resizeable)
   /////////////////////////////
   else if (shape->type == RCSSHAPE_CYLINDER)
   {
-    osg::Cylinder* cylinder = new osg::Cylinder(osg::Vec3(), ext[0], ext[2]);
-    osg::ref_ptr<osg::Drawable> sd = new osg::ShapeDrawable(cylinder, hints.get());
+    osg::Cylinder* cylinder = new osg::Cylinder(osg::Vec3(), 1.0, 1.0);
+    osg::Drawable* sd = new osg::ShapeDrawable(cylinder, hints.get());
+    sd->setUseDisplayList(!resizeable);
     geode->addDrawable(sd);
-    setMaterial(shape->color, geode.get());
-
-    if (shapeUpdater.valid())
-    {
-      shapeUpdater->addGeometry(cylinder);
-      shapeUpdater->addDrawable(sd);
-      sd->setUseDisplayList(false);
-    }
-
+    setNodeMaterial(shape->color, geode.get());
+    setScale(osg::Vec3(ext[0], ext[0], ext[2]));
+    state_set->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
+    state_set->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
   }
 
   /////////////////////////////
@@ -587,22 +559,18 @@ void ShapeNode::addShape(bool resizeable)
   else if (shape->type == RCSSHAPE_CONE)
   {
     osg::Cone* cone = new osg::Cone();
-    cone->setRadius(shape->extents[0]);
-    cone->setHeight(shape->extents[2]);
+    cone->setRadius(1.0);
+    cone->setHeight(1.0);
     // For some reason the cone shape is shifted along the z-axis by the
     // below compensated base offset value.
     cone->setCenter(osg::Vec3(0.0f, 0.0f, -cone->getBaseOffset()));
-    osg::ref_ptr<osg::Drawable> sd = new osg::ShapeDrawable(cone, hints.get());
+    osg::Drawable* sd = new osg::ShapeDrawable(cone, hints.get());
+    sd->setUseDisplayList(!resizeable);
     geode->addDrawable(sd);
-    setMaterial(shape->color, geode.get());
-
-    if (shapeUpdater.valid())
-    {
-      shapeUpdater->addGeometry(cone);
-      shapeUpdater->addDrawable(sd);
-      sd->setUseDisplayList(false);
-    }
-
+    setNodeMaterial(shape->color, geode.get());
+    setScale(osg::Vec3(ext[0], ext[0], ext[2]));
+    state_set->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
+    state_set->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
   }
 
   /////////////////////////////
