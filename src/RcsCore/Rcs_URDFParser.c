@@ -566,11 +566,14 @@ static void makeJointOrderConsistent(RcsBody* bdy)
         RcsJoint* prevJnt = RcsBody_lastJointBeforeBody(parentBdy);
         RCSBODY_TRAVERSE_JOINTS(BODY)
         {
-            RLOG(0, "Joint \"%s\" previous joint was \"%s\", previous joint now \"%s\"",
-                 JNT->name, (JNT->prev == NULL) ? "NULL" : JNT->prev->name,
-                 (prevJnt == NULL) ? "NULL" : prevJnt->name);
-            JNT->prev = prevJnt;
-            JNT->next = NULL;
+            if(prevJnt != JNT->prev)
+            {
+                RLOG(5, "Joint \"%s\" previous joint was \"%s\", previous joint now \"%s\"",
+                     JNT->name, (JNT->prev == NULL) ? "NULL" : JNT->prev->name,
+                     (prevJnt == NULL) ? "NULL" : prevJnt->name);
+                JNT->prev = prevJnt;
+                JNT->next = NULL;
+            }
         }
     }
 }
