@@ -546,6 +546,30 @@ RcsJoint* parseJointURDF(xmlNode* node)
 }
 
 /*******************************************************************************
+ * Corrects the joint order.
+ * When executing the connectURDF function, previous joints do not necessarily
+ * exist (yet) which can mess up the joint order for the Jacobian backward traversal.
+ * Therefore, after calling connectURDF, this function must be called for making
+ * the joint order consistent.
+ ******************************************************************************/
+static void makeJointOrderConsistent(RcsBody* bdy)
+{
+    RCSBODY_TRAVERSE_BODIES(bdy)
+    {
+        RcsBody* parentBdy = BODY->parent;
+        RcsJoint* prevJnt = RcsBody_lastJointBeforeBody(parentBdy);
+        RCSBODY_TRAVERSE_JOINTS(BODY)
+        {
+            RLOG(0, "Joint \"%s\" previous joint was \"%s\", previous joint now \"%s\"",
+                 JNT->name, (JNT->prev == NULL) ? "NULL" : JNT->prev->name,
+                 (prevJnt == NULL) ? "NULL" : prevJnt->name);
+            JNT->prev = prevJnt;
+            JNT->next = NULL;
+        }
+    }
+}
+
+/*******************************************************************************
  * Connect bodies and joints.
  * URDF is a bit limited in the sense that there's only one actuated joint
  * between two links. This makes it simple.
@@ -1048,6 +1072,9 @@ RcsBody* RcsGraph_rootBodyFromURDFFile(const char* filename,
 
   RCHECK_MSG(root, "Couldn't find root link in URFD model - did you "
              "define a cyclic model?");
+
+  // Make the joint order consistent
+  makeJointOrderConsistent(root);
 
   // Clean up
   xmlFreeDoc(doc);
