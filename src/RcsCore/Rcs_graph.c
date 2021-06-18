@@ -3022,6 +3022,13 @@ void RcsGraph_makeJointsConsistent(RcsGraph* self)
     double q0     = RcsJoint_computeSlaveJointAngle(JNT, master->q0);
     double q_init = RcsJoint_computeSlaveJointAngle(JNT, master->q_init);
 
+    if(q_min > q_max)
+    {
+        double tmp = q_min;
+        q_min = q_max;
+        q_max = tmp;
+    }
+
     bool hasRange = false;
 
     if ((JNT->q_min!=0.0) || (JNT->q_max!=0.0) || (JNT->q0!=0.0))

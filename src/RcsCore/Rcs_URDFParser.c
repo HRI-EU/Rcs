@@ -538,6 +538,12 @@ RcsJoint* parseJointURDF(xmlNode* node)
     MatNd_setElementsTo(jnt->couplingFactors, 1.0);
     getXMLNodePropertyDouble(mimicNode, "multiplier", jnt->couplingFactors->ele);
 
+    // Offset is optional (default: 0.0)
+    // We temporarily write the offset into the q_init field which will be overwritten
+    // with the correct value later on
+    jnt->q_init = 0.0;
+    getXMLNodePropertyDouble(mimicNode, "offset", &jnt->q_init);
+
     RLOG(5, "Joint \"%s\" coupled to \"%s\" with factor %lf",
          jnt->name, jnt->coupledJointName, *jnt->couplingFactors->ele);
   }
@@ -1048,6 +1054,33 @@ RcsBody* RcsGraph_rootBodyFromURDFFile(const char* filename,
 
   RCHECK_MSG(root, "Couldn't find root link in URFD model - did you "
              "define a cyclic model?");
+
+  // Correct q_init of mimic joints
+  // Here, we assume that the offset that is read from the urdf file is stored in the q_init field.
+  // Urdf mimic joint computation: q = c*q_master + o (c = coupling factor, o = offset)
+  // Rcs  mimic joint computation: q = q_init + c*(q_master - q_master_init)
+  // Hence, we can use the Rcs computation if we set q_init to: q_init = c*q_master_init - o
+  RCSBODY_TRAVERSE_BODIES(root)
+  {
+      RCSBODY_TRAVERSE_JOINTS(BODY)
+      {
+          if(JNT->coupledJointName != NULL)
+          {
+              RcsJoint* master = NULL;
+              for(uint idx = 0; idx < numJnts; idx++)
+              {
+                  if(STREQ(jntVec[idx]->name, JNT->coupledJointName))
+                  {
+                      master = jntVec[idx];
+                    break;
+                  }
+              }
+              RCHECK(master != NULL);
+              RCHECK(JNT->couplingFactors->size == 1);
+              JNT->q_init = JNT->couplingFactors->ele[0]*master->q_init + JNT->q_init;
+          }
+      }
+  }
 
   // Clean up
   xmlFreeDoc(doc);
