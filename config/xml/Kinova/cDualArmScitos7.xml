@@ -1,0 +1,67 @@
+<Controller graph="gDualArmScitos7.xml" >
+
+  <Task name="XYZ_R" controlVariable="XYZ" effector="PowerGrasp_R" refBdy="floor_base" />
+  <Task name="Polar_R" controlVariable="POLAR" effector="PowerGrasp_R" refBdy="floor_base" />
+  <Task name="FingerJoints_R" controlVariable="Joints" jnts="j2s7s300_joint_finger_1_R j2s7s300_joint_finger_2_R j2s7s300_joint_finger_3_R" />
+
+
+
+  <!-- Setting the threshold to a large negative value has the effect that no -->
+  <!-- collision gradient is computed, but the pair is considered for the collision -->
+  <!-- check. It's not nice, and I will think of a better solution -->
+  <CollisionModel  DistanceThreshold="0.025" >
+
+    <CollisionPair body1="j2s7s300_link_2_R" body2="center_post_link" />
+    <CollisionPair body1="j2s7s300_link_2_R" body2="screen_link" />
+    <CollisionPair body1="j2s7s300_link_2_R" body2="head_kinect_link" />
+    <CollisionPair body1="j2s7s300_link_2_R" body2="table" />
+
+    <CollisionPair body1="j2s7s300_link_4_R" body2="center_post_link" />
+    <CollisionPair body1="j2s7s300_link_4_R" body2="screen_link" />
+    <CollisionPair body1="j2s7s300_link_4_R" body2="head_kinect_link" />
+    <CollisionPair body1="j2s7s300_link_4_R" body2="table" />
+
+    <CollisionPair body1="j2s7s300_link_6_R" body2="center_post_link" />
+    <CollisionPair body1="j2s7s300_link_6_R" body2="screen_link" />
+    <CollisionPair body1="j2s7s300_link_6_R" body2="head_kinect_link" />
+    <CollisionPair body1="j2s7s300_link_6_R" body2="table"  DistanceThreshold="0.02"/>
+
+    <CollisionPair body1="j2s7s300_link_7_R" body2="center_post_link" />
+    <CollisionPair body1="j2s7s300_link_7_R" body2="screen_link" />
+    <CollisionPair body1="j2s7s300_link_7_R" body2="head_kinect_link" />
+    <CollisionPair body1="j2s7s300_link_7_R" body2="table"  DistanceThreshold="0.02"/>
+
+    <CollisionPair body1="j2s7s300_link_5_R" body2="table" threshold="-999" />
+    <CollisionPair body1="j2s7s300_link_6_R" body2="table" threshold="-999" />
+    <CollisionPair body1="j2s7s300_link_7_R" body2="table" threshold="-999" />
+
+
+    
+    <CollisionPair body1="j2s7s300_link_2_L" body2="center_post_link" />
+    <CollisionPair body1="j2s7s300_link_2_L" body2="screen_link" />
+    <CollisionPair body1="j2s7s300_link_2_L" body2="head_kinect_link" />
+    <CollisionPair body1="j2s7s300_link_2_L" body2="table" />
+					   
+    <CollisionPair body1="j2s7s300_link_4_L" body2="center_post_link" />
+    <CollisionPair body1="j2s7s300_link_4_L" body2="screen_link" />
+    <CollisionPair body1="j2s7s300_link_4_L" body2="head_kinect_link" />
+    <CollisionPair body1="j2s7s300_link_4_L" body2="table" />
+					   
+    <CollisionPair body1="j2s7s300_link_6_L" body2="center_post_link" />
+    <CollisionPair body1="j2s7s300_link_6_L" body2="screen_link" />
+    <CollisionPair body1="j2s7s300_link_6_L" body2="head_kinect_link" />
+    <CollisionPair body1="j2s7s300_link_6_L" body2="table"  DistanceThreshold="0.02"/>
+					   
+    <CollisionPair body1="j2s7s300_link_7_L" body2="center_post_link" />
+    <CollisionPair body1="j2s7s300_link_7_L" body2="screen_link" />
+    <CollisionPair body1="j2s7s300_link_7_L" body2="head_kinect_link" />
+    <CollisionPair body1="j2s7s300_link_7_L" body2="table"  DistanceThreshold="0.02"/>
+					   
+    <CollisionPair body1="j2s7s300_link_5_L" body2="table" threshold="-999" />
+    <CollisionPair body1="j2s7s300_link_6_L" body2="table" threshold="-999" />
+    <CollisionPair body1="j2s7s300_link_7_L" body2="table" threshold="-999" />
+
+  </CollisionModel>
+
+  
+</Controller>

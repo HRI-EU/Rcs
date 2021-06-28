@@ -1,0 +1,144 @@
+<Graph resourcePath="${SIT}/Data/RobotMeshes/1.0/data" name="InitialPose" >
+ 
+  <Body name="base_footprint" mass="0.001" inertia="1 0 0   -0 1 0   -0 -0 1" >
+    <Shape type="FRAME" scale="0.75" />
+  </Body>
+
+  <Body name="base_link" prev="base_footprint" transform="0 0 0.0498 0 0 0" physics="fixed" mass="30" inertia="1 0 0   -0 1 0   -0 -0 1" >
+    <!---->
+    <Joint name="DofBaseX"   type="TransX" range="-5 0 5"  weightJL="0.1"   weightMetric="0.01"  constraint="true" />
+    <Joint name="DofBaseY"   type="TransY" range="-5 0 5"  weightJL="0.0"   weightMetric="0.01"  constraint="true" />
+    <Joint name="DofBaseThZ" type="RotZ"   range="-360 0 360"   weightJL="0.1"   weightMetric="0.01"  constraint="true" />
+     
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" transform="-0.075 0 0 0 0 0" meshFile="hri_scitos_description/scitos_base.stl" />
+    <Shape type="CYLINDER" length="0.6" radius="0.31" distance="true" physics="true" graphics="false" transform="-0.075 0 0.2502 0 0 0" />
+  </Body>
+   
+  <Body name="floor_base" prev="base_link" transform="0 0 -0.0498 0 0 0" >
+    <Shape type="FRAME" scale="0.5" />
+  </Body>
+
+  <Body name="tray_link" prev="base_link" transform="-0.125 0 0.539 0 0 0" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" meshFile="hri_scitos_description/tray.dae.stl" />
+  </Body>
+
+  <Body name="center_post_link" prev="base_link" transform="-0.075 0 0.534 0 0 0" physics="kinematic" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" meshFile="hri_scitos_description/center_post_bottom_plate.dae.stl" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" transform="0 0 0.004 0 0 0" meshFile="hri_scitos_description/center_post.dae.stl" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" transform="0 0 0.3205 0 0 0" meshFile="hri_scitos_description/center_post_top_plate.dae.stl" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" transform="-0.04 0 0.516 0 0 0" meshFile="hri_scitos_description/emergency_button.dae.stl" />
+    <Shape type="SSL" radius="0.06" length="0.633" distance="true" physics="true" graphics="false" transform="0 0 0. 0 0 0" />
+  </Body>
+
+
+
+
+
+
+  <Body name="screen_mount_1_link" prev="center_post_link" transform="0.04 0 0.4762 0 0 0" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" meshFile="hri_scitos_description/screen_mount_1.dae.stl" />
+  </Body>
+
+  <Body name="screen_mount_2_link" prev="screen_mount_1_link" transform="0.05 0 0 0 0 0" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" meshFile="hri_scitos_description/screen_mount_2.dae.stl" />
+  </Body>
+
+  <Body name="screen_mount_3_link" prev="screen_mount_2_link" transform="0.04 0 0 0 -20 0" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" meshFile="hri_scitos_description/screen_mount_3.dae.stl" />
+  </Body>
+
+  <Body name="screen_link" prev="screen_mount_3_link" transform="0.042 0 0 0 0 0" physics="kinematic" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" transform="0 0 0 90 0 0" meshFile="hri_scitos_description/screen.dae.stl" />
+    <!-- <Shape type="BOX" extents="0.1 0.25 0.34" distance="true" physics="true" graphics="false" transform="0.05 0 0 90 0 0" /> -->
+    <Shape type="BOX" extents="0.05 0.2 0.28" distance="true" physics="true" graphics="false" transform="0.02 0 0 90 0 0" />
+  </Body>
+
+
+
+
+
+  
+  <!-- <Body name="screen_mount_1_link" prev="center_post_link" transform="0.0 0.04 0.4762 0 0 90" > -->
+  <!--   <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" meshFile="hri_scitos_description/screen_mount_1.dae.stl" /> -->
+  <!-- </Body> -->
+
+  <!-- <Body name="screen_mount_2_link" prev="screen_mount_1_link" transform="0.05 0 0 0 0 -90" > -->
+  <!--   <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" meshFile="hri_scitos_description/screen_mount_2.dae.stl" /> -->
+  <!-- </Body> -->
+
+  <!-- <Body name="screen_mount_3_link" prev="screen_mount_2_link" transform="0.04 0 0 0 -20 0" > -->
+  <!--   <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" meshFile="hri_scitos_description/screen_mount_3.dae.stl" /> -->
+  <!-- </Body> -->
+
+  <!-- <Body name="screen_link" prev="screen_mount_3_link" transform="0.042 0 0 0 0 0" physics="kinematic" > -->
+  <!--   <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" transform="0 0 0 90 0 0" meshFile="hri_scitos_description/screen.dae.stl" /> -->
+  <!--   <Shape type="BOX" extents="0.05 0.2 0.28" distance="true" physics="true" graphics="false" transform="0.02 0 0 90 0 0" /> -->
+  <!-- </Body> -->
+
+
+
+
+
+
+  
+  <Body name="horizontal_profile_link_right" prev="center_post_link" transform="0 -0.04 0.029 0 0 0" physics="kinematic" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" meshFile="hri_scitos_description/horizontal_profile.dae.stl" />
+    <Shape type="BOX" extents="0.08 0.229 0.04" distance="true" physics="true" graphics="false" transform="0 -0.1145 0 0 0 0" />
+  </Body>
+
+  <Body name="jaco_adapter_plate_link_right" prev="horizontal_profile_link_right" transform="0 -0.175 0.02 0 0 0" physics="kinematic" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" meshFile="hri_scitos_description/jaco_adapter_plate.dae.stl" />
+    <Shape type="BOX" extents="0.07 0.1 0.049" distance="true" physics="true" graphics="false" transform="0 0 0.0245 0 0 0" />
+  </Body>
+
+  <Body name="horizontal_profile_link_left" prev="center_post_link" transform="0 0.04 0.029 0 0 180" physics="kinematic" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" meshFile="hri_scitos_description/horizontal_profile.dae.stl" />
+    <Shape type="BOX" extents="0.08 0.229 0.04" distance="true" physics="true" graphics="false" transform="0 -0.1145 0 0 0 0" />
+  </Body>
+
+  <Body name="jaco_adapter_plate_link_left" prev="horizontal_profile_link_left" transform="0 -0.175 0.02 0 0 0" physics="kinematic" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" meshFile="hri_scitos_description/jaco_adapter_plate.dae.stl" />
+    <Shape type="BOX" extents="0.07 0.1 0.049" distance="true" physics="true" graphics="false" transform="0 0 0.0245 0 0 0" />
+  </Body>
+
+  <Body name="ptu_link" prev="center_post_link" transform="0 0 0.633 0 0 90" physics="fixed" mass="0.01" inertia="0.001 0 0   -0 0.001 0   -0 -0 0.001" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0 0.095 -180 0 0" meshFile="hri_scitos_description/pw70_round_holder.stl" />
+    <Shape type="MESH" distance="true" physics="true" graphics="false" transform="0 0 0.095 -180 0 0" meshFile="hri_scitos_description/pw70_round_holder.stl" />
+  </Body>
+
+  <Body name="ptu_pan_link" prev="ptu_link" physics="dynamic" mass="0.01" inertia="0.001 0 0   -0 0.001 0   -0 -0 0.001" >
+    <Joint name="ptu_pan_joint" range="-420 0 420" type="RotZ" transform="0 0 0.095 0 0 0" torqueLimit="200" speedLimit="360" constraint="true" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0 0 -180 0 0" meshFile="hri_scitos_description/pw70_body.stl" />
+    <Shape type="MESH" distance="true" physics="true" graphics="false" transform="0 0 0 -180 0 0" meshFile="hri_scitos_description/pw70_body.stl" />
+  </Body>
+
+  <Body name="ptu_tilt_link" prev="ptu_pan_link" physics="dynamic" mass="0.01" inertia="0.001 0 0   -0 0.001 0   -0 -0 0.001" >
+    <Joint name="ptu_tilt_joint" range="-120 45 120" type="RotX" torqueLimit="12" speedLimit="234.912696" constraint="true" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" transform="0 0 0 -180 0 0" meshFile="hri_scitos_description/pw70_square_holder.stl" />
+    <Shape type="MESH" distance="true" physics="true" graphics="false" transform="0 0 0 -180 0 0" meshFile="hri_scitos_description/pw70_square_holder.stl" />
+  </Body>
+
+  <Body name="ptu_tool_link" prev="ptu_tilt_link" transform="0 0 0.07 0 0 0" mass="0.01" inertia="0.001 0 0   -0 0.001 0   -0 -0 0.001" >
+  </Body>
+
+  <Body name="ptu_top_plate_link" prev="ptu_tool_link" transform="0 0 0 0 0 -90" physics="kinematic" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" meshFile="hri_scitos_description/ptu_top_plate.dae.stl" />
+    <Shape type="BOX" extents="0.1 0.25 0.02" distance="true" physics="true" graphics="false" transform="-0.01 0 0.01 0 0 0" />
+  </Body>
+
+  <Body name="head_kinect_link" prev="ptu_top_plate_link" transform="0 0 0.004 -180 90 90" was_transform="0 0 0.004 -180 88.109239 90" physics="kinematic" >
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" transform="0 0 0 90 0 90" meshFile="hri_scitos_description/kinect2_bracket.dae.stl" />
+    <Shape type="MESH" distance="false" physics="false" graphics="true" scale="0.001" transform="0 0 0 90 0 90" meshFile="hri_scitos_description/kinect2.dae.stl" />
+    <Shape type="BOX" extents="0.26 0.2 0.14" distance="true" physics="true" graphics="false" transform="-0.005 0 -0.015 0 0 0" />
+    <Shape type="FRAME" scale="0.5" />
+  </Body>
+
+  <Body name="head_kinect_rgb_link" prev="head_kinect_link" transform="0.1 -0.035 0.035 0 0 0" physics="kinematic" >
+    <Shape type="FRAME" scale="0.05" />
+    <!-- <Shape type="MESH" meshFile="frustum_80x60.stl" distance="true" graphics="false" physics="false" color="EMERALD_TRANS" scale="2" transform="0 0 0 15 0 0" /> -->
+  </Body>
+
+  <Body name="head_kinect_rgb_gazebo_optical_frame" prev="head_kinect_rgb_link" transform="0 0 0 90 0 90" >
+  </Body> 
+  
+</Graph>

@@ -1,0 +1,69 @@
+<Graph xmlns:xi="http://www.w3.org/2003/XInclude" resourcePath="${SIT}/Data/RobotMeshes/1.0/data" name="JacoDefaultPose" >
+ 
+  <Body name="Lab Frame" physics="kinematic" >
+    <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0"
+           color="PEWTER" graphics="true" physics="true" distance="true"/>
+    <Shape type="FRAME" scale="1.0" />
+  </Body>
+    
+  <Group prev="Lab Frame" >
+    <xi:include href="scitos_base_right.xml" />
+
+  <Body name="table" prev="Lab Frame" rigid_body_joints="0.55 0 0.78 0 0 90" >
+    <Shape type="BOX" extents="1.180 0.680 0.020" transform="0 0 -0.01 0 0 0" graphics="true"
+	   depth="true" distance="true" resizeable="true" />
+    <Shape type="FRAME" scale="0.2" />
+  </Body>
+  
+  <Body name="Cylinder_1" prev="Lab Frame" rigid_body_joints="0.54 -0.1 0.78 0 0 0" color="RED" >
+    <Shape type="SSL" length="0.26" radius="0.028" graphics="true" depth="true" resizeable="true" />
+    <Shape type="FRAME" scale="0.2" />
+  </Body>
+  
+  <Body name="Cylinder_2" prev="Lab Frame" rigid_body_joints="0.5 -0.3 0.78 0 0 0" color="RED" >
+    <Shape type="SSL" length="0.16" radius="0.025" graphics="true" depth="true" resizeable="true" />
+    <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+  </Group >
+
+  <Group name="_R" prev="jaco_adapter_plate_link_right" >
+    <xi:include href="kinova_ulw2_sph_7dof.xml" />
+  </Group>
+
+  <Group name="_L" prev="jaco_adapter_plate_link_left" transform="0 0 0 0 0 180" >
+    <xi:include href="kinova_ulw2_sph_7dof.xml" />
+  </Group>
+
+  <Body name="PowerGrasp_R" prev="j2s7s300_link_7_R" transform="0 0 -0.16 0 90 0" >
+    <Shape type="FRAME" scale="0.2" />
+  </Body>
+  
+  <!-- <Body name="PutLocation" prev="floor_base" rigid_body_joints="0.3 -0.8 1.1 0 0 0" color="YELLOW" > -->
+  <!--   <Shape type="CYLINDER" length="0.02" radius="0.05" graphics="true" distance="false" /> -->
+  <!--   <Shape type="FRAME" scale="0.25" /> -->
+  <!-- </Body> -->
+    
+  <model_state model="JacoDefaultPose" time_stamp="">
+  <joint_state joint="j2s7s300_joint_1_R" position="300" />
+  <joint_state joint="j2s7s300_joint_2_R" position="190" />
+  <joint_state joint="j2s7s300_joint_4_R" position="60" />
+  <joint_state joint="j2s7s300_joint_5_R" position="110" />
+  <joint_state joint="j2s7s300_joint_6_R" position="120" />
+  <joint_state joint="j2s7s300_joint_7_R" position="90" />
+  <joint_state joint="j2s7s300_joint_finger_1_R" position="10" />
+  <joint_state joint="j2s7s300_joint_finger_2_R" position="10" />
+  <joint_state joint="j2s7s300_joint_finger_3_R" position="10" />
+  <joint_state joint="j2s7s300_joint_1_L" position="60" />
+  <joint_state joint="j2s7s300_joint_2_L" position="170" />
+  <joint_state joint="j2s7s300_joint_4_L" position="300" />
+  <joint_state joint="j2s7s300_joint_5_L" position="260" />
+  <joint_state joint="j2s7s300_joint_6_L" position="-120" />
+  <joint_state joint="j2s7s300_joint_7_L" position="-90" />
+  <joint_state joint="j2s7s300_joint_finger_1_L" position="10" />
+  <joint_state joint="j2s7s300_joint_finger_2_L" position="10" />
+  <joint_state joint="j2s7s300_joint_finger_3_L" position="10" />
+  </model_state>
+
+  
+</Graph>
