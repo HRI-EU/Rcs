@@ -15,12 +15,12 @@
     <Shape type="FRAME" scale="0.2" />
   </Body>
   
-  <Body name="Cylinder_1" prev="Lab Frame" rigid_body_joints="0.54 -0.1 0.78 0 0 0" color="RED" >
+  <Body name="Red Cylinder" prev="Lab Frame" rigid_body_joints="0.54 -0.2 0.78 0 0 0" color="RED" >
     <Shape type="SSL" length="0.26" radius="0.028" graphics="true" depth="true" resizeable="true" />
     <Shape type="FRAME" scale="0.2" />
   </Body>
   
-  <Body name="Cylinder_2" prev="Lab Frame" rigid_body_joints="0.5 -0.3 0.78 0 0 0" color="RED" >
+  <Body name="Green Cylinder" prev="Lab Frame" rigid_body_joints="0.5 0.2 0.78 0 0 0" color="GREEN" >
     <Shape type="SSL" length="0.16" radius="0.025" graphics="true" depth="true" resizeable="true" />
     <Shape type="FRAME" scale="0.2" />
   </Body>
@@ -36,6 +36,10 @@
   </Group>
 
   <Body name="PowerGrasp_R" prev="j2s7s300_link_7_R" transform="0 0 -0.16 0 90 0" >
+    <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+  <Body name="PowerGrasp_L" prev="j2s7s300_link_7_L" transform="0 0 -0.16 0 -90 180" >
     <Shape type="FRAME" scale="0.2" />
   </Body>
   

@@ -308,12 +308,12 @@ bool Rcs::VertexArrayNode::dataValid() const
   }
 
   // NULL pointers, or zero points in array
-  if ((this->points==NULL) || (this->nPoints==0))
-  {
-    NLOG(6, "points is %s, nPoints is %zu", this->points ? "VALID" : "NULL",
-         this->nPoints);
-    return false;
-  }
+  // if ((this->points==NULL) || (this->nPoints==0))
+  // {
+  //   NLOG(6, "points is %s, nPoints is %zu", this->points ? "VALID" : "NULL",
+  //        this->nPoints);
+  //   return false;
+  // }
 
   return true;
 }
