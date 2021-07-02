@@ -9,20 +9,9 @@
   <Group prev="Lab Frame" >
     <xi:include href="scitos_base_right.xml" />
 
-  <Body name="table" prev="Lab Frame" rigid_body_joints="0.55 0 0.78 0 0 90" >
-    <Shape type="BOX" extents="1.180 0.680 0.020" transform="0 0 -0.01 0 0 0" graphics="true"
+  <Body name="Table" prev="Lab Frame" rigid_body_joints="0.55 0 0.78 0 0 0" >
+    <Shape type="BOX" extents="0.680 1.180 0.020" transform="0 0 -0.01 0 0 0" graphics="true"
 	   depth="true" distance="true" resizeable="true" />
-    <Shape type="FRAME" scale="0.2" />
-  </Body>
-  
-  <Body name="Red Cylinder" prev="Lab Frame" rigid_body_joints="0.54 -0.2 0.78 0 0 0" color="RED" >
-    <Shape type="SSL" length="0.26" radius="0.028" graphics="true" depth="true" resizeable="true" />
-    <Shape type="FRAME" scale="0.2" />
-  </Body>
-  
-  <Body name="Green Cylinder" prev="Lab Frame" rigid_body_joints="0.5 0.2 0.78 0 0 0" color="GREEN" >
-    <Shape type="SSL" length="0.16" radius="0.025" graphics="true" depth="true" resizeable="true" />
-    <Shape type="FRAME" scale="0.2" />
   </Body>
 
   </Group >
@@ -43,11 +32,25 @@
     <Shape type="FRAME" scale="0.2" />
   </Body>
   
-  <!-- <Body name="PutLocation" prev="floor_base" rigid_body_joints="0.3 -0.8 1.1 0 0 0" color="YELLOW" > -->
-  <!--   <Shape type="CYLINDER" length="0.02" radius="0.05" graphics="true" distance="false" /> -->
-  <!--   <Shape type="FRAME" scale="0.25" /> -->
-  <!-- </Body> -->
-    
+  <Body name="Bottle" prev="Table" rigid_body_joints="0 -0.2 0 0 0 0" color="RED" >
+    <Shape type="CYLINDER" length="0.2" radius="0.03" graphics="true" transform="0 0 0.1 0 0 0" />
+    <Shape type="CYLINDER" length="0.1" radius="0.015" graphics="true" transform="0 0 0.25 0 0 0" />
+    <Shape type="FRAME" scale="0.15" />
+  </Body>
+  
+  <Body name="BottleTip" prev="Bottle" transform="0 0 0.32 0 0 0">
+    <Shape type="FRAME" scale="0.1" />
+  </Body>
+  
+  <Body name="Glas" prev="Table" rigid_body_joints="0 0.2 0 0 0 0" color="GREEN" >
+    <Shape type="CYLINDER" length="0.2" radius="0.035" graphics="true" transform="0 0 0.1 0 0 0" />
+    <Shape type="FRAME" scale="0.15" />
+  </Body>
+  
+  <Body name="GlasTip" prev="Glas" transform="0 0 0.22 0 0 0" >
+    <Shape type="FRAME" scale="0.1" />
+  </Body>
+  
   <model_state model="JacoDefaultPose" time_stamp="">
   <joint_state joint="j2s7s300_joint_1_R" position="300" />
   <joint_state joint="j2s7s300_joint_2_R" position="190" />

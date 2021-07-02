@@ -93,7 +93,7 @@ RcsCollisionMdl* RcsCollisionModel_createFromXML(const RcsGraph* graph,
 
   } // while(lnode)
 
-  NLOG(0, "Found %d bodies", nBodies);
+  RLOG(5, "Found %d bodies in collision model", nBodies);
   RCHECK_MSG(nBodies % 2 == 0, "Uneven number of collideable bodies");
 
   if (nBodies==0)
@@ -132,7 +132,7 @@ RcsCollisionMdl* RcsCollisionModel_createFromXML(const RcsGraph* graph,
       // body1
       RcsBody* bdy1 = NULL;
       bdyName[0] = '\0';
-      if (getXMLNodePropertyStringN(lnode, "body1", bdyName, 64))
+      if (getXMLNodePropertyStringN(lnode, "body1", bdyName, RCS_MAX_NAMELEN))
       {
         bdy1 = RcsGraph_getBodyByName(graph, bdyName);
       }
@@ -147,7 +147,7 @@ RcsCollisionMdl* RcsCollisionModel_createFromXML(const RcsGraph* graph,
       // body2
       RcsBody* bdy2 = NULL;
       bdyName[0] = '\0';
-      if (getXMLNodePropertyStringN(lnode, "body2", bdyName, 64))
+      if (getXMLNodePropertyStringN(lnode, "body2", bdyName, RCS_MAX_NAMELEN))
       {
         bdy2 = RcsGraph_getBodyByName(graph, bdyName);
       }
@@ -186,6 +186,15 @@ RcsCollisionMdl* RcsCollisionModel_createFromXML(const RcsGraph* graph,
     lnode = lnode->next;
 
   } // while(lnode)
+
+
+  // Update collision model arrays to cover the cases where bodies described
+  // in the xml file are not found in the graph. This might lead to a difference
+  // in the parsed nPairs and the found graph bodies.
+  self->nPairs = pairIdx;
+  MatNd_reshape(self->cp, 2*self->nPairs, 3);  // closest points
+  MatNd_reshape(self->n1, self->nPairs, 3);    // normals
+
 
   // Adjust dimensions of matrices for closest points and normals, in case some
   // bodies have not been found in the graph.

@@ -3,8 +3,8 @@
   <!-- <Task name="XYZ_R" controlVariable="XYZ" effector="PowerGrasp_R" refBdy="floor_base" /> -->
   <!-- <Task name="XYZ_L" controlVariable="XYZ" effector="PowerGrasp_L" refBdy="floor_base" /> -->
 
-  <Task name="XYZ_R RedCylinder" controlVariable="XYZ" effector="Red Cylinder" refBdy="PowerGrasp_R" />
-  <Task name="XYZ_L GreenCylinder" controlVariable="XYZ" effector="Green Cylinder" refBdy="PowerGrasp_L" />
+  <Task name="XYZ_R Bottle" controlVariable="XYZ" effector="Bottle" refBdy="PowerGrasp_R" />
+  <Task name="XYZ_L Glas" controlVariable="XYZ" effector="Glas" refBdy="PowerGrasp_L" />
 
   
   <Task name="Polar_R" controlVariable="POLAR" effector="PowerGrasp_R" />
@@ -21,52 +21,52 @@
     <CollisionPair body1="j2s7s300_link_2_R" body2="center_post_link" />
     <CollisionPair body1="j2s7s300_link_2_R" body2="screen_link" />
     <CollisionPair body1="j2s7s300_link_2_R" body2="head_kinect_link" />
-    <CollisionPair body1="j2s7s300_link_2_R" body2="table" />
+    <CollisionPair body1="j2s7s300_link_2_R" body2="Table" />
 
     <CollisionPair body1="j2s7s300_link_4_R" body2="center_post_link" />
     <CollisionPair body1="j2s7s300_link_4_R" body2="screen_link" />
     <CollisionPair body1="j2s7s300_link_4_R" body2="head_kinect_link" />
-    <CollisionPair body1="j2s7s300_link_4_R" body2="table" />
+    <CollisionPair body1="j2s7s300_link_4_R" body2="Table" />
 
     <CollisionPair body1="j2s7s300_link_6_R" body2="center_post_link" />
     <CollisionPair body1="j2s7s300_link_6_R" body2="screen_link" />
     <CollisionPair body1="j2s7s300_link_6_R" body2="head_kinect_link" />
-    <CollisionPair body1="j2s7s300_link_6_R" body2="table"  DistanceThreshold="0.02"/>
+    <CollisionPair body1="j2s7s300_link_6_R" body2="Table"  DistanceThreshold="0.02"/>
 
     <CollisionPair body1="j2s7s300_link_7_R" body2="center_post_link" />
     <CollisionPair body1="j2s7s300_link_7_R" body2="screen_link" />
     <CollisionPair body1="j2s7s300_link_7_R" body2="head_kinect_link" />
-    <CollisionPair body1="j2s7s300_link_7_R" body2="table"  DistanceThreshold="0.02"/>
+    <CollisionPair body1="j2s7s300_link_7_R" body2="Table"  DistanceThreshold="0.02"/>
 
-    <CollisionPair body1="j2s7s300_link_5_R" body2="table" threshold="-999" />
-    <CollisionPair body1="j2s7s300_link_6_R" body2="table" threshold="-999" />
-    <CollisionPair body1="j2s7s300_link_7_R" body2="table" threshold="-999" />
+    <CollisionPair body1="j2s7s300_link_5_R" body2="Table" threshold="-999" />
+    <CollisionPair body1="j2s7s300_link_6_R" body2="Table" threshold="-999" />
+    <CollisionPair body1="j2s7s300_link_7_R" body2="Table" threshold="-999" />
 
 
     
     <CollisionPair body1="j2s7s300_link_2_L" body2="center_post_link" />
     <CollisionPair body1="j2s7s300_link_2_L" body2="screen_link" />
     <CollisionPair body1="j2s7s300_link_2_L" body2="head_kinect_link" />
-    <CollisionPair body1="j2s7s300_link_2_L" body2="table" />
+    <CollisionPair body1="j2s7s300_link_2_L" body2="Table" />
 					   
     <CollisionPair body1="j2s7s300_link_4_L" body2="center_post_link" />
     <CollisionPair body1="j2s7s300_link_4_L" body2="screen_link" />
     <CollisionPair body1="j2s7s300_link_4_L" body2="head_kinect_link" />
-    <CollisionPair body1="j2s7s300_link_4_L" body2="table" />
+    <CollisionPair body1="j2s7s300_link_4_L" body2="Table" />
 					   
     <CollisionPair body1="j2s7s300_link_6_L" body2="center_post_link" />
     <CollisionPair body1="j2s7s300_link_6_L" body2="screen_link" />
     <CollisionPair body1="j2s7s300_link_6_L" body2="head_kinect_link" />
-    <CollisionPair body1="j2s7s300_link_6_L" body2="table"  DistanceThreshold="0.02"/>
+    <CollisionPair body1="j2s7s300_link_6_L" body2="Table"  DistanceThreshold="0.02"/>
 					   
     <CollisionPair body1="j2s7s300_link_7_L" body2="center_post_link" />
     <CollisionPair body1="j2s7s300_link_7_L" body2="screen_link" />
     <CollisionPair body1="j2s7s300_link_7_L" body2="head_kinect_link" />
-    <CollisionPair body1="j2s7s300_link_7_L" body2="table"  DistanceThreshold="0.02"/>
+    <CollisionPair body1="j2s7s300_link_7_L" body2="Table"  DistanceThreshold="0.02"/>
 					   
-    <CollisionPair body1="j2s7s300_link_5_L" body2="table" threshold="-999" />
-    <CollisionPair body1="j2s7s300_link_6_L" body2="table" threshold="-999" />
-    <CollisionPair body1="j2s7s300_link_7_L" body2="table" threshold="-999" />
+    <CollisionPair body1="j2s7s300_link_5_L" body2="Table" threshold="-999" />
+    <CollisionPair body1="j2s7s300_link_6_L" body2="Table" threshold="-999" />
+    <CollisionPair body1="j2s7s300_link_7_L" body2="Table" threshold="-999" />
 
   </CollisionModel>
 
