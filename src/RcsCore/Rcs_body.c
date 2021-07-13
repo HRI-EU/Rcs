@@ -2148,6 +2148,9 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
 
   MatNd_destroy(vertices);
 
+  // Give it a random color
+  strcpy(self->shape[0]->color, "RANDOM");
+
   return true;
 }
 

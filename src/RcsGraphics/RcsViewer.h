@@ -403,7 +403,7 @@ public:
   osg::Node* getNode(std::string nodeName);
 
   /*! \brief Convenience template function for any type of node: Call it with
-   *         MyNode* nd = viewer->getNodeUnderMouse<MyNode*>();
+   *         MyNode* nd = viewer->getBodyNodeUnderMouse<MyNode*>();
    */
   template <typename T>
   T getBodyNodeUnderMouse(double I_mouseCoords[3]=NULL)
