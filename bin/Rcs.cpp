@@ -87,6 +87,7 @@
 #include <Rcs_body.h>
 #include <Rcs_shape.h>
 #include <Rcs_utils.h>
+#include <Rcs_utilsCPP.h>
 #include <Rcs_filters.h>
 #include <IkSolverConstraintRMR.h>
 #include <SolverRAC.h>
@@ -96,7 +97,6 @@
 #include <KineticSimulation.h>
 #include <PhysicsNode.h>
 #include <GraphNode.h>
-#include <FTSensorNode.h>
 #include <SphereNode.h>
 #include <HUD.h>
 #include <VertexArrayNode.h>
@@ -553,11 +553,6 @@ int main(int argc, char** argv)
 
       const RcsBody* comBase = RcsGraph_getBodyByName(graph, comRef);
 
-      RCSGRAPH_TRAVERSE_JOINTS(graph)
-      {
-        JNT->constrained = true;
-      }
-
       int guiHandle = -1;
       unsigned int loopCount = 0;
       double mass = 0.0, Id[3][3], r_com[3];
@@ -617,6 +612,14 @@ int main(int argc, char** argv)
         if ((editMode==false) && (bvhTraj==NULL))
         {
           guiHandle = Rcs::JointWidget::create(graph, mtx);
+
+          // We constrain all joints here so that we can drag them conveniently
+          // with the sliders.
+          RCSGRAPH_TRAVERSE_JOINTS(graph)
+          {
+            JNT->constrained = true;
+          }
+
         }
       }
 
@@ -725,8 +728,7 @@ int main(int argc, char** argv)
             bool framesVisible = gn->referenceFramesVisible();
             bool ghostVisible = gn->getGhostMode();
             bool wireframeVisible = gn->getWireframe();
-            viewer->removeNode(gn);
-            gn = NULL;
+            viewer->removeInternal(gn);
 
             pthread_mutex_lock(&graphLock);
             RcsGraph_scale(graph, scaleFactor);
@@ -744,8 +746,13 @@ int main(int argc, char** argv)
           else if (kc->getAndResetKey('m'))
           {
             std::string mdlState;
-            RMSG("Changing model state");
-            printf("Enter name of model state: ");
+            RMSG("Changing model state. Options are:\n");
+            std::vector<std::string> ms = RcsGraph_getModelStateNames(graph);
+            for (size_t i=0; i<ms.size(); ++i)
+            {
+              printf("\t%s\n", ms[i].c_str());
+            }
+            printf("\nEnter name of model state: ");
             std::cin >> mdlState;
             pthread_mutex_lock(&graphLock);
             bool ok = RcsGraph_setModelStateFromXML(graph, mdlState.c_str(), 0);
@@ -880,9 +887,8 @@ int main(int argc, char** argv)
           else if (kc->getAndResetKey('b'))
           {
             RMSG("Boxifying graph ...");
-            viewer->removeNode(gn);
             pthread_mutex_lock(&graphLock);
-            gn = NULL;
+            viewer->removeInternal(gn);
             RCSGRAPH_TRAVERSE_BODIES(graph)
             {
               bool success = RcsBody_boxify(BODY, RCSSHAPE_COMPUTE_GRAPHICS+
@@ -912,9 +918,9 @@ int main(int argc, char** argv)
             bool framesVisible = gn->referenceFramesVisible();
             bool ghostVisible = gn->getGhostMode();
             bool wireframeVisible = gn->getWireframe();
-            viewer->removeNode(gn);
-            viewer->removeNode("PPSSensorNode");
             pthread_mutex_lock(&graphLock);
+            viewer->removeInternal(gn);
+            viewer->removeInternal("PPSSensorNode");
             gn = NULL;
             RcsGraph_destroy(graph);
             graph = RcsGraph_create(xmlFileName);
@@ -972,11 +978,10 @@ int main(int argc, char** argv)
                 RcsGraph_fprintXML(fd, graph);
                 fclose(fd);
               }
-              pthread_mutex_unlock(&graphLock);
-              viewer->removeNode(gn);
-              gn = NULL;
+              viewer->removeInternal(gn);
               gn = new Rcs::GraphNode(graph);
               gn->toggleReferenceFrames();
+              pthread_mutex_unlock(&graphLock);
               viewer->add(gn);
             }
             else
@@ -1035,13 +1040,11 @@ int main(int argc, char** argv)
               RPAUSE();
             }
 
-
-            pthread_mutex_unlock(&graphLock);
-
-            viewer->removeNode(gn);
-            gn = NULL;
+            viewer->removeInternal(gn);
             gn = new Rcs::GraphNode(graph);
             gn->toggleReferenceFrames();
+            pthread_mutex_unlock(&graphLock);
+
             viewer->add(gn);
           }
         }   // KeyCatcher
@@ -1519,7 +1522,9 @@ int main(int argc, char** argv)
         }
         else if (kc && kc->getAndResetKey('e'))
         {
+          viewer->unlock();
           Rcs::BodyNode* bNd = viewer->getBodyNodeUnderMouse<Rcs::BodyNode*>();
+          viewer->lock();
           if (bNd == NULL)
           {
             RMSG("No BodyNode found under mouse");
@@ -1550,7 +1555,9 @@ int main(int argc, char** argv)
         }
         else if (kc && kc->getAndResetKey('a'))
         {
+          viewer->unlock();
           Rcs::BodyNode* bNd = viewer->getBodyNodeUnderMouse<Rcs::BodyNode*>();
+          viewer->lock();
           if (bNd == NULL)
           {
             RMSG("No BodyNode found under mouse");
@@ -1569,7 +1576,9 @@ int main(int argc, char** argv)
         }
         else if (kc && kc->getAndResetKey('A'))
         {
+          viewer->unlock();
           Rcs::BodyNode* bNd = viewer->getBodyNodeUnderMouse<Rcs::BodyNode*>();
+          viewer->lock();
           if (bNd == NULL)
           {
             RMSG("No BodyNode found under mouse");
@@ -1622,7 +1631,7 @@ int main(int argc, char** argv)
           RMSG("Reloading GraphNode from %s", xmlFileName);
           double t_reload = Timer_getSystemTime();
           int displayMode = simNode->getDisplayMode();
-          viewer->removeNode(simNode);
+          viewer->removeInternal(simNode);
           simNode = NULL;
           double t_reload2 = Timer_getSystemTime();
           RcsGraph_destroy(graph);
@@ -2458,6 +2467,14 @@ int main(int argc, char** argv)
                  "COST INCREASE" : "",
                  algo, lambda, alpha, tmc, manipIdx, staticEff,
                  poseOK ? "VALID" : "VIOLATES LIMITS");
+
+        // snprintf(hudText, 2056,
+        //          "IK calculation: %s\ndof: %d nJ: %d "
+        //          "nqr: %d nx: %d\nJL-cost: %.6f",
+        //          timeStr, controller.getGraph()->dof,
+        //          controller.getGraph()->nJ, ikSolver->getInternalDof(),
+        //          (int) controller.getActiveTaskDim(a_des),
+        //          jlCost);
 
         if (hud.valid())
         {

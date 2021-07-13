@@ -2082,7 +2082,8 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
 
   RCSBODY_TRAVERSE_SHAPES(self)
   {
-    if ((SHAPE->computeType & computeType) != 0)
+    if (((SHAPE->computeType & computeType) != 0) &&
+        (SHAPE->type!=RCSSHAPE_REFFRAME))
     {
       double xyzMin[3], xyzMax[3];
       RcsShape_computeAABB(SHAPE, xyzMin, xyzMax);
@@ -2132,19 +2133,45 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
 
   boxShape->computeType = computeType;
 
-  // Replace body shapes with enclosing box
+  // Store all frames so that we can later add them again
+  unsigned int nFrameShapes = RcsBody_numShapes(self);
+  RcsShape** frameShapes = RNALLOC(nFrameShapes+1, RcsShape*);
+  nFrameShapes = 0;
+
   RcsShape** sPtr = self->shape;
   while (*sPtr)
   {
-    RcsShape_destroy(*sPtr);
+    RcsShape* si = *sPtr;
+    if (si->type==RCSSHAPE_REFFRAME)
+    {
+      frameShapes[nFrameShapes] = si;
+      nFrameShapes++;
+    }
+    sPtr++;
+  }
+
+  // Replace body shapes with enclosing box
+  sPtr = self->shape;
+  while (*sPtr)
+  {
+    if ((*sPtr)->type!=RCSSHAPE_REFFRAME)
+    {
+      RcsShape_destroy(*sPtr);
+    }
     sPtr++;
   }
 
   // In case there were no shapes, we need to allocate memory
-  self->shape = (RcsShape**) realloc(self->shape, 2*sizeof(RcsShape*));
+  self->shape = RREALLOC(self->shape, 2+nFrameShapes, RcsShape*);
   RCHECK(self->shape);
   self->shape[0] = boxShape;
   self->shape[1] = NULL;
+
+  for (unsigned int i=0; i<nFrameShapes; ++i)
+  {
+    self->shape[i+1] = frameShapes[i];
+    self->shape[i+2] = NULL;
+  }
 
   MatNd_destroy(vertices);
 
