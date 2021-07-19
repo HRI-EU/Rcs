@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.4)
 
 PROJECT(RcsVortex)
 
@@ -6,6 +6,12 @@ PROJECT(RcsVortex)
 SET(RCSVORTEX_MASTER_PROJECT OFF)
 IF(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
   SET(RCSVORTEX_MASTER_PROJECT ON)
+  
+  IF (NOT CMAKE_BUILD_TYPE)
+      SET(CMAKE_BUILD_TYPE "Release" CACHE STRING
+	"Choose the type of build, options are: Debug Release." FORCE)
+  ENDIF (NOT CMAKE_BUILD_TYPE)
+  
 ENDIF()
 
 IF(RCSVORTEX_MASTER_PROJECT)
@@ -24,6 +30,8 @@ IF(RCSVORTEX_MASTER_PROJECT)
 
   SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
+  # As subproject, we need no special library installation
+  SET(RCSVORTEX_INSTALL_LIBDIR "lib")
 ELSE()
   # As subproject, we need no special library installation
   SET(RCSVORTEX_INSTALL_LIBDIR "lib")
@@ -39,6 +47,7 @@ ADD_LIBRARY(RcsVortex SHARED ${SRCS})
 # Vortex dependency
 TARGET_INCLUDE_DIRECTORIES(RcsVortex SYSTEM PRIVATE ${VORTEX_INCLUDE_DIR})
 TARGET_COMPILE_DEFINITIONS(RcsVortex PRIVATE ${VORTEX_DEFINITIONS})
+
 # RcsCore dependencies
 TARGET_INCLUDE_DIRECTORIES(RcsVortex PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../RcsCore
@@ -59,8 +68,9 @@ ENDIF()
 
 # Always use C++11
 IF (UNIX)
-  TARGET_COMPILE_OPTIONS(RcsVortex PRIVATE "-std=c++11")
+ TARGET_COMPILE_OPTIONS(RcsVortex PRIVATE "-std=c++11")
 ENDIF()
+
 # Avoid symbol conflicts
 SET_TARGET_PROPERTIES(RcsVortex PROPERTIES CXX_VISIBILITY_PRESET "hidden")
 

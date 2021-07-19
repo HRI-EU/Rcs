@@ -482,8 +482,8 @@ RcsJoint* parseJointURDF(xmlNode* node)
   // to the joint, and its transpose to the child body.Therefore this
   // computation is shifted to a later point (where bodies are connected
   // through joints: connectURDF()).
-  char type[256] = "";
-  len = getXMLNodePropertyStringN(node, "type", type, 256);
+  char type[RCS_MAX_NAMELEN] = "";
+  len = getXMLNodePropertyStringN(node, "type", type, RCS_MAX_NAMELEN);
   RCHECK(len > 0);
 
   // \todo: This might have influence on the weighting matrices in the IK.
@@ -534,8 +534,8 @@ RcsJoint* parseJointURDF(xmlNode* node)
 static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
                         RcsJoint** jntVec, const char* suffix)
 {
-  char jointName[256] = "";
-  unsigned len = getXMLNodePropertyStringN(node, "name", jointName, 256);
+  char jointName[RCS_MAX_NAMELEN] = "";
+  unsigned len = getXMLNodePropertyStringN(node, "name", jointName, RCS_MAX_NAMELEN);
   RCHECK(len > 0);
 
   xmlNodePtr parentNode = getXMLChildByName(node, "parent");
@@ -543,20 +543,25 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
   RCHECK_MSG(parentNode && childNode, "\"parent\" and \"child\" are "
              "required in joint definition of \"%s\"", jointName);
 
-  char parentName[256] = "";
-  getXMLNodePropertyStringN(parentNode, "link", parentName, 256);
+  char parentName[RCS_MAX_NAMELEN] = "";
+  getXMLNodePropertyStringN(parentNode, "link", parentName, RCS_MAX_NAMELEN);
   if (suffix != NULL)
   {
-    strcat(parentName, suffix);
+    int len = RCS_MAX_NAMELEN - strlen(parentName) - 1;
+    RCHECK(len>0);
+    strncat(parentName, suffix, len);
   }
+
   RcsBody* parentBody = findBdyByNameNoCase(parentName, graph, rootIdx);
   RCHECK_MSG(parentBody, "Parent body \"%s\" not found (joint "
              "definition \"%s\")", parentName, jointName);
 
-  char childName[256] = "";
-  getXMLNodePropertyStringN(childNode, "link", childName, 256);
+  char childName[RCS_MAX_NAMELEN] = "";
+  getXMLNodePropertyStringN(childNode, "link", childName, RCS_MAX_NAMELEN);
   if (suffix != NULL)
   {
+    int len = RCS_MAX_NAMELEN - strlen(childName) - 1;
+    RCHECK(len>0);
     strcat(childName, suffix);
   }
   RcsBody* childBody = findBdyByNameNoCase(childName, graph, rootIdx);
@@ -567,8 +572,8 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
        jointName, parentName, childName);
 
   // Joint type
-  char type[256] = "";
-  len = getXMLNodePropertyStringN(node, "type", type, 256);
+  char type[RCS_MAX_NAMELEN] = "";
+  len = getXMLNodePropertyStringN(node, "type", type, RCS_MAX_NAMELEN);
   RCHECK(len > 0);
 
 
@@ -601,10 +606,12 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
     /* } */
 
     // Backward connection of joints
-    char name[256] = "";
-    getXMLNodePropertyStringN(node, "name", name, 256);
+    char name[RCS_MAX_NAMELEN] = "";
+    getXMLNodePropertyStringN(node, "name", name, RCS_MAX_NAMELEN);
     if (suffix != NULL)
     {
+      int len = RCS_MAX_NAMELEN - strlen(name) - 1;
+      RCHECK(len>0);
       strcat(name, suffix);
     }
     RcsJoint* jnt = findJntByNameNoCase(name, jntVec);
@@ -619,7 +626,7 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
     if (axisNode)
     {
       double axis_xyz[3];
-      Vec3d_set(axis_xyz, 1.0, 0.0, 0.0);
+      Vec3d_setUnitVector(axis_xyz, 0);
       getXMLNodePropertyVec3(axisNode, "xyz", axis_xyz);
 
       // Axis "should" be normalized according to the URDF specs. We therefore

@@ -3,13 +3,14 @@
   <!-- <Task name="XYZ_R" controlVariable="XYZ" effector="PowerGrasp_R" refBdy="floor_base" /> -->
   <!-- <Task name="XYZ_L" controlVariable="XYZ" effector="PowerGrasp_L" refBdy="floor_base" /> -->
 
-  <Task name="XYZ_R Bottle" controlVariable="XYZ" effector="Bottle" refBdy="PowerGrasp_R" />
-  <Task name="XYZ_L Glas" controlVariable="XYZ" effector="Glas" refBdy="PowerGrasp_L" />
+  <!-- <Task name="XYZ_R Bottle" controlVariable="XYZ" effector="Bottle" refBdy="PowerGrasp_R" /> -->
+  <!-- <Task name="XYZ_L Glas" controlVariable="XYZ" effector="Glas" refBdy="PowerGrasp_L" /> -->
 
   
-  <Task name="Polar_R" controlVariable="POLAR" effector="PowerGrasp_R" />
+  <!-- <Task name="Polar_R" controlVariable="POLAR" effector="PowerGrasp_R" /> -->
+  <Task name="XYZ_L" controlVariable="XYZ" effector="PowerGrasp_L" />
   <Task name="Polar_L" controlVariable="POLAR" effector="PowerGrasp_L" />
-  <Task name="FingerJoints_R" controlVariable="Joints" jnts="j2s7s300_joint_finger_1_R j2s7s300_joint_finger_2_R j2s7s300_joint_finger_3_R" />
+  <!-- <Task name="FingerJoints_R" controlVariable="Joints" jnts="j2s7s300_joint_finger_1_R j2s7s300_joint_finger_2_R j2s7s300_joint_finger_3_R" /> -->
 
 
 
