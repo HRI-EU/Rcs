@@ -224,6 +224,16 @@ void MeshNode::setMesh(const double* vertices, unsigned int numVertices,
   update(&mesh);
 }
 
+void MeshNode::clearMesh()
+{
+  RcsMeshData mesh;
+  mesh.nVertices = 0;
+  mesh.vertices = NULL;
+  mesh.nFaces = 0;
+  mesh.faces = NULL;
+  update(&mesh);
+}
+
 void MeshNode::update(const RcsMeshData* mesh)
 {
   //osg::Vec3Array* v = static_cast<osg::Vec3Array*>(meshGeo->getVertexArray());

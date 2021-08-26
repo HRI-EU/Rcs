@@ -202,6 +202,7 @@ bool Rcs::VertexArrayNode::updatePoints()
   // update nPoints, in case of a given matrix (m might be dynamic)
   if (this->mat)
   {
+    this->points = this->mat->ele;// in case realloc is called
     this->nPoints = this->mat->m;
   }
 

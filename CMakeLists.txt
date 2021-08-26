@@ -218,7 +218,7 @@ IF(UNIX)
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Performing unittests" VERBATIM)
 ELSE()
-  MESSAGE(WARNING "Unit tests curently for Linux only")
+  MESSAGE(STATUS "Unit tests disabled - currently for Linux only")
 ENDIF()
 
 ################################################################################

@@ -90,6 +90,7 @@ public:
   virtual ~MeshNode();
   virtual void init(const RcsMeshData* mesh);
   virtual void update(const RcsMeshData* mesh);
+  virtual void clearMesh();
   virtual void setMesh(const double* vertices, unsigned int numVertices,
                        const unsigned int* faces, unsigned int numFaces);
   virtual void setMaterial(const std::string& material, double alpha=1.0);

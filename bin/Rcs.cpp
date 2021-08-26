@@ -551,6 +551,32 @@ int main(int argc, char** argv)
         RcsGraph_destroy(graph2);
       }
 
+      if (testCopy==true)
+      {
+        const int nIter = 1000;
+        RcsGraph* graph2 = RcsGraph_clone(graph);
+
+        double t1 = Timer_getTime();
+        for (int i=0; i<nIter; ++i)
+        {
+          RcsGraph_copy(graph2, graph);
+        }
+        t1 = Timer_getTime() - t1;
+
+
+        double t2 = Timer_getTime();
+        for (int i=0; i<nIter; ++i)
+        {
+          RcsGraph_setState(graph2, graph->q, graph->q_dot);
+        }
+        t2 = Timer_getTime() - t2;
+
+        RLOG(0, "Copying took %f msec  forward kinematics took %f msec",
+             1000.0*t1/nIter, 1000.0*t2/nIter);
+
+        RcsGraph_destroy(graph2);
+      }
+
       const RcsBody* comBase = RcsGraph_getBodyByName(graph, comRef);
 
       int guiHandle = -1;

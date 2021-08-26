@@ -737,9 +737,15 @@ static void testVertexArrayNode()
  ******************************************************************************/
 static void testMeshNode()
 {
-  char meshFile[256] = "";
+  Rcs::KeyCatcherBase::registerKey("q", "Quit");
+  Rcs::KeyCatcherBase::registerKey("p", "Print mesh to console and file");
+
+  std::string meshFile, outfile="outmesh.stl";
   Rcs::CmdLineParser argP;
-  argP.getArgument("-f", meshFile, "Mesh file (default is %s)", meshFile);
+  argP.getArgument("-f", &meshFile, "Mesh file (default is %s)",
+                   meshFile.c_str());
+  argP.getArgument("-outFile", &outfile, "Mesh file to be written (default "
+                   "is %s)", outfile.c_str());
   bool withScaling = argP.hasArgument("-scaling", "Slider for dynamic scaling");
 
   if (argP.hasArgument("-h"))
@@ -749,11 +755,13 @@ static void testMeshNode()
 
   osg::ref_ptr<Rcs::MeshNode> mn;
   RcsMeshData* mesh = NULL;
+  RcsMeshData* cpyOfMesh = NULL;
 
-  if (strlen(meshFile)>0)
+  if (!meshFile.empty())
   {
-    RMSG("Loading mesh file \"%s\"", meshFile);
-    mn = new Rcs::MeshNode(meshFile);
+    RMSG("Loading mesh file \"%s\"", meshFile.c_str());
+    mesh = RcsMesh_createFromFile(meshFile.c_str());
+    mn = new Rcs::MeshNode(mesh);
   }
   else
   {
@@ -766,6 +774,8 @@ static void testMeshNode()
   Rcs::Viewer* viewer = new Rcs::Viewer();
   viewer->add(mn.get());
   viewer->add(new Rcs::COSNode());
+  osg::ref_ptr<Rcs::KeyCatcher> kc = new Rcs::KeyCatcher();
+  viewer->add(kc.get());
 
   double scale = 1.0;
   MatNd scaleArr = MatNd_fromPtr(1, 1, &scale);
@@ -777,17 +787,30 @@ static void testMeshNode()
 
   while (runLoop)
   {
-    if (withScaling)
+    if (withScaling && (scale!=1.0))
     {
-      RcsMeshData* cpyOfMesh = RcsMesh_clone(mesh);
+      RcsMesh_destroy(cpyOfMesh);
+      cpyOfMesh = RcsMesh_clone(mesh);
       RCHECK(cpyOfMesh);
       RcsMesh_scale(cpyOfMesh, scale);
       mn->setMesh(cpyOfMesh->vertices, cpyOfMesh->nVertices,
                   cpyOfMesh->faces, cpyOfMesh->nFaces);
-      RcsMesh_destroy(cpyOfMesh);
     }
 
     viewer->frame();
+
+    if (kc->getAndResetKey('q'))
+    {
+      runLoop = false;
+    }
+    else if (kc->getAndResetKey('p'))
+    {
+      RMSGS("Printing mesh to file %s", outfile.c_str());
+      RcsMesh_print(cpyOfMesh ? cpyOfMesh : mesh);
+      bool success = RcsMesh_toFile(cpyOfMesh ? cpyOfMesh : mesh, outfile.c_str());
+      RMSGS("%s", success ? "Success" : "Failed");
+    }
+
     Timer_usleep(1000);
   }
 

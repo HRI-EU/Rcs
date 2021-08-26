@@ -147,7 +147,7 @@ IF(USE_VORTEX AND VORTEX_FOUND)
 ENDIF()
 
 # copy the .dll file to the same folder as the executable
-IF (WIN32)
+IF (WIN32 AND USE_BULLET)
 ADD_CUSTOM_COMMAND(
     TARGET RcsBullet POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy

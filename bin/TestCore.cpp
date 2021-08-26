@@ -492,6 +492,51 @@ static bool testRemoveSuffix()
 /******************************************************************************
  *
  *****************************************************************************/
+static bool testMeshConversion()
+{
+  bool success = true;
+  std::string inFile, outFile;
+  double eps = 1.0e-4;
+
+  Rcs::CmdLineParser argP;
+  argP.getArgument("-inFile", &inFile, "Name of mesh file to be read.");
+  argP.getArgument("-outFile", &outFile, "Name of mesh file to be written.");
+  argP.getArgument("-eps", &eps, "Distance below which vertices are considered"
+                   " duplicate (default is %f)", eps);
+  bool compress = argP.hasArgument("-compress", "Remove duplicate vertices");
+
+  RcsMeshData* inMesh = RcsMesh_createFromFile(inFile.c_str());
+
+  if (!inMesh)
+  {
+    RLOG(1, "Failed to read file \"%s\"", inFile.c_str());
+    return false;
+  }
+
+  if (compress)
+  {
+    int nDuplicates = RcsMesh_compressVertices(inMesh, eps);
+    RLOG(1, "Removed %d duplicates", nDuplicates);
+  }
+
+  REXEC(4)
+  {
+    RcsMesh_print(inMesh);
+  }
+
+  success = RcsMesh_toFile(inMesh, outFile.c_str());
+
+  if (!success)
+  {
+    RLOG(1, "Failed to write file \"%s\"", outFile.c_str());
+  }
+
+  return success;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
 static bool testMode(int mode, int argc, char** argv)
 {
   bool success = true;
@@ -514,6 +559,7 @@ static bool testMode(int mode, int argc, char** argv)
       fprintf(stderr, "\t\t8   Test double to string conversion\n");
       fprintf(stderr, "\t\t9   Test line number extraction for logging\n");
       fprintf(stderr, "\t\t10  Test String_removeSuffix()\n");
+      fprintf(stderr, "\t\t11  Test mesh conversion\n");
       fprintf(stderr, "\n\nResource path:\n");
       Rcs_printResourcePath();
       break;
@@ -620,6 +666,12 @@ static bool testMode(int mode, int argc, char** argv)
     case 10:
     {
       success = testRemoveSuffix();
+      break;
+    }
+
+    case 11:
+    {
+      success = testMeshConversion();
       break;
     }
 

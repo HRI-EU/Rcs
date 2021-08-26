@@ -264,6 +264,7 @@ public:
     KeyCatcherBase::registerKey("M", "Toggle video capture", "Viewer");
 #endif
     KeyCatcherBase::registerKey("F11", "Print camera transform", "Viewer");
+    KeyCatcherBase::registerKey("j", "Print 3d coordinates under mouse", "Viewer");
   }
 
   ~KeyHandler()
@@ -1635,9 +1636,25 @@ bool Viewer::handle(const osgGA::GUIEventAdapter& ea,
         setCartoonEnabled(this->cartoonEnabled);
         return false;
       }
+
+      //
+      // Toggle cartoon mode
+      //
       else if (ea.getKey() == 'M')
       {
         keyHandler->toggleVideoCapture();
+        return false;
+      }
+
+      //
+      // Print pick coordinates to console
+      //
+      else if (ea.getKey() == 'j')
+      {
+        double pt[3];
+        osg::Node* nd = getNodeUnderMouse(pt);
+        if (nd) RMSG("%s [%.5f   %.5f   %.5f]", nd->getName().c_str(),
+                       pt[0], pt[1], pt[2]);
         return false;
       }
 
