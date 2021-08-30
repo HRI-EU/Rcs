@@ -1740,6 +1740,40 @@ bool Math_planeFit3d(const double points_[][3], unsigned int nPoints,
     normal[i] = V[i][minEig];
   }
 
+
+
+  // Counter-clockwise normal. This ensures that the plane normal points into
+  // consistent directions as long as the points keep their winding order.
+#if 1
+  // Transformation that transforms world points into a frame aligned with
+  // the centroid, and the z-axis pointing out of the plane. This is due to
+  // the third Eigenvector being the smallest one, which is the out-of-plane
+  // direction. We transpose the rotation part, since Eigenvectors are
+  // the columns of V.
+  HTr A_PI;
+  Mat3d_transpose(A_PI.rot, V);
+  Vec3d_copy(A_PI.org, centroid);
+
+  // We transform the points array, it is not needed later any more
+  for (unsigned int i=0; i<points->m; ++i)
+  {
+    double* row = MatNd_getRowPtr(points, i);
+    Vec3d_invTransformSelf(row, &A_PI);
+  }
+
+  // Project points into y-z plane of A_PI
+  MatNd_deleteColumn(points, 0);
+
+  // Check winding order using signed area
+  double (*poly)[2] = (double (*)[2])points->ele;
+
+  if (Math_isPolygonClockwise(poly, points->m))
+  {
+    Vec3d_constMulSelf(normal, -1.0);
+  }
+#endif
+  // End counter-clockwise normal
+
   MatNd_destroy(points);
 
   return true;

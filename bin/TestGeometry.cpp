@@ -47,6 +47,7 @@
 #include <SphereNode.h>
 #include <ArrowNode.h>
 #include <SphereNode.h>
+#include <COSNode.h>
 #include <HUD.h>
 #include <VertexArrayNode.h>
 #include <KeyCatcher.h>
@@ -897,6 +898,88 @@ static void testRayLinesegIntersection2D(int argc, char** argv)
 
 /*******************************************************************************
  *
+ *
+ *
+ *  (0/1)______ (0.2/1)
+ *      |<.2 ->|
+ *      |      |
+ *      |      |
+ *      |      |
+ *      |      |
+ *      |      |
+ *      |      |
+ *      |      |(0.2/0.2)
+ *      |      |_____________________ (1/0.2)
+ *      |                            |
+ *      |<--------- 1 -------------->|
+ *      |____________________________|
+ *    (0/0)                         (1/0)
+ *
+ *
+ *      y
+ *      ^
+ *      |
+ *      ---> x
+ *
+ ******************************************************************************/
+static void testPlanefitting(int argc, char** argv)
+{
+  // Initialize GUI and OSG mutex
+  pthread_mutex_t mtx;
+  pthread_mutex_init(&mtx, NULL);
+
+  double K_p[6][3];
+  Vec3d_set(K_p[0], 0.0, 0.0, Math_getRandomNumber(-0.1, 0.1));
+  Vec3d_set(K_p[1], 1.0, 0.0, Math_getRandomNumber(-0.1, 0.1));
+  Vec3d_set(K_p[2], 1.0, 0.2, Math_getRandomNumber(-0.1, 0.1));
+  Vec3d_set(K_p[3], 0.2, 0.2, Math_getRandomNumber(-0.1, 0.1));
+  Vec3d_set(K_p[4], 0.2, 1.0, Math_getRandomNumber(-0.1, 0.1));
+  Vec3d_set(K_p[5], 0.0, 1.0, Math_getRandomNumber(-0.1, 0.1));
+
+  MatNd* I_p = MatNd_create(6, 3);
+
+  HTr A_PI, planeFit;
+  HTr_setIdentity(&A_PI);
+  HTr_setIdentity(&planeFit);
+
+  Rcs::Viewer* viewer = new Rcs::Viewer();
+  viewer->add(new Rcs::TargetSetter(A_PI.org, A_PI.rot, 0.5));
+  viewer->add(new Rcs::VertexArrayNode(I_p, osg::PrimitiveSet::LINE_LOOP));
+  viewer->add(new Rcs::COSNode(&planeFit, 0.5));
+  Rcs::KeyCatcher* kc = new Rcs::KeyCatcher();
+  viewer->add(kc);
+  viewer->runInThread(&mtx);
+
+  while (runLoop)
+  {
+    pthread_mutex_lock(&mtx);
+
+    for (int i=0; i<6; ++i)
+    {
+      double* row = MatNd_getRowPtr(I_p, i);
+      Vec3d_transform(row, &A_PI, K_p[i]);
+    }
+
+    bool success = Math_planeFit3d((double (*)[3])I_p->ele, 6,
+                                   planeFit.org, planeFit.rot[2]);
+
+    Mat3d_fromVec(planeFit.rot, planeFit.rot[2], 2);
+    pthread_mutex_unlock(&mtx);
+
+    if (kc->getAndResetKey('q'))
+    {
+      runLoop = false;
+    }
+
+    Timer_usleep(1000);
+  }
+
+  delete viewer;
+  MatNd_destroy(I_p);
+}
+
+/*******************************************************************************
+ *
  ******************************************************************************/
 int main(int argc, char** argv)
 {
@@ -936,6 +1019,7 @@ int main(int argc, char** argv)
       printf("\t\t3   2D ray - line segment intersection test\n");
       printf("\t\t4   Random distance test\n");
       printf("\t\t5   Threaded random distance test\n");
+      printf("\t\t6   3d plane fitting interactive test\n");
       break;
     }
 
@@ -966,6 +1050,12 @@ int main(int argc, char** argv)
     case 5:
     {
       testDistanceThreaded();
+      break;
+    }
+
+    case 6:
+    {
+      testPlanefitting(argc, argv);
       break;
     }
 
