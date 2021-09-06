@@ -276,7 +276,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 
   // Allocate memory and set defaults
   RcsShape* shape = RcsShape_create();
-  char str[RCS_MAX_FILENAMELEN];
+  char str[RCS_MAX_FILENAMELEN] = "";
   getXMLNodePropertyStringN(node, "type", str, RCS_MAX_FILENAMELEN);
   if (STREQ(str, "SSL"))
   {
@@ -965,9 +965,11 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
 
   // The name as indicated in the xml file
   getXMLNodePropertyStringN(bdyNode, "name", name, RCS_MAX_NAMELEN);
-  RCHECK_MSG(strncmp(name, "GenericBody", 11) != 0,
-             "The name \"GenericBody\" is reserved for internal use");
-
+  if (strlen(name)>10)
+  {
+    RCHECK_MSG(strncmp(name, "GenericBody", 11) != 0,
+               "The name \"GenericBody\" is reserved for internal use");
+  }
 
   /* RLOG(0, "Body %s: firstInGroup is %s", */
   /*      name, firstInGroup ? "TRUE" : "FALSE"); */

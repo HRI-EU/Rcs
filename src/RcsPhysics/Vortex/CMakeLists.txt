@@ -37,6 +37,7 @@ ELSE()
   SET(RCSVORTEX_INSTALL_LIBDIR "lib")
 ENDIF()
 
+
 SET(SRCS
     VortexHelpers.cpp
     VortexSimulation.cpp)

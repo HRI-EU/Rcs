@@ -141,7 +141,7 @@ IF(USE_VORTEX AND VORTEX_FOUND)
   # it. Use no-as-needed to make sure the library is loaded, only then will the
   # physics engine be registered.
   IF (UNIX)
-  TARGET_LINK_LIBRARIES(RcsPhysics -Wl,--no-as-needed ${RCSVORTEX_LIBRARY} -Wl,--as-needed ${VORTEX_LIBRARIES})
+    TARGET_LINK_LIBRARIES(RcsPhysics -Wl,--no-as-needed ${RCSVORTEX_LIBRARY} -Wl,--as-needed ${VORTEX_LIBRARIES})
     ENDIF(UNIX)
   ADD_DEPENDENCIES(RcsPhysics RcsVortex)
 ENDIF()
