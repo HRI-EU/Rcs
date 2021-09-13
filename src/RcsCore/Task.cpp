@@ -223,8 +223,9 @@ Rcs::Task::Task(const std::string& className_,
     node = node->next;
   }
 
-  RLOG(5, "constructed task \"%s\" of type %s: dim: %d, dimIK: %d",
-       getName().c_str(), className.c_str(), getDim(), getDim());
+  RLOG(0, "constructed task \"%s\" of type %s: dim: %d, dimIK: %d effector-id: %d",
+       getName().c_str(), className.c_str(), getDim(), getDim(),
+       effectorId);
 }
 
 /*******************************************************************************
