@@ -125,10 +125,9 @@ Rcs::Task::Task(const std::string& className_,
   // Effector
   if (getXMLNodePropertyStringN(node, "effector", msg, RCS_MAX_NAMELEN))
   {
-
-    if (STRNEQ(name.c_str(), "GenericBody", 11))
+    if (STRNEQ(msg, "GenericBody", 11))
     {
-      this->effectorId = getGenericBodyId(name.c_str());
+      this->effectorId = getGenericBodyId(msg);
     }
     else
     {
@@ -150,9 +149,9 @@ Rcs::Task::Task(const std::string& className_,
   if (getXMLNodePropertyStringN(node, "refBdy", msg, RCS_MAX_NAMELEN) ||
       getXMLNodePropertyStringN(node, "refBody", msg, RCS_MAX_NAMELEN))
   {
-    if (STRNEQ(name.c_str(), "GenericBody", 11))
+    if (STRNEQ(msg, "GenericBody", 11))
     {
-      this->refBodyId = getGenericBodyId(name.c_str());
+      this->refBodyId = getGenericBodyId(msg);
     }
     else
     {
@@ -173,9 +172,9 @@ Rcs::Task::Task(const std::string& className_,
   // Reference frame body
   if (getXMLNodePropertyStringN(node, "refFrame", msg, RCS_MAX_NAMELEN))
   {
-    if (STRNEQ(name.c_str(), "GenericBody", 11))
+    if (STRNEQ(msg, "GenericBody", 11))
     {
-      this->refFrameId = getGenericBodyId(name.c_str());
+      this->refFrameId = getGenericBodyId(msg);
     }
     else
     {
@@ -223,9 +222,8 @@ Rcs::Task::Task(const std::string& className_,
     node = node->next;
   }
 
-  RLOG(0, "constructed task \"%s\" of type %s: dim: %d, dimIK: %d effector-id: %d",
-       getName().c_str(), className.c_str(), getDim(), getDim(),
-       effectorId);
+  RLOG(5, "constructed task \"%s\" of type %s: dim: %d, dimIK: %d",
+       getName().c_str(), className.c_str(), getDim(), getDim());
 }
 
 /*******************************************************************************
