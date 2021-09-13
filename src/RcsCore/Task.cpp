@@ -1507,6 +1507,27 @@ void Rcs::Task::toXMLStart(FILE* out) const
  ******************************************************************************/
 void Rcs::Task::toXMLBody(FILE* out) const
 {
+#if 0
+
+  // Here, names of Generic Bodies get resolved
+  if (getEffector())
+  {
+    fprintf(out, " effector=\"%s\"", getEffector()->name);
+  }
+
+  if (getRefBody())
+  {
+    fprintf(out, " refBdy=\"%s\"", getRefBody()->name);
+  }
+
+  if (getRefFrame() && (getRefFrame()!= getRefBody()))
+  {
+    fprintf(out, " refFrame=\"%s\"", getRefFrame()->name);
+  }
+
+#else
+
+  // Here, names of Generic Bodies remain preserved
   if (getEffectorId()<0)
   {
     fprintf(out, " effector=\"GenericBody%d\"", -10-getEffectorId());
@@ -1540,6 +1561,7 @@ void Rcs::Task::toXMLBody(FILE* out) const
     }
   }
 
+#endif
 }
 
 /*******************************************************************************

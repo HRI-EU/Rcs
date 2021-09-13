@@ -747,6 +747,14 @@ public:
 
 protected:
 
+  /*! \brief If name starts with "GenericBody", the function returns
+   *         -10 - <number> where number is the number following after
+   *         "GenericBody". If number is not within the interval
+   *         [0...RCS_NUM_GENERIC_BODIES-1], the function complains on
+   *         debug level 1 and returns -1.
+   */
+  int getGenericBodyId(const char* name) const;
+
   /*! \brief Sets the dimension of the task. This should not be required in
    *         most cases. However, in few exceptions (e.g. CompositeTask), it
    *         is needed.
@@ -803,14 +811,6 @@ private:
    *         memory.
    */
   Task(const Task& copyFromMe);
-
-  /*! \brief If name starts with "GenericBody", the function returns
-   *         -10 - <number> where number is the number following after
-   *         "GenericBody". If number is not within the interval
-   *         [0...RCS_NUM_GENERIC_BODIES-1], the function complains on
-   *         debug level 1 and returns -1.
-   */
-  int getGenericBodyId(const char* name) const;
 
   /*! \brief Name of the task
    */

@@ -104,9 +104,17 @@ Rcs::TaskInclination::TaskInclination(const std::string& className,
 
   for (size_t i=0; i<vec.size(); ++i)
   {
-    const RcsBody* ef_i = RcsGraph_getBodyByName(graph, vec[i].c_str());
-    RCHECK(ef_i);
-    this->effectorVec.push_back(ef_i->id);
+
+    if (STRNEQ(vec[i].c_str(), "GenericBody", 11))
+    {
+      this->effectorVec.push_back(getGenericBodyId(vec[i].c_str()));
+    }
+    else
+    {
+      const RcsBody* ef_i = RcsGraph_getBodyByName(graph, vec[i].c_str());
+      RCHECK(ef_i);
+      this->effectorVec.push_back(ef_i->id);
+    }
   }
 
   REXEC(5)
@@ -320,7 +328,22 @@ const double* Rcs::TaskInclination::aEf(size_t num) const
  ******************************************************************************/
 const RcsBody* Rcs::TaskInclination::getEffectorVec(size_t num) const
 {
-  return RCSBODY_BY_ID(getGraph(), this->effectorVec[num]);
+  int id = this->effectorVec[num];
+
+  if (id>=0)
+  {
+    return RCSBODY_BY_ID(this->graph, id);
+  }
+
+  // Generic bodies
+  if (id<=-10)
+  {
+    int gBdyId = -id-10;
+    RCHECK(gBdyId<RCS_NUM_GENERIC_BODIES);
+    return RCSBODY_BY_ID(this->graph, graph->gBody[gBdyId]);
+  }
+
+  return NULL;
 }
 
 /*******************************************************************************
