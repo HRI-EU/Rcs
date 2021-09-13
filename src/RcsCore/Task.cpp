@@ -125,16 +125,24 @@ Rcs::Task::Task(const std::string& className_,
   // Effector
   if (getXMLNodePropertyStringN(node, "effector", msg, RCS_MAX_NAMELEN))
   {
-    const RcsBody* ef = RcsGraph_getBodyByName(graph, msg);
 
-    if (ef == NULL)
+    if (STRNEQ(name.c_str(), "GenericBody", 11))
     {
-      RLOG(1, "Effector \"%s\" doesn't exist!", msg);
-      this->effectorId = -1;
+      this->effectorId = getGenericBodyId(name.c_str());
     }
     else
     {
-      this->effectorId = ef->id;
+      const RcsBody* ef = RcsGraph_getBodyByName(graph, msg);
+
+      if (ef == NULL)
+      {
+        RLOG(1, "Effector \"%s\" doesn't exist!", msg);
+        this->effectorId = -1;
+      }
+      else
+      {
+        this->effectorId = ef->id;
+      }
     }
   }
 
@@ -142,32 +150,46 @@ Rcs::Task::Task(const std::string& className_,
   if (getXMLNodePropertyStringN(node, "refBdy", msg, RCS_MAX_NAMELEN) ||
       getXMLNodePropertyStringN(node, "refBody", msg, RCS_MAX_NAMELEN))
   {
-    const RcsBody* refBody = RcsGraph_getBodyByName(graph, msg);
-
-    if (refBody == NULL)
+    if (STRNEQ(name.c_str(), "GenericBody", 11))
     {
-      RLOG(1, "Reference body \"%s\" doesn't exist!", msg);
-      this->refBodyId = -1;
+      this->refBodyId = getGenericBodyId(name.c_str());
     }
     else
     {
-      this->refBodyId = refBody->id;
+      const RcsBody* refBody = RcsGraph_getBodyByName(graph, msg);
+
+      if (refBody == NULL)
+      {
+        RLOG(1, "Reference body \"%s\" doesn't exist!", msg);
+        this->refBodyId = -1;
+      }
+      else
+      {
+        this->refBodyId = refBody->id;
+      }
     }
   }
 
   // Reference frame body
   if (getXMLNodePropertyStringN(node, "refFrame", msg, RCS_MAX_NAMELEN))
   {
-    const RcsBody* refFrame = RcsGraph_getBodyByName(graph, msg);
-
-    if (refFrame == NULL)
+    if (STRNEQ(name.c_str(), "GenericBody", 11))
     {
-      RLOG(1, "Reference frame body \"%s\" doesn't exist!", msg);
-      this->refFrameId = -1;
+      this->refFrameId = getGenericBodyId(name.c_str());
     }
     else
     {
-      this->refFrameId = refFrame->id;
+      const RcsBody* refFrame = RcsGraph_getBodyByName(graph, msg);
+
+      if (refFrame == NULL)
+      {
+        RLOG(1, "Reference frame body \"%s\" doesn't exist!", msg);
+        this->refFrameId = -1;
+      }
+      else
+      {
+        this->refFrameId = refFrame->id;
+      }
     }
   }
 
@@ -209,46 +231,59 @@ Rcs::Task::Task(const std::string& className_,
  * Copy constructor doing deep copying
  ******************************************************************************/
 Rcs::Task::Task(const Task& copyFromMe, RcsGraph* newGraph):
+  graph(newGraph ? newGraph : copyFromMe.graph),
   tsr(copyFromMe.tsr ? copyFromMe.tsr->clone() : NULL),
-  effectorId(-1),
-  refBodyId(-1),
-  refFrameId(-1),
+  effectorId(copyFromMe.effectorId),
+  refBodyId(copyFromMe.refBodyId),
+  refFrameId(copyFromMe.refFrameId),
   taskDim(copyFromMe.taskDim),
   name(copyFromMe.name),
   className(copyFromMe.className),
   params(copyFromMe.params)
 {
-  this->graph = newGraph ? newGraph : copyFromMe.graph;
-
   // If the task is created with a new graph, we don't assume that the body
   // topology is the same as in the task we copy from. Therefore we retrieve
   // the task's bodies by name lookup.
   if (newGraph)
   {
-    const RcsBody* ef = copyFromMe.getEffector();
-    if (ef)
+    // The following section is the same for effector, refBdy and refFrame. We
+    // check if the id >= 0. If this is not the the case, the body
+    // is either not set, or refers to a GenericBody (with id range [-10 ...].
+    // In such cases, we just keep the id, and do not resolve the id by name.
+    int otherId = copyFromMe.getEffectorId();
+    if (otherId >= 0)
     {
-      setEffector(RcsGraph_getBodyByName(newGraph, ef->name));
+      const RcsBody* otherBdy = RCSBODY_BY_ID(copyFromMe.getGraph(), otherId);
+      if (otherBdy)
+      {
+        const RcsBody* myBdy = RcsGraph_getBodyByName(newGraph, otherBdy->name);
+        setEffectorId(myBdy ? myBdy->id : -1);
+      }
     }
 
-    const RcsBody* refBdy = copyFromMe.getRefBody();
-    if (refBdy)
+    otherId = copyFromMe.getRefBodyId();
+    if (otherId >= 0)
     {
-      setRefBody(RcsGraph_getBodyByName(newGraph, refBdy->name));
+      const RcsBody* otherBdy = RCSBODY_BY_ID(copyFromMe.getGraph(), otherId);
+      if (otherBdy)
+      {
+        const RcsBody* myBdy = RcsGraph_getBodyByName(newGraph, otherBdy->name);
+        setRefBodyId(myBdy ? myBdy->id : -1);
+      }
     }
 
-    const RcsBody* refFrame = copyFromMe.getRefFrame();
-    if (refFrame)
+    otherId = copyFromMe.getRefFrameId();
+    if (otherId >= 0)
     {
-      setRefFrame(RcsGraph_getBodyByName(newGraph, refFrame->name));
+      const RcsBody* otherBdy = RCSBODY_BY_ID(copyFromMe.getGraph(), otherId);
+      if (otherBdy)
+      {
+        const RcsBody* myBdy = RcsGraph_getBodyByName(newGraph, otherBdy->name);
+        setRefFrameId(myBdy ? myBdy->id : -1);
+      }
     }
   }
-  else
-  {
-    effectorId = copyFromMe.effectorId;
-    refBodyId = copyFromMe.refBodyId;
-    refFrameId = copyFromMe.refFrameId;
-  }
+
 }
 
 /*******************************************************************************
@@ -257,6 +292,27 @@ Rcs::Task::Task(const Task& copyFromMe, RcsGraph* newGraph):
 Rcs::Task::~Task()
 {
   delete this->tsr;
+}
+
+/*******************************************************************************
+ * name is "GenericBodyX" with X = [0...RCS_NUM_GENERIC_BODIES-1]
+ ******************************************************************************/
+int Rcs::Task::getGenericBodyId(const char* name) const
+{
+  int id, num = atoi(&name[11]);
+
+  if ((num < 0) || (num >= RCS_NUM_GENERIC_BODIES))
+  {
+    RLOG(1, "GenericBody \"%s\": suffix must be [0...%d]",
+         name, RCS_NUM_GENERIC_BODIES-1);
+    id = -1;
+  }
+  else
+  {
+    id = -10-num;
+  }
+
+  return id;
 }
 
 /*******************************************************************************
@@ -1218,9 +1274,46 @@ void Rcs::Task::projectTaskForce(MatNd* ft_task,
 /*******************************************************************************
  * Returns the effector body of the task
  ******************************************************************************/
+int Rcs::Task::getEffectorId() const
+{
+  return this->effectorId;
+}
+
+/*******************************************************************************
+ * Returns the refBody of the task
+ ******************************************************************************/
+int Rcs::Task::getRefBodyId() const
+{
+  return this->refBodyId;
+}
+
+/*******************************************************************************
+ * Returns the refBody of the task
+ ******************************************************************************/
+int Rcs::Task::getRefFrameId() const
+{
+  return this->refFrameId;
+}
+
+/*******************************************************************************
+ * Returns the effector body of the task
+ ******************************************************************************/
 const RcsBody* Rcs::Task::getEffector() const
 {
-  return RCSBODY_BY_ID(this->graph, this->effectorId);
+  if (this->effectorId>=0)
+  {
+    return RCSBODY_BY_ID(this->graph, this->effectorId);
+  }
+
+  // Generic bodies
+  if (this->effectorId<=-10)
+  {
+    int gBdyId = -this->effectorId-10;
+    RCHECK(gBdyId<RCS_NUM_GENERIC_BODIES);
+    return RCSBODY_BY_ID(this->graph, graph->gBody[gBdyId]);
+  }
+
+  return NULL;
 }
 
 /*******************************************************************************
@@ -1228,7 +1321,20 @@ const RcsBody* Rcs::Task::getEffector() const
  ******************************************************************************/
 const RcsBody* Rcs::Task::getRefBody() const
 {
-  return RCSBODY_BY_ID(this->graph, this->refBodyId);
+  if (this->refBodyId>=0)
+  {
+    return RCSBODY_BY_ID(this->graph, this->refBodyId);
+  }
+
+  // Generic bodies
+  if (this->refBodyId<=-10)
+  {
+    int gBdyId = -this->refBodyId-10;
+    RCHECK(gBdyId<RCS_NUM_GENERIC_BODIES);
+    return RCSBODY_BY_ID(this->graph, graph->gBody[gBdyId]);
+  }
+
+  return NULL;
 }
 
 /*******************************************************************************
@@ -1236,31 +1342,44 @@ const RcsBody* Rcs::Task::getRefBody() const
  ******************************************************************************/
 const RcsBody* Rcs::Task::getRefFrame() const
 {
-  return RCSBODY_BY_ID(this->graph, this->refFrameId);
-}
+  if (this->refFrameId>=0)
+  {
+    return RCSBODY_BY_ID(this->graph, this->refFrameId);
+  }
 
-/*******************************************************************************
- * Overwrites the effector body of the task
- ******************************************************************************/
-void Rcs::Task::setEffector(const RcsBody* effector)
-{
-  this->effectorId = effector ? effector->id : -1;
-}
+  // Generic bodies
+  if (this->refFrameId<=-10)
+  {
+    int gBdyId = -this->refFrameId-10;
+    RCHECK(gBdyId<RCS_NUM_GENERIC_BODIES);
+    return RCSBODY_BY_ID(this->graph, graph->gBody[gBdyId]);
+  }
 
-/*******************************************************************************
- * Overwrites the refBody of the task
- ******************************************************************************/
-void Rcs::Task::setRefBody(const RcsBody* referenceBody)
-{
-  this->refBodyId = referenceBody ? referenceBody->id : -1;
+  return NULL;
 }
 
 /*******************************************************************************
  * Overwrites the refFrame  body of the task
  ******************************************************************************/
-void Rcs::Task::setRefFrame(const RcsBody* referenceFrame)
+void Rcs::Task::setRefFrameId(int referenceFrameId)
 {
-  this->refFrameId = referenceFrame ? referenceFrame->id : -1;
+  this->refFrameId = referenceFrameId;
+}
+
+/*******************************************************************************
+ * Overwrites the effector body of the task
+ ******************************************************************************/
+void Rcs::Task::setEffectorId(int effectorId)
+{
+  this->effectorId = effectorId;
+}
+
+/*******************************************************************************
+ * Overwrites the refBody of the task
+ ******************************************************************************/
+void Rcs::Task::setRefBodyId(int referenceBodyId)
+{
+  this->refBodyId = referenceBodyId;
 }
 
 /*******************************************************************************
@@ -1389,19 +1508,37 @@ void Rcs::Task::toXMLStart(FILE* out) const
  ******************************************************************************/
 void Rcs::Task::toXMLBody(FILE* out) const
 {
-  if (getEffector())
+  if (getEffectorId()<0)
+  {
+    fprintf(out, " effector=\"GenericBody%d\"", -10-getEffectorId());
+  }
+  else
   {
     fprintf(out, " effector=\"%s\"", getEffector()->name);
   }
 
-  if (getRefBody())
+  if (getRefBodyId()<0)
+  {
+    fprintf(out, " refBdy=\"GenericBody%d\"", -10-getRefBodyId());
+  }
+  else
   {
     fprintf(out, " refBdy=\"%s\"", getRefBody()->name);
   }
 
-  if (getRefFrame() && (getRefFrame()!= getRefBody()))
+  if (getRefFrameId()<0)
   {
-    fprintf(out, " refFrame=\"%s\"", getRefFrame()->name);
+    if (getRefFrameId()!= getRefBodyId())
+    {
+      fprintf(out, " refFrame=\"GenericBody%d\"", -10-getRefFrameId());
+    }
+  }
+  else
+  {
+    if (getRefFrame() && (getRefFrame()!= getRefBody()))
+    {
+      fprintf(out, " refFrame=\"%s\"", getRefFrame()->name);
+    }
   }
 
 }

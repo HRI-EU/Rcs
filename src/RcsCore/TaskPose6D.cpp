@@ -57,7 +57,7 @@ Rcs::TaskPose6D::TaskPose6D(const std::string& className_,
 
   Rcs::Task* abc = new TaskEuler3D("ABC", node, _graph, 3);
 
-  abc->setRefFrame(abc->getRefBody());
+  abc->setRefFrameId(abc->getRefBodyId());
 
   addTask(abc);
 
@@ -114,9 +114,9 @@ Rcs::TaskPose6D::TaskPose6D(RcsGraph* graph_,
   setName(taskName);
   addTask(new TaskPosition3D(graph_, effector, refBdy, refFrame));
   addTask(new TaskEuler3D(graph_, effector, refBdy, refFrame));
-  setEffector(effector);
-  setRefBody(refBdy);
-  setRefFrame(refFrame ? refFrame : refBdy);
+  setEffectorId(effector ? effector->id : -1);
+  setRefBodyId(refBdy ? refBdy->id : -1);
+  setRefFrameId(refFrame ? refFrame->id : getRefBodyId());
 }
 
 /*******************************************************************************

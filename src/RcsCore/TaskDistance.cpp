@@ -98,11 +98,11 @@ Rcs::TaskDistance::TaskDistance(RcsGraph* graph_,
   setClassName("Distance");
   setName("Distance " + std::string(effector ? effector->name : "NULL") + "-"
           + std::string(refBdy ? refBdy->name : "NULL"));
-  setEffector(effector);
-  setRefBody(refBdy);
+  setEffectorId(effector->id);
+  setRefBodyId(refBdy->id);
   if (!getRefFrame())
   {
-    setRefFrame(refBdy);
+    setRefFrameId(refBdy->id);
   }
   setDim(1);
   resetParameter(Parameters(-0.1, 1.0, 1.0, "Distance [m]"));

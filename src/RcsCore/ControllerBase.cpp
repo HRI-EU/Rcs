@@ -1899,7 +1899,25 @@ bool Rcs::ControllerBase::add(const ControllerBase& other,
 /*******************************************************************************
  *
  ******************************************************************************/
-const RcsBody* getBodyWithSuffix(const RcsBody* bdy, std::string suffix, const RcsGraph* graph)
+static inline int getBodyIdWithSuffix(const RcsBody* bdy, std::string suffix,
+                                      const RcsGraph* graph)
+{
+  if (bdy==NULL)
+  {
+    return -1;
+  }
+
+  std::string newName = std::string(bdy->name) + suffix;
+  const RcsBody* bdy_suffixed = RcsGraph_getBodyByName(graph, newName.c_str());
+  return bdy_suffixed ? bdy_suffixed->id : -1;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static inline const RcsBody* getBodyWithSuffix(const RcsBody* bdy,
+                                               std::string suffix,
+                                               const RcsGraph* graph)
 {
   if (bdy==NULL)
   {
@@ -1947,9 +1965,9 @@ bool Rcs::ControllerBase::add(const ControllerBase* other,
     }
 
     // \todo: Should go into a task-specific function
-    copyOfOtherTask->setEffector(getBodyWithSuffix(copyOfOtherTask->getEffector(), suffix, getGraph()));
-    copyOfOtherTask->setRefBody(getBodyWithSuffix(copyOfOtherTask->getRefBody(), suffix, getGraph()));
-    copyOfOtherTask->setRefFrame(getBodyWithSuffix(copyOfOtherTask->getRefFrame(), suffix, getGraph()));
+    copyOfOtherTask->setEffectorId(getBodyIdWithSuffix(copyOfOtherTask->getEffector(), suffix, getGraph()));
+    copyOfOtherTask->setRefBodyId(getBodyIdWithSuffix(copyOfOtherTask->getRefBody(), suffix, getGraph()));
+    copyOfOtherTask->setRefFrameId(getBodyIdWithSuffix(copyOfOtherTask->getRefFrame(), suffix, getGraph()));
 
     // Reassign sub-tasks in CompositeTask
     // \todo: Should go into a task-specific function
@@ -1960,9 +1978,9 @@ bool Rcs::ControllerBase::add(const ControllerBase* other,
       for (size_t i=0; i<cTask->getNumberOfTasks(); ++i)
       {
         Task* ti = cTask->getSubTask(i);
-        ti->setEffector(getBodyWithSuffix(ti->getEffector(), suffix, getGraph()));
-        ti->setRefBody(getBodyWithSuffix(ti->getRefBody(), suffix, getGraph()));
-        ti->setRefFrame(getBodyWithSuffix(ti->getRefFrame(), suffix, getGraph()));
+        ti->setEffectorId(getBodyIdWithSuffix(ti->getEffector(), suffix, getGraph()));
+        ti->setRefBodyId(getBodyIdWithSuffix(ti->getRefBody(), suffix, getGraph()));
+        ti->setRefFrameId(getBodyIdWithSuffix(ti->getRefFrame(), suffix, getGraph()));
       }
 
     }

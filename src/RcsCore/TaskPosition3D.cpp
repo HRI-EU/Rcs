@@ -99,9 +99,9 @@ TaskPosition3D::TaskPosition3D(RcsGraph* graph_,
   this->graph = graph_;
   setClassName("XYZ");
   setDim(3);
-  setEffector(effector);
-  setRefBody(refBdy);
-  setRefFrame(refFrame ? refFrame : refBdy);
+  setEffectorId(effector ? effector->id : -1);
+  setRefBodyId(refBdy ? refBdy->id : -1);
+  setRefFrameId(refFrame ? refFrame->id : getRefBodyId());
   resetParameter(Parameters(-2.5, 2.5, 1.0, "X Position [m]"));
   addParameter(Parameters(-2.5, 2.5, 1.0, "Y Position [m]"));
   addParameter(Parameters(-2.5, 2.5, 1.0, "Z Position [m]"));

@@ -599,28 +599,43 @@ public:
   /*@{*/
 
   /*! \brief Returns the effector body of the task, or NULL if none exists.
+   *         The function resolves the link to a GenericBody.
    */
   virtual const RcsBody* getEffector() const;
 
   /*! \brief Returns the refBdy of the task, or NULL if none exists.
+   *         The function resolves the link to a GenericBody.
    */
   virtual const RcsBody* getRefBody() const;
 
   /*! \brief Returns the refFrame of the task, or NULL if none exists.
+   *         The function resolves the link to a GenericBody.
    */
   virtual const RcsBody* getRefFrame() const;
 
+  /*! \brief Returns the effector body id of the task, -1 if none exists.
+   */
+  virtual int getEffectorId() const;
+
+  /*! \brief Returns the refBdy id of the task, -1 if none exists.
+   */
+  virtual int getRefBodyId() const;
+
+  /*! \brief Returns the refFrame id of the task, -1 if none exists.
+   */
+  virtual int getRefFrameId() const;
+
   /*! \brief Overwrites the effector body of the task.
    */
-  virtual void setEffector(const RcsBody* effector);
+  virtual void setEffectorId(int effectorId);
 
   /*! \brief Overwrites the reference body of the task.
    */
-  virtual void setRefBody(const RcsBody* referenceBody);
+  virtual void setRefBodyId(int referenceBodyId);
 
   /*! \brief Overwrites the reference frame of the task.
    */
-  virtual void setRefFrame(const RcsBody* referenceFrame);
+  virtual void setRefFrameId(int referenceFrameId);
 
   /*! \brief Computes the relative rotation matrix between effector and
    *         reference body according to
@@ -789,6 +804,13 @@ private:
    */
   Task(const Task& copyFromMe);
 
+  /*! \brief If name starts with "GenericBody", the function returns
+   *         -10 - <number> where number is the number following after
+   *         "GenericBody". If number is not within the interval
+   *         [0...RCS_NUM_GENERIC_BODIES-1], the function complains on
+   *         debug level 1 and returns -1.
+   */
+  int getGenericBodyId(const char* name) const;
 
   /*! \brief Name of the task
    */

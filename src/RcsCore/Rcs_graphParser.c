@@ -1334,7 +1334,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
 
       if (getXMLNodePropertyStringN(node, a, gBody, 32))
       {
-        RLOG(5, "Linking \"%s\"", a);
+        RLOG(5, "Linking \"%s\" to \"%s\"", a, gBody);
         RcsBody* b = RcsGraph_getBodyByName(self, gBody);
 
         if (b == NULL)

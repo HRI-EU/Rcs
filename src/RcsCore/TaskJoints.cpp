@@ -69,7 +69,7 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
     {
       const RcsBody* bdy = RcsGraph_getBodyByName(_graph, tmp.c_str());
       RCHECK_MSG(bdy, "Can't find body \"%s\" for jntsVec", tmp.c_str());
-      setEffector(bdy);
+      setEffectorId(bdy->id);
       const RcsJoint* jPtr = RCSJOINT_BY_ID(_graph, bdy->jntId);
 
       while (jPtr)
@@ -95,7 +95,7 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
       hasRefBdy = true;
       const RcsBody* bdy = RcsGraph_getBodyByName(_graph, tmp.c_str());
       RCHECK_MSG(bdy, "Can't find body \"%s\" for refJntsVec", tmp.c_str());
-      setRefBody(bdy);
+      setRefBodyId(bdy->id);
       const RcsJoint* jPtr = RCSJOINT_BY_ID(_graph, bdy->jntId);
 
       while (jPtr)
@@ -203,7 +203,7 @@ Rcs::TaskJoints::TaskJoints(const RcsBody* effector, RcsGraph* graph_):
   CompositeTask(graph_)
 {
   setClassName("Joints");
-  setEffector(effector);
+  setEffectorId(effector ? effector->id : -1);
 
   RCSBODY_FOREACH_JOINT(graph_, effector)
   {
@@ -220,8 +220,8 @@ Rcs::TaskJoints::TaskJoints(const RcsBody* effector, const RcsBody* refBdy,
   CompositeTask(graph_)
 {
   setClassName("Joints");
-  setEffector(effector);
-  setRefBody(refBdy);
+  setEffectorId(effector ? effector->id : -1);
+  setRefBodyId(refBdy ? refBdy->id : -1);
   const unsigned int nJoints = RcsBody_numJoints(graph, effector);
   RCHECK_MSG(nJoints > 0, "Body \"%s\"", effector ? effector->name : "NULL");
 

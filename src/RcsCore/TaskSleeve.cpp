@@ -74,9 +74,9 @@ Rcs::TaskSleeve::TaskSleeve(const std::string& className,
 
     RCHECK(sh&&el&&wr&&sl);
 
-    setEffector(wr);
-    setRefBody(el);
-    setRefFrame(sh);
+    setEffectorId(wr->id);
+    setRefBodyId(el->id);
+    setRefFrameId(sh->id);
     slideBdyId = sl->id;
 
     double guiMax = 1.5, guiMin = -0.5;

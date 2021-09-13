@@ -93,9 +93,9 @@ Rcs::TaskDistance3D::TaskDistance3D(RcsGraph* graph_,
   setName("Dist3D " + std::string(effector ? effector->name : "NULL") + "-"
           + std::string(refBdy ? refBdy->name : "NULL"));
   setDim(3);
-  setEffector(effector);
-  setRefBody(refBdy);
-  setRefFrame(refBdy);
+  setEffectorId(effector ? effector->id : -1);
+  setRefBodyId(refBdy ? refBdy->id : -1);
+  setRefFrameId(refBdy ? refBdy->id : -1);
   resetParameter(Task::Parameters(-1.0, 1.0, 1.0, "X [m]"));
   addParameter(Task::Parameters(-1.0, 1.0, 1.0, "Y [m]"));
   addParameter(Task::Parameters(-1.0, 1.0, 1.0, "Z [m]"));

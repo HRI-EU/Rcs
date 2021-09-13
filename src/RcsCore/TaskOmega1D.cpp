@@ -96,9 +96,9 @@ Rcs::TaskOmega1D::TaskOmega1D(const std::string& className,
   this->graph = graph_;
   setClassName(className);
   setDim(1);
-  setEffector(effector);
-  setRefBody(refBdy);
-  setRefFrame(refFrame ? refFrame : refBdy);
+  setEffectorId(effector ? effector->id : -1);
+  setRefBodyId(refBdy ? refBdy->id : -1);
+  setRefFrameId(refFrame ? refFrame->id : getRefBodyId());
 
   if (getClassName()=="Ad")
   {

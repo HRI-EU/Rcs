@@ -81,9 +81,9 @@ Rcs::TaskEuler3D::TaskEuler3D(RcsGraph* graph_,
   this->graph = graph_;
   setClassName("ABC");
   setDim(3);
-  setEffector(effector);
-  setRefBody(refBdy);
-  setRefFrame(refFrame ? refFrame : refBdy);
+  setEffectorId(effector ? effector->id : -1);
+  setRefBodyId(refBdy ? refBdy->id : -1);
+  setRefFrameId(refFrame ? refFrame->id : getRefBodyId());
   resetParameter(Task::Parameters(-M_PI, M_PI, (180.0/M_PI), "A [deg]"));
   addParameter(Task::Parameters(-M_PI, M_PI, (180.0/M_PI), "B [deg]"));
   addParameter(Task::Parameters(-M_PI, M_PI, (180.0/M_PI), "C [deg]"));

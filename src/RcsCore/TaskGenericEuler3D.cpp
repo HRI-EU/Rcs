@@ -281,9 +281,9 @@ Rcs::TaskGenericEuler3D::TaskGenericEuler3D(RcsGraph* graph_,
 
   setName(taskName);
 
-  setEffector(effector);
-  setRefBody(refBdy);
-  setRefFrame(refFrame ? refFrame : refBdy);
+  setEffectorId(effector ? effector->id : -1);
+  setRefBodyId(refBdy ? refBdy->id : -1);
+  setRefFrameId(refFrame ? refFrame->id : getRefBodyId());
 
   // we reconstruct the Euler order definition from the string
   int EulOrdPara[4] = {0, 0, 0, 0}; // used for EulOrd macro

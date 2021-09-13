@@ -54,9 +54,9 @@ Rcs::TaskOmega3D::TaskOmega3D(RcsGraph* graph, const RcsBody* effector,
   setDim(3);
   setClassName("ABCd");
 
-  setEffector(effector);
-  setRefBody(refBdy);
-  setRefFrame(refFrame ? refFrame : refBdy);
+  setEffectorId(effector ? effector->id : -1);
+  setRefBodyId(refBdy ? refBdy->id : -1);
+  setRefFrameId(refFrame ? refFrame->id : getRefBodyId());
 
   resetParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "Ad [deg/sec]"));
   addParameter(Parameters(-M_PI, M_PI, (180.0/M_PI), "Bd [deg/sec]"));
