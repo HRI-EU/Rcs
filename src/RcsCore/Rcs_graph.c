@@ -2724,7 +2724,18 @@ void RcsGraph_fprintXML(FILE* out, const RcsGraph* self)
     return;
   }
 
-  fprintf(out, "<Graph name=\"DefaultPose\" >\n\n");
+  fprintf(out, "<Graph name=\"DefaultPose\"");
+
+  // Write generic body links in case their id is not -1
+  for (int i=0; i<RCS_NUM_GENERIC_BODIES; ++i)
+  {
+    if (self->gBody[i]>=0)
+    {
+      fprintf(out, "\n       GenericBody%d=\"%s\"", i,
+              self->bodies[self->gBody[i]].name);
+    }
+  }
+  fprintf(out, " >\n\n");
 
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
