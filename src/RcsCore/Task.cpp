@@ -1528,32 +1528,32 @@ void Rcs::Task::toXMLBody(FILE* out) const
 #else
 
   // Here, names of Generic Bodies remain preserved
-  if (getEffectorId()<0)
+  if (getEffectorId()<=-10)
   {
     fprintf(out, " effector=\"GenericBody%d\"", -10-getEffectorId());
   }
-  else
+  else if (getEffectorId()>=0)
   {
     fprintf(out, " effector=\"%s\"", getEffector()->name);
   }
 
-  if (getRefBodyId()<0)
+  if (getRefBodyId()<=-10)
   {
     fprintf(out, " refBdy=\"GenericBody%d\"", -10-getRefBodyId());
   }
-  else
+  else if (getRefBodyId()>=0)
   {
     fprintf(out, " refBdy=\"%s\"", getRefBody()->name);
   }
 
-  if (getRefFrameId()<0)
+  if (getRefFrameId()<=-10)
   {
     if (getRefFrameId()!= getRefBodyId())
     {
       fprintf(out, " refFrame=\"GenericBody%d\"", -10-getRefFrameId());
     }
   }
-  else
+  else if (getRefFrameId()>=0)
   {
     if (getRefFrame() && (getRefFrame()!= getRefBody()))
     {
