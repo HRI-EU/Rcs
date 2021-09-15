@@ -75,9 +75,9 @@ private:
  * coords, and the mouse coords in the bodies frame of reference. If no body
  * is found under the mouse pointer, the mouse coordinates are left unchanged.
  *****************************************************************************/
-const RcsBody* Rcs::MouseDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
-                                                    osgGA::GUIActionAdapter& aa,
-                                                    double I_pt[3], double k_pt[3])
+RcsBody* Rcs::MouseDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
+                                              osgGA::GUIActionAdapter& aa,
+                                              double I_pt[3], double k_pt[3])
 {
   Rcs::BodyNode* nd = getNodeUnderMouse<Rcs::BodyNode*>(ea, aa, I_pt);
 
@@ -86,7 +86,7 @@ const RcsBody* Rcs::MouseDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter
     return NULL;
   }
 
-  const RcsBody* bdy = nd->body();
+  RcsBody* bdy = nd->body();
 
   if (k_pt && I_pt)
   {
@@ -99,12 +99,23 @@ const RcsBody* Rcs::MouseDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter
 /******************************************************************************
  *
  *****************************************************************************/
+const RcsBody* Rcs::MouseDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
+                                                    osgGA::GUIActionAdapter& aa,
+                                                    double I_pt[3], double k_pt[3]) const
+{
+  return getBodyUnderMouse(ea, aa, I_pt, k_pt);
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
 Rcs::MouseDragger::MouseDragger() : osg::Switch(),
   _draggedBody(NULL),
   _leftShiftPressed(false),
   _leftControlPressed(false),
   _LMBPressed(false),
-  _RMBPressed(false)
+  _RMBPressed(false),
+  _enableArrowKeyTranslation(true)
 {
   setName("MouseDragger");
   KeyCatcherBase::registerKey("Left Shift", "Enable body dragging", "MouseDragger");
@@ -249,6 +260,46 @@ bool Rcs::MouseDragger::callback(const osgGA::GUIEventAdapter& ea,
         _leftControlPressed = true;
       }
 
+      if (_enableArrowKeyTranslation)
+      {
+        RcsBody* bdy = Rcs::MouseDragger::getBodyUnderMouse(ea, aa);
+        if (bdy)
+        {
+          const double disp = 0.01;
+          double dx[3];
+          Vec3d_setZero(dx);
+
+          if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Left)
+          {
+            dx[1] -= disp;
+          }
+          else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Right)
+          {
+            dx[1] += disp;
+          }
+          else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Up)
+          {
+            dx[0] += disp;
+          }
+          else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Down)
+          {
+            dx[0] -= disp;
+          }
+          else if (ea.getKey() == '+')
+          {
+            dx[2] += disp;
+          }
+          else if (ea.getKey() == '-')
+          {
+            dx[2] -= disp;
+          }
+
+          Vec3d_rotateSelf(dx, bdy->A_BI.rot);
+          Vec3d_addSelf(bdy->A_BP.org, dx);
+        }
+
+      }
+
       break;
     }
 
@@ -322,6 +373,14 @@ bool Rcs::MouseDragger::callback(const osgGA::GUIEventAdapter& ea,
  *****************************************************************************/
 void Rcs::MouseDragger::update()
 {
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+void Rcs::MouseDragger::setEnableArrowKeyTranslation(bool enable)
+{
+  _enableArrowKeyTranslation = enable;
 }
 
 /******************************************************************************

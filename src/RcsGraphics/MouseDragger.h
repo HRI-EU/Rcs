@@ -66,6 +66,11 @@ public:
    */
   MouseDragger();
 
+  /*! \brief Enables or disables changing the bodie's relative transform using
+   *         the arrow keys.
+   */
+  virtual void setEnableArrowKeyTranslation(bool enable);
+
   /*! \brief Returns a pointer to the currently dragged body. If no body
    *         is dragged, NULL will be returned.
    */
@@ -174,7 +179,12 @@ public:
   virtual const RcsBody* getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
                                            osgGA::GUIActionAdapter& aa,
                                            double I_pt[3]=NULL,
-                                           double k_pt[3]=NULL);
+                                           double k_pt[3]=NULL) const;
+
+  virtual RcsBody* getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
+                                     osgGA::GUIActionAdapter& aa,
+                                     double I_pt[3]=NULL,
+                                     double k_pt[3]=NULL);
 
 protected:
 
@@ -204,6 +214,7 @@ protected:
   bool _leftControlPressed;    ///< True if left Control key is pressed
   bool _LMBPressed;            ///< True if left mouse button is pressed
   bool _RMBPressed;            ///< True if right mouse button is pressed
+  bool _enableArrowKeyTranslation;///< Enables translating bodies with the arrow keys
 
 private:
 

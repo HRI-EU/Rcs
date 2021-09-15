@@ -67,10 +67,10 @@ protected:
    */
   virtual void updateWorldAnchor();
 
-  const RcsBody* getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
-                                   osgGA::GUIActionAdapter& aa,
-                                   double I_pt[3]=NULL,
-                                   double k_pt[3]=NULL);
+  virtual RcsBody* getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
+                                     osgGA::GUIActionAdapter& aa,
+                                     double I_pt[3]=NULL,
+                                     double k_pt[3]=NULL);
 
   /*! \brief Handles the Gui events.
    */

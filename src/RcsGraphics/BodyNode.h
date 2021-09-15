@@ -107,6 +107,7 @@ public:
   void setAlpha(float alpha, osg::Node* node);
   bool setTexture(std::string textureFile);
   const RcsBody* body() const;
+  RcsBody* body();
   const RcsBody* parent() const;
   int bodyId() const;
   void hide();

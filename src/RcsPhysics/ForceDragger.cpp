@@ -89,6 +89,7 @@ void Rcs::ForceDragger::updateWorldAnchor()
 bool Rcs::ForceDragger::callback(const osgGA::GUIEventAdapter& ea,
                                  osgGA::GUIActionAdapter& aa)
 {
+  setEnableArrowKeyTranslation(false);
   MouseDragger::callback(ea, aa);   // calls update (see above)
 
   const RcsBody* bdy = Rcs::MouseDragger::getBodyUnderMouse(ea, aa);
@@ -143,9 +144,9 @@ bool Rcs::ForceDragger::callback(const osgGA::GUIEventAdapter& ea,
 /******************************************************************************
  * Same as in MouseDragger, except that the physics transformation is used.
  *****************************************************************************/
-const RcsBody* Rcs::ForceDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
-                                                    osgGA::GUIActionAdapter& aa,
-                                                    double I_pt[3], double k_pt[3])
+RcsBody* Rcs::ForceDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
+                                              osgGA::GUIActionAdapter& aa,
+                                              double I_pt[3], double k_pt[3])
 {
   Rcs::BodyNode* nd = getNodeUnderMouse<Rcs::BodyNode*>(ea, aa, I_pt);
 
@@ -154,7 +155,7 @@ const RcsBody* Rcs::ForceDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter
     return NULL;
   }
 
-  const RcsBody* bdy = nd->body();
+  RcsBody* bdy = nd->body();
 
   if (k_pt && I_pt)
   {
