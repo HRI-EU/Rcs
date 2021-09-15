@@ -469,7 +469,6 @@ void Viewer::create(bool fancy, bool startupWithShadow)
     cameraLight->getLight()->setSpecular(osg::Vec4(1.0, 1.0, 1.0, 1.0));
     rootnode->addChild(cameraLight.get());
     rootnode->getOrCreateStateSet()->setMode(GL_LIGHT1, osg::StateAttribute::ON);
-
   }
 
   // Shadow map scene. We use the sunlight to case shadows.

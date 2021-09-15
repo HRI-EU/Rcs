@@ -444,9 +444,6 @@ void ShapeNode::addShape(bool resizeable)
   {
     osg::ref_ptr<COSNode> cFrame = new COSNode(shape->scale3d[0],
                                                ext[0], ext[1], ext[2]);
-    cFrame->setPosition(osg::Vec3(shape->A_CB.org[0], shape->A_CB.org[1],
-                                  shape->A_CB.org[2]));
-    cFrame->setRotation(QuatFromHTr(&shape->A_CB));
     addChild(cFrame.get());
     frame = cFrame;
   }
