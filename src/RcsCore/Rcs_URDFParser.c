@@ -115,25 +115,26 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
 
     char meshFileFull[512] = "";
 
-    if (STRNEQ(meshFile, "package://", 10))
-    {
-      const char* hgrDir = getenv("SIT");
+    if (STRNEQ(meshFile, "package://", 10)) {
+        // Iterate over ressource paths and try to find mesh
+        unsigned int pathIdx = 0;
+        const char* resourcePath = NULL;
+        while ((resourcePath = Rcs_getResourcePath(pathIdx)) != NULL) {
+          snprintf(meshFileFull,
+                   512,
+                   "%s%s",
+                   resourcePath,
+                   &meshFile[10]);
 
-      if (hgrDir != NULL)
-      {
-        snprintf(meshFileFull, 512, "%s%s%s", hgrDir,
-                 "/Data/RobotMeshes/1.0/data/", &meshFile[10]);
-      }
+            if (File_exists(meshFileFull)) {
+                RLOG(5, "Found mesh file \"%s\"", meshFileFull);
+                break;
+            }
 
-      if (File_exists(meshFileFull)==false)
-      {
-        RLOG(0, "File \"%s\" not found", meshFileFull);
-      }
-
-    }
-    else
-    {
-      Rcs_getAbsoluteFileName(meshFile, meshFileFull);
+            pathIdx++;
+        }
+    } else {
+        Rcs_getAbsoluteFileName(meshFile, meshFileFull);
     }
 
     shape->meshFile = RNALLOC(strlen(meshFileFull) + 1, char);
