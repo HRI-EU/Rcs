@@ -1786,9 +1786,9 @@ int main(int argc, char** argv)
         double dtSim = Timer_getTime();
         sim->simulate(dt, graph, NULL, NULL, !skipControl);
         sim->getJointAngles(q_curr);
-        sim->getJointTorque(T_curr);
-        REXEC(1)
+        REXEC(5)
         {
+          sim->getJointTorque(T_curr);
           MatNd_printCommentDigits("T_curr", T_curr, 4);
         }
         dtSim = Timer_getTime() - dtSim;

@@ -2,7 +2,7 @@
 
 
 <Body name="Ground Plane" physics="kinematic" >
-  <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0" 
+  <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0"
          color="PEWTER" graphics="true" physics="true" />
   <Shape type="FRAME" scale="1" />
 </Body>
@@ -56,14 +56,9 @@
   <Shape type="BOX" color="RED" extents=".25 .25 .05" graphics="true" material="object" />
 </Body>
 
- 
-
 <Body name="Bunny" xrigid_body_joints="0.45 0 0 0 0 0" rigid_body_joints=".75 -0.35 0.81 0 0 -90" physics="dynamic" mass="1" >
-  <Shape type="MESH" meshFile="Bunny/bunny-coarse.stl" softPhysics="true" />
+  <Shape type="MESH" meshFile="Bunny/bunny.stl" softPhysics="true" />
 </Body>
-
-<!--
--->
 
 
 

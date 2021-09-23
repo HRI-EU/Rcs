@@ -461,14 +461,16 @@ void BulletSoftSimulation::createSoftBodies()
                  << softBdy->m_nodes.size() << " nodes (" << softMesh->nFaces
                  << " faces " << softMesh->nVertices << " vertices) ");
 
-        RCHECK(BODY->physicsSim==RCSBODY_PHYSICS_FIXED);
+        // RCHECK_MSG(BODY->physicsSim==RCSBODY_PHYSICS_FIXED,
+        //            "Body: %s   parent: %s", BODY->name, parent->name);
         std::map<int, Rcs::BulletRigidBody*>::iterator it;
         it = bdyMap.find(parent->id);
         RCHECK(it!=bdyMap.end());
         BulletRigidBody* bParent = it->second;
 
         int anchoredVertices = connectSoftToRigidBody(softBdy, bParent);
-        RLOG(5, "Anchored %d vertices to parent", anchoredVertices);
+        RLOG(5, "Anchored %d vertices to parent %s",
+             anchoredVertices, parent->name);
       }
 
       // Link rigid child bodies to soft parent

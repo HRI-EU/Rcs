@@ -708,7 +708,7 @@ btTypedConstraint* Rcs::BulletRigidBody::createJoint(const RcsGraph* graph)
 
   if (RcsBody_numJoints(graph, body) != 1)
   {
-    RLOG(1, "Skipping joint: found %d joints in body %s (should be 1)",
+    RLOG(5, "Skipping joint: found %d joints in body %s (should be 1)",
          RcsBody_numJoints(graph, body), getBodyName());
     return NULL;
   }

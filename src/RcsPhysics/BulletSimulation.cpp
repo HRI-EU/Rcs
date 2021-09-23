@@ -2159,7 +2159,7 @@ bool Rcs::BulletSimulation::check() const
       MatNd_mul(x_dot, J_lin, q_dot);
       MatNd_mul(omega, J_rot, q_dot);
 
-      REXEC(1)
+      REXEC(5)
       {
         RLOG(0, "Body %s:", btBdy->getBodyName());
         RLOG(0, "x_dot: [%f %f %f] vs [%f %f %f] err=%.2f %%",
