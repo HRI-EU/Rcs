@@ -49,6 +49,7 @@
 #include <osgFX/Cartoon>
 #include <osgGA/TrackballManipulator>
 #include <osgViewer/ViewerEventHandlers>
+#include <osg/GraphicsContext>
 
 #include <iostream>
 #include <cstring>
@@ -423,6 +424,10 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   options->setOptionString("noRotation");
   osgDB::Registry::instance()->setOptions(options.get());
 
+  // osg::GraphicsContext::WindowingSystemInterface* wsi =
+  //   osg::GraphicsContext::getWindowingSystemInterface();
+  // wsi->setScreenResolution(osg::GraphicsContext::ScreenIdentifier(0), 800, 600);
+
   this->viewer = new osgViewer::Viewer();
 
   // Mouse manipulator (needs to go before event handler)
@@ -530,8 +535,12 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   viewer->home();
 
   KeyCatcherBase::registerKey("F10", "Toggle full screen", "Viewer");
+  KeyCatcherBase::registerKey("F5", "Full screen resolution down", "Viewer");
+  KeyCatcherBase::registerKey("F6", "Full screen resolution up", "Viewer");
   osg::ref_ptr<osgViewer::WindowSizeHandler> wsh = new osgViewer::WindowSizeHandler;
   wsh->setKeyEventToggleFullscreen(osgGA::GUIEventAdapter::KEY_F10);
+  wsh->setKeyEventWindowedResolutionDown(osgGA::GUIEventAdapter::KEY_F5);
+  wsh->setKeyEventWindowedResolutionUp(osgGA::GUIEventAdapter::KEY_F6);
   viewer->addEventHandler(wsh.get());
 
   KeyCatcherBase::registerKey("F9", "Toggle continuous screenshots", "Viewer");
@@ -552,6 +561,7 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   stats->setKeyEventTogglesOnScreenStats('z');
   stats->setKeyEventPrintsOutStats('Z');
   viewer->addEventHandler(stats.get());
+
 
   setTitle("RcsViewer");
 }
