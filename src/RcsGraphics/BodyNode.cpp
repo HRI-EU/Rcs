@@ -826,20 +826,38 @@ void BodyNode::updateDynamicMeshes()
 {
   RCSBODY_TRAVERSE_SHAPES(body())
   {
-    if ((SHAPE->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) == 0)
+    if ((!SHAPE->resizeable) || (!SHAPE->mesh))
     {
       continue;
+    }
+
+    std::vector<MeshNode*> m;
+
+    if (collisionNodeVisible())
+    {
+      std::vector<MeshNode*> tmp = findChildrenOfType<MeshNode>(_collisionNode.get());
+      m.insert(m.end(), tmp.begin(), tmp.end());
+    }
+
+    if (graphicsNodeVisible())
+    {
+      std::vector<MeshNode*> tmp = findChildrenOfType<MeshNode>(_graphicsNode.get());
+      m.insert(m.end(), tmp.begin(), tmp.end());
+    }
+
+    if (physicsNodeVisible())
+    {
+      std::vector<MeshNode*> tmp = findChildrenOfType<MeshNode>(_physicsNode.get());
+      m.insert(m.end(), tmp.begin(), tmp.end());
+    }
+
+    if (depthNodeVisible())
+    {
+      std::vector<MeshNode*> tmp = findChildrenOfType<MeshNode>(_depthNode.get());
+      m.insert(m.end(), tmp.begin(), tmp.end());
     }
 
     RcsMeshData* meshDat = SHAPE->mesh;
-
-    if (meshDat == NULL)
-    {
-      RLOG(1, "Body \"%s\" has mesh shape without RcsMeshData", body()->name);
-      continue;
-    }
-
-    std::vector<MeshNode*> m = findChildrenOfType<MeshNode>(_physicsNode.get());
 
     for (size_t i=0; i<m.size(); ++i)
     {

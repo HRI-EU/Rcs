@@ -42,13 +42,13 @@
 
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
-#include <osgViewer/ViewerEventHandlers>
 #include <osgUtil/Optimizer>
 #include <osg/StateSet>
 #include <osg/PolygonMode>
 #include <osgShadow/ShadowMap>
 #include <osgFX/Cartoon>
 #include <osgGA/TrackballManipulator>
+#include <osgViewer/ViewerEventHandlers>
 
 #include <iostream>
 #include <cstring>
@@ -530,8 +530,7 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   viewer->home();
 
   KeyCatcherBase::registerKey("F10", "Toggle full screen", "Viewer");
-  osg::ref_ptr<osgViewer::WindowSizeHandler> wsh;
-  wsh = new osgViewer::WindowSizeHandler;
+  osg::ref_ptr<osgViewer::WindowSizeHandler> wsh = new osgViewer::WindowSizeHandler;
   wsh->setKeyEventToggleFullscreen(osgGA::GUIEventAdapter::KEY_F10);
   viewer->addEventHandler(wsh.get());
 

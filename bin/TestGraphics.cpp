@@ -61,6 +61,7 @@
 #include <osgGA/TrackballManipulator>
 #include <osgDB/Registry>
 #include <osgFX/Cartoon>
+#include <osgViewer/ViewerEventHandlers>
 
 #include <csignal>
 
@@ -508,6 +509,16 @@ static void testOsgViewer()
     osg::ref_ptr<osg::ClearNode> clearNode = new osg::ClearNode;
     clearNode->setClearColor(osg::Vec4(0.8, 0.8, 0.95, 1.0));
     rootnode->addChild(clearNode.get());
+  }
+
+  // Window size handler toggles fullscreen with F10
+  if (argP.hasArgument("-windowSizeHandler",
+                       "Test WindowSizeHandler (toggles fullscreen with F10)"));
+  {
+    osg::ref_ptr<osgViewer::WindowSizeHandler> wsh;
+    wsh = new osgViewer::WindowSizeHandler;
+    wsh->setKeyEventToggleFullscreen(osgGA::GUIEventAdapter::KEY_F10);
+    viewer->addEventHandler(wsh.get());
   }
 
   // Same as above, but with setting camera background explicitely
