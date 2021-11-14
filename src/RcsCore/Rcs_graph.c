@@ -518,21 +518,27 @@ void RcsGraph_destroy(RcsGraph* self)
        self->cfgFile, (unsigned int) self);
 
   // Destroy all bodies: Just clear shapes
-  for (unsigned int i=0; i<self->nBodies; ++i)
+  if (self->bodies)
   {
-    RcsBody_clear(&self->bodies[i]);
+    for (unsigned int i=0; i<self->nBodies; ++i)
+    {
+      RcsBody_clear(&self->bodies[i]);
+    }
+    RFREE(self->bodies);
   }
-  RFREE(self->bodies);
   RFREE(self->joints);
 
   NLOG(0, "Deleted body list");
 
   // Destroy all sensors
-  for (unsigned int i=0; i<self->nSensors; ++i)
+  if (self->sensors)
   {
-    RcsSensor_clear(&self->sensors[i]);
+    for (unsigned int i=0; i<self->nSensors; ++i)
+    {
+      RcsSensor_clear(&self->sensors[i]);
+    }
+    RFREE(self->sensors);
   }
-  RFREE(self->sensors);
 
   NLOG(0, "Deleted sensor array");
 
@@ -1840,14 +1846,24 @@ int RcsGraph_clipJointAccelerations(const RcsGraph* self, MatNd* qd,
     }
 
 
-
-    if (accClip)
+    REXEC(5)
     {
-      RLOG(5, "Acceleration clip +: accel=%f qp_curr=%f qp_prev=%f",
-           accel, RCS_RAD2DEG(qd->ele[index]),
-           RCS_RAD2DEG(qd_prev->ele[index]));
-    }
+      if (accClip)
+      {
+        if (RcsJoint_isRotation(JNT))
+        {
+          RMSG("Acceleration clip %s: accel=%f qp_curr=%f qp_prev=%f [deg]",
+               JNT->name, RCS_RAD2DEG(accel), RCS_RAD2DEG(qd->ele[index]),
+               RCS_RAD2DEG(qd_prev->ele[index]));
+        }
+        else
+        {
+          RMSG("Acceleration clip %s: accel=%f qp_curr=%f qp_prev=%f [m]",
+               JNT->name, accel, qd->ele[index], qd_prev->ele[index]);
+        }
 
+      }
+    }
 
 
   }   // RCSGRAPH_TRAVERSE_JOINTS(self)
@@ -2246,18 +2262,30 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src)
   }
 
   RcsGraph* dst = RALLOC(RcsGraph);
-  RCHECK(dst);
+
+  if (!dst)
+  {
+    RLOG(1, "Failed to allocate memory for cloning graph");
+    return NULL;
+  }
 
   // Copy the full memory block
-  memmove(dst, src, sizeof(RcsGraph));
+  memcpy(dst, src, sizeof(RcsGraph));
 
   // Adjust pointers to local data
-  dst->q       = MatNd_clone(src->q);
-  dst->q_dot   = MatNd_clone(src->q_dot);
+  dst->q = MatNd_clone(src->q);
+  dst->q_dot = MatNd_clone(src->q_dot);
   dst->bodies = RNALLOC(src->nBodies, RcsBody);
-  dst->nBodies = src->nBodies;
   dst->joints = RNALLOC(src->dof, RcsJoint);
   dst->sensors = RNALLOC(src->nSensors, RcsSensor);
+
+  if ((!dst->q) || (!dst->q_dot) || (!dst->bodies) || (!dst->joints) || (!dst->sensors))
+  {
+    RLOG(1, "Failed to allocate memory for cloning graph");
+    RcsGraph_destroy(dst);
+    return NULL;
+  }
+
   dst->nSensors = 0;
 
   // Copy all joints, it's just a big memory block
@@ -2290,8 +2318,7 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src)
   // Create the sensors
   for (unsigned int i=0; i<src->nSensors; ++i)
   {
-    RcsSensor* s = RcsGraph_insertSensor(dst);
-    RcsSensor_copy(s, &src->sensors[i]);
+    RcsSensor_copy(&dst->sensors[i], &src->sensors[i]);
   }
 
   REXEC(4)
