@@ -116,6 +116,7 @@ public:
   virtual double computeAcceleration(double goal) const;
   virtual void setDamping(double damping);
   virtual void setTarget(double targ);
+  virtual void setTimeConstant(double tmc);
   virtual void setDt(double dt);
   virtual double getTarget() const;
   virtual double getDt() const;
@@ -181,10 +182,12 @@ public:
   virtual void getPosition(double* x) const;
   virtual double getPosition(size_t index) const;
   virtual void getVelocity(double* x_dot) const;
+  virtual double getVelocity(size_t index) const;
   virtual void computeAcceleration(double* x_ddot, const double* goal) const;
   virtual size_t getDim() const;
   virtual void setDim(size_t dim);
   virtual void setDamping(double damping);
+  virtual void setTimeConstant(double tmc, size_t index);
   virtual void setTarget(const double* target);
   virtual void print() const;
   virtual void fprint(FILE* out) const;
@@ -218,9 +221,12 @@ public:
   virtual void iterate(double* x_ddot);
   virtual void iterate();
   virtual double getRamp(size_t index) const;
+  virtual void setMaxVel(double vmax, size_t index);
+  virtual double getMaxVel(size_t index) const;
 
 protected:
-  double vmax, *r;
+private:
+  double* vmax, *r;
 
 private:
   RampFilterND();

@@ -285,6 +285,11 @@ void Rcs::SecondOrderLPF1D::setTarget(double targ)
   this->target = targ;
 }
 
+void Rcs::SecondOrderLPF1D::setTimeConstant(double targ)
+{
+  this->tmc = targ;
+}
+
 void Rcs::SecondOrderLPF1D::setDt(double dt_)
 {
   this->dt = dt_;
@@ -506,6 +511,12 @@ void Rcs::SecondOrderLPFND::getVelocity(double* x_dot) const
   }
 }
 
+double Rcs::SecondOrderLPFND::getVelocity(size_t index) const
+{
+  RCHECK_MSG(index<dim, "index=%zu   dim=%zu", index, dim);
+  return filt[index]->getVelocity();
+}
+
 void Rcs::SecondOrderLPFND::computeAcceleration(double* x_ddot,
                                                 const double* goal) const
 {
@@ -521,6 +532,12 @@ void Rcs::SecondOrderLPFND::setDamping(double damping)
   {
     filt[i]->setDamping(damping);
   }
+}
+
+void Rcs::SecondOrderLPFND::setTimeConstant(double tmc, size_t index)
+{
+  RCHECK_MSG(index<dim, "index=%zu   dim=%zu", index, dim);
+  filt[index]->setTimeConstant(tmc);
 }
 
 void Rcs::SecondOrderLPFND::setTarget(const double* target)
@@ -549,18 +566,22 @@ void Rcs::SecondOrderLPFND::fprint(FILE* out) const
  * Ramp filter class for n dimensions
  ******************************************************************************/
 Rcs::RampFilterND::RampFilterND(double tmc, double vmax_, double dt, size_t dim):
-  Rcs::SecondOrderLPFND(tmc, dt, dim), vmax(vmax_)
+  Rcs::SecondOrderLPFND(tmc, dt, dim)
 {
   r = RNALLOC(dim, double);
   VecNd_setZero(r, dim);
+  vmax = RNALLOC(dim, double);
+  VecNd_setElementsTo(vmax, vmax_, dim);
 }
 
 Rcs::RampFilterND::RampFilterND(double* x, double tmc, double vmax_, double dt,
                                 size_t dim):
-  Rcs::SecondOrderLPFND(x, tmc, dt, dim), vmax(vmax_)
+  Rcs::SecondOrderLPFND(x, tmc, dt, dim)
 {
   r = RNALLOC(dim, double);
   VecNd_copy(r, x, dim);
+  vmax = RNALLOC(dim, double);
+  VecNd_setElementsTo(vmax, vmax_, dim);
 }
 
 Rcs::RampFilterND::~RampFilterND()
@@ -585,12 +606,24 @@ void Rcs::RampFilterND::getRamp(double* ramp) const
   VecNd_copy(ramp, r, dim);
 }
 
+void Rcs::RampFilterND::setMaxVel(double vmax_, size_t index)
+{
+  RCHECK_MSG(index<dim, "index=%zu   dim=%zu", index, dim);
+  vmax[index] = vmax_;
+}
+
+double Rcs::RampFilterND::getMaxVel(size_t index) const
+{
+  RCHECK_MSG(index<dim, "index=%zu   dim=%zu", index, dim);
+  return vmax[index];
+}
+
 void Rcs::RampFilterND::iterate(double* x_ddot)
 {
-  double dx_max = vmax*filt[0]->getDt();
-
   for (size_t i=0; i<dim; i++)
   {
+    double dx_max = vmax[i]*filt[0]->getDt();
+
     if (filt[i]->getTarget() > r[i]+dx_max)
     {
       r[i] += dx_max;
