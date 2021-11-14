@@ -963,6 +963,11 @@ static void testPlanefitting(int argc, char** argv)
     bool success = Math_planeFit3d((double (*)[3])I_p->ele, 6,
                                    planeFit.org, planeFit.rot[2]);
 
+    if (!success)
+    {
+      RLOG(1, "Plane fit failed");
+    }
+
     Mat3d_fromVec(planeFit.rot, planeFit.rot[2], 2);
     pthread_mutex_unlock(&mtx);
 
