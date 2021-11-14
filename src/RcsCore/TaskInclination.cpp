@@ -104,7 +104,6 @@ Rcs::TaskInclination::TaskInclination(const std::string& className,
 
   for (size_t i=0; i<vec.size(); ++i)
   {
-
     if (STRNEQ(vec[i].c_str(), "GenericBody", 11))
     {
       this->effectorVec.push_back(getGenericBodyId(vec[i].c_str()));

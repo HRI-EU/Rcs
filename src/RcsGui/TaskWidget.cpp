@@ -119,9 +119,10 @@ void TaskWidget::init(const Rcs::Task* task)
   mainGrid->addWidget(createActivationSlider(task));
 
   // Sliders for task target values
+  bool showAuxSlider = (ax_curr!=NULL) ? true : false;
   for (size_t i = 0; i < this->dimTask; i++)
   {
-    mainGrid->addWidget(createTaskComponent(task, i, true));
+    mainGrid->addWidget(createTaskComponent(task, i, showAuxSlider));
   }
 
   setLayout(mainGrid);
