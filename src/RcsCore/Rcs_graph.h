@@ -546,18 +546,10 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors, int* nWarnings);
 /*! \ingroup RcsGraphFunctions
  *  \brief Creates a deep copy of a graph.
  *
- *         The following elements are not copied:
- *         - RcsBody::extraInfo
- *         - RcsJoint::extraInfo
- *         - RcsShape::userData
- *         - RcsGraph::userData
- *
- *         These fields are not known on this level, please handle yourself.
- *         Otherwise, the graph's structure is fully preserved.
- *
  *  \param[in] src  Pointer to the graph to be copied.
- *  \return Pointer to copy of the graph. If argument src is NULL, the
- *                  function returns NULL.
+ *  \return Pointer to copy of the graph. If argument src is NULL, or copying
+ *                  failed, the function returns NULL. Failure cases are only
+ *                  related to memory allocations.
  */
 RcsGraph* RcsGraph_clone(const RcsGraph* src);
 

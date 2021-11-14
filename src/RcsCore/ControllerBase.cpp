@@ -175,6 +175,10 @@ bool Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
       {
         RcsCollisionModel_compute(this->cMdl);
       }
+      else
+      {
+        RLOG(1, "Failed to create collision model from xml");
+      }
     }
     else if (isXMLNodeName(node, "Graph"))
     {

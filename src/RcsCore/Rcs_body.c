@@ -510,8 +510,19 @@ void RcsBody_fprint(FILE* out, const RcsBody* b, const RcsGraph* graph)
     {
       fprintf(out, " (unconstrained)\n");
     }
-    fprintf(out, "\t   q index: %d, Jacobi index: %d",
-            JNT->jointIndex, JNT->jacobiIndex);
+    if (RcsJoint_isRotation(JNT))
+    {
+      fprintf(out, "\t   q index: %d, Jacobi index: %d, value: %f deg",
+              JNT->jointIndex, JNT->jacobiIndex,
+              RCS_RAD2DEG(graph->q->ele[JNT->jointIndex]));
+    }
+    else
+    {
+      fprintf(out, "\t   q index: %d, Jacobi index: %d, value: %f m",
+              JNT->jointIndex, JNT->jacobiIndex,
+              graph->q->ele[JNT->jointIndex]);
+    }
+
     if (JNT->coupledToId!=-1)
     {
       fprintf(out, ", coupled to %s\n", JNT->coupledJntName);
