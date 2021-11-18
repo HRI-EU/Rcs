@@ -53,6 +53,7 @@
 
 #include <string>
 #include <cstdio>
+#include <limits>
 
 
 #define ERR_POS (1.0e-5)
@@ -492,7 +493,8 @@ static inline void getUniqueFileName(char* fileName)
  *
  ******************************************************************************/
 ViaPointSequence::ViaPointSequence() :
-  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL), computeAllParams(true),
+  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL),
+  computeHorizon(std::numeric_limits<double>::max()),
   viaType(FifthOrderPolynomial)
 {
 }
@@ -501,8 +503,8 @@ ViaPointSequence::ViaPointSequence() :
  *
  ******************************************************************************/
 ViaPointSequence::ViaPointSequence(const MatNd* viaDescr_, ViaPointType type) :
-  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL), computeAllParams(true),
-  viaType(type)
+  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL),
+  computeHorizon(std::numeric_limits<double>::max()), viaType(type)
 {
   init(viaDescr_);
 }
@@ -511,8 +513,8 @@ ViaPointSequence::ViaPointSequence(const MatNd* viaDescr_, ViaPointType type) :
  *
  ******************************************************************************/
 ViaPointSequence::ViaPointSequence(const char* viaString, ViaPointType type) :
-  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL), computeAllParams(true),
-  viaType(type)
+  viaDescr(NULL), B(NULL), invB(NULL), x(NULL), p(NULL),
+  computeHorizon(std::numeric_limits<double>::max()), viaType(type)
 {
   MatNd* tmp = MatNd_createFromString(viaString);
   init(tmp);
@@ -535,7 +537,7 @@ ViaPointSequence::~ViaPointSequence()
  * Copy constructor doing deep copying.
  ******************************************************************************/
 ViaPointSequence::ViaPointSequence(const ViaPointSequence& copyFromMe):
-  computeAllParams(copyFromMe.computeAllParams),
+  computeHorizon(copyFromMe.computeHorizon),
   viaType(copyFromMe.viaType),
   constraintType(copyFromMe.constraintType),
   viaTime(copyFromMe.viaTime)
@@ -562,7 +564,7 @@ ViaPointSequence& ViaPointSequence::operator=(const ViaPointSequence& rhs)
   this->invB = MatNd_realloc(this->invB, rhs.invB->m, rhs.invB->n);
   this->x = MatNd_realloc(this->x, rhs.x->m, rhs.x->n);
   this->p = MatNd_realloc(this->p, rhs.p->m, rhs.p->n);
-  this->computeAllParams = rhs.computeAllParams;
+  this->computeHorizon = rhs.computeHorizon;
   this->viaType = rhs.viaType;
 
   MatNd_copy(this->viaDescr, rhs.viaDescr);
@@ -612,13 +614,13 @@ void ViaPointSequence::sort(MatNd* desc) const
 /*******************************************************************************
  *
  ******************************************************************************/
-void ViaPointSequence::compressDescriptor(MatNd* desc) const
+void ViaPointSequence::compressDescriptor(MatNd* desc, double t_horizon) const
 {
   for (unsigned int i=1; i<desc->m; ++i)
   {
     unsigned int flag = lround(MatNd_get2(desc, i, 4));
 
-    if (flag==7)
+    if ((flag==7) && (MatNd_get2(desc, i, 0)>t_horizon))
     {
       desc->m = i+1;
       return;
@@ -667,7 +669,7 @@ bool ViaPointSequence::init(const MatNd* viaDescr_)
     MatNd_copy(this->viaDescr, viaDescr_);
   }
 
-  // Eliminate rows with a flag 0. They shoould not contribute to the equation
+  // Eliminate rows with a flag 0. They should not contribute to the equation
   // system.
   pruneZeroFlagRows(this->viaDescr);
 
@@ -677,13 +679,9 @@ bool ViaPointSequence::init(const MatNd* viaDescr_)
   // index 5.
   sort(this->viaDescr);
 
-  // Disregard all constraints after a flag 7 constraint. This must be called
-  // after sorting.
-  if (this->computeAllParams==false)
-  {
-    // truncate trajectory to the first full constraint via
-    compressDescriptor(viaDescr);
-  }
+  // Disregard all constraints after the flag 7 constraint coming after the
+  // computeHorizon. This must be called after sorting.
+  compressDescriptor(viaDescr, computeHorizon);
 
   // Reset vectors to make sure the init function can be called several times.
   this->viaTime.clear();
@@ -2142,7 +2140,14 @@ void ViaPointSequence::computeRHS(MatNd* rhs, double t) const
  ******************************************************************************/
 void ViaPointSequence::setTurboMode(bool enable)
 {
-  this->computeAllParams = !enable;
+  if (enable)
+  {
+    setComputeHorizon(0.0);
+  }
+  else
+  {
+    setComputeHorizon(std::numeric_limits<double>::max());
+  }
 }
 
 /*******************************************************************************
@@ -2150,7 +2155,28 @@ void ViaPointSequence::setTurboMode(bool enable)
  ******************************************************************************/
 bool ViaPointSequence::getTurboMode() const
 {
-  return !this->computeAllParams;
+  if (this->computeHorizon==std::numeric_limits<double>::max())
+  {
+    return false;
+  }
+
+  return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void ViaPointSequence::setComputeHorizon(double t_horizon)
+{
+  this->computeHorizon = t_horizon;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool ViaPointSequence::getComputeHorizon() const
+{
+  return this->computeHorizon;
 }
 
 /*******************************************************************************

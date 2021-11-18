@@ -298,12 +298,14 @@ public:
    *  \param[in] enable   True for activating turbo more, false otherwise.
    */
   void setTurboMode(bool enable);
+  void setComputeHorizon(double t_horizon);
 
   /*! \brief See setTurboMode().
    *
    *  \return True for turbo mode being enabled, false otherwise.
    */
   bool getTurboMode() const;
+  bool getComputeHorizon() const;
 
   bool gradientDxDvia(MatNd* dxdvia, unsigned int row, double t0, double dt, unsigned int nSteps) const;
   bool gradientDxDvia(MatNd* dxdvia, unsigned int row, double t0, double t1, double dt) const;
@@ -340,16 +342,18 @@ protected:
   static void computeB_poly5(MatNd* B, const MatNd* vDesc);
   static void computeB_linAcc(MatNd* B, const MatNd* vDesc);
 
-  /*! \brief Finds the first flag 7 constraint after start and reshapes the
-   *         descriptor so that it is the last one. This function assumes a
+  /*! \brief Finds the first flag 7 constraint after t_horizon and reshapes
+   *         the descriptor so that it is the last one. This function assumes a
    *         descriptor that is sorted with respect to time.
    *
-   *  \param[in] desc   Via point descriptor to be compressed
+   *  \param[in] desc        Via point descriptor to be compressed
+   *  \param[in] t_horizon   Time point until which all flag 7 constraints
+   *                         are kept.
    */
-  void compressDescriptor(MatNd* desc) const;
+  void compressDescriptor(MatNd* desc, double t_horizon) const;
 
   MatNd* B, *invB, *x, *p;
-  bool computeAllParams;
+  bool computeHorizon;
   ViaPointType viaType;
 
   // Vectors with dimension equal to the number of rows / columns of B
