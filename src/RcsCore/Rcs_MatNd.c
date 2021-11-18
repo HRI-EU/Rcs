@@ -1463,7 +1463,6 @@ void MatNd_insertRows(MatNd* self, int rowDst, const MatNd* from, int rowSrc,
                       unsigned int nRows)
 {
   int nEle = self->n, originalRows = self->m;
-  MatNd* buf;
 
   RCHECK_MSG(self->n == from->n, "Arrays have different number of columns: "
              "%d != %d",
@@ -1474,21 +1473,26 @@ void MatNd_insertRows(MatNd* self, int rowDst, const MatNd* from, int rowSrc,
              rowSrc, rowSrc + nRows, from->m);
 
   self = MatNd_realloc(self, self->m + nRows, self->n);
-  MatNd_clone2(buf, self);
-  RCHECK(buf);
 
   if (rowDst == -1)
   {
+    MatNd* buf;
+  MatNd_clone2(buf, self);
+  RCHECK(buf);
+
     // Prepend from, and then append self
     memmove(buf->ele, &from->ele[rowSrc * nEle],
             nRows * nEle * sizeof(double));
     memmove(&buf->ele[nRows * nEle], self->ele,
             originalRows * nEle * sizeof(double));
+
+    MatNd_copy(self, buf);
+    MatNd_destroy(buf);
   }
   else if (rowDst == originalRows - 1)
   {
     // Append from to self
-    memmove(&buf->ele[originalRows * nEle], &from->ele[rowSrc * nEle],
+    memmove(&self->ele[originalRows * nEle], &from->ele[rowSrc * nEle],
             nRows * nEle * sizeof(double));
   }
   else if ((rowDst >= originalRows) || (rowDst < -1))
@@ -1499,6 +1503,10 @@ void MatNd_insertRows(MatNd* self, int rowDst, const MatNd* from, int rowSrc,
   }
   else
   {
+    MatNd* buf;
+    MatNd_clone2(buf, self);
+    RCHECK(buf);
+
     // The first (rowDst+1) rows have already been cloned
     int offset = (rowDst + 1) * nEle;
     memmove(&buf->ele[offset], &from->ele[rowSrc * nEle],
@@ -1506,10 +1514,10 @@ void MatNd_insertRows(MatNd* self, int rowDst, const MatNd* from, int rowSrc,
     offset += nRows * nEle;
     memmove(&buf->ele[offset], &self->ele[(rowDst + 1) * nEle],
             (originalRows - rowDst - 1) * nEle * sizeof(double));
-  }
 
   MatNd_copy(self, buf);
   MatNd_destroy(buf);
+  }
 }
 
 /*******************************************************************************
