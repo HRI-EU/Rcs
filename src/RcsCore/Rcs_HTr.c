@@ -412,6 +412,7 @@ bool HTr_fromString(HTr* A, const char* str)
  * Constructs a HTr from 2 points, so that p1-p2 will become the unit z-axis
  * of the rotation matrix. The x- and y-axis are computed just somehow to be
  * orthogonal. The HTrs' origin will be set to p1.
+ * \todo: Use Mat3d_fromVec()
  ******************************************************************************/
 void HTr_from2Points(HTr* A_KI, const double p1[3], const double p2[3])
 {

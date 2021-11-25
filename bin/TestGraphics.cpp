@@ -40,6 +40,7 @@
 #include <KeyCatcher.h>
 #include <Rcs_utils.h>
 #include <MeshNode.h>
+#include <BoxNode.h>
 #include <TextNode3D.h>
 #include <Rcs_graphicsUtils.h>
 #include <DepthRenderer.h>
@@ -758,6 +759,7 @@ static void testMeshNode()
   argP.getArgument("-outFile", &outfile, "Mesh file to be written (default "
                    "is %s)", outfile.c_str());
   bool withScaling = argP.hasArgument("-scaling", "Slider for dynamic scaling");
+  bool withAABB = argP.hasArgument("-aabb", "Show axis-aligned bounding box");
 
   if (argP.hasArgument("-h"))
   {
@@ -787,6 +789,17 @@ static void testMeshNode()
   viewer->add(new Rcs::COSNode());
   osg::ref_ptr<Rcs::KeyCatcher> kc = new Rcs::KeyCatcher();
   viewer->add(kc.get());
+  if (withAABB)
+  {
+    double xyzMin[3], xyzMax[3], center[3], extents[3];
+    RcsMesh_computeAABB(mesh, xyzMin, xyzMax);
+    RLOG(1, "aabb: min: %.4f %.4f %.4f   max: %.4f %.4f %.4f",
+         xyzMin[0], xyzMin[1], xyzMin[2], xyzMax[0], xyzMax[1], xyzMax[2]);
+    Vec3d_sub(extents, xyzMax, xyzMin);
+    Vec3d_constMulAndAdd(center, xyzMin, extents, 0.5);
+    osg::ref_ptr<Rcs::BoxNode> aabb = new Rcs::BoxNode(center, extents[0], extents[1], extents[2]);
+    viewer->add(aabb.get());
+  }
 
   double scale = 1.0;
   MatNd scaleArr = MatNd_fromPtr(1, 1, &scale);

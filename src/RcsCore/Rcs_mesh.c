@@ -413,10 +413,10 @@ static void RcsMesh_appendRectangle(RcsMeshData* mesh, double x, double y,
   const double verts[12] =
   {
     -0.5, -0.5, 0.0,
-      0.5, -0.5, 0.0,
-      0.5,  0.5, 0.0,
-      -0.5,  0.5, 0.0,
-    };
+    0.5, -0.5, 0.0,
+    0.5,  0.5, 0.0,
+    -0.5,  0.5, 0.0,
+  };
 
   const unsigned int nf = nfRectangle();
 
@@ -1598,21 +1598,14 @@ void RcsMesh_computeAABB(const RcsMeshData* mesh,
   Vec3d_set(xyzMin, DBL_MAX, DBL_MAX, DBL_MAX);
   Vec3d_set(xyzMax, -DBL_MAX, -DBL_MAX, -DBL_MAX);
 
-  for (unsigned int i = 0; i < mesh->nVertices; i=i+3)
+  for (unsigned int i = 0; i < 3*mesh->nVertices; i=i+3)
   {
     const double* v = &mesh->vertices[i];
 
     for (int j = 0; j < 3; ++j)
     {
-      if (v[j] < xyzMin[j])
-      {
-        xyzMin[j] = v[j];
-      }
-
-      if (v[j] > xyzMax[j])
-      {
-        xyzMax[j] = v[j];
-      }
+      xyzMin[j] = fmin(xyzMin[j], v[j]);
+      xyzMax[j] = fmax(xyzMax[j], v[j]);
     }
   }
 }
@@ -1769,14 +1762,14 @@ RcsMeshData* RcsMesh_createBox(const double extents[3])
   const double verts[24] =
   {
     -0.5, -0.5, -0.5,
-      0.5, -0.5, -0.5,
-      0.5,  0.5, -0.5,
-      -0.5,  0.5, -0.5,
-      -0.5,  0.5,  0.5,
-      0.5,  0.5,  0.5,
-      0.5, -0.5,  0.5,
-      -0.5, -0.5,  0.5,
-    };
+    0.5, -0.5, -0.5,
+    0.5,  0.5, -0.5,
+    -0.5,  0.5, -0.5,
+    -0.5,  0.5,  0.5,
+    0.5,  0.5,  0.5,
+    0.5, -0.5,  0.5,
+    -0.5, -0.5,  0.5,
+  };
 
   memcpy(mesh->faces, vertexIndex, 3*mesh->nFaces*sizeof(unsigned int));
 

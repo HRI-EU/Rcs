@@ -1932,41 +1932,53 @@ bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void RcsBody_computeAABB(const RcsBody* self,
+bool RcsBody_computeAABB(const RcsBody* self, int computeType,
                          double xyzMin[3], double xyzMax[3])
 {
-  if (self == NULL || RcsBody_numShapes(self)==0)
+  if (self == NULL)
   {
-    RLOG(4, "Body is NULL or has no shapes - AABB is set to zero");
+    RLOG(4, "Body is NULL AABB is set to zero");
     Vec3d_setZero(xyzMin);
     Vec3d_setZero(xyzMax);
-    return;
+    return false;
   }
 
+  size_t shapeCount = 0;
   Vec3d_set(xyzMin, DBL_MAX, DBL_MAX, DBL_MAX);
   Vec3d_set(xyzMax, -DBL_MAX, -DBL_MAX, -DBL_MAX);
 
   RCSBODY_TRAVERSE_SHAPES(self)
   {
-    double B_min[3], B_max[3], C_min[3], C_max[3];
-    RcsShape_computeAABB(SHAPE, C_min, C_max);
-    Vec3d_transform(B_min, &SHAPE->A_CB, C_min);
-    Vec3d_transform(B_max, &SHAPE->A_CB, C_max);
-
-    for (int j = 0; j < 3; ++j)
+    if (SHAPE->type == RCSSHAPE_REFFRAME)
     {
-      if (B_min[j] < xyzMin[j])
-      {
-        xyzMin[j] = B_min[j];
-      }
+      continue;
+    }
 
-      if (B_max[j] > xyzMax[j])
+    if ((computeType==-1) || ((SHAPE->computeType & computeType) != 0))
+    {
+      shapeCount++;
+      double B_min[3], B_max[3], C_min[3], C_max[3];
+      RcsShape_computeAABB(SHAPE, C_min, C_max);
+      Vec3d_transform(B_min, &SHAPE->A_CB, C_min);
+      Vec3d_transform(B_max, &SHAPE->A_CB, C_max);
+
+      for (int j = 0; j < 3; ++j)
       {
-        xyzMax[j] = B_max[j];
+        xyzMin[j] = fmin(B_min[j], xyzMin[j]);
+        xyzMax[j] = fmax(B_max[j], xyzMax[j]);
       }
     }
   }
 
+  if (shapeCount==0)
+  {
+    RLOG(4, "Body has no shapes with given computeType - AABB is zero");
+    Vec3d_setZero(xyzMin);
+    Vec3d_setZero(xyzMax);
+    return false;
+  }
+
+  return true;
 }
 
 /*******************************************************************************
@@ -2072,7 +2084,7 @@ bool RcsBody_removeJoints(RcsBody* self, RcsGraph* graph)
  * This function needs the GeometricTools library to be linked. Otherwise the
  * OBB cannot be computed and we return false.
  ******************************************************************************/
-bool RcsBody_boxify(RcsBody* self, int computeType)
+bool RcsBody_boxify(RcsBody* self, int computeType, bool replaceShapes)
 {
   if (self == NULL)
   {
@@ -2143,17 +2155,170 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
   }
 
   boxShape->computeType = computeType;
+  strcpy(boxShape->color, "RANDOM");   // Give it a random color
 
+  // Remove all shapes that are not frames, add the boxified shape as the first
+  // shape, and add the frames after that
+  if (replaceShapes)
+  {
+    // Store all frames so that we can later add them again
+    unsigned int nFrameShapes = RcsBody_numShapes(self);
+    RcsShape** frameShapes = RNALLOC(nFrameShapes+1, RcsShape*);
+    nFrameShapes = 0;
+
+    RcsShape** sPtr = self->shape;
+    while (*sPtr)
+    {
+      RcsShape* si = *sPtr;
+      if (si->type==RCSSHAPE_REFFRAME)
+      {
+        frameShapes[nFrameShapes] = si;
+        nFrameShapes++;
+      }
+      sPtr++;
+    }
+
+    // Replace body shapes with enclosing box
+    sPtr = self->shape;
+    while (*sPtr)
+    {
+      if ((*sPtr)->type!=RCSSHAPE_REFFRAME)
+      {
+        RcsShape_destroy(*sPtr);
+      }
+      sPtr++;
+    }
+
+    // In case there were no shapes, we need to allocate memory
+    self->shape = RREALLOC(self->shape, 2+nFrameShapes, RcsShape*);
+    RCHECK(self->shape);
+    self->shape[0] = boxShape;
+    self->shape[1] = NULL;
+
+    for (unsigned int i=0; i<nFrameShapes; ++i)
+    {
+      self->shape[i+1] = frameShapes[i];
+      self->shape[i+2] = NULL;
+    }
+  }
+  else   // Add boxified shape as last shape in the bodie's shape array
+  {
+    unsigned int nShapes = RcsBody_numShapes(self);
+    self->shape = RREALLOC(self->shape, 2 + nShapes, RcsShape*);
+    RCHECK(self->shape);
+    self->shape[nShapes] = boxShape;
+    self->shape[nShapes + 1] = NULL;
+  }
+
+  MatNd_destroy(vertices);
+
+  return true;
+}
+
+/*******************************************************************************
+ * This function needs the GeometricTools library to be linked. Otherwise the
+ * OBB cannot be computed and we return false.
+ ******************************************************************************/
+bool RcsBody_capsulify_aabb(RcsBody* self, int computeType)
+{
+  if (self == NULL)
+  {
+    RLOG(4, "Can't capsulify NULL body");
+    return false;
+  }
+
+  if (self->shape == NULL)
+  {
+    RLOG(4, "Body \"%s\" has no shapes attached - skipping capsulify",
+         self->name);
+    return false;
+  }
+
+  unsigned int nPts = 8 * RcsBody_numShapes(self);
+  MatNd* vertices = MatNd_create(nPts, 3);
+  unsigned int shapeIdx = 0;
+
+  RCSBODY_TRAVERSE_SHAPES(self)
+  {
+    if (((SHAPE->computeType & computeType) != 0) &&
+        (SHAPE->type != RCSSHAPE_REFFRAME))
+    {
+      double xyzMin[3], xyzMax[3];
+      RcsShape_computeAABB(SHAPE, xyzMin, xyzMax);
+      double* row = MatNd_getRowPtr(vertices, 8 * shapeIdx);
+
+      Vec3d_set(row + 0, xyzMin[0], xyzMin[1], xyzMin[2]);
+      Vec3d_set(row + 3, xyzMax[0], xyzMin[1], xyzMin[2]);
+      Vec3d_set(row + 6, xyzMax[0], xyzMax[1], xyzMin[2]);
+      Vec3d_set(row + 9, xyzMin[0], xyzMax[1], xyzMin[2]);
+
+      Vec3d_set(row + 12, xyzMin[0], xyzMin[1], xyzMax[2]);
+      Vec3d_set(row + 15, xyzMax[0], xyzMin[1], xyzMax[2]);
+      Vec3d_set(row + 18, xyzMax[0], xyzMax[1], xyzMax[2]);
+      Vec3d_set(row + 21, xyzMin[0], xyzMax[1], xyzMax[2]);
+
+      for (int i = 0; i < 8; ++i)
+      {
+        Vec3d_transformSelf(&row[i*3], &SHAPE->A_CB);
+      }
+
+      shapeIdx++;
+    }
+
+  }
+
+  if (shapeIdx == 0)
+  {
+    RLOG(4, "Body \"%s\" has no shape to boxify for computeType %d",
+         self->name, computeType);
+    MatNd_destroy(vertices);
+    return false;
+  }
+
+  MatNd_reshape(vertices, 8 * shapeIdx, 3);
+  RcsShape* sslShape = RcsShape_create();
+  sslShape->type = RCSSHAPE_SSL;
+
+  bool success = Rcs_computeOrientedBox(&sslShape->A_CB, sslShape->extents,
+                                        vertices->ele, vertices->m);
+
+  if (success == false)
+  {
+    RLOG(4, "Failed to compute enclosing capsule for body \"%s\"", self->name);
+    MatNd_destroy(vertices);
+    return false;
+  }
+
+  // We assume that the extents are sorted in increasing order due to the
+  // Eigenvalue based approach in the oriented box alorithm.
+  const double* e = sslShape->extents;
+  RCHECK_MSG((e[0]<=e[1]) && (e[1]<=e[2]), "%f %f %f", e[0], e[1], e[2]);
+
+  // Extents in the context of the box are not half lengths but edge lengths.
+  // We need to divide them by 2 to get a radius. The guaranteed enclosing
+  // radius is the distance from the center to the edge. Both radius and length
+  // are too conservative.
+  double radius = 0.5*sqrt(e[0]*e[0]+e[1]*e[1]);
+  double length = e[2];
+  Vec3d_set(sslShape->extents, radius, radius, length);
+
+  // The capsule shape has its origin at the ball end. We need to shift it
+  // half of its height.
+  Vec3d_constMulAndAddSelf(sslShape->A_CB.org, sslShape->A_CB.rot[2], -0.5*length);
+
+  sslShape->computeType = computeType;
+
+#if 0
   // Store all frames so that we can later add them again
   unsigned int nFrameShapes = RcsBody_numShapes(self);
-  RcsShape** frameShapes = RNALLOC(nFrameShapes+1, RcsShape*);
+  RcsShape** frameShapes = RNALLOC(nFrameShapes + 1, RcsShape*);
   nFrameShapes = 0;
 
   RcsShape** sPtr = self->shape;
   while (*sPtr)
   {
     RcsShape* si = *sPtr;
-    if (si->type==RCSSHAPE_REFFRAME)
+    if (si->type == RCSSHAPE_REFFRAME)
     {
       frameShapes[nFrameShapes] = si;
       nFrameShapes++;
@@ -2165,7 +2330,7 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
   sPtr = self->shape;
   while (*sPtr)
   {
-    if ((*sPtr)->type!=RCSSHAPE_REFFRAME)
+    if ((*sPtr)->type != RCSSHAPE_REFFRAME)
     {
       RcsShape_destroy(*sPtr);
     }
@@ -2173,21 +2338,85 @@ bool RcsBody_boxify(RcsBody* self, int computeType)
   }
 
   // In case there were no shapes, we need to allocate memory
-  self->shape = RREALLOC(self->shape, 2+nFrameShapes, RcsShape*);
+  self->shape = RREALLOC(self->shape, 2 + nFrameShapes, RcsShape*);
   RCHECK(self->shape);
-  self->shape[0] = boxShape;
+  self->shape[0] = sslShape;
   self->shape[1] = NULL;
 
-  for (unsigned int i=0; i<nFrameShapes; ++i)
+  for (unsigned int i = 0; i < nFrameShapes; ++i)
   {
-    self->shape[i+1] = frameShapes[i];
-    self->shape[i+2] = NULL;
+    self->shape[i + 1] = frameShapes[i];
+    self->shape[i + 2] = NULL;
   }
+#else
+  unsigned int nShapes = RcsBody_numShapes(self);
+  self->shape = RREALLOC(self->shape, 2+nShapes, RcsShape*);
+  RCHECK(self->shape);
+  self->shape[nShapes] = sslShape;
+  self->shape[nShapes+1] = NULL;
+#endif
 
   MatNd_destroy(vertices);
 
   // Give it a random color
   strcpy(self->shape[0]->color, "RANDOM");
+  return true;
+}
+
+/*******************************************************************************
+ * This function needs the GeometricTools library to be linked. Otherwise the
+ * OBB cannot be computed and we return false.
+ ******************************************************************************/
+bool RcsBody_capsulify(RcsBody* self, int computeType, bool replaceShapes)
+{
+  if (self == NULL)
+  {
+    RLOG(4, "Can't capsulify NULL body");
+    return false;
+  }
+
+  if (self->shape == NULL)
+  {
+    RLOG(4, "Body \"%s\" has no shapes attached - skipping capsulify",
+         self->name);
+    return false;
+  }
+
+  RcsMeshData* mesh = RcsBody_meshify(self, computeType);
+
+  if ((mesh==NULL) || (mesh->nVertices==0))
+  {
+    RLOG(4, "Failed to meshify body \"%s\"", self->name);
+    return false;
+  }
+
+  RcsShape* sslShape = RcsShape_create();
+  sslShape->type = RCSSHAPE_SSL;
+  sslShape->computeType = computeType;
+
+  bool success = Rcs_computeBoundingCapsule(&sslShape->A_CB, sslShape->extents,
+                                            mesh->vertices, mesh->nVertices);
+
+  if (!success)
+  {
+    RLOG(4, "Failed to compute bounding capsule for body \"%s\"", self->name);
+    return false;
+  }
+
+
+
+#if 0
+#else
+  unsigned int nShapes = RcsBody_numShapes(self);
+  self->shape = RREALLOC(self->shape, 2 + nShapes, RcsShape*);
+  RCHECK(self->shape);
+  self->shape[nShapes] = sslShape;
+  strcpy(self->shape[nShapes]->color, "RANDOM");
+  self->shape[nShapes + 1] = NULL;
+#endif
+
+  // Give it a random color
+  //strcpy(self->shape[0]->color, "RANDOM");
 
   return true;
 }
@@ -2525,4 +2754,48 @@ bool RcsBody_attachToBodyId(RcsGraph* graph, int bodyId, int targetId)
   }
 
   return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsMeshData* RcsBody_meshify(const RcsBody* self, char computeType)
+{
+  if (self == NULL)
+  {
+    RLOG(4, "Can't meshify NULL body");
+    return NULL;
+  }
+
+  RcsMeshData* allMesh = NULL;
+
+  RCSBODY_TRAVERSE_SHAPES(self)
+  {
+    if ((SHAPE->computeType&computeType) == 0)
+    {
+      continue;
+    }
+
+    RcsMeshData* mesh = RcsShape_createMesh(SHAPE);
+
+    if (mesh == NULL)
+    {
+      continue;
+    }
+
+    RcsMesh_transform(mesh, SHAPE->A_CB.org, SHAPE->A_CB.rot);
+
+    if (allMesh == NULL)
+    {
+      allMesh = RcsMesh_clone(mesh);
+    }
+    else
+    {
+      RcsMesh_add(allMesh, mesh);
+    }
+
+    RcsMesh_destroy(mesh);
+  }
+
+  return allMesh;
 }

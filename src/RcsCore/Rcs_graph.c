@@ -2286,7 +2286,6 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src)
     return NULL;
   }
 
-  dst->nSensors = 0;
 
   // Copy all joints, it's just a big memory block
   memcpy(dst->joints, src->joints, src->dof*sizeof(RcsJoint));
@@ -3043,9 +3042,9 @@ void RcsGraph_addRandomGeometry(RcsGraph* self)
 void RcsGraph_computeAABB(const RcsGraph* self,
                           double xyzMin[3], double xyzMax[3])
 {
-  if (self == NULL || RcsGraph_numBodies(self)==0)
+  if ((self == NULL) || (RcsGraph_numBodies(self)==0))
   {
-    RLOG(4, "Graph is NULL or has no shapes - AABB is set to zero");
+    RLOG(4, "Graph is NULL or has no bodies - AABB is set to zero");
     Vec3d_setZero(xyzMin);
     Vec3d_setZero(xyzMax);
     return;
@@ -3057,19 +3056,12 @@ void RcsGraph_computeAABB(const RcsGraph* self,
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
     double C_min[3], C_max[3];
-    RcsBody_computeAABB(BODY, C_min, C_max);
+    RcsBody_computeAABB(BODY, -1, C_min, C_max);
 
     for (int j = 0; j < 3; ++j)
     {
-      if (C_min[j] < xyzMin[j])
-      {
-        xyzMin[j] = C_min[j];
-      }
-
-      if (C_max[j] > xyzMax[j])
-      {
-        xyzMax[j] = C_max[j];
-      }
+      xyzMin[j] = fmin(C_min[j], xyzMin[j]);
+      xyzMax[j] = fmax(C_max[j], xyzMax[j]);
     }
   }
 

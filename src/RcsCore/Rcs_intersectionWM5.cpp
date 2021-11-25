@@ -55,6 +55,7 @@
 #include <Wm5Delaunay3.h>
 
 #include <Wm5ContBox3.h>
+#include <Wm5ContCapsule3.h>
 
 #include <limits>
 
@@ -647,6 +648,27 @@ extern "C" {
  ******************************************************************************/
 extern "C" {
 
+  void sortExtents(HTr* A, double extents[3])
+  {
+    for (int i = 0; i < 2; ++i)
+    {
+      if (extents[i] > extents[i + 1])
+      {
+        //RLOG(0, "Swapping %d - %d", i, i + 1);
+        Math_dSwap(&extents[i], &extents[i + 1]);
+        Vec3d_swap(A->rot[i], A->rot[i+1]);
+        int rightHandIdx = (i == 0) ? 2 : 0;
+
+        // When swapping two rows in the rotation matrix, the matrix becomes
+        // left-handed. We correct this by negating the right hand vector to
+        // the swapped indices.
+        Vec3d_constMulSelf(A->rot[rightHandIdx], -1.0);
+
+        // If everything is correct, this will not recurse forever ...
+        sortExtents(A, extents);
+      }
+    }
+  }
   bool Rcs_computeOrientedBox(HTr* A_box, double extents[3],
                               const double* points, unsigned int nPoints)
   {
@@ -667,14 +689,19 @@ extern "C" {
       A_box->org[i] = box.Center[i];
       A_box->rot[0][i] = box.Axis[0][i];
       A_box->rot[1][i] = box.Axis[1][i];
-      Vec3d_crossProduct(A_box->rot[2], A_box->rot[0], A_box->rot[1]);
       //A_box->rot[2][i] = box.Axis[2][i];
       extents[i] = 2.0*box.Extent[i];
     }
+    // We enforce right-handedness here.
+    Vec3d_crossProduct(A_box->rot[2], A_box->rot[0], A_box->rot[1]);
+
+    // Recusive function that sorts extents in increasing order, and adjusts
+    // the rotation matrix accordingly to be consistent.
+    sortExtents(A_box, extents);
 
     if (!Mat3d_isValid(A_box->rot))
     {
-      RLOG(4, "Enclosing box has invalid rotation matrix");
+      RLOG(1, "Enclosing box has invalid rotation matrix");
       REXEC(4)
       {
         Mat3d_printCommentDigits("A_box", A_box->rot, 6);
@@ -685,6 +712,37 @@ extern "C" {
     delete [] vertsWm5;
 
     return success;
+  }
+
+  bool Rcs_computeBoundingCapsule(HTr* A_ssl, double extents[3],
+                                  const double* points, unsigned int nPoints)
+  {
+    Wm5::Vector3d* vertsWm5 = new Wm5::Vector3d[nPoints];
+
+    for (unsigned int i = 0; i < nPoints; ++i)
+    {
+      const double* row = &points[3 * i];
+      vertsWm5[i] = Wm5::Vector3d(row[0], row[1], row[2]);
+    }
+
+    Wm5::Capsule3<double> ssl = Wm5::ContCapsule(nPoints, vertsWm5);
+
+    double p0[3], p1[3], dir[3];
+
+    for (int i = 0; i < 3; ++i)
+    {
+      p0[i] = ssl.Segment.P0[i];
+      p1[i] = ssl.Segment.P1[i];
+      dir[i] = p1[i] - p0[i];
+    }
+
+    Vec3d_copy(A_ssl->org, p0);
+    Mat3d_fromVec(A_ssl->rot, dir, 2);
+    Vec3d_set(extents, ssl.Radius, ssl.Radius, Vec3d_getLength(dir));
+
+    delete[] vertsWm5;
+
+    return true;
   }
 
 } // extern "C"
@@ -716,6 +774,14 @@ extern "C" {
                               const double* points, unsigned int nPoints)
   {
     RLOG(4, "Rcs_computeOrientedBox requires GeometricTools library - "
+         "not available");
+    return false;
+  }
+
+  bool Rcs_computeBoundingCapsule(HTr* A_ssl, double extents[3],
+                                  const double* points, unsigned int nPoints)
+  {
+    RLOG(4, "Rcs_computeBoundingCapsule requires GeometricTools library - "
          "not available");
     return false;
   }

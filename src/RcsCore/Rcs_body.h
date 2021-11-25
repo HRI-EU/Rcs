@@ -365,15 +365,21 @@ bool RcsBody_isFloatingBase(const RcsGraph* graph, const RcsBody* self);
 bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName);
 
 /*! \ingroup RcsBodyFunctions
- *  \brief This function computes the axis-aligned bounding box of a shape.
+ *  \brief This function computes the axis-aligned bounding box of a body.
+ *         It is computed over all contained shapes with the given computeType.
+ *         Shapes of type RCSSHAPE_REFFRAME are ignored.
  *
- *  \param[in] body       Body data. If it is NULL, or contains no shapes, the
- *                        AABB is set to zero, and a debug message is issued
- *                        on debul level 4.
- *  \param[in] xyzMin     Minimum point of the box
- *  \param[in] xyzMax     Maximum point of the box
+ *  \param[in] body        Body data. If it is NULL, or contains no shapes, the
+ *                         AABB is set to zero, and a debug message is issued
+ *                         on debul level 4.
+ *  \param[in] computeType See enum RCSSHAPE_COMPUTE_TYPE. If set to -1, all
+ *                         shapes are considered.
+ *  \param[in] xyzMin      Minimum point of the box
+ *  \param[in] xyzMax      Maximum point of the box
+ *  \return True for success, false otherwise. In case of no success, the
+ *          bounding box will have a size of zero.
  */
-void RcsBody_computeAABB(const RcsBody* body,
+bool RcsBody_computeAABB(const RcsBody* body, int computeType,
                          double xyzMin[3], double xyzMax[3]);
 
 /*! \ingroup RcsBodyFunctions
@@ -416,13 +422,37 @@ bool RcsBody_removeJoints(RcsBody* self, RcsGraph* graph);
 /*! \ingroup RcsBodyFunctions
  *  \brief Replaces all body shapes with a minimum enclosing oriented box. On
  *         success, the original shapes will all be deleted. Otherwise, they
- *         remain unchanged.
+ *         remain unchanged. The funcion uses a method from the GeometricTools
+ *         library and will therefore return failure if this is not available.
  *
  *  \param[in,out] self     Body whose shapes are to be replaced by the OBB.
  *  \param[in] computeType  See enum RCSSHAPE_COMPUTE_TYPE
+ *  \param[in] replaceShapes If true, all shapes except for the frames will be
+ *                           replaced by the enclosing box. If false, the box
+ *                           will be added as an additional shape to the body.
  *  \return True for success, false otherwise.
  */
-bool RcsBody_boxify(RcsBody* self, int computeType);
+bool RcsBody_boxify(RcsBody* self, int computeType, bool replaceShapes);
+
+/*! \ingroup RcsBodyFunctions
+ *  \brief Replaces all body shapes with a minimum enclosing capsule. On
+ *         success, the original shapes will all be deleted. Otherwise, they
+ *         remain unchanged.
+ *
+ *  \param[in,out] self      Body whose shapes are to be replaced by the capule
+ *  \param[in] computeType   See enum RCSSHAPE_COMPUTE_TYPE
+ *  \param[in] replaceShapes If true, all shapes except for the frames will be
+ *                           replaced by the enclosing capsule. If false, the
+ *                           capsule will be added as an additional shape to
+ *                           the body.
+ *  \return True for success, false otherwise.
+ */
+bool RcsBody_capsulify(RcsBody* self, int computeType, bool replaceShapes);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Creates a mesh of the body by traversing through all shapes.
+ */
+RcsMeshData* RcsBody_meshify(const RcsBody* self, char computeType);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Scales the geometry of the body, and of all attached joints and

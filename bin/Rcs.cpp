@@ -394,6 +394,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("X", "Make monolithic");
       Rcs::KeyCatcherBase::registerKey("S", "Scale graph");
       Rcs::KeyCatcherBase::registerKey("b", "Boxify graph");
+      Rcs::KeyCatcherBase::registerKey("B", "Capsulify graph");
       Rcs::KeyCatcherBase::registerKey("H", "Toggle HUD");
 
       double dtSim = 0.0, dtStep = 0.04;
@@ -429,6 +430,11 @@ int main(int argc, char** argv)
       bool playBVH = argP.hasArgument("-bvh", "Play bvh file");
       bool noHud = argP.hasArgument("-noHud", "Don't show HUD");
       bool randomGraph = argP.hasArgument("-random", "Create randomized graph");
+      bool shapifyReplace = argP.hasArgument("-shapifyReplace", "True: Replace "
+                                             "shapes when using boxify / capsul"
+                                             "ify, default: add enclosing box /"
+                                             " capsule as additional shape"
+                                             " to bodies");
 
       Rcs_addResourcePath(directory);
 
@@ -917,14 +923,31 @@ int main(int argc, char** argv)
             viewer->removeInternal(gn);
             RCSGRAPH_TRAVERSE_BODIES(graph)
             {
-              bool success = RcsBody_boxify(BODY, RCSSHAPE_COMPUTE_GRAPHICS+
-                                            RCSSHAPE_COMPUTE_PHYSICS);
-              RLOG(0, "%s boxifying body %s", success ? "SUCCESS" : "FAILURE",
+              bool success = RcsBody_boxify(BODY, RCSSHAPE_COMPUTE_GRAPHICS +
+                                            RCSSHAPE_COMPUTE_PHYSICS, shapifyReplace);
+              RLOG(1, "%s boxifying body %s", success ? "SUCCESS" : "FAILURE",
                    BODY->name);
             }
             gn = new Rcs::GraphNode(graph);
+            viewer->addInternal(gn);
             pthread_mutex_unlock(&graphLock);
-            viewer->add(gn);
+            RMSG("... done boxifying graph");
+          }
+          else if (kc->getAndResetKey('B'))
+          {
+            RMSG("Capsulifying graph ...");
+            pthread_mutex_lock(&graphLock);
+            viewer->removeInternal(gn);
+            RCSGRAPH_TRAVERSE_BODIES(graph)
+            {
+              bool success = RcsBody_capsulify(BODY, RCSSHAPE_COMPUTE_GRAPHICS,
+                                               shapifyReplace);
+              RLOG(1, "%s capsulifying body %s", success ? "SUCCESS" : "FAILURE",
+                   BODY->name);
+            }
+            gn = new Rcs::GraphNode(graph);
+            viewer->addInternal(gn);
+            pthread_mutex_unlock(&graphLock);
             RMSG("... done boxifying graph");
           }
           else if (kc->getAndResetKey('l'))

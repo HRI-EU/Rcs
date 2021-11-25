@@ -46,11 +46,16 @@ extern "C" {
 
 /*! \ingroup DistanceFunctions
  *  \brief Computes a minimum oriented bounding box that encloses the
- *         given points.
+ *         given points. The extents are sorted in increasing order.
  */
 bool Rcs_computeOrientedBox(HTr* A_box, double extents[3],
-                            const double* points,
-                            unsigned int nPoints);
+                            const double* points, unsigned int nPoints);
+
+/*! \ingroup DistanceFunctions
+ *  \brief Computes a capsule that encloses the given points.
+ */
+bool Rcs_computeBoundingCapsule(HTr* A_ssl, double extents[3],
+                                const double* points, unsigned int nPoints);
 
 
 #ifdef __cplusplus
