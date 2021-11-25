@@ -174,7 +174,8 @@ void Rcs::PhysicsBase::simulate(double dt, RcsGraph* graph, MatNd* q_ddot,
   simulate(dt, graph->q, graph->q_dot, q_ddot, T, control);
 
   // Copy sensors
-  RCHECK(graph->nSensors==internalDesiredGraph->nSensors);
+  RCHECK_MSG(graph->nSensors==internalDesiredGraph->nSensors, "%d != %d",
+             graph->nSensors, internalDesiredGraph->nSensors);
 
   for (unsigned int i=0; i<graph->nSensors; ++i)
   {

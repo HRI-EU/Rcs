@@ -224,17 +224,26 @@ void BulletSoftSimulation::updateSoftMeshes()
     RCHECK(softShape->type==RCSSHAPE_MESH);
     RcsMeshData* dstMesh = softShape->mesh;
 
-    const size_t nValues = 3*sbi->m_faces.size();
+    const size_t nf = sbi->m_faces.size();
+    const size_t nv = 3*nf;
+
+    if (dstMesh->nVertices != nv)
+    {
     dstMesh->vertices = (double*) realloc(dstMesh->vertices,
-                                          3*nValues*sizeof(double));
-    RCHECK_MSG(dstMesh->vertices, "Failed to reallocate %zd bytes for vertices",
-               3*nValues*sizeof(double));
-    dstMesh->nVertices = nValues;
+                                           3*nv*sizeof(double));
+      RCHECK_MSG(dstMesh->vertices, "Failed to reallocate %zd bytes for "
+                 " %zd vertices", 3*nv*sizeof(double), nv);
+      dstMesh->nVertices = nv;
+    }
+
+    if (dstMesh->nFaces != nf)
+    {
     dstMesh->faces = (unsigned int*) realloc(dstMesh->faces,
-                                             nValues*sizeof(unsigned int));
-    RCHECK_MSG(dstMesh->faces, "Failed to reallocate %zd bytes for faces",
-               nValues*sizeof(unsigned int));
-    dstMesh->nFaces = sbi->m_faces.size();
+                                              3*nf*sizeof(unsigned int));
+      RCHECK_MSG(dstMesh->faces, "Failed to reallocate %zd bytes for %zd faces",
+                 3*nf*sizeof(unsigned int), nf);
+      dstMesh->nFaces = nf;
+    }
 
     // The vertices of all soft objects are represented in the world frame.
     // There is no equivalent to a rigid body transform. If there is a good
@@ -359,7 +368,7 @@ void BulletSoftSimulation::createSoftBodies()
   {
     RCSBODY_TRAVERSE_SHAPES(BODY)
     {
-      if ((SHAPE->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) == 0)
+      if (!RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_SOFTPHYSICS))
       {
         continue;
       }
@@ -505,7 +514,7 @@ void BulletSoftSimulation::convertShapesToMesh()
   {
     RCSBODY_TRAVERSE_SHAPES(BODY)
     {
-      if ((SHAPE->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) == 0)
+      if (!RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_SOFTPHYSICS))
       {
         continue;
       }
@@ -544,10 +553,11 @@ void BulletSoftSimulation::convertShapesToMesh()
                  RcsShape_name(SHAPE->type));
         SHAPE->type = RCSSHAPE_MESH;
         SHAPE->computeType = RCSSHAPE_COMPUTE_SOFTPHYSICS;
+        SHAPE->resizeable = true;
       }
       else
       {
-        RLOG(0, "Failed to convert shape %s of body %s",
+        RLOG(1, "Failed to convert shape %s of body %s",
              RcsShape_name(SHAPE->type), BODY->name);
       }
 

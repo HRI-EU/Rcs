@@ -216,6 +216,10 @@ extern "C" {
  *
  * - physics: Shape will be considered in physics simulation when true
  *
+ * - softPhysics: Shape will be considered in soft physics simulation when true.
+ *                If this flag is set, the shape will automatically be
+ *                considered to be resizeable (see below).
+ *
  * - graphics: Shape will be visualized in graphics model when true
  *
  * - extents: x, y and z dimensions of shape. For some shapes, the index 0 is
@@ -236,6 +240,16 @@ extern "C" {
  *
  * - material: Material name of the shape for physics simulation. Its parameters
  *             are assumed to be defined in the physics configuration file.
+ *
+ * - resizeable: For visualization and updating reasons. For example, if a mesh
+ *               file is part of a soft physics simulation, its vertices should
+ *               be updated at run time. Similarly, if a cylinder geometry is
+ *               estimated, its changes should become visible at run time. This
+ *               can be achieved with the resizeable parameter set to true. But
+ *               why isn't this done by default for all shapes? This is due to
+ *               a performance overhead. It is more efficient to display
+ *               geometries with constant size, since this can be handled on the
+ *               graphics card without and communication.
  *
  *
  *

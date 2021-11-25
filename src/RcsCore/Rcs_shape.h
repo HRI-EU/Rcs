@@ -239,7 +239,7 @@ void* RcsShape_addOctree(RcsShape* self, const char* fileName);
  *  \brief This function computes the axis-aligned bounding box of a shape.
  *
  *  \param[in] self       Shape data. If it is NULL, the AABB is set to zero,
- * *                      size, and a debug message is issued on debul level 4.
+ *                        size, and a debug message is issued on debul level 4.
  *  \param[in] xyzMin     Minimum point of the box
  *  \param[in] xyzMax     Maximum point of the box
  */

@@ -85,9 +85,13 @@ static osg::ref_ptr<osg::Node> createMeshNode(const RcsShape* shape,
   _meshBufferMtx.lock();
   it = _meshBuffer.find(std::string(shape->meshFile));
 
+  // If there is a specific scaling for the mesh, or the shape is resizeable,
+  // we do not look up an existing mesh, since it may become different due to
+  // resizing or changing the mesh vertices at run time.
   bool isScaled = (shape->scale3d[0]!=1.0) ||
                   (shape->scale3d[1]!=1.0) ||
                   (shape->scale3d[2]!=1.0);
+  isScaled |= shape->resizeable;
 
   if ((it!=_meshBuffer.end()) && (!isScaled))
   {

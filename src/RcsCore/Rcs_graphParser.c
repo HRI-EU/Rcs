@@ -437,6 +437,8 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   getXMLNodePropertyBoolString(node, "contact", &contact);
   getXMLNodePropertyBoolString(node, "attachment", &attachment);
 
+  shape->resizeable = false;
+  getXMLNodePropertyBoolString(node, "resizeable", &shape->resizeable);
   if (distance == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_DISTANCE;
@@ -452,6 +454,7 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
   if (softPhysics == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_SOFTPHYSICS;
+    shape->resizeable = true;
   }
   if (depth == true)
   {
@@ -477,9 +480,6 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
     Vec3d_set(shape->scale3d, stiffness, damping, 0.0);
     getXMLNodePropertyStringN(node, "body", shape->meshFile, RCS_MAX_FILENAMELEN);
   }
-
-  shape->resizeable = false;
-  getXMLNodePropertyBoolString(node, "resizeable", &shape->resizeable);
 
   // Mesh file
   int strLength = getXMLNodeBytes(node, "meshFile");
