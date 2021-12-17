@@ -102,18 +102,10 @@ static void RcsGraph_bodyKinematics(RcsGraph* graph,
         break;
       }
       case RCSJOINT_ROT_X:
-      {
-        Mat3d_rotateSelfAboutXYZAxis(j->A_JI.rot, 0, qi);
-        break;
-      }
       case RCSJOINT_ROT_Y:
-      {
-        Mat3d_rotateSelfAboutXYZAxis(j->A_JI.rot, 1, qi);
-        break;
-      }
       case RCSJOINT_ROT_Z:
       {
-        Mat3d_rotateSelfAboutXYZAxis(j->A_JI.rot, 2, qi);
+        Mat3d_rotateSelfAboutXYZAxis(j->A_JI.rot, j->dirIdx, qi);
         break;
       }
 
@@ -281,14 +273,8 @@ bool RcsGraph_setState(RcsGraph* self, const MatNd* q_, const MatNd* q_dot_)
                             q_dot_ ? self->q_dot : NULL);
   }
 
-  // In most cases, nJ remains unchanged. We therefore only assign a new value
-  // if it is changes, which allows us to access it under many circumstances
-  // from other threads without a mutex
-
-  if (self->nJ != nJ)
-  {
-    self->nJ = nJ;
-  }
+  // Update the count of unconstrained joints
+  self->nJ = nJ;
 
   return qChanged;
 }
