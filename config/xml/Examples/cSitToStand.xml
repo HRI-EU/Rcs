@@ -1,0 +1,444 @@
+<Controller
+    usage="
+&#xA;  Configuration file to illustrate Newton-Euler physics with spring-damper
+&#xA;  contacts between feet and ground as well as between pelvis and sitting     
+&#xA;  surface. The corresponding bodies are equipped with point shapes that
+&#xA;  have a contact propoerty. Stiffness, static friction and other properties
+&#xA;  can be set. The handle bar can be moved with the sliders, so that the
+&#xA;  effect on the dynaimcs can be tried out. This model is also special in     
+&#xA;  the way it combines constrained and free degrees of freedom. While the 
+&#xA;  rigid body motion of the overal human model is dynamic, the joint angles
+&#xA;  are constrained. This leads to a stunning fast simulation and zero error
+&#xA;  in the constraint dofs.                                                  
+&#xA; 
+&#xA;  Here is how to start an example:
+&#xA;  
+&#xA;  bin/Rcs -m 5 -dir config/xml/BioMechanics/ -f cSimpleHuman.xml -physicsEngine NewtonEuler -algo 1 -lamba 0 -dt 0.01
+&#xA;  
+" >
+
+
+
+
+  
+  <Graph name="Sit" xxxname="DefaultPose2" >
+
+  <Body name="Ground Plane" physics="kinematic" >
+    <Shape type="BOX" extents="4.0 4.0 0.04" transform="0 0 -0.02 0 0 0" 
+           textureFile="textures/floor/white-hardwood-floor.jpg" color="PEWTER" 
+	   graphics="true" physics="true" distance="false" />
+    <Shape type="FRAME" />
+  </Body>
+
+  <Body name="Chair" physics="kinematic" >
+    <Shape type="BOX" extents="0.5 0.5 0.46" transform="-0.4 0 0.23 0 0 0" 
+           color="ORANGE" 
+	   graphics="true" physics="true" distance="false" />
+  </Body>
+  <Body name="Base" mass="1" />
+
+  <Body name="Hips" prev="Base" mass="8" inertia="0.00695958 0 0   0 0.009311 5.32579e-05   0 5.32579e-05 0.0158889" physics="fixed" transform="0 0 0 90 90 0" >
+    <Shape type="FRAME" scale="0.5" />
+    <Joint name="Hips_jnt_Xposition" range="1" weightJL="0" type="TransX" torqueLimit="0" speedLimit="1000"  ctrlType="Torque"/>
+    <Joint name="Hips_jnt_Yposition" range="1" weightJL="0" type="TransY" torqueLimit="0" speedLimit="1000"  ctrlType="Torque"/>
+    <Joint name="Hips_jnt_Zposition" range="2" weightJL="0" type="TransZ" torqueLimit="0" speedLimit="1000"  ctrlType="Torque"/>
+    <Joint name="Hips_jnt_Xrotation" range="-10 0 10" weightCA="0" type="RotX" torqueLimit="0" speedLimit="1000"  ctrlType="Torque"/>
+    <Joint name="Hips_jnt_Yrotation" range="-10 0 10" weightCA="0" type="RotY" torqueLimit="0" speedLimit="1000"  ctrlType="Torque"/>
+    <Joint name="Hips_jnt_Zrotation" range="-10 0 10" weightCA="0" type="RotZ" torqueLimit="0" speedLimit="1000"  ctrlType="Torque"/>
+    <Shape type="FRAME" scale="0.5" />
+    <Shape type="BOX" extents="0.017463 0.017463 0.087315" distance="false" physics="true" graphics="true" transform="0 0.054571 -0.000357 -90.374434 0 -90" color="#0b20b4ff" />
+    <Shape type="SPHERE" radius="0.013097" distance="false" physics="true" graphics="true" color="#0b20b4ff" />
+    <Shape type="BOX" extents="0.0151 0.0151 0.075501" distance="false" physics="true" graphics="true" transform="-0.047156 0.001747 0.000178 -84.173684 -87.866695 -84.177695" color="#0b20b4ff" />
+    <Shape type="SPHERE" radius="0.011325" distance="false" physics="true" graphics="true" color="#0b20b4ff" />
+    <Shape type="BOX" extents="0.0151 0.0151 0.075501" distance="false" physics="true" graphics="true" transform="0.047156 0.001747 0.000178 -84.173684 87.866695 -95.822305" color="#0b20b4ff" />
+    <Shape type="SPHERE" radius="0.011325" distance="false" physics="true" graphics="true" color="#0b20b4ff" />
+  </Body>
+
+  <Body name="Chest" prev="Hips" mass="8" inertia="0.00421499 0 0   0 0.000217504 -6.79837e-05   0 -6.79837e-05 0.00421383" physics="dynamic" >
+    <Joint name="Chest_jnt_Yrotation" range="-10 0 10" xxx_constraint="true" weightMetric="0.5" type="RotY" transform="0 0.109141 -0.000713 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="Chest_jnt_Xrotation" range="-30 0 30" xxx_constraint="true" weightMetric="0.5" type="RotX" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="Chest_jnt_Zrotation" range="-10 0 10" xxx_constraint="true" weightMetric="0.5" type="RotZ" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.012193 0.012193 0.060965" distance="false" physics="true" graphics="true" transform="0 0.038098 0.000648 -89.025844 0 -90" color="#2dcc7eff" />
+    <Shape type="SPHERE" radius="0.009145" distance="false" physics="true" graphics="true" color="#2dcc7eff" />
+  </Body>
+
+  <Body name="Chest2" prev="Chest" mass="8" inertia="0.00343563 0 0   0 0.000176335 -8.77241e-20   0 -8.77241e-20 0.00343563" physics="dynamic" >
+    <Joint name="Chest2_jnt_Yrotation" range="-10 0 10" xxx_constraint="true" weightMetric="0.5" type="RotY" transform="0 0.076196 0.001296 0 0 0" torqueLimit="0" speedLimit="0" ctrlType="Velocity" />
+    <Joint name="Chest2_jnt_Xrotation" range="-30 0 30" xxx_constraint="true" weightMetric="0.5" type="RotX" torqueLimit="0" speedLimit="0" ctrlType="Velocity" />
+    <Joint name="Chest2_jnt_Zrotation" range="-10 0 10" xxx_constraint="true" weightMetric="0.5" type="RotZ" torqueLimit="0" speedLimit="0" ctrlType="Velocity" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.011008 0.011008 0.055042" distance="false" physics="true" graphics="true" transform="0 0.034401 0 -90 0 -90" color="#e8aa43ff" />
+    <Shape type="SPHERE" radius="0.008256" distance="false" physics="false" graphics="true" color="#e8aa43ff" />
+  </Body>   
+
+  <Body name="Chest3" prev="Chest2" mass="10" inertia="0.00429454 0 0   0 0.000220418 -1.09655e-19   0 -1.09655e-19 0.00429454" physics="dynamic" >
+    <Joint name="Chest3_jnt_Yrotation" range="-10 0 10" xxx_constraint="true" weightMetric="0.5" type="RotY" transform="0 0.068802 0 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="Chest3_jnt_Xrotation" range="-30 0 30" xxx_constraint="true" weightMetric="0.5" type="RotX" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="Chest3_jnt_Zrotation" range="-10 0 10" xxx_constraint="true" weightMetric="0.5" type="RotZ" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.011008 0.011008 0.055042" distance="false" physics="true" graphics="true" transform="0 0.034401 0 -90 0 -90" color="#263646ff" />
+    <Shape type="SPHERE" radius="0.008256" distance="false" physics="true" graphics="true" color="#263646ff" />
+  </Body>
+
+  <Body name="Chest4" prev="Chest3" mass="7" inertia="0.00519552 0 -1.50463e-36   0 0.000613419 -1.22581e-19   -7.52316e-37 -1.22581e-19 0.00555499" physics="dynamic" >
+    <Joint name="Chest4_jnt_Yrotation" range="-10 0 10" xxx_constraint="true" weightMetric="0.5" type="RotY" transform="0 0.068802 0 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="Chest4_jnt_Xrotation" range="-30 0 30" xxx_constraint="true" weightMetric="0.5" type="RotX" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="Chest4_jnt_Zrotation" range="-10 0 10" xxx_constraint="true" weightMetric="0.5" type="RotZ" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.015792 0.015792 0.078959" distance="false" physics="true" graphics="true" transform="0 0.04935 0 -90 0 -90" color="#7eac73ff" />
+    <Shape type="SPHERE" radius="0.011844" distance="false" physics="true" graphics="true" color="#7eac73ff" />
+    <Shape type="BOX" extents="0.009893 0.009893 0.049466" distance="false" physics="true" graphics="true" transform="-0.013229 0.027943 0 -90 -25.334874 -90" color="#7eac73ff" />
+    <Shape type="SPHERE" radius="0.00742" distance="false" physics="true" graphics="true" color="#7eac73ff" />
+    <Shape type="BOX" extents="0.009893 0.009893 0.049466" distance="false" physics="true" graphics="true" transform="0.013229 0.027943 0 -90 25.334874 -90" color="#7eac73ff" />
+    <Shape type="SPHERE" radius="0.00742" distance="false" physics="true" graphics="true" color="#7eac73ff" />
+  </Body>
+
+  <Body name="Neck" prev="Chest4" mass="5" inertia="0.00385553 0 1.20371e-35   0 0.000198206 -3.36566e-05   1.20371e-35 -3.36566e-05 0.00385522" physics="dynamic" >
+    <Joint name="Neck_jnt_Yrotation" range="-50 0 50" xxx_constraint="true" weightMetric="0.5" type="RotY" transform="0 0.098699 0 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="Neck_jnt_Xrotation" range="-40 0 40" xxx_constraint="true" weightMetric="0.5" type="RotX" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="Neck_jnt_Zrotation" range="-30 0 30" xxx_constraint="true" weightMetric="0.5" type="RotZ" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.014751 0.014751 0.073755" distance="false" physics="true" graphics="true" transform="0 0.046095 0.000424 -89.472447 0 -90" color="#617538ff" />
+    <Shape type="SPHERE" radius="0.011063" distance="false" physics="true" graphics="true" color="#617538ff" />
+  </Body>
+
+  <Body name="Head" prev="Neck" mass="7" inertia="0.0395027 0 0   0 0.0392275 -0.00179686   0 -0.00179686 0.0389515" physics="dynamic" >
+    <Joint name="Head_jnt_Yrotation" range="-50 0 50" xxx_constraint="true" weightMetric="0.5" type="RotY" transform="0 0.09219 0.000849 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="Head_jnt_Xrotation" range="-40 0 40" xxx_constraint="true" weightMetric="0.5" type="RotX" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="Head_jnt_Zrotation" range="-30 0 30" xxx_constraint="true" weightMetric="0.5" type="RotZ" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="SPHERE" radius="0.015749" distance="false" physics="true" graphics="true" color="BLACK_RUBBER" />
+    <Shape type="SPHERE" radius="0.12" distance="false" physics="true" graphics="true" transform="0 0.12 0 0 0 0" color="YELLOW" />
+    <Shape type="BOX" extents="0.16 0.1 0.08" distance="false" physics="true" graphics="true" transform="0 0.16 0.05 0 0 0" color="YELLOW" />
+  </Body>
+
+  <Body name="RightCollar" prev="Chest4" mass="2" inertia="0.000202965 0 1.00968e-19   0 0.00395439 0   1.00968e-19 0 0.00395439" physics="dynamic" >
+    <Joint name="RightCollar_jnt_Yrotation" range="-20 0 20" xxx_constraint="true" weightMetric="0.7" type="RotY" transform="-0.026459 0.055886 0 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="RightCollar_jnt_Zrotation" range="-20 0 20" xxx_constraint="true" weightMetric="0.7" type="RotZ" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.02362 0.02362 0.118102" distance="false" physics="true" graphics="true" transform="-0.073814 0 0 0 -90 0" color="#5b209fff" />
+    <Shape type="SPHERE" radius="0.017715" distance="false" physics="true" graphics="true" color="#5b209fff" />
+  </Body>
+
+  <Body name="RightShoulder" prev="RightCollar" mass="2" inertia="0.000692293 0 3.44385e-19   0 0.0134878 0   3.44385e-19 0 0.0134878" physics="dynamic" >
+    <Joint name="RightShoulder_jnt_Yrotation" range="-90 0 180" xxx_constraint="true" type="RotY" transform="-0.147627 0 0 0 0 90" torqueLimit="0" speedLimit="1000"  ctrlType="Torque" />
+    <Joint name="RightShoulder_jnt_Zrotation" range="-180 0 90" xxx_constraint="true" type="RotZ" torqueLimit="0" speedLimit="1000"  ctrlType="Torque" />
+    <Joint name="RightShoulder_jnt_Xrotation" range="-90 0 90" xxx_constraint="true" type="RotX" torqueLimit="0" speedLimit="1000"  ctrlType="Torque" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.043623 0.043623 0.218116" distance="false" physics="true" graphics="true" transform="-0.136323 0 0 0 -90 0" color="#505e22ff" />
+    <Shape type="SPHERE" radius="0.032717" distance="false" physics="true" graphics="true" color="#505e22ff" />
+  </Body>
+
+  <Body name="RightElbow" prev="RightShoulder" mass="2" inertia="0.000472429 0 3.72602e-06   0 0.00920411 0   3.72602e-06 0 0.00920411" physics="dynamic" >
+    <Joint name="RightElbow_jnt_Yrotation" range="0 1 180" xxx_constraint="true" type="RotY" transform="-0.272645 0 0 0 0 0" torqueLimit="0" speedLimit="1000"  ctrlType="Torque"/>
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.036036 0.036036 0.180181" distance="false" physics="true" graphics="true" transform="-0.112613 0 0.000048 0 -89.975515 0" color="#d53d3fff" />
+    <Shape type="SPHERE" radius="0.027027" distance="false" physics="true" graphics="true" color="#d53d3fff" />
+  </Body>
+
+  <Body name="RightWrist" prev="RightElbow" mass="1" inertia="7.3734e-05 0 0   0 7.3734e-05 0   0 0 7.3734e-05" physics="dynamic" >
+    <Joint name="RightWrist_jnt_Xrotation" range="-100 0 100" xxx_constraint="true" type="RotX" transform="-0.225226 0 0.000096 0 0 0" torqueLimit="0" speedLimit="1000"  ctrlType="Torque"/>
+    <Joint name="RightWrist_jnt_Zrotation" range="-90 0 90" xxx_constraint="true" type="RotZ" torqueLimit="0" speedLimit="1000" ctrlType="Torque" />
+    <Joint name="RightWrist_jnt_Yrotation" range="-30 0 30" xxx_constraint="true" type="RotY" torqueLimit="0" speedLimit="1000" ctrlType="Torque" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="SPHERE" radius="0.013577" distance="false" physics="true" graphics="true" color="BLACK_RUBBER" />
+  </Body>
+
+  <Body name="Handle_R" mass="1" physics="dynamic" >
+    <Joint range="1" constraint="untrue" weightJL="0" type="TransX" torqueLimit="0" speedLimit="1000"  ctrlType="Velocity" transform="-0.129 -0.268 0.56 0 0 0"/>
+    <Joint range="1" constraint="untrue" weightJL="0" type="TransY" torqueLimit="0" speedLimit="1000"  ctrlType="Velocity"/>
+    <Joint range="2" constraint="untrue" weightJL="0" type="TransZ" torqueLimit="0" speedLimit="1000"  ctrlType="Velocity"/>
+    <Shape type="SPHERE" radius="0.05" distance="false" physics="true" graphics="true" color="YELLOW" />
+    <Shape type="POINT" radius="0.05" contact="true" physics="true" graphics="true" color="YELLOW" />
+    <Shape type="FRAME" scale="0.25" />
+  </Body>
+
+  <Body name="PartnerGrasp_R" prev="RightWrist" transform="-0.1 0 0 180 90 0" mass="2.5" inertia="0.0155417 0 0   0 0.00985417 -0.0050625   0 -0.0050625 0.00985417" physics="dynamic" >
+    <Shape type="BOX" extents="0.1 0.16 0.02" distance="false" physics="true" graphics="true" transform="0 0.08 0.01 0 0 0" color="BLUE" />
+    <Shape type="BOX" extents="0.1 0.02 0.16" distance="false" physics="true" graphics="true" transform="0 -0.01 -0.08 0 0 0" color="BLUE" />
+    <Shape type="POINT" distance="false" graphics="true" physics="true" attachment="true" body="Handle_R" color="BLUE" stiffness="5.0e3" />
+    <Shape type="FRAME" scale="0.25" />
+  </Body>
+
+  <Body name="LeftCollar" prev="Chest4" mass="2" inertia="0.000202965 1.2365e-35 1.00968e-19   1.2365e-35 0.00395439 6.30925e-53   1.00968e-19 6.30925e-53 0.00395439" physics="dynamic" >
+    <Joint name="LeftCollar_jnt_Yrotation" range="-20 0 20" xxx_constraint="true" weightMetric="0.7" type="RotY" transform="0.026459 0.055886 0 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="LeftCollar_jnt_Zrotation" range="-20 0 20" xxx_constraint="true" weightMetric="0.7" type="RotZ" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.02362 0.02362 0.118102" distance="false" physics="true" graphics="true" transform="0.073814 0 0 180 90 0" color="#cff5d6ff" />
+    <Shape type="SPHERE" radius="0.017715" distance="false" physics="true" graphics="true" color="#cff5d6ff" />
+  </Body>
+
+  <Body name="LeftShoulder" prev="LeftCollar" mass="2" inertia="0.000692293 4.21749e-35 3.44385e-19   4.21749e-35 0.0134878 2.15204e-52   3.44385e-19 2.15204e-52 0.0134878" physics="dynamic" >
+    <Joint name="LeftShoulder_jnt_Yrotation" range="-180 0 90" xxx_constraint="true" type="RotY" transform="0.147627 0 0 0 0 -90" torqueLimit="0" speedLimit="1000" ctrlType="Torque" />
+    <Joint name="LeftShoulder_jnt_Zrotation" range="-90 0 180" xxx_constraint="true" type="RotZ" torqueLimit="0" speedLimit="1000" ctrlType="Torque" />
+    <Joint name="LeftShoulder_jnt_Xrotation" range="-90 0 90" xxx_constraint="true" type="RotX" torqueLimit="0" speedLimit="1000" ctrlType="Torque" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.043623 0.043623 0.218116" distance="false" physics="true" graphics="true" transform="0.136323 0 0 180 90 0" color="#c36da1ff" />
+    <Shape type="SPHERE" radius="0.032717" distance="false" physics="true" graphics="true" color="#c36da1ff" />
+  </Body>
+
+  <Body name="LeftElbow" prev="LeftShoulder" mass="2" inertia="0.000472429 0 -3.72602e-06   0 0.00920411 0   -3.72602e-06 9.62965e-35 0.00920411" physics="dynamic" >
+    <Joint name="LeftElbow_jnt_Yrotation" range="-180 -1 0" xxx_constraint="true" type="RotY" transform="0.272645 0 0 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Torque" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.036036 0.036036 0.180181" distance="false" physics="true" graphics="true" transform="0.112613 0 0.000048 0 89.975515 -180" color="#13a778ff" />
+    <Shape type="SPHERE" radius="0.027027" distance="false" physics="true" graphics="true" color="#13a778ff" />
+  </Body>
+
+  <Body name="LeftWrist" prev="LeftElbow" mass="1" inertia="7.3734e-05 0 0   0 7.3734e-05 0   0 0 7.3734e-05" physics="dynamic" >
+    <Joint name="LeftWrist_jnt_Xrotation" range="-100 0 100" xxx_constraint="true" type="RotX" transform="0.225226 0 0.000096 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Torque" />
+    <Joint name="LeftWrist_jnt_Zrotation" range="-90 0 90" xxx_constraint="true" type="RotZ" torqueLimit="0" speedLimit="1000" ctrlType="Torque" />
+    <Joint name="LeftWrist_jnt_Yrotation" range="-30 0 30" xxx_constraint="true" type="RotY" torqueLimit="0" speedLimit="1000" ctrlType="Torque" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="SPHERE" radius="0.013577" distance="false" physics="true" graphics="true" color="BLACK_RUBBER" />
+  </Body>
+
+  <Body name="Handle_L" mass="1" physics="dynamic" >
+    <Joint range="1" constraint="untrue" weightJL="0" type="TransX" torqueLimit="0" speedLimit="1000"  ctrlType="Velocity" transform="-0.129 0.268 0.56 0 0 0"/>
+    <Joint range="1" constraint="untrue" weightJL="0" type="TransY" torqueLimit="0" speedLimit="1000"  ctrlType="Velocity"/>
+    <Joint range="2" constraint="untrue" weightJL="0" type="TransZ" torqueLimit="0" speedLimit="1000"  ctrlType="Velocity"/>
+    <Shape type="SPHERE" radius="0.05" distance="false" physics="true" graphics="true" color="YELLOW" />
+    <Shape type="SSL" radius="0.025" length="0.536" distance="false" physics="true" graphics="true" color="YELLOW" transform="0 0 0 90 0 0" />
+    <Shape type="POINT" radius="0.05" contact="true" physics="true" graphics="true" color="YELLOW" />
+    <Shape type="FRAME" scale="0.25" />
+  </Body>
+
+  <Body name="PartnerGrasp_L" prev="LeftWrist" transform="0.1 0 0 -180 -90 0" mass="2.5" inertia="0.0155417 0 0   0 0.00985417 -0.0050625   0 -0.0050625 0.00985417" physics="dynamic" >
+    <Shape type="BOX" extents="0.1 0.16 0.02" distance="false" physics="true" graphics="true" transform="0 0.08 0.01 0 0 0" color="BLUE" />
+    <Shape type="BOX" extents="0.1 0.02 0.16" distance="false" physics="true" graphics="true" transform="0 -0.01 -0.08 0 0 0" color="BLUE" />
+    <Shape type="FRAME" scale="0.25" />
+    <Shape type="POINT" distance="false" graphics="true" physics="true" attachment="true" body="Handle_L" color="BLUE" stiffness="5.0e3" />
+  </Body>
+
+  <Body name="RightHip" prev="Hips" mass="7" inertia="0.165585 0 -7.70372e-34   0 0.00849924 5.49434e-06   -7.70372e-34 5.49434e-06 0.165585" physics="dynamic" >
+    <Joint name="RightHip_jnt_Zrotation" range="-60 0 10" xxx_constraint="true" weightMetric="0.1" type="RotZ" transform="-0.094311 0.003495 0.000357 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="RightHip_jnt_Xrotation" range="-90 -20 10" weightJL="10" xxx_constraint="true" type="RotX" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="RightHip_jnt_Yrotation" range="-50 0 50" xxx_constraint="true" weightMetric="0.1" type="RotY" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.081701 0.081701 0.408503" distance="false" physics="true" graphics="true" transform="0 -0.255314 0.000009 89.998016 0 90" color="#4931e6ff" />
+    <Shape type="SPHERE" radius="0.061275" distance="false" physics="true" graphics="true" color="#4931e6ff" />
+	<Shape type="POINT" contact="true" transform="0 0 -0.036 0 0 0" height="0.5" />
+  </Body>
+
+  <Body name="RightKnee" prev="RightHip" mass="6" inertia="0.0781297 -3.76158e-37 0   0 0.00401034 6.8469e-05   0 6.8469e-05 0.0781296" physics="dynamic" >
+    <Joint name="RightKnee_jnt_Xrotation" range="0 40 180" weightJL="10" xxx_constraint="true" type="RotX" transform="0 -0.510628 0.000018 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.060617 0.060617 0.303085" distance="false" physics="true" graphics="true" transform="0 -0.189428 0.000175 89.947077 0 90" color="#0cb39aff" />
+    <Shape type="SPHERE" radius="0.045463" distance="false" physics="true" graphics="true" color="#0cb39aff" />
+  </Body>
+
+  <Body name="RightAnkle" prev="RightKnee" mass="3" inertia="0.00734527 0 0   -2.40741e-35 0.00619381 0.00258801   0 0.00258801 0.00152849" physics="dynamic" >
+    <Joint name="RightAnkle_jnt_Yrotation" range="-20 0 20" xxx_constraint="true" weightMetric="0.1" type="RotY" transform="0 -0.378856 0.00035 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="RightAnkle_jnt_Xrotation" range="-60 -20 60" xxx_constraint="true" type="RotX" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="RightAnkle_jnt_Zrotation" range="-20 0 20" xxx_constraint="true" weightMetric="0.1" type="RotZ" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.026285 0.026285 0.131424" distance="false" physics="true" graphics="true" transform="0 -0.03339 0.075047 20 0 90" color="#39beadff" />
+    <Shape type="SPHERE" radius="0.019714" distance="false" physics="true" graphics="true" color="#39beadff" />
+  </Body>
+
+  <Body name="RightToe" prev="RightAnkle" mass="2.5" inertia="0.00381571 0 0   0 0.00434874 2.02694e-07   0 2.02694e-07 0.00066648" physics="dynamic" >
+    <Joint name="RightToe_jnt_Yrotation" range="-10 0 10" constraint="true" weightMetric="0.1" type="RotY" transform="0 -0.06678 0.150095 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Torque" />
+    <Joint name="RightToe_jnt_Xrotation" range="-60 0 60" constraint="true" weightMetric="0.1" type="RotX" torqueLimit="0" speedLimit="1000" ctrlType="Torque" />
+    <Joint name="RightToe_jnt_Zrotation" range="-10 0 10" constraint="true" weightMetric="0.1" type="RotZ" torqueLimit="0" speedLimit="1000" ctrlType="Torque" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="SPHERE" radius="0.005186" distance="false" physics="true" graphics="true" color="BLACK_RUBBER" />
+    <Shape type="BOX" extents="0.12 0.04 0.3" distance="false" physics="true" graphics="true" transform="0 0.02 -0.05 0 0 0" color="RED" />
+    
+    <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="0.06 0 0.1 0 0 0" color="RED"
+	   staticFriction="1.0" stiffness="2.0e4" height="0.0" />
+    <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="-0.06 0 0.1 0 0 0" color="RED"
+	   staticFriction="1.0" stiffness="2.0e4" height="0.0"  />
+    <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="0.06 0 -0.2 0 0 0" color="RED"
+	   staticFriction="1.0" stiffness="2.0e4" height="0.0"  />
+    <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="-0.06 0 -0.2 0 0 0" color="RED"
+	   staticFriction="1.0" stiffness="2.0e4" height="0.0"  />
+    
+    <!-- <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="0.06 0 0.0 0 0 0" color="RED" -->
+	   <!-- staticFriction="1.0" stiffness="2.0e4" height="0.0" /> -->
+    <!-- <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="-0.06 0 0.0 0 0 0" color="RED" -->
+	   <!-- staticFriction="1.0" stiffness="2.0e4" height="0.0"  /> -->
+    <!-- <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="0.06 0 -0.1 0 0 0" color="RED" -->
+	   <!-- staticFriction="1.0" stiffness="2.0e4" height="0.0"  /> -->
+    <!-- <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="-0.06 0 -0.1 0 0 0" color="RED" -->
+	   <!-- staticFriction="1.0" stiffness="2.0e4" height="0.0"  /> -->
+  </Body>
+
+  <Body name="LeftHip" prev="Hips" mass="7" inertia="0.165585 0 -7.70372e-34   0 0.00849924 5.49434e-06   -7.70372e-34 5.49434e-06 0.165585" physics="dynamic" >
+    <Joint name="LeftHip_jnt_Zrotation" range="-10 0 60" xxx_constraint="true" weightMetric="0.1" type="RotZ" transform="0.094311 0.003495 0.000357 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="LeftHip_jnt_Xrotation" range="-90 -20 10" weightJL="10" xxx_constraint="true" type="RotX" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="LeftHip_jnt_Yrotation" range="-50 -0 50" xxx_constraint="true" weightMetric="0.1" type="RotY" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.081701 0.081701 0.408503" distance="false" physics="true" graphics="true" transform="0 -0.255314 0.000009 90 0 90" color="#5f1dbaff" />
+    <Shape type="SPHERE" radius="0.061275" distance="false" physics="true" graphics="true" color="#5f1dbaff" />
+    <Shape type="POINT" contact="true" transform="0 0 -0.036 0 0 0" height="0.5"/>
+  </Body>
+
+  <Body name="LeftKnee" prev="LeftHip" mass="6" inertia="0.0781297 -3.76158e-37 0   0 0.00401034 6.8469e-05   0 6.8469e-05 0.0781296" physics="dynamic" >
+    <Joint name="LeftKnee_jnt_Xrotation" range="0 40 180" weightJL="10" xxx_constraint="true" type="RotX" transform="0 -0.510628 0.000018 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.060617 0.060617 0.303085" distance="false" physics="true" graphics="true" transform="0 -0.189428 0.000175 90 0 90" color="#9b51ebff" />
+    <Shape type="SPHERE" radius="0.045463" distance="false" physics="true" graphics="true" color="#9b51ebff" />
+  </Body>
+
+  <Body name="LeftAnkle" prev="LeftKnee" mass="3" inertia="0.00734527 0 0   -2.40741e-35 0.00619381 0.00258801   0 0.00258801 0.00152849" physics="dynamic" >
+    <Joint name="LeftAnkle_jnt_Yrotation" range="-20 0 20" xxx_constraint="true" weightMetric="0.1" type="RotY" transform="0 -0.378856 0.00035 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="LeftAnkle_jnt_Xrotation" range="-60 -20 60" xxx_constraint="true" type="RotX" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Joint name="LeftAnkle_jnt_Zrotation" range="-20 0 20" xxx_constraint="true" weightMetric="0.1" type="RotZ" torqueLimit="0" speedLimit="1000" ctrlType="Velocity" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="BOX" extents="0.026285 0.026285 0.131424" distance="false" physics="true" graphics="true" transform="0 -0.03339 0.075047 20 0 90" color="#7496b6ff" />
+    <Shape type="SPHERE" radius="0.019714" distance="false" physics="true" graphics="true" color="#7496b6ff" />
+  </Body>
+
+  <Body name="LeftToe" prev="LeftAnkle" mass="2.5" inertia="0.00381571 0 0   0 0.00434874 2.02694e-07   0 2.02694e-07 0.00066648" physics="dynamic" >
+    <Joint name="LeftToe_jnt_Yrotation" range="-10 0 10" constraint="true" weightMetric="0.1" type="RotY" transform="0 -0.06678 0.150095 0 0 0" torqueLimit="0" speedLimit="1000" ctrlType="Torque" />
+    <Joint name="LeftToe_jnt_Xrotation" range="-60 0 60" constraint="true" weightMetric="0.1" type="RotX" torqueLimit="0" speedLimit="1000" ctrlType="Torque" />
+    <Joint name="LeftToe_jnt_Zrotation" range="-10 0 10" constraint="true" weightMetric="0.1" type="RotZ" torqueLimit="0" speedLimit="1000" ctrlType="Torque" />
+    <Shape type="FRAME" scale="0.1" />
+    <Shape type="SPHERE" radius="0.005186" distance="false" physics="true" graphics="true" color="BLACK_RUBBER" />
+    <Shape type="BOX" extents="0.12 0.04 0.3" distance="false" physics="true" graphics="true" transform="0 0.02 -0.05 0 0 0" color="RED" />
+
+    <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="0.06 0 0.1 0 0 0" color="RED"
+	   staticFriction="1.0" stiffness="2.0e4" height="0.0" />
+    <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="-0.06 0 0.1 0 0 0" color="RED"
+	   staticFriction="1.0" stiffness="2.0e4" height="0.0" />
+    <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="0.06 0 -0.2 0 0 0" color="RED"
+	   staticFriction="1.0" stiffness="2.0e4" height="0.0" />
+    <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="-0.06 0 -0.2 0 0 0" color="RED"
+	   staticFriction="1.0" stiffness="2.0e4" height="0.0" />
+
+    <!-- <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="0.06 0 0.0 0 0 0" color="RED" -->
+	   <!-- staticFriction="1.0" stiffness="2.0e4" height="0.0" /> -->
+    <!-- <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="-0.06 0 0.0 0 0 0" color="RED" -->
+	   <!-- staticFriction="1.0" stiffness="2.0e4" height="0.0" /> -->
+    <!-- <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="0.06 0 -0.1 0 0 0" color="RED" -->
+	   <!-- staticFriction="1.0" stiffness="2.0e4" height="0.0" /> -->
+    <!-- <Shape type="POINT" contact="true" distance="false" physics="false" graphics="true" transform="-0.06 0 -0.1 0 0 0" color="RED" -->
+	   <!-- staticFriction="1.0" stiffness="2.0e4" height="0.0" /> -->
+  </Body>
+
+<model_state model="DefaultPose2" time_stamp="">
+  <joint_state joint="Hips_jnt_Zposition" position="0.962277" />
+  <joint_state joint="Chest_jnt_Xrotation" position="-0.09063" />
+  <joint_state joint="Chest2_jnt_Xrotation" position="-1.040746" />
+  <joint_state joint="Chest3_jnt_Xrotation" position="-1.789799" />
+  <joint_state joint="Chest4_jnt_Xrotation" position="-2.410847" />
+  <joint_state joint="Neck_jnt_Xrotation" position="0.769853" />
+  <joint_state joint="Head_jnt_Xrotation" position="0.396958" />
+  <joint_state joint="RightCollar_jnt_Yrotation" position="-1.831092" />
+  <joint_state joint="RightCollar_jnt_Zrotation" position="12.678966" />
+  <joint_state joint="RightShoulder_jnt_Yrotation" position="9.273332" />
+  <joint_state joint="RightShoulder_jnt_Zrotation" position="-22.458168" />
+  <joint_state joint="RightShoulder_jnt_Xrotation" position="-5.169778" />
+  <joint_state joint="RightElbow_jnt_Yrotation" position="68.860383" />
+  <joint_state joint="RightWrist_jnt_Xrotation" position="-51.850087" />
+  <joint_state joint="RightWrist_jnt_Zrotation" position="10.936032" />
+  <joint_state joint="RightWrist_jnt_Yrotation" position="-4.136648" />
+  <joint_state joint="LeftCollar_jnt_Yrotation" position="1.831092" />
+  <joint_state joint="LeftCollar_jnt_Zrotation" position="-12.678966" />
+  <joint_state joint="LeftShoulder_jnt_Yrotation" position="-9.273332" />
+  <joint_state joint="LeftShoulder_jnt_Zrotation" position="22.458168" />
+  <joint_state joint="LeftShoulder_jnt_Xrotation" position="-5.169778" />
+  <joint_state joint="LeftElbow_jnt_Yrotation" position="-68.860383" />
+  <joint_state joint="LeftWrist_jnt_Xrotation" position="-51.850087" />
+  <joint_state joint="LeftWrist_jnt_Zrotation" position="-10.936032" />
+  <joint_state joint="LeftWrist_jnt_Yrotation" position="4.136648" />
+  <joint_state joint="RightHip_jnt_Zrotation" position="-0.363582" />
+  <joint_state joint="RightHip_jnt_Xrotation" position="-6.104019" />
+  <joint_state joint="RightHip_jnt_Yrotation" position="-0.014728" />
+  <joint_state joint="RightKnee_jnt_Xrotation" position="21.059747" />
+  <joint_state joint="RightAnkle_jnt_Yrotation" position="0.037" />
+  <joint_state joint="RightAnkle_jnt_Xrotation" position="-6.001807" />
+  <joint_state joint="RightAnkle_jnt_Zrotation" position="0.274502" />
+  <joint_state joint="RightToe_jnt_Yrotation" position="0.019267" />
+  <joint_state joint="RightToe_jnt_Xrotation" position="-10.847609" />
+  <joint_state joint="RightToe_jnt_Zrotation" position="0.078354" />
+  <joint_state joint="LeftHip_jnt_Zrotation" position="0.363582" />
+  <joint_state joint="LeftHip_jnt_Xrotation" position="-6.104019" />
+  <joint_state joint="LeftHip_jnt_Yrotation" position="0.014728" />
+  <joint_state joint="LeftKnee_jnt_Xrotation" position="21.059747" />
+  <joint_state joint="LeftAnkle_jnt_Yrotation" position="-0.037" />
+  <joint_state joint="LeftAnkle_jnt_Xrotation" position="-6.001807" />
+  <joint_state joint="LeftAnkle_jnt_Zrotation" position="-0.274502" />
+  <joint_state joint="LeftToe_jnt_Yrotation" position="-0.019267" />
+  <joint_state joint="LeftToe_jnt_Xrotation" position="-10.847609" />
+  <joint_state joint="LeftToe_jnt_Zrotation" position="-0.078354" />
+</model_state>
+
+
+
+<model_state model="Sit" time_stamp="">
+  <joint_state joint="Hips_jnt_Xposition" position="-0.5" />
+  <joint_state joint="Hips_jnt_Zposition" position="0.5" />
+  <joint_state joint="Chest_jnt_Xrotation" position="-0.09063" />
+  <joint_state joint="Chest2_jnt_Xrotation" position="-1.040746" />
+  <joint_state joint="Chest3_jnt_Xrotation" position="-1.789799" />
+  <joint_state joint="Chest4_jnt_Xrotation" position="-2.410847" />
+  <joint_state joint="Neck_jnt_Xrotation" position="0.769853" />
+  <joint_state joint="Head_jnt_Xrotation" position="0.396958" />
+  <joint_state joint="RightCollar_jnt_Yrotation" position="-1.831092" />
+  <joint_state joint="RightCollar_jnt_Zrotation" position="12.678966" />
+  <joint_state joint="RightShoulder_jnt_Yrotation" position="9.273332" />
+  <joint_state joint="RightShoulder_jnt_Zrotation" position="-22.458168" />
+  <joint_state joint="RightShoulder_jnt_Xrotation" position="-5.169778" />
+  <joint_state joint="RightElbow_jnt_Yrotation" position="68.860383" />
+  <joint_state joint="RightWrist_jnt_Xrotation" position="-51.850087" />
+  <joint_state joint="RightWrist_jnt_Zrotation" position="10.936032" />
+  <joint_state joint="RightWrist_jnt_Yrotation" position="-4.136648" />
+  <joint_state joint="LeftCollar_jnt_Yrotation" position="1.831092" />
+  <joint_state joint="LeftCollar_jnt_Zrotation" position="-12.678966" />
+  <joint_state joint="LeftShoulder_jnt_Yrotation" position="-9.273332" />
+  <joint_state joint="LeftShoulder_jnt_Zrotation" position="22.458168" />
+  <joint_state joint="LeftShoulder_jnt_Xrotation" position="-5.169778" />
+  <joint_state joint="LeftElbow_jnt_Yrotation" position="-68.860383" />
+  <joint_state joint="LeftWrist_jnt_Xrotation" position="-51.850087" />
+  <joint_state joint="LeftWrist_jnt_Zrotation" position="-10.936032" />
+  <joint_state joint="LeftWrist_jnt_Yrotation" position="4.136648" />
+  <joint_state joint="RightHip_jnt_Zrotation" position="-0.506266" />
+  <joint_state joint="RightHip_jnt_Xrotation" position="-85.912579" />
+  <joint_state joint="RightHip_jnt_Yrotation" position="0.284021" />
+  <joint_state joint="RightKnee_jnt_Xrotation" position="93.923289" />
+  <joint_state joint="RightAnkle_jnt_Yrotation" position="0.068878" />
+  <joint_state joint="RightAnkle_jnt_Xrotation" position="0.942844" />
+  <joint_state joint="RightAnkle_jnt_Zrotation" position="0.707273" />
+  <joint_state joint="RightToe_jnt_Yrotation" position="0.019267" />
+  <joint_state joint="RightToe_jnt_Xrotation" position="-10.847609" />
+  <joint_state joint="RightToe_jnt_Zrotation" position="0.078354" />
+  <joint_state joint="LeftHip_jnt_Zrotation" position="0.506295" />
+  <joint_state joint="LeftHip_jnt_Xrotation" position="-85.91258" />
+  <joint_state joint="LeftHip_jnt_Yrotation" position="-0.283972" />
+  <joint_state joint="LeftKnee_jnt_Xrotation" position="93.923286" />
+  <joint_state joint="LeftAnkle_jnt_Yrotation" position="-0.068892" />
+  <joint_state joint="LeftAnkle_jnt_Xrotation" position="0.942847" />
+  <joint_state joint="LeftAnkle_jnt_Zrotation" position="-0.707252" />
+  <joint_state joint="LeftToe_jnt_Yrotation" position="-0.019267" />
+  <joint_state joint="LeftToe_jnt_Xrotation" position="-10.847609" />
+  <joint_state joint="LeftToe_jnt_Zrotation" position="-0.078354" />
+</model_state>
+
+</Graph>
+  <Task name="Handle_R" controlVariable="XYZ" effector="Handle_R" active="true" />
+  <Task name="Handle_sync" controlVariable="XYZ" effector="Handle_R" refBdy="Handle_L" active="true" />
+  <!-- Hands -->
+  <Task name="Partner_HAND_L" controlVariable="XYZABC" effector="PartnerGrasp_L" active="untrue" />
+  <Task name="Partner_HAND_R" controlVariable="XYZABC" effector="PartnerGrasp_R" active="untrue" />
+
+  <!-- Mass center -->
+  <Task name="Partner_COM_Z" controlVariable="COGZ" effector="Base" refBdy="Base" active="true" />
+  <Task name="Partner_COM_X" controlVariable="COGX" effector="Base" refBdy="Base" active="true" />
+  
+  <!-- Feet with differential constraint (allowing to do the split)
+  <Task name="Partner_Foot_X_L" controlVariable="X" effector="LeftToe" refBdy="Base" active="untrue" />
+  <Task name="Partner_Foot_Y_L" controlVariable="Y" effector="LeftToe" refBdy="Base" active="true" />
+  <Task name="Partner_Foot_Z_L" controlVariable="Z" effector="LeftToe" refBdy="Base" active="true" />
+  <Task name="Partner_Foot_ABC_L" controlVariable="POLAR" effector="LeftToe" refBdy="Base" axisDirection="Y" active="true" />
+  <Task name="Partner_Foot_X_R" controlVariable="X" effector="RightToe" refBdy="Base" active="untrue" />
+  <Task name="Partner_Foot_Y_R" controlVariable="Y" effector="RightToe" refBdy="Base" active="true" />
+  <Task name="Partner_Foot_Z_R" controlVariable="Z" effector="RightToe" refBdy="Base" active="true" />
+  <Task name="Partner_Foot_ABC_R" controlVariable="POLAR" effector="RightToe" refBdy="Base" axisDirection="Y" active="true" />
+  <Task name="Partner_Foot_X_Diff" controlVariable="DiffConstraintX" effector="LeftToe" refBdy="RightToe" refFrame="Base" active="true" /> -->
+  
+  <!-- Feet fixed (allowing to crouch) -->
+  <Task name="Partner_Foot_L" controlVariable="XYZABC" effector="LeftToe"  refBdy="Base" active="true" />
+  <Task name="Partner_Foot_R" controlVariable="XYZABC" effector="RightToe" refBdy="Base" active="true" />
+  
+</Controller>
