@@ -3,6 +3,8 @@ config/xml/ECS
 config/xml/MotorCycle
 config/xml/RebaPrediction
 install
+UnitTestResults.txt
+unittest
 
 # Emacs backup files
 *~
