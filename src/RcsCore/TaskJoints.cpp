@@ -56,8 +56,8 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
   CompositeTask(className_, node, _graph)
 {
   // Parse all joints specified in attribute "jnts"
-  std::vector<std::string> jntsVec;
-  getXMLNodePropertyVecSTLString(node, "jnts", jntsVec);
+  std::vector<std::string> jntsVec =
+    getXMLNodePropertyVecSTLString(node, "jnts");
 
   // If atribute "jnts" does not exist or contain anything, we look for
   // an "effector" attribute and add all body joints
@@ -80,8 +80,8 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
     }
   }
 
-  std::vector<std::string> refJntsVec;
-  getXMLNodePropertyVecSTLString(node, "refJnts", refJntsVec);
+  std::vector<std::string> refJntsVec =
+    getXMLNodePropertyVecSTLString(node, "refJnts");
 
   // If atribute "refJnts" does not exist or contain anything, we look
   // for a "refBdy" attribute and add all body joints
@@ -456,8 +456,9 @@ bool Rcs::TaskJoints::isValid(xmlNode* node, const RcsGraph* graph)
 
   // If the attribute "jnts" is given, TaskJoints are only created
   // for the joints listed within the attribute
-  std::vector<std::string> jntVec;
-  bool hasJnts = getXMLNodePropertyVecSTLString(node, "jnts", jntVec);
+  std::vector<std::string> jntVec =
+    getXMLNodePropertyVecSTLString(node, "jnts");
+  bool hasJnts = jntVec.empty() ? false : true;
 
   if (hasJnts)
   {
@@ -507,8 +508,9 @@ bool Rcs::TaskJoints::isValid(xmlNode* node, const RcsGraph* graph)
 
   // If the attribute "refJnts" is given, TaskJoints are only created
   // for the joints listed within the attribute
-  std::vector<std::string> refJntVec;
-  bool hasRefJnts = getXMLNodePropertyVecSTLString(node, "refJnts", refJntVec);
+  std::vector<std::string> refJntVec =
+    getXMLNodePropertyVecSTLString(node, "refJnts");
+  bool hasRefJnts = refJntVec.empty() ? false : true;
 
   if (hasRefJnts)
   {

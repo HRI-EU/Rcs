@@ -1948,8 +1948,10 @@ int main(int argc, char** argv)
                        "Null space scaling factor (default is %g)", alpha);
       argP.getArgument("-lambda", &lambda, "Regularization (default is %g)",
                        lambda);
-      argP.getArgument("-f", xmlFileName);
-      argP.getArgument("-dir", directory);
+      argP.getArgument("-f", xmlFileName, "Configuration file (default is %s)",
+                       xmlFileName);
+      argP.getArgument("-dir", directory, "Configuration file directory "
+                       "(default is %s)", directory);
       argP.getArgument("-tmc", &tmc, "Filter time constant for sliders");
       argP.getArgument("-dt", &dt, "Sampling time interval (default: %f)", dt);
       argP.getArgument("-clipLimit", &clipLimit, "Clip limit for dx (default "
@@ -1987,6 +1989,14 @@ int main(int argc, char** argv)
       if (argP.hasArgument("-h"))
       {
         printf("Resolved motion rate control test\n\n");
+        printf("Here are a few examples:\n");
+        printf("bin/Rcs -m 5 -dir config/xml/DexBot -f cAction.xml\n");
+        printf("bin/Rcs -m 5 -f config/xml/Examples/cContactGrasping.xml -algo 1 -lambda 0.001 -alpha 0\n");
+        printf("bin/Rcs -m 5 -f config/xml/Examples/cDistanceTask.xml\n");
+        printf("bin/Rcs -m 5 -f config/xml/Examples/cNormalAlign.xml -algo 1 -alpha 0.01 -lambda 0 -scaleDragForce 0.001\n");
+        printf("bin/Rcs -m 5 -f config/xml/Examples/cFace.xml\n");
+        printf("bin/Rcs -m 5 -f config/xml/Examples/cSoftPhysicsIK.xml -physicsEngine SoftBullet\n");
+        printf("bin/Rcs -m 5 -dir config/xml/BioMechanics/ -f cSimpleHuman.xml -physicsEngine NewtonEuler -algo 1 -lamba 0 -dt 0.01\n");
         Rcs::ControllerBase::printUsage(xmlFileName);
         break;
       }
@@ -2107,6 +2117,7 @@ int main(int argc, char** argv)
         {
           simNode = new Rcs::PhysicsNode(sim);
           gn->setGhostMode(true, "RED");
+          gn->hide();
           v->add(simNode.get());
         }
 
@@ -3748,26 +3759,6 @@ int main(int argc, char** argv)
       RLOGS(1, "%s testing null space projections",
             (result==0) ? "SUCCESS" : "FAILURE");
 
-      break;
-    }
-
-    // ==============================================================
-    // Bit mask test
-    // ==============================================================
-    case 16:
-    {
-      unsigned int mask = 0;
-
-      mask += 1 << 1;
-      mask += 1 << 4;
-
-      RMSG("Mask is %d", mask);
-      Math_printBinaryVector(mask);
-
-      for (unsigned int i=0; i<7; ++i)
-      {
-        RMSG("Bit %d is %s", i, Math_isBitSet(mask, i) ? "SET" : "CLEAR");
-      }
       break;
     }
 

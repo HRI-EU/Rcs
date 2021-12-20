@@ -76,8 +76,8 @@ std::string getXMLNodePropertySTLString(xmlNodePtr node, const char* tag)
 /*******************************************************************************
  *
  ******************************************************************************/
-size_t getXMLNodePropertyVecSTLString(xmlNodePtr node, const char* tag,
-                                      std::vector<std::string>& vec)
+static size_t getXMLNodePropertyVecSTLString(xmlNodePtr node, const char* tag,
+                                             std::vector<std::string>& vec)
 {
   std::string tmp;
   size_t len = getXMLNodePropertySTLString(node, tag, tmp);

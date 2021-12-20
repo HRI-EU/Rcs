@@ -113,6 +113,7 @@ static bool testMode(int mode, int argc, char** argv)
         fprintf(stderr, "\t\t35  Test StackVec class\n");
         fprintf(stderr, "\t\t36  Tests interpolation algorithms\n");
         fprintf(stderr, "\t\t37  Tests plane fitting of 3d points\n");
+        fprintf(stderr, "\t\t38  Tests bit mask functions\n");
         break;
       }
 
@@ -226,6 +227,9 @@ static bool testMode(int mode, int argc, char** argv)
         break;
       case 37:
         success = testPlaneFit3d(argc, argv) && success;
+        break;
+      case 38:
+        success = testBitMask(argc, argv) && success;
         break;
       default:
         RMSGS("there is no mode %d", mode);

@@ -4328,3 +4328,24 @@ bool testPlaneFit3d(int argc, char** argv)
 
   return success;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool testBitMask(int argc, char** argv)
+{
+  unsigned int mask = 0;
+
+  mask += 1 << 1;
+  mask += 1 << 4;
+
+  RMSG("Mask is %d", mask);
+  Math_printBinaryVector(mask);
+
+  for (unsigned int i=0; i<8; ++i)
+  {
+    RMSG("Bit %d is %s", i, Math_isBitSet(mask, i) ? "SET" : "CLEAR");
+  }
+
+  return true;
+}

@@ -99,8 +99,8 @@ Rcs::TaskInclination::TaskInclination(const std::string& className,
   }
 
   // Generate vector of effector links
-  std::vector<std::string> vec;
-  getXMLNodePropertyVecSTLString(node, "effector", vec);
+  std::vector<std::string> vec =
+    getXMLNodePropertyVecSTLString(node, "effector");
 
   for (size_t i=0; i<vec.size(); ++i)
   {
@@ -361,8 +361,8 @@ bool Rcs::TaskInclination::isValid(xmlNode* node, const RcsGraph* graph)
   success = checkBody(node, "refFrame", graph, taskName) && success;
 
   // We don't check the effector
-  std::vector<std::string> vec;
-  getXMLNodePropertyVecSTLString(node, "effector", vec);
+  std::vector<std::string> vec =
+    getXMLNodePropertyVecSTLString(node, "effector");
 
   for (size_t i=0; i<vec.size(); ++i)
   {

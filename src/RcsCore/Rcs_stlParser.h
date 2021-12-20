@@ -70,20 +70,6 @@ std::string getXMLNodePropertySTLString(xmlNodePtr node, const char* tag);
 /*! \ingroup RcsParserFunctions
  *  \brief Reads multiple words from xml node into a vector of STL strings
  *
- *  \param[in]  node The xml node to read from
- *  \param[in]  tag  The name of node property to read
- *  \param[out] vec  Reference to a std::vector of std::string object that gets
- *                   the result
- *
- *  \return number of read bytes (including trailing '\\0')
- */
-size_t getXMLNodePropertyVecSTLString(xmlNodePtr node, const char* tag,
-                                      std::vector<std::string>& vec);
-
-
-/*! \ingroup RcsParserFunctions
- *  \brief Reads multiple words from xml node into a vector of STL strings
- *
  *  \param[in] node The xml node to read from
  *  \param[in] tag  The name of node property to read
  *

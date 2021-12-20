@@ -78,6 +78,7 @@ bool testFunctionsEigen3(int argc, char** argv);
 bool testSlerp(int argc, char** argv);
 bool testStackVec(int argc, char** argv);
 bool testPlaneFit3d(int argc, char** argv);
+bool testBitMask(int argc, char** argv);
 
 
 #ifdef __cplusplus
