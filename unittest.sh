@@ -31,19 +31,19 @@
 
 function testMath()
 {
-    build/bionic64/bin/bionic64/TestMath -m -1 -numTests 10 -dl 1 &> UnitTestResults.txt
+    build/$MAKEFILE_PLATFORM/bin/$MAKEFILE_PLATFORM/TestMath -m -1 -numTests 10 -dl 1 &> UnitTestResults.txt
     testMathResult=$?
 }
 
 function testGraph()
 {
-    build/bionic64/bin/bionic64/Rcs -m 3 -iter 10 -dl 1 -valgrind &>> UnitTestResults.txt
+    build/$MAKEFILE_PLATFORM/bin/$MAKEFILE_PLATFORM/Rcs -m 3 -iter 10 -dl 1 -valgrind &>> UnitTestResults.txt
     testGraphResult=$?
 }
 
 function testController()
 {
-    build/bionic64/bin/bionic64/Rcs -m 6 -valgrind -nTests 10 -dl 1 &>> UnitTestResults.txt
+    build/$MAKEFILE_PLATFORM/bin/$MAKEFILE_PLATFORM/Rcs -m 6 -valgrind -nTests 10 -dl 1 &>> UnitTestResults.txt
     testControllerResult=$?
 }
 

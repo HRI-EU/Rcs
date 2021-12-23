@@ -381,11 +381,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
     char matrix[512] = "1 2 3 4 , 5 6 7 8 , 9 10 11 12 , 13 14 15 16";
     MatNd_fromString(A, matrix);
 
-#if defined (_MSC_VER)
-    const char* fileName = "C:\\Temp\\deleteme.dat";
-#else
-    const char* fileName = "/tmp/deleteme.dat";
-#endif
+    const char* fileName = "MatNd_string_deleteme.dat";
 
     REXEC(2)
     {
@@ -446,11 +442,7 @@ bool testSimpleMatrixFunctions(int argc, char** argv)
     RLOGS(2, "**************************************");
     MatNd* A = MatNd_create(5, 2);
 
-#if defined (_MSC_VER)
-    const char* fileName = "C:\\Temp\\deleteme2.dat";
-#else
-    const char* fileName = "/tmp/deleteme2.dat";
-#endif
+    const char* fileName = "MatNd_append_deleteme.dat";
 
     for (unsigned int i=0; i<A->m; i++)
     {

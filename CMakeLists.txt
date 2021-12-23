@@ -211,14 +211,21 @@ ADD_SUBDIRECTORY (doc)
 #
 ################################################################################
 IF(UNIX)
-  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/unittest.in
-    ${CMAKE_CURRENT_BINARY_DIR}/unittest.sh @ONLY)
-  ADD_CUSTOM_TARGET(unittest 
-      COMMAND ${CMAKE_CURRENT_BINARY_DIR}/unittest.sh
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      COMMENT "Performing unittests" VERBATIM)
+  SET(TEST_EXE_DIR "${EXECUTABLE_OUTPUT_PATH}")
+  SET(TESTSCRIPT_NAME "${TEST_EXE_DIR}/rcs_unittest.sh")
+ELSEIF(WIN32)
+  SET(TEST_EXE_DIR "${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}")
+  SET(TESTSCRIPT_NAME "${TEST_EXE_DIR}/rcs_unittest.bat")
+ENDIF()
+
+IF(UNIX)
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/unittest.in ${TESTSCRIPT_NAME} @ONLY)
+  ADD_CUSTOM_TARGET(rcsunittest 
+      COMMAND ${TESTSCRIPT_NAME}
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+      COMMENT "Performing Rcs unittests" VERBATIM)
 ELSE()
-  MESSAGE(STATUS "Unit tests disabled - currently for Linux only")
+  MESSAGE(STATUS "Rcs unit tests for Linux only")
 ENDIF()
 
 ################################################################################
