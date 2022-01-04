@@ -71,8 +71,13 @@ typedef struct
  *  \return Number of integration steps
  */
 int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
-                      void* param, int nz, double t1, double t2,
-                      double* dt_opt, const double* x, double* x2,
+                      void* param,
+                      int nz,
+                      double t1,
+                      double t2,
+                      double* dt_opt,
+                      const double* x,
+                      double* x2,
                       double* maxErr);
 
 /*! \ingroup RcsKineticsFunctions
@@ -86,6 +91,23 @@ int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
  *  \param[out] x2      State vector after integration
  */
 void integration_euler(void (*FCN)(const double*, void*, double*, double),
+                       void* param,
+                       int nz,
+                       double dt,
+                       const double* x,
+                       double* x2);
+
+/*! \ingroup RcsKineticsFunctions
+ *  \brief Runge-Kutta-Fehlberg integration of second and 3rd order.
+ *
+ *  \param[in] FCN      Evaluation function for the differential equations
+ *  \param[in] param    Pointer to your use-case specific data
+ *  \param[in] nz       Number of differential equations
+ *  \param[in] dt       Integration interval
+ *  \param[in] x        State at t
+ *  \param[out] x2      State vector after integration
+ */
+void integration_rkf23(void (*FCN)(const double*, void*, double*, double),
                        void* param,
                        int nz,
                        double dt,
@@ -161,14 +183,12 @@ double Rcs_directDynamics(const RcsGraph* graph,
 
 /*! \ingroup RcsKineticsFunctions
  *  \brief Wrapper function of the direct dynamics to match the function
- *         signature of the integrator. Argument param is assumed to
- *         point to a RcsGraph structure. It's userData field is assumed
- *         to point to an MatNd holding the external forces projected into
- *         the configuration space. Please see the implementation for
- *         details.
+ *         signature of the integrator: xp = f(x, time)
+ *         Argument param is assumed to point to a DirDynParams structure,
+ *         see above. Please see the implementation for details.
  */
 void Rcs_directDynamicsIntegrationStep(const double* x, void* param,
-                                       double* xp, double dt);
+                                       double* xp, double time);
 
 
 

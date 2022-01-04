@@ -39,9 +39,114 @@
 
 
 
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static void runge_kutta_fehlberg_1_2(int nz,
+                                     void (*FCN)(const double*, void*, double*, double),
+                                     void* param,
+                                     double t,
+                                     double dt,
+                                     const double* x1,
+                                     double* x2,
+                                     double* err)
+{
+  double* k1 = RNALLOC(nz, double);
+  double* k2 = RNALLOC(nz, double);
+  double* tmp = RNALLOC(nz, double);
+
+  (*FCN)(x1, param, k1, dt);
+
+  // tmp is 1st-order approximation of x2
+  for (int i = 0; i < nz; i++)
+  {
+    tmp[i] = x1[i] + dt*k1[i];
+  }
+
+  // Computation of k2 = dx(x2)
+  (*FCN)(tmp, param, k2, dt);
+
+  // Error estimate
+  for (int i = 0; i < nz; i++)
+  {
+    const double x_ord1 = x1[i] + dt*k1[i];
+    const double x_ord2 = x1[i] + 0.5*dt*(k1[i]+k2[i]);
+    x2[i] = x_ord2;
+
+    if (err)
+    {
+      err[i] = x_ord2-x_ord1;  // = 0.5*dt*(k2[i]-k1[i]);
+    }
+  }
+
+  RFREE(k1);
+  RFREE(k2);
+  RFREE(tmp);
+}
+
+/*******************************************************************************
+ * See IfM_Preprint_M_02_09.pdf page 18
+ ******************************************************************************/
+static void runge_kutta_fehlberg_2_3(int nz,
+                                     void (*FCN)(const double*, void*, double*, double),
+                                     void* param,
+                                     double t,
+                                     double dt,
+                                     const double* x1,
+                                     double* x2,
+                                     double* err)
+{
+  double* k1 = RNALLOC(nz, double);
+  double* k2 = RNALLOC(nz, double);
+  double* k3 = RNALLOC(nz, double);
+  double* tmp = RNALLOC(nz, double);
+
+  t = 0.0;
+
+  // Computation of k1 = dx(x1)
+  (*FCN)(x1, param, k1, dt);
+
+  // tmp is 1st-order approximation of x2
+  for (int i = 0; i < nz; i++)
+  {
+    tmp[i] = x1[i] + dt*k1[i];
+  }
+
+  // Computation of k2 = dx(x2)
+  (*FCN)(tmp, param, k2, t+dt);
+
+  // Computation of k3
+  for (int i = 0; i < nz; i++)
+  {
+    tmp[i] = x1[i] + 0.25*dt*(k1[i]+k2[i]);
+  }
+
+  /* (*FCN)(tmp, param, k3, t+0.5*dt); */
+  (*FCN)(tmp, param, k3, dt);
+
+  // Error estimate
+  for (int i = 0; i < nz; i++)
+  {
+    const double x_ord2 = x1[i] + (dt/2.0)*(k1[i]+k2[i]);
+    const double x_ord3 = x1[i] + (dt/6.0)*(k1[i]+k2[i]+4.0*k3[i]);
+    x2[i] = x_ord3;
+
+    if (err)
+    {
+      err[i] = (x_ord3-x_ord2);
+    }
+  }
+
+  RFREE(k1);
+  RFREE(k2);
+  RFREE(k3);
+  RFREE(tmp);
+}
+
 /*******************************************************************************
  * Integration of differential equations of first order according to
- * Runge - Kutta - Fehlberg - Order 2 and 2. From:
+ * Runge - Kutta - Fehlberg - Order 2 and 3. From:
  * Stoer, Bulirsch, Numerische Mathematik II,
  * Springer- Verlag, fifth edition, 2005, pp.135.
  * Parameters:
@@ -51,63 +156,37 @@
  * t       : Integration time
  * dt      : Integration time step
  * x1      : State at t
- * x2      : Atate at t+dt
+ * x2      : State at t+dt
  * err     : Estimated error at x2
  ******************************************************************************/
-void runge_kutta_2_3(int nz,
-                     void (*FCN)(const double*, void*, double*, double),
-                     void* param,
-                     double t,
-                     double dt,
-                     const double* x1,
-                     double* x2,
-                     double* err,
-                     int* init)
+static void runge_kutta_2_3(int nz,
+                            void (*FCN)(const double*, void*, double*, double),
+                            void* param,
+                            double t,
+                            double dt,
+                            const double* x1,
+                            double* x2,
+                            double* err)
 {
-  static bool initRK    = false;
-  static double t_merk  = 0.0;
-  static double dt_merk = 0.0;
-  static int init_test  = false;
+  // Integration constants
+  //const double a1 = 1. / 4.;
+  //const double a2 = 27. / 40.;
+  const double b10 = 1. / 4.;
+  const double b20 = -189. / 800.;
+  const double b21 = 729. / 800.;
+  const double b30 = 214. / 891.;
+  const double b31 = 1. / 33.;
+  const double b32 = 650. / 891.;
 
-  // Memorize configurationen
-  static double* XP_merk1 = NULL;
-  static double* XP_merk2 = NULL;
+  const double c0 = 214. / 891.;
+  const double c1 = 1. / 33.;
+  const double c2 = 650. / 891.;
 
-  if (!initRK)
-  {
-    initRK    = true;
-    t_merk    = t;
-    dt_merk   = dt;
-    init_test = *init;
-    XP_merk1  = RNALLOC(nz, double);
-    XP_merk2  = RNALLOC(nz, double);
-    if (!init_test)
-    {
-      RFATAL("Integrator not initialized!");
-    }
-  }
+  const double cd0 = 533. / 2106.;
+  const double cd2 = 800. / 1053.;
+  const double cd3 = -1. / 78.;
 
-  // Konstanten des Integrationsverfahrens
-  //double a1, a2;
-  double b10, b20, b21, b30, b31, b32, c0, c1, c2, cd0, cd2, cd3;
-  //a1 = 1. / 4.;
-  //a2 = 27. / 40.;
-  b10 = 1. / 4.;
-  b20 = -189. / 800.;
-  b21 = 729. / 800.;
-  b30 = 214. / 891.;
-  b31 = 1. / 33.;
-  b32 = 650. / 891.;
-
-  c0 = 214. / 891.;
-  c1 = 1. / 33.;
-  c2 = 650. / 891.;
-
-  cd0 = 533. / 2106.;
-  cd2 = 800. / 1053.;
-  cd3 = -1. / 78.;
-
-  // Ergebnisvektor und Hilfsvektoren
+  // Intermediate integrated states
   double* w0 = RNALLOC(nz, double);
   double* w1 = RNALLOC(nz, double);
   double* w2 = RNALLOC(nz, double);
@@ -115,29 +194,8 @@ void runge_kutta_2_3(int nz,
   double* w4 = RNALLOC(nz, double);
   double* w5 = RNALLOC(nz, double);
 
-  if (init == 0)
-  {
-    // no complete re-initialization
-    if (fabs(t_merk - t) < dt_merk / 10.)
-    {
-      // Integration failed -> new initial gradient
-      memmove(w0, XP_merk1, nz * sizeof(double));
-    }
-    else
-    {
-      // Integration succeeded -> previous gradient is initial gradient
-      memmove(w0, XP_merk2, nz * sizeof(double));
-      memmove(XP_merk1, XP_merk2, nz * sizeof(double));
-    }
-  }
-  else
-  {
-    // Re-initialization after impact etc.
-    // 1st call to the equations of motion
-    (*FCN)(x1, param, XP_merk1, dt);
-    memmove(w0, XP_merk1, nz * sizeof(double));
-    init = 0;
-  }
+  // 1st call to the equations of motion
+  (*FCN)(x1, param, w0, dt);
 
   // 1st integration of the equations of motion
   for (int i = 0; i < nz; i++)
@@ -166,11 +224,6 @@ void runge_kutta_2_3(int nz,
   // 4th call to the equations of motion
   (*FCN)(w5, param, w3, dt);
 
-  // Memorize last system state
-  memmove(XP_merk2, w3, nz * sizeof(double));
-  t_merk  = t;
-  dt_merk = dt;
-
   // Computation of X2 with 2nd order strategy
   for (int i = 0; i < nz; i++)
   {
@@ -195,6 +248,19 @@ void runge_kutta_2_3(int nz,
   RFREE(w3);
   RFREE(w4);
   RFREE(w5);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void integration_rkf23(void (*FCN)(const double*, void*, double*, double),
+                       void* param,
+                       int nz,
+                       double dt,
+                       const double* x,
+                       double* x2)
+{
+  runge_kutta_fehlberg_2_3(nz, FCN, param, 0.0, dt, x, x2, NULL);
 }
 
 /*******************************************************************************
@@ -253,7 +319,6 @@ int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
 {
   int j, anzahl_integrationsschritte = 0, anzahl_schaltpunktschritte;
   double max_fehler;
-  static int init = 1;
   double t  = t1;
   double dt = *dt_opt;
   double* x1  = RNALLOC(nz, double);
@@ -279,14 +344,18 @@ int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
       anzahl_schaltpunktschritte += 1;
       anzahl_integrationsschritte += 1;
 
-      runge_kutta_2_3(nz, FCN, param, t, dt, x1, x2, err, &init);
+      //runge_kutta_fehlberg_1_2(nz, FCN, param, t, dt, x1, x2, err);
+      //runge_kutta_fehlberg_2_3(nz, FCN, param, t, dt, x1, x2, err);
+      runge_kutta_2_3(nz, FCN, param, t, dt, x1, x2, err);
+
 
       // Computation of max. error
       for (j = 0; j < nz; j++)
       {
-        err[j] = err[j] / fehler_zul[j];
+        err[j] = fabs(err[j] / fehler_zul[j]);
       }
-      max_fehler = pow(VecNd_maxAbsEle(err, nz), (1.0 / 3.0));
+
+      max_fehler = pow(VecNd_maxEle(err, nz), (1.0 / 3.0));
 
       // Step size adaptation
       if (max_fehler < ALMOST_ZERO)
@@ -817,7 +886,7 @@ double Rcs_directDynamics(const RcsGraph* graph,
 void Rcs_directDynamicsIntegrationStep(const double* x,
                                        void* param,
                                        double* xp,
-                                       double dt)
+                                       double time)
 {
   DirDynParams* p = (DirDynParams*) param;
   RcsGraph* graph = p->graph;

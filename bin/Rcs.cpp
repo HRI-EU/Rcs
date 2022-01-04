@@ -204,7 +204,7 @@ int main(int argc, char** argv)
   // Parse command line arguments
   Rcs::CmdLineParser argP(argc, argv);
   argP.getArgument("-dl", &RcsLogLevel, "Debug level (default is 0)");
-  argP.getArgument("-m", &mode, "Test mode (default is 0)");
+  argP.getArgument("-m", &mode, "Test mode (default is %d)", mode);
   argP.getArgument("-f", xmlFileName, "Configuration file name");
   argP.getArgument("-dir", directory, "Configuration file directory");
   bool valgrind = argP.hasArgument("-valgrind",
@@ -1288,7 +1288,7 @@ int main(int argc, char** argv)
       argP.getArgument("-bgColor", bgColor, "Background color (default is "
                        "\"%s\")", bgColor);
       argP.getArgument("-i", &integrator, "Integrator for Newton-Euler "
-                       "simulatio (default is \"%s\")", integrator.c_str());
+                       "simulation (default is \"%s\")", integrator.c_str());
       getModel(directory, xmlFileName);
 
       if (argP.hasArgument("-h"))
@@ -1809,7 +1809,7 @@ int main(int argc, char** argv)
         double dtSim = Timer_getTime();
         sim->simulate(dt, graph, NULL, NULL, !skipControl);
         sim->getJointAngles(q_curr);
-        REXEC(5)
+        REXEC(6)
         {
           sim->getJointTorque(T_curr);
           MatNd_printCommentDigits("T_curr", T_curr, 4);
@@ -1941,7 +1941,10 @@ int main(int argc, char** argv)
       char effortBdyName[256] = "";
       std::string physicsEngine;
       char physicsCfg[128] = "config/physics/physics.xml";
+      std::string integrator = "Fehlberg";
 
+      argP.getArgument("-i", &integrator, "Integrator for Newton-Euler "
+                       "simulation (default is \"%s\")", integrator.c_str());
       argP.getArgument("-algo", &algo, "IK algorithm: 0: left inverse, 1: "
                        "right inverse (default is %d)", algo);
       argP.getArgument("-alpha", &alpha,
@@ -1952,7 +1955,8 @@ int main(int argc, char** argv)
                        xmlFileName);
       argP.getArgument("-dir", directory, "Configuration file directory "
                        "(default is %s)", directory);
-      argP.getArgument("-tmc", &tmc, "Filter time constant for sliders");
+      argP.getArgument("-tmc", &tmc, "Filter time constant for sliders: 1 is "
+                       "unfiltered (default: %f)", tmc);
       argP.getArgument("-dt", &dt, "Sampling time interval (default: %f)", dt);
       argP.getArgument("-clipLimit", &clipLimit, "Clip limit for dx (default "
                        "is DBL_MAX)");
@@ -1996,7 +2000,7 @@ int main(int argc, char** argv)
         printf("bin/Rcs -m 5 -f config/xml/Examples/cNormalAlign.xml -algo 1 -alpha 0.01 -lambda 0 -scaleDragForce 0.001\n");
         printf("bin/Rcs -m 5 -f config/xml/Examples/cFace.xml\n");
         printf("bin/Rcs -m 5 -f config/xml/Examples/cSoftPhysicsIK.xml -physicsEngine SoftBullet\n");
-        printf("bin/Rcs -m 5 -dir config/xml/BioMechanics/ -f cSimpleHuman.xml -physicsEngine NewtonEuler -algo 1 -lamba 0 -dt 0.01\n");
+        printf("bin/Rcs -m 5 -dir config/xml/Examples/ -f cSitToStand.xml -physicsEngine NewtonEuler -algo 1 -lamba 0 -dt 0.01\n");
         Rcs::ControllerBase::printUsage(xmlFileName);
         break;
       }
@@ -2033,6 +2037,7 @@ int main(int argc, char** argv)
       MatNd* q_dot_des = MatNd_create(controller.getGraph()->dof, 1);
       MatNd* a_des     = MatNd_create(controller.getNumberOfTasks(), 1);
       MatNd* x_curr    = MatNd_create(controller.getTaskDim(), 1);
+      MatNd* x_physics = MatNd_create(controller.getTaskDim(), 1);
       MatNd* x_des     = MatNd_create(controller.getTaskDim(), 1);
       MatNd* x_des_f   = MatNd_create(controller.getTaskDim(), 1);
       MatNd* dx_des    = MatNd_create(controller.getTaskDim(), 1);
@@ -2042,6 +2047,7 @@ int main(int argc, char** argv)
       controller.computeX(x_curr);
       MatNd_copy(x_des, x_curr);
       MatNd_copy(x_des_f, x_curr);
+      MatNd_copy(x_physics, x_curr);
 
       // Body for static effort null space gradient
       const RcsBody* effortBdy = RcsGraph_getBodyByName(controller.getGraph(),
@@ -2052,12 +2058,14 @@ int main(int argc, char** argv)
 
       // Physics engine
       Rcs::PhysicsBase* sim = NULL;
+      Rcs::ControllerBase* simController = NULL;
       RcsGraph* simGraph = NULL;
       bool physicsFeedback = false;
 
       if (Rcs::PhysicsFactory::hasEngine(physicsEngine.c_str()))
       {
-        simGraph = RcsGraph_clone(controller.getGraph());
+        simController = new Rcs::ControllerBase(controller);
+        simGraph = simController->getGraph();//RcsGraph_clone(controller.getGraph());
 
         if (posCntrl)
         {
@@ -2081,6 +2089,11 @@ int main(int argc, char** argv)
           RLOG_CPP(1, "Couldn't create physics \"" << physicsEngine << "\"");
           RcsGraph_destroy(simGraph);
           simGraph = NULL;
+        }
+        else
+        {
+          sim->setParameter(Rcs::PhysicsBase::Simulation, integrator.c_str(),
+                            "Integrator", 0.0);
         }
       }
 
@@ -2136,16 +2149,26 @@ int main(int argc, char** argv)
         {
           if (!skipGui)
           {
-            if (algo==0 && lambda>0.0)
+            if ((algo==0) && (lambda>0.0))
             {
               Rcs::ControllerWidgetBase::create(&controller, a_des,
-                                                ikSolver->getCurrentActivation(), x_des,
-                                                x_curr, mtx);
+                                                ikSolver->getCurrentActivation(),
+                                                x_des, x_curr, mtx);
             }
             else
             {
-              Rcs::ControllerWidgetBase::create(&controller, a_des,
-                                                x_des, x_curr, mtx);
+              if (sim)
+              {
+                // If mode 5 runs with a simulator, the GUI displays the
+                // current values from physics.
+                Rcs::ControllerWidgetBase::create(&controller, a_des,
+                                                  x_des, x_physics, mtx);
+              }
+              else
+              {
+                Rcs::ControllerWidgetBase::create(&controller, a_des,
+                                                  x_des, x_curr, mtx);
+              }
             }
           }
         }
@@ -2300,12 +2323,14 @@ int main(int argc, char** argv)
         {
           sim->setControlInput(controller.getGraph()->q, q_dot_des, NULL);
           sim->simulate(dt, simGraph);
-          RcsGraph_setState(simGraph, NULL, NULL);
+          RcsGraph_setState(simGraph, simGraph->q, simGraph->q_dot);
+          simController->computeX(x_physics);
           if (physicsFeedback)
           {
             RcsGraph_setState(controller.getGraph(), simGraph->q,
                               simGraph->q_dot);
           }
+
           else
           {
             RcsGraph* dstGraph = controller.getGraph();
@@ -2498,13 +2523,13 @@ int main(int argc, char** argv)
         }
 
         char timeStr[64] = "";
-        if (1.0e6*dt_calc>10000000.0)   // show seconds
+        if (dt_calc>10.0)   // show seconds
         {
           snprintf(timeStr, 64, "%.1f s", dt_calc);
         }
-        else if (1.0e6*dt_calc>10000.0)   // show milliseconds
+        else if (dt_calc>0.0001)   // show milliseconds
         {
-          snprintf(timeStr, 64, "%.1f ms", 1.0e3*dt_calc);
+          snprintf(timeStr, 64, "%.3f ms", 1.0e3*dt_calc);
         }
         else
         {
@@ -2572,11 +2597,13 @@ int main(int argc, char** argv)
       MatNd_destroy(q_dot_des);
       MatNd_destroy(a_des);
       MatNd_destroy(x_curr);
+      MatNd_destroy(x_physics);
       MatNd_destroy(x_des);
       MatNd_destroy(x_des_f);
       MatNd_destroy(dx_des);
       MatNd_destroy(dH);
 
+      delete simController;   // It's safe even if simController is NULL
       delete ikSolver;
 
       break;

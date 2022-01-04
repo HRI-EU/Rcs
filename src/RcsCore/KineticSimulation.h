@@ -48,7 +48,8 @@ namespace Rcs
  *
  *  This library implements a dynamics simulation class that integrates the
  *  rigid body equations of motion. It also implements a point contact model
- *  based on a spring-damper model.
+ *  based on a spring-damper model. The forward dynamics is based on an O(3)
+ *  scheme that inverts the mass matrix.
  *
  *  The equations of motion can be integrated with two different integrators.
  *  The default is an Euler one-step integration. It is very efficient, but is
@@ -78,7 +79,7 @@ namespace Rcs
  *  into
  *
  *      / M00   M10 \  / qdd_f \     / h_f \      / F_f \
- *      |           |  |       |  =  |      | +   |     |
+ *      |           |  |       |  =  |     |  +   |     |
  *      \ M10   M11 /  \ qdd_c /     \ h_c /      \ F_c /
  *
  *  We then solve for the free accelerations under consideration of the
@@ -308,6 +309,13 @@ public:
                              const double x_attach[3],
                              const double xp_attach[3]) const;
 
+    void computeContacts(double xp_contact[3],
+                         double f_contact[3],
+                         const double dt,
+                         const double x_contact[3],
+                         const double x_attach[3],
+                         const double xp_attach[3]) const;
+
     int bdyId;                // Contact body
     int shapeIdx;             // Index of bodie's contacting shape
     double mu;                // Coulomb friction coefficient
@@ -327,11 +335,17 @@ protected:
   double dirdyn(const RcsGraph* graph, const MatNd* F_ext,
                 const MatNd* F_jnt, MatNd* q_ddot, double dt);
 
+  void addContactForces(MatNd* M_contact, MatNd* xp_contact,
+                        const double* x, double dt);
+
+  void addSpringForces(MatNd* M_spring, const MatNd* q_dot);
+
   MatNd* draggerTorque;
   MatNd* jointTorque;
   std::string integrator;
   double energy;
   double dt_opt;
+  double lastDt;   // Most recent dt when calling simulate()
 };
 
 }   // namespace Rcs
