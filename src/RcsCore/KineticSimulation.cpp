@@ -756,99 +756,17 @@ void KineticSimulation::integrationStep(const double* x, void* param,
   RcsGraph* graph = kSim->getGraph();
   const int nq = graph->nJ;
   const int nc = kSim->contact.size();
-  MatNd q = MatNd_fromPtr(nq, 1, (double*)&x[0]);
-  MatNd qp = MatNd_fromPtr(nq, 1, (double*)&x[nq]);
-  MatNd qpp = MatNd_fromPtr(nq, 1, &xp[nq]);
-  MatNd xp_c = MatNd_fromPtr(nc, 3, &xp[2*nq]);
 
   // Update kinematics
+  MatNd q = MatNd_fromPtr(nq, 1, (double*)&x[0]);
+  MatNd qp = MatNd_fromPtr(nq, 1, (double*)&x[nq]);
   RcsGraph_setState(graph, &q, &qp);
 
   // Compute the contact forces and friction contact velocities
-  // MatNd* J = MatNd_create(3, nq);
   MatNd* M_contact = MatNd_create(nq, 1);
-
-#if 0
-  // Compute the velocities of the attachement points
-  MatNd x_c = MatNd_fromPtr(nc, 3, (double*)&x[2*nq]);
-
-  for (int i = 0; i < nc; i++)
-  {
-    const RcsBody* cBdy = &graph->bodies[kSim->contact[i].bdyId];
-    const RcsShape* cSh = cBdy->shape[kSim->contact[i].shapeIdx];
-    RcsGraph_bodyPointJacobian(graph, cBdy, cSh->A_CB.org, NULL, J);
-
-    // Compute the velocities of the attachement points
-    double xp_attach_i[3];
-    MatNd xp_a_i = MatNd_fromPtr(3, 1, xp_attach_i);
-    MatNd_mul(&xp_a_i, J, &qp);
-
-    // Compute friction contact speeds
-    double* xp_contact_i = &xp_c.ele[3 * i];
-    const double* x_contact_i = &x_c.ele[3*i];
-    HTr A_CI;
-    HTr_transform(&A_CI, &cBdy->A_BI, &cSh->A_CB);
-    const double* x_attach_i = A_CI.org;
-
-    kSim->contact[i].computeContacts(xp_contact_i, kSim->contact[i].f_contact,
-                                     dt, x_contact_i, x_attach_i, xp_attach_i);
-
-    // Project contact forces into joint space
-    MatNd F_i = MatNd_fromPtr(3, 1, kSim->contact[i].f_contact);
-    MatNd_transposeSelf(J);
-    MatNd_mulAndAddSelf(M_contact, J, &F_i);
-  }
-#else
+  MatNd xp_c = MatNd_fromPtr(nc, 3, &xp[2*nq]);
   kSim->addContactForces(M_contact, &xp_c, x, dt);
-#endif
-
-  // Spring forces
-#if 0
-  RCSGRAPH_FOREACH_BODY(graph)
-  {
-    RCSBODY_TRAVERSE_SHAPES(BODY)
-    {
-      if (!RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_ATTACHMENT))
-      {
-        continue;
-      }
-
-      const RcsBody* anchor = RcsGraph_getBodyByName(graph, SHAPE->meshFile);
-      RCHECK_MSG(anchor, "Not found: \"%s\"", SHAPE->meshFile);
-      const double* x_anchor = anchor->A_BI.org;
-      const double* xp_anchor = anchor->x_dot;
-
-      // Compute the velocities of the spring point
-      HTr A_CI;
-      HTr_transform(&A_CI, &BODY->A_BI, &SHAPE->A_CB);
-      const double* x_spring = A_CI.org;
-      double xp_spring_[3];
-      MatNd xp_spring = MatNd_fromPtr(3, 1, xp_spring_);
-      RcsGraph_bodyPointJacobian(graph, BODY, SHAPE->A_CB.org, NULL, J);
-      MatNd_mul(&xp_spring, J, &qp);
-
-      // Compute spring force
-      double f[3];
-      const double stiffness = SHAPE->scale3d[0];
-      const double damping = SHAPE->scale3d[1];
-      for (int i = 0; i < 3; ++i)
-      {
-        f[i] = stiffness*(x_anchor[i]-x_spring[i]) +
-               damping*(xp_anchor[i]-xp_spring_[i]);
-      }
-
-      // Project contact forces into joint space
-      MatNd F_i = MatNd_fromPtr(3, 1, f);
-      MatNd_transposeSelf(J);
-      MatNd_mulAndAddSelf(M_contact, J, &F_i);
-    }
-  }
-#else
   kSim->addSpringForces(M_contact, &qp);
-#endif
-
-  // Transfer joint velocities
-  memmove(&xp[0], qp.ele, nq * sizeof(double));
 
   // Add joint torque
   MatNd* T_des_ik = MatNd_create(nq, 1);
@@ -860,7 +778,11 @@ void KineticSimulation::integrationStep(const double* x, void* param,
   // applyForce() function, called from the ForceDragger of the PhysicsNode.
   MatNd_subSelf(M_contact, kSim->draggerTorque);
 
+  // Transfer joint velocities
+  memmove(&xp[0], qp.ele, nq * sizeof(double));
+
   // Compute accelerations using direct dynamics.
+  MatNd qpp = MatNd_fromPtr(nq, 1, &xp[nq]);
   kSim->energy = kSim->dirdyn(graph, M_contact, NULL, &qpp, time);
 
   MatNd xpArr = MatNd_fromPtr(2*nq + 3*nc, 1, xp);
