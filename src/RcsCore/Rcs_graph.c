@@ -2680,7 +2680,7 @@ void RcsGraph_makeJointsConsistent(RcsGraph* self)
       continue;
     }
 
-    JNT->coupledToId = master->jointIndex;
+    JNT->coupledToId = master->id;
 
     // Calculate range and initial posture
     double q_min  = RcsJoint_computeSlaveJointAngle(self, JNT, master->q_min);
