@@ -53,8 +53,8 @@ static PhysicsFactoryRegistrar<KineticSimulation> physics(className);
  * Constructor.
  ******************************************************************************/
 KineticSimulation::KineticSimulation() : PhysicsBase(), draggerTorque(NULL),
-  jointTorque(NULL), integrator("Fehlberg"), energy(0.0), dt_opt(0.0),
-  lastDt(0.0)
+  jointTorque(NULL), contactForces(NULL), contactPositions(NULL),
+  integrator("Fehlberg"), energy(0.0), dt_opt(0.0), lastDt(0.0)
 {
 }
 
@@ -63,7 +63,8 @@ KineticSimulation::KineticSimulation() : PhysicsBase(), draggerTorque(NULL),
  ******************************************************************************/
 KineticSimulation::KineticSimulation(const RcsGraph* graph_) :
   PhysicsBase(graph_), draggerTorque(NULL), jointTorque(NULL),
-  integrator("Fehlberg"), energy(0.0), dt_opt(0.0), lastDt(0.0)
+  contactForces(NULL), contactPositions(NULL), integrator("Fehlberg"),
+  energy(0.0), dt_opt(0.0), lastDt(0.0)
 {
   initialize(graph_, NULL);
 }
@@ -76,9 +77,11 @@ KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe) :
   integrator(copyFromMe.integrator), energy(copyFromMe.energy),
   dt_opt(copyFromMe.dt_opt), lastDt(copyFromMe.lastDt)
 {
-  this->draggerTorque = MatNd_create(getGraph()->nJ, 1);
+  this->draggerTorque = MatNd_create(getGraph()->dof, 1);
   MatNd_reshapeCopy(this->draggerTorque, copyFromMe.draggerTorque);
   this->jointTorque = MatNd_clone(copyFromMe.jointTorque);
+  this->contactForces = MatNd_clone(copyFromMe.contactForces);
+  this->contactPositions = MatNd_clone(copyFromMe.contactPositions);
 }
 
 /*******************************************************************************
@@ -90,9 +93,11 @@ KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe,
   integrator(copyFromMe.integrator), energy(copyFromMe.energy),
   dt_opt(copyFromMe.dt_opt), lastDt(copyFromMe.lastDt)
 {
-  this->draggerTorque = MatNd_create(getGraph()->nJ, 1);
+  this->draggerTorque = MatNd_create(getGraph()->dof, 1);
   MatNd_reshapeCopy(this->draggerTorque, copyFromMe.draggerTorque);
   this->jointTorque = MatNd_clone(copyFromMe.jointTorque);
+  this->contactForces = MatNd_clone(copyFromMe.contactForces);
+  this->contactPositions = MatNd_clone(copyFromMe.contactPositions);
 }
 
 /*******************************************************************************
@@ -110,6 +115,8 @@ KineticSimulation& KineticSimulation::operator= (const KineticSimulation& other)
   PhysicsBase::operator =(other);
   MatNd_resizeCopy(&this->draggerTorque, other.draggerTorque);
   MatNd_resizeCopy(&this->jointTorque, other.jointTorque);
+  MatNd_resizeCopy(&this->contactForces, other.contactForces);
+  MatNd_resizeCopy(&this->contactPositions, other.contactPositions);
   this->integrator = other.integrator;
   this->energy = other.energy;
   this->dt_opt = other.dt_opt;
@@ -123,6 +130,8 @@ KineticSimulation::~KineticSimulation()
 {
   MatNd_destroy(this->draggerTorque);
   MatNd_destroy(this->jointTorque);
+  MatNd_destroy(this->contactForces);
+  MatNd_destroy(this->contactPositions);
 }
 
 /*******************************************************************************
@@ -151,16 +160,31 @@ bool KineticSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
     {
       if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_CONTACT))
       {
-        double mu = SHAPE->scale3d[0];
-        double stiffness = SHAPE->scale3d[1];
-        double z0 = SHAPE->scale3d[2];
-        contact.push_back(FrictionContactPoint(BODY, shapeIdx,
+        const double mu = SHAPE->scale3d[0];
+        const double stiffness = SHAPE->scale3d[1];
+        const double z0 = SHAPE->scale3d[2];
+
+        contact.push_back(FrictionContactPoint(BODY->id, shapeIdx,
                                                mu, stiffness, z0));
       }
 
       shapeIdx++;
     }
   }
+
+  // Create arrays for contact forces and positions
+  this->contactForces = MatNd_create(contact.size(), 3);
+  this->contactPositions = MatNd_create(contact.size(), 3);
+
+  // Initialize contact point with attachement point coordinates
+  for (size_t i=0; i<contact.size(); ++i)
+  {
+    HTr A_CI;
+    const RcsBody* bdy = RCSBODY_BY_ID(g, contact[i].bdyId);
+    HTr_transform(&A_CI, &bdy->A_BI, &bdy->shape[contact[i].shapeIdx]->A_CB);
+    MatNd_setRow(this->contactPositions, i, A_CI.org, 3);
+  }
+
   // Remove kinematic constraints from all bodies with rigid body dofs
   RCSGRAPH_TRAVERSE_BODIES(getGraph())
   {
@@ -225,11 +249,7 @@ void KineticSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
   RcsGraph_stateVectorToIK(getGraph(), getGraph()->q_dot, &zqd);
 
   // Copy contact point positions into overal state vector z
-  for (int i=0; i<nc; ++i)
-  {
-    double* row = MatNd_getRowPtr(&zc, i);
-    Vec3d_copy(row, contact[i].x_contact);
-  }
+  MatNd_copy(&zc, contactPositions);
 
   if (integrator == "Fehlberg")
   {
@@ -259,11 +279,7 @@ void KineticSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
   RcsGraph_setState(getGraph(), &zq, &zqd);
 
   // ... and into contact point coordinates
-  for (int i = 0; i < nc; ++i)
-  {
-    double* row = MatNd_getRowPtr(&zc, i);
-    Vec3d_copy(contact[i].x_contact, row);
-  }
+  MatNd_copy(contactPositions, &zc);
 
   // Clean up
   MatNd_destroy(z);
@@ -512,8 +528,10 @@ PhysicsBase::Contacts KineticSimulation::getContacts()
   for (size_t i = 0; i < contact.size(); ++i)
   {
     Contact c;
-    Vec3d_copy(c.pos, contact[i].x_contact);
-    Vec3d_copy(c.force, contact[i].f_contact);
+    const double* xi = MatNd_getRowPtr(contactPositions, i);
+    Vec3d_copy(c.pos, xi);
+    const double* fi = MatNd_getRowPtr(contactForces, i);
+    Vec3d_copy(c.force, fi);
     contacts.push_back(c);
   }
 
@@ -613,7 +631,11 @@ bool KineticSimulation::addBody(const RcsGraph* graph, const RcsBody* body_)
     int shapeIdx = 0;
     if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_CONTACT))
     {
-      contact.push_back(FrictionContactPoint(body, shapeIdx));
+      // Here we have to initialize the contact point in the contactPositions
+      // array. That's a bit hard with the indexing. If somebody needs it, it
+      // can be done.
+      RFATAL("Currently can't handle adding new bodies with contact points");
+      contact.push_back(FrictionContactPoint(body->id, shapeIdx));
     }
     shapeIdx++;
   }
@@ -751,21 +773,19 @@ void KineticSimulation::setControlInput(const MatNd* q_des_,
 void KineticSimulation::integrationStep(const double* x, void* param,
                                         double* xp, double dt)
 {
-  const double time = 0.0;
   KineticSimulation* kSim = (KineticSimulation*)param;
   RcsGraph* graph = kSim->getGraph();
-  const int nq = graph->nJ;
-  const int nc = kSim->contact.size();
+  const int nq = graph->nJ, nc = kSim->contact.size();
 
   // Update kinematics
   MatNd q = MatNd_fromPtr(nq, 1, (double*)&x[0]);
   MatNd qp = MatNd_fromPtr(nq, 1, (double*)&x[nq]);
   RcsGraph_setState(graph, &q, &qp);
 
-  // Compute the contact forces and friction contact velocities
+  // Compute the contact and spring forces and friction contact velocities
   MatNd* M_contact = MatNd_create(nq, 1);
   MatNd xp_c = MatNd_fromPtr(nc, 3, &xp[2*nq]);
-  kSim->addContactForces(M_contact, &xp_c, x, dt);
+  kSim->addContactForces(M_contact, &xp_c, kSim->contactForces, x, dt);
   kSim->addSpringForces(M_contact, &qp);
 
   // Add joint torque
@@ -783,7 +803,11 @@ void KineticSimulation::integrationStep(const double* x, void* param,
 
   // Compute accelerations using direct dynamics.
   MatNd qpp = MatNd_fromPtr(nq, 1, &xp[nq]);
-  kSim->energy = kSim->dirdyn(graph, M_contact, NULL, &qpp, time);
+  MatNd* b = MatNd_create(nq, 1);
+  kSim->energy = kSim->dirdyn(graph, M_contact, &qpp, b);
+  RcsGraph_stateVectorFromIK(graph, b, kSim->jointTorque);// Memorize torques.
+  MatNd_destroy(b);
+
 
   MatNd xpArr = MatNd_fromPtr(2*nq + 3*nc, 1, xp);
   if (!MatNd_isFinite(&xpArr))
@@ -802,7 +826,6 @@ void KineticSimulation::integrationStep(const double* x, void* param,
   }
 
   // Cleanup
-  // MatNd_destroy(J);
   MatNd_destroy(M_contact);
 }
 
@@ -874,19 +897,15 @@ static void getSubMat(MatNd* dst, const MatNd* src, const std::vector<int>& idx)
   getSubMat(dst, src, idx, idx);
 }
 
-#define EOM_DECOMPOSE
-
 double KineticSimulation::dirdyn(const RcsGraph* graph,
                                  const MatNd* F_ext,
-                                 const MatNd* F_jnt,
                                  MatNd* q_ddot,
-                                 double time)
+                                 MatNd* b) const
 {
   int n = graph->nJ;
   MatNd* M = MatNd_create(n, n);
   MatNd* F_gravity = MatNd_create(n, 1);
   MatNd* h = MatNd_create(n, 1);
-  MatNd* b = MatNd_create(n, 1);
 
   // Compute mass matrix, h-vector and gravity forces
   double E = RcsGraph_computeKineticTerms(graph, M, h, F_gravity);
@@ -919,10 +938,6 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   // Assemble RHS generalized forces
   MatNd_addSelf(b, F_gravity);
   MatNd_addSelf(b, F_ext);
-  if (F_jnt)
-  {
-    MatNd_subSelf(b, F_jnt);
-  }
   MatNd_addSelf(b, h);
 
 
@@ -944,7 +959,6 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
 
     qdd_f = inv(M00) (h_f + F_f - M10 qpp_c)
   */
-#if defined (EOM_DECOMPOSE)
 
   // pIdx are all indices of position and velocity controlled dofs, tIdx are the
   // dofs that are controlled by forces / torques.
@@ -972,7 +986,6 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
     }
 
   }
-
 
   MatNd* M00 = MatNd_create(tIdx.size(), tIdx.size());
   MatNd* M01 = MatNd_create(tIdx.size(), pIdx.size());
@@ -1039,10 +1052,6 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   }
 
   MatNd_destroyN(7, M00, M01, qpp_f, qpp_c, Mqpp_c, q_ddot_f, b_f);
-#else
-  MatNd_reshape(q_ddot, n, 1);
-  double det = MatNd_choleskySolve(q_ddot, M, b);
-#endif
 
   // Warn if something seriously goes wrong.
   if (det == 0.0)
@@ -1056,11 +1065,8 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
     RLOG(1, "q_ddot has infinite values - det was %g", det);
   }
 
-  // Memorize joint torques.
-  RcsGraph_stateVectorFromIK(graph, b, this->jointTorque);
-
   // Clean up
-  MatNd_destroyN(4, M, F_gravity, h, b);
+  MatNd_destroyN(3, M, F_gravity, h);
 
   return E;
 }
@@ -1090,21 +1096,36 @@ double KineticSimulation::getAdaptedDt() const
 }
 
 /*******************************************************************************
- * This function is not declared as const, since the intermediate contact
- * forces are stored inside the contact class. This is only for visualization
- * reasons.
+ *
+ ******************************************************************************/
+const double* KineticSimulation::getContactPositionPtr(size_t i) const
+{
+  RCHECK(i<contactPositions->m);
+  return MatNd_getRowPtr(this->contactPositions, i);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+size_t KineticSimulation::getNumContacts() const
+{
+  return this->contactPositions->m;
+}
+
+/*******************************************************************************
+ *
  ******************************************************************************/
 void KineticSimulation::addContactForces(MatNd* M_contact,
                                          MatNd* xp_contact,
+                                         MatNd* f_contact,   // nc x 3
                                          const double* x,
-                                         double dt)
+                                         double dt) const
 {
   const int nq = getGraph()->nJ;
   const int nc = contact.size();
   MatNd qp = MatNd_fromPtr(nq, 1, (double*)&x[nq]);
   MatNd x_c = MatNd_fromPtr(nc, 3, (double*)&x[2*nq]);
   MatNd* J = MatNd_create(3, nq);
-  MatNd_reshape(M_contact, nq, 1);
 
   // Compute the velocities of the attachement points
   for (int i = 0; i < nc; i++)
@@ -1113,7 +1134,8 @@ void KineticSimulation::addContactForces(MatNd* M_contact,
     const RcsShape* cSh = cBdy->shape[contact[i].shapeIdx];
     RcsGraph_bodyPointJacobian(getGraph(), cBdy, cSh->A_CB.org, NULL, J);
 
-    // Compute the velocities of the attachement points
+    // Compute the velocities of the attachement points. \todo: Could also be
+    // done cheaper with the body velocities.
     double xp_attach_i[3];
     MatNd xp_a_i = MatNd_fromPtr(3, 1, xp_attach_i);
     MatNd_mul(&xp_a_i, J, &qp);
@@ -1125,11 +1147,12 @@ void KineticSimulation::addContactForces(MatNd* M_contact,
     HTr_transform(&A_CI, &cBdy->A_BI, &cSh->A_CB);
     const double* x_attach_i = A_CI.org;
 
-    contact[i].computeContacts(xp_contact_i, contact[i].f_contact,
+    double* fi = MatNd_getRowPtr(f_contact, i);
+    contact[i].computeContacts(xp_contact_i, fi,
                                dt, x_contact_i, x_attach_i, xp_attach_i);
 
     // Project contact forces into joint space
-    MatNd F_i = MatNd_fromPtr(3, 1, contact[i].f_contact);
+    MatNd F_i = MatNd_fromPtr(3, 1, fi);
     MatNd_transposeSelf(J);
     MatNd_mulAndAddSelf(M_contact, J, &F_i);
   }
@@ -1140,7 +1163,7 @@ void KineticSimulation::addContactForces(MatNd* M_contact,
 /*******************************************************************************
  *
  ******************************************************************************/
-void KineticSimulation::addSpringForces(MatNd* M_spring, const MatNd* q_dot)
+void KineticSimulation::addSpringForces(MatNd* M_spring, const MatNd* q_dot) const
 {
   MatNd* J = MatNd_create(3, getGraph()->nJ);
 
@@ -1204,19 +1227,18 @@ void KineticSimulation::addSpringForces(MatNd* M_spring, const MatNd* q_dot)
   5. Everything is represented in world coordinates
 
 *******************************************************************************/
-KineticSimulation::FrictionContactPoint::FrictionContactPoint(const RcsBody* bdy_,
+KineticSimulation::FrictionContactPoint::FrictionContactPoint(int bdyId_,
                                                               int shapeIdx_,
                                                               double mu_,
                                                               double k_p_,
                                                               double z0_) :
-  bdyId(bdy_->id), shapeIdx(shapeIdx_), mu(mu_), k_p(k_p_), k_v(sqrt(4.0*k_p_)),
+  bdyId(bdyId_), shapeIdx(shapeIdx_), mu(mu_), k_p(k_p_), k_v(sqrt(4.0*k_p_)),
   z0(z0_)
 {
   // Initialize contact point with attachement point coordinates
-  HTr A_CI;
-  HTr_transform(&A_CI, &bdy_->A_BI, &bdy_->shape[shapeIdx]->A_CB);
-  Vec3d_copy(x_contact, A_CI.org);
-  Vec3d_setZero(f_contact);
+  // HTr A_CI;
+  // HTr_transform(&A_CI, &bdy_->A_BI, &bdy_->shape[shapeIdx]->A_CB);
+  // Vec3d_copy(position, A_CI.org);
 }
 
 void KineticSimulation::FrictionContactPoint::computeContactForce(double f[3],
@@ -1255,61 +1277,6 @@ void KineticSimulation::FrictionContactPoint::computeContactForce(double f[3],
     f[0] *= ft_limit / ft;
     f[1] *= ft_limit / ft;
   }
-}
-
-void KineticSimulation::FrictionContactPoint::computeContactSpeed(double xp_contact[3],
-                                                                  const double dt,
-                                                                  const double x_contact[3],
-                                                                  const double x_attach[3],
-                                                                  const double xp_attach[3]) const
-{
-  // If the body point is not penetrating, the velocity is computed so
-  // that x_contact coincides with x_attach
-  if (x_attach[2] > this->z0)
-  {
-    xp_contact[0] = (x_attach[0] - x_contact[0]) / dt;
-    xp_contact[1] = (x_attach[1] - x_contact[1]) / dt;
-    xp_contact[2] = (x_attach[2] - x_contact[2]) / dt;
-    return;
-  }
-
-
-  // If the body point is penetrating, the velocity is computed so that
-  // x_contact[2] lies at the surface.
-  xp_contact[2] = (this->z0 - x_contact[2]) / dt;
-
-  // Horizontal component. There are 2 cases:
-  // 1. The tangential force is within the friction cone. Then, the tangential
-  //    contact point velocities are zero.
-  // 2. The tangential force exceeds the friction force. Then, the tangential
-  //    contact point velocity is computed so that the contact point ends up
-  //    on the friction cone's boundary, in the direction towards the
-  //    attachement point
-  double f[3], ft, ft_limit;
-
-  computeContactForce(f, x_contact, x_attach, xp_attach);
-  ft = sqrt(f[0] * f[0] + f[1] * f[1]);
-  ft_limit = this->mu*f[2];
-
-  // Tangential forces are inside friction cone - contact points don't move
-  if (ft <= ft_limit)
-  {
-    xp_contact[0] = 0.0;
-    xp_contact[1] = 0.0;
-  }
-  else
-  {
-    double dx = sqrt(pow(x_contact[0] - x_attach[0], 2) +
-                     pow(x_contact[1] - x_attach[1], 2));
-
-    dx -= ft_limit / this->k_p;
-
-    for (int i = 0; i < 2; i++)
-    {
-      xp_contact[i] = -(dx*f[i] / ft) / dt;
-    }
-  }
-
 }
 
 void KineticSimulation::FrictionContactPoint::computeContacts(double xp_contact[3],

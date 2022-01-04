@@ -287,24 +287,36 @@ public:
    */
   virtual double getAdaptedDt() const;
 
+  /*! \brief Returns a pointer to the i-th contact point position.
+   */
+  virtual const double* getContactPositionPtr(size_t i) const;
+
+  /*! \brief Returns the number of contact points.
+   */
+  virtual size_t getNumContacts() const;
+
   ///@}
 
 
 
-public:
+private:
+
+  static void integrationStep(const double* x, void* param, double* xp,
+                              double dt);
+  double dirdyn(const RcsGraph* graph, const MatNd* F_ext,
+                MatNd* q_ddot, MatNd* b) const;
+
+  void addContactForces(MatNd* M_contact, MatNd* xp_contact, MatNd* f_contact,
+                        const double* x, double dt) const;
+
+  void addSpringForces(MatNd* M_spring, const MatNd* q_dot) const;
 
   struct FrictionContactPoint
   {
-    FrictionContactPoint(const RcsBody* bdy, int shapeIdx,
+    FrictionContactPoint(int bdyId, int shapeIdx,
                          double mu=1.0, double k_p=2.0e4, double z0=0.0);
 
     void computeContactForce(double f[3],
-                             const double x_contact[3],
-                             const double x_attach[3],
-                             const double xp_attach[3]) const;
-
-    void computeContactSpeed(double xp_contact[3],
-                             const double dt,
                              const double x_contact[3],
                              const double x_attach[3],
                              const double xp_attach[3]) const;
@@ -322,26 +334,14 @@ public:
     double k_p;               // Spring coefficient
     double k_v;               // Damping coefficient
     double z0;                // Height of ground plane
-    double x_contact[3];      // Contact point position in world coordinates
-    double f_contact[3];      // Contact force in world coordinates
   };
 
   std::vector<FrictionContactPoint> contact;
 
-protected:
-
-  static void integrationStep(const double* x, void* param, double* xp,
-                              double dt);
-  double dirdyn(const RcsGraph* graph, const MatNd* F_ext,
-                const MatNd* F_jnt, MatNd* q_ddot, double dt);
-
-  void addContactForces(MatNd* M_contact, MatNd* xp_contact,
-                        const double* x, double dt);
-
-  void addSpringForces(MatNd* M_spring, const MatNd* q_dot);
-
   MatNd* draggerTorque;
   MatNd* jointTorque;
+  MatNd* contactForces;
+  MatNd* contactPositions;
   std::string integrator;
   double energy;
   double dt_opt;

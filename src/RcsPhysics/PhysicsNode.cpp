@@ -133,10 +133,10 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   Rcs::KineticSimulation* neSim = dynamic_cast<Rcs::KineticSimulation*>(sim);
   if (neSim)
   {
-    for (size_t i=0; i<neSim->contact.size(); ++i)
+    for (size_t i=0; i<neSim->getNumContacts(); ++i)
     {
-      const double* pos = neSim->contact[i].x_contact;
-      osg::ref_ptr<Rcs::SphereNode> cn = new Rcs::SphereNode(pos, 0.005);
+      const double* pos = neSim->getContactPositionPtr(i);
+      osg::ref_ptr<Rcs::SphereNode> cn = new Rcs::SphereNode(pos, 0.01);
       cn->makeDynamic(pos);
       pat->addChild(cn.get());
     }

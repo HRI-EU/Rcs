@@ -1477,8 +1477,8 @@ void MatNd_insertRows(MatNd* self, int rowDst, const MatNd* from, int rowSrc,
   if (rowDst == -1)
   {
     MatNd* buf;
-  MatNd_clone2(buf, self);
-  RCHECK(buf);
+    MatNd_clone2(buf, self);
+    RCHECK(buf);
 
     // Prepend from, and then append self
     memmove(buf->ele, &from->ele[rowSrc * nEle],
@@ -1515,8 +1515,8 @@ void MatNd_insertRows(MatNd* self, int rowDst, const MatNd* from, int rowSrc,
     memmove(&buf->ele[offset], &self->ele[(rowDst + 1) * nEle],
             (originalRows - rowDst - 1) * nEle * sizeof(double));
 
-  MatNd_copy(self, buf);
-  MatNd_destroy(buf);
+    MatNd_copy(self, buf);
+    MatNd_destroy(buf);
   }
 }
 
@@ -2747,7 +2747,7 @@ void MatNd_saturateSelf(MatNd* self, const MatNd* limit)
 void MatNd_setRow(MatNd* A, int row, const double* p, int n)
 {
   RCHECK_MSG(row + (n / A->n) <= A->m, "row = %d, should be < %d", row, A->m);
-  RCHECK_MSG((n % A->n) == 0, "n = %d, needsto be a multiple of %d", n, A->n);
+  RCHECK_MSG((n % A->n) == 0, "n = %d, needs to be a multiple of %d", n, A->n);
 
   memmove(&A->ele[row * A->n], p, n * sizeof(double)); // copy one or more rows
 }
