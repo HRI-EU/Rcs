@@ -56,6 +56,7 @@ KineticSimulation::KineticSimulation() : PhysicsBase(), draggerTorque(NULL),
   jointTorque(NULL), contactForces(NULL), contactPositions(NULL),
   integrator("Fehlberg"), energy(0.0), dt_opt(0.0), lastDt(0.0)
 {
+  Vec3d_set(this->gravity, 0.0, 0.0, -RCS_GRAVITY);
 }
 
 /*******************************************************************************
@@ -82,6 +83,7 @@ KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe) :
   this->jointTorque = MatNd_clone(copyFromMe.jointTorque);
   this->contactForces = MatNd_clone(copyFromMe.contactForces);
   this->contactPositions = MatNd_clone(copyFromMe.contactPositions);
+  Vec3d_copy(gravity, copyFromMe.gravity);
 }
 
 /*******************************************************************************
@@ -98,6 +100,7 @@ KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe,
   this->jointTorque = MatNd_clone(copyFromMe.jointTorque);
   this->contactForces = MatNd_clone(copyFromMe.contactForces);
   this->contactPositions = MatNd_clone(copyFromMe.contactPositions);
+  Vec3d_copy(gravity, copyFromMe.gravity);
 }
 
 /*******************************************************************************
@@ -120,6 +123,7 @@ KineticSimulation& KineticSimulation::operator= (const KineticSimulation& other)
   this->integrator = other.integrator;
   this->energy = other.energy;
   this->dt_opt = other.dt_opt;
+  Vec3d_copy(gravity, other.gravity);
   return *this;
 }
 
@@ -139,6 +143,7 @@ KineticSimulation::~KineticSimulation()
  ******************************************************************************/
 bool KineticSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
 {
+  Vec3d_set(this->gravity, 0.0, 0.0, -RCS_GRAVITY);
   initGraph(g);
   if (this->draggerTorque==NULL)
   {
@@ -324,9 +329,9 @@ const char* KineticSimulation::getClassName() const
 /*******************************************************************************
  *
  ******************************************************************************/
-void KineticSimulation::setGravity(const double gravity[3])
+void KineticSimulation::setGravity(const double newGravity[3])
 {
-  RFATAL("FIXME");
+  Vec3d_copy(this->gravity, newGravity);
 }
 
 /*******************************************************************************
@@ -908,13 +913,13 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   MatNd* h = MatNd_create(n, 1);
 
   // Compute mass matrix, h-vector and gravity forces
-  double E = RcsGraph_computeKineticTerms(graph, M, h, F_gravity);
+  double E = RcsGraph_computeKineticTerms(graph, gravity, M, h, F_gravity);
 
   // Joint speed damping: M Kv(qp_des - qp) with qp_des = 0
   // We consider all bodies with six joints as floating and do not apply any
   // damping.
   // \todo: Provide interface on per-joint basis
-  const double damping = 5.0;
+  const double damping = 0*5.0;
   MatNd* Fi = MatNd_create(n, 1);
   MatNd* qp_ik = MatNd_clone(graph->q_dot);
 
@@ -1235,10 +1240,6 @@ KineticSimulation::FrictionContactPoint::FrictionContactPoint(int bdyId_,
   bdyId(bdyId_), shapeIdx(shapeIdx_), mu(mu_), k_p(k_p_), k_v(sqrt(4.0*k_p_)),
   z0(z0_)
 {
-  // Initialize contact point with attachement point coordinates
-  // HTr A_CI;
-  // HTr_transform(&A_CI, &bdy_->A_BI, &bdy_->shape[shapeIdx]->A_CB);
-  // Vec3d_copy(position, A_CI.org);
 }
 
 void KineticSimulation::FrictionContactPoint::computeContactForce(double f[3],

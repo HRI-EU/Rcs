@@ -461,7 +461,8 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsGraph* graph,
 
   // Assign a bit higher damping for bodies that are not connected through
   // joints
-  if (bdy->rigid_body_joints)
+  //if (bdy->rigid_body_joints)
+  if (RcsBody_numJoints(graph, bdy)==6)
   {
     //btBody->setDamping(0.05, 0.85);
     btBody->setDamping(0.1, 0.9);

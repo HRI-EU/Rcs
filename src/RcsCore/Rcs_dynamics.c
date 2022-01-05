@@ -39,6 +39,14 @@
 
 
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static inline const double* getDefaultGravity()
+{
+  static double g[3] = { 0.0, 0.0, -RCS_GRAVITY };
+  return g;
+}
 
 /*******************************************************************************
  *
@@ -513,6 +521,7 @@ static void RcsBody_massMatrix(const RcsBody* bdy, MatNd* MassMatrix)
  *    ones or so).
  ******************************************************************************/
 double RcsGraph_computeKineticTerms(const RcsGraph* graph,
+                                    const double gravityVec[3],
                                     MatNd* M_,
                                     MatNd* h,
                                     MatNd* F_gravity)
@@ -522,6 +531,9 @@ double RcsGraph_computeKineticTerms(const RcsGraph* graph,
   const double* K_r_com = NULL;
   MatNd* M = M_;
 
+  double g[3];
+  Vec3d_copy(g, gravityVec ? gravityVec : getDefaultGravity());
+
   MatNd* q_dot = NULL;
   MatNd_clone2(q_dot, graph->q_dot);
   RcsGraph_stateVectorToIKSelf(graph, q_dot);
@@ -529,8 +541,8 @@ double RcsGraph_computeKineticTerms(const RcsGraph* graph,
   MatNd T_kinArr = MatNd_fromPtr(1, 1, &T_kin);
   MatNd M_local  = MatNd_fromPtr(6, 6, &buf[0]);
   MatNd h_local  = MatNd_fromPtr(6, 1, &buf[36]);
-  //MatNd om       = MatNd_fromPtr(3, 1, &buf[42]);
-  //MatNd v        = MatNd_fromPtr(3, 1, &buf[45]);
+  MatNd om       = MatNd_fromPtr(3, 1, &buf[42]);
+  MatNd v        = MatNd_fromPtr(3, 1, &buf[45]);
   MatNd ta1      = MatNd_fromPtr(6, 1, &buf[48]);
   MatNd ta2      = MatNd_fromPtr(6, 1, &buf[54]);
   MatNd I_g      = MatNd_fromPtr(3, 1, &buf[60]);
@@ -596,12 +608,14 @@ double RcsGraph_computeKineticTerms(const RcsGraph* graph,
       RcsGraph_bodyPointDotJacobian(graph, BODY, K_r_com, NULL, q_dot, &JTq);
       RcsGraph_rotationDotJacobian(graph,  BODY, q_dot, &JRq);
 
-      // 2. Compute bodie's angular and linear velocity in bodie's frame
-      //MatNd_mul(&om, &JR, q_dot);
-      //MatNd_mul(&v, &JT, q_dot);
+      // 2. Compute bodie's angular and linear velocity in bodie's frame. We
+      //    don't use the bodie's velocities, since they are not describing
+      //    the COM, but the body frame.
+      MatNd_mul(&om, &JR, q_dot);
+      MatNd_mul(&v, &JT, q_dot);
 
       // 3. h += J^T*(M_local*J_q*q_dot + h_local);
-      RcsBody_HVector(BODY, BODY->omega, BODY->x_dot, &h_local);
+      RcsBody_HVector(BODY, om.ele, v.ele, &h_local);
       MatNd_mul(&ta1, Jq, q_dot);      // J_q*q_dot
       MatNd_mul(&ta2, &M_local, &ta1); // M_local*J_q*q_dot
       MatNd_addSelf(&ta2, &h_local);   // M_local*J_q*q_dot + h_local
@@ -613,14 +627,15 @@ double RcsGraph_computeKineticTerms(const RcsGraph* graph,
     if (F_gravity != NULL)
     {
       MatNd_transpose(Jtpcom, &JT);
-      Vec3d_set(I_g.ele, 0.0, 0.0, -RCS_GRAVITY*BODY->m);
+      Vec3d_copy(I_g.ele, g);
+      Vec3d_constMulSelf(I_g.ele, BODY->m);
       MatNd_mul(Ftmp, Jtpcom, &I_g);
       MatNd_addSelf(F_gravity, Ftmp);
     }
 
     // Add the bodies potential energy: V_bdy = m*g*r_z
     RcsGraph_bodyPoint(BODY, K_r_com, I_r_com);
-    V_pot += BODY->m * RCS_GRAVITY * I_r_com[2];
+    V_pot -= BODY->m * Vec3d_innerProduct(I_r_com, g);
   }
 
   // Compute kinetic energy: 0.5*(q_dot^T)*M*q_dot
@@ -648,8 +663,11 @@ double RcsGraph_computeKineticTerms(const RcsGraph* graph,
  * See header.
  ******************************************************************************/
 void RcsGraph_computeGravityTorque(const RcsGraph* graph,
+                                   const double gravityVec[3],
                                    MatNd* T_gravity)
 {
+  double g[3];
+  Vec3d_copy(g, gravityVec ? gravityVec : getDefaultGravity());
   MatNd_reshape(T_gravity, graph->nJ, 1);
 
   MatNd* J_cog_tp = NULL;
@@ -657,13 +675,11 @@ void RcsGraph_computeGravityTorque(const RcsGraph* graph,
 
   RcsGraph_COGJacobian(graph, J_cog_tp);
   MatNd_transposeSelf(J_cog_tp);
-  MatNd* F_g = NULL;
-  MatNd_create2(F_g, 3, 1);
-  MatNd_set(F_g, 2, 0, -RcsGraph_mass(graph)*RCS_GRAVITY);
-  MatNd_mul(T_gravity, J_cog_tp, F_g);
+  MatNd F_g = MatNd_fromPtr(3, 1, g);
+  MatNd_constMulSelf(&F_g, RcsGraph_mass(graph));
+  MatNd_mul(T_gravity, J_cog_tp, &F_g);
 
   MatNd_destroy(J_cog_tp);
-  MatNd_destroy(F_g);
 }
 
 /*******************************************************************************
@@ -786,7 +802,7 @@ double Rcs_directDynamics(const RcsGraph* graph,
   MatNd_reshapeAndSetZero(q_ddot, n, 1);
 
   // Compute mass matrix, h-vector and gravity forces
-  double E = RcsGraph_computeKineticTerms(graph, M, h, F_gravity);
+  double E = RcsGraph_computeKineticTerms(graph, NULL, M, h, F_gravity);
 
   // Solve direct dynamics for joint accelerations
   MatNd_addSelf(b, F_gravity);

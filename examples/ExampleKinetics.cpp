@@ -224,7 +224,7 @@ int main(int argc, char** argv)
         MatNd* F_gravity = MatNd_create(n, 1);
         MatNd* h         = MatNd_create(n, 1);
         MatNd* Fi        = MatNd_create(n, 1);
-        E = RcsGraph_computeKineticTerms(graph, MM, h, F_gravity);
+        E = RcsGraph_computeKineticTerms(graph, NULL, MM, h, F_gravity);
 
         // Joint speed damping: M Kv(qp_des - qp)
         MatNd_mul(Fi, MM, &qp);

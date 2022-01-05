@@ -620,7 +620,7 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
                                    const char* suffix,
                                    const HTr* A_group)
 {
-  char msg[256];
+  char msg[RCS_MAX_NAMELEN];
   double ka[3];
   bool verbose = false;
   unsigned int strLength = 0;
@@ -691,7 +691,7 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
   getXMLNodePropertyBoolString(node, "constraint", &jnt->constrained);
 
   // Joint type
-  if (getXMLNodePropertyStringN(node, "type", msg, 256))
+  if (getXMLNodePropertyStringN(node, "type", msg, RCS_MAX_NAMELEN))
   {
     if (verbose)
     {
@@ -824,7 +824,7 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
   jnt->ctrlType = RCSJOINT_CTRL_POSITION;
   jnt->maxTorque = DBL_MAX; // Default: No limit for non-torque joints
 
-  if (getXMLNodePropertyStringN(node, "ctrlType", msg, 256))
+  if (getXMLNodePropertyStringN(node, "ctrlType", msg, RCS_MAX_NAMELEN))
   {
     if (STREQ(msg, "Position") || STREQ(msg, "pos"))
     {
@@ -1040,7 +1040,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
 
   // Physics simulation
   strcpy(msg, "none");
-  getXMLNodePropertyStringN(bdyNode, "physics", msg, 256);
+  getXMLNodePropertyStringN(bdyNode, "physics", msg, RCS_MAX_NAMELEN);
 
   if (STREQ(msg, "none"))
   {
@@ -1438,13 +1438,13 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
   {
     // The node points to an OpenRave file
 
-    char tmp[256];
+    char tmp[RCS_MAX_FILENAMELEN];
     strcpy(tmp, "");
 
     // check if prev tag is provided --> first body of openrave graph will be
     // attached to it
     RcsBody* pB = NULL;
-    if (getXMLNodePropertyStringN(node, "prev", tmp, 64) > 0)
+    if (getXMLNodePropertyStringN(node, "prev", tmp, RCS_MAX_FILENAMELEN) > 0)
     {
       pB = RcsGraph_getBodyByName(self, tmp);
       RCHECK_MSG(pB, "Body \"%s\" not found, which was specified as prev for an OpenRave node", tmp);
@@ -1452,7 +1452,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
 
     // Get filename
     strcpy(tmp, "");
-    getXMLNodePropertyStringN(node, "file", tmp, 64);
+    getXMLNodePropertyStringN(node, "file", tmp, RCS_MAX_FILENAMELEN);
 
     // check if q0 is provided and read it
     double* q0 = NULL;
@@ -1510,8 +1510,8 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
 
     // Get filename
     strcpy(tmp, "");
-    getXMLNodePropertyStringN(node, "file", tmp, 256);
-    char filename[256] = "";
+    getXMLNodePropertyStringN(node, "file", tmp, RCS_MAX_FILENAMELEN);
+    char filename[RCS_MAX_FILENAMELEN] = "";
     bool urdfExists = Rcs_getAbsoluteFileName(tmp, filename);
     RCHECK_MSG(urdfExists, "Couldn't open urdf file \"%s\"", tmp);
     // parse URDF file
@@ -1795,15 +1795,17 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
   RcsGraph_makeJointsConsistent(self);
 
   // Apply model state
-  char mdlName[64] = "";
-  int nBytes = getXMLNodePropertyStringN(node, "name", mdlName, 64);
+  char mdlName[RCS_MAX_NAMELEN] = "";
+  int nBytes = getXMLNodePropertyStringN(node, "name", mdlName, RCS_MAX_NAMELEN);
   if (nBytes > 0)
   {
     RcsGraph_parseModelState(node, self, mdlName);
   }
 
-  // Set state vector
-  RcsGraph_setState(self, NULL, NULL);
+  // Set state vector. For the case there are velocities assigned in the
+  // model_state, we perform a velocity forward kinematics pass to compute
+  // the graph's corresponding body velocities.
+  RcsGraph_setState(self, NULL, self->q_dot);
 
   return self;
 }

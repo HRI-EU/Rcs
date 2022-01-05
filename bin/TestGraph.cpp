@@ -321,7 +321,7 @@ int main(int argc, char** argv)
 
         // gravity compensation
         Timer_setZero();
-        RcsGraph_computeKineticTerms(graph, NULL, NULL, F_gk);
+        RcsGraph_computeKineticTerms(graph, NULL, NULL, NULL, F_gk);
         double dt2 = Timer_getTime();
 
         RMSG("\nCOM Jacobian");
@@ -342,7 +342,7 @@ int main(int argc, char** argv)
 
         // Mass matrix along with other terms
         Timer_setZero();
-        RcsGraph_computeKineticTerms(graph, MM2, NULL, NULL);
+        RcsGraph_computeKineticTerms(graph, NULL, MM2, NULL, NULL);
         double dt4 = Timer_getTime();
 
         RMSG("\ndt3(computeMassMatrix) = %.3f msec, dt4(Kinetic terms)"

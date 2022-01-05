@@ -462,6 +462,7 @@ int main(int argc, char** argv)
         printf("\t-dir config/xml/Husky -f dual_arm_husky_original.urdf\n");
         printf("\t-dir config/xml/Valkyrie -f valkyrie_sim.urdf\n");
         printf("\n");
+        RcsGraph_printUsage(xmlFileName);
         break;
       }
 
@@ -1241,6 +1242,8 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("t", "Run physics test for step");
 
       double dt = 0.005, tmc = 0.01, damping = 2.0, shootMass = 1.0;
+      double gVec[3];
+      Vec3d_set(gVec, 0.0, 0.0, -RCS_GRAVITY);
       char hudText[2056] = "";
       char physicsEngine[32] = "Bullet";
       std::string integrator = "Fehlberg";
@@ -1289,8 +1292,12 @@ int main(int argc, char** argv)
                        "\"%s\")", bgColor);
       argP.getArgument("-i", &integrator, "Integrator for Newton-Euler "
                        "simulation (default is \"%s\")", integrator.c_str());
+      argP.getArgument("-gx", &gVec[0], "Gravity x (default is %f)", gVec[0]);
+      argP.getArgument("-gy", &gVec[1], "Gravity y (default is %f)", gVec[1]);
+      argP.getArgument("-gz", &gVec[2], "Gravity z (default is %f)", gVec[2]);
       getModel(directory, xmlFileName);
 
+      Rcs_addResourcePath(directory);
       if (argP.hasArgument("-h"))
       {
         RMSG("Mode %d: Rcs -m %d -dir <graph-directory> -f "
@@ -1300,11 +1307,20 @@ int main(int argc, char** argv)
              "- Runs the forward kinematics in a physics enabled loop\n\n\t"
              "The joints angles can be modified by the sliders\n",
              mode, mode);
+        printf("Here are a few examples:\n");
+        printf("bin/Rcs -m 4 -dir config/xml/PPStest\n");
+        printf("bin/Rcs -m 4 -skipGui -dir config/xml/Examples -f gGyro.xml -physicsEngine NewtonEuler -gz 0\n");
+        printf("bin/Rcs -m 4 -skipGui -dir config/xml/Examples -f gGyro.xml -physicsEngine Bullet -gz 0\n");
+        printf("bin/Rcs -m 4 -f config/xml/Examples/gHumanoidPendulum.xml -physicsEngine NewtonEuler -skipGui\n");
+        printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f gSoftPhysics.xml -physicsEngine SoftBullet\n");
+        printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f cSoftPhysicsIK.xml -physicsEngine SoftBullet\n");
+        printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f gSoftShirtPerson.xml -physicsEngine SoftBullet\n");
+
         Rcs::PhysicsFactory::print();
+        RcsGraph_printUsage(xmlFileName);
         break;
       }
 
-      Rcs_addResourcePath(directory);
 
       RcsGraph* graph = RcsGraph_create(xmlFileName);
       RCHECK(graph);
@@ -1345,6 +1361,7 @@ int main(int argc, char** argv)
 
       sim->setParameter(Rcs::PhysicsBase::Simulation, integrator.c_str(),
                         "Integrator", 0.0);
+      sim->setGravity(gVec);
       if (disableCollisions==true)
       {
         sim->disableCollisions();
@@ -1358,7 +1375,7 @@ int main(int argc, char** argv)
       MatNd* q_dot_curr = MatNd_create(graph->dof, 1);
       MatNd* T_gravity = MatNd_create(graph->dof, 1);
       MatNd* T_curr = MatNd_create(graph->dof, 1);
-      RcsGraph_computeGravityTorque(graph, T_gravity);
+      RcsGraph_computeGravityTorque(graph, NULL, T_gravity);
       MatNd_constMulSelf(T_gravity, -1.0);
 
       // Viewer and Gui
@@ -1727,7 +1744,7 @@ int main(int argc, char** argv)
             T_curr = MatNd_realloc(T_curr, graph->dof, 1);
             MatNd_setZero(T_curr);
             T_gravity = MatNd_realloc(T_gravity, graph->dof, 1);
-            RcsGraph_computeGravityTorque(graph, T_gravity);
+            RcsGraph_computeGravityTorque(graph, NULL, T_gravity);
             MatNd_constMulSelf(T_gravity, -1.0);
             simNode = new Rcs::PhysicsNode(sim);
             simNode->setDisplayMode(displayMode);
@@ -1782,7 +1799,7 @@ int main(int argc, char** argv)
           MatNd_preMulSelf(M_damp, MM);
 
           // Gravity compensation
-          RcsGraph_computeGravityTorque(graph, T_gravity);
+          RcsGraph_computeGravityTorque(graph, NULL, T_gravity);
           MatNd_constMulSelf(T_gravity, -1.0);
           MatNd_addSelf(T_gravity, M_damp);
 

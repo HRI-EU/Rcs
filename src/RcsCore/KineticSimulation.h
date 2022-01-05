@@ -346,6 +346,7 @@ private:
   double energy;
   double dt_opt;
   double lastDt;   // Most recent dt when calling simulate()
+  double gravity[3];
 };
 
 }   // namespace Rcs

@@ -375,6 +375,42 @@ static RcsGraph* RcsGraph_createFromBuffer(const char* buffer,
 
   return self;
 }
+/*******************************************************************************
+ * Print the usage description if any
+ ******************************************************************************/
+void RcsGraph_printUsage(const char* xmlFile)
+{
+  char cfgFile[RCS_MAX_FILENAMELEN];
+  bool fileExists = Rcs_getAbsoluteFileName(xmlFile, cfgFile);
+
+  if (!fileExists)
+  {
+    RLOG(1, "XML file \"%s\" not found in resource paths", xmlFile);
+    return;
+  }
+
+  xmlDocPtr docPtr;
+  xmlNodePtr node = parseXMLFile(cfgFile, "Graph", &docPtr);
+
+  if (node == NULL)
+  {
+    RLOG(1, "Node \"Graph\" not found in \"%s\"", cfgFile);
+    return;
+  }
+
+  xmlChar* usage = xmlGetProp(node, (const xmlChar*) "usage");
+
+  if (usage)
+  {
+    printf("Usage: \n%s\n", usage);
+  }
+  else
+  {
+    printf("No usage description\n");
+  }
+
+  xmlFreeDoc(docPtr);
+}
 
 /*******************************************************************************
  * See header.

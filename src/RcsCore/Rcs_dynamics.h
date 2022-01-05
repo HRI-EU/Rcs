@@ -138,6 +138,7 @@ void integration_rkf23(void (*FCN)(const double*, void*, double*, double),
  *         allocated (except if M is NULL).
  */
 double RcsGraph_computeKineticTerms(const RcsGraph* graph,
+                                    const double gravityVec[3],
                                     MatNd* M,
                                     MatNd* h,
                                     MatNd* F_gravity);
@@ -146,6 +147,7 @@ double RcsGraph_computeKineticTerms(const RcsGraph* graph,
  *  \brief Computes the gravity torques
  */
 void RcsGraph_computeGravityTorque(const RcsGraph* graph,
+                                   const double gravityVec[3],
                                    MatNd* T_gravity);
 
 /*! \ingroup RcsKineticsFunctions

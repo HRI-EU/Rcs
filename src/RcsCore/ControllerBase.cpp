@@ -2661,7 +2661,7 @@ void Rcs::ControllerBase::computeInvDynJointSpace(MatNd* T_des,
   MatNd_reshapeAndSetZero(T_des, nq, 1);
 
   // Dynamics: Mass matrix, gravity load and h-vector
-  RcsGraph_computeKineticTerms(graph, M, h, g);
+  RcsGraph_computeKineticTerms(graph, NULL, M, h, g);
 
   // aq = -kp*(q-q_des)
   MatNd_sub(aq, q_curr, q_des);

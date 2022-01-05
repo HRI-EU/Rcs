@@ -1137,6 +1137,13 @@ bool RcsGraph_setRigidBodyDoFs(RcsGraph* self, const RcsBody* body,
 bool RcsGraph_toXML(const char* fileName, const RcsGraph* self);
 
 /*! \ingroup RcsGraphFunctions
+ *  \brief Prints the graph's usage description to stdout.
+ *
+ *  \param[in] xmlFile   RcsGraph xml file (not required to be full path)
+ */
+void RcsGraph_printUsage(const char* xmlFile);
+
+/*! \ingroup RcsGraphFunctions
  *  \brief Prints the graph's xml representation to the given file
  *         descriptor. Both arguments are assumed to be not NULL. Otherwise,
  *         the function exits with a fatal error.

@@ -1,0 +1,99 @@
+<!-- 
+  Copyright (c) 2020, Honda Research Institute Europe GmbH
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  3. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER "AS IS" AND ANY EXPRESS OR
+  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT, INDIRECT,
+  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<Graph name="Default"
+       usage="
+&#xA;  Configuration file to illustrate Newton-Euler physics with gyroscopic
+&#xA;  forces. The three boxes rotate in gravity-less space around their      
+&#xA;  principal inertia axes. The red and blue boxes rotate about the 
+&#xA;  smallest and largest axis, the green box around the middle axis.         
+&#xA;  According to Leonhard Euler, the rotation about the middle axis is 
+&#xA;  instable. This can clearly be observed.                                                
+&#xA; 
+&#xA;  Here is how to start an example:
+&#xA;  
+&#xA;  bin/Rcs -m 4 -skipGui -dir config/xml/Examples -f gGyro.xml -physicsEngine NewtonEuler -gz 0
+&#xA;  bin/Rcs -m 4 -skipGui -dir config/xml/Examples -f gGyro.xml -physicsEngine Bullet -gz 0
+&#xA;  
+">
+
+  <Body name="Ground Plane" physics="kinematic" >
+    <Shape type="BOX" extents="4.0 4.0 0.04" transform="0 0 -0.02 0 0 0" 
+           textureFile="textures/floor/white-hardwood-floor.jpg" color="PEWTER" 
+	   graphics="true" physics="true" distance="false" />
+    <Shape type="FRAME" />
+  </Body>
+  
+  <Body name="Gyro 1" physics="dynamic" mass="1" >
+    <Joint name="x1" range="10" type="TransX" ctrlType="Torque" transform="0 -1.5 1 0 0 0" />
+    <Joint name="y1" range="10" type="TransY" ctrlType="Torque"/>
+    <Joint name="z1" range="10" type="TransZ" ctrlType="Torque"/>
+    <Joint name="a1" range="10" type="RotX"   ctrlType="Torque"/>
+    <Joint name="b1" range="10" type="RotY"   ctrlType="Torque"/>
+    <Joint name="c1" range="10" type="RotZ"   ctrlType="Torque"/>
+    <Shape type="BOX" extents="0.9 0.6 0.2" color="RED" graphics="true" physics="true" />
+    <Shape type="FRAME" graphics="true" physics="true" />
+  </Body>
+  
+  <Body name="Gyro 2" physics="dynamic" mass="1" >
+    <Joint name="x2" range="10" type="TransX" ctrlType="Torque" transform="0 0 1 0 0 0"/>
+    <Joint name="y2" range="10" type="TransY" ctrlType="Torque"/>
+    <Joint name="z2" range="10" type="TransZ" ctrlType="Torque"/>
+    <Joint name="a2" range="10" type="RotX"   ctrlType="Torque"/>
+    <Joint name="b2" range="10" type="RotY"   ctrlType="Torque"/>
+    <Joint name="c2" range="10" type="RotZ"   ctrlType="Torque"/>
+    <Shape type="BOX" extents="0.9 0.6 0.2" color="GREEN" graphics="true" physics="true" />
+    <Shape type="FRAME" graphics="true" physics="true" />
+  </Body>
+  
+  <Body name="Gyro 3" physics="dynamic" mass="1" >
+    <Joint name="x3" range="10" type="TransX" ctrlType="Torque" transform="0 1.5 1 0 0 0"/>
+    <Joint name="y3" range="10" type="TransY" ctrlType="Torque"/>
+    <Joint name="z3" range="10" type="TransZ" ctrlType="Torque"/>
+    <Joint name="a3" range="10" type="RotX"   ctrlType="Torque"/>
+    <Joint name="b3" range="10" type="RotY"   ctrlType="Torque"/>
+    <Joint name="c3" range="10" type="RotZ"   ctrlType="Torque"/>
+    <Shape type="BOX" extents="0.9 0.6 0.2" color="BLUE" graphics="true" physics="true" />
+    <Shape type="FRAME" graphics="true" physics="true" />
+  </Body>
+
+  <model_state model="Default" time_stamp="">
+    <joint_state joint="a1" velocity="500" />
+    <joint_state joint="b1" velocity="1" />
+    <joint_state joint="c1" velocity="1" />
+    <joint_state joint="a2" velocity="1" />
+    <joint_state joint="b2" velocity="500" />
+    <joint_state joint="c2" velocity="1" />
+    <joint_state joint="a3" velocity="1" />
+    <joint_state joint="b3" velocity="1" />
+    <joint_state joint="c3" velocity="500" />
+  </model_state>
+
+</Graph>
+
