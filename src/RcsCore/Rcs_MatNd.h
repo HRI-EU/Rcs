@@ -34,8 +34,7 @@
 #ifndef RCS_MATND_H
 #define RCS_MATND_H
 
-#include "Rcs_bool.h"
-
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -465,6 +464,16 @@ double MatNd_inverseDiag(MatNd* inv, const MatNd* src);
  *         If the dimension of \f$\mathbf{A}\f$ is smaller or equal
  *         MATND_MAX_STACK_VECTOR_SIZE doubles, no heap memory will be
  *         allocated.
+ *
+ *  \param[out] x   Solution vector or matrix of dimension n x d, where n is
+ *                  the dimension of the square matrix A. Typically, n is 1,
+ *                  however, the function can also solve for several right hand
+ *                  side vectrs simultaneously. In this case, x and b must have
+ *                  the same number of columns.
+ *  \param[in]  A   Square matrix
+ *  \param[in]  b   Right hand side vector or matrix, must have same
+ *                  dimensions as x.
+ *  \return Determinant of A.
  */
 double MatNd_choleskySolve(MatNd* x, const MatNd* A, const MatNd* b);
 
@@ -477,17 +486,26 @@ double MatNd_choleskySolve(MatNd* x, const MatNd* A, const MatNd* b);
  *         faster than other solvers. eps is the stopping criterion, maxIter
  *         indicate the maximal number of iterations, maxIter < 1 sets it
  *         to unlimited.
+ *
+ *  \param[in,out] x    Solution vector or of dimension n x 1, where n is the
+ *                      dimension of the square matrix A.
+ *  \param[in]  A       Square matrix
+ *  \param[in]  b       Right hand side vector, must have same dimensions as x.
+ *  \param[in]  eps     Stopping criterion: Permissable difference of each
+ *                      element of x between two iterations. If one component
+ *                      falls below eps, the algorithm stops.
+ *  \param[in]  maxIter Maximum permissible iterations before the algorithm
+ *                      stops. If maxIter is less than 1, it will iterate until
+ *                      converging to eps, or forever.
+ *  \return Number of iterations. If the algorithm did not converge, it
+ *          returns maxIter.
  */
 int MatNd_gaussSeidelIterate(MatNd* x, const MatNd* A, const MatNd* b,
                              const double eps, const int maxIter);
 
 /*! \ingroup MatNdFunctions
- *  \brief Solves A x = b using the iterative Gauss-Seidel algorithm.
- *
- *         Matrix A must be square. This algorithm works iteratively. This
- *         means if vector x is initialized closely to the solution, only a
- *         few iterations are needed. In this case, the algorithm might be
- *         faster than other solvers.
+ *  \brief Solves A x = b using the iterative Gauss-Seidel algorithm. It calls
+ *         \ref MatNd_gaussSeidelIterate() with maxIter=-1 and eps=1.0e-8.
  */
 int MatNd_gaussSeidelSolve(MatNd* x, const MatNd* A, const MatNd* b);
 

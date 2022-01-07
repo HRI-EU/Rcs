@@ -35,8 +35,7 @@
 #define RCS_MESH_H
 
 
-#include "Rcs_bool.h"
-
+#include <stdbool.h>
 #include <stdio.h>
 
 

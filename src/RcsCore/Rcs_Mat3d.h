@@ -34,8 +34,7 @@
 #ifndef RCS_MAT3D_H
 #define RCS_MAT3D_H
 
-#include "Rcs_bool.h"
-
+#include <stdbool.h>
 #include <stdio.h>
 
 #ifdef __cplusplus

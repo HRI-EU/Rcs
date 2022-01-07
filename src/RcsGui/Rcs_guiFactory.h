@@ -66,8 +66,7 @@
 extern "C" {
 #endif
 
-#include "Rcs_bool.h"
-
+#include <stdbool.h>
 #include <pthread.h>
 
 #if defined(_MSC_VER) && defined(WIN_DLL)

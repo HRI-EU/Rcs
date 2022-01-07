@@ -34,8 +34,7 @@
 #ifndef RCS_HTR_H
 #define RCS_HTR_H
 
-#include "Rcs_bool.h"
-
+#include <stdbool.h>
 #include <stdio.h>
 
 

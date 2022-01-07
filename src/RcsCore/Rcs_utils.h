@@ -52,8 +52,7 @@
  *  \ref ResourcePathFunctions
  */
 
-#include "Rcs_bool.h"
-
+#include <stdbool.h>
 #include <stdio.h>
 #include <signal.h>
 #include <pthread.h>

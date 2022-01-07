@@ -35,7 +35,7 @@
 #define RCS_TIMER_H
 
 
-#include "Rcs_bool.h"
+#include <stdbool.h>
 
 
 #ifdef __cplusplus
