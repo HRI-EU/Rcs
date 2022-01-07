@@ -6,13 +6,11 @@
 SET(RCS_CORE_SRCS
 CompositeTask.cpp
 ControllerBase.cpp
-HardwareComponent.cpp
 IkSolverConstraintRMR.cpp
 IkSolverPrioRMR.cpp
 IkSolverRMR.cpp
 KeyCatcherBase.cpp
 KineticSimulation.cpp
-MotionControlLayer.cpp
 PeriodicCallback.cpp
 PhysicsBase.cpp
 PhysicsConfig.cpp
@@ -53,7 +51,6 @@ Rcs_utils.c
 Rcs_utilsCPP.cpp
 Rcs_Vec3d.c
 Rcs_VecNd.c
-SensorComponent.cpp
 SolverRAC.cpp
 TaskAngularMomentum3D.cpp
 #TaskCollision.cpp
