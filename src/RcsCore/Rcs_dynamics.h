@@ -54,10 +54,14 @@ typedef struct
 } DirDynParams;
 
 /*! \ingroup RcsKineticsFunctions
+ *  \brief Direct dynamics function wrapper to pass to intergrator:
+ *  double Func(const double* x, void* param, double* xp, double time)
+ */
+typedef double (*DirDynFunc)(const double*, void*, double*, double);
+
+/*! \ingroup RcsKineticsFunctions
  *  \brief Integrator with step width adaptation using a 2nd-3rd order
- *         Runge-Kutta-Fehlberg method. It uses currently some static
- *         variables and is not reentrant. Calling this function with
- *         different equations of motion will lead to trouble...
+ *         Runge-Kutta-Fehlberg method.
  *
  *  \param[in] FCN      Evaluation function for the differential equations
  *  \param[in] param    Pointer to your use-case specific data
@@ -70,7 +74,7 @@ typedef struct
  *  \param[in] maxErr   Permissable integration error per dimension
  *  \return Number of integration steps
  */
-int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
+int integration_t1_t2(DirDynFunc func,
                       void* param,
                       int nz,
                       double t1,
@@ -90,7 +94,7 @@ int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
  *  \param[in] x        State at t
  *  \param[out] x2      State vector after integration
  */
-void integration_euler(void (*FCN)(const double*, void*, double*, double),
+void integration_euler(DirDynFunc func,
                        void* param,
                        int nz,
                        double dt,
@@ -107,7 +111,7 @@ void integration_euler(void (*FCN)(const double*, void*, double*, double),
  *  \param[in] x        State at t
  *  \param[out] x2      State vector after integration
  */
-void integration_rkf23(void (*FCN)(const double*, void*, double*, double),
+void integration_rkf23(DirDynFunc func,
                        void* param,
                        int nz,
                        double dt,
@@ -124,8 +128,7 @@ void integration_rkf23(void (*FCN)(const double*, void*, double*, double),
  *         not be computed and the function gets more efficient. For
  *         instance it is possible to compute the overall energy only by
  *         calling<br>
- *         double E =
- *           RcsGraph_computeKineticTerms(self, qp, NULL, NULL, NULL);
+ *         double E = RcsGraph_computeKineticTerms(self, qp, NULL, NULL, NULL);
  *         <br>
  *         or
  *         <br>
@@ -133,9 +136,14 @@ void integration_rkf23(void (*FCN)(const double*, void*, double*, double),
  *         <br>
  *         computes the gravity load only. The returned energy is then the
  *         potential energy only.
- *         If the dimension of the active dofs is smaller or equal
- *         MATND_MAX_STACK_VECTOR_SIZE doubles, no heap memory will be
- *         allocated (except if M is NULL).
+ *
+ *  \param[in]  graph Pointer to a valid RcsGraph
+ *  \param[in]  gravityVec Gravitational vector. If it is NULL, the default
+ *                         (0 0 -9.81)^T is used.
+ *  \param[out] M Mass matrix of square dimensions RcsGraph::nJ
+ *  \param[out] h Coriolis forces of dimensions RcsGraph::nJ x 1
+ *  \param[out] F_gravity Gravitational forces of dimensions RcsGraph::nJ x 1
+ *  \return Overall energy of the system based on q and q_dot of the graph.
  */
 double RcsGraph_computeKineticTerms(const RcsGraph* graph,
                                     const double gravityVec[3],
@@ -144,22 +152,32 @@ double RcsGraph_computeKineticTerms(const RcsGraph* graph,
                                     MatNd* F_gravity);
 
 /*! \ingroup RcsKineticsFunctions
- *  \brief Computes the gravity torques
+ *  \brief Computes the gravity torques. It uses the overal COM Jacobian,
+ *         therefore this function is more efficient than
+ *         \ref RcsGraph_computeKineticTerms()
+ *
+ *  \param[in]  graph Pointer to a valid RcsGraph
+ *  \param[in]  gravityVec Gravitational vector. If it is NULL, the default
+ *                         (0 0 -9.81)^T is used.
+ *  \param[out] F_gravity Gravitational forces of dimensions RcsGraph::nJ x 1
  */
 void RcsGraph_computeGravityTorque(const RcsGraph* graph,
                                    const double gravityVec[3],
                                    MatNd* T_gravity);
 
 /*! \ingroup RcsKineticsFunctions
- *  \brief Computes the mass matrix.
+ *  \brief Computes the mass matrix. This function is more efficient than
+ *         \ref RcsGraph_computeKineticTerms()
+ *
+ *  \param[in]  graph Pointer to a valid RcsGraph
+ *  \param[out] M Mass matrix of square dimensions RcsGraph::nJ
  */
 void RcsGraph_computeMassMatrix(const RcsGraph* graph, MatNd* M);
 
 /*! \ingroup RcsKineticsFunctions
- *  \brief Solves the multibody equations of motion for the joint
- *         accelerations:
+ *  \brief Solves the multibody equations of motion for the joint accelerations:
  *
- *         M(q) qpp + h(q,qp) + F_gravity + F_ext = F_jnt
+ *         M(q) qpp + h(q,qp) + F_gravity(q) + F_ext = 0
  *
  *         q, qp, qpp: Generalized coordinates, velocities and accelerations
  *                     The dimension is graph->nJ (num. of unconstrained dof)
@@ -167,21 +185,26 @@ void RcsGraph_computeMassMatrix(const RcsGraph* graph, MatNd* M);
  *         F_gravity:  Gravity force projected on generalized coordinates
  *         h:          Coriolis vector
  *         F_ext:      External forces projected on generalized coordinates
- *         F_jnt:      Joint torque vector
  *
  *         Currently F_jnt is projected on all unconstrained degrees of
- *         freedom. Arrays F_ext and F_jnt can be pointers to NULL. In this
- *         case, they are assumed to be zero.
+ *         freedom. Array F_ext can be pointers to NULL. In this case, it
+ *         is assumed to be zero.
  *
  *         The function returns the overall energy of the system. It will
  *         warn on debug level 1 if
  *         - the Cholesky decomposition failed
  *         - one of the elements of qpp is not finite.
+ *         In any of these cases, q_ddot is set to zero.
+ *
+ *  \param[in]  graph Pointer to a valid RcsGraph
+ *  \param[in]  F_external External force vector of dimension RcsGraph::nJ x 1
+ *  \param[out] q_ddot  Resulting generalized accelerations, reshaped to
+ *                      dimensions RcsGraph::nJ x 1
+ *  \return Overall energy of the system based on q and q_dot of the graph.
  */
 double Rcs_directDynamics(const RcsGraph* graph,
-                          const MatNd* F_ext,
-                          const MatNd* F_jnt,
-                          MatNd* qpp);
+                          const MatNd* F_external,
+                          MatNd* q_ddot);
 
 /*! \ingroup RcsKineticsFunctions
  *  \brief Wrapper function of the direct dynamics to match the function
@@ -189,8 +212,8 @@ double Rcs_directDynamics(const RcsGraph* graph,
  *         Argument param is assumed to point to a DirDynParams structure,
  *         see above. Please see the implementation for details.
  */
-void Rcs_directDynamicsIntegrationStep(const double* x, void* param,
-                                       double* xp, double time);
+double Rcs_directDynamicsIntegrationStep(const double* x, void* param,
+                                         double* xp, double time);
 
 
 

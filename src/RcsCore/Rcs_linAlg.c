@@ -330,10 +330,16 @@ int MatNd_gaussSeidelIterate(MatNd* x, const MatNd* A, const MatNd* b,
   int i, j, steps = 0, n = A->m;
   double change;
 
+  RCHECK_MSG(A->m == A->n, "A->m=%d   A->n=%d", A->m, A->n);
+  RCHECK_MSG(x->m == n, "x->m=%d   n=%d", x->m, n);
+  RCHECK_MSG(x->n == 1, "x->n=%d", x->n);
+  RCHECK_MSG(b->m == n, "x->m=%d   n=%d", x->m, n);
+  RCHECK_MSG(b->n == 1, "b->n=%d", b->n);
+
   do
   {
     steps++;
-    change = 0.;
+    change = 0.0;
 
     // The algorithm
     for (i = 0; i < n; i++)
@@ -368,13 +374,6 @@ int MatNd_gaussSeidelIterate(MatNd* x, const MatNd* A, const MatNd* b,
  ******************************************************************************/
 int MatNd_gaussSeidelSolve(MatNd* x, const MatNd* A, const MatNd* b)
 {
-  int n = A->m;
-  RCHECK_MSG(A->m == A->n, "A->m=%d   A->n=%d", A->m, A->n);
-  RCHECK_MSG(x->m == n, "x->m=%d   n=%d", x->m, n);
-  RCHECK_MSG(x->n == 1, "x->n=%d", x->n);
-  RCHECK_MSG(b->m == n, "x->m=%d   n=%d", x->m, n);
-  RCHECK_MSG(b->n == 1, "b->n=%d", b->n);
-
   return MatNd_gaussSeidelIterate(x, A, b, 1.0e-8, -1);
 }
 

@@ -78,6 +78,16 @@ double Math_fmax3(double x, double y, double z);
 int Math_iClip(int x, int min, int max);
 
 /*! \ingroup RcsBasicMathFunctions
+ *  \brief Swaps the values pointed to by p1 and p2.
+ */
+void Math_iSwap(int* p1, int* p2);
+
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Swaps the values pointed to by p1 and p2.
+ */
+void Math_uiSwap(unsigned int* p1, unsigned int* p2);
+
+/*! \ingroup RcsBasicMathFunctions
  *  \brief Returns x clipped to the range [min , max].
  */
 double Math_clip(double x, double min, double max);

@@ -301,13 +301,15 @@ public:
 
 private:
 
-  static void integrationStep(const double* x, void* param, double* xp,
-                              double dt);
+  static double integrationStep(const double* x, void* param, double* xp,
+                                double dt);
+  static double integrationStepSimple(const double* x, void* param, double* xp,
+                                      double dt);
   double dirdyn(const RcsGraph* graph, const MatNd* F_ext,
                 MatNd* q_ddot, MatNd* b) const;
 
   void addContactForces(MatNd* M_contact, MatNd* xp_contact, MatNd* f_contact,
-                        const double* x, double dt) const;
+                        const double* x) const;
 
   void addSpringForces(MatNd* M_spring, const MatNd* q_dot) const;
 
@@ -321,9 +323,8 @@ private:
                              const double x_attach[3],
                              const double xp_attach[3]) const;
 
-    void computeContacts(double xp_contact[3],
+    void computeContacts(double dx_contact[3],
                          double f_contact[3],
-                         const double dt,
                          const double x_contact[3],
                          const double x_attach[3],
                          const double xp_attach[3]) const;

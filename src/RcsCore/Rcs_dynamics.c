@@ -52,7 +52,7 @@ static inline const double* getDefaultGravity()
  *
  ******************************************************************************/
 static void runge_kutta_fehlberg_1_2(int nz,
-                                     void (*FCN)(const double*, void*, double*, double),
+                                     DirDynFunc FCN,
                                      void* param,
                                      double t,
                                      double dt,
@@ -97,7 +97,7 @@ static void runge_kutta_fehlberg_1_2(int nz,
  * See IfM_Preprint_M_02_09.pdf page 18
  ******************************************************************************/
 static void runge_kutta_fehlberg_2_3(int nz,
-                                     void (*FCN)(const double*, void*, double*, double),
+                                     DirDynFunc FCN,
                                      void* param,
                                      double t,
                                      double dt,
@@ -168,7 +168,7 @@ static void runge_kutta_fehlberg_2_3(int nz,
  * err     : Estimated error at x2
  ******************************************************************************/
 static void runge_kutta_2_3(int nz,
-                            void (*FCN)(const double*, void*, double*, double),
+                            DirDynFunc FCN,
                             void* param,
                             double t,
                             double dt,
@@ -261,7 +261,7 @@ static void runge_kutta_2_3(int nz,
 /*******************************************************************************
  *
  ******************************************************************************/
-void integration_rkf23(void (*FCN)(const double*, void*, double*, double),
+void integration_rkf23(DirDynFunc FCN,
                        void* param,
                        int nz,
                        double dt,
@@ -280,7 +280,7 @@ void integration_rkf23(void (*FCN)(const double*, void*, double*, double),
  *        x     : initial state vector
  *        x2    : state vector after integration
  ******************************************************************************/
-void integration_euler(void (*FCN)(const double*, void*, double*, double),
+void integration_euler(DirDynFunc FCN,
                        void* param,
                        int nz,
                        double dt,
@@ -315,7 +315,7 @@ void integration_euler(void (*FCN)(const double*, void*, double*, double),
  ******************************************************************************/
 #define ALMOST_ZERO (1.0e-5)    // was 1.0e-8 and 1.0e-6
 
-int integration_t1_t2(void (*FCN)(const double*, void*, double*, double),
+int integration_t1_t2(DirDynFunc FCN,
                       void* param,
                       int nz,
                       double t1,
@@ -430,8 +430,7 @@ static void RcsBody_HVector(const RcsBody* bdy,
                             const double vPtr[3],
                             MatNd* hVec)
 {
-  MatNd_reshape(hVec, 6, 1);
-  MatNd_setZero(hVec);
+  MatNd_reshapeAndSetZero(hVec, 6, 1);
 
   if (bdy->m == 0.0)
   {
@@ -473,8 +472,7 @@ static void RcsBody_HVector(const RcsBody* bdy,
  ******************************************************************************/
 static void RcsBody_massMatrix(const RcsBody* bdy, MatNd* MassMatrix)
 {
-  MatNd_reshape(MassMatrix, 6, 6);
-  MatNd_setZero(MassMatrix);
+  MatNd_reshapeAndSetZero(MassMatrix, 6, 6);
 
   if (bdy->m == 0.0)
   {
@@ -497,8 +495,6 @@ static void RcsBody_massMatrix(const RcsBody* bdy, MatNd* MassMatrix)
   }
 
 }
-
-
 
 /*******************************************************************************
  *
@@ -734,35 +730,37 @@ void RcsGraph_computeMassMatrix(const RcsGraph* graph, MatNd* M)
 
 /*******************************************************************************
  *
- *   Solves the multibody equations of motion for the joint
- *   accelerations:
+ * Solves the multibody equations of motion for the joint accelerations:
  *
- *   M(q) q_ddot + h(q,q_dot) + F_gravity + F_ext = F_jnt
+ * M(q) q_ddot + h(q,q_dot) + F_gravity + F_ext' = F_jnt
  *
- *   The signs follow the equations of the Springer handbook of robotics,
- *   but not the variable names.
+ * with F_ext = F_ext' - F_jnt we get:
  *
- *   q, q_dot, q_ddot: Generalized coordinates, velocities and accelerations
- *               The dimension is graph->nJ (number of unconstrained dof)
- *   M:          Mass and inertia matrix
- *   F_gravity:  Gravity force projected on generalized coordinates
- *   h:          Coriolis vector
- *   F_ext:      External forces projected on generalized coordinates
- *   F_jnt:      Joint torque vector
+ * M(q) q_ddot + h(q,q_dot) + F_gravity + F_ext = 0
  *
- *   Currently F_jnt is projected on all unconstrained degrees of
- *   freedom. Arrays F_ext and F_jnt can be pointers to NULL. In this
- *   case, they are assumed to be zero.
+ * The signs follow the equations of the Springer handbook of robotics,
+ * but not the variable names.
  *
- *   The function returns the overall energy of the system. It will
- *   warn on debug level 1 if
- *   - the Cholesky decomposition failed
- *   - one of the elements of q_ddot is not finite
+ * q, q_dot, q_ddot: Generalized coordinates, velocities and accelerations
+ *             The dimension is graph->nJ (number of unconstrained dof)
+ * M:          Mass and inertia matrix
+ * F_gravity:  Gravity force projected on generalized coordinates
+ * h:          Coriolis vector
+ * F_ext:      External forces projected on generalized coordinates
+ *             The joint torque vector needs to be substracted: F_ext-F_jnt
+ *
+ * Currently F_jnt is projected on all unconstrained degrees of
+ * freedom. Arrays F_ext and F_jnt can be pointers to NULL. In this
+ * case, they are assumed to be zero.
+ *
+ * The function returns the overall energy of the system. It will
+ * warn on debug level 1 if
+ * - the Cholesky decomposition failed
+ * - one of the elements of q_ddot is not finite
  *
  ******************************************************************************/
 double Rcs_directDynamics(const RcsGraph* graph,
                           const MatNd* F_ext,
-                          const MatNd* F_jnt,
                           MatNd* q_ddot)
 {
   RCHECK(graph);
@@ -776,17 +774,6 @@ double Rcs_directDynamics(const RcsGraph* graph,
     {
       MatNd_printCommentDigits("F_ext", F_ext, 5);
       RPAUSE_MSG("F_ext contains non-finite values");
-    }
-  }
-
-  if (F_jnt != NULL)
-  {
-    RCHECK((F_jnt->m == n) && (F_jnt->n == 1));
-
-    if (!MatNd_isFinite(F_jnt))
-    {
-      MatNd_printCommentDigits("F_jnt", F_jnt, 5);
-      RPAUSE_MSG("F_jnt contains non-finite values");
     }
   }
 
@@ -804,20 +791,17 @@ double Rcs_directDynamics(const RcsGraph* graph,
   // Compute mass matrix, h-vector and gravity forces
   double E = RcsGraph_computeKineticTerms(graph, NULL, M, h, F_gravity);
 
-  // Solve direct dynamics for joint accelerations
+  // Assemble RHS vector b considering gravity and Coriolis forces
   MatNd_addSelf(b, F_gravity);
+  MatNd_addSelf(b, h);
 
+  // Add external forces comming in as arguments
   if (F_ext)
   {
     MatNd_addSelf(b, F_ext);
   }
 
-  if (F_jnt)
-  {
-    MatNd_subSelf(b, F_jnt);
-  }
-
-  MatNd_addSelf(b, h);
+  // Solve direct dynamics for joint accelerations: q_ddot = inv(M) b
   double det = MatNd_choleskySolve(q_ddot, M, b);
 
   // Use Singular Value Decomposition if system is ill-conditioned. That's
@@ -825,13 +809,17 @@ double Rcs_directDynamics(const RcsGraph* graph,
   // singularity, or if the mass and inertia properties are screwed up.
   if (det==0.0)
   {
-    //det = MatNd_SVDSolve(q_ddot, M, b);
-    RLOG(1, "Solving for q_ddot with Cholesky decomposition failed - using SVD");
+    RLOG(1, "Solving for q_ddot with Cholesky decomposition failed - trying "
+         "again with mass matrix regularization");
+
     REXEC(4)
     {
       MatNd_printCommentDigits("Mass matrix", M, 12);
       MatNd_printCommentDigits("Sum of torques", b, 3);
     }
+
+    MatNd_addConstToDiag(M, 1.0e-3);
+    det = MatNd_choleskySolve(q_ddot, M, b);
   }
 
   // Warn if something seriously goes wrong.
@@ -846,7 +834,7 @@ double Rcs_directDynamics(const RcsGraph* graph,
     RLOG(2, "Couldn't solve direct dynamics - determinant is 0");
   }
 
-  if (MatNd_isINF(q_ddot))
+  if (!MatNd_isFinite(q_ddot))
   {
     REXEC(3)
     {
@@ -855,11 +843,6 @@ double Rcs_directDynamics(const RcsGraph* graph,
       MatNd_printCommentDigits("q_ddot", q_ddot, 4);
       MatNd_printCommentDigits("h", h, 4);
       MatNd_printCommentDigits("F_gravity", F_gravity, 4);
-
-      if (F_jnt != NULL)
-      {
-        MatNd_printCommentDigits("F_jnt", F_jnt, 4);
-      }
 
       if (F_ext != NULL)
       {
@@ -899,10 +882,10 @@ double Rcs_directDynamics(const RcsGraph* graph,
  * RcsGraph structure. It's userData field is assumed to point to an
  * MatNd holding the external forces projected into the configuration space.
  ******************************************************************************/
-void Rcs_directDynamicsIntegrationStep(const double* x,
-                                       void* param,
-                                       double* xp,
-                                       double time)
+double Rcs_directDynamicsIntegrationStep(const double* x,
+                                         void* param,
+                                         double* xp,
+                                         double time)
 {
   DirDynParams* p = (DirDynParams*) param;
   RcsGraph* graph = p->graph;
@@ -910,21 +893,25 @@ void Rcs_directDynamicsIntegrationStep(const double* x,
   int n           = graph->nJ;
   MatNd q         = MatNd_fromPtr(n, 1, (double*) &x[0]);
   MatNd q_dot     = MatNd_fromPtr(n, 1, (double*) &x[n]);
+  MatNd q_dot_out = MatNd_fromPtr(n, 1, (double*) &xp[0]);
   MatNd q_ddot    = MatNd_fromPtr(n, 1, &xp[n]);
 
   RcsGraph_setState(graph, &q, &q_dot);
+
+  double energy = Rcs_directDynamics(graph, F_ext, &q_ddot);
+
+  MatNd_copy(&q_dot_out, &q_dot);
 
   // Set the speed of the coupled joints to zero. Otherwise, they will get
   // integrated and drift away.
   RCSGRAPH_TRAVERSE_JOINTS(graph)
   {
-    if (JNT->coupledToId != -1)
+    if ((JNT->coupledToId!=-1) && (JNT->jacobiIndex!=-1))
     {
-      q_dot.ele[JNT->jacobiIndex] = 0.0;
+      q_dot_out.ele[JNT->jacobiIndex] = 0.0;
+      q_ddot.ele[JNT->jacobiIndex] = 0.0;
     }
   }
 
-  Rcs_directDynamics(graph, F_ext, NULL, &q_ddot);
-
-  memmove(&xp[0], &x[n], n*sizeof(double));
+  return energy;
 }

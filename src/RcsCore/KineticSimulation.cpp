@@ -750,71 +750,109 @@ void KineticSimulation::setControlInput(const MatNd* q_des_,
 }
 
 /*******************************************************************************
+ *
+ * Wrapper function of the direct dynamics to match the function
+ * signature of the integrator. Argument param is assumed to point to a
+ * KineticSimulation instance. We set up the state vector as
+ *
+ * x = (q^T qp^T x_c^T)^T
+ *
+ * The contact dynamics part x_c is ignored. This function only models a
+ * minimum, it ignores contact and spring forces, joint speed damping and
+ * PID controls for position / velocity controlled joints.
+ *
+ ******************************************************************************/
+double KineticSimulation::integrationStepSimple(const double* x_, void* param,
+                                                double* xp, double dt)
+{
+  KineticSimulation* kSim = (KineticSimulation*)param;
+  MatNd* F_external = MatNd_create(kSim->getGraph()->nJ, 1);
+  DirDynParams simpleParams;
+  simpleParams.graph = kSim->getGraph();
+  simpleParams.F_ext = F_external;
 
-  \brief Wrapper function of the direct dynamics to match the function
-     signature of the integrator. Argument param is assumed to point to a
-     RcsGraph structure. It's userData field is assumed to point to an
-     MatNd holding the external forces projected into the configuration
-     space.
+  // Add joint torque
+  MatNd* T_des_ik = MatNd_create(kSim->getGraph()->nJ, 1);
+  RcsGraph_stateVectorToIK(kSim->getGraph(), kSim->T_des, T_des_ik);
+  MatNd_addSelf(F_external, T_des_ik);
+  MatNd_destroy(T_des_ik);
 
-     We augment this here a bit to account for the frictional forces of
-     the ground contacts. When exceeding the friction cone limit, the
-     contact points have a velocity that needs to be integrated consistently
-     with the system. Therefore, we set up the state vector as
+  // Subtract torque from mouse dragger.
+  MatNd_subSelf(F_external, kSim->draggerTorque);
 
-     x = (q^T qp^T x_c^T)^T
+  kSim->energy = Rcs_directDynamicsIntegrationStep(x_, &simpleParams, xp, dt);
+  MatNd_destroy(F_external);
 
-     In this function, we compute the state vector derivative, which is
+  return kSim->energy;
+}
 
-     xp = (qp^T qpp^T xp_c^T)^T
-
-     We do the following updates:
-
-     qp is the qp from the last time step
-     qpp comes out of the direct dynamics
-     xp_c comes out of the contact point velocity computations
-
-*******************************************************************************/
-void KineticSimulation::integrationStep(const double* x, void* param,
-                                        double* xp, double dt)
+/*******************************************************************************
+ *
+ * Wrapper function of the direct dynamics to match the function
+ * signature of the integrator. Argument param is assumed to point to a
+ * KineticSimulation instance.
+ *
+ * We augment this here a bit to account for the frictional forces of
+ * the ground contacts. When exceeding the friction cone limit, the
+ * contact points have a velocity that needs to be integrated consistently
+ * with the system. Therefore, we set up the state vector as
+ *
+ * x = (q^T qp^T x_c^T)^T
+ *
+ * In this function, we compute the state vector derivative, which is
+ *
+ * xp = (qp^T qpp^T xp_c^T)^T
+ *
+ * We do the following updates:
+ *
+ * qp is the qp from the last time step
+ * qpp comes out of the direct dynamics
+ * xp_c comes out of the contact point velocity computations
+ *
+ ******************************************************************************/
+double KineticSimulation::integrationStep(const double* x_, void* param,
+                                          double* xp, double dt)
 {
   KineticSimulation* kSim = (KineticSimulation*)param;
   RcsGraph* graph = kSim->getGraph();
-  const int nq = graph->nJ, nc = kSim->contact.size();
+  const int nq = graph->nJ, nc = kSim->contact.size(), nz = 2*nq+3*nc;
+
+  // Allow calling the function with x and xp pointing to the same memory
+  double* x = VecNd_clone(x_, nz);
 
   // Update kinematics
   MatNd q = MatNd_fromPtr(nq, 1, (double*)&x[0]);
   MatNd qp = MatNd_fromPtr(nq, 1, (double*)&x[nq]);
   RcsGraph_setState(graph, &q, &qp);
 
-  // Compute the contact and spring forces and friction contact velocities
-  MatNd* M_contact = MatNd_create(nq, 1);
+  // Compute the contact and spring forces and friction contact velocities. We
+  // need dt here to consistently compute the contact point velocities.
+  MatNd* F_external = MatNd_create(nq, 1);
   MatNd xp_c = MatNd_fromPtr(nc, 3, &xp[2*nq]);
-  kSim->addContactForces(M_contact, &xp_c, kSim->contactForces, x, dt);
-  kSim->addSpringForces(M_contact, &qp);
+  kSim->addContactForces(F_external, &xp_c, kSim->contactForces, x);
+  MatNd_constMulSelf(&xp_c, 1.0/dt);   // xp^T = [ ... ...  xp_c^T ]^T
+  kSim->addSpringForces(F_external, &qp);
 
   // Add joint torque
   MatNd* T_des_ik = MatNd_create(nq, 1);
   RcsGraph_stateVectorToIK(graph, kSim->T_des, T_des_ik);
-  MatNd_addSelf(M_contact, T_des_ik);
+  MatNd_addSelf(F_external, T_des_ik);
   MatNd_destroy(T_des_ik);
 
   // Subtract torque from mouse dragger. The dragger torque comes from the
   // applyForce() function, called from the ForceDragger of the PhysicsNode.
-  MatNd_subSelf(M_contact, kSim->draggerTorque);
+  MatNd_subSelf(F_external, kSim->draggerTorque);
 
-  // Transfer joint velocities
-  memmove(&xp[0], qp.ele, nq * sizeof(double));
-
-  // Compute accelerations using direct dynamics.
+  // Compute accelerations using direct dynamics. Here is how we assemble the
+  VecNd_copy(&xp[0], qp.ele, nq);   // xp^T = [ qp^T ... ... ]^T
   MatNd qpp = MatNd_fromPtr(nq, 1, &xp[nq]);
   MatNd* b = MatNd_create(nq, 1);
-  kSim->energy = kSim->dirdyn(graph, M_contact, &qpp, b);
-  RcsGraph_stateVectorFromIK(graph, b, kSim->jointTorque);// Memorize torques.
+  kSim->energy = kSim->dirdyn(graph, F_external, &qpp, b);  // xp^T = [ ... qpp^T ... ]^T
+  RcsGraph_stateVectorFromIK(graph, b, kSim->jointTorque); // Memorize torques.
   MatNd_destroy(b);
 
-
-  MatNd xpArr = MatNd_fromPtr(2*nq + 3*nc, 1, xp);
+  // Check direct dynamics outputs
+  MatNd xpArr = MatNd_fromPtr(nz, 1, xp);
   if (!MatNd_isFinite(&xpArr))
   {
     RLOG(1, "Found non-finite elements in xp - setting to zero");
@@ -827,11 +865,13 @@ void KineticSimulation::integrationStep(const double* x, void* param,
     }
 
     MatNd_setZero(&xpArr);
-    RPAUSE();
   }
 
   // Cleanup
-  MatNd_destroy(M_contact);
+  MatNd_destroy(F_external);
+  RFREE(x);
+
+  return kSim->energy;
 }
 
 /*******************************************************************************
@@ -1058,20 +1098,15 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
 
   MatNd_destroyN(7, M00, M01, qpp_f, qpp_c, Mqpp_c, q_ddot_f, b_f);
 
+  // Clean up
+  MatNd_destroyN(3, M, F_gravity, h);
+
   // Warn if something seriously goes wrong.
   if (det == 0.0)
   {
-    RLOG(2, "Couldn't solve direct dynamics - determinant is 0");
+    RLOG(1, "Couldn't solve direct dynamics - determinant is 0");
+    E = -1.0;
   }
-
-  if (MatNd_isINF(q_ddot))
-  {
-    MatNd_setZero(q_ddot);
-    RLOG(1, "q_ddot has infinite values - det was %g", det);
-  }
-
-  // Clean up
-  MatNd_destroyN(3, M, F_gravity, h);
 
   return E;
 }
@@ -1120,46 +1155,66 @@ size_t KineticSimulation::getNumContacts() const
 /*******************************************************************************
  *
  ******************************************************************************/
-void KineticSimulation::addContactForces(MatNd* M_contact,
-                                         MatNd* xp_contact,
-                                         MatNd* f_contact,   // nc x 3
-                                         const double* x,
-                                         double dt) const
+void KineticSimulation::addContactForces(MatNd* M_contact,      // nq x 1
+                                         MatNd* dx_contact,     // nc x 3
+                                         MatNd* f_contact,      // nc x 3
+                                         const double* x) const // 2*nq+3*nc
 {
   const int nq = getGraph()->nJ;
-  const int nc = contact.size();
   MatNd qp = MatNd_fromPtr(nq, 1, (double*)&x[nq]);
-  MatNd x_c = MatNd_fromPtr(nc, 3, (double*)&x[2*nq]);
+  MatNd x_c = MatNd_fromPtr(contact.size(), 3, (double*)&x[2*nq]);
   MatNd* J = MatNd_create(3, nq);
 
   // Compute the velocities of the attachement points
-  for (int i = 0; i < nc; i++)
+  for (size_t i = 0; i < contact.size(); i++)
   {
     const RcsBody* cBdy = &getGraph()->bodies[contact[i].bdyId];
     const RcsShape* cSh = cBdy->shape[contact[i].shapeIdx];
     RcsGraph_bodyPointJacobian(getGraph(), cBdy, cSh->A_CB.org, NULL, J);
 
-    // Compute the velocities of the attachement points. \todo: Could also be
-    // done cheaper with the body velocities.
-    double xp_attach_i[3];
-    MatNd xp_a_i = MatNd_fromPtr(3, 1, xp_attach_i);
-    MatNd_mul(&xp_a_i, J, &qp);
+    // Compute the attachement point velocities: I_xp_c = I_xp_b + I_om x I_r_c
+    double xp_attach_i[3], omxr[3], I_r_cp[3];
+    Vec3d_transRotate(I_r_cp, (double (*)[3])cBdy->A_BI.rot, cSh->A_CB.org);
+    Vec3d_crossProduct(omxr, cBdy->omega, I_r_cp);
+    Vec3d_add(xp_attach_i, cBdy->x_dot, omxr);
+
+    // Compute the attachement point velocities: I_xp_c = J_cp qp
+    // double xp_attach_i[3];
+    // MatNd xp_a_i = MatNd_fromPtr(3, 1, xp_attach_i);
+    // MatNd_mul(&xp_a_i, J, &qp);
+
+    // Test: Compute the attachement point velocities using the Jacobian.
+    REXEC(1)
+    {
+      double xp_test[3];
+      MatNd xp_a_i = MatNd_fromPtr(3, 1, xp_test);
+      MatNd_mul(&xp_a_i, J, &qp);
+      double err = Vec3d_distance(xp_attach_i, xp_test);
+
+      if (err>1.0e-8)
+      {
+        RLOG(0, "Attachement error[%s]: %f (%f = %f)", cBdy->name, err,
+             Vec3d_getLength(xp_attach_i), Vec3d_getLength(xp_test));
+      }
+    }
 
     // Compute friction contact speeds
-    double* xp_contact_i = &xp_contact->ele[3 * i];
+    double* dx_contact_i = &dx_contact->ele[3*i];
     const double* x_contact_i = &x_c.ele[3*i];
     HTr A_CI;
     HTr_transform(&A_CI, &cBdy->A_BI, &cSh->A_CB);
-    const double* x_attach_i = A_CI.org;
 
     double* fi = MatNd_getRowPtr(f_contact, i);
-    contact[i].computeContacts(xp_contact_i, fi,
-                               dt, x_contact_i, x_attach_i, xp_attach_i);
+    const double* x_attach_i = A_CI.org;
+    contact[i].computeContacts(dx_contact_i, fi,
+                               x_contact_i, x_attach_i, xp_attach_i);
 
-    // Project contact forces into joint space
-    MatNd F_i = MatNd_fromPtr(3, 1, fi);
-    MatNd_transposeSelf(J);
-    MatNd_mulAndAddSelf(M_contact, J, &F_i);
+    // Project contact forces into joint space: M_c = J^T * F_i
+    // We save the transpose and do: M_c^T = F_i^T*J
+    MatNd F_i = MatNd_fromPtr(1, 3, fi);
+    MatNd_reshape(M_contact, 1, nq);
+    MatNd_mulAndAddSelf(M_contact, &F_i, J);
+    MatNd_reshape(M_contact, nq, 1);
   }
 
   MatNd_destroy(J);
@@ -1280,9 +1335,8 @@ void KineticSimulation::FrictionContactPoint::computeContactForce(double f[3],
   }
 }
 
-void KineticSimulation::FrictionContactPoint::computeContacts(double xp_contact[3],
+void KineticSimulation::FrictionContactPoint::computeContacts(double dx_contact[3],
                                                               double f_contact[3],
-                                                              const double dt,
                                                               const double x_contact[3],
                                                               const double x_attach[3],
                                                               const double xp_attach[3]) const
@@ -1293,7 +1347,7 @@ void KineticSimulation::FrictionContactPoint::computeContacts(double xp_contact[
   {
     for (int i = 0; i < 3; ++i)
     {
-      xp_contact[i] = (x_attach[i] - x_contact[i]) / dt;
+      dx_contact[i] = x_attach[i] - x_contact[i];
       f_contact[i] = 0.0;
     }
     return;
@@ -1302,7 +1356,7 @@ void KineticSimulation::FrictionContactPoint::computeContacts(double xp_contact[
 
   // If the body point is penetrating, the velocity is computed so that
   // x_contact[2] lies at the surface.
-  xp_contact[2] = (this->z0 - x_contact[2]) / dt;
+  dx_contact[2] = this->z0 - x_contact[2];
 
   // Horizontal component. There are 2 cases:
   // 1. The tangential force is within the friction cone. Then, the tangential
@@ -1320,8 +1374,8 @@ void KineticSimulation::FrictionContactPoint::computeContacts(double xp_contact[
   // Tangential forces are inside friction cone - contact points don't move
   if (ft <= ft_limit)
   {
-    xp_contact[0] = 0.0;
-    xp_contact[1] = 0.0;
+    dx_contact[0] = 0.0;
+    dx_contact[1] = 0.0;
   }
   else
   {
@@ -1332,7 +1386,7 @@ void KineticSimulation::FrictionContactPoint::computeContacts(double xp_contact[
 
     for (int i = 0; i < 2; i++)
     {
-      xp_contact[i] = -(dx*f_contact[i] / ft) / dt;
+      dx_contact[i] = -dx*f_contact[i]/ft;
     }
   }
 

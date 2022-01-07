@@ -1312,6 +1312,7 @@ int main(int argc, char** argv)
         printf("bin/Rcs -m 4 -skipGui -dir config/xml/Examples -f gGyro.xml -physicsEngine NewtonEuler -gz 0\n");
         printf("bin/Rcs -m 4 -skipGui -dir config/xml/Examples -f gGyro.xml -physicsEngine Bullet -gz 0\n");
         printf("bin/Rcs -m 4 -f config/xml/Examples/gHumanoidPendulum.xml -physicsEngine NewtonEuler -skipGui\n");
+        printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f cSitToStand.xml -physicsEngine NewtonEuler -skipGui\n");
         printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f gSoftPhysics.xml -physicsEngine SoftBullet\n");
         printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f cSoftPhysicsIK.xml -physicsEngine SoftBullet\n");
         printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f gSoftShirtPerson.xml -physicsEngine SoftBullet\n");
@@ -1948,7 +1949,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("k", "Toggle GraphNode");
       Rcs::KeyCatcherBase::registerKey("S", "Reset physics");
 
-      int algo = 0;
+      int algo = 0, guiHandle = -1;
       double alpha = 0.05, lambda = 1.0e-8, tmc = 0.1, dt = 0.01, dt_calc = 0.0;
       double jlCost = 0.0, dJlCost = 0.0, clipLimit = DBL_MAX;
       double scaleDragForce = 0.01;
@@ -2168,9 +2169,9 @@ int main(int argc, char** argv)
           {
             if ((algo==0) && (lambda>0.0))
             {
-              Rcs::ControllerWidgetBase::create(&controller, a_des,
-                                                ikSolver->getCurrentActivation(),
-                                                x_des, x_curr, mtx);
+              guiHandle = Rcs::ControllerWidgetBase::create(&controller, a_des,
+                                                            ikSolver->getCurrentActivation(),
+                                                            x_des, x_curr, mtx);
             }
             else
             {
@@ -2178,13 +2179,13 @@ int main(int argc, char** argv)
               {
                 // If mode 5 runs with a simulator, the GUI displays the
                 // current values from physics.
-                Rcs::ControllerWidgetBase::create(&controller, a_des,
-                                                  x_des, x_physics, mtx);
+                guiHandle = Rcs::ControllerWidgetBase::create(&controller, a_des,
+                                                              x_des, x_physics, mtx);
               }
               else
               {
-                Rcs::ControllerWidgetBase::create(&controller, a_des,
-                                                  x_des, x_curr, mtx);
+                guiHandle = Rcs::ControllerWidgetBase::create(&controller, a_des,
+                                                              x_des, x_curr, mtx);
               }
             }
           }
@@ -2432,14 +2433,24 @@ int main(int argc, char** argv)
         {
           RMSG("Resetting");
           RcsGraph_setDefaultState(controller.getGraph());
-        }
-        else if (kc && kc->getAndResetKey('k'))
-        {
-          if (gn)
+          controller.computeX(x_curr);
+          MatNd_copy(x_des, x_curr);
+          MatNd_copy(x_des_f, x_curr);
+
+          if (sim)
           {
-            RMSG("Toggling GraphNode");
-            gn->toggle();
+            sim->reset(controller.getGraph()->q);
+            MatNd_copy(x_physics, x_curr);
           }
+
+          void* ptr = RcsGuiFactory_getPointer(guiHandle);
+          Rcs::ControllerWidgetBase* cw = static_cast<Rcs::ControllerWidgetBase*>(ptr);
+          cw->reset(a_des, x_curr);
+        }
+        else if (kc && kc->getAndResetKey('k') && gn)
+        {
+          RMSG("Toggling GraphNode");
+          gn->toggle();
         }
         else if (kc && kc->getAndResetKey('C') && cn)
         {

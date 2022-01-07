@@ -1387,8 +1387,9 @@ bool Rcs::VortexSimulation::createJoint(const RcsBody* body)
         }
         else
         {
-          RFATAL("%s has %d joints - only one is currently supported",
-                 body->name, nJnts);
+          RLOG(1, "%s has %d joints - only one is currently supported",
+               body->name, nJnts);
+          break;
         }
       }
 
