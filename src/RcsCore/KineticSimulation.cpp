@@ -959,7 +959,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   // We consider all bodies with six joints as floating and do not apply any
   // damping.
   // \todo: Provide interface on per-joint basis
-  const double damping = 0*5.0;
+  const double damping = 5.0;
   MatNd* Fi = MatNd_create(n, 1);
   MatNd* qp_ik = MatNd_clone(graph->q_dot);
 
