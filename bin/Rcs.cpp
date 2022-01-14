@@ -1316,6 +1316,7 @@ int main(int argc, char** argv)
         printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f gSoftPhysics.xml -physicsEngine SoftBullet\n");
         printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f cSoftPhysicsIK.xml -physicsEngine SoftBullet\n");
         printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f gSoftShirtPerson.xml -physicsEngine SoftBullet\n");
+        printf("bin/Rcs -m 4 -dir config/xml/WAM -f gScenario.xml -gc -damping 3 -physicsEngine NewtonEuler -gravComp\n");
 
         Rcs::PhysicsFactory::print();
         RcsGraph_printUsage(xmlFileName);

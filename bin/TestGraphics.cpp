@@ -514,7 +514,7 @@ static void testOsgViewer()
 
   // Window size handler toggles fullscreen with F10
   if (argP.hasArgument("-windowSizeHandler",
-                       "Test WindowSizeHandler (toggles fullscreen with F10)"));
+                       "Test WindowSizeHandler (toggles fullscreen with F10)"))
   {
     osg::ref_ptr<osgViewer::WindowSizeHandler> wsh;
     wsh = new osgViewer::WindowSizeHandler;

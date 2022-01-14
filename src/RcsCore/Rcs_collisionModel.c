@@ -32,7 +32,7 @@
 *******************************************************************************/
 
 #include "Rcs_collisionModel.h"
-#include "Rcs_graphParser.h"
+#include "Rcs_parser.h"
 #include "Rcs_typedef.h"
 #include "Rcs_body.h"
 #include "Rcs_math.h"
@@ -527,7 +527,7 @@ void RcsCollisionMdl_gradient(const RcsCollisionMdl* self, MatNd* grad)
     double* n1 = MatNd_getRowPtr(self->cp, PAIR->n1);
     RcsBody_distanceGradient(self->graph, b1, b2, repelling, cp1, cp2, n1, dDpdq);
 
-    if (d < 0)
+    if (d < 0.0)
     {
       dgpDdp = -2.0*s/dLimit;
     }
@@ -553,7 +553,7 @@ void RcsCollisionMdl_gradient(const RcsCollisionMdl* self, MatNd* grad)
                                I_p1_center, I_p2_center, NULL, dDcdq);
 
       // dgc/ddc
-      if (d < 0)
+      if (d < 0.0)
       {
         dgcDdc = -self->sMixtureCost*exp(-dCenters);
       }
@@ -565,7 +565,7 @@ void RcsCollisionMdl_gradient(const RcsCollisionMdl* self, MatNd* grad)
       MatNd_constMulAndAddSelf(grad, dDcdq, dgcDdc*w);
 
       // dgc/ddp
-      if (d < 0)
+      if (d < 0.0)
       {
         dgcDdp = 0.0;
       }
