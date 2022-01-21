@@ -2664,7 +2664,11 @@ void Rcs::ControllerBase::computeInvDynJointSpace(MatNd* T_des,
   RcsGraph_computeKineticTerms(graph, NULL, M, h, g);
 
   // aq = -kp*(q-q_des)
-  MatNd_sub(aq, q_curr, q_des);
+  if (q_des != NULL)
+  {
+    MatNd_sub(aq, q_curr, q_des);
+  }
+
   RcsGraph_stateVectorToIKSelf(graph, aq);
   MatNd_constMulSelf(aq, -positionGain);
 
