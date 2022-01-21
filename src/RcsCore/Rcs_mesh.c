@@ -413,10 +413,10 @@ static void RcsMesh_appendRectangle(RcsMeshData* mesh, double x, double y,
   const double verts[12] =
   {
     -0.5, -0.5, 0.0,
-    0.5, -0.5, 0.0,
-    0.5,  0.5, 0.0,
-    -0.5,  0.5, 0.0,
-  };
+      0.5, -0.5, 0.0,
+      0.5,  0.5, 0.0,
+      -0.5,  0.5, 0.0,
+    };
 
   const unsigned int nf = nfRectangle();
 
@@ -987,7 +987,7 @@ static double* RcsMesh_readBinarySTLFile(FILE* fd, unsigned int* numVertices)
 
   if (vertices == NULL)
   {
-    RLOG(4, "Failed to load binary stl file with %d vertices", *numVertices);
+    RLOG(4, "Failed to allocate memory for %d vertices", *numVertices);
     *numVertices = 0;
     return NULL;
   }
@@ -1004,7 +1004,7 @@ static double* RcsMesh_readBinarySTLFile(FILE* fd, unsigned int* numVertices)
 
     if (itemsRead < 3)
     {
-      RLOG(4, "Error reading STL file");
+      RLOG(4, "Error reading normals - read %zu items, expected 3", itemsRead);
       RFREE(vertices);
       return NULL;
     }
@@ -1017,7 +1017,7 @@ static double* RcsMesh_readBinarySTLFile(FILE* fd, unsigned int* numVertices)
 
       if (itemsRead < 1)
       {
-        RLOG(4, "Error reading STL file");
+        RLOG(4, "Error reading vertices");
         RFREE(vertices);
         return NULL;
       }
@@ -1762,14 +1762,14 @@ RcsMeshData* RcsMesh_createBox(const double extents[3])
   const double verts[24] =
   {
     -0.5, -0.5, -0.5,
-    0.5, -0.5, -0.5,
-    0.5,  0.5, -0.5,
-    -0.5,  0.5, -0.5,
-    -0.5,  0.5,  0.5,
-    0.5,  0.5,  0.5,
-    0.5, -0.5,  0.5,
-    -0.5, -0.5,  0.5,
-  };
+      0.5, -0.5, -0.5,
+      0.5,  0.5, -0.5,
+      -0.5,  0.5, -0.5,
+      -0.5,  0.5,  0.5,
+      0.5,  0.5,  0.5,
+      0.5, -0.5,  0.5,
+      -0.5, -0.5,  0.5,
+    };
 
   memcpy(mesh->faces, vertexIndex, 3*mesh->nFaces*sizeof(unsigned int));
 
