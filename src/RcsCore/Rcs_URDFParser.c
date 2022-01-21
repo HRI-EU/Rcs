@@ -126,7 +126,7 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
         int nBytes = snprintf(meshFileFull, RCS_MAX_FILENAMELEN, "%s%s%s",
                               hgrDir, "/Data/RobotMeshes/1.0/data/",
                               &meshFile[10]);
-        if (nBytes>=RCS_MAX_NAMELEN-1)
+        if (nBytes>=RCS_MAX_FILENAMELEN-1)
         {
           RLOG(1, "File name truncation happened: %s", meshFileFull);
         }
@@ -427,7 +427,7 @@ static RcsBody* findBdyByNameNoCase(const char* name, RcsGraph* graph, int rootI
  * The joint element has these attributes: http://wiki.ros.org/urdf/XML/joint
  * \todo Floating joints
  ******************************************************************************/
-RcsJoint* parseJointURDF(xmlNode* node)
+static RcsJoint* parseJointURDF(xmlNode* node)
 {
   // Return if node is not a joint node
   if (!isXMLNodeNameNoCase(node, "joint"))
@@ -535,7 +535,8 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
                         RcsJoint** jntVec, const char* suffix)
 {
   char jointName[RCS_MAX_NAMELEN] = "";
-  unsigned len = getXMLNodePropertyStringN(node, "name", jointName, RCS_MAX_NAMELEN);
+  unsigned len = getXMLNodePropertyStringN(node, "name", jointName,
+                                           RCS_MAX_NAMELEN);
   RCHECK(len > 0);
 
   xmlNodePtr parentNode = getXMLChildByName(node, "parent");
@@ -614,8 +615,9 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
       RCHECK(len>0);
       strcat(name, suffix);
     }
-    RcsJoint* jnt = findJntByNameNoCase(name, jntVec);
-    RCHECK_MSG(jnt, "Joint \"%s\" not found", name);
+    RcsJoint* jnt_ = findJntByNameNoCase(name, jntVec);
+    RCHECK_MSG(jnt_, "Joint \"%s\" not found", name);
+    RcsJoint* jnt = RcsGraph_insertGraphJoint(graph, childBody->id);
 
     // Relative rotation.
     jnt->dirIdx = 2;   // URDF joint direction default is x
@@ -661,7 +663,7 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
       }
       else   // Axis is skew
       {
-        NLOG(0, "Need to fix axis transform for joint \"%s\" has weird axis "
+        RLOG(0, "Need to fix axis transform for joint \"%s\" has weird axis "
              "direction: [%f %f %f]",
              jnt->name, axis_xyz[0], axis_xyz[1], axis_xyz[2]);
         jnt->dirIdx = 2;
@@ -674,7 +676,7 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
         Mat3d_preMulSelf(jnt->A_JP.rot, A_NJ);
 
         // Apply transpose of this to child body
-        RFATAL("Fix this");
+        //RFATAL("Fix this");
         /* if (childBody->A_BP == NULL) */
         /* { */
         /*   childBody->A_BP = HTr_create(); */
@@ -757,7 +759,7 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
 
   else if (STRCASEEQ(type, "floating"))
   {
-    RFATAL("Implement me");
+    RLOG(1, "Joint type \"floating\" not yet implemented - skipping");
   }
   else
   {
@@ -921,7 +923,6 @@ int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
         // Also need to add the suffix to the coupledJointName
         if (strlen(j->coupledJntName) != 0)
         {
-          char newName[RCS_MAX_NAMELEN];
           snprintf(newName, RCS_MAX_NAMELEN, "%s%s", j->coupledJntName, suffix);
           snprintf(j->coupledJntName, RCS_MAX_NAMELEN, "%s", newName);
         }
@@ -1015,8 +1016,8 @@ int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
 
   // CHECK HERE A_BP!!!
 
-  RCHECK_MSG(rootBodyId != -1, "Couldn't find root link in URFD model - did you "
-             "define a cyclic model?");
+  RCHECK_MSG(rootBodyId != -1, "Couldn't find root link in URFD model - did "
+             "you define a cyclic model?");
 
   // Clean up
   xmlFreeDoc(doc);
