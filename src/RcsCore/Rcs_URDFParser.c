@@ -542,6 +542,12 @@ static RcsJoint* parseJointURDF(xmlNode* node)
     jnt->nCouplingCoeff = 1;
     getXMLNodePropertyDouble(mimicNode, "multiplier", &jnt->couplingPoly[0]);
 
+    // Offset is optional (default: 0.0)
+    // We temporarily write the offset into the q_init field which will be overwritten
+    // with the correct value later on
+    jnt->q_init = 0.0;
+    getXMLNodePropertyDouble(mimicNode, "offset", &jnt->q_init);
+
     RLOG(5, "Joint \"%s\" coupled to \"%s\" with factor %lf",
          jnt->name, jnt->coupledJntName, jnt->couplingPoly[0]);
   }
@@ -819,8 +825,8 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
  *      </model_state>
  *
  ******************************************************************************/
-static void RcsGraph_parseModelState(const char* modelName, xmlNodePtr node,
-                                     RcsJoint** jntVec, const char* suffix)
+static void RcsGraph_parseUrdfModelState(const char* modelName, xmlNodePtr node,
+                                         RcsJoint** jntVec, const char* suffix)
 {
   node = node->children;
 
@@ -895,7 +901,7 @@ int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
   unsigned int numLinks = getNumXMLNodes(linkNode, "link");
   RLOG(5, "Found %d links", numLinks);
 
-  int rootBodyId = graph->nBodies;
+  int urdfRootId = graph->nBodies;
 
   while (linkNode != NULL)
   {
@@ -964,48 +970,108 @@ int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
   {
     if (isXMLNodeNameNoCase(childNode, "joint"))
     {
-      connectURDF(childNode, graph, rootBodyId, jntVec, suffix);
+      connectURDF(childNode, graph, urdfRootId, jntVec, suffix);
     }
     childNode = childNode->next;
   }
 
-
-  // Parse model state and apply values to each joints q0 and q_init.
-  RcsGraph_parseModelState(modelName, node, jntVec, suffix);
-
-  // Create graph and find the root node. It is the first one without parent.
+  // The urdf-file's root node is the first one without parent, starting from
+  // the urdfRootId (last body entry before calling this function).
   // We do not need to take care about connecting bodies on the root level,
   // this has already happened by RcsGraph_insertGraphBody() with parent id
   // being -1.
-  int nRootNodes = 0;
-  RCSGRAPH_FOREACH_BODY(graph)
+  int nRootNodes = 0, idxStart = urdfRootId;
+  urdfRootId = -1;
+  for (int i=idxStart; i<(int)graph->nBodies; ++i)
   {
-    if (BODY->parentId==-1)
-    {
-      // We apply the A_BP transform to all bodies on the root level.
-      if (A_BP)
-      {
-        HTr_copy(&BODY->A_BP, A_BP);
-      }
+    RcsBody* bdy = &graph->bodies[i];
 
-      if (BODY->prevId==-1)
+    if (bdy->parentId!=-1)
+    {
+      continue;
+    }
+
+    // We apply the A_BP transform to all bodies on the root level.
+    if (A_BP)
+    {
+      HTr_copy(&bdy->A_BP, A_BP);
+    }
+
+    if (bdy->prevId==-1)
+    {
+      RLOG(5, "Found root node for body \"%s\"", bdy->name);
+      urdfRootId = bdy->id;
+      nRootNodes++;
+    }
+
+  }
+
+  RCHECK_MSG(nRootNodes==1, "Found %d root bodies, but must be 1", nRootNodes);
+  RCHECK_MSG(urdfRootId != -1, "Couldn't find root link in URFD model - did "
+             "you define a cyclic model?");
+
+  // Correct the joint order. When executing the connectURDF function,
+  // previous joints do not necessarily exist (yet) which can mess up the joint
+  // order for the Jacobian backward traversal. Therefore, after calling
+  // connectURDF, this function must be called for making the joint order
+  // consistent.
+  RcsBody* rootBdy = RCSBODY_BY_ID(graph, graph->rootId);
+  RCSBODY_TRAVERSE_BODIES(graph, rootBdy)
+  {
+    const RcsBody* parentBdy = RCSBODY_BY_ID(graph, BODY->parentId);
+    const RcsJoint* prevJnt = RcsBody_lastJointBeforeBody(graph, parentBdy);
+
+    RCSBODY_FOREACH_JOINT(graph, BODY)
+    {
+      if (prevJnt->id != JNT->prevId)
       {
-        RLOG(5, "Found root node for body \"%s\"", BODY->name);
-        graph->rootId = BODY->id;
-        nRootNodes++;
+        RLOG(5, "Joint \"%s\": previous joint changed from \"%s\" to \"%s\"",
+             JNT->name, RCSBODY_NAME_BY_ID(graph, JNT->prevId),
+             (prevJnt == NULL) ? "NULL" : prevJnt->name);
+        JNT->prevId = prevJnt->id;
+        JNT->nextId = -1;
       }
     }
   }
 
-  RCHECK_MSG(nRootNodes==1, "Found %d root bodies, but must be 1", nRootNodes);
-  RCHECK_MSG(rootBodyId != -1, "Couldn't find root link in URFD model - did "
-             "you define a cyclic model?");
+  // Correct q_init of mimic joints.  Here, we assume that the offset that is
+  // read from the urdf file is stored in the q_init field.
+  // Urdf mimic joint computation:
+  //   q = c*q_master + o (c = coupling factor, o = offset)
+  // Rcs  mimic joint computation:
+  //   q = q_init + c*(q_master - q_master_init)
+  // Hence, we can use the Rcs computation if we set q_init to:
+  //   q_init = c*q_master_init - o
+  RCSBODY_TRAVERSE_BODIES(graph, rootBdy)
+  {
+    RCSBODY_FOREACH_JOINT(graph, BODY)
+    {
+      if (strlen(JNT->coupledJntName)>0)
+      {
+        RcsJoint* master = NULL;
+        for (unsigned int idx = 0; idx < numJnts; idx++)
+        {
+          if (STREQ(jntVec[idx]->name, JNT->coupledJntName))
+          {
+            master = jntVec[idx];
+            break;
+          }
+        }
+        RCHECK(master != NULL);
+        RCHECK(JNT->nCouplingCoeff == 1);
+        JNT->q_init = JNT->couplingPoly[0]*master->q_init + JNT->q_init;
+      }
+    }
+  }
+
+  // Parse model state and apply values to each joints q0 and q_init.
+  RcsGraph_parseUrdfModelState(modelName, node, jntVec, suffix);
 
   // Clean up
   xmlFreeDoc(doc);
   RFREE(jntVec);
 
-  return rootBodyId;
+  return urdfRootId;
 }
 
 /*******************************************************************************
@@ -1033,8 +1099,8 @@ RcsGraph* RcsGraph_fromURDFFile(const char* configFile)
 
   RcsGraph* self = RALLOC(RcsGraph);
   snprintf(self->cfgFile, RCS_MAX_FILENAMELEN, "%s", configFile);
-  int rootId = RcsGraph_rootBodyFromURDFFile(self, filename, NULL, NULL, NULL);
-  RCHECK(rootId==0);
+  self->rootId = RcsGraph_rootBodyFromURDFFile(self, filename, NULL, NULL, NULL);
+  RCHECK(self->rootId!=-1);
 
   // Check that traversal leads to same number of bodies as in body array.
   int nBodies = 0;
