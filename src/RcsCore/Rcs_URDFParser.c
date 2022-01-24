@@ -117,19 +117,25 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
 
     if (STRNEQ(meshFile, "package://", 10))
     {
-      const char* hgrDir = getenv("SIT");
+      bool fileFound = Rcs_getAbsoluteFileName(meshFileFull, &meshFile[10]);
 
-      if (hgrDir != NULL)
+      if (!fileFound)
       {
-        snprintf(meshFileFull, 512, "%s%s%s", hgrDir,
-                 "/Data/RobotMeshes/1.0/data/", &meshFile[10]);
+        const char* hgrDir = getenv("SIT");
+
+        if (hgrDir != NULL)
+        {
+          snprintf(meshFileFull, 512, "%s%s%s", hgrDir,
+                   "/Data/RobotMeshes/1.0/data/", &meshFile[10]);
+          fileFound = File_exists(meshFileFull);
+        }
+
       }
 
-      if (File_exists(meshFileFull)==false)
+      if (!fileFound)
       {
         RLOG(0, "File \"%s\" not found", meshFileFull);
       }
-
     }
     else
     {
@@ -209,7 +215,7 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
       char str[256] = "";
       getXMLNodePropertyStringN(texture_node, "filename", str, 256);
 
-      char fullname[512] = "";
+      char fullname[256] = "";
       if (Rcs_getAbsoluteFileName(str, fullname))
       {
         shape->textureFile = String_clone(fullname);
@@ -224,12 +230,12 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
   }
   else
   {
-    char shape_color[256] = "DEFAULT";
+    char shape_color[64] = "DEFAULT";
     shape->color = String_clone(shape_color);
   }
 
   // physics material is default
-  char shapeMaterial[256] = "default";
+  char shapeMaterial[64] = "default";
   shape->material = String_clone(shapeMaterial);
 
   if (isXMLNodeNameNoCase(node, "visual"))
