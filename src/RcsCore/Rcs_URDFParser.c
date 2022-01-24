@@ -115,38 +115,60 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
                               RCS_MAX_FILENAMELEN);
     RLOG(5, "Adding mesh file \"%s\"", meshFile);
 
-    char meshFileFull[RCS_MAX_FILENAMELEN] = "";
+    char meshFileFull[512] = "";
+    bool meshFileFound = false;
 
+    // If there is a package:// attribute, we
+    // - first try to find the mesh file in the resource path
+    // - second try to find it in the SIT resource directory.
     if (STRNEQ(meshFile, "package://", 10))
     {
-      const char* hgrDir = getenv("SIT");
-
-      if (hgrDir != NULL)
+      // Iterate over ressource paths and try to find mesh
+      unsigned int pathIdx = 0;
+      const char* resourcePath = NULL;
+      while ((resourcePath = Rcs_getResourcePath(pathIdx)) != NULL)
       {
-        int nBytes = snprintf(meshFileFull, RCS_MAX_FILENAMELEN, "%s%s%s",
-                              hgrDir, "/Data/RobotMeshes/1.0/data/",
-                              &meshFile[10]);
-        if (nBytes>=RCS_MAX_FILENAMELEN-1)
+        snprintf(meshFileFull, 512, "%s%s", resourcePath, &meshFile[10]);
+        meshFileFound = File_exists(meshFileFull);
+
+        if (meshFileFound)
         {
-          RLOG(1, "File name truncation happened: %s", meshFileFull);
+          RLOG(5, "Found mesh file \"%s\"", meshFileFull);
+          break;
         }
 
+        pathIdx++;
       }
 
-      if (File_exists(meshFileFull)==false)
+      // Try to find in SIT data directory
+      if (!meshFileFound)
       {
-        RLOG(0, "File \"%s\" not found", meshFileFull);
-      }
+        const char* hgrDir = getenv("SIT");
 
+        if (hgrDir != NULL)
+        {
+          snprintf(meshFileFull, 512, "%s%s%s", hgrDir,
+                   "/Data/RobotMeshes/1.0/data/", &meshFile[10]);
+          meshFileFound = File_exists(meshFileFull);
+          RLOG(5, "%s to open file \"%s\"",
+               meshFileFound ? "Success" : "Failed", &meshFile[10]);
+        }
+      }
     }
     else
     {
-      Rcs_getAbsoluteFileName(meshFile, meshFileFull);
+      meshFileFound = Rcs_getAbsoluteFileName(meshFile, meshFileFull);
     }
 
-    snprintf(shape->meshFile, RCS_MAX_FILENAMELEN, "%s", meshFileFull);
+    int nchars = snprintf(shape->meshFile, RCS_MAX_FILENAMELEN,"%s",
+                          meshFileFull);
 
-    if (File_exists(shape->meshFile) == false)
+    if (nchars>=RCS_MAX_FILENAMELEN-1)
+    {
+      RLOG(1, "Mesh file name truncation happened: %s", shape->meshFile);
+    }
+
+    if (!meshFileFound)
     {
       RLOG(4, "Mesh file \"%s\" not found!", meshFile);
     }
@@ -155,7 +177,7 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
       shape->mesh = RcsMesh_createFromFile(shape->meshFile);
       if (shape->mesh==NULL)
       {
-        RLOG(4, "Couldn't create mesh for file \"%s\"", shape->meshFile);
+        RLOG(4, "Couldn't create mesh for file \"%s\"", meshFile);
       }
     }
 
@@ -951,88 +973,33 @@ int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
   // Parse model state and apply values to each joints q0 and q_init.
   RcsGraph_parseModelState(modelName, node, jntVec, suffix);
 
+  // Create graph and find the root node. It is the first one without parent.
+  // We do not need to take care about connecting bodies on the root level,
+  // this has already happened by RcsGraph_insertGraphBody() with parent id
+  // being -1.
   int nRootNodes = 0;
   RCSGRAPH_FOREACH_BODY(graph)
   {
-    if ((BODY->parentId==-1) && (BODY->prevId==-1))
+    if (BODY->parentId==-1)
     {
-      RLOG(0, "Found root node for body \"%s\"", BODY->name);
-      graph->rootId = BODY->id;
-      nRootNodes++;
+      // We apply the A_BP transform to all bodies on the root level.
+      if (A_BP)
+      {
+        HTr_copy(&BODY->A_BP, A_BP);
+      }
+
+      if (BODY->prevId==-1)
+      {
+        RLOG(5, "Found root node for body \"%s\"", BODY->name);
+        graph->rootId = BODY->id;
+        nRootNodes++;
+      }
     }
   }
 
-  RLOG(0, "Found %d root bodies", nRootNodes);
-
-
-  /* // Create graph and find the root node. It is the first one without parent. */
-  /* // Consecutive parent-less nodes are attached it in a prev-next style. */
-  /* RcsBody* root = NULL; */
-  /* RcsBody** bvPtr = bdyVec; */
-
-  /* while (*bvPtr) */
-  /* { */
-  /*   // We found a top-level body with no parent */
-  /*   if ((*bvPtr)->parent==NULL) */
-  /*   { */
-  /*     // If root has not yet been assigned, we assign the first found top- */
-  /*     // level body as the root. This is arbitrary, also the consecutive */
-  /*     // top-level links could be assigned. */
-  /*     if (root==NULL) */
-  /*     { */
-  /*       root = *bvPtr; */
-  /*       RLOG(5, "Found root link: %s", root->name); */
-  /*     } */
-  /*     // If root has already been assigned, we assign the found top-level */
-  /*     // body as the last next-body on the top-level. */
-  /*     else  // root already exists */
-  /*     { */
-  /*       // Find last body on the first level */
-  /*       unsigned int nextCount = 0; */
-  /*       RcsBody* b = root; */
-  /*       while (b->next) */
-  /*       { */
-  /*         b = b->next; */
-  /*         nextCount++; */
-  /*       } */
-
-  /*       // Connect new parent-less body with last ones */
-  /*       b->next = *bvPtr; */
-  /*       (*bvPtr)->prev = b; */
-
-  /*       RLOG(5, "Found the %d root link: %s (root is %s)", */
-  /*            nextCount+1, (*bvPtr)->name, root->name); */
-  /*     } */
-
-  /*     // Apply relative transformation */
-  /*     RLOG(5, "Applying relative transformation"); */
-  /*     if (A_BP != NULL) */
-  /*     { */
-  /*       if ((*bvPtr)->A_BP == NULL) */
-  /*       { */
-  /*         (*bvPtr)->A_BP = HTr_create(); */
-  /*       } */
-
-  /*       HTr_transformSelf((*bvPtr)->A_BP, A_BP); */
-  /*     } */
-
-  /*   } */
-
-  /*   bvPtr++; */
-  /* }   // while (*bvPtr) */
-
-  // CHECK HERE A_BP!!!
-
+  RCHECK_MSG(nRootNodes==1, "Found %d root bodies, but must be 1", nRootNodes);
   RCHECK_MSG(rootBodyId != -1, "Couldn't find root link in URFD model - did "
              "you define a cyclic model?");
-
-  int nBodies = 0;
-  RCSGRAPH_TRAVERSE_BODIES(graph)
-  {
-    nBodies++;
-  }
-
-  RCHECK_MSG(graph->nBodies==nBodies, "%d != %d", graph->nBodies, nBodies);
 
   // Clean up
   xmlFreeDoc(doc);
@@ -1068,6 +1035,15 @@ RcsGraph* RcsGraph_fromURDFFile(const char* configFile)
   snprintf(self->cfgFile, RCS_MAX_FILENAMELEN, "%s", configFile);
   int rootId = RcsGraph_rootBodyFromURDFFile(self, filename, NULL, NULL, NULL);
   RCHECK(rootId==0);
+
+  // Check that traversal leads to same number of bodies as in body array.
+  int nBodies = 0;
+  RCSGRAPH_TRAVERSE_BODIES(self)
+  {
+    nBodies++;
+  }
+
+  RCHECK_MSG(self->nBodies==nBodies, "%d != %d", self->nBodies, nBodies);
 
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {

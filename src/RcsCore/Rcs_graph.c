@@ -418,7 +418,7 @@ void RcsGraph_printUsage(const char* xmlFile)
 RcsGraph* RcsGraph_create(const char* cfgFile)
 {
   // Determine absolute file name of config file and return if it doesn't exist
-  char filename[256] = "";
+  char filename[RCS_MAX_FILENAMELEN] = "";
   bool fileExists = Rcs_getAbsoluteFileName(cfgFile, filename);
 
   if ((fileExists==false) && (cfgFile!=NULL))
@@ -506,9 +506,9 @@ RcsGraph* RcsGraph_create(const char* cfgFile)
   RLOG(5, "Didn't find child node \"Graph\" in children - trying"
        " graph property");
 
-  char graphFilename[256] = "";
+  char graphFilename[RCS_MAX_FILENAMELEN] = "";
   unsigned int len = getXMLNodePropertyStringN(node, "graph",
-                                               graphFilename, 256);
+                                               graphFilename, RCS_MAX_FILENAMELEN);
 
   // If this test succeeds, we clear all memory and call this
   // function recursively with the graph's file name.
@@ -1428,7 +1428,6 @@ void RcsGraph_printState(const RcsGraph* self, const MatNd* q)
 void RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q)
 {
   RcsStateType stateType;
-  char buf[256];
 
   if (q->m == self->dof)
   {
@@ -1451,10 +1450,8 @@ void RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q)
     return;
   }
 
-
+  char buf[256];
   fprintf(out, "<model_state model=\"DefaultPose\" time_stamp=\"\">\n");
-
-
 
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {
@@ -1477,10 +1474,6 @@ void RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q)
     fprintf(out, "  <joint_state joint=\"%s\" position=\"%s\" />\n",
             JNT->name, String_fromDouble(buf, qi, 6));
   }
-
-
-
-
 
   fprintf(out, "</model_state>\n");
 }
