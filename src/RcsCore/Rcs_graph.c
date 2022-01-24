@@ -2717,15 +2717,21 @@ void RcsGraph_makeJointsConsistent(RcsGraph* self)
     double q0     = RcsJoint_computeSlaveJointAngle(self, JNT, master->q0);
     double q_init = RcsJoint_computeSlaveJointAngle(self, JNT, master->q_init);
 
-    bool hasRange = false;
-
-    if ((JNT->q_min!=0.0) || (JNT->q_max!=0.0) || (JNT->q0!=0.0))
+    // For coupled joints with negative coupling
+    if (q_min > q_max)
     {
-      hasRange = true;
+      Math_dSwap(&q_min, &q_max);
     }
 
     REXEC(4)
     {
+      bool hasRange = false;
+
+      if ((JNT->q_min!=0.0) || (JNT->q_max!=0.0) || (JNT->q0!=0.0))
+      {
+        hasRange = true;
+      }
+
       if ((hasRange==true) &&
           ((fabs(JNT->q_min-q_min)>1.0e-4) ||
            (fabs(JNT->q_max-q_max)>1.0e-4) ||
