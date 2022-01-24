@@ -114,12 +114,28 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
     RLOG(5, "Adding mesh file \"%s\"", meshFile);
 
     char meshFileFull[512] = "";
+    bool meshFileFound = false;
 
     if (STRNEQ(meshFile, "package://", 10))
     {
-      bool fileFound = Rcs_getAbsoluteFileName(meshFileFull, &meshFile[10]);
+      // Iterate over ressource paths and try to find mesh
+      unsigned int pathIdx = 0;
+      const char* resourcePath = NULL;
+      while ((resourcePath = Rcs_getResourcePath(pathIdx)) != NULL)
+      {
+        snprintf(meshFileFull, 512, "%s%s", resourcePath, &meshFile[10]);
+        meshFileFound = File_exists(meshFileFull);
 
-      if (!fileFound)
+        if (meshFileFound)
+        {
+          RLOG(5, "Found mesh file \"%s\"", meshFileFull);
+          break;
+        }
+
+        pathIdx++;
+      }
+
+      if (!meshFileFound)
       {
         const char* hgrDir = getenv("SIT");
 
@@ -127,12 +143,12 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
         {
           snprintf(meshFileFull, 512, "%s%s%s", hgrDir,
                    "/Data/RobotMeshes/1.0/data/", &meshFile[10]);
-          fileFound = File_exists(meshFileFull);
+          meshFileFound = File_exists(meshFileFull);
         }
 
       }
 
-      if (!fileFound)
+      if (!meshFileFound)
       {
         RLOG(0, "File \"%s\" not found", meshFileFull);
       }
