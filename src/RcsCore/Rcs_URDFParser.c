@@ -244,6 +244,8 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
 
 /*******************************************************************************
  * See http://wiki.ros.org/urdf/XML/link
+ * Returns the body id. Since no connection information is available during
+ * this stage of parsing, all bodies will be created on the top level.
  ******************************************************************************/
 static int parseBodyURDF(xmlNode* node, RcsGraph* graph, int parentId)
 {
@@ -255,7 +257,8 @@ static int parseBodyURDF(xmlNode* node, RcsGraph* graph, int parentId)
   }
 
   // Body name as indicated in the xml file
-  int len = getXMLNodeBytes(node, "name");
+  char bdyName[RCS_MAX_NAMELEN];
+  int len = getXMLNodePropertyStringN(node, "name", bdyName, RCS_MAX_NAMELEN);
 
   if (len==0)
   {
@@ -263,17 +266,15 @@ static int parseBodyURDF(xmlNode* node, RcsGraph* graph, int parentId)
     return -1;
   }
 
-  RcsBody* body = RcsGraph_insertGraphBody(graph, parentId);
-
-
-
-  getXMLNodePropertyStringN(node, "name", body->bdyXmlName, RCS_MAX_NAMELEN);
-
-  if (strncmp(body->bdyXmlName, "GenericBody", 11) == 0)
+  if (strncmp(bdyName, "GenericBody", 11) == 0)
   {
     RLOG(4, "The name \"GenericBody\" is reserved for internal use");
     return -1;
   }
+
+  // Create new body in the graph's bodies array
+  RcsBody* body = RcsGraph_insertGraphBody(graph, parentId);
+  snprintf(body->bdyXmlName, RCS_MAX_NAMELEN, "%s", bdyName);
 
   RLOG(5, "Creating body \"%s\"", body->bdyXmlName);
 
@@ -353,8 +354,8 @@ static int parseBodyURDF(xmlNode* node, RcsGraph* graph, int parentId)
   // Check if we have a finite inertia but no mass
   if ((Mat3d_getFrobeniusnorm(body->Inertia.rot)>0.0) && (body->m<=0.0))
   {
-    RLOG(4, "You specified a non-zero inertia but a zero mass for body \"%s\"."
-         " Shame on you!", body->name);
+    RLOG(4, "Found non-zero inertia but zero mass for body \"%s\".",
+         body->name);
   }
 
   // Rigid body joints not supported
@@ -367,7 +368,7 @@ static int parseBodyURDF(xmlNode* node, RcsGraph* graph, int parentId)
     body->physicsSim = RCSBODY_PHYSICS_DYNAMIC;
     if (numCollisionShapes == 0)
     {
-      RLOG(1, "You specified a non-zero mass but no collision shapes for body "
+      RLOG(4, "You specified a non-zero mass but no collision shapes for body "
            "\"%s\". It will not work in physics simulations", body->name);
       body->physicsSim = RCSBODY_PHYSICS_NONE;
     }
@@ -579,32 +580,55 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
 
 
 
+
+
+  // Re-connect. The child must have only one parent
+  RCHECK(childBody->parentId == -1);
+  childBody->parentId = parentBody->id;
+
+  // Child connectivity: Take out body from where it was before
+  RcsBody* prevBdy = RCSBODY_BY_ID(graph, childBody->prevId);
+  RcsBody* nextBdy = RCSBODY_BY_ID(graph, childBody->nextId);
+
+  if (prevBdy)
+  {
+    prevBdy->nextId = nextBdy ? nextBdy->id : -1;
+  }
+
+  if (nextBdy)
+  {
+    nextBdy->prevId = prevBdy ? prevBdy->id : -1;
+  }
+
+  // If it is the first child, child and last are the same
+  if (parentBody->firstChildId == -1)
+  {
+    parentBody->firstChildId = childBody->id;
+    parentBody->lastChildId = childBody->id;
+    childBody->prevId = -1;
+    childBody->nextId = -1;
+  }
+  // If there are already children, we need to consider the prev, next
+  // and last pointers
+  else
+  {
+    RcsBody* lastChild = RCSBODY_BY_ID(graph, parentBody->lastChildId);
+    lastChild->nextId = childBody->id;
+    childBody->prevId = lastChild->id;
+    childBody->nextId = -1;
+    parentBody->lastChildId = childBody->id;
+  }
+  // Done re-connect
+
+
+
+
+
   if (STRCASEEQ(type, "revolute") ||
       STRCASEEQ(type, "continuous") ||
       STRCASEEQ(type, "prismatic"))
   {
     bool prismatic = STRCASEEQ(type, "prismatic");
-
-    /* // The child has only one parent */
-    /* RCHECK(childBody->parentId == -1); */
-    /* childBody->parentId = parentBody;   // parentBody exists (has been checked) */
-
-    /* // Child connectivity */
-    /* // If it is the first child, child and last are the same */
-    /* if (parentBody->firstChild == NULL) */
-    /* { */
-    /*   parentBody->firstChild = childBody; */
-    /*   parentBody->lastChild = childBody; */
-    /* } */
-    /* // If there are already children, we need to consider the prev, next */
-    /* // and last pointers */
-    /* else */
-    /* { */
-    /*   RcsBody* lastChild = parentBody->lastChild; */
-    /*   lastChild->next = childBody; */
-    /*   childBody->prev = lastChild; */
-    /*   parentBody->lastChild = childBody; */
-    /* } */
 
     // Backward connection of joints
     char name[RCS_MAX_NAMELEN] = "";
@@ -618,6 +642,7 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
     RcsJoint* jnt_ = findJntByNameNoCase(name, jntVec);
     RCHECK_MSG(jnt_, "Joint \"%s\" not found", name);
     RcsJoint* jnt = RcsGraph_insertGraphJoint(graph, childBody->id);
+    RcsJoint_copy(jnt, jnt_);
 
     // Relative rotation.
     jnt->dirIdx = 2;   // URDF joint direction default is x
@@ -719,35 +744,6 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
       getXMLNodePropertyVec3(originNode, "rpy", rpy);
       HTr_fromURDFOrigin(&childBody->A_BP, rpy, xyz);
     }
-
-    /* // The child has only one parent */
-    /* RCHECK(childBody->parentId == NULL); */
-    /* childBody->parent = parentBody; */
-
-    /* // Child connectivity */
-    /* // If it is the first child, child and last are the same */
-    /* if (parentBody->firstChild == NULL) */
-    /* { */
-    /*   parentBody->firstChild = childBody; */
-    /*   parentBody->lastChild = childBody; */
-    /*   childBody->prev = NULL; */
-    /*   childBody->next = NULL; */
-    /* } */
-    /* // If there are already children, we need to consider the prev, next */
-    /* // and last pointers */
-    /* else */
-    /* { */
-    /*   RcsBody* lastChild = parentBody->firstChild; */
-
-    /*   while (lastChild->next) */
-    /*   { */
-    /*     lastChild = lastChild->next; */
-    /*   } */
-    /*   RCHECK(lastChild); */
-    /*   lastChild->next = childBody; */
-    /*   childBody->prev = lastChild; */
-    /*   parentBody->lastChild = childBody; */
-    /* } */
 
     if (childBody->physicsSim == RCSBODY_PHYSICS_DYNAMIC)
     {
@@ -877,23 +873,20 @@ int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
   unsigned int numLinks = getNumXMLNodes(linkNode, "link");
   RLOG(5, "Found %d links", numLinks);
 
-  int parentId = -1;
   int rootBodyId = graph->nBodies;
 
   while (linkNode != NULL)
   {
-    int tmp = parseBodyURDF(linkNode, graph, parentId);
-    if (tmp != -1)
-    {
-      parentId = tmp;
-      RcsBody* b = &graph->bodies[parentId];
+    // No connection information is available, so all bodies will be created
+    // on the top level with parent-id being -1
+    int bdyId = parseBodyURDF(linkNode, graph, -1);
 
-      if (suffix != NULL)
-      {
-        char newName[RCS_MAX_NAMELEN];
-        snprintf(newName, RCS_MAX_NAMELEN, "%s%s", b->name, suffix);
-        snprintf(b->name, RCS_MAX_NAMELEN, "%s", newName);
-      }
+    if ((bdyId!=-1) && (suffix != NULL))
+    {
+      RcsBody* b = &graph->bodies[bdyId];
+      char newName[RCS_MAX_NAMELEN];
+      snprintf(newName, RCS_MAX_NAMELEN, "%s%s", b->name, suffix);
+      snprintf(b->name, RCS_MAX_NAMELEN, "%s", newName);
 
     }
     linkNode = linkNode->next;
@@ -958,6 +951,20 @@ int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
   // Parse model state and apply values to each joints q0 and q_init.
   RcsGraph_parseModelState(modelName, node, jntVec, suffix);
 
+  int nRootNodes = 0;
+  RCSGRAPH_FOREACH_BODY(graph)
+  {
+    if ((BODY->parentId==-1) && (BODY->prevId==-1))
+    {
+      RLOG(0, "Found root node for body \"%s\"", BODY->name);
+      graph->rootId = BODY->id;
+      nRootNodes++;
+    }
+  }
+
+  RLOG(0, "Found %d root bodies", nRootNodes);
+
+
   /* // Create graph and find the root node. It is the first one without parent. */
   /* // Consecutive parent-less nodes are attached it in a prev-next style. */
   /* RcsBody* root = NULL; */
@@ -1018,6 +1025,14 @@ int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
 
   RCHECK_MSG(rootBodyId != -1, "Couldn't find root link in URFD model - did "
              "you define a cyclic model?");
+
+  int nBodies = 0;
+  RCSGRAPH_TRAVERSE_BODIES(graph)
+  {
+    nBodies++;
+  }
+
+  RCHECK_MSG(graph->nBodies==nBodies, "%d != %d", graph->nBodies, nBodies);
 
   // Clean up
   xmlFreeDoc(doc);
