@@ -469,6 +469,10 @@ RcsJoint* parseJointURDF(xmlNode* node)
   jnt->weightMetric = 1.0;
   jnt->ctrlType = RCSJOINT_CTRL_POSITION;
   jnt->constrained = false;
+  jnt->accLimit = DBL_MAX;
+  jnt->decLimit = DBL_MAX;
+  jnt->maxTorque = DBL_MAX;
+  jnt->speedLimit = DBL_MAX;
   HTr_setIdentity(&jnt->A_JI);
 
   if (A_JP!=NULL)
@@ -781,7 +785,7 @@ static void connectURDF(xmlNode* node, RcsBody** bdyVec, RcsJoint** jntVec,
 
   else if (STRCASEEQ(type, "floating"))
   {
-    RFATAL("Implement me");
+    RLOG(0, "Implement me: floating");
   }
   else
   {
