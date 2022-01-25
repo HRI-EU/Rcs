@@ -115,49 +115,29 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
                               RCS_MAX_FILENAMELEN);
     RLOG(5, "Adding mesh file \"%s\"", meshFile);
 
-    char meshFileFull[512] = "";
-    bool meshFileFound = false;
-
-    // If there is a package:// attribute, we
-    // - first try to find the mesh file in the resource path
-    // - second try to find it in the SIT resource directory.
+    // If there is a "package://" attribute, onsider the filename afterwards
+    const char* meshFilePtr = &meshFile[0];
     if (STRNEQ(meshFile, "package://", 10))
     {
-      // Iterate over ressource paths and try to find mesh
-      unsigned int pathIdx = 0;
-      const char* resourcePath = NULL;
-      while ((resourcePath = Rcs_getResourcePath(pathIdx)) != NULL)
-      {
-        snprintf(meshFileFull, 512, "%s%s", resourcePath, &meshFile[10]);
-        meshFileFound = File_exists(meshFileFull);
-
-        if (meshFileFound)
-        {
-          RLOG(5, "Found mesh file \"%s\"", meshFileFull);
-          break;
-        }
-
-        pathIdx++;
-      }
-
-      // Try to find in SIT data directory
-      if (!meshFileFound)
-      {
-        const char* hgrDir = getenv("SIT");
-
-        if (hgrDir != NULL)
-        {
-          snprintf(meshFileFull, 512, "%s%s%s", hgrDir,
-                   "/Data/RobotMeshes/1.0/data/", &meshFile[10]);
-          meshFileFound = File_exists(meshFileFull);
-          RLOG(5, "%s to open file \"%s\"",
-               meshFileFound ? "Success" : "Failed", &meshFile[10]);
-        }
-      }
+      meshFilePtr = &meshFile[10];
     }
-    else
+
+    char meshFileFull[512] = "";
+    bool meshFileFound = Rcs_getAbsoluteFileName(meshFilePtr, meshFileFull);
+
+    // Try to find in SIT data directory in case it failed
+    if (!meshFileFound)
     {
-      meshFileFound = Rcs_getAbsoluteFileName(meshFile, meshFileFull);
+      const char* hgrDir = getenv("SIT");
+
+      if (hgrDir != NULL)
+      {
+        snprintf(meshFileFull, 512, "%s%s%s", hgrDir,
+                 "/Data/RobotMeshes/1.0/data/", meshFilePtr);
+        meshFileFound = File_exists(meshFileFull);
+        RLOG(5, "%s to open file \"%s\"",
+             meshFileFound ? "Success" : "Failed", meshFilePtr);
+      }
     }
 
     int nchars = snprintf(shape->meshFile, RCS_MAX_FILENAMELEN,"%s",
@@ -212,12 +192,11 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
       getXMLNodePropertyVecN(color_node, "rgba", rgba, 4);
 
       // create color string of form #RRGGBBAA
-      snprintf(shape->color, 10, "#%2x%2x%2x%2x",
-               (int)(rgba[0] * 255),
-               (int)(rgba[1] * 255),
-               (int)(rgba[2] * 255),
-               (int)(rgba[3] * 255));
-
+      snprintf(shape->color, 10, "#%02x%02x%02x%02x",
+               (int)(rgba[0] * 255.0),
+               (int)(rgba[1] * 255.0),
+               (int)(rgba[2] * 255.0),
+               (int)(rgba[3] * 255.0));
     }
     else
     {
@@ -1020,15 +999,16 @@ int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
   {
     const RcsBody* parentBdy = RCSBODY_BY_ID(graph, BODY->parentId);
     const RcsJoint* prevJnt = RcsBody_lastJointBeforeBody(graph, parentBdy);
+    int prevJntId = prevJnt ? prevJnt->id : -1;
 
     RCSBODY_FOREACH_JOINT(graph, BODY)
     {
-      if (prevJnt->id != JNT->prevId)
+      if (prevJntId != JNT->prevId)
       {
         RLOG(5, "Joint \"%s\": previous joint changed from \"%s\" to \"%s\"",
              JNT->name, RCSBODY_NAME_BY_ID(graph, JNT->prevId),
              (prevJnt == NULL) ? "NULL" : prevJnt->name);
-        JNT->prevId = prevJnt->id;
+        JNT->prevId = prevJntId;
         JNT->nextId = -1;
       }
     }
