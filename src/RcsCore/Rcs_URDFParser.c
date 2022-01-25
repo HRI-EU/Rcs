@@ -211,7 +211,7 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
 
       // create color string of form #RRGGBBAA
       char color_string[10];
-      snprintf(color_string, 10, "#%2x%2x%2x%2x",
+      snprintf(color_string, 10, "#%02x%02x%02x%02x",
                (int)(rgba[0] * 255),
                (int)(rgba[1] * 255),
                (int)(rgba[2] * 255),
@@ -586,22 +586,22 @@ RcsJoint* parseJointURDF(xmlNode* node)
  ******************************************************************************/
 static void makeJointOrderConsistent(RcsBody* bdy)
 {
-    RCSBODY_TRAVERSE_BODIES(bdy)
+  RCSBODY_TRAVERSE_BODIES(bdy)
+  {
+    RcsBody* parentBdy = BODY->parent;
+    RcsJoint* prevJnt = RcsBody_lastJointBeforeBody(parentBdy);
+    RCSBODY_TRAVERSE_JOINTS(BODY)
     {
-        RcsBody* parentBdy = BODY->parent;
-        RcsJoint* prevJnt = RcsBody_lastJointBeforeBody(parentBdy);
-        RCSBODY_TRAVERSE_JOINTS(BODY)
-        {
-            if(prevJnt != JNT->prev)
-            {
-                RLOG(5, "Joint \"%s\" previous joint was \"%s\", previous joint now \"%s\"",
-                     JNT->name, (JNT->prev == NULL) ? "NULL" : JNT->prev->name,
-                     (prevJnt == NULL) ? "NULL" : prevJnt->name);
-                JNT->prev = prevJnt;
-                JNT->next = NULL;
-            }
-        }
+      if (prevJnt != JNT->prev)
+      {
+        RLOG(5, "Joint \"%s\" previous joint was \"%s\", previous joint now \"%s\"",
+             JNT->name, (JNT->prev == NULL) ? "NULL" : JNT->prev->name,
+             (prevJnt == NULL) ? "NULL" : prevJnt->name);
+        JNT->prev = prevJnt;
+        JNT->next = NULL;
+      }
     }
+  }
 }
 
 /*******************************************************************************
@@ -1118,24 +1118,24 @@ RcsBody* RcsGraph_rootBodyFromURDFFile(const char* filename,
   // Hence, we can use the Rcs computation if we set q_init to: q_init = c*q_master_init - o
   RCSBODY_TRAVERSE_BODIES(root)
   {
-      RCSBODY_TRAVERSE_JOINTS(BODY)
+    RCSBODY_TRAVERSE_JOINTS(BODY)
+    {
+      if (JNT->coupledJointName != NULL)
       {
-          if(JNT->coupledJointName != NULL)
+        RcsJoint* master = NULL;
+        for (uint idx = 0; idx < numJnts; idx++)
+        {
+          if (STREQ(jntVec[idx]->name, JNT->coupledJointName))
           {
-              RcsJoint* master = NULL;
-              for(uint idx = 0; idx < numJnts; idx++)
-              {
-                  if(STREQ(jntVec[idx]->name, JNT->coupledJointName))
-                  {
-                      master = jntVec[idx];
-                    break;
-                  }
-              }
-              RCHECK(master != NULL);
-              RCHECK(JNT->couplingFactors->size == 1);
-              JNT->q_init = JNT->couplingFactors->ele[0]*master->q_init + JNT->q_init;
+            master = jntVec[idx];
+            break;
           }
+        }
+        RCHECK(master != NULL);
+        RCHECK(JNT->couplingFactors->size == 1);
+        JNT->q_init = JNT->couplingFactors->ele[0]*master->q_init + JNT->q_init;
       }
+    }
   }
 
   // Clean up
