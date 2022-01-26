@@ -33,7 +33,7 @@ Rcs can be compiled with the cmake build system and has mainly been developed on
     cd <build-directory>
     cmake <source-directory>
     make 
-    make unittest
+    make rcsunittest
 
 To build the doxygen documentation, just type:
 
@@ -55,6 +55,7 @@ It is also possible to compile it on Microsoft Visual Studio, however with some 
  - USE_VORTEX: Enable Vortex physics. With this option, a PhysicsSimulation class that uses Vortex Essentials (CmLabs) or Vortex with version 6.8 will be built. It can be instantiated through the PhysicsFactory class. Please refer to the documentation. To obtain Vortex, please refer to the CmLabs web-site. The default is OFF.
  - VORTEX_ESSENTIALS_DIR: Installation directory of Vortex Essentials. Required since there is no standard location for this.
  - USE_EIGEN3: Use the Eigen3 library. This will compile in a number of additional linear algebra functions (See Rcs_eigen3.h for details)
+ - USE_OCTOMAP: Use the OctoMap library. This will compile in a number of additional distance functions to copmpute distances of the geometric shapes against octrees.
  - ENABLE_DEBUG_MACROS: This option enables logging macros that allow to log information on different debug levels (such as RLOG). If disabled, all these conditional logs are not compiled into the binaries. This usually leads to faster programs, however with the drawback of loosing the information if something goes wrong. The default is ON.
  - ENABLE_C++11: This option sets the corresponding flag so that all code is compiled with the C++11 support. It is not needed from the code, but might be necessary for binary compatibility if other code is compiled for C++11. The default is OFF.
  - HEADLESS_BUILD: Build only RcsCore and RcsPhysics, and leave out all graphics and Gui related classes. If no graphics and Gui libraries are present on the system, you need to call cmake -DHEADLESS_BUILD=TRUE. The default is OFF.
@@ -88,6 +89,7 @@ Optionally (please use the ccmake tool to manage the compile options), additiona
  - Bullet Physics (Zlib, Ubuntu-package libbullet-dev)
  - Vortex Studio Essentials
  - Eigen3 (Mozilla Public License Version 2.0)
+ - OctoMap (New BSD License). Web-site: [http://octomap.github.io](http://octomap.github.io)
 
 In case you don't have a Vortex license, you can in certain cases apply for the Adademic Access Program that allows to get a free license. Please check: [https://www.cm-labs.com](https://www.cm-labs.com)
 

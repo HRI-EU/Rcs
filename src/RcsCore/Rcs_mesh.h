@@ -433,6 +433,21 @@ RcsMeshData* RcsMesh_createPyramid(double x, double y, double z);
 RcsMeshData* RcsMesh_createFrustum(double fovX, double fovY, double h);
 
 /*! \ingroup RcsMeshFunctions
+ *  \brief Creates a random convex mesh that fits into the extents given by
+ *         x, y and z. This function requires the GeometricTools library to
+ *         be compiled in.
+ *
+ *  \param[in] x         Extent in x-direction
+ *  \param[in] y         Extent in y-direction
+ *  \param[in] z         Extent in z-direction
+ *  \param[in] nPoints   Number of random points
+ *  \return Random convex mesh according to dimensions. The caller is
+ *          responsible to delete the memory. NULL is returned on failure.
+ */
+RcsMeshData* RcsMesh_createConvexRandom(double x, double y, double z,
+                                        unsigned int nPoints);
+
+/*! \ingroup RcsMeshFunctions
  *  \brief Computes the mesh's center of mass and the inertia tensor around the
  *         COM. If argument mesh is NULL, both I and com are set to zero.
  *

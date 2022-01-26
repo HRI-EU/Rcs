@@ -36,6 +36,7 @@
 #include "Rcs_macros.h"
 #include "Rcs_Vec3d.h"
 #include "Rcs_Mat3d.h"
+#include "Rcs_basicMath.h"
 
 #include <stdint.h>
 #include <limits.h>
@@ -2082,6 +2083,28 @@ RcsMeshData* RcsMesh_createFrustum(double fovX, double fovY, double h)
   Mat3d_setRotMatX(A_MI, M_PI);
   RcsMesh_rotate(mesh, A_MI);
   RcsMesh_shift(mesh, 0.0, 0.0, h);
+
+  return mesh;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsMeshData* RcsMesh_createConvexRandom(double x, double y, double z,
+                                        unsigned int nPoints)
+{
+  double* v = RNALLOC(3*nPoints, double);
+
+  for (int i=0; i<nPoints; ++i)
+  {
+    v[3*i+0] = Math_getRandomNumber(-0.5*x, 0.5*x);
+    v[3*i+1] = Math_getRandomNumber(-0.5*y, 0.5*y);
+    v[3*i+2] = Math_getRandomNumber(-0.5*z, 0.5*z);
+  }
+
+  RcsMeshData* mesh = RcsMesh_fromVertices(v, nPoints);
+
+  RFREE(v);
 
   return mesh;
 }

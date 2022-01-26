@@ -84,6 +84,7 @@ ENDIF()
 ################################################################################
 OPTION(HEADLESS_BUILD "Build without graphics and Guis" OFF)
 OPTION(USE_EIGEN3 "Use Eigen3 in RcsCore" OFF)
+OPTION(USE_OCTOMAP "Use OctoMap library for distance calculation" OFF)
 OPTION(ENABLE_DEBUG_MACROS "Enable debug macros also in release mode" ON)
 OPTION(BUILD_RCS_LIBRARIES_ONLY "Build only libs, but not examples and tests" OFF)
 

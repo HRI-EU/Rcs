@@ -39,42 +39,8 @@
 #include "Rcs_math.h"
 #include "Rcs_mesh.h"
 #include "Rcs_geometry.h"
-
-#if defined (USE_OCTOMAP)
 #include "Rcs_octree.h"
-#else
-bool RcsGraph_checkOctreeConsistency(const RcsGraph* graph)
-{
-  RLOGS(5, "No octree support");
-  return true;
-}
 
-void* Rcs_loadOctree(const char* fileName)
-{
-  RLOGS(1, "No octree support");
-  return NULL;
-}
-
-void Rcs_destroyOctree(void* octomap)
-{
-  RLOGS(5, "No octree support - skipping to destroy octree");
-}
-
-void Rcs_getOctreeBoundingBox(void* octomap,
-                              double xyz_min[3],
-                              double xyz_max[3])
-{
-  Vec3d_setZero(xyz_min);
-  Vec3d_setZero(xyz_max);
-  RLOGS(5, "No octree support - bounding box is zero");
-}
-
-double Rcs_getOctreeVolume(void* octomap)
-{
-  RLOGS(5, "No octree support - volume is zero");
-  return 0.0;
-}
-#endif
 
 
 /*******************************************************************************
@@ -140,8 +106,7 @@ double RcsShape_computeVolume(const RcsShape* self)
     }
     case RCSSHAPE_OCTREE:
     {
-      //v = Rcs_getOctreeVolume(self->userData);
-      RFATAL("Currently no Octree support");
+      v = Rcs_getOctreeVolume(self->mesh);
       break;
     }
     default:
@@ -529,8 +494,7 @@ void RcsShape_destroy(RcsShape* self)
   if (self->type == RCSSHAPE_OCTREE)
   {
     // We assume userData is an Octomap type
-    // Rcs_destroyOctree(self->userData);
-    RFATAL("No Octree support currently");
+    Rcs_destroyOctree(self->mesh);
   }
 
   if (self->type == RCSSHAPE_MESH)
@@ -624,9 +588,8 @@ void RcsShape_copy(RcsShape* dst, const RcsShape* src)
   {
     // Load Octree from file
     case RCSSHAPE_OCTREE:
-      // Rcs_destroyOctree(dst->userData);
-      // dst->userData = Rcs_loadOctree(dst->meshFile);
-      RFATAL("No Octree support currently");
+      Rcs_destroyOctree(dst->mesh);
+      dst->mesh = (RcsMeshData*)Rcs_loadOctree(dst->meshFile);
       break;
 
     case RCSSHAPE_MESH:
@@ -917,10 +880,13 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
     return NULL;
   }
 
+#if !defined (USE_OCTOMAP)
   if (shapeType==RCSSHAPE_OCTREE)
   {
-    shapeType = RCSSHAPE_BOX;
+    RLOG(1, "Can't create octree, no OctoMap support compiled in");
+    return NULL;
   }
+#endif
 
   // Allocate memory and set defaults
   RcsShape* shape = RcsShape_create();
@@ -933,7 +899,7 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
   int rr = Math_getRandomInteger(0, 255);
   int gg = Math_getRandomInteger(0, 255);
   int bb = Math_getRandomInteger(0, 255);
-  sprintf(shape->color, "#%02x%02x%02xff", rr, gg, bb);
+  sprintf(shape->color, "#%02x%02x%02xff", rr, gg, bb); // RGBA with A=255=0xff
 
   shape->computeType |= RCSSHAPE_COMPUTE_DISTANCE;
   shape->computeType |= RCSSHAPE_COMPUTE_PHYSICS;
@@ -941,21 +907,24 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
 
   if (shapeType==RCSSHAPE_MESH)
   {
-    strcpy(shape->meshFile, "Cylinder");
-    shape->mesh = RcsMesh_createCylinder(0.2, 1.0, 32);
+    strcpy(shape->meshFile, "Random mesh");
+    shape->mesh = RcsMesh_createConvexRandom(0.2, 0.4, 0.6, 128);
+    RCHECK(shape->mesh);
   }
 
+#if defined (USE_OCTOMAP)
   if (shapeType==RCSSHAPE_OCTREE)
   {
-    RFATAL("No Octree support currently");
-    /* const char* sit = getenv("SIT"); */
-    /* if (sit!=NULL) */
-    /* { */
-    /*   snprintf(shape->meshFile, RCS_MAX_FILENAMELEN, */
-    /*            "%s\\Data\\RobotMeshes\\1.0\\data\\Octrees\\octree.bt", sit); */
-    /*   shape->userData = Rcs_loadOctree(shape->meshFile); */
-    /* } */
+    const char* sit = getenv("SIT");
+    if (sit!=NULL)
+    {
+      snprintf(shape->meshFile, RCS_MAX_FILENAMELEN,
+               "%s/Data/RobotMeshes/1.0/data/octomap/test.bt", sit);
+      shape->mesh = (RcsMeshData*)Rcs_loadOctree(shape->meshFile);
+      RCHECK(shape->mesh);
+    }
   }
+#endif
 
   return shape;
 }
@@ -1924,16 +1893,14 @@ void RcsShape_fprintDistanceFunctions(FILE* out)
  ******************************************************************************/
 void* RcsShape_addOctree(RcsShape* self, const char* fileName)
 {
-  RFATAL("No Octree support currently");
-  return NULL;
-  /* self->userData = Rcs_loadOctree(self->meshFile); */
+  self->mesh = (RcsMeshData*)Rcs_loadOctree(self->meshFile);
 
-  /* if (self->userData == NULL) */
-  /* { */
-  /*   RLOG(1, "Failed to load Octree file \"%s\"", self->meshFile); */
-  /* } */
+  if (self->mesh == NULL)
+  {
+    RLOG(1, "Failed to load Octree file \"%s\"", self->meshFile);
+  }
 
-  /* return self->userData; */
+  return self->mesh;
 }
 
 /*******************************************************************************

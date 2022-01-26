@@ -45,12 +45,6 @@
 #include <Rcs_shape.h>
 #include <MeshNode.h>
 
-#ifdef USE_OCTOMAP
-#include "OctomapNode.h"
-#include <octomap/OcTree.h>
-#include <octomap/octomap_types.h>
-#endif
-
 #include <osgDB/ReadFile>
 #include <osg/MatrixTransform>
 #include <osg/PolygonMode>

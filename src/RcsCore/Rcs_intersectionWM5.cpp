@@ -577,20 +577,14 @@ extern "C" {
                                     unsigned int numVertices)
   {
     const double epsilon = 1.0e-8;
-    const bool owner = false;
     Vec3* vertsWm5 = new Vec3[numVertices];
 
-#if 0
-    // Ignore duplicates
-    for (unsigned int i=0; i<numVertices; ++i)
-    {
-      vertsWm5[i] = Vec3(vCoords[i*3+0], vCoords[i*3+1], vCoords[i*3+2]);
-    }
-#else
     // Remove duplicates
     for (unsigned int i=0; i<numVertices; ++i)
     {
       Vec3 verts_i = Vec3(vCoords[i*3+0], vCoords[i*3+1], vCoords[i*3+2]);
+
+      bool isDuplicate = false;
 
       for (unsigned int j=0; j<i; ++j)
       {
@@ -598,13 +592,18 @@ extern "C" {
             pow(verts_i.Y()-vertsWm5[j].Y(), 2) +
             pow(verts_i.Z()-vertsWm5[j].Z(), 2) < epsilon)
         {
+          isDuplicate = true;
           RLOG(1, "Found duplicate for index %d - skipping", i);
         }
       }
 
-      vertsWm5[i] = verts_i;
+      if (!isDuplicate)
+      {
+        vertsWm5[i] = verts_i;
+      }
     }
-#endif
+
+    const bool owner = false;
     Wm5::Delaunay3<double> d(numVertices, vertsWm5, epsilon, owner,
                              Wm5::Query::QT_INTEGER);
 

@@ -219,6 +219,7 @@ unsigned int RcsBody_numDistanceShapes(const RcsBody* self)
  ******************************************************************************/
 void RcsBody_addShape(RcsBody* self, RcsShape* shape)
 {
+  RCHECK_MSG(shape, "Failed adding NULL shape to body \"%s\"", self->name);
   unsigned int nShapes = RcsBody_numShapes(self);
   self->shape = (RcsShape**) realloc(self->shape, (nShapes+2)*sizeof(RcsShape*));
   RCHECK(self->shape);

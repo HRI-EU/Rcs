@@ -518,12 +518,11 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 
     if (shape->type == RCSSHAPE_OCTREE)
     {
-      RFATAL("Currently disabled");
-      /* shape->userData = RcsShape_addOctree(shape, shape->meshFile); */
-      /* if (shape->userData == NULL) */
-      /* { */
-      /*   RLOG(1, "Failed to load Octree file \"%s\"", shape->meshFile); */
-      /* } */
+      shape->mesh = (RcsMeshData*)RcsShape_addOctree(shape, shape->meshFile);
+      if (shape->mesh == NULL)
+      {
+        RLOG(1, "Failed to load Octree file \"%s\"", shape->meshFile);
+      }
     }
 
   }

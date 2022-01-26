@@ -46,6 +46,12 @@
 #include <Rcs_shape.h>
 #include <Rcs_math.h>
 
+#ifdef USE_OCTOMAP
+#include "OctomapNode.h"
+#include <octomap/OcTree.h>
+#include <octomap/octomap_types.h>
+#endif
+
 #include <osgDB/ReadFile>
 #include <osg/MatrixTransform>
 #include <osg/PolygonMode>
@@ -477,44 +483,58 @@ void ShapeNode::addShape(bool resizeable)
   {
 #ifdef USE_OCTOMAP
     octomap::OcTree* tree;
-    if (shape->userData == NULL)
+    if (shape->mesh == NULL)
     {
       tree = new octomap::OcTree(shape->meshFile);
     }
     else
     {
-      tree = reinterpret_cast<octomap::OcTree*>(shape->userData);
+      tree = reinterpret_cast<octomap::OcTree*>(shape->mesh);
     }
 
     if (tree)
     {
-      osg::Geometry* octomap_geom =
+      osg::ref_ptr<osg::Geometry> octoGeom =
         Rcs::OctomapNode::createOctomapGeometry(tree, tree->getTreeDepth());
-      geode->addDrawable(octomap_geom);
+      geode->addDrawable(octoGeom.get());
+
+      // Overlay the solid geometry with a wireframe. Since a Geode is a leaf
+      // (there might be crashes if children are added to Geodes), we add
+      // a separate Geode as a child of the class, and configure it with
+      // the osg::PolygonMode::LINE. This allows us to reuse the geometry.
+      osg::ref_ptr<osg::Geode> wiredGeode = new osg::Geode();
+      osg::StateSet* ss = wiredGeode->getOrCreateStateSet();
+      ss->setAttributeAndModes(new osg::PolygonMode(osg::PolygonMode::FRONT_AND_BACK,
+                                                    osg::PolygonMode::LINE), osg::StateAttribute::ON);
+      wiredGeode->addDrawable(octoGeom.get());
+      wiredGeode->setNodeMask(geode->getNodeMask() & ~CastsShadowTraversalMask);
+      addChild(wiredGeode.get());
+
+      // Disable shadow casting on octrees
+      geode->setNodeMask(geode->getNodeMask() & ~CastsShadowTraversalMask);
 
       // color
-      RcsMaterialData* material = NULL;
+      // RcsMaterialData* material = NULL;
 
-      if (shape->color != NULL)
-      {
-        material = getMaterial(shape->color);
-      }
+      // material = getMaterial(shape->color);
+      // osg::Vec4Array* color = new osg::Vec4Array();
 
-      if (material == NULL)
-      {
-        RLOG(5, "Failed to set color \"%s\"",
-             shape->color ? shape->color : "NULL");
-      }
-      else
-      {
-        osg::Vec4Array* color = new osg::Vec4Array();
-        color->push_back(material->diff);
-        octomap_geom->setColorArray(color);
-        octomap_geom->setColorBinding(osg::Geometry::BIND_OVERALL);
-      }
+      // if (material == NULL)
+      // {
+      //   RLOG(5, "Failed to set color \"%s\" - using white",
+      //        shape->color ? shape->color : "NULL");
+      //   color->push_back(osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f));  // White
+      // }
+      // else
+      // {
+      //   color->push_back(material->diff);
+      // }
+
+      // octoGeom->setColorArray(color);
+      // octoGeom->setColorBinding(osg::Geometry::BIND_OVERALL);
     }
 #else
-    RLOGS(0, "No octomap support");
+    RLOG(1, "No octomap support");
 #endif   // USE_OCTOMAP
   }
 
