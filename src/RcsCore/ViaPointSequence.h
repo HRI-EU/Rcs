@@ -293,32 +293,63 @@ public:
 
   /*! \brief Enables the turbo mode: Computes the polynomial parameters up to
    *         the first full constraint in the descriptor. Any point after the
-   *         first constraint queried will return an undefined result.
+   *         first constraint queried will return an undefined result. This
+   *         function is essentially setting the computeHorizon to max.
    *
    *  \param[in] enable   True for activating turbo more, false otherwise.
    */
   void setTurboMode(bool enable);
-  void setComputeHorizon(double t_horizon);
+
+  /*! \brief Sets the time horizon until which the polynomial coefficients are
+   *         computed. Calling this function with t_hor=0 will lead to the
+   *         polynomials only computed up to the first full constraint. This is
+   *         the most computationall efficient calculation.
+   *
+   *  \param[in] t_hor Time horizon up to which the polynomials are computed.
+   */
+  void setComputeHorizon(double t_hor);
 
   /*! \brief See setTurboMode().
    *
    *  \return True for turbo mode being enabled, false otherwise.
    */
   bool getTurboMode() const;
+
+  /*! \brief See setComputeHorizon(double t_hor).
+   *
+   *  \return Returns the time point up to which the polynomial coefficients
+   *          deliver a valid query.
+   */
   bool getComputeHorizon() const;
+
+  /*! \brief This class supports different types of polynomial coefficient
+   *         calculations. The default is FifthOrderPolynomial and will compute
+   *         coefficients according to a minimum jerk model. The
+   *         LinearAcceleration mode will lead to linear acceleration profiles.
+   *         It is experimental only and has some issues.
+   *
+   *  \return \param[in] desc   Polynomial computation, see enum ViaPointType.
+   */
+  void setViaPointType(ViaPointType type);
+
+  /*! \brief See setViaPointType(ViaPointType type).
+   *
+   *  \return Returns the current mode of polynomial coefficient calculation.
+   */
+  ViaPointType getViaPointType() const;
 
   bool gradientDxDvia(MatNd* dxdvia, unsigned int row, double t0, double dt, unsigned int nSteps) const;
   bool gradientDxDvia(MatNd* dxdvia, unsigned int row, double t0, double t1, double dt) const;
   bool gradientDxDvia_a(MatNd* dxdvia, unsigned int row, double t0, double t1, double dt) const;
 
-  void setViaPointType(ViaPointType type);
-
-  ViaPointType getViaPointType() const;
-
-  MatNd* viaDescr;
-
 protected:
 
+  /*! \brief Assembles the right hand side vector for the given time point to
+   *         solve for the polynomial coefficients.
+   *
+   *  \param[in] rhs   Right hand side vector of time polynomials.
+   *  \param[in] t     Time point at which rhs is evaluated
+   */
   void computeRHS(MatNd* rhs, double t) const;
 
   /*! \brief Sorts the rows of desc so that the time (column 0) always
@@ -336,12 +367,6 @@ protected:
    */
   double getPolynomialParameter(size_t index) const;
 
-  static int getConstraintIndex(const MatNd* desc, unsigned int row,
-                                unsigned int pos_vel_or_acc);
-
-  static void computeB_poly5(MatNd* B, const MatNd* vDesc);
-  static void computeB_linAcc(MatNd* B, const MatNd* vDesc);
-
   /*! \brief Finds the first flag 7 constraint after t_horizon and reshapes
    *         the descriptor so that it is the last one. This function assumes a
    *         descriptor that is sorted with respect to time.
@@ -352,6 +377,13 @@ protected:
    */
   void compressDescriptor(MatNd* desc, double t_horizon) const;
 
+  static int getConstraintIndex(const MatNd* desc, unsigned int row,
+                                unsigned int pos_vel_or_acc);
+
+  static void computeB_poly5(MatNd* B, const MatNd* vDesc);
+  static void computeB_linAcc(MatNd* B, const MatNd* vDesc);
+
+  MatNd* viaDescr;
   MatNd* B, *invB, *x, *p;
   double computeHorizon;
   ViaPointType viaType;

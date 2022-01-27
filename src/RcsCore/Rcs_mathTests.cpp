@@ -3655,8 +3655,13 @@ bool testViaPointSequencePlotter(int argc, char** argv)
   bool skipPause = argP.hasArgument("-skipPause",
                                     "Skip enter key after each step");
 
+  if (argP.hasArgument("-h"))
+  {
+    return false;
+  }
+
   MatNd* viaDesc = MatNd_createFromString("0 0 0 0 7 , 0.5 2 0 0 1 , 1 1 0 0 7");
-  viaDesc = MatNd_realloc(viaDesc, viaDesc->m, viaDesc->n+1);
+  MatNd_realloc(viaDesc, viaDesc->m, viaDesc->n+1);
   MatNd_reshape(viaDesc, viaDesc->m, viaDesc->n-1);
 
   Rcs::ViaPointSequence via(viaDesc);
@@ -3664,6 +3669,8 @@ bool testViaPointSequencePlotter(int argc, char** argv)
 
   Rcs::ViaPointSequencePlotter plotter;
   plotter.enableFixedAxes(via, true);
+
+  MatNd* desc = MatNd_clone(viaDesc);
 
   while (true)
   {
@@ -3674,53 +3681,53 @@ bool testViaPointSequencePlotter(int argc, char** argv)
     if (testMode==0)
     {
       via.computeTrajectoryPoint(pos, vel, acc, via.t0() + dt_shift);
-      MatNd_set(via.viaDescr, 0, 0, via.t0() + dt_shift);
-      MatNd_set(via.viaDescr, 0, 1, pos);
-      MatNd_set(via.viaDescr, 0, 2, vel);
-      MatNd_set(via.viaDescr, 0, 3, acc);
+      MatNd_set(desc, 0, 0, via.t0() + dt_shift);
+      MatNd_set(desc, 0, 1, pos);
+      MatNd_set(desc, 0, 2, vel);
+      MatNd_set(desc, 0, 3, acc);
     }
     // Mode 1: Via point shifted with time
     else if (testMode==1)
     {
       via.computeTrajectoryPoint(pos, vel, acc, via.t0() + dt_shift);
-      MatNd_set(via.viaDescr, 0, 0, via.t0() + dt_shift);
-      MatNd_set(via.viaDescr, 0, 1, pos);
-      MatNd_set(via.viaDescr, 0, 2, vel);
-      MatNd_set(via.viaDescr, 0, 3, acc);
+      MatNd_set(desc, 0, 0, via.t0() + dt_shift);
+      MatNd_set(desc, 0, 1, pos);
+      MatNd_set(desc, 0, 2, vel);
+      MatNd_set(desc, 0, 3, acc);
 
       // Intermediate via point
-      MatNd_addToEle(via.viaDescr, 1, 0, dt_shift);
-      pos = via.computeTrajectoryPos(MatNd_get(via.viaDescr, 1, 0));
-      MatNd_set(via.viaDescr, 1, 1, pos);
+      MatNd_addToEle(desc, 1, 0, dt_shift);
+      pos = via.computeTrajectoryPos(MatNd_get(desc, 1, 0));
+      MatNd_set(desc, 1, 1, pos);
     }
     // Mode 2: Via point shifted with time, everything moves back
     else if (testMode==2)
     {
       // Set first via point to state at t0+dt
       via.computeTrajectoryPoint(pos, vel, acc, via.t0() + dt_shift);
-      MatNd_set(via.viaDescr, 0, 1, pos);
-      MatNd_set(via.viaDescr, 0, 2, vel);
-      MatNd_set(via.viaDescr, 0, 3, acc);
+      MatNd_set(desc, 0, 1, pos);
+      MatNd_set(desc, 0, 2, vel);
+      MatNd_set(desc, 0, 3, acc);
 
       // Shift second via point back in time, but keep position
-      MatNd_addToEle(via.viaDescr, 1, 0, -dt_shift);
+      MatNd_addToEle(desc, 1, 0, -dt_shift);
 
       if (via.t1() < MatNd_get(viaDesc, 2, 0))
       {
-        via.viaDescr = MatNd_realloc(via.viaDescr, 4, via.viaDescr->n);
-        MatNd_copyRow(via.viaDescr, 3, viaDesc, 2);
+        MatNd_realloc(desc, 4, desc->n);
+        MatNd_copyRow(desc, 3, viaDesc, 2);
         RLOG(0, "Adding via point");
       }
 
 
-      if (via.viaDescr->m>2)
+      if (desc->m>2)
       {
-        MatNd_addToEle(via.viaDescr, 2, 0, -dt_shift);
+        MatNd_addToEle(desc, 2, 0, -dt_shift);
       }
 
-      if (MatNd_get(via.viaDescr, 1, 0) <= MatNd_get(via.viaDescr, 0, 0))
+      if (MatNd_get(desc, 1, 0) <= MatNd_get(desc, 0, 0))
       {
-        MatNd_deleteRow(via.viaDescr, 1);
+        MatNd_deleteRow(desc, 1);
         RLOG(0, "Removing via point");
       }
 
@@ -3731,11 +3738,11 @@ bool testViaPointSequencePlotter(int argc, char** argv)
     }
 
     // Re-compute polynomial
-    via.init(via.viaDescr);
+    via.init(desc);
 
     REXEC(1)
     {
-      MatNd_printCommentDigits("Via descriptor", via.viaDescr, 3);
+      MatNd_printCommentDigits("Via descriptor", desc, 3);
     }
 
     if (skipPause==false)
@@ -3759,12 +3766,15 @@ bool testViaPointSequencePlotter(int argc, char** argv)
       printf("Enter flag: ");
       std::cin >> flag;
       via.addViaPoint(t, x, xp, xpp, flag);
-      via.init(via.viaDescr);
+      via.init(desc);
       RPAUSE_MSG("Hit enter to continue");
     }
 
     Timer_waitDT(0.01);
   }
+
+  MatNd_destroy(viaDesc);
+  MatNd_destroy(desc);
 
   return success;
 }
