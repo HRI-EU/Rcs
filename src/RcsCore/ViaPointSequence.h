@@ -353,7 +353,7 @@ protected:
   void compressDescriptor(MatNd* desc, double t_horizon) const;
 
   MatNd* B, *invB, *x, *p;
-  bool computeHorizon;
+  double computeHorizon;
   ViaPointType viaType;
 
   // Vectors with dimension equal to the number of rows / columns of B
