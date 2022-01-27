@@ -2195,6 +2195,14 @@ ViaPointSequence::ViaPointType ViaPointSequence::getViaPointType() const
   return this->viaType;
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+MatNd* ViaPointSequence::cloneDescriptor() const
+{
+  return MatNd_clone(viaDescr);
+}
+
 
 
 

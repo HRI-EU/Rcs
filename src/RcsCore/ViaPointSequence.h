@@ -338,6 +338,8 @@ public:
    */
   ViaPointType getViaPointType() const;
 
+  MatNd* cloneDescriptor() const;
+
   bool gradientDxDvia(MatNd* dxdvia, unsigned int row, double t0, double dt, unsigned int nSteps) const;
   bool gradientDxDvia(MatNd* dxdvia, unsigned int row, double t0, double t1, double dt) const;
   bool gradientDxDvia_a(MatNd* dxdvia, unsigned int row, double t0, double t1, double dt) const;
