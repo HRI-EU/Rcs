@@ -99,8 +99,8 @@ Rcs::TaskPolarSurfaceNormal::TaskPolarSurfaceNormal(const std::string& className
  ******************************************************************************/
 Rcs::TaskPolarSurfaceNormal::TaskPolarSurfaceNormal(const TaskPolarSurfaceNormal& copyFromMe,
                                                     RcsGraph* newGraph):
-  Task(copyFromMe, newGraph), direction(copyFromMe.direction),
-  gainDX(copyFromMe.gainDX)
+  Task(copyFromMe, newGraph), surfaceBodies(copyFromMe.surfaceBodies),
+  direction(copyFromMe.direction), gainDX(copyFromMe.gainDX)
 {
 }
 
@@ -248,34 +248,72 @@ bool Rcs::TaskPolarSurfaceNormal::isValid(xmlNode* node, const RcsGraph* graph)
   cVars.push_back("POLAR_SURFACE_Z");
   bool success = Task::isValid(node, graph, cVars);
 
-  return true;
-
-  char taskName[256] = "Unnamed task";
-  getXMLNodePropertyStringN(node, "name", taskName, 256);
+  char taskName[RCS_MAX_NAMELEN] = "Unnamed task";
+  getXMLNodePropertyStringN(node, "name", taskName, RCS_MAX_NAMELEN);
 
   // Check if there is a distance function called between effector and refBdy
-  char name1[265] = "", name2[265] = "";
-  getXMLNodePropertyStringN(node, "effector", name1, 256);
-  getXMLNodePropertyStringN(node, "refBdy", name2, 256);
-  getXMLNodePropertyStringN(node, "refBody", name2, 256);
-  const RcsBody* b1 = RcsGraph_getBodyByName(graph, name1);
-  const RcsBody* b2 = RcsGraph_getBodyByName(graph, name2);
+  char name1[RCS_MAX_NAMELEN] = "";
+  int len = getXMLNodePropertyStringN(node, "effector", name1, RCS_MAX_NAMELEN);
 
-  if (b1 == NULL)
+  if (len == 0)
   {
-    RLOG(1, "Effector \"%s\" of task \"%s\" doesn't exist!", name1, taskName);
+    RLOG(4, "Attribute \"effector\" missing in task \"%s\"", taskName);
+    return false;
+  }
+
+  const RcsBody* effector = RcsGraph_getBodyByName(graph, name1);
+
+  if (!effector)
+  {
+    RLOG(4, "Effector \"%s\" not found in graph for task \"%s\"",
+         name1, taskName);
     success = false;
   }
-  else if (b2 == NULL)
+
+  std::vector<std::string> surfBodies = getXMLNodePropertyVecSTLString(node, "surfaceBodies");
+
+  for (size_t i = 0; i < surfBodies.size(); ++i)
   {
-    RLOG(1, "Ref-body \"%s\" of task \"%s\" doesn't exist!", name2, taskName);
+    const RcsBody* bi = RcsGraph_getBodyByName(graph, surfBodies[i].c_str());
+
+    if (!bi)
+    {
+      RLOG(4, "Surface body \"%s\" not found in graph for task \"%s\"",
+           surfBodies[i].c_str(), taskName);
     success = false;
   }
-  else if (RcsBody_getNumDistanceQueries(b1, b2) == 0)
+
+    if (RcsBody_getNumDistanceQueries(effector, bi) == 0)
   {
     RLOG(1, "Task \"%s\": No distance function between \"%s\" and \"%s\"!",
-         taskName, name1, name2);
+           taskName, effector->name, bi->name);
     success = false;
+    }
+
+  }
+
+  if (surfBodies.empty())
+  {
+    char name2[RCS_MAX_NAMELEN] = "";
+    getXMLNodePropertyStringN(node, "refBdy", name2, RCS_MAX_NAMELEN);
+    getXMLNodePropertyStringN(node, "refBody", name2, RCS_MAX_NAMELEN);
+
+    const RcsBody* refBdy = RcsGraph_getBodyByName(graph, name2);
+
+    if (!refBdy)
+    {
+      RLOG(4, "Reference body \"%s\" not found in graph for task \"%s\"",
+           name2, taskName);
+      success = false;
+    }
+
+    if (RcsBody_getNumDistanceQueries(effector, refBdy) == 0)
+    {
+      RLOG(1, "Task \"%s\": No distance function between \"%s\" and \"%s\"!",
+           taskName, effector->name, name2);
+      success = false;
+    }
+
   }
 
   return success;

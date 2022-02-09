@@ -42,17 +42,31 @@ namespace Rcs
 
 /*! \ingroup RcsTask
  * \brief This tasks allows to set a 2D orientation (Polar angles) of an
- *        effector. The orientation can also be relative to another body and
- *        reference frame. The polar axis is taken from the effector body. By
- *        default, it is the z-axis. It can be specified with the xml tag
+ *        effector with respect to the surface normal of one or several bodies.
+ *        The polar axis is taken from the effector body. By default, it is the
+ *        z-axis. It can be specified with the xml tag
  *        - axisDirection="X"
  *        - axisDirection="Y"
  *        - axisDirection="Z"
  *        to select which axis direction from the effector body is used.
  *
- *        To avoid jumps in the feedback, the velocities and accelerations are
- *        calculated in the effector's angular velocity (with respect to the
- *        reference body, which is the world rfame if none is given).
+ *        The bodies to which the effector is to be made normal are comprised
+ *        in a vector of bodies with names given as space-separated list in
+ *        attribute "surfaceBodies". If that does not exist, one surface body
+ *        is used as the reference body.
+ *
+ *        To account for discontinuities in the surface normal, the attribute
+ *        "gainDX" is a multiplier that is applied to the value coming out of
+ *        the computeDX() method. Choosing it to be small is similar to
+ *        applying a first-order low-pass filter. The default is 1.
+ *
+ *  Example:
+ *  \code
+ *    <Task name="Task1" controlVariable="POLAR_SURFACE_Z" effector="Hand"
+ *          surfaceBodies="Table Object1 Object2" active="true" />
+ *    <Task name="Task2" controlVariable="POLAR_SURFACE_X" effector="Hand"
+ *          refBdy="Table" active="true" />
+ *  \endcode
  */
 class TaskPolarSurfaceNormal: public Task
 {
