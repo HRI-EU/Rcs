@@ -31,7 +31,6 @@
 
 *******************************************************************************/
 
-
 #include <Rcs_macros.h>
 #include <Rcs_cmdLine.h>
 #include <Rcs_resourcePath.h>
@@ -48,7 +47,6 @@
 #include <ControllerWidgetBase.h>
 #include <SegFaultHandler.h>
 
-#include <pthread.h>
 #include <csignal>
 
 RCS_INSTALL_ERRORHANDLERS

@@ -36,14 +36,6 @@
 
 #include "ShapeNode.h"
 
-#include <Rcs_graph.h>
-
-#include <osg/Geode>
-#include <osg/PositionAttitudeTransform>
-#include <osg/ShapeDrawable>
-#include <osg/Switch>
-#include <osg/Material>
-#include <osg/Texture2D>
 #include <osgText/Text>
 
 
