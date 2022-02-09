@@ -66,11 +66,8 @@ static void HTr_fromURDFOrigin(HTr* A, double rpy[3], double xyz[3])
 /*******************************************************************************
  * The link element has these attributes: http://wiki.ros.org/urdf/XML/link
  ******************************************************************************/
-static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
+static void parseShapeURDF(RcsShape* shape, xmlNode* node, RcsBody* body)
 {
-  // Allocate memory and set defaults
-  RcsShape* shape = RcsShape_create();
-
   // origin (identity if not specified)
   double xyz[3], rpy[3];
   Vec3d_setZero(xyz);
@@ -240,7 +237,6 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
     shape->computeType = RCSSHAPE_COMPUTE_DISTANCE | RCSSHAPE_COMPUTE_PHYSICS;
   }
 
-  return shape;
 }
 
 /*******************************************************************************
@@ -293,9 +289,6 @@ static int parseBodyURDF(xmlNode* node, RcsGraph* graph, int parentId)
   size_t inertialTagCount = 0;
   size_t shapeCount = 0;
   size_t numCollisionShapes = getNumXMLNodes(node, "collision");
-  size_t numShapes = getNumXMLNodes(node, "visual") +
-                     numCollisionShapes;
-  body->shape = RNALLOC(numShapes+1, RcsShape*);
 
 
   while (node != NULL)
@@ -333,12 +326,8 @@ static int parseBodyURDF(xmlNode* node, RcsGraph* graph, int parentId)
     else if (isXMLNodeNameNoCase(node, "visual") ||
              isXMLNodeNameNoCase(node, "collision"))
     {
-      body->shape[shapeCount] = parseShapeURDF(node, body);
-
-      if (body->shape[shapeCount] != NULL)
-      {
-        shapeCount++;
-      }
+      RcsShape* shi = RcsBody_appendShape(body);
+      parseShapeURDF(shi, node, body);
     } // "visual" or "collision"
 
     node = node->next;

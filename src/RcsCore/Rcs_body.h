@@ -106,27 +106,21 @@ unsigned int RcsBody_numDistanceShapes(const RcsBody* self);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Appends a shape to the bodie's shapes. The shapes array will be
- *         resized if needed (using realloc).
+ *         resized if needed (using realloc). The bodie's shape count will be
+ *         incremented. The new shape is initialized with the defaults
+ *         (see \ref RcsShape_init).
  */
-void RcsBody_addShape(RcsBody* self, RcsShape* shape);
+RcsShape* RcsBody_appendShape(RcsBody* self);
 
 /*! \ingroup RcsBodyFunctions
- *  \brief Destroys the idx-th shape of the body, and packs the other shapes
- *         so that there is no NULL gap in the array.
+ *  \brief Removes the idx-th shape of the body, and packs the other shapes
+ *         so that there is no NULL gap in the array. There will be no memory
+ *         re-allocation.
  *
  *  \return True for success, false otherwies (e.g. there is no idx shapes in
  *          the array)
  */
 bool RcsBody_removeShape(RcsBody* self, unsigned int idx);
-
-/*! \ingroup RcsBodyFunctions
- *  \brief Removes and destroys all shapes of the body, and sets the shape
- *         array element to NULL. The shapes array is not destroyed (and not
- *         resized).
- *
- *  \return Number of removed shapes.
- */
-unsigned int RcsBody_removeShapes(RcsBody* self);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns the last body in the graph according to a depth-first
@@ -478,7 +472,8 @@ void RcsBody_scale(RcsGraph* graph, RcsBody* self, double scale);
  *  \return Number of distance function calls between the bodies. If either
  *          b1 or b2 is NULL, the function returns 0.
  */
-int RcsBody_getNumDistanceQueries(const RcsBody* b1, const RcsBody* b2);
+unsigned int RcsBody_getNumDistanceQueries(const RcsBody* b1,
+                                           const RcsBody* b2);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns a pointer to the body referred to by RcsBody::prevId.

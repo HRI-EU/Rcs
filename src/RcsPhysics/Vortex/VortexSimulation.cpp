@@ -708,7 +708,7 @@ bool Rcs::VortexSimulation::createCompositeBody(const RcsBody* body)
     return false;
   }
 
-  if (body->shape == NULL)
+  if (body->nShapes == 0)
   {
     RLOG(1, "Body \"%s\" has no shape attached - skipping", body->name);
     return false;
@@ -727,88 +727,81 @@ bool Rcs::VortexSimulation::createCompositeBody(const RcsBody* body)
 
   RLOG(5, "Creating body \"%s\"", body->name);
 
-  // Traverse through shapes
-  RcsShape** sPtr = &body->shape[0];
-
-
   Vx::VxCompositeCollisionGeometry* composite =
     new Vx::VxCompositeCollisionGeometry();
 
-
-  while (*sPtr)
+  // Traverse through shapes
+  for (unsigned int i=0; i<body->nShapes; ++i)
   {
-
-    if (((*sPtr)->computeType & RCSSHAPE_COMPUTE_PHYSICS) == 0)
+    RcsShape* sh = &body->shapes[i];
+    if (!RcsShape_isOfComputeType(sh, RCSSHAPE_COMPUTE_PHYSICS))
     {
-      RLOG(5, "Skipping shape %s", RcsShape_name((*sPtr)->type));
-      sPtr++;
+      RLOG(5, "Skipping shape %s", RcsShape_name(sh->type));
       continue;
     }
 
-    RLOG(5, "Creating shape %s", RcsShape_name((*sPtr)->type));
+    RLOG(5, "Creating shape %s", RcsShape_name(sh->type));
 
     // Set proper material
-    char* materialName = (*sPtr)->material;
+    char* materialName = sh->material;
     Vx::VxMaterial* material = getMaterial(materialName);
 
     if (material == NULL)
     {
       RLOG(1, "%s shape of body \"%s\" has unknown material \"%s\", setting "
            "it to default material",
-           RcsShape_name((*sPtr)->type), body->name, materialName);
+           RcsShape_name(sh->type), body->name, materialName);
     }
 
     // create shape objects with the given material id
-    switch ((*sPtr)->type)
+    switch (sh->type)
     {
       case RCSSHAPE_SSL:
         RLOG(5, "Creating SSL for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createCapsule(*sPtr, &body->A_BI, material));
+        composite->addCollisionGeometry(createCapsule(sh, &body->A_BI, material));
         break;
 
       case RCSSHAPE_MESH:
         RLOG(5, "Creating mesh for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createMesh(*sPtr, &body->A_BI, material));
+        composite->addCollisionGeometry(createMesh(sh, &body->A_BI, material));
         break;
 
       case RCSSHAPE_BOX:
         RLOG(5, "Creating box for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createBox(*sPtr, &body->A_BI, material));
+        composite->addCollisionGeometry(createBox(sh, &body->A_BI, material));
         break;
 
       case RCSSHAPE_SPHERE:
         RLOG(5, "Creating sphere for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createSphere(*sPtr, &body->A_BI, material));
+        composite->addCollisionGeometry(createSphere(sh, &body->A_BI, material));
         break;
 
       case RCSSHAPE_CYLINDER:
         RLOG(5, "Creating cylinder for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createCylinder(*sPtr, &body->A_BI, material));
+        composite->addCollisionGeometry(createCylinder(sh, &body->A_BI, material));
         break;
 
       case RCSSHAPE_SSR:
         RLOG(5, "Creating SSR for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createSSR(*sPtr, &body->A_BI, material));
+        composite->addCollisionGeometry(createSSR(sh, &body->A_BI, material));
         break;
 
       case RCSSHAPE_CONE:
         RLOG(5, "Creating cone for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createCone(*sPtr, &body->A_BI, material));
+        composite->addCollisionGeometry(createCone(sh, &body->A_BI, material));
         break;
 
       case RCSSHAPE_TORUS:
         RLOG(5, "Creating torus for object \"%s\"", body->name);
-        composite->addCollisionGeometry(createTorus(*sPtr, &body->A_BI, material));
+        composite->addCollisionGeometry(createTorus(sh, &body->A_BI, material));
         break;
 
       default:
-        RLOG(3, "Shape %d (\"%s\") not yet implemented", (*sPtr)->type,
-             RcsShape_name((*sPtr)->type));
+        RLOG(3, "Shape %d (\"%s\") not yet implemented", sh->type,
+             RcsShape_name(sh->type));
     }
 
-    sPtr++;
-
-  } // while(*sPtr)
+  } // for (unsigned int i=0; i<body->nShapes; ++i)
 
   // Check whether success, otherwise return
   if (composite->getCollisionGeometries().size() == 0)
@@ -2728,12 +2721,9 @@ bool Rcs::VortexSimulation::addBody(const RcsGraph* graph, const RcsBody* body_)
   RcsBody_copy(body, body_);
 
   // Make a copy of all body shapes and attach them to the body
-  int nShapes = RcsBody_numShapes(body_);
-  body->shape = RNALLOC(nShapes + 1, RcsShape*);
-  for (int i = 0; i < nShapes; i++)
-  {
-    body->shape[i] = RcsShape_clone(body_->shape[i]);
-  }
+  body->nShapes = body_->nShapes;
+  body->shapes = RNALLOC(body->nShapes, RcsShape);
+  memcpy(body->shapes, body_->shapes, body->nShapes * sizeof(RcsShape));
 
   // Create the joints into the simulation's body.
   RCSBODY_FOREACH_JOINT(graph, body_)

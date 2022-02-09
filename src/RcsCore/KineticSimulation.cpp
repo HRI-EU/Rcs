@@ -186,7 +186,7 @@ bool KineticSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
   {
     HTr A_CI;
     const RcsBody* bdy = RCSBODY_BY_ID(g, contact[i].bdyId);
-    HTr_transform(&A_CI, &bdy->A_BI, &bdy->shape[contact[i].shapeIdx]->A_CB);
+    HTr_transform(&A_CI, &bdy->A_BI, &bdy->shapes[contact[i].shapeIdx].A_CB);
     MatNd_setRow(this->contactPositions, i, A_CI.org, 3);
   }
 
@@ -587,11 +587,11 @@ bool KineticSimulation::addBody(const RcsGraph* graph, const RcsBody* body_)
   RcsBody_copy(body, body_);
 
   // Make a copy of all body shapes and attach them to the body
-  int nShapes = RcsBody_numShapes(body_);
-  body->shape = RNALLOC(nShapes + 1, RcsShape*);
-  for (int i = 0; i < nShapes; i++)
+  body->nShapes = RcsBody_numShapes(body_);
+  body->shapes = RREALLOC(body->shapes, body->nShapes+1, RcsShape);
+  for (unsigned int i = 0; i < body->nShapes; i++)
   {
-    body->shape[i] = RcsShape_clone(body_->shape[i]);
+    RcsShape_copy(&body->shapes[i], &body_->shapes[i]);
   }
 
   // Create the joints into the simulation's body.
@@ -1169,7 +1169,7 @@ void KineticSimulation::addContactForces(MatNd* M_contact,      // nq x 1
   for (size_t i = 0; i < contact.size(); i++)
   {
     const RcsBody* cBdy = &getGraph()->bodies[contact[i].bdyId];
-    const RcsShape* cSh = cBdy->shape[contact[i].shapeIdx];
+    const RcsShape* cSh = &cBdy->shapes[contact[i].shapeIdx];
     RcsGraph_bodyPointJacobian(getGraph(), cBdy, cSh->A_CB.org, NULL, J);
 
     // Compute the attachement point velocities: I_xp_c = I_xp_b + I_om x I_r_c

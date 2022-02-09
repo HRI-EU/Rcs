@@ -247,8 +247,9 @@ RcsBody* RcsBody_getLastLeaf(const RcsGraph* graph, RcsBody* b);
 *         The joints can be accessed with variable "SHAPE".
 */
 #define RCSBODY_TRAVERSE_SHAPES(body)                                        \
-  for (RcsShape **sPtr = (RcsShape**)((body)->shape), *SHAPE = *sPtr; *sPtr; \
-       sPtr++, SHAPE=*sPtr)
+  for (RcsShape *S0 = (body)->nShapes > 0 ? &(body)->shapes[0] : NULL,       \
+       *S1 = (S0!=NULL) ? &(body)->shapes[body->nShapes-1] : NULL,           \
+       *SHAPE = S0; SHAPE && SHAPE <= S1; SHAPE++)
 
 #define RCSGRAPH_FOREACH_SENSOR(graph)                                       \
   for (RcsSensor *S0 = RcsSensor_first(graph), *SENSOR = S0,                 \

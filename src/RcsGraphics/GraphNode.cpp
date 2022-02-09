@@ -176,7 +176,7 @@ bool GraphNode::init(const RcsGraph* g, bool resizeable,
 
   RCSGRAPH_TRAVERSE_BODIES(g)
   {
-    if (BODY->shape == NULL)
+    if (BODY->nShapes == 0)
     {
       continue;
     }

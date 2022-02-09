@@ -323,45 +323,43 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsGraph* graph,
 
 
   // Traverse through shapes
-  RcsShape** sPtr = &bdy->shape[0];
   btCompoundShape* cSh = new btCompoundShape();
   const char* materialName = NULL;
   bool hasSoftShape = false;
 
-  while (*sPtr)
+  for (unsigned int i = 0; i < bdy->nShapes; ++i)
   {
+    RcsShape* sh = &bdy->shapes[i];
 
-    if (((*sPtr)->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) != 0)
+    if (RcsShape_isOfComputeType(sh, RCSSHAPE_COMPUTE_SOFTPHYSICS))
     {
-      RLOG(5, "Skipping soft shape %s", RcsShape_name((*sPtr)->type));
+      RLOG(5, "Skipping soft shape %s", RcsShape_name(sh->type));
       hasSoftShape = true;
-      sPtr++;
       continue;
     }
 
-    if (((*sPtr)->computeType & RCSSHAPE_COMPUTE_PHYSICS) == 0)
+    if (!RcsShape_isOfComputeType(sh, RCSSHAPE_COMPUTE_PHYSICS))
     {
-      RLOG(5, "Skipping shape %s", RcsShape_name((*sPtr)->type));
-      sPtr++;
+      RLOG(5, "Skipping shape %s", RcsShape_name(sh->type));
       continue;
     }
 
-    RLOG(5, "Creating shape %s", RcsShape_name((*sPtr)->type));
+    RLOG(5, "Creating shape %s", RcsShape_name(sh->type));
 
     btTransform relTrans;
-    btCollisionShape* shape = createShape(*sPtr, relTrans, bdy,
+    btCollisionShape* shape = createShape(sh, relTrans, bdy,
                                           convexHullVertexLimit);
 
     if (shape != NULL)
     {
-      shape->setUserPointer(*sPtr);
+      shape->setUserPointer(sh);
       cSh->addChildShape(relTrans, shape);
 
       if (materialName == NULL)
       {
         // Bullet cannot set material properties per shape, so we only use the
         // material of the first shape.
-        materialName = (*sPtr)->material;
+        materialName = sh->material;
       }
     }
     else
@@ -369,9 +367,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsGraph* graph,
       RLOG(4, "Skipping shape for body %s", bdy->name);
     }
 
-    sPtr++;
-
-  } // while(*sPtr)
+  } // for (unsigned int i = 0; i < bdy->nShapes; ++i)
 
 
   if (cSh->getNumChildShapes() == 0)

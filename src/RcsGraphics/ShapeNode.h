@@ -68,19 +68,20 @@ namespace Rcs
 class ShapeNode : public osg::PositionAttitudeTransform
 {
 public:
-  ShapeNode(const RcsShape* shape, bool resizeable);
+  ShapeNode(const RcsGraph* graph, int bdyId, int shapeIdx, bool resizeable);
   void displayFrame(bool visibility = true);
   void toggleFrame();
   void updateDynamicShapes();
+  const RcsShape* getShape() const;
 
 protected:
   virtual ~ShapeNode();
-  void addShape(bool resizeable);
+  void addShape(const RcsShape* shape, bool resizeable);
   bool addTexture(const char* textureFile);
 
   struct ShapeUpdater : public osg::Referenced
   {
-    ShapeUpdater(ShapeNode* node);
+    ShapeUpdater(ShapeNode* node, const RcsShape* shape);
     void addDrawable(osg::Drawable* d);
     void addSubNode(osg::Node* nd);
     const RcsShape* shape();
@@ -94,7 +95,9 @@ protected:
     std::string color;
   };
 
-  const RcsShape* shape;
+  const RcsGraph* graph;
+  int bdyId;
+  int shapeIdx;
   osg::ref_ptr<NodeBase> frame;
   osg::ref_ptr<ShapeUpdater> shapeUpdater;
 };

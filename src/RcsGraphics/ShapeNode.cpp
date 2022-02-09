@@ -164,11 +164,12 @@ static osg::ref_ptr<osg::Node> createMeshNode(const RcsShape* shape,
  *  resize meshes, torus
  *  change color
  ******************************************************************************/
-ShapeNode::ShapeUpdater::ShapeUpdater(ShapeNode* node) : shapeNode(node)
+ShapeNode::ShapeUpdater::ShapeUpdater(ShapeNode* node, const RcsShape* shape) :
+  shapeNode(node)
 {
-  Vec3d_copy(this->extents, node->shape->extents);
-  HTr_copy(&this->A_CB, &node->shape->A_CB);
-  color = std::string(node->shape->color);
+  Vec3d_copy(this->extents, shape->extents);
+  HTr_copy(&this->A_CB, &shape->A_CB);
+  color = std::string(shape->color);
 }
 
 void ShapeNode::ShapeUpdater::addDrawable(osg::Drawable* d)
@@ -183,7 +184,7 @@ void ShapeNode::ShapeUpdater::addSubNode(osg::Node* nd)
 
 const RcsShape* ShapeNode::ShapeUpdater::shape()
 {
-  return shapeNode->shape;
+  return shapeNode->getShape();
 }
 
 void ShapeNode::ShapeUpdater::updateDynamicShapes()
@@ -277,14 +278,16 @@ void ShapeNode::ShapeUpdater::updateDynamicShapes()
  *                      ---> capsule, box, etc (osg::Capsule ...)
 
 *******************************************************************************/
-ShapeNode::ShapeNode(const RcsShape* shape_, bool resizeable) : shape(shape_)
+ShapeNode::ShapeNode(const RcsGraph* graph_, int bdyId_, int shapeIdx_,
+                     bool resizeable) :
+  graph(graph_), bdyId(bdyId_), shapeIdx(shapeIdx_)
 {
-  RCHECK(shape);
-  addShape(resizeable);
+  const RcsShape* sh = getShape();
+  addShape(sh, resizeable);
 
-  if (strlen(shape->textureFile)>0)
+  if (strlen(sh->textureFile)>0)
   {
-    addTexture(shape->textureFile);
+    addTexture(sh->textureFile);
   }
 
 }
@@ -292,7 +295,7 @@ ShapeNode::ShapeNode(const RcsShape* shape_, bool resizeable) : shape(shape_)
 /*******************************************************************************
  *
  ******************************************************************************/
-void ShapeNode::addShape(bool resizeable)
+void ShapeNode::addShape(const RcsShape* shape, bool resizeable)
 {
   osg::ref_ptr<osg::TessellationHints> hints = new osg::TessellationHints;
   osg::ref_ptr<osg::Geode> geode = new osg::Geode();
@@ -302,7 +305,7 @@ void ShapeNode::addShape(bool resizeable)
   {
     resizeable = true;
     hints->setDetailRatio(0.5);
-    shapeUpdater = new ShapeUpdater(this);
+    shapeUpdater = new ShapeUpdater(this, shape);
   }
 
   // This enables depth sorting by default for correctly drawing
@@ -700,6 +703,11 @@ void ShapeNode::updateDynamicShapes()
     shapeUpdater->updateDynamicShapes();
   }
 
+}
+
+const RcsShape* ShapeNode::getShape() const
+{
+  return &graph->bodies[bdyId].shapes[shapeIdx];
 }
 
 }   // namespace Rcs

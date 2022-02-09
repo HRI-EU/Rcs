@@ -49,16 +49,6 @@ void RcsGraph_createBodiesFromOpenRAVENode(RcsGraph* self, RcsBody* parent,
                                            const xmlNodePtr node, double* q0,
                                            unsigned int nq);
 
-RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode,
-                                       RcsBody* root);
-
-RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
-                                         const double* q0);
-
-RcsShape* RcsShape_createFromOpenRAVEXML(xmlNode* node, RcsBody* body);
-
-xmlNodePtr getXMLNodeForOpenRave(const char* filename, xmlDocPtr* doc);
-
 #ifdef __cplusplus
 }
 #endif

@@ -636,21 +636,6 @@ static void testOsgViewer()
   }
 
 
-  if (argP.hasArgument("-shape", "Add ShapeNode"))
-  {
-    RcsShape shape;
-    memset(&shape, 0, sizeof(RcsShape));
-    HTr_setIdentity(&shape.A_CB);
-    shape.A_CB.org[2] = 1.0;
-    shape.type = RCSSHAPE_BOX;
-    Vec3d_setElementsTo(shape.scale3d, 1.0);
-    shape.computeType = RCSSHAPE_COMPUTE_GRAPHICS;
-    Vec3d_set(shape.extents, 0.5, 0.3, 01.1);
-    osg::ref_ptr<Rcs::ShapeNode> sn = new Rcs::ShapeNode(&shape, false);
-    rootnode->addChild(sn.get());
-  }
-
-
   if (argP.hasArgument("-h"))
   {
     delete viewer;

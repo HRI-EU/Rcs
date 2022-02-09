@@ -114,10 +114,15 @@ bool testBulletDistance(size_t iterations)
     int rndIdx1 = Math_getRandomInteger(0, sTypes.size() - 1);
     int rndIdx2 = Math_getRandomInteger(0, sTypes.size() - 1);
 
-    RcsShape* s1 = RcsShape_createRandomShape(sTypes[rndIdx1]);
-    RcsShape* s2 = RcsShape_createRandomShape(sTypes[rndIdx2]);
-    RCHECK(s1);
-    RCHECK(s2);
+    RcsShape* s1 = RALLOC(RcsShape);
+    RcsShape_init(s1);
+    bool initOk = RcsShape_initRandom(s1, sTypes[rndIdx1]);
+    RCHECK(initOk);
+    RcsShape* s2 = RALLOC(RcsShape);
+    RcsShape_init(s2);
+    initOk = RcsShape_initRandom(s2, sTypes[rndIdx2]);
+    RCHECK(initOk);
+
     RLOG_CPP(2, "Testing " << RcsShape_name(s1->type) << " against "
              << RcsShape_name(s2->type));
 

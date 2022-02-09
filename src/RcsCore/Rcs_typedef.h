@@ -182,7 +182,8 @@ struct _RcsBody
   char bdyXmlName[RCS_MAX_NAMELEN]; ///< Name of the body from xml file
   char bdySuffix[RCS_MAX_NAMELEN];  ///< Group suffix of the body
   HTr Inertia;                      ///< Inertia tensor and local COG vector
-  RcsShape** shape;                 ///< Geometric shapes of the body
+  unsigned int nShapes;             ///< Number of shapes in shapes arrray
+  RcsShape* shapes;                 ///< Geometric shapes of the body
 };
 
 
@@ -268,13 +269,13 @@ struct _RcsGraph
 #undef RCSGRAPH_FOREACH_SENSOR
 #define RCSGRAPH_FOREACH_SENSOR(graph)                                         \
   for (RcsSensor *S0 = (graph)->nSensors>0 ? &(graph)->sensors[0] : NULL,      \
-       *S1 = (graph)->nSensors>0 ? &(graph)->sensors[graph->nSensors-1] : NULL,\
+       *S1 = (S0!=NULL) ? &(graph)->sensors[graph->nSensors-1] : NULL,       \
        *SENSOR = S0; SENSOR && SENSOR<=S1; SENSOR++)
 
 #undef RCSGRAPH_FOREACH_BODY
 #define RCSGRAPH_FOREACH_BODY(graph)                                           \
   for (RcsBody *B0 = (graph)->nBodies>0 ? &(graph)->bodies[0] : NULL,          \
-       *B1 = (graph)->nBodies>0 ? &(graph)->bodies[(graph)->nBodies-1] : NULL, \
+       *B1 = (B0!=NULL) ? &(graph)->bodies[(graph)->nBodies-1] : NULL,       \
        *BODY = B0; BODY && BODY<=B1; BODY++)
 
 #undef RCSJOINT_TRAVERSE_FORWARD

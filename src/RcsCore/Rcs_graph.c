@@ -2294,36 +2294,32 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src)
   dst->joints = RNALLOC(src->dof, RcsJoint);
   dst->sensors = RNALLOC(src->nSensors, RcsSensor);
 
-  if ((!dst->q) || (!dst->q_dot) || (!dst->bodies) || (!dst->joints) || (!dst->sensors))
+  if ((!dst->q) || (!dst->q_dot) || (!dst->bodies) ||
+      (!dst->joints) || (!dst->sensors))
   {
     RLOG(1, "Failed to allocate memory for cloning graph");
     RcsGraph_destroy(dst);
     return NULL;
   }
 
-
   // Copy all joints, it's just a big memory block
   memcpy(dst->joints, src->joints, src->dof*sizeof(RcsJoint));
+
+  // Same for bodies. We handle the copying of the shapes below.
+  memcpy(dst->bodies, src->bodies, src->nBodies * sizeof(RcsBody));
 
   // Copy all bodies
   for (unsigned int i=0; i<src->nBodies; ++i)
   {
-    dst->bodies[i] = src->bodies[i];
-    dst->bodies[i].shape = NULL;
-  }
+    RcsBody* bdyDst = &dst->bodies[i];
+    const RcsBody* bdySrc = &src->bodies[i];
 
-  RCSGRAPH_TRAVERSE_BODIES(src)
+    // Make a copy of all body shapes. We don't do a block copy to avoid
+    // shallow-copying of the meshes.
+    bdyDst->shapes = RNALLOC(bdySrc->nShapes, RcsShape);
+    for (unsigned int i = 0; i < bdyDst->nShapes; i++)
   {
-    // Determine body corresponding to BODY in the dst graph
-    RcsBody* b = &dst->bodies[BODY->id];
-
-    // Make a copy of all body shapes and attach them to the body
-    int nShapes = RcsBody_numShapes(BODY);
-    b->shape = RNALLOC(nShapes + 1, RcsShape*);
-    for (int i = 0; i < nShapes; i++)
-    {
-      b->shape[i] = RALLOC(RcsShape);
-      RcsShape_copy(b->shape[i], BODY->shape[i]);
+      RcsShape_copy(&bdyDst->shapes[i], &bdySrc->shapes[i]);
     }
 
   }   // RCSGRAPH_TRAVERSE_BODIES(src)
@@ -3030,7 +3026,7 @@ void RcsGraph_addRandomGeometry(RcsGraph* self)
       }
 
       // Box from parent to child
-      RcsShape* shape = RcsShape_create();
+      RcsShape* shape = RcsBody_appendShape(BODY);
       shape->type = RCSSHAPE_BOX;
       shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
       shape->extents[0] = 0.2*len;
@@ -3039,17 +3035,15 @@ void RcsGraph_addRandomGeometry(RcsGraph* self)
       snprintf(shape->color, RCS_MAX_NAMELEN, "%s", color);
       Mat3d_fromVec(shape->A_CB.rot, K_p12, 2);
       Vec3d_copy(shape->A_CB.org, K_center);
-      RcsBody_addShape(BODY, shape);
 
       // Sphere at parent origin
-      shape = RcsShape_create();
+      shape = RcsBody_appendShape(BODY);
       shape->type = RCSSHAPE_SPHERE;
       shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
       shape->extents[0] = 0.15*len;
       shape->extents[1] = 0.15*len;
       shape->extents[2] = 0.15*len;
       snprintf(shape->color, RCS_MAX_NAMELEN, "%s", color);
-      RcsBody_addShape(BODY, shape);
 
       CHILD=RCSBODY_BY_ID(self, CHILD->nextId);
     }
@@ -3169,21 +3163,19 @@ void RcsGraph_copyResizeableShapes(RcsGraph* dst, const RcsGraph* src,
 
   do
   {
-    RcsShape** sSrc = bSrc->shape;
-    RcsShape** sDst = bDst->shape;
+    const unsigned int nShapes = bSrc->nShapes < bDst->nShapes ?
+                                 bSrc->nShapes : bDst->nShapes;
 
-    while ((*sSrc) && (*sDst))
+    for (unsigned int i=0; i< nShapes; ++i)
     {
-      RcsShape* shapeDst = *sDst;
+      RcsShape* shapeDst = &bDst->shapes[i];
 
       if (!shapeDst->resizeable)
       {
-        sSrc++;
-        sDst++;
         continue;
       }
 
-      const RcsShape* shapeSrc = *sSrc;
+      const RcsShape* shapeSrc = &bSrc->shapes[i];
       Vec3d_copy(shapeDst->extents, shapeSrc->extents);
       shapeDst->computeType = shapeSrc->computeType;
 
@@ -3197,9 +3189,6 @@ void RcsGraph_copyResizeableShapes(RcsGraph* dst, const RcsGraph* src,
         RcsShape_copy(shapeDst, shapeSrc);
       }
 
-
-      sSrc++;
-      sDst++;
     }
 
     bSrc = RcsBody_depthFirstTraversalGetNextById(src, bSrc);
@@ -3427,43 +3416,36 @@ void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src)
     RcsBody* bDst = &dst->bodies[i];
 
     // Determine body corresponding to BODY in the dst graph
-    RcsShape** shTmp = bDst->shape;
+    RcsShape* shTmp = bDst->shapes;
+    unsigned int nShTmp = bDst->nShapes;
     memcpy(bDst, bSrc, sizeof(RcsBody));
-    bDst->shape = shTmp;
+    bDst->shapes = shTmp;
+    bDst->nShapes = nShTmp;
 
     // Make a copy of all body shapes and attach them to the body
-    int nSrcShapes = RcsBody_numShapes(&src->bodies[i]);
-    int nDstShapes = RcsBody_numShapes(&dst->bodies[i]);
-
-    if (nDstShapes < nSrcShapes)
+    if (bDst->nShapes < bSrc->nShapes)
     {
-      bDst->shape = RREALLOC(bDst->shape, nSrcShapes + 1, RcsShape*);
-      RCHECK(bDst->shape);
-      memset(&bDst->shape[nDstShapes], 0,
-             (nSrcShapes-nDstShapes+1)*sizeof(RcsShape*));
+      bDst->shapes = RREALLOC(bDst->shapes, bSrc->nShapes, RcsShape);
+      bDst->nShapes = bSrc->nShapes;
+      RCHECK(bDst->shapes);
     }
 
-    for (int i = 0; i < nSrcShapes; i++)
+    for (unsigned int i = 0; i < bSrc->nShapes; i++)
     {
-      if (bDst->shape[i] == NULL)
-      {
-        bDst->shape[i] = RALLOC(RcsShape);
-      }
-
       // Block-copy of src shape over dst. We make a temporary copy of the
       // mesh pointer and revert it after the memcpy. It is currently the
       // only pointer in the RcsShape structure.
-      RcsMeshData* dstMesh = bDst->shape[i]->mesh;
-      memcpy(bDst->shape[i], bSrc->shape[i], sizeof(RcsShape));
-      bDst->shape[i]->mesh = dstMesh;
+      RcsMeshData* dstMesh = bDst->shapes[i].mesh;
+      memcpy(&bDst->shapes[i], &bSrc->shapes[i], sizeof(RcsShape));
+      bDst->shapes[i].mesh = dstMesh;
 
       // In case we have a resizeable shape of mesh type, we also make a deep
       // copy of all vertices and faces. This is needed for instance for soft
       // meshes during physics simulation.
-      if ((dstMesh) && (bDst->shape[i]->type==RCSSHAPE_MESH) &&
-          (bSrc->shape[i]->mesh) && (bDst->shape[i]->resizeable))
+      if ((dstMesh) && (bDst->shapes[i].type==RCSSHAPE_MESH) &&
+          (bSrc->shapes[i].mesh) && (bDst->shapes[i].resizeable))
       {
-        RcsMesh_copy(dstMesh, bSrc->shape[i]->mesh);
+        RcsMesh_copy(dstMesh, bSrc->shapes[i].mesh);
       }
     }
 
@@ -3763,9 +3745,13 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self,
   RcsGraph_setState(self, self->q, self->q_dot);
 
   RLOG(5, "Destroying temporary graph");
+
+  // Above we did a memcpy of the bodies, so that they took ownership of the
+  // shapes. We therefore don't destroy the shapes of the temporary graph.
   for (unsigned int i=0; i<other->nBodies; ++i)
   {
-    other->bodies[i].shape = NULL;
+    other->bodies[i].shapes = NULL;
+    other->bodies[i].nShapes = 0;
   }
 
   for (unsigned int i=0; i<other->nSensors; ++i)
@@ -3798,13 +3784,13 @@ RcsBody* RcsGraph_insertRandomBody(RcsGraph* graph, int parentId)
   bdy->Inertia.rot[2][2] = Math_getRandomNumber(0.1, 1.0);
   snprintf(bdy->name, RCS_MAX_NAMELEN, "body_%d", bdy->id);
 
-  int nShapes = Math_getRandomInteger(1, 5);
+  bdy->nShapes = Math_getRandomInteger(1, 5);
+  bdy->shapes = RNALLOC(bdy->nShapes, RcsShape);
 
-  for (int i=0; i<nShapes; ++i)
+  for (unsigned int i=0; i< bdy->nShapes; ++i)
   {
-    int shapeType = Math_getRandomInteger(1, RCSSHAPE_SHAPE_MAX-1);
-    RcsShape* shape = RcsShape_createRandomShape(shapeType);
-    RcsBody_addShape(bdy, shape);
+    int shapeType = RcsShape_randomShapeType();
+    RcsShape_initRandom(&bdy->shapes[i], shapeType);
   }
 
   // For each 10th joint, we create a rigid body joint

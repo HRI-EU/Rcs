@@ -130,20 +130,8 @@ void RcsBody_clear(RcsBody* self)
     return;
   }
 
-  // Destroy all associated shapes
-  NLOG(0, "Starting to delete shapes");
-  if (self->shape != NULL)
-  {
-    RcsShape** sPtr = self->shape;
-    while (*sPtr)
-    {
-      RcsShape_destroy(*sPtr);
-      sPtr++;
-    }
-
-    RFREE(self->shape);
-  }
-
+  self->nShapes = 0;
+  RFREE(self->shapes);
 }
 
 /*******************************************************************************
@@ -171,24 +159,7 @@ unsigned int RcsBody_numJoints(const RcsGraph* graph, const RcsBody* self)
  ******************************************************************************/
 unsigned int RcsBody_numShapes(const RcsBody* self)
 {
-  unsigned int nShapes = 0;
-
-  if (self == NULL)
-  {
-    return 0;
-  }
-
-  if (self->shape == NULL)
-  {
-    return 0;
-  }
-
-  for (RcsShape** sPtr = self->shape; *sPtr; sPtr++)
-  {
-    nShapes++;
-  }
-
-  return nShapes;
+  return self->nShapes;
 }
 
 /*******************************************************************************
@@ -217,36 +188,15 @@ unsigned int RcsBody_numDistanceShapes(const RcsBody* self)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void RcsBody_addShape(RcsBody* self, RcsShape* shape)
+RcsShape* RcsBody_appendShape(RcsBody* self)
 {
-  RCHECK_MSG(shape, "Failed adding NULL shape to body \"%s\"", self->name);
-  unsigned int nShapes = RcsBody_numShapes(self);
-  self->shape = (RcsShape**) realloc(self->shape, (nShapes+2)*sizeof(RcsShape*));
-  RCHECK(self->shape);
-  self->shape[nShapes] = shape;
-  self->shape[nShapes+1] = NULL;
-}
+  self->nShapes++;
+  self->shapes = (RcsShape*) realloc(self->shapes,
+                                     self->nShapes*sizeof(RcsShape));
+  RcsShape* newShape = &self->shapes[self->nShapes-1];
+  RcsShape_init(newShape);
 
-/*******************************************************************************
- * Destroy all associated shapes.
- ******************************************************************************/
-unsigned int RcsBody_removeShapes(RcsBody* self)
-{
-  unsigned int count = 0;
-
-  if (self->shape == NULL)
-  {
-    return 0;
-  }
-
-  RCSBODY_TRAVERSE_SHAPES(self)
-  {
-    RcsShape_destroy(SHAPE);
-    SHAPE = NULL;
-    count++;
-  }
-
-  return count;
+  return newShape;
 }
 
 /*******************************************************************************
@@ -254,33 +204,28 @@ unsigned int RcsBody_removeShapes(RcsBody* self)
  ******************************************************************************/
 bool RcsBody_removeShape(RcsBody* self, unsigned int idx)
 {
-  unsigned int nShapes = RcsBody_numShapes(self);
-
-  if (nShapes == 0)   // self or self->shape are NULL
+  // No shapes or index out of range
+  if ((self == NULL) || (self->nShapes == 0) || (idx > self->nShapes - 1))
   {
     return false;
   }
 
-  if (idx > nShapes-1)   // Index out of range
+  // Last shape: We just decrement the shape count and leave the memory
+  // unchanged
+  if (idx == self->nShapes-1)
   {
-    return false;
-  }
-  else if (idx == nShapes-1)   // Delete last one - no re-arranging needed
-  {
-    RcsShape_destroy(self->shape[idx]);
-    self->shape[idx] = NULL;
+    self->nShapes--;
     return true;
   }
 
-  // Index is somewhere in the middle. We first delete the corresponding shape
-  RcsShape_destroy(self->shape[idx]);
-
-  // .. and then move all successors one index to the front. The last index
-  // (idx+1) is a NULL pointer, so there is no invalid memory read.
-  for (unsigned int i=idx; i<nShapes-1; ++i)
-  {
-    self->shape[idx] = self->shape[idx+1];
-  }
+  // Index is anything valid except the last one: We copy all shapes after the
+  // index one shape-block to the front and decrease the shape count.
+  // For instance:
+  // nShapes=5, idx=0: memmove(&self->shapes[0], &self->shapes[1], 4);
+  // nShapes=5, idx=3: memmove(&self->shapes[3], &self->shapes[4], 1);
+  const unsigned int nShapesAfter = self->nShapes - idx - 1;
+  memmove(&self->shapes[idx], &self->shapes[idx+1], nShapesAfter);
+  self->nShapes--;
 
   return true;
 }
@@ -601,7 +546,7 @@ void RcsBody_fprint(FILE* out, const RcsBody* b, const RcsGraph* graph)
   // Shapes
   fprintf(out, "\n\tBody has %d shapes:\n", RcsBody_numShapes(b));
 
-  if (b->shape != NULL)
+  if (b->shapes != NULL)
   {
     RCSBODY_TRAVERSE_SHAPES(b)
     {
@@ -719,7 +664,7 @@ double RcsBody_distance(const RcsBody* b1,
 {
   RCHECK(b1 && b2);
 
-  if ((b1->shape==NULL) || (b2->shape==NULL))
+  if ((b1->shapes==NULL) || (b2->shapes==NULL))
   {
     RFATAL("Body has no shape in distance computation");
   }
@@ -742,29 +687,28 @@ double RcsBody_distance(const RcsBody* b1,
     Vec3d_setUnitVector(n, 2);
   }
 
-  RcsShape** sh1Ptr = &b1->shape[0];
-  RcsShape** sh2Ptr = &b2->shape[0];
-
   // Traverse all shapes of the 1st body
-  while (*sh1Ptr)
+  for (unsigned int i1=0; i1<b1->nShapes; ++i1)
   {
-    if (((*sh1Ptr)->computeType & RCSSHAPE_COMPUTE_DISTANCE) == 0)
+    const RcsShape* sh1 = &b1->shapes[i1];
+
+    if (!RcsShape_isOfComputeType(sh1, RCSSHAPE_COMPUTE_DISTANCE))
     {
-      sh1Ptr++;
       continue;
     }
 
     // Traverse all shapes of the 2nd body
-    while (*sh2Ptr)
+    for (unsigned int i2 = 0; i2 < b2->nShapes; ++i2)
     {
-      if (((*sh2Ptr)->computeType & RCSSHAPE_COMPUTE_DISTANCE) == 0)
+      const RcsShape* sh2 = &b2->shapes[i2];
+
+      if (!RcsShape_isOfComputeType(sh2, RCSSHAPE_COMPUTE_DISTANCE))
       {
-        sh2Ptr++;
         continue;
       }
 
       // Compute the closest distance via function table lookup
-      d = RcsShape_distance(*sh1Ptr, *sh2Ptr, &b1->A_BI, &b2->A_BI, p1, p2, ni);
+      d = RcsShape_distance(sh1, sh2, &b1->A_BI, &b2->A_BI, p1, p2, ni);
 
       // Copy results if distance is smaller than before
       if (d < d_closest)
@@ -785,16 +729,9 @@ double RcsBody_distance(const RcsBody* b1,
         }
       }
 
-      sh2Ptr++;
+    }   // for (int i2 = 0; i2 < b2->nShapes; ++i2)
 
-    }   // while(*sh2Ptr)
-
-    sh1Ptr++;
-    sh2Ptr = &b2->shape[0];   // Reset the 2nd shape pointer
-
-  }   // while(*sh1Ptr)
-
-
+  }   // for (int i1=0; i1<b1->nShapes; ++i1)
 
   if (d_closest == Math_infinity())
   {
@@ -815,20 +752,15 @@ double RcsBody_distanceToPoint(const RcsBody* body,
                                double I_nBdyPt[3])
 {
   RcsShape ptShape;
-  memset(&ptShape, 0, sizeof(RcsShape));
+  RcsShape_init(&ptShape);
   ptShape.type = RCSSHAPE_POINT;
-  HTr_setIdentity(&ptShape.A_CB);
-  Vec3d_setElementsTo(ptShape.scale3d, 1.0);
   ptShape.computeType |= RCSSHAPE_COMPUTE_DISTANCE;
 
   RcsBody ptBdy;
   RcsBody_init(&ptBdy);
   Vec3d_copy(ptBdy.A_BI.org, I_pt);
-
-  RcsShape* shapeVec[2];
-  shapeVec[0] = &ptShape;
-  shapeVec[1] = NULL;
-  ptBdy.shape = shapeVec;
+  ptBdy.shapes = &ptShape;
+  ptBdy.nShapes = 1;
 
   return RcsBody_distance(body, &ptBdy, I_cpBdy, NULL, I_nBdyPt);
 }
@@ -1669,7 +1601,7 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
     RcsJoint_fprintXML(out, JNT, graph);
   }
 
-  if (self->shape != NULL)
+  if (self->shapes != NULL)
   {
     RCSBODY_TRAVERSE_SHAPES(self)
     {
@@ -1989,7 +1921,10 @@ RcsBody* RcsBody_createBouncingSphere(RcsGraph* graph, const double pos[3],
                                       double mass, double radius)
 {
   static int sphereCount = 0;
-  RcsShape* sphere = RcsShape_create();
+
+  RcsBody* bdy = RcsGraph_insertGraphBody(graph, -1);
+  RcsShape* sphere = RcsBody_appendShape(bdy);
+  RcsShape_init(sphere);
 
   sphere->type = RCSSHAPE_SPHERE;
   Vec3d_setElementsTo(sphere->extents, radius);
@@ -1999,10 +1934,6 @@ RcsBody* RcsBody_createBouncingSphere(RcsGraph* graph, const double pos[3],
   strcpy(sphere->material, "bouncy");
   strcpy(sphere->color, "YELLOW");
 
-  RcsBody* bdy = RcsGraph_insertGraphBody(graph, -1);
-  bdy->shape = RNALLOC(2, RcsShape*);
-  bdy->shape[0] = sphere;
-  bdy->shape[1] = NULL;
   snprintf(bdy->name, RCS_MAX_NAMELEN, "BouncingSphere_%d", sphereCount);
   bdy->m = mass;
   bdy->physicsSim = RCSBODY_PHYSICS_DYNAMIC;
@@ -2093,14 +2024,14 @@ bool RcsBody_boxify(RcsBody* self, int computeType, bool replaceShapes)
     return false;
   }
 
-  if (self->shape == NULL)
+  if (self->nShapes == 0)
   {
     RLOG(4, "Body \"%s\" has no shapes attached - skipping boxify",
          self->name);
     return false;
   }
 
-  unsigned int nPts = 8*RcsBody_numShapes(self);
+  unsigned int nPts = 8*self->nShapes;
   MatNd* vertices = MatNd_create(nPts, 3);
   unsigned int shapeIdx = 0;
 
@@ -2142,7 +2073,9 @@ bool RcsBody_boxify(RcsBody* self, int computeType, bool replaceShapes)
   }
 
   MatNd_reshape(vertices, 8*shapeIdx, 3);
-  RcsShape* boxShape = RcsShape_create();
+
+  // Add boxified shape as last shape in the bodie's shape array
+  RcsShape* boxShape = RcsBody_appendShape(self);
   boxShape->type = RCSSHAPE_BOX;
 
   bool success = Rcs_computeOrientedBox(&boxShape->A_CB, boxShape->extents,
@@ -2162,53 +2095,7 @@ bool RcsBody_boxify(RcsBody* self, int computeType, bool replaceShapes)
   // shape, and add the frames after that
   if (replaceShapes)
   {
-    // Store all frames so that we can later add them again
-    unsigned int nFrameShapes = RcsBody_numShapes(self);
-    RcsShape** frameShapes = RNALLOC(nFrameShapes+1, RcsShape*);
-    nFrameShapes = 0;
-
-    RcsShape** sPtr = self->shape;
-    while (*sPtr)
-    {
-      RcsShape* si = *sPtr;
-      if (si->type==RCSSHAPE_REFFRAME)
-      {
-        frameShapes[nFrameShapes] = si;
-        nFrameShapes++;
-      }
-      sPtr++;
-    }
-
-    // Replace body shapes with enclosing box
-    sPtr = self->shape;
-    while (*sPtr)
-    {
-      if ((*sPtr)->type!=RCSSHAPE_REFFRAME)
-      {
-        RcsShape_destroy(*sPtr);
-      }
-      sPtr++;
-    }
-
-    // In case there were no shapes, we need to allocate memory
-    self->shape = RREALLOC(self->shape, 2+nFrameShapes, RcsShape*);
-    RCHECK(self->shape);
-    self->shape[0] = boxShape;
-    self->shape[1] = NULL;
-
-    for (unsigned int i=0; i<nFrameShapes; ++i)
-    {
-      self->shape[i+1] = frameShapes[i];
-      self->shape[i+2] = NULL;
-    }
-  }
-  else   // Add boxified shape as last shape in the bodie's shape array
-  {
-    unsigned int nShapes = RcsBody_numShapes(self);
-    self->shape = RREALLOC(self->shape, 2 + nShapes, RcsShape*);
-    RCHECK(self->shape);
-    self->shape[nShapes] = boxShape;
-    self->shape[nShapes + 1] = NULL;
+    RFATAL("Implement me");
   }
 
   MatNd_destroy(vertices);
@@ -2228,14 +2115,14 @@ bool RcsBody_capsulify_aabb(RcsBody* self, int computeType)
     return false;
   }
 
-  if (self->shape == NULL)
+  if (self->nShapes == 0)
   {
     RLOG(4, "Body \"%s\" has no shapes attached - skipping capsulify",
          self->name);
     return false;
   }
 
-  unsigned int nPts = 8 * RcsBody_numShapes(self);
+  unsigned int nPts = 8 * self->nShapes;
   MatNd* vertices = MatNd_create(nPts, 3);
   unsigned int shapeIdx = 0;
 
@@ -2277,7 +2164,7 @@ bool RcsBody_capsulify_aabb(RcsBody* self, int computeType)
   }
 
   MatNd_reshape(vertices, 8 * shapeIdx, 3);
-  RcsShape* sslShape = RcsShape_create();
+  RcsShape* sslShape = RcsBody_appendShape(self);
   sslShape->type = RCSSHAPE_SSL;
 
   bool success = Rcs_computeOrientedBox(&sslShape->A_CB, sslShape->extents,
@@ -2349,18 +2236,13 @@ bool RcsBody_capsulify_aabb(RcsBody* self, int computeType)
     self->shape[i + 1] = frameShapes[i];
     self->shape[i + 2] = NULL;
   }
-#else
-  unsigned int nShapes = RcsBody_numShapes(self);
-  self->shape = RREALLOC(self->shape, 2+nShapes, RcsShape*);
-  RCHECK(self->shape);
-  self->shape[nShapes] = sslShape;
-  self->shape[nShapes+1] = NULL;
+
 #endif
 
   MatNd_destroy(vertices);
 
   // Give it a random color
-  strcpy(self->shape[0]->color, "RANDOM");
+  strcpy(sslShape->color, "RANDOM");
   return true;
 }
 
@@ -2376,7 +2258,7 @@ bool RcsBody_capsulify(RcsBody* self, int computeType, bool replaceShapes)
     return false;
   }
 
-  if (self->shape == NULL)
+  if (self->nShapes==0)
   {
     RLOG(4, "Body \"%s\" has no shapes attached - skipping capsulify",
          self->name);
@@ -2391,9 +2273,10 @@ bool RcsBody_capsulify(RcsBody* self, int computeType, bool replaceShapes)
     return false;
   }
 
-  RcsShape* sslShape = RcsShape_create();
+  RcsShape* sslShape = RcsBody_appendShape(self);
   sslShape->type = RCSSHAPE_SSL;
   sslShape->computeType = computeType;
+  strcpy(sslShape->color, "RANDOM");
 
   bool success = Rcs_computeBoundingCapsule(&sslShape->A_CB, sslShape->extents,
                                             mesh->vertices, mesh->nVertices);
@@ -2404,20 +2287,10 @@ bool RcsBody_capsulify(RcsBody* self, int computeType, bool replaceShapes)
     return false;
   }
 
-
-
-#if 0
-#else
-  unsigned int nShapes = RcsBody_numShapes(self);
-  self->shape = RREALLOC(self->shape, 2 + nShapes, RcsShape*);
-  RCHECK(self->shape);
-  self->shape[nShapes] = sslShape;
-  strcpy(self->shape[nShapes]->color, "RANDOM");
-  self->shape[nShapes + 1] = NULL;
-#endif
-
-  // Give it a random color
-  //strcpy(self->shape[0]->color, "RANDOM");
+  if (replaceShapes)
+  {
+    RFATAL("Implement me");
+  }
 
   return true;
 }
@@ -2444,43 +2317,38 @@ void RcsBody_scale(RcsGraph* graph, RcsBody* bdy, double scale)
 /*******************************************************************************
  *
  ******************************************************************************/
-int RcsBody_getNumDistanceQueries(const RcsBody* b1, const RcsBody* b2)
+unsigned int RcsBody_getNumDistanceQueries(const RcsBody* b1, const RcsBody* b2)
 {
-  int fcnCount = 0;
-  RcsShape** sh1Ptr = &b1->shape[0];
-  RcsShape** sh2Ptr = &b2->shape[0];
+  unsigned int fcnCount = 0;
+
+  if ((b1==NULL) || (b2==NULL))
+  {
+    return 0;
+  }
 
   // Traverse all shapes of the 1st body
-  while (*sh1Ptr)
+  for (unsigned int i1=0; i1<b1->nShapes; ++i1)
   {
-    if (((*sh1Ptr)->computeType & RCSSHAPE_COMPUTE_DISTANCE) == 0)
+    const RcsShape* sh1 = &b1->shapes[i1];
+    if (RcsShape_isOfComputeType(sh1, RCSSHAPE_COMPUTE_DISTANCE))
     {
-      sh1Ptr++;
-      continue;
-    }
-
     // Traverse all shapes of the 2nd body
-    while (*sh2Ptr)
+      for (unsigned int i2 = 0; i2 < b2->nShapes; ++i2)
     {
-      if (((*sh2Ptr)->computeType & RCSSHAPE_COMPUTE_DISTANCE) == 0)
+        const RcsShape* sh2 = &b2->shapes[i2];
+        if (RcsShape_isOfComputeType(sh2, RCSSHAPE_COMPUTE_DISTANCE))
       {
-        sh2Ptr++;
-        continue;
+          if (RcsShape_hasDistanceFunction(sh1->type, sh2->type))
+          {
+            fcnCount++;
       }
-
-      // Compute the closest distance via function table lookup
-      fcnCount++;
-      sh2Ptr++;
-    }   // while(*sh2Ptr)
-
-    sh1Ptr++;
-    sh2Ptr = &b2->shape[0];   // Reset the 2nd shape pointer
-
-  }   // while(*sh1Ptr)
+        }
+      }
+    }
+  }
 
   return fcnCount;
 }
-
 
 /*******************************************************************************
  * See header.

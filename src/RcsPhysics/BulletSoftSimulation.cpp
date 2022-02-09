@@ -220,7 +220,7 @@ void BulletSoftSimulation::updateSoftMeshes()
     int bodyId = sbi->getUserIndex();
     RcsBody* rcsSoftBdy = RCSBODY_BY_ID(getGraph(), bodyId);
     RCHECK(rcsSoftBdy);
-    RcsShape* softShape = rcsSoftBdy->shape[0];
+    RcsShape* softShape = &rcsSoftBdy->shapes[0];
     RCHECK(softShape->type==RCSSHAPE_MESH);
     RcsMeshData* dstMesh = softShape->mesh;
 

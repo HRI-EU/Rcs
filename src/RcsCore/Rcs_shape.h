@@ -85,6 +85,17 @@ RcsDistanceFunction RcsShape_getDistanceFunction(unsigned int shapeTypeIdx1,
                                                  unsigned int shapeTypeIdx2);
 
 /*! \ingroup RcsShapeFunctions
+ *  \brief Returns true if a distance function between two shape types
+ *         exists, false otherwise.
+ *
+ *  \param[in] shapeTypeIdx1   First shape's index (see RCSSHAPE_TYPE)
+ *  \param[in] shapeTypeIdx2   Second shape's index (see RCSSHAPE_TYPE)
+ *  \return True if distance function exists, false otherwise.
+ */
+bool RcsShape_hasDistanceFunction(unsigned int shapeTypeIdx1,
+                                  unsigned int shapeTypeIdx2);
+
+/*! \ingroup RcsShapeFunctions
  *  \brief Returns the distance of s1 and s2. The closest points (in world
  *         coordinates) will be copied to I_cp1 and I_cp2. The unit normal
  *         vector (in world coordinates) of s1 (pointing away from the
@@ -207,18 +218,33 @@ void RcsShape_fprint(FILE* out, const RcsShape* s);
 void RcsShape_fprintXML(FILE* out, const RcsShape* self);
 
 /*! \ingroup RcsShapeFunctions
- *  \brief Creates an empty shape with everything zeroed except for these
+ *  \brief Initializes an empty shape with everything zeroed except for these
  *         defaults:
  *         - scale3d is (1, 1, 1)
  *         - A_CB is identity transform
  */
-RcsShape* RcsShape_create();
+void RcsShape_init(RcsShape* self);
 
 /*! \ingroup RcsShapeFunctions
- *  \brief Creates a shape of the given type with random parameters. Used for
- *         distance function testing.
+ *  \brief Returns a random shape type that is supported by the compiled
+ *         version. For instance, the function will not return a RCSSHAPE_OCTREE
+ *         type if the OctoMap support has not been compiled.
  */
-RcsShape* RcsShape_createRandomShape(int shapeType);
+int RcsShape_randomShapeType();
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Returns true if the shape type is supported by the compiled
+ *         version. For instance, the function will return false if a
+ *         RCSSHAPE_OCTREE type if the OctoMap support has not been compiled.
+ */
+bool RcsShape_isSupported(int shapeType);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Initializes a shape to the given type with random parameters. Used
+ *         for distance function testing. Returns false in case the shape
+ *         type is out of range or not supported, or the shape is NULL.
+ */
+bool RcsShape_initRandom(RcsShape* shape, int shapeType);
 
 /*! \ingroup RcsShapeFunctions
  *  \brief Creates a frame shape with default parameters and the given scaling.

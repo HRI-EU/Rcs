@@ -155,7 +155,7 @@ static bool getXMLNodeVec3(xmlNodePtr node, double* x)
 }
 
 
-bool getXMLNodeQuat(xmlNodePtr node, double A_BI[3][3])
+static bool getXMLNodeQuat(xmlNodePtr node, double A_BI[3][3])
 {
   double x[4], qw, qx, qy, qz;
 
@@ -183,6 +183,573 @@ bool getXMLNodeQuat(xmlNodePtr node, double A_BI[3][3])
   A_BI[2][2] = 1.0f - 2.0f*qx*qx - 2.0f*qy*qy;
 
   return true;
+}
+
+static xmlNodePtr getXMLNodeForOpenRave(const char* filename, xmlDocPtr* doc)
+{
+  xmlNodePtr rave_node = NULL;
+
+  rave_node = parseXMLFile(filename, "Robot", doc);
+
+  if (rave_node == NULL)
+  {
+    RLOG(5, "Couldn't find node \"Robot\" - checking for \"Environment\"");
+    rave_node = parseXMLFile(filename, "Environment", doc);
+  }
+
+  if (rave_node == NULL)
+  {
+    RLOG(5, "Couldn't find node \"Environment\" neither - returning NULL");
+  }
+
+  return rave_node;
+}
+
+static void RcsShape_initFromOpenRAVEXML(RcsShape* shape, xmlNode* node,
+                                         RcsBody* body)
+{
+  /// \todo: not all shape types are supported yet
+  char str[RCS_MAX_NAMELEN];
+  getXMLNodePropertyStringN(node, "type", str, RCS_MAX_NAMELEN);
+  if (STRCASEEQ(str, "box"))
+  {
+    shape->type = RCSSHAPE_BOX;
+  }
+  else if (STRCASEEQ(str, "sphere"))
+  {
+    shape->type = RCSSHAPE_SPHERE;
+  }
+  else if (STRCASEEQ(str, "capsule"))
+  {
+    shape->type = RCSSHAPE_SSL;
+  }
+  else if (STRCASEEQ(str, "trimesh"))
+  {
+    shape->type = RCSSHAPE_MESH;
+  }
+  else if (STRCASEEQ(str, "frame"))
+  {
+    shape->type = RCSSHAPE_REFFRAME;
+  }
+  else if (STRCASEEQ(str, "cylinder"))
+  {
+    shape->type = RCSSHAPE_CYLINDER;
+  }
+  else
+  {
+    RMSG("OpenRave: Unsupported shape type in \"%s\"", str);
+  }
+
+  if (shape->type == RCSSHAPE_REFFRAME)
+  {
+    // set default extents
+    Vec3d_setElementsTo(shape->extents, 0.9);
+  }
+
+  xmlNodePtr child = getXMLChildByName(node, "extents");
+  getXMLNodeVecN(child, shape->extents, 3);
+  if (shape->type == RCSSHAPE_BOX)
+  {
+    Vec3d_constMulSelf(shape->extents, 2.0);
+  }
+
+  child = getXMLChildByName(node, "radius");
+  getXMLNodeVecN(child, &shape->extents[0], 1);
+
+  child = getXMLChildByName(node, "height");
+  getXMLNodeVecN(child, &shape->extents[2], 1);
+
+  child = getXMLChildByName(node, "translation");
+  getXMLNodeVec3(child, shape->A_CB.org);
+
+  child = getXMLChildByName(node, "quat");
+  getXMLNodeQuat(child, shape->A_CB.rot);
+
+  child = getXMLChildByName(node, "scale");
+  double scale1d = 1.0;
+  getXMLNodeVecN(child, &scale1d, 1);
+  Vec3d_setElementsTo(shape->scale3d, scale1d);
+
+  /// \todo (AH, Jan 27, 2014): rotationaxis parsing should be removed assumptions and cleaned up.
+  child = node->children;
+  double ea[3] = { 0.0, 0.0, 0.0 };
+  while (child)
+  {
+    if (STREQ((const char*)BAD_CAST child->name, "rotationaxis"))
+    {
+#if 1
+      double x[4];
+      int axis[3];
+      getXMLNodeVecN(child, x, 4);
+
+      for (unsigned int i = 0; i < 3; i++)
+      {
+        axis[i] = (int)(x[i]);
+      }
+
+      if (axis[0] == 1)
+      {
+        ea[0] = x[3];
+      }
+      else if (axis[1] == 1)
+      {
+        ea[1] = x[3];
+      }
+      else if (axis[2] == 1)
+      {
+        if (shape->type == RCSSHAPE_SSL)
+        {
+          ea[1] = x[3];
+        }
+        else
+        {
+          ea[2] = x[3];
+        }
+      }
+#else
+      double x[4], A_KI[3][3];
+      getXMLNodeVecN(child, x, 4);
+      Mat3d_fromAxisAngle(A_KI, x, x[3]);
+      Mat3d_getEulerAngles(A_KI, ea);
+#endif
+    }
+    child = child->next;
+  }
+
+  // angles are specified in degree
+  Vec3d_constMulSelf(ea, M_PI / 180.0);
+
+
+  Mat3d_fromEulerAngles(shape->A_CB.rot, ea);
+
+  // need to adapt for HRI
+  if (shape->type == RCSSHAPE_SSL)
+  {
+    // offset of thx (-90 deg)
+    ea[0] -= 0.5*M_PI;
+    Mat3d_fromEulerAngles(shape->A_CB.rot, ea);
+
+    HTr local;
+    HTr_setIdentity(&local);
+    local.org[2] -= 0.5 * shape->extents[2];
+
+    HTr temp;
+    HTr_copy(&temp, &shape->A_CB);
+    HTr_transform(&shape->A_CB, &temp, &local);
+  }
+
+  // Compute type
+  bool distance = true, graphics = true, physics = true;
+
+  // Physics computation is not carried out for non-physics objects by default.
+  if (body->physicsSim == RCSBODY_PHYSICS_NONE)
+  {
+    physics = false;
+  }
+
+  // Physics and distance computation is not carried out for meshes by default.
+  if (shape->type == RCSSHAPE_MESH)
+  {
+    physics = false;
+    distance = false;
+  }
+
+  // Visualizing all openRAVE bodies for now
+#if 0
+  // Only meshes are added to the graphics node by default (also SSLs are visualized by default here)
+  if (shape->type != RCSSHAPE_MESH)
+  {
+    graphics = false;
+  }
+#endif
+
+  // Reference frames are only considered for the graphics nodes by default
+  if (shape->type == RCSSHAPE_REFFRAME)
+  {
+    graphics = true;
+    distance = false;
+    physics = false;
+  }
+
+  getXMLNodePropertyBoolString(node, "distance", &distance);
+  getXMLNodePropertyBoolString(node, "physics", &physics);
+  getXMLNodePropertyBoolString(node, "render", &graphics);
+
+  if (distance == true)
+  {
+    shape->computeType |= RCSSHAPE_COMPUTE_DISTANCE;
+  }
+  if (physics == true)
+  {
+    shape->computeType |= RCSSHAPE_COMPUTE_PHYSICS;
+  }
+  if (graphics == true)
+  {
+    shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
+  }
+
+  // Mesh file
+  char fileName[RCS_MAX_FILENAMELEN] = "-";
+  child = getXMLChildByName(node, "render");
+  if (child == NULL)
+  {
+    child = getXMLChildByName(node, "Data");
+  }
+  int strLength = getXMLNodeString(child, fileName);
+
+  if (strLength > 0)
+  {
+    char fullName[RCS_MAX_FILENAMELEN] = "-";
+    RCHECK(shape->type == RCSSHAPE_MESH);
+    Rcs_getAbsoluteFileName(fileName, fullName);
+    snprintf(shape->meshFile, RCS_MAX_FILENAMELEN, "%s", fullName);
+
+    if (File_exists(shape->meshFile) == false)
+    {
+      RLOG(4, "Mesh file \"%s\" not found!", fileName);
+    }
+
+  }
+
+  /// \todo textures, colors, materials not supported yet
+  strcpy(shape->color, "DEFAULT");
+  strcpy(shape->material, "default");
+}
+
+static RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
+                                                const double* q0)
+{
+  char msg[RCS_MAX_NAMELEN];
+  bool verbose = false;
+  int strLength = 0;
+
+  // if type is fix, we do not create the joint
+  getXMLNodePropertyStringN(node, "type", msg, RCS_MAX_NAMELEN);
+  if (STREQ(msg, "fix"))
+  {
+    return NULL;
+  }
+
+
+  // first find body that the joint is attached to
+  /// \todo: offsetfrom is used and Body nodes are ignored,
+  // that may not be valid for all OpenRAVE files
+  xmlNodePtr child = getXMLChildByName(node, "offsetfrom");
+  RCHECK_MSG(child, "Couldn't find tag \"offsetfrom\"");
+
+
+  char buff[RCS_MAX_NAMELEN];
+  getXMLNodeString(child, buff);
+
+  RcsBody* bdy = RcsGraph_getBodyByName(self, buff);
+  RCHECK(bdy);
+
+  RcsJoint* jnt = RcsGraph_insertGraphJoint(self, bdy->id);
+
+  jnt->weightJL = 1.0;
+  jnt->weightCA = 1.0;
+  jnt->weightMetric = 1.0;
+  jnt->maxTorque = 1.0;
+  jnt->ctrlType = RCSJOINT_CTRL_POSITION;
+
+  //  Joint name
+  strLength = getXMLNodePropertyStringN(node, "name", NULL, 0);
+
+  if (strLength > 0)
+  {
+    getXMLNodePropertyStringN(node, "name", jnt->name, RCS_MAX_NAMELEN);
+  }
+  else
+  {
+    snprintf(jnt->name, RCS_MAX_NAMELEN, "%s", "unnamed joint");
+    RLOG(4, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
+         "unnamed joint\"", bdy->name,
+         bdy->parentId != -1 ? self->bodies[bdy->parentId].name : "NULL");
+  }
+
+  RLOG(5, "Inserted joint \"%s\" into body \"%s\"", jnt->name, bdy->name);
+
+  if (verbose == true)
+  {
+    RMSG("Body %s: Adding joint with id = %d", bdy->name, jnt->id);
+  }
+
+  // joints in OpenRAVE format don't have transformations, but we have
+  // thus the first joint in the list of joints of the body, takes over the
+  // body's transformation
+  if (bdy->jntId == jnt->id)
+  {
+    HTr_copy(&jnt->A_JP, &bdy->A_BP);
+    HTr_setIdentity(&bdy->A_BP);
+  }
+
+  /// \todo: Groups are not supported yet
+
+  // Joint constraint
+  /// \todo: Constrained joints are not supported yet
+  jnt->constrained = false;
+
+  // Joint type
+  /// \todo: Currently only rotational joints are supported
+  xmlNodePtr axis_node = getXMLChildByName(node, "axis");
+  RCHECK(axis_node);
+
+  int axis[3];
+  getXMLNodeIntN(axis_node, axis, 3);
+
+  if (STREQ(msg, "hinge"))
+  {
+    if (axis[0] == 1)
+    {
+      jnt->type = RCSJOINT_ROT_X;
+      jnt->dirIdx = 0;
+    }
+    else if (axis[1] == 1)
+    {
+      jnt->type = RCSJOINT_ROT_Y;
+      jnt->dirIdx = 1;
+    }
+    else if (axis[2] == 1)
+    {
+      jnt->type = RCSJOINT_ROT_Z;
+      jnt->dirIdx = 2;
+    }
+  }
+  else if (STREQ(msg, "slider"))
+  {
+    if (axis[0] == 1)
+    {
+      jnt->type = RCSJOINT_TRANS_X;
+      jnt->dirIdx = 0;
+    }
+    else if (axis[1] == 1)
+    {
+      jnt->type = RCSJOINT_TRANS_Y;
+      jnt->dirIdx = 1;
+    }
+    else if (axis[2] == 1)
+    {
+      jnt->type = RCSJOINT_TRANS_Z;
+      jnt->dirIdx = 2;
+    }
+  }
+  else
+  {
+    RFATAL("Joint \"%s\": Unknown joint type \"%s\"", jnt->name, msg);
+  }
+
+  // limits
+  xmlNodePtr limits_node = getXMLChildByName(node, "limitsdeg");
+  if (limits_node == NULL)
+  {
+    limits_node = getXMLChildByName(node, "limits");
+  }
+  RCHECK(limits_node);
+
+  double range[2];
+  getXMLNodeVecN(limits_node, range, 2);
+
+  jnt->q_min = range[0];
+  jnt->q_max = range[1];
+
+  RCHECK(jnt->q_min <= jnt->q_max);
+  if (RcsJoint_isRotation(jnt) == true)
+  {
+    jnt->q_min *= (M_PI / 180.0);
+    jnt->q_max *= (M_PI / 180.0);
+  }
+
+  if (!q0)
+  {
+    // q0 from openrave model with tag "initial" [rad]
+    xmlNodePtr initial_node = getXMLChildByName(node, "initial");
+    if (initial_node != NULL)
+    {
+      double initial;
+      getXMLNodeVecN(initial_node, &initial, 1);
+      jnt->q0 = initial;
+    }
+    else
+    {
+      // there is no initial tag in openrave, so we set the half of the range
+      jnt->q0 = (jnt->q_max + jnt->q_min) / 2.0;
+      RLOG(1, "Initial tag is not found. q0 is set the half of the range");
+    }
+
+    if ((jnt->q0 < jnt->q_min) || (jnt->q0 > jnt->q_max))
+    {
+      RLOGS(1, "initial value not between q_min and q_max for joint \"%s\": q0"
+            "is set the half of the range", jnt->name);
+      jnt->q0 = (jnt->q_max + jnt->q_min) / 2.0;
+    }
+  }
+  else
+  {
+    jnt->q0 = *q0;
+  }
+
+  jnt->q_init = jnt->q0;
+
+  /// \todo: HGF coupled joint equations is not supported, this is just a workaround
+  // Coupled joint
+  strLength = getXMLNodePropertyStringN(node, "coupledTo", NULL, 0);
+
+  if (strLength > 0)
+  {
+    getXMLNodePropertyStringN(node, "coupledTo", jnt->coupledJntName, RCS_MAX_NAMELEN);
+
+    unsigned int polyGrad = getXMLNodeNumStrings(node, "couplingFactor");
+    if (polyGrad == 0)
+    {
+      polyGrad = 1;
+    }
+    RLOG(5, "Coupled joint \"%s\" has %d parameters", jnt->name, polyGrad);
+    RCHECK_MSG(polyGrad == 1, "Currently only polynomials of order 1 are "
+               "supported, and not %d parameters", polyGrad);
+    getXMLNodePropertyVecN(node, "couplingFactor", jnt->couplingPoly, polyGrad);
+    jnt->nCouplingCoeff = polyGrad;
+  }
+
+
+  /// \todo: additional parameters like gearRatio and so on are not supported
+
+  if (verbose)
+  {
+    RPAUSE();
+  }
+
+  return jnt;
+}
+
+static RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode,
+                                              RcsBody* root)
+{
+  // Return if node is not a body node
+  if (!isXMLNodeNameNoCase(bdyNode, "Body"))
+  {
+    return NULL;
+  }
+
+  // Body name
+  char msg[RCS_MAX_NAMELEN];
+  strcpy(msg, "unnamed body");
+
+  // The name as indicated in the xml file
+  getXMLNodePropertyStringN(bdyNode, "name", msg, RCS_MAX_NAMELEN);
+  RCHECK_MSG(strncmp(msg, "GenericBody", 11) != 0,
+             "The name \"GenericBody\" is reserved for internal use");
+
+  /// \todo Groups not yet supported by OpenRAVE parser
+  RcsBody* parentBdy = root;
+
+  // Find predecessor
+  xmlNodePtr child = getXMLChildByName(bdyNode, "offsetfrom");
+  if (child)
+  {
+    char buff[RCS_MAX_NAMELEN];
+    getXMLNodeString(child, buff);
+    parentBdy = RcsGraph_getBodyByName(self, buff);
+  }
+
+  RcsBody* b = RcsGraph_insertGraphBody(self, parentBdy ? parentBdy->id : -1);
+
+  // Fully qualified name
+  snprintf(b->bdyXmlName, RCS_MAX_NAMELEN, "%s", msg);
+  snprintf(b->name, RCS_MAX_NAMELEN, "%s", msg);
+
+  // check for translation
+  child = getXMLChildByName(bdyNode, "Translation");
+
+  if (child && !root)
+  {
+    getXMLNodeVec3(child, b->A_BP.org);
+  }
+
+  // check for quat
+  child = getXMLChildByName(bdyNode, "Quat");
+  if (child && !root)
+  {
+    getXMLNodeQuat(child, b->A_BP.rot);
+  }
+
+  /// \todo Physics not supported yet
+
+  /// \todo Rigid body joints not supported yet
+
+  // Things one level deeper
+  xmlNodePtr shapeNode = bdyNode->children;
+
+  // Populate shapes array
+  while (shapeNode != NULL)
+  {
+    if (isXMLNodeNameNoCase(shapeNode, "geom"))
+    {
+      RcsShape* sh = RcsBody_appendShape(b);
+      RcsShape_initFromOpenRAVEXML(sh, shapeNode, b);
+    }
+
+    shapeNode = shapeNode->next;
+  }
+
+  // Dynamic properties
+  Mat3d_setZero(b->Inertia.rot);
+
+  // get mass
+  xmlNodePtr mass_node = getXMLChildByName(bdyNode, "mass");
+
+  if (mass_node)
+  {
+    char buff[RCS_MAX_NAMELEN];
+    getXMLNodePropertyStringN(mass_node, "type", buff, RCS_MAX_NAMELEN);
+
+    // we only support custom mass types for now
+    RCHECK(STREQ(buff, "custom"));
+
+    // get total node
+    xmlNodePtr total_node = getXMLChildByName(mass_node, "total");
+    if (total_node != NULL)
+    {
+      getXMLNodeVecN(total_node, &b->m, 1);
+      RCHECK_MSG(b->m >= 0.0, "Body \"%s\" has negative mass: %f",
+                 b->name, b->m);
+    }
+    else
+    {
+      RLOG(4, "Couldn't find node \"total\" for body \"%s\"", b->name);
+    }
+
+    // get cog
+    xmlNodePtr com_node = getXMLChildByName(mass_node, "com");
+    RCHECK(com_node);
+    getXMLNodeVec3(com_node, b->Inertia.org);
+
+
+    // get inertia
+    xmlNodePtr inertia_node = getXMLChildByName(mass_node, "inertia");
+
+    if (inertia_node)
+    {
+      getXMLNodeVecN(inertia_node, &b->Inertia.rot[0][0], 9);
+    }
+    else
+    {
+      // If not specified in the xml file, compute the inertia tensor based on the
+      // volume of the shapes and the given body mass
+      RcsBody_computeInertiaTensor(b, &b->Inertia);
+    }
+  }
+
+
+  // Check if we have a finite inertia but no mass
+  if (Mat3d_getFrobeniusnorm(b->Inertia.rot) > 0.0)
+  {
+    RCHECK_MSG(b->m > 0.0, "You specified a non-zero inertia but a zero mass "
+               "for body \"%s\". Shame on you!", b->name);
+  }
+
+  /// \todo: Sensors are not supported yet
+
+  return b;
 }
 
 
@@ -297,587 +864,3 @@ void RcsGraph_createBodiesFromOpenRAVENode(RcsGraph* self, RcsBody* parent,
 
 }
 
-
-RcsBody* RcsBody_createFromOpenRAVEXML(RcsGraph* self, xmlNode* bdyNode, RcsBody* root)
-{
-  // Return if node is not a body node
-  if (!isXMLNodeNameNoCase(bdyNode, "Body"))
-  {
-    return NULL;
-  }
-
-  // Body name
-  char msg[RCS_MAX_NAMELEN];
-  strcpy(msg, "unnamed body");
-
-  // The name as indicated in the xml file
-  getXMLNodePropertyStringN(bdyNode, "name", msg, RCS_MAX_NAMELEN);
-  RCHECK_MSG(strncmp(msg, "GenericBody", 11) != 0,
-             "The name \"GenericBody\" is reserved for internal use");
-
-  /// \todo Groups not yet supported by OpenRAVE parser
-  RcsBody* parentBdy = root;
-
-  // Find predecessor
-  xmlNodePtr child = getXMLChildByName(bdyNode, "offsetfrom");
-  if (child)
-  {
-    char buff[RCS_MAX_NAMELEN];
-    getXMLNodeString(child, buff);
-    parentBdy = RcsGraph_getBodyByName(self, buff);
-  }
-
-  RcsBody* b = RcsGraph_insertGraphBody(self, parentBdy ? parentBdy->id : -1);
-
-  // Fully qualified name
-  snprintf(b->bdyXmlName, RCS_MAX_NAMELEN, "%s", msg);
-  snprintf(b->name, RCS_MAX_NAMELEN, "%s", msg);
-
-  // check for translation
-  child = getXMLChildByName(bdyNode, "Translation");
-
-  if (child && !root)
-  {
-    getXMLNodeVec3(child, b->A_BP.org);
-  }
-
-  // check for quat
-  child = getXMLChildByName(bdyNode, "Quat");
-  if (child && !root)
-  {
-    getXMLNodeQuat(child, b->A_BP.rot);
-  }
-
-  /// \todo Physics not supported yet
-
-  /// \todo Rigid body joints not supported yet
-
-  // Things one level deeper
-  xmlNodePtr shapeNode = bdyNode->children;
-
-  // Allocate memory for shape node lists
-  b->shape = RNALLOC(getNumXMLNodes(shapeNode, "geom") + 1, RcsShape*);
-
-  int shapeCount = 0;
-
-  while (shapeNode != NULL)
-  {
-    b->shape[shapeCount] = RcsShape_createFromOpenRAVEXML(shapeNode, b);
-
-    if (b->shape[shapeCount] != NULL)
-    {
-      shapeCount++;
-    }
-
-    shapeNode = shapeNode->next;
-  }
-
-
-  // Dynamic properties
-  Mat3d_setZero(b->Inertia.rot);
-
-  // get mass
-  xmlNodePtr mass_node = getXMLChildByName(bdyNode, "mass");
-
-  if (mass_node)
-  {
-    char buff[RCS_MAX_NAMELEN];
-    getXMLNodePropertyStringN(mass_node, "type", buff, RCS_MAX_NAMELEN);
-
-    // we only support custom mass types for now
-    RCHECK(STREQ(buff, "custom"));
-
-    // get total node
-    xmlNodePtr total_node = getXMLChildByName(mass_node, "total");
-    if (total_node != NULL)
-    {
-      getXMLNodeVecN(total_node, &b->m, 1);
-      RCHECK_MSG(b->m >= 0.0, "Body \"%s\" has negative mass: %f",
-                 b->name, b->m);
-    }
-    else
-    {
-      RLOG(4, "Couldn't find node \"total\" for body \"%s\"", b->name);
-    }
-
-    // get cog
-    xmlNodePtr com_node = getXMLChildByName(mass_node, "com");
-    RCHECK(com_node);
-    getXMLNodeVec3(com_node, b->Inertia.org);
-
-
-    // get inertia
-    xmlNodePtr inertia_node = getXMLChildByName(mass_node, "inertia");
-
-    if (inertia_node)
-    {
-      getXMLNodeVecN(inertia_node, &b->Inertia.rot[0][0], 9);
-    }
-    else
-    {
-      // If not specified in the xml file, compute the inertia tensor based on the
-      // volume of the shapes and the given body mass
-      RcsBody_computeInertiaTensor(b, &b->Inertia);
-    }
-  }
-
-
-  // Check if we have a finite inertia but no mass
-  if (Mat3d_getFrobeniusnorm(b->Inertia.rot) > 0.0)
-  {
-    RCHECK_MSG(b->m > 0.0, "You specified a non-zero inertia but a zero mass "
-               "for body \"%s\". Shame on you!", b->name);
-  }
-
-  /// \todo: Sensors are not supported yet
-
-  return b;
-}
-
-RcsJoint* RcsJoint_createFromOpenRAVEXML(RcsGraph* self, xmlNode* node,
-                                         const double* q0)
-{
-  char msg[RCS_MAX_NAMELEN];
-  bool verbose = false;
-  int strLength = 0;
-
-  // if type is fix, we do not create the joint
-  getXMLNodePropertyStringN(node, "type", msg, RCS_MAX_NAMELEN);
-  if (STREQ(msg, "fix"))
-  {
-    return NULL;
-  }
-
-
-  // first find body that the joint is attached to
-  /// \todo: offsetfrom is used and Body nodes are ignored,
-  // that may not be valid for all OpenRAVE files
-  xmlNodePtr child = getXMLChildByName(node, "offsetfrom");
-  RCHECK_MSG(child, "Couldn't find tag \"offsetfrom\"");
-
-
-  char buff[RCS_MAX_NAMELEN];
-  getXMLNodeString(child, buff);
-
-  RcsBody* bdy = RcsGraph_getBodyByName(self, buff);
-  RCHECK(bdy);
-
-  RcsJoint* jnt = RcsGraph_insertGraphJoint(self, bdy->id);
-
-  jnt->weightJL = 1.0;
-  jnt->weightCA = 1.0;
-  jnt->weightMetric = 1.0;
-  jnt->maxTorque = 1.0;
-  jnt->ctrlType = RCSJOINT_CTRL_POSITION;
-
-  //  Joint name
-  strLength = getXMLNodePropertyStringN(node, "name", NULL, 0);
-
-  if (strLength > 0)
-  {
-    getXMLNodePropertyStringN(node, "name", jnt->name, RCS_MAX_NAMELEN);
-  }
-  else
-  {
-    snprintf(jnt->name, RCS_MAX_NAMELEN, "%s", "unnamed joint");
-    RLOG(4, "A joint between bodies \"%s\" and \"%s\" has no name - using \""
-         "unnamed joint\"", bdy->name,
-         bdy->parentId!=-1 ? self->bodies[bdy->parentId].name : "NULL");
-  }
-
-  RLOG(5, "Inserted joint \"%s\" into body \"%s\"", jnt->name, bdy->name);
-
-  if (verbose == true)
-  {
-    RMSG("Body %s: Adding joint with id = %d", bdy->name, jnt->id);
-  }
-
-  // joints in OpenRAVE format don't have transformations, but we have
-  // thus the first joint in the list of joints of the body, takes over the
-  // body's transformation
-  if (bdy->jntId == jnt->id)
-  {
-    HTr_copy(&jnt->A_JP, &bdy->A_BP);
-    HTr_setIdentity(&bdy->A_BP);
-  }
-
-  /// \todo: Groups are not supported yet
-
-  // Joint constraint
-  /// \todo: Constrained joints are not supported yet
-  jnt->constrained = false;
-
-  // Joint type
-  /// \todo: Currently only rotational joints are supported
-  xmlNodePtr axis_node = getXMLChildByName(node, "axis");
-  RCHECK(axis_node);
-
-  int axis[3];
-  getXMLNodeIntN(axis_node, axis, 3);
-
-  if (STREQ(msg, "hinge"))
-  {
-    if (axis[0] == 1)
-    {
-      jnt->type = RCSJOINT_ROT_X;
-      jnt->dirIdx = 0;
-    }
-    else if (axis[1] == 1)
-    {
-      jnt->type = RCSJOINT_ROT_Y;
-      jnt->dirIdx = 1;
-    }
-    else if (axis[2] == 1)
-    {
-      jnt->type = RCSJOINT_ROT_Z;
-      jnt->dirIdx = 2;
-    }
-  }
-  else if (STREQ(msg, "slider"))
-  {
-    if (axis[0] == 1)
-    {
-      jnt->type = RCSJOINT_TRANS_X;
-      jnt->dirIdx = 0;
-    }
-    else if (axis[1] == 1)
-    {
-      jnt->type = RCSJOINT_TRANS_Y;
-      jnt->dirIdx = 1;
-    }
-    else if (axis[2] == 1)
-    {
-      jnt->type = RCSJOINT_TRANS_Z;
-      jnt->dirIdx = 2;
-    }
-  }
-  else
-  {
-    RFATAL("Joint \"%s\": Unknown joint type \"%s\"", jnt->name, msg);
-  }
-
-  // limits
-  xmlNodePtr limits_node = getXMLChildByName(node, "limitsdeg");
-  if (limits_node==NULL)
-  {
-    limits_node = getXMLChildByName(node, "limits");
-  }
-  RCHECK(limits_node);
-
-  double range[2];
-  getXMLNodeVecN(limits_node, range, 2);
-
-  jnt->q_min = range[0];
-  jnt->q_max = range[1];
-
-  RCHECK(jnt->q_min <= jnt->q_max);
-  if (RcsJoint_isRotation(jnt) == true)
-  {
-    jnt->q_min *= (M_PI / 180.0);
-    jnt->q_max *= (M_PI / 180.0);
-  }
-
-  if (!q0)
-  {
-    // q0 from openrave model with tag "initial" [rad]
-    xmlNodePtr initial_node = getXMLChildByName(node, "initial");
-    if (initial_node != NULL)
-    {
-      double initial;
-      getXMLNodeVecN(initial_node, &initial, 1);
-      jnt->q0 = initial;
-    }
-    else
-    {
-      // there is no initial tag in openrave, so we set the half of the range
-      jnt->q0 = (jnt->q_max + jnt->q_min) / 2.0;
-      RLOG(1, "Initial tag is not found. q0 is set the half of the range");
-    }
-
-    if ((jnt->q0 < jnt->q_min) || (jnt->q0 > jnt->q_max))
-    {
-      RLOGS(1, "initial value not between q_min and q_max for joint \"%s\": q0"
-            "is set the half of the range", jnt->name);
-      jnt->q0 = (jnt->q_max + jnt->q_min) / 2.0;
-    }
-  }
-  else
-  {
-    jnt->q0 = *q0;
-  }
-
-  jnt->q_init = jnt->q0;
-
-  /// \todo: HGF coupled joint equations is not supported, this is just a workaround
-  // Coupled joint
-  strLength = getXMLNodePropertyStringN(node, "coupledTo", NULL, 0);
-
-  if (strLength > 0)
-  {
-    getXMLNodePropertyStringN(node, "coupledTo", jnt->coupledJntName, RCS_MAX_NAMELEN);
-
-    unsigned int polyGrad = getXMLNodeNumStrings(node, "couplingFactor");
-    if (polyGrad == 0)
-    {
-      polyGrad = 1;
-    }
-    RLOG(5, "Coupled joint \"%s\" has %d parameters", jnt->name, polyGrad);
-    RCHECK_MSG(polyGrad == 1, "Currently only polynomials of order 1 are "
-               "supported, and not %d parameters", polyGrad);
-    getXMLNodePropertyVecN(node, "couplingFactor", jnt->couplingPoly, polyGrad);
-    jnt->nCouplingCoeff = polyGrad;
-  }
-
-
-  /// \todo: additional parameters like gearRatio and so on are not supported
-
-  if (verbose)
-  {
-    RPAUSE();
-  }
-
-  return jnt;
-}
-
-RcsShape* RcsShape_createFromOpenRAVEXML(xmlNode* node, RcsBody* body)
-{
-  // Return if no tag
-  if (!isXMLNodeNameNoCase(node, "geom"))
-  {
-    return NULL;
-  }
-
-  // Allocate memory and set defaults
-  RcsShape* shape = RcsShape_create();
-
-  /// \todo: not all shape types are supported yet
-  char str[RCS_MAX_NAMELEN];
-  getXMLNodePropertyStringN(node, "type", str, RCS_MAX_NAMELEN);
-  if (STRCASEEQ(str, "box"))
-  {
-    shape->type = RCSSHAPE_BOX;
-  }
-  else if (STRCASEEQ(str, "sphere"))
-  {
-    shape->type = RCSSHAPE_SPHERE;
-  }
-  else if (STRCASEEQ(str, "capsule"))
-  {
-    shape->type = RCSSHAPE_SSL;
-  }
-  else if (STRCASEEQ(str, "trimesh"))
-  {
-    shape->type = RCSSHAPE_MESH;
-  }
-  else if (STRCASEEQ(str, "frame"))
-  {
-    shape->type = RCSSHAPE_REFFRAME;
-  }
-  else if (STRCASEEQ(str, "cylinder"))
-  {
-    shape->type = RCSSHAPE_CYLINDER;
-  }
-  else
-  {
-    RMSG("OpenRave: Unsupported shape type in \"%s\"", str);
-  }
-
-  if (shape->type == RCSSHAPE_REFFRAME)
-  {
-    // set default extents
-    shape->extents[0] = 0.9;
-    shape->extents[1] = 0.9;
-    shape->extents[2] = 0.9;
-  }
-
-  xmlNodePtr child = getXMLChildByName(node, "extents");
-  getXMLNodeVecN(child, shape->extents, 3);
-  if (shape->type == RCSSHAPE_BOX)
-  {
-    Vec3d_constMulSelf(shape->extents, 2.0);
-  }
-
-  child = getXMLChildByName(node, "radius");
-  getXMLNodeVecN(child, &shape->extents[0], 1);
-
-  child = getXMLChildByName(node, "height");
-  getXMLNodeVecN(child, &shape->extents[2], 1);
-
-  child = getXMLChildByName(node, "translation");
-  getXMLNodeVec3(child, shape->A_CB.org);
-
-  child = getXMLChildByName(node, "quat");
-  getXMLNodeQuat(child, shape->A_CB.rot);
-
-  child = getXMLChildByName(node, "scale");
-  double scale1d = 1.0;
-  getXMLNodeVecN(child, &scale1d, 1);
-  Vec3d_setElementsTo(shape->scale3d, scale1d);
-
-  /// \todo (AH, Jan 27, 2014): rotationaxis parsing should be removed assumptions and cleaned up.
-  child = node->children;
-  double ea[3] = {0.0, 0.0, 0.0};
-  while (child)
-  {
-    if (STREQ((const char*) BAD_CAST child->name, "rotationaxis"))
-    {
-#if 1
-      double x[4];
-      int axis[3];
-      getXMLNodeVecN(child, x, 4);
-
-      for (unsigned int i=0; i<3; i++)
-      {
-        axis[i] = (int)(x[i]);
-      }
-
-      if (axis[0] == 1)
-      {
-        ea[0] = x[3];
-      }
-      else if (axis[1] == 1)
-      {
-        ea[1] = x[3];
-      }
-      else if (axis[2] == 1)
-      {
-        if (shape->type == RCSSHAPE_SSL)
-        {
-          ea[1] = x[3];
-        }
-        else
-        {
-          ea[2] = x[3];
-        }
-      }
-#else
-      double x[4], A_KI[3][3];
-      getXMLNodeVecN(child, x, 4);
-      Mat3d_fromAxisAngle(A_KI, x, x[3]);
-      Mat3d_getEulerAngles(A_KI, ea);
-#endif
-    }
-    child = child->next;
-  }
-
-  // angles are specified in degree
-  Vec3d_constMulSelf(ea, M_PI / 180.0);
-
-
-  Mat3d_fromEulerAngles(shape->A_CB.rot, ea);
-
-  // need to adapt for HRI
-  if (shape->type == RCSSHAPE_SSL)
-  {
-    // offset of thx (-90 deg)
-    ea[0] -= 0.5*M_PI;
-    Mat3d_fromEulerAngles(shape->A_CB.rot, ea);
-
-    HTr local;
-    HTr_setIdentity(&local);
-    local.org[2] -= 0.5 * shape->extents[2];
-
-    HTr temp;
-    HTr_copy(&temp, &shape->A_CB);
-    HTr_transform(&shape->A_CB, &temp, &local);
-  }
-
-  // Compute type
-  bool distance = true, graphics = true, physics = true;
-
-  // Physics computation is not carried out for non-physics objects by default.
-  if (body->physicsSim == RCSBODY_PHYSICS_NONE)
-  {
-    physics = false;
-  }
-
-  // Physics and distance computation is not carried out for meshes by default.
-  if (shape->type == RCSSHAPE_MESH)
-  {
-    physics  = false;
-    distance = false;
-  }
-
-  // Visualizing all openRAVE bodies for now
-#if 0
-  // Only meshes are added to the graphics node by default (also SSLs are visualized by default here)
-  if (shape->type != RCSSHAPE_MESH)
-  {
-    graphics = false;
-  }
-#endif
-
-  // Reference frames are only considered for the graphics nodes by default
-  if (shape->type == RCSSHAPE_REFFRAME)
-  {
-    graphics = true;
-    distance = false;
-    physics  = false;
-  }
-
-  getXMLNodePropertyBoolString(node, "distance", &distance);
-  getXMLNodePropertyBoolString(node, "physics",  &physics);
-  getXMLNodePropertyBoolString(node, "render", &graphics);
-
-  if (distance == true)
-  {
-    shape->computeType |= RCSSHAPE_COMPUTE_DISTANCE;
-  }
-  if (physics == true)
-  {
-    shape->computeType |= RCSSHAPE_COMPUTE_PHYSICS;
-  }
-  if (graphics == true)
-  {
-    shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
-  }
-
-  // Mesh file
-  char fileName[RCS_MAX_FILENAMELEN] = "-";
-  child = getXMLChildByName(node, "render");
-  if (child==NULL)
-  {
-    child = getXMLChildByName(node, "Data");
-  }
-  int strLength = getXMLNodeString(child, fileName);
-
-  if (strLength > 0)
-  {
-    char fullName[RCS_MAX_FILENAMELEN] = "-";
-    RCHECK(shape->type == RCSSHAPE_MESH);
-    Rcs_getAbsoluteFileName(fileName, fullName);
-    snprintf(shape->meshFile, RCS_MAX_FILENAMELEN, "%s", fullName);
-
-    if (File_exists(shape->meshFile) == false)
-    {
-      RLOG(4, "Mesh file \"%s\" not found!", fileName);
-    }
-
-  }
-
-  /// \todo textures, colors, materials not supported yet
-  strcpy(shape->color, "DEFAULT");
-  strcpy(shape->material, "default");
-
-  return shape;
-}
-
-xmlNodePtr getXMLNodeForOpenRave(const char* filename, xmlDocPtr* doc)
-{
-  xmlNodePtr rave_node = NULL;
-
-  rave_node = parseXMLFile(filename, "Robot", doc);
-
-  if (rave_node == NULL)
-  {
-    RLOG(5, "Couldn't find node \"Robot\" - checking for \"Environment\"");
-    rave_node = parseXMLFile(filename, "Environment", doc);
-  }
-
-  if (rave_node==NULL)
-  {
-    RLOG(5, "Couldn't find node \"Environment\" neither - returning NULL");
-  }
-
-  return rave_node;
-}

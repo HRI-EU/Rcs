@@ -859,37 +859,80 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
 }
 
 /*******************************************************************************
- * Create a shape with random properties
+ * Initialize shape with default properties
  ******************************************************************************/
-RcsShape* RcsShape_create()
+void RcsShape_init(RcsShape* self)
 {
-  RcsShape* shape = RALLOC(RcsShape);
-  Vec3d_setElementsTo(shape->scale3d, 1.0);
-  HTr_setIdentity(&shape->A_CB);
-  return shape;
+  memset(self, 0, sizeof(RcsShape));
+  Vec3d_setElementsTo(self->scale3d, 1.0);
+  HTr_setIdentity(&self->A_CB);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool RcsShape_isSupported(int shapeType)
+{
+#if !defined (USE_OCTOMAP)
+  if (shapeType == RCSSHAPE_OCTREE)
+  {
+    return false;
+  }
+#endif
+
+  return true;
+}
+
+/*******************************************************************************
+ * Return random shape type. We put it here to not expose the details about
+ * available shape types such as Octomap shapes to the outside.
+ ******************************************************************************/
+int RcsShape_randomShapeType()
+{
+  int shapeType = Math_getRandomInteger(1, RCSSHAPE_SHAPE_MAX - 1);
+
+  // We return the first one in case an OCTREE shape has been selected and is
+  // not available. This might bias a distribution. The clean solution would be
+  // a recursion, which I don't think is necessary and potentially introduces
+  // issues.
+#if !defined (USE_OCTOMAP)
+  if (shapeType == RCSSHAPE_OCTREE)
+  {
+    shapeType = 1;
+  }
+#endif
+
+  return shapeType;
 }
 
 /*******************************************************************************
  * Create a shape with random properties
  ******************************************************************************/
-RcsShape* RcsShape_createRandomShape(int shapeType)
+bool RcsShape_initRandom(RcsShape* shape, int shapeType)
 {
+  if (shape==NULL)
+  {
+    RLOG(1, "NULL shape of type %d cannot be initialized", shapeType);
+    return false;
+  }
+
   if ((shapeType<=RCSSHAPE_NONE) || (shapeType>=RCSSHAPE_SHAPE_MAX))
   {
     RLOG(1, "Unknown shape type %d", shapeType);
-    return NULL;
+    return false;
   }
 
 #if !defined (USE_OCTOMAP)
   if (shapeType==RCSSHAPE_OCTREE)
   {
     RLOG(1, "Can't create octree, no OctoMap support compiled in");
-    return NULL;
+    return false;
   }
 #endif
 
+  RcsShape_init(shape);
+
   // Allocate memory and set defaults
-  RcsShape* shape = RcsShape_create();
   shape->type = shapeType;
   shape->resizeable = true;
   Vec3d_setRandom(shape->extents, 0.1, 0.3);
@@ -926,16 +969,16 @@ RcsShape* RcsShape_createRandomShape(int shapeType)
   }
 #endif
 
-  return shape;
+  return true;
 }
-
 
 /*******************************************************************************
  *
  ******************************************************************************/
 RcsShape* RcsShape_createFrameShape(double scale)
 {
-  RcsShape* shape = RcsShape_create();
+  RcsShape* shape = RALLOC(RcsShape);
+  RcsShape_init(shape);
   Vec3d_setElementsTo(shape->scale3d, scale);
   shape->type = RCSSHAPE_REFFRAME;
   shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
@@ -1692,6 +1735,18 @@ RcsDistanceFunction RcsShape_getDistanceFunction(unsigned int shapeTypeIdx1,
   }
 
   return RcsShapeDistFunc[shapeTypeIdx1][shapeTypeIdx2];
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool RcsShape_hasDistanceFunction(unsigned int shapeTypeIdx1,
+                                  unsigned int shapeTypeIdx2)
+{
+  RcsDistanceFunction func = RcsShape_getDistanceFunction(shapeTypeIdx1,
+                                                          shapeTypeIdx2);
+
+  return (func==NULL) ? false : true;
 }
 
 /*******************************************************************************

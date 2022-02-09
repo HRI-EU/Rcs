@@ -1892,12 +1892,9 @@ bool Rcs::BulletSimulation::addBody(const RcsGraph* graph, const RcsBody* body_)
   RcsBody_copy(body, body_);
 
   // Make a copy of all body shapes and attach them to the body
-  int nShapes = RcsBody_numShapes(body_);
-  body->shape = RNALLOC(nShapes + 1, RcsShape*);
-  for (int i = 0; i < nShapes; i++)
-  {
-    body->shape[i] = RcsShape_clone(body_->shape[i]);
-  }
+  body->nShapes = body_->nShapes;
+  body->shapes = RNALLOC(body->nShapes, RcsShape);
+  memcpy(body->shapes, body_->shapes, body->nShapes * sizeof(RcsShape));
 
   // Create the joints into the simulation's body.
   RCSBODY_FOREACH_JOINT(graph, body_)

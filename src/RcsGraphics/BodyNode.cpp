@@ -124,29 +124,30 @@ BodyNode::BodyNode(const RcsBody* b, const RcsGraph* graph, double scale,
   _depthNode = new osg::Switch;
 
 
-  RCSBODY_TRAVERSE_SHAPES(b)
+  for (unsigned int i=0; i<b->nShapes; ++i)
   {
-    RLOG(5, "Creating ShapeNode for %s", RcsShape_name(SHAPE->type));
-    osg::ref_ptr<ShapeNode> sni = new ShapeNode(SHAPE, resizeable);
+    const RcsShape* sh = &b->shapes[i];
+    RLOG(5, "Creating ShapeNode for %s", RcsShape_name(sh->type));
+    osg::ref_ptr<ShapeNode> sni = new ShapeNode(graph, b->id, i, resizeable);
     _shapeNodes.push_back(sni);
 
-    if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_DISTANCE))
+    if (RcsShape_isOfComputeType(sh, RCSSHAPE_COMPUTE_DISTANCE))
     {
       _collisionNode->addChild(sni.get());
     }
 
-    if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_GRAPHICS))
+    if (RcsShape_isOfComputeType(sh, RCSSHAPE_COMPUTE_GRAPHICS))
     {
       _graphicsNode->addChild(sni.get());
     }
 
-    if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_PHYSICS) ||
-        RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_SOFTPHYSICS))
+    if (RcsShape_isOfComputeType(sh, RCSSHAPE_COMPUTE_PHYSICS) ||
+        RcsShape_isOfComputeType(sh, RCSSHAPE_COMPUTE_SOFTPHYSICS))
     {
       _physicsNode->addChild(sni.get());
     }
 
-    if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_DEPTHBUFFER))
+    if (RcsShape_isOfComputeType(sh, RCSSHAPE_COMPUTE_DEPTHBUFFER))
     {
       _depthNode->addChild(sni.get());
     }

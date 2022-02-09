@@ -265,17 +265,10 @@ static RcsSensor* RcsSensor_initFromXML(xmlNode* node, RcsBody* parentBody,
 /*******************************************************************************
  * Shape for distance computation.
  ******************************************************************************/
-static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
-                                   const char* bodyColor)
+static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
+                              const RcsBody* body, const char* bodyColor)
 {
-  // Return if no tag
-  if (!isXMLNodeName(node, "Shape"))
-  {
-    return NULL;
-  }
-
   // Allocate memory and set defaults
-  RcsShape* shape = RcsShape_create();
   char str[RCS_MAX_FILENAMELEN] = "";
   getXMLNodePropertyStringN(node, "type", str, RCS_MAX_FILENAMELEN);
   if (STREQ(str, "SSL"))
@@ -607,7 +600,6 @@ static RcsShape* RcsBody_initShape(xmlNodePtr node, const RcsBody* body,
 
   }   // REXEC(1)
 
-  return shape;
 }
 
 /*******************************************************************************
@@ -1142,17 +1134,12 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   xmlNodePtr shapeNode = bdyNode->children;
 
   // Allocate memory for shape node lists
-  b->shape = RNALLOC(getNumXMLNodes(shapeNode, "Shape") + 1, RcsShape*);
-
-  int shapeCount = 0;
-
   while (shapeNode != NULL)
   {
-    b->shape[shapeCount] = RcsBody_initShape(shapeNode, b, bColor);
-
-    if (b->shape[shapeCount] != NULL)
+    if (isXMLNodeName(shapeNode, "Shape"))
     {
-      shapeCount++;
+      RcsShape* sh = RcsBody_appendShape(b);
+      RcsBody_initShape(sh, shapeNode, b, bColor);
     }
 
     shapeNode = shapeNode->next;

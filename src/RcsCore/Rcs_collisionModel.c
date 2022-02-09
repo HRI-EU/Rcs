@@ -321,11 +321,9 @@ void RcsCollisionModel_fprint(FILE* fd, const RcsCollisionMdl* self)
     for (unsigned int i=0; i<self->nPairs; ++i)
     {
       const RcsPair* pair = &self->pair[i];
-      const RcsBody* b1 = RCSBODY_BY_ID(self->graph, pair->b1);
-      const RcsBody* b2 = RCSBODY_BY_ID(self->graph, pair->b2);
 
-      fprintf(fd, "\t[%d]   %s", i, b1 ? b1->name : "NULL");
-      fprintf(fd, "\t\t%s", b2 ? b2->name : "NULL");
+      fprintf(fd, "\t[%d]  %s", i, RCSBODY_NAME_BY_ID(self->graph, pair->b1));
+      fprintf(fd, "\t\t%s", RCSBODY_NAME_BY_ID(self->graph, pair->b2));
       fprintf(fd, "\n\tdistance = %.6f   weight=%.3f   dThreshold=%.3f",
               pair->distance, pair->weight, pair->dThreshold);
       fprintf(fd, "   cp1 = %d   cp2 = %d   n = %d", pair->cp1, pair->cp2, pair->n1);

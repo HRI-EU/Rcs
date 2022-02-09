@@ -76,9 +76,9 @@ static bool findKeyword(const char* keyword, FILE* fd)
 /*******************************************************************************
  *
  ******************************************************************************/
-static RcsShape* createFrameShape(double scale)
+static RcsShape* addFrameShape(RcsBody* bdy, double scale)
 {
-  RcsShape* shape = RcsShape_create();
+  RcsShape* shape = RcsBody_appendShape(bdy);
   Vec3d_setElementsTo(shape->scale3d, scale);
   shape->type = RCSSHAPE_REFFRAME;
   shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
@@ -108,7 +108,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, int parentId, FILE* fd,
     RCHECK_MSG(itemsMatched==1, "Couldn't read body name");
 
     snprintf(child->name, RCS_MAX_NAMELEN, "%s", buf);
-    RcsBody_addShape(child, createFrameShape(0.5));
+    addFrameShape(child, 0.5);
     itemsMatched = fscanf(fd, "%63s", buf);   // Curly brace open
     RCHECK_MSG(itemsMatched==1, "Couldn't read curly brace open");
     itemsMatched = fscanf(fd, "%63s", buf);   // Next keyword
@@ -126,7 +126,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, int parentId, FILE* fd,
     // Create a new body and recursively call this function again
     RcsBody* child = RcsGraph_insertGraphBody(self, parentId);
     snprintf(child->name, RCS_MAX_NAMELEN, "%s", buf);
-    RcsBody_addShape(child, createFrameShape(0.1));
+    addFrameShape(child, 0.1);
 
     itemsMatched = fscanf(fd, "%63s", buf);   // Opening curly brace
     RCHECK_MSG(itemsMatched==1, "Couldn't read opening curly brace");
@@ -275,16 +275,14 @@ static bool parseRecursive(char* buf, RcsGraph* self, int parentId, FILE* fd,
       len = 0.01;
     }
 
-    RcsShape* shape = RcsShape_create();
+    RcsBody* body = &self->bodies[parentId];
+    RcsShape* shape = RcsBody_appendShape(body);
     shape->type = RCSSHAPE_SPHERE;
     shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
     shape->extents[0] = 0.1*len;
     shape->extents[1] = 0.1*len;
     shape->extents[2] = 0.1*len;
     strcpy(shape->color, "BLACK_RUBBER");
-    RcsBody* body = &self->bodies[parentId];
-    RcsBody_addShape(body, shape);
-
 
     RLOG(5, "Recursing after END SITE with next keyword %s", buf);
     parseRecursive(buf, self, parentId, fd, Vec3d_zeroVec(), linearScaleToSI,
@@ -366,22 +364,20 @@ static void addGeometry(RcsGraph* self)
       }
 
       // Box from parent to child
-      RcsShape* shape = RcsShape_create();
+      RcsShape* shape = RcsBody_appendShape(BODY);
       shape->type = RCSSHAPE_BOX;
       RcsShape_setComputeType(shape, RCSSHAPE_COMPUTE_GRAPHICS, true);
       Vec3d_set(shape->extents, 0.2*len, 0.2*len, len);
       snprintf(shape->color, RCS_MAX_NAMELEN, "%s", color);
       Mat3d_fromVec(shape->A_CB.rot, K_p12, 2);
       Vec3d_copy(shape->A_CB.org, K_center);
-      RcsBody_addShape(BODY, shape);
 
       // Sphere at parent origin
-      shape = RcsShape_create();
+      shape = RcsBody_appendShape(BODY);
       shape->type = RCSSHAPE_SPHERE;
       shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
       Vec3d_set(shape->extents, 0.15*len, 0.15*len, 0.15*len);
       snprintf(shape->color, RCS_MAX_NAMELEN, "%s", color);
-      RcsBody_addShape(BODY, shape);
 
       CHILD = RcsBody_getNext(self, CHILD);
     }
@@ -453,7 +449,7 @@ RcsGraph* RcsGraph_createFromBVHFile(const char* fileName,
     RcsBody* xyzRoot = RcsGraph_insertGraphBody(self, -1);
     snprintf(xyzRoot->name, RCS_MAX_NAMELEN, "%s", "BVHROOT");
     Mat3d_fromEulerAngles2(xyzRoot->A_BP.rot, M_PI_2, M_PI_2, 0.0);
-    RcsBody_addShape(xyzRoot, createFrameShape(1.0));
+    addFrameShape(xyzRoot, 1.0);
     bvhRoot = xyzRoot;
   }
 
@@ -693,7 +689,8 @@ bool RcsGraph_beautifyHumanModelBVH(RcsGraph* graph,
   }
 
   // Head
-  RcsShape* shape = RcsShape_create();
+  RcsShape* shape = RcsBody_appendShape(head);
+  RcsShape* prevShape = shape;
   Vec3d_set(shape->A_CB.org, 0.0, 0.12, 0.0);
   shape->type = RCSSHAPE_SPHERE;
   shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
@@ -701,62 +698,68 @@ bool RcsGraph_beautifyHumanModelBVH(RcsGraph* graph,
   strcpy(shape->color, "YELLOW");
   Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
   Vec3d_constMulSelf(shape->extents, linearScaleToSI);
-  RcsBody_addShape(head, shape);
 
-  shape = RcsShape_clone(shape);
+  shape = RcsBody_appendShape(head);
+  RcsShape_copy(shape, prevShape);
+  prevShape = shape;
   Vec3d_set(shape->A_CB.org, 0.0, 0.16, 0.05);
   shape->type = RCSSHAPE_BOX;
   Vec3d_set(shape->extents, 0.16, 0.1, 0.08);
   Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
   Vec3d_constMulSelf(shape->extents, linearScaleToSI);
-  RcsBody_addShape(head, shape);
 
   // Feet
-  shape = RcsShape_clone(shape);
+  shape = RcsBody_appendShape(rightToe);
+  RcsShape_copy(shape, prevShape);
+  prevShape = shape;
   Vec3d_set(shape->A_CB.org, 0.0, 0.02, -0.05);
   Vec3d_set(shape->extents, 0.12, 0.04, 0.3);
   strcpy(shape->color, "RED");
   Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
   Vec3d_constMulSelf(shape->extents, linearScaleToSI);
-  RcsBody_addShape(rightToe, shape);
 
-  shape = RcsShape_clone(shape);
+  shape = RcsBody_appendShape(leftToe);
+  RcsShape_copy(shape, prevShape);
+  prevShape = shape;
   Vec3d_set(shape->A_CB.org, 0.0, 0.02, -0.05);
   Vec3d_set(shape->extents, 0.12, 0.04, 0.3);
   Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
   Vec3d_constMulSelf(shape->extents, linearScaleToSI);
-  RcsBody_addShape(leftToe, shape);
 
   // Left hand
-  shape = RcsShape_clone(shape);
+  shape = RcsBody_appendShape(leftWrist);
+  RcsShape_copy(shape, prevShape);
+  prevShape = shape;
   Vec3d_set(shape->A_CB.org, 0.1, 0.0, 0.0);
   Vec3d_set(shape->extents, 0.16, 0.02, 0.1);
   strcpy(shape->color, "BLUE");
   Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
   Vec3d_constMulSelf(shape->extents, linearScaleToSI);
-  RcsBody_addShape(leftWrist, shape);
 
-  shape = RcsShape_clone(shape);
+  shape = RcsBody_appendShape(leftWrist);
+  RcsShape_copy(shape, prevShape);
+  prevShape = shape;
   Vec3d_set(shape->A_CB.org, 0.03, -0.04, 0.0);
   Vec3d_set(shape->extents, 0.02, 0.08, 0.1);
   Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
   Vec3d_constMulSelf(shape->extents, linearScaleToSI);
-  RcsBody_addShape(leftWrist, shape);
 
   // Right hand
-  shape = RcsShape_clone(shape);
+  shape = RcsBody_appendShape(rightWrist);
+  RcsShape_copy(shape, prevShape);
+  prevShape = shape;
   Vec3d_set(shape->A_CB.org, -0.1, 0.0, 0.0);
   Vec3d_set(shape->extents, 0.16, 0.02, 0.1);
   Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
   Vec3d_constMulSelf(shape->extents, linearScaleToSI);
-  RcsBody_addShape(rightWrist, shape);
 
-  shape = RcsShape_clone(shape);
+  shape = RcsBody_appendShape(rightWrist);
+  RcsShape_copy(shape, prevShape);
+  prevShape = shape;
   Vec3d_set(shape->A_CB.org, -0.03, -0.04, 0.0);
   Vec3d_set(shape->extents, 0.02, 0.08, 0.1);
   Vec3d_constMulSelf(shape->A_CB.org, linearScaleToSI);
   Vec3d_constMulSelf(shape->extents, linearScaleToSI);
-  RcsBody_addShape(rightWrist, shape);
 
   return true;
 }

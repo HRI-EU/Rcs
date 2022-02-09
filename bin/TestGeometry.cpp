@@ -116,6 +116,11 @@ static bool testDistanceRandomly()
   sTypes.push_back(RCSSHAPE_TORUS);
   sTypes.push_back(RCSSHAPE_POINT);
 
+  if (RcsShape_isSupported(RCSSHAPE_OCTREE))
+  {
+    sTypes.push_back(RCSSHAPE_OCTREE);
+  }
+
   bool success = true;
   const double eps = 1.0e-5;
 
@@ -136,10 +141,12 @@ static bool testDistanceRandomly()
       rndIdx2 = sTypes[Math_getRandomInteger(0, sTypes.size() - 1)];
     }
 
-    RcsShape* s1 = RcsShape_createRandomShape(rndIdx1);
-    RcsShape* s2 = RcsShape_createRandomShape(rndIdx2);
-    RCHECK(s1);
-    RCHECK(s2);
+    RcsShape* s1 = RALLOC(RcsShape);
+    bool initOk = RcsShape_initRandom(s1, rndIdx1);
+    RCHECK(initOk);
+    RcsShape* s2 = RALLOC(RcsShape);
+    initOk = RcsShape_initRandom(s2, rndIdx2);
+    RCHECK(initOk);
     RLOG_CPP(2, "Testing " << RcsShape_name(s1->type) << " against "
              << RcsShape_name(s2->type));
 
@@ -207,9 +214,8 @@ static bool testDistanceRandomly()
       RcsGraph_insertGraphBody(graph, -1);
 
       RcsBody* b1 = &graph->bodies[0];
-      b1->shape = RNALLOC(2, RcsShape*);
-      b1->shape[0] = s1;
-      b1->shape[1] = NULL;
+      RcsShape* bsh1 = RcsBody_appendShape(b1);
+      RcsShape_copy(bsh1, s1);
 
       osg::ref_ptr<Rcs::BodyNode> coll1 = new Rcs::BodyNode(b1, graph);
       coll1->setMaterial("RED");
@@ -219,9 +225,8 @@ static bool testDistanceRandomly()
       coll1->setTransformPtr(&A_BI1);
 
       RcsBody* b2 = &graph->bodies[1];
-      b2->shape = RNALLOC(2, RcsShape*);
-      b2->shape[0] = s2;
-      b2->shape[1] = NULL;
+      RcsShape* bsh2 = RcsBody_appendShape(b2);
+      RcsShape_copy(bsh2, s2);
 
       osg::ref_ptr<Rcs::BodyNode> coll2 = new Rcs::BodyNode(b2, graph);
       coll2->setMaterial("BLUE");
@@ -348,10 +353,12 @@ static void testDistance(int argc, char** argv)
   RcsBody* b2 = &graph->bodies[1];
 
   Vec3d_setRandom(b1->A_BI.org, -0.2, -0.1);
-  RcsBody_addShape(b1, RcsShape_createRandomShape(shapeType1));
+  RcsShape* sh1 = RcsBody_appendShape(b1);
+  RcsShape_initRandom(sh1, shapeType1);
 
   Vec3d_setRandom(b2->A_BI.org, 0.1, 0.2);
-  RcsBody_addShape(b2, RcsShape_createRandomShape(shapeType2));
+  RcsShape* sh2 = RcsBody_appendShape(b2);
+  RcsShape_initRandom(sh2, shapeType2);
 
   double I_closestPts[6];
   VecNd_setZero(I_closestPts, 6);
@@ -382,12 +389,12 @@ static void testDistance(int argc, char** argv)
     viewer->add(bNd2);
 
     // TargetSetters
-    bool sphTracker = b1->shape[0]->type==RCSSHAPE_POINT ? false : true;
+    bool sphTracker = b1->shapes[0].type==RCSSHAPE_POINT ? false : true;
     Rcs::TargetSetter* ts1 =
       new Rcs::TargetSetter(b1->A_BI.org, b1->A_BI.rot, 0.5, sphTracker);
     viewer->add(ts1);
     viewer->add(ts1->getHandler());
-    sphTracker = b2->shape[0]->type==RCSSHAPE_POINT ? false : true;
+    sphTracker = b2->shapes[0].type==RCSSHAPE_POINT ? false : true;
     Rcs::TargetSetter* ts2 =
       new Rcs::TargetSetter(b2->A_BI.org, b2->A_BI.rot, 0.5, sphTracker);
     viewer->add(ts2);
@@ -427,8 +434,7 @@ static void testDistance(int argc, char** argv)
     double dt = Timer_getTime();
     double dist;
 
-    dist = RcsShape_distance(b1->shape[0], b2->shape[0],
-                             &b1->A_BI, &b2->A_BI, cp0, cp1, n01);
+    dist = RcsShape_distance(sh1, sh2, &b1->A_BI, &b2->A_BI, cp0, cp1, n01);
 
     dt = Timer_getTime() - dt;
     pthread_mutex_unlock(&graphLock);
