@@ -63,47 +63,21 @@ IF (USE_BULLET STREQUAL 2.83_double)
       )
   ENDIF()
   
-ELSEIF(USE_BULLET STREQUAL 2.83_float)
-
-  FIND_PACKAGE(Bullet REQUIRED)
-  SET(BULLET_DEFINITIONS -DUSE_BULLET)
-  
-ELSEIF(USE_BULLET STREQUAL latest)
-
-  IF(DEFINED ENV{SIT})
-    # SIT available, use that version by default
-    SET(BT_LIB_DIR ${HGR}/External/bullet3/lib)
-    SET(BULLET_INCLUDE_DIR ${HGR}/External/bullet3/include/bullet)
-  ELSE()
-    # SIT not available, path must be set
-    SET(BT_LIB_DIR "" CACHE PATH "Bullet library directory")
-    SET(BULLET_INCLUDE_DIR "" CACHE PATH "Bullet include directory")
-  ENDIF()
-
-  SET(BULLET_DEFINITIONS -DUSE_BULLET -DBT_USE_DOUBLE_PRECISION)
-
-  SET(BULLET_LIBRARIES
-    ${BT_LIB_DIR}/libLinearMath.so 
-    ${BT_LIB_DIR}/libBulletCollision.so
-    ${BT_LIB_DIR}/libBulletDynamics.so 
-    ${BT_LIB_DIR}/libBulletSoftBody.so 
-    )
-  
-ELSEIF(USE_BULLET STREQUAL 2.89_double)
+ELSEIF(USE_BULLET STREQUAL 3.21_double)
 
   SET(BULLET_FOUND 1)
-  SET(BULLET_ROOT_DIR     "${HGR}/External/Bullet/2.89" )
+  SET(BULLET_ROOT_DIR     "${HGR}/External/Bullet/3.21" )
   SET(BULLET_USE_FILE     "lib/cmake/bullet/UseBullet.cmake" )
   SET(BULLET_INCLUDE_DIR  "${BULLET_ROOT_DIR}/include/bullet" )
   SET(BULLET_INCLUDE_DIRS "${BULLET_ROOT_DIR}/include/bullet" )
   SET(BULLET_LIBRARIES
-    ${BULLET_ROOT_DIR}/lib/libLinearMath.so
-    ${BULLET_ROOT_DIR}/lib/libBullet3Common.so
-    ${BULLET_ROOT_DIR}/lib/libBulletInverseDynamics.so
-    ${BULLET_ROOT_DIR}/lib/libBulletCollision.so
-    ${BULLET_ROOT_DIR}/lib/libBulletDynamics.so
-    ${BULLET_ROOT_DIR}/lib/libBulletSoftBody.so)
-  SET(BULLET_VERSION_STRING "2.89" )
+    ${BULLET_ROOT_DIR}/bin/LinearMath_vs2010_x64_release.lib
+    ${BULLET_ROOT_DIR}/bin/Bullet3Common_vs2010_x64_release.lib
+    #${BULLET_ROOT_DIR}/bin/libBulletInverseDynamics.so
+    ${BULLET_ROOT_DIR}/bin/BulletCollision_vs2010_x64_release.lib
+    ${BULLET_ROOT_DIR}/bin/BulletDynamics_vs2010_x64_release.lib
+    ${BULLET_ROOT_DIR}/bin/BulletSoftBody_vs2010_x64_release.lib)
+  SET(BULLET_VERSION_STRING "3.21" )
   SET(BULLET_DEFINITIONS -DUSE_BULLET -DBT_USE_DOUBLE_PRECISION)
 
 ENDIF()

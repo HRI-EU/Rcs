@@ -2095,7 +2095,7 @@ RcsMeshData* RcsMesh_createConvexRandom(double x, double y, double z,
 {
   double* v = RNALLOC(3*nPoints, double);
 
-  for (int i=0; i<nPoints; ++i)
+  for (unsigned int i=0; i<nPoints; ++i)
   {
     v[3*i+0] = Math_getRandomNumber(-0.5*x, 0.5*x);
     v[3*i+1] = Math_getRandomNumber(-0.5*y, 0.5*y);

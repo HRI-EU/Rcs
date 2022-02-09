@@ -118,7 +118,7 @@ static inline void MatNd_fromEigen3(MatNd* dst, const T& src,
   }
   else
   {
-    MatNd_reshape(dst, src.rows(), src.cols());
+    MatNd_reshape(dst, (int)src.rows(), (int)src.cols());
   }
 
   for (size_t m=0; m<dst->m; m++)
@@ -223,9 +223,9 @@ static inline int SvdDC(MatNd* U, MatNd* S, MatNd* V, const MatNd* J,
   JacobiSVD<MatT> svd(mapJ, ComputeFullU | ComputeFullV);
 
   // Cut off singular values smaller than eps
-  int rank = svd.nonzeroSingularValues();
+  int rank = (int)svd.nonzeroSingularValues();
 
-  for (int i=0; i<svd.nonzeroSingularValues(); ++i)
+  for (int i=0; i<rank; ++i)
   {
     if (svd.singularValues()(i) < eps)
     {
@@ -243,7 +243,7 @@ static inline int SvdDC(MatNd* U, MatNd* S, MatNd* V, const MatNd* J,
   if (U != NULL)
   {
     MatT svdU = svd.matrixU();
-    MatNd_reshape(U, svdU.rows(), rank);
+    MatNd_reshape(U, (int)svdU.rows(), rank);
 
     for (unsigned int m=0; m<U->m; m++)
     {
@@ -257,7 +257,7 @@ static inline int SvdDC(MatNd* U, MatNd* S, MatNd* V, const MatNd* J,
   if (V != NULL)
   {
     MatT svdV = svd.matrixV();
-    MatNd_reshape(V, svdV.rows(), rank);
+    MatNd_reshape(V, (int)svdV.rows(), rank);
 
     for (unsigned int m=0; m<V->m; m++)
     {
