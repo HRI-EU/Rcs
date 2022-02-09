@@ -38,7 +38,7 @@
 		   &#xA;  
 		   &#xA;  Here is how to start an example:
 		   &#xA;  
-		   &#xA;  bin/Rcs -m 5 -physicsEngine SoftBullet -dir config/xml/Examples/ -f cRoboSleeve.xml -physics -noHud
+		   &#xA;  bin/Rcs -m 5 -algo 1 -physicsEngine SoftBullet -dir config/xml/Dressing -f cRoboSleeve.xml -dt 0.002
 		   &#xA;  
 		   &#xA;  Then, press: k - T - T - T - P - g - C
 		   &#xA;  

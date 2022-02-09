@@ -2020,6 +2020,7 @@ int main(int argc, char** argv)
         printf("bin/Rcs -m 5 -f config/xml/Examples/cFace.xml\n");
         printf("bin/Rcs -m 5 -f config/xml/Examples/cSoftPhysicsIK.xml -physicsEngine SoftBullet\n");
         printf("bin/Rcs -m 5 -dir config/xml/Examples/ -f cSitToStand.xml -physicsEngine NewtonEuler -algo 1 -lamba 0 -dt 0.01\n");
+        printf("bin/Rcs -m 5 -dir config/xml/Dressing -f cRoboSleeve.xml -algo 1 -physicsEngine SoftBullet -dt 0.002\n");
         Rcs::ControllerBase::printUsage(xmlFileName);
         break;
       }
