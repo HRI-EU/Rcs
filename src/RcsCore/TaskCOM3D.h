@@ -54,11 +54,6 @@ public:
   TaskCOM3D(const std::string& className, xmlNode* node, RcsGraph* graph,
             int dim=3);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskCOM3D(const TaskCOM3D& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! Destructor
    */
   virtual ~TaskCOM3D();

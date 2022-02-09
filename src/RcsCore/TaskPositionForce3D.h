@@ -55,11 +55,6 @@ public:
   TaskPositionForce3D(const std::string& className, xmlNode* node,
                       RcsGraph* graph, int dim=3);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph pointer
-   */
-  TaskPositionForce3D(const TaskPositionForce3D& copyFromMe,
-                      RcsGraph* newGraph=NULL);
-
   /*! Destructor
    */
   virtual ~TaskPositionForce3D();
@@ -104,7 +99,7 @@ protected:
   double ft_curr_temp[3];
   double ft_des_temp[3];
   bool force_feedback;
-  RcsSensor* fts;
+  int ftsId;
 };
 
 }

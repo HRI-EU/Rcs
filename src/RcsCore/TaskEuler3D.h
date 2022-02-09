@@ -55,11 +55,6 @@ public:
   TaskEuler3D(const std::string& className, xmlNode* node, RcsGraph* graph,
               int dim=3);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskEuler3D(const TaskEuler3D& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! Constructor based on graph and effectors.
    */
   TaskEuler3D(RcsGraph* graph, const RcsBody* effector,

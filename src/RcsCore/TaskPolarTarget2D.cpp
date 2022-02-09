@@ -83,17 +83,6 @@ Rcs::TaskPolarTarget2D::TaskPolarTarget2D(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskPolarTarget2D::TaskPolarTarget2D(const TaskPolarTarget2D& copyFromMe,
-                                          RcsGraph* newGraph):
-  Task(copyFromMe, newGraph), direction(copyFromMe.direction)
-{
-  this->polarDes[0] = copyFromMe.polarDes[0];
-  this->polarDes[1] = copyFromMe.polarDes[1];
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskPolarTarget2D::~TaskPolarTarget2D()
@@ -105,7 +94,9 @@ Rcs::TaskPolarTarget2D::~TaskPolarTarget2D()
  ******************************************************************************/
 Rcs::TaskPolarTarget2D* Rcs::TaskPolarTarget2D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskPolarTarget2D(*this, newGraph);
+  TaskPolarTarget2D* task = new Rcs::TaskPolarTarget2D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

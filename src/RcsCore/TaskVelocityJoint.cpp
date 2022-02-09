@@ -72,15 +72,6 @@ Rcs::TaskVelocityJoint::TaskVelocityJoint(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskVelocityJoint::TaskVelocityJoint(const Rcs::TaskVelocityJoint& copyFromMe,
-                                          RcsGraph* newGraph):
-  Rcs::TaskJoint(copyFromMe, newGraph)
-{
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskVelocityJoint::~TaskVelocityJoint()
@@ -92,9 +83,10 @@ Rcs::TaskVelocityJoint::~TaskVelocityJoint()
  ******************************************************************************/
 Rcs::TaskVelocityJoint* Rcs::TaskVelocityJoint::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskVelocityJoint(*this, newGraph);
+  TaskVelocityJoint* task = new Rcs::TaskVelocityJoint(*this);
+  task->setGraph(newGraph);
+  return task;
 }
-
 
 /*******************************************************************************
  * Task variable is the joint velocity

@@ -55,12 +55,6 @@ public:
   TaskSpherical1D(const std::string& className, xmlNode* node,
                   RcsGraph* graph, int dim=1);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskSpherical1D(const TaskSpherical1D& copyFromFe,
-                  RcsGraph* newGraph=NULL);
-
   /*! \brief Destructor
    */
   virtual ~TaskSpherical1D();
@@ -119,8 +113,8 @@ public:
   static bool isValid(xmlNode* node, const RcsGraph* graph);
 
 protected:
-  int index;
 
+  int index;
 };
 }
 

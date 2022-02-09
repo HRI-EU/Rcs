@@ -63,15 +63,6 @@ Rcs::TaskCylindricalPos3D::TaskCylindricalPos3D(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskCylindricalPos3D::TaskCylindricalPos3D(const TaskCylindricalPos3D& src,
-                                                RcsGraph* newGraph):
-  TaskPosition3D(src, newGraph)
-{
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskCylindricalPos3D::~TaskCylindricalPos3D()
@@ -83,7 +74,9 @@ Rcs::TaskCylindricalPos3D::~TaskCylindricalPos3D()
  ******************************************************************************/
 Rcs::TaskCylindricalPos3D* Rcs::TaskCylindricalPos3D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskCylindricalPos3D(*this, newGraph);
+  TaskCylindricalPos3D* task = new Rcs::TaskCylindricalPos3D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

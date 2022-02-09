@@ -61,16 +61,6 @@ public:
                  const RcsBody* effector, const RcsBody* refBdy=NULL,
                  const RcsBody* refFrame=NULL);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer.
-   *
-   *  \param[in] copyFromMe   Task to be copied.
-   *  \param[in] newGraph     Optional graph. If this is not NULL, all task
-   *                          members reference this graph instead of the
-   *                          source task's graph.
-   */
-  TaskVelocity1D(const TaskVelocity1D& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! Virtual destructor to allow correct polymorphism.
    */
   virtual ~TaskVelocity1D();

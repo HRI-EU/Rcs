@@ -67,10 +67,8 @@ public:
    *         pointer.
    *
    *  \param[in] copyFromMe Task to be copied from.
-   *  \param[in] newGraph   If it is not NULL, all tasks's members refer to
-   *                        this graph.
    */
-  CompositeTask(const CompositeTask& copyFromMe, RcsGraph* newGraph=NULL);
+  CompositeTask(const CompositeTask& copyFromMe);
 
   /*! \brief Constructor based on a graph reference.
    */
@@ -172,6 +170,10 @@ public:
   virtual void toXML(FILE* out, bool activation=true) const;
 
 protected:
+
+  /*! \brief Updates the task to the new graph.
+   */
+  virtual void setGraph(RcsGraph* graph);
 
   std::vector<Task*> subTask;
 };

@@ -52,12 +52,6 @@ public:
   TaskAngularMomentum3D(const std::string& className, xmlNode* node,
                         RcsGraph* graph, int dim=3);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskAngularMomentum3D(const TaskAngularMomentum3D& copyFromMe,
-                        RcsGraph* newGraph=NULL);
-
   /*! \brief
    */
   virtual ~TaskAngularMomentum3D();

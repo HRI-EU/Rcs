@@ -118,15 +118,6 @@ Rcs::TaskOmega1D::TaskOmega1D(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskOmega1D::TaskOmega1D(const TaskOmega1D& copyFromMe,
-                              RcsGraph* newGraph):
-  TaskGenericIK(copyFromMe, newGraph), index(copyFromMe.index)
-{
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskOmega1D::~TaskOmega1D()
@@ -138,7 +129,9 @@ Rcs::TaskOmega1D::~TaskOmega1D()
  ******************************************************************************/
 Rcs::TaskOmega1D* Rcs::TaskOmega1D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskOmega1D(*this, newGraph);
+  TaskOmega1D* task = new Rcs::TaskOmega1D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

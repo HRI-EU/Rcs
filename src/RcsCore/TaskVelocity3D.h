@@ -60,11 +60,6 @@ public:
   TaskVelocity3D(const std::string& className, xmlNode* node,
                  RcsGraph* graph, int dim=1);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskVelocity3D(const TaskVelocity3D& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! Destructor
    */
   virtual ~TaskVelocity3D();
@@ -86,7 +81,8 @@ public:
   static bool isValid(xmlNode* node, const RcsGraph* graph);
 
 protected:
-  double velocity_des_temp[3];
+
+  std::vector<double> velocity_des_temp;
 };
 
 }

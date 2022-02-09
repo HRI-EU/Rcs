@@ -63,11 +63,6 @@ public:
               const RcsBody* effector, const RcsBody* refBdy=NULL,
               const RcsBody* refFrame=NULL);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskEuler1D(const TaskEuler1D& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! Virtual destructor to allow proper inheriting from this class.
    */
   virtual ~TaskEuler1D();

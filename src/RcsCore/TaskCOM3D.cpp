@@ -62,14 +62,6 @@ Rcs::TaskCOM3D::TaskCOM3D(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskCOM3D::TaskCOM3D(const TaskCOM3D& copyFromMe, RcsGraph* newGraph):
-  Rcs::TaskGenericIK(copyFromMe, newGraph)
-{
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskCOM3D::~TaskCOM3D()
@@ -81,7 +73,9 @@ Rcs::TaskCOM3D::~TaskCOM3D()
  ******************************************************************************/
 Rcs::TaskCOM3D* Rcs::TaskCOM3D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskCOM3D(*this, newGraph);
+  TaskCOM3D* task = new Rcs::TaskCOM3D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

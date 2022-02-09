@@ -64,11 +64,6 @@ public:
   TaskCompositeXml(const std::string& className, xmlNode* node,
                    RcsGraph* graph);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskCompositeXml(const TaskCompositeXml& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! \brief Virtual copy constructor with optional new graph
    */
   TaskCompositeXml* clone(RcsGraph* newGraph=NULL) const;

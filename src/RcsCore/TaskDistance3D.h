@@ -60,11 +60,6 @@ public:
   TaskDistance3D(const std::string& className, xmlNode* node,
                  RcsGraph* graph, int dim=3);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer.
-   */
-  TaskDistance3D(const TaskDistance3D& src, RcsGraph* newGraph=NULL);
-
   /*! Constructor based on graph and effectors.
   */
   TaskDistance3D(RcsGraph* graph, const RcsBody* effector,

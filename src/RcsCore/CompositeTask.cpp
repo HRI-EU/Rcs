@@ -55,11 +55,18 @@ Rcs::CompositeTask::CompositeTask(const std::string& className,
 }
 
 /*******************************************************************************
+ * Constructor based on a graph reference
+ ******************************************************************************/
+Rcs::CompositeTask::CompositeTask(RcsGraph* _graph) : Task()
+{
+  this->graph = _graph;
+}
+
+/*******************************************************************************
  * Copy constructor doing deep copying
  ******************************************************************************/
-Rcs::CompositeTask::CompositeTask(const Rcs::CompositeTask& copyFromMe,
-                                  RcsGraph* newGraph):
-  Task(copyFromMe, newGraph)
+Rcs::CompositeTask::CompositeTask(const Rcs::CompositeTask& copyFromMe) :
+  Task(copyFromMe)
 {
   // The addTask method assigns the parameter list, so we need to delete it
   // before going trough te sub tasks.
@@ -67,16 +74,8 @@ Rcs::CompositeTask::CompositeTask(const Rcs::CompositeTask& copyFromMe,
 
   for (size_t i=0; i<copyFromMe.subTask.size(); ++i)
   {
-    addTask(copyFromMe.subTask[i]->clone(newGraph));
+    addTask(copyFromMe.subTask[i]->clone(getGraph()));
   }
-}
-
-/*******************************************************************************
- * Constructor based on a graph reference
- ******************************************************************************/
-Rcs::CompositeTask::CompositeTask(RcsGraph* _graph): Task()
-{
-  this->graph = _graph;
 }
 
 /*******************************************************************************
@@ -84,7 +83,6 @@ Rcs::CompositeTask::CompositeTask(RcsGraph* _graph): Task()
  ******************************************************************************/
 Rcs::CompositeTask::~CompositeTask()
 {
-
   for (size_t i=0; i<subTask.size(); ++i)
   {
     delete this->subTask[i];
@@ -96,7 +94,23 @@ Rcs::CompositeTask::~CompositeTask()
  ******************************************************************************/
 Rcs::CompositeTask* Rcs::CompositeTask::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::CompositeTask(*this, newGraph);
+  CompositeTask* task = new Rcs::CompositeTask(*this);
+  task->setGraph(newGraph);
+  return task;
+}
+
+/*******************************************************************************
+ * This is why the setGraph() method is public and not protected.
+ ******************************************************************************/
+void Rcs::CompositeTask::setGraph(RcsGraph* newGraph)
+{
+  this->graph = newGraph;
+
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    subTask[i]->setGraph(newGraph);
+  }
+
 }
 
 /*******************************************************************************

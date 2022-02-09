@@ -63,17 +63,11 @@ public:
   TaskPolar2D(const std::string& className, xmlNode* node,
               RcsGraph* graph, int dim=2);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskPolar2D(const TaskPolar2D& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! Destructor
    */
   virtual ~TaskPolar2D();
 
-  /*!
-   * \brief Virtual copy constructor with optional new graph.
+  /*! \brief Polymorphic clone function.
    */
   virtual TaskPolar2D* clone(RcsGraph* newGraph=NULL) const;
 

@@ -93,16 +93,6 @@ Rcs::TaskPosition1D::TaskPosition1D(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskPosition1D::TaskPosition1D(const TaskPosition1D& copyFromMe,
-                                    RcsGraph* newGraph):
-  TaskPosition3D(copyFromMe, newGraph),
-  index(copyFromMe.index)
-{
-}
-
-/*******************************************************************************
  * For programmatic creation
  ******************************************************************************/
 Rcs::TaskPosition1D::TaskPosition1D(const std::string& className,
@@ -150,7 +140,9 @@ Rcs::TaskPosition1D::~TaskPosition1D()
  ******************************************************************************/
 Rcs::TaskPosition1D* Rcs::TaskPosition1D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskPosition1D(*this, newGraph);
+  TaskPosition1D* task = new Rcs::TaskPosition1D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

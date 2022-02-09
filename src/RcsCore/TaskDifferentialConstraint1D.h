@@ -51,12 +51,6 @@ public:
   TaskDifferentialConstraint1D(const std::string& className, xmlNode* node,
                                RcsGraph* graph, int dim=1);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskDifferentialConstraint1D(const TaskDifferentialConstraint1D& src,
-                               RcsGraph* newGraph=NULL);
-
   /*! Destructor
    */
   virtual ~TaskDifferentialConstraint1D();

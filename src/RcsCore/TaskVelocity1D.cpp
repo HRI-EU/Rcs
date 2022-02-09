@@ -110,15 +110,6 @@ Rcs::TaskVelocity1D::TaskVelocity1D(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskVelocity1D::TaskVelocity1D(const TaskVelocity1D& copyFromMe,
-                                    RcsGraph* newGraph):
-  TaskPosition1D(copyFromMe, newGraph)
-{
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskVelocity1D::~TaskVelocity1D()
@@ -130,7 +121,9 @@ Rcs::TaskVelocity1D::~TaskVelocity1D()
  ******************************************************************************/
 Rcs::TaskVelocity1D* Rcs::TaskVelocity1D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskVelocity1D(*this, newGraph);
+  TaskVelocity1D* task = new Rcs::TaskVelocity1D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

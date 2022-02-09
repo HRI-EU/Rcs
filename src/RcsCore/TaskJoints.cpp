@@ -239,20 +239,13 @@ Rcs::TaskJoints::TaskJoints(const RcsBody* effector, const RcsBody* refBdy,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskJoints::TaskJoints(const Rcs::TaskJoints& copyFromMe,
-                            RcsGraph* newGraph):
-  CompositeTask(copyFromMe, newGraph)
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
 Rcs::TaskJoints* Rcs::TaskJoints::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskJoints(*this, newGraph);
+  TaskJoints* task = new Rcs::TaskJoints(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

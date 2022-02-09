@@ -227,10 +227,10 @@ Rcs::Task::Task(const std::string& className_,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
+ *
  ******************************************************************************/
-Rcs::Task::Task(const Task& copyFromMe, RcsGraph* newGraph):
-  graph(newGraph ? newGraph : copyFromMe.graph),
+Rcs::Task::Task(const Task& copyFromMe) :
+  graph(copyFromMe.graph),
   tsr(copyFromMe.tsr ? copyFromMe.tsr->clone() : NULL),
   effectorId(copyFromMe.effectorId),
   refBodyId(copyFromMe.refBodyId),
@@ -240,19 +240,30 @@ Rcs::Task::Task(const Task& copyFromMe, RcsGraph* newGraph):
   className(copyFromMe.className),
   params(copyFromMe.params)
 {
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::Task::setGraph(RcsGraph* newGraph)
+{
+  if (newGraph == this->graph)
+  {
+    return;
+  }
+
   // If the task is created with a new graph, we don't assume that the body
   // topology is the same as in the task we copy from. Therefore we retrieve
   // the task's bodies by name lookup.
-  if (newGraph)
-  {
+
     // The following section is the same for effector, refBdy and refFrame. We
     // check if the id >= 0. If this is not the the case, the body
     // is either not set, or refers to a GenericBody (with id range [-10 ...].
     // In such cases, we just keep the id, and do not resolve the id by name.
-    int otherId = copyFromMe.getEffectorId();
+  int otherId = getEffectorId();
     if (otherId >= 0)
     {
-      const RcsBody* otherBdy = RCSBODY_BY_ID(copyFromMe.getGraph(), otherId);
+    const RcsBody* otherBdy = RCSBODY_BY_ID(getGraph(), otherId);
       if (otherBdy)
       {
         const RcsBody* myBdy = RcsGraph_getBodyByName(newGraph, otherBdy->name);
@@ -260,10 +271,10 @@ Rcs::Task::Task(const Task& copyFromMe, RcsGraph* newGraph):
       }
     }
 
-    otherId = copyFromMe.getRefBodyId();
+  otherId = getRefBodyId();
     if (otherId >= 0)
     {
-      const RcsBody* otherBdy = RCSBODY_BY_ID(copyFromMe.getGraph(), otherId);
+    const RcsBody* otherBdy = RCSBODY_BY_ID(getGraph(), otherId);
       if (otherBdy)
       {
         const RcsBody* myBdy = RcsGraph_getBodyByName(newGraph, otherBdy->name);
@@ -271,18 +282,18 @@ Rcs::Task::Task(const Task& copyFromMe, RcsGraph* newGraph):
       }
     }
 
-    otherId = copyFromMe.getRefFrameId();
+  otherId = getRefFrameId();
     if (otherId >= 0)
     {
-      const RcsBody* otherBdy = RCSBODY_BY_ID(copyFromMe.getGraph(), otherId);
+    const RcsBody* otherBdy = RCSBODY_BY_ID(getGraph(), otherId);
       if (otherBdy)
       {
         const RcsBody* myBdy = RcsGraph_getBodyByName(newGraph, otherBdy->name);
         setRefFrameId(myBdy ? myBdy->id : -1);
-      }
     }
   }
 
+  this->graph = newGraph;
 }
 
 /*******************************************************************************

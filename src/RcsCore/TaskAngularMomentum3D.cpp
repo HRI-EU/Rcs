@@ -66,15 +66,6 @@ Rcs::TaskAngularMomentum3D::TaskAngularMomentum3D(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskAngularMomentum3D::TaskAngularMomentum3D(const Rcs::TaskAngularMomentum3D& copyFromMe, RcsGraph* newGraph):
-  Rcs::TaskGenericIK(copyFromMe, newGraph)
-{
-}
-
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskAngularMomentum3D::~TaskAngularMomentum3D()
@@ -86,7 +77,9 @@ Rcs::TaskAngularMomentum3D::~TaskAngularMomentum3D()
  ******************************************************************************/
 Rcs::TaskAngularMomentum3D* Rcs::TaskAngularMomentum3D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskAngularMomentum3D(*this, newGraph);
+  TaskAngularMomentum3D* task = new Rcs::TaskAngularMomentum3D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

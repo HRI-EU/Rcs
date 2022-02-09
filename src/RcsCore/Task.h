@@ -64,6 +64,16 @@
  *  coordinates of the effector are represented in the refBodie's frame, but
  *  rotated into the refFrame.
  *
+ *  We try to implement the Task classes with the "Rule of Zero" whereever
+ *  possible. It means that we try to avoid pointer resources in the classes
+ *  so that the classes are default-copyable. Therefore, there is no copy-
+ *  constructor in most classes. In order to provide a polymorphic copy
+ *  method, the clone-method is implemented in each class. It might be possible
+ *  to make this a bit less verbose using the "Curiously Recurring Template
+ *  Pattern (CRTP)", however this requires thinking about a few corners when
+ *  trying to understand what's going on so that ths saving in code-lines does
+ *  not justify the increased code complexity.
+ *
  *  Here is what to do for implementing a new task:
  *
  *  Case 1: Positions, velocities and accelerations are represented in the same
@@ -120,6 +130,8 @@
  *  - Where does the dimension of the task come from?
  *    - It is a default argument in the constructor and needs to be specified
  *      in the header file's constructor declaration.
+ *  - Why s the setGraph() method public?
+ *    - It needs to be called for child tasks from the Composite task
  */
 
 namespace Rcs
@@ -162,11 +174,6 @@ public:
   Task(const std::string& className, xmlNode* node, RcsGraph* graph,
        int dim=0);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  Task(const Task& copyFromMe, RcsGraph* newGraph);
-
   /*! \brief Destructor
    */
   virtual ~Task();
@@ -174,6 +181,10 @@ public:
   /*! \brief Virtual copy constructor with optional new graph
    */
   virtual Task* clone(RcsGraph* newGraph=NULL) const = 0;
+
+  /*! \brief Updates the task to the new graph.
+   */
+  virtual void setGraph(RcsGraph* graph);
 
   /*! \brief Returns the dimension of the task.
    */
@@ -747,6 +758,12 @@ public:
 
 protected:
 
+  /*! \brief We make this protected so that any non-Task class must use the
+   *         polymorphic clone method for copying. The graph pointer is
+   *         shallow-copied, the TaskSpaceRegion is deep-copied.
+   */
+  Task(const Task& copyFromMe);
+
   /*! \brief If name starts with "GenericBody", the function returns
    *         -10 - <number> where number is the number following after
    *         "GenericBody". If number is not within the interval
@@ -806,11 +823,6 @@ private:
    *         memory.
    */
   Task& operator = (const Task&);
-
-  /*! \brief Private copy constructor to avoid multiple deletes of pointer
-   *         memory.
-   */
-  Task(const Task& copyFromMe);
 
   /*! \brief Name of the task
    */

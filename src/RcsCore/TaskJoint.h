@@ -55,11 +55,6 @@ public:
   TaskJoint(const std::string& className, xmlNode* node, RcsGraph* graph,
             int dim=1);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskJoint(const TaskJoint& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! Constructor for tasks using the joint pointer directly.
    */
   TaskJoint(const RcsJoint* joint, const RcsJoint* refJoint,

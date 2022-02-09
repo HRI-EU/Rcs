@@ -56,35 +56,10 @@ Rcs::TaskStaticEffort::TaskStaticEffort(const std::string& className,
                                         RcsGraph* _graph,
                                         int dim):
   TaskGenericIK(className, node, _graph, dim),
-  W(NULL),
-  sensor(NULL)
+  sensorId(-1)
 {
   RFATAL("Parsing sensor and W missing, also toXML needs update");
   resetParameter(Parameters(0.0, 1.0, 1.0, "Effort"));
-}
-
-/*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskStaticEffort::TaskStaticEffort(const TaskStaticEffort& copyFromMe,
-                                        RcsGraph* newGraph):
-  TaskGenericIK(copyFromMe, newGraph),
-  sensor(NULL)
-{
-  if (newGraph != NULL)
-  {
-    if (copyFromMe.sensor)
-    {
-      this->sensor = RcsGraph_getSensorByName(newGraph,
-                                              copyFromMe.sensor->name);
-    }
-  }
-  else
-  {
-    this->sensor = copyFromMe.sensor;
-  }
-
-  this->W = MatNd_clone(copyFromMe.W);
 }
 
 /*******************************************************************************
@@ -99,7 +74,9 @@ Rcs::TaskStaticEffort::~TaskStaticEffort()
  ******************************************************************************/
 Rcs::TaskStaticEffort* Rcs::TaskStaticEffort::clone(RcsGraph* newGraph) const
 {
-  return new TaskStaticEffort(*this, newGraph);
+  TaskStaticEffort* task = new TaskStaticEffort(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************
@@ -107,10 +84,10 @@ Rcs::TaskStaticEffort* Rcs::TaskStaticEffort::clone(RcsGraph* newGraph) const
  ******************************************************************************/
 void Rcs::TaskStaticEffort::getForceInWorldCoords(double f[3]) const
 {
-  Vec3d_copy(f, this->sensor->rawData->ele);
+  Vec3d_copy(f, getSensor()->rawData->ele);
   HTr A_SI;
   HTr_copy(&A_SI, &getEffector()->A_BI);
-  HTr_transformSelf(&A_SI, &this->sensor->A_SB);
+  HTr_transformSelf(&A_SI, &getSensor()->A_SB);
   Vec3d_transRotateSelf(f, A_SI.rot);
 }
 
@@ -122,8 +99,32 @@ void Rcs::TaskStaticEffort::computeX(double* x_res) const
   double fbuf[3];
   MatNd f = MatNd_fromPtr(3, 1, fbuf);
   getForceInWorldCoords(f.ele);
-  *x_res = RcsGraph_staticEffort(this->graph, getEffector(), &f, this->W,
-                                 this->sensor->A_SB.org);
+  MatNd* wj = getJointWeights();
+
+  *x_res = RcsGraph_staticEffort(this->graph, getEffector(), &f, wj,
+                                 getSensor()->A_SB.org);
+
+  MatNd_destroy(wj);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+MatNd* Rcs::TaskStaticEffort::getJointWeights() const
+{
+  MatNd* wj = NULL;
+
+  if (!jointWeights.empty())
+  {
+    RCHECK(graph->nJ == jointWeights.size());
+    MatNd_create2(wj, graph->nJ, 1);
+    for (size_t i = 0; i < jointWeights.size(); ++i)
+    {
+      wj->ele[i] = jointWeights[i];
+    }
+  }
+
+  return wj;
 }
 
 /*******************************************************************************
@@ -135,9 +136,12 @@ void Rcs::TaskStaticEffort::computeJ(MatNd* dH) const
   double fbuf[3];
   MatNd f = MatNd_fromPtr(3, 1, fbuf);
   getForceInWorldCoords(f.ele);
-  RcsGraph_staticEffortGradient(this->graph, getEffector(), &f, this->W,
-                                this->sensor->A_SB.org, dH);
+  MatNd* wj = getJointWeights();
+
+  RcsGraph_staticEffortGradient(this->graph, getEffector(), &f, wj,
+                                getSensor()->A_SB.org, dH);
   MatNd_reshape(dH, 1, this->graph->nJ);
+  MatNd_destroy(wj);
 }
 
 /*******************************************************************************
@@ -148,6 +152,15 @@ void Rcs::TaskStaticEffort::computeJ(MatNd* dH) const
 void Rcs::TaskStaticEffort::computeH(MatNd* hessian) const
 {
   RFATAL("Not yet implemented");
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+const RcsSensor* Rcs::TaskStaticEffort::getSensor() const
+{
+  RCHECK((sensorId>=0) && (sensorId<(int)graph->nSensors));
+  return &graph->sensors[sensorId];
 }
 
 /*******************************************************************************

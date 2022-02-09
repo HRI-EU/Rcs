@@ -66,10 +66,6 @@ public:
    */
   TaskOmega3D(const std::string& className, xmlNode* node, RcsGraph* graph);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph pointer
-   */
-  TaskOmega3D(const TaskOmega3D& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! \brief Virtual destructor so that classes can properly inherit from this.
    */
   virtual ~TaskOmega3D();

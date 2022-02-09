@@ -52,12 +52,6 @@ public:
   TaskStaticEffort(const std::string& className, xmlNode* node,
                    RcsGraph* graph, int dim=1);
 
-  /*! \brief Copy constructor doing deep copying with optional new
-   *         graph pointer
-   */
-  TaskStaticEffort(const TaskStaticEffort& copyFromMe,
-                   RcsGraph* newGraph=NULL);
-
   /*! Destructor
    */
   virtual ~TaskStaticEffort();
@@ -97,8 +91,11 @@ public:
 
 protected:
 
-  MatNd* W;
-  RcsSensor* sensor;
+  const RcsSensor* getSensor() const;
+  MatNd* getJointWeights() const;
+
+  std::vector<double> jointWeights;
+  int sensorId;
 };
 
 }

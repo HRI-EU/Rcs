@@ -59,16 +59,6 @@ Rcs::TaskJointLimitPlateau::TaskJointLimitPlateau(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskJointLimitPlateau::TaskJointLimitPlateau(const Rcs::TaskJointLimitPlateau& copyFromMe,
-                                                  RcsGraph* newGraph):
-  TaskGenericIK(copyFromMe, newGraph)
-{
-  this->borderRatio = copyFromMe.borderRatio;
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskJointLimitPlateau::~TaskJointLimitPlateau()
@@ -80,7 +70,9 @@ Rcs::TaskJointLimitPlateau::~TaskJointLimitPlateau()
  ******************************************************************************/
 Rcs::TaskJointLimitPlateau* Rcs::TaskJointLimitPlateau::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskJointLimitPlateau(*this, newGraph);
+  TaskJointLimitPlateau* task = new Rcs::TaskJointLimitPlateau(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

@@ -53,11 +53,6 @@ public:
   TaskSpherical3D(const std::string& className, xmlNode* node,
                   RcsGraph* graph, int dim=3);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskSpherical3D(const TaskSpherical3D& src, RcsGraph* newGraph=NULL);
-
   /*! \brief Destructor
    */
   virtual ~TaskSpherical3D();

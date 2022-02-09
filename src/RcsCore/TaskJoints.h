@@ -100,12 +100,7 @@ public:
    */
   TaskJoints(const RcsBody* effector, const RcsBody* refBdy, RcsGraph* graph);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskJoints(const TaskJoints& copyFromMe, RcsGraph* newGraph=NULL);
-
-  /*! \brief Virtual copy constructor with optional new graph
+  /*! \brief Polymorphic clone function.
    */
   TaskJoints* clone(RcsGraph* newGraph=NULL) const;
 

@@ -53,11 +53,6 @@ public:
    */
   TaskPose5D(const std::string& className, xmlNode* node, RcsGraph* graph);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskPose5D(const TaskPose5D& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! \brief Virtual copy constructor with optional new graph
    */
   TaskPose5D* clone(RcsGraph* newGraph=NULL) const;

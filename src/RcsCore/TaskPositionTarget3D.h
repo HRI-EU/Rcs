@@ -31,6 +31,7 @@
 
 *******************************************************************************/
 
+#if 0
 #ifndef RCS_TASKPOSITIONTARGET3D_H
 #define RCS_TASKPOSITIONTARGET3D_H
 
@@ -53,14 +54,6 @@ public:
    */
   TaskPositionTarget3D(const std::string& className, xmlNode* node,
                        RcsGraph* graph, int dim=3);
-
-  /*! \brief Copy constructor, sharing the same graph.
-   */
-  TaskPositionTarget3D(const TaskPositionTarget3D& src);
-
-  /*! \brief Copy constructor doing deep copying with new graph pointer
-   */
-  TaskPositionTarget3D(const TaskPositionTarget3D& src, RcsGraph* newGraph);
 
   /*! Destructor
    */
@@ -131,12 +124,14 @@ private:
 
   int createBody();
   void updateRefBody() const;
+  HTr computeGoalTransform() const;
   int goalBdyId;
+  HTr goalTransform;
 
   TaskPositionTarget3D();
-  TaskPositionTarget3D& operator=(const TaskPositionTarget3D&);
 };
 
 }
 
 #endif // RCS_TASKPOSITIONTARGET3D_H
+#endif//0

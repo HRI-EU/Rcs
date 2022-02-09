@@ -78,17 +78,6 @@ Rcs::TaskSphericalForce1D::TaskSphericalForce1D(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskSphericalForce1D::TaskSphericalForce1D(const TaskSphericalForce1D& copyFromMe, RcsGraph* newGraph):
-  TaskSpherical1D(copyFromMe, newGraph),
-  ft_curr_temp(copyFromMe.ft_curr_temp),
-  ft_des_temp(copyFromMe.ft_des_temp),
-  force_feedback(copyFromMe.force_feedback)
-{
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskSphericalForce1D::~TaskSphericalForce1D()
@@ -100,7 +89,9 @@ Rcs::TaskSphericalForce1D::~TaskSphericalForce1D()
  ******************************************************************************/
 Rcs::TaskSphericalForce1D* Rcs::TaskSphericalForce1D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskSphericalForce1D(*this, newGraph);
+  TaskSphericalForce1D* task = new Rcs::TaskSphericalForce1D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

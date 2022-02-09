@@ -51,11 +51,6 @@ public:
   TaskDistance1D(const std::string& className, xmlNode* node,
                  RcsGraph* graph, int dim=1);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer.
-   */
-  TaskDistance1D(const TaskDistance1D& src, RcsGraph* newGraph=NULL);
-
   /*! Constructor based on graph and effectors.
   */
   TaskDistance1D(RcsGraph* graph, const RcsBody* effector,
@@ -102,6 +97,7 @@ public:
   static bool isValid(xmlNode* xml_node, const RcsGraph* graph);
 
 protected:
+
   int index;
 };
 }

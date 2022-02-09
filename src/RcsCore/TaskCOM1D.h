@@ -55,11 +55,6 @@ public:
   TaskCOM1D(const std::string& className, xmlNode* node, RcsGraph* graph,
             int dim=1);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskCOM1D(const TaskCOM1D& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! Destructor
    */
   virtual ~TaskCOM1D();

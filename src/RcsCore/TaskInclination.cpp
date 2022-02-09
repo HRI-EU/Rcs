@@ -129,18 +129,6 @@ Rcs::TaskInclination::TaskInclination(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskInclination::TaskInclination(const TaskInclination& copyFromMe,
-                                      RcsGraph* newGraph):
-  TaskGenericIK(copyFromMe, newGraph),
-  direction(copyFromMe.direction),
-  refDirection(copyFromMe.refDirection),
-  effectorVec(copyFromMe.effectorVec)
-{
-}
-
-/*******************************************************************************
  *  Destructor
  ******************************************************************************/
 Rcs::TaskInclination::~TaskInclination()
@@ -152,7 +140,9 @@ Rcs::TaskInclination::~TaskInclination()
  ******************************************************************************/
 Rcs::TaskInclination* Rcs::TaskInclination::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskInclination(*this, newGraph);
+  TaskInclination* task = new Rcs::TaskInclination(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

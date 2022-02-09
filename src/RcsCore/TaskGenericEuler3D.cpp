@@ -411,17 +411,6 @@ Rcs::TaskGenericEuler3D::TaskGenericEuler3D(RcsGraph* graph_,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskGenericEuler3D::TaskGenericEuler3D(const TaskGenericEuler3D& src,
-                                            RcsGraph* newGraph):
-  Rcs::Task(src, newGraph)
-{
-  this->eulerOrder = src.eulerOrder;
-  memmove(this->eulerOrderVect, src.eulerOrderVect, 4*sizeof(int));
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskGenericEuler3D::~TaskGenericEuler3D()
@@ -433,7 +422,9 @@ Rcs::TaskGenericEuler3D::~TaskGenericEuler3D()
  ******************************************************************************/
 Rcs::TaskGenericEuler3D* Rcs::TaskGenericEuler3D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskGenericEuler3D(*this, newGraph);
+  TaskGenericEuler3D* task = new Rcs::TaskGenericEuler3D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 

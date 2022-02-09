@@ -79,16 +79,6 @@ Rcs::TaskEuler1D::TaskEuler1D(const std::string& className, xmlNode* node,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskEuler1D::TaskEuler1D(const TaskEuler1D& copyFromMe,
-                              RcsGraph* newGraph):
-  TaskGenericIK(copyFromMe, newGraph),
-  index(copyFromMe.index)
-{
-}
-
-/*******************************************************************************
  * For programmatic creation
  ******************************************************************************/
 Rcs::TaskEuler1D::TaskEuler1D(const std::string& className,
@@ -134,7 +124,9 @@ Rcs::TaskEuler1D::~TaskEuler1D()
  ******************************************************************************/
 Rcs::TaskEuler1D* Rcs::TaskEuler1D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskEuler1D(*this, newGraph);
+  TaskEuler1D* task = new Rcs::TaskEuler1D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

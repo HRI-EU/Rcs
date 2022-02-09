@@ -54,7 +54,7 @@ Rcs::TaskPositionForce3D::TaskPositionForce3D(const std::string& className,
                                               xmlNode* node,
                                               RcsGraph* _graph,
                                               int _dim):
-  TaskPosition3D(className, node, _graph, _dim), force_feedback(true), fts(NULL)
+  TaskPosition3D(className, node, _graph, _dim), force_feedback(true), ftsId(-1)
 {
   VecNd_setZero(ft_curr_temp, getDim());
   VecNd_setZero(ft_des_temp, getDim());
@@ -70,24 +70,7 @@ Rcs::TaskPositionForce3D::TaskPositionForce3D(const std::string& className,
 
   char tmp[64] = "";
   getXMLNodePropertyStringN(node, "sensor", tmp, 64);
-  this->fts = RcsGraph_getSensorByName(getGraph(), tmp);
-}
-
-/*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskPositionForce3D::TaskPositionForce3D(const TaskPositionForce3D& copyFromMe, RcsGraph* newGraph):
-  TaskPosition3D(copyFromMe, newGraph),
-  force_feedback(copyFromMe.force_feedback),
-  fts(NULL)
-{
-  if (copyFromMe.fts != NULL)
-  {
-    this->fts = RcsGraph_getSensorByName(getGraph(), copyFromMe.fts->name);
-  }
-
-  VecNd_copy(this->ft_curr_temp, copyFromMe.ft_curr_temp, getDim());
-  VecNd_copy(this->ft_des_temp, copyFromMe.ft_des_temp, getDim());
+  this->ftsId = RcsGraph_getSensorIdByName(getGraph(), tmp);
 }
 
 /*******************************************************************************
@@ -102,7 +85,9 @@ Rcs::TaskPositionForce3D::~TaskPositionForce3D()
  ******************************************************************************/
 Rcs::TaskPositionForce3D* Rcs::TaskPositionForce3D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskPositionForce3D(*this, newGraph);
+  TaskPositionForce3D* task = new Rcs::TaskPositionForce3D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************
@@ -110,14 +95,15 @@ Rcs::TaskPositionForce3D* Rcs::TaskPositionForce3D::clone(RcsGraph* newGraph) co
  ******************************************************************************/
 void Rcs::TaskPositionForce3D::computeX(double* x_res) const
 {
-  if (this->fts == NULL)
+  if (this->ftsId == -1)
   {
     VecNd_copy(x_res, this->ft_curr_temp, getDim());
   }
   else
   {
     MatNd res = MatNd_fromPtr(getDim(), 1, x_res);
-    projectTaskForce(&res, this->fts);
+    const RcsSensor* fts = &graph->sensors[this->ftsId];
+    projectTaskForce(&res, fts);
   }
 }
 

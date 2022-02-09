@@ -65,20 +65,13 @@ Rcs::TaskCompositeXml::TaskCompositeXml(const std::string& className_,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskCompositeXml::TaskCompositeXml(const Rcs::TaskCompositeXml& copyFromMe,
-                                        RcsGraph* newGraph):
-  CompositeTask(copyFromMe, newGraph)
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
 Rcs::TaskCompositeXml* Rcs::TaskCompositeXml::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskCompositeXml(*this, newGraph);
+  TaskCompositeXml* task = new Rcs::TaskCompositeXml(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

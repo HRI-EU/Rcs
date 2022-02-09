@@ -60,12 +60,6 @@ public:
                      const RcsBody* effector, const RcsBody* refBdy,
                      const RcsBody* refFrame);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskGenericEuler3D(const TaskGenericEuler3D& copyFromMe,
-                     RcsGraph* newGraph=NULL);
-
   /*! Destructor
    */
   virtual ~TaskGenericEuler3D();

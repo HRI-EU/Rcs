@@ -64,15 +64,6 @@ Rcs::TaskEuler3D::TaskEuler3D(const std::string& className_,
 /*******************************************************************************
  *
  ******************************************************************************/
-Rcs::TaskEuler3D::TaskEuler3D(const TaskEuler3D& copyFromMe,
-                              RcsGraph* newGraph):
-  Rcs::Task(copyFromMe, newGraph)
-{
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
 Rcs::TaskEuler3D::TaskEuler3D(RcsGraph* graph_,
                               const RcsBody* effector,
                               const RcsBody* refBdy,
@@ -101,7 +92,9 @@ Rcs::TaskEuler3D::~TaskEuler3D()
  ******************************************************************************/
 Rcs::TaskEuler3D* Rcs::TaskEuler3D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskEuler3D(*this, newGraph);
+  TaskEuler3D* task = new Rcs::TaskEuler3D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

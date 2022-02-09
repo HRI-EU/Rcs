@@ -95,16 +95,6 @@ Rcs::TaskPolarSurfaceNormal::TaskPolarSurfaceNormal(const std::string& className
 }
 
 /*******************************************************************************
- *
- ******************************************************************************/
-Rcs::TaskPolarSurfaceNormal::TaskPolarSurfaceNormal(const TaskPolarSurfaceNormal& copyFromMe,
-                                                    RcsGraph* newGraph):
-  Task(copyFromMe, newGraph), surfaceBodies(copyFromMe.surfaceBodies),
-  direction(copyFromMe.direction), gainDX(copyFromMe.gainDX)
-{
-}
-
-/*******************************************************************************
  * Virtual destructor required for Polymorphism
  ******************************************************************************/
 Rcs::TaskPolarSurfaceNormal::~TaskPolarSurfaceNormal()
@@ -116,7 +106,9 @@ Rcs::TaskPolarSurfaceNormal::~TaskPolarSurfaceNormal()
  ******************************************************************************/
 Rcs::TaskPolarSurfaceNormal* Rcs::TaskPolarSurfaceNormal::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskPolarSurfaceNormal(*this, newGraph);
+  TaskPolarSurfaceNormal* task = new Rcs::TaskPolarSurfaceNormal(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

@@ -73,18 +73,6 @@ Rcs::TaskCylindricalForce1D::TaskCylindricalForce1D(const std::string& className
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskCylindricalForce1D::TaskCylindricalForce1D(const TaskCylindricalForce1D& copyFromMe,
-                                                    RcsGraph* newGraph):
-  TaskCylindrical1D(copyFromMe, newGraph),
-  ft_curr_temp(copyFromMe.ft_curr_temp),
-  ft_des_temp(copyFromMe.ft_des_temp),
-  force_feedback(copyFromMe.force_feedback)
-{
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskCylindricalForce1D::~TaskCylindricalForce1D()
@@ -96,7 +84,9 @@ Rcs::TaskCylindricalForce1D::~TaskCylindricalForce1D()
  ******************************************************************************/
 Rcs::TaskCylindricalForce1D* Rcs::TaskCylindricalForce1D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskCylindricalForce1D(*this, newGraph);
+  TaskCylindricalForce1D* task = new Rcs::TaskCylindricalForce1D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

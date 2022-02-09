@@ -93,11 +93,6 @@ public:
   TaskGenericIK(const std::string& className, xmlNode* node, RcsGraph* graph,
                 int dim=0);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskGenericIK(const TaskGenericIK& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! \brief Destructor
    */
   virtual ~TaskGenericIK();

@@ -79,16 +79,6 @@ Rcs::TaskSpherical1D::TaskSpherical1D(const std::string& className_,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskSpherical1D::TaskSpherical1D(const TaskSpherical1D& copyFromMe,
-                                      RcsGraph* newGraph):
-  TaskSpherical3D(copyFromMe, newGraph),
-  index(copyFromMe.index)
-{
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskSpherical1D::~TaskSpherical1D()
@@ -100,7 +90,9 @@ Rcs::TaskSpherical1D::~TaskSpherical1D()
  ******************************************************************************/
 Rcs::TaskSpherical1D* Rcs::TaskSpherical1D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskSpherical1D(*this, newGraph);
+  TaskSpherical1D* task = new Rcs::TaskSpherical1D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

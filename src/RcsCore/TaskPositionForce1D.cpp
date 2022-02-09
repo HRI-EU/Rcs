@@ -57,7 +57,7 @@ Rcs::TaskPositionForce1D::TaskPositionForce1D(const std::string& className,
                                               RcsGraph* _graph,
                                               int _dim):
   TaskPosition1D(className, node, _graph, _dim),
-  ft_curr_temp(0.0), ft_des_temp(0.0), force_feedback(true), fts(NULL)
+  ft_curr_temp(0.0), ft_des_temp(0.0), force_feedback(true), ftsId(-1)
 {
   if (className=="ForceX")
   {
@@ -79,7 +79,7 @@ Rcs::TaskPositionForce1D::TaskPositionForce1D(const std::string& className,
 
   char tmp[64] = "";
   getXMLNodePropertyStringN(node, "sensor", tmp, 64);
-  this->fts = RcsGraph_getSensorByName(getGraph(), tmp);
+  this->ftsId = RcsGraph_getSensorIdByName(getGraph(), tmp);
 }
 
 /*******************************************************************************
@@ -93,7 +93,7 @@ Rcs::TaskPositionForce1D::TaskPositionForce1D(const std::string& className,
                                               const std::string& sensorName,
                                               bool forceFeedback):
   TaskPosition1D(className, graph, effector, refBdy, refFrame),
-  ft_curr_temp(0.0), ft_des_temp(0.0), force_feedback(true), fts(NULL)
+  ft_curr_temp(0.0), ft_des_temp(0.0), force_feedback(true), ftsId(-1)
 {
 
   if (className=="ForceX")
@@ -114,23 +114,7 @@ Rcs::TaskPositionForce1D::TaskPositionForce1D(const std::string& className,
 
   this->force_feedback = forceFeedback;
 
-  this->fts = RcsGraph_getSensorByName(graph, sensorName.c_str());
-}
-
-/*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskPositionForce1D::TaskPositionForce1D(const TaskPositionForce1D& copyFromMe, RcsGraph* newGraph):
-  TaskPosition1D(copyFromMe, newGraph),
-  ft_curr_temp(copyFromMe.ft_curr_temp),
-  ft_des_temp(copyFromMe.ft_des_temp),
-  force_feedback(copyFromMe.force_feedback),
-  fts(NULL)
-{
-  if (copyFromMe.fts != NULL)
-  {
-    this->fts = RcsGraph_getSensorByName(getGraph(), copyFromMe.fts->name);
-  }
+  this->ftsId = RcsGraph_getSensorIdByName(graph, sensorName.c_str());
 }
 
 /*******************************************************************************
@@ -145,7 +129,9 @@ Rcs::TaskPositionForce1D::~TaskPositionForce1D()
  ******************************************************************************/
 Rcs::TaskPositionForce1D* Rcs::TaskPositionForce1D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskPositionForce1D(*this, newGraph);
+  TaskPositionForce1D* task = new Rcs::TaskPositionForce1D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************
@@ -153,14 +139,15 @@ Rcs::TaskPositionForce1D* Rcs::TaskPositionForce1D::clone(RcsGraph* newGraph) co
  ******************************************************************************/
 void Rcs::TaskPositionForce1D::computeX(double* x_res) const
 {
-  if (this->fts == NULL)
+  if (this->ftsId == -1)
   {
     x_res[0] = this->ft_curr_temp;
   }
   else
   {
     MatNd res = MatNd_fromPtr(getDim(), 1, x_res);
-    projectTaskForce(&res, this->fts);
+    const RcsSensor* fts = &graph->sensors[this->ftsId];
+    projectTaskForce(&res, fts);
   }
 }
 

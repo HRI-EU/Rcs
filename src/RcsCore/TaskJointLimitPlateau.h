@@ -52,10 +52,6 @@ public:
   TaskJointLimitPlateau(const std::string& className, xmlNode* node, RcsGraph* _graph,
                         int dim=1);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph pointer
-   */
-  TaskJointLimitPlateau(const TaskJointLimitPlateau& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! Destructor
    */
   virtual ~TaskJointLimitPlateau();

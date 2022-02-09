@@ -53,12 +53,6 @@ public:
   TaskSphericalForce1D(const std::string& className, xmlNode* node,
                        RcsGraph* graph, int dim=1);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskSphericalForce1D(const TaskSphericalForce1D& copyFromMe,
-                       RcsGraph* newGraph=NULL);
-
   /*! Destructor
    */
   virtual ~TaskSphericalForce1D();
@@ -107,7 +101,6 @@ protected:
   double ft_curr_temp;
   double ft_des_temp;
   bool force_feedback;
-
 };
 
 }

@@ -62,11 +62,6 @@ public:
                       const RcsBody* refFrame, const std::string& sensorName,
                       bool forceFeedback);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph pointer
-   */
-  TaskPositionForce1D(const TaskPositionForce1D& copyFromMe,
-                      RcsGraph* newGraph=NULL);
-
   /*! Destructor
    */
   virtual ~TaskPositionForce1D();
@@ -112,7 +107,7 @@ protected:
   double ft_curr_temp;
   double ft_des_temp;
   bool force_feedback;
-  RcsSensor* fts;
+  int ftsId;
 };
 
 }

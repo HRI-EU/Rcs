@@ -49,11 +49,6 @@ public:
   TaskSleeve(const std::string& className, xmlNode* node,
              RcsGraph* graph, int dim=3);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskSleeve(const TaskSleeve& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! Destructor
    */
   virtual ~TaskSleeve();

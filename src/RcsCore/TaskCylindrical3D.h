@@ -62,11 +62,6 @@ public:
   TaskCylindrical3D(const std::string& className, xmlNode* node,
                     RcsGraph* graph, int dim=3);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskCylindrical3D(const TaskCylindrical3D& src, RcsGraph* newGraph=NULL);
-
   /*! \brief Destructor
    */
   virtual ~TaskCylindrical3D();
@@ -111,7 +106,9 @@ public:
    *         coordinates
    */
   virtual void computeJdot(MatNd* Jdot) const;
+
   virtual bool testHessian(bool verbose=false);
+
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise:
    *         - XML tag "effector" corresponds to body in graph

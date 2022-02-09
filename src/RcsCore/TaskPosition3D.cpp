@@ -80,15 +80,6 @@ TaskPosition3D::TaskPosition3D(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-TaskPosition3D::TaskPosition3D(const TaskPosition3D& src,
-                               RcsGraph* newGraph) :
-  TaskGenericIK(src, newGraph)
-{
-}
-
-/*******************************************************************************
  * Constructor based on body pointers
  ******************************************************************************/
 TaskPosition3D::TaskPosition3D(RcsGraph* graph_,
@@ -119,7 +110,9 @@ TaskPosition3D::~TaskPosition3D()
  ******************************************************************************/
 TaskPosition3D* TaskPosition3D::clone(RcsGraph* newGraph) const
 {
-  return new TaskPosition3D(*this, newGraph);
+  TaskPosition3D* task = new TaskPosition3D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

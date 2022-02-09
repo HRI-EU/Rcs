@@ -89,11 +89,6 @@ public:
   TaskPosition3D(const std::string& className, xmlNode* node,
                  RcsGraph* graph, int dim=3);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer.
-   */
-  TaskPosition3D(const TaskPosition3D& src, RcsGraph* newGraph=NULL);
-
   /*! Constructor based on graph and effectors.
    */
   TaskPosition3D(RcsGraph* graph, const RcsBody* effector,

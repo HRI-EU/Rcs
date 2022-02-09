@@ -100,16 +100,6 @@ Rcs::TaskPosition2D::TaskPosition2D(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskPosition2D::TaskPosition2D(const TaskPosition2D& copyFromMe,
-                                    RcsGraph* newGraph):
-  TaskPosition3D(copyFromMe, newGraph),
-  index1(copyFromMe.index1), index2(copyFromMe.index2)
-{
-}
-
-/*******************************************************************************
  * For programmatic creation
  ******************************************************************************/
 Rcs::TaskPosition2D::TaskPosition2D(const std::string& className,
@@ -162,7 +152,9 @@ Rcs::TaskPosition2D::~TaskPosition2D()
  ******************************************************************************/
 Rcs::TaskPosition2D* Rcs::TaskPosition2D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskPosition2D(*this, newGraph);
+  TaskPosition2D* task = new Rcs::TaskPosition2D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

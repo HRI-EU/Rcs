@@ -55,8 +55,7 @@ TaskDifferentialConstraint1D(const std::string& taskType,
                              xmlNode* node,
                              RcsGraph* _graph,
                              int dim):
-  TaskGenericIK(taskType, node, _graph, dim),
-  index(0)
+  TaskGenericIK(taskType, node, _graph, dim), index(0)
 {
 
   if (taskType=="DiffConstraintX")
@@ -78,17 +77,6 @@ TaskDifferentialConstraint1D(const std::string& taskType,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskDifferentialConstraint1D::
-TaskDifferentialConstraint1D(const TaskDifferentialConstraint1D& src,
-                             RcsGraph* newGraph):
-  TaskGenericIK(src, newGraph),
-  index(src.index)
-{
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskDifferentialConstraint1D::~TaskDifferentialConstraint1D()
@@ -101,7 +89,9 @@ Rcs::TaskDifferentialConstraint1D::~TaskDifferentialConstraint1D()
 Rcs::TaskDifferentialConstraint1D*
 Rcs::TaskDifferentialConstraint1D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskDifferentialConstraint1D(*this, newGraph);
+  TaskDifferentialConstraint1D* task = new Rcs::TaskDifferentialConstraint1D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

@@ -86,15 +86,6 @@ Rcs::TaskCOM1D::TaskCOM1D(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskCOM1D::TaskCOM1D(const TaskCOM1D& copyFromMe, RcsGraph* newGraph):
-  TaskCOM3D(copyFromMe, newGraph),
-  index(copyFromMe.index)
-{
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskCOM1D::~TaskCOM1D()
@@ -106,7 +97,9 @@ Rcs::TaskCOM1D::~TaskCOM1D()
  ******************************************************************************/
 Rcs::TaskCOM1D* Rcs::TaskCOM1D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskCOM1D(*this, newGraph);
+  TaskCOM1D* task = new Rcs::TaskCOM1D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

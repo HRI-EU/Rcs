@@ -67,16 +67,6 @@ Rcs::TaskDistance::TaskDistance(const std::string& className_,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskDistance::TaskDistance(const TaskDistance& copyFromMe,
-                                RcsGraph* newGraph):
-  TaskGenericIK(copyFromMe, newGraph),
-  gainDX(copyFromMe.gainDX)
-{
-}
-
-/*******************************************************************************
  * Constructor based on body pointers
  ******************************************************************************/
 Rcs::TaskDistance::TaskDistance(RcsGraph* graph_,
@@ -120,7 +110,9 @@ Rcs::TaskDistance::~TaskDistance()
  ******************************************************************************/
 Rcs::TaskDistance* Rcs::TaskDistance::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskDistance(*this, newGraph);
+  TaskDistance* task = new Rcs::TaskDistance(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

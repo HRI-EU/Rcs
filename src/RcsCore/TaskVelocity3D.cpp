@@ -60,7 +60,7 @@ Rcs::TaskVelocity3D::TaskVelocity3D(RcsGraph* graph, const RcsBody* effector,
   addParameter(Parameters(-1.0, 1.0, 1.0, "Y Velocity [m/s]"));
   addParameter(Parameters(-1.0, 1.0, 1.0, "Z Velocity [m/s]"));
 
-  Vec3d_setZero(velocity_des_temp);
+  velocity_des_temp = std::vector<double>(3, 0.0);
 }
 
 /*******************************************************************************
@@ -80,17 +80,7 @@ Rcs::TaskVelocity3D::TaskVelocity3D(const std::string& taskType,
     addParameter(Parameters(-1.0, 1.0, 1.0, "Z Velocity [m/s]"));
   }
 
-  Vec3d_setZero(velocity_des_temp);
-}
-
-/*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskVelocity3D::TaskVelocity3D(const TaskVelocity3D& copyFromMe,
-                                    RcsGraph* newGraph):
-  TaskPosition3D(copyFromMe, newGraph)
-{
-  Vec3d_copy(velocity_des_temp, copyFromMe.velocity_des_temp);
+  velocity_des_temp = std::vector<double>(3, 0.0);
 }
 
 /*******************************************************************************
@@ -105,7 +95,9 @@ Rcs::TaskVelocity3D::~TaskVelocity3D()
  ******************************************************************************/
 Rcs::TaskVelocity3D* Rcs::TaskVelocity3D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskVelocity3D(*this, newGraph);
+  TaskVelocity3D* task = new Rcs::TaskVelocity3D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

@@ -99,15 +99,6 @@ Rcs::TaskSleeve::TaskSleeve(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskSleeve::TaskSleeve(const TaskSleeve& copyFromMe,
-                            RcsGraph* newGraph):
-  TaskGenericIK(copyFromMe, newGraph), slideBdyId(copyFromMe.slideBdyId)
-{
-}
-
-/*******************************************************************************
  *  Destructor
  ******************************************************************************/
 Rcs::TaskSleeve::~TaskSleeve()
@@ -119,7 +110,9 @@ Rcs::TaskSleeve::~TaskSleeve()
  ******************************************************************************/
 Rcs::TaskSleeve* Rcs::TaskSleeve::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskSleeve(*this, newGraph);
+  TaskSleeve* task = new Rcs::TaskSleeve(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

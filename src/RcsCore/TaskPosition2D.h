@@ -60,11 +60,6 @@ public:
   TaskPosition2D(const std::string& className, xmlNode* node,
                  RcsGraph* graph, int dim=2);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskPosition2D(const TaskPosition2D& copyFromFe, RcsGraph* newGraph=NULL);
-
   /*! Constructor based on graph and effectors.
    */
   TaskPosition2D(const std::string& className, RcsGraph* graph,
@@ -112,6 +107,7 @@ public:
   static bool isValid(xmlNode* node, const RcsGraph* graph);
 
 protected:
+
   int index1, index2;
 };
 }

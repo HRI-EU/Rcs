@@ -68,10 +68,6 @@ public:
               const RcsBody* effector, const RcsBody* refBdy=NULL,
               const RcsBody* refFrame=NULL);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph pointer
-   */
-  TaskOmega1D(const TaskOmega1D& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! Destructor
    */
   virtual ~TaskOmega1D();

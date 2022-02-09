@@ -65,15 +65,6 @@ Rcs::TaskJointLimit::TaskJointLimit(const std::string& className_,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskJointLimit::TaskJointLimit(const TaskJointLimit& copyFromMe,
-                                    RcsGraph* newGraph):
-  TaskGenericIK(copyFromMe, newGraph), borderRatio(copyFromMe.borderRatio)
-{
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskJointLimit::~TaskJointLimit()
@@ -85,7 +76,9 @@ Rcs::TaskJointLimit::~TaskJointLimit()
  ******************************************************************************/
 Rcs::TaskJointLimit* Rcs::TaskJointLimit::clone(RcsGraph* newGraph) const
 {
-  return new TaskJointLimit(*this, newGraph);
+  TaskJointLimit* task =  new TaskJointLimit(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

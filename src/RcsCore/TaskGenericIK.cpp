@@ -59,15 +59,6 @@ Rcs::TaskGenericIK::TaskGenericIK(const std::string& className,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskGenericIK::TaskGenericIK(const TaskGenericIK& copyFromMe,
-                                  RcsGraph* newGraph):
-  Task(copyFromMe, newGraph)
-{
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskGenericIK::~TaskGenericIK()

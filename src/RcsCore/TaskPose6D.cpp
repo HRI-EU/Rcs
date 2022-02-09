@@ -120,20 +120,13 @@ Rcs::TaskPose6D::TaskPose6D(RcsGraph* graph_,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskPose6D::TaskPose6D(const Rcs::TaskPose6D& copyFromMe,
-                            RcsGraph* newGraph):
-  CompositeTask(copyFromMe, newGraph)
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
 Rcs::TaskPose6D* Rcs::TaskPose6D::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskPose6D(*this, newGraph);
+  TaskPose6D* task = new Rcs::TaskPose6D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

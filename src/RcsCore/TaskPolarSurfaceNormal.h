@@ -77,12 +77,6 @@ public:
   TaskPolarSurfaceNormal(const std::string& className, xmlNode* node,
                          RcsGraph* graph, int dim=2);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskPolarSurfaceNormal(const TaskPolarSurfaceNormal& copyFromMe,
-                         RcsGraph* newGraph=NULL);
-
   /*! Destructor
    */
   virtual ~TaskPolarSurfaceNormal();

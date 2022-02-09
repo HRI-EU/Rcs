@@ -58,11 +58,6 @@ public:
   TaskPose6D(RcsGraph* graph, const RcsBody* effector,
              const RcsBody* refBdy, const RcsBody* refFrame);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskPose6D(const TaskPose6D& copyFromMe, RcsGraph* newGraph=NULL);
-
   /*! \brief Virtual copy constructor with optional new graph
    */
   TaskPose6D* clone(RcsGraph* newGraph=NULL) const;

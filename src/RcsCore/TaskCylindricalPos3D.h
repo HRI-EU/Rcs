@@ -60,12 +60,6 @@ public:
   TaskCylindricalPos3D(const std::string& className, xmlNode* node,
                        RcsGraph* graph, int dim=3);
 
-  /*! \brief Copy constructor doing deep copying with optional new graph
-   *         pointer
-   */
-  TaskCylindricalPos3D(const TaskCylindricalPos3D& src,
-                       RcsGraph* newGraph=NULL);
-
   /*! \brief Destructor
    */
   virtual ~TaskCylindricalPos3D();

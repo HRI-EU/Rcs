@@ -184,17 +184,6 @@ Rcs::TaskJoint::TaskJoint(RcsGraph* graph_, const RcsJoint* joint,
 }
 
 /*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-Rcs::TaskJoint::TaskJoint(const TaskJoint& copyFromMe, RcsGraph* newGraph):
-  TaskGenericIK(copyFromMe, newGraph),
-  jointId(copyFromMe.jointId),
-  refJointId(copyFromMe.refJointId),
-  refGain(copyFromMe.refGain)
-{
-}
-
-/*******************************************************************************
  * Destructor
  ******************************************************************************/
 Rcs::TaskJoint::~TaskJoint()
@@ -206,7 +195,9 @@ Rcs::TaskJoint::~TaskJoint()
  ******************************************************************************/
 Rcs::TaskJoint* Rcs::TaskJoint::clone(RcsGraph* newGraph) const
 {
-  return new Rcs::TaskJoint(*this, newGraph);
+  TaskJoint* task = new Rcs::TaskJoint(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************

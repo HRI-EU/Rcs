@@ -30,7 +30,7 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *******************************************************************************/
-
+#if 0
 #include "TaskPositionTarget3D.h"
 #include "TaskFactory.h"
 #include "Rcs_typedef.h"
@@ -57,6 +57,7 @@ TaskPositionTarget3D::TaskPositionTarget3D(const std::string& className_,
   TaskPosition3D(className_, node, _graph, dim)
 {
   this->goalBdyId = createBody();
+  HTr_setIdentity(&goalTransform);
 }
 
 /*******************************************************************************
@@ -66,16 +67,7 @@ TaskPositionTarget3D::TaskPositionTarget3D(const TaskPositionTarget3D& src):
   TaskPosition3D(src)
 {
   this->goalBdyId = createBody();
-}
-
-/*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-TaskPositionTarget3D::TaskPositionTarget3D(const TaskPositionTarget3D& src,
-                                           RcsGraph* newGraph):
-  TaskPosition3D(src, newGraph), goalBdyId(src.goalBdyId)
-{
-  this->goalBdyId = createBody();
+  HTr_setIdentity(&goalTransform);
 }
 
 /*******************************************************************************
@@ -90,10 +82,9 @@ TaskPositionTarget3D::~TaskPositionTarget3D()
  ******************************************************************************/
 TaskPositionTarget3D* TaskPositionTarget3D::clone(RcsGraph* newGraph) const
 {
-  TaskPositionTarget3D* cpy = new TaskPositionTarget3D(*this, newGraph);
-  cpy->updateRefBody();
-
-  return cpy;
+  TaskPositionTarget3D* task = new TaskPositionTarget3D(*this);
+  task->setGraph(newGraph);
+  return task;
 }
 
 /*******************************************************************************
@@ -103,16 +94,36 @@ void TaskPositionTarget3D::updateRefBody() const
 {
   const RcsBody* ef = getEffector();
   const RcsBody* refBody = getRefBody();
-  RcsBody* goalBdy = RCSBODY_BY_ID(getGraph(), goalBdyId);
 
   // Origin is in reference body
   const double* refPos = refBody ? refBody->A_BI.org : Vec3d_zeroVec();
-  Vec3d_copy(goalBdy->A_BI.org, refPos);
+  Vec3d_copy(goalTransform.org, refPos);
 
   // Orientation (x-axis of frame) points towards effector
   double dir[3];
   Vec3d_sub(dir, ef->A_BI.org, refPos);
-  Mat3d_fromVec(goalBdy->A_BI.rot, dir, 0);
+  Mat3d_fromVec(goalTransform.rot, dir, 0);
+}
+
+/*******************************************************************************
+ * Set refBody transformation to point from reference towards effector
+ ******************************************************************************/
+HTr TaskPositionTarget3D::computeGoalTransform() const
+{
+  HTr A_GI;
+  const RcsBody* ef = getEffector();
+  const RcsBody* refBody = getRefBody();
+
+  // Origin is in reference body
+  const double* refPos = refBody ? refBody->A_BI.org : Vec3d_zeroVec();
+  Vec3d_copy(A_GI.org, refPos);
+
+  // Orientation (x-axis of frame) points towards effector
+  double dir[3];
+  Vec3d_sub(dir, ef->A_BI.org, refPos);
+  Mat3d_fromVec(A_GI.rot, dir, 0);
+
+  return A_GI;
 }
 
 /*******************************************************************************
@@ -194,7 +205,6 @@ void TaskPositionTarget3D::computeH(MatNd* hessian) const
  ******************************************************************************/
 int TaskPositionTarget3D::createBody()
 {
-  //RcsBody* body = RcsBody_create();
   RcsBody* body = RcsGraph_insertGraphBody(getGraph(), -1);
 
   snprintf(body->name, RCS_MAX_NAMELEN, "%s", "TaskPositionTarget3D::refFrame");
@@ -346,3 +356,4 @@ bool TaskPositionTarget3D::isValid(xmlNode* node, const RcsGraph* graph)
 }
 
 }   // namespace Rcs
+#endif//0
