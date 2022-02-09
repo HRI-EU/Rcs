@@ -382,7 +382,17 @@ protected:
   static int getConstraintIndex(const MatNd* desc, unsigned int row,
                                 unsigned int pos_vel_or_acc);
 
-  static void computeB_poly5(MatNd* B, const MatNd* vDesc);
+  /*! \brief Computes the B-matrix for the linear equation system x = B*p
+   *         where x are the trajectory constraints and p are the polynomial
+   *         parameters. The function will not terminate in case of algorithmic
+   *         issues, but return success or failure. It will only crash when
+   *         severe memory allocation problems occur.
+   *
+   *  \param[out] B       Matrix describing x = B*p
+   *  \param[in]  vDesc   Via point descriptor
+   *  \return True for success, false otherwise.
+   */
+  static bool computeB_poly5(MatNd* B, const MatNd* vDesc);
   static void computeB_linAcc(MatNd* B, const MatNd* vDesc);
 
   MatNd* viaDescr;

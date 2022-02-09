@@ -319,7 +319,7 @@ void ViaPointSequence::computeB_linAcc(MatNd* B, const MatNd* vDescr)
 /*******************************************************************************
  * Static function to compute the B matrix.
  ******************************************************************************/
-void ViaPointSequence::computeB_poly5(MatNd* B, const MatNd* vDescr)
+bool ViaPointSequence::computeB_poly5(MatNd* B, const MatNd* vDescr)
 {
   // Vectors with vDescr->m-2 elements: The initial and final conditions are
   // not represented. Each element of the index vector corresponds to the
@@ -335,13 +335,13 @@ void ViaPointSequence::computeB_poly5(MatNd* B, const MatNd* vDescr)
 
   for (size_t i=0; i<vDescr->m; i++)
   {
-    double t = MatNd_get2(vDescr, i, 0);
-    double t2 = t*t;
-    double t3 = t2*t;
-    double t4 = t2*t2;
-    double t5 = t3*t2;
+    const double t = MatNd_get2(vDescr, i, 0);
+    const double t2 = t*t;
+    const double t3 = t2*t;
+    const double t4 = t2*t2;
+    const double t5 = t3*t2;
 
-    unsigned int flag = lround(MatNd_get(vDescr, i, 4));
+    const unsigned int flag = lround(MatNd_get(vDescr, i, 4));
 
     // Position polynomial elements first
     if (Math_isBitSet(flag, VIA_POS))
@@ -359,13 +359,17 @@ void ViaPointSequence::computeB_poly5(MatNd* B, const MatNd* vDescr)
       // increasing time.
       for (size_t j=1; j<i; j++)
       {
-        double t_base = MatNd_get(vDescr, j, 0);
+        const double t_base = MatNd_get(vDescr, j, 0);
 
         if (t_base>=t)
         {
+          REXEC(1)
+        {
           MatNd_printCommentDigits("viaDesc", vDescr, 5);
-          RFATAL("Row %d, pivot %d: t_base: %f t: %f",
-                 (int) i, (int) j, t_base, t);
+            RLOG_CPP(1, "Row " << i << " pivot " << j << ": t_base: "
+                     << t_base << " t: " << t);
+          }
+          return false;
         }
 
         if (pIdx[j-1] != -1)
@@ -401,13 +405,17 @@ void ViaPointSequence::computeB_poly5(MatNd* B, const MatNd* vDescr)
       // sub-matrices according to the Lagrange Multipliers pi
       for (size_t j=1; j<i; j++)
       {
-        double t_base = MatNd_get(vDescr, j, 0);
+        const double t_base = MatNd_get(vDescr, j, 0);
 
         if (t_base>=t)
         {
+          REXEC(1)
+        {
           MatNd_printCommentDigits("viaDesc", vDescr, 5);
-          RFATAL("Row %d, pivot %d: t_base: %f t: %f",
-                 (int) i, (int) j, t_base, t);
+            RLOG_CPP(1, "Row " << i << " pivot " << j << ": t_base: "
+                     << t_base << " t: " << t);
+          }
+          return false;
         }
 
         if (vIdx[j-1] != -1)
@@ -443,13 +451,17 @@ void ViaPointSequence::computeB_poly5(MatNd* B, const MatNd* vDescr)
       // sub-matrices according to the Lagrange Multipliers pi
       for (size_t j=1; j<i; j++)
       {
-        double t_base = MatNd_get(vDescr, j, 0);
+        const double t_base = MatNd_get(vDescr, j, 0);
 
         if (t_base>=t)
         {
+          REXEC(1)
+        {
           MatNd_printCommentDigits("viaDesc", vDescr, 5);
-          RFATAL("Row %d, pivot %d: t_base: %f t: %f",
-                 (int) i, (int) j, t_base, t);
+            RLOG_CPP(1, "Row " << i << " pivot " << j << ": t_base: "
+                     << t_base << " t: " << t);
+          }
+          return false;
         }
 
         if (aIdx[j-1] != -1)
@@ -474,6 +486,7 @@ void ViaPointSequence::computeB_poly5(MatNd* B, const MatNd* vDescr)
 
   }   // for(size_t i=0;i<vDescr->m;i++)
 
+  return true;
 }
 
 /*******************************************************************************
@@ -760,7 +773,14 @@ bool ViaPointSequence::init(const MatNd* viaDescr_)
   switch (viaType)
   {
     case FifthOrderPolynomial:
-      computeB_poly5(this->B, this->viaDescr);
+    {
+      bool ok = computeB_poly5(this->B, this->viaDescr);
+      if (!ok)
+      {
+        RLOG(1, "Failed to compute B matrix");
+        return false;
+      }
+    }
       break;
 
     case LinearAcceleration:
