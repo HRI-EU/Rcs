@@ -274,6 +274,13 @@ char* File_createUniqueName(char* fileName, const char* pattern,
 bool File_exists(const char* filename);
 
 /*! \ingroup RcsUtilsFunctions
+ *  \brief Returns true if the given directory exists (meaning being readable
+ *         by the user), false otherwise. If directory is NULL, the function
+ *         returns false.
+ */
+bool File_isDirectory(const char* directory);
+
+/*! \ingroup RcsUtilsFunctions
  *  \brief Returns the number of bytes of a file. If the file doesn't exist
  *         or cannot be opened, the function returns 0 and prints a warning
  *         on debug level 4.

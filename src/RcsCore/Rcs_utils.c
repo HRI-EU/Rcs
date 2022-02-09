@@ -37,6 +37,8 @@
 
 #include <locale.h>
 #include <limits.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #if !defined(_MSC_VER)
 #include <unistd.h>
@@ -602,6 +604,31 @@ bool File_exists(const char* filename)
   if (file != NULL)
   {
     fclose(file);
+    return true;
+  }
+
+  return false;
+}
+
+/*******************************************************************************
+ * See header
+ ******************************************************************************/
+bool File_isDirectory(const char* directory)
+{
+  if (directory == NULL)
+  {
+    return false;
+  }
+
+  struct stat info;
+
+  if (stat(directory, &info) != 0)
+  {
+    return false;
+  }
+
+  if (info.st_mode & S_IFDIR)
+  {
     return true;
   }
 
