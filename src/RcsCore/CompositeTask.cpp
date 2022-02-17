@@ -49,7 +49,7 @@ Rcs::CompositeTask::CompositeTask(): Task()
  ******************************************************************************/
 Rcs::CompositeTask::CompositeTask(const std::string& className,
                                   xmlNode* node,
-                                  RcsGraph* _graph):
+                                  const RcsGraph* _graph):
   Task(className, node, _graph, 0)
 {
 }
@@ -57,7 +57,7 @@ Rcs::CompositeTask::CompositeTask(const std::string& className,
 /*******************************************************************************
  * Constructor based on a graph reference
  ******************************************************************************/
-Rcs::CompositeTask::CompositeTask(RcsGraph* _graph) : Task()
+Rcs::CompositeTask::CompositeTask(const RcsGraph* _graph) : Task()
 {
   this->graph = _graph;
 }
@@ -92,7 +92,7 @@ Rcs::CompositeTask::~CompositeTask()
 /*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::CompositeTask* Rcs::CompositeTask::clone(RcsGraph* newGraph) const
+Rcs::CompositeTask* Rcs::CompositeTask::clone(const RcsGraph* newGraph) const
 {
   CompositeTask* task = new Rcs::CompositeTask(*this);
   task->setGraph(newGraph);
@@ -102,7 +102,7 @@ Rcs::CompositeTask* Rcs::CompositeTask::clone(RcsGraph* newGraph) const
 /*******************************************************************************
  * This is why the setGraph() method is public and not protected.
  ******************************************************************************/
-void Rcs::CompositeTask::setGraph(RcsGraph* newGraph)
+void Rcs::CompositeTask::setGraph(const RcsGraph* newGraph)
 {
   this->graph = newGraph;
 

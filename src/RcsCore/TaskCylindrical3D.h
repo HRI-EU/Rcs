@@ -60,16 +60,11 @@ public:
   /*! \brief Constructor based on xml parsing
    */
   TaskCylindrical3D(const std::string& className, xmlNode* node,
-                    RcsGraph* graph, int dim=3);
+                    const RcsGraph* graph, int dim=3);
 
-  /*! \brief Destructor
+  /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual ~TaskCylindrical3D();
-
-  /*!
-   * \brief Virtual copy constructor with optional new graph
-   */
-  virtual TaskCylindrical3D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskCylindrical3D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable. The result is
    *         written to parameter \e x_res. Reuses TaskPosition3D::computeX
@@ -107,7 +102,7 @@ public:
    */
   virtual void computeJdot(MatNd* Jdot) const;
 
-  virtual bool testHessian(bool verbose=false);
+  virtual bool testHessian(bool verbose=false) const;
 
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise:

@@ -52,21 +52,17 @@ public:
 
   /*! \brief Constructor based on xml parsing
    */
-  TaskEuler3D(const std::string& className, xmlNode* node, RcsGraph* graph,
-              int dim=3);
+  TaskEuler3D(const std::string& className, xmlNode* node,
+              const RcsGraph* graph, int dim=3);
 
   /*! Constructor based on graph and effectors.
    */
-  TaskEuler3D(RcsGraph* graph, const RcsBody* effector,
+  TaskEuler3D(const RcsGraph* graph, const RcsBody* effector,
               const RcsBody* refBdy, const RcsBody* refFrame);
-
-  /*! \brief Destructor.
-   */
-  virtual ~TaskEuler3D();
 
   /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual TaskEuler3D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskEuler3D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current XYZ Euler angles.
    *

@@ -53,7 +53,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskEuler1D> registrar3("C");
  * Constructor based on xml parsing
  ******************************************************************************/
 Rcs::TaskEuler1D::TaskEuler1D(const std::string& className, xmlNode* node,
-                              RcsGraph* _graph, int dim):
+                              const RcsGraph* _graph, int dim):
   TaskGenericIK(className, node, _graph, dim)
 {
 
@@ -82,7 +82,7 @@ Rcs::TaskEuler1D::TaskEuler1D(const std::string& className, xmlNode* node,
  * For programmatic creation
  ******************************************************************************/
 Rcs::TaskEuler1D::TaskEuler1D(const std::string& className,
-                              RcsGraph* graph_,
+                              const RcsGraph* graph_,
                               const RcsBody* effector,
                               const RcsBody* refBdy,
                               const RcsBody* refFrame):
@@ -113,16 +113,9 @@ Rcs::TaskEuler1D::TaskEuler1D(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskEuler1D::~TaskEuler1D()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskEuler1D* Rcs::TaskEuler1D::clone(RcsGraph* newGraph) const
+Rcs::TaskEuler1D* Rcs::TaskEuler1D::clone(const RcsGraph* newGraph) const
 {
   TaskEuler1D* task = new Rcs::TaskEuler1D(*this);
   task->setGraph(newGraph);

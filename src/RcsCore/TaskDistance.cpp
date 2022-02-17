@@ -48,7 +48,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskDistance> registrar1("Distance");
  ******************************************************************************/
 Rcs::TaskDistance::TaskDistance(const std::string& className_,
                                 xmlNode* node,
-                                RcsGraph* _graph,
+                                const RcsGraph* _graph,
                                 int dim):
   TaskGenericIK(className_, node, _graph, dim), gainDX(1.0)
 {
@@ -69,7 +69,7 @@ Rcs::TaskDistance::TaskDistance(const std::string& className_,
 /*******************************************************************************
  * Constructor based on body pointers
  ******************************************************************************/
-Rcs::TaskDistance::TaskDistance(RcsGraph* graph_,
+Rcs::TaskDistance::TaskDistance(const RcsGraph* graph_,
                                 const RcsBody* effector,
                                 const RcsBody* refBdy,
                                 double gainDX_) :
@@ -99,16 +99,9 @@ Rcs::TaskDistance::TaskDistance(RcsGraph* graph_,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskDistance::~TaskDistance()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskDistance* Rcs::TaskDistance::clone(RcsGraph* newGraph) const
+Rcs::TaskDistance* Rcs::TaskDistance::clone(const RcsGraph* newGraph) const
 {
   TaskDistance* task = new Rcs::TaskDistance(*this);
   task->setGraph(newGraph);
@@ -168,17 +161,16 @@ void Rcs::TaskDistance::computeH(MatNd* hessian) const
 bool Rcs::TaskDistance::testJacobian(double errorLimit,
                                      double delta,
                                      bool relativeError,
-                                     bool verbose)
+                                     bool verbose) const
 {
   errorLimit = 0.1;   // 10% error is permitted
-  relativeError = true;
   return Task::testJacobian(errorLimit, delta, relativeError, verbose);
 }
 
 /*******************************************************************************
  * See header
  ******************************************************************************/
-bool Rcs::TaskDistance::testHessian(bool verbose)
+bool Rcs::TaskDistance::testHessian(bool verbose) const
 {
   RLOG(4, "Skipping Hessian test for task \"%s\"", getName().c_str());
   return true;

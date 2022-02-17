@@ -52,16 +52,9 @@ Rcs::TaskGenericIK::TaskGenericIK(): Task()
  ******************************************************************************/
 Rcs::TaskGenericIK::TaskGenericIK(const std::string& className,
                                   xmlNode* node,
-                                  RcsGraph* _graph,
+                                  const RcsGraph* _graph,
                                   int _dim):
   Task(className, node, _graph, _dim)
-{
-}
-
-/*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskGenericIK::~TaskGenericIK()
 {
 }
 

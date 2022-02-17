@@ -56,7 +56,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskSleeve> registrar("Sleeve");
  ******************************************************************************/
 Rcs::TaskSleeve::TaskSleeve(const std::string& className,
                             xmlNode* node,
-                            RcsGraph* _graph,
+                            const RcsGraph* _graph,
                             int dim) :
   TaskGenericIK(className, node, _graph, dim), slideBdyId(-1)
 {
@@ -99,16 +99,9 @@ Rcs::TaskSleeve::TaskSleeve(const std::string& className,
 }
 
 /*******************************************************************************
- *  Destructor
- ******************************************************************************/
-Rcs::TaskSleeve::~TaskSleeve()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskSleeve* Rcs::TaskSleeve::clone(RcsGraph* newGraph) const
+Rcs::TaskSleeve* Rcs::TaskSleeve::clone(const RcsGraph* newGraph) const
 {
   TaskSleeve* task = new Rcs::TaskSleeve(*this);
   task->setGraph(newGraph);

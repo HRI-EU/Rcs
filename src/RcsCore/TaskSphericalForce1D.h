@@ -51,16 +51,11 @@ public:
   /*! Constructor based on xml parsing
    */
   TaskSphericalForce1D(const std::string& className, xmlNode* node,
-                       RcsGraph* graph, int dim=1);
+                       const RcsGraph* graph, int dim=1);
 
-  /*! Destructor
+  /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual ~TaskSphericalForce1D();
-
-  /*!
-   * \brief Virtual copy constructor with optional new graph
-   */
-  virtual TaskSphericalForce1D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskSphericalForce1D* clone(const RcsGraph* newGraph=NULL) const;
 
   virtual void computeX(double* x_res) const;
 

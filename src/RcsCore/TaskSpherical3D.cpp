@@ -58,7 +58,7 @@ static inline double sqr(double x)
  ******************************************************************************/
 Rcs::TaskSpherical3D::TaskSpherical3D(const std::string& className,
                                       xmlNode* node,
-                                      RcsGraph* _graph,
+                                      const RcsGraph* _graph,
                                       int dim):
   TaskPosition3D(className, node, _graph, dim)
 {
@@ -71,16 +71,9 @@ Rcs::TaskSpherical3D::TaskSpherical3D(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskSpherical3D::~TaskSpherical3D()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskSpherical3D* Rcs::TaskSpherical3D::clone(RcsGraph* newGraph) const
+Rcs::TaskSpherical3D* Rcs::TaskSpherical3D::clone(const RcsGraph* newGraph) const
 {
   TaskSpherical3D* task = new Rcs::TaskSpherical3D(*this);
   task->setGraph(newGraph);
@@ -101,7 +94,6 @@ void Rcs::TaskSpherical3D::computeX(double* x_res) const
 }
 
 /*******************************************************************************
- * Computes the current velocity in task space
  * Reuses TaskPosition3D::computeXp and then converts to spherical coordinates
  ******************************************************************************/
 void Rcs::TaskSpherical3D::computeXp(double* xp_res) const
@@ -121,8 +113,6 @@ void Rcs::TaskSpherical3D::computeXp(double* xp_res) const
 }
 
 /*******************************************************************************
- * \brief Computes current task Jacobian to parameter jacobian.
- *
  * Reuses TaskPosition3D::computeJ and then converts to spherical coordinates
  ******************************************************************************/
 void Rcs::TaskSpherical3D::computeJ(MatNd* jacobian) const
@@ -171,26 +161,11 @@ void Rcs::TaskSpherical3D::computeDX(double* dx, const double* x_des,
 {
   double x_des_modif[3];
   Vec3d_copy(x_des_modif, x_des);
-  x_des_modif[0] = fabs(x_des_modif[0]);
+  x_des_modif[0] = fabs(x_des_modif[0]);   // Radius always positive
 
   Rcs::TaskPosition3D::computeDX(dx, x_des_modif, x_curr);
-  while (dx[1]>M_PI)
-  {
-    dx[1] -= 2.0*M_PI;
-  }
-  while (dx[1]<=-M_PI)
-  {
-    dx[1] += 2.0*M_PI;
-  }
-
-  while (dx[2]>M_PI)
-  {
-    dx[2] -= 2.0*M_PI;
-  }
-  while (dx[2]<=-M_PI)
-  {
-    dx[2] += 2.0*M_PI;
-  }
+  dx[1] = Math_fmodAngle(dx[1]);
+  dx[2] = Math_fmodAngle(dx[2]);
 }
 
 /*******************************************************************************
@@ -292,9 +267,9 @@ void Rcs::TaskSpherical3D::computeJdot(MatNd* Jdot) const
 /*******************************************************************************
  * See header
  ******************************************************************************/
-bool Rcs::TaskSpherical3D::test(bool verbose)
+bool Rcs::TaskSpherical3D::test(bool verbose) const
 {
-  const double delta = 1.0e-6;
+  const double delta = 0.01;
   bool success = true;
   bool success_i;
   bool relativeError = true;

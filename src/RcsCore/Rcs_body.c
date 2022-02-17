@@ -167,16 +167,16 @@ unsigned int RcsBody_numShapes(const RcsBody* self)
  ******************************************************************************/
 unsigned int RcsBody_numDistanceShapes(const RcsBody* self)
 {
-  unsigned int nShapes = 0;
-
   if (self == NULL)
   {
     return 0;
   }
 
-  RCSBODY_TRAVERSE_SHAPES(self)
+  unsigned int nShapes = 0;
+
+  for (unsigned int i=0; i<self->nShapes; ++i)
   {
-    if ((SHAPE->computeType & RCSSHAPE_COMPUTE_DISTANCE) != 0)
+    if (RcsShape_isOfComputeType(&self->shapes[i], RCSSHAPE_COMPUTE_DISTANCE))
     {
       nShapes++;
     }
@@ -275,55 +275,6 @@ void RcsBody_copy(RcsBody* dst, const RcsBody* src)
   snprintf(dst->bdyXmlName, RCS_MAX_NAMELEN, "%s", src->bdyXmlName);
   dst->Inertia = src->Inertia;
 }
-
-/*******************************************************************************
-* See header.
-******************************************************************************/
-/* RcsBody* RcsBody_clone(const RcsBody* src) */
-/* { */
-/*   if (src == NULL) */
-/*   { */
-/*     return NULL; */
-/*   } */
-
-/*   // Make a copy of the body. */
-/*   RcsBody* newBody = RcsBody_create(); */
-/*   RcsBody_copy(newBody, src); */
-
-/*   // Make a copy of all body shapes and attach them to the body */
-/*   int nShapes = RcsBody_numShapes(src); */
-/*   newBody->shape = RNALLOC(nShapes + 1, RcsShape*); */
-/*   for (int i = 0; i < nShapes; i++) */
-/*   { */
-/*     newBody->shape[i] = RALLOC(RcsShape); */
-/*     RcsShape_copy(newBody->shape[i], src->shape[i]); */
-/*   } */
-
-/*   // Make a copy of all body joints and attach them to the body */
-/*   RcsJoint* prevJoint = NULL; */
-
-/*   RCSBODY_TRAVERSE_JOINTS(src) */
-/*   { */
-/*     RcsJoint* j = RALLOC(RcsJoint); */
-/*     RcsJoint_copy(j, JNT); */
-
-/*     // Connect joints that belong to body. All outside body connections are */
-/*     // not handled here. */
-/*     if (prevJoint == NULL) */
-/*     { */
-/*       newBody->jnt = j; */
-/*     } */
-/*     else */
-/*     { */
-/*       j->prev = prevJoint; */
-/*       prevJoint->next = j; */
-/*     } */
-
-/*     prevJoint = j; */
-/*   }   // RCSBODY_TRAVERSE_JOINTS(BODY) */
-
-/*   return newBody; */
-/* } */
 
 /*******************************************************************************
  * See header.

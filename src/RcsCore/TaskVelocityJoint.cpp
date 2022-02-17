@@ -52,7 +52,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskVelocityJoint> registrar("Jointd");
  ******************************************************************************/
 Rcs::TaskVelocityJoint::TaskVelocityJoint(const std::string& className,
                                           xmlNode* node,
-                                          RcsGraph* _graph,
+                                          const RcsGraph* _graph,
                                           int dim):
   TaskJoint(className, node, _graph, dim)
 {
@@ -72,16 +72,9 @@ Rcs::TaskVelocityJoint::TaskVelocityJoint(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskVelocityJoint::~TaskVelocityJoint()
-{
-}
-
-/*******************************************************************************
  *
  ******************************************************************************/
-Rcs::TaskVelocityJoint* Rcs::TaskVelocityJoint::clone(RcsGraph* newGraph) const
+Rcs::TaskVelocityJoint* Rcs::TaskVelocityJoint::clone(const RcsGraph* newGraph) const
 {
   TaskVelocityJoint* task = new Rcs::TaskVelocityJoint(*this);
   task->setGraph(newGraph);

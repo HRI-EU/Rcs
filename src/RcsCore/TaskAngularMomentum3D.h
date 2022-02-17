@@ -50,16 +50,11 @@ public:
   /*! \brief
    */
   TaskAngularMomentum3D(const std::string& className, xmlNode* node,
-                        RcsGraph* graph, int dim=3);
+                        const RcsGraph* graph, int dim=3);
 
-  /*! \brief
+  /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual ~TaskAngularMomentum3D();
-
-  /*!
-   * \brief Virtual copy constructor with optional new graph
-   */
-  virtual TaskAngularMomentum3D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskAngularMomentum3D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief
    */

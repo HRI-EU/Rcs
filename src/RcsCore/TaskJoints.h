@@ -90,19 +90,19 @@ public:
 
   /*! Constructor based on xml parsing
    */
-  TaskJoints(const std::string& className, xmlNode* node, RcsGraph* graph);
+  TaskJoints(const std::string& className, xmlNode* node, const RcsGraph* graph);
 
   /*! Constructor based on joints of a body
    */
-  TaskJoints(const RcsBody* effector, RcsGraph* graph);
+  TaskJoints(const RcsBody* effector, const RcsGraph* graph);
 
   /*! Constructor based on linking rigid bodies
    */
-  TaskJoints(const RcsBody* effector, const RcsBody* refBdy, RcsGraph* graph);
+  TaskJoints(const RcsBody* effector, const RcsBody* refBdy, const RcsGraph* graph);
 
   /*! \brief Polymorphic clone function.
    */
-  TaskJoints* clone(RcsGraph* newGraph=NULL) const;
+  TaskJoints* clone(const RcsGraph* newGraph=NULL) const;
 
   void setJoints(std::vector<const RcsJoint*> jnt);
   void setRefJoints(std::vector<const RcsJoint*> jnt);

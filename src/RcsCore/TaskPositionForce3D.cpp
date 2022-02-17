@@ -52,7 +52,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskPositionForce3D> registrar1("ForceXYZ"
  ******************************************************************************/
 Rcs::TaskPositionForce3D::TaskPositionForce3D(const std::string& className,
                                               xmlNode* node,
-                                              RcsGraph* _graph,
+                                              const RcsGraph* _graph,
                                               int _dim):
   TaskPosition3D(className, node, _graph, _dim), force_feedback(true), ftsId(-1)
 {
@@ -74,16 +74,9 @@ Rcs::TaskPositionForce3D::TaskPositionForce3D(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskPositionForce3D::~TaskPositionForce3D()
-{
-}
-
-/*******************************************************************************
  *
  ******************************************************************************/
-Rcs::TaskPositionForce3D* Rcs::TaskPositionForce3D::clone(RcsGraph* newGraph) const
+Rcs::TaskPositionForce3D* Rcs::TaskPositionForce3D::clone(const RcsGraph* newGraph) const
 {
   TaskPositionForce3D* task = new Rcs::TaskPositionForce3D(*this);
   task->setGraph(newGraph);

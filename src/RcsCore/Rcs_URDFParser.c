@@ -287,7 +287,6 @@ static int parseBodyURDF(xmlNode* node, RcsGraph* graph, int parentId)
 
   // Allocate memory for shape node lists (visual and collision tags)
   size_t inertialTagCount = 0;
-  size_t shapeCount = 0;
   size_t numCollisionShapes = getNumXMLNodes(node, "collision");
 
 

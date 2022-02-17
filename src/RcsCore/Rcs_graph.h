@@ -827,12 +827,13 @@ double RcsGraph_getJointValue(const RcsGraph* self, const char* name);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Returns a pointer to the joint with the indicated name. If
- *         several joints have the same name, the closest one to the root
- *         node (depth first traversal) will be taken. If no matching joint
- *         is found, NULL will be returned.
- *  \param[in] self  Pointer to graph. If it is NULL, the function returns NULL.
- *  \param[in] name  Character array holding the name of the joint. If it is
- *                   NULL, the function returns NULL.
+ *         several joints have the same name, the first one in the order of
+ *         construction will be taken. If no matching joint is found, NULL
+ *         will be returned.
+ *
+ *  \param[in] self  Pointer to graph. Must be not NULL.
+ *  \param[in] name  Character array holding the name of the joint. Must not
+ *                   be NULL.
  *  \return Pointer to joint with the given name. If no joint with this name
  *          exist, the function returns NULL.
  */
@@ -857,8 +858,7 @@ RcsJoint* RcsGraph_getJointByTruncatedName(const RcsGraph* self,
  *  \brief Returns a pointer to the joint with the given index. If no matching
  *         joint is found, NULL will be returned.
  *
- *  \param[in] self   Pointer to graph. If it is NULL, the function
- *                    returns NULL.
+ *  \param[in] self   Pointer to graph. Must not be NULL.
  *  \param[in] idx    Index of the joint, see above description.
  *  \param[in] type   If type is RcsStateIK, the searched index is the
  *                    jacobiIndex, otherwise the jointIndex.

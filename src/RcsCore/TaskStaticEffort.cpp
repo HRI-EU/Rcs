@@ -53,7 +53,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskStaticEffort> registrar("StaticEffort"
  ******************************************************************************/
 Rcs::TaskStaticEffort::TaskStaticEffort(const std::string& className,
                                         xmlNode* node,
-                                        RcsGraph* _graph,
+                                        const RcsGraph* _graph,
                                         int dim):
   TaskGenericIK(className, node, _graph, dim),
   sensorId(-1)
@@ -63,16 +63,9 @@ Rcs::TaskStaticEffort::TaskStaticEffort(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskStaticEffort::~TaskStaticEffort()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskStaticEffort* Rcs::TaskStaticEffort::clone(RcsGraph* newGraph) const
+Rcs::TaskStaticEffort* Rcs::TaskStaticEffort::clone(const RcsGraph* newGraph) const
 {
   TaskStaticEffort* task = new TaskStaticEffort(*this);
   task->setGraph(newGraph);

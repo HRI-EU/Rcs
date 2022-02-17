@@ -53,7 +53,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskInclination> registrar("Inclination");
  ******************************************************************************/
 Rcs::TaskInclination::TaskInclination(const std::string& className,
                                       xmlNode* node,
-                                      RcsGraph* _graph,
+                                      const RcsGraph* _graph,
                                       int dim) :
   TaskGenericIK(className, node, _graph, dim),
   direction(2),
@@ -129,16 +129,9 @@ Rcs::TaskInclination::TaskInclination(const std::string& className,
 }
 
 /*******************************************************************************
- *  Destructor
- ******************************************************************************/
-Rcs::TaskInclination::~TaskInclination()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskInclination* Rcs::TaskInclination::clone(RcsGraph* newGraph) const
+Rcs::TaskInclination* Rcs::TaskInclination::clone(const RcsGraph* newGraph) const
 {
   TaskInclination* task = new Rcs::TaskInclination(*this);
   task->setGraph(newGraph);

@@ -90,12 +90,8 @@ public:
 
   /*! \brief Constructor based on xml parsing
    */
-  TaskGenericIK(const std::string& className, xmlNode* node, RcsGraph* graph,
-                int dim=0);
-
-  /*! \brief Destructor
-   */
-  virtual ~TaskGenericIK();
+  TaskGenericIK(const std::string& className, xmlNode* node,
+                const RcsGraph* graph, int dim=0);
 
   /*! \brief Computes the displacement in task space
    *         \f$

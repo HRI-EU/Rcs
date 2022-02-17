@@ -61,7 +61,8 @@ public:
 
   /*! \brief Calls the constructor of Task with the same arguments
    */
-  CompositeTask(const std::string& className, xmlNode* node, RcsGraph* graph);
+  CompositeTask(const std::string& className, xmlNode* node,
+                const RcsGraph* graph);
 
   /*! \brief Copy constructor doing deep copying with optional new graph
    *         pointer.
@@ -72,7 +73,7 @@ public:
 
   /*! \brief Constructor based on a graph reference.
    */
-  CompositeTask(RcsGraph* graph);
+  CompositeTask(const RcsGraph* graph);
 
   /*! \brief Deletes all subtasks.
    */
@@ -80,7 +81,7 @@ public:
 
   /*! \brief Returns a deep copy of the class created by the copy constructor.
    */
-  virtual CompositeTask* clone(RcsGraph* newGraph=NULL) const;
+  virtual CompositeTask* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Adds a sub-task, updates the task dimension, and appends the
    *         sub-tasks parameters.
@@ -173,7 +174,7 @@ protected:
 
   /*! \brief Updates the task to the new graph.
    */
-  virtual void setGraph(RcsGraph* graph);
+  virtual void setGraph(const RcsGraph* graph);
 
   std::vector<Task*> subTask;
 };

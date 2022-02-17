@@ -62,7 +62,7 @@ public:
   /*! Constructor based on xml parsing
    */
   TaskCompositeXml(const std::string& className, xmlNode* node,
-                   RcsGraph* graph);
+                   const RcsGraph* graph);
 
   /*! \brief Virtual copy constructor with optional new graph
    */

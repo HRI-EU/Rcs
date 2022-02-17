@@ -52,7 +52,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskJoints> registrar("Joints");
  ******************************************************************************/
 Rcs::TaskJoints::TaskJoints(const std::string& className_,
                             xmlNode* node,
-                            RcsGraph* _graph):
+                            const RcsGraph* _graph):
   CompositeTask(className_, node, _graph)
 {
   // Parse all joints specified in attribute "jnts"
@@ -199,7 +199,7 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
 /*******************************************************************************
  * Explicit construction using rigid body joint links
  ******************************************************************************/
-Rcs::TaskJoints::TaskJoints(const RcsBody* effector, RcsGraph* graph_):
+Rcs::TaskJoints::TaskJoints(const RcsBody* effector, const RcsGraph* graph_):
   CompositeTask(graph_)
 {
   setClassName("Joints");
@@ -216,7 +216,7 @@ Rcs::TaskJoints::TaskJoints(const RcsBody* effector, RcsGraph* graph_):
  * Explicit construction using rigid body joint links
  ******************************************************************************/
 Rcs::TaskJoints::TaskJoints(const RcsBody* effector, const RcsBody* refBdy,
-                            RcsGraph* graph_) :
+                            const RcsGraph* graph_) :
   CompositeTask(graph_)
 {
   setClassName("Joints");
@@ -241,7 +241,7 @@ Rcs::TaskJoints::TaskJoints(const RcsBody* effector, const RcsBody* refBdy,
 /*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskJoints* Rcs::TaskJoints::clone(RcsGraph* newGraph) const
+Rcs::TaskJoints* Rcs::TaskJoints::clone(const RcsGraph* newGraph) const
 {
   TaskJoints* task = new Rcs::TaskJoints(*this);
   task->setGraph(newGraph);

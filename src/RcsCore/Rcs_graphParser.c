@@ -905,8 +905,7 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
                "supported, and not %d parameters", polyGrad);
     RCHECK(polyGrad<=8);
     jnt->nCouplingCoeff = polyGrad;
-    getXMLNodePropertyVecN(node, "couplingFactor",
-                           jnt->couplingPoly, polyGrad);
+    getXMLNodePropertyVecN(node, "couplingFactor", jnt->couplingPoly, polyGrad);
 
     // Check if a range is given, because it will later be overwritten
     bool hasRangeTag = getXMLNodeProperty(node, "range");
@@ -1573,8 +1572,6 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
       if (nRBJTagStr == 12)
       {
         unsigned int checkRbjNum = 0;
-        //for (RcsJoint* JNT = rbj0; JNT; JNT = JNT->next)
-        //for (RcsJoint* JNT = rbj0; JNT; JNT = (JNT->nextId==-1) ? NULL : &self->joints[JNT->nextId])
         RCSJOINT_TRAVERSE_FORWARD(self, rbj0)
         {
           JNT->weightMetric = q_rbj[6 + checkRbjNum];
@@ -1584,27 +1581,32 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
       }
 
       // Rigid body joints don't have any relative transformations after
-      // construction. If there is a transformation coming from a group, it needs
-      // to be applied to the first of the six rigid body joints. We can simply
-      // clone it.
+      // construction. If there is a transformation coming from a group, it
+      // needs to be applied to the first of the six rigid body joints. We can
+      // simply clone it.
       if (HTr_isIdentity(&A_local) == false)
       {
         HTr_copy(&rbj0->A_JP, &A_local);
-        // since the group transform was already applied to the body, remove it there again
+
+        // since the group transform was already applied to the body, remove it
+        // there again
         HTr_setIdentity(&urdfRoot->A_BP);
       }
     }
     else if (urdfRoot->physicsSim != RCSBODY_PHYSICS_NONE)
     {
-      // no rigid body joints - urdf root is fixed to it's parent. Make sure that the physics simulation treats it correctly.
-      if (pB != NULL && (pB->physicsSim == RCSBODY_PHYSICS_DYNAMIC || pB->physicsSim == RCSBODY_PHYSICS_FIXED))
+      // no rigid body joints - urdf root is fixed to it's parent. Make sure
+      // that the physics simulation treats it correctly.
+      if (pB != NULL && (pB->physicsSim == RCSBODY_PHYSICS_DYNAMIC ||
+                         pB->physicsSim == RCSBODY_PHYSICS_FIXED))
       {
         // or to fixed if the parent is dynamic
         urdfRoot->physicsSim = RCSBODY_PHYSICS_FIXED;
       }
       else
       {
-        // set it to kinematic if the parent is kinematic or not participating at all
+        // set it to kinematic if the parent is kinematic or not participating
+        // at all
         urdfRoot->physicsSim = RCSBODY_PHYSICS_KINEMATIC;
       }
     }
@@ -1624,21 +1626,19 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
 
   else // can be a body or some junk
   {
-    const RcsBody* levelRoot = RCSBODY_BY_ID(self, rootId[level]);
     RLOG(19, "Creating new body with root[%d] \"%s\"", level,
-         (level > 0) ? (levelRoot ? levelRoot->name : "NULL") : "NULL");
+         (level > 0) ? RCSBODY_NAME_BY_ID(self, rootId[level]) : "NULL");
 
-    RcsBody* nr = NULL;
-
-    nr = RcsBody_createFromXML(self, node, gCol, suffix, parentGroup,
-                               A, firstInGroup, level,
-                               rootId[level], verbose);
+    RcsBody* nr = RcsBody_createFromXML(self, node, gCol, suffix, parentGroup,
+                                        A, firstInGroup, level, rootId[level],
+                                        verbose);
 
 #ifndef TRANSFORM_ROOT_NEXT
     if (nr)
     {
       firstInGroup = false;
     }
+
 #else
     if (firstInGroup && !node->next)
     {
@@ -1650,7 +1650,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
                          parentGroup, A, firstInGroup, level, rootId, verbose);
 
     RLOG(19, "Falling back - root[%d] \"%s\"",
-         level, levelRoot ? levelRoot->name : "NULL");
+         level, RCSBODY_NAME_BY_ID(self, rootId[level]));
   }
 
 
@@ -1761,14 +1761,13 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
     rootId[i] = 0;
   }
 
-  // Initialize generic bodies. Here we allocate memory for names and body
-  // transforms. They are deleted once relinked to another body. We initialize
-  // it before parsing, since they can already be linked in the xml files.
+  // Initialize generic bodies to refer to no graph body.
   for (int i = 0; i < RCS_NUM_GENERIC_BODIES; i++)
   {
     self->gBody[i] = -1;
   }
 
+  // Recursively assemble all bodies, joints and shapes.
   RcsGraph_parseBodies(node, self, "DEFAULT", "", "",
                        &A_rel, false, 0, rootId, false);
 

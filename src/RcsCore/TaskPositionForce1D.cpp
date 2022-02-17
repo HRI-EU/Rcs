@@ -54,7 +54,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskPositionForce1D> registrar4("ForceCylZ
  ******************************************************************************/
 Rcs::TaskPositionForce1D::TaskPositionForce1D(const std::string& className,
                                               xmlNode* node,
-                                              RcsGraph* _graph,
+                                              const RcsGraph* _graph,
                                               int _dim):
   TaskPosition1D(className, node, _graph, _dim),
   ft_curr_temp(0.0), ft_des_temp(0.0), force_feedback(true), ftsId(-1)
@@ -86,7 +86,7 @@ Rcs::TaskPositionForce1D::TaskPositionForce1D(const std::string& className,
  * For programmatic creation
  ******************************************************************************/
 Rcs::TaskPositionForce1D::TaskPositionForce1D(const std::string& className,
-                                              RcsGraph* graph,
+                                              const RcsGraph* graph,
                                               const RcsBody* effector,
                                               const RcsBody* refBdy,
                                               const RcsBody* refFrame,
@@ -118,16 +118,9 @@ Rcs::TaskPositionForce1D::TaskPositionForce1D(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskPositionForce1D::~TaskPositionForce1D()
-{
-}
-
-/*******************************************************************************
  *
  ******************************************************************************/
-Rcs::TaskPositionForce1D* Rcs::TaskPositionForce1D::clone(RcsGraph* newGraph) const
+Rcs::TaskPositionForce1D* Rcs::TaskPositionForce1D::clone(const RcsGraph* newGraph) const
 {
   TaskPositionForce1D* task = new Rcs::TaskPositionForce1D(*this);
   task->setGraph(newGraph);

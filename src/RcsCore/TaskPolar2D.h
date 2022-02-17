@@ -61,15 +61,11 @@ public:
   /*! Constructor based on xml parsing
    */
   TaskPolar2D(const std::string& className, xmlNode* node,
-              RcsGraph* graph, int dim=2);
-
-  /*! Destructor
-   */
-  virtual ~TaskPolar2D();
+              const RcsGraph* graph, int dim=2);
 
   /*! \brief Polymorphic clone function.
    */
-  virtual TaskPolar2D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskPolar2D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the Polar Angles between reference body and effector.
    */
@@ -88,8 +84,7 @@ public:
 
   virtual void computeXpp(double* polarAcceleration, const MatNd* qpp) const;
 
-  virtual void computeDXp(double* dOmega,
-                          const double* phip_des) const;
+  virtual void computeDXp(double* dOmega, const double* phip_des) const;
 
   /*! \brief This Jacobian relates the x- and y-components of
    *         the angular velocity (with respect to a reference body) to
@@ -147,21 +142,14 @@ public:
    */
   virtual void computeFfXpp(double* xpp_res, const double* xpp_des) const;
 
-  /*! \brief Performs a set of tests:
-   *         - Jacobian finite difference test
-   *         - Hessian finite difference test
-   *
-   *  \param[in] verbose If true, debug information is printed to the console.
-   *  \return True for success, false otherwise.
-   */
-  virtual bool test(bool verbose=false);
-
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise. The task is invalid if
    *         - The direction index in tag "axisDirection" exists, but
    *           is not "x", "y", "z", "X", "Y or "Z"
    */
   static bool isValid(xmlNode* node, const RcsGraph* graph);
+
+  virtual bool test(bool verbose=false) const;
 
 protected:
 

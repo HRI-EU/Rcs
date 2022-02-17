@@ -53,7 +53,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskDifferentialConstraint1D> registrar3("
 Rcs::TaskDifferentialConstraint1D::
 TaskDifferentialConstraint1D(const std::string& taskType,
                              xmlNode* node,
-                             RcsGraph* _graph,
+                             const RcsGraph* _graph,
                              int dim):
   TaskGenericIK(taskType, node, _graph, dim), index(0)
 {
@@ -77,17 +77,10 @@ TaskDifferentialConstraint1D(const std::string& taskType,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskDifferentialConstraint1D::~TaskDifferentialConstraint1D()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
 Rcs::TaskDifferentialConstraint1D*
-Rcs::TaskDifferentialConstraint1D::clone(RcsGraph* newGraph) const
+Rcs::TaskDifferentialConstraint1D::clone(const RcsGraph* newGraph) const
 {
   TaskDifferentialConstraint1D* task = new Rcs::TaskDifferentialConstraint1D(*this);
   task->setGraph(newGraph);

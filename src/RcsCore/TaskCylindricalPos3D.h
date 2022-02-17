@@ -58,16 +58,11 @@ public:
   /*! \brief Constructor based on xml parsing
    */
   TaskCylindricalPos3D(const std::string& className, xmlNode* node,
-                       RcsGraph* graph, int dim=3);
+                       const RcsGraph* graph, int dim=3);
 
-  /*! \brief Destructor
+  /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual ~TaskCylindricalPos3D();
-
-  /*!
-   * \brief Virtual copy constructor with optional new graph
-   */
-  virtual TaskCylindricalPos3D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskCylindricalPos3D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable. The result is
    *         written to parameter \e x_res. Reuses TaskPosition3D::computeX

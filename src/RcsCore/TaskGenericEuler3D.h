@@ -52,22 +52,18 @@ public:
   /*! Constructor based on xml parsing
    */
   TaskGenericEuler3D(const std::string& className, xmlNode* node,
-                     RcsGraph* graph, int dim=3);
+                     const RcsGraph* graph, int dim=3);
 
   /*! Constructor based on graph, euler order and effectors.
    */
-  TaskGenericEuler3D(RcsGraph* graph, const char* eulerOrder,
+  TaskGenericEuler3D(const RcsGraph* graph, const char* eulerOrder,
                      const RcsBody* effector, const RcsBody* refBdy,
                      const RcsBody* refFrame);
-
-  /*! Destructor
-   */
-  virtual ~TaskGenericEuler3D();
 
   /*!
    * \brief Virtual copy constructor with optional new graph
    */
-  virtual TaskGenericEuler3D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskGenericEuler3D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable
    *

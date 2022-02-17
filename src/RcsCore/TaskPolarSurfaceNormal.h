@@ -75,16 +75,12 @@ public:
   /*! Constructor based on xml parsing
    */
   TaskPolarSurfaceNormal(const std::string& className, xmlNode* node,
-                         RcsGraph* graph, int dim=2);
-
-  /*! Destructor
-   */
-  virtual ~TaskPolarSurfaceNormal();
+                         const RcsGraph* graph, int dim=2);
 
   /*!
    * \brief Virtual copy constructor with optional new graph.
    */
-  virtual TaskPolarSurfaceNormal* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskPolarSurfaceNormal* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief The first component of the 2-dimensional polarAngles is the angle
   *          between current Polar axis and the distance normal between

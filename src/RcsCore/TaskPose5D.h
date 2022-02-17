@@ -51,11 +51,11 @@ public:
 
   /*! Constructor based on xml parsing
    */
-  TaskPose5D(const std::string& className, xmlNode* node, RcsGraph* graph);
+  TaskPose5D(const std::string& className, xmlNode* node, const RcsGraph* graph);
 
   /*! \brief Virtual copy constructor with optional new graph
    */
-  TaskPose5D* clone(RcsGraph* newGraph=NULL) const;
+  TaskPose5D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Returns the effector body of the first sub-task.
    */

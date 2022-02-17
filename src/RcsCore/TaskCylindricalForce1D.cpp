@@ -52,7 +52,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskCylindricalForce1D> registrar2("ForceC
  ******************************************************************************/
 Rcs::TaskCylindricalForce1D::TaskCylindricalForce1D(const std::string& className,
                                                     xmlNode* node,
-                                                    RcsGraph* _graph,
+                                                    const RcsGraph* _graph,
                                                     int _dim):
   TaskCylindrical1D(className, node, _graph, _dim),
   ft_curr_temp(0.0),
@@ -73,16 +73,9 @@ Rcs::TaskCylindricalForce1D::TaskCylindricalForce1D(const std::string& className
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskCylindricalForce1D::~TaskCylindricalForce1D()
-{
-}
-
-/*******************************************************************************
  *
  ******************************************************************************/
-Rcs::TaskCylindricalForce1D* Rcs::TaskCylindricalForce1D::clone(RcsGraph* newGraph) const
+Rcs::TaskCylindricalForce1D* Rcs::TaskCylindricalForce1D::clone(const RcsGraph* newGraph) const
 {
   TaskCylindricalForce1D* task = new Rcs::TaskCylindricalForce1D(*this);
   task->setGraph(newGraph);

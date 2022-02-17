@@ -49,21 +49,17 @@ public:
   /*! Constructor based on xml parsing.
    */
   TaskDistance(const std::string& className, xmlNode* node,
-               RcsGraph* graph, int dim=1);
+               const RcsGraph* graph, int dim=1);
 
   /*! Constructor based on graph and effectors.
   */
-  TaskDistance(RcsGraph* graph, const RcsBody* effector,
+  TaskDistance(const RcsGraph* graph, const RcsBody* effector,
                const RcsBody* refBdy, double gainDX=1.0);
-
-  /*! Destructor.
-   */
-  virtual ~TaskDistance();
 
   /*!
    * \brief Virtual copy constructor with optional new graph.
    */
-  virtual TaskDistance* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskDistance* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable
    *
@@ -97,13 +93,13 @@ public:
    *         and forcing the relative error calculation.
    */
   virtual bool testJacobian(double errorLimit=1.0e-4, double delta=1.0e-6,
-                            bool relativeError=false, bool verbose=false);
+                            bool relativeError=false, bool verbose=false) const;
 
   /*! \brief We skip the hessian derivative test since it usually fails due to
    *         the assumption that the closest points are body-fixed. This
    *         function is empty and just returns true.
    */
-  virtual bool testHessian(bool verbose = false);
+  virtual bool testHessian(bool verbose = false) const;
 
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise. The following checks are performed:

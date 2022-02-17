@@ -53,7 +53,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskPosition1D> registrar4("CylZ");
  ******************************************************************************/
 Rcs::TaskPosition1D::TaskPosition1D(const std::string& className,
                                     xmlNode* node,
-                                    RcsGraph* graph_,
+                                    const RcsGraph* graph_,
                                     int dim):
   TaskPosition3D(className, node, graph_, dim), index(-1)
 {
@@ -96,7 +96,7 @@ Rcs::TaskPosition1D::TaskPosition1D(const std::string& className,
  * For programmatic creation
  ******************************************************************************/
 Rcs::TaskPosition1D::TaskPosition1D(const std::string& className,
-                                    RcsGraph* graph,
+                                    const RcsGraph* graph,
                                     const RcsBody* effector,
                                     const RcsBody* refBdy,
                                     const RcsBody* refFrame):
@@ -129,16 +129,9 @@ Rcs::TaskPosition1D::TaskPosition1D(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskPosition1D::~TaskPosition1D()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskPosition1D* Rcs::TaskPosition1D::clone(RcsGraph* newGraph) const
+Rcs::TaskPosition1D* Rcs::TaskPosition1D::clone(const RcsGraph* newGraph) const
 {
   TaskPosition1D* task = new Rcs::TaskPosition1D(*this);
   task->setGraph(newGraph);

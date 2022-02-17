@@ -50,7 +50,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskPose6D> registrar("XYZABC");
  ******************************************************************************/
 Rcs::TaskPose6D::TaskPose6D(const std::string& className_,
                             xmlNode* node,
-                            RcsGraph* _graph):
+                            const RcsGraph* _graph):
   CompositeTask(className_, node, _graph)
 {
   addTask(new TaskPosition3D("XYZ", node, _graph, 3));
@@ -89,7 +89,7 @@ Rcs::TaskPose6D::TaskPose6D(const std::string& className_,
 /*******************************************************************************
  * Constructor based on body pointers
  ******************************************************************************/
-Rcs::TaskPose6D::TaskPose6D(RcsGraph* graph_,
+Rcs::TaskPose6D::TaskPose6D(const RcsGraph* graph_,
                             const RcsBody* effector,
                             const RcsBody* refBdy,
                             const RcsBody* refFrame): CompositeTask()
@@ -122,7 +122,7 @@ Rcs::TaskPose6D::TaskPose6D(RcsGraph* graph_,
 /*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskPose6D* Rcs::TaskPose6D::clone(RcsGraph* newGraph) const
+Rcs::TaskPose6D* Rcs::TaskPose6D::clone(const RcsGraph* newGraph) const
 {
   TaskPose6D* task = new Rcs::TaskPose6D(*this);
   task->setGraph(newGraph);

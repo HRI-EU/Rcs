@@ -51,17 +51,13 @@ public:
 
   /*! Constructor based on xml parsing
    */
-  TaskCOM3D(const std::string& className, xmlNode* node, RcsGraph* graph,
+  TaskCOM3D(const std::string& className, xmlNode* node, const RcsGraph* graph,
             int dim=3);
-
-  /*! Destructor
-   */
-  virtual ~TaskCOM3D();
 
   /*!
    * \brief Virtual copy constructor with optional new graph
    */
-  virtual TaskCOM3D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskCOM3D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable
    *

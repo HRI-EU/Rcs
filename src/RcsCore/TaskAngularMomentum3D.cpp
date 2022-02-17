@@ -51,7 +51,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskAngularMomentum3D> registrar1("Angular
  ******************************************************************************/
 Rcs::TaskAngularMomentum3D::TaskAngularMomentum3D(const std::string& className,
                                                   xmlNode* node,
-                                                  RcsGraph* _graph,
+                                                  const RcsGraph* _graph,
                                                   int dim):
   TaskGenericIK(className, node, _graph, dim)
 {
@@ -66,16 +66,9 @@ Rcs::TaskAngularMomentum3D::TaskAngularMomentum3D(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskAngularMomentum3D::~TaskAngularMomentum3D()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskAngularMomentum3D* Rcs::TaskAngularMomentum3D::clone(RcsGraph* newGraph) const
+Rcs::TaskAngularMomentum3D* Rcs::TaskAngularMomentum3D::clone(const RcsGraph* newGraph) const
 {
   TaskAngularMomentum3D* task = new Rcs::TaskAngularMomentum3D(*this);
   task->setGraph(newGraph);

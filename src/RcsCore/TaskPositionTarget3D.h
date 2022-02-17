@@ -31,7 +31,6 @@
 
 *******************************************************************************/
 
-#if 0
 #ifndef RCS_TASKPOSITIONTARGET3D_H
 #define RCS_TASKPOSITIONTARGET3D_H
 
@@ -53,16 +52,11 @@ public:
   /*! Constructor based on xml parsing
    */
   TaskPositionTarget3D(const std::string& className, xmlNode* node,
-                       RcsGraph* graph, int dim=3);
+                       const RcsGraph* graph, int dim=3);
 
-  /*! Destructor
+  /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual ~TaskPositionTarget3D();
-
-  /*!
-   * \brief Virtual copy constructor with optional new graph
-   */
-  virtual TaskPositionTarget3D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskPositionTarget3D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable
    *
@@ -101,7 +95,7 @@ public:
 
   /*! \brief See \ref Task::testJacobian. TODO: Implement this function.
    */
-  virtual bool testHessian(bool verbose);
+  virtual bool testHessian(bool verbose) const;
 
   /*! \brief See \ref Task::testJacobian. In this class, the rows corresponding
    *         to Y and Z are ignored, since the task's computeDX() function
@@ -110,7 +104,7 @@ public:
   virtual bool testJacobian(double errorLimit,
                             double delta,
                             bool relativeError,
-                            bool verbose);
+                            bool verbose) const;
 
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise. The following checks are performed:
@@ -120,18 +114,11 @@ public:
    */
   static bool isValid(xmlNode* xml_node, const RcsGraph* graph);
 
-private:
+protected:
 
-  int createBody();
-  void updateRefBody() const;
-  HTr computeGoalTransform() const;
-  int goalBdyId;
-  HTr goalTransform;
-
-  TaskPositionTarget3D();
+  HTr computeGoalRotation() const;
 };
 
 }
 
 #endif // RCS_TASKPOSITIONTARGET3D_H
-#endif//0

@@ -51,16 +51,11 @@ public:
   /*! \brief Constructor based on xml parsing
    */
   TaskSpherical3D(const std::string& className, xmlNode* node,
-                  RcsGraph* graph, int dim=3);
+                  const RcsGraph* graph, int dim=3);
 
-  /*! \brief Destructor
+  /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual ~TaskSpherical3D();
-
-  /*!
-   * \brief Virtual copy constructor with optional new graph
-   */
-  virtual TaskSpherical3D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskSpherical3D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable. The result
    *         is written to parameter \e x_res. Reuses
@@ -107,7 +102,7 @@ public:
    *  \param[in] verbose If true, debug information is printed to the console.
    *  \return True for success, false otherwise.
    */
-  virtual bool test(bool verbose=false);
+  virtual bool test(bool verbose=false) const;
 
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise. The following checks are performed:

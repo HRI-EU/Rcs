@@ -48,7 +48,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskJoint> registrar("Joint");
  ******************************************************************************/
 Rcs::TaskJoint::TaskJoint(const std::string& className,
                           xmlNode* node,
-                          RcsGraph* _graph,
+                          const RcsGraph* _graph,
                           int dim):
   TaskGenericIK(className, node, _graph, dim),
   jointId(-1), refJointId(-1), refGain(1.0)
@@ -121,7 +121,7 @@ Rcs::TaskJoint::TaskJoint(const std::string& className,
 Rcs::TaskJoint::TaskJoint(const RcsJoint* joint,
                           const RcsJoint* refJoint,
                           xmlNode* node,
-                          RcsGraph* _graph,
+                          const RcsGraph* _graph,
                           double refGain_):
   TaskGenericIK("Joint", node, _graph, 1),
   jointId(joint ? joint->id : -1),
@@ -151,7 +151,7 @@ Rcs::TaskJoint::TaskJoint(const RcsJoint* joint,
 /*******************************************************************************
  *
 ******************************************************************************/
-Rcs::TaskJoint::TaskJoint(RcsGraph* graph_, const RcsJoint* joint,
+Rcs::TaskJoint::TaskJoint(const RcsGraph* graph_, const RcsJoint* joint,
                           const RcsJoint* refJoint, double refGain_) :
   TaskGenericIK(),
   jointId(joint ? joint->id : -1),
@@ -184,16 +184,9 @@ Rcs::TaskJoint::TaskJoint(RcsGraph* graph_, const RcsJoint* joint,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskJoint::~TaskJoint()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskJoint* Rcs::TaskJoint::clone(RcsGraph* newGraph) const
+Rcs::TaskJoint* Rcs::TaskJoint::clone(const RcsGraph* newGraph) const
 {
   TaskJoint* task = new Rcs::TaskJoint(*this);
   task->setGraph(newGraph);

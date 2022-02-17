@@ -96,7 +96,7 @@ Rcs::Task::Task():
  ******************************************************************************/
 Rcs::Task::Task(const std::string& className_,
                 xmlNode* node,
-                RcsGraph* graph_,
+                const RcsGraph* graph_,
                 int dim):
   graph(graph_),
   tsr(NULL),
@@ -245,7 +245,7 @@ Rcs::Task::Task(const Task& copyFromMe) :
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::Task::setGraph(RcsGraph* newGraph)
+void Rcs::Task::setGraph(const RcsGraph* newGraph)
 {
   if (newGraph == this->graph)
   {
@@ -256,40 +256,40 @@ void Rcs::Task::setGraph(RcsGraph* newGraph)
   // topology is the same as in the task we copy from. Therefore we retrieve
   // the task's bodies by name lookup.
 
-    // The following section is the same for effector, refBdy and refFrame. We
-    // check if the id >= 0. If this is not the the case, the body
-    // is either not set, or refers to a GenericBody (with id range [-10 ...].
-    // In such cases, we just keep the id, and do not resolve the id by name.
+  // The following section is the same for effector, refBdy and refFrame. We
+  // check if the id >= 0. If this is not the the case, the body
+  // is either not set, or refers to a GenericBody (with id range [-10 ...].
+  // In such cases, we just keep the id, and do not resolve the id by name.
   int otherId = getEffectorId();
-    if (otherId >= 0)
-    {
+  if (otherId >= 0)
+  {
     const RcsBody* otherBdy = RCSBODY_BY_ID(getGraph(), otherId);
-      if (otherBdy)
-      {
-        const RcsBody* myBdy = RcsGraph_getBodyByName(newGraph, otherBdy->name);
-        setEffectorId(myBdy ? myBdy->id : -1);
-      }
+    if (otherBdy)
+    {
+      const RcsBody* myBdy = RcsGraph_getBodyByName(newGraph, otherBdy->name);
+      setEffectorId(myBdy ? myBdy->id : -1);
     }
+  }
 
   otherId = getRefBodyId();
-    if (otherId >= 0)
-    {
+  if (otherId >= 0)
+  {
     const RcsBody* otherBdy = RCSBODY_BY_ID(getGraph(), otherId);
-      if (otherBdy)
-      {
-        const RcsBody* myBdy = RcsGraph_getBodyByName(newGraph, otherBdy->name);
-        setRefBodyId(myBdy ? myBdy->id : -1);
-      }
+    if (otherBdy)
+    {
+      const RcsBody* myBdy = RcsGraph_getBodyByName(newGraph, otherBdy->name);
+      setRefBodyId(myBdy ? myBdy->id : -1);
     }
+  }
 
   otherId = getRefFrameId();
-    if (otherId >= 0)
-    {
+  if (otherId >= 0)
+  {
     const RcsBody* otherBdy = RCSBODY_BY_ID(getGraph(), otherId);
-      if (otherBdy)
-      {
-        const RcsBody* myBdy = RcsGraph_getBodyByName(newGraph, otherBdy->name);
-        setRefFrameId(myBdy ? myBdy->id : -1);
+    if (otherBdy)
+    {
+      const RcsBody* myBdy = RcsGraph_getBodyByName(newGraph, otherBdy->name);
+      setRefFrameId(myBdy ? myBdy->id : -1);
     }
   }
 
@@ -361,7 +361,7 @@ const std::string& Rcs::Task::getName() const
 /*******************************************************************************
  * Returns pointer to internal graph
  ******************************************************************************/
-RcsGraph* Rcs::Task::getGraph() const
+const RcsGraph* Rcs::Task::getGraph() const
 {
   return this->graph;
 }
@@ -790,37 +790,51 @@ void Rcs::Task::computeAF(double* ft_res,
 /*******************************************************************************
  * Finite difference test for the Hessian
  ******************************************************************************/
-static void testJ(double* f, const double* x, void* params)
+struct TaskGradTestParams
 {
-  Rcs::Task* self = (Rcs::Task*) params;
+  const Rcs::Task* task;
+  RcsGraph* graph;
+};
+
+static void testJ(double* f, const double* x, void* arg)
+{
+  TaskGradTestParams* params = (TaskGradTestParams*) arg;
+  const Rcs::Task* self = params->task;
+  RcsGraph* graph = params->graph;
   unsigned int nx = self->getDim();
-  unsigned int nq = self->getGraph()->nJ;
+  unsigned int nq = graph->nJ;
   MatNd q = MatNd_fromPtr(nq, 1, (double*) x);
   MatNd J = MatNd_fromPtr(nx, nq, f);
-  RcsGraph_setState(self->getGraph(), &q, NULL);
+  RcsGraph_setState(graph, &q, NULL);
   self->computeJ(&J);
 }
 
-static void testH(double* f, const double* x, void* params)
+static void testH(double* f, const double* x, void* arg)
 {
-  Rcs::Task* self = (Rcs::Task*) params;
+  TaskGradTestParams* params = (TaskGradTestParams*)arg;
+  const Rcs::Task* self = params->task;
+  RcsGraph* graph = params->graph;
   unsigned int nx = self->getDim();
   unsigned int nq = self->getGraph()->nJ;
   MatNd q = MatNd_fromPtr(nq, 1, (double*) x);
   MatNd H = MatNd_fromPtr(nx, nq*nq, f);
 
-  RcsGraph_setState(self->getGraph(), &q, NULL);
+  RcsGraph_setState(graph, &q, NULL);
   self->computeH(&H);
 }
 
-bool Rcs::Task::testHessian(bool verbose)
+bool Rcs::Task::testHessian(bool verbose) const
 {
-  double tolerance = 0.01;   // We accept 1% error
-  MatNd* q_ik = MatNd_create(getGraph()->nJ, 1);
-  RcsGraph_stateVectorToIK(getGraph(), getGraph()->q, q_ik);
+  TaskGradTestParams params;
+  params.graph = RcsGraph_clone(getGraph());
+  params.task = clone(params.graph);
 
-  bool success = Rcs_testGradient(testJ, testH, this, q_ik->ele,
-                                  getGraph()->nJ, getDim()*getGraph()->nJ,
+  double tolerance = 0.01;   // We accept 1% error
+  MatNd* q_ik = MatNd_create(params.graph->nJ, 1);
+  RcsGraph_stateVectorToIK(params.graph, params.graph->q, q_ik);
+
+  bool success = Rcs_testGradient(testJ, testH, &params, q_ik->ele,
+                                  params.graph->nJ, getDim()*params.graph->nJ,
                                   tolerance, verbose);
 
   MatNd_destroy(q_ik);
@@ -831,6 +845,9 @@ bool Rcs::Task::testHessian(bool verbose)
          getName().c_str(), success ? "SUCCESS" : "FAILURE");
   }
 
+  delete params.task;
+  RcsGraph_destroy(params.graph);
+
   return success;
 }
 
@@ -838,11 +855,16 @@ bool Rcs::Task::testHessian(bool verbose)
  * Finite difference test for the Jacobian
  ******************************************************************************/
 bool Rcs::Task::testJacobian(double errorLimit,
-                             double delta,
+                             double delta0,
                              bool relativeError,
-                             bool verbose)
+                             bool verbose) const
 {
-  const unsigned int nx = getDim();
+  // To keep the interface const with the function not modifying its internals,
+  // we do the finite difference estimation using a local copy of the task
+  // that points to the passed non-const graph.
+  RcsGraph* testGraph = RcsGraph_clone(getGraph());
+  Task* task = clone(testGraph);
+  const unsigned int nx = task->getDim();
 
   bool success = true;
   MatNd* x0, *x1, *dx;
@@ -851,19 +873,19 @@ bool Rcs::Task::testJacobian(double errorLimit,
   MatNd_create2(dx, nx, 1);
 
   // Set the state.
-  RcsGraph_computeForwardKinematics(this->graph, NULL, NULL);
+  RcsGraph_setState(testGraph, NULL, NULL);
 
   // Memorize the graph's state for the finite difference computation
   MatNd* q0;
-  MatNd_clone2(q0, this->graph->q);
+  MatNd_clone2(q0, testGraph->q);
 
   // Compute the task vector for the current state
-  computeX(x0->ele);
+  task->computeX(x0->ele);
 
   // Compute the Jacobian analytically for the given state
   MatNd* J = NULL;
-  MatNd_create2(J, nx, this->graph->nJ);
-  computeJ(J);
+  MatNd_create2(J, nx, testGraph->nJ);
+  task->computeJ(J);
 
   // Numerical Jacobian approximation with finite differences
   MatNd* J_fd = NULL;
@@ -873,7 +895,7 @@ bool Rcs::Task::testJacobian(double errorLimit,
   MatNd* J_err = NULL;
   MatNd_create2(J_err, J->m, J->n);
 
-  RCSGRAPH_TRAVERSE_JOINTS(this->graph)
+  RCSGRAPH_TRAVERSE_JOINTS(testGraph)
   {
     // Ignore dofs that are constrained
     if (JNT->jacobiIndex == -1)
@@ -883,25 +905,28 @@ bool Rcs::Task::testJacobian(double errorLimit,
 
     // Determine the finite difference step according to the joint type:
     // rotational joint: 0.01 degree, translational joint: 0.01mm
-    double delta = RcsJoint_isRotation(JNT) ? 0.01*(M_PI/180.0) : 0.01*0.001;
+    double delta = delta0*(RcsJoint_isRotation(JNT) ? (M_PI/180.0) : 0.001);
 
     // Calculate task variable x1 after applying finite difference step
-    MatNd_copy(this->graph->q, q0);
-    MatNd_addToEle(this->graph->q, JNT->jointIndex, 0, delta);
+    MatNd_copy(testGraph->q, q0);
+    MatNd_addToEle(testGraph->q, JNT->jointIndex, 0, delta);
 
     // Here we don't use the RcsGraph_setState() function, since it also
     // updates potentially kinematically coupled joints. Here we don't
     // consider any kinematic coupling, and therefore don't want to see
     // them in the pertubations of the finite differences.
-    RcsGraph_computeForwardKinematics(this->graph, NULL, NULL);
-    computeX(x1->ele);
+    RcsGraph_computeForwardKinematics(testGraph, NULL, NULL);
+    task->computeX(x1->ele);
 
     // Reset state and calculate dx
-    RcsGraph_setState(this->graph, q0, NULL);
-    computeDX(dx->ele, x1->ele);
+    RcsGraph_setState(testGraph, q0, NULL);
+    task->computeDX(dx->ele, x1->ele);
     VecNd_constMulSelf(dx->ele, 1.0 / delta, nx);
     MatNd_setColumn(J_fd, JNT->jacobiIndex, dx->ele, nx);
   }
+
+  // Reset graph to original state
+  RcsGraph_setState(testGraph, q0, NULL);
 
   // Compute error: percentual difference of solutions
   double err = 0.0;
@@ -980,12 +1005,12 @@ bool Rcs::Task::testJacobian(double errorLimit,
       if (relativeError==true)
       {
         RMSG("Task %s: Failure: err = %.1f %%, index = %d %d",
-             getName().c_str(), 100.0*err, idx_errRow, idx_errCol);
+             task->getName().c_str(), 100.0*err, idx_errRow, idx_errCol);
       }
       else
       {
         RMSG("Task %s: Failure: err = %g, index = %d %d",
-             getName().c_str(), err, idx_errRow, idx_errCol);
+             task->getName().c_str(), err, idx_errRow, idx_errCol);
       }
 
       RMSG("J");
@@ -1010,7 +1035,7 @@ bool Rcs::Task::testJacobian(double errorLimit,
     if (verbose == true)
     {
       RLOG(1, "Task %s: Jacobian test success: err = %g",
-           getName().c_str(), err);
+           task->getName().c_str(), err);
     }
   }
 
@@ -1024,9 +1049,6 @@ bool Rcs::Task::testJacobian(double errorLimit,
     MatNd_printDigits(J_err, 4);
   }
 
-  // Reset graph to original state
-  RcsGraph_setState(this->graph, q0, NULL);
-
   MatNd_destroy(q0);
   MatNd_destroy(J_fd);
   MatNd_destroy(J_err);
@@ -1035,6 +1057,9 @@ bool Rcs::Task::testJacobian(double errorLimit,
   MatNd_destroy(x0);
   MatNd_destroy(x1);
   MatNd_destroy(dx);
+
+  delete task;
+  RcsGraph_destroy(testGraph);
 
   return success;
 }
@@ -1072,7 +1097,7 @@ bool Rcs::Task::testVelocity(double maxErr) const
 /*******************************************************************************
  * See header
  ******************************************************************************/
-bool Rcs::Task::test(bool verbose)
+bool Rcs::Task::test(bool verbose) const
 {
   const double delta = 1.0e-6;
   bool success = true;
@@ -1178,7 +1203,7 @@ bool Rcs::Task::isValid(xmlNode* node, const RcsGraph* graph,
 /*******************************************************************************
  * See header
  ******************************************************************************/
-Rcs::Task* Rcs::Task::createRandom(std::string className, RcsGraph* graph)
+Rcs::Task* Rcs::Task::createRandom(std::string className, const RcsGraph* graph)
 {
   int rndId = Math_getRandomInteger(-1, graph->nBodies-1);
   const RcsBody* ef = RCSBODY_BY_ID(graph, rndId);

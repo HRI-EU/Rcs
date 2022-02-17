@@ -45,7 +45,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskCompositeXml> registrar("Composite");
  ******************************************************************************/
 Rcs::TaskCompositeXml::TaskCompositeXml(const std::string& className_,
                                         xmlNode* node,
-                                        RcsGraph* _graph):
+                                        const RcsGraph* _graph):
   CompositeTask(className_, node, _graph)
 {
   // Descend one level in XML parsing to find Task et al.

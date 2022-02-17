@@ -47,19 +47,10 @@ class TaskJointLimit: public Rcs::TaskGenericIK
 {
 public:
 
-  /*! Constructor based on xml parsing
-   */
   TaskJointLimit(const std::string& className, xmlNode* node,
-                 RcsGraph* graph, int dim=1);
+                 const RcsGraph* graph, int dim=1);
 
-  /*! Destructor
-   */
-  virtual ~TaskJointLimit();
-
-  /*!
-   * \brief Virtual copy constructor with optional new graph
-   */
-  virtual TaskJointLimit* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskJointLimit* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable
    *

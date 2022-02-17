@@ -48,19 +48,10 @@ public:
 
   using Task::computeDX;
 
-  /*! Constructor based on xml parsing
-   */
   TaskVelocityJoint(const std::string& className, xmlNode* node,
-                    RcsGraph* graph, int dim=1);
+                    const RcsGraph* graph, int dim=1);
 
-  /*! Destructor
-   */
-  virtual ~TaskVelocityJoint();
-
-  /*!
-   * \brief Virtual copy constructor with optional new graph
-   */
-  virtual TaskVelocityJoint* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskVelocityJoint* clone(const RcsGraph* newGraph=NULL) const;
 
   virtual void computeX(double* x_res) const;
 

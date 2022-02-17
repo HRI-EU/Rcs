@@ -40,18 +40,19 @@
 #include "Rcs_kinematics.h"
 
 
+namespace Rcs
+{
 // register task at the task factory
-static Rcs::TaskFactoryRegistrar<Rcs::TaskPolar2D> registrar("POLAR");
-
+REGISTER_TASK(TaskPolar2D, "POLAR");
 
 
 /*******************************************************************************
  * Constructor based on xml parsing
  ******************************************************************************/
-Rcs::TaskPolar2D::TaskPolar2D(const std::string& className,
-                              xmlNode* node,
-                              RcsGraph* _graph,
-                              int dim) :
+TaskPolar2D::TaskPolar2D(const std::string& className,
+                         xmlNode* node,
+                         const RcsGraph* _graph,
+                         int dim) :
   Task(className, node, _graph, dim), direction(2)
 {
   if (getClassName()=="POLAR")
@@ -96,18 +97,11 @@ Rcs::TaskPolar2D::TaskPolar2D(const std::string& className,
 }
 
 /*******************************************************************************
- *  Destructor
- ******************************************************************************/
-Rcs::TaskPolar2D::~TaskPolar2D()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskPolar2D* Rcs::TaskPolar2D::clone(RcsGraph* newGraph) const
+TaskPolar2D* TaskPolar2D::clone(const RcsGraph* newGraph) const
 {
-  TaskPolar2D* task = new Rcs::TaskPolar2D(*this);
+  TaskPolar2D* task = new TaskPolar2D(*this);
   task->setGraph(newGraph);
   return task;
 }
@@ -115,7 +109,7 @@ Rcs::TaskPolar2D* Rcs::TaskPolar2D::clone(RcsGraph* newGraph) const
 /*******************************************************************************
  * Computes the current value of the task variable: Polar angles
  ******************************************************************************/
-void Rcs::TaskPolar2D::computeX(double* polarAngles) const
+void TaskPolar2D::computeX(double* polarAngles) const
 {
   double A_ER[3][3];
   computeRelativeRotationMatrix(A_ER, getEffector(), getRefBody());
@@ -125,7 +119,7 @@ void Rcs::TaskPolar2D::computeX(double* polarAngles) const
 /*******************************************************************************
  * Computes the Polar angle velocity: phi_dot = H*R_om
  ******************************************************************************/
-void Rcs::TaskPolar2D::computeXp(double* phip) const
+void TaskPolar2D::computeXp(double* phip) const
 {
   double R_om[3], A_ER[3][3], H[2][3];
 
@@ -141,7 +135,7 @@ void Rcs::TaskPolar2D::computeXp(double* phip) const
 /*******************************************************************************
  * Computes the Polar angle acceleration
  ******************************************************************************/
-void Rcs::TaskPolar2D::computeXpp(double* phipp, const MatNd* q_ddot) const
+void TaskPolar2D::computeXpp(double* phipp, const MatNd* q_ddot) const
 {
   RLOG(4, "Implement TaskPolar2D::computeXpp");
   VecNd_setZero(phipp, getDim());
@@ -150,8 +144,8 @@ void Rcs::TaskPolar2D::computeXpp(double* phipp, const MatNd* q_ddot) const
 /*******************************************************************************
  * Computes the Polar angle velocity delta
  ******************************************************************************/
-void Rcs::TaskPolar2D::computeDXp(double* dOmega,
-                                  const double* phip_des) const
+void TaskPolar2D::computeDXp(double* dOmega,
+                             const double* phip_des) const
 {
   double E_om[3], A_ER[3][3], H[2][3], invH[3][2], E_om_des[3], lambda = 0.001;
   MatNd arrH      = MatNd_fromPtr(2, 3, &H[0][0]);
@@ -205,7 +199,7 @@ void Rcs::TaskPolar2D::computeDXp(double* dOmega,
   J = 2_JR12 with only rows x,y
 
 *******************************************************************************/
-void Rcs::TaskPolar2D::computeJ(MatNd* jacobian) const
+void TaskPolar2D::computeJ(MatNd* jacobian) const
 {
   MatNd* JR2 = NULL;
   MatNd_create2(JR2, 3, this->graph->nJ);
@@ -245,7 +239,7 @@ void Rcs::TaskPolar2D::computeJ(MatNd* jacobian) const
  * The Hessian is:
  *      1_H_12 = d(A_1I)/dq(I_J_2 - I_J_1) + A_1I (I_H_2 - I_H_1)
  ******************************************************************************/
-void Rcs::TaskPolar2D::computeH(MatNd* hessian) const
+void TaskPolar2D::computeH(MatNd* hessian) const
 {
   int nq = this->graph->nJ;
   MatNd* H_omega = NULL;
@@ -281,7 +275,7 @@ void Rcs::TaskPolar2D::computeH(MatNd* hessian) const
 /*******************************************************************************
  *  Computes the delta in task space for the differential kinematics
  ******************************************************************************/
-void Rcs::TaskPolar2D::computeDX(double* dx_ik, const double* polar_des) const
+void TaskPolar2D::computeDX(double* dx_ik, const double* polar_des) const
 {
   double A_ER[3][3];
   computeRelativeRotationMatrix(A_ER, getEffector(), getRefBody());
@@ -292,9 +286,9 @@ void Rcs::TaskPolar2D::computeDX(double* dx_ik, const double* polar_des) const
  *  Due to the lack of 1 dof in the task representation, this function cannot be
  *  implemented.
  ******************************************************************************/
-void Rcs::TaskPolar2D::computeDX(double* dx_ik,
-                                 const double* x_des,
-                                 const double* x_curr) const
+void TaskPolar2D::computeDX(double* dx_ik,
+                            const double* x_des,
+                            const double* x_curr) const
 {
   RFATAL("Not yet implemented");
 }
@@ -302,30 +296,10 @@ void Rcs::TaskPolar2D::computeDX(double* dx_ik,
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskPolar2D::integrateXp_ik(double* x_res, const double* x,
-                                      const double* x_dot, double dt) const
+void TaskPolar2D::integrateXp_ik(double* x_res, const double* x,
+                                 const double* x_dot, double dt) const
 {
   RFATAL("Not yet implemented");
-}
-
-/*******************************************************************************
- * Finite difference tests with a bit different error limits.
- ******************************************************************************/
-bool Rcs::TaskPolar2D::test(bool verbose)
-{
-  bool success = true;
-  bool success_i;
-  bool relativeError = false;
-  double errorLimit = 5.0e-3;
-  double delta = 1.0e-4;
-
-  success_i = testJacobian(errorLimit, delta, relativeError, verbose);
-  success = success && success_i;
-
-  success_i = testHessian(verbose);
-  success = success && success_i;
-
-  return success;
 }
 
 /*******************************************************************************
@@ -337,8 +311,8 @@ bool Rcs::TaskPolar2D::test(bool verbose)
  * w = H^-1*phi_dot
  * w_dot = d(H^-1)/dt phi_dot + (H^-1) phi_ddot
  ******************************************************************************/
-void Rcs::TaskPolar2D::computeFfXpp(double* x_ddot_res,
-                                    const double* desired_acc) const
+void TaskPolar2D::computeFfXpp(double* x_ddot_res,
+                               const double* desired_acc) const
 {
   RFATAL("Implement me");
 }
@@ -346,7 +320,7 @@ void Rcs::TaskPolar2D::computeFfXpp(double* x_ddot_res,
 /*******************************************************************************
  * Transforms force from Jacobi coordinates to task coordinates.
  ******************************************************************************/
-void Rcs::TaskPolar2D::forceTrafo(double* ft_task) const
+void TaskPolar2D::forceTrafo(double* ft_task) const
 {
   RFATAL("Implement me");
 }
@@ -354,8 +328,8 @@ void Rcs::TaskPolar2D::forceTrafo(double* ft_task) const
 /*******************************************************************************
  * Transforms the selection into the Jacobian coordinates
 *******************************************************************************/
-void Rcs::TaskPolar2D::selectionTrafo(double* S_des_trafo,
-                                      const double* S_des) const
+void TaskPolar2D::selectionTrafo(double* S_des_trafo,
+                                 const double* S_des) const
 {
   RFATAL("Implement me");
 }
@@ -363,7 +337,7 @@ void Rcs::TaskPolar2D::selectionTrafo(double* S_des_trafo,
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskPolar2D::toXMLBody(FILE* out) const
+void TaskPolar2D::toXMLBody(FILE* out) const
 {
   Task::toXMLBody(out);
 
@@ -384,11 +358,31 @@ void Rcs::TaskPolar2D::toXMLBody(FILE* out) const
 }
 
 /*******************************************************************************
+ * Finite difference tests with a bit different error limits.
+ ******************************************************************************/
+bool TaskPolar2D::test(bool verbose) const
+{
+  bool success = true;
+  bool success_i;
+  bool relativeError = false;
+  double errorLimit = 5.0e-3;
+  double delta = 1.0e-2;
+
+  success_i = testJacobian(errorLimit, delta, relativeError, verbose);
+  success = success && success_i;
+
+  success_i = testHessian(verbose);
+  success = success && success_i;
+
+  return success;
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
-bool Rcs::TaskPolar2D::isValid(xmlNode* node, const RcsGraph* graph)
+bool TaskPolar2D::isValid(xmlNode* node, const RcsGraph* graph)
 {
-  bool success = Rcs::Task::isValid(node, graph, "POLAR");
+  bool success = Task::isValid(node, graph, "POLAR");
 
 
   // Check if axis direction is X, Y or Z
@@ -411,3 +405,5 @@ bool Rcs::TaskPolar2D::isValid(xmlNode* node, const RcsGraph* graph)
 
   return success;
 }
+
+}   // namespace Rcs

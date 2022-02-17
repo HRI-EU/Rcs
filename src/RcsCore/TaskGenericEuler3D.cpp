@@ -54,8 +54,12 @@
   - computeAx
 */
 
-static Rcs::TaskFactoryRegistrar<Rcs::TaskGenericEuler3D> registrar("genericEuler");
 
+namespace Rcs
+{
+
+// register task at the task factory
+REGISTER_TASK(TaskGenericEuler3D, "genericEuler");
 
 
 /*******************************************************************************
@@ -113,11 +117,11 @@ static void Eul2RotMatrix(double A_KI[3][3], const double ea[3], int eulerOrder)
 /*******************************************************************************
  * Constructor based on xml parsing
  ******************************************************************************/
-Rcs::TaskGenericEuler3D::TaskGenericEuler3D(const std::string& className_,
+TaskGenericEuler3D::TaskGenericEuler3D(const std::string& className_,
                                             xmlNode* node,
-                                            RcsGraph* _graph,
+                                       const RcsGraph* _graph,
                                             int dim):
-  Rcs::Task(className_, node, _graph, dim)
+  Task(className_, node, _graph, dim)
 {
   char eulerOrderChar[64] = "ABCr";
 
@@ -254,7 +258,7 @@ Rcs::TaskGenericEuler3D::TaskGenericEuler3D(const std::string& className_,
 /*******************************************************************************
  *
  ******************************************************************************/
-Rcs::TaskGenericEuler3D::TaskGenericEuler3D(RcsGraph* graph_,
+TaskGenericEuler3D::TaskGenericEuler3D(const RcsGraph* graph_,
                                             const char* eulerOrderChar,
                                             const RcsBody* effector,
                                             const RcsBody* refBdy,
@@ -411,18 +415,11 @@ Rcs::TaskGenericEuler3D::TaskGenericEuler3D(RcsGraph* graph_,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskGenericEuler3D::~TaskGenericEuler3D()
-{
-}
-
-/*******************************************************************************
  * Returns a clone of the instance.
  ******************************************************************************/
-Rcs::TaskGenericEuler3D* Rcs::TaskGenericEuler3D::clone(RcsGraph* newGraph) const
+TaskGenericEuler3D* TaskGenericEuler3D::clone(const RcsGraph* newGraph) const
 {
-  TaskGenericEuler3D* task = new Rcs::TaskGenericEuler3D(*this);
+  TaskGenericEuler3D* task = new TaskGenericEuler3D(*this);
   task->setGraph(newGraph);
   return task;
 }
@@ -431,8 +428,7 @@ Rcs::TaskGenericEuler3D* Rcs::TaskGenericEuler3D::clone(RcsGraph* newGraph) cons
 /*******************************************************************************
  * Computes the current value of the task variable: Euler angles
  ******************************************************************************/
-
-void Rcs::TaskGenericEuler3D::computeX(double* x_res) const
+void TaskGenericEuler3D::computeX(double* x_res) const
 {
   computeEulerAngles(x_res, getEffector(), getRefBody(), this->eulerOrder);
 }
@@ -447,7 +443,7 @@ void Rcs::TaskGenericEuler3D::computeX(double* x_res) const
  *
  * ref_JR = A_ref-I * (I_JR,ef - I_JR,ref)
  ******************************************************************************/
-void Rcs::TaskGenericEuler3D::computeJ(MatNd* jacobian) const
+void TaskGenericEuler3D::computeJ(MatNd* jacobian) const
 {
   RcsGraph_3dOmegaJacobian(this->graph, getEffector(), getRefBody(),
                            getRefFrame(), jacobian);
@@ -456,7 +452,7 @@ void Rcs::TaskGenericEuler3D::computeJ(MatNd* jacobian) const
 /*******************************************************************************
  * see RcsGraph_3dOmegaHessian();
  ******************************************************************************/
-void Rcs::TaskGenericEuler3D::computeH(MatNd* hessian) const
+void TaskGenericEuler3D::computeH(MatNd* hessian) const
 {
   RcsGraph_3dOmegaHessian(this->graph, getEffector(), getRefBody(),
                           getRefFrame(), hessian);
@@ -465,7 +461,7 @@ void Rcs::TaskGenericEuler3D::computeH(MatNd* hessian) const
 /*******************************************************************************
  * Computes the current value of the task variable: Euler angles
  ******************************************************************************/
-void Rcs::TaskGenericEuler3D::computeEulerAngles(double* ea,
+void TaskGenericEuler3D::computeEulerAngles(double* ea,
                                                  const RcsBody* effector,
                                                  const RcsBody* referenceBody,
                                                  const int eulerOrder)
@@ -489,7 +485,7 @@ void Rcs::TaskGenericEuler3D::computeEulerAngles(double* ea,
 /*******************************************************************************
  * Computes the current velocity in task space: Euler angles
  ******************************************************************************/
-void Rcs::TaskGenericEuler3D::computeXp(double* eap) const
+void TaskGenericEuler3D::computeXp(double* eap) const
 {
   double omega[3], ea[3], Binv[3][3];
   computeOmega(omega);
@@ -504,9 +500,9 @@ void Rcs::TaskGenericEuler3D::computeXp(double* eap) const
 /*******************************************************************************
  * Computes the current velocity in task space: Euler velocities
  ******************************************************************************/
-void Rcs::TaskGenericEuler3D::computeXpp(double* eapp, const MatNd* qpp) const
+void TaskGenericEuler3D::computeXpp(double* eapp, const MatNd* qpp) const
 {
-  Rcs::Task::computeXpp_ik(eapp, qpp);
+  Task::computeXpp_ik(eapp, qpp);
 
   double ea[3], eap[3];
   this->computeX(ea);
@@ -525,7 +521,7 @@ void Rcs::TaskGenericEuler3D::computeXpp(double* eapp, const MatNd* qpp) const
 /*******************************************************************************
  * Computes the delta in task space for the differential kinematics
  ******************************************************************************/
-void Rcs::TaskGenericEuler3D::computeDX(double* dx,
+void TaskGenericEuler3D::computeDX(double* dx,
                                         const double* x_des,
                                         const double* x_curr) const
 {
@@ -549,7 +545,7 @@ void Rcs::TaskGenericEuler3D::computeDX(double* dx,
 /*******************************************************************************
  * Computes the velocity error
  ******************************************************************************/
-void Rcs::TaskGenericEuler3D::computeDXp(double* delta_om,
+void TaskGenericEuler3D::computeDXp(double* delta_om,
                                          const double* eap_des) const
 {
   double om_curr[3], ea[3], B[3][3];
@@ -574,7 +570,7 @@ void Rcs::TaskGenericEuler3D::computeDXp(double* delta_om,
 /*******************************************************************************
  * See header
  ******************************************************************************/
-void Rcs::TaskGenericEuler3D::computeAF(double* ft_res,
+void TaskGenericEuler3D::computeAF(double* ft_res,
                                         double* ft_int,
                                         const double* ft_des,
                                         const double* selection,
@@ -583,8 +579,7 @@ void Rcs::TaskGenericEuler3D::computeAF(double* ft_res,
                                         const double kp,
                                         const double ki) const
 {
-  Rcs::Task::computeAF(ft_res, ft_int, ft_des, selection, ft_task,
-                       a_des, kp, ki);
+  Task::computeAF(ft_res, ft_int, ft_des, selection, ft_task, a_des, kp, ki);
 
   double ea[3], Binv[3][3];
   computeX(ea);
@@ -597,7 +592,7 @@ void Rcs::TaskGenericEuler3D::computeAF(double* ft_res,
 /*******************************************************************************
  * Computes the feed forward acceleration
  ******************************************************************************/
-void Rcs::TaskGenericEuler3D::computeFfXpp(double* omegap_des,
+void TaskGenericEuler3D::computeFfXpp(double* omegap_des,
                                            const double* eapp_des) const
 {
   //wp = dB/dt ap + B app
@@ -620,7 +615,7 @@ void Rcs::TaskGenericEuler3D::computeFfXpp(double* omegap_des,
 /*******************************************************************************
  * See header
  ******************************************************************************/
-void Rcs::TaskGenericEuler3D::forceTrafo(double* ft_task) const
+void TaskGenericEuler3D::forceTrafo(double* ft_task) const
 {
   double ea[3], B[3][3];
   computeX(ea);
@@ -634,7 +629,7 @@ void Rcs::TaskGenericEuler3D::forceTrafo(double* ft_task) const
 /*******************************************************************************
  * Transforms the selection into the Jacobian coordinates
  ******************************************************************************/
-void Rcs::TaskGenericEuler3D::selectionTrafo(double* S_des_trafo,
+void TaskGenericEuler3D::selectionTrafo(double* S_des_trafo,
                                              const double* S_des) const
 {
   double sqrLengthS = Vec3d_sqrLength(S_des);
@@ -664,7 +659,7 @@ void Rcs::TaskGenericEuler3D::selectionTrafo(double* S_des_trafo,
 /*******************************************************************************
  * see Rcs/1.4/RcsController/1.4/doc/latex Sect. 1.7
  ******************************************************************************/
-void Rcs::TaskGenericEuler3D::EulerRateToOmegasMat(double B[3][3],
+void TaskGenericEuler3D::EulerRateToOmegasMat(double B[3][3],
                                                    const double ea[3],
                                                    const int eulerOrderVect[4])
 {
@@ -731,7 +726,7 @@ void Rcs::TaskGenericEuler3D::EulerRateToOmegasMat(double B[3][3],
 /*******************************************************************************
  * See header
  ******************************************************************************/
-void Rcs::TaskGenericEuler3D::OmegasToEulerRateMat(double Binv[3][3],
+void TaskGenericEuler3D::OmegasToEulerRateMat(double Binv[3][3],
                                                    const double ea[3],
                                                    const int eulerOrderVect[4])
 {
@@ -746,7 +741,7 @@ void Rcs::TaskGenericEuler3D::OmegasToEulerRateMat(double Binv[3][3],
 /*******************************************************************************
  * See header
  ******************************************************************************/
-void Rcs::TaskGenericEuler3D::EulerRateToOmegasDerivativeTimesEulerVel(double dBeap[3], const double ea[3], const double eap[3], const int eulerOrderVect[4])
+void TaskGenericEuler3D::EulerRateToOmegasDerivativeTimesEulerVel(double dBeap[3], const double ea[3], const double eap[3], const int eulerOrderVect[4])
 {
   Vec3d_setZero(dBeap);
 
@@ -843,7 +838,7 @@ void Rcs::TaskGenericEuler3D::EulerRateToOmegasDerivativeTimesEulerVel(double dB
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskGenericEuler3D::integrateXp_ik(double* x_res,
+void TaskGenericEuler3D::integrateXp_ik(double* x_res,
                                              const double* ea_curr,
                                              const double* omega,
                                              double dt) const
@@ -871,9 +866,9 @@ void Rcs::TaskGenericEuler3D::integrateXp_ik(double* x_res,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-bool Rcs::TaskGenericEuler3D::isValid(xmlNode* node, const RcsGraph* graph)
+bool TaskGenericEuler3D::isValid(xmlNode* node, const RcsGraph* graph)
 {
-  bool success = Rcs::Task::isValid(node, graph, "genericEuler");
+  bool success = Task::isValid(node, graph, "genericEuler");
 
   // Check if frame is static or relative
   char eulerOrderChar[64];
@@ -919,3 +914,5 @@ bool Rcs::TaskGenericEuler3D::isValid(xmlNode* node, const RcsGraph* graph)
 
   return success;
 }
+
+}   // namespace Rcs

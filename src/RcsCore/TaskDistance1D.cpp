@@ -49,7 +49,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskDistance1D> registrar3("DistanceZ");
  ******************************************************************************/
 Rcs::TaskDistance1D::TaskDistance1D(const std::string& className_,
                                     xmlNode* node,
-                                    RcsGraph* _graph,
+                                    const RcsGraph* _graph,
                                     int dim):
   TaskDistance3D(className_, node, _graph, dim), index(-1)
 {
@@ -82,7 +82,7 @@ Rcs::TaskDistance1D::TaskDistance1D(const std::string& className_,
 /*******************************************************************************
  * Constructor based on body pointers
 ******************************************************************************/
-Rcs::TaskDistance1D::TaskDistance1D(RcsGraph* graph_,
+Rcs::TaskDistance1D::TaskDistance1D(const RcsGraph* graph_,
                                     const RcsBody* effector,
                                     const RcsBody* refBdy,
                                     int idx) :
@@ -113,16 +113,9 @@ Rcs::TaskDistance1D::TaskDistance1D(RcsGraph* graph_,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskDistance1D::~TaskDistance1D()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskDistance1D* Rcs::TaskDistance1D::clone(RcsGraph* newGraph) const
+Rcs::TaskDistance1D* Rcs::TaskDistance1D::clone(const RcsGraph* newGraph) const
 {
   TaskDistance1D* task = new Rcs::TaskDistance1D(*this);
   task->setGraph(newGraph);

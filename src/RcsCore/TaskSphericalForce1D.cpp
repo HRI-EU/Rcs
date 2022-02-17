@@ -53,7 +53,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskSphericalForce1D> registrar3("ForceSph
  ******************************************************************************/
 Rcs::TaskSphericalForce1D::TaskSphericalForce1D(const std::string& className,
                                                 xmlNode* node,
-                                                RcsGraph* _graph,
+                                                const RcsGraph* _graph,
                                                 int dim):
   TaskSpherical1D(className, node, _graph, dim),
   ft_curr_temp(0.0), ft_des_temp(0.), force_feedback(true)
@@ -78,16 +78,9 @@ Rcs::TaskSphericalForce1D::TaskSphericalForce1D(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskSphericalForce1D::~TaskSphericalForce1D()
-{
-}
-
-/*******************************************************************************
  *
  ******************************************************************************/
-Rcs::TaskSphericalForce1D* Rcs::TaskSphericalForce1D::clone(RcsGraph* newGraph) const
+Rcs::TaskSphericalForce1D* Rcs::TaskSphericalForce1D::clone(const RcsGraph* newGraph) const
 {
   TaskSphericalForce1D* task = new Rcs::TaskSphericalForce1D(*this);
   task->setGraph(newGraph);

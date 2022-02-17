@@ -48,7 +48,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskJointLimit> registrar("JointLimit");
  ******************************************************************************/
 Rcs::TaskJointLimit::TaskJointLimit(const std::string& className_,
                                     xmlNode* node,
-                                    RcsGraph* _graph,
+                                    const RcsGraph* _graph,
                                     int dim):
   TaskGenericIK(className_, node, _graph, dim),
   borderRatio(0.0)
@@ -65,16 +65,9 @@ Rcs::TaskJointLimit::TaskJointLimit(const std::string& className_,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskJointLimit::~TaskJointLimit()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskJointLimit* Rcs::TaskJointLimit::clone(RcsGraph* newGraph) const
+Rcs::TaskJointLimit* Rcs::TaskJointLimit::clone(const RcsGraph* newGraph) const
 {
   TaskJointLimit* task =  new TaskJointLimit(*this);
   task->setGraph(newGraph);

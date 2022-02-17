@@ -39,6 +39,16 @@
 #include <map>
 
 
+// Convenience macro to register Tasks in the factory. Here is an example:
+// REGISTER_TASK(MyTask, "ABC") expands to
+// static Rcs::TaskFactoryRegistrar<MyTask> MyTask_("ABC")
+// It has the drawback that it can only be used once per compile unit, since
+// the name is automatically created from the type. An alternative would be
+// to use the template argument N (like N ## _(N)). This would only lead to
+// name clashes of task identifier strings match. However, this solution
+// would disallow chosing task identifiers with white spaces.
+#define REGISTER_TASK(T,N) static Rcs::TaskFactoryRegistrar<T> T ## _(N)
+
 
 namespace Rcs
 {
@@ -78,7 +88,7 @@ public:
    *  \param graph The underlying graph for the kinematics
    *  \return New task instance
    */
-  static Task* createTask(xmlNode* node, RcsGraph* graph);
+  static Task* createTask(xmlNode* node, const RcsGraph* graph);
 
   /*! \brief Convenience method to create a task from a string.
    *
@@ -86,8 +96,8 @@ public:
    *  \param graph The underlying graph for the kinematics
    *  \return New task instance, or NULL in case it can't be constructed.
    */
-  static Task* createTask(std::string xmlStr, RcsGraph* graph);
-  static Task* createRandomTask(std::string className, RcsGraph* graph);
+  static Task* createTask(std::string xmlStr, const RcsGraph* graph);
+  static Task* createRandomTask(std::string className, const RcsGraph* graph);
 
   /*! \brief Prints the list of all registered tasks to stdout.
    */
@@ -103,9 +113,10 @@ public:
 private:
 
   typedef Task* (*TaskBuilder)(std::string className, xmlNode* node,
-                               RcsGraph* graph);
+                               const RcsGraph* graph);
 
-  typedef Task* (*RandomTaskBuilder)(std::string className, RcsGraph* graph);
+  typedef Task* (*RandomTaskBuilder)(std::string className,
+                                     const RcsGraph* graph);
 
   typedef bool (*TaskChecker)(xmlNode* node, const RcsGraph* graph);
 
@@ -171,12 +182,13 @@ private:
   *  \param graph Pointer to tasks's RcsGraph structure
   *  \return New task instance of type T
   */
-  static Task* create(std::string className, xmlNode* node, RcsGraph* graph)
+  static Task* create(std::string className, xmlNode* node,
+                      const RcsGraph* graph)
   {
     return new T(className, node, graph);
   }
 
-  static Task* createRandom(std::string className, RcsGraph* graph)
+  static Task* createRandom(std::string className, const RcsGraph* graph)
   {
     return T::createRandom(className, graph);
   }

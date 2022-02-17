@@ -59,8 +59,6 @@ public:
 
   TaskRegionBoundingBox(const Task* task, xmlNode* node);
 
-  TaskRegionBoundingBox(const TaskRegionBoundingBox& src);
-
   virtual ~TaskRegionBoundingBox();
 
   virtual TaskRegionBoundingBox* clone() const;

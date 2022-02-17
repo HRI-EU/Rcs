@@ -51,16 +51,16 @@ public:
 
   /*! Constructor based on xml parsing
    */
-  TaskPose6D(const std::string& className, xmlNode* node, RcsGraph* graph);
+  TaskPose6D(const std::string& className, xmlNode* node, const RcsGraph* graph);
 
   /*! Constructor based on graph and effectors.
    */
-  TaskPose6D(RcsGraph* graph, const RcsBody* effector,
+  TaskPose6D(const RcsGraph* graph, const RcsBody* effector,
              const RcsBody* refBdy, const RcsBody* refFrame);
 
   /*! \brief Virtual copy constructor with optional new graph
    */
-  TaskPose6D* clone(RcsGraph* newGraph=NULL) const;
+  TaskPose6D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Returns the effector body of the first sub-task.
    */

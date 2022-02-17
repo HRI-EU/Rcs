@@ -46,7 +46,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskOmega3D> registrar("ABCd");
 /*******************************************************************************
  * Constructor based on graph and effectors.
  ******************************************************************************/
-Rcs::TaskOmega3D::TaskOmega3D(RcsGraph* graph, const RcsBody* effector,
+Rcs::TaskOmega3D::TaskOmega3D(const RcsGraph* graph, const RcsBody* effector,
                               const RcsBody* refBdy, const RcsBody* refFrame):
   TaskGenericIK()
 {
@@ -69,7 +69,7 @@ Rcs::TaskOmega3D::TaskOmega3D(RcsGraph* graph, const RcsBody* effector,
  ******************************************************************************/
 Rcs::TaskOmega3D::TaskOmega3D(const std::string& className_,
                               xmlNode* node,
-                              RcsGraph* _graph):
+                              const RcsGraph* _graph):
   TaskGenericIK(className_, node, _graph, 3)
 {
   if (getClassName()=="ABCd")
@@ -82,16 +82,9 @@ Rcs::TaskOmega3D::TaskOmega3D(const std::string& className_,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskOmega3D::~TaskOmega3D()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskOmega3D* Rcs::TaskOmega3D::clone(RcsGraph* newGraph) const
+Rcs::TaskOmega3D* Rcs::TaskOmega3D::clone(const RcsGraph* newGraph) const
 {
   TaskOmega3D* task = new Rcs::TaskOmega3D(*this);
   task->setGraph(newGraph);

@@ -1198,18 +1198,14 @@ double RcsGraph_getJointValue(const RcsGraph* self, const char* name)
  ******************************************************************************/
 RcsJoint* RcsGraph_getJointByName(const RcsGraph* self, const char* name)
 {
-  if ((name==NULL) || (self==NULL))
+  for (unsigned int i=0; i<self->dof; ++i)
   {
-    return NULL;
-  }
-
-  RCSGRAPH_TRAVERSE_JOINTS(self)
+    if (STREQ(name, self->joints[i].name) && (self->joints[i].id!=-1))
   {
-    if (STREQ(name, JNT->name))
-    {
-      return JNT;
+      return &self->joints[i];
     }
   }
+
   return NULL;
 }
 
@@ -1219,11 +1215,6 @@ RcsJoint* RcsGraph_getJointByName(const RcsGraph* self, const char* name)
 RcsJoint* RcsGraph_getJointByIndex(const RcsGraph* self, unsigned int idx,
                                    RcsStateType type)
 {
-  if (self==NULL)
-  {
-    return NULL;
-  }
-
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {
     int jointsIdx = (type==RcsStateFull) ? JNT->jointIndex : JNT->jacobiIndex;
@@ -2705,6 +2696,9 @@ void RcsGraph_makeJointsConsistent(RcsGraph* self)
       continue;
     }
 
+    // We do this after the parsing to capture couplings where the coupled
+    // joint is parsed after the master. This is the only reason why we need
+    // the coupledJointName member in the RcsJoint struct.
     JNT->coupledToId = master->id;
 
     // Calculate range and initial posture

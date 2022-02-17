@@ -41,18 +41,19 @@
 #include "Rcs_joint.h"
 
 
-// register task at the task factory
-static Rcs::TaskFactoryRegistrar<Rcs::TaskPolarTarget2D> registrar("POLAR_TARGET");
+namespace Rcs
+{
 
+REGISTER_TASK(TaskPolarTarget2D, "POLAR_TARGET");
 
 
 /*******************************************************************************
  * Constructor based on xml parsing
  ******************************************************************************/
-Rcs::TaskPolarTarget2D::TaskPolarTarget2D(const std::string& className,
-                                          xmlNode* node,
-                                          RcsGraph* _graph,
-                                          int dim) :
+TaskPolarTarget2D::TaskPolarTarget2D(const std::string& className,
+                                     xmlNode* node,
+                                     const RcsGraph* _graph,
+                                     int dim) :
   Task(className, node, _graph, dim), direction(2)
 {
   if (getClassName()=="POLAR_TARGET")
@@ -62,8 +63,8 @@ Rcs::TaskPolarTarget2D::TaskPolarTarget2D(const std::string& className,
   }
 
   // Parse axis direction (should be X, Y or Z)
-  char text[256] = "Z";
-  getXMLNodePropertyStringN(node, "axisDirection", text, 256);
+  char text[8] = "Z";
+  getXMLNodePropertyStringN(node, "axisDirection", text, 8);
 
   if (STRCASEEQ(text, "X"))
   {
@@ -83,18 +84,11 @@ Rcs::TaskPolarTarget2D::TaskPolarTarget2D(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskPolarTarget2D::~TaskPolarTarget2D()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskPolarTarget2D* Rcs::TaskPolarTarget2D::clone(RcsGraph* newGraph) const
+TaskPolarTarget2D* TaskPolarTarget2D::clone(const RcsGraph* newGraph) const
 {
-  TaskPolarTarget2D* task = new Rcs::TaskPolarTarget2D(*this);
+  TaskPolarTarget2D* task = new TaskPolarTarget2D(*this);
   task->setGraph(newGraph);
   return task;
 }
@@ -102,7 +96,7 @@ Rcs::TaskPolarTarget2D* Rcs::TaskPolarTarget2D::clone(RcsGraph* newGraph) const
 /*******************************************************************************
   Computes the current value of the task variable: Polar angles
 *******************************************************************************/
-void Rcs::TaskPolarTarget2D::computeX(double* x_curr) const
+void TaskPolarTarget2D::computeX(double* x_curr) const
 {
   // Compute the desired polar axis
   double a_des[3];
@@ -120,9 +114,9 @@ void Rcs::TaskPolarTarget2D::computeX(double* x_curr) const
 /*******************************************************************************
  * Computes the delta in task space for the differential kinematics
  ******************************************************************************/
-void Rcs::TaskPolarTarget2D::computeDX(double* dx_ik,
-                                       const double* x_des,
-                                       const double* x_curr) const
+void TaskPolarTarget2D::computeDX(double* dx_ik,
+                                  const double* x_des,
+                                  const double* x_curr) const
 {
   double phi_des = Math_clip(x_des[0], 0.0, M_PI);
   dx_ik[0] = x_curr[0] - phi_des;
@@ -132,7 +126,7 @@ void Rcs::TaskPolarTarget2D::computeDX(double* dx_ik,
 /*******************************************************************************
  * Computes the Polar angle velocity
  ******************************************************************************/
-void Rcs::TaskPolarTarget2D::computeXp(double* phip) const
+void TaskPolarTarget2D::computeXp(double* phip) const
 {
   RFATAL("Implement me");
 }
@@ -144,8 +138,8 @@ void Rcs::TaskPolarTarget2D::computeXp(double* phip) const
  * it needs to be overwritten to account for the different coordinates of the
  * position and velocity levels.
  ******************************************************************************/
-void Rcs::TaskPolarTarget2D::computeFfXpp(double* x_ddot_res,
-                                          const double* desired_acc) const
+void TaskPolarTarget2D::computeFfXpp(double* x_ddot_res,
+                                     const double* desired_acc) const
 {
   RFATAL("Implement me");
 }
@@ -153,8 +147,8 @@ void Rcs::TaskPolarTarget2D::computeFfXpp(double* x_ddot_res,
 /*******************************************************************************
  * Computes the Polar angle velocity delta
  ******************************************************************************/
-void Rcs::TaskPolarTarget2D::computeDXp(double* dOmega,
-                                        const double* phip_des) const
+void TaskPolarTarget2D::computeDXp(double* dOmega,
+                                   const double* phip_des) const
 {
   RFATAL("Implement me");
 }
@@ -163,7 +157,7 @@ void Rcs::TaskPolarTarget2D::computeDXp(double* dOmega,
  * Computes the angular velocity to rotate the current polar axis on the goal
  * axis with the shortest path.
  ******************************************************************************/
-void Rcs::TaskPolarTarget2D::computeXp_ik(double* phip) const
+void TaskPolarTarget2D::computeXp_ik(double* phip) const
 {
   // Compute the current angular velocity in direction of the desired Polar
   // axis. The sideways component it 0 per definition.
@@ -179,10 +173,10 @@ void Rcs::TaskPolarTarget2D::computeXp_ik(double* phip) const
 /*******************************************************************************
  * We need to go in the negative velocity direction here.
  ******************************************************************************/
-void Rcs::TaskPolarTarget2D::integrateXp_ik(double* x_res,
-                                            const double* x,
-                                            const double* x_dot,
-                                            double dt) const
+void TaskPolarTarget2D::integrateXp_ik(double* x_res,
+                                       const double* x,
+                                       const double* x_dot,
+                                       double dt) const
 {
   VecNd_constMulAndAdd(x_res, x, x_dot, -dt, getDim());
 }
@@ -190,8 +184,7 @@ void Rcs::TaskPolarTarget2D::integrateXp_ik(double* x_res,
 /*******************************************************************************
  * Computes the Polar angle acceleration
  ******************************************************************************/
-void Rcs::TaskPolarTarget2D::computeXpp(double* phi_ddot,
-                                        const MatNd* q_ddot) const
+void TaskPolarTarget2D::computeXpp(double* phi_ddot, const MatNd* q_ddot) const
 {
   RFATAL("Implement TaskPolarTarget2D::computeXpp");
 }
@@ -200,7 +193,7 @@ void Rcs::TaskPolarTarget2D::computeXpp(double* phi_ddot,
  * See header. Here we may use fixed indices for the z-axis, since the
  * direction index is already considered in the Slerp frame.
  ******************************************************************************/
-void Rcs::TaskPolarTarget2D::computeJ(MatNd* jacobian) const
+void TaskPolarTarget2D::computeJ(MatNd* jacobian) const
 {
   // Reshape to correct dimensions
   MatNd_reshape(jacobian, 2, this->graph->nJ);
@@ -231,7 +224,7 @@ void Rcs::TaskPolarTarget2D::computeJ(MatNd* jacobian) const
  * See header. Here we may use fixed indices for the z-axis, since the
  * direction index is already considered in the Slerp frame.
  ******************************************************************************/
-void Rcs::TaskPolarTarget2D::computeH(MatNd* hessian) const
+void TaskPolarTarget2D::computeH(MatNd* hessian) const
 {
   int nq = this->graph->nJ;
   int nn = nq*nq;
@@ -279,7 +272,7 @@ void Rcs::TaskPolarTarget2D::computeH(MatNd* hessian) const
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskPolarTarget2D::setTarget(const double polarTarget[2])
+void TaskPolarTarget2D::setTarget(const double polarTarget[2])
 {
   setTarget(polarTarget[0], polarTarget[1]);
 }
@@ -287,7 +280,7 @@ void Rcs::TaskPolarTarget2D::setTarget(const double polarTarget[2])
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskPolarTarget2D::setTarget(double phi, double theta)
+void TaskPolarTarget2D::setTarget(double phi, double theta)
 {
   this->polarDes[0] = phi;
   this->polarDes[1] = theta;
@@ -296,7 +289,7 @@ void Rcs::TaskPolarTarget2D::setTarget(double phi, double theta)
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskPolarTarget2D::computeSlerpFrame(double A_SR[3][3]) const
+void TaskPolarTarget2D::computeSlerpFrame(double A_SR[3][3]) const
 {
   computeSlerpFrame(A_SR, this->polarDes);
 }
@@ -306,8 +299,8 @@ void Rcs::TaskPolarTarget2D::computeSlerpFrame(double A_SR[3][3]) const
  * y-axis: rotates current on desired Polar axis
  * x-axis: completes right hand frame
  ******************************************************************************/
-void Rcs::TaskPolarTarget2D::computeSlerpFrame(double A_SR[3][3],
-                                               const double polarDes[2]) const
+void TaskPolarTarget2D::computeSlerpFrame(double A_SR[3][3],
+                                          const double polarDes[2]) const
 {
   // Compute current Polar axis
   double A_ER[3][3];
@@ -352,7 +345,7 @@ void Rcs::TaskPolarTarget2D::computeSlerpFrame(double A_SR[3][3],
 /*******************************************************************************
  * Transforms force from Jacobi coordinates to task coordinates.
  ******************************************************************************/
-void Rcs::TaskPolarTarget2D::forceTrafo(double* ft_task) const
+void TaskPolarTarget2D::forceTrafo(double* ft_task) const
 {
   RFATAL("Implement me");
 }
@@ -360,8 +353,8 @@ void Rcs::TaskPolarTarget2D::forceTrafo(double* ft_task) const
 /*******************************************************************************
  * Transforms the selection into the Jacobian coordinates
 *******************************************************************************/
-void Rcs::TaskPolarTarget2D::selectionTrafo(double* S_des_trafo,
-                                            const double* S_des) const
+void TaskPolarTarget2D::selectionTrafo(double* S_des_trafo,
+                                       const double* S_des) const
 {
   RFATAL("Implement me");
 }
@@ -369,14 +362,13 @@ void Rcs::TaskPolarTarget2D::selectionTrafo(double* S_des_trafo,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-bool Rcs::TaskPolarTarget2D::isValid(xmlNode* node, const RcsGraph* graph)
+bool TaskPolarTarget2D::isValid(xmlNode* node, const RcsGraph* graph)
 {
-  bool success = Rcs::Task::isValid(node, graph, "POLAR_TARGET");
-
+  bool success = Task::isValid(node, graph, "POLAR_TARGET");
 
   // Check if axis direction is X, Y or Z
-  char text[256] = "Z";
-  getXMLNodePropertyStringN(node, "axisDirection", text, 256);
+  char text[8] = "Z";
+  getXMLNodePropertyStringN(node, "axisDirection", text, 8);
 
   if ((!STRCASEEQ(text, "X")) &&
       (!STRCASEEQ(text, "Y")) &&
@@ -386,8 +378,8 @@ bool Rcs::TaskPolarTarget2D::isValid(xmlNode* node, const RcsGraph* graph)
 
     REXEC(3)
     {
-      char taskName[256] = "unnamed task";
-      getXMLNodePropertyStringN(node, "name", taskName, 256);
+      char taskName[RCS_MAX_NAMELEN] = "unnamed task";
+      getXMLNodePropertyStringN(node, "name", taskName, RCS_MAX_NAMELEN);
       RMSG("Task \"%s\": Axis direction not [0...2]: %s",
            taskName, text);
     }
@@ -395,3 +387,5 @@ bool Rcs::TaskPolarTarget2D::isValid(xmlNode* node, const RcsGraph* graph)
 
   return success;
 }
+
+}   // namespace Rcs

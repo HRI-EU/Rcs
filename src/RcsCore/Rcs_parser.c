@@ -736,3 +736,26 @@ bool getXMLNodePropertyHTr(xmlNodePtr node, const char* tag, HTr* A)
 
   return success;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+unsigned int countNodesWithName(xmlNode* node, const char* name)
+{
+  unsigned int count = 0;
+
+  for (xmlNode* curr = node; curr; curr = curr->next)
+  {
+    if (curr->type==XML_ELEMENT_NODE)
+    {
+      if ((name==NULL) || (STREQ(name, (const char*)curr->name)))
+      {
+        count++;
+      }
+    }
+
+    count += countNodesWithName(curr->children, name);
+  }
+
+  return count;
+}

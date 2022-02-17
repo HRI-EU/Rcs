@@ -53,7 +53,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskVelocity1D> registrar3("Zd");
  ******************************************************************************/
 Rcs::TaskVelocity1D::TaskVelocity1D(const std::string& taskType,
                                     xmlNode* node,
-                                    RcsGraph* _graph,
+                                    const RcsGraph* _graph,
                                     int dim):
   TaskPosition1D(taskType, node, _graph, dim)
 {
@@ -86,7 +86,7 @@ Rcs::TaskVelocity1D::TaskVelocity1D(const std::string& taskType,
  * For programmatic creation
  ******************************************************************************/
 Rcs::TaskVelocity1D::TaskVelocity1D(const std::string& className,
-                                    RcsGraph* graph,
+                                    const RcsGraph* graph,
                                     const RcsBody* effector,
                                     const RcsBody* refBdy,
                                     const RcsBody* refFrame):
@@ -110,16 +110,9 @@ Rcs::TaskVelocity1D::TaskVelocity1D(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskVelocity1D::~TaskVelocity1D()
-{
-}
-
-/*******************************************************************************
  *
  ******************************************************************************/
-Rcs::TaskVelocity1D* Rcs::TaskVelocity1D::clone(RcsGraph* newGraph) const
+Rcs::TaskVelocity1D* Rcs::TaskVelocity1D::clone(const RcsGraph* newGraph) const
 {
   TaskVelocity1D* task = new Rcs::TaskVelocity1D(*this);
   task->setGraph(newGraph);
@@ -163,7 +156,7 @@ bool Rcs::TaskVelocity1D::isValid(xmlNode* node, const RcsGraph* graph)
 bool Rcs::TaskVelocity1D::testJacobian(double errorLimit,
                                        double delta,
                                        bool relativeError,
-                                       bool verbose)
+                                       bool verbose) const
 {
   return true;
 }

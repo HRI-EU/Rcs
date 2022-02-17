@@ -50,7 +50,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskOmega1D> registrar3("Cd");
  ******************************************************************************/
 Rcs::TaskOmega1D::TaskOmega1D(const std::string& className_,
                               xmlNode* node,
-                              RcsGraph* _graph,
+                              const RcsGraph* _graph,
                               int dim):
   TaskGenericIK(className_, node, _graph, dim), index(-1)
 {
@@ -87,7 +87,7 @@ Rcs::TaskOmega1D::TaskOmega1D(const std::string& className_,
  * For programmatic creation
  ******************************************************************************/
 Rcs::TaskOmega1D::TaskOmega1D(const std::string& className,
-                              RcsGraph* graph_,
+                              const RcsGraph* graph_,
                               const RcsBody* effector,
                               const RcsBody* refBdy,
                               const RcsBody* refFrame):
@@ -118,16 +118,9 @@ Rcs::TaskOmega1D::TaskOmega1D(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskOmega1D::~TaskOmega1D()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskOmega1D* Rcs::TaskOmega1D::clone(RcsGraph* newGraph) const
+Rcs::TaskOmega1D* Rcs::TaskOmega1D::clone(const RcsGraph* newGraph) const
 {
   TaskOmega1D* task = new Rcs::TaskOmega1D(*this);
   task->setGraph(newGraph);
@@ -213,7 +206,7 @@ bool Rcs::TaskOmega1D::isValid(xmlNode* node, const RcsGraph* graph)
 bool Rcs::TaskOmega1D::testJacobian(double errorLimit,
                                     double delta,
                                     bool relativeError,
-                                    bool verbose)
+                                    bool verbose) const
 {
   return true;
 }

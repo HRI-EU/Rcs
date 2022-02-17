@@ -89,8 +89,6 @@ public:
    */
   TaskRegionBoxInterval(const Task* task, xmlNode* node);
 
-  TaskRegionBoxInterval(const TaskRegionBoxInterval& src);
-
   virtual ~TaskRegionBoxInterval();
 
   virtual TaskRegionBoxInterval* clone() const;

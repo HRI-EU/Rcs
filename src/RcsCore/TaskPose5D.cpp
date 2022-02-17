@@ -45,7 +45,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskPose5D> registrar("XYZ-Polar");
  ******************************************************************************/
 Rcs::TaskPose5D::TaskPose5D(const std::string& className_,
                             xmlNode* node,
-                            RcsGraph* _graph):
+                            const RcsGraph* _graph):
   CompositeTask(className_, node, _graph)
 {
   addTask(new TaskPosition3D("XYZ", node, _graph, 3));
@@ -55,7 +55,7 @@ Rcs::TaskPose5D::TaskPose5D(const std::string& className_,
 /*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskPose5D* Rcs::TaskPose5D::clone(RcsGraph* newGraph) const
+Rcs::TaskPose5D* Rcs::TaskPose5D::clone(const RcsGraph* newGraph) const
 {
   TaskPose5D* task = new Rcs::TaskPose5D(*this);
   task->setGraph(newGraph);

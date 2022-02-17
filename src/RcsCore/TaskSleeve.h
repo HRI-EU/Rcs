@@ -47,16 +47,11 @@ public:
   /*! Constructor based on xml parsing
    */
   TaskSleeve(const std::string& className, xmlNode* node,
-             RcsGraph* graph, int dim=3);
+             const RcsGraph* graph, int dim=3);
 
-  /*! Destructor
+  /*! \brief Virtual copy constructor with optional new graph.
    */
-  virtual ~TaskSleeve();
-
-  /*!
-   * \brief Virtual copy constructor with optional new graph.
-   */
-  virtual TaskSleeve* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskSleeve* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the Polar Angles between reference body and effector.
    */

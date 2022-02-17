@@ -59,23 +59,16 @@ public:
 
   /*! Constructor based on xml parsing
    */
-  TaskOmega1D(const std::string& className, xmlNode* node, RcsGraph* _graph,
-              int dim=1);
+  TaskOmega1D(const std::string& className, xmlNode* node,
+              const RcsGraph* _graph, int dim=1);
 
   /*! Constructor based on graph and effectors for programmatic construction.
    */
-  TaskOmega1D(const std::string& className, RcsGraph* graph,
+  TaskOmega1D(const std::string& className, const RcsGraph* graph,
               const RcsBody* effector, const RcsBody* refBdy=NULL,
               const RcsBody* refFrame=NULL);
 
-  /*! Destructor
-   */
-  virtual ~TaskOmega1D();
-
-  /*!
-   * \brief Virtual copy constructor with optional new graph
-   */
-  virtual TaskOmega1D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskOmega1D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*!  \brief Computes current task Jacobian to parameter \e jacobian
    */
@@ -100,7 +93,7 @@ public:
    *         Jacobian test.
    */
   virtual bool testJacobian(double errorLimit=1.0e-4, double delta=1.0e-6,
-                            bool relativeError=false, bool verbose=false);
+                            bool relativeError=false, bool verbose=false) const;
 
   /*! \brief Returns true if the task is specified correctly, false otherwise.
    *         The following chechs are carried out:

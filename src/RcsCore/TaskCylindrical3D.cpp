@@ -50,7 +50,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskCylindrical3D> registrar("CylRPZ");
  ******************************************************************************/
 Rcs::TaskCylindrical3D::TaskCylindrical3D(const std::string& className,
                                           xmlNode* node,
-                                          RcsGraph* _graph,
+                                          const RcsGraph* _graph,
                                           int _dim):
   TaskPosition3D(className, node, _graph, _dim)
 {
@@ -63,16 +63,9 @@ Rcs::TaskCylindrical3D::TaskCylindrical3D(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskCylindrical3D::~TaskCylindrical3D()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskCylindrical3D* Rcs::TaskCylindrical3D::clone(RcsGraph* newGraph) const
+Rcs::TaskCylindrical3D* Rcs::TaskCylindrical3D::clone(const RcsGraph* newGraph) const
 {
   TaskCylindrical3D* task = new Rcs::TaskCylindrical3D(*this);
   task->setGraph(newGraph);
@@ -245,7 +238,7 @@ bool Rcs::TaskCylindrical3D::isValid(xmlNode* node, const RcsGraph* graph)
 /*******************************************************************************
  * Remove this once we have an implementation for the Hessian.
  ******************************************************************************/
-bool Rcs::TaskCylindrical3D::testHessian(bool verbose)
+bool Rcs::TaskCylindrical3D::testHessian(bool verbose) const
 {
   return true;
 }

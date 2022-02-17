@@ -87,21 +87,17 @@ public:
   /*! Constructor based on xml parsing.
    */
   TaskPosition3D(const std::string& className, xmlNode* node,
-                 RcsGraph* graph, int dim=3);
+                 const RcsGraph* graph, int dim=3);
 
   /*! Constructor based on graph and effectors.
    */
-  TaskPosition3D(RcsGraph* graph, const RcsBody* effector,
+  TaskPosition3D(const RcsGraph* graph, const RcsBody* effector,
                  const RcsBody* refBdy, const RcsBody* refFrame);
-
-  /*! Destructor.
-   */
-  virtual ~TaskPosition3D();
 
   /*!
    * \brief Virtual copy constructor with optional new graph.
    */
-  virtual TaskPosition3D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskPosition3D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the relative position of the effector with respect to the
    *         reference body, projected into the coordinate system of the

@@ -75,16 +75,12 @@ public:
   /*! Constructor based on xml parsing
    */
   TaskInclination(const std::string& className, xmlNode* node,
-                  RcsGraph* graph, int dim=1);
-
-  /*! Destructor
-   */
-  virtual ~TaskInclination();
+                  const RcsGraph* graph, int dim=1);
 
   /*!
    * \brief Virtual copy constructor with optional new graph.
    */
-  virtual TaskInclination* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskInclination* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the inclination angle between reference body and effector.
    */

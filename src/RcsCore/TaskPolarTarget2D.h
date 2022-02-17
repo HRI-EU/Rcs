@@ -61,16 +61,11 @@ public:
   /*! Constructor based on xml parsing
    */
   TaskPolarTarget2D(const std::string& className, xmlNode* node,
-                    RcsGraph* graph, int dim=2);
+                    const RcsGraph* graph, int dim=2);
 
-  /*! Destructor
+  /*! \brief Virtual copy constructor with optional new graph.
    */
-  virtual ~TaskPolarTarget2D();
-
-  /*!
-   * \brief Virtual copy constructor with optional new graph.
-   */
-  virtual TaskPolarTarget2D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskPolarTarget2D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the Polar Angles between reference body and effector.
    */

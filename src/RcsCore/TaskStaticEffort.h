@@ -50,16 +50,11 @@ public:
   /*! Constructor based on xml parsing
    */
   TaskStaticEffort(const std::string& className, xmlNode* node,
-                   RcsGraph* graph, int dim=1);
+                   const RcsGraph* graph, int dim=1);
 
-  /*! Destructor
+  /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual ~TaskStaticEffort();
-
-  /*!
-   * \brief Virtual copy constructor with optional new graph
-   */
-  virtual TaskStaticEffort* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskStaticEffort* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable
    *

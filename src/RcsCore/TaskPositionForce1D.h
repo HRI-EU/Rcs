@@ -53,23 +53,18 @@ public:
   /*! Constructor based on xml parsing
    */
   TaskPositionForce1D(const std::string& className, xmlNode* node,
-                      RcsGraph* graph, int dim=1);
+                      const RcsGraph* graph, int dim=1);
 
   /*! Constructor based on graph and effectors
    */
-  TaskPositionForce1D(const std::string& className, RcsGraph* graph,
+  TaskPositionForce1D(const std::string& className, const RcsGraph* graph,
                       const RcsBody* effector, const RcsBody* refBdy,
                       const RcsBody* refFrame, const std::string& sensorName,
                       bool forceFeedback);
 
-  /*! Destructor
+  /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual ~TaskPositionForce1D();
-
-  /*!
-   * \brief Virtual copy constructor with optional new graph
-   */
-  virtual TaskPositionForce1D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskPositionForce1D* clone(const RcsGraph* newGraph=NULL) const;
 
   virtual void computeX(double* x_res) const;
 

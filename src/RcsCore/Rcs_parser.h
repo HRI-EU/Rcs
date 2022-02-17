@@ -271,6 +271,11 @@ bool getXMLNodePropertyQuat(xmlNodePtr node, const char* tag,
  */
 bool getXMLNodePropertyHTr(xmlNodePtr node, const char* tag, HTr* A);
 
+/*! \ingroup RcsParserFunctions
+ * \brief Returns the number of nodes with the given name. If name is NULL, the
+ *        overall number of nodes is returned.
+ */
+unsigned int countNodesWithName(xmlNode* node, const char* name);
 
 
 #ifdef __cplusplus

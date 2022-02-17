@@ -171,20 +171,26 @@ public:
 
   /*! \brief Constructor based on xml parsing
    */
-  Task(const std::string& className, xmlNode* node, RcsGraph* graph,
+  Task(const std::string& className, xmlNode* node, const RcsGraph* graph,
        int dim=0);
 
-  /*! \brief Destructor
+  /*! \brief Virtual destructor to support Polymorphism. Tasks might often be
+   *         be created through the TaskFactory, and therefore being deleted
+   *         through the base class destructor. We implement it as virtual
+   *         so that the derieved class destructor is called upon deletion. For
+   *         derieved classes, the virtualness of the destructor is inherited,
+   *         therefore we don't need to implement a destructor if not
+   *         required.
    */
   virtual ~Task();
 
   /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual Task* clone(RcsGraph* newGraph=NULL) const = 0;
+  virtual Task* clone(const RcsGraph* newGraph=NULL) const = 0;
 
   /*! \brief Updates the task to the new graph.
    */
-  virtual void setGraph(RcsGraph* graph);
+  virtual void setGraph(const RcsGraph* graph);
 
   /*! \brief Returns the dimension of the task.
    */
@@ -246,11 +252,15 @@ public:
 
   /*! \brief Returns a pointer to the task's underlying graph.
    */
-  RcsGraph* getGraph() const;
+  const RcsGraph* getGraph() const;
 
   /*! \brief Prints information about task to console.
    */
   virtual void print() const;
+
+  /*! \brief Writes the task's xml representation to a file desriptor.
+   */
+  virtual void toXML(FILE* out, bool activation = true) const;
 
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise. The task is invalid if
@@ -273,7 +283,7 @@ public:
   static bool isValid(xmlNode* node, const RcsGraph* graph,
                       const std::vector<std::string>& className);
 
-  static Task* createRandom(std::string className, RcsGraph* graph);
+  static Task* createRandom(std::string className, const RcsGraph* graph);
 
   TaskRegion* getTaskRegion();
 
@@ -700,45 +710,6 @@ public:
 
   /*@{*/
 
-  /*! \brief Performs a gradient test for the task using a finite difference
-   *         method. The finite difference Jacobian is constructed column-
-   *         wise by computing the tasks's computeDX() function with a
-   *         slightly permuted state vector.
-   *
-   *  \param[in] errorLimit Limit on permissible error for each component of
-   *                        the gradient. It is calculated according to the
-   *                        argument relativeError.
-   *  \param[in] delta Finite difference step size (should be small).
-   *  \param[in] relativeError Calculation mode for the error:
-   *                        - absolute difference of the analytic and numeric
-   *                          gradients if argument relativeError is false
-   *                        - relative difference of the analytic and numeric
-   *                          gradients with respect to the magnitude of the
-   *                          individual element. In this mode, some scaling
-   *                          is done to avoid numerical artefacts for tiny
-   *                          values or zeros.
-   *  \param[in] verbose If true, debug information is printed to the console.
-   *  \return True for success, false otherwise.
-   */
-  virtual bool testJacobian(double errorLimit=1.0e-4, double delta=1.0e-6,
-                            bool relativeError=false, bool verbose=false);
-
-  /*! \brief Performs a gradient test for the task Hessian using a finite
-   *         difference method. The error is calculated with the method
-   *         \ref Rcs_testGradient().
-   *
-   *  \param[in] verbose If true, debug information is printed to the console.
-   *  \return True for success, false otherwise.
-   */
-  virtual bool testHessian(bool verbose=false);
-
-  /*! \brief Compares the output of the function \ref computeXp_ik with the
-   *         product J*qp
-   *
-   *  \param[in] maxErr Maximum permissable rms error.
-   *  \return Root mean square error of difference.
-   */
-  virtual bool testVelocity(double maxErr=1.0e-8) const;
 
   /*! \brief Performs a set of tests:
    *         - Jacobian finite difference test
@@ -747,11 +718,7 @@ public:
    *  \param[in] verbose If true, debug information is printed to the console.
    *  \return True for success, false otherwise.
    */
-  virtual bool test(bool verbose=false);
-
-  /*! \brief Writes the task's xml representation to a file desriptor.
-   */
-  virtual void toXML(FILE* out, bool activation = true) const;
+  virtual bool test(bool verbose=false) const;
 
   ///@}
 
@@ -763,6 +730,48 @@ protected:
    *         shallow-copied, the TaskSpaceRegion is deep-copied.
    */
   Task(const Task& copyFromMe);
+
+  /*! \brief Performs a gradient test for the task using a finite difference
+   *         method. The finite difference Jacobian is constructed column-
+   *         wise by computing the tasks's computeDX() function with a
+   *         slightly permuted state vector.
+   *
+   *  \param[in] errorLimit Limit on permissible error for each component of
+   *                        the gradient. It is calculated according to the
+   *                        argument relativeError.
+  *  \param[in] delta Finite difference step size for numerical Jacobian
+  *                   estimates. Value delta is interpreted as degrees for
+  *                   angular units, and mm for linear ones.
+   *  \param[in] relativeError Calculation mode for the error:
+   *                        - absolute difference of the analytic and numeric
+   *                          gradients if argument relativeError is false
+   *                        - relative difference of the analytic and numeric
+   *                          gradients with respect to the magnitude of the
+   *                          individual element. In this mode, some scaling
+   *                          is done to avoid numerical artefacts for tiny
+   *                          values or zeros.
+   *  \param[in] verbose If true, debug information is printed to the console.
+   *  \return True for success, false otherwise.
+   */
+  virtual bool testJacobian(double errorLimit=1.0e-4, double delta=0.01,
+                            bool relativeError=true, bool verbose=false) const;
+
+  /*! \brief Performs a gradient test for the task Hessian using a finite
+   *         difference method. The error is calculated with the method
+   *         \ref Rcs_testGradient().
+   *
+   *  \param[in] verbose If true, debug information is printed to the console.
+   *  \return True for success, false otherwise.
+   */
+  virtual bool testHessian(bool verbose=false) const;
+
+  /*! \brief Compares the output of the function \ref computeXp_ik with the
+   *         product J*qp.
+   *
+   *  \param[in] maxErr Maximum permissable rms error.
+   *  \return Root mean square error of difference.
+   */
+  virtual bool testVelocity(double maxErr=1.0e-8) const;
 
   /*! \brief If name starts with "GenericBody", the function returns
    *         -10 - <number> where number is the number following after
@@ -793,12 +802,18 @@ protected:
    */
   virtual void toXMLEnd(FILE* out, bool activation) const;
 
-  /*! \brief Graph on which the task operates. It is not a const pointer,
-   *         since it is modified in some test functions. However, it is safe
-   *         to assume that it is not modified during "normal" processing.
+  /*! \brief Graph on which the task operates. Tasks never change the underlying
+   *         graph, therefore it is declared as const.
    */
-  RcsGraph* graph;          //!< Underlying graph representation
-  TaskRegion* tsr;          //!< Task space region
+  const RcsGraph* graph;
+
+  /*! \brief Task space regions are relaxations to the computeDX method that
+   *         allow to implement manifolds that the task coordinate max track.
+   *         Regions can be specified in the xml file, see the TaskRegion
+   *         implementations for details. The default is no region, which is
+   *         indicated by tsr pointing to NULL.
+   */
+  TaskRegion* tsr;
 
 
 private:

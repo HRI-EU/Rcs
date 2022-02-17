@@ -50,7 +50,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskCylindrical1D> registrar2("CylP");
  ******************************************************************************/
 Rcs::TaskCylindrical1D::TaskCylindrical1D(const std::string& className,
                                           xmlNode* node,
-                                          RcsGraph* _graph,
+                                          const RcsGraph* _graph,
                                           int _dim):
   TaskCylindrical3D(className, node, _graph, _dim),
   index(0)
@@ -70,16 +70,9 @@ Rcs::TaskCylindrical1D::TaskCylindrical1D(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskCylindrical1D::~TaskCylindrical1D()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskCylindrical1D* Rcs::TaskCylindrical1D::clone(RcsGraph* newGraph) const
+Rcs::TaskCylindrical1D* Rcs::TaskCylindrical1D::clone(const RcsGraph* newGraph) const
 {
   TaskCylindrical1D* task = new Rcs::TaskCylindrical1D(*this);
   task->setGraph(newGraph);

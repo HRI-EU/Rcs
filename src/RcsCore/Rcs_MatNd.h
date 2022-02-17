@@ -1356,11 +1356,6 @@ void MatNd_fromString(MatNd* J, const char* str);
 void MatNd_toString(const MatNd* A, char* str);
 
 /*! \ingroup MatNdFunctions
- *  \brief Mirrors upper to lower triangle. The matrix must be square.
- */
-void MatNd_mirrorUpperTriangle(MatNd* A);
-
-/*! \ingroup MatNdFunctions
  *  \brief Copies the lower triangle of src to dst. This does not include
  *         the main diagonal. The matrices must be square.
  */

@@ -53,21 +53,17 @@ public:
   /*! Constructor based on xml parsing
    */
   TaskVelocity1D(const std::string& className, xmlNode* node,
-                 RcsGraph* graph, int dim=1);
+                 const RcsGraph* graph, int dim=1);
 
   /*! Constructor based on graph and effectors.
    */
-  TaskVelocity1D(const std::string& className, RcsGraph* graph,
+  TaskVelocity1D(const std::string& className, const RcsGraph* graph,
                  const RcsBody* effector, const RcsBody* refBdy=NULL,
                  const RcsBody* refFrame=NULL);
 
-  /*! Virtual destructor to allow correct polymorphism.
-   */
-  virtual ~TaskVelocity1D();
-
   /*! \brief Returns a deep copy of a task.
    */
-  virtual TaskVelocity1D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskVelocity1D* clone(const RcsGraph* newGraph=NULL) const;
 
   virtual void computeX(double* x_res) const;
 
@@ -80,7 +76,7 @@ public:
    *         Jacobian test.
    */
   virtual bool testJacobian(double errorLimit=1.0e-4, double delta=1.0e-6,
-                            bool relativeError=false, bool verbose=false);
+                            bool relativeError=false, bool verbose=false) const;
 
   /*! \brief Returns true for success, false otherwise:
    *         - Xml tag "controlVariable" is not "Xd", "Yd" or "Zd".

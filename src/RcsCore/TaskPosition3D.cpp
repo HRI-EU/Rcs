@@ -54,7 +54,7 @@ static TaskFactoryRegistrar<TaskPosition3D> registrar("XYZ");
  ******************************************************************************/
 TaskPosition3D::TaskPosition3D(const std::string& className,
                                xmlNode* node,
-                               RcsGraph* graph_,
+                               const RcsGraph* graph_,
                                int dim) :
   TaskGenericIK(className, node, graph_, dim)
 {
@@ -82,7 +82,7 @@ TaskPosition3D::TaskPosition3D(const std::string& className,
 /*******************************************************************************
  * Constructor based on body pointers
  ******************************************************************************/
-TaskPosition3D::TaskPosition3D(RcsGraph* graph_,
+TaskPosition3D::TaskPosition3D(const RcsGraph* graph_,
                                const RcsBody* effector,
                                const RcsBody* refBdy,
                                const RcsBody* refFrame) : TaskGenericIK()
@@ -99,16 +99,9 @@ TaskPosition3D::TaskPosition3D(RcsGraph* graph_,
 }
 
 /*******************************************************************************
- * Destructor
+ *
  ******************************************************************************/
-TaskPosition3D::~TaskPosition3D()
-{
-}
-
-/*******************************************************************************
- * Clone function
- ******************************************************************************/
-TaskPosition3D* TaskPosition3D::clone(RcsGraph* newGraph) const
+TaskPosition3D* TaskPosition3D::clone(const RcsGraph* newGraph) const
 {
   TaskPosition3D* task = new TaskPosition3D(*this);
   task->setGraph(newGraph);

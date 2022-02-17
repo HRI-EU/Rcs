@@ -57,21 +57,17 @@ public:
   /*! Constructor based on xml parsing
    */
   TaskPosition1D(const std::string& className, xmlNode* node,
-                 RcsGraph* graph, int dim=1);
+                 const RcsGraph* graph, int dim=1);
 
   /*! Constructor based on graph and effectors.
    */
-  TaskPosition1D(const std::string& className, RcsGraph* graph,
+  TaskPosition1D(const std::string& className, const RcsGraph* graph,
                  const RcsBody* effector=NULL, const RcsBody* refBdy=NULL,
                  const RcsBody* refFrame=NULL);
 
-  /*! Destructor
-   */
-  virtual ~TaskPosition1D();
-
   /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual TaskPosition1D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskPosition1D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable
    *

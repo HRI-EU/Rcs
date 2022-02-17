@@ -59,20 +59,16 @@ public:
 
   /*! Constructor based on graph and effectors.
    */
-  TaskOmega3D(RcsGraph* graph, const RcsBody* effector,
+  TaskOmega3D(const RcsGraph* graph, const RcsBody* effector,
               const RcsBody* refBdy, const RcsBody* refFrame);
 
   /*! Constructor based on xml parsing
    */
-  TaskOmega3D(const std::string& className, xmlNode* node, RcsGraph* graph);
-
-  /*! \brief Virtual destructor so that classes can properly inherit from this.
-   */
-  virtual ~TaskOmega3D();
+  TaskOmega3D(const std::string& className, xmlNode* node, const RcsGraph* graph);
 
   /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual TaskOmega3D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskOmega3D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*!  \brief Computes current task Jacobian to parameter \e jacobian
    */

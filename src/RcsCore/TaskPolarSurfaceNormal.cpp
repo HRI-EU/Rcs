@@ -42,19 +42,23 @@
 #include "Rcs_body.h"
 
 
-// register task at the task factory
-static Rcs::TaskFactoryRegistrar<Rcs::TaskPolarSurfaceNormal> regX("POLAR_SURFACE_X");
-static Rcs::TaskFactoryRegistrar<Rcs::TaskPolarSurfaceNormal> regY("POLAR_SURFACE_Y");
-static Rcs::TaskFactoryRegistrar<Rcs::TaskPolarSurfaceNormal> regZ("POLAR_SURFACE_Z");
+namespace Rcs
+{
+
+// Register tasks at the task factory. Here we don't use our macro, since it
+// would create the same name for each instance.
+static TaskFactoryRegistrar<TaskPolarSurfaceNormal> regX("POLAR_SURFACE_X");
+static TaskFactoryRegistrar<TaskPolarSurfaceNormal> regY("POLAR_SURFACE_Y");
+static TaskFactoryRegistrar<TaskPolarSurfaceNormal> regZ("POLAR_SURFACE_Z");
 
 
 
 /*******************************************************************************
  * Constructor based on xml parsing
  ******************************************************************************/
-Rcs::TaskPolarSurfaceNormal::TaskPolarSurfaceNormal(const std::string& className,
+TaskPolarSurfaceNormal::TaskPolarSurfaceNormal(const std::string& className,
                                                     xmlNode* node,
-                                                    RcsGraph* _graph,
+                                               const RcsGraph* _graph,
                                                     int dim) :
   Task(className, node, _graph, dim), direction(2), gainDX(1.0)
 {
@@ -95,18 +99,11 @@ Rcs::TaskPolarSurfaceNormal::TaskPolarSurfaceNormal(const std::string& className
 }
 
 /*******************************************************************************
- * Virtual destructor required for Polymorphism
- ******************************************************************************/
-Rcs::TaskPolarSurfaceNormal::~TaskPolarSurfaceNormal()
-{
-}
-
-/*******************************************************************************
  * Clone function required for Polymorphism
  ******************************************************************************/
-Rcs::TaskPolarSurfaceNormal* Rcs::TaskPolarSurfaceNormal::clone(RcsGraph* newGraph) const
+TaskPolarSurfaceNormal* TaskPolarSurfaceNormal::clone(const RcsGraph* newGraph) const
 {
-  TaskPolarSurfaceNormal* task = new Rcs::TaskPolarSurfaceNormal(*this);
+  TaskPolarSurfaceNormal* task = new TaskPolarSurfaceNormal(*this);
   task->setGraph(newGraph);
   return task;
 }
@@ -115,7 +112,7 @@ Rcs::TaskPolarSurfaceNormal* Rcs::TaskPolarSurfaceNormal::clone(RcsGraph* newGra
  * First element: angle between current and desired polar axis
  * Second element: 0
  ******************************************************************************/
-void Rcs::TaskPolarSurfaceNormal::computeX(double* x_curr) const
+void TaskPolarSurfaceNormal::computeX(double* x_curr) const
 {
   // Compute the normal pointing from the closest surface body to the effector
   double a_des[3];
@@ -131,7 +128,7 @@ void Rcs::TaskPolarSurfaceNormal::computeX(double* x_curr) const
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskPolarSurfaceNormal::computeDX(double* dx_ik,
+void TaskPolarSurfaceNormal::computeDX(double* dx_ik,
                                             const double* x_des,
                                             const double* x_curr) const
 {
@@ -143,7 +140,7 @@ void Rcs::TaskPolarSurfaceNormal::computeDX(double* dx_ik,
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskPolarSurfaceNormal::computeJ(MatNd* jacobian) const
+void TaskPolarSurfaceNormal::computeJ(MatNd* jacobian) const
 {
   // Reshape to correct dimensions
   MatNd_reshape(jacobian, 2, this->graph->nJ);
@@ -191,7 +188,7 @@ void Rcs::TaskPolarSurfaceNormal::computeJ(MatNd* jacobian) const
 /*******************************************************************************
  *
  *******************************************************************************/
-void Rcs::TaskPolarSurfaceNormal::computePolarNormal(double polarAngs[2]) const
+void TaskPolarSurfaceNormal::computePolarNormal(double polarAngs[2]) const
 {
   double n12[3];
   const RcsBody* b1 = getRefBody();
@@ -203,7 +200,7 @@ void Rcs::TaskPolarSurfaceNormal::computePolarNormal(double polarAngs[2]) const
 /*******************************************************************************
  *
  ******************************************************************************/
-const RcsBody* Rcs::TaskPolarSurfaceNormal::closestSurfaceBody() const
+const RcsBody* TaskPolarSurfaceNormal::closestSurfaceBody() const
 {
   if (surfaceBodies.empty())
   {
@@ -232,7 +229,7 @@ const RcsBody* Rcs::TaskPolarSurfaceNormal::closestSurfaceBody() const
 /*******************************************************************************
  *
  ******************************************************************************/
-bool Rcs::TaskPolarSurfaceNormal::isValid(xmlNode* node, const RcsGraph* graph)
+bool TaskPolarSurfaceNormal::isValid(xmlNode* node, const RcsGraph* graph)
 {
   std::vector<std::string> cVars;
   cVars.push_back("POLAR_SURFACE_X");
@@ -310,3 +307,5 @@ bool Rcs::TaskPolarSurfaceNormal::isValid(xmlNode* node, const RcsGraph* graph)
 
   return success;
 }
+
+}   // namespace Rcs

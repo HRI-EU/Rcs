@@ -52,22 +52,17 @@ public:
 
   /*! Constructor based on graph and effectors.
    */
-  TaskVelocity3D(RcsGraph* graph, const RcsBody* effector,
+  TaskVelocity3D(const RcsGraph* graph, const RcsBody* effector,
                  const RcsBody* refBdy, const RcsBody* refFrame);
 
   /*! Constructor based on xml parsing
    */
   TaskVelocity3D(const std::string& className, xmlNode* node,
-                 RcsGraph* graph, int dim=1);
+                 const RcsGraph* graph, int dim=1);
 
-  /*! Destructor
+  /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual ~TaskVelocity3D();
-
-  /*!
-   * \brief Virtual copy constructor with optional new graph
-   */
-  virtual TaskVelocity3D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskVelocity3D* clone(const RcsGraph* newGraph=NULL) const;
 
   virtual void computeX(double* x_res) const;
 

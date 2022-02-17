@@ -49,16 +49,12 @@ public:
   /*! Constructor based on xml parsing
    */
   TaskDifferentialConstraint1D(const std::string& className, xmlNode* node,
-                               RcsGraph* graph, int dim=1);
-
-  /*! Destructor
-   */
-  virtual ~TaskDifferentialConstraint1D();
+                               const RcsGraph* graph, int dim=1);
 
   /*!
    * \brief Virtual copy constructor with optional new graph
    */
-  virtual TaskDifferentialConstraint1D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskDifferentialConstraint1D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable
    *

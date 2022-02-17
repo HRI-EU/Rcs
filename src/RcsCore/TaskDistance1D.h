@@ -49,21 +49,17 @@ public:
   /*! Constructor based on xml parsing.
    */
   TaskDistance1D(const std::string& className, xmlNode* node,
-                 RcsGraph* graph, int dim=1);
+                 const RcsGraph* graph, int dim=1);
 
   /*! Constructor based on graph and effectors.
   */
-  TaskDistance1D(RcsGraph* graph, const RcsBody* effector,
+  TaskDistance1D(const RcsGraph* graph, const RcsBody* effector,
                  const RcsBody* refBdy, int index);
-
-  /*! Destructor.
-   */
-  virtual ~TaskDistance1D();
 
   /*!
    * \brief Virtual copy constructor with optional new graph.
    */
-  virtual TaskDistance1D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskDistance1D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable
    *

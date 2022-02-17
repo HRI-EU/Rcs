@@ -49,17 +49,12 @@ public:
 
   /*! Constructor based on xml parsing
    */
-  TaskJointLimitPlateau(const std::string& className, xmlNode* node, RcsGraph* _graph,
-                        int dim=1);
+  TaskJointLimitPlateau(const std::string& className, xmlNode* node,
+                        const RcsGraph* graph, int dim=1);
 
-  /*! Destructor
+  /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual ~TaskJointLimitPlateau();
-
-  /*!
-   * \brief Virtual copy constructor with optional new graph
-   */
-  virtual TaskJointLimitPlateau* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskJointLimitPlateau* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable
    *

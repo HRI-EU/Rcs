@@ -94,12 +94,6 @@ TaskRegionBoxInterval::TaskRegionBoxInterval(const Task* task, xmlNode* node) :
 
 }
 
-TaskRegionBoxInterval::TaskRegionBoxInterval(const TaskRegionBoxInterval& src) :
-  TaskRegion(src), bbMin(src.bbMin), bbMax(src.bbMax),
-  slowDownRatio(src.slowDownRatio)
-{
-}
-
 TaskRegionBoxInterval::~TaskRegionBoxInterval()
 {
 }

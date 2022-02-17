@@ -39,7 +39,7 @@
 #include <map>
 
 
-// Convenience macro to register TaskRegios in the factory. Here is an
+// Convenience macro to register TaskRegions in the factory. Here is an
 // example: REGISTER_TASKREGION(TaskRegion, "ABC") expands to
 // static Rcs::TaskRegionFactoryRegistrar<TaskRegion> TaskRegion_("ABC")
 #define REGISTER_TASKREGION(T,N) static Rcs::TaskRegionFactoryRegistrar<T> T ## _(N)

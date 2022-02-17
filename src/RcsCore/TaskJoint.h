@@ -52,27 +52,23 @@ public:
 
   /*! Constructor based on xml parsing
    */
-  TaskJoint(const std::string& className, xmlNode* node, RcsGraph* graph,
+  TaskJoint(const std::string& className, xmlNode* node, const RcsGraph* graph,
             int dim=1);
 
   /*! Constructor for tasks using the joint pointer directly.
    */
   TaskJoint(const RcsJoint* joint, const RcsJoint* refJoint,
-            xmlNode* node, RcsGraph* graph = NULL, double refGain=1.0);
+            xmlNode* node, const RcsGraph* graph = NULL, double refGain=1.0);
 
   /*! Constructor for tasks using the joint pointer directly.
    */
-  TaskJoint(RcsGraph* graph, const RcsJoint* joint, const RcsJoint* refJoint=NULL,
+  TaskJoint(const RcsGraph* graph, const RcsJoint* joint, const RcsJoint* refJoint=NULL,
             double refGain=1.0);
-
-  /*! Destructor
-   */
-  virtual ~TaskJoint();
 
   /*!
    * \brief Virtual copy constructor with optional new graph
    */
-  virtual TaskJoint* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskJoint* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable
    *

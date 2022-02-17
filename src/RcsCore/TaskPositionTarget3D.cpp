@@ -30,7 +30,7 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *******************************************************************************/
-#if 0
+
 #include "TaskPositionTarget3D.h"
 #include "TaskFactory.h"
 #include "Rcs_typedef.h"
@@ -52,35 +52,16 @@ static TaskFactoryRegistrar<TaskPositionTarget3D> registrar("XYZ_TARGET");
  ******************************************************************************/
 TaskPositionTarget3D::TaskPositionTarget3D(const std::string& className_,
                                            xmlNode* node,
-                                           RcsGraph* _graph,
+                                           const RcsGraph* _graph,
                                            int dim):
   TaskPosition3D(className_, node, _graph, dim)
-{
-  this->goalBdyId = createBody();
-  HTr_setIdentity(&goalTransform);
-}
-
-/*******************************************************************************
- * Copy constructor doing deep copying
- ******************************************************************************/
-TaskPositionTarget3D::TaskPositionTarget3D(const TaskPositionTarget3D& src):
-  TaskPosition3D(src)
-{
-  this->goalBdyId = createBody();
-  HTr_setIdentity(&goalTransform);
-}
-
-/*******************************************************************************
- * Destructor
- ******************************************************************************/
-TaskPositionTarget3D::~TaskPositionTarget3D()
 {
 }
 
 /*******************************************************************************
  * Clone function
  ******************************************************************************/
-TaskPositionTarget3D* TaskPositionTarget3D::clone(RcsGraph* newGraph) const
+TaskPositionTarget3D* TaskPositionTarget3D::clone(const RcsGraph* newGraph) const
 {
   TaskPositionTarget3D* task = new TaskPositionTarget3D(*this);
   task->setGraph(newGraph);
@@ -88,64 +69,12 @@ TaskPositionTarget3D* TaskPositionTarget3D::clone(RcsGraph* newGraph) const
 }
 
 /*******************************************************************************
- * Set refBody transformation to point from reference towards effector
- ******************************************************************************/
-void TaskPositionTarget3D::updateRefBody() const
-{
-  const RcsBody* ef = getEffector();
-  const RcsBody* refBody = getRefBody();
-
-  // Origin is in reference body
-  const double* refPos = refBody ? refBody->A_BI.org : Vec3d_zeroVec();
-  Vec3d_copy(goalTransform.org, refPos);
-
-  // Orientation (x-axis of frame) points towards effector
-  double dir[3];
-  Vec3d_sub(dir, ef->A_BI.org, refPos);
-  Mat3d_fromVec(goalTransform.rot, dir, 0);
-}
-
-/*******************************************************************************
- * Set refBody transformation to point from reference towards effector
- ******************************************************************************/
-HTr TaskPositionTarget3D::computeGoalTransform() const
-{
-  HTr A_GI;
-  const RcsBody* ef = getEffector();
-  const RcsBody* refBody = getRefBody();
-
-  // Origin is in reference body
-  const double* refPos = refBody ? refBody->A_BI.org : Vec3d_zeroVec();
-  Vec3d_copy(A_GI.org, refPos);
-
-  // Orientation (x-axis of frame) points towards effector
-  double dir[3];
-  Vec3d_sub(dir, ef->A_BI.org, refPos);
-  Mat3d_fromVec(A_GI.rot, dir, 0);
-
-  return A_GI;
-}
-
-/*******************************************************************************
- * Computes the current value of the task variable
- *
- *  1. Local effector reference vector is added to effector origin:
- *
- *       I_r = A_IK * K_ef_r
- *
- *  2. If a reference body exists, subtract its origin and rotate
- *     the result into the reference bodies's basis:
- *
- *       ref_r = A_ref-I * (I_r - I_r_refBdy)
+ * The 3-d task variable is (distance 0 0)^T
  ******************************************************************************/
 void TaskPositionTarget3D::computeX(double* I_r) const
 {
-  updateRefBody();
-
-  double pos[3];
-  TaskPosition3D::computeX(pos);
-
-  Vec3d_set(I_r, Vec3d_getLength(pos), 0.0, 0.0);
+  HTr A_goal = computeGoalRotation();
+  Vec3d_set(I_r, Vec3d_getLength(A_goal.org), 0.0, 0.0);
 }
 
 
@@ -175,18 +104,31 @@ void TaskPositionTarget3D::computeDX(double* dx,
  ******************************************************************************/
 void TaskPositionTarget3D::computeXp_ik(double* xp_res) const
 {
-  updateRefBody();
   TaskPosition3D::computeXp_ik(xp_res);
 }
 
 /*******************************************************************************
- * Computes current task Jacobian to parameter jacobian. See
- * RcsGraph_3dPosJacobian() for details.
+ * Rotate Jacobian into frame that points from effector to refBdy.
+ * Construct a transform with origin being the refBdy, and the rotation matrix
+ * with x-axis pointing from end-effector to refBdy. All coordinates are
+ * represented in world coordinates.
  ******************************************************************************/
 void TaskPositionTarget3D::computeJ(MatNd* jacobian) const
 {
-  updateRefBody();
-  TaskPosition3D::computeJ(jacobian);
+  HTr A_goal = computeGoalRotation();
+  RcsGraph_bodyPointJacobian(graph, getEffector(), NULL, A_goal.rot, jacobian);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+HTr TaskPositionTarget3D::computeGoalRotation() const
+{
+  HTr A_goal;
+  Vec3d_sub(A_goal.org, getEffector()->A_BI.org, getRefBody()->A_BI.org);
+  Mat3d_fromVec(A_goal.rot, A_goal.org, 0);
+
+  return A_goal;
 }
 
 /*******************************************************************************
@@ -195,21 +137,8 @@ void TaskPositionTarget3D::computeJ(MatNd* jacobian) const
  ******************************************************************************/
 void TaskPositionTarget3D::computeH(MatNd* hessian) const
 {
-  updateRefBody();
+  RLOG(0, "Fixme");
   TaskPosition3D::computeH(hessian);
-}
-
-/*******************************************************************************
- * Computes current task Hessian to parameter hessian. See
- * RcsGraph_3dPosHessian() for details.
- ******************************************************************************/
-int TaskPositionTarget3D::createBody()
-{
-  RcsBody* body = RcsGraph_insertGraphBody(getGraph(), -1);
-
-  snprintf(body->name, RCS_MAX_NAMELEN, "%s", "TaskPositionTarget3D::refFrame");
-
-  return body->id;
 }
 
 /*******************************************************************************
@@ -235,12 +164,12 @@ static void calcTaskKinematics(MatNd* x, const MatNd* q, void* params)
 bool TaskPositionTarget3D::testJacobian(double errorLimit,
                                         double delta,
                                         bool relativeError,
-                                        bool verbose)
+                                        bool verbose) const
 {
   MatNd* J = MatNd_create(3, getGraph()->nJ);
   MatNd* J_fd = MatNd_create(3, getGraph()->nJ);
   computeJ(J);
-  Math_finiteDifferenceDerivative(J_fd, calcTaskKinematics, this,
+  Math_finiteDifferenceDerivative(J_fd, calcTaskKinematics, (void*)this,
                                   getGraph()->q, delta);
 
   MatNd_setRowZero(J, 1);
@@ -284,8 +213,9 @@ static void calcTaskJacobian(MatNd* J, const MatNd* q, void* params)
   RcsGraph_destroy(graph);
 }
 
-bool TaskPositionTarget3D::testHessian(bool verbose)
+bool TaskPositionTarget3D::testHessian(bool verbose) const
 {
+  return true;
   MatNd* H = MatNd_create(3*getGraph()->nJ, getGraph()->nJ);
   MatNd* H_fd = MatNd_create(3*getGraph()->nJ, getGraph()->nJ);
   computeH(H);
@@ -300,7 +230,7 @@ bool TaskPositionTarget3D::testHessian(bool verbose)
   // ...      ...      ...
   // dJmn/dq0 dJmn/dq1 dJmn/dqn
   //
-  Math_finiteDifferenceDerivative(H_fd, calcTaskJacobian, this,
+  Math_finiteDifferenceDerivative(H_fd, calcTaskJacobian, (void*)this,
                                   getGraph()->q, 1.0e-8);
 
 
@@ -337,23 +267,56 @@ bool TaskPositionTarget3D::isValid(xmlNode* node, const RcsGraph* graph)
 {
   bool success = Task::isValid(node, graph, "XYZ_TARGET");
 
-  char tag[256] = "";
-  unsigned int len = getXMLNodePropertyStringN(node, "refFrame", tag, 256);
+  char tag[RCS_MAX_NAMELEN] = "";
+  char taskName[RCS_MAX_NAMELEN];
 
-  if (len>0)
+  strcpy(taskName, "unnamed task");
+  getXMLNodePropertyStringN(node, "name", taskName, RCS_MAX_NAMELEN);
+
+
+  unsigned int len = getXMLNodePropertyStringN(node, "refFrame", tag,
+                                               RCS_MAX_NAMELEN);
+
+  if (len > 0)
   {
-    REXEC(3)
-    {
-      char taskName[256];
-      strcpy(taskName, "unnamed task");
-      getXMLNodePropertyStringN(node, "name", taskName, 256);
-      RMSG("Task \"%s\": Must not have a refFrame", taskName);
-    }
+    RLOG(1, "Task \"%s\": Must not have a refFrame", taskName);
     success = false;
+  }
+
+  len = getXMLNodePropertyStringN(node, "refBdy", tag, RCS_MAX_NAMELEN);
+  len += getXMLNodePropertyStringN(node, "refBody", tag, RCS_MAX_NAMELEN);
+
+  if (len==0)
+  {
+    RLOG(1, "Task \"%s\": Must have a refBdy or refBody attribute", taskName);
+    return false;
+  }
+
+  const RcsBody* refBdy = RcsGraph_getBodyByName(graph, tag);
+
+  if (refBdy == NULL)
+  {
+    RLOG(1, "Task \"%s\": Couldn't find reference body with name \"%s\"",
+         taskName, tag);
+    return false;
+  }
+
+  len = getXMLNodePropertyStringN(node, "effector", tag, RCS_MAX_NAMELEN);
+
+  if (len == 0)
+  {
+    RLOG(1, "Task \"%s\": Must have an effector attribute", taskName);
+    return false;
+  }
+
+  if (RcsBody_isArticulated(graph, refBdy))
+  {
+    RLOG(1, "Task \"%s\": Goal body \"%s\" is articulated - not supported",
+         taskName, tag);
+    return false;
   }
 
   return success;
 }
 
 }   // namespace Rcs
-#endif//0

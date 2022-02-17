@@ -54,23 +54,19 @@ public:
 
   /*! Constructor based on xml parsing
    */
-  TaskEuler1D(const std::string& className, xmlNode* node, RcsGraph* graph,
-              int dim=1);
+  TaskEuler1D(const std::string& className, xmlNode* node,
+              const RcsGraph* graph, int dim=1);
 
   /*! Constructor based on graph and effectors for programmatic construction.
    */
-  TaskEuler1D(const std::string& className, RcsGraph* graph,
+  TaskEuler1D(const std::string& className, const RcsGraph* graph,
               const RcsBody* effector, const RcsBody* refBdy=NULL,
               const RcsBody* refFrame=NULL);
-
-  /*! Virtual destructor to allow proper inheriting from this class.
-   */
-  virtual ~TaskEuler1D();
 
   /*!
    * \brief Virtual copy constructor with optional new graph
    */
-  virtual TaskEuler1D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskEuler1D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable
    *

@@ -58,11 +58,6 @@ TaskRegionBoundingBox::TaskRegionBoundingBox(const Task* task, xmlNode* node) :
   RCHECK(nVals==task->getDim());
 }
 
-TaskRegionBoundingBox::TaskRegionBoundingBox(const TaskRegionBoundingBox& src) :
-  TaskRegion(src), bbMin(src.bbMin), bbMax(src.bbMax)
-{
-}
-
 TaskRegionBoundingBox::~TaskRegionBoundingBox()
 {
 }

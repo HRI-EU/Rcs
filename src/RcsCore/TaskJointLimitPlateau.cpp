@@ -50,7 +50,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskJointLimitPlateau> registrar("JointLim
  ******************************************************************************/
 Rcs::TaskJointLimitPlateau::TaskJointLimitPlateau(const std::string& className,
                                                   xmlNode* node,
-                                                  RcsGraph* _graph,
+                                                  const RcsGraph* _graph,
                                                   int dim):
   TaskGenericIK(className, node, _graph, dim),
   borderRatio(0.05)
@@ -59,16 +59,9 @@ Rcs::TaskJointLimitPlateau::TaskJointLimitPlateau(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskJointLimitPlateau::~TaskJointLimitPlateau()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskJointLimitPlateau* Rcs::TaskJointLimitPlateau::clone(RcsGraph* newGraph) const
+Rcs::TaskJointLimitPlateau* Rcs::TaskJointLimitPlateau::clone(const RcsGraph* newGraph) const
 {
   TaskJointLimitPlateau* task = new Rcs::TaskJointLimitPlateau(*this);
   task->setGraph(newGraph);

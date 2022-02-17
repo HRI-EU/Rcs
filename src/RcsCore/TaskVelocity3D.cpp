@@ -50,7 +50,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskVelocity3D> registrar("XYZd");
 /*******************************************************************************
  * Constructor based on graph and effectors.
  ******************************************************************************/
-Rcs::TaskVelocity3D::TaskVelocity3D(RcsGraph* graph, const RcsBody* effector,
+Rcs::TaskVelocity3D::TaskVelocity3D(const RcsGraph* graph, const RcsBody* effector,
                                     const RcsBody* refBdy, const RcsBody* refFrame):
   TaskPosition3D(graph, effector, refBdy, refFrame)
 {
@@ -68,7 +68,7 @@ Rcs::TaskVelocity3D::TaskVelocity3D(RcsGraph* graph, const RcsBody* effector,
  ******************************************************************************/
 Rcs::TaskVelocity3D::TaskVelocity3D(const std::string& taskType,
                                     xmlNode* node,
-                                    RcsGraph* _graph,
+                                    const RcsGraph* _graph,
                                     int dim):
   TaskPosition3D(taskType, node, _graph, dim)
 {
@@ -84,16 +84,9 @@ Rcs::TaskVelocity3D::TaskVelocity3D(const std::string& taskType,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskVelocity3D::~TaskVelocity3D()
-{
-}
-
-/*******************************************************************************
  *
  ******************************************************************************/
-Rcs::TaskVelocity3D* Rcs::TaskVelocity3D::clone(RcsGraph* newGraph) const
+Rcs::TaskVelocity3D* Rcs::TaskVelocity3D::clone(const RcsGraph* newGraph) const
 {
   TaskVelocity3D* task = new Rcs::TaskVelocity3D(*this);
   task->setGraph(newGraph);

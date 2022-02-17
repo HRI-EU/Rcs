@@ -51,7 +51,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskSpherical1D> registrar3("SphP");
  ******************************************************************************/
 Rcs::TaskSpherical1D::TaskSpherical1D(const std::string& className_,
                                       xmlNode* node,
-                                      RcsGraph* _graph,
+                                      const RcsGraph* _graph,
                                       int dim):
   TaskSpherical3D(className_, node, _graph, dim)
 {
@@ -79,16 +79,9 @@ Rcs::TaskSpherical1D::TaskSpherical1D(const std::string& className_,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskSpherical1D::~TaskSpherical1D()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskSpherical1D* Rcs::TaskSpherical1D::clone(RcsGraph* newGraph) const
+Rcs::TaskSpherical1D* Rcs::TaskSpherical1D::clone(const RcsGraph* newGraph) const
 {
   TaskSpherical1D* task = new Rcs::TaskSpherical1D(*this);
   task->setGraph(newGraph);

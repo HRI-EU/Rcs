@@ -58,20 +58,16 @@ public:
   /*! Constructor based on xml parsing.
    */
   TaskDistance3D(const std::string& className, xmlNode* node,
-                 RcsGraph* graph, int dim=3);
+                 const RcsGraph* graph, int dim=3);
 
   /*! Constructor based on graph and effectors.
   */
-  TaskDistance3D(RcsGraph* graph, const RcsBody* effector,
+  TaskDistance3D(const RcsGraph* graph, const RcsBody* effector,
                  const RcsBody* refBdy);
-
-  /*! Destructor.
-   */
-  virtual ~TaskDistance3D();
 
   /*! \brief Virtual clone method with optional new graph.
    */
-  virtual TaskDistance3D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskDistance3D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the relative distance between effector and reference
    *         body. It is represented in the reference bodie's frame.

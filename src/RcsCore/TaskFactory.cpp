@@ -57,7 +57,7 @@ Rcs::TaskFactory* Rcs::TaskFactory::instance()
 /*******************************************************************************
  * Creates the task for className and the given graph and xml content
  ******************************************************************************/
-Rcs::Task* Rcs::TaskFactory::createTask(std::string str, RcsGraph* graph)
+Rcs::Task* Rcs::TaskFactory::createTask(std::string str, const RcsGraph* graph)
 {
   const char* xmlStr = str.c_str();
   xmlDocPtr doc;
@@ -71,8 +71,7 @@ Rcs::Task* Rcs::TaskFactory::createTask(std::string str, RcsGraph* graph)
 /*******************************************************************************
  * Creates the task for className and the given graph and xml content
  ******************************************************************************/
-Rcs::Task* Rcs::TaskFactory::createTask(xmlNode* node,
-                                        RcsGraph* graph)
+Rcs::Task* Rcs::TaskFactory::createTask(xmlNode* node, const RcsGraph* graph)
 {
   TaskFactory* tf = TaskFactory::instance();
   std::string cVar = getXMLNodePropertySTLString(node, "controlVariable");
@@ -121,7 +120,8 @@ Rcs::Task* Rcs::TaskFactory::createTask(xmlNode* node,
 /*******************************************************************************
  * Creates the task for className and the given graph and xml content
  ******************************************************************************/
-Rcs::Task* Rcs::TaskFactory::createRandomTask(std::string cVar, RcsGraph* graph)
+Rcs::Task* Rcs::TaskFactory::createRandomTask(std::string cVar,
+                                              const RcsGraph* graph)
 {
   TaskFactory* tf = TaskFactory::instance();
 

@@ -50,15 +50,11 @@ public:
   /*! \brief Constructor based on xml parsing
    */
   TaskCylindrical1D(const std::string& className, xmlNode* node,
-                    RcsGraph* graph, int dim=1);
-
-  /*! \brief Destructor
-   */
-  virtual ~TaskCylindrical1D();
+                    const RcsGraph* graph, int dim=1);
 
   /*! \brief Virtual copy constructor with optional new graph
    */
-  virtual TaskCylindrical1D* clone(RcsGraph* newGraph=NULL) const;
+  virtual TaskCylindrical1D* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Computes the current value of the task variable
    *

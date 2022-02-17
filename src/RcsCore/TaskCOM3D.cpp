@@ -49,7 +49,7 @@ static Rcs::TaskFactoryRegistrar<Rcs::TaskCOM3D> registrar1("COG");
  ******************************************************************************/
 Rcs::TaskCOM3D::TaskCOM3D(const std::string& className,
                           xmlNode* node,
-                          RcsGraph* _graph,
+                          const RcsGraph* _graph,
                           int dim):
   Rcs::TaskGenericIK(className, node, _graph, dim)
 {
@@ -62,16 +62,9 @@ Rcs::TaskCOM3D::TaskCOM3D(const std::string& className,
 }
 
 /*******************************************************************************
- * Destructor
- ******************************************************************************/
-Rcs::TaskCOM3D::~TaskCOM3D()
-{
-}
-
-/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskCOM3D* Rcs::TaskCOM3D::clone(RcsGraph* newGraph) const
+Rcs::TaskCOM3D* Rcs::TaskCOM3D::clone(const RcsGraph* newGraph) const
 {
   TaskCOM3D* task = new Rcs::TaskCOM3D(*this);
   task->setGraph(newGraph);
