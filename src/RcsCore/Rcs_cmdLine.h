@@ -49,29 +49,27 @@ namespace Rcs
  *           texts will be appended. In addition, a warning on debul level 4
  *           will be emitted.
  *
- *           Note: The copy pointers "result" must exist, and have sufficient
- *           memory. In case they are NULL, the compiler will dislike it since
- *           it can't figure out which function to call.
+ *           Note: The copy pointers "result" must not be NULL, and point to
+ *           sufficient memory. In case they are NULL, the compiler cannot
+ *           deduce the type and therefore not find the correct function to
+ *           call.
  *
  */
 class CmdLineParser
 {
 public:
 
-  /*!
-   *  \brief Constructs a parser instance.
+  /*! \brief Constructs a parser instance.
    */
   CmdLineParser(int argc, char** argv);
 
-  /*!
-   *  \brief Call this constructor only if the class has already been
+  /*! \brief Call this constructor only if the class has already been
    *         instantiated before. Otherwise, the constructor will exit
    *         fatally.
    */
   CmdLineParser();
 
-  /*!
-   *  \brief Returns the argument after string "tag" as a character array.
+  /*! \brief Returns the argument after string "tag" as a character array.
    *         The argument is copied into str, assuming str has sufficiently
    *         memory. <br>
    *         Example: Executable is called with <br>
@@ -82,8 +80,7 @@ public:
   bool getArgument(const char* tag, char* result,
                    const char* description=NULL, ...) const;
 
-  /*!
-   *  \brief Returns the argument after string "tag" as a std::string.
+  /*! \brief Returns the argument after string "tag" as a std::string.
    *         The argument is copied into result if is provided.
    *         Compared to getArgumentTag with char* it is memory save<br>
    *         Example: Executable is called with <br>
@@ -94,8 +91,7 @@ public:
   bool getArgument(const char* tag, std::string* result = NULL,
                    const char* description=NULL, ...) const;
 
-  /*!
-   *  \brief Returns the argument after string "tag" as an integer. The
+  /*! \brief Returns the argument after string "tag" as an integer. The
    *         argument is copied into res. <br>
    *         Example: Executable is called with <br>
    *         Rcs.exe -m 5 -dir xml/Humanoids08 -f cAction.xml <br>
@@ -105,53 +101,52 @@ public:
   bool getArgument(const char* tag, int* result,
                    const char* description=NULL, ...) const;
 
-  /*!
-   *  \brief Returns the argument after string "tag" as an unsigned integer.
+  /*! \brief Returns the argument after string "tag" as an unsigned integer.
    *         If the tag contains a negative number, a warning on debug
    *         level 1 is issued.
    */
   bool getArgument(const char* tag, unsigned int* result,
                    const char* description=NULL, ...) const;
 
-  /*!
-   *  \brief Returns the argument after string "tag" as a size_t type.
+  /*! \brief Returns the argument after string "tag" as a unsigned long type.
    *         If the tag contains a negative number, a warning on debug
    *         level 1 is issued.
    */
-#ifdef __64BIT__
-  bool getArgument(const char* tag, size_t* result,
-                   const char* description=NULL, ...) const;
-#endif
+  bool getArgument(const char* tag, unsigned long* result,
+                   const char* description = NULL, ...) const;
 
-  /*!
-   *  \brief Returns the argument after string "tag" as a double.
+  /*! \brief Returns the argument after string "tag" as a unsigned long long
+   *         type. On 64 bit operating systems, the size_t is of the same type.
+   *         If the tag contains a negative number, a warning on debug
+   *         level 1 is issued.
+   */
+  bool getArgument(const char* tag, unsigned long long* result,
+                   const char* description=NULL, ...) const;
+
+  /*! \brief Returns the argument after string "tag" as a double.
    */
   bool getArgument(const char* tag, double* result,
                    const char* description=NULL, ...) const;
 
-  /*!
-   *  \brief Returns true if an argument with name tag exists, false
+  /*! \brief Returns true if an argument with name tag exists, false
    *         otherwise.
    */
   bool hasArgument(const char* tag, const char* description=NULL, ...) const;
 
-  /*!
-   *  \brief Prints out all arguments contained in argv to stderr.
+  /*! \brief Prints out all arguments contained in argv to stderr.
    */
   void printArguments() const;
 
-  /*!
-   *  \brief Prints out all parsed arguments to stderr.
+  /*! \brief Prints out all parsed arguments to stderr.
    */
   static void print();
 
-  /*!
-   *  \brief Adds a command line description that will be printed to the
+  /*! \brief Adds a command line description that will be printed to the
    *         console.
    */
   void addDescription(const char* tag, const char* description, ...) const;
 
-  int getArgs(char*** argv) const;
+  int getArgs(char** * argv) const;
 
 
 protected:

@@ -84,9 +84,11 @@ Rcs::CmdLineParser::CmdLineParser()
 bool Rcs::CmdLineParser::getArgument(const char* tag, char* str,
                                      const char* description, ...) const
 {
-  if (tag==NULL)
+
+  int idx = getTagIndex(tag);
+
+  if (idx == -1)
   {
-    RLOG(4, "Tag is NULL - skipping");
     return false;
   }
 
@@ -98,17 +100,7 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, char* str,
     va_end(args);
   }
 
-  int idx = getTagIndex(tag);
-
-  if (idx == -1)
-  {
-    return false;
-  }
-
-  if (str != NULL)
-  {
-    strcpy(str, argv[idx + 1]);
-  }
+  strcpy(str, argv[idx + 1]);
 
   return true;
 }
@@ -119,9 +111,10 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, char* str,
 bool Rcs::CmdLineParser::getArgument(const char* tag, std::string* result,
                                      const char* description, ...) const
 {
-  if (tag==NULL)
+  int idx = getTagIndex(tag);
+
+  if (idx == -1)
   {
-    RLOG(4, "Tag is NULL - skipping");
     return false;
   }
 
@@ -133,17 +126,7 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, std::string* result,
     va_end(args);
   }
 
-  int idx = getTagIndex(tag);
-
-  if (idx == -1)
-  {
-    return false;
-  }
-
-  if (result != NULL)
-  {
-    *result = std::string(argv[idx + 1]);
-  }
+  *result = std::string(argv[idx + 1]);
 
   return true;
 }
@@ -154,9 +137,10 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, std::string* result,
 bool Rcs::CmdLineParser::getArgument(const char* tag, int* res,
                                      const char* description, ...) const
 {
-  if (tag==NULL)
+  int idx = getTagIndex(tag);
+
+  if (idx == -1)
   {
-    RLOG(4, "Tag is NULL - skipping");
     return false;
   }
 
@@ -168,18 +152,9 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, int* res,
     va_end(args);
   }
 
-  int idx = getTagIndex(tag);
+  *res = atoi(argv[idx + 1]);
+  RCHECK((*res>INT_MIN) && (*res<INT_MAX));
 
-  if (idx == -1)
-  {
-    return false;
-  }
-
-  if (res != NULL)
-  {
-    *res = atoi(argv[idx + 1]);
-    RCHECK((*res>INT_MIN) && (*res<INT_MAX));
-  }
   return true;
 }
 
@@ -189,9 +164,10 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, int* res,
 bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned int* res,
                                      const char* description, ...) const
 {
-  if (tag==NULL)
+  int idx = getTagIndex(tag);
+
+  if (idx == -1)
   {
-    RLOG(4, "Tag is NULL - skipping");
     return false;
   }
 
@@ -203,36 +179,27 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned int* res,
     va_end(args);
   }
 
-  int idx = getTagIndex(tag);
+  int number = atoi(argv[idx + 1]);
+  RCHECK((number>INT_MIN) && (number<INT_MAX));
 
-  if (idx == -1)
-  {
-    return false;
-  }
+  // This can lead to very hard to find bugs so that we exit here.
+  RCHECK_MSG(number >= 0, "You are trying to read a negative number (%d) "
+             "into an unsigned int variable", number);
+  *res = (unsigned int) number;
 
-  if (res != NULL)
-  {
-    int number = atoi(argv[idx + 1]);
-    RCHECK((number>INT_MIN) && (number<INT_MAX));
-
-    // This can lead to very hard to find bugs so that we exit here.
-    RCHECK_MSG(number >= 0, "You are trying to read a negative number (%d) "
-               "into an unsigned int variable", number);
-    *res = (unsigned int) number;
-  }
   return true;
 }
 
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-#ifdef __64BIT__
-bool Rcs::CmdLineParser::getArgument(const char* tag, size_t* res,
+bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned long* res,
                                      const char* description, ...) const
 {
-  if (tag==NULL)
+  int idx = getTagIndex(tag);
+
+  if (idx == -1)
   {
-    RLOG(4, "Tag is NULL - skipping");
     return false;
   }
 
@@ -244,6 +211,23 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, size_t* res,
     va_end(args);
   }
 
+  int number = atoi(argv[idx + 1]);
+  RCHECK((number>INT_MIN) && (number<INT_MAX));
+
+  // This can lead to very hard to find bugs so that we exit here.
+  RCHECK_MSG(number >= 0, "You are trying to read a negative number (%d) "
+             "into an unsigned int variable", number);
+  *res = (size_t) number;
+
+  return true;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned long long* res,
+                                     const char* description, ...) const
+{
   int idx = getTagIndex(tag);
 
   if (idx == -1)
@@ -251,19 +235,24 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, size_t* res,
     return false;
   }
 
-  if (res != NULL)
+  if (description != NULL)
   {
-    int number = atoi(argv[idx + 1]);
-    RCHECK((number>INT_MIN) && (number<INT_MAX));
-
-    // This can lead to very hard to find bugs so that we exit here.
-    RCHECK_MSG(number >= 0, "You are trying to read a negative number (%d) "
-               "into an unsigned int variable", number);
-    *res = (size_t) number;
+    va_list args;
+    va_start(args, description);
+    appendDescription(tag, description, args);
+    va_end(args);
   }
+
+  int number = atoi(argv[idx + 1]);
+  RCHECK((number > INT_MIN) && (number < INT_MAX));
+
+  // This can lead to very hard to find bugs so that we exit here.
+  RCHECK_MSG(number >= 0, "You are trying to read a negative number (%d) "
+             "into an unsigned int variable", number);
+  *res = (size_t)number;
+
   return true;
 }
-#endif
 
 /*******************************************************************************
  * See header.
@@ -271,9 +260,10 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, size_t* res,
 bool Rcs::CmdLineParser::getArgument(const char* tag, double* res,
                                      const char* description, ...) const
 {
-  if (tag==NULL)
+  int idx = getTagIndex(tag);
+
+  if (idx == -1)
   {
-    RLOG(4, "Tag is NULL - skipping");
     return false;
   }
 
@@ -285,18 +275,8 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, double* res,
     va_end(args);
   }
 
-  int idx = getTagIndex(tag);
-
-  if (idx == -1)
-  {
-    return false;
-  }
-
-  if (res != NULL)
-  {
-    *res = atof(argv[idx + 1]);
-    RCHECK((*res>-DBL_MAX) && (*res<DBL_MAX));
-  }
+  *res = atof(argv[idx + 1]);
+  RCHECK((*res>-DBL_MAX) && (*res<DBL_MAX));
 
   return true;
 }
@@ -435,6 +415,11 @@ void Rcs::CmdLineParser::appendDescription(const char* tag,
  ******************************************************************************/
 int Rcs::CmdLineParser::getTagIndex(const char* tag) const
 {
+  if (tag == NULL)
+  {
+    return -1;
+  }
+
   for (int i = 0; i < argc-1; i++)
   {
     if (std::string(argv[i]) == std::string(tag))
@@ -449,7 +434,7 @@ int Rcs::CmdLineParser::getTagIndex(const char* tag) const
 /*******************************************************************************
  *
  ******************************************************************************/
-int Rcs::CmdLineParser::getArgs(char*** argv_) const
+int Rcs::CmdLineParser::getArgs(char** * argv_) const
 {
   *argv_ = argv;
 
