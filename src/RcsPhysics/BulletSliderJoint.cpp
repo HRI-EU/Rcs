@@ -178,10 +178,10 @@ void Rcs::BulletSliderJoint::setJointPosition(double angle, double dt)
   if (withForceLimit)
   {
     setPoweredLinMotor(true);
-    setMaxLinMotorForce(getJoint()->maxTorque);
+    setMaxLinMotorForce((btScalar)getJoint()->maxTorque);
     double vel = (angle-getJointPosition())/dt;
     vel = Math_clip(vel, -0.5, 0.5);
-    setTargetLinMotorVelocity(vel);
+    setTargetLinMotorVelocity((btScalar)vel);
   }
   else
   {
@@ -221,8 +221,8 @@ void Rcs::BulletSliderJoint::setJointTorque(double torque, double dt)
   btVector3 hingeAxisWorldB =
     getRigidBodyB().getWorldTransform().getBasis()*hingeAxisLocalB;
 
-  btVector3 forceA = torque*hingeAxisWorldA;
-  btVector3 forceB = -torque*hingeAxisWorldB;
+  btVector3 forceA = (btScalar)torque*hingeAxisWorldA;
+  btVector3 forceB = -(btScalar)torque*hingeAxisWorldB;
 
   // We use the btTypedConstraint namespace since the getRigidBody() methods
   // are only overwritten as const in the btSliderConstraint class

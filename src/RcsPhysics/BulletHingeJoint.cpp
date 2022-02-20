@@ -79,7 +79,7 @@ Rcs::BulletHingeJoint::BulletHingeJoint(const RcsGraph* graph_,
 
   // Increase the constraint error correction, since we set a tiny global
   // cfm value to increase contact stability
-  setParam(BT_CONSTRAINT_ERP, 0.8);
+  setParam(BT_CONSTRAINT_ERP, (btScalar)0.8);
 
   // This allows us to query inter-body reaction forces and moments
   setJointFeedback(&this->jf);
@@ -130,8 +130,8 @@ void Rcs::BulletHingeJoint::setJointPosition(double angle, double dt)
 {
   enableMotor(true);
   double maxImpulse = Math_clip(getJoint()->maxTorque*dt, 0.0, 1.0);
-  setMaxMotorImpulse(maxImpulse);
-  setMotorTarget(angle+this->offset-this->flipAngle, dt);
+  setMaxMotorImpulse((btScalar)maxImpulse);
+  setMotorTarget(btScalar(angle+this->offset-this->flipAngle), (btScalar)dt);
 }
 
 /*******************************************************************************
@@ -165,8 +165,8 @@ void Rcs::BulletHingeJoint::setJointTorque(double torque, double dt)
   btVector3 hingeAxisWorldB =
     getRigidBodyB().getWorldTransform().getBasis()*hingeAxisLocalB;
 
-  getRigidBodyA().applyTorque(torque*hingeAxisWorldA);
-  getRigidBodyB().applyTorque(-torque*hingeAxisWorldB);
+  getRigidBodyA().applyTorque((btScalar)torque*hingeAxisWorldA);
+  getRigidBodyB().applyTorque((btScalar)-torque*hingeAxisWorldB);
 
 #else
 
@@ -196,12 +196,12 @@ void Rcs::BulletHingeJoint::setJointLimit(bool enable,
 
   if (ll == -2.0*M_PI)
   {
-    ll += 1.0e-12;
+    ll += (btScalar)1.0e-12;
   }
 
   if (ul == 2.0*M_PI)
   {
-    ul -= 1.0e-12;
+    ul -= (btScalar)1.0e-12;
   }
 
   if ((ll > -2.0*M_PI) && (ul < 2.0*M_PI))

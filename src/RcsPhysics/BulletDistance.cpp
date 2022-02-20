@@ -232,7 +232,7 @@ static btConvexShape* createShape(const RcsShape* sh, HTr* A_SB)
 
     case RCSSHAPE_BOX:
     {
-      btVector3 halfExt(0.5*sh->extents[0], 0.5*sh->extents[1],
+      btVector3 halfExt(btScalar(0.5*sh->extents[0]), btScalar(0.5*sh->extents[1]),
                         btScalar(0.5*sh->extents[2]));
       bShape = new btBoxShape(halfExt);
       break;
@@ -242,19 +242,19 @@ static btConvexShape* createShape(const RcsShape* sh, HTr* A_SB)
     {
       btVector3 positions[4];
       btScalar radi[4];
-      btScalar hx = sh->extents[0];
-      btScalar hy = sh->extents[1];
-      double r = sh->extents[2] / 2.0;
+      btScalar hx = btScalar(0.5*sh->extents[0]);
+      btScalar hy = btScalar(0.5*sh->extents[1]);
+      btScalar r = btScalar(0.5*sh->extents[2]);
 
       for (int i=0; i<4; ++i)
       {
         radi[i] = r;
       }
 
-      positions[0] = btVector3(-hx/2.0, +hy/2.0, 0.0);
-      positions[1] = btVector3(+hx/2.0, +hy/2.0, 0.0);
-      positions[2] = btVector3(+hx/2.0, -hy/2.0, 0.0);
-      positions[3] = btVector3(-hx/2.0, -hy/2.0, 0.0);
+      positions[0] = btVector3(-hx, +hy, 0.0);
+      positions[1] = btVector3(+hx, +hy, 0.0);
+      positions[2] = btVector3(+hx, -hy, 0.0);
+      positions[3] = btVector3(-hx, -hy, 0.0);
 
       bShape = new btMultiSphereShape(positions, radi, 4);
       break;
@@ -276,12 +276,12 @@ static btConvexShape* createShape(const RcsShape* sh, HTr* A_SB)
       {
         const double* vi = &mesh->vertices[i*3];
         //chShape->addPoint(sh->scale*btVector3(vi[0], vi[1], vi[2]), false);
-        chShape->addPoint(btVector3(sh->scale3d[0]*vi[0],
-                                    sh->scale3d[1]*vi[1],
-                                    sh->scale3d[2]*vi[2]), false);
+        chShape->addPoint(btVector3(btScalar(sh->scale3d[0]*vi[0]),
+                                    btScalar(sh->scale3d[1]*vi[1]),
+                                    btScalar(sh->scale3d[2]*vi[2])), false);
       }
 
-      const double collisionMargin = 0.002;   // 2 mm
+      const btScalar collisionMargin = btScalar(0.002);   // 2 mm
       chShape->recalcLocalAabb();
       chShape->setMargin(collisionMargin);
       bShape = chShape;

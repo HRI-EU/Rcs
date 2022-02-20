@@ -147,7 +147,8 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
     case RCSSHAPE_BOX:
     {
       RLOG(5, "Creating BOX for object \"%s\"", body->name);
-      btVector3 halfExt(0.5*sh->extents[0], 0.5*sh->extents[1],
+      btVector3 halfExt(btScalar(0.5*sh->extents[0]),
+                        btScalar(0.5*sh->extents[1]),
                         btScalar(0.5*sh->extents[2]));
       bShape = new btBoxShape(halfExt);
       setMargin(bShape);
@@ -159,19 +160,19 @@ btCollisionShape* Rcs::BulletRigidBody::createShape(RcsShape* sh,
       RLOG(5, "Creating SSR for object \"%s\"", body->name);
       btVector3 positions[4];
       btScalar radi[4];
-      btScalar hx = sh->extents[0];
-      btScalar hy = sh->extents[1];
-      btScalar r = 0.5*sh->extents[2];
+      btScalar hx = btScalar(0.5*sh->extents[0]);
+      btScalar hy = btScalar(0.5*sh->extents[1]);
+      btScalar r = btScalar(0.5*sh->extents[2]);
 
       for (int i=0; i<4; ++i)
       {
         radi[i] = r;
       }
 
-      positions[0] = btVector3(-hx/2.0, +hy/2.0, 0.0);
-      positions[1] = btVector3(+hx/2.0, +hy/2.0, 0.0);
-      positions[2] = btVector3(+hx/2.0, -hy/2.0, 0.0);
-      positions[3] = btVector3(-hx/2.0, -hy/2.0, 0.0);
+      positions[0] = btVector3(-hx, +hy, 0.0);
+      positions[1] = btVector3(+hx, +hy, 0.0);
+      positions[2] = btVector3(+hx, -hy, 0.0);
+      positions[3] = btVector3(-hx, -hy, 0.0);
 
       bShape = new btMultiSphereShape(positions, radi, 4);
       bShape->setMargin(0.0);
@@ -401,14 +402,14 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsGraph* graph,
   btTransform bdyTrans = btTransformFromHTr(&A_PI);
   btDefaultMotionState* ms = new btDefaultMotionState(bdyTrans);
 
-  btVector3 bdyInertia(0,0,0);
+  btVector3 bdyInertia(0.0, 0.0, 0.0);
 
   if (bdy->m != 0.0)
   {
     // The principal axes of inertia correspond to the Eigenvectors
-    bdyInertia[0] = lambda[0];
-    bdyInertia[1] = lambda[1];
-    bdyInertia[2] = lambda[2];
+    bdyInertia[0] = (btScalar)lambda[0];
+    bdyInertia[1] = (btScalar)lambda[1];
+    bdyInertia[2] = (btScalar)lambda[2];
   }
 
   BulletRigidBody* btBody = NULL;
@@ -423,7 +424,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsGraph* graph,
   }
   else
   {
-    btRigidBody::btRigidBodyConstructionInfo rbc(bdy->m, ms, cSh, bdyInertia);
+    btRigidBody::btRigidBodyConstructionInfo rbc((btScalar)bdy->m, ms, cSh, bdyInertia);
     btBody = new BulletRigidBody(rbc, graph, bdy);
 
     REXEC(5)
@@ -434,7 +435,7 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsGraph* graph,
       btVector3 bulletInertia = btBody->getLocalInertia();
       RLOG(0, "%s inertia from Bullet: %f %f %f", bdy->name,
            bulletInertia[0], bulletInertia[1], bulletInertia[2]);
-      cSh->calculateLocalInertia(bdy->m, bulletInertia);
+      cSh->calculateLocalInertia((btScalar)bdy->m, bulletInertia);
       RLOG(0, "%s shape inertia from Bullet: %f %f %f", bdy->name,
            bulletInertia[0], bulletInertia[1], bulletInertia[2]);
     }
@@ -461,20 +462,24 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsGraph* graph,
   if (RcsBody_numJoints(graph, bdy)==6)
   {
     //btBody->setDamping(0.05, 0.85);
-    btBody->setDamping(0.1, 0.9);
+    btBody->setDamping((btScalar)0.1, (btScalar)0.9);
 
-    btBody->setLinearVelocity(btVector3(bdy->x_dot[0], bdy->x_dot[1], bdy->x_dot[2]));
-    btBody->setAngularVelocity(btVector3(bdy->omega[0], bdy->omega[1], bdy->omega[2]));
+    btBody->setLinearVelocity(btVector3((btScalar)bdy->x_dot[0],
+                                        (btScalar)bdy->x_dot[1],
+                                        (btScalar)bdy->x_dot[2]));
+    btBody->setAngularVelocity(btVector3((btScalar)bdy->omega[0],
+                                         (btScalar)bdy->omega[1],
+                                         (btScalar)bdy->omega[2]));
   }
 
   // apply material properties
   RCHECK(materialName);
   const PhysicsMaterial material = config->getMaterial(materialName);
 
-  btBody->setFriction(material.getFrictionCoefficient());
-  btBody->setRollingFriction(material.getRollingFrictionCoefficient());
+  btBody->setFriction((btScalar)material.getFrictionCoefficient());
+  btBody->setRollingFriction((btScalar)material.getRollingFrictionCoefficient());
   //btBody->setSpinningFriction(0.1);
-  btBody->setRestitution(material.getRestitution());
+  btBody->setRestitution((btScalar)material.getRestitution());
 
   Vec3d_copy(btBody->A_PB_.org, bdy->Inertia.org);
   Mat3d_copy(btBody->A_PB_.rot, A_PB);
@@ -488,23 +493,23 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsGraph* graph,
     const RcsJoint* rbj = RCSJOINT_BY_ID(graph, bdy->jntId);
     RCHECK(rbj);
 
-    linFac[0] = rbj->weightMetric;
+    linFac[0] = (btScalar)rbj->weightMetric;
     rbj = RCSJOINT_BY_ID(graph, rbj->nextId);
     RCHECK(rbj);
-    linFac[1] = rbj->weightMetric;
+    linFac[1] = (btScalar)rbj->weightMetric;
     rbj = RCSJOINT_BY_ID(graph, rbj->nextId);
     RCHECK(rbj);
-    linFac[2] = rbj->weightMetric;
+    linFac[2] = (btScalar)rbj->weightMetric;
     rbj = RCSJOINT_BY_ID(graph, rbj->nextId);
     RCHECK(rbj);
 
-    angFac[0] = rbj->weightMetric;
+    angFac[0] = (btScalar)rbj->weightMetric;
     rbj = RCSJOINT_BY_ID(graph, rbj->nextId);
     RCHECK(rbj);
-    angFac[1] = rbj->weightMetric;
+    angFac[1] = (btScalar)rbj->weightMetric;
     rbj = RCSJOINT_BY_ID(graph, rbj->nextId);
     RCHECK(rbj);
-    angFac[2] = rbj->weightMetric;
+    angFac[2] = (btScalar)rbj->weightMetric;
 
     btBody->setLinearFactor(linFac);
     btBody->setAngularFactor(angFac);
@@ -553,8 +558,7 @@ void Rcs::BulletRigidBody::calcHingeTrans(const RcsJoint* jnt,
 
   // Transformation from physics body to joint in physics coordinates
   HTr A_JP;   // A_JP = A_JI*A_IP
-  RcsJoint* seppl = (RcsJoint*) jnt;
-  Mat3d_mulTranspose(A_JP.rot, seppl->A_JI.rot, A_PI.rot);
+  Mat3d_mulTranspose(A_JP.rot, (double(*)[3])jnt->A_JI.rot, A_PI.rot);
 
   Vec3d_sub(A_JP.org, jnt->A_JI.org, A_PI.org);
   Vec3d_rotateSelf(A_JP.org, A_PI.rot);
@@ -562,8 +566,8 @@ void Rcs::BulletRigidBody::calcHingeTrans(const RcsJoint* jnt,
   // Joint hinge point and axis in physics frame
   for (int i=0; i<3; i++)
   {
-    pivot[i] = A_JP.org[i];
-    axis[i] = A_JP.rot[jnt->dirIdx][i];
+    pivot[i] = (btScalar)A_JP.org[i];
+    axis[i] = (btScalar)A_JP.rot[jnt->dirIdx][i];
   }
 
 }
@@ -658,12 +662,12 @@ btFixedConstraint* Rcs::BulletRigidBody::createFixedJoint(const RcsGraph* graph)
 
   // Increase the constraint error correction, since we set a tiny global
   // cfm value to increase contact stability
-  jnt->setParam(BT_CONSTRAINT_ERP, 0.8, 0);
-  jnt->setParam(BT_CONSTRAINT_ERP, 0.8, 1);
-  jnt->setParam(BT_CONSTRAINT_ERP, 0.8, 2);
-  jnt->setParam(BT_CONSTRAINT_ERP, 0.8, 3);
-  jnt->setParam(BT_CONSTRAINT_ERP, 0.8, 4);
-  jnt->setParam(BT_CONSTRAINT_ERP, 0.8, 5);
+  jnt->setParam(BT_CONSTRAINT_ERP, (btScalar)0.8, 0);
+  jnt->setParam(BT_CONSTRAINT_ERP, (btScalar)0.8, 1);
+  jnt->setParam(BT_CONSTRAINT_ERP, (btScalar)0.8, 2);
+  jnt->setParam(BT_CONSTRAINT_ERP, (btScalar)0.8, 3);
+  jnt->setParam(BT_CONSTRAINT_ERP, (btScalar)0.8, 4);
+  jnt->setParam(BT_CONSTRAINT_ERP, (btScalar)0.8, 5);
 
   RCHECK_MSG(this->fixedJnt==NULL, "Fixed joint of body \"%s\" has already "
              "been created - this is the second time", getBodyName());

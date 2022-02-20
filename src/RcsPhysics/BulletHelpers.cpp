@@ -44,12 +44,20 @@
  ******************************************************************************/
 btTransform Rcs::btTransformFromHTr(const HTr* A_KI)
 {
-  btMatrix3x3 rm(A_KI->rot[0][0], A_KI->rot[1][0], A_KI->rot[2][0],
-                 A_KI->rot[0][1], A_KI->rot[1][1], A_KI->rot[2][1],
-                 A_KI->rot[0][2], A_KI->rot[1][2], A_KI->rot[2][2]);
+  btMatrix3x3 rm((btScalar)A_KI->rot[0][0],
+                 (btScalar)A_KI->rot[1][0],
+                 (btScalar)A_KI->rot[2][0],
+                 (btScalar)A_KI->rot[0][1],
+                 (btScalar)A_KI->rot[1][1],
+                 (btScalar)A_KI->rot[2][1],
+                 (btScalar)A_KI->rot[0][2],
+                 (btScalar)A_KI->rot[1][2],
+                 (btScalar)A_KI->rot[2][2]);
 
   btTransform transform;
-  transform.setOrigin(btVector3(A_KI->org[0], A_KI->org[1], A_KI->org[2]));
+  transform.setOrigin(btVector3((btScalar)A_KI->org[0],
+                                (btScalar)A_KI->org[1],
+                                (btScalar)A_KI->org[2]));
   transform.setBasis(rm);
 
   return transform;
@@ -117,11 +125,13 @@ btConvexHullShape* Rcs::meshToHull(const RcsMeshData* mesh,
   for (unsigned int i=0; i<mesh->nVertices; ++i)
   {
     const double* vi = &mesh->vertices[i*3];
-    chShape->addPoint(btVector3(vi[0], vi[1], vi[2]), false);
+    chShape->addPoint(btVector3((btScalar)vi[0],
+                                (btScalar)vi[1],
+                                (btScalar)vi[2]), false);
   }
 
   chShape->recalcLocalAabb();
-  chShape->setMargin(collisionMargin);
+  chShape->setMargin((btScalar)collisionMargin);
 
   return chShape;
 }
@@ -192,11 +202,13 @@ btConvexHullShape* Rcs::meshToCompressedHull(const RcsMeshData* mesh,
   for (unsigned int i=0; i<mesh->nVertices; ++i)
   {
     const double* vi = &mesh->vertices[i*3];
-    chShape->addPoint(btVector3(vi[0], vi[1], vi[2]), false);
+    chShape->addPoint(btVector3((btScalar)vi[0],
+                                (btScalar)vi[1],
+                                (btScalar)vi[2]), false);
   }
 
   chShape->recalcLocalAabb();
-  chShape->setMargin(collisionMargin);
+  chShape->setMargin((btScalar)collisionMargin);
 
   // Simplify hull (without shrinking the margin)
   btShapeHull* hull = new btShapeHull(chShape);
@@ -204,7 +216,7 @@ btConvexHullShape* Rcs::meshToCompressedHull(const RcsMeshData* mesh,
   hull->buildHull(margin);   // margin is ignored in buildMargin()
 
   btConvexHullShape* simplifiedHull = new btConvexHullShape();
-  simplifiedHull->setMargin(collisionMargin);
+  simplifiedHull->setMargin((btScalar)collisionMargin);
 
   for (int i=0; i<hull->numVertices(); ++i)
   {
