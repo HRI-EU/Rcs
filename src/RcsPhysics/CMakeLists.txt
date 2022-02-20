@@ -1,6 +1,22 @@
+###############################################################################
+#
+# CMakeLists file for the RcsPhysics library
+#
+###############################################################################
+FIND_PACKAGE(Vortex QUIET)
+IF (VORTEX_FOUND)
+  OPTION(USE_VORTEX "Use the Vortex physics library" ON)
+ELSE()
+  OPTION(USE_VORTEX "Use the Vortex physics library" OFF)
+ENDIF()
 
-# Build the vortex sub-library
-FIND_PACKAGE(Vortex)
+FIND_PACKAGE(Bullet QUIET)
+IF(BULLET_FOUND)
+  SET(USE_BULLET 2.83_float CACHE STRING "Bullet version to use")
+ELSE()
+  SET(USE_BULLET OFF CACHE STRING "Bullet version to use")
+ENDIF()
+SET_PROPERTY(CACHE USE_BULLET PROPERTY STRINGS 3.21_float 3.21_double 2.83_double OFF)
 
 IF(USE_VORTEX AND VORTEX_FOUND)
   SET(RCSVORTEX_LIBRARY ${LIBRARY_OUTPUT_PATH}/libRcsVortex.so)

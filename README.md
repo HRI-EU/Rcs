@@ -26,7 +26,9 @@ Rcs is a set of C and C++ libraries for robot control and simulation. It is writ
 <img src="doc/images/WAM-bulb.png" width="19%" >
 </p>
 
-## Getting Started
+## How to compile
+
+### Linux
 
 Rcs can be compiled with the cmake build system and has mainly been developed on Ubuntu 14.04 and GCC 4.8. To compile it, just type:
 
@@ -43,10 +45,36 @@ Compilation has successfully been tested on Ubuntu 14.04, Ubuntu 16.04 with GCC 
 
 Note that using Vortex Essentials on newer operating systems requires extra care. The official distribution is compiled with GCC 4.8, and will not work with newer compiler versions. To work around this limitation, Rcs compiles the Vortex integration module separately. If GCC 4.8 is available (by installing the `g++-4.8` package), the integration module is built automatically. If it isn't, you need to provide a pre-built version of libRcsVortex.so.
 
-It is also possible to compile it on Microsoft Visual Studio, however with some additional efforts. The libxml2 and pthreads library as well as the below mentioned dependencies need to be installed. Further, a cmake version higher than 3.4 is required. They support automatic symbol generation for windows compilation. The formerly mandatory export declaratives are not needed (except for global variables). Here is how to call it:
+### Windows native with Visual Studio
 
+We recommend to use the vcpkg package manager to obtain the dependencies. These packages need to be installed:
+
+```
+me@computer: > vcpkg.exe install pthreads libxml2 osg qwt 
+```
+
+These are optional packages that extend the functionality of Rcs:
+```
+me@computer: > vcpkg.exe install bullet3 eigen3 octomap
+```
+
+
+This is how to run the cmake command for an out-of-source build directory:
+
+```
+me@computer: > cd <build-directory> && cmake.exe -G "Visual Studio 15 2017 Win64"  -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DBUILD_SHARED_LIBS=TRUE -DCMAKE_BUILD_TYPE=Release -DVCPKG_TARGET_TRIPLET=x64-windows-release -DCMAKE_TOOLCHAIN_FILE=C:\dev\vcpkg\scripts\buildsystems\vcpkg.cmake <Rcs root directory> -Wno-dev
+```
+
+It is convenient to put these instructions into a script file:
+
+```
     cd <build-directory>
-    cmake.exe  -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DBUILD_SHARED_LIBS=TRUE -DCMAKE_INSTALL_PREFIX=<install-directory> -DCMAKE_BUILD_TYPE=Release <source-directory> -Wno-dev
+cd <build-directory> && cmake.exe -G "Visual Studio 15 2017 Win64" -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DBUILD_SHARED_LIBS=TRUE -DCMAKE_BUILD_TYPE=Release -DVCPKG_TARGET_TRIPLET=x64-windows-release -DCMAKE_TOOLCHAIN_FILE=C:\dev\vcpkg\scripts\buildsystems\vcpkg.cmake <Rcs root directory> -Wno-dev
+cd ..
+set /p=Hit ENTER to continue...
+```
+
+The Rcs CmakeLists.txt contain targets that copy the Windows dlls to the build directory. It is therefore not necessary that the paths to the dlls are added to the environment variables. The above examples might require adjusting to your particular settings (e.g. Visual Studio version or VCPKG_TARGET_TRIPLET ...).
 
 ## Build options
 

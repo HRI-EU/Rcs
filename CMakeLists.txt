@@ -1,8 +1,10 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.4)
 SET(BST_INSTALL_CATEGORY Libraries) 
 
 PROJECT(Rcs)
 
+STRING (REPLACE "\\" "/" HGR "$ENV{SIT}")
+STRING (REPLACE "\\" "/" MKPLT "$ENV{MAKEFILE_PLATFORM}")
 ################################################################################
 # Check if project is stand-alone or inside tree with dependencies
 ################################################################################
@@ -83,39 +85,56 @@ ENDIF()
 #
 ################################################################################
 OPTION(HEADLESS_BUILD "Build without graphics and Guis" OFF)
-OPTION(USE_EIGEN3 "Use Eigen3 in RcsCore" OFF)
-OPTION(USE_OCTOMAP "Use OctoMap library for distance calculation" OFF)
 OPTION(ENABLE_DEBUG_MACROS "Enable debug macros also in release mode" ON)
 OPTION(BUILD_RCS_LIBRARIES_ONLY "Build only libs, but not examples and tests" OFF)
 
+################################################################################
+#
+# Compile settings
+#
+################################################################################
 IF(UNIX)
   OPTION(ENABLE_C++11 "Compile with C++11 support enabled" OFF)
-ENDIF()
 
-FIND_PACKAGE(WM5 QUIET)
-IF (WM5_FOUND)
-  OPTION(USE_WM5 "Use Wildmagic library" ON)
+  IF(ENABLE_C++11)
+    SET(CMAKE_CXX_STANDARD 11)
+    SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 ELSE()
-  OPTION(USE_WM5 "Use Wildmagic library" OFF)
+    SET(CMAKE_CXX_FLAGS "-std=c++0x")
 ENDIF()
 
-FIND_PACKAGE(Vortex QUIET)
-IF (VORTEX_FOUND)
-  OPTION(USE_VORTEX "Use the Vortex physics library" ON)
-ELSE()
-  OPTION(USE_VORTEX "Use the Vortex physics library" OFF)
 ENDIF()
 
-IF(UNIX)
-  FIND_PACKAGE(Bullet QUIET)
+# Create shared libraries for Linux and Windows: see http://www.kitware.com/blog/home/post/939
+IF(WIN32)
+  ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE)
+  SET(BUILD_SHARED_LIBS ON)
+  SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  #SET(CREATE_WIN_DLL TRUE)
+  #ADD_DEFINITIONS(-DWIN_DLL)
+ELSEIF(UNIX)
+  SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -Wall -pedantic -fPIC -Wno-long-long -Wno-variadic-macros -std=c99")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -fPIC -Wno-format -Wno-long-long -Wno-variadic-macros")
+  ADD_DEFINITIONS(-D__linux__)
+
+  # Flag -rdynamic needed for backtrace()
+  IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -rdynamic")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic")
 ENDIF()
   
-IF(BULLET_FOUND)
-  SET(USE_BULLET 2.83_float CACHE STRING "Bullet version to use")
+  IF(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    # setting march to core2 to enable valgrind debugging (also good for Xeon)
+    # Low level optimization for debug mode, flag for checking stack corruption, flag for debug output
+    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -march=core2 -O0 -fstack-protector-all -ggdb")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=core2 -O0 -fstack-protector-all -ggdb")
 ELSE()
-  SET(USE_BULLET OFF CACHE STRING "Bullet version to use")
+    # setting march to native for optimal performance on local machine
+    # Strong optimization for release mode
+    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -march=native -ggdb")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -ggdb")
 ENDIF()
-SET_PROPERTY(CACHE USE_BULLET PROPERTY STRINGS 3.21_double 2.83_double OFF)
+ENDIF()
 
 ################################################################################
 #
@@ -123,7 +142,7 @@ SET_PROPERTY(CACHE USE_BULLET PROPERTY STRINGS 3.21_double 2.83_double OFF)
 #
 ################################################################################
 INCLUDE(Externals)
-INCLUDE(CompileSettings)
+#INCLUDE(CompileSettings)
 
 IF (WIN32)
   ADD_DEFINITIONS(-D_USE_MATH_DEFINES)   # M_PI etc. for windows
@@ -197,11 +216,6 @@ ADD_SUBDIRECTORY (src)
 IF (NOT BUILD_RCS_LIBRARIES_ONLY)
   ADD_SUBDIRECTORY (bin)
   ADD_SUBDIRECTORY (examples)
-ENDIF()
-
-IF(EXISTS "${PROJECT_SOURCE_DIR}/projects")
-  MESSAGE(STATUS "Including projects directory" )
-  ADD_SUBDIRECTORY (projects)
 ENDIF()
 
 ADD_SUBDIRECTORY (doc)

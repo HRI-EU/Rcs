@@ -3,6 +3,15 @@
 # CMakeLists file for the RcsCore library
 #
 ###############################################################################
+OPTION(USE_EIGEN3 "Use Eigen3 in RcsCore" OFF)
+OPTION(USE_OCTOMAP "Use OctoMap library for distance calculation" OFF)
+
+FIND_PACKAGE(WM5 QUIET)
+IF (WM5_FOUND)
+  OPTION(USE_WM5 "Use Wildmagic library" ON)
+ELSE()
+  OPTION(USE_WM5 "Use Wildmagic library" OFF)
+ENDIF()
 SET(RCS_CORE_SRCS
 CompositeTask.cpp
 ControllerBase.cpp
@@ -110,9 +119,11 @@ Rcs_octree.cpp
 
 IF(WIN32)
   LIST(APPEND RCS_CORE_SRCS Rcs_msvc.cpp)
-  FIND_PACKAGE(LibXml2-win REQUIRED)
-  SET(PTHREAD_LIBRARIES ${HGR}/External/pthreads-win/2.91/lib/${MKPLT}/RcsPthreadsVC2.lib)
-  SET(PTHREAD_INCLUDE_DIR ${HGR}/External/pthreads-win/2.91/include)
+  FIND_PACKAGE(LibXml2 REQUIRED)
+  FIND_PACKAGE(pthreads REQUIRED)
+  #FIND_PACKAGE(LibXml2-win REQUIRED)
+  #SET(PTHREAD_LIBRARIES ${HGR}/External/pthreads-win/2.91/lib/${MKPLT}/RcsPthreadsVC2.lib)
+  #SET(PTHREAD_INCLUDE_DIR ${HGR}/External/pthreads-win/2.91/include)
 ELSE(WIN32)
   FIND_PACKAGE(LibXml2 REQUIRED)
   SET(PTHREAD_LIBRARIES pthread)

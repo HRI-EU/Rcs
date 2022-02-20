@@ -45,13 +45,13 @@
 #include <cfloat>
 #include <limits>
 
-#if defined(WIN_DLL)
+//#if defined(WIN_DLL)
 #    ifdef RCSCORE_EXPORTS
 #        define RCSCORE_API __declspec(dllexport)
 #    else
 #        define RCSCORE_API __declspec(dllimport)
 #    endif
-#endif
+//#endif
 
 // See top-level CMakeLists.txt how RCS_BASE_PATH_LENGTH is defined
 /* #if defined (RCS_BASE_PATH_LENGTH) */

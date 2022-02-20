@@ -51,7 +51,7 @@ endif ()
 unset ( _VERSION_FILE )
 
 find_library ( QWT_LIBRARY
-  NAMES qwt-qt5
+  NAMES qwt-qt5 qwt
   HINTS ${QT_LIBRARY_DIR}
 )
 
