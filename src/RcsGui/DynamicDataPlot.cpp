@@ -36,7 +36,9 @@
 #include <Rcs_guiFactory.h>
 #include <Rcs_macros.h>
 
+#include <QtGlobal>
 #include <QBoxLayout>
+#include <QPen>
 
 #include <qwt_plot_canvas.h>
 #include <qwt_thermo.h>
@@ -103,7 +105,11 @@ DynamicDataPlot::DynamicDataPlot(MatNd* mat_, const char* title,
   canvas->setFrameStyle(QFrame::Box | QFrame::Plain);
 
   QPalette canvasPalette(Qt::white);
+#if QT_VERSION < QT_VERSION_CHECK(5, 13, 0)
   canvasPalette.setColor(QPalette::Foreground, QColor(131, 131, 131));
+#else
+  canvasPalette.setColor(QPalette::WindowText, QColor(131, 131, 131));
+#endif
   canvas->setPalette(canvasPalette);
 
   this->plot = new QwtPlot;

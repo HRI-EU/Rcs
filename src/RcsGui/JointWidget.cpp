@@ -45,6 +45,7 @@
 #include <QLabel>
 #include <QGridLayout>
 #include <QTimer>
+#include <QtGlobal>
 
 #include <cstdio>
 #include <cmath>
@@ -175,6 +176,7 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
   if (_constGraph->dof > 0)
   {
     QPalette palette;
+#if QT_VERSION < QT_VERSION_CHECK(5, 13, 0)
     palette.setColor(QPalette::Normal, QPalette::Foreground, Qt::red);
     palette.setColor(QPalette::Normal, QPalette::Background, Qt::black);
     palette.setColor(QPalette::Normal, QPalette::Light, Qt::yellow);
@@ -185,6 +187,19 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
     palette.setColor(QPalette::Inactive, QPalette::Light, Qt::yellow);
     palette.setColor(QPalette::Inactive, QPalette::Dark, Qt::darkYellow);
 
+#else
+
+    palette.setColor(QPalette::Normal, QPalette::WindowText, Qt::red);
+    palette.setColor(QPalette::Normal, QPalette::Window, Qt::black);
+    palette.setColor(QPalette::Normal, QPalette::Light, Qt::yellow);
+    palette.setColor(QPalette::Normal, QPalette::Dark, Qt::darkYellow);
+
+    palette.setColor(QPalette::Inactive, QPalette::WindowText, Qt::red);
+    palette.setColor(QPalette::Inactive, QPalette::Window, Qt::black);
+    palette.setColor(QPalette::Inactive, QPalette::Light, Qt::yellow);
+    palette.setColor(QPalette::Inactive, QPalette::Dark, Qt::darkYellow);
+
+#endif
     //
     // Checkboxes for constraints
     //

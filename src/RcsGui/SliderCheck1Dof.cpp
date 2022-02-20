@@ -42,6 +42,7 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QTimer>
+#include <QtGlobal>
 
 
 
@@ -153,6 +154,7 @@ SliderCheck1Dof::SliderCheck1Dof(double* q_des_,
   // Palette for lcd numbers
   this->lcd1 = new QLCDNumber(6);
   QPalette palette = this->lcd1->palette();
+#if QT_VERSION < QT_VERSION_CHECK(5, 13, 0)
   palette.setColor(QPalette::Normal, QPalette::Foreground, Qt::red);
   palette.setColor(QPalette::Normal, QPalette::Background, Qt::black);
   palette.setColor(QPalette::Normal, QPalette::Light, Qt::yellow);
@@ -161,6 +163,18 @@ SliderCheck1Dof::SliderCheck1Dof(double* q_des_,
   palette.setColor(QPalette::Inactive, QPalette::Background, Qt::black);
   palette.setColor(QPalette::Inactive, QPalette::Light, Qt::yellow);
   palette.setColor(QPalette::Inactive, QPalette::Dark, Qt::darkYellow);
+#else
+
+  palette.setColor(QPalette::Normal, QPalette::WindowText, Qt::red);
+  palette.setColor(QPalette::Normal, QPalette::Window, Qt::black);
+  palette.setColor(QPalette::Normal, QPalette::Light, Qt::yellow);
+  palette.setColor(QPalette::Normal, QPalette::Dark, Qt::darkYellow);
+  palette.setColor(QPalette::Inactive, QPalette::WindowText, Qt::red);
+  palette.setColor(QPalette::Inactive, QPalette::Window, Qt::black);
+  palette.setColor(QPalette::Inactive, QPalette::Light, Qt::yellow);
+  palette.setColor(QPalette::Inactive, QPalette::Dark, Qt::darkYellow);
+
+#endif
 
   // Command value
   this->lcd1->setAutoFillBackground(true);
