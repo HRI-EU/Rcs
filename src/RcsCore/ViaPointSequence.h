@@ -328,7 +328,7 @@ public:
    *         LinearAcceleration mode will lead to linear acceleration profiles.
    *         It is experimental only and has some issues.
    *
-   *  \return \param[in] desc   Polynomial computation, see enum ViaPointType.
+   *  \param[in] type   Polynomial computation type, see enum ViaPointType.
    */
   void setViaPointType(ViaPointType type);
 

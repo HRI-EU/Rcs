@@ -323,7 +323,7 @@ public:
    * control variable on velocity level (TaskGenericIK).
    */
 
-  /*@{*/
+  ///@{
 
   /*! \addtogroup TaskLinearDerivative
    *  \brief Computes the delta in task space for the differential
@@ -399,7 +399,7 @@ public:
    * implemented.
    */
 
-  /*@{*/
+  ///@{
 
   /*! \addtogroup TaskMethodsThroughInheritance
    *  \brief Computes the current velocity in task velocity space. In this
@@ -617,7 +617,7 @@ public:
    * These methods are related to end effector tasks
    */
 
-  /*@{*/
+  ///@{
 
   /*! \brief Returns the effector body of the task, or NULL if none exists.
    *         The function resolves the link to a GenericBody.
@@ -708,7 +708,7 @@ public:
    * implemented.
    */
 
-  /*@{*/
+  ///@{
 
 
   /*! \brief Performs a set of tests:
@@ -774,7 +774,7 @@ protected:
   virtual bool testVelocity(double maxErr=1.0e-8) const;
 
   /*! \brief If name starts with "GenericBody", the function returns
-   *         -10 - <number> where number is the number following after
+   *         -10 - number where number is the number following after
    *         "GenericBody". If number is not within the interval
    *         [0...RCS_NUM_GENERIC_BODIES-1], the function complains on
    *         debug level 1 and returns -1.

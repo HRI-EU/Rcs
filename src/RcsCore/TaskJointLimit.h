@@ -59,7 +59,7 @@ public:
    */
   virtual void computeX(double* x_res) const;
 
-  /*! \brief Computes current task Jacobian to parameter \param jacobian
+  /*! \brief Computes current task Jacobian to parameter \e jacobian
    *
    *  \param[out] jacobian Joint limit gradient of dimension
    *              1 x RcsGraph::nJ according to function
@@ -67,7 +67,7 @@ public:
    */
   virtual void computeJ(MatNd* jacobian) const;
 
-  /*! \brief Computes current task Hessian to parameter \param hessian
+  /*! \brief Computes current task Hessian to parameter \e hessian
    *
    *  \param[out] hessian Joint limit Hessian of dimension
    *              RcsGraph::nJ x RcsGraph::nJ according to function

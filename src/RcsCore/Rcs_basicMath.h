@@ -475,13 +475,13 @@ void Math_srand48(long int seed);
  *         not particularly performant and robust.
  *
  *  \param[out] roots The roots of the polynomial. It must have memory for
- *                    \param degree double values. The function writes the
+ *                    degree double values. The function writes the
  *                    number of degree roots. If there are roots with
  *                    multiplicity, they are written with the same values. For
  *                    instance if a degree 3 polynomial has a triple root for 1,
  *                    root[0] = root[1] = root[2] = 1, and the return value
  *                    is 1.
- *  \param[in] c      degree+1 coefficients of the polynomial
+ *  \param[in] c      Degree+1 coefficients of the polynomial
  *  \param[in] degree Degree of the polynomial. It corresponds to the highest
  *                    exponent
  *  \return Number of determined roots on success, -1 on failure. For

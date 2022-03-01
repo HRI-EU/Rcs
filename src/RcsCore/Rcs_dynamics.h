@@ -63,7 +63,7 @@ typedef double (*DirDynFunc)(const double*, void*, double*, double);
  *  \brief Integrator with step width adaptation using a 2nd-3rd order
  *         Runge-Kutta-Fehlberg method.
  *
- *  \param[in] FCN      Evaluation function for the differential equations
+ *  \param[in] func     Evaluation function for the differential equations
  *  \param[in] param    Pointer to your use-case specific data
  *  \param[in] nz       Number of differential equations
  *  \param[in] t1       Integration start time
@@ -87,7 +87,7 @@ int integration_t1_t2(DirDynFunc func,
 /*! \ingroup RcsKineticsFunctions
  *  \brief Euler single step integrator.
  *
- *  \param[in] FCN      Evaluation function for the differential equations
+ *  \param[in] func     Evaluation function for the differential equations
  *  \param[in] param    Pointer to your use-case specific data
  *  \param[in] nz       Number of differential equations
  *  \param[in] dt       Integration interval
@@ -104,7 +104,7 @@ void integration_euler(DirDynFunc func,
 /*! \ingroup RcsKineticsFunctions
  *  \brief Runge-Kutta-Fehlberg integration of second and 3rd order.
  *
- *  \param[in] FCN      Evaluation function for the differential equations
+ *  \param[in] func     Evaluation function for the differential equations
  *  \param[in] param    Pointer to your use-case specific data
  *  \param[in] nz       Number of differential equations
  *  \param[in] dt       Integration interval
@@ -159,7 +159,7 @@ double RcsGraph_computeKineticTerms(const RcsGraph* graph,
  *  \param[in]  graph Pointer to a valid RcsGraph
  *  \param[in]  gravityVec Gravitational vector. If it is NULL, the default
  *                         (0 0 -9.81)^T is used.
- *  \param[out] F_gravity Gravitational forces of dimensions RcsGraph::nJ x 1
+ *  \param[out] T_gravity Gravitational forces of dimensions RcsGraph::nJ x 1
  */
 void RcsGraph_computeGravityTorque(const RcsGraph* graph,
                                    const double gravityVec[3],
