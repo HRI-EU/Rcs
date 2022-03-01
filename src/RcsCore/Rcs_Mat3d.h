@@ -198,10 +198,10 @@ void Mat3d_preMulSelf(double A[3][3], double B[3][3]);
 void Mat3d_postMulSelf(double A[3][3], double B[3][3]);
 
 /*! \ingroup RcsMat3dFunctions
- *  \brief A_BI = (A_BV)^T * A_VI
+ *  \brief A_BI = (A_PB)^T * A_PI
  */
-void Mat3d_transposeMul(double A_BI[3][3], double A_BV[3][3],
-                        double A_VI[3][3]);
+void Mat3d_transposeMul(double A_BI[3][3], double A_PB[3][3],
+                        double A_PI[3][3]);
 
 /*! \ingroup RcsMat3dFunctions
  *  \brief Computes the relative rotation matrix A_21 = A_2I * (A_1I)^T.
