@@ -125,7 +125,7 @@ static void parseShapeURDF(RcsShape* shape, xmlNode* node, RcsBody* body)
     // Try to find in SIT data directory in case it failed
     if (!meshFileFound)
     {
-      const char* hgrDir = getenv("SIT");
+      const char* hgrDir = String_getEnv("SIT");
 
       if (hgrDir != NULL)
       {
@@ -608,6 +608,7 @@ static void connectURDF(xmlNode* node, RcsGraph* graph, int rootIdx,
   else
   {
     RcsBody* lastChild = RCSBODY_BY_ID(graph, parentBody->lastChildId);
+    RCHECK(lastChild);
     lastChild->nextId = childBody->id;
     childBody->prevId = lastChild->id;
     childBody->nextId = -1;

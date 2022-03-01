@@ -400,11 +400,16 @@ void Rcs::HUD::init(int llx, int lly, int sizeX, int sizeY,
   osg::BoundingBox bb;
   for (unsigned int i = 0; i < geode->getNumDrawables(); ++i)
   {
+    osg::Drawable* di = geode->getDrawable(i);
+
+    if (di)
+    {
 #if OSG_VERSION_GREATER_OR_EQUAL(3, 6, 2)
-    bb.expandBy(geode->getDrawable(i)->getBoundingBox());
+      bb.expandBy(di->getBoundingBox());
 #else
-    bb.expandBy(geode->getDrawable(i)->getBound());
+      bb.expandBy(di->getBound());
 #endif
+    }
   }
 
 

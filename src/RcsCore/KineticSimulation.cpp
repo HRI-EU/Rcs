@@ -185,7 +185,7 @@ bool KineticSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
   for (size_t i=0; i<contact.size(); ++i)
   {
     HTr A_CI;
-    const RcsBody* bdy = RCSBODY_BY_ID(g, contact[i].bdyId);
+    const RcsBody* bdy = &g->bodies[contact[i].bdyId];
     HTr_transform(&A_CI, &bdy->A_BI, &bdy->shapes[contact[i].shapeIdx].A_CB);
     MatNd_setRow(this->contactPositions, i, A_CI.org, 3);
   }
@@ -589,6 +589,7 @@ bool KineticSimulation::addBody(const RcsGraph* graph, const RcsBody* body_)
   // Make a copy of all body shapes and attach them to the body
   body->nShapes = RcsBody_numShapes(body_);
   body->shapes = RREALLOC(body->shapes, body->nShapes+1, RcsShape);
+  RCHECK(body->shapes);
   for (unsigned int i = 0; i < body->nShapes; i++)
   {
     RcsShape_copy(&body->shapes[i], &body_->shapes[i]);
@@ -1189,12 +1190,12 @@ void KineticSimulation::addContactForces(MatNd* M_contact,      // nq x 1
       double xp_test[3];
       MatNd xp_a_i = MatNd_fromPtr(3, 1, xp_test);
       MatNd_mul(&xp_a_i, J, &qp);
-      double err = Vec3d_distance(xp_attach_i, xp_test);
+      double err = Vec3d_distance(xp_attach_i, xp_a_i.ele);
 
       if (err>1.0e-8)
       {
         RLOG(0, "Attachement error[%s]: %f (%f = %f)", cBdy->name, err,
-             Vec3d_getLength(xp_attach_i), Vec3d_getLength(xp_test));
+             Vec3d_getLength(xp_attach_i), Vec3d_getLength(xp_a_i.ele));
       }
     }
 
@@ -1257,7 +1258,7 @@ void KineticSimulation::addSpringForces(MatNd* M_spring, const MatNd* q_dot) con
       for (int i = 0; i < 3; ++i)
       {
         f[i] = stiffness*(x_anchor[i]-x_spring[i]) +
-               damping*(xp_anchor[i]-xp_spring_[i]);
+               damping*(xp_anchor[i]-xp_spring.ele[i]);
       }
 
       // Project contact forces into joint space

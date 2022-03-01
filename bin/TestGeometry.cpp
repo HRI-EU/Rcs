@@ -987,6 +987,7 @@ static void testPlanefitting(int argc, char** argv)
 
   delete viewer;
   MatNd_destroy(I_p);
+  pthread_mutex_destroy(&mtx);
 }
 
 /*******************************************************************************

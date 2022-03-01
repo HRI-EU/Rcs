@@ -342,14 +342,13 @@ void HighGuiPlot::update()
           QPen marker_pen = QPen(QColor::fromRgb(50, 50, 50));
           marker_pen.setWidth(3);
           marker->setLinePen(marker_pen);
-#if QWT_VERSION < 0x060102
           QwtSymbol marker_symbol(QwtSymbol::Ellipse, curve_color, curve_color,
                                   QSize(5,5));
+
+#if QWT_VERSION < 0x060102
           marker->setSymbol(marker_symbol);
 #else
-          QwtSymbol* marker_symbol = new QwtSymbol(QwtSymbol::Ellipse, curve_color, curve_color,
-                                                   QSize(5, 5));
-          marker->setSymbol(marker_symbol);
+          marker->setSymbol(&marker_symbol);
 
 #endif
           marker->setZ(100.0);

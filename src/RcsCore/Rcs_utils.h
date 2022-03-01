@@ -234,6 +234,16 @@ char* String_createRandom(unsigned int size);
  */
 bool String_removeSuffix(char* dst, const char* src, char suffix);
 
+/*! \ingroup RcsUtilsFunctions
+ * \brief Safe wrapper around getenv() function. This eliminates static code
+ *        analysis warnings and makes the library robust agains vulnerabilities.
+ *
+ *  \param[in] name   Environment variable name
+ *  \return Pointer to the content of the environment variable, or NULL if it
+ *          does not exist.
+ */
+const char* String_getEnv(const char* name);
+
 ///@}
 
 

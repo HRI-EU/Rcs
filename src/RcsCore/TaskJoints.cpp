@@ -205,9 +205,12 @@ Rcs::TaskJoints::TaskJoints(const RcsBody* effector, const RcsGraph* graph_):
   setClassName("Joints");
   setEffectorId(effector ? effector->id : -1);
 
-  RCSBODY_FOREACH_JOINT(graph_, effector)
+  if (effector)
   {
-    addTask(new TaskJoint(graph, JNT, NULL, 1.0));
+    RCSBODY_FOREACH_JOINT(graph_, effector)
+    {
+      addTask(new TaskJoint(graph, JNT, NULL, 1.0));
+    }
   }
 
 }

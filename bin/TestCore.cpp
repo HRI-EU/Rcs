@@ -269,18 +269,20 @@ static bool test_envString()
 
   std::string home, user;
 
-  if (getenv("HOME"))
+  const char* envPtr = String_getEnv("HOME");
+  if (envPtr)
   {
-    home = std::string(getenv("HOME"));
+    home = std::string(envPtr);
   }
   else
   {
     RLOG(2, "Cannot find HOME environment variable");
   }
 
-  if (getenv("USER"))
+  envPtr = String_getEnv("USER");
+  if (envPtr)
   {
-    user = std::string(getenv("USER"));
+    user = std::string(envPtr);
   }
   else
   {

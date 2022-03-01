@@ -827,6 +827,13 @@ bool Rcs::Task::testHessian(bool verbose) const
 {
   TaskGradTestParams params;
   params.graph = RcsGraph_clone(getGraph());
+
+  if (!params.graph)
+  {
+    RLOG(1, "Failed to clone graph");
+    return false;
+  }
+
   params.task = clone(params.graph);
 
   double tolerance = 0.01;   // We accept 1% error
@@ -863,6 +870,13 @@ bool Rcs::Task::testJacobian(double errorLimit,
   // we do the finite difference estimation using a local copy of the task
   // that points to the passed non-const graph.
   RcsGraph* testGraph = RcsGraph_clone(getGraph());
+
+  if (!testGraph)
+  {
+    RLOG(1, "Failed to clone graph");
+    return false;
+  }
+
   Task* task = clone(testGraph);
   const unsigned int nx = task->getDim();
 

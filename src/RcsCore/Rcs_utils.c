@@ -399,6 +399,7 @@ static char* String_expandMacros_(char* str)
           RFREE(macro);
           unsigned int macroStrLen = envStr ? strlen(envStr) : 0;
           char* before = String_clone(str);
+          RCHECK(before);
           before[macroStartIdx-2] = '\0';
 
           const char* after = &str[macroEndIdx+1];
@@ -441,6 +442,7 @@ static char* String_expandMacros_(char* str)
 char* String_expandEnvironmentVariables(const char* str)
 {
   char* copyOfString = String_clone(str);
+  RCHECK(copyOfString);
   return String_expandMacros_(copyOfString);
 }
 
@@ -580,6 +582,18 @@ bool String_removeSuffix(char* dst, const char* src, char suffix)
   dst[namelen] = '\0';
 
   return true;
+}
+
+/*******************************************************************************
+ * See header
+ ******************************************************************************/
+const char* String_getEnv(const char* name)
+{
+#if defined (_MSC_VER)
+  return getenv(name);
+#else
+  return secure_getenv(name);
+#endif
 }
 
 /*******************************************************************************

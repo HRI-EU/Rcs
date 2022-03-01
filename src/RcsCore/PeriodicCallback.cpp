@@ -190,10 +190,10 @@ Rcs::PeriodicCallback::~PeriodicCallback()
   if (isStarted()==true)
   {
     // not good
-    RLOG(0, "The PeriodicCallback  of class %s is getting destroyed while its"
-         " thread is still running! This will very likely lead to problems,"
-         " since the derivedclass is already destroyed. Please call stop() in"
-         " your destructor.", this->className.c_str());
+    RLOG_CPP(0, "The PeriodicCallback  of class " << className << " is getting"
+             " destroyed while its thread is still running! This will very likely"
+             " lead to problems, since the derivedclass is already destroyed."
+             " Please call stop() in your destructor.");
 
     // let's be on the safe side and stop anyways
     stop();
@@ -201,8 +201,8 @@ Rcs::PeriodicCallback::~PeriodicCallback()
 
   pthread_mutex_destroy(&this->settingsMtx);
 
-  RLOGS(5, "PeriodicCallback of class \"%s\" destructor finished",
-        this->className.c_str());
+  RLOG_CPP(5, "PeriodicCallback of class \"" << className
+           << "\" destructor finished");
 }
 
 /*******************************************************************************
