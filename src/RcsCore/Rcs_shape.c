@@ -2067,7 +2067,7 @@ void RcsShape_setComputeType(RcsShape* shape, char computeType, bool enable)
 /*******************************************************************************
  *
  ******************************************************************************/
-bool RcsShape_isOfComputeType(const RcsShape* shape, char computeType)
+bool RcsShape_isOfComputeType(const RcsShape* shape, int computeType)
 {
   if ((shape->computeType & computeType) == 0)
   {

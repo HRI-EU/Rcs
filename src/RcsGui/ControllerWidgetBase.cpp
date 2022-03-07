@@ -185,7 +185,7 @@ ControllerWidgetBase::ControllerWidgetBase(const ControllerBase* cntrl,
   QGroupBox* gbox_controllerSliders = new QGroupBox(tr("Controller settings"), this);
   gbox_controllerSliders->setStyleSheet("QGroupBox { font-weight: bold; }");
   gbox_controllerSliders->setLayout(sliderLayout);
-  taskLayout->addWidget(gbox_controllerSliders, 0, 0);
+  taskLayout->addWidget(gbox_controllerSliders);// , 0, 0);
 
   unsigned int rowIndex = 0;
 

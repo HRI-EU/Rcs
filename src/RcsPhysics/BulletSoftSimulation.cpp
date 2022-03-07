@@ -62,13 +62,13 @@ static void setSoftMaterial(btSoftBody* softBdy, int materialId)
   {
     case 0:   // "Spongy" solid objects
     {
-      softBdy->m_cfg.kDF = 0.9;
-      softBdy->m_cfg.kDP = 0.01;// damping
-      softBdy->m_cfg.kMT = 0.5;// Pose matching coefficient [0,1]  was 0.05
+      softBdy->m_cfg.kDF = (btScalar)0.9;
+      softBdy->m_cfg.kDP = (btScalar)0.01;// damping
+      softBdy->m_cfg.kMT = (btScalar)0.5;// Pose matching coefficient [0,1]  was 0.05
       softBdy->m_cfg.piterations = 25;
       //softBdy->m_cfg.viterations = 25;
       //softBdy->m_cfg.diterations = 25;
-      softBdy->m_cfg.kVCF = 0.1;
+      softBdy->m_cfg.kVCF = (btScalar)0.1;
       //softBdy->m_cfg.kVC = 0.01;
       // softBdy->m_cfg.kSRHR_CL = 1.0;
       // softBdy->m_cfg.kCHR = 1.0;
@@ -82,18 +82,18 @@ static void setSoftMaterial(btSoftBody* softBdy, int materialId)
 
     case 1:// "cloth"
     {
-      softBdy->m_cfg.kDF = 0.9; // dynamic friction
-      softBdy->m_cfg.kDP = 0.01;// damping
-      softBdy->m_cfg.kMT = 0.00;// Pose matching coefficient [0,1]  was 0.05
-      softBdy->m_cfg.kVCF = 0.1;// Velocities correction factor (Baumgarte)
-      softBdy->m_cfg.kVC = 0.0;// Volume conversation coefficient [0,+inf]
+      softBdy->m_cfg.kDF = (btScalar)0.9; // dynamic friction
+      softBdy->m_cfg.kDP = (btScalar)0.01;// damping
+      softBdy->m_cfg.kMT = (btScalar)0.00;// Pose matching coefficient [0,1]  was 0.05
+      softBdy->m_cfg.kVCF = (btScalar)0.1;// Velocities correction factor (Baumgarte)
+      softBdy->m_cfg.kVC = (btScalar)0.0;// Volume conversation coefficient [0,+inf]
       softBdy->m_cfg.piterations = 250;
       softBdy->m_cfg.citerations = 10;
       softBdy->m_cfg.diterations = 10;
 
-      softBdy->m_cfg.kCHR = 1.0;   // Rigid contacts hardness [0,1]
-      softBdy->m_cfg.kKHR = 1.0;   // Kinetic contacts hardness [0,1]
-      softBdy->m_cfg.kSHR = 1.0;   // Soft contacts hardness [0,1]
+      softBdy->m_cfg.kCHR = (btScalar)1.0;   // Rigid contacts hardness [0,1]
+      softBdy->m_cfg.kKHR = (btScalar)1.0;   // Kinetic contacts hardness [0,1]
+      softBdy->m_cfg.kSHR = (btScalar)1.0;   // Soft contacts hardness [0,1]
 
       //softBdy->m_cfg.collisions = btSoftBody::fCollision::SDF_RS;// + btSoftBody::fCollision::SDF_RDF;
       // btSoftBody::fCollision::CL_SS +
@@ -107,30 +107,30 @@ static void setSoftMaterial(btSoftBody* softBdy, int materialId)
 
     case 2:// "cloth2"
     {
-      softBdy->m_cfg.kMT = 0.0;// Pose matching coefficient [0,1]
-      softBdy->m_cfg.kVCF = 1.0;// Velocities correction factor (Baumgarte)
-      softBdy->m_cfg.kVC = 0.0;// Volume conversation coefficient [0,+inf]
+      softBdy->m_cfg.kMT = (btScalar)0.0;// Pose matching coefficient [0,1]
+      softBdy->m_cfg.kVCF = (btScalar)1.0;// Velocities correction factor (Baumgarte)
+      softBdy->m_cfg.kVC = (btScalar)0.0;// Volume conversation coefficient [0,+inf]
       softBdy->m_cfg.piterations = 250;
       softBdy->m_cfg.citerations = 10;
       softBdy->m_cfg.diterations = 10;
 
-      softBdy->m_cfg.kCHR = 1.0;   // Rigid contacts hardness [0,1]
-      softBdy->m_cfg.kKHR = 1.0;   // Kinetic contacts hardness [0,1]
-      softBdy->m_cfg.kSHR = 1.0;   // Soft contacts hardness [0,1]
+      softBdy->m_cfg.kCHR = (btScalar)1.0;   // Rigid contacts hardness [0,1]
+      softBdy->m_cfg.kKHR = (btScalar)1.0;   // Kinetic contacts hardness [0,1]
+      softBdy->m_cfg.kSHR = (btScalar)1.0;   // Soft contacts hardness [0,1]
     }
     break;
 
     case 3:
     {
       btSoftBody::Material* material = softBdy->appendMaterial();
-      material->m_kLST = 1.0;  // Linear stiffness coefficient [0,1]
-      material->m_kAST = 1.0;  // Area/Angular stiffness coefficient [0,1]
+      material->m_kLST = (btScalar)1.0;  // Linear stiffness coefficient [0,1]
+      material->m_kAST = (btScalar)1.0;  // Area/Angular stiffness coefficient [0,1]
 
-      softBdy->m_cfg.kDF = 0.0; // dynamic friction
-      softBdy->m_cfg.kDP = 0.1;// damping
-      softBdy->m_cfg.kMT = 0.;// Pose matching coefficient [0,1]  was 0.05
-      softBdy->m_cfg.kVCF = 0.1;// Velocities correction factor (Baumgarte)
-      softBdy->m_cfg.kVC = 0.0;// Volume conversation coefficient [0,+inf]
+      softBdy->m_cfg.kDF = (btScalar)0.0; // dynamic friction
+      softBdy->m_cfg.kDP = (btScalar)0.1;// damping
+      softBdy->m_cfg.kMT = (btScalar)0.0;// Pose matching coefficient [0,1]  was 0.05
+      softBdy->m_cfg.kVCF = (btScalar)0.1;// Velocities correction factor (Baumgarte)
+      softBdy->m_cfg.kVC = (btScalar)0.0;// Volume conversation coefficient [0,+inf]
       softBdy->m_cfg.piterations = 250;
       softBdy->m_cfg.citerations = 100;
       softBdy->m_cfg.diterations = 100;
@@ -229,8 +229,8 @@ void BulletSoftSimulation::updateSoftMeshes()
 
     if (dstMesh->nVertices != nv)
     {
-    dstMesh->vertices = (double*) realloc(dstMesh->vertices,
-                                           3*nv*sizeof(double));
+      dstMesh->vertices = (double*) realloc(dstMesh->vertices,
+                                            3*nv*sizeof(double));
       RCHECK_MSG(dstMesh->vertices, "Failed to reallocate %zd bytes for "
                  " %zd vertices", 3*nv*sizeof(double), nv);
       dstMesh->nVertices = nv;
@@ -238,8 +238,8 @@ void BulletSoftSimulation::updateSoftMeshes()
 
     if (dstMesh->nFaces != nf)
     {
-    dstMesh->faces = (unsigned int*) realloc(dstMesh->faces,
-                                              3*nf*sizeof(unsigned int));
+      dstMesh->faces = (unsigned int*) realloc(dstMesh->faces,
+                                               3*nf*sizeof(unsigned int));
       RCHECK_MSG(dstMesh->faces, "Failed to reallocate %zd bytes for %zd faces",
                  3*nf*sizeof(unsigned int), nf);
       dstMesh->nFaces = nf;
@@ -335,7 +335,7 @@ void BulletSoftSimulation::createWorld(xmlNodePtr bulletParams)
                                                  collisionConfiguration, NULL);
   this->dynamicsWorld = softWorld;
 
-  softWorld->setGravity(btVector3(0.0, 0.0, -RCS_GRAVITY));
+  softWorld->setGravity(btVector3((btScalar)0.0, (btScalar)0.0, (btScalar)-RCS_GRAVITY));
   this->softBodyWorldInfo = new btSoftBodyWorldInfo();
   this->softBodyWorldInfo->m_broadphase = broadPhase;
   this->softBodyWorldInfo->m_dispatcher = dispatcher;
@@ -349,8 +349,8 @@ void BulletSoftSimulation::createWorld(xmlNodePtr bulletParams)
   btContactSolverInfo& si = softWorld->getSolverInfo();
   si.m_numIterations = 200;//20;
   // ERP: 0: no joint error correction (Recommended: 0.1-0.8, default 0.2)
-  si.m_erp = 0.2;
-  si.m_globalCfm = 1.0e-4; // 0: hard constraint (Default)
+  si.m_erp = (btScalar)0.2;
+  si.m_globalCfm = (btScalar)1.0e-4; // 0: hard constraint (Default)
   si.m_restingContactRestitutionThreshold = INT_MAX;
   si.m_splitImpulse = 1;
   si.m_solverMode = SOLVER_RANDMIZE_ORDER |
@@ -399,7 +399,7 @@ void BulletSoftSimulation::createSoftBodies()
         for (unsigned int i=0; i<softMesh->nVertices; ++i)
         {
           const double* v = &softMesh->vertices[3*i];
-          hull[i] = btVector3(v[0], v[1], v[2]);
+          hull[i] = btVector3((btScalar)v[0], (btScalar)v[1], (btScalar)v[2]);
         }
 
         softBdy = btSoftBodyHelpers::CreateFromConvexHull(*softBodyWorldInfo,
@@ -410,8 +410,8 @@ void BulletSoftSimulation::createSoftBodies()
       else if (STREQ(SHAPE->meshFile, "RCSSHAPE_SPHERE"))
       {
         const int res = 256;
-        const double r = SHAPE->extents[0];
-        btVector3 center(A_CI.org[0], A_CI.org[1], A_CI.org[2]);
+        const btScalar r = (btScalar)SHAPE->extents[0];
+        btVector3 center((btScalar)A_CI.org[0], (btScalar)A_CI.org[1], (btScalar)A_CI.org[2]);
         btVector3 radius(r, r, r);
         softBdy = btSoftBodyHelpers::CreateEllipsoid(*softBodyWorldInfo,
                                                      center, radius, res);
@@ -423,7 +423,7 @@ void BulletSoftSimulation::createSoftBodies()
         btScalar* btVerts = RNALLOC(3*softMesh->nVertices, btScalar);
         for (unsigned int i=0; i<3*softMesh->nVertices; ++i)
         {
-          btVerts[i] = softMesh->vertices[i];
+          btVerts[i] = (btScalar)softMesh->vertices[i];
         }
 
         softBdy = btSoftBodyHelpers::CreateFromTriMesh(*softBodyWorldInfo,
@@ -454,7 +454,7 @@ void BulletSoftSimulation::createSoftBodies()
       setSoftMaterial(softBdy, materialId);
 
       softBdy->randomizeConstraints();
-      softBdy->setTotalMass(BODY->m, true);
+      softBdy->setTotalMass((btScalar)BODY->m, true);
       softBdy->getCollisionShape()->setMargin(0.0);
       softBdy->setUserIndex(BODY->id);
       btSoftBodyHelpers::ReoptimizeLinkOrder(softBdy);

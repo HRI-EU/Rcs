@@ -146,14 +146,14 @@ static bool getModel(char* directory, char* xmlFileName)
 {
   Rcs::CmdLineParser argP;
 
-  if (!argP.hasArgument("-model",
-                        "Example models: Husky, DexBot, WAM, Humanoid"))
+  if (!argP.hasArgument("-model"))
   {
     return false;
   }
 
   char model[64] = "";
-  argP.getArgument("-model", model);
+  argP.getArgument("-model", model,
+                   "Example models: Husky, DexBot, WAM, Humanoid");
 
   if (STREQ(model, "Husky"))
   {
@@ -1317,6 +1317,8 @@ int main(int argc, char** argv)
         printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f cSoftPhysicsIK.xml -physicsEngine SoftBullet\n");
         printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f gSoftShirtPerson.xml -physicsEngine SoftBullet\n");
         printf("bin/Rcs -m 4 -dir config/xml/WAM -f gScenario.xml -gc -damping 3 -physicsEngine NewtonEuler -gravComp\n");
+        printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f cWeldConstraint.xml -physicsEngine NewtonEuler -skipGui\n");
+
 
         Rcs::PhysicsFactory::print();
         RcsGraph_printUsage(xmlFileName);
@@ -1952,7 +1954,7 @@ int main(int argc, char** argv)
 
       int algo = 0, guiHandle = -1;
       double alpha = 0.05, lambda = 1.0e-8, tmc = 0.1, dt = 0.01, dt_calc = 0.0;
-      double jlCost = 0.0, dJlCost = 0.0, clipLimit = DBL_MAX;
+      double jlCost = 0.0, dJlCost = 0.0, clipLimit = DBL_MAX, det = 0.0;
       double scaleDragForce = 0.01;
       bool calcDistance = true;
       strcpy(xmlFileName, "cAction.xml");
@@ -2321,11 +2323,11 @@ int main(int argc, char** argv)
         switch (algo)
         {
           case 0:
-            ikSolver->solveLeftInverse(dq_des, dx_des, dH, a_des, lambda);
+            det = ikSolver->solveLeftInverse(dq_des, dx_des, dH, a_des, lambda);
             break;
 
           case 1:
-            ikSolver->solveRightInverse(dq_des, dx_des, dH, a_des, lambda);
+            det = ikSolver->solveRightInverse(dq_des, dx_des, dH, a_des, lambda);
             break;
 
           default:
@@ -2577,7 +2579,7 @@ int main(int argc, char** argv)
                  controller.getGraph()->nJ, ikSolver->getInternalDof(),
                  (int) controller.getActiveTaskDim(a_des),
                  jlCost, dJlCost,
-                 ikSolver->getDeterminant()==0.0?"SINGULAR":"",
+                 det==0.0?"SINGULAR":"",
                  ((dJlCost > 1.0e-8) && (MatNd_getNorm(dx_des) == 0.0)) ?
                  "COST INCREASE" : "",
                  algo, lambda, alpha, tmc, manipIdx, staticEff,
@@ -2764,7 +2766,7 @@ int main(int argc, char** argv)
 
       int algo = 1, nTests = -1;
       unsigned int loopCount = 0, nIter = 10000;
-      double alpha = 0.01, lambda = 1.0e-8;
+      double alpha = 0.01, lambda = 1.0e-8, det = 0.0;
       double jlCost = 0.0, dJlCost = 0.0, eps=1.0e-5;
       strcpy(xmlFileName, "cAction.xml");
       strcpy(directory, "config/xml/DexBot");
@@ -2802,7 +2804,7 @@ int main(int argc, char** argv)
       }
 
       // Create controller
-      Rcs::ControllerBase controller(xmlFileName, true);
+      Rcs::ControllerBase controller(xmlFileName);
       Rcs::IkSolverRMR ikSolver(&controller);
 
       MatNd* dq_des  = MatNd_create(controller.getGraph()->dof, 1);
@@ -2877,11 +2879,11 @@ int main(int argc, char** argv)
         switch (algo)
         {
           case 0:
-            ikSolver.solveLeftInverse(dq_des, dx_des, dH, a_des, lambda);
+            det = ikSolver.solveLeftInverse(dq_des, dx_des, dH, a_des, lambda);
             break;
 
           case 1:
-            ikSolver.solveRightInverse(dq_des, dx_des, dH, a_des, lambda);
+            det = ikSolver.solveRightInverse(dq_des, dx_des, dH, a_des, lambda);
             break;
 
           default:
@@ -2950,7 +2952,7 @@ int main(int argc, char** argv)
                 controller.getGraph()->nJ, ikSolver.getInternalDof(),
                 controller.getActiveTaskDim(a_des),
                 jlCost, dJlCost,
-                ikSolver.getDeterminant()==0.0?"SINGULAR":"",
+                det==0.0?"SINGULAR":"",
                 ((dJlCost > eps) && (MatNd_getNorm(dx_des) == 0.0)) ?
                 "COST INCREASE" : "",
                 dtIK*1.0e6, algo, lambda, alpha);
@@ -3540,7 +3542,7 @@ int main(int argc, char** argv)
 
       int nTests = -1;
       unsigned int loopCount = 0, nIter = 10000;
-      double alpha = 0.05, lambda = 0.0;
+      double alpha = 0.05, lambda = 0.0, det = 0.0;
       double jlCost = 0.0, dJlCost = 0.0, eps=0*1.0e-5;
       strcpy(xmlFileName, "cAction.xml");
       strcpy(directory, "config/xml/DexBot");
@@ -3700,7 +3702,7 @@ int main(int argc, char** argv)
         }
 
         double dtIK = Timer_getTime();
-        ikSolver.solveRightInverse(dq_ts, dq_ns, dx_des, dH, a_des, lambda);
+        det = ikSolver.solveRightInverse(dq_ts, dq_ns, dx_des, dH, a_des, lambda);
         MatNd_copy(dq_des, dq_ts);
         MatNd_addSelf(dq_des, dq_ns);
 
@@ -3750,8 +3752,7 @@ int main(int argc, char** argv)
                 1.0e3*dt, controller.getGraph()->dof,
                 controller.getGraph()->nJ, ikSolver.getInternalDof(),
                 controller.getActiveTaskDim(a_des),
-                jlCost, dJlCost,
-                ikSolver.getDeterminant()==0.0?"SINGULAR":"",
+                jlCost, dJlCost, det==0.0?"SINGULAR":"",
                 ((dJlCost > eps) && (MatNd_getNorm(dx_des) == 0.0)) ?
                 "COST INCREASE" : "",
                 dtIK*1.0e6, lambda, alpha, loopCount);

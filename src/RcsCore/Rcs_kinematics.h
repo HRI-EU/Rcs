@@ -172,7 +172,7 @@ void RcsGraph_bodyPointHessian(const RcsGraph* graph, const RcsBody* body,
  *  \param[in]   qp     Joint velocity vector. It must be of dimension
  *                      RcsGraph::nJ x 1.
  *  \param[out]  J_dot  Dot Jacobian of the point, represented in world
- *                      coordinates. It will be reshaped to 3n x n (with n
+ *                      coordinates. It will be reshaped to 3 x n (with n
  *                      being \ref RcsGraph::nJ).
  */
 void RcsGraph_bodyPointDotJacobian(const RcsGraph* graph, const RcsBody* body,
@@ -222,7 +222,7 @@ void RcsGraph_rotationHessian(const RcsGraph* graph, const RcsBody* body,
  *  \param[in]   qp     Joint velocity vector. It must be of dimension
  *                      RcsGraph::nJ x 1.
  *  \param[out]  J_dot  Dot Jacobian of the point, represented in world
- *                      coordinates. It will be reshaped to 3n x n (with n
+ *                      coordinates. It will be reshaped to 3 x n (with n
  *                      being \ref RcsGraph::nJ).
  */
 void RcsGraph_rotationDotJacobian(const RcsGraph* graph, const RcsBody* body,

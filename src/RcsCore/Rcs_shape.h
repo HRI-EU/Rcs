@@ -309,7 +309,7 @@ void RcsShape_setComputeType(RcsShape* shape, char computeType, bool enable);
 /*! \ingroup RcsShapeFunctions
  *  \brief Returns true if the compute type is set, false otherwise.
  */
-bool RcsShape_isOfComputeType(const RcsShape* shape, char computeType);
+bool RcsShape_isOfComputeType(const RcsShape* shape, int computeType);
 
 
 #ifdef __cplusplus

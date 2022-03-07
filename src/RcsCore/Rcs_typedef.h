@@ -128,7 +128,9 @@ typedef enum
   RCSSHAPE_COMPUTE_CONTACT      = 8,   ///< Contact simulation
   RCSSHAPE_COMPUTE_SOFTPHYSICS  = 16,  ///< Soft physics simulation
   RCSSHAPE_COMPUTE_DEPTHBUFFER  = 32,  ///< Depth buffer simulation
-  RCSSHAPE_COMPUTE_ATTACHMENT   = 64   ///< Spring damper connection
+  RCSSHAPE_COMPUTE_ATTACHMENT   = 64,  ///< Spring damper connection
+  RCSSHAPE_COMPUTE_WELDPOS      = 128, ///< Kinematic position constraint
+  RCSSHAPE_COMPUTE_WELDORI      = 256  ///< Kinematic orientation constraint
 
 } RCSSHAPE_COMPUTE_TYPE;
 
@@ -139,7 +141,7 @@ struct _RcsShape
   double extents[3];    ///< Geometrical parameters
   double scale3d[3];    ///< Scale factor for meshes (applied after parsing)
   bool resizeable;      ///< For visualization and copying
-  char computeType;     ///< Bitmask, see RCSSHAPE_COMPUTE_TYPE
+  int computeType;      ///< Bitmask, see RCSSHAPE_COMPUTE_TYPE
 
   char meshFile[RCS_MAX_FILENAMELEN];    ///< Name of a mesh file (if any)
   char textureFile[RCS_MAX_FILENAMELEN]; ///< File holding texture data

@@ -54,7 +54,7 @@
   </Body>
 
   <Body name="LeftSh0" prev="UpperBody" mass="1" physics="dynamic" >
-    <Joint name="DofSh0L" range="-120 100 180" type="RotY" transform="0.05 0.18 0.36 20 0 0" torqueLimit="0" ctrlType="Torque" />
+    <Joint name="DofSh0L" range="-120 0 180" was_range="-120 100 180" type="RotY" transform="0.05 0.18 0.36 20 0 0" torqueLimit="0" ctrlType="Torque" />
     <Shape type="SSL" length="0.075" radius="0.05"  physics="true" graphics="true" transform="0 0 -0.04 0 0 0" color="PEWTER" />
   </Body>
 

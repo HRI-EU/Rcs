@@ -313,6 +313,10 @@ private:
 
   void addSpringForces(MatNd* M_spring, const MatNd* q_dot) const;
 
+  void addConstraintForces(MatNd* M_constraint, const MatNd* q_dot, const MatNd* M, const MatNd* b) const;
+
+
+
   struct FrictionContactPoint
   {
     FrictionContactPoint(int bdyId, int shapeIdx,
@@ -337,7 +341,39 @@ private:
     double z0;                // Height of ground plane
   };
 
+
+
+  struct KinematicConstraint
+  {
+
+    typedef enum
+    {
+      Pos,
+      Ori,
+      PosAndOri
+
+    } ConstraintType;
+
+    KinematicConstraint(ConstraintType type, int bdyId,
+                        std::vector<double> x_des, double kp);
+    void addForce(MatNd* lambdaQ, const RcsGraph* graph, const MatNd* M, const MatNd* b) const;
+
+    void appendJacobian(MatNd* J, const RcsGraph* graph) const;
+    void appendDotJacobian(MatNd* J_dot, const RcsGraph* graph, const MatNd* q_dot) const;
+    void appendStabilization(MatNd* ax, const RcsGraph* graph) const;
+
+    size_t dim() const;
+    void print(const RcsGraph* graph) const;
+
+    ConstraintType type;
+    int bdyId;
+    std::vector<double> x_des;
+    double kp;
+  };
+
+
   std::vector<FrictionContactPoint> contact;
+  std::vector<KinematicConstraint> constraint;
 
   MatNd* draggerTorque;
   MatNd* jointTorque;

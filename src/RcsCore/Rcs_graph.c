@@ -1201,7 +1201,7 @@ RcsJoint* RcsGraph_getJointByName(const RcsGraph* self, const char* name)
   for (unsigned int i=0; i<self->dof; ++i)
   {
     if (STREQ(name, self->joints[i].name) && (self->joints[i].id!=-1))
-  {
+    {
       return &self->joints[i];
     }
   }
@@ -2309,7 +2309,7 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src)
     // shallow-copying of the meshes.
     bdyDst->shapes = RNALLOC(bdySrc->nShapes, RcsShape);
     for (unsigned int i = 0; i < bdyDst->nShapes; i++)
-  {
+    {
       RcsShape_copy(&bdyDst->shapes[i], &bdySrc->shapes[i]);
     }
 
@@ -2492,7 +2492,7 @@ int RcsGraph_countCoupledJoints(const RcsGraph* self)
 {
   int n = 0;
 
-  RCSGRAPH_TRAVERSE_JOINTS(self)
+  RCSGRAPH_FOREACH_JOINT(self)
   {
     if ((JNT->coupledToId!=-1) && (JNT->constrained==false))
     {

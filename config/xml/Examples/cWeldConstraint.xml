@@ -1,0 +1,231 @@
+<!-- 
+  Copyright (c) 2020, Honda Research Institute Europe GmbH
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  3. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER "AS IS" AND ANY EXPRESS OR
+  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT, INDIRECT,
+  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<Controller >
+
+  <Graph name="Default" >
+  
+  <Body name="Ground Plane" >
+    <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0"
+           color="PEWTER" graphics="true" />
+    <Shape type="FRAME" scale="0.3" />
+  </Body>
+
+    <Body name="b1" mass="1" >
+      <Joint name="j1" type="RotX" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" transform="0 0 2 0 0 0" />
+      <Joint name="j1b" type="RotY" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint name="j1c" type="RotZ" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.3" 
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+      <Shape type="SPHERE" radius="0.1"   
+	     color="RED" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b2" prev="b1" mass="1" >
+      <Joint name="j2" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b3" prev="b2" mass="1" >
+      <Joint name="j3" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b4" prev="b3" mass="1" >
+      <Joint name="j4" type="RotX" range="-22 0 22" transform="0 0 0.3 0 0 0" weightJL="0" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b5" prev="b4" mass="1" >
+      <Joint name="j5" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b6" prev="b5" mass="1" >
+      <Joint name="j6" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b7" prev="b6" mass="1" >
+      <Joint name="j7" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25" weldpos="true" weldori="true" kp="1" 
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b8" prev="b7" mass="1" >
+      <Joint name="j8" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b9" prev="b8" mass="1" >
+      <Joint name="j9" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25"
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+      <Shape type="FRAME" physics="true" graphics="true" distance="true" />
+    </Body>
+
+    <Body name="b10" prev="b9" mass="1" >
+      <Joint name="j10" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25"
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b11" prev="b10" mass="1" >
+      <Joint name="j11" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b12" prev="b11" mass="1" >
+      <Joint name="j12" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25" weldpos="true" weldori="true" kp="1" 
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b13" prev="b12" mass="1" >
+      <Joint name="j13" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b14" prev="b13" mass="1" >
+      <Joint name="j14" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b15" prev="b14" mass="1" >
+      <Joint name="j15" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" torqueLimit="0" ctrlType="Torque" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="ee" prev="b15" mass="1" transform="0 0 0.3 0 0 0" >
+      <Shape type="SPHERE" radius="0.1"   
+	     color="RED" graphics="true" physics="true" distance="true" weldpos="true" weldori="true" kp="1" />
+    </Body>
+
+	
+	
+	
+  <model_state model="Default" time_stamp="0">
+    <joint_state joint="j1" position="-20" />
+    <joint_state joint="j2" position="-20" />
+    <joint_state joint="j3" position="20" />
+    <joint_state joint="j4" position="0" />
+    <joint_state joint="j5" position="20" />
+    <joint_state joint="j6" position="20" />
+    <joint_state joint="j7" position="20" />
+    <joint_state joint="j8" position="20" />
+    <joint_state joint="j9" position="20" />
+    <joint_state joint="j10" position="20" />
+    <joint_state joint="j11" position="20" />
+    <joint_state joint="j12" position="20" />
+    <joint_state joint="j13" position="20" />
+    <joint_state joint="j14" position="20" />
+    <joint_state joint="j15" position="20" />
+  </model_state>
+
+  
+  </Graph>
+
+
+  <Task name="y" controlVariable="Y" effector="ee" active="true" guiMin="-5" guiMax="5" />
+  <Task name="z" controlVariable="Z" effector="ee" active="true"  guiMin="-5" guiMax="5" />
+
+  <CollisionModel  DistanceThreshold="0.01" >
+    <CollisionPair body1="b1" body2="obstacle1" />
+    <CollisionPair body1="b2" body2="obstacle1" />
+    <CollisionPair body1="b3" body2="obstacle1" />
+    <CollisionPair body1="b4" body2="obstacle1" />
+    <CollisionPair body1="b5" body2="obstacle1" />
+    <CollisionPair body1="b6" body2="obstacle1" />
+    <CollisionPair body1="b7" body2="obstacle1" />
+    <CollisionPair body1="b8" body2="obstacle1" />
+    <CollisionPair body1="b9" body2="obstacle1" />
+    <CollisionPair body1="b10" body2="obstacle1" />
+    <CollisionPair body1="b11" body2="obstacle1" />
+    <CollisionPair body1="b12" body2="obstacle1" />
+    <CollisionPair body1="b13" body2="obstacle1" />
+    <CollisionPair body1="b14" body2="obstacle1" />
+    <CollisionPair body1="b15" body2="obstacle1" />
+	
+    <CollisionPair body1="b1" body2="obstacle2" />
+    <CollisionPair body1="b2" body2="obstacle2" />
+    <CollisionPair body1="b3" body2="obstacle2" />
+    <CollisionPair body1="b4" body2="obstacle2" />
+    <CollisionPair body1="b5" body2="obstacle2" />
+    <CollisionPair body1="b6" body2="obstacle2" />
+    <CollisionPair body1="b7" body2="obstacle2" />
+    <CollisionPair body1="b8" body2="obstacle2" />
+    <CollisionPair body1="b9" body2="obstacle2" />
+    <CollisionPair body1="b10" body2="obstacle2" />
+    <CollisionPair body1="b11" body2="obstacle2" />
+    <CollisionPair body1="b12" body2="obstacle2" />
+    <CollisionPair body1="b13" body2="obstacle2" />
+    <CollisionPair body1="b14" body2="obstacle2" />
+    <CollisionPair body1="b15" body2="obstacle2" />
+  </CollisionModel>
+
+  
+</Controller>

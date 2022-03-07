@@ -394,6 +394,7 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   // Compute type
   bool distance = true, graphics = true, physics = true, softPhysics = false;
   bool depth=false, contact=false, attachment = false;
+  bool weldpos=false, weldori=false;
 
   // Physics computation is not carried out for non-physics objects by default.
   if (body->physicsSim == RCSBODY_PHYSICS_NONE)
@@ -429,6 +430,8 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   getXMLNodePropertyBoolString(node, "depth", &depth);
   getXMLNodePropertyBoolString(node, "contact", &contact);
   getXMLNodePropertyBoolString(node, "attachment", &attachment);
+  getXMLNodePropertyBoolString(node, "weldpos", &weldpos);
+  getXMLNodePropertyBoolString(node, "weldori", &weldori);
 
   shape->resizeable = false;
   getXMLNodePropertyBoolString(node, "resizeable", &shape->resizeable);
@@ -473,6 +476,18 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
     Vec3d_set(shape->scale3d, stiffness, damping, 0.0);
     getXMLNodePropertyStringN(node, "body", shape->meshFile, RCS_MAX_FILENAMELEN);
   }
+  if (weldpos == true)
+  {
+    shape->computeType |= RCSSHAPE_COMPUTE_WELDPOS;
+    getXMLNodePropertyDouble(node, "kp", &shape->scale3d[0]);
+  }
+  if (weldori == true)
+  {
+    shape->computeType |= RCSSHAPE_COMPUTE_WELDORI;
+    getXMLNodePropertyDouble(node, "kp", &shape->scale3d[0]);
+  }
+
+
 
   // Mesh file
   int strLength = getXMLNodeBytes(node, "meshFile");

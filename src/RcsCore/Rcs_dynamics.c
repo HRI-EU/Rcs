@@ -801,6 +801,140 @@ double Rcs_directDynamics(const RcsGraph* graph,
     MatNd_addSelf(b, F_ext);
   }
 
+
+
+
+
+
+
+
+
+
+
+#if 1
+  // Compute kinematic constraint Lagrange Multipliers
+  {
+    const unsigned int nc = 6;   // Number of constraints
+
+    const RcsBody* ef = RcsGraph_getBodyByName(graph, "LeftHand");
+    RCHECK(ef);
+
+    static bool init = false;
+    static double x0[6];
+    if (!init)
+    {
+      Vec3d_copy(x0, ef->A_BI.org);
+      init = true;
+    }
+
+    // Constraint Jacobian
+    MatNd* J = MatNd_create(nc, n);
+    MatNd Jx = MatNd_fromPtr(3, J->n, MatNd_getRowPtr(J, 0));
+    RcsGraph_bodyPointJacobian(graph, ef, NULL, NULL, &Jx);
+    if (nc==6)
+    {
+      MatNd Jw = MatNd_fromPtr(3, J->n, MatNd_getRowPtr(J, 3));
+      RcsGraph_rotationJacobian(graph, ef, NULL, &Jw);
+    }
+
+    MatNd* qp_ik2 = MatNd_clone(graph->q_dot);
+    RcsGraph_stateVectorToIKSelf(graph, qp_ik2);
+
+    // Constraint dot-Jacobian
+    MatNd* J_dot = MatNd_createLike(J);
+    MatNd J_dot_x = MatNd_fromPtr(3, J_dot->n, MatNd_getRowPtr(J_dot, 0));
+    RcsGraph_bodyPointDotJacobian(graph, ef, NULL, NULL, qp_ik2, &J_dot_x);
+    if (nc==6)
+    {
+      MatNd J_dot_w = MatNd_fromPtr(3, J_dot->n, MatNd_getRowPtr(J_dot, 3));
+      RcsGraph_rotationDotJacobian(graph, ef, qp_ik2, &J_dot_w);
+    }
+
+    // J inv(M)
+    MatNd* invM = MatNd_createLike(M);
+    double det = MatNd_choleskyInverse(invM, M);
+    RCHECK(det != 0.0);
+    MatNd* JinvM = MatNd_create(nc, n);
+    MatNd_mul(JinvM, J, invM);
+
+    // inv(J inv(M) JT)
+    MatNd* invJinvMJT = MatNd_create(nc, nc);
+    MatNd_sqrMulABAt(invJinvMJT, J, invM);
+    det = MatNd_choleskyInverse(invJinvMJT, invJinvMJT);
+    RCHECK(det != 0.0);
+
+    // term1: -J inv(M) b
+    MatNd* term1 = MatNd_create(nc, 1);
+    MatNd_mul(term1, JinvM, b);
+    MatNd_constMulSelf(term1, -1.0);
+
+    // term1 += J_dot q_dot
+    MatNd_constMulSelf(qp_ik2, -1.0);// Hack: Where does the minus come from? But so it looks correct
+    MatNd_mulAndAddSelf(term1, J_dot, qp_ik2);
+
+    // term 3: stabilization, either PD control law or other like Baumgarte
+    // Stabilization: ax = kp*dx + kd*dx_dot
+    const double kp = 0.0;
+    const double kd = 0.5*sqrt(4.0*kp);
+    MatNd* ax, * dx_c, *dxd_c;
+    MatNd_fromStack(ax, nc, 1);
+    MatNd_fromStack(dx_c, nc, 1);
+    MatNd_fromStack(dxd_c, nc, 1);
+    Vec3d_sub(dx_c->ele, x0, ef->A_BI.org);
+    Vec3d_sub(dxd_c->ele, Vec3d_zeroVec(), ef->x_dot);
+
+    // Orientation feedback missing
+    if (nc==6)
+    {
+      Vec3d_sub(&dxd_c->ele[3], Vec3d_zeroVec(), ef->omega);
+    }
+
+    for (size_t i=0; i<nc; ++i)
+    {
+      ax->ele[i] = kp*dx_c->ele[i] + kd*dxd_c->ele[i];
+    }
+
+    RLOG(0, "x0: %f %f %f", x0[0], x0[1], x0[2]);
+    RLOG(0, "dx: %f %f %f", dx_c->ele[0], dx_c->ele[1], dx_c->ele[2]);
+    RLOG(0, "FootL: %f %f %f", ef->A_BI.org[0], ef->A_BI.org[1], ef->A_BI.org[2]);
+
+    MatNd_addSelf(term1, ax);
+
+    // Lagrange Multipliers in constraint space:
+    // lambda = inv(J inv(M) JT) (-J inv(M) b + J_dot q_dot)
+    MatNd* lambda = MatNd_create(nc, 1);
+    MatNd_mul(lambda, invJinvMJT, term1);
+
+    // Project into joint space and add to RHS vector: b += JT lambda
+    MatNd_transposeSelf(J);
+    MatNd_mulAndAddSelf(b, J, lambda);
+
+    // Clean up
+    MatNd_destroy(lambda);
+    MatNd_destroy(term1);
+    MatNd_destroy(qp_ik2);
+    MatNd_destroy(invJinvMJT);
+    MatNd_destroy(JinvM);
+    MatNd_destroy(invM);
+    MatNd_destroy(J_dot);
+    MatNd_destroy(J);
+  }
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   // Solve direct dynamics for joint accelerations: q_ddot = inv(M) b
   double det = MatNd_choleskySolve(q_ddot, M, b);
 
