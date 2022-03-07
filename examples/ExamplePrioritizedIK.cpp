@@ -223,7 +223,7 @@ int main(int argc, char** argv)
       argP.getArgument("-algo", &algo, "Algrithm: 0: PrioIK, 1: RMR");
 
       // Create controller
-      Rcs::ControllerBase controller(xmlFileName, true);
+      Rcs::ControllerBase controller(xmlFileName);
 
       if (noCpldJnts==true)
       {
@@ -456,7 +456,7 @@ int main(int argc, char** argv)
       argP.getArgument("-lambda", &lambda, "Regularization for IK");
 
       // Create controller
-      Rcs::ControllerBase controller(xmlFileName, true);
+      Rcs::ControllerBase controller(xmlFileName);
       Rcs::IkSolverPrioRMR ikSolver(&controller);
 
       unsigned int nx  = controller.getTaskDim();

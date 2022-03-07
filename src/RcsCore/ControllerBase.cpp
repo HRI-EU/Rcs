@@ -48,40 +48,37 @@
 #include <cfloat>
 
 
+namespace Rcs
+{
 
 /*******************************************************************************
  * Construction without tasks and default settings.
  ******************************************************************************/
-Rcs::ControllerBase::ControllerBase() :
+ControllerBase::ControllerBase() :
   graph(NULL),
   ownsGraph(true),
-  xmlRootNode(NULL),
-  xmlDoc(NULL),
-  cMdl(NULL),
-  name("Unknown controller")
+  cMdl(NULL)
 {
 }
 
 /*******************************************************************************
  * Constructor based on xml parsing.
  ******************************************************************************/
-Rcs::ControllerBase::ControllerBase(const std::string& xmlDescription,
-                                    bool xmlParsingFinished) :
+ControllerBase::ControllerBase(const std::string& xmlDescription) :
   graph(NULL),
   ownsGraph(true),
-  xmlRootNode(NULL),
-  xmlDoc(NULL),
   cMdl(NULL),
-  name("Unknown controller"),
   xmlFile(xmlDescription)
 {
-  char txt[256];
+  char txt[RCS_MAX_FILENAMELEN];
   bool fileExists = Rcs_getAbsoluteFileName(xmlDescription.c_str(), txt);
+  xmlDocPtr xmlDoc = NULL;
+  xmlNodePtr xmlRootNode = NULL;
 
   if (fileExists==true)
   {
     this->xmlFile.assign(txt);
-    this->xmlRootNode = parseXMLFile(txt, "Controller", &this->xmlDoc);
+    xmlRootNode = parseXMLFile(txt, "Controller", &xmlDoc);
   }
   else
   {
@@ -90,41 +87,38 @@ Rcs::ControllerBase::ControllerBase(const std::string& xmlDescription,
     // Check if the xmlDescription is really a file (with extension .xml). If
     // it has the .xml extension, we assume the file couldn't be opened and
     // exit with a fatal error.
-    if (fileExtension != NULL)
-    {
-      if (STREQ(fileExtension, ".xml"))
+    if (fileExtension && STREQ(fileExtension, ".xml"))
       {
         RMSG("Resource path is:");
         Rcs_printResourcePath();
         RFATAL("Controller configuration file \"%s\" not found in "
                "resource path - exiting", xmlDescription.c_str());
-      }
     }
 
     // From here we assume that is is a memory buffer holding the xml
     // file as a string.
     this->xmlFile.assign("Created_from_memory_buffer");
-    this->xmlRootNode = parseXMLMemory(xmlDescription.c_str(),
+    xmlRootNode = parseXMLMemory(xmlDescription.c_str(),
                                        xmlDescription.size(),
-                                       &this->xmlDoc);
+                                 &xmlDoc);
   }
 
   // Check if the xml description is malformed
-  if (this->xmlRootNode == NULL)
+  if (xmlRootNode == NULL)
   {
     RFATAL("Node \"Controller\" not found in \"%s\"", this->xmlFile.c_str());
   }
 
-  bool success = initFromXmlNode(this->xmlRootNode);
+  bool success = initFromXmlNode(xmlRootNode);
   if (!success)
   {
     RLOG(1, "Found errors in graph for controller");
   }
 
   // Free the xml memory in case no child ctors need to continue parsing
-  if (xmlParsingFinished)
+  if (xmlDoc)
   {
-    closeXmlFile();
+    xmlFreeDoc(xmlDoc);
   }
 
 }
@@ -132,13 +126,8 @@ Rcs::ControllerBase::ControllerBase(const std::string& xmlDescription,
 /*******************************************************************************
  * Initialization from xml node "Controller".
  ******************************************************************************/
-bool Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
+bool ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
 {
-  // Parse controller name
-  this->name = "Unknown controller";
-  getXMLNodePropertySTLString(xmlNodeController, "name", name);
-  RLOG_CPP(5, "Controller name is " << this->name);
-
   // Create the graph. If no tag "graph" exists, the graph still can
   // be included by an xinclude directive. Therefore it's not fatal
   // if we don't find it here.
@@ -216,16 +205,9 @@ bool Rcs::ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
 /*******************************************************************************
  * Constructor based on a graph object. Takes ownership of the graph.
  ******************************************************************************/
-Rcs::ControllerBase::ControllerBase(RcsGraph* graph):
-  graph(graph),
-  ownsGraph(true),
-  xmlRootNode(NULL),
-  xmlDoc(NULL),
-  cMdl(NULL),
-  name("Unknown controller"),
-  xmlFile("no-xml-file-available")
+ControllerBase::ControllerBase(RcsGraph* graph_):
+  graph(graph_), ownsGraph(true), cMdl(NULL)
 {
-  // nothing more to do in here.
 }
 
 /*******************************************************************************
@@ -233,34 +215,26 @@ Rcs::ControllerBase::ControllerBase(RcsGraph* graph):
  * The xml data is not copied, since this is not present after the
  * construction of the copied constructor.
  ******************************************************************************/
-Rcs::ControllerBase::ControllerBase(const ControllerBase& copyFromMe):
-  graph(NULL),
+ControllerBase::ControllerBase(const ControllerBase& copyFromMe):
+  graph(RcsGraph_clone(copyFromMe.graph)),
   ownsGraph(true),
-  xmlRootNode(NULL),
-  xmlDoc(NULL),
-  cMdl(NULL),
-  name(copyFromMe.name),
+  cMdl(RcsCollisionModel_clone(copyFromMe.cMdl, this->graph)),
   xmlFile(copyFromMe.xmlFile),
   taskArrayIdx(copyFromMe.taskArrayIdx)
 {
-  this->graph = RcsGraph_clone(copyFromMe.graph);
-
-  // clone tasks (index lists are cloned above)
   for (std::vector<Task*>::const_iterator itr = copyFromMe.tasks.begin();
        itr != copyFromMe.tasks.end(); ++itr)
   {
     this->tasks.push_back((*itr)->clone(this->graph));
   }
 
-  // Clone the collision model. If it is NULL, the clone function returns NULL.
-  this->cMdl = RcsCollisionModel_clone(copyFromMe.cMdl, this->graph);
 }
 
 /*******************************************************************************
  * Assignment operator. Could be done a bit more nice if the tasks had an
  * assignment operator as well. Currently, we just replace them.
  ******************************************************************************/
-Rcs::ControllerBase& Rcs::ControllerBase::operator= (const Rcs::ControllerBase& copyFromMe)
+ControllerBase& ControllerBase::operator= (const ControllerBase& copyFromMe)
 {
   // check for self-assignment by comparing the address of the
   // implicit object and the parameter
@@ -305,7 +279,7 @@ Rcs::ControllerBase& Rcs::ControllerBase::operator= (const Rcs::ControllerBase& 
 /*******************************************************************************
  * Destructor
  ******************************************************************************/
-Rcs::ControllerBase::~ControllerBase()
+ControllerBase::~ControllerBase()
 {
   // Delete collision model. The function accepts a NULL pointer.
   RcsCollisionModel_destroy(this->cMdl);
@@ -322,17 +296,9 @@ Rcs::ControllerBase::~ControllerBase()
 }
 
 /*******************************************************************************
- * Returns the name of the controller as indicated in the xml file.
- ******************************************************************************/
-const std::string& Rcs::ControllerBase::getName() const
-{
-  return this->name;
-}
-
-/*******************************************************************************
  * Returns the name of the controller's xml file.
  ******************************************************************************/
-const std::string& Rcs::ControllerBase::getXmlFileName() const
+const std::string& ControllerBase::getXmlFileName() const
 {
   return this->xmlFile;
 }
@@ -340,7 +306,7 @@ const std::string& Rcs::ControllerBase::getXmlFileName() const
 /*******************************************************************************
  * Returns the name of a task with the given ID.
  ******************************************************************************/
-const std::string& Rcs::ControllerBase::getTaskName(size_t id) const
+const std::string& ControllerBase::getTaskName(size_t id) const
 {
   RCHECK_MSG(id<this->tasks.size(), "id=%zu size=%zu", id, this->tasks.size());
   return this->tasks[id]->getName();
@@ -349,7 +315,7 @@ const std::string& Rcs::ControllerBase::getTaskName(size_t id) const
 /*******************************************************************************
  * Returns the full dimension of a task with the given ID.
  ******************************************************************************/
-size_t Rcs::ControllerBase::getTaskDim() const
+size_t ControllerBase::getTaskDim() const
 {
   size_t dim = 0;
 
@@ -363,7 +329,7 @@ size_t Rcs::ControllerBase::getTaskDim() const
 /*******************************************************************************
 * Returns the full dimension of a task with the given ID.
 ******************************************************************************/
-size_t Rcs::ControllerBase::getTaskDim(size_t id) const
+size_t ControllerBase::getTaskDim(size_t id) const
 {
   RCHECK(id < this->tasks.size());
   return this->tasks[id]->getDim();
@@ -372,7 +338,7 @@ size_t Rcs::ControllerBase::getTaskDim(size_t id) const
 /*******************************************************************************
  * Returns the dimension of all active tasks.
  ******************************************************************************/
-size_t Rcs::ControllerBase::getActiveTaskDim(const MatNd* activation) const
+size_t ControllerBase::getActiveTaskDim(const MatNd* activation) const
 {
   size_t dim = 0;
   RCHECK_MSG(activation->m == this->tasks.size(), "%d != %zu",
@@ -392,7 +358,7 @@ size_t Rcs::ControllerBase::getActiveTaskDim(const MatNd* activation) const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-int Rcs::ControllerBase::getTaskIndex(const char* name) const
+int ControllerBase::getTaskIndex(const char* name) const
 {
   if (name == NULL)
   {
@@ -413,7 +379,7 @@ int Rcs::ControllerBase::getTaskIndex(const char* name) const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-int Rcs::ControllerBase::getTaskIndex(const Rcs::Task* task) const
+int ControllerBase::getTaskIndex(const Task* task) const
 {
   if (task == NULL)
   {
@@ -435,7 +401,7 @@ int Rcs::ControllerBase::getTaskIndex(const Rcs::Task* task) const
  * Returns the task's index to its entries in x_curr, x_des, and x_dot_des
  * vectors.
  ******************************************************************************/
-size_t Rcs::ControllerBase::getTaskArrayIndex(size_t id) const
+size_t ControllerBase::getTaskArrayIndex(size_t id) const
 {
   RCHECK_MSG(id < this->tasks.size(), "id: %zu   size: %zu",
              id, this->tasks.size());
@@ -445,7 +411,7 @@ size_t Rcs::ControllerBase::getTaskArrayIndex(size_t id) const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-int Rcs::ControllerBase::getTaskArrayIndex(const char* name) const
+int ControllerBase::getTaskArrayIndex(const char* name) const
 {
   if (name == NULL)
   {
@@ -468,7 +434,7 @@ int Rcs::ControllerBase::getTaskArrayIndex(const char* name) const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-int Rcs::ControllerBase::getTaskArrayIndex(const Task* task) const
+int ControllerBase::getTaskArrayIndex(const Task* task) const
 {
   if (task == NULL)
   {
@@ -491,7 +457,7 @@ int Rcs::ControllerBase::getTaskArrayIndex(const Task* task) const
 /*******************************************************************************
  * Returns a const pointer to the task with the given id.
  ******************************************************************************/
-const Rcs::Task* Rcs::ControllerBase::getTask(size_t id) const
+const Task* ControllerBase::getTask(size_t id) const
 {
   RCHECK(id < this->tasks.size());
   return this->tasks[id];
@@ -500,7 +466,7 @@ const Rcs::Task* Rcs::ControllerBase::getTask(size_t id) const
 /*******************************************************************************
  * Returns a pointer to the task with the given id.
  ******************************************************************************/
-Rcs::Task* Rcs::ControllerBase::getTask(size_t id)
+Task* ControllerBase::getTask(size_t id)
 {
   RCHECK(id < this->tasks.size());
   return this->tasks[id];
@@ -509,11 +475,11 @@ Rcs::Task* Rcs::ControllerBase::getTask(size_t id)
 /*******************************************************************************
  * Returns a const pointer to the task with the given name.
  ******************************************************************************/
-const Rcs::Task* Rcs::ControllerBase::getTask(const std::string& name) const
+const Task* ControllerBase::getTask(const std::string& name) const
 {
   for (size_t i = 0; i < this->tasks.size(); i++)
   {
-    const Rcs::Task* t = this->tasks[i];
+    const Task* t = this->tasks[i];
 
     if (t->getName() == name)
     {
@@ -527,11 +493,11 @@ const Rcs::Task* Rcs::ControllerBase::getTask(const std::string& name) const
 /*******************************************************************************
  * Returns a pointer to the task with the given name.
  ******************************************************************************/
-Rcs::Task* Rcs::ControllerBase::getTask(const std::string& name)
+Task* ControllerBase::getTask(const std::string& name)
 {
   for (size_t i = 0; i < this->tasks.size(); i++)
   {
-    Rcs::Task* t = this->tasks[i];
+    Task* t = this->tasks[i];
 
     if (t->getName() == name)
     {
@@ -545,7 +511,7 @@ Rcs::Task* Rcs::ControllerBase::getTask(const std::string& name)
 /*******************************************************************************
  * Return the number of registered tasks (this->tasks.size())
  ******************************************************************************/
-size_t Rcs::ControllerBase::getNumberOfTasks() const
+size_t ControllerBase::getNumberOfTasks() const
 {
   return this->tasks.size();
 }
@@ -553,7 +519,7 @@ size_t Rcs::ControllerBase::getNumberOfTasks() const
 /*******************************************************************************
  *
  ******************************************************************************/
-std::vector<Rcs::Task*> Rcs::ControllerBase::getTasks(const MatNd* a) const
+std::vector<Task*> ControllerBase::getTasks(const MatNd* a) const
 {
   std::vector<Task*> tVec;
 
@@ -571,7 +537,7 @@ std::vector<Rcs::Task*> Rcs::ControllerBase::getTasks(const MatNd* a) const
 /*******************************************************************************
  * Returns the type of a task with the given ID.
  ******************************************************************************/
-std::string Rcs::ControllerBase::getTaskType(size_t id) const
+std::string ControllerBase::getTaskType(size_t id) const
 {
   RCHECK(id < this->tasks.size());
   return this->tasks[id]->getClassName();
@@ -580,7 +546,7 @@ std::string Rcs::ControllerBase::getTaskType(size_t id) const
 /*******************************************************************************
  * Return the controller graph.
  ******************************************************************************/
-RcsGraph* Rcs::ControllerBase::getGraph() const
+RcsGraph* ControllerBase::getGraph() const
 {
   return this->graph;
 }
@@ -588,7 +554,7 @@ RcsGraph* Rcs::ControllerBase::getGraph() const
 /*******************************************************************************
  * Return the graph file name (e.g., gScenario.xml).
  ******************************************************************************/
-std::string Rcs::ControllerBase::getGraphFileName() const
+std::string ControllerBase::getGraphFileName() const
 {
   return std::string(graph->cfgFile);
 }
@@ -596,7 +562,7 @@ std::string Rcs::ControllerBase::getGraphFileName() const
 /*******************************************************************************
  * Return the collision model.
  ******************************************************************************/
-RcsCollisionMdl* Rcs::ControllerBase::getCollisionMdl() const
+RcsCollisionMdl* ControllerBase::getCollisionMdl() const
 {
   return this->cMdl;
 }
@@ -605,7 +571,7 @@ RcsCollisionMdl* Rcs::ControllerBase::getCollisionMdl() const
  * Reads the activation vector from the configuration file. TODO: Check if
  * ctor xml file is open and use this in that case.
  ******************************************************************************/
-void Rcs::ControllerBase::readActivationsFromXML(MatNd* a_init) const
+void ControllerBase::readActivationsFromXML(MatNd* a_init) const
 {
   unsigned int nTasks = getNumberOfTasks(), taskCount = 0;
 
@@ -653,10 +619,9 @@ void Rcs::ControllerBase::readActivationsFromXML(MatNd* a_init) const
 }
 
 /*******************************************************************************
- * Reads the activation vector from the configuration file. TODO: Check if
- * ctor xml file is open and use this in that case.
+ * Reads the activation vector from the configuration file.
  ******************************************************************************/
-void Rcs::ControllerBase::readActivationVectorFromXML(MatNd* taskVec,
+void ControllerBase::readActivationVectorFromXML(MatNd* taskVec,
                                                       const char* tag) const
 {
   unsigned int nTasks = getNumberOfTasks(), taskCount = 0;
@@ -696,10 +661,9 @@ void Rcs::ControllerBase::readActivationVectorFromXML(MatNd* taskVec,
 }
 
 /*******************************************************************************
- * Reads the activation vector from the configuration file. TODO: Check if
- * ctor xml file is open and use this in that case.
+ * Reads the activation vector from the configuration file.
  ******************************************************************************/
-void Rcs::ControllerBase::readTaskVectorFromXML(MatNd* x,
+void ControllerBase::readTaskVectorFromXML(MatNd* x,
                                                 const char* tag) const
 {
   xmlDocPtr docPtr;
@@ -735,33 +699,9 @@ void Rcs::ControllerBase::readTaskVectorFromXML(MatNd* x,
 }
 
 /*******************************************************************************
- * Closes the parsed xml file and destroys all xml memory.
- ******************************************************************************/
-void Rcs::ControllerBase::closeXmlFile()
-{
-  if (this->xmlDoc == NULL)
-  {
-    this->xmlRootNode = NULL;
-    return;
-  }
-
-  xmlFreeDoc(this->xmlDoc);
-  this->xmlDoc = NULL;
-  this->xmlRootNode = NULL;
-}
-
-/*******************************************************************************
- * Returns the xml root node of the controller definition file.
- ******************************************************************************/
-xmlNodePtr Rcs::ControllerBase::getXmlNode() const
-{
-  return this->xmlRootNode;
-}
-
-/*******************************************************************************
  * Returns the vector of tasks.
  ******************************************************************************/
-const std::vector<Rcs::Task*>& Rcs::ControllerBase::taskVec() const
+const std::vector<Task*>& ControllerBase::taskVec() const
 {
   return this->tasks;
 }
@@ -769,7 +709,7 @@ const std::vector<Rcs::Task*>& Rcs::ControllerBase::taskVec() const
 /*******************************************************************************
  * Returns the vector of tasks.
  ******************************************************************************/
-std::vector<Rcs::Task*>& Rcs::ControllerBase::taskVec()
+std::vector<Task*>& ControllerBase::taskVec()
 {
   return this->tasks;
 }
@@ -777,7 +717,7 @@ std::vector<Rcs::Task*>& Rcs::ControllerBase::taskVec()
 /*******************************************************************************
  * Task Jacobian.
  ******************************************************************************/
-void Rcs::ControllerBase::computeJ(MatNd* J, const MatNd* a_des) const
+void ControllerBase::computeJ(MatNd* J, const MatNd* a_des) const
 {
   unsigned int dimTask, nq = this->graph->nJ, nRows = 0;
 
@@ -812,7 +752,7 @@ void Rcs::ControllerBase::computeJ(MatNd* J, const MatNd* a_des) const
 /*******************************************************************************
  * Task Hessian.
  ******************************************************************************/
-void Rcs::ControllerBase::computeH(MatNd* H, const MatNd* a_des) const
+void ControllerBase::computeH(MatNd* H, const MatNd* a_des) const
 {
   unsigned int nx, nq = this->graph->nJ;
 
@@ -835,7 +775,7 @@ void Rcs::ControllerBase::computeH(MatNd* H, const MatNd* a_des) const
 /*******************************************************************************
  * Task Jacobian derivative times q_dot.
  ******************************************************************************/
-void Rcs::ControllerBase::computeJdotQdot(MatNd* JdotQdot,
+void ControllerBase::computeJdotQdot(MatNd* JdotQdot,
                                           const MatNd* a_des) const
 {
   MatNd_reshape(JdotQdot, 0, 1);
@@ -868,7 +808,7 @@ void Rcs::ControllerBase::computeJdotQdot(MatNd* JdotQdot,
 /*******************************************************************************
  * Computes the task vector.
  ******************************************************************************/
-void Rcs::ControllerBase::computeX(MatNd* x, const MatNd* a_des) const
+void ControllerBase::computeX(MatNd* x, const MatNd* a_des) const
 {
   unsigned int dimTask, nRows = 0;
 
@@ -897,7 +837,7 @@ void Rcs::ControllerBase::computeX(MatNd* x, const MatNd* a_des) const
 /*******************************************************************************
  * Delta x for differential kinematics.
  ******************************************************************************/
-void Rcs::ControllerBase::computeDX(MatNd* dx,
+void ControllerBase::computeDX(MatNd* dx,
                                     const MatNd* x_des,
                                     const MatNd* a_des) const
 {
@@ -944,7 +884,7 @@ void Rcs::ControllerBase::computeDX(MatNd* dx,
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::ControllerBase::computeAx(MatNd* ax,
+void ControllerBase::computeAx(MatNd* ax,
                                     const MatNd* a_des,
                                     const MatNd* x_des,
                                     const MatNd* xp_des,
@@ -989,7 +929,7 @@ void Rcs::ControllerBase::computeAx(MatNd* ax,
 /*******************************************************************************
  * Computes the task velocity vector.
  ******************************************************************************/
-void Rcs::ControllerBase::computeXp(MatNd* x_dot, const MatNd* a_des) const
+void ControllerBase::computeXp(MatNd* x_dot, const MatNd* a_des) const
 {
   unsigned int dimTask, nRows = 0;
 
@@ -1018,7 +958,7 @@ void Rcs::ControllerBase::computeXp(MatNd* x_dot, const MatNd* a_des) const
 /*******************************************************************************
  * Computes the task velocity vector.
  ******************************************************************************/
-void Rcs::ControllerBase::computeXp_ik(MatNd* x_dot, const MatNd* a_des) const
+void ControllerBase::computeXp_ik(MatNd* x_dot, const MatNd* a_des) const
 {
   unsigned int dimTask, nRows = 0;
 
@@ -1047,7 +987,7 @@ void Rcs::ControllerBase::computeXp_ik(MatNd* x_dot, const MatNd* a_des) const
 /*******************************************************************************
  * Computes the task velocity vector.
  ******************************************************************************/
-void Rcs::ControllerBase::integrateXp_ik(MatNd* x_res,
+void ControllerBase::integrateXp_ik(MatNd* x_res,
                                          const MatNd* x,
                                          const MatNd* x_dot,
                                          double dt,
@@ -1089,7 +1029,7 @@ void Rcs::ControllerBase::integrateXp_ik(MatNd* x_res,
 /*******************************************************************************
  * Delta x for differential kinematics.
  ******************************************************************************/
-void Rcs::ControllerBase::computeDXp(MatNd* dx_dot,
+void ControllerBase::computeDXp(MatNd* dx_dot,
                                      const MatNd* x_dot_des_,
                                      const MatNd* a_des) const
 {
@@ -1131,7 +1071,7 @@ void Rcs::ControllerBase::computeDXp(MatNd* dx_dot,
 /*******************************************************************************
  * Projects task-space accelerations into the Jacobian coordinates.
  ******************************************************************************/
-void Rcs::ControllerBase::computeFfXpp(MatNd* x_ddot_ik,
+void ControllerBase::computeFfXpp(MatNd* x_ddot_ik,
                                        const MatNd* x_ddot_,
                                        const MatNd* a_des) const
 {
@@ -1173,7 +1113,7 @@ void Rcs::ControllerBase::computeFfXpp(MatNd* x_ddot_ik,
 /*******************************************************************************
  * Computes the task acceleration vector.
  ******************************************************************************/
-void Rcs::ControllerBase::computeXpp(MatNd* x_ddot,
+void ControllerBase::computeXpp(MatNd* x_ddot,
                                      const MatNd* q_ddot,
                                      const MatNd* a_des) const
 {
@@ -1205,7 +1145,7 @@ void Rcs::ControllerBase::computeXpp(MatNd* x_ddot,
 /*******************************************************************************
  * Compresses x to xc holding only elements that correspond to active tasks.
  ******************************************************************************/
-void Rcs::ControllerBase::compressToActive(MatNd* xc,
+void ControllerBase::compressToActive(MatNd* xc,
                                            const MatNd* x,
                                            const MatNd* activations) const
 {
@@ -1238,7 +1178,7 @@ void Rcs::ControllerBase::compressToActive(MatNd* xc,
 /*******************************************************************************
  * In-place version of compressToActive().
  ******************************************************************************/
-void Rcs::ControllerBase::compressToActiveSelf(MatNd* x,
+void ControllerBase::compressToActiveSelf(MatNd* x,
                                                const MatNd* activations) const
 {
   MatNd* xc = NULL;
@@ -1253,7 +1193,7 @@ void Rcs::ControllerBase::compressToActiveSelf(MatNd* x,
  * Decompresses xc to x setting elements that don't correspond to active
  * tasks to 0.
  ******************************************************************************/
-void Rcs::ControllerBase::decompressFromActive(MatNd* x, const MatNd* xc,
+void ControllerBase::decompressFromActive(MatNd* x, const MatNd* xc,
                                                const MatNd* activations) const
 {
   unsigned int dimTask, xc_row = 0, x_row = 0;
@@ -1278,7 +1218,7 @@ void Rcs::ControllerBase::decompressFromActive(MatNd* x, const MatNd* xc,
 /*******************************************************************************
  * In-place version of above.
  ******************************************************************************/
-void Rcs::ControllerBase::decompressFromActiveSelf(MatNd* xc,
+void ControllerBase::decompressFromActiveSelf(MatNd* xc,
                                                    const MatNd* activations) const
 {
   MatNd* x = NULL;
@@ -1292,7 +1232,7 @@ void Rcs::ControllerBase::decompressFromActiveSelf(MatNd* xc,
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::ControllerBase::decompressActivationToTask(MatNd* x,
+void ControllerBase::decompressActivationToTask(MatNd* x,
                                                      const MatNd* a) const
 {
   RCHECK(a->m == getNumberOfTasks());
@@ -1314,7 +1254,7 @@ void Rcs::ControllerBase::decompressActivationToTask(MatNd* x,
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::ControllerBase::decompressActivationToTask(MatNd* x) const
+void ControllerBase::decompressActivationToTask(MatNd* x) const
 {
   MatNd* a = MatNd_clone(x);
   MatNd_reshape(x, getTaskDim(), 1);
@@ -1325,7 +1265,7 @@ void Rcs::ControllerBase::decompressActivationToTask(MatNd* x) const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-double Rcs::ControllerBase::computeJointlimitCost() const
+double ControllerBase::computeJointlimitCost() const
 {
   return RcsGraph_jointLimitCost(this->graph, RcsStateIK);
 }
@@ -1333,7 +1273,7 @@ double Rcs::ControllerBase::computeJointlimitCost() const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void Rcs::ControllerBase::computeJointlimitGradient(MatNd* grad) const
+void ControllerBase::computeJointlimitGradient(MatNd* grad) const
 {
   RcsGraph_jointLimitGradient(this->graph, grad, RcsStateIK);
 }
@@ -1341,7 +1281,7 @@ void Rcs::ControllerBase::computeJointlimitGradient(MatNd* grad) const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-double Rcs::ControllerBase::computeJointlimitBorderCost(double borderRatio) const
+double ControllerBase::computeJointlimitBorderCost(double borderRatio) const
 {
   return RcsGraph_jointLimitBorderCost(this->graph, borderRatio, RcsStateIK);
 }
@@ -1349,7 +1289,7 @@ double Rcs::ControllerBase::computeJointlimitBorderCost(double borderRatio) cons
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void Rcs::ControllerBase::computeJointlimitBorderGradient(MatNd* grad,
+void ControllerBase::computeJointlimitBorderGradient(MatNd* grad,
                                                           double borderRatio) const
 {
   RcsGraph_jointLimitBorderGradient(this->graph, grad, borderRatio, RcsStateIK);
@@ -1358,7 +1298,7 @@ void Rcs::ControllerBase::computeJointlimitBorderGradient(MatNd* grad,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void Rcs::ControllerBase::computeCollisionModel()
+void ControllerBase::computeCollisionModel()
 {
   RcsCollisionModel_compute(this->cMdl);
 }
@@ -1366,7 +1306,7 @@ void Rcs::ControllerBase::computeCollisionModel()
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-double Rcs::ControllerBase::computeCollisionCost()
+double ControllerBase::computeCollisionCost()
 {
   computeCollisionModel();
   return RcsCollisionMdl_cost(this->cMdl);
@@ -1375,7 +1315,7 @@ double Rcs::ControllerBase::computeCollisionCost()
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-double Rcs::ControllerBase::getCollisionCost() const
+double ControllerBase::getCollisionCost() const
 {
   return RcsCollisionMdl_cost(this->cMdl);
 }
@@ -1383,7 +1323,7 @@ double Rcs::ControllerBase::getCollisionCost() const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void Rcs::ControllerBase::computeCollisionGradient(MatNd* grad)
+void ControllerBase::computeCollisionGradient(MatNd* grad)
 {
   if (this->cMdl == NULL)
   {
@@ -1398,7 +1338,7 @@ void Rcs::ControllerBase::computeCollisionGradient(MatNd* grad)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void Rcs::ControllerBase::getCollisionGradient(MatNd* grad) const
+void ControllerBase::getCollisionGradient(MatNd* grad) const
 {
   if (this->cMdl == NULL)
   {
@@ -1412,7 +1352,7 @@ void Rcs::ControllerBase::getCollisionGradient(MatNd* grad) const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-double Rcs::ControllerBase::computeTaskCost(const MatNd* xDes,
+double ControllerBase::computeTaskCost(const MatNd* xDes,
                                             const MatNd* W,
                                             const MatNd* a_des) const
 {
@@ -1444,7 +1384,7 @@ double Rcs::ControllerBase::computeTaskCost(const MatNd* xDes,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void Rcs::ControllerBase::computeTaskGradient(MatNd* grad,
+void ControllerBase::computeTaskGradient(MatNd* grad,
                                               const MatNd* xDes,
                                               const MatNd* W,
                                               const MatNd* a_des) const
@@ -1482,7 +1422,7 @@ void Rcs::ControllerBase::computeTaskGradient(MatNd* grad,
 /*******************************************************************************
  * Manipulability index according to Yoshikawa: w = sqrt(det(J*J^T)).
  ******************************************************************************/
-double Rcs::ControllerBase::computeManipulabilityCost(const MatNd* a_des,
+double ControllerBase::computeManipulabilityCost(const MatNd* a_des,
                                                       const MatNd* W) const
 {
   size_t nx = (a_des==NULL) ? getTaskDim() : getActiveTaskDim(a_des);
@@ -1498,7 +1438,7 @@ double Rcs::ControllerBase::computeManipulabilityCost(const MatNd* a_des,
 /*******************************************************************************
  * Manipulability index according to Yoshikawa: grad = d/dq(sqrt(det(J*J^T))).
  ******************************************************************************/
-double Rcs::ControllerBase::computeManipulabilityGradient(MatNd* grad,
+double ControllerBase::computeManipulabilityGradient(MatNd* grad,
                                                           const MatNd* a_des,
                                                           const MatNd* W) const
 {
@@ -1524,7 +1464,7 @@ double Rcs::ControllerBase::computeManipulabilityGradient(MatNd* grad,
 /*******************************************************************************
  * See header. TODO: Use optional activation array to test active tasks only.
  ******************************************************************************/
-bool Rcs::ControllerBase::test(bool verbose)
+bool ControllerBase::test(bool verbose)
 {
   bool success = true;
 
@@ -1628,7 +1568,7 @@ bool Rcs::ControllerBase::test(bool verbose)
  *
  ******************************************************************************/
 #if 0
-void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
+void ControllerBase::computeTaskForce(MatNd* ft_task,
                                            const double S_ft[6],
                                            const RcsSensor* loadCell,
                                            const MatNd* activation) const
@@ -1797,7 +1737,7 @@ static void thresholdFtSensor(double* S_ft_f,
  *    f_task = J_task (J_sensor1# f_sensor1 + J_sensor2# f_sensor2 ...)
  *
  ******************************************************************************/
-void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
+void ControllerBase::computeTaskForce(MatNd* ft_task,
                                            const MatNd* activation) const
 {
   size_t nx = activation ? getActiveTaskDim(activation) : getTaskDim();
@@ -1893,7 +1833,7 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-bool Rcs::ControllerBase::add(const ControllerBase& other,
+bool ControllerBase::add(const ControllerBase& other,
                               const char* suffix,
                               const HTr* A_BP)
 {
@@ -1936,7 +1876,7 @@ static inline const RcsBody* getBodyWithSuffix(const RcsBody* bdy,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-bool Rcs::ControllerBase::add(const ControllerBase* other,
+bool ControllerBase::add(const ControllerBase* other,
                               const char* suffixPtr,
                               const HTr* A_BP)
 {
@@ -2026,7 +1966,7 @@ bool Rcs::ControllerBase::add(const ControllerBase* other,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-bool Rcs::ControllerBase::eraseTask(size_t index)
+bool ControllerBase::eraseTask(size_t index)
 {
   if (index > tasks.size() - 1)
   {
@@ -2045,7 +1985,7 @@ bool Rcs::ControllerBase::eraseTask(size_t index)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-bool Rcs::ControllerBase::eraseTask(const std::string& taskName)
+bool ControllerBase::eraseTask(const std::string& taskName)
 {
   int index = getTaskIndex(taskName.c_str());
 
@@ -2061,7 +2001,7 @@ bool Rcs::ControllerBase::eraseTask(const std::string& taskName)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-bool Rcs::ControllerBase::replaceTask(size_t index, Task* newTask)
+bool ControllerBase::replaceTask(size_t index, Task* newTask)
 {
   if (newTask==NULL)
   {
@@ -2092,7 +2032,7 @@ bool Rcs::ControllerBase::replaceTask(size_t index, Task* newTask)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-bool Rcs::ControllerBase::replaceTask(const std::string& taskName,
+bool ControllerBase::replaceTask(const std::string& taskName,
                                       Task* newTask)
 {
   int index = getTaskIndex(taskName.c_str());
@@ -2109,7 +2049,7 @@ bool Rcs::ControllerBase::replaceTask(const std::string& taskName,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void Rcs::ControllerBase::add(Task* other)
+void ControllerBase::add(Task* other)
 {
   if (other == NULL)
   {
@@ -2160,7 +2100,7 @@ static void calcAdmittanceDelta(double* compliantDelta,
 /*******************************************************************************
  * Computes the admittance control law.
  ******************************************************************************/
-void Rcs::ControllerBase::computeAdmittance(MatNd* compliantFrame,
+void ControllerBase::computeAdmittance(MatNd* compliantFrame,
                                             const MatNd* ft_task,
                                             const MatNd* Kp_ext,
                                             const MatNd* a_des)
@@ -2219,7 +2159,7 @@ void Rcs::ControllerBase::computeAdmittance(MatNd* compliantFrame,
  *
  ******************************************************************************/
 #if 0
-void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
+void ControllerBase::computeTaskForce(MatNd* ft_task,
                                            const MatNd* activation,
                                            // std::vector<MedianFilterND*>* MedFilters_vec,
                                            std::vector<SecondOrderLPFND*>* secOrderfilt,
@@ -2352,7 +2292,8 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
     // count loadcells
     nLoadCells++;
 
-    // increase filter vector iterator (get next filter respective to next sensor)
+    // increase filter vector iterator (get next filter respective to next
+    // sensor)
     filter++;
   }
 
@@ -2401,7 +2342,7 @@ void Rcs::ControllerBase::computeTaskForce(MatNd* ft_task,
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::ControllerBase::printX(const MatNd* x, const MatNd* a_des) const
+void ControllerBase::printX(const MatNd* x, const MatNd* a_des) const
 {
   for (size_t i = 0; i < getNumberOfTasks(); i++)
   {
@@ -2420,7 +2361,7 @@ void Rcs::ControllerBase::printX(const MatNd* x, const MatNd* a_des) const
 /*******************************************************************************
  *
  ******************************************************************************/
-bool Rcs::ControllerBase::getModelState(MatNd* q, const char* modelStateName,
+bool ControllerBase::getModelState(MatNd* q, const char* modelStateName,
                                         int timeStamp)
 {
   return RcsGraph_getModelStateFromXML(q, getGraph(), modelStateName,
@@ -2430,7 +2371,7 @@ bool Rcs::ControllerBase::getModelState(MatNd* q, const char* modelStateName,
 /*******************************************************************************
  *
  ******************************************************************************/
-bool Rcs::ControllerBase::checkLimits(bool checkJointLimits,
+bool ControllerBase::checkLimits(bool checkJointLimits,
                                       bool checkCollisions,
                                       bool checkJointVelocities,
                                       double jlMarginAngular,
@@ -2511,7 +2452,7 @@ bool Rcs::ControllerBase::checkLimits(bool checkJointLimits,
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::ControllerBase::swapTaskVec(std::vector<Task*>& newTasks,
+void ControllerBase::swapTaskVec(std::vector<Task*>& newTasks,
                                       bool recomputeArrayIndices)
 {
   std::swap(newTasks, this->tasks);
@@ -2533,7 +2474,7 @@ void Rcs::ControllerBase::swapTaskVec(std::vector<Task*>& newTasks,
 /*******************************************************************************
  * Print the usage description if any
  ******************************************************************************/
-void Rcs::ControllerBase::printUsage(const std::string& xmlFile)
+void ControllerBase::printUsage(const std::string& xmlFile)
 {
   char cfgFile[256];
   bool fileExists = Rcs_getAbsoluteFileName(xmlFile.c_str(), cfgFile);
@@ -2570,7 +2511,7 @@ void Rcs::ControllerBase::printUsage(const std::string& xmlFile)
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::ControllerBase::print() const
+void ControllerBase::print() const
 {
   // Print information for each task
   for (size_t i = 0; i < getNumberOfTasks(); i++)
@@ -2586,7 +2527,7 @@ void Rcs::ControllerBase::print() const
 /*******************************************************************************
  *
  ******************************************************************************/
-bool Rcs::ControllerBase::toXML(const std::string& fileName,
+bool ControllerBase::toXML(const std::string& fileName,
                                 const MatNd* activation) const
 {
   if (activation && (activation->m != getNumberOfTasks()))
@@ -2637,7 +2578,7 @@ bool Rcs::ControllerBase::toXML(const std::string& fileName,
  *      movements. However, if the whole robot is for instance attached to
  *      a kinematically driven torso, this must be considered.
  ******************************************************************************/
-void Rcs::ControllerBase::computeInvDynJointSpace(MatNd* T_des,
+void ControllerBase::computeInvDynJointSpace(MatNd* T_des,
                                                   const RcsGraph* graph,
                                                   const MatNd* q_des,
                                                   const MatNd* qp_des,
@@ -2714,7 +2655,7 @@ void Rcs::ControllerBase::computeInvDynJointSpace(MatNd* T_des,
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::ControllerBase::computeInvDynJointSpace(MatNd* T_des,
+void ControllerBase::computeInvDynJointSpace(MatNd* T_des,
                                                   const RcsGraph* graph,
                                                   const MatNd* q_des,
                                                   double positionGain,
@@ -2727,7 +2668,7 @@ void Rcs::ControllerBase::computeInvDynJointSpace(MatNd* T_des,
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::ControllerBase::recomputeIndices()
+void ControllerBase::recomputeIndices()
 {
   taskArrayIdx.clear();
 
@@ -2738,9 +2679,11 @@ void Rcs::ControllerBase::recomputeIndices()
 
   taskArrayIdx.push_back(0);
 
-  for (size_t i = 1; i < this->tasks.size(); i++)
+  for (size_t i = 1; i < this->tasks.size(); ++i)
   {
     taskArrayIdx.push_back(taskArrayIdx[i-1] + tasks[i-1]->getDim());
   }
 
 }
+
+}   // namespace Rcs

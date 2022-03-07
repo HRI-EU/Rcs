@@ -54,8 +54,8 @@ public:
 
   virtual ~IkSolverConstraintRMR();
 
-  void solveRightInverse(MatNd* dq_des, const MatNd* dx, const MatNd* dH,
-                         const MatNd* activation, double lambda);
+  double solveRightInverse(MatNd* dq_des, const MatNd* dx, const MatNd* dH,
+                           const MatNd* activation, double lambda);
 
 
 protected:

@@ -75,6 +75,29 @@ public:
              const MatNd* dH, double lambda);
 
 
+  /*! \brief Computes the task blending matrix Wx. We compute it as a
+   *         vector, since the matrix is diagonal. The vector only
+   *         comprises the rows that have a non-zero activation. Wx will
+   *         be reshaped by this function.
+   *
+   *  \param[in]   controller Controller with current graph state
+   *  \param[out]  Wx       Weight vector of dimension nx x 1
+   *  \param[in]   a_des    Full activation vector (including inactive
+   *                        dimensions)
+   *  \param[in]   J        Task Jacobian
+   *  \param[in]   lambda0  Small regularization value
+   *  \param[in]   useInnerProduct Flag to use normalization based on the
+   *                               Jacobian
+   */
+  static void computeBlendingMatrix(const ControllerBase& controller,
+                                    MatNd* Wx,
+                                    const MatNd* a_des,
+                                    const MatNd* J,
+                                    const double lambda0,
+                                    const bool useInnerProduct=true);
+
+  static void computeBlendingMatrixDirect(const ControllerBase& controller,
+                                          MatNd* Wx, const MatNd* a_des);
   /*! \brief Makes a copy of the solver (including the controller and graph),
    *         sets the position and velocity state to random values, and performs
    *         an inverse test in the form qpp = solve(a_des, ax_rnd, dH_rnd) with

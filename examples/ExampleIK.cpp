@@ -93,7 +93,7 @@ int main(int argc, char** argv)
   pthread_mutex_init(&mtx, NULL);
 
   // Create controller and Inverse Kinematics solver
-  Rcs::ControllerBase controller(xmlFileName, true);
+  Rcs::ControllerBase controller(xmlFileName);
   Rcs::IkSolverRMR ikSolver(&controller);
 
   MatNd* dq_des  = MatNd_create(controller.getGraph()->dof, 1);

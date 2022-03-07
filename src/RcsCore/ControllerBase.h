@@ -77,8 +77,7 @@ public:
    *         instantiating this class directly, it should be set to true (the
    *         default).
    */
-  ControllerBase(const std::string& xmlDescription,
-                 bool xmlParsingFinished=true);
+  ControllerBase(const std::string& xmlDescription);
 
   /*! \brief Constructor based on a graph. The new class takes ownership of the
    *         given graph. Use this if you only want to add tasks manually using
@@ -643,14 +642,7 @@ public:
                                  const MatNd* Kp,
                                  const MatNd* a_des);
 
-  /*! \brief Returns the name of the controller as indicated in the xml
-   *         file.
-   *
-   *  \return Reference to name string.
-   */
-  virtual const std::string& getName() const;
-
-  /*! \brief Returns the name of the controller's xml file.
+  /*! \brief Returns the name (full path) of the controller's xml file.
    *
    *  \return Reference to  string.
    */
@@ -660,17 +652,6 @@ public:
    *         Returns true if all tests have succeeded, false otherwise.
    */
   virtual bool test(bool verbose=false);
-
-  /*! \brief Closes the parsed xml file and destroys all xml memory.
-   */
-  virtual void closeXmlFile();
-
-  /*! \brief Returns the xml root node of the controller definition file.
-   *
-   *  \return Controller file root xml node, or NULL if the xml file is not
-   *          open.
-   */
-  virtual xmlNodePtr getXmlNode() const;
 
   /*! \brief Adds a copy of the other controller to the task list, and appends
    *         the corresponding graph. The suffix is appended to each body and
@@ -864,21 +845,15 @@ public:
    */
   void recomputeIndices();
 
-protected:
+private:
 
   bool initFromXmlNode(xmlNodePtr xmlNodeController);
 
   RcsGraph* graph;                   //!< Underlying graph
   bool ownsGraph;                    //!< True if controller needs to destroy it
-  std::vector<Task*> tasks;          //!< List of tasksof the controller
-
-private:
-
-  xmlNodePtr xmlRootNode;            //!< XML root node during ctors
-  xmlDocPtr xmlDoc;                  //!< Pointer for XML parsing context
+  std::vector<Task*> tasks;          //!< Tasks of the controller
   RcsCollisionMdl* cMdl;             //!< Collision model
-  std::string name;                  //!< Name of the controller
-  std::string xmlFile;               //!< Configuration file name
+  std::string xmlFile;               //!< Configuration file name (full path)
   std::vector<size_t> taskArrayIdx;  //!< List of indices in task vector
 };
 

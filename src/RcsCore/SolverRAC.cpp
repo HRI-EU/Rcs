@@ -35,6 +35,8 @@
 #include "IkSolverRMR.h"
 #include "Rcs_macros.h"
 #include "Rcs_typedef.h"
+#include "Rcs_basicMath.h"
+#include "Rcs_VecNd.h"
 
 
 /*******************************************************************************
@@ -125,7 +127,7 @@ void Rcs::SolverRAC::solve(MatNd* qpp_des,
   MatNd_postMulDiagSelf(J, jointMetricInvA);     // J_r = J*A*invWq_r
 
   // Compute the task-space weight matrix for blending
-  Rcs::IkSolverRMR::computeBlendingMatrix(*controller, Wx, a_des, J, false);
+  computeBlendingMatrix(*controller, Wx, a_des, J, false);
 
   MatNd lambdaMat = MatNd_fromPtr(1, 1, &lambda);
   double det = MatNd_rwPinv(wJpinv, J, jointMetricInvA, &lambdaMat);
@@ -211,6 +213,111 @@ void Rcs::SolverRAC::solve(MatNd* qpp_des,
   MatNd_destroy(JdotQdot);
   MatNd_destroy(N);
   MatNd_destroy(dH);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::SolverRAC::computeBlendingMatrix(const Rcs::ControllerBase& cntrl,
+                                           MatNd* Wx,
+                                           const MatNd* a_des,
+                                           const MatNd* J,
+                                           const double lambda0,
+                                           const bool useInnerProduct)
+{
+  unsigned int i, j, dimTask, nRows = 0;
+
+  for (i=0; i<cntrl.getNumberOfTasks(); i++)
+  {
+
+    if (MatNd_get(a_des, i, 0) == 0.0)
+    {
+      NLOG(4, "Skipping task \"%s\": activation is %f",
+           cntrl.getTaskName(i).c_str(), a_des->ele[i]);
+      continue;
+    }
+
+    const double ci = Math_clip(MatNd_get(a_des, i, 0), 0.0, 1.0);
+
+    dimTask = cntrl.getTaskDim(i);
+
+    RCHECK_MSG(Wx->size >= nRows + dimTask, "While adding task "
+               "\"%s\": size of Wx: %d   m: %d   dimTask: %d",
+               cntrl.getTaskName(i).c_str(), Wx->size, nRows, dimTask);
+
+    for (j=0; j<dimTask; j++)
+    {
+      // Task space blending part 1
+      double aBuf = 1.0, wi1 = 1.0;
+
+      if (useInnerProduct==true)
+      {
+        MatNd Ji = MatNd_fromPtr(1, J->n, MatNd_getRowPtr(J, nRows));
+        MatNd a = MatNd_fromPtr(1, 1, &aBuf);
+        MatNd_sqrMulABAt(&a, &Ji, NULL);
+      }
+
+      if (ci < 1.0)
+      {
+        if (aBuf == 0.0)
+        {
+          wi1 = 0.0;
+        }
+        else
+        {
+          wi1 = lambda0 * ci / (aBuf * (1.0 - ci));
+        }
+      }
+
+      // Task space blending part 2
+      // The minimum lambda_i is one or two orders of magnitude smaller
+      // than the joint space metric lambda
+      double wi2 = pow(0.01*lambda0, 1.0-ci);
+
+      // Fusion of both parts
+      Wx->ele[nRows] = a_des->ele[i]*wi2 + (1.0-a_des->ele[i])*wi1;
+      nRows++;
+
+    }   // for(j=0;j<dimTask;j++)
+
+
+  }   // for(i=0; i<nTasks; i++)
+
+  // Reshape
+  Wx->m = nRows;
+  Wx->n = 1;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::SolverRAC::computeBlendingMatrixDirect(const Rcs::ControllerBase& cntrl,
+                                                 MatNd* Wx,
+                                                 const MatNd* a_des)
+{
+  unsigned int nRows = 0;
+
+  for (unsigned int i=0; i<cntrl.getNumberOfTasks(); i++)
+  {
+    const double a = MatNd_get(a_des, i, 0);
+
+    if (a > 0.0)
+    {
+      unsigned int dimTask = cntrl.getTaskDim(i);
+
+      RCHECK_MSG(Wx->size >= nRows + dimTask, "While adding task "
+                 "\"%s\": size of Wx: %d   m: %d   dimTask: %d",
+                 cntrl.getTaskName(i).c_str(), Wx->size, nRows, dimTask);
+
+      VecNd_setElementsTo(&Wx->ele[nRows], a, dimTask);
+      nRows += dimTask;
+    }
+
+  }
+
+  // Reshape
+  Wx->m = nRows;
+  Wx->n = 1;
 }
 
 

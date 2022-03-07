@@ -45,6 +45,12 @@ namespace Rcs
 
 /*! \ingroup RcsController
  * \brief Inverse kinematics solver (Resolved motion rate control).
+ *        To keep the implementation efficient, these assumptions have been
+ *        made:
+ *        - The size of the graph (RcsGraph::dof) does not change
+ *        - Jount couplings will not be changed after instantiating this class
+ *        It is however accounted for changing joint constraints.
+ *
  */
 class IkSolverRMR
 {
@@ -103,9 +109,9 @@ public:
    *                                  \ref computeKinematics is called before
    *                                  calculating the above equations.
    */
-  virtual void solveLeftInverse(MatNd* dq_ts, MatNd* dq_ns, const MatNd* dx,
-                                const MatNd* dH, const MatNd* activation,
-                                double lambda, bool recomputeKinematics=true);
+  virtual double solveLeftInverse(MatNd* dq_ts, MatNd* dq_ns, const MatNd* dx,
+                                  const MatNd* dH, const MatNd* activation,
+                                  double lambda, bool recomputeKinematics=true);
 
   /*! \brief Same as
    *         \ref IkSolverRMR::solveLeftInverse(MatNd* dq_ts, MatNd* dq_ns,
@@ -115,9 +121,9 @@ public:
    *         Argument dq comprises bot task and null space terms
    *         (dq = dq_ts + dq_ns)
    */
-  virtual void solveLeftInverse(MatNd* dq, const MatNd* dx, const MatNd* dH,
-                                const MatNd* activation, double lambda,
-                                bool recomputeKinematics=true);
+  virtual double solveLeftInverse(MatNd* dq, const MatNd* dx, const MatNd* dH,
+                                  const MatNd* activation, double lambda,
+                                  bool recomputeKinematics=true);
 
   /*! \brief Computes the joint velocities based on the task space inverse
      *         kinematics according to Liegeois:<br>
@@ -149,17 +155,17 @@ public:
      *                          Must be 1 x 1 or nx x 1, where nx is the
      *                          number of the active task dimensions.
      */
-  virtual void solveRightInverse(MatNd* dq_des,
-                                 const MatNd* dx,
-                                 const MatNd* dH,
-                                 const MatNd* activation,
-                                 const MatNd* lambda);
-  virtual void solveRightInverse(MatNd* dq_ts,
-                                 MatNd* dq_ns,
-                                 const MatNd* dx,
-                                 const MatNd* dH,
-                                 const MatNd* activation,
-                                 const MatNd* lambda);
+  virtual double solveRightInverse(MatNd* dq_des,
+                                   const MatNd* dx,
+                                   const MatNd* dH,
+                                   const MatNd* activation,
+                                   const MatNd* lambda);
+  virtual double solveRightInverse(MatNd* dq_ts,
+                                   MatNd* dq_ns,
+                                   const MatNd* dx,
+                                   const MatNd* dH,
+                                   const MatNd* activation,
+                                   const MatNd* lambda);
 
   /*! \brief Same as
    *         \ref IkSolverRMR::solveRightInverse(MatNd* dq_des, const MatNd* dx,
@@ -168,42 +174,13 @@ public:
    *         Argument lambda is a scalar and will be applied to all task
    *         elements.
    */
-  virtual void solveRightInverse(MatNd* dq_des, const MatNd* dx,
-                                 const MatNd* dH, const MatNd* activation,
-                                 double lambda);
+  virtual double solveRightInverse(MatNd* dq_des, const MatNd* dx,
+                                   const MatNd* dH, const MatNd* activation,
+                                   double lambda);
 
-  virtual void solveRightInverse(MatNd* dq_ts, MatNd* dq_ns, const MatNd* dx,
-                                 const MatNd* dH, const MatNd* activation,
-                                 double lambda);
-
-  /*! \brief Computes the task blending matrix Wx. We compute it as a
-   *         vector, since the matrix is diagonal. The vector only
-   *         comprises the rows that have a non-zero activation. Wx will
-   *         be reshaped by this function.
-   *
-   *  \param[in]   controller Controller with current graph state
-   *  \param[out]  Wx       Weight vector of dimension nx x 1
-   *  \param[in]   a_des    Full activation vector (including inactive
-   *                        dimensions)
-   *  \param[in]   J        Task Jacobian
-   *  \param[in]   lambda0  Small regularization value
-   *  \param[in]   useInnerProduct Flag to use normalization based on the
-   *                               Jacobian
-   */
-  static void computeBlendingMatrix(const ControllerBase& controller,
-                                    MatNd* Wx,
-                                    const MatNd* a_des,
-                                    const MatNd* J,
-                                    const double lambda0,
-                                    const bool useInnerProduct=true);
-
-  static void computeBlendingMatrixDirect(const ControllerBase& controller,
-                                          MatNd* Wx, const MatNd* a_des);
-
-  /*! \brief Returns the determinant of the Jacobian from the last solver
-   *         iteration.
-   */
-  virtual double getDeterminant() const;
+  virtual double solveRightInverse(MatNd* dq_ts, MatNd* dq_ns, const MatNd* dx,
+                                   const MatNd* dH, const MatNd* activation,
+                                   double lambda);
 
   /*! \brief Returns the pointer to the internal controller.
    */
@@ -259,15 +236,11 @@ public:
 
 protected:
 
-  void reshape();
-  void computeKinematics(const MatNd* activation, double lambda0);
-
   ControllerBase* controller;
-  unsigned int nx, nTasks, nq, nqr;
-  double det;
   MatNd* A, *invA, *invWq, *J, *pinvJ, *N, *dHA, *dq, *dqr, *dxr, *NinvW,
          *Wx, *dHr, *dH, *dx_proj, *ax_curr;
   int blendingMode;
+  bool hasCoupledJoints;
 };
 
 

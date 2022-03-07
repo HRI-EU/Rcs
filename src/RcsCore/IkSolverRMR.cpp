@@ -37,81 +37,89 @@
 #include "Rcs_math.h"
 #include "Rcs_parser.h"
 #include "TaskRegion.h"
-
-#define USE_BLENDING
-#if defined (USE_BLENDING)
 #include "TaskSpaceBlender.h"
-#endif
 
+namespace Rcs
+{
 
 /*******************************************************************************
  *
  ******************************************************************************/
-Rcs::IkSolverRMR::IkSolverRMR(Rcs::ControllerBase* controller_) :
-  controller(controller_), nx(controller->getTaskDim()),
-  nTasks(controller_->getNumberOfTasks()),
-  nq(controller_->getGraph()->nJ), nqr(0), det(0.0),
+IkSolverRMR::IkSolverRMR(ControllerBase* controller_) :
+  controller(controller_),
   A(NULL), invA(NULL), invWq(NULL), J(NULL), pinvJ(NULL), N(NULL), dHA(NULL),
   dq(NULL), dqr(NULL), dxr(NULL), NinvW(NULL), Wx(NULL), dHr(NULL), dH(NULL),
-  dx_proj(NULL), ax_curr(NULL), blendingMode(0)
+  dx_proj(NULL), ax_curr(NULL), blendingMode(0), hasCoupledJoints(true)
 {
+  const unsigned int nq = controller->getGraph()->nJ;
+  const unsigned int dof = controller->getGraph()->dof;
+  const size_t nx = controller->getTaskDim();
+
   // Coupled joint matrix
-  this->A = MatNd_create(this->nq, this->nq);
-  this->invA = MatNd_create(this->nq, this->nq);
-  RcsGraph_coupledJointMatrix(controller_->getGraph(), this->A, this->invA);
-  this->nqr = this->A->n;
+  this->A = MatNd_create(dof, dof);
+  this->invA = MatNd_create(dof, dof);
+  const int nCpldJnts = RcsGraph_countCoupledJoints(controller->getGraph());
+  this->hasCoupledJoints = (nCpldJnts > 0);
+  RcsGraph_coupledJointMatrix(controller->getGraph(), this->A, this->invA);
+
 
   // Joint space weghting matrix
-  this->invWq = MatNd_create(this->nq, 1);
-  RcsGraph_getInvWq(controller_->getGraph(), this->invWq, RcsStateIK);
+  this->invWq = MatNd_create(dof, 1);
+  RcsGraph_getInvWq(controller->getGraph(), this->invWq, RcsStateIK);
   MatNd_preMulSelf(this->invWq, this->invA);
 
   // Jacobian
-  this->J = MatNd_create(this->nx, this->nq);
+  this->J = MatNd_create(nx, dof);
+  MatNd_reshape(this->J, nx, nq);
 
   // Pseudo-inverse
-  this->pinvJ = MatNd_create(this->nq, this->nx);
+  this->pinvJ = MatNd_create(dof, nx);
+  MatNd_reshape(this->pinvJ, nq, nx);
 
   // Null space
-  this->N = MatNd_create(this->nq, this->nq);
+  this->N = MatNd_create(dof, dof);
+  MatNd_reshape(this->N, nq, nq);
 
   // dHA = dH*A
-  this->dHA = MatNd_create(this->nq, 1);
+  this->dHA = MatNd_create(dof, 1);
+  MatNd_reshape(this->dHA, nq, 1);
 
   // Configuration space vector
-  this->dq = MatNd_create(controller_->getGraph()->dof, 1);
+  this->dq = MatNd_create(dof, 1);
 
   // Configuration space vector with only non-coupled dof
-  this->dqr = MatNd_create(this->nq, 1);
+  this->dqr = MatNd_create(dof, 1);
+  MatNd_reshape(this->dqr, nq, 1);
 
   // Task space vector with only non-coupled dof
-  this->dxr = MatNd_create(this->nx, 1);
+  this->dxr = MatNd_create(nx, 1);
 
   // N*invWq
-  this->NinvW = MatNd_create(this->nq, this->nq);
+  this->NinvW = MatNd_create(dof, dof);
+  MatNd_reshape(this->NinvW, nq, nq);
 
   // Task space weighting matrix
-  this->Wx = MatNd_create(this->nx, 1);
+  this->Wx = MatNd_create(nx, 1);
 
   // Null space potential (in reduced coordinates)
-  this->dHr = MatNd_create(this->nq, 1);
+  this->dHr = MatNd_create(dof, 1);
+  MatNd_reshape(this->dHr, nq, 1);
 
   // Null space potential (in IK-relevant coordinates)
-  this->dH = MatNd_create(1, this->nq);
+  this->dH = MatNd_create(1, dof);
+  MatNd_reshape(this->dH, 1, nq);
 
   // Null space -> task space re-projection
-  this->dx_proj = MatNd_create(this->nx, 1);
+  this->dx_proj = MatNd_create(nx, 1);
 
   // True task activation ax_curr = J*J#
-  this->ax_curr = MatNd_create(this->nx, 1);
-
-  reshape();
+  this->ax_curr = MatNd_create(nx, 1);
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-Rcs::IkSolverRMR::~IkSolverRMR()
+IkSolverRMR::~IkSolverRMR()
 {
   MatNd_destroy(this->A);
   MatNd_destroy(this->invA);
@@ -132,183 +140,102 @@ Rcs::IkSolverRMR::~IkSolverRMR()
 }
 
 /*******************************************************************************
- * Returns the determinant from the last solver call
- ******************************************************************************/
-double Rcs::IkSolverRMR::getDeterminant() const
-{
-  return this->det;
-}
-
-/*******************************************************************************
  * Returns the pointer to the internal controller
  ******************************************************************************/
-Rcs::ControllerBase* Rcs::IkSolverRMR::getController() const
+ControllerBase* IkSolverRMR::getController() const
 {
   return this->controller;
 }
 
 /*******************************************************************************
- * Change array dimensions of the internal arrays
+ * Calculate the inverse kinematics, left-hand (nq x nq) inverse.
  ******************************************************************************/
-void Rcs::IkSolverRMR::reshape()
+double IkSolverRMR::solveLeftInverse(MatNd* dq_des,
+                                     const MatNd* dx,
+                                     const MatNd* dH,
+                                     const MatNd* activation,
+                                     double lambda0,
+                                     bool recomputeKinematics)
 {
-  this->nx     = controller->getTaskDim();
-  this->nTasks = controller->getNumberOfTasks();
-  this->nq     = controller->getGraph()->nJ;
+  MatNd_reshape(dq_des, controller->getGraph()->dof, 1);
+  MatNd* dq_ts = MatNd_createLike(dq_des);
+  MatNd* dq_ns = MatNd_createLike(dq_des);
+  double det = solveLeftInverse(dq_ts, dq_ns, dx, dH, activation, lambda0,
+                                recomputeKinematics);
+  MatNd_add(dq_des, dq_ts, dq_ns);
+  MatNd_destroyN(2, dq_ts, dq_ns);
 
-  MatNd* tmpA    = MatNd_create(this->nq, this->nq);
-  MatNd* tmpInvA = MatNd_create(this->nq, this->nq);
-  RcsGraph_coupledJointMatrix(controller->getGraph(), tmpA, tmpInvA);
-  this->nqr = tmpA->n;
-  MatNd_destroy(tmpA);
-  MatNd_destroy(tmpInvA);
-
-  MatNd_reshape(this->dH, 1, this->nq);
+  return det;
 }
 
-/*******************************************************************************
- * Calculate Jacobians etc.
- ******************************************************************************/
-void Rcs::IkSolverRMR::computeKinematics(const MatNd* activation,
-                                         double lambda0)
-{
-  // Compute the joint coupling matrices. This is required only for joints
-  // that have a non-constant coupling (e.g. polynomial coupling as in some
-  // parallel linkage joints).
-  RcsGraph_coupledJointMatrix(controller->getGraph(), this->A, this->invA);
-  this->nqr = this->A->n;
-
-  // Update of the joint space wegihting matrix. This needs to be done if the
-  // joint coupling matrices change, or the joint weights are dynamically
-  // modified between successive calls.
-  RcsGraph_getInvWq(controller->getGraph(), this->invWq, RcsStateIK);
-  MatNd_preMulSelf(this->invWq, this->invA);
-
-  // Compute the Jacobian
-  controller->computeJ(this->J, activation);
-  MatNd_postMulSelf(this->J, this->A);         // J_r = J*A
-  MatNd_postMulDiagSelf(this->J, this->invWq); // J_r = J*A*invWq_r
-
-  // Compute the blending matrix
-#if defined (USE_BLENDING)
-  TaskSpaceBlender b(controller);
-  b.setBlendingMode((TaskSpaceBlender::BlendingMode)blendingMode);
-  b.compute(this->Wx, this->ax_curr, activation, this->J, lambda0);
-#else
-  computeBlendingMatrix(*controller, this->Wx, activation, J, lambda0, true);
-#endif
-}
 
 /*******************************************************************************
  * Calculate the inverse kinematics, left-hand (nq x nq) inverse.
  ******************************************************************************/
-void Rcs::IkSolverRMR::solveLeftInverse(MatNd* dq_des,
-                                        const MatNd* dx,
-                                        const MatNd* dH,
-                                        const MatNd* activation,
-                                        double lambda0,
-                                        bool recomputeKinematics)
+double IkSolverRMR::solveLeftInverse(MatNd* dq_ts,
+                                     MatNd* dq_ns,
+                                     const MatNd* dx,
+                                     const MatNd* dH,
+                                     const MatNd* activation,
+                                     double lambda0,
+                                     bool recomputeKinematics)
 {
   // Compute the required terms for the inverse kinematics calculation
   if (recomputeKinematics==true)
   {
-    computeKinematics(activation, lambda0);
+    // Compute the joint coupling matrices. This is required only for joints
+    // that have a non-constant coupling (e.g. polynomial coupling as in some
+    // parallel linkage joints).
+    if (hasCoupledJoints)
+    {
+      RcsGraph_coupledJointMatrix(controller->getGraph(), this->A, this->invA);
+    }
+
+    // Update of the joint space wegihting matrix. This needs to be done if the
+    // joint coupling matrices change, or the joint weights are dynamically
+    // modified between successive calls.
+    RcsGraph_getInvWq(controller->getGraph(), this->invWq, RcsStateIK);
+    if (hasCoupledJoints)
+    {
+      MatNd_preMulSelf(this->invWq, this->invA);
+    }
+
+    // Compute the Jacobian
+    controller->computeJ(this->J, activation);
+    if (hasCoupledJoints)
+    {
+      MatNd_postMulSelf(this->J, this->A);  // J_r = J*A
+    }
+    MatNd_postMulDiagSelf(this->J, this->invWq); // J_r = J*A*invWq_r
+
+    // Compute the blending matrix
+    TaskSpaceBlender b(controller);
+    b.setBlendingMode((TaskSpaceBlender::BlendingMode)blendingMode);
+    b.compute(this->Wx, this->ax_curr, activation, this->J, lambda0);
   }
 
   // Compute the left weighted regularized pseudo-inverse Jacobian
   MatNd lambda = MatNd_fromPtr(1, 1, &lambda0);
-  this->det = MatNd_rwPinv2(this->pinvJ, J, Wx, &lambda);
+  double det = MatNd_rwPinv2(this->pinvJ, J, Wx, &lambda);
 
   // Do nothing if the projection is singular
-  if (this->det == 0.0)
+  if (det == 0.0)
   {
     RLOG(1, "Singular Jacobian - setting velocities to zero");
-    MatNd_reshapeAndSetZero(dq_des, controller->getGraph()->dof, 1);
-    return;
+    MatNd_reshapeAndSetZero(dq_ts, controller->getGraph()->dof, 1);
+    MatNd_reshapeAndSetZero(dq_ns, controller->getGraph()->dof, 1);
+    return det;
   }
 
   // Reset the result and some internal arrays to match the problem indices
+  const unsigned int nq = controller->getGraph()->nJ;
+  const unsigned int nqr = this->A->n;
   MatNd_reshapeAndSetZero(this->dqr, nqr, 1);
 
   // Add task space component to the result
   if (dx != NULL)
   {
-    if ((activation!=NULL) && (dx->m==this->nx))
-    {
-      controller->compressToActive(this->dxr, dx, activation);
-      MatNd_mul(this->dqr, pinvJ, dxr);
-    }
-    else
-    {
-      MatNd_mul(this->dqr, pinvJ, dx);
-    }
-
-  }
-
-  // Compute null space
-  if (dH != NULL)
-  {
-    RCHECK_MSG((dH->m==nq && dH->n==1) || (dH->m==1 && dH->n==nq),
-               "dH: %d x %d, should be 1 x %d", dH->m, dH->n, nq);
-    MatNd_reshapeCopy(this->dHr, dH);
-    MatNd_reshape(dHr, nq, 1);
-    MatNd_constMulSelf(this->dHr, -1.0);
-    MatNd_preMulSelf(this->dHr, invA);
-    MatNd_reshape(this->NinvW, nqr, nqr);
-    MatNd_nullspace(this->NinvW, pinvJ, J);
-    MatNd_postMulDiagSelf(this->NinvW, invWq);   // apply joint metric
-    MatNd_mulAndAddSelf(this->dqr, NinvW, dHr);
-  }
-
-  // Project back into non-weighted space
-  MatNd_eleMulSelf(dqr, invWq);
-
-  // Expand from coupled joint space to constraint joints
-  MatNd_reshape(dq_des, nq, 1);
-  MatNd_mul(dq_des, A, dqr);
-
-  // Uncompress to all states
-  RcsGraph_stateVectorFromIKSelf(controller->getGraph(), dq_des);
-}
-
-
-/*******************************************************************************
- * Calculate the inverse kinematics, left-hand (nq x nq) inverse.
- ******************************************************************************/
-void Rcs::IkSolverRMR::solveLeftInverse(MatNd* dq_ts,
-                                        MatNd* dq_ns,
-                                        const MatNd* dx,
-                                        const MatNd* dH,
-                                        const MatNd* activation,
-                                        double lambda0,
-                                        bool recomputeKinematics)
-{
-  // Compute the required terms for the inverse kinematics calculation
-  if (recomputeKinematics==true)
-  {
-    computeKinematics(activation, lambda0);
-  }
-
-  // Compute the left weighted regularized pseudo-inverse Jacobian
-  MatNd lambda = MatNd_fromPtr(1, 1, &lambda0);
-  this->det = MatNd_rwPinv2(this->pinvJ, J, Wx, &lambda);
-
-  // Do nothing if the projection is singular
-  if (this->det == 0.0)
-  {
-    RLOG(1, "Singular Jacobian - setting velocities to zero");
-    MatNd_reshapeAndSetZero(dq_ts, controller->getGraph()->dof, 1);
-    MatNd_reshapeAndSetZero(dq_ns, controller->getGraph()->dof, 1);
-    return;
-  }
-
-  // Add task space component to the result
-  if (dx != NULL)
-  {
-    // Reset the result and some internal arrays to match the problem indices
-    MatNd_reshapeAndSetZero(this->dqr, nqr, 1);
-
-    if ((activation!=NULL) && (dx->m==this->nx))
+    if ((activation!=NULL) && (dx->m== controller->getTaskDim()))
     {
       controller->compressToActive(this->dxr, dx, activation);
       MatNd_mul(this->dqr, pinvJ, dxr);
@@ -323,7 +250,15 @@ void Rcs::IkSolverRMR::solveLeftInverse(MatNd* dq_ts,
 
     // Expand from coupled joint space to constraint joints
     MatNd_reshape(dq_ts, nq, 1);
-    MatNd_mul(dq_ts, A, dqr);
+
+    if (hasCoupledJoints)
+    {
+      MatNd_mul(dq_ts, A, dqr);
+    }
+    else
+    {
+      MatNd_reshapeCopy(dq_ts, dqr);
+    }
 
     // Uncompress to all states
     RcsGraph_stateVectorFromIKSelf(controller->getGraph(), dq_ts);
@@ -344,11 +279,13 @@ void Rcs::IkSolverRMR::solveLeftInverse(MatNd* dq_ts,
     MatNd_reshapeCopy(this->dHr, dH);
     MatNd_reshape(dHr, nq, 1);
     MatNd_constMulSelf(this->dHr, -1.0);
-    MatNd_preMulSelf(this->dHr, invA);
+    if (hasCoupledJoints)
+    {
+      MatNd_preMulSelf(this->dHr, invA);
+    }
     MatNd_reshape(this->NinvW, nqr, nqr);
     MatNd_nullspace(this->NinvW, pinvJ, J);
     MatNd_postMulDiagSelf(this->NinvW, invWq);   // apply joint metric
-    MatNd_reshape(this->dqr, nqr, 1);
     MatNd_mul(this->dqr, NinvW, dHr);
 
     // Project back into non-weighted space
@@ -356,7 +293,14 @@ void Rcs::IkSolverRMR::solveLeftInverse(MatNd* dq_ts,
 
     // Expand from coupled joint space to constraint joints
     MatNd_reshape(dq_ns, nq, 1);
-    MatNd_mul(dq_ns, A, dqr);
+    if (hasCoupledJoints)
+    {
+      MatNd_mul(dq_ns, A, dqr);
+    }
+    else
+    {
+      MatNd_reshapeCopy(dq_ns, dqr);
+    }
 
     // Uncompress to all states
     RcsGraph_stateVectorFromIKSelf(controller->getGraph(), dq_ns);
@@ -365,33 +309,33 @@ void Rcs::IkSolverRMR::solveLeftInverse(MatNd* dq_ts,
   {
     MatNd_reshapeAndSetZero(dq_ns, controller->getGraph()->dof, 1);
   }
+
+  return det;
 }
 
 /*******************************************************************************
  * Calculate the inverse kinematics using the right-hand pseudo-inverse. This
  * follows the derivation of Liegeois.
  ******************************************************************************/
-void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_des,
-                                         const MatNd* dx,
-                                         const MatNd* dH,
-                                         const MatNd* activation,
-                                         double lambda0)
+double IkSolverRMR::solveRightInverse(MatNd* dq_des,
+                                      const MatNd* dx,
+                                      const MatNd* dH,
+                                      const MatNd* activation,
+                                      double lambda0)
 {
   MatNd lambdaArr = MatNd_fromPtr(1, 1, &lambda0);
-  solveRightInverse(dq_des, dx, dH, activation, &lambdaArr);
-  return;
+  return solveRightInverse(dq_des, dx, dH, activation, &lambdaArr);
 }
 
-void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
-                                         MatNd* dq_ns,
-                                         const MatNd* dx,
-                                         const MatNd* dH,
-                                         const MatNd* activation,
-                                         double lambda0)
+double IkSolverRMR::solveRightInverse(MatNd* dq_ts,
+                                      MatNd* dq_ns,
+                                      const MatNd* dx,
+                                      const MatNd* dH,
+                                      const MatNd* activation,
+                                      double lambda0)
 {
   MatNd lambdaArr = MatNd_fromPtr(1, 1, &lambda0);
-  solveRightInverse(dq_ts, dq_ns, dx, dH, activation, &lambdaArr);
-  return;
+  return solveRightInverse(dq_ts, dq_ns, dx, dH, activation, &lambdaArr);
 }
 
 /*******************************************************************************
@@ -400,34 +344,43 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
  *
  * This version uses a full lambda vector instead of a single value
  ******************************************************************************/
-void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_des,
-                                         const MatNd* dx,
-                                         const MatNd* dH,
-                                         const MatNd* activation,
-                                         const MatNd* lambda)
+double IkSolverRMR::solveRightInverse(MatNd* dq_des,
+                                      const MatNd* dx,
+                                      const MatNd* dH,
+                                      const MatNd* activation,
+                                      const MatNd* lambda)
 {
   MatNd* dq_ns = MatNd_createLike(dq_des);
-  solveRightInverse(dq_des, dq_ns, dx, dH, activation, lambda);
+  double det = solveRightInverse(dq_des, dq_ns, dx, dH, activation, lambda);
   MatNd_addSelf(dq_des, dq_ns);
   MatNd_destroy(dq_ns);
+  return det;
 }
 
-void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
-                                         MatNd* dq_ns,
-                                         const MatNd* dx,
-                                         const MatNd* dH,
-                                         const MatNd* activation,
-                                         const MatNd* lambda)
+/*******************************************************************************
+ * Implementation for all cases. We adjust arrays with task dimensions, but
+ * assume that the size of the graph does not grow.
+ ******************************************************************************/
+double IkSolverRMR::solveRightInverse(MatNd* dq_ts,
+                                      MatNd* dq_ns,
+                                      const MatNd* dx,
+                                      const MatNd* dH,
+                                      const MatNd* activation,
+                                      const MatNd* lambda)
 {
-  RcsGraph* graph = controller->getGraph();
+  const RcsGraph* graph = controller->getGraph();
 
-  // Look for kinematic joint couplings in each iteration so that they can be
-  // changed at run-time
-  const int nCpldJnts = RcsGraph_countCoupledJoints(controller->getGraph());
-  const bool hasCouplings = (nCpldJnts>0);
+  // Adjust task space array sizes
+  const size_t nx = controller->getTaskDim();
+  const size_t nxa = controller->getActiveTaskDim(activation);
+
+  MatNd_realloc(this->J, nxa, graph->nJ);
+  MatNd_realloc(this->pinvJ, graph->nJ, nxa);
+  MatNd_realloc(this->dx_proj, nxa, 1);
+  MatNd_realloc(this->dxr, nxa, 1);
 
   // Create coupled joint matrix
-  if (hasCouplings)
+  if (hasCoupledJoints)
   {
     RcsGraph_coupledJointMatrix(graph, this->A, this->invA);
   }
@@ -437,22 +390,25 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
   RcsGraph_getInvWq(graph, this->invWq, RcsStateIK);
 
   // Task space
-  if (hasCouplings)
+  if (hasCoupledJoints)
   {
     MatNd_postMulSelf(this->J, this->A);
     MatNd_preMulSelf(this->invWq, this->invA);
   }
 
-  this->det = MatNd_rwPinv(this->pinvJ, this->J, this->invWq, lambda);
+  MatNd_reshape(this->pinvJ, this->J->n, this->J->m);
+  double det = MatNd_rwPinv(this->pinvJ, this->J, this->invWq, lambda);
 
   // Do nothing if the projection is singular
-  if (this->det == 0.0)
+  if (det == 0.0)
   {
     RLOG(1, "Singular Jacobian - setting velocities to zero");
     MatNd_reshapeAndSetZero(dq_ts, graph->dof, 1);
     MatNd_reshapeAndSetZero(dq_ns, graph->dof, 1);
-    return;
+    return det;
   }
+
+  const unsigned int nq = controller->getGraph()->nJ;
 
   // Compute null space terms
   if (dH != NULL)
@@ -461,7 +417,7 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
     MatNd_reshapeCopy(this->dHr, dH);
     MatNd_constMulSelf(this->dHr, -1.0);
     MatNd_reshape(this->dHr, nq, 1);
-    if (hasCouplings)
+    if (hasCoupledJoints)
     {
       MatNd_preMulSelf(this->dHr, this->invA);
     }
@@ -475,8 +431,8 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
 
   for (size_t i=0; i<controller->getNumberOfTasks(); ++i)
   {
-    Rcs::Task* tsk = controller->getTask(i);
-    Rcs::TaskRegion* tsr = tsk->getTaskRegion();
+    Task* tsk = controller->getTask(i);
+    TaskRegion* tsr = tsk->getTaskRegion();
 
     if (tsr)
     {
@@ -491,21 +447,21 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
 #if 0
     // Compute null space -> task space re-projection: (dH^T J#)^T
     MatNd_reshape(this->dHr, dHr->n, dHr->m);
-    MatNd_reshape(dx_proj, 1, pinvJ->n);
-    MatNd_mul(dx_proj, this->dHr, this->pinvJ);
+    MatNd_reshape(this->dx_proj, 1, pinvJ->n);
+    MatNd_mul(this->dx_proj, this->dHr, this->pinvJ);
     MatNd_reshape(this->dHr, dHr->n, dHr->m);
-    MatNd_reshape(dx_proj, pinvJ->n, 1);
+    MatNd_reshape(this->dx_proj, pinvJ->n, 1);
 #else
     // Compute null space -> task space re-projection: J dH^T
-    MatNd_reshape(dx_proj, J->m, 1);
-    MatNd_mul(dx_proj, this->J, this->dHr);
+    MatNd_reshape(this->dx_proj, J->m, 1);
+    MatNd_mul(this->dx_proj, this->J, this->dHr);
 #endif
 
     // Here comes the sinister HACK
-    for (size_t i=0; i<controller->getNumberOfTasks(); ++i)
+    for (size_t i=0; i< controller->getNumberOfTasks(); ++i)
     {
-      Rcs::Task* tsk = controller->getTask(i);
-      Rcs::TaskRegion* tsr = tsk->getTaskRegion();
+      Task* tsk = controller->getTask(i);
+      TaskRegion* tsr = tsk->getTaskRegion();
 
       if (tsr)
       {
@@ -540,7 +496,7 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
     }
 
     // Expand from coupled joint space to constraint joints
-    if (hasCouplings)
+    if (hasCoupledJoints)
     {
       MatNd_reshape(dq_ts, nq, 1);
       MatNd_mul(dq_ts, this->A, this->dqr);
@@ -575,7 +531,7 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
     MatNd_mul(this->dqr, this->NinvW, this->dHr);
 
     // Expand from coupled joint space to constraint joints
-    if (hasCouplings)
+    if (hasCoupledJoints)
     {
       MatNd_reshape(dq_ns, nq, 1);
       MatNd_mul(dq_ns, this->A, this->dqr);
@@ -593,125 +549,21 @@ void Rcs::IkSolverRMR::solveRightInverse(MatNd* dq_ts,
     MatNd_reshapeAndSetZero(dq_ns, graph->dof, 1);
   }
 
+  return det;
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::IkSolverRMR::computeBlendingMatrix(const Rcs::ControllerBase& cntrl,
-                                             MatNd* Wx,
-                                             const MatNd* a_des,
-                                             const MatNd* J,
-                                             const double lambda0,
-                                             const bool useInnerProduct)
+unsigned int IkSolverRMR::getInternalDof() const
 {
-  unsigned int i, j, dimTask, nRows = 0;
-
-  for (i=0; i<cntrl.getNumberOfTasks(); i++)
-  {
-
-    if (MatNd_get(a_des, i, 0) == 0.0)
-    {
-      NLOG(4, "Skipping task \"%s\": activation is %f",
-           cntrl.getTaskName(i).c_str(), a_des->ele[i]);
-      continue;
-    }
-
-    const double ci = Math_clip(MatNd_get(a_des, i, 0), 0.0, 1.0);
-
-    dimTask = cntrl.getTaskDim(i);
-
-    RCHECK_MSG(Wx->size >= nRows + dimTask, "While adding task "
-               "\"%s\": size of Wx: %d   m: %d   dimTask: %d",
-               cntrl.getTaskName(i).c_str(), Wx->size, nRows, dimTask);
-
-    for (j=0; j<dimTask; j++)
-    {
-      // Task space blending part 1
-      double aBuf = 1.0, wi1 = 1.0;
-
-      if (useInnerProduct==true)
-      {
-        MatNd Ji = MatNd_fromPtr(1, J->n, MatNd_getRowPtr(J, nRows));
-        MatNd a = MatNd_fromPtr(1, 1, &aBuf);
-        MatNd_sqrMulABAt(&a, &Ji, NULL);
-      }
-
-      if (ci < 1.0)
-      {
-        if (aBuf == 0.0)
-        {
-          wi1 = 0.0;
-        }
-        else
-        {
-          wi1 = lambda0 * ci / (aBuf * (1.0 - ci));
-        }
-      }
-
-      // Task space blending part 2
-      // The minimum lambda_i is one or two orders of magnitude smaller
-      // than the joint space metric lambda
-      double wi2 = pow(0.01*lambda0, 1.0-ci);
-
-      // Fusion of both parts
-      Wx->ele[nRows] = a_des->ele[i]*wi2 + (1.0-a_des->ele[i])*wi1;
-      nRows++;
-
-    }   // for(j=0;j<dimTask;j++)
-
-
-  }   // for(i=0; i<nTasks; i++)
-
-  // Reshape
-  Wx->m = nRows;
-  Wx->n = 1;
+  return this->A->n;
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::IkSolverRMR::computeBlendingMatrixDirect(const Rcs::ControllerBase& cntrl,
-                                                   MatNd* Wx,
-                                                   const MatNd* a_des)
-{
-  unsigned int nRows = 0;
-
-  for (unsigned int i=0; i<cntrl.getNumberOfTasks(); i++)
-  {
-    const double a = MatNd_get(a_des, i, 0);
-
-    if (a > 0.0)
-    {
-      unsigned int dimTask = cntrl.getTaskDim(i);
-
-      RCHECK_MSG(Wx->size >= nRows + dimTask, "While adding task "
-                 "\"%s\": size of Wx: %d   m: %d   dimTask: %d",
-                 cntrl.getTaskName(i).c_str(), Wx->size, nRows, dimTask);
-
-      VecNd_setElementsTo(&Wx->ele[nRows], a, dimTask);
-      nRows += dimTask;
-    }
-
-  }
-
-  // Reshape
-  Wx->m = nRows;
-  Wx->n = 1;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-unsigned int Rcs::IkSolverRMR::getInternalDof() const
-{
-  return this->nqr;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-const MatNd* Rcs::IkSolverRMR::getJacobian() const
+const MatNd* IkSolverRMR::getJacobian() const
 {
   return this->J;
 }
@@ -719,7 +571,7 @@ const MatNd* Rcs::IkSolverRMR::getJacobian() const
 /*******************************************************************************
  *
  ******************************************************************************/
-const MatNd* Rcs::IkSolverRMR::getPseudoInverse() const
+const MatNd* IkSolverRMR::getPseudoInverse() const
 {
   return this->pinvJ;
 }
@@ -727,7 +579,7 @@ const MatNd* Rcs::IkSolverRMR::getPseudoInverse() const
 /*******************************************************************************
  *
  ******************************************************************************/
-const MatNd* Rcs::IkSolverRMR::getNullSpace() const
+const MatNd* IkSolverRMR::getNullSpace() const
 {
   return this->NinvW;
 }
@@ -735,7 +587,7 @@ const MatNd* Rcs::IkSolverRMR::getNullSpace() const
 /*******************************************************************************
  *
  ******************************************************************************/
-const MatNd* Rcs::IkSolverRMR::getCurrentActivation() const
+const MatNd* IkSolverRMR::getCurrentActivation() const
 {
   return this->ax_curr;
 }
@@ -743,11 +595,13 @@ const MatNd* Rcs::IkSolverRMR::getCurrentActivation() const
 /*******************************************************************************
  *
  ******************************************************************************/
-bool Rcs::IkSolverRMR::computeRightInverse(MatNd* pinvJ_,
-                                           const MatNd* activation,
-                                           double lambda) const
+bool IkSolverRMR::computeRightInverse(MatNd* pinvJ_,
+                                      const MatNd* activation,
+                                      double lambda) const
 {
   const RcsGraph* graph = controller->getGraph();
+  const unsigned int nq = controller->getGraph()->nJ;
+  const size_t nx = controller->getTaskDim();
 
   MatNd* A_ = MatNd_create(nq, nq);
   MatNd* invA_ = MatNd_create(nq, nq);
@@ -795,7 +649,7 @@ bool Rcs::IkSolverRMR::computeRightInverse(MatNd* pinvJ_,
 /*******************************************************************************
  *
  ******************************************************************************/
-bool Rcs::IkSolverRMR::setActivationBlending(const std::string& mode)
+bool IkSolverRMR::setActivationBlending(const std::string& mode)
 {
   bool success = true;
 
@@ -827,3 +681,5 @@ bool Rcs::IkSolverRMR::setActivationBlending(const std::string& mode)
 
   return success;
 }
+
+}   // namespace Rcs

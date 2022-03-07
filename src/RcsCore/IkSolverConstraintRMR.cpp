@@ -116,8 +116,9 @@ Rcs::IkSolverConstraintRMR::IkSolverConstraintRMR(Rcs::ControllerBase* ctrl) :
   RLOG(5, "activeSet: %zu   tasks: %zu",
        activeSet.size(), controller->getNumberOfTasks());
 
-  MatNd_realloc(this->J, activeSet.size(), this->nq);
-  MatNd_realloc(this->pinvJ, this->nq, activeSet.size());
+  const unsigned int nq = controller->getGraph()->nJ;
+  MatNd_realloc(this->J, activeSet.size(), nq);
+  MatNd_realloc(this->pinvJ, nq, activeSet.size());
   MatNd_realloc(this->dxr, activeSet.size(), 1);
   MatNd_realloc(this->Wx, activeSet.size(), 1);
 }
@@ -150,29 +151,27 @@ Rcs::IkSolverConstraintRMR::~IkSolverConstraintRMR()
  * value has been chosen so that an "escape" from the active constraint can
  * easily happen with the first IK call.
  ******************************************************************************/
-void Rcs::IkSolverConstraintRMR::solveRightInverse(MatNd* dq_des,
-                                                   const MatNd* dx_,
-                                                   const MatNd* dH,
-                                                   const MatNd* activation_,
-                                                   double lambda0)
+double Rcs::IkSolverConstraintRMR::solveRightInverse(MatNd* dq_des,
+                                                     const MatNd* dx_,
+                                                     const MatNd* dH,
+                                                     const MatNd* activation_,
+                                                     double lambda0)
 {
   controller->swapTaskVec(activeSet);
-  this->nx = controller->getTaskDim();
 
   MatNd* dx = MatNd_clone(dx_);
   MatNd* activation = MatNd_clone(activation_);
   MatNd_realloc(dx, controller->getTaskDim(), 1);
   MatNd_realloc(activation, controller->getNumberOfTasks(), 1);
 
-  IkSolverRMR::solveRightInverse(dq_des, dx, dH, activation, lambda0);
+  double det = IkSolverRMR::solveRightInverse(dq_des, dx, dH, activation, lambda0);
 
-  if (activeSet.empty() || getDeterminant()==0.0)
+  if (activeSet.empty() || det==0.0)
   {
     controller->swapTaskVec(activeSet);
-    this->nx = controller->getTaskDim();
     MatNd_destroy(dx);
     MatNd_destroy(activation);
-    return;
+    return det;
   }
 
   unsigned int nViolations = 0;
@@ -263,5 +262,6 @@ void Rcs::IkSolverConstraintRMR::solveRightInverse(MatNd* dq_des,
   MatNd_destroy(activation);
 
   controller->swapTaskVec(activeSet);
-  this->nx = controller->getTaskDim();
+
+  return det;
 }
