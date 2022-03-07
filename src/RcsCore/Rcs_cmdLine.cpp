@@ -84,20 +84,19 @@ Rcs::CmdLineParser::CmdLineParser()
 bool Rcs::CmdLineParser::getArgument(const char* tag, char* str,
                                      const char* description, ...) const
 {
-
-  int idx = getTagIndex(tag);
-
-  if (idx == -1)
-  {
-    return false;
-  }
-
   if (description != NULL)
   {
     va_list args;
     va_start(args, description);
     appendDescription(tag, description, args);
     va_end(args);
+  }
+
+  int idx = getTagIndex(tag);
+
+  if (idx == -1)
+  {
+    return false;
   }
 
   strcpy(str, argv[idx + 1]);
@@ -111,19 +110,19 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, char* str,
 bool Rcs::CmdLineParser::getArgument(const char* tag, std::string* result,
                                      const char* description, ...) const
 {
-  int idx = getTagIndex(tag);
-
-  if (idx == -1)
-  {
-    return false;
-  }
-
   if (description != NULL)
   {
     va_list args;
     va_start(args, description);
     appendDescription(tag, description, args);
     va_end(args);
+  }
+
+  int idx = getTagIndex(tag);
+
+  if (idx == -1)
+  {
+    return false;
   }
 
   *result = std::string(argv[idx + 1]);
@@ -137,19 +136,19 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, std::string* result,
 bool Rcs::CmdLineParser::getArgument(const char* tag, int* res,
                                      const char* description, ...) const
 {
-  int idx = getTagIndex(tag);
-
-  if (idx == -1)
-  {
-    return false;
-  }
-
   if (description != NULL)
   {
     va_list args;
     va_start(args, description);
     appendDescription(tag, description, args);
     va_end(args);
+  }
+
+  int idx = getTagIndex(tag);
+
+  if (idx == -1)
+  {
+    return false;
   }
 
   *res = atoi(argv[idx + 1]);
@@ -164,19 +163,19 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, int* res,
 bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned int* res,
                                      const char* description, ...) const
 {
-  int idx = getTagIndex(tag);
-
-  if (idx == -1)
-  {
-    return false;
-  }
-
   if (description != NULL)
   {
     va_list args;
     va_start(args, description);
     appendDescription(tag, description, args);
     va_end(args);
+  }
+
+  int idx = getTagIndex(tag);
+
+  if (idx == -1)
+  {
+    return false;
   }
 
   int number = atoi(argv[idx + 1]);
@@ -196,19 +195,19 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned int* res,
 bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned long* res,
                                      const char* description, ...) const
 {
-  int idx = getTagIndex(tag);
-
-  if (idx == -1)
-  {
-    return false;
-  }
-
   if (description != NULL)
   {
     va_list args;
     va_start(args, description);
     appendDescription(tag, description, args);
     va_end(args);
+  }
+
+  int idx = getTagIndex(tag);
+
+  if (idx == -1)
+  {
+    return false;
   }
 
   int number = atoi(argv[idx + 1]);
@@ -228,19 +227,19 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned long* res,
 bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned long long* res,
                                      const char* description, ...) const
 {
-  int idx = getTagIndex(tag);
-
-  if (idx == -1)
-  {
-    return false;
-  }
-
   if (description != NULL)
   {
     va_list args;
     va_start(args, description);
     appendDescription(tag, description, args);
     va_end(args);
+  }
+
+  int idx = getTagIndex(tag);
+
+  if (idx == -1)
+  {
+    return false;
   }
 
   int number = atoi(argv[idx + 1]);
@@ -260,19 +259,19 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned long long* res,
 bool Rcs::CmdLineParser::getArgument(const char* tag, double* res,
                                      const char* description, ...) const
 {
-  int idx = getTagIndex(tag);
-
-  if (idx == -1)
-  {
-    return false;
-  }
-
   if (description != NULL)
   {
     va_list args;
     va_start(args, description);
     appendDescription(tag, description, args);
     va_end(args);
+  }
+
+  int idx = getTagIndex(tag);
+
+  if (idx == -1)
+  {
+    return false;
   }
 
   *res = atof(argv[idx + 1]);
@@ -287,18 +286,18 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, double* res,
 bool Rcs::CmdLineParser::hasArgument(const char* tag,
                                      const char* description, ...) const
 {
-  if (tag==NULL)
-  {
-    RLOGS(4, "Tag is NULL - skipping");
-    return false;
-  }
-
   if (description != NULL)
   {
     va_list args;
     va_start(args, description);
     appendDescription(tag, description, args);
     va_end(args);
+  }
+
+  if (tag==NULL)
+  {
+    RLOGS(4, "Tag is NULL - skipping");
+    return false;
   }
 
   // Here we don't use the getTagIndex() function since the tag does not have
