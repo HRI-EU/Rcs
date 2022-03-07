@@ -52,9 +52,9 @@ REGISTER_TASK(TaskEuler3D, "ABC");
  *
  ******************************************************************************/
 TaskEuler3D::TaskEuler3D(const std::string& className_,
-                              xmlNode* node,
+                         xmlNode* node,
                          const RcsGraph* _graph,
-                              int dim):
+                         int dim):
   Task(className_, node, _graph, dim)
 {
   if (getClassName()=="ABC")
@@ -69,9 +69,9 @@ TaskEuler3D::TaskEuler3D(const std::string& className_,
  *
  ******************************************************************************/
 TaskEuler3D::TaskEuler3D(const RcsGraph* graph_,
-                              const RcsBody* effector,
-                              const RcsBody* refBdy,
-                              const RcsBody* refFrame): Task()
+                         const RcsBody* effector,
+                         const RcsBody* refBdy,
+                         const RcsBody* refFrame): Task()
 {
   this->graph = graph_;
   setClassName("ABC");
@@ -127,7 +127,7 @@ void TaskEuler3D::computeXp_ik(double* omega) const
  *
  ******************************************************************************/
 void TaskEuler3D::integrateXp_ik(double* x_res, const double* x,
-                                      const double* omega, double dt) const
+                                 const double* omega, double dt) const
 {
   double A_CI[3][3];   // Rotation matrix for current state
   Mat3d_fromEulerAngles(A_CI, x);
@@ -172,7 +172,7 @@ void TaskEuler3D::computeXpp(double* eapp, const MatNd* q_ddot) const
  *     = d(H^-1)/dt H om +  (H^-1) app
  ******************************************************************************/
 void TaskEuler3D::computeFfXpp(double* omegap_des,
-                                    const double* eapp_des) const
+                               const double* eapp_des) const
 {
   double ea[3], eap[3];
   this->computeX(ea);
@@ -231,8 +231,8 @@ void TaskEuler3D::computeH(MatNd* hessian) const
  * does not do any linearization.
  ******************************************************************************/
 void TaskEuler3D::computeDX(double* dx,
-                                 const double* x_des,
-                                 const double* x_curr) const
+                            const double* x_des,
+                            const double* x_curr) const
 {
   double A_curr[3][3], A_des[3][3];
 
@@ -259,7 +259,7 @@ void TaskEuler3D::computeDX(double* dx,
  *       due to singularities. It is always well-defined.
  ******************************************************************************/
 void TaskEuler3D::computeDXp(double* delta_om,
-                                  const double* eap_des) const
+                             const double* eap_des) const
 {
   double om_curr[3], ea[3], invH[3][3], om_des[3];
 
@@ -287,16 +287,16 @@ void TaskEuler3D::computeDXp(double* delta_om,
  * so we can pre-multiply the forces here to transform them
  ******************************************************************************/
 void TaskEuler3D::computeAF(double* ft_res,
-                                 double* ft_int,
-                                 const double* ft_des,
-                                 const double* selection,
-                                 const double* ft_task,
-                                 const double a_des,
-                                 const double kp,
-                                 const double ki) const
+                            double* ft_int,
+                            const double* ft_des,
+                            const double* selection,
+                            const double* ft_task,
+                            const double a_des,
+                            const double kp,
+                            const double ki) const
 {
   Task::computeAF(ft_res, ft_int, ft_des, selection, ft_task,
-                       a_des, kp, ki);
+                  a_des, kp, ki);
 
   double ea[3], H[3][3];
   computeX(ea);
@@ -324,7 +324,7 @@ void TaskEuler3D::forceTrafo(double* ft_task) const
  * Transforms the selection into the Jacobian coordinates
  ******************************************************************************/
 void TaskEuler3D::selectionTrafo(double* S_des_trafo,
-                                      const double* S_des) const
+                                 const double* S_des) const
 {
   double sqrLengthS = Vec3d_sqrLength(S_des);
 
@@ -354,8 +354,8 @@ void TaskEuler3D::selectionTrafo(double* S_des_trafo,
  * dg/dq = dx^T W J
  ******************************************************************************/
 void TaskEuler3D::computeTaskGradient(MatNd* dgDq,
-                                           const double* x_des,
-                                           const double* diagW) const
+                                      const double* x_des,
+                                      const double* diagW) const
 {
   Task::computeTaskGradient(dgDq, x_des, diagW);
   MatNd_constMulSelf(dgDq, 0.05);
@@ -368,18 +368,18 @@ void TaskEuler3D::computeTaskGradient(MatNd* dgDq,
  *       are not being used (see NULL arguments).
  ******************************************************************************/
 void TaskEuler3D::computeAX(double* a_res,
-                                 double* integral_x,
-                                 const double* x_des,
-                                 const double* x_dot_des,
-                                 const double* x_ddot_des,
-                                 const double* S_des,
-                                 const double a_des,
-                                 const double kp,
-                                 const double kd,
-                                 const double ki) const
+                            double* integral_x,
+                            const double* x_des,
+                            const double* x_dot_des,
+                            const double* x_ddot_des,
+                            const double* S_des,
+                            const double a_des,
+                            const double kp,
+                            const double kd,
+                            const double ki) const
 {
   Task::computeAX(a_res, integral_x, x_des, x_dot_des, x_ddot_des,
-                       S_des, a_des, kp, kd, ki);
+                  S_des, a_des, kp, kd, ki);
 }
 
 /*******************************************************************************

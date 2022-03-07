@@ -356,8 +356,6 @@ private:
 
     KinematicConstraint(ConstraintType type, int bdyId,
                         std::vector<double> x_des, double kp);
-    void addForce(MatNd* lambdaQ, const RcsGraph* graph, const MatNd* M, const MatNd* b) const;
-
     void appendJacobian(MatNd* J, const RcsGraph* graph) const;
     void appendDotJacobian(MatNd* J_dot, const RcsGraph* graph, const MatNd* q_dot) const;
     void appendStabilization(MatNd* ax, const RcsGraph* graph) const;

@@ -987,7 +987,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   // We consider all bodies with six joints as floating and do not apply any
   // damping.
   // \todo: Provide interface on per-joint basis
-  const double damping = 5.0;
+  const double damping = 2.0;
   MatNd* Fi = MatNd_create(n, 1);
   MatNd* qp_ik = MatNd_clone(graph->q_dot);
 
@@ -1013,139 +1013,9 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   MatNd_addSelf(b, F_ext);
   MatNd_addSelf(b, h);
 
-  // Compute constraint forces for kinematic constraints
-  MatNd* lambdaQ = MatNd_createLike(b);
-  addConstraintForces(lambdaQ, qp_ik, M,  b);
-  MatNd_addSelf(b, lambdaQ);
-  MatNd_destroy(lambdaQ);
-
-
-  // MatNd* constraintTorque = MatNd_createLike(b);
-  // for (size_t i=0; i<constraint.size(); ++i)
-  // {
-  //   constraint[i].addForce(lambdaQ, graph, M, b);
-  //   MatNd_addSelf(constraintTorque, lambdaQ);
-  //   MatNd_addSelf(b, lambdaQ);
-  // }
-  // //MatNd_addSelf(b, constraintTorque);
-  // MatNd_destroy(lambdaQ);
-  // MatNd_destroy(constraintTorque);
-
-
-
-
-#if 0
-  // Compute kinematic constraint Lagrange Multipliers
-  {
-    const unsigned int nc = 6;   // Number of constraints
-
-    const RcsBody* ef = RcsGraph_getBodyByName(graph, "LeftHand");
-    RCHECK(ef);
-
-    // Constraint Jacobian
-    MatNd* J = MatNd_create(nc, n);
-    MatNd Jx = MatNd_fromPtr(3, graph->nJ, MatNd_getRowPtr(J, 0));
-    RcsGraph_bodyPointJacobian(graph, ef, NULL, NULL, &Jx);
-    MatNd Jw = MatNd_fromPtr(3, graph->nJ, MatNd_getRowPtr(J, 3));
-    RcsGraph_rotationJacobian(graph, ef, NULL, &Jw);
-
-    MatNd* qp_ik2 = MatNd_clone(graph->q_dot);
-    RcsGraph_stateVectorToIKSelf(graph, qp_ik2);
-
-    // Constraint dot-Jacobian
-    MatNd* J_dot = MatNd_createLike(J);
-    MatNd J_dot_x = MatNd_fromPtr(3, graph->nJ, MatNd_getRowPtr(J_dot, 0));
-    RcsGraph_bodyPointDotJacobian(graph, ef, NULL, NULL, qp_ik2, &J_dot_x);
-    MatNd J_dot_w = MatNd_fromPtr(3, graph->nJ, MatNd_getRowPtr(J_dot, 3));
-    RcsGraph_rotationDotJacobian(graph, ef, qp_ik2, &J_dot_w);
-
-    // J inv(M)
-    MatNd* invM = MatNd_createLike(M);
-    double det = MatNd_choleskyInverse(invM, M);
-    RCHECK(det != 0.0);
-    MatNd* JinvM = MatNd_create(nc, n);
-    MatNd_mul(JinvM, J, invM);
-
-    // inv(J inv(M) JT)
-    MatNd* invJinvMJT = MatNd_create(nc, nc);
-    MatNd_sqrMulABAt(invJinvMJT, J, invM);
-    det = MatNd_choleskyInverse(invJinvMJT, invJinvMJT);
-    RCHECK(det != 0.0);
-
-    // term1: -J inv(M) b
-    MatNd* term1 = MatNd_create(nc, 1);
-    MatNd_mul(term1, JinvM, b);
-    MatNd_constMulSelf(term1, -1.0);
-
-    // term2: J_dot q_dot
-    MatNd* term2 = MatNd_create(nc, 1);
-    MatNd_mul(term2, J_dot, qp_ik2);
-
-    // term1 = -J inv(M) b + J_dot q_dot
-    MatNd_subSelf(term1, term2);
-
-    // term 3: stabilization, either PD control law or other like Baumgarte
-    // Stabilization: ax = kp*dx + kd*dx_dot
-    static bool init = false;
-    static double x0[3];
-    if (!init)
-    {
-      Vec3d_copy(x0, ef->A_BI.org);
-      init = true;
-    }
-
-    const double kp = 0.0;
-    const double kd = 0.5*sqrt(4.0*kp);
-    MatNd* ax, * dx_c, *dxd_c;
-    MatNd_fromStack(ax, nc, 1);
-    MatNd_fromStack(dx_c, nc, 1);
-    MatNd_fromStack(dxd_c, nc, 1);
-    Vec3d_sub(dx_c->ele, x0, ef->A_BI.org);
-    Vec3d_sub(dxd_c->ele, Vec3d_zeroVec(), ef->x_dot);
-
-    // Orientation feedback missing
-    Vec3d_sub(&dxd_c->ele[3], Vec3d_zeroVec(), ef->omega);
-
-    for (size_t i=0; i<nc; ++i)
-    {
-      ax->ele[i] = kp*dx_c->ele[i] + kd*dxd_c->ele[i];
-    }
-
-    RLOG(0, "x0: %f %f %f", x0[0], x0[1], x0[2]);
-    RLOG(0, "dx: %f %f %f", dx_c->ele[0], dx_c->ele[1], dx_c->ele[2]);
-    RLOG(0, "FootL: %f %f %f", ef->A_BI.org[0], ef->A_BI.org[1], ef->A_BI.org[2]);
-
-    MatNd_addSelf(term1, ax);
-
-    // Lagrange Multipliers in constraint space:
-    // lambda = inv(J inv(M) JT) (-J inv(M) b + J_dot q_dot)
-    MatNd* lambda = MatNd_create(nc, 1);
-    MatNd_mul(lambda, invJinvMJT, term1);
-
-    // Project into joint space: lambdaQ = JT lambda : n x 1 = [n x nc] * [nx x 1]
-    // or in transpose space: lambdaQ^T = lambda^T J : 1 x n = [1 x nc] * [nc x n]
-    MatNd* lambdaQ = MatNd_create(1, n);
-    MatNd_transposeSelf(lambda);   // now 1 x nc
-    MatNd_mul(lambdaQ, lambda, J);
-    MatNd_transposeSelf(lambdaQ);   // now n x 1
-
-    // Add to RHS vector
-    MatNd_addSelf(b, lambdaQ);
-
-    // Clean up
-    MatNd_destroy(lambdaQ);
-    MatNd_destroy(lambda);
-    MatNd_destroy(term1);
-    MatNd_destroy(term2);
-    MatNd_destroy(qp_ik2);
-    MatNd_destroy(invJinvMJT);
-    MatNd_destroy(JinvM);
-    MatNd_destroy(invM);
-    MatNd_destroy(J_dot);
-    MatNd_destroy(J);
-  }
-#endif
-
+  // Enforce kinematic constraints. This must be called after vector b has been
+  // completely assembled with all external force components.
+  addConstraintForces(b, qp_ik, M,  b);
 
   /*
     Matrix decomposition into torque and position controlled partitions. We
@@ -1270,126 +1140,6 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
 
   return E;
 }
-
-/*******************************************************************************
- *
- ******************************************************************************/
-#if 0
-void KineticSimulation::addConstraintForce(MatNd* b,
-                                           const RcsGraph* graph,
-                                           const std::string bodyName,
-                                           const MatNd* M,
-                                           double kp) const
-{
-  const unsigned int nc = 6;   // Number of constraints
-  const unsigned int n = graph->nJ;
-
-  const RcsBody* ef = RcsGraph_getBodyByName(graph, bodyName.c_str());
-  RCHECK(ef);
-
-  // Constraint Jacobian
-  MatNd* J = MatNd_create(nc, n);
-  MatNd Jx = MatNd_fromPtr(3, n, MatNd_getRowPtr(J, 0));
-  RcsGraph_bodyPointJacobian(graph, ef, NULL, NULL, &Jx);
-  MatNd Jw = MatNd_fromPtr(3, n, MatNd_getRowPtr(J, 3));
-  RcsGraph_rotationJacobian(graph, ef, NULL, &Jw);
-
-  MatNd* qp_ik2 = MatNd_clone(graph->q_dot);
-  RcsGraph_stateVectorToIKSelf(graph, qp_ik2);
-
-  // Constraint dot-Jacobian
-  MatNd* J_dot = MatNd_createLike(J);
-  MatNd J_dot_x = MatNd_fromPtr(3, n, MatNd_getRowPtr(J_dot, 0));
-  RcsGraph_bodyPointDotJacobian(graph, ef, NULL, NULL, qp_ik2, &J_dot_x);
-  MatNd J_dot_w = MatNd_fromPtr(3, n, MatNd_getRowPtr(J_dot, 3));
-  RcsGraph_rotationDotJacobian(graph, ef, qp_ik2, &J_dot_w);
-
-  // J inv(M)
-  MatNd* invM = MatNd_createLike(M);
-  double det = MatNd_choleskyInverse(invM, M);
-  RCHECK(det != 0.0);
-  MatNd* JinvM = MatNd_create(nc, n);
-  MatNd_mul(JinvM, J, invM);
-
-  // inv(J inv(M) JT)
-  MatNd* invJinvMJT = MatNd_create(nc, nc);
-  MatNd_sqrMulABAt(invJinvMJT, J, invM);
-  det = MatNd_choleskyInverse(invJinvMJT, invJinvMJT);
-  RCHECK(det != 0.0);
-
-  // term1: -J inv(M) b
-  MatNd* term1 = MatNd_create(nc, 1);
-  MatNd_mul(term1, JinvM, b);
-  MatNd_constMulSelf(term1, -1.0);
-
-  // term2: J_dot q_dot
-  MatNd* term2 = MatNd_create(nc, 1);
-  MatNd_mul(term2, J_dot, qp_ik2);
-
-  // term1 = -J inv(M) b + J_dot q_dot
-  MatNd_subSelf(term1, term2);
-
-  // term 3: stabilization, either PD control law or other like Baumgarte
-  // Stabilization: ax = kp*dx + kd*dx_dot
-  static bool init = false;
-  static double x0[3];
-  if (!init)
-  {
-    Vec3d_copy(x0, ef->A_BI.org);
-    init = true;
-  }
-
-  //  const double kp = 0.0;
-  const double kd = 0.5*sqrt(4.0*kp);
-  MatNd* ax, * dx_c, *dxd_c;
-  MatNd_fromStack(ax, nc, 1);
-  MatNd_fromStack(dx_c, nc, 1);
-  MatNd_fromStack(dxd_c, nc, 1);
-  Vec3d_sub(dx_c->ele, x0, ef->A_BI.org);
-  Vec3d_sub(dxd_c->ele, Vec3d_zeroVec(), ef->x_dot);
-
-  // Orientation feedback missing
-  Vec3d_sub(&dxd_c->ele[3], Vec3d_zeroVec(), ef->omega);
-
-  for (size_t i=0; i<nc; ++i)
-  {
-    ax->ele[i] = kp*dx_c->ele[i] + kd*dxd_c->ele[i];
-  }
-
-  // RLOG(0, "x0: %f %f %f", x0[0], x0[1], x0[2]);
-  // RLOG(0, "dx: %f %f %f", dx_c->ele[0], dx_c->ele[1], dx_c->ele[2]);
-  // RLOG(0, "FootL: %f %f %f", ef->A_BI.org[0], ef->A_BI.org[1], ef->A_BI.org[2]);
-
-  MatNd_addSelf(term1, ax);
-
-  // Lagrange Multipliers in constraint space:
-  // lambda = inv(J inv(M) JT) (-J inv(M) b + J_dot q_dot)
-  MatNd* lambda = MatNd_create(nc, 1);
-  MatNd_mul(lambda, invJinvMJT, term1);
-
-  // Project into joint space: lambdaQ = JT lambda : n x 1 = [n x nc] * [nx x 1]
-  // or in transpose space: lambdaQ^T = lambda^T J : 1 x n = [1 x nc] * [nc x n]
-  MatNd* lambdaQ = MatNd_create(1, n);
-  MatNd_transposeSelf(lambda);   // now 1 x nc
-  MatNd_mul(lambdaQ, lambda, J);
-  MatNd_transposeSelf(lambdaQ);   // now n x 1
-
-  // Add to RHS vector
-  MatNd_addSelf(b, lambdaQ);
-
-  // Clean up
-  MatNd_destroy(lambdaQ);
-  MatNd_destroy(lambda);
-  MatNd_destroy(term1);
-  MatNd_destroy(term2);
-  MatNd_destroy(qp_ik2);
-  MatNd_destroy(invJinvMJT);
-  MatNd_destroy(JinvM);
-  MatNd_destroy(invM);
-  MatNd_destroy(J_dot);
-  MatNd_destroy(J);
-}
-#endif
 
 /*******************************************************************************
  *
@@ -1550,6 +1300,82 @@ void KineticSimulation::addSpringForces(MatNd* M_spring, const MatNd* q_dot) con
   MatNd_destroy(J);
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void KineticSimulation::addConstraintForces(MatNd* M_constraint,
+                                            const MatNd* q_dot,
+                                            const MatNd* M,
+                                            const MatNd* b) const
+{
+  const RcsGraph* graph = getGraph();
+
+  MatNd* J = MatNd_create(1, graph->nJ);
+  MatNd* J_dot = MatNd_create(1, graph->nJ);
+  MatNd* ax = MatNd_create(1, 1);
+  MatNd_reshape(J, 0, graph->nJ);
+  MatNd_reshape(J_dot, 0, graph->nJ);
+  MatNd_reshape(ax, 0, 1);
+  MatNd* qp_ik = MatNd_clone(graph->q_dot);
+  RcsGraph_stateVectorToIKSelf(graph, qp_ik);
+
+  // Compute an augmented overall Jacobian and dot Jacobian
+  for (size_t i=0; i<constraint.size(); ++i)
+  {
+    constraint[i].appendJacobian(J, graph);
+    constraint[i].appendDotJacobian(J_dot, graph, qp_ik);
+    constraint[i].appendStabilization(ax, graph);
+  }
+
+  const int nc = J->m;
+
+  // J inv(M)
+  MatNd* invM = MatNd_createLike(M);
+  double det = MatNd_choleskyInverse(invM, M);
+  RCHECK(det != 0.0);
+  MatNd* JinvM = MatNd_create(nc, graph->nJ);
+  MatNd_mul(JinvM, J, invM);
+
+  // inv(J inv(M) JT)
+  MatNd* invJinvMJT = MatNd_create(nc, nc);
+  MatNd_sqrMulABAt(invJinvMJT, J, invM);
+  det = MatNd_choleskyInverse(invJinvMJT, invJinvMJT);
+  RCHECK(det != 0.0);
+
+  // term1: -J inv(M) b
+  MatNd* term1 = MatNd_create(nc, 1);
+  MatNd_mul(term1, JinvM, b);
+  MatNd_constMulSelf(term1, -1.0);
+
+  // term2: J_dot q_dot
+  MatNd* term2 = MatNd_create(nc, 1);
+  MatNd_mul(term2, J_dot, qp_ik);
+
+  // term1 = -J inv(M) b + J_dot q_dot
+  MatNd_subSelf(term1, term2);
+
+  // term 3: stabilization, either PD control law or other like Baumgarte
+  // Stabilization: ax = kp*dx + kd*dx_dot
+  MatNd_addSelf(term1, ax);
+
+  // Lagrange Multipliers in constraint space:
+  // lambda = inv(J inv(M) JT) (-J inv(M) b + J_dot q_dot)
+  MatNd* lambda = MatNd_create(nc, 1);
+  MatNd_mul(lambda, invJinvMJT, term1);
+
+  // Project into joint space: lambdaQ = JT lambda : n x 1 = [n x nc] * [nx x 1]
+  // or in transpose space: lambdaQ^T = lambda^T J : 1 x n = [1 x nc] * [nc x n]
+  MatNd* lambdaQ = MatNd_create(1, graph->nJ);
+  MatNd_transposeSelf(lambda);   // now 1 x nc
+  MatNd_mul(lambdaQ, lambda, J);
+  MatNd_transposeSelf(lambdaQ);   // now n x 1
+
+  MatNd_addSelf(M_constraint, lambdaQ);
+
+  // Clean up
+  MatNd_destroyN(8, qp_ik, invM, JinvM, invJinvMJT, term1, term2, lambda, lambdaQ);
+}
+
 
 
 
@@ -1685,24 +1511,7 @@ KineticSimulation::KinematicConstraint::KinematicConstraint(ConstraintType type_
 
 size_t KineticSimulation::KinematicConstraint::dim() const
 {
-  size_t rowCount = 0;
-
-  switch (type)
-  {
-    case Pos:
-    case Ori:
-      rowCount = 3;
-      break;
-
-    case PosAndOri:
-      rowCount = 6;
-      break;
-
-    default:
-      RFATAL("Unknown ConstraintType: %zu", type);
-  }
-
-  return rowCount;
+  return x_des.size();
 }
 
 void KineticSimulation::KinematicConstraint::print(const RcsGraph* graph) const
@@ -1835,24 +1644,62 @@ void KineticSimulation::KinematicConstraint::appendStabilization(MatNd* ax_full,
     return;
   }
 
-  if (type==Ori)
-  {
-    MatNd_appendRows(ax_full, ax);
-    return;
-  }
-
   const RcsBody* ef = RCSBODY_BY_ID(graph, bdyId);
   RCHECK(ef);
 
   const double kd = 0.5*sqrt(4.0*kp);
+  double dxPos[3], dxOri[3], dvPos[3], dvOri[3];
+
+  if (type==Pos || type==PosAndOri)
+  {
+    Vec3d_sub(dxPos, x_des.data(), ef->A_BI.org);
+    Vec3d_constMul(dvPos, ef->x_dot, -1.0);
+  }
+
+  if (type==Ori || type==PosAndOri)
+  {
+    double A_curr[3][3], A_des[3][3];
+    Mat3d_copy(A_curr, (double (*)[3])ef->A_BI.rot);
+    Mat3d_fromEulerAngles(A_des, x_des.data());
+
+    double angle = Mat3d_diffAngle(A_des, A_curr);
+
+    if (angle<1.0*(M_PI/180.0))   // Less than 1 deg error: Use Euler error
+    {
+      Mat3d_getEulerError(dxOri, A_curr, A_des);
+    }
+    else   // Larger error: Use axis angle error
+    {
+      Mat3d_getAxisAngle(dxOri, A_des, A_curr);
+      Vec3d_constMulSelf(dxOri, angle);
+    }
+
+    Vec3d_constMul(dvOri, ef->omega, -1.0);
+    Vec3d_setZero(dxOri);
+  }
+
+
   MatNd* dx_c, *dxd_c;
   MatNd_fromStack(dx_c, nc, 1);
   MatNd_fromStack(dxd_c, nc, 1);
-  Vec3d_sub(dx_c->ele, x_des.data(), ef->A_BI.org);
-  Vec3d_sub(dxd_c->ele, Vec3d_zeroVec(), ef->x_dot);
 
-  // Orientation feedback missing
-  // Vec3d_sub(&dxd_c->ele[3], Vec3d_zeroVec(), ef->omega);
+  if (type==Pos)
+  {
+    Vec3d_copy(dx_c->ele, dxPos);
+    Vec3d_copy(dxd_c->ele, dvPos);
+  }
+  else if (type==Ori)
+  {
+    Vec3d_copy(dx_c->ele, dxOri);
+    Vec3d_copy(dxd_c->ele, dvOri);
+  }
+  else if (type==PosAndOri)
+  {
+    Vec3d_copy(dx_c->ele, dxPos);
+    Vec3d_copy(dxd_c->ele, dvPos);
+    Vec3d_copy(dx_c->ele+3, dxOri);
+    Vec3d_copy(dxd_c->ele+3, dvOri);
+  }
 
   for (size_t i=0; i<nc; ++i)
   {
@@ -1860,236 +1707,7 @@ void KineticSimulation::KinematicConstraint::appendStabilization(MatNd* ax_full,
   }
 
   MatNd_appendRows(ax_full, ax);
-}
 
-void KineticSimulation::KinematicConstraint::addForce(MatNd* lambdaQ,
-                                                      const RcsGraph* graph,
-                                                      const MatNd* M,
-                                                      const MatNd* b) const
-{
-  const unsigned int nc = dim();   // Number of constraints
-  const unsigned int n = graph->nJ;
-
-  const RcsBody* ef = RCSBODY_BY_ID(graph, bdyId);
-  RCHECK(ef);
-
-  // Constraint Jacobian
-  MatNd* J = MatNd_create(nc, n);
-  switch (this->type)
-  {
-    case Pos:
-    {
-      MatNd Jx = MatNd_fromPtr(3, n, MatNd_getRowPtr(J, 0));
-      RcsGraph_bodyPointJacobian(graph, ef, NULL, NULL, &Jx);
-      break;
-    }
-    case Ori:
-    {
-      MatNd Jw = MatNd_fromPtr(3, n, MatNd_getRowPtr(J, 0));
-      RcsGraph_rotationJacobian(graph, ef, NULL, &Jw);
-      break;
-    }
-    case PosAndOri:
-    {
-      MatNd Jx = MatNd_fromPtr(3, n, MatNd_getRowPtr(J, 0));
-      RcsGraph_bodyPointJacobian(graph, ef, NULL, NULL, &Jx);
-      MatNd Jw = MatNd_fromPtr(3, n, MatNd_getRowPtr(J, 3));
-      RcsGraph_rotationJacobian(graph, ef, NULL, &Jw);
-      break;
-    }
-
-    default:
-      RFATAL("Unknown constraint type: %d", this->type);
-  };
-
-  MatNd* qp_ik = MatNd_clone(graph->q_dot);
-  RcsGraph_stateVectorToIKSelf(graph, qp_ik);
-
-  // Constraint dot-Jacobian
-  MatNd* J_dot = MatNd_createLike(J);
-  switch (this->type)
-  {
-    case Pos:
-    {
-      MatNd J_dot_x = MatNd_fromPtr(3, n, MatNd_getRowPtr(J_dot, 0));
-      RcsGraph_bodyPointDotJacobian(graph, ef, NULL, NULL, qp_ik, &J_dot_x);
-      break;
-    }
-    case Ori:
-    {
-      MatNd J_dot_w = MatNd_fromPtr(3, n, MatNd_getRowPtr(J_dot, 0));
-      RcsGraph_rotationDotJacobian(graph, ef, qp_ik, &J_dot_w);
-      break;
-    }
-    case PosAndOri:
-    {
-      MatNd J_dot_x = MatNd_fromPtr(3, n, MatNd_getRowPtr(J_dot, 0));
-      RcsGraph_bodyPointDotJacobian(graph, ef, NULL, NULL, qp_ik, &J_dot_x);
-      MatNd J_dot_w = MatNd_fromPtr(3, n, MatNd_getRowPtr(J_dot, 3));
-      RcsGraph_rotationDotJacobian(graph, ef, qp_ik, &J_dot_w);
-      break;
-    }
-
-    default:
-      RFATAL("Unknown constraint type: %d", this->type);
-  };
-
-
-  // J inv(M)
-  MatNd* invM = MatNd_createLike(M);
-  double det = MatNd_choleskyInverse(invM, M);
-  RCHECK(det != 0.0);
-  MatNd* JinvM = MatNd_create(nc, n);
-  MatNd_mul(JinvM, J, invM);
-
-  // inv(J inv(M) JT)
-  MatNd* invJinvMJT = MatNd_create(nc, nc);
-  MatNd_sqrMulABAt(invJinvMJT, J, invM);
-  det = MatNd_choleskyInverse(invJinvMJT, invJinvMJT);
-  RCHECK(det != 0.0);
-
-  // term1: -J inv(M) b
-  MatNd* term1 = MatNd_create(nc, 1);
-  MatNd_mul(term1, JinvM, b);
-  MatNd_constMulSelf(term1, -1.0);
-
-  // term2: J_dot q_dot
-  MatNd* term2 = MatNd_create(nc, 1);
-  MatNd_mul(term2, J_dot, qp_ik);
-
-  // term1 = -J inv(M) b + J_dot q_dot
-  MatNd_subSelf(term1, term2);
-
-  // term 3: stabilization, either PD control law or other like Baumgarte
-  // Stabilization: ax = kp*dx + kd*dx_dot
-  if ((kp != 0.0) && (type==Pos || type==PosAndOri))
-  {
-    const double kd = 0.5*sqrt(4.0*kp);
-    MatNd* ax, * dx_c, *dxd_c;
-    MatNd_fromStack(ax, 3, 1);
-    MatNd_fromStack(dx_c, 3, 1);
-    MatNd_fromStack(dxd_c, 3, 1);
-    Vec3d_sub(dx_c->ele, x_des.data(), ef->A_BI.org);
-    Vec3d_sub(dxd_c->ele, Vec3d_zeroVec(), ef->x_dot);
-
-    // Orientation feedback missing
-    // Vec3d_sub(&dxd_c->ele[3], Vec3d_zeroVec(), ef->omega);
-
-    for (size_t i=0; i<3; ++i)
-    {
-      ax->ele[i] = kp*dx_c->ele[i] + kd*dxd_c->ele[i];
-    }
-
-    Vec3d_addSelf(term1->ele, ax->ele);
-  }
-
-  // Lagrange Multipliers in constraint space:
-  // lambda = inv(J inv(M) JT) (-J inv(M) b + J_dot q_dot)
-  MatNd* lambda = MatNd_create(nc, 1);
-  MatNd_mul(lambda, invJinvMJT, term1);
-
-  // Project into joint space: lambdaQ = JT lambda : n x 1 = [n x nc] * [nx x 1]
-  // or in transpose space: lambdaQ^T = lambda^T J : 1 x n = [1 x nc] * [nc x n]
-  MatNd_reshape(lambdaQ, 1, n);
-  MatNd_transposeSelf(lambda);   // now 1 x nc
-  MatNd_mul(lambdaQ, lambda, J);
-  MatNd_transposeSelf(lambdaQ);   // now n x 1
-
-  // Add to RHS vector
-  // MatNd_addSelf(b, lambdaQ);
-
-  // Clean up
-  MatNd_destroy(lambda);
-  MatNd_destroy(term1);
-  MatNd_destroy(term2);
-  MatNd_destroy(qp_ik);
-  MatNd_destroy(invJinvMJT);
-  MatNd_destroy(JinvM);
-  MatNd_destroy(invM);
-  MatNd_destroy(J_dot);
-  MatNd_destroy(J);
-}
-
-void KineticSimulation::addConstraintForces(MatNd* lambdaQ,
-                                            const MatNd* q_dot,
-                                            const MatNd* M,
-                                            const MatNd* b) const
-{
-  const RcsGraph* graph = getGraph();
-
-  MatNd* J = MatNd_create(1, graph->nJ);
-  MatNd* J_dot = MatNd_create(1, graph->nJ);
-  MatNd* ax = MatNd_create(1, 1);
-  MatNd_reshape(J, 0, graph->nJ);
-  MatNd_reshape(J_dot, 0, graph->nJ);
-  MatNd_reshape(ax, 0, 1);
-  MatNd* qp_ik = MatNd_clone(graph->q_dot);
-  RcsGraph_stateVectorToIKSelf(graph, qp_ik);
-
-  // Compute an augmented overall Jacobian and dot Jacobian
-  for (size_t i=0; i<constraint.size(); ++i)
-  {
-    constraint[i].appendJacobian(J, graph);
-    constraint[i].appendDotJacobian(J_dot, graph, qp_ik);
-    constraint[i].appendStabilization(ax, graph);
-  }
-
-
-  const int nc = J->m;
-
-
-  // J inv(M)
-  MatNd* invM = MatNd_createLike(M);
-  double det = MatNd_choleskyInverse(invM, M);
-  RCHECK(det != 0.0);
-  MatNd* JinvM = MatNd_create(nc, graph->nJ);
-  MatNd_mul(JinvM, J, invM);
-
-  // inv(J inv(M) JT)
-  MatNd* invJinvMJT = MatNd_create(nc, nc);
-  MatNd_sqrMulABAt(invJinvMJT, J, invM);
-  det = MatNd_choleskyInverse(invJinvMJT, invJinvMJT);
-  RCHECK(det != 0.0);
-
-  // term1: -J inv(M) b
-  MatNd* term1 = MatNd_create(nc, 1);
-  MatNd_mul(term1, JinvM, b);
-  MatNd_constMulSelf(term1, -1.0);
-
-  // term2: J_dot q_dot
-  MatNd* term2 = MatNd_create(nc, 1);
-  MatNd_mul(term2, J_dot, qp_ik);
-
-  // term1 = -J inv(M) b + J_dot q_dot
-  MatNd_subSelf(term1, term2);
-
-  // term 3: stabilization, either PD control law or other like Baumgarte
-  // Stabilization: ax = kp*dx + kd*dx_dot
-  MatNd_addSelf(term1, ax);
-
-  // Lagrange Multipliers in constraint space:
-  // lambda = inv(J inv(M) JT) (-J inv(M) b + J_dot q_dot)
-  MatNd* lambda = MatNd_create(nc, 1);
-  MatNd_mul(lambda, invJinvMJT, term1);
-
-  // Project into joint space: lambdaQ = JT lambda : n x 1 = [n x nc] * [nx x 1]
-  // or in transpose space: lambdaQ^T = lambda^T J : 1 x n = [1 x nc] * [nc x n]
-  MatNd_reshape(lambdaQ, 1, graph->nJ);
-  MatNd_transposeSelf(lambda);   // now 1 x nc
-  MatNd_mul(lambdaQ, lambda, J);
-  MatNd_transposeSelf(lambdaQ);   // now n x 1
-
-
-
-
-  // Clean up
-  MatNd_destroy(qp_ik);
-  MatNd_destroy(invM);
-  MatNd_destroy(JinvM);
-  MatNd_destroy(invJinvMJT);
-  MatNd_destroy(term1);
-  MatNd_destroy(term2);
-  MatNd_destroy(lambda);
 }
 
 }   // namespace Rcs
