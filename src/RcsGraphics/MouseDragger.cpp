@@ -75,11 +75,11 @@ private:
  * coords, and the mouse coords in the bodies frame of reference. If no body
  * is found under the mouse pointer, the mouse coordinates are left unchanged.
  *****************************************************************************/
-RcsBody* Rcs::MouseDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
-                                              osgGA::GUIActionAdapter& aa,
-                                              double I_pt[3], double k_pt[3])
+static RcsBody* getBodyUnderMouseTip(const osgGA::GUIEventAdapter& ea,
+                                     osgGA::GUIActionAdapter& aa,
+                                     double I_pt[3], double k_pt[3])
 {
-  Rcs::BodyNode* nd = getNodeUnderMouse<Rcs::BodyNode*>(ea, aa, I_pt);
+  Rcs::BodyNode* nd = Rcs::getNodeUnderMouse<Rcs::BodyNode*>(ea, aa, I_pt);
 
   if (nd == NULL)
   {
@@ -99,11 +99,21 @@ RcsBody* Rcs::MouseDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
 /******************************************************************************
  *
  *****************************************************************************/
+RcsBody* Rcs::MouseDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
+                                              osgGA::GUIActionAdapter& aa,
+                                              double I_pt[3], double k_pt[3])
+{
+  return getBodyUnderMouseTip(ea, aa, I_pt, k_pt);
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
 const RcsBody* Rcs::MouseDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
                                                     osgGA::GUIActionAdapter& aa,
                                                     double I_pt[3], double k_pt[3]) const
 {
-  return getBodyUnderMouse(ea, aa, I_pt, k_pt);
+  return getBodyUnderMouseTip(ea, aa, I_pt, k_pt);
 }
 
 /******************************************************************************

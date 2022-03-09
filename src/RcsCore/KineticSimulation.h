@@ -313,7 +313,7 @@ private:
 
   void addSpringForces(MatNd* M_spring, const MatNd* q_dot) const;
 
-  void addConstraintForces(MatNd* M_constraint, const MatNd* q_dot, const MatNd* M, const MatNd* b) const;
+  void addConstraintForces(MatNd* M_constraint, const MatNd* M, const MatNd* b) const;
 
 
 
@@ -357,7 +357,8 @@ private:
     KinematicConstraint(ConstraintType type, int bdyId,
                         std::vector<double> x_des, double kp);
     void appendJacobian(MatNd* J, const RcsGraph* graph) const;
-    void appendDotJacobian(MatNd* J_dot, const RcsGraph* graph, const MatNd* q_dot) const;
+    void appendDotJacobian(MatNd* J_dot, const RcsGraph* graph,
+                           const MatNd* q_dot) const;
     void appendStabilization(MatNd* ax, const RcsGraph* graph) const;
 
     size_t dim() const;

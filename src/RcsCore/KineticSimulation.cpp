@@ -41,6 +41,7 @@
 #include "Rcs_body.h"
 #include "Rcs_shape.h"
 #include "Rcs_joint.h"
+#include "Rcs_eigen.h"
 
 
 namespace Rcs
@@ -74,7 +75,9 @@ KineticSimulation::KineticSimulation(const RcsGraph* graph_) :
  * Copy constructor.
  ******************************************************************************/
 KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe) :
-  PhysicsBase(copyFromMe), draggerTorque(NULL),
+  PhysicsBase(copyFromMe), contact(copyFromMe.contact),
+  constraint(copyFromMe.constraint), draggerTorque(NULL), jointTorque(NULL),
+  contactForces(NULL), contactPositions(NULL),
   integrator(copyFromMe.integrator), energy(copyFromMe.energy),
   dt_opt(copyFromMe.dt_opt), lastDt(copyFromMe.lastDt)
 {
@@ -91,7 +94,9 @@ KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe) :
  ******************************************************************************/
 KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe,
                                      const RcsGraph* newGraph) :
-  PhysicsBase(copyFromMe, newGraph), draggerTorque(NULL),
+  PhysicsBase(copyFromMe, newGraph), contact(copyFromMe.contact),
+  constraint(copyFromMe.constraint), draggerTorque(NULL),jointTorque(NULL),
+  contactForces(NULL), contactPositions(NULL),
   integrator(copyFromMe.integrator), energy(copyFromMe.energy),
   dt_opt(copyFromMe.dt_opt), lastDt(copyFromMe.lastDt)
 {
@@ -178,10 +183,10 @@ bool KineticSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
       if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_WELDPOS) &&
           RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_WELDORI))
       {
-        std::vector<double> x_des(BODY->A_BI.org, BODY->A_BI.org+3);
-        x_des.push_back(0.0);
-        x_des.push_back(0.0);
-        x_des.push_back(0.0);
+        double x0[6];
+        Vec3d_copy(x0, BODY->A_BI.org);
+        Mat3d_toEulerAngles(&x0[3], BODY->A_BI.rot);
+        std::vector<double> x_des(x0, x0+6);
         constraint.push_back(KinematicConstraint(KinematicConstraint::PosAndOri,
                                                  BODY->id, x_des, kp));
       }
@@ -193,7 +198,9 @@ bool KineticSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
       }
       else if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_WELDORI))
       {
-        std::vector<double> x_des(3, 0.0);
+        double ea[3];
+        Mat3d_toEulerAngles(ea, BODY->A_BI.rot);
+        std::vector<double> x_des(ea, ea+3);
         constraint.push_back(KinematicConstraint(KinematicConstraint::Ori,
                                                  BODY->id, x_des, kp));
       }
@@ -839,8 +846,6 @@ double KineticSimulation::integrationStepSimple(const double* x_, void* param,
 double KineticSimulation::integrationStep(const double* x_, void* param,
                                           double* xp, double dt)
 {
-  //return integrationStepSimple(x_, param, xp, dt);
-
   KineticSimulation* kSim = (KineticSimulation*)param;
   RcsGraph* graph = kSim->getGraph();
   const int nq = graph->nJ, nc = kSim->contact.size(), nz = 2*nq+3*nc;
@@ -932,13 +937,28 @@ double KineticSimulation::integrationStep(const double* x_, void* param,
  ******************************************************************************/
 static void getSubVec(MatNd* dst, const MatNd* src, const std::vector<int>& idx)
 {
-  RCHECK(src->n==1);
-  MatNd_reshape(dst, idx.size(), 1);
+  MatNd_reshape(dst, idx.size(), src->n);
 
+  // Fast track for column vector
+  if (src->n == 1)
+  {
   for (size_t i = 0; i < idx.size(); ++i)
   {
     RCHECK(idx[i]<(int)src->m);
     dst->ele[i] = src->ele[idx[i]];
+  }
+}
+  else
+  {
+    // Handle matrix interpreted as side-by-side column vectors
+    for (size_t i = 0; i < idx.size(); ++i)
+    {
+      RCHECK(idx[i] < (int)src->m);
+      double* rowDst = MatNd_getRowPtr(dst, i);
+      const double* rowSrc = MatNd_getRowPtr(src, idx[i]);
+      VecNd_copy(rowDst, rowSrc, src->n);
+    }
+
   }
 }
 
@@ -985,8 +1005,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
 
   // Joint speed damping: M Kv(qp_des - qp) with qp_des = 0
   // We consider all bodies with six joints as floating and do not apply any
-  // damping.
-  // \todo: Provide interface on per-joint basis
+  // damping. \todo: Provide interface on per-joint basis
   const double damping = 2.0;
   MatNd* Fi = MatNd_create(n, 1);
   MatNd* qp_ik = MatNd_clone(graph->q_dot);
@@ -996,17 +1015,14 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
     if (RcsBody_numJoints(graph, BODY)==6)
     {
       const RcsJoint* ji = RCSJOINT_BY_ID(graph, BODY->jntId);
-      RCHECK(ji);
       VecNd_setZero(&qp_ik->ele[ji->jointIndex], 6);
     }
   }
 
   RcsGraph_stateVectorToIKSelf(graph, qp_ik);
   MatNd_mul(Fi, M, qp_ik);
-  MatNd_constMulSelf(Fi, -damping);
-  MatNd_addSelf(b, Fi);
-  MatNd_destroy(qp_ik);
-  MatNd_destroy(Fi);
+  MatNd_constMulAndAddSelf(b, Fi, -damping);
+  MatNd_destroyN(2, qp_ik, Fi);
 
   // Assemble RHS generalized forces
   MatNd_addSelf(b, F_gravity);
@@ -1015,7 +1031,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
 
   // Enforce kinematic constraints. This must be called after vector b has been
   // completely assembled with all external force components.
-  addConstraintForces(b, qp_ik, M,  b);
+  addConstraintForces(b, M, b);
 
   /*
     Matrix decomposition into torque and position controlled partitions. We
@@ -1025,14 +1041,18 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
 
     into
 
-    / M00   M10 \  / qpp_f \     / h_f \      / F_f \
+    / M00   M01 \  / qpp_f \     / h_f \      / F_f \
     |           |  |       |  =  |     |  +   |     |
     \ M10   M11 /  \ qpp_c /     \ h_c /      \ F_c /
 
     We then solve for the free accelerations under consideration of the
     constrained ones:
 
-    qdd_f = inv(M00) (h_f + F_f - M10 qpp_c)
+    qdd_f = inv(M00) (h_f + F_f - M01 qpp_c)
+
+    We can obtain the joint torques like that:
+
+    F_c = M10 qpp_f + M11 qpp_c - hc
   */
 
   // pIdx are all indices of position and velocity controlled dofs, tIdx are the
@@ -1114,6 +1134,81 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   MatNd_mul(Mqpp_c, M01, qpp_c);
   MatNd_subSelf(b_f, Mqpp_c);
   MatNd* q_ddot_f = MatNd_createLike(b_f);
+
+  // Fixed kinematic constraints in the reduced space
+#if 0
+  {
+    MatNd* J = MatNd_create(0, graph->nJ);
+    MatNd* J_dot = MatNd_create(0, graph->nJ);
+    MatNd* ax = MatNd_create(0, 1);
+    MatNd* qp_ik = MatNd_clone(graph->q_dot);
+    RcsGraph_stateVectorToIKSelf(graph, qp_ik);
+
+    // Compute an augmented overall Jacobian, dot Jacobian and error compensation
+    for (size_t i = 0; i < constraint.size(); ++i)
+    {
+      constraint[i].appendJacobian(J, graph);
+      constraint[i].appendDotJacobian(J_dot, graph, qp_ik);
+      constraint[i].appendStabilization(ax, graph);
+    }
+
+    // Project terms into free space
+    RLOG(1, "A");
+    MatNd_transposeSelf(J);
+    getSubVec(J, tIdx);
+    MatNd_transposeSelf(J);
+    MatNd_transposeSelf(J_dot);
+    getSubVec(J_dot, tIdx);
+    MatNd_transposeSelf(J_dot);
+    getSubVec(ax, tIdx);
+    getSubVec(qp_ik, tIdx);
+    MatNd_printDims("J", J);
+
+    // J inv(M)
+    RLOG(1, "B");
+    MatNd* invM00 = MatNd_createLike(M00);
+    double det = MatNd_choleskyInverse(invM00, M00);
+    RCHECK(det);
+    MatNd* JinvM = MatNd_create(J->m, invM00->n);
+    MatNd_mul(JinvM, J, invM00);
+    MatNd_printDims("JinvM", JinvM);
+
+    // inv(J inv(M) JT)
+    RLOG(1, "C");
+    MatNd* invJinvMJT = MatNd_create(J->m, J->m);
+    MatNd_sqrMulABAt(invJinvMJT, J, invM00);
+    int rank = MatNd_SVDInverse(invJinvMJT, invJinvMJT);
+    RLOG(1, "Rank is %d", rank);
+
+    // lambda = -J inv(M00) b_f - J_dot q_dot_f
+    RLOG(1, "D");
+    MatNd* lambda = MatNd_create(JinvM->m, 1);
+    MatNd_mul(lambda, JinvM, b_f);
+    MatNd_mulAndAddSelf(lambda, J_dot, qp_ik);
+    MatNd_constMulSelf(lambda, -1.0);
+
+    // Add stabilization: ax = kp*dx + kd*dx_dot
+    RLOG(1, "E");
+    MatNd_addSelf(lambda, ax);
+
+    // Lagrange Multipliers: lambda = inv(J inv(M) JT) (-J inv(M) b - J_dot q_dot)
+    RLOG(1, "F");
+    MatNd_preMulSelf(lambda, invJinvMJT);
+
+    // Project into joint space: lambdaQ = JT lambda : n x 1 = [n x nc] * [nx x 1]
+    // or in transpose space: lambdaQ^T = lambda^T J : 1 x n = [1 x nc] * [nc x n]
+    RLOG(1, "G");
+    MatNd* lambda_f = MatNd_create(1, graph->nJ);
+    MatNd_transposeSelf(lambda);   // now 1 x nc
+    MatNd_mulAndAddSelf(lambda_f, lambda, J);
+    MatNd_transposeSelf(lambda_f);   // now n x 1
+
+
+    // Clean up
+    RLOG(1, "H");
+    MatNd_destroyN(7, J, J_dot, ax, qp_ik, invM00, invJinvMJT, lambda_f);
+  }
+#endif
   double det = MatNd_choleskySolve(q_ddot_f, M00, b_f);
 
   MatNd_reshape(q_ddot, n, 1);
@@ -1126,10 +1221,32 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
     q_ddot->ele[pIdx[i]] = qpp_c->ele[i];
   }
 
-  MatNd_destroyN(7, M00, M01, qpp_f, qpp_c, Mqpp_c, q_ddot_f, b_f);
+#if 0
+  // Get joint torques: F_c = M10 qpp_f + M11 qpp_c - hc
+  {
+    MatNd_transposeSelf(M01);   // now M10
+    MatNd* jointTorque = MatNd_createLike(qpp_c);
+    MatNd* M11 = MatNd_create(pIdx.size(), pIdx.size());
+    MatNd* b_c = MatNd_createLike(qpp_c);
+
+
+    getSubMat(M11, M, pIdx);
+    getSubVec(b_c, b, pIdx);
+
+    MatNd_mul(jointTorque, M01, qpp_f);
+    MatNd_mulAndAddSelf(jointTorque, M11, qpp_c);
+    MatNd_subSelf(jointTorque, b_c);
+    MatNd_printCommentDigits("torque", jointTorque, 4);
+
+    MatNd_destroy(M11);
+    MatNd_destroy(b_c);
+    MatNd_destroy(jointTorque);
+  }
+#endif
 
   // Clean up
-  MatNd_destroyN(3, M, F_gravity, h);
+  MatNd_destroyN(10, M00, M01, qpp_f, qpp_c, Mqpp_c, q_ddot_f, b_f, M,
+                 F_gravity, h);
 
   // Warn if something seriously goes wrong.
   if (det == 0.0)
@@ -1301,25 +1418,21 @@ void KineticSimulation::addSpringForces(MatNd* M_spring, const MatNd* q_dot) con
 }
 
 /*******************************************************************************
- *
+ * M_constraint += J^T inv(J inv(M) J^T) (-J inv(M) b - J_dot q_dot)
  ******************************************************************************/
 void KineticSimulation::addConstraintForces(MatNd* M_constraint,
-                                            const MatNd* q_dot,
                                             const MatNd* M,
                                             const MatNd* b) const
 {
   const RcsGraph* graph = getGraph();
 
-  MatNd* J = MatNd_create(1, graph->nJ);
-  MatNd* J_dot = MatNd_create(1, graph->nJ);
-  MatNd* ax = MatNd_create(1, 1);
-  MatNd_reshape(J, 0, graph->nJ);
-  MatNd_reshape(J_dot, 0, graph->nJ);
-  MatNd_reshape(ax, 0, 1);
+  MatNd* J = MatNd_create(0, graph->nJ);
+  MatNd* J_dot = MatNd_create(0, graph->nJ);
+  MatNd* ax = MatNd_create(0, 1);
   MatNd* qp_ik = MatNd_clone(graph->q_dot);
   RcsGraph_stateVectorToIKSelf(graph, qp_ik);
 
-  // Compute an augmented overall Jacobian and dot Jacobian
+  // Compute an augmented overall Jacobian, dot Jacobian and error compensation
   for (size_t i=0; i<constraint.size(); ++i)
   {
     constraint[i].appendJacobian(J, graph);
@@ -1327,53 +1440,48 @@ void KineticSimulation::addConstraintForces(MatNd* M_constraint,
     constraint[i].appendStabilization(ax, graph);
   }
 
-  const int nc = J->m;
-
   // J inv(M)
   MatNd* invM = MatNd_createLike(M);
   double det = MatNd_choleskyInverse(invM, M);
-  RCHECK(det != 0.0);
-  MatNd* JinvM = MatNd_create(nc, graph->nJ);
+  if (det == 0.0)
+  {
+    RLOG(1, "Failed to invert mass matrix");
+  }
+  MatNd* JinvM = MatNd_create(J->m, graph->nJ);
   MatNd_mul(JinvM, J, invM);
 
   // inv(J inv(M) JT)
-  MatNd* invJinvMJT = MatNd_create(nc, nc);
+  MatNd* invJinvMJT = MatNd_create(J->m, J->m);
   MatNd_sqrMulABAt(invJinvMJT, J, invM);
   det = MatNd_choleskyInverse(invJinvMJT, invJinvMJT);
-  RCHECK(det != 0.0);
+  if (det == 0.0)
+  {
+    MatNd_sqrMulABAt(invJinvMJT, J, invM);
+    int rank = MatNd_SVDInverseSelf(invJinvMJT);
+    RLOG(1, "Using SVD to invert J inv(M) transpose(J): rank is %d", rank);
+  }
 
-  // term1: -J inv(M) b
-  MatNd* term1 = MatNd_create(nc, 1);
-  MatNd_mul(term1, JinvM, b);
-  MatNd_constMulSelf(term1, -1.0);
+  // lambda = -J inv(M) b - J_dot q_dot
+  MatNd* lambda = MatNd_create(J->m, 1);
+  MatNd_mul(lambda, JinvM, b);
+  MatNd_mulAndAddSelf(lambda, J_dot, qp_ik);
+  MatNd_constMulSelf(lambda, -1.0);
 
-  // term2: J_dot q_dot
-  MatNd* term2 = MatNd_create(nc, 1);
-  MatNd_mul(term2, J_dot, qp_ik);
+  // Add stabilization: ax = kp*dx + kd*dx_dot
+  MatNd_addSelf(lambda, ax);
 
-  // term1 = -J inv(M) b + J_dot q_dot
-  MatNd_subSelf(term1, term2);
-
-  // term 3: stabilization, either PD control law or other like Baumgarte
-  // Stabilization: ax = kp*dx + kd*dx_dot
-  MatNd_addSelf(term1, ax);
-
-  // Lagrange Multipliers in constraint space:
-  // lambda = inv(J inv(M) JT) (-J inv(M) b + J_dot q_dot)
-  MatNd* lambda = MatNd_create(nc, 1);
-  MatNd_mul(lambda, invJinvMJT, term1);
+  // Lagrange Multipliers: lambda = inv(J inv(M) JT) (-J inv(M) b - J_dot q_dot)
+  MatNd_preMulSelf(lambda, invJinvMJT);
 
   // Project into joint space: lambdaQ = JT lambda : n x 1 = [n x nc] * [nx x 1]
   // or in transpose space: lambdaQ^T = lambda^T J : 1 x n = [1 x nc] * [nc x n]
-  MatNd* lambdaQ = MatNd_create(1, graph->nJ);
+  MatNd_reshape(M_constraint, 1, graph->nJ);
   MatNd_transposeSelf(lambda);   // now 1 x nc
-  MatNd_mul(lambdaQ, lambda, J);
-  MatNd_transposeSelf(lambdaQ);   // now n x 1
-
-  MatNd_addSelf(M_constraint, lambdaQ);
+  MatNd_mulAndAddSelf(M_constraint, lambda, J);
+  MatNd_transposeSelf(M_constraint);   // now n x 1
 
   // Clean up
-  MatNd_destroyN(8, qp_ik, invM, JinvM, invJinvMJT, term1, term2, lambda, lambdaQ);
+  MatNd_destroyN(8, J, J_dot, ax, qp_ik, invM, JinvM, invJinvMJT, lambda);
 }
 
 
@@ -1650,32 +1758,22 @@ void KineticSimulation::KinematicConstraint::appendStabilization(MatNd* ax_full,
   const double kd = 0.5*sqrt(4.0*kp);
   double dxPos[3], dxOri[3], dvPos[3], dvOri[3];
 
+  // Compute linear position and velocity error
   if (type==Pos || type==PosAndOri)
   {
     Vec3d_sub(dxPos, x_des.data(), ef->A_BI.org);
     Vec3d_constMul(dvPos, ef->x_dot, -1.0);
   }
 
+  // Compute angular position and velocity error
   if (type==Ori || type==PosAndOri)
   {
-    double A_curr[3][3], A_des[3][3];
-    Mat3d_copy(A_curr, (double (*)[3])ef->A_BI.rot);
-    Mat3d_fromEulerAngles(A_des, x_des.data());
-
-    double angle = Mat3d_diffAngle(A_des, A_curr);
-
-    if (angle<1.0*(M_PI/180.0))   // Less than 1 deg error: Use Euler error
-    {
-      Mat3d_getEulerError(dxOri, A_curr, A_des);
-    }
-    else   // Larger error: Use axis angle error
-    {
-      Mat3d_getAxisAngle(dxOri, A_des, A_curr);
-      Vec3d_constMulSelf(dxOri, angle);
-    }
+    double A_des[3][3];
+    size_t offset = (type == Ori) ? 0 : 3;
+    Mat3d_fromEulerAngles(A_des, x_des.data()+ offset);
+    Mat3d_getEulerError(dxOri, (double(*)[3])ef->A_BI.rot, A_des);
 
     Vec3d_constMul(dvOri, ef->omega, -1.0);
-    Vec3d_setZero(dxOri);
   }
 
 
@@ -1683,22 +1781,27 @@ void KineticSimulation::KinematicConstraint::appendStabilization(MatNd* ax_full,
   MatNd_fromStack(dx_c, nc, 1);
   MatNd_fromStack(dxd_c, nc, 1);
 
-  if (type==Pos)
+  switch (type)
   {
-    Vec3d_copy(dx_c->ele, dxPos);
-    Vec3d_copy(dxd_c->ele, dvPos);
-  }
-  else if (type==Ori)
-  {
-    Vec3d_copy(dx_c->ele, dxOri);
-    Vec3d_copy(dxd_c->ele, dvOri);
-  }
-  else if (type==PosAndOri)
-  {
-    Vec3d_copy(dx_c->ele, dxPos);
-    Vec3d_copy(dxd_c->ele, dvPos);
-    Vec3d_copy(dx_c->ele+3, dxOri);
-    Vec3d_copy(dxd_c->ele+3, dvOri);
+    case Pos:
+      Vec3d_copy(dx_c->ele, dxPos);
+      Vec3d_copy(dxd_c->ele, dvPos);
+      break;
+
+    case Ori:
+      Vec3d_copy(dx_c->ele, dxOri);
+      Vec3d_copy(dxd_c->ele, dvOri);
+      break;
+
+    case PosAndOri:
+      Vec3d_copy(dx_c->ele, dxPos);
+      Vec3d_copy(dxd_c->ele, dvPos);
+      Vec3d_copy(dx_c->ele+3, dxOri);
+      Vec3d_copy(dxd_c->ele+3, dvOri);
+      break;
+
+    default:
+      RFATAL("Unknown constraint type: %d", type);
   }
 
   for (size_t i=0; i<nc; ++i)

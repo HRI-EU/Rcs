@@ -1751,25 +1751,24 @@ void RcsGraph_dAdq(const RcsGraph* self, const RcsBody* b, double* dAdq,
   while (jnt != NULL)
   {
 
-    if ((jnt->constrained==true) || (RcsJoint_isRotation(jnt)==false))
+    if ((jnt->jacobiIndex==-1) || (RcsJoint_isRotation(jnt)==false))
     {
       jnt = RCSJOINT_BY_ID(self, jnt->prevId);
       continue;
     }
 
-    double dAdq_i[3][3];
-    RcsGraph_dAdq_i(self, b, jnt, (double*) dAdq_i);
-    double* res = &dAdq_i[0][0];
+    double dAdq_i[9];
+    RcsGraph_dAdq_i(self, b, jnt, dAdq_i);
 
     if (transposed == true)
     {
-      memcpy(&dAdq[jnt->jacobiIndex * 9], res, 9 * sizeof(double));
+      memcpy(&dAdq[jnt->jacobiIndex * 9], dAdq_i, 9 * sizeof(double));
     }
     else
     {
       for (int i = 0; i < 9; i++)
       {
-        dAdq[self->nJ * i + jnt->jacobiIndex] = res[i];
+        dAdq[self->nJ * i + jnt->jacobiIndex] = dAdq_i[i];
       }
     }
 
