@@ -362,6 +362,11 @@ private:
     void appendStabilization(MatNd* ax, const RcsGraph* graph) const;
     static void computeX(const RcsGraph* graph, int bdy_id, int refbdy_id,
                          double x_curr[3]);
+    static void computeEulerAngles(const RcsGraph* graph,
+                                   int bdy_id,
+                                   int refbdy_id,
+                                   double ea_curr[3]);
+
     void computeXp(const RcsGraph* graph, double x_dot[3]) const;
 
     size_t dim() const;

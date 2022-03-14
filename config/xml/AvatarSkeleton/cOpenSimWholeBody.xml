@@ -352,10 +352,9 @@
     <Joint name="Tool_thy" range="-180 0 180" type="RotY" torqueLimit="7.4466"   speedLimit="57.29578" ctrlType="Torque" weightJL="0" />
     <Joint name="Tool_thz" range="-180 0 180" type="RotZ" torqueLimit="7.4466"   speedLimit="57.29578" ctrlType="Torque" weightJL="0" />
 
-	<Shape type="SPHERE" radius="0.001" physics="true" weldpos="true" weldori="true" kp="1000" refBdy="hand_l" />
-	<Shape type="SPHERE" radius="0.001" physics="true" weldpos="true" weldori="true" kp="1000" refBdy="hand_r" />
-
-    <Shape type="BOX" distance="false" physics="true" graphics="true" extents="1 0.5 0.2" transform="0.5 0 0 0 0 0" color="RED" />
+    <Shape type="SPHERE" radius="0.001" physics="true" weldpos="true" weldori="true" kp="1000" refBdy="hand_l" />
+    <Shape type="SPHERE" radius="0.001" physics="true" weldpos="true" weldori="true" kp="1000" refBdy="hand_r" />
+    <Shape type="BOX" distance="false" physics="true" graphics="true" extents="1 0.5 0.2" transform="0.5 0 0 0 0 0" color="DARKRED_TRANS" />
     <Shape type="FRAME" distance="false" physics="true" graphics="true" scale="0.5" />
   </Body>
 
@@ -378,129 +377,6 @@
   <joint_state joint="arm_add_l" position="-10" />
   <joint_state joint="elbow_flex_l" position="30" />
   <joint_state joint="pro_sup_l" position="60" />
-</model_state>
-
-<model_state model="BowDown" time_stamp="">
- <joint_state joint="pelvis_tx" position="-0.03548" />
-  <joint_state joint="pelvis_ty" position="0.001802" />
-  <joint_state joint="pelvis_tz" position="0.197689" />
-  <joint_state joint="pelvis_tilt" position="0.44836" />
-  <joint_state joint="pelvis_list" position="-5.121862" />
-  <joint_state joint="pelvis_rotation" position="-0.475917" />
-  <joint_state joint="hip_flexion_r" position="120.098066" />
-  <joint_state joint="hip_adduction_r" position="-0.173685" />
-  <joint_state joint="hip_rotation_r" position="1.413071" />
-  <joint_state joint="knee_angle_r" position="-169.167063" />
-  <joint_state joint="ankle_angle_r" position="45.418315" />
-  <joint_state joint="subtalar_angle_r" position="7.419737" />
-  <joint_state joint="mtp_angle_r" position="0.00697" />
-  <joint_state joint="hip_flexion_l" position="118.527203" />
-  <joint_state joint="hip_adduction_l" position="-1.498914" />
-  <joint_state joint="hip_rotation_l" position="-1.284686" />
-  <joint_state joint="knee_angle_l" position="-168.997492" />
-  <joint_state joint="ankle_angle_l" position="46.571321" />
-  <joint_state joint="subtalar_angle_l" position="5.220202" />
-  <joint_state joint="mtp_angle_l" position="0.002639" />
-  <joint_state joint="lumbar_extension" position="-7.66467" />
-  <joint_state joint="lumbar_bending" position="0.649339" />
-  <joint_state joint="lumbar_rotation" position="-0.205341" />
-  <joint_state joint="neck_flexion" position="15" />
-  <joint_state joint="arm_flex_r" position="29.34859" />
-  <joint_state joint="arm_add_r" position="-11.462198" />
-  <joint_state joint="arm_rot_r" position="3.524249" />
-  <joint_state joint="elbow_flex_r" position="30.25763" />
-  <joint_state joint="pro_sup_r" position="83.706708" />
-  <joint_state joint="wrist_flex_r" position="-1.461943" />
-  <joint_state joint="wrist_dev_r" position="3.725359" />
-  <joint_state joint="arm_flex_l" position="30.265808" />
-  <joint_state joint="arm_add_l" position="-11.612411" />
-  <joint_state joint="arm_rot_l" position="5.212161" />
-  <joint_state joint="elbow_flex_l" position="25.535715" />
-  <joint_state joint="pro_sup_l" position="79.987946" />
-  <joint_state joint="wrist_flex_l" position="0.069669" />
-  <joint_state joint="wrist_dev_l" position="5.805356" />
-</model_state>
-
-<model_state model="BowDefault" time_stamp="">
-  <joint_state joint="pelvis_tx" position="-0.012339" />
-  <joint_state joint="pelvis_ty" position="0.002823" />
-  <joint_state joint="pelvis_tz" position="0.905213" />
-  <joint_state joint="pelvis_tilt" position="1.077771" />
-  <joint_state joint="pelvis_list" position="0.600057" />
-  <joint_state joint="pelvis_rotation" position="-0.860906" />
-  <joint_state joint="hip_flexion_r" position="18.546186" />
-  <joint_state joint="hip_adduction_r" position="-1.019158" />
-  <joint_state joint="hip_rotation_r" position="1.074231" />
-  <joint_state joint="knee_angle_r" position="-33.587814" />
-  <joint_state joint="ankle_angle_r" position="15.723405" />
-  <joint_state joint="subtalar_angle_r" position="0.425454" />
-  <joint_state joint="mtp_angle_r" position="0.001452" />
-  <joint_state joint="hip_flexion_l" position="17.553379" />
-  <joint_state joint="hip_adduction_l" position="1.040744" />
-  <joint_state joint="hip_rotation_l" position="-1.034958" />
-  <joint_state joint="knee_angle_l" position="-32.050361" />
-  <joint_state joint="ankle_angle_l" position="15.090548" />
-  <joint_state joint="subtalar_angle_l" position="-0.270518" />
-  <joint_state joint="mtp_angle_l" position="0.000621" />
-  <joint_state joint="lumbar_extension" position="0.057195" />
-  <joint_state joint="lumbar_bending" position="0.476072" />
-  <joint_state joint="lumbar_rotation" position="-0.288515" />
-  <joint_state joint="neck_flexion" position="15" />
-  <joint_state joint="arm_flex_r" position="22.282559" />
-  <joint_state joint="arm_add_r" position="-12.358824" />
-  <joint_state joint="arm_rot_r" position="3.005282" />
-  <joint_state joint="elbow_flex_r" position="37.333521" />
-  <joint_state joint="pro_sup_r" position="83.788839" />
-  <joint_state joint="wrist_flex_r" position="-2.773778" />
-  <joint_state joint="wrist_dev_r" position="4.079759" />
-  <joint_state joint="arm_flex_l" position="22.588431" />
-  <joint_state joint="arm_add_l" position="-12.848181" />
-  <joint_state joint="arm_rot_l" position="4.206464" />
-  <joint_state joint="elbow_flex_l" position="32.584082" />
-  <joint_state joint="pro_sup_l" position="79.221648" />
-  <joint_state joint="wrist_flex_l" position="-1.108453" />
-  <joint_state joint="wrist_dev_l" position="5.533872" />
-</model_state>
-
-<model_state model="Overhead" time_stamp="">
-  <joint_state joint="pelvis_tx" position="0.00112" />
-  <joint_state joint="pelvis_ty" position="-0.000356" />
-  <joint_state joint="pelvis_tz" position="0.93291" />
-  <joint_state joint="pelvis_tilt" position="0.255492" />
-  <joint_state joint="pelvis_list" position="-2.293968" />
-  <joint_state joint="pelvis_rotation" position="1.224671" />
-  <joint_state joint="hip_flexion_r" position="1.521395" />
-  <joint_state joint="hip_adduction_r" position="-0.429074" />
-  <joint_state joint="hip_rotation_r" position="-1.779921" />
-  <joint_state joint="knee_angle_r" position="-9.409315" />
-  <joint_state joint="ankle_angle_r" position="5.211476" />
-  <joint_state joint="subtalar_angle_r" position="-1.524265" />
-  <joint_state joint="mtp_angle_r" position="0.002532" />
-  <joint_state joint="hip_flexion_l" position="1.266696" />
-  <joint_state joint="hip_adduction_l" position="0.317059" />
-  <joint_state joint="hip_rotation_l" position="0.695947" />
-  <joint_state joint="knee_angle_l" position="-8.44125" />
-  <joint_state joint="ankle_angle_l" position="4.447752" />
-  <joint_state joint="subtalar_angle_l" position="-1.853812" />
-  <joint_state joint="mtp_angle_l" position="0.001032" />
-  <joint_state joint="lumbar_extension" position="4.200443" />
-  <joint_state joint="lumbar_bending" position="0.419675" />
-  <joint_state joint="lumbar_rotation" position="0.437002" />
-  <joint_state joint="neck_flexion" position="15" />
-  <joint_state joint="arm_flex_r" position="107.965745" />
-  <joint_state joint="arm_add_r" position="-13.353101" />
-  <joint_state joint="arm_rot_r" position="0.443363" />
-  <joint_state joint="elbow_flex_r" position="42.594589" />
-  <joint_state joint="pro_sup_r" position="84.874845" />
-  <joint_state joint="wrist_flex_r" position="-2.655699" />
-  <joint_state joint="wrist_dev_r" position="3.606929" />
-  <joint_state joint="arm_flex_l" position="108.559246" />
-  <joint_state joint="arm_add_l" position="-12.455063" />
-  <joint_state joint="arm_rot_l" position="2.187983" />
-  <joint_state joint="elbow_flex_l" position="38.049132" />
-  <joint_state joint="pro_sup_l" position="80.972525" />
-  <joint_state joint="wrist_flex_l" position="-2.117898" />
-  <joint_state joint="wrist_dev_l" position="5.3229" />
 </model_state>
 
 <model_state model="Tool1" time_stamp="">
@@ -546,49 +422,6 @@
   <joint_state joint="Tool_z" position="1.2" />
 </model_state>
 
-<model_state model="Test1" time_stamp="">
-  <joint_state joint="pelvis_tx" position="-0.017421" />
-  <joint_state joint="pelvis_ty" position="0.001873" />
-  <joint_state joint="pelvis_tz" position="0.905799" />
-  <joint_state joint="pelvis_tilt" position="1.275155" />
-  <joint_state joint="pelvis_list" position="6.462933" />
-  <joint_state joint="pelvis_rotation" position="0.196965" />
-  <joint_state joint="hip_flexion_r" position="26.429921" />
-  <joint_state joint="hip_adduction_r" position="-2.014276" />
-  <joint_state joint="hip_rotation_r" position="0.865726" />
-  <joint_state joint="knee_angle_r" position="-36.040552" />
-  <joint_state joint="ankle_angle_r" position="16.864035" />
-  <joint_state joint="subtalar_angle_r" position="3.842761" />
-  <joint_state joint="mtp_angle_r" position="0.00345" />
-  <joint_state joint="hip_flexion_l" position="25.555329" />
-  <joint_state joint="hip_adduction_l" position="1.17681" />
-  <joint_state joint="hip_rotation_l" position="0.530476" />
-  <joint_state joint="knee_angle_l" position="-34.32322" />
-  <joint_state joint="ankle_angle_l" position="15.904107" />
-  <joint_state joint="subtalar_angle_l" position="3.013914" />
-  <joint_state joint="mtp_angle_l" position="0.001509" />
-  <joint_state joint="lumbar_extension" position="-1.276857" />
-  <joint_state joint="lumbar_bending" position="0.538025" />
-  <joint_state joint="lumbar_rotation" position="0.097903" />
-  <joint_state joint="neck_flexion" position="15" />
-  <joint_state joint="arm_flex_r" position="56.315527" />
-  <joint_state joint="arm_add_r" position="-12.554061" />
-  <joint_state joint="arm_rot_r" position="-2.951105" />
-  <joint_state joint="elbow_flex_r" position="51.731871" />
-  <joint_state joint="pro_sup_r" position="87.566647" />
-  <joint_state joint="wrist_flex_r" position="-3.491102" />
-  <joint_state joint="wrist_dev_r" position="0.387758" />
-  <joint_state joint="arm_flex_l" position="56.059493" />
-  <joint_state joint="arm_add_l" position="-13.441847" />
-  <joint_state joint="arm_rot_l" position="-2.25206" />
-  <joint_state joint="elbow_flex_l" position="47.674478" />
-  <joint_state joint="pro_sup_l" position="83.183817" />
-  <joint_state joint="wrist_flex_l" position="-2.049902" />
-  <joint_state joint="wrist_dev_l" position="1.684519" />
-  <joint_state joint="Tool_x" position="0.62" />
-  <joint_state joint="Tool_z" position="1.2" />
-</model_state>
-
 </Graph>
 
 
@@ -600,8 +433,6 @@
   <Task name="Right foot pose" controlVariable="XYZABC" effector="calcn_r" active="true" />
   <Task name="COM x" controlVariable="COGX" active="true" />
   <Task name="COM y" controlVariable="COGY" active="true" />
-  <xxTask name="Left hand pose" controlVariable="XYZ-Polar" effector="HandTip_L" axisDirection="Y" active="false"  />
-  <xxTask name="Hand pose rel" controlVariable="XYZABC" effector="HandTip_R" refBdy="HandTip_L" active="false" />
 
 
 

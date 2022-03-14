@@ -42,7 +42,6 @@
 #include "Rcs_shape.h"
 #include "Rcs_joint.h"
 #include "Rcs_eigen.h"
-#include "Task.h"
 
 #include <algorithm>
 
@@ -183,36 +182,28 @@ bool KineticSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
 
       // Initialize kinematic constraints
       const double kp = SHAPE->scale3d[0];
+      RcsBody* refBdy = RcsGraph_getBodyByName(getGraph(), SHAPE->material);
+      int refId = refBdy ? refBdy->id : -1;
+      double x0[6];
+      KinematicConstraint::computeX(getGraph(), BODY->id, refId, x0);
+      KinematicConstraint::computeEulerAngles(getGraph(), BODY->id, refId, &x0[3]);
+
       if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_WELDPOS) &&
           RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_WELDORI))
       {
-        RcsBody* refBdy = RcsGraph_getBodyByName(getGraph(), SHAPE->material);
-        int refId = refBdy ? refBdy->id : -1;
-        double x0[6];
-        Vec3d_copy(x0, BODY->A_BI.org);
-        KinematicConstraint::computeX(getGraph(), BODY->id, refId, x0);
-
-        //Mat3d_toEulerAngles(&x0[3], BODY->A_BI.rot);
-        Task::computeEulerAngles(&x0[3], BODY, refBdy);
         std::vector<double> x_des(x0, x0+6);
         constraint.push_back(KinematicConstraint(KinematicConstraint::PosAndOri,
                                                  BODY->id, refId, x_des, kp));
       }
       else if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_WELDPOS))
       {
-        std::vector<double> x_des(BODY->A_BI.org, BODY->A_BI.org+3);
-        RcsBody* refBdy = RcsGraph_getBodyByName(getGraph(), SHAPE->material);
-        int refId = refBdy ? refBdy->id : -1;
+        std::vector<double> x_des(x0, x0+3);
         constraint.push_back(KinematicConstraint(KinematicConstraint::Pos,
                                                  BODY->id, refId, x_des, kp));
       }
       else if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_WELDORI))
       {
-        double ea[3];
-        Mat3d_toEulerAngles(ea, BODY->A_BI.rot);
-        std::vector<double> x_des(ea, ea+3);
-        RcsBody* refBdy = RcsGraph_getBodyByName(getGraph(), SHAPE->material);
-        int refId = refBdy ? refBdy->id : -1;
+        std::vector<double> x_des(x0+3, x0+6);
         constraint.push_back(KinematicConstraint(KinematicConstraint::Ori,
                                                  BODY->id, refId, x_des, kp));
       }
@@ -1216,14 +1207,10 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
     MatNd_subSelf(b_f, Mqpp_c);
     MatNd_subSelf(b_f, lambdaQ);
     MatNd_mul(qpp_f, invM00, b_f);
-    REXEC(1)
-    {
-      MatNd_printCommentDigits("lambda", lambda, 6);
-    }
 
     // Clean up
-    MatNd_destroyN(11, J, J_dot, ax, qp_ik, invM00, invJinvMJT, lambda, lambdaQ,
-                   J_f, J_c, term2);
+    MatNd_destroyN(12, J, J_dot, ax, qp_ik, invM00, JinvM, invJinvMJT, lambda,
+                   lambdaQ, J_f, J_c, term2);
   }
   else   // Simple case for no kinematic constraints
   {
@@ -1761,6 +1748,35 @@ void KineticSimulation::KinematicConstraint::computeX(const RcsGraph* graph,
 
 }
 
+void KineticSimulation::KinematicConstraint::computeEulerAngles(const RcsGraph* graph,
+                                                                int bdy_id,
+                                                                int refbdy_id,
+                                                                double ea_curr[3])
+{
+  double A_ER[3][3];
+
+  //computeRelativeRotationMatrix(A_ER, effector, referenceBody);
+  const RcsBody* bdyEff = RCSBODY_BY_ID(graph, bdy_id);
+  RCHECK(bdyEff);
+  const RcsBody* bdyRef = RCSBODY_BY_ID(graph, refbdy_id);
+
+  if (bdyRef == NULL)
+  {
+    // No refBody, but effector
+    Mat3d_copy(A_ER, (double(*)[3]) bdyEff->A_BI.rot);
+  }
+  else
+  {
+    // refBody and effector
+    Mat3d_mulTranspose(A_ER, (double(*)[3]) bdyEff->A_BI.rot,
+                       (double(*)[3]) bdyRef->A_BI.rot);
+
+  }
+
+  Mat3d_toEulerAngles(ea_curr, A_ER);
+}
+
+
 void KineticSimulation::KinematicConstraint::computeXp(const RcsGraph* graph,
                                                        double x_dot[3]) const
 {
@@ -1786,8 +1802,6 @@ void KineticSimulation::KinematicConstraint::computeXp(const RcsGraph* graph,
   }
 }
 
-
-// \todo: Relative bodies
 void KineticSimulation::KinematicConstraint::appendStabilization(MatNd* ax_full,
                                                                  const RcsGraph* graph) const
 {
@@ -1821,20 +1835,11 @@ void KineticSimulation::KinematicConstraint::appendStabilization(MatNd* ax_full,
   // Compute angular position and velocity error
   if (type==Ori || type==PosAndOri)
   {
-    double A_des[3][3];
-    size_t offset = (type == Ori) ? 0 : 3;
-    Mat3d_fromEulerAngles(A_des, x_des.data()+ offset);
-#if 0
-    Mat3d_getEulerError(dxOri, (double(*)[3])ef->A_BI.rot, A_des);
-#else
-    double ea_curr[3];
-    const RcsBody* refBdy = RCSBODY_BY_ID(graph, refBdyId);
-    Task::computeEulerAngles(ea_curr, ef, refBdy);
-
-    double A_curr[3][3];
-
+    double A_curr[3][3], A_des[3][3], ea_curr[3];
+    const size_t offset = (type == Ori) ? 0 : 3;
+    KinematicConstraint::computeEulerAngles(graph, bdyId, refBdyId, ea_curr);
     Mat3d_fromEulerAngles(A_curr, ea_curr);
-    //Mat3d_fromEulerAngles(A_des, x_des);
+    Mat3d_fromEulerAngles(A_des, x_des.data()+ offset);
 
     double angle = Mat3d_diffAngle(A_des, A_curr);
 
@@ -1848,11 +1853,8 @@ void KineticSimulation::KinematicConstraint::appendStabilization(MatNd* ax_full,
       Vec3d_constMulSelf(dxOri, angle);
     }
 
-#endif
-
-#if 0
-    Vec3d_constMul(dvOri, ef->omega, -1.0);
-#else
+    // Angluar velocity damping
+    const RcsBody* refBdy = RCSBODY_BY_ID(graph, refBdyId);
     Vec3d_copy(dvOri, ef->omega);
 
     if (refBdy)
@@ -1861,9 +1863,7 @@ void KineticSimulation::KinematicConstraint::appendStabilization(MatNd* ax_full,
       Vec3d_rotateSelf(dvOri, (double(*)[3])refBdy->A_BI.rot);
     }
     Vec3d_constMulSelf(dvOri, -1.0);
-#endif
   }
-
 
   MatNd* dx_c, *dxd_c;
   MatNd_fromStack(dx_c, nc, 1);
@@ -1898,7 +1898,6 @@ void KineticSimulation::KinematicConstraint::appendStabilization(MatNd* ax_full,
   }
 
   MatNd_appendRows(ax_full, ax);
-
 }
 
 
