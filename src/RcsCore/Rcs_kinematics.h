@@ -180,6 +180,13 @@ void RcsGraph_bodyPointDotJacobian(const RcsGraph* graph, const RcsBody* body,
                                    const MatNd* qp, MatNd* J_dot);
 
 /*! \ingroup RcsKinematicsFunctions
+ *  \brief See \ref RcsGraph_bodyPointDotJacobian() for reference.
+ */
+void RcsGraph_3dOmegaDotJacobian(const RcsGraph* self, const RcsBody* effector,
+                                 const RcsBody* refBdy, const RcsBody* refFrame,
+                                 const MatNd* q_dot, MatNd* J_dot);
+
+/*! \ingroup RcsKinematicsFunctions
  *  \brief Computes the rotation Jacobian of a given body with respect to the
  *         world (I) reference frame.
  *
@@ -268,6 +275,12 @@ void RcsGraph_3dPosJacobian(const RcsGraph* self, const RcsBody* effector,
 void RcsGraph_3dPosHessian(const RcsGraph* self, const RcsBody* effector,
                            const RcsBody* refBdy, const RcsBody* refFrame,
                            MatNd* H);
+/*! \ingroup RcsKinematicsFunctions
+ *  \brief See \ref RcsGraph_bodyPointDotJacobian() for reference.
+ */
+void RcsGraph_3dPosDotJacobian(const RcsGraph* self, const RcsBody* effector,
+                               const RcsBody* refBody, const RcsBody* refFrame,
+                               const MatNd* q_dot, MatNd* J_dot);
 
 /*! \ingroup RcsKinematicsFunctions
  *  \brief The index-th row of the 3d position Jacobian. Index must be

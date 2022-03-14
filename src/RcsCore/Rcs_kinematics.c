@@ -413,6 +413,25 @@ void RcsGraph_bodyPointDotJacobian(const RcsGraph* self,
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+void RcsGraph_3dPosDotJacobian(const RcsGraph* self, const RcsBody* effector,
+                               const RcsBody* refBody, const RcsBody* refFrame,
+                               const MatNd* q_dot, MatNd* J_dot)
+{
+  int n = self->nJ;
+  MatNd* H = NULL;
+  MatNd_create2(H, 3*n, n);
+
+  RcsGraph_3dPosHessian(self, effector, refBody, refFrame, H);
+
+  MatNd_reshape(J_dot, 3*n, 1);
+  MatNd_mul(J_dot, H, q_dot);
+  MatNd_reshape(J_dot, 3, n);
+  MatNd_destroy(H);
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
 void RcsGraph_rotationJacobian(const RcsGraph* self,
@@ -725,17 +744,20 @@ void RcsGraph_3dPosHessian(const RcsGraph* self, const RcsBody* effector,
 
     for (int j = 0; j < n; j++)
     {
+      const int jn = j * n;
       for (int k = 0; k < n; k++)
       {
         double col[3], dst[3];
-        col[0] = HR3->ele[         j * n + k];
-        col[1] = HR3->ele[    nn + j * n + k];
-        col[2] = HR3->ele[2 * nn + j * n + k];
+        const int jnpk = jn + k;
+
+        col[0] = HR3->ele[         jnpk];
+        col[1] = HR3->ele[    nn + jnpk];
+        col[2] = HR3->ele[2 * nn + jnpk];
         Vec3d_crossProduct(dst, r12, col);
         Vec3d_rotateSelf(dst, (double (*)[3])b3->A_BI.rot);
-        H->ele[         j * n + k] += dst[0];
-        H->ele[    nn + j * n + k] += dst[1];
-        H->ele[2 * nn + j * n + k] += dst[2];
+        H->ele[         jnpk] += dst[0];
+        H->ele[    nn + jnpk] += dst[1];
+        H->ele[2 * nn + jnpk] += dst[2];
       }
     }
 
@@ -901,6 +923,26 @@ void RcsGraph_3dOmegaHessian(const RcsGraph* self, const RcsBody* effector,
   }
 
   MatNd_reshape(H, n3, n);
+}
+
+
+/*******************************************************************************
+ * Rotation dot Jacobian: q_dot^T H
+ ******************************************************************************/
+void RcsGraph_3dOmegaDotJacobian(const RcsGraph* self, const RcsBody* effector,
+                                 const RcsBody* refBdy, const RcsBody* refFrame,
+                                 const MatNd* q_dot, MatNd* J_dot)
+{
+  int n = self->nJ, n3 = 3*self->nJ;
+  MatNd* H = NULL;
+  MatNd_create2(H, n3, n);
+
+  RcsGraph_3dOmegaHessian(self, effector, refBdy, refFrame, H);
+
+  MatNd_reshape(J_dot, n3, 1);
+  MatNd_mul(J_dot, H, q_dot);
+  MatNd_reshape(J_dot, 3, n);
+  MatNd_destroy(H);
 }
 
 /*******************************************************************************
@@ -1292,7 +1334,7 @@ double RcsGraph_jointLimitBorderCost(const RcsGraph* self, double freeRatio,
 
 
 
-/******************************************************************************
+/*******************************************************************************
 
   Value freeRatio is the ratio of the joint's half range in which the
   joint limit gradient kicks in. For instance if freeRatio is 1, the whole
@@ -1329,7 +1371,7 @@ double RcsGraph_jointLimitBorderCost(const RcsGraph* self, double freeRatio,
     and for symmetric joint centers, we get: dH_i = 1.0/range
     If we interpret it as a velocity, it's the inverse of the joint range.
 
-******************************************************************************/
+*******************************************************************************/
 
 void RcsGraph_jointLimitBorderGradient(const RcsGraph* self,
                                        MatNd* dH,
@@ -1406,9 +1448,8 @@ void RcsGraph_jointLimitBorderGradient(const RcsGraph* self,
 
 
 
-/******************************************************************************
-
-  \brief See header.
+/*******************************************************************************
+ * See header.
 
 ******************************************************************************/
 
@@ -1489,9 +1530,8 @@ void RcsGraph_jointLimitBorderHessian(const RcsGraph* self,
 
 
 
-/******************************************************************************
-
-  \brief See header.
+/*******************************************************************************
+ * See header.
 
 ******************************************************************************/
 
@@ -1521,9 +1561,8 @@ double RcsGraph_jointLimitGradient(const RcsGraph* self,
   return 0.5 * cost;
 }
 
-/******************************************************************************
-
-  \brief See header.
+/*******************************************************************************
+ * See header.
 
 ******************************************************************************/
 
@@ -1582,9 +1621,8 @@ double RcsGraph_jointLimitGradientPlateau(const RcsGraph* self,
 
 
 
-/******************************************************************************
-
-  \brief See header.
+/*******************************************************************************
+ * See header.
 
 ******************************************************************************/
 
@@ -1615,7 +1653,7 @@ void RcsGraph_jointLimitHessian(const RcsGraph* self, MatNd* ddH,
 
 
 
-/******************************************************************************
+/*******************************************************************************
 
   \brief Computes the partial derivative of the bodies rotation matrix with
          respect to a given joint.
@@ -1674,7 +1712,7 @@ static void RcsGraph_dAdq_i(const RcsGraph* self,
 
 
 
-/******************************************************************************
+/*******************************************************************************
 
   \brief This function computes the partial derivative of a bodies rotation
          matrix with respect to the state (q) vector. Argument dAdq is expected
@@ -1777,9 +1815,7 @@ void RcsGraph_dAdq(const RcsGraph* self, const RcsBody* b, double* dAdq,
 
 }
 
-
-
-/******************************************************************************
+/*******************************************************************************
 
   \brief Cost function that penalizes if a point lies within the boundary
          of a frustrum. The frustrum is aligned with the body "cam". It's
@@ -1848,14 +1884,9 @@ double RcsGraph_pointFrustrumCost(const RcsBody* cam,
   return cost;
 }
 
-
-
-/******************************************************************************
-
-  \brief See header.
-
-******************************************************************************/
-
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void RcsGraph_pointFrustrumGradient(const RcsGraph* graph,
                                     const RcsBody* cam,
                                     const RcsBody* bdy,
@@ -1985,14 +2016,9 @@ void RcsGraph_pointFrustrumGradient(const RcsGraph* graph,
 
 }
 
-
-
-/******************************************************************************
-
-  \brief The effort is the squared joint torque: 0.5 M^T M with M = J^T F
-
-******************************************************************************/
-
+/*******************************************************************************
+ * The effort is the squared joint torque: 0.5 M^T M with M = J^T F
+ ******************************************************************************/
 double RcsGraph_staticEffort(const RcsGraph* self,
                              const RcsBody* bdy,
                              const MatNd* F,
@@ -2023,7 +2049,7 @@ double RcsGraph_staticEffort(const RcsGraph* self,
 
 
 
-/******************************************************************************
+/*******************************************************************************
 
   \brief The effort is the squared joint torque: M^T W M with M = J^T F
          Its derivative is
@@ -2087,21 +2113,19 @@ void RcsGraph_staticEffortGradient(const RcsGraph* self,
 
 
 
-/******************************************************************************
-
-  \brief Euler error partial derivative corresponding to HTr_getEulerError()
-
-         de/dq = d(0.5*(n x nd + s x sd + a x ad))/dq
-
-         =   (tilde(nd)^T tilde(sd)^T tilde(ad)^T) dA/dq
-           + (tilde(n)    tilde(s)    tilde(a)) dAd/dq
-
-         with n being the 1st row of the A_BI rotation matrix, s the second
-         and a the third one. Index d stands for desired. Result grad is
-         of dimension 3 x dof.
-
-******************************************************************************/
-
+/*******************************************************************************
+ *
+ * Euler error partial derivative corresponding to Mat3d_getEulerError()
+ *
+ * de/dq = d(0.5*(n x nd + s x sd + a x ad))/dq
+ *
+ *       =   (tilde(nd)^T tilde(sd)^T tilde(ad)^T) dA/dq
+ *         + (tilde(n)    tilde(s)    tilde(a)) dAd/dq
+ *
+ * with n being the 1st row of the A_BI rotation matrix, s the second and a the
+ * third one. Index d stands for desired. Result grad is of dimension 3 x dof.
+ *
+ ******************************************************************************/
 void RcsGraph_dEulerErrorDq(const RcsGraph* self, const RcsBody* b_act,
                             const RcsBody* b_des, MatNd* grad)
 {
