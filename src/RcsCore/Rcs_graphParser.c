@@ -433,29 +433,42 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   getXMLNodePropertyBoolString(node, "weldpos", &weldpos);
   getXMLNodePropertyBoolString(node, "weldori", &weldori);
 
+  // Color
+  strcpy(shape->color, bodyColor ? bodyColor : "DEFAULT");
+  getXMLNodePropertyStringN(node, "color", shape->color, RCS_MAX_NAMELEN);
+
+  // Material
+  strcpy(shape->material, "default");
+  getXMLNodePropertyStringN(node, "material", shape->material, RCS_MAX_NAMELEN);
+
   shape->resizeable = false;
   getXMLNodePropertyBoolString(node, "resizeable", &shape->resizeable);
   if (distance == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_DISTANCE;
   }
+
   if (physics == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_PHYSICS;
   }
+
   if (graphics == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
   }
+
   if (softPhysics == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_SOFTPHYSICS;
     shape->resizeable = true;
   }
+
   if (depth == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_DEPTHBUFFER;
   }
+
   if (contact == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_CONTACT;
@@ -466,6 +479,7 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
     getXMLNodePropertyDouble(node, "height", &z0);
     Vec3d_set(shape->scale3d, mu, stiffness, z0);
   }
+
   if (attachment == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_ATTACHMENT;
@@ -476,15 +490,22 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
     Vec3d_set(shape->scale3d, stiffness, damping, 0.0);
     getXMLNodePropertyStringN(node, "body", shape->meshFile, RCS_MAX_FILENAMELEN);
   }
+
   if (weldpos == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_WELDPOS;
     getXMLNodePropertyDouble(node, "kp", &shape->scale3d[0]);
   }
+
   if (weldori == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_WELDORI;
     getXMLNodePropertyDouble(node, "kp", &shape->scale3d[0]);
+  }
+
+  if (weldpos || weldori)
+  {
+    getXMLNodePropertyStringN(node, "refBdy", shape->material, RCS_MAX_FILENAMELEN);
   }
 
 
@@ -552,14 +573,6 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
     }
 
   }
-
-  // Color
-  strcpy(shape->color, bodyColor ? bodyColor : "DEFAULT");
-  getXMLNodePropertyStringN(node, "color", shape->color, RCS_MAX_NAMELEN);
-
-  // Material
-  strcpy(shape->material, "default");
-  getXMLNodePropertyStringN(node, "material", shape->material, RCS_MAX_NAMELEN);
 
   // Some pedantic checking on tags that might lead to mistakes
   REXEC(1)

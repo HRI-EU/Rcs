@@ -354,18 +354,22 @@ private:
 
     } ConstraintType;
 
-    KinematicConstraint(ConstraintType type, int bdyId,
+    KinematicConstraint(ConstraintType type, int bdyId, int refBdyId,
                         std::vector<double> x_des, double kp);
     void appendJacobian(MatNd* J, const RcsGraph* graph) const;
     void appendDotJacobian(MatNd* J_dot, const RcsGraph* graph,
                            const MatNd* q_dot) const;
     void appendStabilization(MatNd* ax, const RcsGraph* graph) const;
+    static void computeX(const RcsGraph* graph, int bdy_id, int refbdy_id,
+                         double x_curr[3]);
+    void computeXp(const RcsGraph* graph, double x_dot[3]) const;
 
     size_t dim() const;
     void print(const RcsGraph* graph) const;
 
     ConstraintType type;
     int bdyId;
+    int refBdyId;
     std::vector<double> x_des;
     double kp;
   };

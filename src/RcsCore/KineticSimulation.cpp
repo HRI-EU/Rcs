@@ -42,6 +42,9 @@
 #include "Rcs_shape.h"
 #include "Rcs_joint.h"
 #include "Rcs_eigen.h"
+#include "Task.h"
+
+#include <algorithm>
 
 
 namespace Rcs
@@ -183,26 +186,35 @@ bool KineticSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
       if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_WELDPOS) &&
           RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_WELDORI))
       {
+        RcsBody* refBdy = RcsGraph_getBodyByName(getGraph(), SHAPE->material);
+        int refId = refBdy ? refBdy->id : -1;
         double x0[6];
         Vec3d_copy(x0, BODY->A_BI.org);
-        Mat3d_toEulerAngles(&x0[3], BODY->A_BI.rot);
+        KinematicConstraint::computeX(getGraph(), BODY->id, refId, x0);
+
+        //Mat3d_toEulerAngles(&x0[3], BODY->A_BI.rot);
+        Task::computeEulerAngles(&x0[3], BODY, refBdy);
         std::vector<double> x_des(x0, x0+6);
         constraint.push_back(KinematicConstraint(KinematicConstraint::PosAndOri,
-                                                 BODY->id, x_des, kp));
+                                                 BODY->id, refId, x_des, kp));
       }
       else if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_WELDPOS))
       {
         std::vector<double> x_des(BODY->A_BI.org, BODY->A_BI.org+3);
+        RcsBody* refBdy = RcsGraph_getBodyByName(getGraph(), SHAPE->material);
+        int refId = refBdy ? refBdy->id : -1;
         constraint.push_back(KinematicConstraint(KinematicConstraint::Pos,
-                                                 BODY->id, x_des, kp));
+                                                 BODY->id, refId, x_des, kp));
       }
       else if (RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_WELDORI))
       {
         double ea[3];
         Mat3d_toEulerAngles(ea, BODY->A_BI.rot);
         std::vector<double> x_des(ea, ea+3);
+        RcsBody* refBdy = RcsGraph_getBodyByName(getGraph(), SHAPE->material);
+        int refId = refBdy ? refBdy->id : -1;
         constraint.push_back(KinematicConstraint(KinematicConstraint::Ori,
-                                                 BODY->id, x_des, kp));
+                                                 BODY->id, refId, x_des, kp));
       }
 
       shapeIdx++;
@@ -942,18 +954,18 @@ static void getSubVec(MatNd* dst, const MatNd* src, const std::vector<int>& idx)
   // Fast track for column vector
   if (src->n == 1)
   {
-  for (size_t i = 0; i < idx.size(); ++i)
-  {
-    RCHECK(idx[i]<(int)src->m);
-    dst->ele[i] = src->ele[idx[i]];
+    for (size_t i = 0; i < idx.size(); ++i)
+    {
+      RCHECK_MSG(idx[i]<(int)src->m, "%d %d", idx[i], (int)src->m);
+      dst->ele[i] = src->ele[idx[i]];
+    }
   }
-}
   else
   {
     // Handle matrix interpreted as side-by-side column vectors
     for (size_t i = 0; i < idx.size(); ++i)
     {
-      RCHECK(idx[i] < (int)src->m);
+      RCHECK_MSG(idx[i]<(int)src->m, "%d %d", idx[i], (int)src->m);
       double* rowDst = MatNd_getRowPtr(dst, i);
       const double* rowSrc = MatNd_getRowPtr(src, idx[i]);
       VecNd_copy(rowDst, rowSrc, src->n);
@@ -1006,7 +1018,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   // Joint speed damping: M Kv(qp_des - qp) with qp_des = 0
   // We consider all bodies with six joints as floating and do not apply any
   // damping. \todo: Provide interface on per-joint basis
-  const double damping = 2.0;
+  const double damping = 0*2.0;
   MatNd* Fi = MatNd_create(n, 1);
   MatNd* qp_ik = MatNd_clone(graph->q_dot);
 
@@ -1031,7 +1043,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
 
   // Enforce kinematic constraints. This must be called after vector b has been
   // completely assembled with all external force components.
-  addConstraintForces(b, M, b);
+  // addConstraintForces(b, M, b);
 
   /*
     Matrix decomposition into torque and position controlled partitions. We
@@ -1106,6 +1118,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
     // velocity-controlled joints, and do the PD on top of it.
     if (JNT->ctrlType == RCSJOINT_CTRL_POSITION)
     {
+      RLOG(0, "Warning: Joint %s might create trouble!!!", JNT->name);
       double q_des_i = this->q_des->ele[JNT->jointIndex];
       double q_curr_i = graph->q->ele[JNT->jointIndex];
       double qp_curr_i = graph->q_dot->ele[JNT->jointIndex];
@@ -1127,16 +1140,15 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
     }
   }
 
-
   getSubVec(qpp_c, pIdx);
   getSubVec(b_f, tIdx);
   MatNd* Mqpp_c = MatNd_create(tIdx.size(), 1);
   MatNd_mul(Mqpp_c, M01, qpp_c);
-  MatNd_subSelf(b_f, Mqpp_c);
-  MatNd* q_ddot_f = MatNd_createLike(b_f);
+
+  double det = 1.0;
 
   // Fixed kinematic constraints in the reduced space
-#if 0
+  if (!constraint.empty())
   {
     MatNd* J = MatNd_create(0, graph->nJ);
     MatNd* J_dot = MatNd_create(0, graph->nJ);
@@ -1153,100 +1165,84 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
     }
 
     // Project terms into free space
-    RLOG(1, "A");
     MatNd_transposeSelf(J);
-    getSubVec(J, tIdx);
+    MatNd* J_f = MatNd_clone(J);
+    MatNd* J_c = MatNd_clone(J);
+    getSubVec(J_f, tIdx);
+    getSubVec(J_c, pIdx);
+    MatNd_transposeSelf(J_f);
+    MatNd_transposeSelf(J_c);
     MatNd_transposeSelf(J);
-    MatNd_transposeSelf(J_dot);
-    getSubVec(J_dot, tIdx);
-    MatNd_transposeSelf(J_dot);
-    getSubVec(ax, tIdx);
-    getSubVec(qp_ik, tIdx);
-    MatNd_printDims("J", J);
 
     // J inv(M)
-    RLOG(1, "B");
     MatNd* invM00 = MatNd_createLike(M00);
     double det = MatNd_choleskyInverse(invM00, M00);
     RCHECK(det);
-    MatNd* JinvM = MatNd_create(J->m, invM00->n);
-    MatNd_mul(JinvM, J, invM00);
-    MatNd_printDims("JinvM", JinvM);
+    MatNd* JinvM = MatNd_create(J_f->m, J_f->n);
+    MatNd_mul(JinvM, J_f, invM00);
 
     // inv(J inv(M) JT)
-    RLOG(1, "C");
-    MatNd* invJinvMJT = MatNd_create(J->m, J->m);
-    MatNd_sqrMulABAt(invJinvMJT, J, invM00);
+    MatNd* invJinvMJT = MatNd_create(J_f->m, J_f->m);
+    MatNd_sqrMulABAt(invJinvMJT, J_f, invM00);
     int rank = MatNd_SVDInverse(invJinvMJT, invJinvMJT);
     RLOG(1, "Rank is %d", rank);
 
-    // lambda = -J inv(M00) b_f - J_dot q_dot_f
-    RLOG(1, "D");
-    MatNd* lambda = MatNd_create(JinvM->m, 1);
-    MatNd_mul(lambda, JinvM, b_f);
+    // lambda = J inv(M00) (b_f - M01 qpp_c) + J_dot q_dot_f + J_c qpp_c
+    MatNd* lambda = MatNd_create(J_f->m, 1);
+    MatNd* term2 = MatNd_clone(b_f);
+    MatNd_subSelf(term2, Mqpp_c);
+    MatNd_mul(lambda, JinvM, term2);
     MatNd_mulAndAddSelf(lambda, J_dot, qp_ik);
-    MatNd_constMulSelf(lambda, -1.0);
+    MatNd_mulAndAddSelf(lambda, J_c, qpp_c);
 
     // Add stabilization: ax = kp*dx + kd*dx_dot
-    RLOG(1, "E");
-    MatNd_addSelf(lambda, ax);
+    MatNd_subSelf(lambda, ax);
 
-    // Lagrange Multipliers: lambda = inv(J inv(M) JT) (-J inv(M) b - J_dot q_dot)
-    RLOG(1, "F");
+    // Lagrange Multipliers: lambda = inv(J inv(M) JT) * lambda
     MatNd_preMulSelf(lambda, invJinvMJT);
 
-    // Project into joint space: lambdaQ = JT lambda : n x 1 = [n x nc] * [nx x 1]
+    // Project into joint space: lambdaQ = JT lambda : n x 1 = [n x nc] * [nc x 1]
     // or in transpose space: lambdaQ^T = lambda^T J : 1 x n = [1 x nc] * [nc x n]
-    RLOG(1, "G");
-    MatNd* lambda_f = MatNd_create(1, graph->nJ);
+    // We do the latter one since it saves us a Jacobian transpose operation.
+    MatNd* lambdaQ = MatNd_create(1, tIdx.size());
     MatNd_transposeSelf(lambda);   // now 1 x nc
-    MatNd_mulAndAddSelf(lambda_f, lambda, J);
-    MatNd_transposeSelf(lambda_f);   // now n x 1
+    MatNd_mulAndAddSelf(lambdaQ, lambda, J_f);
+    MatNd_transposeSelf(lambdaQ);   // now n x 1
 
+    // Add contribution to RHS external force amd compute accelerations. Since
+    // we have already computed the inverse of M00, no more solving of the
+    // equation system is needed. We can determine the solution by
+    // multiplication.
+    MatNd_subSelf(b_f, Mqpp_c);
+    MatNd_subSelf(b_f, lambdaQ);
+    MatNd_mul(qpp_f, invM00, b_f);
+    REXEC(1)
+    {
+      MatNd_printCommentDigits("lambda", lambda, 6);
+    }
 
     // Clean up
-    RLOG(1, "H");
-    MatNd_destroyN(7, J, J_dot, ax, qp_ik, invM00, invJinvMJT, lambda_f);
+    MatNd_destroyN(11, J, J_dot, ax, qp_ik, invM00, invJinvMJT, lambda, lambdaQ,
+                   J_f, J_c, term2);
   }
-#endif
-  double det = MatNd_choleskySolve(q_ddot_f, M00, b_f);
+  else   // Simple case for no kinematic constraints
+  {
+    MatNd_subSelf(b_f, Mqpp_c);
+    det = MatNd_choleskySolve(qpp_f, M00, b_f);
+  }
 
   MatNd_reshape(q_ddot, n, 1);
   for (size_t i = 0; i < tIdx.size(); ++i)
   {
-    q_ddot->ele[tIdx[i]] = q_ddot_f->ele[i];
+    q_ddot->ele[tIdx[i]] = qpp_f->ele[i];
   }
   for (size_t i = 0; i < pIdx.size(); ++i)
   {
     q_ddot->ele[pIdx[i]] = qpp_c->ele[i];
   }
 
-#if 0
-  // Get joint torques: F_c = M10 qpp_f + M11 qpp_c - hc
-  {
-    MatNd_transposeSelf(M01);   // now M10
-    MatNd* jointTorque = MatNd_createLike(qpp_c);
-    MatNd* M11 = MatNd_create(pIdx.size(), pIdx.size());
-    MatNd* b_c = MatNd_createLike(qpp_c);
-
-
-    getSubMat(M11, M, pIdx);
-    getSubVec(b_c, b, pIdx);
-
-    MatNd_mul(jointTorque, M01, qpp_f);
-    MatNd_mulAndAddSelf(jointTorque, M11, qpp_c);
-    MatNd_subSelf(jointTorque, b_c);
-    MatNd_printCommentDigits("torque", jointTorque, 4);
-
-    MatNd_destroy(M11);
-    MatNd_destroy(b_c);
-    MatNd_destroy(jointTorque);
-  }
-#endif
-
   // Clean up
-  MatNd_destroyN(10, M00, M01, qpp_f, qpp_c, Mqpp_c, q_ddot_f, b_f, M,
-                 F_gravity, h);
+  MatNd_destroyN(9, M00, M01, qpp_f, qpp_c, Mqpp_c, b_f, M, F_gravity, h);
 
   // Warn if something seriously goes wrong.
   if (det == 0.0)
@@ -1325,12 +1321,8 @@ void KineticSimulation::addContactForces(MatNd* M_contact,      // nq x 1
     Vec3d_crossProduct(omxr, cBdy->omega, I_r_cp);
     Vec3d_add(xp_attach_i, cBdy->x_dot, omxr);
 
-    // Compute the attachement point velocities: I_xp_c = J_cp qp
-    // double xp_attach_i[3];
-    // MatNd xp_a_i = MatNd_fromPtr(3, 1, xp_attach_i);
-    // MatNd_mul(&xp_a_i, J, &qp);
-
-    // Test: Compute the attachement point velocities using the Jacobian.
+    // Test: Compute the attachement point velocities using the Jacobian:
+    // I_xp_c = J_cp qp
     REXEC(1)
     {
       double xp_test[3];
@@ -1611,9 +1603,10 @@ void KineticSimulation::FrictionContactPoint::computeContacts(double dx_contact[
  ******************************************************************************/
 KineticSimulation::KinematicConstraint::KinematicConstraint(ConstraintType type_,
                                                             int bdyId_,
+                                                            int refBdyId_,
                                                             std::vector<double> x_des_,
                                                             double kp_) :
-  type(type_), bdyId(bdyId_), x_des(x_des_), kp(kp_)
+  type(type_), bdyId(bdyId_), refBdyId(refBdyId_), x_des(x_des_), kp(kp_)
 {
 }
 
@@ -1624,7 +1617,8 @@ size_t KineticSimulation::KinematicConstraint::dim() const
 
 void KineticSimulation::KinematicConstraint::print(const RcsGraph* graph) const
 {
-  std::cout << "Body " << RCSBODY_NAME_BY_ID(graph, bdyId) << ": " << std::endl;
+  std::cout << "Body: " << RCSBODY_NAME_BY_ID(graph, bdyId) << std::endl;
+  std::cout << "Ref-body: " << RCSBODY_NAME_BY_ID(graph, refBdyId) << std::endl;
 
   std::cout << "ConstraintType: ";
   switch (type)
@@ -1662,6 +1656,7 @@ void KineticSimulation::KinematicConstraint::appendJacobian(MatNd* J_full,
 
   const RcsBody* ef = RCSBODY_BY_ID(graph, bdyId);
   RCHECK(ef);
+  const RcsBody* refBdy = RCSBODY_BY_ID(graph, refBdyId);
 
   // Constraint Jacobian
   MatNd* J = MatNd_create(nc, n);
@@ -1670,21 +1665,21 @@ void KineticSimulation::KinematicConstraint::appendJacobian(MatNd* J_full,
     case Pos:
     {
       MatNd Jx = MatNd_fromPtr(3, n, MatNd_getRowPtr(J, 0));
-      RcsGraph_bodyPointJacobian(graph, ef, NULL, NULL, &Jx);
+      RcsGraph_3dPosJacobian(graph, ef, refBdy, refBdy, &Jx);
       break;
     }
     case Ori:
     {
       MatNd Jw = MatNd_fromPtr(3, n, MatNd_getRowPtr(J, 0));
-      RcsGraph_rotationJacobian(graph, ef, NULL, &Jw);
+      RcsGraph_3dOmegaJacobian(graph, ef, refBdy, refBdy, &Jw);
       break;
     }
     case PosAndOri:
     {
       MatNd Jx = MatNd_fromPtr(3, n, MatNd_getRowPtr(J, 0));
-      RcsGraph_bodyPointJacobian(graph, ef, NULL, NULL, &Jx);
+      RcsGraph_3dPosJacobian(graph, ef, refBdy, refBdy, &Jx);
       MatNd Jw = MatNd_fromPtr(3, n, MatNd_getRowPtr(J, 3));
-      RcsGraph_rotationJacobian(graph, ef, NULL, &Jw);
+      RcsGraph_3dOmegaJacobian(graph, ef, refBdy, refBdy, &Jw);
       break;
     }
 
@@ -1705,6 +1700,7 @@ void KineticSimulation::KinematicConstraint::appendDotJacobian(MatNd* J_dot_full
 
   const RcsBody* ef = RCSBODY_BY_ID(graph, bdyId);
   RCHECK(ef);
+  const RcsBody* refBdy = RCSBODY_BY_ID(graph, refBdyId);
 
   // Constraint dot-Jacobian
   MatNd* J_dot = MatNd_create(nc, n);
@@ -1713,21 +1709,27 @@ void KineticSimulation::KinematicConstraint::appendDotJacobian(MatNd* J_dot_full
     case Pos:
     {
       MatNd J_dot_x = MatNd_fromPtr(3, n, MatNd_getRowPtr(J_dot, 0));
-      RcsGraph_bodyPointDotJacobian(graph, ef, NULL, NULL, qp_ik, &J_dot_x);
+      //RcsGraph_bodyPointDotJacobian(graph, ef, NULL, NULL, qp_ik, &J_dot_x);
+      RcsGraph_3dPosDotJacobian(graph, ef, refBdy, refBdy, qp_ik, &J_dot_x);
       break;
     }
     case Ori:
     {
       MatNd J_dot_w = MatNd_fromPtr(3, n, MatNd_getRowPtr(J_dot, 0));
-      RcsGraph_rotationDotJacobian(graph, ef, qp_ik, &J_dot_w);
+      //RcsGraph_rotationDotJacobian(graph, ef, qp_ik, &J_dot_w);
+      RcsGraph_3dOmegaDotJacobian(graph, ef, refBdy, refBdy, qp_ik, &J_dot_w);
       break;
     }
     case PosAndOri:
     {
+      //MatNd J_dot_x = MatNd_fromPtr(3, n, MatNd_getRowPtr(J_dot, 0));
+      //RcsGraph_bodyPointDotJacobian(graph, ef, NULL, NULL, qp_ik, &J_dot_x);
+      //MatNd J_dot_w = MatNd_fromPtr(3, n, MatNd_getRowPtr(J_dot, 3));
+      //RcsGraph_rotationDotJacobian(graph, ef, qp_ik, &J_dot_w);
       MatNd J_dot_x = MatNd_fromPtr(3, n, MatNd_getRowPtr(J_dot, 0));
-      RcsGraph_bodyPointDotJacobian(graph, ef, NULL, NULL, qp_ik, &J_dot_x);
       MatNd J_dot_w = MatNd_fromPtr(3, n, MatNd_getRowPtr(J_dot, 3));
-      RcsGraph_rotationDotJacobian(graph, ef, qp_ik, &J_dot_w);
+      RcsGraph_3dPosDotJacobian(graph, ef, refBdy, refBdy, qp_ik, &J_dot_x);
+      RcsGraph_3dOmegaDotJacobian(graph, ef, refBdy, refBdy, qp_ik, &J_dot_w);
       break;
     }
 
@@ -1739,6 +1741,53 @@ void KineticSimulation::KinematicConstraint::appendDotJacobian(MatNd* J_dot_full
   MatNd_destroy(J_dot);
 }
 
+void KineticSimulation::KinematicConstraint::computeX(const RcsGraph* graph,
+                                                      int bdy_id,
+                                                      int refbdy_id,
+                                                      double x_curr[3])
+{
+  const RcsBody* ef = RCSBODY_BY_ID(graph, bdy_id);
+
+  // Effector-fixed reference point in world coordinates
+  Vec3d_copy(x_curr, ef->A_BI.org);
+
+  // Transform to reference frame: ref_r = A_ref-I * (I_r - I_r_refBdy)
+  if (refbdy_id != -1)
+  {
+    const RcsBody* refBody = RCSBODY_BY_ID(graph, refbdy_id);
+    Vec3d_subSelf(x_curr, refBody->A_BI.org);
+    Vec3d_rotateSelf(x_curr, (double(*)[3])refBody->A_BI.rot);
+  }
+
+}
+
+void KineticSimulation::KinematicConstraint::computeXp(const RcsGraph* graph,
+                                                       double x_dot[3]) const
+{
+  const RcsBody* ef = RCSBODY_BY_ID(graph, bdyId);
+  RCHECK(ef);
+
+  if (refBdyId==-1)
+  {
+    Vec3d_copy(x_dot, ef->x_dot);
+  }
+  else
+  {
+    const RcsBody* refBody = RCSBODY_BY_ID(graph, refBdyId);
+    const double* I_xp_ef = ef->x_dot;
+    const double* I_xp_ref = refBody->x_dot;
+    Vec3d_sub(x_dot, I_xp_ef, I_xp_ref);
+
+    double r_12[3], eul[3];
+    Vec3d_sub(r_12, ef->A_BI.org, refBody->A_BI.org);
+    Vec3d_crossProduct(eul, r_12, refBody->omega);
+    Vec3d_addSelf(x_dot, eul);
+    Vec3d_rotateSelf(x_dot, (double(*)[3])refBody->A_BI.rot);
+  }
+}
+
+
+// \todo: Relative bodies
 void KineticSimulation::KinematicConstraint::appendStabilization(MatNd* ax_full,
                                                                  const RcsGraph* graph) const
 {
@@ -1761,8 +1810,12 @@ void KineticSimulation::KinematicConstraint::appendStabilization(MatNd* ax_full,
   // Compute linear position and velocity error
   if (type==Pos || type==PosAndOri)
   {
-    Vec3d_sub(dxPos, x_des.data(), ef->A_BI.org);
+    double x_curr[3];
+    computeX(graph, bdyId, refBdyId, x_curr);
+    Vec3d_sub(dxPos, x_des.data(), x_curr);
     Vec3d_constMul(dvPos, ef->x_dot, -1.0);
+    computeXp(graph, dvPos);
+    Vec3d_constMulSelf(dvPos, -1.0);
   }
 
   // Compute angular position and velocity error
@@ -1771,9 +1824,44 @@ void KineticSimulation::KinematicConstraint::appendStabilization(MatNd* ax_full,
     double A_des[3][3];
     size_t offset = (type == Ori) ? 0 : 3;
     Mat3d_fromEulerAngles(A_des, x_des.data()+ offset);
+#if 0
     Mat3d_getEulerError(dxOri, (double(*)[3])ef->A_BI.rot, A_des);
+#else
+    double ea_curr[3];
+    const RcsBody* refBdy = RCSBODY_BY_ID(graph, refBdyId);
+    Task::computeEulerAngles(ea_curr, ef, refBdy);
 
+    double A_curr[3][3];
+
+    Mat3d_fromEulerAngles(A_curr, ea_curr);
+    //Mat3d_fromEulerAngles(A_des, x_des);
+
+    double angle = Mat3d_diffAngle(A_des, A_curr);
+
+    if (angle < 1.0*(M_PI / 180.0))   // Less than 1 deg error: Use Euler error
+    {
+      Mat3d_getEulerError(dxOri, A_curr, A_des);
+    }
+    else   // Larger error: Use axis angle error
+    {
+      Mat3d_getAxisAngle(dxOri, A_des, A_curr);
+      Vec3d_constMulSelf(dxOri, angle);
+    }
+
+#endif
+
+#if 0
     Vec3d_constMul(dvOri, ef->omega, -1.0);
+#else
+    Vec3d_copy(dvOri, ef->omega);
+
+    if (refBdy)
+    {
+      Vec3d_subSelf(dvOri, refBdy->omega);
+      Vec3d_rotateSelf(dvOri, (double(*)[3])refBdy->A_BI.rot);
+    }
+    Vec3d_constMulSelf(dvOri, -1.0);
+#endif
   }
 
 
@@ -1812,5 +1900,6 @@ void KineticSimulation::KinematicConstraint::appendStabilization(MatNd* ax_full,
   MatNd_appendRows(ax_full, ax);
 
 }
+
 
 }   // namespace Rcs

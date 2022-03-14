@@ -1816,12 +1816,16 @@ int main(int argc, char** argv)
         }
 
         // Desired joint angles from Gui
+        MatNd* qp_des_f = MatNd_createLike(q_des_f);
         for (unsigned int i=0; i<graph->dof; i++)
         {
+          double q_prev = q_des_f->ele[i];
           q_des_f->ele[i] = (1.0-tmc)*q_des_f->ele[i] + tmc*q_des->ele[i];
+          qp_des_f->ele[i] = (q_des_f->ele[i] - q_prev) / dt;
         }
 
-        sim->setControlInput(q_des_f, NULL, T_gravity);
+        sim->setControlInput(q_des_f, qp_des_f, T_gravity);
+        MatNd_destroy(qp_des_f);
 
         //////////////////////////////////////////////////////////////
         // call physics simulation and read new current state
@@ -2023,6 +2027,7 @@ int main(int argc, char** argv)
         printf("bin/Rcs -m 5 -f config/xml/Examples/cSoftPhysicsIK.xml -physicsEngine SoftBullet\n");
         printf("bin/Rcs -m 5 -dir config/xml/Examples/ -f cSitToStand.xml -physicsEngine NewtonEuler -algo 1 -lamba 0 -dt 0.01\n");
         printf("bin/Rcs -m 5 -dir config/xml/Dressing -f cRoboSleeve.xml -algo 1 -physicsEngine SoftBullet -dt 0.002\n");
+        printf("bin/Rcs -m 5 -dir config/xml/AvatarSkeleton -f cOpenSimWholeBody.xml -physicsEngine NewtonEuler -algo 1 -lambda 0 -i Euler\n");
         Rcs::ControllerBase::printUsage(xmlFileName);
         break;
       }
