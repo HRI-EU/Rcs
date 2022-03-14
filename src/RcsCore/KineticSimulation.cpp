@@ -1009,7 +1009,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   // Joint speed damping: M Kv(qp_des - qp) with qp_des = 0
   // We consider all bodies with six joints as floating and do not apply any
   // damping. \todo: Provide interface on per-joint basis
-  const double damping = 0*2.0;
+  const double damping = 2.0;
   MatNd* Fi = MatNd_create(n, 1);
   MatNd* qp_ik = MatNd_clone(graph->q_dot);
 
@@ -1753,27 +1753,21 @@ void KineticSimulation::KinematicConstraint::computeEulerAngles(const RcsGraph* 
                                                                 int refbdy_id,
                                                                 double ea_curr[3])
 {
-  double A_ER[3][3];
-
-  //computeRelativeRotationMatrix(A_ER, effector, referenceBody);
-  const RcsBody* bdyEff = RCSBODY_BY_ID(graph, bdy_id);
+  RcsBody* bdyEff = RCSBODY_BY_ID(graph, bdy_id);
   RCHECK(bdyEff);
-  const RcsBody* bdyRef = RCSBODY_BY_ID(graph, refbdy_id);
 
-  if (bdyRef == NULL)
+  if (refbdy_id == -1)   // No refBody, but effector
   {
-    // No refBody, but effector
-    Mat3d_copy(A_ER, (double(*)[3]) bdyEff->A_BI.rot);
+    Mat3d_toEulerAngles(ea_curr, bdyEff->A_BI.rot);
   }
-  else
+  else   // refBody and effector
   {
-    // refBody and effector
-    Mat3d_mulTranspose(A_ER, (double(*)[3]) bdyEff->A_BI.rot,
-                       (double(*)[3]) bdyRef->A_BI.rot);
-
+    double A_ER[3][3];
+    RcsBody* bdyRef = RCSBODY_BY_ID(graph, refbdy_id);
+    Mat3d_mulTranspose(A_ER, bdyEff->A_BI.rot, bdyRef->A_BI.rot);
+    Mat3d_toEulerAngles(ea_curr, A_ER);
   }
 
-  Mat3d_toEulerAngles(ea_curr, A_ER);
 }
 
 
