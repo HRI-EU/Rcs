@@ -244,6 +244,17 @@ bool String_removeSuffix(char* dst, const char* src, char suffix);
  */
 const char* String_getEnv(const char* name);
 
+/*! \ingroup RcsUtilsFunctions
+ * \brief Safe replacement for strlen function. Only len characters will be
+ *        checked.
+ *
+ *  \param[in] str Character array the length is to be determined
+ *  \param[in] len Number of characters that are maximally compared against '\0'
+ *  \return Length of the string. If the return value is len, the string might
+ *          not be properly terminated.
+ */
+unsigned int String_getLength(const char* str, unsigned int len);
+
 ///@}
 
 

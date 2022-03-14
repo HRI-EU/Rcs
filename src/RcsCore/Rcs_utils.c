@@ -599,6 +599,21 @@ const char* String_getEnv(const char* name)
 /*******************************************************************************
  * See header
  ******************************************************************************/
+unsigned int String_getLength(const char* str, unsigned int len)
+{
+  unsigned int i = 0;
+
+  for (i = 0; i < len && str[i] != '\0'; i++)
+  {
+    continue;
+  }
+
+  return i;
+}
+
+/*******************************************************************************
+ * See header
+ ******************************************************************************/
 bool File_exists(const char* filename)
 {
   FILE* file;
