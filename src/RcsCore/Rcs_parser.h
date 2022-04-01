@@ -74,7 +74,8 @@ xmlNodePtr parseXMLMemory(const char* buffer, size_t size,
  *  \brief Parses the xml file given in filename with the given tag, and
  *         stores it in the doc pointer. The caller has to take care to
  *         destroy the memory pointed to by doc. If the return value is NULL,
- *         parsing failed and doc is unchanged.
+ *         parsing failed and doc is unchanged. If tag is NULL, the root node
+ *         is returned regardless of it.
  */
 xmlNodePtr parseXMLFile(const char* filename, const char* tag,
                         xmlDocPtr* doc);

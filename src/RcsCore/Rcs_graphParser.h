@@ -347,11 +347,12 @@ extern "C" {
 RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node);
 
 /*! \ingroup RcsParserFunctions
-*  \brief Loads the graph's xml file, looks for the tag "model_state" with
-*         the specified time stamp, and if found, sets the state to the
-*         corresponding values. Currently, timeStamp is ignored.
-*
-*  \return true for success, false otherwise.
+ *  \brief Loads the graph's xml file, looks for the tag "model_state" with
+ *         the specified time stamp, and if found, sets the state to the
+ *         corresponding values. Currently, timeStamp is ignored. States that
+ *         are not specified in the model_state are left unchanged.
+ *
+ *  \return true for success, false otherwise.
  */
 bool RcsGraph_setModelStateFromXML(RcsGraph* self, const char* modelStateName,
                                    int timeStamp);

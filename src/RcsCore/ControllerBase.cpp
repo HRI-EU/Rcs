@@ -88,18 +88,18 @@ ControllerBase::ControllerBase(const std::string& xmlDescription) :
     // it has the .xml extension, we assume the file couldn't be opened and
     // exit with a fatal error.
     if (fileExtension && STREQ(fileExtension, ".xml"))
-      {
-        RMSG("Resource path is:");
-        Rcs_printResourcePath();
-        RFATAL("Controller configuration file \"%s\" not found in "
-               "resource path - exiting", xmlDescription.c_str());
+    {
+      RMSG("Resource path is:");
+      Rcs_printResourcePath();
+      RFATAL("Controller configuration file \"%s\" not found in "
+             "resource path - exiting", xmlDescription.c_str());
     }
 
     // From here we assume that is is a memory buffer holding the xml
     // file as a string.
     this->xmlFile.assign("Created_from_memory_buffer");
     xmlRootNode = parseXMLMemory(xmlDescription.c_str(),
-                                       xmlDescription.size(),
+                                 xmlDescription.size(),
                                  &xmlDoc);
   }
 
@@ -174,6 +174,7 @@ bool ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
       RCHECK_MSG(this->graph==NULL, "Found xml tag <Graph>, but already graph"
                  " loaded graph from file \"%s\"", graph->cfgFile);
       this->graph = RcsGraph_createFromXmlNode(node);
+      strcpy(graph->cfgFile, xmlFile.c_str());
       RCHECK_MSG(this->graph, "Failed to create inlined graph");
     }
 
@@ -622,7 +623,7 @@ void ControllerBase::readActivationsFromXML(MatNd* a_init) const
  * Reads the activation vector from the configuration file.
  ******************************************************************************/
 void ControllerBase::readActivationVectorFromXML(MatNd* taskVec,
-                                                      const char* tag) const
+                                                 const char* tag) const
 {
   unsigned int nTasks = getNumberOfTasks(), taskCount = 0;
 
@@ -664,7 +665,7 @@ void ControllerBase::readActivationVectorFromXML(MatNd* taskVec,
  * Reads the activation vector from the configuration file.
  ******************************************************************************/
 void ControllerBase::readTaskVectorFromXML(MatNd* x,
-                                                const char* tag) const
+                                           const char* tag) const
 {
   xmlDocPtr docPtr;
   xmlNodePtr node = parseXMLFile(this->xmlFile.c_str(), "Controller", &docPtr);
@@ -776,7 +777,7 @@ void ControllerBase::computeH(MatNd* H, const MatNd* a_des) const
  * Task Jacobian derivative times q_dot.
  ******************************************************************************/
 void ControllerBase::computeJdotQdot(MatNd* JdotQdot,
-                                          const MatNd* a_des) const
+                                     const MatNd* a_des) const
 {
   MatNd_reshape(JdotQdot, 0, 1);
 
@@ -838,8 +839,8 @@ void ControllerBase::computeX(MatNd* x, const MatNd* a_des) const
  * Delta x for differential kinematics.
  ******************************************************************************/
 void ControllerBase::computeDX(MatNd* dx,
-                                    const MatNd* x_des,
-                                    const MatNd* a_des) const
+                               const MatNd* x_des,
+                               const MatNd* a_des) const
 {
   unsigned int dimTask, nRowsActive = 0, nRowsAll = 0;
   const double* x_des_i;
@@ -885,12 +886,12 @@ void ControllerBase::computeDX(MatNd* dx,
  *
  ******************************************************************************/
 void ControllerBase::computeAx(MatNd* ax,
-                                    const MatNd* a_des,
-                                    const MatNd* x_des,
-                                    const MatNd* xp_des,
-                                    const MatNd* xpp_des,
-                                    const MatNd* kp,
-                                    const MatNd* kd) const
+                               const MatNd* a_des,
+                               const MatNd* x_des,
+                               const MatNd* xp_des,
+                               const MatNd* xpp_des,
+                               const MatNd* kp,
+                               const MatNd* kd) const
 {
   unsigned int dimTask, nRows = 0;
 
@@ -988,10 +989,10 @@ void ControllerBase::computeXp_ik(MatNd* x_dot, const MatNd* a_des) const
  * Computes the task velocity vector.
  ******************************************************************************/
 void ControllerBase::integrateXp_ik(MatNd* x_res,
-                                         const MatNd* x,
-                                         const MatNd* x_dot,
-                                         double dt,
-                                         const MatNd* a_des) const
+                                    const MatNd* x,
+                                    const MatNd* x_dot,
+                                    double dt,
+                                    const MatNd* a_des) const
 {
   unsigned int dimTask, nRows = 0;
 
@@ -1030,8 +1031,8 @@ void ControllerBase::integrateXp_ik(MatNd* x_res,
  * Delta x for differential kinematics.
  ******************************************************************************/
 void ControllerBase::computeDXp(MatNd* dx_dot,
-                                     const MatNd* x_dot_des_,
-                                     const MatNd* a_des) const
+                                const MatNd* x_dot_des_,
+                                const MatNd* a_des) const
 {
   unsigned int nRows = 0;
   const MatNd* x_dot_des = x_dot_des_;
@@ -1072,8 +1073,8 @@ void ControllerBase::computeDXp(MatNd* dx_dot,
  * Projects task-space accelerations into the Jacobian coordinates.
  ******************************************************************************/
 void ControllerBase::computeFfXpp(MatNd* x_ddot_ik,
-                                       const MatNd* x_ddot_,
-                                       const MatNd* a_des) const
+                                  const MatNd* x_ddot_,
+                                  const MatNd* a_des) const
 {
   unsigned int dimTask, nRows = 0;
   const MatNd* x_ddot = x_ddot_;
@@ -1114,8 +1115,8 @@ void ControllerBase::computeFfXpp(MatNd* x_ddot_ik,
  * Computes the task acceleration vector.
  ******************************************************************************/
 void ControllerBase::computeXpp(MatNd* x_ddot,
-                                     const MatNd* q_ddot,
-                                     const MatNd* a_des) const
+                                const MatNd* q_ddot,
+                                const MatNd* a_des) const
 {
   unsigned int dimTask, nRows = 0;
 
@@ -1146,8 +1147,8 @@ void ControllerBase::computeXpp(MatNd* x_ddot,
  * Compresses x to xc holding only elements that correspond to active tasks.
  ******************************************************************************/
 void ControllerBase::compressToActive(MatNd* xc,
-                                           const MatNd* x,
-                                           const MatNd* activations) const
+                                      const MatNd* x,
+                                      const MatNd* activations) const
 {
   unsigned int dimTask, nRows = 0;
   RCHECK(x);
@@ -1179,7 +1180,7 @@ void ControllerBase::compressToActive(MatNd* xc,
  * In-place version of compressToActive().
  ******************************************************************************/
 void ControllerBase::compressToActiveSelf(MatNd* x,
-                                               const MatNd* activations) const
+                                          const MatNd* activations) const
 {
   MatNd* xc = NULL;
   MatNd_create2(xc, getTaskDim(), 1);
@@ -1194,7 +1195,7 @@ void ControllerBase::compressToActiveSelf(MatNd* x,
  * tasks to 0.
  ******************************************************************************/
 void ControllerBase::decompressFromActive(MatNd* x, const MatNd* xc,
-                                               const MatNd* activations) const
+                                          const MatNd* activations) const
 {
   unsigned int dimTask, xc_row = 0, x_row = 0;
 
@@ -1219,7 +1220,7 @@ void ControllerBase::decompressFromActive(MatNd* x, const MatNd* xc,
  * In-place version of above.
  ******************************************************************************/
 void ControllerBase::decompressFromActiveSelf(MatNd* xc,
-                                                   const MatNd* activations) const
+                                              const MatNd* activations) const
 {
   MatNd* x = NULL;
   MatNd_create2(x, getTaskDim(), 1);
@@ -1233,7 +1234,7 @@ void ControllerBase::decompressFromActiveSelf(MatNd* xc,
  *
  ******************************************************************************/
 void ControllerBase::decompressActivationToTask(MatNd* x,
-                                                     const MatNd* a) const
+                                                const MatNd* a) const
 {
   RCHECK(a->m == getNumberOfTasks());
   MatNd_reshape(x, getTaskDim(), 1);
@@ -1290,7 +1291,7 @@ double ControllerBase::computeJointlimitBorderCost(double borderRatio) const
  * See header.
  ******************************************************************************/
 void ControllerBase::computeJointlimitBorderGradient(MatNd* grad,
-                                                          double borderRatio) const
+                                                     double borderRatio) const
 {
   RcsGraph_jointLimitBorderGradient(this->graph, grad, borderRatio, RcsStateIK);
 }
@@ -1353,8 +1354,8 @@ void ControllerBase::getCollisionGradient(MatNd* grad) const
  * See header.
  ******************************************************************************/
 double ControllerBase::computeTaskCost(const MatNd* xDes,
-                                            const MatNd* W,
-                                            const MatNd* a_des) const
+                                       const MatNd* W,
+                                       const MatNd* a_des) const
 {
   unsigned int nx = getTaskDim();
   double cost = 0.0;
@@ -1385,9 +1386,9 @@ double ControllerBase::computeTaskCost(const MatNd* xDes,
  * See header.
  ******************************************************************************/
 void ControllerBase::computeTaskGradient(MatNd* grad,
-                                              const MatNd* xDes,
-                                              const MatNd* W,
-                                              const MatNd* a_des) const
+                                         const MatNd* xDes,
+                                         const MatNd* W,
+                                         const MatNd* a_des) const
 {
   unsigned int nx = getTaskDim();
 
@@ -1423,7 +1424,7 @@ void ControllerBase::computeTaskGradient(MatNd* grad,
  * Manipulability index according to Yoshikawa: w = sqrt(det(J*J^T)).
  ******************************************************************************/
 double ControllerBase::computeManipulabilityCost(const MatNd* a_des,
-                                                      const MatNd* W) const
+                                                 const MatNd* W) const
 {
   size_t nx = (a_des==NULL) ? getTaskDim() : getActiveTaskDim(a_des);
   MatNd* J = NULL;
@@ -1439,8 +1440,8 @@ double ControllerBase::computeManipulabilityCost(const MatNd* a_des,
  * Manipulability index according to Yoshikawa: grad = d/dq(sqrt(det(J*J^T))).
  ******************************************************************************/
 double ControllerBase::computeManipulabilityGradient(MatNd* grad,
-                                                          const MatNd* a_des,
-                                                          const MatNd* W) const
+                                                     const MatNd* a_des,
+                                                     const MatNd* W) const
 {
   size_t nq = this->graph->nJ;
   size_t nx = (a_des==NULL) ? getTaskDim() : getActiveTaskDim(a_des);
@@ -1569,9 +1570,9 @@ bool ControllerBase::test(bool verbose)
  ******************************************************************************/
 #if 0
 void ControllerBase::computeTaskForce(MatNd* ft_task,
-                                           const double S_ft[6],
-                                           const RcsSensor* loadCell,
-                                           const MatNd* activation) const
+                                      const double S_ft[6],
+                                      const RcsSensor* loadCell,
+                                      const MatNd* activation) const
 {
 
   // Transform sensor values into world coordinates
@@ -1738,7 +1739,7 @@ static void thresholdFtSensor(double* S_ft_f,
  *
  ******************************************************************************/
 void ControllerBase::computeTaskForce(MatNd* ft_task,
-                                           const MatNd* activation) const
+                                      const MatNd* activation) const
 {
   size_t nx = activation ? getActiveTaskDim(activation) : getTaskDim();
 
@@ -1834,8 +1835,8 @@ void ControllerBase::computeTaskForce(MatNd* ft_task,
  * See header.
  ******************************************************************************/
 bool ControllerBase::add(const ControllerBase& other,
-                              const char* suffix,
-                              const HTr* A_BP)
+                         const char* suffix,
+                         const HTr* A_BP)
 {
   return add(&other, suffix, A_BP);
 }
@@ -1877,8 +1878,8 @@ static inline const RcsBody* getBodyWithSuffix(const RcsBody* bdy,
  * See header.
  ******************************************************************************/
 bool ControllerBase::add(const ControllerBase* other,
-                              const char* suffixPtr,
-                              const HTr* A_BP)
+                         const char* suffixPtr,
+                         const HTr* A_BP)
 {
   bool success = RcsGraph_appendCopyOfGraph(getGraph(), NULL, other->getGraph(),
                                             suffixPtr, A_BP);
@@ -2033,7 +2034,7 @@ bool ControllerBase::replaceTask(size_t index, Task* newTask)
  * See header.
  ******************************************************************************/
 bool ControllerBase::replaceTask(const std::string& taskName,
-                                      Task* newTask)
+                                 Task* newTask)
 {
   int index = getTaskIndex(taskName.c_str());
 
@@ -2101,9 +2102,9 @@ static void calcAdmittanceDelta(double* compliantDelta,
  * Computes the admittance control law.
  ******************************************************************************/
 void ControllerBase::computeAdmittance(MatNd* compliantFrame,
-                                            const MatNd* ft_task,
-                                            const MatNd* Kp_ext,
-                                            const MatNd* a_des)
+                                       const MatNd* ft_task,
+                                       const MatNd* Kp_ext,
+                                       const MatNd* a_des)
 {
   double cmplDelta_[6];
 
@@ -2160,11 +2161,11 @@ void ControllerBase::computeAdmittance(MatNd* compliantFrame,
  ******************************************************************************/
 #if 0
 void ControllerBase::computeTaskForce(MatNd* ft_task,
-                                           const MatNd* activation,
-                                           // std::vector<MedianFilterND*>* MedFilters_vec,
-                                           std::vector<SecondOrderLPFND*>* secOrderfilt,
-                                           double* s_ftL, double* s_ft_fL,
-                                           double* s_ftR, double* s_ft_fR) const
+                                      const MatNd* activation,
+                                      // std::vector<MedianFilterND*>* MedFilters_vec,
+                                      std::vector<SecondOrderLPFND*>* secOrderfilt,
+                                      double* s_ftL, double* s_ft_fL,
+                                      double* s_ftR, double* s_ft_fR) const
 {
   size_t nx = activation ? getActiveTaskDim(activation) : getTaskDim();
   size_t nLoadCells = 0;
@@ -2362,7 +2363,7 @@ void ControllerBase::printX(const MatNd* x, const MatNd* a_des) const
  *
  ******************************************************************************/
 bool ControllerBase::getModelState(MatNd* q, const char* modelStateName,
-                                        int timeStamp)
+                                   int timeStamp)
 {
   return RcsGraph_getModelStateFromXML(q, getGraph(), modelStateName,
                                        timeStamp);
@@ -2372,13 +2373,13 @@ bool ControllerBase::getModelState(MatNd* q, const char* modelStateName,
  *
  ******************************************************************************/
 bool ControllerBase::checkLimits(bool checkJointLimits,
-                                      bool checkCollisions,
-                                      bool checkJointVelocities,
-                                      double jlMarginAngular,
-                                      double jlMarginLinear,
-                                      double collMargin,
-                                      double speedMarginAngular,
-                                      double speedMarginLinear) const
+                                 bool checkCollisions,
+                                 bool checkJointVelocities,
+                                 double jlMarginAngular,
+                                 double jlMarginLinear,
+                                 double collMargin,
+                                 double speedMarginAngular,
+                                 double speedMarginLinear) const
 {
   bool success = true;
 
@@ -2453,7 +2454,7 @@ bool ControllerBase::checkLimits(bool checkJointLimits,
  *
  ******************************************************************************/
 void ControllerBase::swapTaskVec(std::vector<Task*>& newTasks,
-                                      bool recomputeArrayIndices)
+                                 bool recomputeArrayIndices)
 {
   std::swap(newTasks, this->tasks);
 
@@ -2528,7 +2529,7 @@ void ControllerBase::print() const
  *
  ******************************************************************************/
 bool ControllerBase::toXML(const std::string& fileName,
-                                const MatNd* activation) const
+                           const MatNd* activation) const
 {
   if (activation && (activation->m != getNumberOfTasks()))
   {
@@ -2579,12 +2580,12 @@ bool ControllerBase::toXML(const std::string& fileName,
  *      a kinematically driven torso, this must be considered.
  ******************************************************************************/
 void ControllerBase::computeInvDynJointSpace(MatNd* T_des,
-                                                  const RcsGraph* graph,
-                                                  const MatNd* q_des,
-                                                  const MatNd* qp_des,
-                                                  const MatNd* qpp_des,
-                                                  double positionGain,
-                                                  double velocityGain)
+                                             const RcsGraph* graph,
+                                             const MatNd* q_des,
+                                             const MatNd* qp_des,
+                                             const MatNd* qpp_des,
+                                             double positionGain,
+                                             double velocityGain)
 {
   const unsigned int nq = graph->nJ;
   MatNd* M       = MatNd_create(nq, nq);
@@ -2656,10 +2657,10 @@ void ControllerBase::computeInvDynJointSpace(MatNd* T_des,
  *
  ******************************************************************************/
 void ControllerBase::computeInvDynJointSpace(MatNd* T_des,
-                                                  const RcsGraph* graph,
-                                                  const MatNd* q_des,
-                                                  double positionGain,
-                                                  double velocityGain)
+                                             const RcsGraph* graph,
+                                             const MatNd* q_des,
+                                             double positionGain,
+                                             double velocityGain)
 {
   computeInvDynJointSpace(T_des, graph, q_des, NULL, NULL,
                           positionGain, velocityGain);

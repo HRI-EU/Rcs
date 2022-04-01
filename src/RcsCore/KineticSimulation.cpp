@@ -44,6 +44,7 @@
 #include "Rcs_eigen.h"
 
 #include <algorithm>
+#include <cmath>
 
 
 namespace Rcs
@@ -1024,38 +1025,32 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
 
   RcsGraph_stateVectorToIKSelf(graph, qp_ik);
   MatNd_mul(Fi, M, qp_ik);
-  MatNd_constMulAndAddSelf(b, Fi, -damping);
+  MatNd_constMulAndAddSelf(b, Fi, damping);
   MatNd_destroyN(2, qp_ik, Fi);
 
   // Assemble RHS generalized forces
-  MatNd_addSelf(b, F_gravity);
-  MatNd_addSelf(b, F_ext);
-  MatNd_addSelf(b, h);
+  MatNd_subSelf(b, F_gravity);
+  MatNd_subSelf(b, F_ext);
+  MatNd_subSelf(b, h);
 
   // Enforce kinematic constraints. This must be called after vector b has been
   // completely assembled with all external force components.
-  // addConstraintForces(b, M, b);
+  // addConstraintForces(b, M, b);// TODO: b is now -b
 
   /*
     Matrix decomposition into torque and position controlled partitions. We
     decompose the standard EoM
 
-    M qdd - h = F
+    M qdd + b = 0
 
     into
 
-    / M00   M01 \  / qpp_f \     / h_f \      / F_f \
-    |           |  |       |  =  |     |  +   |     |
-    \ M10   M11 /  \ qpp_c /     \ h_c /      \ F_c /
+    / M00   M01 \  / qpp_f \     / b_f \      / 0 \
+    |           |  |       |  +  |     |  =   |   |
+    \ M10   M11 /  \ qpp_c /     \ b_c /      \ 0 /
 
     We then solve for the free accelerations under consideration of the
-    constrained ones:
-
-    qdd_f = inv(M00) (h_f + F_f - M01 qpp_c)
-
-    We can obtain the joint torques like that:
-
-    F_c = M10 qpp_f + M11 qpp_c - hc
+    constrained ones.
   */
 
   // pIdx are all indices of position and velocity controlled dofs, tIdx are the
@@ -1073,6 +1068,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
       case RCSJOINT_CTRL_POSITION:
       case RCSJOINT_CTRL_VELOCITY:
         pIdx.push_back(JNT->jacobiIndex);
+        RLOG(1, "pIdx[%zu] = %s", pIdx.size()-1, JNT->name);
         break;
 
       case RCSJOINT_CTRL_TORQUE:
@@ -1153,6 +1149,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
       constraint[i].appendJacobian(J, graph);
       constraint[i].appendDotJacobian(J_dot, graph, qp_ik);
       constraint[i].appendStabilization(ax, graph);
+      RLOG(1, "Constraint[%zu] = %s", i, constraint[i].name(graph).c_str());
     }
 
     // Project terms into free space
@@ -1178,13 +1175,14 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
     int rank = MatNd_SVDInverse(invJinvMJT, invJinvMJT);
     RLOG(1, "Rank is %d", rank);
 
-    // lambda = J inv(M00) (b_f - M01 qpp_c) + J_dot q_dot_f + J_c qpp_c
+    // lambda = -J inv(M00) (b_f + M01 qpp_c) + J_dot q_dot + J_c qpp_c
     MatNd* lambda = MatNd_create(J_f->m, 1);
     MatNd* term2 = MatNd_clone(b_f);
-    MatNd_subSelf(term2, Mqpp_c);
-    MatNd_mul(lambda, JinvM, term2);
-    MatNd_mulAndAddSelf(lambda, J_dot, qp_ik);
-    MatNd_mulAndAddSelf(lambda, J_c, qpp_c);
+    MatNd_addSelf(term2, Mqpp_c);     // b_f + M01 qpp_c
+    MatNd_mul(lambda, JinvM, term2);  // J inv(M00) (b_f + M01 qpp_c)
+    MatNd_constMulSelf(lambda, -1.0); // -J inv(M00) (b_f + M01 qpp_c)
+    MatNd_mulAndAddSelf(lambda, J_dot, qp_ik); // -J inv(M00) (b_f + M01 qpp_c) + J_dot q_dot
+    MatNd_mulAndAddSelf(lambda, J_c, qpp_c);   // -J inv(M00) (b_f + M01 qpp_c) + J_dot q_dot + J_c qpp_c
 
     // Add stabilization: ax = kp*dx + kd*dx_dot
     MatNd_subSelf(lambda, ax);
@@ -1192,21 +1190,126 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
     // Lagrange Multipliers: lambda = inv(J inv(M) JT) * lambda
     MatNd_preMulSelf(lambda, invJinvMJT);
 
+    REXEC(1)
+    {
+      MatNd_printCommentDigits("lambda", lambda, 6);
+    }
     // Project into joint space: lambdaQ = JT lambda : n x 1 = [n x nc] * [nc x 1]
     // or in transpose space: lambdaQ^T = lambda^T J : 1 x n = [1 x nc] * [nc x n]
     // We do the latter one since it saves us a Jacobian transpose operation.
     MatNd* lambdaQ = MatNd_create(1, tIdx.size());
-    MatNd_transposeSelf(lambda);   // now 1 x nc
+    MatNd_transposeSelf(lambda);   // now 1 x nf
     MatNd_mulAndAddSelf(lambdaQ, lambda, J_f);
-    MatNd_transposeSelf(lambdaQ);   // now n x 1
+    MatNd_transposeSelf(lambdaQ);   // now nf x 1
 
     // Add contribution to RHS external force amd compute accelerations. Since
     // we have already computed the inverse of M00, no more solving of the
     // equation system is needed. We can determine the solution by
     // multiplication.
+    // qpp_f = inv(M00) (-lambdaQ - b_f - M01 qpp_c)
+    MatNd_constMulSelf(b_f, -1.0);
     MatNd_subSelf(b_f, Mqpp_c);
     MatNd_subSelf(b_f, lambdaQ);
     MatNd_mul(qpp_f, invM00, b_f);
+
+
+    // TEST compute constraint torques
+    {
+      MatNd* b_c = MatNd_clone(b);
+      getSubVec(b_c, pIdx);
+
+      MatNd* M11 = MatNd_create(pIdx.size(), pIdx.size());
+      MatNd* M10 = MatNd_create(pIdx.size(), tIdx.size());
+
+      getSubMat(M00, M, tIdx);
+      getSubMat(M10, M, pIdx, tIdx);
+
+
+      MatNd_mulAndAddSelf(b_c, M10, qpp_f);
+      MatNd_mulAndAddSelf(b_c, M11, qpp_c);
+      MatNd_transposeSelf(b_c);
+      MatNd_mulAndAddSelf(b_c, lambda, J_c);
+      MatNd_transposeSelf(b_c);
+
+      REXEC(1)
+      {
+        MatNd_printCommentDigits("b_c", b_c, 6);
+      }
+      size_t jidx = 0;
+      RCSGRAPH_TRAVERSE_BODIES(graph)
+      {
+        double rr = 255.0, gg = 255.0, bb = 255.0, sat = 0.0;
+
+        RCSBODY_FOREACH_JOINT(graph, BODY)
+        {
+          if (JNT->constrained)
+          {
+            continue;
+          }
+
+          switch (JNT->ctrlType)
+          {
+            case RCSJOINT_CTRL_POSITION:
+            case RCSJOINT_CTRL_VELOCITY:
+            {
+              sat = std::max(sat, Math_clip(fabs(b_c->ele[jidx] / JNT->maxTorque), 0.0, 1.0));
+              rr = 255.0*sat;
+              gg = 255.0*(1.0 - sat);
+              bb = 0.0;
+              jidx++;
+            }
+            break;
+
+          }
+        }   // RCSBODY_FOREACH_JOINT(graph, BODY)
+
+
+
+        RCSBODY_TRAVERSE_SHAPES(BODY)
+        {
+          snprintf(SHAPE->color, 16, "#%02x%02x%02xff",
+                   lround(rr), lround(gg), lround(bb));
+
+        }
+      }
+
+      MatNd_destroyN(3, b_c, M11, M10);
+    }
+    // END TEST
+
+
+
+    // Test static joint torque projection: T = inv(S Nc S^T) S Nc h
+#if 0
+    {
+      MatNd* pinvJ_c = MatNd_create(J_c->n, J_c->m);
+      MatNd* N_c = MatNd_create(J_c->n, J_c->n);
+
+      MatNd* F_grav_c = MatNd_clone(F_gravity);
+      getSubVec(F_grav_c, pIdx);
+
+      double det = MatNd_rwPinv(pinvJ_c, J_c, NULL, NULL);
+      RCHECK(det!=0.0);
+      MatNd_nullspace(N_c, pinvJ_c, J_c);
+      int rank = MatNd_SVDInverseSelf(N_c);
+      RLOG(1, "rank=%d dim=%d", rank, N_c->m);
+
+      MatNd* jointTorque = MatNd_createLike(F_grav_c);
+      MatNd_mul(jointTorque, N_c, F_grav_c);
+
+
+      REXEC(1)
+      {
+        MatNd_printCommentDigits("jointTorque", jointTorque, 6);
+      }
+
+      MatNd_destroyN(4, jointTorque, F_grav_c, pinvJ_c, N_c);
+    }
+#endif
+    // END TEST
+
+
+
 
     // Clean up
     MatNd_destroyN(12, J, J_dot, ax, qp_ik, invM00, JinvM, invJinvMJT, lambda,
@@ -1214,6 +1317,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   }
   else   // Simple case for no kinematic constraints
   {
+    MatNd_constMulSelf(b_f, -1.0);
     MatNd_subSelf(b_f, Mqpp_c);
     det = MatNd_choleskySolve(qpp_f, M00, b_f);
   }
@@ -1600,6 +1704,12 @@ KineticSimulation::KinematicConstraint::KinematicConstraint(ConstraintType type_
 size_t KineticSimulation::KinematicConstraint::dim() const
 {
   return x_des.size();
+}
+
+std::string KineticSimulation::KinematicConstraint::name(const RcsGraph* graph) const
+{
+  std::string kkName = RCSBODY_NAME_BY_ID(graph, bdyId) + std::string("-") + RCSBODY_NAME_BY_ID(graph, refBdyId);
+  return kkName;
 }
 
 void KineticSimulation::KinematicConstraint::print(const RcsGraph* graph) const

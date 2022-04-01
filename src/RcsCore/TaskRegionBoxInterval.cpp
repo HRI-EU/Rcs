@@ -127,7 +127,6 @@ void TaskRegionBoxInterval::computeDX(const Task* task, double* dx,
       {
         dx[i] *= Math_clip((x_ub - x_curr[i]) / slowRange, 0.0, 1.0);
       }
-
     }
 
     // Limit so that dx does not bring us out
@@ -139,7 +138,7 @@ void TaskRegionBoxInterval::computeDX(const Task* task, double* dx,
     }
     else if (x_next > x_ub)
     {
-      dx[i] += x_ub - x_next;
+      dx[i] -=  x_next - x_ub;
     }
 
   }

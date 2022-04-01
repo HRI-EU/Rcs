@@ -1699,20 +1699,27 @@ bool RcsGraph_setModelStateFromXML(RcsGraph* self, const char* modelStateName,
 {
   if ((self==NULL) || (modelStateName==NULL))
   {
+    RLOG(4, "Graph or model state name are NULL");
     return false;
   }
 
   // Read XML file
-  xmlDocPtr doc;
+  xmlDocPtr doc = NULL;
   xmlNodePtr node = parseXMLFile(self->cfgFile, "Graph", &doc);
 
   if (node == NULL)
   {
+    RLOG(4, "Failed to read xml file \"%s\"", self->cfgFile);
     xmlFreeDoc(doc);
     return false;
   }
 
   bool success = RcsGraph_parseModelState(node, self, modelStateName);
+  if (!success)
+  {
+    RLOG(1, "Failed to parse model_state \"%s\"", modelStateName);
+  }
+
   xmlFreeDoc(doc);
 
   return success;

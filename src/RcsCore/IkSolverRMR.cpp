@@ -444,7 +444,7 @@ double IkSolverRMR::solveRightInverse(MatNd* dq_ts,
 
   if (hasTaskRegions)
   {
-#if 0
+#if 1
     // Compute null space -> task space re-projection: (dH^T J#)^T
     MatNd_reshape(this->dHr, dHr->n, dHr->m);
     MatNd_reshape(this->dx_proj, 1, pinvJ->n);

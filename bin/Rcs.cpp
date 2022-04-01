@@ -781,6 +781,7 @@ int main(int argc, char** argv)
             std::string mdlState;
             RMSG("Changing model state. Options are:\n");
             std::vector<std::string> ms = RcsGraph_getModelStateNames(graph);
+            ms.push_back("Zero");
             for (size_t i=0; i<ms.size(); ++i)
             {
               printf("\t%s\n", ms[i].c_str());
@@ -788,7 +789,18 @@ int main(int argc, char** argv)
             printf("\nEnter name of model state: ");
             std::cin >> mdlState;
             pthread_mutex_lock(&graphLock);
-            bool ok = RcsGraph_setModelStateFromXML(graph, mdlState.c_str(), 0);
+            bool ok = true;
+
+            if (mdlState=="Zero")
+            {
+              MatNd_setZero(graph->q);
+              RcsGraph_setState(graph, NULL, NULL);
+            }
+            else
+            {
+              ok = RcsGraph_setModelStateFromXML(graph, mdlState.c_str(), 0);
+            }
+
             pthread_mutex_unlock(&graphLock);
             RMSG("%s changing model state to %s",
                  ok ? "SUCCEEDED" : "FAILED", mdlState.c_str());
@@ -1944,7 +1956,7 @@ int main(int argc, char** argv)
       Rcs::KeyCatcherBase::registerKey("d", "Write q-vector to q.dat");
       Rcs::KeyCatcherBase::registerKey("D", "Set q-vector from file q.dat");
       Rcs::KeyCatcherBase::registerKey("n", "Reset to default state");
-      Rcs::KeyCatcherBase::registerKey("C", "Toggle closest point lines");
+      Rcs::KeyCatcherBase::registerKey("C", "Toggle closest point lines and COM");
       Rcs::KeyCatcherBase::registerKey("o", "Toggle distance calculation");
       Rcs::KeyCatcherBase::registerKey("m", "Manipulability null space");
       Rcs::KeyCatcherBase::registerKey("e", "Remove body under mouse");
@@ -2082,6 +2094,9 @@ int main(int argc, char** argv)
       MatNd* F_effort = NULL;
       MatNd_fromStack(F_effort, 4, 1);
       MatNd F_effort3 = MatNd_fromPtr(3, 1, F_effort->ele);
+      // Overall COM
+      double r_com[3];
+      Vec3d_setZero(r_com);
 
       // Physics engine
       Rcs::PhysicsBase* sim = NULL;
@@ -2133,6 +2148,7 @@ int main(int argc, char** argv)
       osg::ref_ptr<Rcs::HUD> hud;
       osg::ref_ptr<Rcs::BodyPointDragger> dragger;
       osg::ref_ptr<Rcs::VertexArrayNode> cn;
+      osg::ref_ptr < Rcs::SphereNode> comNd;
       char hudText[2056];
 
       if (valgrind==false)
@@ -2146,6 +2162,10 @@ int main(int argc, char** argv)
           hud     = new Rcs::HUD();
           v->add(hud);
         }
+        comNd = new Rcs::SphereNode(r_com, 0.05);
+        comNd->makeDynamic(r_com);
+        comNd->setMaterial("RED");
+        v->add(comNd);
 
         dragger = new Rcs::BodyPointDragger();
         dragger->scaleDragForce(scaleDragForce);
@@ -2258,6 +2278,7 @@ int main(int argc, char** argv)
       while (runLoop == true)
       {
         pthread_mutex_lock(&graphLock);
+        RcsGraph_COG(controller.getGraph(), r_com);
 
         dt_calc = Timer_getTime();
 
@@ -2465,6 +2486,7 @@ int main(int argc, char** argv)
         {
           RMSG("Toggle closest points visualization");
           cn->toggle();
+          comNd->toggle();
         }
         else if (kc && kc->getAndResetKey('o'))
         {

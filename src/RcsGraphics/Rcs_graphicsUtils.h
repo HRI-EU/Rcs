@@ -376,13 +376,21 @@ public:
   {
   }
 
+  ChildNodeCollector(const std::string& name) :
+    searchName(name), osg::NodeVisitor(osg::NodeVisitor::TRAVERSE_ALL_CHILDREN)
+  {
+  }
+
   virtual void apply(osg::Node& node)
   {
     T* ndPtr = dynamic_cast<T*>(&node);
 
     if (ndPtr)
     {
-      collectedNodes.push_back(ndPtr);
+      if (searchName.empty() || (node.getName()==searchName))
+      {
+        collectedNodes.push_back(ndPtr);
+      }
     }
 
     // Keep traversing the rest of the scene graph.
@@ -396,12 +404,21 @@ public:
 
 protected:
   std::vector<T*> collectedNodes;
+  std::string searchName;
 };
 
 template <typename T>
 std::vector<T*> findChildrenOfType(osg::Group* root)
 {
   ChildNodeCollector<T> nf;
+  root->accept(nf);
+  return nf.getNodes();
+}
+
+template <typename T>
+std::vector<T*> findChildrenOfType(osg::Group* root, const std::string& name)
+{
+  ChildNodeCollector<T> nf(name);
   root->accept(nf);
   return nf.getNodes();
 }

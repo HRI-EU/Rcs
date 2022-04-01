@@ -2423,7 +2423,10 @@ void RcsGraph_relativeRigidBodyDoFs(const RcsGraph* self,
 bool RcsGraph_setRigidBodyDoFs(RcsGraph* self, const RcsBody* body,
                                const double angles[6])
 {
-  if ((self==NULL) || (body==NULL) || (body->rigid_body_joints==false))
+
+  bool isFloating = RcsBody_isFloatingBase(self, body);
+
+  if ((self==NULL) || (body==NULL) || (isFloating==false))
   {
     return false;
   }
@@ -3383,7 +3386,6 @@ bool RcsGraph_addBodyDofs(RcsGraph* graph, RcsBody* parent, RcsBody* body,
 void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src)
 {
   dst->rootId = src->rootId;
-
 
   // Copy memory block of joints. We only reallocate memory in case the
   // memory increased.

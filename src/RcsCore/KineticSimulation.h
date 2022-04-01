@@ -368,6 +368,7 @@ private:
                                    double ea_curr[3]);
 
     void computeXp(const RcsGraph* graph, double x_dot[3]) const;
+    std::string name(const RcsGraph* graph) const;
 
     size_t dim() const;
     void print(const RcsGraph* graph) const;

@@ -59,7 +59,6 @@
 #include <osg/ShapeDrawable>
 #include <osg/Switch>
 #include <osg/Material>
-#include <osgText/Text>
 #include <osg/Texture2D>
 
 

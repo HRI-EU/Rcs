@@ -116,8 +116,8 @@ bool getXMLFileTag(const char* filename, char* tag)
 }
 
 /*******************************************************************************
-*
-******************************************************************************/
+ *
+ ******************************************************************************/
 xmlNodePtr parseXMLMemory(const char* buffer, size_t size,
                           xmlDocPtr* doc)
 {
@@ -140,11 +140,12 @@ xmlNodePtr parseXMLMemory(const char* buffer, size_t size,
 xmlNodePtr parseXMLFile(const char* filename, const char* tag, xmlDocPtr* doc)
 {
   xmlNodePtr node;
-
   xmlParserOption options = XML_PARSE_XINCLUDE ;
 
-  RCHECK_MSG(File_exists(filename), "XML-file \"%s\" not found (Tag \"%s\")!",
-             filename, tag);
+  if (!File_exists(filename))
+  {
+    RLOG(1, "XML-file \"%s\" not found (Tag \"%s\")!", filename, tag);
+  }
 
   if (!(*doc = xmlReadFile(filename, NULL, options)))
   {
@@ -163,18 +164,17 @@ xmlNodePtr parseXMLFile(const char* filename, const char* tag, xmlDocPtr* doc)
     return NULL;
   }
 
-  if (tag && xmlStrcmp(node->name, (const xmlChar*) tag))
+  if (tag==NULL)
   {
-    NLOG(1, "Wrong file type (\"%s\"), root node is \"%s\" and not \"%s\"",
-         filename, node->name, tag);
-    return NULL;
+    return node;
   }
 
-
-  /*   FILE *out = fopen("xmlDump.txt", "w+"); */
-  /*   RCHECK(out); */
-  /*   RCHECK(doc); */
-  /*   xmlDocFormatDump(out,*doc,1); */
+  if (xmlStrcmp(node->name, (const xmlChar*) tag))
+  {
+    RLOG(1, "Wrong file type (\"%s\"), root node is \"%s\" and not \"%s\"",
+         filename, node->name, tag);
+    return getXMLChildByName(node, tag);
+  }
 
   return node;
 }
