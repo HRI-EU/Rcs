@@ -1,0 +1,466 @@
+<!-- 
+  Copyright (c) 2020, Honda Research Institute Europe GmbH
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  3. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER "AS IS" AND ANY EXPRESS OR
+  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT, INDIRECT,
+  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<Controller usage="
+&#xA;  Configuration file to illustrate the biomechanical model.
+&#xA; 
+&#xA;  Here is how to start an example:
+&#xA;  bin\Release\Rcs -m 5 -dir config\xml\AvatarSkeleton -f cOpenSimWholeBody.xml -physicsEngine NewtonEuler -algo 1 -lambda 0 -i Euler
+&#xA;  bin/Rcs -m 5 -dir config/xml/AvatarSkeleton -f cOpenSimWholeBody.xml -physicsEngine NewtonEuler -algo 1 -lambda 0 -i Euler
+&#xA;  
+">
+
+<Graph name="Tool1"
+       resourcePath="${SIT}/Data/RobotMeshes/1.0/data" >
+
+  <!-- <Body name="ground" > -->
+  <!--     <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0" -->
+  <!--          color="PEWTER" graphics="true" physics="true" /> -->
+  <!-- <Shape type="FRAME" graphics="true" physics="true" scale="0.5" /> -->
+  <!-- </Body> -->
+
+  <Body name="pelvis" physics="dynamic" mass="11.777" inertia="0.1028 0 0   -0 0.0871 0   -0 -0 0.0579"  transform="0.13 0 0 0 0 -90" >
+    <Joint name="pelvis_tx" range="-10 0 10" type="TransX" torqueLimit="7.4466" speedLimit="1" ctrlType="Torque" weightJL="0" />
+    <Joint name="pelvis_ty" range="-6 0 6" type="TransY" torqueLimit="7.4466" speedLimit="1" ctrlType="Torque" weightJL="0" />
+    <Joint name="pelvis_tz" range="-5 0 5" type="TransZ" torqueLimit="7.4466" speedLimit="1" ctrlType="Torque" weightJL="0" />
+    <Joint name="pelvis_tilt" range="-90 0 90" type="RotX" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Torque" weightMetric="0.1" weightJL="10" />
+    <Joint name="pelvis_list" range="-180 0 180" type="RotY" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Torque" weightMetric="0.1" weightJL="20" />
+    <Joint name="pelvis_rotation" range="-180 0 180" type="RotZ" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Torque" weightMetric="0.1" weightJL="10" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/sacrum.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/pelvis.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/l_pelvis.stl" />
+	<Shape type="FRAME" scale="0.4" physics="true" graphics="true" />
+  </Body>
+
+  <Body name="femur_r_f1" physics="dynamic" prev="pelvis" mass="0.0001" inertia="0.0003 0 0   -0 0.0003 0   -0 -0 0.0003" >
+    <Joint name="hip_flexion_r" range="-150 -15 120" type="RotX" transform="0.0835 -0.0707 -0.0661 0 0 0" torqueLimit="49.023833" speedLimit="57.29578" ctrlType="Velocity" />
+	<Shape type="SPHERE" radius="0.001" physics="true" />
+	<!-- <Shape type="FRAME" scale="0.4" physics="true" graphics="true" /> -->
+  </Body>
+
+  <Body name="femur_r_f2" physics="dynamic" prev="femur_r_f1" mass="0.0001" inertia="0.0003 0 0   -0 0.0003 0   -0 -0 0.0003" >
+    <Joint name="hip_adduction_r" range="-120 0 120" type="RotY" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+	<Shape type="SPHERE" radius="0.001" physics="true" />
+  </Body>
+
+  <Body name="femur_r" prev="femur_r_f2" physics="dynamic" mass="9.3014" inertia="0.1339 0 0   -0 0.0351 0   -0 -0 0.1412" >
+    <Joint name="hip_rotation_r" range="-120 0 120" type="RotZ" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/femur_r.stl" />
+  </Body>
+
+  <Body name="tibia_r" prev="femur_r" physics="dynamic" mass="3.7075" inertia="0.0504 0 0   -0 0.0051 0   -0 -0 0.0511" >
+    <Joint name="knee_angle_r" range="-180 -80 20" type="RotX" transform="0 0 -0.39 0 0 0" torqueLimit="51.6275" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/tibia_r.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/fibula_r.stl" />
+  </Body>
+
+  <Body name="talus_r" prev="tibia_r" transform="0 0 0 -180 80 6.121703" physics="dynamic" mass="0.1" inertia="0.001 0 0   -0 0.001 0   -0 -0 0.001" >
+    <Joint name="ankle_angle_r" range="-90 0 90" type="RotZ" transform="0 0 -0.43 148.891191 78.272767 31.646069" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/talus_rv.stl" />
+  </Body>
+
+  <Body name="calcn_r" prev="talus_r" transform="0 0 0 0 52.789329 81.264864" physics="dynamic" mass="1.25" inertia="0.0014 0 0   -0 0.0039 0   -0 -0 0.0041" >
+    <Joint name="subtalar_angle_r" range="-90 0 90" type="RotZ" transform="0.00792 -0.04877 -0.04195 -52.466879 -6.946903 -84.69138" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="FRAME" physics="true" graphics="true" scale="0.25" />
+    <Shape type="SPHERE" radius="0.001" physics="true" weldpos="true" weldori="true" kp="10" />
+	<Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/foot.stl"/>
+  </Body>
+
+  <Body name="toes_r" prev="calcn_r" transform="0 0 0 -144.482302 90 0" physics="dynamic" mass="0.2166" cogVector="-0.0175 0.0346 0.006" inertia="0.0001 0 0   -0 0.0002 0   -0 -0 0.001" >
+    <Joint name="mtp_angle_r" range="-90 0 90" type="RotZ" transform="0.00108 0.1788 -0.002 90 54.482302 90" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/bofoot.stl" />
+  </Body>
+
+  <Body name="femur_l_f1" prev="pelvis" physics="dynamic" mass="0.0001" inertia="0.0003 0 0   -0 0.0003 0   -0 -0 0.0003" >
+    <Joint name="hip_flexion_l" range="-150 -15 120" type="RotX" transform="-0.0835 -0.0707 -0.0661 0 0 0" torqueLimit="49.023833" speedLimit="57.29578" ctrlType="Velocity" />
+	<Shape type="SPHERE" radius="0.001" physics="true" />
+  </Body>
+
+  <Body name="femur_l_f2" prev="femur_l_f1" physics="dynamic" transform="0 0 0 -90 90 0" mass="0.0001" inertia="0.0003 0 0   -0 0.0003 0   -0 -0 0.0003" >
+    <Joint name="hip_adduction_l" range="-120 0 120" type="RotZ" transform="0 0 0 90 0 90" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+	<Shape type="SPHERE" radius="0.001" physics="true" />
+  </Body>
+
+  <Body name="femur_l" prev="femur_l_f2" transform="0 0 0 -180 0 0" physics="dynamic" mass="9.3014" inertia="0.1339 0 0   -0 0.0351 0   -0 -0 0.1412" >
+    <Joint name="hip_rotation_l" range="-120 0 120" type="RotZ" transform="0 0 0 180 0 0" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/femur_l.stl" />
+  </Body>
+
+  <Body name="tibia_l" prev="femur_l" physics="dynamic" mass="3.7075" inertia="0.0504 0 0   -0 0.0051 0   -0 -0 0.0511" >
+    <Joint name="knee_angle_l" range="-180 -80 20" type="RotX" transform="0 0 -0.39 0 0 0" torqueLimit="51.6275" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/tibia_l.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/fibula_l.stl" />
+  </Body>
+
+  <Body name="talus_l" prev="tibia_l" transform="0 0 0 0 79.978224 173.878297" physics="dynamic" mass="0.1" inertia="0.001 0 0   -0 0.001 0   -0 -0 0.001" >
+    <Joint name="ankle_angle_l" range="-90 0 90" type="RotZ" transform="0 0 -0.43 -31.108809 78.272767 -148.353931" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/talus_lv.stl" />
+  </Body>
+
+  <Body name="calcn_l" prev="talus_l" transform="0 0 0 -180 52.789329 98.735136" physics="dynamic" mass="1.25" inertia="0.0014 0 0   -0 0.0039 0   -0 -0 0.0041" >
+    <Joint name="subtalar_angle_l" range="-90 0 90" type="RotZ" transform="-0.00792 -0.04877 -0.04195 127.533121 -6.946903 95.30862" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity"/>
+    <Shape type="FRAME" physics="true" graphics="true" scale="0.25" />
+    <Shape type="SPHERE" radius="0.001" physics="true" weldpos="true" weldori="true" kp="10" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/l_foot.stl" />
+  </Body>
+
+  <Body name="toes_l" prev="calcn_l" transform="0 0 0 144.482302 90 0" physics="dynamic" mass="0.2166" cogVector="0.0175 0.0346 0.006" inertia="0.0001 0 0   -0 0.0002 0   -0 -0 0.001" >
+    <Joint name="mtp_angle_l" range="-60 0 60" type="RotZ" transform="-0.00108 0.1788 -0.002 -90 54.482302 -90" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/bofoot.stl" />
+  </Body>
+
+  <Body name="torso_f1" prev="pelvis" physics="dynamic" mass="0.0001" inertia="0.0003 0 0   -0 0.0003 0   -0 -0 0.0003" >
+    <Joint name="lumbar_extension" range="-90 0 90" type="RotX" transform="0 -0.1007 0.0815 0 0 0" torqueLimit="179.4297" speedLimit="57.29578" ctrlType="Velocity" weightJL="10" weightMetric="0.1" />
+	<Shape type="SPHERE" radius="0.001" physics="true" />
+	<Shape type="FRAME" scale="0.3" physics="true" graphics="true" />
+  </Body>
+
+  <Body name="torso_f2" prev="torso_f1" physics="dynamic" mass="0.0001" inertia="0.0003 0 0   -0 0.0003 0   -0 -0 0.0003" >
+    <Joint name="lumbar_bending" range="-90 0 90" type="RotY" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" weightJL="10" weightMetric="0.1" />
+	<Shape type="SPHERE" radius="0.001" physics="true" />
+	<Shape type="FRAME" scale="0.3" physics="true" graphics="true" />
+  </Body>
+
+  <Body name="torso" prev="torso_f2" physics="dynamic" mass="21.28" inertia="0.627499 0 0   -0 0.627499 0   -0 -0 0.845584" >
+    <Joint name="lumbar_rotation" range="-90 0 90" type="RotZ" torqueLimit="7.4466" speedLimit="57.29578" weightJL="10" weightMetric="0.1" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/hat_spine.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/hat_ribs_scap.stl" />
+	<Shape type="FRAME" scale="0.3" physics="true" graphics="true" />
+  </Body>
+
+  <Body name="head_and_neck_f1" prev="torso" physics="dynamic" mass="0.0001" inertia="0.0003 0 0   -0 0.0003 0   -0 -0 0.0003" >
+    <Joint name="neck_flexion" range="-100 -20 60" type="RotX" transform="0 -0.01 0.445 0 0 0" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+	<Shape type="SPHERE" radius="0.001" physics="true" />
+  </Body>
+
+  <Body name="head_and_neck_f2" prev="head_and_neck_f1" physics="dynamic" mass="0.0001" inertia="0.0003 0 0   -0 0.0003 0   -0 -0 0.0003" >
+    <Joint name="neck_lateral_bending" range="-34.377468 0 34.377468" type="RotY" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+	<Shape type="SPHERE" radius="0.001" physics="true" />
+  </Body>
+
+  <Body name="head_and_neck" prev="head_and_neck_f2" physics="dynamic" mass="4.69" inertia="0.0268334 0.000226171 0.000251301   -0.000226171 0.0174515 0.00011169   -0.000251301 -0.00011169 0.0269334" >
+    <Joint name="neck_rotation" range="-70 0 70" type="RotZ" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/jaw.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/skull.stl" />
+  </Body>
+
+  <Body name="nose" prev="head_and_neck" transform="0 0.2 0 0 0 0" >
+    <Shape type="FRAME"  />
+  </Body>
+
+  <Body name="humerus_r_f1" prev="torso" physics="dynamic" mass="0.0001" inertia="0.0003 0 0   -0 0.0003 0   -0 -0 0.0003" >
+    <Joint name="arm_flex_r" range="-90 45 180" type="RotX" transform="0.17 0.003155 0.3715 0 0 0" torqueLimit="85.657919" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="SPHERE" radius="0.001" physics="true" />
+  </Body>
+
+  <Body name="humerus_r_f2" prev="humerus_r_f1" physics="dynamic" mass="0.0001" inertia="0.0003 0 0   -0 0.0003 0   -0 -0 0.0003" >
+    <Joint name="arm_add_r" range="-220 -65 90" type="RotY" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="SPHERE" radius="0.001" physics="true" />
+  </Body>
+
+  <Body name="humerus_r" prev="humerus_r_f2" physics="dynamic" mass="2.0325" inertia="0.011946 0 0   -0 0.004121 0   -0 -0 0.013409" >
+    <Joint name="arm_rot_r" range="-90 0 90" type="RotZ" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/humerus_rv.stl" />
+  </Body>
+
+  <Body name="ulna_r" prev="humerus_r" transform="0 0 0 0 88.723975 166.932251" physics="dynamic" mass="0.6075" inertia="0.002962 0 0   -0 0.000618 0   -0 -0 0.003213" >
+    <Joint name="elbow_flex_r" range="0 90 180" type="RotZ" transform="-0.009595 0.013144 -0.286273 -84.373665 76.871178 -95.48018" torqueLimit="77.845527" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/ulna_rv.stl" />
+  </Body>
+
+  <Body name="radius_r" prev="ulna_r" transform="0 0 0 3.233097 -0.111663 0.006308" physics="dynamic" mass="0.6075" inertia="0.002962 0 0   -0 0.000618 0   -0 -0 0.003213" >
+    <Joint name="pro_sup_r" range="-180 0 180" type="RotZ" transform="0.026083 -0.006727 -0.013007 -3.233091 0.111841 0" torqueLimit="55.48956" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/radius_rv.stl" />
+  </Body>
+
+  <Body name="lunate_r" prev="radius_r" physics="dynamic" mass="0.01" inertia="1e-05 0 0   -0 1e-05 0   -0 -0 1e-05" >
+    <Joint name="wrist_flex_r" range="-90 0 90" type="RotX" transform="0.01361 -0.008797 -0.235841 0 5.729578 0" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/lunate_rvs.stl" />
+  </Body>
+
+  <Body name="hand_r" prev="lunate_r" physics="dynamic" mass="0.4575" inertia="0.000892 0 0   -0 0.000547 0   -0 -0 0.00134" >
+    <Joint name="wrist_dev_r" range="-25 5 35" type="RotY" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+	<Shape type="FRAME" scale="0.25" physics="false" graphics="false" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/pisiform_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/scaphoid_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/triquetrum_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/hamate_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/capitate_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/trapezoid_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/trapezium_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/metacarpal2_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/metacarpal3_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/metacarpal4_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/metacarpal5_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/metacarpal1_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/thumb_proximal_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/thumb_distal_rvs.stl" />
+  </Body>
+
+  <Body name="fingers_r" prev="hand_r" physics="dynamic" mass="0.1" inertia="0.001 0 0   -0 0.001 0   -0 -0 0.001" >
+    <Joint name="hand_finger_flex_r" range="-90 0 90" type="RotX" transform="-0.01 0 -0.077 0 0 0" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/index_proximal_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/index_medial_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/index_distal_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/middle_proximal_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/middle_medial_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/middle_distal_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/ring_proximal_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/ring_medial_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/ring_distal_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/little_proximal_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/little_medial_rvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/little_distal_rvs.stl" />
+  </Body>
+
+  <Body name="humerus_l_f1" prev="torso" physics="dynamic" mass="0.0001" inertia="0.0003 0 0   -0 0.0003 0   -0 -0 0.0003" >
+    <Joint name="arm_flex_l" range="-90 45 180" type="RotX" transform="-0.17 0.003155 0.3715 0 0 0" torqueLimit="85.657919" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="SPHERE" radius="0.001" physics="true" />
+    <Shape type="FRAME" scale="0.25" />
+  </Body>
+
+  <Body name="humerus_l_f2" prev="humerus_l_f1" physics="dynamic" transform="0 0 0 -90 90 0" mass="0.0001" inertia="0.0003 0 0   -0 0.0003 0   -0 -0 0.0003" >
+    <Joint name="arm_add_l" range="-220 -65 90" type="RotZ" transform="0 0 0 90 0 90" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="SPHERE" radius="0.001" physics="true" />
+    <Shape type="FRAME" scale="0.25" />
+  </Body>
+
+  <Body name="humerus_l" prev="humerus_l_f2" transform="0 0 0 -180 0 0" physics="dynamic" mass="2.0325" inertia="0.011946 0 0   -0 0.004121 0   -0 -0 0.013409" >
+    <Joint name="arm_rot_l" range="-90 0 90" type="RotZ" transform="0 0 0 180 0 0" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/humerus_lv.stl" />
+    <Shape type="FRAME" scale="0.25" />
+  </Body>
+
+  <Body name="ulna_l" prev="humerus_l" transform="0 0 0 -180 88.723975 13.067749" physics="dynamic" mass="0.6075" inertia="0.002962 0 0   -0 0.000618 0   -0 -0 0.003213" >
+    <Joint name="elbow_flex_l" range="0 90 180" type="RotZ" transform="0.009595 0.013144 -0.286273 95.626335 76.871178 84.51982" torqueLimit="77.845527" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/ulna_lv.stl" />
+    <Shape type="FRAME" scale="0.25" />
+  </Body>
+
+  <Body name="radius_l" prev="ulna_l" transform="0 0 0 -176.766903 0.111663 -0.006308" physics="dynamic" mass="0.6075" inertia="0.002962 0 0   -0 0.000618 0   -0 -0 0.003213" >
+    <Joint name="pro_sup_l" range="-180 0 180" type="RotZ" transform="-0.026083 -0.006727 -0.013007 176.766909 0.111841 0" torqueLimit="55.48956" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/radius_lv.stl" />
+    <Shape type="FRAME" scale="0.25" />
+  </Body>
+
+  <Body name="lunate_l" prev="radius_l" physics="dynamic" mass="0.01" inertia="1e-05 0 0   -0 1e-05 0   -0 -0 1e-05" >
+    <Joint name="wrist_flex_l" range="-90 0 90" type="RotX" transform="-0.01361 -0.008797 -0.235841 0 0 0" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/lunate_lvs.stl" />
+    <Shape type="FRAME" scale="0.25" />
+  </Body>
+
+  <Body name="hand_l" prev="lunate_l" transform="0 0 0 -90 90 0" physics="dynamic" mass="0.4575" inertia="0.000892 0 0   -0 0.000547 0   -0 -0 0.00134" >
+	<Shape type="FRAME" scale="0.25" physics="false" graphics="false" />
+    <Joint name="wrist_dev_l" range="-25 5 35" type="RotZ" transform="0 0 0 90 0 90" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/pisiform_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/scaphoid_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/triquetrum_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/hamate_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/capitate_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/trapezoid_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/trapezium_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/metacarpal2_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/metacarpal3_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/metacarpal4_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/metacarpal5_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/metacarpal1_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/thumb_proximal_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/thumb_distal_lvs.stl" />
+  </Body>
+
+  <Body name="fingers_l" prev="hand_l" physics="dynamic" mass="0.1" inertia="0.001 0 0   -0 0.001 0   -0 -0 0.001" >
+    <Joint name="hand_finger_flex_l" range="-90 0 90" type="RotX" transform="0.01 0 -0.077 0 0 0" torqueLimit="7.4466" speedLimit="57.29578" ctrlType="Velocity" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/index_proximal_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/index_medial_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/index_distal_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/middle_proximal_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/middle_medial_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/middle_distal_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/ring_proximal_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/ring_medial_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/ring_distal_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/little_proximal_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/little_medial_lvs.stl" />
+    <Shape type="MESH" distance="false" physics="true" graphics="true" transform="0 0 0 90 90 0"  resizeable="false" meshFile="OpenSim/wholebody/little_distal_lvs.stl" />
+  </Body>
+
+
+  <Body name="HandTip_R" prev="hand_r" transform="0 0 -0.08 0 90 0" >
+    <Shape type="FRAME" distance="false" physics="true" graphics="true" scale="0.25" />
+  </Body>
+
+  <Body name="HandTip_L" prev="hand_l" transform="0 0 -0.08 0 90 0" >
+    <Shape type="FRAME" distance="false" physics="true" graphics="true" scale="0.25" />
+  </Body>
+
+  <!-- <Body name="Tool" mass="10" cogVector="0 0 0" physics="dynamic" > -->
+  <!--   <Joint name="Tool_x"   range="-10 0 10"   type="TransX" torqueLimit="7.4466" speedLimit="1"        ctrlType="Torque" weightJL="0" /> -->
+  <!--   <Joint name="Tool_y"   range="-6 0 6"     type="TransY" torqueLimit="7.4466" speedLimit="1"        ctrlType="Torque" weightJL="0" /> -->
+  <!--   <Joint name="Tool_z"   range="-5 0 5"     type="TransZ" torqueLimit="7.4466" speedLimit="1"        ctrlType="Torque" weightJL="0" /> -->
+  <!--   <Joint name="Tool_thx" range="-180 0 180" type="RotX" torqueLimit="7.4466"   speedLimit="57.29578" ctrlType="Torque" weightJL="0" /> -->
+  <!--   <Joint name="Tool_thy" range="-180 0 180" type="RotY" torqueLimit="7.4466"   speedLimit="57.29578" ctrlType="Torque" weightJL="0" /> -->
+  <!--   <Joint name="Tool_thz" range="-180 0 180" type="RotZ" torqueLimit="7.4466"   speedLimit="57.29578" ctrlType="Torque" weightJL="0" /> -->
+
+  <!--   <Shape type="SPHERE" radius="0.001" physics="true" weldpos="true" weldori="true" kp="10" refBdy="hand_l" /> -->
+  <!--   <Shape type="SPHERE" radius="0.001" physics="true" weldpos="true" weldori="true" kp="10" refBdy="hand_r" /> -->
+  <!--   <Shape type="BOX" distance="false" physics="true" graphics="true" extents="1 0.5 0.2" transform="0.5 0 0 0 0 0" color="DARKRED_TRANS" /> -->
+  <!--   <Shape type="FRAME" distance="false" physics="true" graphics="true" scale="0.5" /> -->
+  <!-- </Body> -->
+
+
+
+<model_state model="DefaultPose" time_stamp="">
+  <joint_state joint="pelvis_tz" position="0.91" />
+  <joint_state joint="hip_flexion_r" position="15" />
+  <joint_state joint="knee_angle_r" position="-30" />
+  <joint_state joint="ankle_angle_r" position="15" />
+  <joint_state joint="hip_flexion_l" position="15" />
+  <joint_state joint="knee_angle_l" position="-30" />
+  <joint_state joint="ankle_angle_l" position="15" />
+  <joint_state joint="neck_flexion" position="15" />
+  <joint_state joint="arm_flex_r" position="-10" />
+  <joint_state joint="arm_add_r" position="-10" />
+  <joint_state joint="elbow_flex_r" position="30" />
+  <joint_state joint="pro_sup_r" position="60" />
+  <joint_state joint="arm_flex_l" position="-10" />
+  <joint_state joint="arm_add_l" position="-10" />
+  <joint_state joint="elbow_flex_l" position="30" />
+  <joint_state joint="pro_sup_l" position="60" />
+</model_state>
+
+<model_state model="Tool1" time_stamp="">
+  <joint_state joint="pelvis_tx" position="-0.017457" />
+  <joint_state joint="pelvis_ty" position="0.002133" />
+  <joint_state joint="pelvis_tz" position="0.904901" />
+  <joint_state joint="pelvis_tilt" position="1.361769" />
+  <joint_state joint="pelvis_list" position="6.405683" />
+  <joint_state joint="pelvis_rotation" position="0.115127" />
+  <joint_state joint="hip_flexion_r" position="26.609509" />
+  <joint_state joint="hip_adduction_r" position="-2.079632" />
+  <joint_state joint="hip_rotation_r" position="0.973253" />
+  <joint_state joint="knee_angle_r" position="-36.468832" />
+  <joint_state joint="ankle_angle_r" position="17.070891" />
+  <joint_state joint="subtalar_angle_r" position="3.909456" />
+  <joint_state joint="mtp_angle_r" position="0.003428" />
+  <joint_state joint="hip_flexion_l" position="25.673169" />
+  <joint_state joint="hip_adduction_l" position="1.250158" />
+  <joint_state joint="hip_rotation_l" position="0.437142" />
+  <joint_state joint="knee_angle_l" position="-34.67143" />
+  <joint_state joint="ankle_angle_l" position="16.08359" />
+  <joint_state joint="subtalar_angle_l" position="3.021994" />
+  <joint_state joint="mtp_angle_l" position="0.0015" />
+  <joint_state joint="lumbar_extension" position="-1.281024" />
+  <joint_state joint="lumbar_bending" position="0.578863" />
+  <joint_state joint="lumbar_rotation" position="0.072195" />
+  <joint_state joint="neck_flexion" position="15" />
+  <joint_state joint="arm_flex_r" position="55.917819" />
+  <joint_state joint="arm_add_r" position="-12.589107" />
+  <joint_state joint="arm_rot_r" position="-3.079571" />
+  <joint_state joint="elbow_flex_r" position="52.145302" />
+  <joint_state joint="pro_sup_r" position="87.629229" />
+  <joint_state joint="wrist_flex_r" position="-3.508231" />
+  <joint_state joint="wrist_dev_r" position="0.291434" />
+  <joint_state joint="arm_flex_l" position="56.049934" />
+  <joint_state joint="arm_add_l" position="-13.58063" />
+  <joint_state joint="arm_rot_l" position="-2.293762" />
+  <joint_state joint="elbow_flex_l" position="47.61633" />
+  <joint_state joint="pro_sup_l" position="83.010196" />
+  <joint_state joint="wrist_flex_l" position="-2.01789" />
+  <joint_state joint="wrist_dev_l" position="1.688029" />
+  <joint_state joint="Tool_x" position="0.62" />
+  <joint_state joint="Tool_z" position="1.2" />
+</model_state>
+
+<model_state model="T-Pose" time_stamp="">
+  <joint_state joint="pelvis_tx" position="-0.017457" />
+  <joint_state joint="pelvis_ty" position="0.002133" />
+  <joint_state joint="pelvis_tz" position="0.904901" />
+  <joint_state joint="pelvis_tilt" position="1.361769" />
+  <joint_state joint="pelvis_list" position="6.405683" />
+  <joint_state joint="pelvis_rotation" position="0.115127" />
+  <joint_state joint="hip_flexion_r" position="26.609509" />
+  <joint_state joint="hip_adduction_r" position="-2.079632" />
+  <joint_state joint="hip_rotation_r" position="0.973253" />
+  <joint_state joint="knee_angle_r" position="-36.468832" />
+  <joint_state joint="ankle_angle_r" position="17.070891" />
+  <joint_state joint="subtalar_angle_r" position="3.909456" />
+  <joint_state joint="mtp_angle_r" position="0.003428" />
+  <joint_state joint="hip_flexion_l" position="25.673169" />
+  <joint_state joint="hip_adduction_l" position="1.250158" />
+  <joint_state joint="hip_rotation_l" position="0.437142" />
+  <joint_state joint="knee_angle_l" position="-34.67143" />
+  <joint_state joint="ankle_angle_l" position="16.08359" />
+  <joint_state joint="subtalar_angle_l" position="3.021994" />
+  <joint_state joint="mtp_angle_l" position="0.0015" />
+  <joint_state joint="lumbar_extension" position="-1.281024" />
+  <joint_state joint="lumbar_bending" position="0.578863" />
+  <joint_state joint="lumbar_rotation" position="0.072195" />
+  <joint_state joint="neck_flexion" position="15" />
+  <joint_state joint="arm_flex_r" position="10" />
+  <joint_state joint="arm_add_r" position="-80" />
+  <joint_state joint="arm_rot_r" position="-80" />
+  <joint_state joint="elbow_flex_r" position="10" />
+  <joint_state joint="pro_sup_r" position="110" />
+  <joint_state joint="wrist_dev_r" position="0" />
+  <joint_state joint="arm_flex_l" position="10" />
+  <joint_state joint="arm_add_l" position="-80" />
+  <joint_state joint="arm_rot_l" position="-80" />
+  <joint_state joint="elbow_flex_l" position="10" />
+  <joint_state joint="pro_sup_l" position="110" />
+  <joint_state joint="wrist_dev_l" position="0" />
+</model_state>
+
+</Graph>
+
+
+  <Task name="pelvis" controlVariable="XYZ" effector="pelvis" active="true" />
+
+  <Task name="femur_r_f1" controlVariable="XYZ" effector="femur_r_f1" active="true" />
+  <Task name="tibia_r" controlVariable="XYZ" effector="tibia_r" active="true" />
+  <Task name="talus_r" controlVariable="XYZ" effector="talus_r" active="true" />
+  <Task name="toes_r" controlVariable="XYZ" effector="toes_r" active="true" />
+
+  <Task name="femur_l_f1" controlVariable="XYZ" effector="femur_l_f1" active="true" />
+  <Task name="tibia_l" controlVariable="XYZ" effector="tibia_l" active="true" />
+  <Task name="talus_l" controlVariable="XYZ" effector="talus_l" active="true" />
+  <Task name="toes_l" controlVariable="XYZ" effector="toes_l" active="true" />
+
+  <Task name="humerus_r_f2" controlVariable="XYZ" effector="humerus_r_f2" active="true" />
+  <Task name="ulna_r" controlVariable="XYZ" effector="ulna_r" active="true" />
+  <Task name="hand_r" controlVariable="XYZ" effector="hand_r" active="true" />
+
+  <Task name="humerus_l_f2" controlVariable="XYZ" effector="humerus_l_f2" active="true" />
+  <Task name="ulna_l" controlVariable="XYZ" effector="ulna_l" active="true" />
+  <Task name="hand_l" controlVariable="XYZ" effector="hand_l" active="true" />
+
+  <xxTask name="head_and_neck_f2" controlVariable="XYZ" effector="head_and_neck_f1" active="true" />
+  <Task name="nose" controlVariable="XYZ" effector="nose" active="true" />
+
+</Controller>
+
