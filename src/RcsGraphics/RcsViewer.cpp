@@ -168,6 +168,7 @@ struct ViewerEventData : public osg::Referenced
     SetWireframeEnabled,
     SetCartoonEnabled,
     SetTrackballCenter,
+    SetFrameUpdatesEnabled,
     None
   };
 
@@ -353,7 +354,7 @@ Viewer::Viewer() :
   updateFreq(25.0), initialized(false), wireFrame(false), shadowsEnabled(false),
   llx(0), lly(0), sizeX(640), sizeY(480), cartoonEnabled(false),
   threadStopped(true), leftMouseButtonPressed(false),
-  rightMouseButtonPressed(false)
+  rightMouseButtonPressed(false), pauseFrameUpdates(false)
 {
   // Check if logged in remotely
   const char* sshClient = getenv("SSH_CLIENT");
@@ -382,7 +383,7 @@ Viewer::Viewer(bool fancy, bool startupWithShadow) :
   updateFreq(25.0), initialized(false), wireFrame(false), shadowsEnabled(false),
   llx(0), lly(0), sizeX(640), sizeY(480), cartoonEnabled(false),
   threadStopped(true), leftMouseButtonPressed(false),
-  rightMouseButtonPressed(false)
+  rightMouseButtonPressed(false), pauseFrameUpdates(false)
 {
   create(fancy, startupWithShadow);
 
@@ -390,11 +391,14 @@ Viewer::Viewer(bool fancy, bool startupWithShadow) :
 }
 
 /*******************************************************************************
- * Destructor.
+ * Destructor. \todo: Explain why we are explicitely releasing the viewer here.
+ * Has something to do with the errors we get from failure of releasing graphics
+ * contexts.
  ******************************************************************************/
 Viewer::~Viewer()
 {
   stopUpdateThread();
+  //viewer.release();
 }
 
 /*******************************************************************************
@@ -609,6 +613,15 @@ void Viewer::add(osg::Node* node)
   RLOG(5, "Adding node %s to eventqueue", node->getName().c_str());
   osg::ref_ptr<osg::Node> refNode(node);
   addUserEvent(new ViewerEventData(refNode, ViewerEventData::AddNode));
+}
+
+/*******************************************************************************
+ * Add a node to the root node.
+ ******************************************************************************/
+void Viewer::setEnableFrameUpdates(bool enable)
+{
+  RLOG(5, "%s frame updates", enable ? "Enabling" : "Disabling");
+  addUserEvent(new ViewerEventData(ViewerEventData::SetFrameUpdatesEnabled, enable));
 }
 
 /*******************************************************************************
@@ -1103,9 +1116,22 @@ void Viewer::frame()
   userEventStack.clear();
   userEventMtx.unlock();
 
-  lock();
-  viewer->frame();
-  unlock();
+  if (!pauseFrameUpdates)
+  {
+    lock();
+    viewer->frame();
+    unlock();
+  }
+  else
+  {
+    // Frame calls advance, eventTraversal, updateTraversal and
+    // renderingTraversals. We skip the rendering.
+    lock();
+    viewer->advance();
+    viewer->eventTraversal();
+    viewer->updateTraversal();
+    unlock();
+  }
 
   dtFrame = Timer_getSystemTime() - dtFrame;
   this->fps = 0.9*this->fps + 0.1*(1.0/dtFrame);
@@ -1270,7 +1296,7 @@ void Viewer::getMouseTip(double tip[3]) const
  ******************************************************************************/
 void Viewer::handleUserEvents(const osg::Referenced* userEvent)
 {
-  RLOG(5, "Received user event");
+  NLOG(5, "Received user event");
 
   const ViewerEventData* ev = dynamic_cast<const ViewerEventData*>(userEvent);
   if (!ev)
@@ -1475,6 +1501,13 @@ void Viewer::handleUserEvents(const osg::Referenced* userEvent)
         const double* cntr = ev->trf.org;
         trackball->setCenter(osg::Vec3(cntr[0], cntr[1], cntr[2]));
       }
+    }
+    break;
+
+    case ViewerEventData::SetFrameUpdatesEnabled:
+    {
+      this->pauseFrameUpdates = !ev->flag;
+      RLOG(5, "pauseFrameUpdates is %s", this->pauseFrameUpdates ? "TRUE" : "FALSE");
     }
     break;
 

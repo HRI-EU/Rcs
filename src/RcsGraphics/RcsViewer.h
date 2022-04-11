@@ -274,19 +274,19 @@ public:
   void removeNode(osg::Node* node);
 
   /*! \brief Removes all nodes with the given name from the viewer's
-   *         scene graph. This function does not directly add the node, but
+   *         scene graph. This function does not directly remove the node, but
    *         defers it to the next update traversal.
    */
   void removeNode(std::string nodeName);
 
   /*! \brief Removes all child nodes of parent with the given nodeName from
-   *         the parent node. This function does not directly add the node,
+   *         the parent node. This function does not directly remove the node,
    *         but defers it to the next update traversal.
    */
   void removeNode(osg::Group* parent, std::string nodeName);
 
   /*! \brief Removes all osg::Node from the viewer's root node, but leaves the
-   *         background clear node. This function does not directly add the
+   *         background clear node. This function does not directly remove the
    *         node, but defers it to the next update traversal.
    */
   void removeNodes();
@@ -370,6 +370,14 @@ public:
    *  \param[in]   z Position z in [m]
    */
   void setTrackballCenter(double x, double y, double z);
+
+  /*! \brief Method to enable or disable the frame() call. Only the
+   *         methods inside the osgViewer::frame call are skipped. The
+   *         Rcs::Viewer's event queue is still being processed.
+   *
+   *  \param[in] enable  True for frame updates active, false otherwise.
+   */
+  void setEnableFrameUpdates(bool enable);
 
   ///@}
 
@@ -568,6 +576,7 @@ protected:
   bool threadStopped;
   bool leftMouseButtonPressed;
   bool rightMouseButtonPressed;
+  bool pauseFrameUpdates;
   pthread_t frameThread;
 
   // osg node members
