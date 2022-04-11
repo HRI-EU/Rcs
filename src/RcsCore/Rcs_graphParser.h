@@ -350,7 +350,10 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node);
  *  \brief Loads the graph's xml file, looks for the tag "model_state" with
  *         the specified time stamp, and if found, sets the state to the
  *         corresponding values. Currently, timeStamp is ignored. States that
- *         are not specified in the model_state are left unchanged.
+ *         are not specified in the model_state are left unchanged. The
+ *         function does not calculate the forward kinematics, so that several
+ *         model states can be set in a sequence without forward kinematics
+ *         calculations in between.
  *
  *  \return true for success, false otherwise.
  */

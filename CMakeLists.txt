@@ -121,19 +121,20 @@ ELSEIF(UNIX)
   IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -rdynamic")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic")
-ENDIF()
+  ENDIF()
   
   IF(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     # setting march to core2 to enable valgrind debugging (also good for Xeon)
     # Low level optimization for debug mode, flag for checking stack corruption, flag for debug output
     SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -march=core2 -O0 -fstack-protector-all -ggdb")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=core2 -O0 -fstack-protector-all -ggdb")
-ELSE()
+  ELSE()
     # setting march to native for optimal performance on local machine
     # Strong optimization for release mode
     SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -march=native -ggdb")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -ggdb")
-ENDIF()
+  ENDIF()
+  
 ENDIF()
 
 ################################################################################

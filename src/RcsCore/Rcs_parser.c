@@ -171,7 +171,7 @@ xmlNodePtr parseXMLFile(const char* filename, const char* tag, xmlDocPtr* doc)
 
   if (xmlStrcmp(node->name, (const xmlChar*) tag))
   {
-    RLOG(1, "Wrong file type (\"%s\"), root node is \"%s\" and not \"%s\"",
+    RLOG(5, "Wrong file type (\"%s\"), root node is \"%s\" and not \"%s\"",
          filename, node->name, tag);
     return getXMLChildByName(node, tag);
   }

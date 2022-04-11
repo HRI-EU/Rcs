@@ -459,6 +459,7 @@ public:
   /*! \brief Virtual destructor to allow overloading.
    */
   virtual ~PhysicsBase();
+
   /*! \brief Creates a physicsConfig class instance and calls
    *         \ref initialize(const RcsGraph*, const PhysicsConfig*)
    *

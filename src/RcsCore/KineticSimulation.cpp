@@ -703,7 +703,7 @@ bool KineticSimulation::setParameter(ParameterCategory category,
       if (STREQ(type, "Integrator"))
       {
         this->integrator = std::string(name);
-        RLOG_CPP(1, "Changed integrator to " << this->integrator);
+        RLOG_CPP(5, "Changed integrator to " << this->integrator);
       }
       break;
 
@@ -1068,7 +1068,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
       case RCSJOINT_CTRL_POSITION:
       case RCSJOINT_CTRL_VELOCITY:
         pIdx.push_back(JNT->jacobiIndex);
-        RLOG(1, "pIdx[%zu] = %s", pIdx.size()-1, JNT->name);
+        //RLOG(1, "pIdx[%zu] = %s", pIdx.size()-1, JNT->name);
         break;
 
       case RCSJOINT_CTRL_TORQUE:
@@ -1149,7 +1149,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
       constraint[i].appendJacobian(J, graph);
       constraint[i].appendDotJacobian(J_dot, graph, qp_ik);
       constraint[i].appendStabilization(ax, graph);
-      RLOG(1, "Constraint[%zu] = %s", i, constraint[i].name(graph).c_str());
+      //RLOG(1, "Constraint[%zu] = %s", i, constraint[i].name(graph).c_str());
     }
 
     // Project terms into free space
@@ -1165,7 +1165,10 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
     // J inv(M)
     MatNd* invM00 = MatNd_createLike(M00);
     double det = MatNd_choleskyInverse(invM00, M00);
-    RCHECK(det);
+    if (det==0.0)
+    {
+      RLOG(1, "Faild to invert floating mass matrix");
+    }
     MatNd* JinvM = MatNd_create(J_f->m, J_f->n);
     MatNd_mul(JinvM, J_f, invM00);
 
@@ -1173,7 +1176,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
     MatNd* invJinvMJT = MatNd_create(J_f->m, J_f->m);
     MatNd_sqrMulABAt(invJinvMJT, J_f, invM00);
     int rank = MatNd_SVDInverse(invJinvMJT, invJinvMJT);
-    RLOG(1, "Rank is %d", rank);
+    RLOG(5, "Rank is %d, dimension is %d", rank, invJinvMJT->m);
 
     // lambda = -J inv(M00) (b_f + M01 qpp_c) + J_dot q_dot + J_c qpp_c
     MatNd* lambda = MatNd_create(J_f->m, 1);
@@ -1190,10 +1193,6 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
     // Lagrange Multipliers: lambda = inv(J inv(M) JT) * lambda
     MatNd_preMulSelf(lambda, invJinvMJT);
 
-    REXEC(1)
-    {
-      MatNd_printCommentDigits("lambda", lambda, 6);
-    }
     // Project into joint space: lambdaQ = JT lambda : n x 1 = [n x nc] * [nc x 1]
     // or in transpose space: lambdaQ^T = lambda^T J : 1 x n = [1 x nc] * [nc x n]
     // We do the latter one since it saves us a Jacobian transpose operation.
@@ -1224,17 +1223,14 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
       getSubMat(M00, M, tIdx);
       getSubMat(M10, M, pIdx, tIdx);
 
-
       MatNd_mulAndAddSelf(b_c, M10, qpp_f);
       MatNd_mulAndAddSelf(b_c, M11, qpp_c);
       MatNd_transposeSelf(b_c);
       MatNd_mulAndAddSelf(b_c, lambda, J_c);
       MatNd_transposeSelf(b_c);
 
-      REXEC(1)
-      {
-        MatNd_printCommentDigits("b_c", b_c, 6);
-      }
+      // Colorize model and write torques back to b
+      MatNd_setZero(b);
       size_t jidx = 0;
       RCSGRAPH_TRAVERSE_BODIES(graph)
       {
@@ -1252,6 +1248,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
             case RCSJOINT_CTRL_POSITION:
             case RCSJOINT_CTRL_VELOCITY:
             {
+              b->ele[JNT->jacobiIndex] = b_c->ele[jidx];
               sat = std::max(sat, Math_clip(fabs(b_c->ele[jidx] / JNT->maxTorque), 0.0, 1.0));
               rr = 255.0*sat;
               gg = 255.0*(1.0 - sat);
