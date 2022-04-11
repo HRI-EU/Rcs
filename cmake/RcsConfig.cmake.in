@@ -14,6 +14,7 @@ SET(BULLET_INCLUDE_DIRS @BULLET_INCLUDE_DIRS@ CACHE PATH "Bullet include directo
 # Make FindQwt.cmake available
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 # Include dependencies
+INCLUDE (FindPackageHandleStandardArgs)
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/Externals.cmake")
 
 # Include targets definition
