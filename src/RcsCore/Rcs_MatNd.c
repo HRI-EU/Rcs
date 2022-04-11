@@ -2272,7 +2272,7 @@ void MatNd_deleteRow(MatNd* self, int index)
   if (index < (int)(self->m - 1))
   {
     memmove(&self->ele[index * self->n], &self->ele[(index + 1) * self->n],
-            (self->m - index) * self->n * sizeof(double));
+            (self->m - 1 - index) * self->n * sizeof(double));
   }
 
   MatNd_reshape(self, self->m - 1, self->n);
@@ -4681,8 +4681,7 @@ void MatNd_interpolateLinear(MatNd* dst, const MatNd* src,
   unsigned int rows = src->m, cols = src->n, i, j, k;
   unsigned int transitions = rows - 1;
 
-  MatNd_reshape(dst, subSteps * transitions + 1, cols);
-  MatNd_setZero(dst);
+  MatNd_reshapeAndSetZero(dst, subSteps * transitions + 1, cols);
 
   for (i = 0; i < transitions; i++)
   {
