@@ -130,6 +130,11 @@ void RcsBody_clear(RcsBody* self)
     return;
   }
 
+  for (unsigned int i=0; i<self->nShapes; ++i)
+  {
+    RcsShape_clear(&self->shapes[i]);
+  }
+
   self->nShapes = 0;
   RFREE(self->shapes);
 }
@@ -2283,16 +2288,16 @@ unsigned int RcsBody_getNumDistanceQueries(const RcsBody* b1, const RcsBody* b2)
     const RcsShape* sh1 = &b1->shapes[i1];
     if (RcsShape_isOfComputeType(sh1, RCSSHAPE_COMPUTE_DISTANCE))
     {
-    // Traverse all shapes of the 2nd body
+      // Traverse all shapes of the 2nd body
       for (unsigned int i2 = 0; i2 < b2->nShapes; ++i2)
-    {
+      {
         const RcsShape* sh2 = &b2->shapes[i2];
         if (RcsShape_isOfComputeType(sh2, RCSSHAPE_COMPUTE_DISTANCE))
-      {
+        {
           if (RcsShape_hasDistanceFunction(sh1->type, sh2->type))
           {
             fcnCount++;
-      }
+          }
         }
       }
     }

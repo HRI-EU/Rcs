@@ -141,14 +141,13 @@ static bool testDistanceRandomly()
       rndIdx2 = sTypes[Math_getRandomInteger(0, sTypes.size() - 1)];
     }
 
-    RcsShape* s1 = RALLOC(RcsShape);
-    bool initOk = RcsShape_initRandom(s1, rndIdx1);
+    RcsShape s1, s2;
+    bool initOk = RcsShape_initRandom(&s1, rndIdx1);
     RCHECK(initOk);
-    RcsShape* s2 = RALLOC(RcsShape);
-    initOk = RcsShape_initRandom(s2, rndIdx2);
+    initOk = RcsShape_initRandom(&s2, rndIdx2);
     RCHECK(initOk);
-    RLOG_CPP(2, "Testing " << RcsShape_name(s1->type) << " against "
-             << RcsShape_name(s2->type));
+    RLOG_CPP(2, "Testing " << RcsShape_name(s1.type) << " against "
+             << RcsShape_name(s2.type));
 
     HTr A_BI1, A_BI2;
     Vec3d_setRandom(A_BI1.org, -0.1, 0.1);
@@ -158,10 +157,10 @@ static bool testDistanceRandomly()
 
     double cp1[3], cp2[3], n12[3];
     HTr A_C1I, A_C2I;
-    HTr_transform(&A_C1I, &A_BI1, &s1->A_CB);
-    HTr_transform(&A_C2I, &A_BI2, &s2->A_CB);
+    HTr_transform(&A_C1I, &A_BI1, &s1.A_CB);
+    HTr_transform(&A_C2I, &A_BI2, &s2.A_CB);
 
-    double d = RcsShape_distance(s1, s2, &A_BI1, &A_BI2, cp1, cp2, n12);
+    double d = RcsShape_distance(&s1, &s2, &A_BI1, &A_BI2, cp1, cp2, n12);
 
     if (skipPenetrations && (d<0.0))
     {
@@ -169,8 +168,8 @@ static bool testDistanceRandomly()
     }
 
     double testPt1[3], testPt2[3], tmp[3];
-    double dtest1 = RcsShape_distanceToPoint(s1, &A_BI1, cp1, testPt1, tmp);
-    double dtest2 = RcsShape_distanceToPoint(s2, &A_BI2, cp2, testPt2, tmp);
+    double dtest1 = RcsShape_distanceToPoint(&s1, &A_BI1, cp1, testPt1, tmp);
+    double dtest2 = RcsShape_distanceToPoint(&s2, &A_BI2, cp2, testPt2, tmp);
 
     bool success_i = true;
 
@@ -179,23 +178,23 @@ static bool testDistanceRandomly()
     {
       success_i = false;
       success = false;
-      RLOG_CPP(1, "Testing " << RcsShape_name(s1->type) << " against "
-               << RcsShape_name(s2->type) << " with d=" << d);
+      RLOG_CPP(1, "Testing " << RcsShape_name(s1.type) << " against "
+               << RcsShape_name(s2.type) << " with d=" << d);
       RLOG(1, "Distance test 1 %d failed: %f %f", i, dtest1, dtest2);
     }
 
     // Test 2: Distance query from point cp2 to shape 1 (and the other way
     //         around) must deiver the same contact point cp1.
-    RcsShape_distanceToPoint(s1, &A_BI1, cp2, testPt1, tmp);
-    RcsShape_distanceToPoint(s2, &A_BI2, cp1, testPt2, tmp);
+    RcsShape_distanceToPoint(&s1, &A_BI1, cp2, testPt1, tmp);
+    RcsShape_distanceToPoint(&s2, &A_BI2, cp1, testPt2, tmp);
 
     if ((d>0.0) && ((Vec3d_distance(cp1, testPt1) > eps) ||
                     (Vec3d_distance(cp1, testPt1) > eps)))
     {
       success_i = false;
       success = false;
-      RLOG_CPP(1, "Testing " << RcsShape_name(s1->type) << " against "
-               << RcsShape_name(s2->type) << " with d=" << d);
+      RLOG_CPP(1, "Testing " << RcsShape_name(s1.type) << " against "
+               << RcsShape_name(s2.type) << " with d=" << d);
       RLOG(1, "Distance test 2 %d failed", i);
     }
 
@@ -215,7 +214,7 @@ static bool testDistanceRandomly()
 
       RcsBody* b1 = &graph->bodies[0];
       RcsShape* bsh1 = RcsBody_appendShape(b1);
-      RcsShape_copy(bsh1, s1);
+      RcsShape_copy(bsh1, &s1);
 
       osg::ref_ptr<Rcs::BodyNode> coll1 = new Rcs::BodyNode(b1, graph);
       coll1->setMaterial("RED");
@@ -226,7 +225,7 @@ static bool testDistanceRandomly()
 
       RcsBody* b2 = &graph->bodies[1];
       RcsShape* bsh2 = RcsBody_appendShape(b2);
-      RcsShape_copy(bsh2, s2);
+      RcsShape_copy(bsh2, &s2);
 
       osg::ref_ptr<Rcs::BodyNode> coll2 = new Rcs::BodyNode(b2, graph);
       coll2->setMaterial("BLUE");
@@ -241,15 +240,10 @@ static bool testDistanceRandomly()
       RPAUSE();
 
       RcsGraph_destroy(graph);
-      s1 = NULL;
-      s2 = NULL;
     }
 
     RLOG(2, "Distance test %s: %f %f", success_i ? "SUCCEEDED" : "FAILED",
          dtest1, dtest2);
-
-    RcsShape_destroy(s1);
-    RcsShape_destroy(s2);
   }
 
   RMSG("Distance test reported %s", success ? "SUCCESS" : "FAILURE");

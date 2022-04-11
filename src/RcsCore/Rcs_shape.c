@@ -484,7 +484,7 @@ double RcsShape_boundingSphereDistance(const double Pt[3],
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void RcsShape_destroy(RcsShape* self)
+void RcsShape_clear(RcsShape* self)
 {
   if (self == NULL)
   {
@@ -502,9 +502,6 @@ void RcsShape_destroy(RcsShape* self)
     RcsMesh_destroy(self->mesh);
   }
 
-  memset(self, 0, sizeof(RcsShape));
-
-  RFREE(self);
 }
 
 /*******************************************************************************

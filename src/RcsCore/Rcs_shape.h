@@ -179,10 +179,10 @@ double RcsShape_boundingSphereDistance(const double Pt[3],
                                        const RcsShape* shape);
 
 /*! \ingroup RcsShapeFunctions
- *  \brief Deletes the shape and frees all memory. The function does nothing
- *         if self is NULL.
+ *  \brief Clears the memory for all meshes / octrees. The function does
+ *         nothing if self is NULL.
  */
-void RcsShape_destroy(RcsShape* self);
+void RcsShape_clear(RcsShape* self);
 
 /*! \ingroup RcsShapeFunctions
  *  \brief Returns the name of the shape (see enum RCSSHAPE_TYPE)
