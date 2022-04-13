@@ -27,6 +27,8 @@ SliderCheck1Dof.cpp
 TaskWidget.cpp
 DblSlider.cpp
 DynamicDataPlot.cpp
+ExampleWidget.cpp
+ExampleGui.cpp
 ${RCS_HIGHGUI_SRCS}
 )
 

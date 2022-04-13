@@ -18,6 +18,9 @@ IF(NOT HEADLESS_BUILD)
   ADD_EXECUTABLE(ExampleKinetics ExampleKinetics.cpp)
   TARGET_LINK_LIBRARIES(ExampleKinetics RcsCore RcsGui RcsGraphics RcsPhysics)
 
+  ADD_EXECUTABLE(ExampleRunner ExampleRunner.cpp ExampleFK.cpp ExampleInvKin.cpp)
+  TARGET_LINK_LIBRARIES(ExampleRunner RcsCore RcsGui RcsGraphics RcsPhysics)
+
   IF(USE_BULLET)
     ADD_EXECUTABLE(ExampleBullet ExampleBullet.cpp)
     TARGET_LINK_LIBRARIES(ExampleBullet RcsPhysics)

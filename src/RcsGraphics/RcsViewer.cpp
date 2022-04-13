@@ -398,7 +398,9 @@ Viewer::Viewer(bool fancy, bool startupWithShadow) :
 Viewer::~Viewer()
 {
   stopUpdateThread();
-  //viewer.release();
+#if defined (_MSC_VER)
+  viewer.release();
+#endif
 }
 
 /*******************************************************************************

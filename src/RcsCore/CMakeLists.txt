@@ -115,6 +115,8 @@ TaskRegionFactory.cpp
 TaskSpaceBlender.cpp
 TaskSleeve.cpp
 Rcs_octree.cpp
+ExampleBase.cpp
+ExampleFactory.cpp
 )
 
 IF(WIN32)
