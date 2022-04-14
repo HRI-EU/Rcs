@@ -62,11 +62,35 @@
 namespace Rcs
 {
 
-REGISTER_EXAMPLE(ExampleFK);
+//REGISTER_EXAMPLE(ExampleFK);
+static ExampleFactoryRegistrar<ExampleFK> ExampleFK_("RcsCore", "Forward kinematics");
 
 
 ExampleFK::ExampleFK(int argc, char** argv) : ExampleBase(argc, argv)
 {
+  valgrind = false;
+  simpleGraphics = false;
+  dtSim = 0.0;
+  dtStep = 0.04;
+  fwdKinType = 0;
+  hudText[0] = '\0';
+  testCopy = false;
+  resizeable = false;
+  editMode = false;
+  playBVH = false;
+  noHud = false;
+  randomGraph = false;
+  shapifyReplace = false;
+  graph = NULL;
+  bvhTraj = NULL;
+  viewer = NULL;
+  guiHandle = -1;
+  loopCount = 0;
+  mass = 0.0;
+  Mat3d_setIdentity(Id);
+  Vec3d_setZero(r_com);
+  bvhIdx = 0;
+  comBase = NULL;
   pthread_mutex_init(&graphLock, NULL);
   mtx = &graphLock;
 }
@@ -88,38 +112,16 @@ ExampleFK::~ExampleFK()
 
   RLOG(0, "Destroying graphLock");
   pthread_mutex_destroy(&graphLock);
+  Rcs_removeResourcePath(directory.c_str());
   RLOG(0, "Done destructor");
 }
 
 void ExampleFK::initParameters()
 {
-  valgrind = false;
-  simpleGraphics = false;
   xmlFileName = "gScenario.xml";
   directory = "config/xml/DexBot";
-  dtSim = 0.0;
-  dtStep = 0.04;
-  fwdKinType = 0;
-  hudText[0] = '\0';
   dotFile = "RcsGraph.dot";
   bgColor = "LIGHT_GRAYISH_GREEN";
-  testCopy = false;
-  resizeable = false;
-  editMode = false;
-  playBVH = false;
-  noHud = false;
-  randomGraph = false;
-  shapifyReplace = false;
-  graph = NULL;
-  bvhTraj = NULL;
-  viewer = NULL;
-  guiHandle = -1;
-  loopCount = 0;
-  mass = 0.0;
-  Mat3d_setIdentity(Id);
-  Vec3d_setZero(r_com);
-  bvhIdx = 0;
-  comBase = NULL;
 }
 
 void ExampleFK::parseArgs(int argc, char** argv)
@@ -164,15 +166,6 @@ void ExampleFK::parseArgs(int argc, char** argv)
                                     " capsule as additional shape"
                                     " to bodies");
 
-  const char* hgr = getenv("SIT");
-  if (hgr != NULL)
-  {
-    std::string meshDir = std::string(hgr) +
-                          std::string("/Data/RobotMeshes/1.0/data");
-    Rcs_addResourcePath(meshDir.c_str());
-  }
-
-  Rcs_addResourcePath("config");
   Rcs_addResourcePath(directory.c_str());
 
   if (argP.hasArgument("-h"))
@@ -878,7 +871,7 @@ void ExampleFK::handleKeys()
 
 
 //REGISTER_EXAMPLE(ExampleFK_Octree);
-static ExampleFactoryRegistrar<ExampleFK_Octree> ExampleFK_Octree_("Octree example");
+static ExampleFactoryRegistrar<ExampleFK_Octree> ExampleFK_Octree_("RcsCore", "Octree example");
 
 ExampleFK_Octree::ExampleFK_Octree(int argc, char** argv) : ExampleFK(argc, argv)
 {

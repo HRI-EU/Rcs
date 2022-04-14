@@ -63,12 +63,30 @@
 namespace Rcs
 {
 
-REGISTER_EXAMPLE(ExampleIK);
+//REGISTER_EXAMPLE(ExampleIK);
+static ExampleFactoryRegistrar<ExampleIK> ExampleIK_("IK", "Inverse kinematics");
 
 
-ExampleIK::ExampleIK(int argc, char** argv) : ExampleBase(argc, argv)
+ExampleIK::ExampleIK(int argc, char** argv) : ExampleBase(argc, argv),
+  valgrind(false), simpleGraphics(false), mtx(NULL), algo(1), guiHandle(-1),
+  alpha(0.05), lambda(1.0e-8), tmc(0.1), dt(0.01), dt_calc(0.0),
+  jlCost(0.0), dJlCost(0.0), clipLimit(DBL_MAX), det(0.0), scaleDragForce(0.01),
+  calcDistance(false),
+  ffwd(false), skipGui(false), pause(false), launchJointWidget(false),
+  manipulability(false), cAvoidance(false),
+  constraintIK(false), initToQ0(false), testCopying(false), noHud(false),
+  posCntrl(false),
+  controller(NULL), ikSolver(NULL),
+  dq_des(NULL), q_dot_des(NULL), a_des(NULL), x_curr(NULL), x_physics(NULL),
+  x_des(NULL), x_des_f(NULL), dx_des(NULL), dH(NULL),
+  effortBdy(NULL), F_effort(NULL),
+  sim(NULL), simController(NULL), simGraph(NULL), physicsFeedback(false),
+  v(NULL), loopCount(0)
 {
   pthread_mutex_init(&graphLock, NULL);
+  Vec3d_setZero(r_com);
+  hudText[0] = '\0';
+  Vec3d_setZero(r_com);
 }
 
 ExampleIK::~ExampleIK()
@@ -94,57 +112,15 @@ ExampleIK::~ExampleIK()
   delete ikSolver;
 
   pthread_mutex_destroy(&graphLock);
+  Rcs_removeResourcePath(directory.c_str());
 }
 
 void ExampleIK::initParameters()
 {
-  valgrind = false;
-  simpleGraphics = false;
-  mtx = NULL;
-
-  algo = 1;
-  guiHandle = -1;
-  alpha = 0.05;
-  lambda = 1.0e-8;
-  tmc = 0.1;
-  dt = 0.01;
-  dt_calc = 0.0;
-  jlCost = 0.0;
-  dJlCost = 0.0;
-  clipLimit = DBL_MAX;
-  det = 0.0;
-  scaleDragForce = 0.01;
-  calcDistance = false;
   xmlFileName = "cAction.xml";
   directory = "config/xml/DexBot";
   physicsCfg = "config/physics/physics.xml";
   integrator = "Fehlberg";
-  controller = NULL;
-  ikSolver = NULL;
-
-  dq_des = NULL;
-  q_dot_des = NULL;
-  a_des = NULL;
-  x_curr = NULL;
-  x_physics = NULL;
-  x_des = NULL;
-  x_des_f = NULL;
-  dx_des = NULL;
-  dH = NULL;
-  effortBdy = NULL;
-  F_effort = NULL;
-  Vec3d_setZero(r_com);
-  sim = NULL;
-  simController = NULL;
-  simGraph = NULL;
-
-  physicsFeedback = false;
-
-  v = NULL;
-  hudText[0] = '\0';
-
-  Vec3d_setZero(r_com);
-  loopCount = 0;
 }
 
 void ExampleIK::parseArgs(int argc, char** argv)
@@ -240,15 +216,6 @@ void ExampleIK::parseArgs(int argc, char** argv)
     }
   }
 
-  const char* hgr = getenv("SIT");
-  if (hgr != NULL)
-  {
-    std::string meshDir = std::string(hgr) +
-                          std::string("/Data/RobotMeshes/1.0/data");
-    Rcs_addResourcePath(meshDir.c_str());
-  }
-
-  Rcs_addResourcePath("config");
   Rcs_addResourcePath(directory.c_str());
 }
 
@@ -879,7 +846,7 @@ void ExampleIK::handleKeys()
 
 
 
-static ExampleFactoryRegistrar<ExampleIK_ContactGrasping> ExampleIK_ContactGrasping_("Contact Grasping");
+static ExampleFactoryRegistrar<ExampleIK_ContactGrasping> ExampleIK_ContactGrasping_("RcsCore", "Contact Grasping");
 
 ExampleIK_ContactGrasping::ExampleIK_ContactGrasping(int argc, char** argv) : ExampleIK(argc, argv)
 {
@@ -896,7 +863,7 @@ void ExampleIK_ContactGrasping::initParameters()
 }
 
 
-static ExampleFactoryRegistrar<ExampleIK_OSimWholeBody> ExampleIK_OSimWholeBody_("OpenSim whole-body");
+static ExampleFactoryRegistrar<ExampleIK_OSimWholeBody> ExampleIK_OSimWholeBody_("RcsCore", "OpenSim whole-body");
 
 ExampleIK_OSimWholeBody::ExampleIK_OSimWholeBody(int argc, char** argv) : ExampleIK(argc, argv)
 {

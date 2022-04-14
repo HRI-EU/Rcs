@@ -38,7 +38,8 @@
 
 namespace Rcs
 {
-REGISTER_EXAMPLE(ExampleBase);
+//REGISTER_EXAMPLE(ExampleBase);
+static ExampleFactoryRegistrar<ExampleBase> ExampleBase_("RcsCore", "ExampleBase");
 
 ExampleBase::ExampleBase(int argc, char** argv) : runLoop(false)
 {

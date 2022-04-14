@@ -37,6 +37,7 @@
 #include "Rcs_guiFactory.h"
 
 #include <Rcs_macros.h>
+#include <Rcs_utilsCPP.h>
 
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -63,15 +64,16 @@ typedef struct
 class ExampleItem : public QStandardItem
 {
 public:
-  ExampleItem(int argc_, char** argv_, const QString& text) :
-    QStandardItem(text), example(NULL), argc(argc_), argv(argv_), clicked(false)
+  ExampleItem(int argc_, char** argv_, const QString& categoryName_, const QString& exampleName) :
+    QStandardItem(exampleName), categoryName(categoryName_), example(NULL), argc(argc_), argv(argv_), clicked(false)
   {
   }
 
   void init()
   {
     RLOG(0, "Initializing example");
-    example = ExampleFactory::create(text().toStdString(), argc, argv);
+    example = ExampleFactory::create(categoryName.toStdString(), text().toStdString(), argc, argv);
+    RCHECK(example);
   }
 
   static void* runThreadFunc(void* arg)
@@ -105,6 +107,7 @@ public:
     example = NULL;
   }
 
+  QString categoryName;
   ExampleBase* example;
   pthread_t runThread;
   int argc;
@@ -124,14 +127,10 @@ TreeTest::TreeTest(int argc, char** argv, QWidget* parent) : QMainWindow(parent)
   mainGrid->addWidget(tree);
   mainWidget->setLayout(mainGrid);
 
-  const int numCols = 1;
+  std::set<std::string> categories = ExampleFactory::getCategories();
+  std::set<std::string>::iterator categories_it = categories.begin();
 
-  std::vector<std::string> categories;
-  categories.push_back("Rcs");
-  categories.push_back("Biomechanics");
-  categories.push_back("Math");
-
-  this->model = new QStandardItemModel();
+  this->model = new QStandardItemModel(this);
   QStandardItem* parentItem = model->invisibleRootItem();
 
   typedef std::map<std::string, ExampleFactory::ExampleMaker> ExampleMap;
@@ -139,29 +138,32 @@ TreeTest::TreeTest(int argc, char** argv, QWidget* parent) : QMainWindow(parent)
   ExampleMap cMap = ExampleFactory::constructorMap();
 
 
-  for (size_t r = 0; r < categories.size(); r++)
+  while (categories_it != categories.end())
   {
-    QStandardItem* item = new QStandardItem(QString::fromStdString(categories[r]));
+    std::string category_i = *categories_it;
+    QStandardItem* item = new QStandardItem(QString::fromStdString(category_i));
     item->setEditable(false);
     parentItem->appendRow(item);
 
-    for (int c = 0; c < numCols; c++)
+    int i=0;
+    ExampleMap::iterator it = cMap.begin();
+    while (it != cMap.end())
     {
+      std::vector<std::string> strings = String_split(it->first, "_");
+      RCHECK_MSG(strings.size()==2, "Splitted into %zu strings: %s",
+                 strings.size(), it->first.c_str());
 
-      if (r==0)
+      if (strings[0]==category_i)
       {
-        int i=0;
-        ExampleMap::iterator it = cMap.begin();
-        while (it != cMap.end())
-        {
-          ExampleItem* child = new ExampleItem(argc, argv, QString::fromStdString(it->first));
-          child->setEditable(false);
-          item->setChild(i++, c, child);
-          RLOG(0, "%s", it->first.c_str());
-          it++;
-        }
+
+        ExampleItem* child = new ExampleItem(argc, argv, QString::fromStdString(strings[0]), QString::fromStdString(strings[1]));
+        child->setEditable(false);
+        item->setChild(i++, 0, child);
       }
+      it++;
     }
+
+    categories_it++;
   }
 
   model->setHorizontalHeaderItem(0, new QStandardItem("Example"));
@@ -305,7 +307,7 @@ ExampleGui::ExampleGui(int argc, char** argv)
 
   while (it != cMap.end())
   {
-    vbox->addWidget(new ExampleWidget(it->first, argc, argv));
+    vbox->addWidget(new ExampleWidget("My Category", it->first, argc, argv));
     it++;
   }
 

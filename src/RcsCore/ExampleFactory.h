@@ -37,6 +37,7 @@
 
 #include <string>
 #include <map>
+#include <set>
 
 
 
@@ -78,7 +79,8 @@ public:
    * \param argv      String array of command line arguments
    * \return          New ExampleBase instance or NULL incase of failure
    */
-  static ExampleBase* create(std::string name, int argc, char** argv);
+  static ExampleBase* create(std::string category, std::string example,
+                             int argc, char** argv);
 
   /*! \brief Prints out all registered examples to the console
    */
@@ -86,7 +88,9 @@ public:
 
   /*! \brief Checks if an example with the given name has been registered
    */
-  static bool hasExample(std::string name);
+  static bool hasExample(std::string category, std::string example);
+
+  static std::set<std::string> getCategories();
 
   /*! \brief Signature of example creation function.
      */
@@ -103,7 +107,8 @@ private:
   /*! \brief Registers a new function for creating examples. You can not
    *        call this function directly. Instead us the above macro.
    */
-  static void registerExample(std::string name, ExampleMaker createFunction);
+  static void registerExample(std::string category, std::string example,
+                              ExampleMaker createFunction);
 };
 
 
@@ -134,10 +139,10 @@ public:
    *  \param className The name that is used for instanciating a new
    *                   example by name
    */
-  ExampleFactoryRegistrar(std::string className)
+  ExampleFactoryRegistrar(std::string category, std::string example)
   {
     // Register the function to create the example
-    ExampleFactory::registerExample(className,
+    ExampleFactory::registerExample(category, example,
                                     &ExampleFactoryRegistrar::create);
   }
 

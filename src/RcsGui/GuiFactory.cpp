@@ -35,6 +35,7 @@
 #include "Rcs_guiFactory.h"
 
 #include <Rcs_macros.h>
+#include <Rcs_timer.h>
 
 #include <QtGlobal>
 #include <QApplication>
@@ -81,7 +82,7 @@ void* RcsGuiFactory_thread(void*)
 
   RCSGUIFACTORY_THREAD_VALID = true;
 
-  if (app != NULL)
+  if (app)
   {
     app->exec();
   }
@@ -125,7 +126,7 @@ extern "C" {
 
   void RcsGuiFactory_stopApplication()
   {
-    if (qApp != NULL)
+    if (qApp)
     {
       RLOG(5, "Quitting QApplication of GuiFactory...");
 
@@ -151,6 +152,10 @@ extern "C" {
     }
 
     w->deleteLater();
+
+    // Wait a little bit until the event loop has deleted the widget.
+    // Timer_waitDT(0.5);
+
     return true;
   }
 

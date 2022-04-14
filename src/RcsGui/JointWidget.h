@@ -108,7 +108,7 @@ private:
   void unlock() const;
   RcsGraph* _graph;
   const RcsGraph* _constGraph;
-  int _togglestate;
+  bool _togglestate;
   bool _alwaysWriteToQ;
   MatNd* _q_des;
   MatNd* _q_curr;

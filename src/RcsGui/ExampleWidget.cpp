@@ -53,30 +53,37 @@ typedef struct
 static void* threadFunc(void* arg)
 {
   VoidPointerList* p = (VoidPointerList*) arg;
-  std::string* exampleName = (std::string*) p->ptr[0];
-  int* argc = (int*) p->ptr[1];
-  char** argv = (char**) p->ptr[2];
+  std::string* categoryName = (std::string*) p->ptr[0];
+  std::string* exampleName = (std::string*) p->ptr[1];
+  int* argc = (int*) p->ptr[2];
+  char** argv = (char**) p->ptr[3];
 
-  ExampleWidget* w = new ExampleWidget(*exampleName, *argc, argv);
+  ExampleWidget* w = new ExampleWidget(*categoryName, *exampleName, *argc, argv);
   w->show();
 
   delete argc;
+  delete categoryName;
   delete exampleName;
   delete p;
 
   return w;
 }
 
-int ExampleWidget::create(std::string name, int argc_, char** argv)
+int ExampleWidget::create(std::string categoryName_,
+                          std::string exampleName_,
+                          int argc_,
+                          char** argv)
 {
   VoidPointerList* p = new VoidPointerList;
-  std::string* exampleName = new std::string(name);
+  std::string* categoryName = new std::string(categoryName_);
+  std::string* exampleName = new std::string(exampleName_);
   double* argc = new double;
   *argc = argc_;
 
-  p->ptr[0] = (void*) exampleName;
-  p->ptr[1] = (void*) argc;
-  p->ptr[2] = (void*) argv;
+  p->ptr[0] = (void*) categoryName;
+  p->ptr[1] = (void*) exampleName;
+  p->ptr[2] = (void*) argc;
+  p->ptr[3] = (void*) argv;
 
   return RcsGuiFactory_requestGUI(threadFunc, p);
 }
@@ -86,8 +93,8 @@ bool ExampleWidget::destroy(int handle)
   return RcsGuiFactory_destroyGUI(handle);
 }
 
-ExampleWidget::ExampleWidget(std::string name, int argc_, char** argv_) :
-  example(NULL), exampleName(name), argc(argc_), argv(argv_)
+ExampleWidget::ExampleWidget(std::string categoryName_, std::string exampleName_, int argc_, char** argv_) :
+  example(NULL), categoryName(categoryName_), exampleName(exampleName_), argc(argc_), argv(argv_)
 {
   this->setStyleSheet("QCheckBox { font-weight: bold; }"
                       "QGroupBox { font-weight: bold; color: gray; border-radius: 1px; }"
@@ -104,7 +111,7 @@ void ExampleWidget::initGui()
   QHBoxLayout* hbox = new QHBoxLayout(this);
 
 
-  if (ExampleFactory::hasExample(exampleName))
+  if (ExampleFactory::hasExample(categoryName, exampleName))
   {
     QPushButton* bt_init = new QPushButton(QString::fromStdString(exampleName));
     connect(bt_init, SIGNAL(clicked()), SLOT(init()));
@@ -136,7 +143,7 @@ ExampleWidget::~ExampleWidget()
 void ExampleWidget::init()
 {
   RLOG(0, "Initializing example");
-  example = ExampleFactory::create(exampleName, argc, argv);
+  example = ExampleFactory::create(categoryName, exampleName, argc, argv);
 }
 
 static void* runThreadFunc(void* arg)

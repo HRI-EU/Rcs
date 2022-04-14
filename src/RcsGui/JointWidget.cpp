@@ -297,9 +297,12 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
   //
   // 25 Hz timer callback
   //
-  QTimer* _timer = new QTimer(this);
-  connect(_timer, SIGNAL(timeout()), SLOT(displayAct()));
-  _timer->start(40);
+  if (_constGraph->dof > 0)
+  {
+    QTimer* _timer = new QTimer(this);
+    connect(_timer, SIGNAL(timeout()), SLOT(displayAct()));
+    _timer->start(40);
+  }
 
   RLOG(5, "JointWidget generated");
 }

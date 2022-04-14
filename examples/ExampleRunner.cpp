@@ -93,6 +93,7 @@ int main(int argc, char** argv)
     mode = 0;
   }
 
+  Rcs_addResourcePath("config");
   switch (mode)
   {
     // ==============================================================
@@ -119,7 +120,7 @@ int main(int argc, char** argv)
       std::string exampleName = "ExampleFK";
       argP.getArgument("-e", &exampleName, "Example name (default: %s)",
                        exampleName.c_str());
-      int guiHandle = Rcs::ExampleWidget::create(exampleName, argc, argv);
+      int guiHandle = Rcs::ExampleWidget::create("My Category", exampleName, argc, argv);
       RPAUSE();
       Rcs::ExampleWidget::destroy(guiHandle);
       break;
@@ -141,10 +142,13 @@ int main(int argc, char** argv)
     // ==============================================================
     case 3:
     {
+      std::string categoryName = "RcsCore";
       std::string exampleName = "ExampleFK";
+      argP.getArgument("-c", &categoryName, "Category name (default: %s)",
+                       categoryName.c_str());
       argP.getArgument("-e", &exampleName, "Example name (default: %s)",
                        exampleName.c_str());
-      Rcs::ExampleBase* example = Rcs::ExampleFactory::create(exampleName, argc, argv);
+      Rcs::ExampleBase* example = Rcs::ExampleFactory::create(categoryName, exampleName, argc, argv);
       RCHECK_MSG(example, "Example %s unknown", exampleName.c_str());
       example->init(argc, argv);
       example->start();

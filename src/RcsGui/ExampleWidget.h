@@ -51,14 +51,15 @@ class ExampleWidget : public QGroupBox
   Q_OBJECT
 
 public:
-  static int create(std::string name, int argc, char** argv);
+  static int create(std::string categoryName, std::string exampleName, int argc, char** argv);
   static bool destroy(int handle);
-  ExampleWidget(std::string name, int argc, char** argv);
+  ExampleWidget(std::string categoryName, std::string exampleName, int argc, char** argv);
   virtual ~ExampleWidget();
 
 protected:
   ExampleBase* example;
   pthread_t runThread;
+  std::string categoryName;
   std::string exampleName;
   int argc;
   char** argv;
