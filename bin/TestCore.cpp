@@ -335,7 +335,8 @@ static bool test_localeFreeParsing()
     double b = 0.0, dt = Timer_getSystemTime();
     for (int i=0; i<nIter; ++i)
     {
-      sscanf(str, "%lf", &b);
+      int nItems = sscanf(str, "%lf", &b);
+      RCHECK(nItems == 1);
     }
     dt = Timer_getSystemTime() - dt;
     RLOG(4, "sscanf: double value is %f ... took %.4f usec",
@@ -455,8 +456,9 @@ static bool test_DoubleToString()
   argP.getArgument("-digits", &digits, "Digits (default is %d)", digits);
   argP.getArgument("-value", &value, "Value (default is %g)", value);
 
-  char buf[512];
-  RLOG(3, "%.8f = \"%s\"", value, String_fromDouble(buf, value, digits));
+  char buf[512] = "";
+  String_fromDouble(buf, value, digits);
+  RLOG(3, "%.8f = \"%s\"", value, buf);
   RLOG_CPP(3, "len: " << strlen(buf));
 
   if (std::string(buf) == "3.14159265")
@@ -532,6 +534,80 @@ static bool testMeshConversion()
   {
     RLOG(1, "Failed to write file \"%s\"", outFile.c_str());
   }
+  return success;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool testResourcePath()
+{
+  bool success = true;
+  Rcs_clearResourcePath();
+
+  Rcs_addResourcePath("MyFirstPath");
+  Rcs_addResourcePath("MySecondPathPath");
+  Rcs_addResourcePath("MyThirdPathPath");
+
+  unsigned int n = Rcs_numResourcePaths();
+  if (n!=3)
+  {
+    RLOG(1, "Found %d resource paths, should be 3", n);
+    REXEC(2)
+    {
+      Rcs_printResourcePath();
+    }
+    success = false;
+  }
+
+  // Add same paths again: Should not create duplicates
+  Rcs_addResourcePath("MyFirstPath");
+  Rcs_addResourcePath("MySecondPathPath");
+  Rcs_addResourcePath("MyThirdPathPath");
+
+  n = Rcs_numResourcePaths();
+
+  if (n != 3)
+  {
+    RLOG(1, "Found %d resource paths, should be 3", n);
+    REXEC(2)
+    {
+      Rcs_printResourcePath();
+    }
+    success = false;
+  }
+
+  // Remove paths
+  Rcs_removeResourcePath("MyFirstPath");
+
+  n = Rcs_numResourcePaths();
+
+  if (n != 2)
+  {
+    RLOG(1, "Found %d resource paths, should be 2", n);
+    REXEC(2)
+    {
+      Rcs_printResourcePath();
+    }
+    success = false;
+  }
+
+  // Remove paths
+  Rcs_removeResourcePath("MyFirstPath");
+
+  n = Rcs_numResourcePaths();
+
+  if (n != 2)
+  {
+    RLOG(1, "Found %d resource paths, should be 2", n);
+    REXEC(2)
+    {
+      Rcs_printResourcePath();
+    }
+    success = false;
+  }
+
+  RLOGS(1, "%s testing resource path functions", success ? "SUCCESS" : "FAILURE");
 
   return success;
 }
@@ -561,7 +637,8 @@ static bool testMode(int mode, int argc, char** argv)
       fprintf(stderr, "\t\t8   Test double to string conversion\n");
       fprintf(stderr, "\t\t9   Test line number extraction for logging\n");
       fprintf(stderr, "\t\t10  Test String_removeSuffix()\n");
-      fprintf(stderr, "\t\t11  Test mesh conversion\n");
+      fprintf(stderr, "\t\t11  Test resource path functions\n");
+      fprintf(stderr, "\t\t12  Test mesh conversion\n");
       fprintf(stderr, "\n\nResource path:\n");
       Rcs_printResourcePath();
       break;
@@ -673,6 +750,12 @@ static bool testMode(int mode, int argc, char** argv)
 
     case 11:
     {
+      success = testResourcePath();
+      break;
+    }
+
+    case 12:
+    {
       success = testMeshConversion();
       break;
     }
@@ -705,7 +788,7 @@ int main(int argc, char** argv)
 
   if (mode == -1)
   {
-    for (int i = 1; i <= 10; ++i)
+    for (int i = 1; i <= 11; ++i)
     {
       bool success_i = testMode(i, argc, argv);
       if (!success_i)
@@ -714,6 +797,7 @@ int main(int argc, char** argv)
       }
 
       success = success_i && success;
+      RLOG(0, "%d: %s", i, success ? "SUCCESS" : "FAIL");
     }
   }
   else

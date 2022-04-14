@@ -37,6 +37,7 @@
 
 #include <vector>
 #include <string>
+#include <algorithm>
 
 
 typedef std::vector<std::string> StringList;
@@ -158,6 +159,26 @@ extern "C" {
   /*****************************************************************************
    *
    ****************************************************************************/
+  bool Rcs_removeResourcePath(const char* pathStr)
+  {
+    std::string path = std::string(pathStr);
+    addDelim(path);
+    StringListIt it = std::find(RCSRESOURCEPATH.begin(),
+                                RCSRESOURCEPATH.end(),
+                                path);
+
+    if (it != RCSRESOURCEPATH.end())
+    {
+      RCSRESOURCEPATH.erase(it);
+      return true;
+    }
+
+    return false;
+  }
+
+  /*****************************************************************************
+   *
+   ****************************************************************************/
   bool Rcs_getAbsoluteFileName(const char* fileName, char* absFileName)
   {
     if (fileName==NULL)
@@ -221,6 +242,13 @@ extern "C" {
     }
   }
 
+  /*****************************************************************************
+   *
+   ****************************************************************************/
+  unsigned int Rcs_numResourcePaths(void)
+  {
+    return RCSRESOURCEPATH.size();
+  }
 
 
 }  // extern "C"

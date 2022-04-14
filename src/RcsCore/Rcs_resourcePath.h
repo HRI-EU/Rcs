@@ -91,6 +91,13 @@ bool Rcs_insertResourcePath(const char* path);
 const char* Rcs_getResourcePath(unsigned int index);
 
 /*! \ingroup ResourcePathFunctions
+ *  \brief Removes the given path from the rsource paths. All occurances are
+ *         removed. The function returns false if path is NULL, or it was
+ *         not found in the resource path array.
+ */
+bool Rcs_removeResourcePath(const char* path);
+
+/*! \ingroup ResourcePathFunctions
  *  \brief For a given file name, the absolute file name is searched in the
  *         resource path list. The first match is copied to absFileName,
  *         and "true" is returned. If it is not found, absFileName is not
@@ -113,6 +120,10 @@ bool Rcs_fileInResourcePath(const char* fileName);
  *  \brief Prints out the resource paths to stderr.
  */
 void Rcs_printResourcePath(void);
+/*! \ingroup ResourcePathFunctions
+ *  \brief Returns the number of registered resource paths.
+ */
+unsigned int Rcs_numResourcePaths(void);
 
 
 
