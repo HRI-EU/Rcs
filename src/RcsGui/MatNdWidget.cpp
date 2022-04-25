@@ -172,7 +172,7 @@ MatNdWidget::MatNdWidget(MatNd* mat_, const MatNd* dispMat_,
  ******************************************************************************/
 MatNdWidget::~MatNdWidget()
 {
-  RLOG(5, "Destroying MatNdWidget");
+  RLOG(0, "Destroying MatNdWidget");
 }
 
 /*******************************************************************************
@@ -290,6 +290,7 @@ void MatNdWidget::init(MatNd* mat_, const MatNd* dispMat_,
   char windowTitle[256];
   sprintf(windowTitle, "%d x %d matrix", this->mat->m, this->mat->n);
   setWindowTitle(title ? title : windowTitle);
+  setObjectName("Rcs::MatNdWidget");
 
   // The layout for the overall task widget
   QGridLayout* matLayout = new QGridLayout(this);

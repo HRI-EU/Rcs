@@ -55,15 +55,11 @@
 #include <PPSGui.h>
 #include <PPSSensorNode.h>
 
-#include <JointWidget.h>
-#include <Rcs_guiFactory.h>
-
 
 namespace Rcs
 {
 
-//REGISTER_EXAMPLE(ExampleFK);
-static ExampleFactoryRegistrar<ExampleFK> ExampleFK_("RcsCore", "Forward kinematics");
+static ExampleFactoryRegistrar<ExampleFK> ExampleFK_("Forward kinematics", "Dexbot");
 
 
 ExampleFK::ExampleFK(int argc, char** argv) : ExampleBase(argc, argv)
@@ -84,6 +80,7 @@ ExampleFK::ExampleFK(int argc, char** argv) : ExampleBase(argc, argv)
   graph = NULL;
   bvhTraj = NULL;
   viewer = NULL;
+  jGui = NULL;
   guiHandle = -1;
   loopCount = 0;
   mass = 0.0;
@@ -97,23 +94,34 @@ ExampleFK::ExampleFK(int argc, char** argv) : ExampleBase(argc, argv)
 
 ExampleFK::~ExampleFK()
 {
+  clear();
+
+  RLOG(1, "Destroying graphLock");
+  pthread_mutex_destroy(&graphLock);
+  RLOG(1, "Done destructor");
+}
+
+void ExampleFK::clear()
+{
   if (!valgrind)
   {
-    RLOG(0, "delete viewer");
+    RLOG(1, "Deleting viewer");
     delete viewer;
-    RLOG(0, "JointWidget::destroy");
-    JointWidget::destroy(guiHandle);
-    RLOG(0, "Done JointWidget::destroy");
+    viewer = NULL;
+    RLOG(1, "Deleting JointWidget");
+    delete jGui;
+    jGui = NULL;
+    RLOG(1, "Done deleting JointWidget");
   }
 
-  RLOG(0, "Destroying graph etc.");
+  RLOG(1, "Destroying graph etc.");
   RcsGraph_destroy(graph);
+  graph = NULL;
   MatNd_destroy(bvhTraj);
+  bvhTraj = NULL;
 
-  RLOG(0, "Destroying graphLock");
-  pthread_mutex_destroy(&graphLock);
   Rcs_removeResourcePath(directory.c_str());
-  RLOG(0, "Done destructor");
+  RLOG(1, "Done clear()");
 }
 
 void ExampleFK::initParameters()
@@ -166,37 +174,44 @@ void ExampleFK::parseArgs(int argc, char** argv)
                                     " capsule as additional shape"
                                     " to bodies");
 
-  Rcs_addResourcePath(directory.c_str());
-
   if (argP.hasArgument("-h"))
   {
-    RMSG("ExampleRunner -dir <graph-directory> -f "
-         "<graph-file>\n\n\t- Creates a graph from an xml file\n\t"
-         "- Creates a viewer (if option -valgrind is not set)\n\t"
-         "- Creates a JointWidget (if option -valgrind is not set)\n\t"
-         "- Runs the forward kinematics in a loop\n\n\t"
-         "The joints angles can be modified by the sliders\n");
-    printf("\n\tForward kinematics:\n");
-    printf("\t-dir\t<directory=%s>   Configuration file directory\n",
-           directory.c_str());
-    printf("\t-f\t<configFile=%s>   Configuration file\n",
-           xmlFileName.c_str());
-    printf("\t-edit\t   Don't launch JointWidget. Otherwise, reloading"
-           " doesn't work with the widget being active.\n");
-    printf("\n");
-    printf("\n");
-    printf("\tExamples: Rcs -m 2\n");
-    printf("\t-dir config/xml/LWR -f lbr_iiwa_14_r820.urdf\n");
-    printf("\t-dir config/xml/DarwinOP -f robotis_op.urdf\n");
-    printf("\t-dir config/xml/Husky -f dual_arm_husky_original.urdf\n");
-    printf("\t-dir config/xml/Valkyrie -f valkyrie_sim.urdf\n");
-    printf("\n");
-    RcsGraph_printUsage(xmlFileName.c_str());
+    help();
   }
+}
+
+void ExampleFK::help()
+{
+  RMSG("ExampleRunner -dir <graph-directory> -f "
+       "<graph-file>\n\n\t- Creates a graph from an xml file\n\t"
+       "- Creates a viewer (if option -valgrind is not set)\n\t"
+       "- Creates a JointWidget (if option -valgrind is not set)\n\t"
+       "- Runs the forward kinematics in a loop\n\n\t"
+       "The joints angles can be modified by the sliders\n");
+  printf("\n\tForward kinematics:\n");
+  printf("\t-dir\t<directory=%s>   Configuration file directory\n",
+         directory.c_str());
+  printf("\t-f\t<configFile=%s>   Configuration file\n",
+         xmlFileName.c_str());
+  printf("\t-edit\t   Don't launch JointWidget. Otherwise, reloading"
+         " doesn't work with the widget being active.\n");
+  printf("\n");
+  printf("\n");
+  printf("\tExamples: Rcs -m 2\n");
+  printf("\t-dir config/xml/LWR -f lbr_iiwa_14_r820.urdf\n");
+  printf("\t-dir config/xml/DarwinOP -f robotis_op.urdf\n");
+  printf("\t-dir config/xml/Husky -f dual_arm_husky_original.urdf\n");
+  printf("\t-dir config/xml/Valkyrie -f valkyrie_sim.urdf\n");
+  printf("\n");
+  Rcs_printResourcePath();
+  Rcs::CmdLineParser argP;
+  argP.print();
+  RcsGraph_printUsage(xmlFileName.c_str());
 }
 
 bool ExampleFK::initAlgo()
 {
+  Rcs_addResourcePath(directory.c_str());
   if (randomGraph)
   {
     graph = RcsGraph_createRandom(30, 5);
@@ -208,8 +223,7 @@ bool ExampleFK::initAlgo()
 
   if (graph == NULL)
   {
-    RMSG("Failed to create graph from file \"%s\" - exiting",
-         xmlFileName.c_str());
+    RMSG_CPP("Failed to create graph from file " << xmlFileName << " - exiting");
     return false;
   }
 
@@ -322,7 +336,6 @@ void ExampleFK::initGraphics()
   gn = new Rcs::GraphNode(graph, resizeable);
   gn->toggleReferenceFrames();
   viewer->add(gn);
-  RLOG(0, "E");
 
   comNd = new Rcs::SphereNode(r_com, 0.05);
   comNd->makeDynamic(r_com);
@@ -330,7 +343,6 @@ void ExampleFK::initGraphics()
   comNd->toggleWireframe();
   comNd->hide();
   viewer->add(comNd);
-  RLOG(0, "D");
 
   char xmlFile2[64] = "";
   Rcs::CmdLineParser argP;
@@ -348,7 +360,6 @@ void ExampleFK::initGraphics()
     hud = new Rcs::HUD();
     viewer->add(hud);
   }
-  RLOG(0, "C");
 
   kc = new Rcs::KeyCatcher();
   viewer->add(kc);
@@ -361,16 +372,17 @@ void ExampleFK::initGraphics()
       viewer->add(new Rcs::PPSSensorNode(SENSOR, graph, debug));
     }
   }
-  RLOG(0, "B");
   viewer->runInThread(mtx);
-  RLOG(0, "A");
 }
 
 void ExampleFK::initGuis()
 {
+  if (valgrind)
+  {
+    return;
+  }
   if ((editMode == false) && (bvhTraj == NULL))
   {
-    guiHandle = Rcs::JointWidget::create(graph, mtx);
 
     // We constrain all joints here so that we can drag them conveniently
     // with the sliders.
@@ -379,6 +391,7 @@ void ExampleFK::initGuis()
       JNT->constrained = true;
     }
 
+    jGui = new JointGui(graph, mtx);
   }
 }
 
@@ -391,55 +404,52 @@ void ExampleFK::step()
     RLOG(1, "Starting step");
   }
 
-  if (graph != NULL)
+  if (bvhTraj != NULL)
   {
-    if (bvhTraj != NULL)
-    {
-      MatNd row = MatNd_getRowViewTranspose(bvhTraj, bvhIdx);
-      MatNd_copy(graph->q, &row);
+    MatNd row = MatNd_getRowViewTranspose(bvhTraj, bvhIdx);
+    MatNd_copy(graph->q, &row);
 
-      bvhIdx++;
-      if (bvhIdx >= bvhTraj->m)
-      {
-        bvhIdx = 0;
-      }
+    bvhIdx++;
+    if (bvhIdx >= bvhTraj->m)
+    {
+      bvhIdx = 0;
     }
+  }
 
-    dtSim = Timer_getSystemTime();
+  dtSim = Timer_getSystemTime();
 
-    switch (fwdKinType)
-    {
-      case 0:
-        RcsGraph_setState(graph, NULL, NULL);
-        break;
-
-      case 1:
-      {
-        RcsBody* fkBdy = RcsGraph_getBodyByName(graph, fKinBdyName.c_str());
-        RcsGraph_computeBodyKinematics(graph, fkBdy, NULL, NULL, true);
-      }
+  switch (fwdKinType)
+  {
+    case 0:
+      RcsGraph_setState(graph, NULL, NULL);
       break;
 
-      case 2:
-      {
-        RcsBody* fkBdy = RcsGraph_getBodyByName(graph, fKinBdyName.c_str());
-        RcsGraph_computeBodyKinematics(graph, fkBdy, NULL, NULL, false);
-      }
-      break;
-
-      default:
-        RFATAL("No forward kinematics mode %d", fwdKinType);
-    }
-
-    dtSim = Timer_getSystemTime() - dtSim;
-    if (comBase != NULL)
+    case 1:
     {
-      mass = RcsGraph_COG_Body(graph, comBase, r_com);
+      RcsBody* fkBdy = RcsGraph_getBodyByName(graph, fKinBdyName.c_str());
+      RcsGraph_computeBodyKinematics(graph, fkBdy, NULL, NULL, true);
     }
-    else
+    break;
+
+    case 2:
     {
-      mass = RcsGraph_COG(graph, r_com);
+      RcsBody* fkBdy = RcsGraph_getBodyByName(graph, fKinBdyName.c_str());
+      RcsGraph_computeBodyKinematics(graph, fkBdy, NULL, NULL, false);
     }
+    break;
+
+    default:
+      RFATAL("No forward kinematics mode %d", fwdKinType);
+  }
+
+  dtSim = Timer_getSystemTime() - dtSim;
+  if (comBase != NULL)
+  {
+    mass = RcsGraph_COG_Body(graph, comBase, r_com);
+  }
+  else
+  {
+    mass = RcsGraph_COG(graph, r_com);
   }
 
   if (valgrind)
@@ -561,7 +571,7 @@ void ExampleFK::handleKeys()
   else if (kc->getAndResetKey('j'))
   {
     RMSGS("Creating JointWidget");
-    guiHandle = Rcs::JointWidget::create(graph, &graphLock);
+    jGui = new JointGui(graph, &graphLock);
   }
   else if (kc->getAndResetKey('e'))
   {
@@ -723,8 +733,9 @@ void ExampleFK::handleKeys()
 
     if (guiHandle != -1)
     {
-      bool success = RcsGuiFactory_destroyGUI(guiHandle);
-      RLOG(0, "%s destroyed Gui", success ? "Successfully" : "Not");
+      delete jGui;
+      //bool success = RcsGuiFactory_destroyGUI(guiHandle);
+      RLOG(0, "JointGui deleted");
     }
 
     bool collisionVisible = gn->collisionModelVisible();
@@ -871,7 +882,7 @@ void ExampleFK::handleKeys()
 
 
 //REGISTER_EXAMPLE(ExampleFK_Octree);
-static ExampleFactoryRegistrar<ExampleFK_Octree> ExampleFK_Octree_("RcsCore", "Octree example");
+static ExampleFactoryRegistrar<ExampleFK_Octree> ExampleFK_Octree_("Forward kinematics", "Octree");
 
 ExampleFK_Octree::ExampleFK_Octree(int argc, char** argv) : ExampleFK(argc, argv)
 {

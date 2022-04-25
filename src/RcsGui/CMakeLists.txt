@@ -29,6 +29,9 @@ DblSlider.cpp
 DynamicDataPlot.cpp
 ExampleWidget.cpp
 ExampleGui.cpp
+CmdLineWidget.cpp
+AsyncWidget.cpp
+AsyncGuiFactory.cpp 
 ${RCS_HIGHGUI_SRCS}
 )
 

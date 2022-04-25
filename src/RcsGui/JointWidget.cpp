@@ -46,6 +46,7 @@
 #include <QGridLayout>
 #include <QTimer>
 #include <QtGlobal>
+#include <QThread>
 
 #include <cstdio>
 #include <cmath>
@@ -55,6 +56,47 @@ namespace Rcs
 {
 
 
+JointGui::JointGui(const RcsGraph* graph_,
+                   pthread_mutex_t* graphLock_,
+                   MatNd* q_des_,
+                   MatNd* q_curr_,
+                   bool alwaysWriteToQ_,
+                   bool passive_) :
+  graph(NULL), constGraph(graph_), graphLock(graphLock_),
+  q_des(q_des_), q_curr(q_curr_), alwaysWriteToQ(alwaysWriteToQ_),
+  passive(passive_)
+{
+  RLOG(0, "Before launch");
+  launch();
+  RLOG(0, "After launch");
+}
+
+JointGui::JointGui(RcsGraph* graph_,
+                   pthread_mutex_t* graphLock_,
+                   MatNd* q_des_,
+                   MatNd* q_curr_,
+                   bool alwaysWriteToQ_,
+                   bool passive_) :
+  graph(graph_), constGraph(graph_), graphLock(graphLock_),
+  q_des(q_des_), q_curr(q_curr_), alwaysWriteToQ(alwaysWriteToQ_),
+  passive(passive_)
+{
+  RLOG(0, "Before launch");
+  launch();
+  RLOG(0, "After launch");
+}
+
+void JointGui::construct()
+{
+  RLOG(0, "Constructing test");
+
+  QWidget* test = new JointWidget(graph, constGraph, graphLock,
+                                  q_des, q_curr, alwaysWriteToQ, passive);
+  //QWidget* test = new QLabel("Seppl");
+  RLOG(0, "Setting widget");
+  setWidget(test);
+  RLOG(0, "Done");
+}
 /*******************************************************************************
  * Factory instantiation method for Qt thread.
  ******************************************************************************/
@@ -84,6 +126,7 @@ void* JointWidget::stateGui(void* arg)
 
   delete alwaysWriteToQ;
   delete passive;
+  //delete p; // \todo: Yes, this is a leak
 
   return w;
 }
@@ -166,7 +209,7 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
   _q_curr(q_curr ? q_curr : constGraph->q),
   mutex(graphLock)
 {
-  RLOG(5, "Creating Widget with %d dof", _constGraph->dof);
+  RLOG(0, "Creating Widget with %d dof", _constGraph->dof);
 
   setWindowTitle("RCS Joint Control");
   setObjectName("Rcs::JointWidget");
@@ -304,7 +347,7 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
     _timer->start(40);
   }
 
-  RLOG(5, "JointWidget generated");
+  RLOG(0, "JointWidget generated");
 }
 
 /*******************************************************************************
@@ -312,7 +355,7 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
  ******************************************************************************/
 JointWidget::~JointWidget()
 {
-  RLOG(5, "JointWidget deleted");
+  RLOG(0, "JointWidget deleted");
 }
 
 /*******************************************************************************

@@ -44,6 +44,7 @@
 #include <Rcs_guiFactory.h>
 #include <ControllerWidgetBase.h>
 #include <DynamicDataPlot.h>
+#include <AsyncWidget.h>
 #include <MatNdWidget.h>
 #include <PPSGui.h>
 #include <SegFaultHandler.h>
@@ -72,6 +73,66 @@ void quit(int /*sig*/)
     fprintf(stderr, "Exiting without cleanup\n");
     exit(0);
   }
+}
+
+class MatWidget : public Rcs::AsyncWidget
+{
+public:
+  MatWidget(MatNd* mat_) : mat(mat_)
+  {
+    launch();
+  }
+
+  void construct()
+  {
+    setWidget(new Rcs::MatNdWidget(mat, mat, 0.0, 1.0, "Matrix", NULL));
+  }
+
+protected:
+  MatNd* mat;
+};
+
+void testAsyncFactory(int argc, char** argv)
+{
+  {
+    MatNd* mat = MatNd_create(3, 1);
+    MatWidget mw(mat);
+    MatWidget mw2(mat);
+    MatWidget mw3(mat);
+    RPAUSE();
+    //mw3.destroy();
+  }
+
+
+  //Rcs::MyGuiFactory::create(argc, argv);
+  {
+    MatNd* mat = MatNd_create(3, 1);
+    MatWidget mw(mat);
+    MatWidget mw2(mat);
+    MatWidget mw3(mat);
+
+    //mw.launch();
+    RPAUSE_MSG("Hit enter to unlaunch");
+
+    //mw.unlaunch();
+    mw.unlaunch();
+    RPAUSE_MSG("Hit enter to launch");
+
+    //MatWidget mw2(mat);
+    mw.launch();
+    RPAUSE_MSG("Hit enter to unlaunch");
+
+    mw.unlaunch();
+    mw.unlaunch();
+    //RPAUSE_MSG("Hit enter to destroy facory");
+  }
+
+
+
+
+
+  //Rcs::MyGuiFactory::destroy();
+  //RPAUSE_MSG("Hit enter to quit");
 }
 
 /*******************************************************************************
@@ -230,6 +291,15 @@ int main(int argc, char** argv)
       }
 
       Rcs::DynamicDataPlot::destroy(handle);
+      break;
+    }
+
+    // ==============================================================
+    // Asynchronous Gui factory
+    // ==============================================================
+    case 5:
+    {
+      testAsyncFactory(argc, argv);
       break;
     }
 

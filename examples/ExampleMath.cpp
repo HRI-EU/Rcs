@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-  Copyright (c) 2017, Honda Research Institute Europe GmbH
+  Copyright (c) 2022, Honda Research Institute Europe GmbH
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are
@@ -31,12 +31,13 @@
 
 *******************************************************************************/
 
-#include <SegFaultHandler.h>
+#include "ExampleMath.h"
 
+#include <ExampleFactory.h>
+#include <Rcs_cmdLine.h>
+#include <Rcs_macros.h>
 #include <Rcs_math.h>
 #include <Rcs_mathTests.h>
-#include <Rcs_macros.h>
-#include <Rcs_cmdLine.h>
 #include <Rcs_utils.h>
 #include <Rcs_timer.h>
 
@@ -44,8 +45,10 @@
 #include <string>
 
 
-RCS_INSTALL_ERRORHANDLERS
+namespace Rcs
+{
 
+static ExampleFactoryRegistrar<ExampleMath> ExampleMath_("Mathematics", "Test cases");
 
 static bool testMode(int mode, int argc, char** argv)
 {
@@ -243,47 +246,28 @@ static bool testMode(int mode, int argc, char** argv)
 }
 
 
-/*******************************************************************************
- *
- ******************************************************************************/
-int main(int argc, char** argv)
+ExampleMath::ExampleMath(int argc_, char** argv_) :
+  ExampleBase(argc_, argv_), success(true), nErrors(0), argc(argc_), argv(argv_)
 {
-  int result = 0, mode = 0;
-
-  // Parse command line arguments
-  Rcs::CmdLineParser argP(argc, argv);
-  argP.getArgument("-dl", &RcsLogLevel, "Set debug level (default is %d)",
-                   RcsLogLevel);
-  argP.getArgument("-m", &mode, "Set test mode (default is %d)", mode);
-
-  bool success = true;
-
-  if (mode==-1)
-  {
-    for (int i=1; i<=18; ++i)
-    {
-      bool success_i = testMode(i, argc, argv);
-      if (!success_i)
-      {
-        result++;
-      }
-
-      success = success_i && success;
-    }
-  }
-  else
-  {
-    success = testMode(mode, argc, argv);
-  }
-
-  if (argP.hasArgument("-h"))
-  {
-    argP.print();
-  }
-  else
-  {
-    RLOGS(1, "Math tests %s", success ? "SUCCEEDED" : "FAILED");
-  }
-
-  return Math_iClip(result, 0, 255);
 }
+
+ExampleMath::~ExampleMath()
+{
+  RLOG(0, "Success is %s, found %d errors", success ? "TRUE" : "FALSE", nErrors);
+}
+
+void ExampleMath::step()
+{
+  for (int i=1; i<=18; ++i)
+  {
+    bool success_i = testMode(i, argc, argv);
+    if (!success_i)
+    {
+      nErrors++;
+    }
+
+    success = success_i && success;
+  }
+}
+
+}   // namespace Rcs

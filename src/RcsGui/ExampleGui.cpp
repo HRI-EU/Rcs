@@ -41,79 +41,117 @@
 
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QScrollArea>
 
 #include <QSplitter>
 #include <QTreeView>
 #include <QListView>
 #include <QTableView>
 #include <QPushButton>
+#include <QHeaderView>
 
 
 namespace Rcs
 {
 
-typedef struct
+ExampleGui::ExampleGui(int argc_, char** argv_) : argc(argc_), argv(argv_)
 {
-  void* ptr[10];
-} VoidPointerList;
+  RLOG(0, "Before launch");
+  launch();
+  RLOG(0, "After launch");
+}
+
+void ExampleGui::construct()
+{
+  RLOG(0, "Constructing test");
+  QWidget* test = new TreeTest(argc, argv);
+  RLOG(0, "Setting widget");
+  setWidget(test);
+  RLOG(0, "Done");
+}
 
 
-
-class ExampleItem : public QStandardItem
+class ExampleWorker : public QObject
 {
 public:
-  ExampleItem(int argc_, char** argv_, const QString& categoryName_, const QString& exampleName) :
-    QStandardItem(exampleName), categoryName(categoryName_), example(NULL), argc(argc_), argv(argv_), clicked(false)
+  ExampleWorker(ExampleBase* example_, int argc_, char** argv_) : example(example_), argc(argc_), argv(argv_)
   {
+    RLOG(0, "ExampleWorker created");
   }
 
-  void init()
+  ~ExampleWorker()
   {
-    RLOG(0, "Initializing example");
-    example = ExampleFactory::create(categoryName.toStdString(), text().toStdString(), argc, argv);
-    RCHECK(example);
+    RLOG(0, "ExampleWorker deleted");
   }
 
-  static void* runThreadFunc(void* arg)
+  void doWork()
   {
-    ExampleBase* example = (ExampleBase*) arg;
-    example->start();
-    return NULL;
-  }
-
-  void start()
-  {
-    RLOG(0, "Starting example");
     example->init(argc, argv);
-    pthread_create(&runThread, NULL, &runThreadFunc, example);
+    RLOG(0, "doWork() started");
+    example->start();
+    RLOG(0, "doWork() finished");
   }
 
-  void stop()
-  {
-    RLOG(0, "Stopping example");
-    example->stop();
-    pthread_join(runThread, NULL);
-    RLOG(0, "... stopped");
-  }
-
-  void destroy()
-  {
-    // Calling pthread_join on a joined thread will immediately return
-    stop();
-    RLOG(0, "Deleting example");
-    delete example;
-    example = NULL;
-  }
-
-  QString categoryName;
   ExampleBase* example;
-  pthread_t runThread;
   int argc;
   char** argv;
-  bool clicked;
 };
+
+
+
+
+
+
+ExampleItem::ExampleItem(int argc_, char** argv_, const QString& categoryName_, const QString& exampleName) :
+  QStandardItem(exampleName), categoryName(categoryName_), example(NULL), argc(argc_), argv(argv_), clicked(false)
+{
+}
+
+ExampleItem::~ExampleItem()
+{
+  RLOG_CPP(0, "Deleting ExampleItem " << categoryName.toStdString()
+           << "::" << text().toStdString());
+
+  // Cleaníng up will properly shut down the running thread and delete the example.
+  if (example)
+  {
+    destroy();
+  }
+}
+
+void ExampleItem::start()
+{
+  RLOG(1, "Initializing example");
+  example = ExampleFactory::create(categoryName.toStdString(), text().toStdString(), argc, argv);
+  RCHECK(example);
+  RLOG(1, "Starting example");
+  ExampleWorker* worker = new ExampleWorker(example, argc, argv);
+  worker->moveToThread(&exampleThread);
+  connect(&exampleThread, &QThread::finished, worker, &QObject::deleteLater);
+  connect(this, &ExampleItem::startWork, worker, &ExampleWorker::doWork);
+  exampleThread.start();
+  emit startWork();
+}
+
+void startWork()
+{
+}
+
+void ExampleItem::stop()
+{
+  RLOG(1, "Stopping example");
+  example->stop();
+  exampleThread.quit();
+  exampleThread.wait();
+  RLOG(1, "... stopped");
+}
+
+void ExampleItem::destroy()
+{
+  stop();
+  RLOG(1, "Deleting example");
+  delete example;
+  example = NULL;
+}
 
 
 TreeTest::TreeTest(int argc, char** argv, QWidget* parent) : QMainWindow(parent)
@@ -121,22 +159,24 @@ TreeTest::TreeTest(int argc, char** argv, QWidget* parent) : QMainWindow(parent)
   QWidget* mainWidget = new QWidget(this);
   QTreeView* tree = new QTreeView(mainWidget);
   QVBoxLayout* mainGrid = new QVBoxLayout();
+  setObjectName("Rcs::ExampleGui");
 
   mainGrid->setMargin(0);
   mainGrid->setSpacing(0);
   mainGrid->addWidget(tree);
   mainWidget->setLayout(mainGrid);
+  setCentralWidget(mainWidget);
 
   std::set<std::string> categories = ExampleFactory::getCategories();
-  std::set<std::string>::iterator categories_it = categories.begin();
 
-  this->model = new QStandardItemModel(this);
+  this->model = new QStandardItemModel();
   QStandardItem* parentItem = model->invisibleRootItem();
 
   typedef std::map<std::string, ExampleFactory::ExampleMaker> ExampleMap;
 
   ExampleMap cMap = ExampleFactory::constructorMap();
 
+  std::set<std::string>::iterator categories_it = categories.begin();
 
   while (categories_it != categories.end())
   {
@@ -173,15 +213,25 @@ TreeTest::TreeTest(int argc, char** argv, QWidget* parent) : QMainWindow(parent)
   tree->expandAll();
   tree->setSelectionMode(QAbstractItemView::MultiSelection);
 
-  setCentralWidget(mainWidget);
+  // Headers are resized so that all text is visible
+  tree->header()->resizeSections(QHeaderView::ResizeToContents);
+
+
+  setFixedWidth(400);
+  setFixedHeight(cMap.size()*25);
 
   connect(tree,SIGNAL(clicked(const QModelIndex&)), this, SLOT(itemClicked(const QModelIndex&)));
 }
 
+TreeTest::~TreeTest()
+{
+  RLOG(0, "Deleting TreeTest");
+  delete this->model;
+}
+
 void TreeTest::itemClicked(const QModelIndex& idx)
 {
-
-  if (idx.parent().row()==-1 && idx.parent().column()==-1)
+  if ((idx.parent().row() == -1) && (idx.parent().column() == -1))
   {
     return;
   }
@@ -193,13 +243,12 @@ void TreeTest::itemClicked(const QModelIndex& idx)
   if (ei)
   {
     ei->clicked = !ei->clicked;
-    RLOG(0, "Item: %d %d -> %s (%s)", idx.parent().row(), idx.row(), item->text().toStdString().c_str(),
+    RLOG(1, "Item: %d %d -> %s (%s)", idx.parent().row(), idx.row(), item->text().toStdString().c_str(),
          ei->clicked ? "Clicked" : "Not clicked");
 
 
     if (ei->clicked)
     {
-      ei->init();
       ei->start();
     }
     else
@@ -215,6 +264,10 @@ void TreeTest::itemClicked(const QModelIndex& idx)
     RFATAL("This should never happen");
   }
 }
+typedef struct
+{
+  void* ptr[10];
+} VoidPointerList;
 
 static void* threadFunc2(void* arg)
 {
@@ -256,6 +309,7 @@ bool TreeTest::destroy(int handle)
 
 
 
+#if 0
 
 static void* threadFunc(void* arg)
 {
@@ -317,6 +371,7 @@ ExampleGui::~ExampleGui()
 {
 }
 
+#endif
 
 
 

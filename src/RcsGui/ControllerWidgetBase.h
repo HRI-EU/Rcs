@@ -34,6 +34,7 @@
 #ifndef CONTROLLERWIDGETBASE_H
 #define CONTROLLERWIDGETBASE_H
 
+#include "AsyncWidget.h"
 #include "TaskWidget.h"
 
 #include <ControllerBase.h>
@@ -47,6 +48,35 @@
 
 namespace Rcs
 {
+class ControllerGui : public Rcs::AsyncWidget
+{
+public:
+  ControllerGui(ControllerBase* cntrl,
+                MatNd* a_des,
+                MatNd* x_des,
+                const MatNd* x_curr,
+                pthread_mutex_t* lock_ = NULL,
+                bool showOnly = false);
+
+  ControllerGui(ControllerBase* cntrl,
+                MatNd* a_des,
+                const MatNd* a_curr,
+                MatNd* x_des,
+                const MatNd* x_curr,
+                pthread_mutex_t* lock_ = NULL,
+                bool showOnly = false);
+
+  void construct();
+
+protected:
+  ControllerBase* cntrl;
+  MatNd* a_des;
+  const MatNd* a_curr;
+  MatNd* x_des;
+  const MatNd* x_curr;
+  pthread_mutex_t* lock;
+  bool showOnly;
+};
 
 /*! \ingroup RcsGui
  *  \brief Gui to display and / or modify task-level control variables. This
@@ -109,22 +139,23 @@ protected slots:
   virtual void setActive(int status);
   virtual void displayAct();
 
-protected:
+public:
 
   ControllerWidgetBase(const ControllerBase* cntrl,
                        MatNd* a_des,
-                       MatNd* a_curr,
+                       const MatNd* a_curr,
                        MatNd* x_des,
                        const MatNd* x_curr,
                        pthread_mutex_t* lock,
                        bool showOnly);
 
   virtual ~ControllerWidgetBase();
+protected:
 
   /*! \brief We overwrite this with an empty function, otherwise the widget
    *         scrolls when we use te mouse wheel inside the canvas and not
    *         above the scroll bar. This is inconvenient, since we also want
-   *         use the mouse wheel for scrolling the task sliders. Tis beaviour
+   *         use the mouse wheel for scrolling the task sliders. This behaviour
    *         only exists for windows.
    */
   void wheelEvent(QWheelEvent* e);

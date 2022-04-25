@@ -38,8 +38,8 @@
 
 namespace Rcs
 {
-//REGISTER_EXAMPLE(ExampleBase);
-static ExampleFactoryRegistrar<ExampleBase> ExampleBase_("RcsCore", "ExampleBase");
+
+//static ExampleFactoryRegistrar<ExampleBase> ExampleBase_("RcsCore", "ExampleBase");
 
 ExampleBase::ExampleBase(int argc, char** argv) : runLoop(false)
 {
@@ -51,20 +51,23 @@ ExampleBase::~ExampleBase()
 
 void ExampleBase::init(int argc, char** argv)
 {
-  RLOG(0, "initParameters");
+  RLOG(1, "initParameters");
   initParameters();
-  RLOG(0, "parseArgs");
+  RLOG(1, "parseArgs");
   parseArgs(argc, argv);
-  RLOG(0, "initAlgo");
+  RLOG(1, "initAlgo");
   bool success = initAlgo();
-  RLOG(0, "%s initAlgo", success ? "Success" : "Failure");
-  RLOG(0, "initGraphics");
+  RLOG(1, "%s initAlgo", success ? "Success" : "Failure");
+  RLOG(1, "initGraphics");
   initGraphics();
-  RLOG(0, "initGuis");
+  RLOG(1, "initGuis");
   initGuis();
-  RLOG(0, "done init");
+  RLOG(1, "done init");
 }
 
+void ExampleBase::clear()
+{
+}
 void ExampleBase::initParameters()
 {
 }
@@ -112,6 +115,11 @@ void ExampleBase::step()
 
 void ExampleBase::handleKeys()
 {
+}
+
+void ExampleBase::help()
+{
+  printf("No help message implemented");
 }
 
 }   // namespace Rcs

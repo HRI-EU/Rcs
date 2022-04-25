@@ -269,7 +269,7 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
   {                                                        \
     fprintf(stderr, "[%s: %s(%d)]: Hit enter to continue", \
             __FILENAME__, __FUNCTION__, __LINE__);         \
-    getchar();                                             \
+    (void)getchar();                                       \
   } while (0)
 
 /*! \ingroup RcsMacros
@@ -282,7 +282,8 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
     {                                                        \
       fprintf(stderr, "[%s: %s(%d)]: Hit enter to continue", \
               __FILENAME__, __FUNCTION__, __LINE__);         \
-      getchar(); }                                           \
+      (void)getchar();                                       \
+    }                                                        \
   } while (0)
 
 /*! \ingroup RcsMacros
@@ -294,7 +295,7 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
     fprintf(stderr, "[%s: %s(%d)]: ",              \
             __FILENAME__, __FUNCTION__, __LINE__); \
     fprintf(stderr, __VA_ARGS__);                  \
-    getchar();                                     \
+    (void)getchar();                               \
   } while (0)
 
 /*! \ingroup RcsMacros
@@ -308,7 +309,8 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
       fprintf(stderr, "[%s: %s(%d)]: ",               \
               __FILENAME__, __FUNCTION__, __LINE__);  \
       fprintf(stderr, __VA_ARGS__);                   \
-      getchar(); }                                    \
+      (void)getchar();                                \
+    }                                                 \
   } while (0)
 
 /*! \ingroup RcsMacros

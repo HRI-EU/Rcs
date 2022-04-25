@@ -47,18 +47,48 @@ public:
   ExampleBase(int argc, char** argv);
   virtual ~ExampleBase();
 
+  /*  \brief Calls these functions:
+   *         - initParameters()
+   *         - parseArgs()
+   *         - initAlgo()
+   *         - initGraphics()
+   *         - initGuis()
+   *
+   *         It is adviseable to set the resource path in the initAlgo()
+   *         function, so that the init functions can be overwritten by
+   *         derieved classes without any side effects.
+   */
   virtual void init(int argc, char** argv);
 
+  /*  \brief Deletes all memory and brings the global variables into a
+   *         state like before the class was instantiated. In order to
+   *         avoid side-effects on other classes, also the resource path
+   *         should be resetted. This method should be implemented so
+   *         that it can be called several times.
+   */
+  virtual void clear();
+
+  /*  \brief Assign defaults to all member variables, allocate memory if needed.
+   */
   virtual void initParameters();
+  /*  \brief Assign member variables according to supported command line options.
+   */
   virtual void parseArgs(int argc, char** argv);
+  /*  \brief Initializations related to algorithmic steps, no gui or graphics.
+   */
   virtual bool initAlgo();
+  /*  \brief Initializations for graphics windows, nodes etc.
+   */
   virtual void initGraphics();
+  /*  \brief Initializations for Guis and widgets.
+   */
   virtual void initGuis();
   virtual void start();
   virtual void stop();
   virtual void run();
   virtual void step();
   virtual void handleKeys();
+  virtual void help();
 
 protected:
   bool runLoop;

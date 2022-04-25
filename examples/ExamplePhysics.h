@@ -31,34 +31,33 @@
 
 *******************************************************************************/
 
-#ifndef RCS_EXAMPLEIK_H
-#define RCS_EXAMPLEIK_H
+#ifndef RCS_EXAMPLEPHYSICS_H
+#define RCS_EXAMPLEPHYSICS_H
 
 #include <ExampleBase.h>
-#include <IkSolverRMR.h>
-#include <PhysicsBase.h>
+#include <Rcs_graph.h>
+#include <Rcs_timer.h>
 
 #include <RcsViewer.h>
 #include <KeyCatcher.h>
 #include <GraphNode.h>
-#include <PhysicsNode.h>
-#include <HUD.h>
-#include <BodyPointDragger.h>
-#include <VertexArrayNode.h>
 #include <SphereNode.h>
-#include <ControllerWidgetBase.h>
+#include <HUD.h>
+#include <JointWidget.h>
+#include <PhysicsNode.h>
 
+#include <string>
 #include <pthread.h>
 
 
 namespace Rcs
 {
 
-class ExampleIK : public ExampleBase
+class ExamplePhysics : public ExampleBase
 {
 public:
-  ExampleIK(int argc, char** argv);
-  virtual ~ExampleIK();
+  ExamplePhysics(int argc, char** argv);
+  virtual ~ExamplePhysics();
   virtual void initParameters();
   virtual void parseArgs(int argc, char** argv);
   virtual bool initAlgo();
@@ -70,66 +69,64 @@ public:
   virtual void clear();
 
 protected:
-  bool valgrind, simpleGraphics;
   pthread_mutex_t graphLock;
   pthread_mutex_t* mtx;
-
-  int algo, guiHandle;
-  double alpha, lambda, tmc, dt, dt_calc, jlCost, dJlCost, clipLimit, det,
-         scaleDragForce;
-  bool calcDistance;
-  std::string xmlFileName, directory, effortBdyName, physicsEngine, physicsCfg,
-      integrator;
-  bool ffwd, skipGui, pause, launchJointWidget, manipulability, cAvoidance,
-       constraintIK, initToQ0, testCopying, noHud, posCntrl;
-  ControllerBase* controller;
-  IkSolverRMR* ikSolver;
-  MatNd* dq_des, *q_dot_des, *a_des, *x_curr, *x_physics, *x_des, *x_des_f,
-         *dx_des, *dH;
-  const RcsBody* effortBdy;
-  MatNd* F_effort;
-  double r_com[3];
-
-  PhysicsBase* sim;
-  ControllerBase* simController;
-  RcsGraph* simGraph;
-  bool physicsFeedback;
-
-  Viewer* v;
-  osg::ref_ptr<KeyCatcher> kc;
-  osg::ref_ptr<GraphNode> gn;
-  osg::ref_ptr<PhysicsNode> simNode;
-  osg::ref_ptr<HUD> hud;
-  osg::ref_ptr<BodyPointDragger> dragger;
-  osg::ref_ptr<VertexArrayNode> cn;
-  osg::ref_ptr<SphereNode> comNd;
+  double dt, tmc, damping, shootMass;
+  double gVec[3];
   char hudText[2056];
-  ControllerGui* cGui;
-  unsigned int loopCount;
+  std::string physicsEngine;
+  std::string integrator;
+  std::string physicsCfg;
+  std::string xmlFileName;
+  std::string directory;
+  std::string bgColor;
+  bool pause, posCntrl, skipGui, skipControl, disableCollisions,
+       disableJointLimits, testCopy, withPPS, gravComp, resizeable,
+       syncHard, seqSim, valgrind, simpleGraphics, bodyAdded;
+  size_t loopCount;
+  RcsGraph* graph;
+  PhysicsBase* sim;
+
+  MatNd* q0, *q_des, *q_des_f, *q_curr, *q_dot_curr, *T_gravity, *T_curr;
+
+  KeyCatcher* kc;
+  Viewer* viewer;
+  HUD* hud;
+  PhysicsNode* simNode;
+
+  JointGui* jGui;
+
+  Timer* timer;
 };
 
-
-class ExampleIK_ContactGrasping : public ExampleIK
+class ExamplePhysics_Gyro : public ExamplePhysics
 {
 public:
-  ExampleIK_ContactGrasping(int argc, char** argv);
+  ExamplePhysics_Gyro(int argc, char** argv);
+  virtual void parseArgs(int argc, char** argv);
+};
+
+class ExamplePhysics_SoftBullet : public ExamplePhysics
+{
+public:
+  ExamplePhysics_SoftBullet(int argc, char** argv);
   virtual void initParameters();
 };
 
-class ExampleIK_OSimWholeBody : public ExampleIK
+class ExamplePhysics_SitToStand : public ExamplePhysics
 {
 public:
-  ExampleIK_OSimWholeBody(int argc, char** argv);
+  ExamplePhysics_SitToStand(int argc, char** argv);
   virtual void initParameters();
 };
 
-class ExampleIK_AssistiveDressing : public ExampleIK
+class ExamplePhysics_HumanoidPendulum : public ExamplePhysics
 {
 public:
-  ExampleIK_AssistiveDressing(int argc, char** argv);
-  virtual void initParameters();
+  ExamplePhysics_HumanoidPendulum(int argc, char** argv);
+  virtual void parseArgs(int argc, char** argv);
 };
 
 }   // namespace
 
-#endif   // RCS_EXAMPLEIK_H
+#endif   // RCS_EXAMPLEPHYSICS_H

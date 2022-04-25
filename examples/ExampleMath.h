@@ -31,86 +31,27 @@
 
 *******************************************************************************/
 
-#ifndef RCS_EXAMPLEFK_H
-#define RCS_EXAMPLEFK_H
+#ifndef RCS_EXAMPLEMATH_H
+#define RCS_EXAMPLEMATH_H
 
 #include <ExampleBase.h>
-#include <Rcs_graph.h>
-
-#include <RcsViewer.h>
-#include <KeyCatcher.h>
-#include <GraphNode.h>
-#include <SphereNode.h>
-#include <HUD.h>
-#include <JointWidget.h>
-
-#include <string>
-#include <pthread.h>
 
 
 namespace Rcs
 {
 
-class ExampleFK : public ExampleBase
+class ExampleMath : public ExampleBase
 {
 public:
-  ExampleFK(int argc, char** argv);
-  virtual ~ExampleFK();
-  virtual void initParameters();
-  virtual void clear();
-  virtual void parseArgs(int argc, char** argv);
-  virtual bool initAlgo();
-  virtual void initGraphics();
-  virtual void initGuis();
+  ExampleMath(int argc, char** argv);
+  virtual ~ExampleMath();
   virtual void step();
-  virtual void help();
-  virtual void handleKeys();
-
-protected:
-  bool valgrind;
-  bool simpleGraphics;
-  std::string xmlFileName;
-  std::string directory;
-  double dtSim, dtStep;
-  int fwdKinType;
-  char hudText[512];
-  std::string comRef;
-  std::string dotFile;
-  std::string bgColor;
-  std::string fKinBdyName;
-  bool testCopy;
-  bool resizeable;
-  bool editMode;
-  bool playBVH;
-  bool noHud;
-  bool randomGraph;
-  bool shapifyReplace;
-  RcsGraph* graph;
-  MatNd* bvhTraj;
-  pthread_mutex_t graphLock;
-  pthread_mutex_t* mtx;
-
-  osg::ref_ptr<Rcs::KeyCatcher> kc;
-  osg::ref_ptr<Rcs::GraphNode> gn;
-  osg::ref_ptr<Rcs::SphereNode> comNd;
-  osg::ref_ptr<Rcs::HUD> hud;
-  Rcs::Viewer* viewer;
-  JointGui* jGui;
-
-  int guiHandle;
-  unsigned int loopCount;
-  double mass, Id[3][3], r_com[3];
-  unsigned int bvhIdx;
-  const RcsBody* comBase;
-};
-
-class ExampleFK_Octree : public ExampleFK
-{
-public:
-  ExampleFK_Octree(int argc, char** argv);
-  virtual void initParameters();
+  bool success;
+  int nErrors;
+  int argc;
+  char** argv;
 };
 
 }   // namespace
 
-#endif   // RCS_EXAMPLEFK_H
+#endif   // RCS_EXAMPLEMATH_H

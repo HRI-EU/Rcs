@@ -34,6 +34,7 @@
 #ifndef JOINTWIDGET_H
 #define JOINTWIDGET_H
 
+#include "AsyncWidget.h"
 #include <Rcs_graph.h>
 
 #include <QScrollArea>
@@ -47,6 +48,34 @@ class JointSlider;
 
 namespace Rcs
 {
+class JointGui : public Rcs::AsyncWidget
+{
+public:
+  JointGui(const RcsGraph* graph,
+           pthread_mutex_t* graphLock = NULL,
+           MatNd* q_des = NULL,
+           MatNd* q_curr = NULL,
+           bool alwaysWriteToQ = false,
+           bool passive = false);
+
+  JointGui(RcsGraph* graph,
+           pthread_mutex_t* graphLock = NULL,
+           MatNd* q_des = NULL,
+           MatNd* q_curr = NULL,
+           bool alwaysWriteToQ = false,
+           bool passive = false);
+
+  void construct();
+
+protected:
+  RcsGraph* graph;
+  const RcsGraph* constGraph;
+  pthread_mutex_t* graphLock;
+  MatNd* q_des;
+  MatNd* q_curr;
+  bool alwaysWriteToQ;
+  bool passive;
+};
 
 class JointWidget: public QScrollArea
 {
@@ -75,6 +104,13 @@ public:
   public:
     virtual void callback() = 0;
   };
+  JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
+              pthread_mutex_t* graphLock = NULL,
+              MatNd* q_des = NULL, MatNd* q_curr = NULL,
+              bool alwaysWriteToQ = false,
+              bool passive = false);
+
+  ~JointWidget();
 
   void registerCallback(JointChangeCallback* callback);
 
@@ -88,13 +124,6 @@ private slots:
 private:
 
   static void* stateGui(void* arg);
-
-  JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
-              pthread_mutex_t* graphLock = NULL,
-              MatNd* q_des = NULL, MatNd* q_curr = NULL,
-              bool alwaysWriteToQ = false,
-              bool passive = false);
-  ~JointWidget();
 
   /*! \brief We overwrite this with an empty function, otherwise the widget
    *         scrolls when we use te mouse wheel inside the canvas and not

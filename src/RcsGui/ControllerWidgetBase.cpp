@@ -48,6 +48,48 @@
 namespace Rcs
 {
 
+ControllerGui::ControllerGui(ControllerBase* cntrl_,
+                             MatNd* a_des_,
+                             MatNd* x_des_,
+                             const MatNd* x_curr_,
+                             pthread_mutex_t* lock_,
+                             bool showOnly_) :
+  cntrl(cntrl_), a_des(a_des_), a_curr(NULL),
+  x_des(x_des_), x_curr(x_curr_), lock(lock_),
+  showOnly(showOnly_)
+{
+  RLOG(0, "Before launch");
+  launch();
+  RLOG(0, "After launch");
+}
+
+ControllerGui::ControllerGui(ControllerBase* cntrl_,
+                             MatNd* a_des_,
+                             const MatNd* a_curr_,
+                             MatNd* x_des_,
+                             const MatNd* x_curr_,
+                             pthread_mutex_t* lock_,
+                             bool showOnly_) :
+  cntrl(cntrl_), a_des(a_des_), a_curr(a_curr_),
+  x_des(x_des_), x_curr(x_curr_), lock(lock_),
+  showOnly(showOnly_)
+{
+  RLOG(0, "Before launch");
+  launch();
+  RLOG(0, "After launch");
+}
+
+void ControllerGui::construct()
+{
+  RLOG(0, "Constructing test");
+
+  QWidget* test = new ControllerWidgetBase(cntrl, a_des, a_curr,
+                                           x_des, x_curr, lock, showOnly);
+  //QWidget* test = new QLabel("Seppl");
+  RLOG(0, "Setting widget");
+  setWidget(test);
+  RLOG(0, "Done");
+}
 typedef struct
 {
   void* ptr[10];
@@ -153,7 +195,7 @@ bool ControllerWidgetBase::destroy(int handle)
  ******************************************************************************/
 ControllerWidgetBase::ControllerWidgetBase(const ControllerBase* cntrl,
                                            MatNd* a_des,
-                                           MatNd* a_curr,
+                                           const MatNd* a_curr,
                                            MatNd* x_des,
                                            const MatNd* x_curr,
                                            pthread_mutex_t* mutex_,

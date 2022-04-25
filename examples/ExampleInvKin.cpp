@@ -64,7 +64,7 @@ namespace Rcs
 {
 
 //REGISTER_EXAMPLE(ExampleIK);
-static ExampleFactoryRegistrar<ExampleIK> ExampleIK_("IK", "Inverse kinematics");
+static ExampleFactoryRegistrar<ExampleIK> ExampleIK_("Inverse kinematics", "Dexbot with Task Interval");
 
 
 ExampleIK::ExampleIK(int argc, char** argv) : ExampleBase(argc, argv),
@@ -81,7 +81,7 @@ ExampleIK::ExampleIK(int argc, char** argv) : ExampleBase(argc, argv),
   x_des(NULL), x_des_f(NULL), dx_des(NULL), dH(NULL),
   effortBdy(NULL), F_effort(NULL),
   sim(NULL), simController(NULL), simGraph(NULL), physicsFeedback(false),
-  v(NULL), loopCount(0)
+  v(NULL), cGui(NULL), loopCount(0)
 {
   pthread_mutex_init(&graphLock, NULL);
   Vec3d_setZero(r_com);
@@ -91,11 +91,18 @@ ExampleIK::ExampleIK(int argc, char** argv) : ExampleBase(argc, argv),
 
 ExampleIK::~ExampleIK()
 {
-  // Clean up
+  clear();
+  pthread_mutex_destroy(&graphLock);
+}
+
+void ExampleIK::clear()
+{
   if (valgrind == false)
   {
     delete v;
-    ControllerWidgetBase::destroy(guiHandle);
+    v = NULL;
+    delete cGui;
+    cGui = NULL;
   }
 
   MatNd_destroy(dq_des);
@@ -107,11 +114,21 @@ ExampleIK::~ExampleIK()
   MatNd_destroy(x_des_f);
   MatNd_destroy(dx_des);
   MatNd_destroy(dH);
+  dq_des = NULL;
+  q_dot_des = NULL;
+  a_des = NULL;
+  x_curr = NULL;
+  x_physics = NULL;
+  x_des = NULL;
+  x_des_f = NULL;
+  dx_des = NULL;
+  dH = NULL;
 
   delete simController;   // It's safe even if simController is NULL
+  simController = NULL;
   delete ikSolver;
+  ikSolver = NULL;
 
-  pthread_mutex_destroy(&graphLock);
   Rcs_removeResourcePath(directory.c_str());
 }
 
@@ -181,23 +198,6 @@ void ExampleIK::parseArgs(int argc, char** argv)
   posCntrl = argP.hasArgument("-posCntrl",
                               "Enforce position control with physics");
 
-
-  if (argP.hasArgument("-h"))
-  {
-    printf("Resolved motion rate control test\n\n");
-    printf("Here are a few examples:\n");
-    printf("bin/Rcs -m 5 -dir config/xml/DexBot -f cAction.xml\n");
-    printf("bin/Rcs -m 5 -f config/xml/Examples/cContactGrasping.xml -algo 1 -lambda 0.001 -alpha 0\n");
-    printf("bin/Rcs -m 5 -f config/xml/Examples/cDistanceTask.xml\n");
-    printf("bin/Rcs -m 5 -f config/xml/Examples/cNormalAlign.xml -algo 1 -alpha 0.01 -lambda 0 -scaleDragForce 0.001\n");
-    printf("bin/Rcs -m 5 -f config/xml/Examples/cFace.xml\n");
-    printf("bin/Rcs -m 5 -f config/xml/Examples/cSoftPhysicsIK.xml -physicsEngine SoftBullet\n");
-    printf("bin/Rcs -m 5 -dir config/xml/Examples/ -f cSitToStand.xml -physicsEngine NewtonEuler -algo 1 -lamba 0 -dt 0.01\n");
-    printf("bin/Rcs -m 5 -dir config/xml/Dressing -f cRoboSleeve.xml -algo 1 -physicsEngine SoftBullet -dt 0.002\n");
-    printf("bin/Rcs -m 5 -dir config/xml/AvatarSkeleton -f cOpenSimWholeBody.xml -physicsEngine NewtonEuler -algo 1 -lambda 0 -i Euler\n");
-    ControllerBase::printUsage(xmlFileName);
-  }
-
   // Option to set locale - mainly for parsing tests
   if (argP.hasArgument("-locale", "Set locale"))
   {
@@ -216,11 +216,27 @@ void ExampleIK::parseArgs(int argc, char** argv)
     }
   }
 
-  Rcs_addResourcePath(directory.c_str());
+}
+
+void ExampleIK::help()
+{
+  printf("Resolved motion rate control test\n\n");
+  printf("Here are a few examples:\n");
+  printf("bin/Rcs -m 5 -dir config/xml/DexBot -f cAction.xml\n");
+  printf("bin/Rcs -m 5 -f config/xml/Examples/cContactGrasping.xml -algo 1 -lambda 0.001 -alpha 0\n");
+  printf("bin/Rcs -m 5 -f config/xml/Examples/cDistanceTask.xml\n");
+  printf("bin/Rcs -m 5 -f config/xml/Examples/cNormalAlign.xml -algo 1 -alpha 0.01 -lambda 0 -scaleDragForce 0.001\n");
+  printf("bin/Rcs -m 5 -f config/xml/Examples/cFace.xml\n");
+  printf("bin/Rcs -m 5 -f config/xml/Examples/cSoftPhysicsIK.xml -physicsEngine SoftBullet\n");
+  printf("bin/Rcs -m 5 -dir config/xml/Examples/ -f cSitToStand.xml -physicsEngine NewtonEuler -algo 1 -lamba 0 -dt 0.01\n");
+  printf("bin/Rcs -m 5 -dir config/xml/Dressing -f cRoboSleeve.xml -algo 1 -physicsEngine SoftBullet -dt 0.002\n");
+  printf("bin/Rcs -m 5 -dir config/xml/AvatarSkeleton -f cOpenSimWholeBody.xml -physicsEngine NewtonEuler -algo 1 -lambda 0 -i Euler\n");
+  ControllerBase::printUsage(xmlFileName);
 }
 
 bool ExampleIK::initAlgo()
 {
+  Rcs_addResourcePath(directory.c_str());
   controller = new ControllerBase(xmlFileName.c_str());
 
   if (testCopying)
@@ -391,9 +407,12 @@ void ExampleIK::initGuis()
     {
       if ((algo == 0) && (lambda > 0.0))
       {
-        guiHandle = ControllerWidgetBase::create(controller, a_des,
-                                                 ikSolver->getCurrentActivation(),
-                                                 x_des, x_curr, mtx);
+        cGui = new ControllerGui(controller, a_des,
+                                 ikSolver->getCurrentActivation(),
+                                 x_des, x_curr, mtx);
+        //guiHandle = ControllerWidgetBase::create(controller, a_des,
+        //                                         ikSolver->getCurrentActivation(),
+        //                                         x_des, x_curr, mtx);
       }
       else
       {
@@ -401,13 +420,17 @@ void ExampleIK::initGuis()
         {
           // If mode 5 runs with a simulator, the GUI displays the
           // current values from physics.
-          guiHandle = ControllerWidgetBase::create(controller, a_des,
-                                                   x_des, x_physics, mtx);
+          cGui = new ControllerGui(controller, a_des,
+                                   x_des, x_physics, mtx);
+          //guiHandle = ControllerWidgetBase::create(controller, a_des,
+          //                                         x_des, x_physics, mtx);
         }
         else
         {
-          guiHandle = ControllerWidgetBase::create(controller, a_des,
-                                                   x_des, x_curr, mtx);
+          cGui = new ControllerGui(controller, a_des,
+                                   x_des, x_curr, mtx);
+          //guiHandle = ControllerWidgetBase::create(controller, a_des,
+          //                                         x_des, x_curr, mtx);
         }
       }
     }
@@ -846,7 +869,7 @@ void ExampleIK::handleKeys()
 
 
 
-static ExampleFactoryRegistrar<ExampleIK_ContactGrasping> ExampleIK_ContactGrasping_("RcsCore", "Contact Grasping");
+static ExampleFactoryRegistrar<ExampleIK_ContactGrasping> ExampleIK_ContactGrasping_("Inverse kinematics", "Contact Grasping");
 
 ExampleIK_ContactGrasping::ExampleIK_ContactGrasping(int argc, char** argv) : ExampleIK(argc, argv)
 {
@@ -863,7 +886,7 @@ void ExampleIK_ContactGrasping::initParameters()
 }
 
 
-static ExampleFactoryRegistrar<ExampleIK_OSimWholeBody> ExampleIK_OSimWholeBody_("RcsCore", "OpenSim whole-body");
+static ExampleFactoryRegistrar<ExampleIK_OSimWholeBody> ExampleIK_OSimWholeBody_("Inverse kinematics", "OpenSim whole-body");
 
 ExampleIK_OSimWholeBody::ExampleIK_OSimWholeBody(int argc, char** argv) : ExampleIK(argc, argv)
 {
@@ -878,6 +901,23 @@ void ExampleIK_OSimWholeBody::initParameters()
   lambda = 0.0;
   physicsEngine = "NewtonEuler";
   integrator = "Euler";
+}
+
+
+static ExampleFactoryRegistrar<ExampleIK_AssistiveDressing> ExampleIK_AssistiveDressing_("Inverse kinematics", "Assistive dressing");
+
+ExampleIK_AssistiveDressing::ExampleIK_AssistiveDressing(int argc, char** argv) : ExampleIK(argc, argv)
+{
+}
+
+void ExampleIK_AssistiveDressing::initParameters()
+{
+  ExampleIK::initParameters();
+  xmlFileName = "cRoboSleeve.xml";
+  directory = "config/xml/Dressing";
+  algo = 1;
+  dt = 0.002;
+  physicsEngine = "SoftBullet";
 }
 
 

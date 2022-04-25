@@ -34,9 +34,11 @@
 #ifndef MATNDWIDGET_H
 #define MATNDWIDGET_H
 
+#include "AsyncWidget.h"
+#include "LcdSlider.h"
+
 #include <Rcs_MatNd.h>
 
-#include <LcdSlider.h>
 
 #include <QScrollArea>
 

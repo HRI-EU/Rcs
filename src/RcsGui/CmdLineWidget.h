@@ -1,21 +1,21 @@
 /*******************************************************************************
 
-  Copyright (c) 2022, Honda Research Institute Europe GmbH
+  Copyright (c) by Honda Research Institute Europe GmbH
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
    notice, this list of conditions and the following disclaimer in the
    documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -31,91 +31,74 @@
 
 *******************************************************************************/
 
-#ifndef EXAMPLEGUI_H
-#define EXAMPLEGUI_H
+#ifndef RCS_CMDLINEWIDGET_H
+#define RCS_CMDLINEWIDGET_H
 
-#include "AsyncWidget.h"
-#include "ExampleWidget.h"
-
-#include <QMainWindow>
 #include <QScrollArea>
-#include <QStandardItemModel>
-#include <QThread>
+#include <QString>
+#include <QStringList>
+#include <QLineEdit>
 
+#include <string>
 #include <vector>
-
+#include <cstddef>
 
 namespace Rcs
 {
 
-class ExampleItem : public QObject, public QStandardItem
+class ParameterLine
+{
+public:
+  ParameterLine(std::string name, std::string description);
+  virtual ~ParameterLine();
+  virtual void setParam(std::string paramString) = 0;
+  virtual std::string getParamAsString() const = 0;
+
+  std::string name;
+  std::string description;
+};
+
+class ParameterCollection
+{
+public:
+  bool getArgument(const char* name, char* value, const char* description);
+  bool getArgument(const char* name, int* value, const char* description);
+  bool getArgument(const char* name, std::string* value, const char* description);
+  size_t size() const;
+  ParameterLine* getEntry(size_t index);
+
+protected:
+  std::vector<ParameterLine*> paramLine;
+};
+
+class CmdLineWidget : public QScrollArea
 {
   Q_OBJECT
 
 public:
-  ExampleItem(int argc_, char** argv_, const QString& categoryName_, const QString& exampleName);
-  ~ExampleItem();
-  void start();
-  void stop();
-  void destroy();
-
-  QString categoryName;
-  ExampleBase* example;
-  pthread_t runThread;
-  QThread exampleThread;
-  int argc;
-  char** argv;
-  bool clicked;
-
-signals:
-  void startWork();
-};
-
-class ExampleGui : public Rcs::AsyncWidget
-{
-public:
-  ExampleGui(int argc, char** argv);
-  void construct();
-  int argc;
-  char** argv;
-};
-class TreeTest : public QMainWindow
-{
-  Q_OBJECT
-
-public:
-  static int create(int argc, char** argv);
+  static int create(ParameterCollection* collection);
   static bool destroy(int handle);
-  TreeTest(int argc, char** argv, QWidget* parent = 0);
-  ~TreeTest();
+
+
+private:
+  CmdLineWidget(ParameterCollection* collection);
+  static void* threadFunc(void* arg);
+};
+
+class CmdLineEntry : public QWidget
+{
+  Q_OBJECT
+
+public:
+  CmdLineEntry(ParameterLine* line);
 
 public slots:
-  void itemClicked(const QModelIndex& idx);
+  void handleText();
 
-private:
-  QStandardItemModel* model;
+protected:
+  QLineEdit* textParam;
+  ParameterLine* line;
 };
 
-
-
-
-
-#if 0
-class ExampleGui : public QMainWindow
-{
-  Q_OBJECT
-
-public:
-  static int create(int argc, char** argv);
-  static bool destroy(int handle);
-  ExampleGui(int argc, char** argv);
-  virtual ~ExampleGui();
-
-private:
-  std::vector<ExampleWidget> examples;
-};
-
-#endif
-}   // namespace Rcs
-
-#endif // EXAMPLEGUI_H
+}
+#endif   // RCS_CMDLINEWIDGET_H
