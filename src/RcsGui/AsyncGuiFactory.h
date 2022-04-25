@@ -38,17 +38,12 @@
 #include "AsyncWidget.h"
 
 #include <vector>
+#include <pthread.h>
 
 
 namespace Rcs
 {
 
-// This class exists to allow a complete widget destruction when closing
-// the window. The sigIsDisconnected slot is connected to the widget's close
-// signal, and does set the widget pointer to NULL after deletion in the Gui
-// thread.
-// QT does not allow to this class being a nested class due to some QObject
-// restrictions.
 class WidgetLauncher : public QObject
 {
   Q_OBJECT
@@ -56,13 +51,14 @@ class WidgetLauncher : public QObject
 public:
 
   WidgetLauncher();
-  virtual ~WidgetLauncher();
-  virtual bool event(QEvent* ev);
+  ~WidgetLauncher();
+  bool event(QEvent* ev);
+  size_t numWidgets() const;
 
 public slots:
   void onCloseWindow(QObject* obj);
 
-public:
+private:
   std::vector<AsyncWidget*> asyncWidgets;
 };
 

@@ -36,8 +36,7 @@
 
 #include <QWidget>
 #include <QEvent>
-
-#include <pthread.h>
+#include <QMutex>
 
 
 
@@ -55,6 +54,7 @@ class AsyncWidget
 
 public:
   AsyncWidget();
+
   virtual ~AsyncWidget();
 
   void setWidget(QWidget* widget);
@@ -77,7 +77,7 @@ private:
   bool launched;
   QWidget* w;
   static int refCount;
-  mutable pthread_mutex_t launchMtx;
+  mutable QMutex launchMtx;
 };
 
 

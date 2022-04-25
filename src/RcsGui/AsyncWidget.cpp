@@ -71,8 +71,6 @@ int AsyncWidget::refCount = 0;
 
 AsyncWidget::AsyncWidget() : launched(false), w(NULL)
 {
-  pthread_mutex_init(&launchMtx, NULL);
-
   if (!QApplication::instance())
   {
     RLOG(0, "refCount is 0 - creating GuiFactory");
@@ -115,22 +113,21 @@ AsyncWidget::~AsyncWidget()
     RLOG(0, "Gui factory thread finished");
   }
 
-  pthread_mutex_destroy(&launchMtx);
 }
 
 void AsyncWidget::setLaunched(bool isLaunched)
 {
-  pthread_mutex_lock(&launchMtx);
+  launchMtx.lock();
   launched = isLaunched;
-  pthread_mutex_unlock(&launchMtx);
+  launchMtx.unlock();
 }
 
 bool AsyncWidget::isLaunched() const
 {
   bool isLaunched;
-  pthread_mutex_lock(&launchMtx);
+  launchMtx.lock();
   isLaunched = launched;
-  pthread_mutex_unlock(&launchMtx);
+  launchMtx.unlock();
 
   return isLaunched;
 }
