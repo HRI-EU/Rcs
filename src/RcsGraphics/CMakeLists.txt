@@ -49,7 +49,7 @@ SET(RCS_GRAPHICS_SRCS
   OctomapNode.cpp
   )
 
-ADD_LIBRARY(RcsGraphics ${LIBRARY_LINKING_TYPE} ${RCS_GRAPHICS_SRCS})
+ADD_LIBRARY(RcsGraphics ${RCS_GRAPHICS_SRCS})
 
 TARGET_INCLUDE_DIRECTORIES(RcsGraphics PUBLIC
     # Header source location

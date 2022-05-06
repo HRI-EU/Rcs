@@ -36,7 +36,6 @@ ENDIF()
 
 SET(RCS_THIRDPARTY_DIR ${PROJECT_SOURCE_DIR}/external)
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-SET(LIBRARY_LINKING_TYPE "SHARED")
 SITE_NAME(HOSTNAME)
 
 MESSAGE(STATUS "Using cmake ${CMAKE_VERSION}")
@@ -93,22 +92,23 @@ OPTION(BUILD_RCS_LIBRARIES_ONLY "Build only libs, but not examples and tests" OF
 # Compile settings
 #
 ################################################################################
+SET(BUILD_SHARED_LIBS ON)
+
 IF(UNIX)
   OPTION(ENABLE_C++11 "Compile with C++11 support enabled" OFF)
 
   IF(ENABLE_C++11)
     SET(CMAKE_CXX_STANDARD 11)
     SET(CMAKE_CXX_STANDARD_REQUIRED ON)
-ELSE()
+  ELSE()
     SET(CMAKE_CXX_FLAGS "-std=c++0x")
-ENDIF()
+  ENDIF()
 
 ENDIF()
 
 # Create shared libraries for Linux and Windows: see http://www.kitware.com/blog/home/post/939
 IF(WIN32)
   ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE)
-  SET(BUILD_SHARED_LIBS ON)
   SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
   #SET(CREATE_WIN_DLL TRUE)
   #ADD_DEFINITIONS(-DWIN_DLL)
@@ -143,7 +143,6 @@ ENDIF()
 #
 ################################################################################
 INCLUDE(Externals)
-#INCLUDE(CompileSettings)
 
 IF (WIN32)
   ADD_DEFINITIONS(-D_USE_MATH_DEFINES)   # M_PI etc. for windows
