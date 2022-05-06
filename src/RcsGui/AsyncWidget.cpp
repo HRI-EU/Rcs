@@ -152,7 +152,7 @@ void AsyncWidget::launch()
   double t_launch = Timer_getSystemTime();
   while (!isLaunched())
   {
-    Timer_usleep(10000);
+    Timer_usleep(100000);
 
     double duration = Timer_getSystemTime() - t_launch;
     if (duration > 3.0)
@@ -182,7 +182,7 @@ void AsyncWidget::unlaunch()
   double t_unlaunch = Timer_getSystemTime();
   while (isLaunched())
   {
-    Timer_usleep(10000);
+    Timer_usleep(100000);
 
     double duration = Timer_getSystemTime() - t_unlaunch;
     if (duration > 3.0)
@@ -222,4 +222,13 @@ void AsyncWidget::setWidget(QWidget* widget)
   w = widget;
 }
 
+const QWidget* AsyncWidget::getWidget() const
+{
+  return w;
+}
+
+QWidget* AsyncWidget::getWidget()
+{
+  return w;
+}
 } // namespace Rcs

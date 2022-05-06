@@ -961,7 +961,7 @@ int main(int argc, char** argv)
             gn = new Rcs::GraphNode(graph);
             viewer->addInternal(gn);
             pthread_mutex_unlock(&graphLock);
-            RMSG("... done boxifying graph");
+            RMSG("... done capsulifying graph");
           }
           else if (kc->getAndResetKey('l'))
           {

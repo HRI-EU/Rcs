@@ -88,7 +88,7 @@ public:
    *         getArgumentTag("-m", (std::string*) myArg) <br>
    *         will copy 5 into the string myArg.
    */
-  bool getArgument(const char* tag, std::string* result = NULL,
+  bool getArgument(const char* tag, std::string* result,
                    const char* description=NULL, ...) const;
 
   /*! \brief Returns the argument after string "tag" as an integer. The
@@ -126,6 +126,13 @@ public:
   /*! \brief Returns the argument after string "tag" as a double.
    */
   bool getArgument(const char* tag, double* result,
+                   const char* description=NULL, ...) const;
+
+  /*! \brief Returns the argument after string "tag" as a boolean. Tag must
+   *         be "true" (case not considereed) in order to become true. All
+   *         other attributes will leave result unchanged.
+   */
+  bool getArgument(const char* tag, bool* result,
                    const char* description=NULL, ...) const;
 
   /*! \brief Returns true if an argument with name tag exists, false

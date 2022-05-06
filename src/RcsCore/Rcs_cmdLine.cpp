@@ -283,6 +283,37 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, double* res,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+bool Rcs::CmdLineParser::getArgument(const char* tag, bool* res,
+                                     const char* description, ...) const
+{
+  if (description != NULL)
+  {
+    va_list args;
+    va_start(args, description);
+    appendDescription(tag, description, args);
+    va_end(args);
+  }
+
+  int idx = getTagIndex(tag);
+
+  if (idx == -1)
+  {
+    return false;
+  }
+
+  const char* arg = argv[idx + 1];
+
+  if (STRCASEEQ(arg, "true"))
+  {
+    *res = true;
+  }
+
+  return true;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 bool Rcs::CmdLineParser::hasArgument(const char* tag,
                                      const char* description, ...) const
 {

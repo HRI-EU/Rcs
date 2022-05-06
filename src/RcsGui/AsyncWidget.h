@@ -59,6 +59,9 @@ public:
 
   void setWidget(QWidget* widget);
 
+  const QWidget* getWidget() const;
+
+  QWidget* getWidget();
   // Emits an event that calls construct() from the Gui thread
   void launch();
 
