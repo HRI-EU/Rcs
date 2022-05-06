@@ -61,9 +61,31 @@ public:
 class ParameterCollection
 {
 public:
-  bool getArgument(const char* name, char* value, const char* description);
-  bool getArgument(const char* name, int* value, const char* description);
-  bool getArgument(const char* name, std::string* value, const char* description);
+
+  // String types
+  bool getArgument(const char* name, char* value,
+                   const char* description=NULL, ...);
+  bool getArgument(const char* name, std::string* value,
+                   const char* description=NULL, ...);
+
+  // Integer types
+  bool getArgument(const char* name, int* value, 
+                   const char* description=NULL, ...);
+  bool getArgument(const char* name, unsigned int* value,
+                   const char* description=NULL, ...);
+  bool getArgument(const char* name, unsigned long* value,
+                   const char* description=NULL, ...);
+  bool getArgument(const char* name, unsigned long long* value,
+                   const char* description=NULL, ...);
+  bool getArgument(const char* name, bool* value,
+                   const char* description=NULL, ...);
+
+  // Floating point types
+  bool getArgument(const char* tag, double* result,
+                   const char* description=NULL, ...);
+  bool getArgument(const char* tag, float* result,
+                   const char* description=NULL, ...);
+
   size_t size() const;
   ParameterLine* getEntry(size_t index);
 
@@ -79,9 +101,9 @@ public:
   static int create(ParameterCollection* collection);
   static bool destroy(int handle);
 
+  CmdLineWidget(ParameterCollection* collection, QWidget* parent=NULL);
 
 private:
-  CmdLineWidget(ParameterCollection* collection);
   static void* threadFunc(void* arg);
 };
 
