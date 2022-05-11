@@ -231,4 +231,15 @@ QWidget* AsyncWidget::getWidget()
 {
   return w;
 }
+
+void AsyncWidget::wait()
+{
+  while (getWidget())
+  {
+    Timer_usleep(100000);
+  }
+
+  RLOG(0, "Thank you for waiting");
+}
+
 } // namespace Rcs

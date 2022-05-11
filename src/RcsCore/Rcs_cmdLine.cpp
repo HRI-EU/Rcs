@@ -79,10 +79,17 @@ Rcs::CmdLineParser::CmdLineParser()
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+Rcs::CmdLineParser::~CmdLineParser()
+{
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
 bool Rcs::CmdLineParser::getArgument(const char* tag, char* str,
-                                     const char* description, ...) const
+                                     const char* description, ...)
 {
   if (description != NULL)
   {
@@ -108,7 +115,7 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, char* str,
  * See header.
  ******************************************************************************/
 bool Rcs::CmdLineParser::getArgument(const char* tag, std::string* result,
-                                     const char* description, ...) const
+                                     const char* description, ...)
 {
   if (description != NULL)
   {
@@ -134,7 +141,7 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, std::string* result,
  * See header.
  ******************************************************************************/
 bool Rcs::CmdLineParser::getArgument(const char* tag, int* res,
-                                     const char* description, ...) const
+                                     const char* description, ...)
 {
   if (description != NULL)
   {
@@ -161,7 +168,7 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, int* res,
  * See header.
  ******************************************************************************/
 bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned int* res,
-                                     const char* description, ...) const
+                                     const char* description, ...)
 {
   if (description != NULL)
   {
@@ -193,7 +200,7 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned int* res,
  * See header.
  ******************************************************************************/
 bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned long* res,
-                                     const char* description, ...) const
+                                     const char* description, ...)
 {
   if (description != NULL)
   {
@@ -225,7 +232,7 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned long* res,
  * See header.
  ******************************************************************************/
 bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned long long* res,
-                                     const char* description, ...) const
+                                     const char* description, ...)
 {
   if (description != NULL)
   {
@@ -257,7 +264,7 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, unsigned long long* res,
  * See header.
  ******************************************************************************/
 bool Rcs::CmdLineParser::getArgument(const char* tag, double* res,
-                                     const char* description, ...) const
+                                     const char* description, ...)
 {
   if (description != NULL)
   {
@@ -274,7 +281,7 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, double* res,
     return false;
   }
 
-  *res = atof(argv[idx + 1]);
+  *res = strtof(argv[idx + 1], NULL);
   RCHECK((*res>-DBL_MAX) && (*res<DBL_MAX));
 
   return true;
@@ -283,8 +290,35 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, double* res,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+bool Rcs::CmdLineParser::getArgument(const char* tag, float* res,
+                                     const char* description, ...)
+{
+  if (description != NULL)
+  {
+    va_list args;
+    va_start(args, description);
+    appendDescription(tag, description, args);
+    va_end(args);
+  }
+
+  int idx = getTagIndex(tag);
+
+  if (idx == -1)
+  {
+    return false;
+  }
+
+  *res = strtof(argv[idx + 1], NULL);
+  RCHECK((*res>-FLT_MAX) && (*res<FLT_MAX));
+
+  return true;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 bool Rcs::CmdLineParser::getArgument(const char* tag, bool* res,
-                                     const char* description, ...) const
+                                     const char* description, ...)
 {
   if (description != NULL)
   {
@@ -315,7 +349,7 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, bool* res,
  * See header.
  ******************************************************************************/
 bool Rcs::CmdLineParser::hasArgument(const char* tag,
-                                     const char* description, ...) const
+                                     const char* description, ...)
 {
   if (description != NULL)
   {
@@ -359,11 +393,20 @@ void Rcs::CmdLineParser::printArguments() const
 }
 
 /*******************************************************************************
- * See header.
+ * See header. This method is static, therefore not const.
  ******************************************************************************/
 void Rcs::CmdLineParser::print()
 {
-  printf("Parsed arguments:\n\n");
+  std::string res = printToString();
+  printf("%s", res.c_str());
+}
+
+/*******************************************************************************
+ * See header. This method is static, therefore not const.
+ ******************************************************************************/
+std::string Rcs::CmdLineParser::printToString()
+{
+  std::string res = "Parsed arguments:\n\n";
   std::map<std::string, std::string>::iterator it;
 
   size_t tagWidth = 0;
@@ -377,19 +420,23 @@ void Rcs::CmdLineParser::print()
 
   for (it = parsedArguments.begin(); it != parsedArguments.end(); ++it)
   {
-    printf("\t%s", it->first.c_str());
+    res += '\t';
+    res += it->first;
 
     int whiteSpaces = tagWidth-strlen(it->first.c_str());
 
     for (int i=0; i<whiteSpaces; i++)
     {
-      printf(" ");
+      res += " ";
     }
 
-    printf("%s\n", it->second.c_str());
+    res += it->second;
+    res += '\n';
   }
 
-  printf("\n");
+  res += '\n';
+
+  return res;
 }
 
 /*******************************************************************************
@@ -397,7 +444,7 @@ void Rcs::CmdLineParser::print()
  ******************************************************************************/
 void Rcs::CmdLineParser::addDescription(const char* tag,
                                         const char* description,
-                                        ...) const
+                                        ...)
 {
   if (tag==NULL)
   {
@@ -419,7 +466,7 @@ void Rcs::CmdLineParser::addDescription(const char* tag,
  ******************************************************************************/
 void Rcs::CmdLineParser::appendDescription(const char* tag,
                                            const char* description,
-                                           va_list args) const
+                                           va_list args)
 {
   RCHECK(description != NULL);
 

@@ -36,6 +36,9 @@
 
 #include "AsyncWidget.h"
 #include "ExampleWidget.h"
+#include "CmdLineWidget.h"
+
+#include <ExampleBase.h>
 
 #include <QMainWindow>
 #include <QScrollArea>
@@ -48,29 +51,6 @@
 namespace Rcs
 {
 
-class ExampleItem : public QObject, public QStandardItem
-{
-  Q_OBJECT
-
-public:
-  ExampleItem(int argc_, char** argv_, const QString& categoryName_, const QString& exampleName);
-  ~ExampleItem();
-  void start();
-  void stop();
-  void destroy();
-
-  QString categoryName;
-  ExampleBase* example;
-  pthread_t runThread;
-  QThread exampleThread;
-  int argc;
-  char** argv;
-  bool clicked;
-
-signals:
-  void startWork();
-};
-
 class ExampleGui : public Rcs::AsyncWidget
 {
 public:
@@ -79,15 +59,48 @@ public:
   int argc;
   char** argv;
 };
-class TreeTest : public QMainWindow
+
+class ExampleItem : public QObject, public QStandardItem
+{
+  Q_OBJECT
+
+public:
+  ExampleItem(int argc, char** argv, const QString& categoryName,
+              const QString& exampleName);
+  ~ExampleItem();
+  void start();
+  void stop();
+  void destroy();
+
+  QString categoryName;
+  ExampleBase* example;
+  QThread exampleThread;
+  int argc;
+  char** argv;
+  bool clicked;
+  bool parsingFinished;
+  QTimer* timer;
+  CmdLineGui* gui;
+  TextGui* helpWin;
+  ParameterCollection pc;
+  bool withArgParser;
+
+signals:
+  void startWork();
+
+public slots:
+  void timerCallback();
+};
+
+class ExampleWidget : public QMainWindow
 {
   Q_OBJECT
 
 public:
   static int create(int argc, char** argv);
   static bool destroy(int handle);
-  TreeTest(int argc, char** argv, QWidget* parent = 0);
-  ~TreeTest();
+  ExampleWidget(int argc, char** argv, QWidget* parent=NULL);
+  ~ExampleWidget();
 
 public slots:
   void itemClicked(const QModelIndex& idx);
@@ -96,26 +109,6 @@ private:
   QStandardItemModel* model;
 };
 
-
-
-
-
-#if 0
-class ExampleGui : public QMainWindow
-{
-  Q_OBJECT
-
-public:
-  static int create(int argc, char** argv);
-  static bool destroy(int handle);
-  ExampleGui(int argc, char** argv);
-  virtual ~ExampleGui();
-
-private:
-  std::vector<ExampleWidget> examples;
-};
-
-#endif
 }   // namespace Rcs
 
 #endif // EXAMPLEGUI_H

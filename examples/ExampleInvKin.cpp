@@ -140,69 +140,68 @@ void ExampleIK::initParameters()
   integrator = "Fehlberg";
 }
 
-void ExampleIK::parseArgs(int argc, char** argv)
+void ExampleIK::parseArgs(CmdLineParser* argP)
 {
-  Rcs::CmdLineParser argP;
-  valgrind = argP.hasArgument("-valgrind",
-                              "Start without Guis and graphics");
-  simpleGraphics = argP.hasArgument("-simpleGraphics", "OpenGL without fan"
-                                    "cy stuff (shadows, anti-aliasing)");
-  if (argP.hasArgument("-nomutex", "Graphics without mutex"))
+  valgrind = argP->hasArgument("-valgrind",
+                               "Start without Guis and graphics");
+  simpleGraphics = argP->hasArgument("-simpleGraphics", "OpenGL without fan"
+                                     "cy stuff (shadows, anti-aliasing)");
+  if (argP->hasArgument("-nomutex", "Graphics without mutex"))
   {
     mtx = NULL;
   }
 
-  argP.getArgument("-i", &integrator, "Integrator for Newton-Euler "
-                   "simulation (default is \"%s\")", integrator.c_str());
-  argP.getArgument("-algo", &algo, "IK algorithm: 0: left inverse, 1: "
-                   "right inverse (default is %d)", algo);
-  argP.getArgument("-alpha", &alpha,
-                   "Null space scaling factor (default is %g)", alpha);
-  argP.getArgument("-lambda", &lambda, "Regularization (default is %g)",
-                   lambda);
-  argP.getArgument("-f", &xmlFileName, "Configuration file (default is %s)",
-                   xmlFileName.c_str());
-  argP.getArgument("-dir", &directory, "Configuration file directory "
-                   "(default is %s)", directory.c_str());
-  argP.getArgument("-tmc", &tmc, "Filter time constant for sliders: 1 is "
-                   "unfiltered (default: %f)", tmc);
-  argP.getArgument("-dt", &dt, "Sampling time interval (default: %f)", dt);
-  argP.getArgument("-clipLimit", &clipLimit, "Clip limit for dx (default "
-                   "is DBL_MAX)");
-  argP.getArgument("-staticEffort", &effortBdyName,
-                   "Body to map static effort (default: none)");
-  argP.getArgument("-physics_config", &physicsCfg, "Configuration file name"
-                   " for physics (default is %s)", physicsCfg.c_str());
-  argP.getArgument("-physicsEngine", &physicsEngine, "Physics engine "
-                   "(default is \"%s\")", physicsEngine.c_str());
-  argP.getArgument("-scaleDragForce", &scaleDragForce, "Scale factor for"
-                   " mouse dragger (default is \"%f\")", scaleDragForce);
+  argP->getArgument("-i", &integrator, "Integrator for Newton-Euler "
+                    "simulation (default is \"%s\")", integrator.c_str());
+  argP->getArgument("-algo", &algo, "IK algorithm: 0: left inverse, 1: "
+                    "right inverse (default is %d)", algo);
+  argP->getArgument("-alpha", &alpha,
+                    "Null space scaling factor (default is %g)", alpha);
+  argP->getArgument("-lambda", &lambda, "Regularization (default is %g)",
+                    lambda);
+  argP->getArgument("-f", &xmlFileName, "Configuration file (default is %s)",
+                    xmlFileName.c_str());
+  argP->getArgument("-dir", &directory, "Configuration file directory "
+                    "(default is %s)", directory.c_str());
+  argP->getArgument("-tmc", &tmc, "Filter time constant for sliders: 1 is "
+                    "unfiltered (default: %f)", tmc);
+  argP->getArgument("-dt", &dt, "Sampling time interval (default: %f)", dt);
+  argP->getArgument("-clipLimit", &clipLimit, "Clip limit for dx (default "
+                    "is DBL_MAX)");
+  argP->getArgument("-staticEffort", &effortBdyName,
+                    "Body to map static effort (default: none)");
+  argP->getArgument("-physics_config", &physicsCfg, "Configuration file name"
+                    " for physics (default is %s)", physicsCfg.c_str());
+  argP->getArgument("-physicsEngine", &physicsEngine, "Physics engine "
+                    "(default is \"%s\")", physicsEngine.c_str());
+  argP->getArgument("-scaleDragForce", &scaleDragForce, "Scale factor for"
+                    " mouse dragger (default is \"%f\")", scaleDragForce);
 
-  ffwd = argP.hasArgument("-ffwd", "Feed-forward dx only");
-  skipGui = argP.hasArgument("-skipGui", "No GUIs, only viewer");
-  pause = argP.hasArgument("-pause", "Pause after each iteration");
-  launchJointWidget = argP.hasArgument("-jointWidget",
-                                       "Launch JointWidget");
-  manipulability = argP.hasArgument("-manipulability",
-                                    "Manipulability criterion in "
-                                    "null space");
-  cAvoidance = argP.hasArgument("-ca", "Collision avoidance in "
-                                "null space");
-  constraintIK = argP.hasArgument("-constraintIK", "Use constraint IK"
-                                  " solver");
-  initToQ0 = argP.hasArgument("-setDefaultStateFromInit", "Set the "
-                              "joint center defaults from the initial"
-                              " state");
-  testCopying = argP.hasArgument("-copy", "Test copying");
-  noHud = argP.hasArgument("-noHud", "Don't show HUD");
-  posCntrl = argP.hasArgument("-posCntrl",
-                              "Enforce position control with physics");
+  ffwd = argP->hasArgument("-ffwd", "Feed-forward dx only");
+  skipGui = argP->hasArgument("-skipGui", "No GUIs, only viewer");
+  pause = argP->hasArgument("-pause", "Pause after each iteration");
+  launchJointWidget = argP->hasArgument("-jointWidget",
+                                        "Launch JointWidget");
+  manipulability = argP->hasArgument("-manipulability",
+                                     "Manipulability criterion in "
+                                     "null space");
+  cAvoidance = argP->hasArgument("-ca", "Collision avoidance in "
+                                 "null space");
+  constraintIK = argP->hasArgument("-constraintIK", "Use constraint IK"
+                                   " solver");
+  initToQ0 = argP->hasArgument("-setDefaultStateFromInit", "Set the "
+                               "joint center defaults from the initial"
+                               " state");
+  testCopying = argP->hasArgument("-copy", "Test copying");
+  noHud = argP->hasArgument("-noHud", "Don't show HUD");
+  posCntrl = argP->hasArgument("-posCntrl",
+                               "Enforce position control with physics");
 
   // Option to set locale - mainly for parsing tests
-  if (argP.hasArgument("-locale", "Set locale"))
+  if (argP->hasArgument("-locale", "Set locale"))
   {
     char localeStr[256] = "de_DE.utf8";
-    argP.getArgument("-locale", localeStr);
+    argP->getArgument("-locale", localeStr);
     char* res = setlocale(LC_ALL, localeStr);
     if (res == NULL)
     {
@@ -218,8 +217,9 @@ void ExampleIK::parseArgs(int argc, char** argv)
 
 }
 
-void ExampleIK::help()
+std::string ExampleIK::help()
 {
+  std::stringstream s;
   printf("Resolved motion rate control test\n\n");
   printf("Here are a few examples:\n");
   printf("bin/Rcs -m 5 -dir config/xml/DexBot -f cAction.xml\n");
@@ -232,6 +232,7 @@ void ExampleIK::help()
   printf("bin/Rcs -m 5 -dir config/xml/Dressing -f cRoboSleeve.xml -algo 1 -physicsEngine SoftBullet -dt 0.002\n");
   printf("bin/Rcs -m 5 -dir config/xml/AvatarSkeleton -f cOpenSimWholeBody.xml -physicsEngine NewtonEuler -algo 1 -lambda 0 -i Euler\n");
   ControllerBase::printUsage(xmlFileName);
+  return s.str();
 }
 
 bool ExampleIK::initAlgo()

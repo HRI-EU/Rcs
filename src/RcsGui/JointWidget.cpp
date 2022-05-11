@@ -62,7 +62,7 @@ JointGui::JointGui(const RcsGraph* graph_,
                    MatNd* q_curr_,
                    bool alwaysWriteToQ_,
                    bool passive_) :
-  graph(NULL), constGraph(graph_), graphLock(graphLock_),
+  AsyncWidget(), graph(NULL), constGraph(graph_), graphLock(graphLock_),
   q_des(q_des_), q_curr(q_curr_), alwaysWriteToQ(alwaysWriteToQ_),
   passive(passive_)
 {
@@ -77,7 +77,7 @@ JointGui::JointGui(RcsGraph* graph_,
                    MatNd* q_curr_,
                    bool alwaysWriteToQ_,
                    bool passive_) :
-  graph(graph_), constGraph(graph_), graphLock(graphLock_),
+  AsyncWidget(), graph(graph_), constGraph(graph_), graphLock(graphLock_),
   q_des(q_des_), q_curr(q_curr_), alwaysWriteToQ(alwaysWriteToQ_),
   passive(passive_)
 {
@@ -97,6 +97,7 @@ void JointGui::construct()
   setWidget(test);
   RLOG(0, "Done");
 }
+
 /*******************************************************************************
  * Factory instantiation method for Qt thread.
  ******************************************************************************/

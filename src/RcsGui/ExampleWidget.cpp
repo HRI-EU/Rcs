@@ -30,7 +30,7 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *******************************************************************************/
-
+#if 0
 #include "ExampleWidget.h"
 #include "Rcs_guiFactory.h"
 #include "Rcs_cmdLine.h"
@@ -177,3 +177,4 @@ void ExampleWidget::destroy()
 }
 
 }   // namespace Rcs
+#endif

@@ -44,7 +44,6 @@
 #include <HUD.h>
 #include <JointWidget.h>
 
-#include <string>
 #include <pthread.h>
 
 
@@ -58,12 +57,12 @@ public:
   virtual ~ExampleFK();
   virtual void initParameters();
   virtual void clear();
-  virtual void parseArgs(int argc, char** argv);
+  virtual void parseArgs(CmdLineParser* parser);
   virtual bool initAlgo();
   virtual void initGraphics();
   virtual void initGuis();
   virtual void step();
-  virtual void help();
+  virtual std::string help();
   virtual void handleKeys();
 
 protected:
@@ -85,6 +84,8 @@ protected:
   bool noHud;
   bool randomGraph;
   bool shapifyReplace;
+  bool noMutex;
+  bool helpMsg;
   RcsGraph* graph;
   MatNd* bvhTraj;
   pthread_mutex_t graphLock;

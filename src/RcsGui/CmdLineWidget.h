@@ -34,10 +34,15 @@
 #ifndef RCS_CMDLINEWIDGET_H
 #define RCS_CMDLINEWIDGET_H
 
+#include "AsyncWidget.h"
+
+#include <Rcs_cmdLine.h>
+
 #include <QScrollArea>
 #include <QString>
 #include <QStringList>
 #include <QLineEdit>
+#include <QLabel>
 
 #include <string>
 #include <vector>
@@ -46,21 +51,22 @@
 namespace Rcs
 {
 
-class ParameterLine
+class ParameterCollection : public CmdLineParser
 {
 public:
-  ParameterLine(std::string name, std::string description);
-  virtual ~ParameterLine();
-  virtual void setParam(std::string paramString) = 0;
-  virtual std::string getParamAsString() const = 0;
+  class Entry
+  {
+  public:
+    virtual ~Entry()
+    {
+    }
+    virtual void setParam(std::string paramString) = 0;
+    virtual std::string getParamAsString() const = 0;
 
-  std::string name;
-  std::string description;
-};
+    virtual std::string getName() const = 0;
+    virtual std::string getDescription() const = 0;
+  };
 
-class ParameterCollection
-{
-public:
 
   // String types
   bool getArgument(const char* name, char* value,
@@ -69,7 +75,7 @@ public:
                    const char* description=NULL, ...);
 
   // Integer types
-  bool getArgument(const char* name, int* value, 
+  bool getArgument(const char* name, int* value,
                    const char* description=NULL, ...);
   bool getArgument(const char* name, unsigned int* value,
                    const char* description=NULL, ...);
@@ -87,10 +93,24 @@ public:
                    const char* description=NULL, ...);
 
   size_t size() const;
-  ParameterLine* getEntry(size_t index);
+  Entry* getEntry(size_t index);
+  void clear();
 
 protected:
-  std::vector<ParameterLine*> paramLine;
+  std::vector<Entry*> paramLine;
+};
+
+
+
+class CmdLineGui : public Rcs::AsyncWidget
+{
+public:
+  CmdLineGui(ParameterCollection* collection);
+
+  void construct();
+
+protected:
+  ParameterCollection* collection;
 };
 
 class CmdLineWidget : public QScrollArea
@@ -103,8 +123,6 @@ public:
 
   CmdLineWidget(ParameterCollection* collection, QWidget* parent=NULL);
 
-private:
-  static void* threadFunc(void* arg);
 };
 
 class CmdLineEntry : public QWidget
@@ -112,14 +130,30 @@ class CmdLineEntry : public QWidget
   Q_OBJECT
 
 public:
-  CmdLineEntry(ParameterLine* line);
+  CmdLineEntry(ParameterCollection::Entry* line);
 
 public slots:
   void handleText();
 
 protected:
   QLineEdit* textParam;
-  ParameterLine* line;
+  ParameterCollection::Entry* line;
+};
+class TextGui : public Rcs::AsyncWidget
+{
+public:
+  TextGui(std::string text_) : AsyncWidget(), text(text_)
+  {
+    launch();
+  }
+
+  void construct()
+  {
+    setWidget(new QLabel(QString::fromStdString(text)));
+  }
+
+protected:
+  std::string text;
 };
 
 }

@@ -65,6 +65,10 @@ static void addDelim(std::string& str)
 }
 
 
+std::vector<std::string> getResourcePath()
+{
+  return RCSRESOURCEPATH;
+}
 extern "C" {
 
 

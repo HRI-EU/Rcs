@@ -33,7 +33,6 @@
 
 #include "CmdLineWidget.h"
 
-#include "Rcs_guiFactory.h"
 #include <Rcs_macros.h>
 
 #include <QLayout>
@@ -52,20 +51,48 @@
 namespace Rcs
 {
 
-ParameterLine::ParameterLine(std::string name_, std::string description_) :
-  name(name_), description(description_)
-{
-}
-
-ParameterLine::~ParameterLine()
-{
-}
-
-class ParameterLineChar : public ParameterLine
+template<typename T>
+class ParameterLine : public ParameterCollection::Entry
 {
 public:
-  ParameterLineChar(std::string name, std::string description, char* param_) :
-    ParameterLine(name, description), param(param_)
+  ParameterLine(std::string name_, std::string description_, T* param_) :
+    name(name_), description(description_), param(param_)
+  {
+  }
+
+  virtual ~ParameterLine()
+  {
+  }
+
+  virtual void setParam(std::string paramString) = 0;
+
+  virtual std::string getParamAsString() const
+  {
+    std::stringstream  sstream;
+    sstream << (*param);
+    return sstream.str();
+  }
+
+  std::string getName() const
+  {
+    return name;
+  }
+
+  std::string getDescription() const
+  {
+    return description;
+  }
+
+  std::string name;
+  std::string description;
+  T* param;
+};
+
+class ParameterLineChar : public ParameterLine<char>
+{
+public:
+  ParameterLineChar(std::string name, std::string description, char* param) :
+    ParameterLine(name, description, param)
   {
   }
   void setParam(std::string paramString)
@@ -77,107 +104,68 @@ public:
     return std::string(param);
   }
 
-protected:
-  char* param;
 };
 
-class ParameterLineInt : public ParameterLine
+class ParameterLineInt : public ParameterLine<int>
 {
 public:
-  ParameterLineInt(std::string name, std::string description, int* param_) :
-    ParameterLine(name, description), param(param_)
+  ParameterLineInt(std::string name, std::string description, int* param) :
+    ParameterLine(name, description, param)
   {
   }
   void setParam(std::string paramString)
   {
     *param = atoi(paramString.c_str());
   }
-  std::string getParamAsString() const
-  {
-    std::ostringstream sstream;
-    sstream << (*param);
-    return sstream.str();
-  }
-
-protected:
-  int* param;
 };
 
-class ParameterLineUnsignedInt : public ParameterLine
+class ParameterLineUnsignedInt : public ParameterLine<unsigned int>
 {
 public:
   ParameterLineUnsignedInt(std::string name, std::string description,
-                           unsigned int* param_) :
-    ParameterLine(name, description), param(param_)
+                           unsigned int* param) :
+    ParameterLine(name, description, param)
   {
   }
   void setParam(std::string paramString)
   {
     *param = atoi(paramString.c_str());
   }
-  std::string getParamAsString() const
-  {
-    std::ostringstream sstream;
-    sstream << (*param);
-    return sstream.str();
-  }
-
-protected:
-  unsigned int* param;
 };
 
-class ParameterLineUnsignedLong : public ParameterLine
+class ParameterLineUnsignedLong : public ParameterLine<unsigned long>
 {
 public:
   ParameterLineUnsignedLong(std::string name, std::string description,
-                            unsigned long* param_) :
-    ParameterLine(name, description), param(param_)
+                            unsigned long* param) :
+    ParameterLine(name, description, param)
   {
   }
   void setParam(std::string paramString)
   {
     *param = atol(paramString.c_str());
   }
-  std::string getParamAsString() const
-  {
-    std::ostringstream sstream;
-    sstream << (*param);
-    return sstream.str();
-  }
-
-protected:
-  unsigned long* param;
 };
 
-class ParameterLineUnsignedLongLong : public ParameterLine
+class ParameterLineUnsignedLongLong : public ParameterLine<unsigned long long>
 {
 public:
   ParameterLineUnsignedLongLong(std::string name, std::string description,
-                                unsigned long long* param_) :
-    ParameterLine(name, description), param(param_)
+                                unsigned long long* param) :
+    ParameterLine(name, description, param)
   {
   }
   void setParam(std::string paramString)
   {
     *param = atoll(paramString.c_str());
   }
-  std::string getParamAsString() const
-  {
-    std::ostringstream sstream;
-    sstream << (*param);
-    return sstream.str();
-  }
-
-protected:
-  unsigned long long* param;
 };
 
-class ParameterLineBool : public ParameterLine
+class ParameterLineBool : public ParameterLine<bool>
 {
 public:
-  ParameterLineBool(std::string name, std::string description,
-                    bool* param_) :
-    ParameterLine(name, description), param(param_)
+  ParameterLineBool(std::string name, std::string description, bool* param) :
+    ParameterLine(name, description, param)
   {
   }
   void setParam(std::string paramString)
@@ -200,16 +188,13 @@ public:
 
     return std::string("false");
   }
-
-protected:
-  bool* param;
 };
 
-class ParameterLineString : public ParameterLine
+class ParameterLineString : public ParameterLine<std::string>
 {
 public:
-  ParameterLineString(std::string name, std::string description, std::string* param_) :
-    ParameterLine(name, description), param(param_)
+  ParameterLineString(std::string name, std::string description, std::string* param) :
+    ParameterLine(name, description, param)
   {
   }
   void setParam(std::string paramString)
@@ -221,52 +206,32 @@ public:
     return *param;
   }
 
-protected:
-  std::string* param;
 };
 
-class ParameterLineDouble : public ParameterLine
+class ParameterLineDouble : public ParameterLine<double>
 {
 public:
-  ParameterLineDouble(std::string name, std::string description, double* param_) :
-    ParameterLine(name, description), param(param_)
+  ParameterLineDouble(std::string name, std::string description, double* param) :
+    ParameterLine(name, description, param)
   {
   }
   void setParam(std::string paramString)
   {
     *param = strtod(paramString.c_str(), NULL);
   }
-  std::string getParamAsString() const
-  {
-    std::ostringstream sstream;
-    sstream << (*param);
-    return sstream.str();
-  }
-
-protected:
-  double* param;
 };
 
-class ParameterLineFloat : public ParameterLine
+class ParameterLineFloat : public ParameterLine<float>
 {
 public:
-  ParameterLineFloat(std::string name, std::string description, float* param_) :
-    ParameterLine(name, description), param(param_)
+  ParameterLineFloat(std::string name, std::string description, float* param) :
+    ParameterLine(name, description, param)
   {
   }
   void setParam(std::string paramString)
   {
     *param = strtof(paramString.c_str(), NULL);
   }
-  std::string getParamAsString() const
-  {
-    std::ostringstream sstream;
-    sstream << (*param);
-    return sstream.str();
-  }
-
-protected:
-  float* param;
 };
 
 
@@ -277,90 +242,141 @@ protected:
 bool ParameterCollection::getArgument(const char* name, char* value,
                                       const char* description, ...)
 {
-  paramLine.push_back(new ParameterLineChar(name, description, value));
+  char buffer[512] = "";
+  va_list args;
+  va_start(args, description);
+  vsprintf(buffer, description, args);
+  va_end(args);
+  paramLine.push_back(new ParameterLineChar(name, buffer, value));
   return true;
 }
 bool ParameterCollection::getArgument(const char* name, int* value,
                                       const char* description, ...)
 {
-  paramLine.push_back(new ParameterLineInt(name, description, value));
+  char buffer[512] = "";
+  va_list args;
+  va_start(args, description);
+  vsprintf(buffer, description, args);
+  va_end(args);
+  paramLine.push_back(new ParameterLineInt(name, buffer, value));
   return true;
 }
 bool ParameterCollection::getArgument(const char* name, unsigned int* value,
                                       const char* description, ...)
 {
-  paramLine.push_back(new ParameterLineUnsignedInt(name, description, value));
+  char buffer[512] = "";
+  va_list args;
+  va_start(args, description);
+  vsprintf(buffer, description, args);
+  va_end(args);
+  paramLine.push_back(new ParameterLineUnsignedInt(name, buffer, value));
   return true;
 }
 bool ParameterCollection::getArgument(const char* name, unsigned long* value,
                                       const char* description, ...)
 {
-  paramLine.push_back(new ParameterLineUnsignedLong(name, description, value));
+  char buffer[512] = "";
+  va_list args;
+  va_start(args, description);
+  vsprintf(buffer, description, args);
+  va_end(args);
+  paramLine.push_back(new ParameterLineUnsignedLong(name, buffer, value));
   return true;
 }
 bool ParameterCollection::getArgument(const char* name, unsigned long long* value,
                                       const char* description, ...)
 {
-  paramLine.push_back(new ParameterLineUnsignedLongLong(name, description, value));
+  char buffer[512] = "";
+  va_list args;
+  va_start(args, description);
+  vsprintf(buffer, description, args);
+  va_end(args);
+  paramLine.push_back(new ParameterLineUnsignedLongLong(name, buffer, value));
   return true;
 }
 bool ParameterCollection::getArgument(const char* name, bool* value,
                                       const char* description, ...)
 {
-  paramLine.push_back(new ParameterLineBool(name, description, value));
+  char buffer[512] = "";
+  va_list args;
+  va_start(args, description);
+  vsprintf(buffer, description, args);
+  va_end(args);
+  paramLine.push_back(new ParameterLineBool(name, buffer, value));
   return true;
 }
 bool ParameterCollection::getArgument(const char* name, std::string* value,
                                       const char* description, ...)
 {
-  paramLine.push_back(new ParameterLineString(name, description, value));
+  char buffer[512] = "";
+  va_list args;
+  va_start(args, description);
+  vsprintf(buffer, description, args);
+  va_end(args);
+  paramLine.push_back(new ParameterLineString(name, buffer, value));
   return true;
 }
 bool ParameterCollection::getArgument(const char* name, double* value,
                                       const char* description, ...)
 {
-  paramLine.push_back(new ParameterLineDouble(name, description, value));
+  char buffer[512] = "";
+  va_list args;
+  va_start(args, description);
+  vsprintf(buffer, description, args);
+  va_end(args);
+  paramLine.push_back(new ParameterLineDouble(name, buffer, value));
   return true;
 }
 bool ParameterCollection::getArgument(const char* name, float* value,
                                       const char* description, ...)
 {
-  paramLine.push_back(new ParameterLineFloat(name, description, value));
+  char buffer[512] = "";
+  va_list args;
+  va_start(args, description);
+  vsprintf(buffer, description, args);
+  va_end(args);
+  paramLine.push_back(new ParameterLineFloat(name, buffer, value));
   return true;
 }
 size_t ParameterCollection::size() const
 {
   return paramLine.size();
 }
-ParameterLine* ParameterCollection::getEntry(size_t index)
+ParameterCollection::Entry* ParameterCollection::getEntry(size_t index)
 {
   return paramLine[index];
 }
 
-
-
-
-
-
-
-
-void* CmdLineWidget::threadFunc(void* arg)
+void ParameterCollection::clear()
 {
-  ParameterCollection* collection = (ParameterCollection*) arg;
-  CmdLineWidget* gui = new CmdLineWidget(collection);
-  gui->show();
-  return gui;
+  for (size_t i=0; i<paramLine.size(); ++i)
+  {
+    delete paramLine[i];
+  }
+
+  paramLine.clear();
 }
 
-int CmdLineWidget::create(ParameterCollection* collection)
+
+
+
+
+
+
+
+
+
+
+CmdLineGui::CmdLineGui(ParameterCollection* pc) : AsyncWidget(), collection(pc)
 {
-  return RcsGuiFactory_requestGUI(threadFunc, (void*) collection);
+  launch();
 }
 
-bool CmdLineWidget::destroy(int handle)
+void CmdLineGui::construct()
 {
-  return RcsGuiFactory_destroyGUI(handle);
+  setWidget(new CmdLineWidget(collection));
 }
+
 
 
 CmdLineWidget::CmdLineWidget(ParameterCollection* collection, QWidget* parent) :
@@ -382,18 +398,26 @@ CmdLineWidget::CmdLineWidget(ParameterCollection* collection, QWidget* parent) :
 }
 
 
-CmdLineEntry::CmdLineEntry(ParameterLine* line_) : line(line_)
+CmdLineEntry::CmdLineEntry(ParameterCollection::Entry* line_) : line(line_)
 {
   QHBoxLayout* hbox = new QHBoxLayout(this);
 
-  QLabel* label = new QLabel(QString::fromStdString(line->name));
+  QLabel* label = new QLabel(QString::fromStdString(line->getName()));
   hbox->addWidget(label);
 
   this->textParam = new QLineEdit(this);
   textParam->setText(QString::fromStdString(line->getParamAsString()));
+  QString text = textParam->text();
+  QFontMetrics fm(textParam->font());
+  int pixelsWide = fm.horizontalAdvance(text);
+  textParam->setFixedWidth(50+pixelsWide);
   connect(textParam, SIGNAL(returnPressed()), this, SLOT(handleText()));
   hbox->addWidget(textParam);
 
+  QLabel* descr = new QLabel(QString::fromStdString(line->getDescription()));
+  hbox->addWidget(descr);
+
+  hbox->addStretch();
 }
 
 void CmdLineEntry::handleText()

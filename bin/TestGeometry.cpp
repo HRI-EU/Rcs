@@ -549,7 +549,7 @@ static void testPolygon(int argc, char** argv)
     if (gridSize>0.0)
     {
       //Math_boxifyPolygon2D(poly, nVertices, gridSize);
-      grid = Math_snapToGridPolygon2D(poly, nVertices, gridSize);
+      grid = Rcs::Math_snapToGridPolygon2D(poly, nVertices, gridSize);
     }
   }
   else
@@ -638,7 +638,7 @@ static void testPolygon(int argc, char** argv)
 
 
     {
-      std::vector<std::pair<double,double>> quads = Math_quadsFromPolygon2D(poly, nVertices, gridSize);
+      std::vector<std::pair<double,double>> quads = Rcs::Math_quadsFromPolygon2D(poly, nVertices, gridSize);
       MatNd* quadsArr = MatNd_create(quads.size(), 3);
 
       for (size_t i=0; i<quads.size(); ++i)

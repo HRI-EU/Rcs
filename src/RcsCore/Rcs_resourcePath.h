@@ -56,8 +56,12 @@
 
 
 #ifdef __cplusplus
+#include <vector>
+#include <string>
+
+std::vector<std::string> getResourcePath();
 extern "C" {
-#endif // __cplusplus
+#endif 
 
 
 
@@ -129,7 +133,7 @@ unsigned int Rcs_numResourcePaths(void);
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
+#endif 
 
 
 

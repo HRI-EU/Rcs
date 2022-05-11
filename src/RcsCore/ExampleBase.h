@@ -34,7 +34,7 @@
 #ifndef RCS_EXAMPLEBASE_H
 #define RCS_EXAMPLEBASE_H
 
-#include <stdbool.h>
+#include <Rcs_cmdLine.h>
 
 
 
@@ -44,7 +44,9 @@ namespace Rcs
 class ExampleBase
 {
 public:
+
   ExampleBase(int argc, char** argv);
+
   virtual ~ExampleBase();
 
   /*  \brief Calls these functions:
@@ -71,15 +73,19 @@ public:
   /*  \brief Assign defaults to all member variables, allocate memory if needed.
    */
   virtual void initParameters();
+
   /*  \brief Assign member variables according to supported command line options.
    */
-  virtual void parseArgs(int argc, char** argv);
+  virtual void parseArgs(CmdLineParser* parser);
+
   /*  \brief Initializations related to algorithmic steps, no gui or graphics.
    */
   virtual bool initAlgo();
+
   /*  \brief Initializations for graphics windows, nodes etc.
    */
   virtual void initGraphics();
+
   /*  \brief Initializations for Guis and widgets.
    */
   virtual void initGuis();
@@ -88,7 +94,7 @@ public:
   virtual void run();
   virtual void step();
   virtual void handleKeys();
-  virtual void help();
+  virtual std::string help();
 
 protected:
   bool runLoop;

@@ -54,12 +54,16 @@
 #include <HUD.h>
 #include <PPSGui.h>
 #include <PPSSensorNode.h>
+#include <CmdLineWidget.h>
+
+#include <sstream>
 
 
 namespace Rcs
 {
 
-static ExampleFactoryRegistrar<ExampleFK> ExampleFK_("Forward kinematics", "Dexbot");
+static ExampleFactoryRegistrar<ExampleFK> ExampleFK_("Forward kinematics",
+                                                     "Dexbot");
 
 
 ExampleFK::ExampleFK(int argc, char** argv) : ExampleBase(argc, argv)
@@ -77,6 +81,8 @@ ExampleFK::ExampleFK(int argc, char** argv) : ExampleBase(argc, argv)
   noHud = false;
   randomGraph = false;
   shapifyReplace = false;
+  noMutex = false;
+  helpMsg = false;
   graph = NULL;
   bvhTraj = NULL;
   viewer = NULL;
@@ -132,56 +138,45 @@ void ExampleFK::initParameters()
   bgColor = "LIGHT_GRAYISH_GREEN";
 }
 
-void ExampleFK::parseArgs(int argc, char** argv)
+void ExampleFK::parseArgs(CmdLineParser* argP)
 {
-  Rcs::CmdLineParser argP(argc, argv);
+  argP->getArgument("-nomutex", &noMutex, "Graphics without mutex");
+  argP->getArgument("-valgrind", &valgrind, "Start without Guis and graphics");
+  argP->getArgument("-simpleGraphics", &simpleGraphics, "OpenGL without fancy"
+                    " stuff (shadows, anti-aliasing)");
 
-  // Option without mutex for viewer
-  if (argP.hasArgument("-nomutex", "Graphics without mutex"))
-  {
-    mtx = NULL;
-  }
+  argP->getArgument("-dt", &dtStep, "Animation time step (default is %f)",
+                    dtStep);
+  argP->getArgument("-dotFile", &dotFile, "Dot file name");
+  argP->getArgument("-f", &xmlFileName, "Configuration file name (default"
+                    " is \"%s\")", xmlFileName.c_str());
+  argP->getArgument("-dir", &directory, "Configuration file directory "
+                    "(default is \"%s\")", directory.c_str());
+  argP->getArgument("-comRef", &comRef, "Reference body for COM (default is "
+                    "root)");
+  argP->getArgument("-bgColor", &bgColor, "Background color (default is "
+                    "\"%s\")", bgColor.c_str());
+  argP->getArgument("-fKin", &fwdKinType, "Forward kinematics: 0: all dof,"
+                    "1: sub tree, 2: body only (default is %d)", fwdKinType);
+  argP->getArgument("-fKinBdy", &fKinBdyName, "Forward kinematics start "
+                    "body (default is none)");
+  argP->getArgument("-copy", &testCopy, "Test graph copying");
+  argP->getArgument("-resizeable", &resizeable, "Adjust visualization "
+                    "of shapes dynamically");
+  argP->getArgument("-edit", &editMode, "Start in xml edit mode (no Qt Gui)");
+  argP->getArgument("-bvh", &playBVH, "Play bvh file");
+  argP->getArgument("-noHud", &noHud, "Don't show HUD");
+  argP->getArgument("-random", &randomGraph, "Create randomized graph");
+  argP->getArgument("-shapifyReplace", &shapifyReplace, "True: Replace shapes "
+                    "when using boxify / capsulify, default: add enclosing box"
+                    " / capsule as additional shape to bodies");
 
-  valgrind = argP.hasArgument("-valgrind", "Start without Guis and graphics");
-  simpleGraphics = argP.hasArgument("-simpleGraphics", "OpenGL without fancy"
-                                    " stuff (shadows, anti-aliasing)");
-
-  argP.getArgument("-dt", &dtStep, "Animation time step (default is %f)",
-                   dtStep);
-  argP.getArgument("-dotFile", &dotFile, "Dot file name");
-  argP.getArgument("-f", &xmlFileName, "Configuration file name (default"
-                   " is \"%s\")", xmlFileName.c_str());
-  argP.getArgument("-dir", &directory, "Configuration file directory "
-                   "(default is \"%s\")", directory.c_str());
-  argP.getArgument("-comRef", &comRef, "Reference body for COM (default is "
-                   "root)");
-  argP.getArgument("-bgColor", &bgColor, "Background color (default is "
-                   "\"%s\")", bgColor.c_str());
-  argP.getArgument("-fKin", &fwdKinType, "Forward kinematics: 0: all dof,"
-                   "1: sub tree, 2: body only (default is %d)", fwdKinType);
-  argP.getArgument("-fKinBdy", &fKinBdyName, "Forward kinematics start "
-                   "body (default is none)");
-  testCopy = argP.hasArgument("-copy", "Test graph copying");
-  resizeable = argP.hasArgument("-resizeable", "Adjust visualization "
-                                "of shapes dynamically");
-  editMode = argP.hasArgument("-edit", "Start in xml edit mode (no Qt Gui)");
-  playBVH = argP.hasArgument("-bvh", "Play bvh file");
-  noHud = argP.hasArgument("-noHud", "Don't show HUD");
-  randomGraph = argP.hasArgument("-random", "Create randomized graph");
-  shapifyReplace = argP.hasArgument("-shapifyReplace", "True: Replace "
-                                    "shapes when using boxify / capsul"
-                                    "ify, default: add enclosing box /"
-                                    " capsule as additional shape"
-                                    " to bodies");
-
-  if (argP.hasArgument("-h"))
-  {
-    help();
-  }
+  argP->getArgument("-h", &helpMsg, "Print help message to console");
 }
 
-void ExampleFK::help()
+std::string ExampleFK::help()
 {
+  std::stringstream s;
   RMSG("ExampleRunner -dir <graph-directory> -f "
        "<graph-file>\n\n\t- Creates a graph from an xml file\n\t"
        "- Creates a viewer (if option -valgrind is not set)\n\t"
@@ -203,14 +198,24 @@ void ExampleFK::help()
   printf("\t-dir config/xml/Husky -f dual_arm_husky_original.urdf\n");
   printf("\t-dir config/xml/Valkyrie -f valkyrie_sim.urdf\n");
   printf("\n");
-  Rcs_printResourcePath();
-  Rcs::CmdLineParser argP;
-  argP.print();
-  RcsGraph_printUsage(xmlFileName.c_str());
+  s << Rcs::getResourcePaths();
+  s << Rcs::CmdLineParser::printToString();
+  s << Rcs::RcsGraph_printUsageToString(xmlFileName);
+  return s.str();
 }
 
 bool ExampleFK::initAlgo()
 {
+  // Option without mutex for viewer
+  if (noMutex)
+  {
+    mtx = NULL;
+  }
+
+  if (helpMsg)
+  {
+    help();
+  }
   Rcs_addResourcePath(directory.c_str());
   if (randomGraph)
   {

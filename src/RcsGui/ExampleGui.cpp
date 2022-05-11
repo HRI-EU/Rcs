@@ -38,6 +38,7 @@
 
 #include <Rcs_macros.h>
 #include <Rcs_utilsCPP.h>
+#include <Rcs_timer.h>
 
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -48,12 +49,15 @@
 #include <QTableView>
 #include <QPushButton>
 #include <QHeaderView>
+#include <QTimer>
+
 
 
 namespace Rcs
 {
 
-ExampleGui::ExampleGui(int argc_, char** argv_) : argc(argc_), argv(argv_)
+ExampleGui::ExampleGui(int argc_, char** argv_) :
+  AsyncWidget(), argc(argc_), argv(argv_)
 {
   RLOG(0, "Before launch");
   launch();
@@ -63,17 +67,17 @@ ExampleGui::ExampleGui(int argc_, char** argv_) : argc(argc_), argv(argv_)
 void ExampleGui::construct()
 {
   RLOG(0, "Constructing test");
-  QWidget* test = new TreeTest(argc, argv);
+  QWidget* test = new ExampleWidget(argc, argv);
   RLOG(0, "Setting widget");
   setWidget(test);
   RLOG(0, "Done");
 }
 
-
 class ExampleWorker : public QObject
 {
 public:
-  ExampleWorker(ExampleBase* example_, int argc_, char** argv_) : example(example_), argc(argc_), argv(argv_)
+  ExampleWorker(ExampleBase* example_, int argc_, char** argv_) :
+    example(example_), argc(argc_), argv(argv_)
   {
     RLOG(0, "ExampleWorker created");
   }
@@ -85,8 +89,8 @@ public:
 
   void doWork()
   {
-    example->init(argc, argv);
-    RLOG(0, "doWork() started");
+    // example->init(argc, argv);
+    // RLOG(0, "doWork() started");
     example->start();
     RLOG(0, "doWork() finished");
   }
@@ -101,9 +105,23 @@ public:
 
 
 
-ExampleItem::ExampleItem(int argc_, char** argv_, const QString& categoryName_, const QString& exampleName) :
-  QStandardItem(exampleName), categoryName(categoryName_), example(NULL), argc(argc_), argv(argv_), clicked(false)
+ExampleItem::ExampleItem(int argc_, char** argv_,
+                         const QString& categoryName_,
+                         const QString& exampleName) :
+  QStandardItem(exampleName),
+  categoryName(categoryName_),
+  example(NULL),
+  argc(argc_),
+  argv(argv_),
+  clicked(false),
+  parsingFinished(false),
+  timer(NULL),
+  gui(NULL),
+  helpWin(NULL),
+  withArgParser(false)
 {
+  this->timer = new QTimer(this);
+  connect(timer, SIGNAL(timeout()), SLOT(timerCallback()));
 }
 
 ExampleItem::~ExampleItem()
@@ -118,18 +136,52 @@ ExampleItem::~ExampleItem()
   }
 }
 
+void ExampleItem::timerCallback()
+{
+
+  if (gui->getWidget()==NULL && (!parsingFinished))
+  {
+    example->initAlgo();
+    example->initGraphics();
+    example->initGuis();
+    parsingFinished = true;
+
+    emit startWork();
+  }
+
+}
+
 void ExampleItem::start()
 {
   RLOG(1, "Initializing example");
   example = ExampleFactory::create(categoryName.toStdString(), text().toStdString(), argc, argv);
   RCHECK(example);
+
   RLOG(1, "Starting example");
   ExampleWorker* worker = new ExampleWorker(example, argc, argv);
   worker->moveToThread(&exampleThread);
   connect(&exampleThread, &QThread::finished, worker, &QObject::deleteLater);
   connect(this, &ExampleItem::startWork, worker, &ExampleWorker::doWork);
   exampleThread.start();
-  emit startWork();
+
+
+  if (withArgParser)
+  {
+    CmdLineParser argP;
+    example->initParameters();
+    pc.clear();
+    example->parseArgs(&pc);
+    example->parseArgs(&argP);
+    gui = new CmdLineGui(&pc);
+    helpWin = new TextGui(example->help());
+    timer->start(40);
+  }
+  else
+  {
+    example->init(argc, argv);
+    emit startWork();
+  }
+
 }
 
 void startWork()
@@ -143,6 +195,12 @@ void ExampleItem::stop()
   exampleThread.quit();
   exampleThread.wait();
   RLOG(1, "... stopped");
+  timer->stop();
+  parsingFinished = false;
+  delete helpWin;
+  delete gui;
+  helpWin = NULL;
+  gui = NULL;
 }
 
 void ExampleItem::destroy()
@@ -154,11 +212,12 @@ void ExampleItem::destroy()
 }
 
 
-TreeTest::TreeTest(int argc, char** argv, QWidget* parent) : QMainWindow(parent)
+ExampleWidget::ExampleWidget(int argc, char** argv, QWidget* parent) :
+  QMainWindow(parent)
 {
   QWidget* mainWidget = new QWidget(this);
   QTreeView* tree = new QTreeView(mainWidget);
-  QVBoxLayout* mainGrid = new QVBoxLayout();
+  QHBoxLayout* mainGrid = new QHBoxLayout();
   setObjectName("Rcs::ExampleGui");
 
   mainGrid->setMargin(0);
@@ -195,10 +254,20 @@ TreeTest::TreeTest(int argc, char** argv, QWidget* parent) : QMainWindow(parent)
 
       if (strings[0]==category_i)
       {
-
-        ExampleItem* child = new ExampleItem(argc, argv, QString::fromStdString(strings[0]), QString::fromStdString(strings[1]));
+        ExampleItem* child = new ExampleItem(argc, argv,
+                                             QString::fromStdString(strings[0]),
+                                             QString::fromStdString(strings[1]));
         child->setEditable(false);
-        item->setChild(i++, 0, child);
+        //child->setSelectable(false);
+        item->setChild(i, 0, child);
+
+
+        QStandardItem* description = new QStandardItem("");
+        description->setEditable(false);
+        description->setCheckable(true);
+        item->setChild(i, 1, description);
+
+        i++;
       }
       it++;
     }
@@ -207,7 +276,7 @@ TreeTest::TreeTest(int argc, char** argv, QWidget* parent) : QMainWindow(parent)
   }
 
   model->setHorizontalHeaderItem(0, new QStandardItem("Example"));
-  model->setHorizontalHeaderItem(1, new QStandardItem("Description"));
+  model->setHorizontalHeaderItem(1, new QStandardItem("Parse"));
 
   tree->setModel(model);
   tree->expandAll();
@@ -216,20 +285,20 @@ TreeTest::TreeTest(int argc, char** argv, QWidget* parent) : QMainWindow(parent)
   // Headers are resized so that all text is visible
   tree->header()->resizeSections(QHeaderView::ResizeToContents);
 
+  setMinimumWidth(400);
+  setMinimumHeight((cMap.size()+categories.size())*25 + 25);
 
-  setFixedWidth(400);
-  setFixedHeight(cMap.size()*25);
-
-  connect(tree,SIGNAL(clicked(const QModelIndex&)), this, SLOT(itemClicked(const QModelIndex&)));
+  connect(tree,SIGNAL(clicked(const QModelIndex&)), this,
+          SLOT(itemClicked(const QModelIndex&)));
 }
 
-TreeTest::~TreeTest()
+ExampleWidget::~ExampleWidget()
 {
-  RLOG(0, "Deleting TreeTest");
+  RLOG(0, "Deleting ExampleWidget");
   delete this->model;
 }
 
-void TreeTest::itemClicked(const QModelIndex& idx)
+void ExampleWidget::itemClicked(const QModelIndex& idx)
 {
   if ((idx.parent().row() == -1) && (idx.parent().column() == -1))
   {
@@ -237,15 +306,16 @@ void TreeTest::itemClicked(const QModelIndex& idx)
   }
 
   QStandardItem* item = model->itemFromIndex(idx);
+  RLOG(0, "row: %d   col: %d", idx.row(), idx.column());
 
   ExampleItem* ei = dynamic_cast<ExampleItem*>(item);
 
   if (ei)
   {
     ei->clicked = !ei->clicked;
-    RLOG(1, "Item: %d %d -> %s (%s)", idx.parent().row(), idx.row(), item->text().toStdString().c_str(),
+    RLOG(1, "Item: %d %d -> %s (%s)", idx.parent().row(), idx.row(),
+         item->text().toStdString().c_str(),
          ei->clicked ? "Clicked" : "Not clicked");
-
 
     if (ei->clicked)
     {
@@ -257,122 +327,32 @@ void TreeTest::itemClicked(const QModelIndex& idx)
       ei->destroy();
     }
 
-
   }
-  else
+  else if (item)
   {
-    RFATAL("This should never happen");
+    QModelIndex eidx = idx.sibling(idx.row(), idx.column()-1);
+    ExampleItem* sib = dynamic_cast<ExampleItem*>(model->itemFromIndex(eidx));
+    RCHECK(sib);
+    Qt::CheckState cs = item->checkState();
+
+    switch (cs)
+    {
+      case Qt::Checked:
+        RLOG_CPP(1, "Checked");
+        sib->withArgParser = true;
+        break;
+
+      case Qt::Unchecked:
+        RLOG_CPP(1, "Unchecked");
+        sib->withArgParser = false;
+        break;
+
+      default:
+        RLOG_CPP(1, "Unknown checked mode: " << cs);
+    }
+    RLOG_CPP(0, "Clicked on item with: " << item->text().toStdString());
   }
 }
-typedef struct
-{
-  void* ptr[10];
-} VoidPointerList;
-
-static void* threadFunc2(void* arg)
-{
-  VoidPointerList* p = (VoidPointerList*) arg;
-  int* argc = (int*) p->ptr[0];
-  char** argv = (char**) p->ptr[1];
-
-  TreeTest* w = new TreeTest(*argc, argv);
-  w->setWindowTitle("Examples");
-  w->show();
-
-  delete argc;
-  delete p;
-
-  return w;
-}
-
-int TreeTest::create(int argc_, char** argv_)
-{
-  VoidPointerList* p = new VoidPointerList;
-
-  double* argc = new double;
-  *argc = argc_;
-
-  p->ptr[0] = (void*) argc;
-  p->ptr[1] = (void*) argv_;
-
-  int handle = RcsGuiFactory_requestGUI(threadFunc2, p);
-
-  return handle;
-}
-
-bool TreeTest::destroy(int handle)
-{
-  return RcsGuiFactory_destroyGUI(handle);
-}
-
-
-
-
-
-#if 0
-
-static void* threadFunc(void* arg)
-{
-  VoidPointerList* p = (VoidPointerList*) arg;
-  int* argc = (int*) p->ptr[0];
-  char** argv = (char**) p->ptr[1];
-
-  ExampleGui* w = new ExampleGui(*argc, argv);
-  w->setWindowTitle("Examples");
-  w->show();
-
-  delete argc;
-  delete p;
-
-  return w;
-}
-
-int ExampleGui::create(int argc_, char** argv_)
-{
-  VoidPointerList* p = new VoidPointerList;
-
-  double* argc = new double;
-  *argc = argc_;
-
-  p->ptr[0] = (void*) argc;
-  p->ptr[1] = (void*) argv_;
-
-  int handle = RcsGuiFactory_requestGUI(threadFunc, p);
-
-  return handle;
-}
-
-bool ExampleGui::destroy(int handle)
-{
-  return RcsGuiFactory_destroyGUI(handle);
-}
-
-ExampleGui::ExampleGui(int argc, char** argv)
-{
-  QScrollArea* scrollWidget = new QScrollArea(this);
-  QVBoxLayout* vbox = new QVBoxLayout(scrollWidget);
-  setCentralWidget(scrollWidget);
-  scrollWidget->setLayout(vbox);
-
-  typedef std::map<std::string, ExampleFactory::ExampleMaker> ExampleMap;
-
-  ExampleMap cMap = ExampleFactory::constructorMap();
-  ExampleMap::iterator it = cMap.begin();
-
-  while (it != cMap.end())
-  {
-    vbox->addWidget(new ExampleWidget("My Category", it->first, argc, argv));
-    it++;
-  }
-
-}
-
-ExampleGui::~ExampleGui()
-{
-}
-
-#endif
-
 
 
 }   // namespace Rcs

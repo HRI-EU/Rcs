@@ -69,6 +69,10 @@ public:
    */
   CmdLineParser();
 
+  /*! \brief Enable polymorphic destruction.
+   */
+  virtual ~CmdLineParser();
+
   /*! \brief Returns the argument after string "tag" as a character array.
    *         The argument is copied into str, assuming str has sufficiently
    *         memory. <br>
@@ -77,8 +81,8 @@ public:
    *         getArgumentTag("-m", (char*) myArg) <br>
    *         will copy 5 into character array myArg.
    */
-  bool getArgument(const char* tag, char* result,
-                   const char* description=NULL, ...) const;
+  virtual bool getArgument(const char* tag, char* result,
+                           const char* description=NULL, ...);
 
   /*! \brief Returns the argument after string "tag" as a std::string.
    *         The argument is copied into result if is provided.
@@ -88,8 +92,8 @@ public:
    *         getArgumentTag("-m", (std::string*) myArg) <br>
    *         will copy 5 into the string myArg.
    */
-  bool getArgument(const char* tag, std::string* result,
-                   const char* description=NULL, ...) const;
+  virtual bool getArgument(const char* tag, std::string* result,
+                           const char* description=NULL, ...);
 
   /*! \brief Returns the argument after string "tag" as an integer. The
    *         argument is copied into res. <br>
@@ -98,68 +102,79 @@ public:
    *         getArgumentTag("-m", (int*) myArg) <br>
    *         will copy 5 into integer myArg.
    */
-  bool getArgument(const char* tag, int* result,
-                   const char* description=NULL, ...) const;
+  virtual bool getArgument(const char* tag, int* result,
+                           const char* description=NULL, ...);
 
   /*! \brief Returns the argument after string "tag" as an unsigned integer.
    *         If the tag contains a negative number, a warning on debug
    *         level 1 is issued.
    */
-  bool getArgument(const char* tag, unsigned int* result,
-                   const char* description=NULL, ...) const;
+  virtual bool getArgument(const char* tag, unsigned int* result,
+                           const char* description=NULL, ...);
 
   /*! \brief Returns the argument after string "tag" as a unsigned long type.
    *         If the tag contains a negative number, a warning on debug
    *         level 1 is issued.
    */
-  bool getArgument(const char* tag, unsigned long* result,
-                   const char* description = NULL, ...) const;
+  virtual bool getArgument(const char* tag, unsigned long* result,
+                           const char* description = NULL, ...);
 
   /*! \brief Returns the argument after string "tag" as a unsigned long long
    *         type. On 64 bit operating systems, the size_t is of the same type.
    *         If the tag contains a negative number, a warning on debug
    *         level 1 is issued.
    */
-  bool getArgument(const char* tag, unsigned long long* result,
-                   const char* description=NULL, ...) const;
-
-  /*! \brief Returns the argument after string "tag" as a double.
-   */
-  bool getArgument(const char* tag, double* result,
-                   const char* description=NULL, ...) const;
+  virtual bool getArgument(const char* tag, unsigned long long* result,
+                           const char* description=NULL, ...);
 
   /*! \brief Returns the argument after string "tag" as a boolean. Tag must
    *         be "true" (case not considereed) in order to become true. All
    *         other attributes will leave result unchanged.
    */
-  bool getArgument(const char* tag, bool* result,
-                   const char* description=NULL, ...) const;
+  virtual bool getArgument(const char* tag, bool* result,
+                           const char* description=NULL, ...);
+
+  /*! \brief Returns the argument after string "tag" as a double.
+   */
+  virtual bool getArgument(const char* tag, double* result,
+                           const char* description=NULL, ...);
+
+  /*! \brief Returns the argument after string "tag" as a float.
+   */
+  virtual bool getArgument(const char* tag, float* result,
+                           const char* description=NULL, ...);
 
   /*! \brief Returns true if an argument with name tag exists, false
    *         otherwise.
    */
-  bool hasArgument(const char* tag, const char* description=NULL, ...) const;
+  virtual bool hasArgument(const char* tag, const char* description=NULL, ...);
 
   /*! \brief Prints out all arguments contained in argv to stderr.
    */
-  void printArguments() const;
+  virtual void printArguments() const;
 
   /*! \brief Prints out all parsed arguments to stderr.
    */
   static void print();
 
+  /*! \brief Prints out all parsed arguments to a returned string.
+   */
+  static std::string printToString();
   /*! \brief Adds a command line description that will be printed to the
    *         console.
    */
-  void addDescription(const char* tag, const char* description, ...) const;
+  virtual void addDescription(const char* tag, const char* description, ...);
 
-  int getArgs(char** * argv) const;
+  /*! \brief Query the arguments vector and number of arguments. If they habe not
+   *         been parsed, argc is 0 and argv points to NULL.
+   */
+  virtual int getArgs(char** * argv) const;
 
 
 protected:
 
-  void appendDescription(const char* tag, const char* description,
-                         va_list args) const;
+  virtual void appendDescription(const char* tag, const char* description,
+                                 va_list args) ;
   int getTagIndex(const char* tag) const;
   static int argc;
   static char** argv;

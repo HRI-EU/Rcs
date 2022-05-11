@@ -18,8 +18,40 @@ IF(NOT HEADLESS_BUILD)
   ADD_EXECUTABLE(ExampleKinetics ExampleKinetics.cpp)
   TARGET_LINK_LIBRARIES(ExampleKinetics RcsCore RcsGui RcsGraphics RcsPhysics)
 
-  ADD_EXECUTABLE(ExampleRunner ExampleRunner.cpp ExampleFK.cpp ExampleInvKin.cpp ExampleMath.cpp ExamplePhysics.cpp)
-  TARGET_LINK_LIBRARIES(ExampleRunner RcsCore RcsGui RcsGraphics RcsPhysics)
+  ADD_LIBRARY(ExampleCollection ExampleFK.cpp ExampleInvKin.cpp ExampleMath.cpp ExamplePhysics.cpp)
+  TARGET_LINK_LIBRARIES(ExampleCollection RcsGraphics RcsPhysics RcsGui)
+
+  # We add this option to force the linker to export the symbols. This
+  # solves the issue that it will not be exposed, since all initialization 
+  # happens inside statically. Under Unix, we can use -Wl,--no-as-needed
+  IF (WIN32)
+    TARGET_LINK_OPTIONS(ExampleCollection PUBLIC /INCLUDE:ExampleInfo)
+  ENDIF()
+
+  # copy the .dll file to the same folder as the executable
+ IF (WIN32)
+  ADD_CUSTOM_COMMAND(
+    TARGET ExampleCollection POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+    ${LIBRARY_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/ExampleCollection.dll
+    ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/ExampleCollection.dll)
+
+    ADD_EXECUTABLE(ExampleRunnerWin WIN32 ExampleRunner.cpp)
+    TARGET_LINK_LIBRARIES(ExampleRunnerWin ExampleCollection)
+    TARGET_COMPILE_OPTIONS(ExampleRunnerWin PRIVATE -DNO_CONSOLE -DRCS_NO_DEBUG)
+    TARGET_LINK_OPTIONS(ExampleRunnerWin PRIVATE /entry:mainCRTStartup /subsystem:windows)
+  ENDIF(WIN32)
+  
+  ADD_EXECUTABLE(ExampleRunner ExampleRunner.cpp)
+
+  IF (UNIX)
+    TARGET_LINK_LIBRARIES(ExampleRunner -Wl,--no-as-needed ExampleCollection -Wl,--as-needed)
+  ELSE()
+    TARGET_LINK_LIBRARIES(ExampleRunner ExampleCollection)
+  ENDIF()
+
+  
+  
 
   IF(USE_BULLET)
     ADD_EXECUTABLE(ExampleBullet ExampleBullet.cpp)
@@ -29,6 +61,6 @@ IF(NOT HEADLESS_BUILD)
   ENDIF(USE_BULLET)
 
   # Install the binaries
-  INSTALL(TARGETS ExampleHighGui ExamplePrioritizedIK ExampleForwardKinematics ExampleKinetics RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
+  INSTALL(TARGETS ExampleRunner ExampleHighGui ExamplePrioritizedIK ExampleForwardKinematics ExampleKinetics RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
 
 ENDIF(NOT HEADLESS_BUILD)

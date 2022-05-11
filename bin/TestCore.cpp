@@ -81,7 +81,7 @@ static bool test_stringSplit(std::string src, std::string delim,
 {
   RLOG(4, "Delimiter:       \"%s\"", delim.c_str());
   RLOG(4, "Original string: \"%s\"", src.c_str());
-  std::vector<std::string> split = String_split(src, delim);
+  std::vector<std::string> split = Rcs::String_split(src, delim);
 
   for (size_t i=0; i<split.size(); ++i)
   {

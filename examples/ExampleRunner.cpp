@@ -31,6 +31,19 @@
 
 *******************************************************************************/
 
+/*
+
+[Rcs/src/RcsGui/ExampleGui.cpp : ExampleGui(62)]: Before launch
+[Rcs/src/RcsGui/AsyncWidget.cpp : launch(148)]: launch(): Constructing by posting event to Gui thread
+QCoreApplication::postEvent: Unexpected null receiver
+[Rcs/src/RcsGui/AsyncWidget.cpp : ~AsyncWidgetEvent(61)]: Deleting AsyncWidgetEvent
+[Rcs/src/RcsGui/AsyncWidget.cpp : launch(160)]: Waiting for launch: 3.00 seconds
+
+
+ */
+
+
+
 #include <Rcs_macros.h>
 #include <Rcs_cmdLine.h>
 #include <Rcs_timer.h>
@@ -47,6 +60,7 @@
 
 #include <iostream>
 #include <csignal>
+
 
 RCS_INSTALL_ERRORHANDLERS
 
@@ -82,8 +96,18 @@ void quit(int /*sig*/)
 /*******************************************************************************
  *
  ******************************************************************************/
+#if defined (NO_CONSOLE)
+int main()
+{
+  int argc = 1;
+  char* argv[2];
+  argv[0] = "ExampleRunner";
+  argv[1] = NULL;
+#else
 int main(int argc, char** argv)
 {
+#endif
+
   // Ctrl-C callback handler
   signal(SIGINT, quit);
 
@@ -92,12 +116,13 @@ int main(int argc, char** argv)
   LIBXML_TEST_VERSION;
 
   // Parse command line arguments
-  int mode = 4;
+  int mode = 1;
   Rcs::CmdLineParser argP(argc, argv);
   argP.getArgument("-dl", &RcsLogLevel, "Debug level (default is 0)");
   argP.getArgument("-m", &mode, "Test mode");
 
   Rcs_addResourcePath("config");
+
   switch (mode)
   {
     // ==============================================================
@@ -117,34 +142,19 @@ int main(int argc, char** argv)
     }
 
     // ==============================================================
-    // Example widget test
+    // Example view Gui
     // ==============================================================
     case 1:
     {
-      std::string exampleName = "ExampleFK";
-      argP.getArgument("-e", &exampleName, "Example name (default: %s)",
-                       exampleName.c_str());
-      int guiHandle = Rcs::ExampleWidget::create("My Category", exampleName, argc, argv);
-      RPAUSE();
-      Rcs::ExampleWidget::destroy(guiHandle);
+      Rcs::ExampleGui gui(argc, argv);
+      gui.wait();
       break;
     }
 
     // ==============================================================
-    // ExampleGui
-    // ==============================================================
-    //case 2:
-    //{
-    //  int handle = Rcs::ExampleGui::create(argc, argv);
-    //  RPAUSE();
-    //  Rcs::ExampleGui::destroy(handle);
-    //  break;
-    //}
-
-    // ==============================================================
     // Programatic example test
     // ==============================================================
-    case 3:
+    case 2:
     {
       std::string categoryName = "Forward kinematics";
       std::string exampleName = "Dexbot";
@@ -164,19 +174,9 @@ int main(int argc, char** argv)
     }
 
     // ==============================================================
-    // Tree view Gui
-    // ==============================================================
-    case 4:
-    {
-      Rcs::ExampleGui gui(argc, argv);
-      RPAUSE();
-      break;
-    }
-
-    // ==============================================================
     // Command line Gui
     // ==============================================================
-    case 5:
+    case 3:
     {
       Rcs::ParameterCollection collection;
       int a = 4;
@@ -184,23 +184,25 @@ int main(int argc, char** argv)
       collection.getArgument("a", &a, "This is a");
       collection.getArgument("b", &b, "This is b");
 
-      int handle = Rcs::CmdLineWidget::create(&collection);
+      Rcs::CmdLineGui gui(&collection);
+
       while (runLoop)
       {
         RLOG(0, "a = %d   b = %s", a, b.c_str());
         Timer_waitDT(1.0);
       }
-      Rcs::CmdLineWidget::destroy(handle);
+
       break;
     }
+
     // ==============================================================
     // JointGui
     // ==============================================================
-    case 6:
+    case 4:
     {
       RcsGraph* graph = RcsGraph_createRandom(5, 3);
       Rcs::JointGui gui(graph);
-      RPAUSE();
+      gui.wait();
       RcsGraph_destroy(graph);
       break;
     }
@@ -208,7 +210,7 @@ int main(int argc, char** argv)
     // ==============================================================
     // Thread test
     // ==============================================================
-    case 7:
+    case 5:
     {
       RcsGraph* graph = RcsGraph_createRandom(5, 3);
       Rcs::JointGui gui(graph);
@@ -232,10 +234,9 @@ int main(int argc, char** argv)
   } // switch(mode)
 
 
-  //RcsGuiFactory_shutdown();
   xmlCleanupParser();
 
-  fprintf(stderr, "Thanks for using the ExampleRunner application\n");
+  fprintf(stderr, "Thanks for using the ExampleRunner\n");
 
   return 0;
 }

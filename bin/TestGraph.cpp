@@ -638,7 +638,7 @@ int main(int argc, char** argv)
       }
       else
       {
-        files = getFilenamesInDirectory(directory, true, ".xml");
+        files = Rcs::getFilenamesInDirectory(directory, true, ".xml");
       }
 
       RLOGS(1, "Found %zu files in directory %s", files.size(), directory);

@@ -60,13 +60,13 @@ public:
   ExampleIK(int argc, char** argv);
   virtual ~ExampleIK();
   virtual void initParameters();
-  virtual void parseArgs(int argc, char** argv);
+  virtual void parseArgs(CmdLineParser* parser);
   virtual bool initAlgo();
   virtual void initGraphics();
   virtual void initGuis();
   virtual void step();
   virtual void handleKeys();
-  virtual void help();
+  virtual std::string help();
   virtual void clear();
 
 protected:

@@ -124,8 +124,13 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
  *         be expanded, but the code can remain. So it is easier to keep
  *         debugging information without affecting the speed.
  */
+#if !defined (NLOG)
 #define NLOG(debugLevel, ...)
+#endif
+
+#if !defined (NLOGS)
 #define NLOGS(debugLevel, ...)
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief For convenience. If severe NULL checking is required, this macro can
@@ -133,11 +138,14 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
  *         produce no run-time overhead. The stack trace will in most cases be
  *         sufficient.
  */
+#if !defined (RCHECK_PEDANTIC)
 #define RCHECK_PEDANTIC(cond)
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief Triggers a stack trace and exits the application.
  */
+#if !defined (RFATAL)
 #define RFATAL(...)                                \
   do                                               \
   {                                                \
@@ -148,10 +156,12 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
     print_trace();                                 \
     exit(EXIT_FAILURE);                            \
   } while (0)
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief Triggers a stack trace.
  */
+#if !defined (RWARNING)
 #define RWARNING(debugLevel, ...)                                         \
   do                                                                      \
   {                                                                       \
@@ -164,20 +174,28 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
       fprintf(stderr, "\n");                                              \
       print_trace(); }                                                    \
   } while (0)
+#endif
 
 
 /*! \ingroup RcsMacros
  *  \brief String compare macro. Returns true if the strings a and b are equal,
  *         false otherwise.
  */
+#if !defined (STREQ)
 #define STREQ(a,b) (strcmp((a),(b))==0)
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief String compare macro for max. number of characters. Returns true if
  *         the strings a and b a re equal, false otherwise.
  */
+#if !defined (STRNEQ)
 #define STRNEQ(a,b,n) (strncmp((a),(b),(n))==0)
+#endif
+
+#if !defined (STRCASEEQ)
 #define STRCASEEQ(a,b) (strcasecmp((a),(b))==0)
+#endif
 
 
 
@@ -187,30 +205,40 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
  *  \brief Allocates heap memory for one variable of the given type. The memory
  *         is set to zero.
  */
+#if !defined (RALLOC)
 #define RALLOC(type) (type*) Rcs_calloc(1, sizeof(type))
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief Allocates heap memory for nMemb variables of the given type. The
  *         memory is set to zero.
  */
+#if !defined (RNALLOC)
 #define RNALLOC(nMemb, type) (type*) Rcs_calloc((nMemb), sizeof(type))
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief Convenience macro around realloc.
  */
+#if !defined (RREALLOC)
 #define RREALLOC(ptr, nMemb, type) (type*) realloc(ptr, (nMemb)*sizeof(type));
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief Frees the heap memory.
  */
+#if !defined (RFREE)
 #define RFREE(ptr) free((void*) (ptr))
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief Gets the memory for one variable of the given type from the stack.
  *         It must not be freed, otherwise there will be undefined behavior.
  *         The memory is uninitialized.
  */
+#if !defined (RSTALLOC)
 #define RSTALLOC(type) (type*) alloca(sizeof(type))
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief Gets the memory for nMemb variables of the given type from the
@@ -221,12 +249,15 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
  *         Therefore using alloca is accepted if used with care (small memory
  *         allocations, no recursions, etc.).
  */
+#if !defined (RNSTALLOC)
 #define RNSTALLOC(nMemb, type) (type*) alloca((nMemb)*sizeof(type))
+#endif
 
 
 /*! \ingroup RcsMacros
  *  \brief Print macro.
  */
+#if !defined (RMSG)
 #define RMSG(...)                                                            \
   do                                                                         \
   {                                                                          \
@@ -235,10 +266,12 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
     fprintf(stderr, "\n");                                                   \
     fflush(stderr);                                                          \
   } while (0)
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief Print macro (short form)
  */
+#if !defined (RMSGS)
 #define RMSGS(...)                                         \
   do                                                       \
   {                                                        \
@@ -247,15 +280,18 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
     fprintf(stderr, "\n");                                 \
     fflush(stderr);                                        \
   } while (0)
+#endif
 
 /*! \ingroup RcsMacros
  * \brief Rcs stack trace function
  */
+#if !defined (RTRACE)
 #define RTRACE() \
   do \
   { \
     print_trace(); \
   } while (0)
+#endif
 
 // These macros are empty if RCS_NO_DEBUG is flagged
 
@@ -264,6 +300,7 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 /*! \ingroup RcsMacros
  *  \brief Pause macro.
  */
+#if !defined (RPAUSE)
 #define RPAUSE()                                           \
   do                                                       \
   {                                                        \
@@ -271,10 +308,12 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
             __FILENAME__, __FUNCTION__, __LINE__);         \
     (void)getchar();                                       \
   } while (0)
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief Pause macro.
  */
+#if !defined (RPAUSE_DL)
 #define RPAUSE_DL(debugLevel)                                \
   do                                                         \
   {                                                          \
@@ -285,10 +324,12 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
       (void)getchar();                                       \
     }                                                        \
   } while (0)
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief Pause macro with message.
  */
+#if !defined (RPAUSE_MSG)
 #define RPAUSE_MSG(...)                            \
   do                                               \
   {                                                \
@@ -297,10 +338,12 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
     fprintf(stderr, __VA_ARGS__);                  \
     (void)getchar();                               \
   } while (0)
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief Pause macro with message.
  */
+#if !defined (RPAUSE_MSG_DL)
 #define RPAUSE_MSG_DL(debugLevel, ...)                \
   do                                                  \
   {                                                   \
@@ -312,10 +355,12 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
       (void)getchar();                                \
     }                                                 \
   } while (0)
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief Check macro. Exits if condition is not met.
  */
+#if !defined (RCHECK)
 #define RCHECK(cond)                                                  \
   do                                                                  \
   {                                                                   \
@@ -326,10 +371,12 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
       print_trace();                                                  \
       abort(); }                                                      \
   } while (0)
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief Check macro. Exits if condition is not met.
  */
+#if !defined (RCHECK_EQ)
 #define RCHECK_EQ(var1, var2) \
   do                                                                      \
   {                                                                       \
@@ -341,10 +388,12 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
       print_trace();                                                      \
       exit(EXIT_FAILURE); }                                               \
   } while (0)
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief Check macro. Exits with a message if condition is not met.
  */
+#if !defined (RCHECK_MSG)
 #define RCHECK_MSG(cond, ...)                                    \
   do                                                             \
   {                                                              \
@@ -357,7 +406,7 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
       print_trace();                                             \
       exit(EXIT_FAILURE); }                                      \
   } while (0)
-
+#endif
 
 /*! \ingroup RcsMacros
  *  \brief Log macro with debug level. Optionally calls a registered callback
@@ -367,6 +416,7 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
  */
 #if !defined(_MSC_VER)
 
+#if !defined (RLOG)
 #define RLOG(debugLevel, ...)                                        \
   do                                                                 \
   {                                                                  \
@@ -381,7 +431,9 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
       fprintf(stderr, __VA_ARGS__);                                  \
       fprintf(stderr, "\n"); }                                       \
   } while (0)
+#endif
 
+#if !defined (RLOGS)
 #define RLOGS(debugLevel, ...)                                   \
   do                                                             \
   {                                                              \
@@ -396,9 +448,11 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
       fprintf(stderr, __VA_ARGS__);                              \
       fprintf(stderr, "\n"); }                                   \
   } while (0)
+#endif
 
 #else
 
+#if !defined (RLOG)
 #define RLOG(debugLevel, ...)                                \
   do                                                         \
   {                                                          \
@@ -408,7 +462,9 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
       fprintf(stderr, __VA_ARGS__);                          \
       fprintf(stderr, "\n"); }                               \
   } while (0)
+#endif
 
+#if !defined (RLOGS)
 #define RLOGS(debugLevel, ...)                               \
   do                                                         \
   {                                                          \
@@ -418,11 +474,13 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
       fprintf(stderr, __VA_ARGS__);                          \
       fprintf(stderr, "\n"); }                               \
   } while (0)
+#endif
 
 #endif
 
 #if defined (__cplusplus)
 
+#if !defined (RLOG_CPP)
 #define RLOG_CPP(debugLevel, msg) \
   do                                                                  \
   {                                                                   \
@@ -431,13 +489,17 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
       std::cerr << "[" << __FILENAME__ << ": " << __FUNCTION__ << "(" \
                 << __LINE__ << ")]: " << msg << std::endl; }          \
   } while (0)
+#endif
 
+#if !defined (RMSG_CPP)
 #define RMSG_CPP(msg)                                               \
   do                                                                \
   {                                                                 \
     std::cerr << "[" << __FILENAME__ << ": " << __FUNCTION__ << "(" \
               << __LINE__ << ")]: " << msg << std::endl;            \
   } while (0)
+#endif
+
 #endif
 
 /*! \ingroup RcsMacros

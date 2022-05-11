@@ -59,7 +59,14 @@
 #include <PPSGui.h>
 #include <PPSSensorNode.h>
 
+#include <sstream>
 
+
+
+void ExampleInfo()
+{
+  Rcs::ExampleFactory::print();
+}
 
 namespace Rcs
 {
@@ -174,67 +181,66 @@ void ExamplePhysics::initParameters()
   directory = "config/xml/DexBot";
 }
 
-void ExamplePhysics::parseArgs(int argc, char** argv)
+void ExamplePhysics::parseArgs(CmdLineParser* argP)
 {
-  CmdLineParser argP(argc, argv);
-
   // Option without mutex for viewer
-  if (argP.hasArgument("-nomutex", "Graphics without mutex"))
+  bool noMutex = false;
+  argP->getArgument("-nomutex", &noMutex, "Graphics without mutex");
+
+  if (noMutex)
   {
     mtx = NULL;
   }
 
-  pause = argP.hasArgument("-pause", "Hit key for each iteration");
-  posCntrl = argP.hasArgument("-posCntrl",
-                              "Enforce position control");
-  skipGui = argP.hasArgument("-skipGui",
-                             "No joint angle command Gui");
-  skipControl = argP.hasArgument("-skipControl",
-                                 "No commands considered in physics");
-  disableCollisions = argP.hasArgument("-disableCollisions",
-                                       "Disable collisions between"
-                                       " all rigid bodies");
-  disableJointLimits = argP.hasArgument("-disableJointLimits",
-                                        "Disable all joint limits");
-  testCopy = argP.hasArgument("-copy", "Test physics copying");
-  withPPS = argP.hasArgument("-pps", "Launch PPS widgets");
-  gravComp = argP.hasArgument("-gravComp", "Apply gravity compensation"
-                              " to torque joints");
-  resizeable = argP.hasArgument("-resizeable", "Adjust visualization "
-                                "of shapes dynamically");
-  syncHard = argP.hasArgument("-syncHard", "Try to sync with wall "
-                              "clock time as hard as possible");
-  seqSim = argP.hasArgument("-sequentialPhysics", "Physics simulation "
-                            "step alternating with viewer's frame()");
-  valgrind = argP.hasArgument("-valgrind", "Start without Guis and graphics");
-  simpleGraphics = argP.hasArgument("-simpleGraphics", "OpenGL without fancy"
-                                    " stuff (shadows, anti-aliasing)");
-  argP.getArgument("-physics_config", &physicsCfg, "Configuration file name"
-                   " for physics (default is %s)", physicsCfg.c_str());
-  argP.getArgument("-physicsEngine", &physicsEngine,
-                   "Physics engine (default is \"%s\")", physicsEngine.c_str());
-  argP.getArgument("-dt", &dt, "Simulation time step (default is %f)", dt);
-  argP.getArgument("-tmc", &tmc, "Gui filter, smaller is softer (default"
-                   " is: %f)", tmc);
-  argP.getArgument("-damping", &damping,
-                   "Joint torque damping (default is %f)", damping);
-  argP.getArgument("-f", &xmlFileName, "Configuration file name (default "
-                   "is \"%s\")", xmlFileName.c_str());
-  argP.getArgument("-dir", &directory, "Configuration file directory "
-                   "(default is \"%s\")", directory.c_str());
-  argP.getArgument("-shootMass", &shootMass, "Mass of shooting ball"
-                   "(default is \"%f\")", shootMass);
-  argP.getArgument("-bgColor", &bgColor, "Background color (default is "
-                   "\"%s\")", bgColor.c_str());
-  argP.getArgument("-i", &integrator, "Integrator for Newton-Euler "
-                   "simulation (default is \"%s\")", integrator.c_str());
-  argP.getArgument("-gx", &gVec[0], "Gravity x (default is %f)", gVec[0]);
-  argP.getArgument("-gy", &gVec[1], "Gravity y (default is %f)", gVec[1]);
-  argP.getArgument("-gz", &gVec[2], "Gravity z (default is %f)", gVec[2]);
+  argP->getArgument("-pause", &pause, "Hit key for each iteration");
+  argP->getArgument("-posCntrl", &posCntrl, "Enforce position control");
+  argP->getArgument("-skipGui", &skipGui, "No joint angle command Gui");
+  argP->getArgument("-skipControl", &skipControl,
+                    "No commands considered in physics");
+  argP->getArgument("-disableCollisions", &disableCollisions,
+                    "Disable collisions between all rigid bodies");
+  argP->getArgument("-disableJointLimits", &disableJointLimits,
+                    "Disable all joint limits");
+  argP->getArgument("-copy", &testCopy, "Test physics copying");
+  argP->getArgument("-pps", &withPPS, "Launch PPS widgets");
+  argP->getArgument("-gravComp", &gravComp, "Apply gravity compensation"
+                    " to torque joints");
+  argP->getArgument("-resizeable", &resizeable, "Adjust visualization "
+                    "of shapes dynamically");
+  argP->getArgument("-syncHard", &syncHard, "Try to sync with wall "
+                    "clock time as hard as possible");
+  argP->getArgument("-sequentialPhysics", &seqSim, "Physics simulation "
+                    "step alternating with viewer's frame()");
+  argP->getArgument("-valgrind", &valgrind, "Start without Guis and graphics");
+  argP->getArgument("-simpleGraphics", &simpleGraphics, "OpenGL without fancy"
+                    " stuff (shadows, anti-aliasing)");
+  argP->getArgument("-physics_config", &physicsCfg, "Configuration file name"
+                    " for physics (default is %s)", physicsCfg.c_str());
+  argP->getArgument("-physicsEngine", &physicsEngine,
+                    "Physics engine (default is \"%s\")", physicsEngine.c_str());
+  argP->getArgument("-dt", &dt, "Simulation time step (default is %f)", dt);
+  argP->getArgument("-tmc", &tmc, "Gui filter, smaller is softer (default"
+                    " is: %f)", tmc);
+  argP->getArgument("-damping", &damping,
+                    "Joint torque damping (default is %f)", damping);
+  argP->getArgument("-f", &xmlFileName, "Configuration file name (default "
+                    "is \"%s\")", xmlFileName.c_str());
+  argP->getArgument("-dir", &directory, "Configuration file directory "
+                    "(default is \"%s\")", directory.c_str());
+  argP->getArgument("-shootMass", &shootMass, "Mass of shooting ball"
+                    "(default is \"%f\")", shootMass);
+  argP->getArgument("-bgColor", &bgColor, "Background color (default is "
+                    "\"%s\")", bgColor.c_str());
+  argP->getArgument("-i", &integrator, "Integrator for Newton-Euler "
+                    "simulation (default is \"%s\")", integrator.c_str());
+  argP->getArgument("-gx", &gVec[0], "Gravity x (default is %f)", gVec[0]);
+  argP->getArgument("-gy", &gVec[1], "Gravity y (default is %f)", gVec[1]);
+  argP->getArgument("-gz", &gVec[2], "Gravity z (default is %f)", gVec[2]);
 }
 
-void ExamplePhysics::help()
+std::string ExamplePhysics::help()
 {
+  std::stringstream s;
   RMSG("Mode 4: Rcs -m 4 -dir <graph-directory> -f "
        "<graph-file>\n\n\t- Creates a graph from an xml file\n\t"
        "- Creates a viewer (if option -valgrind is not set)\n\t"
@@ -255,6 +261,7 @@ void ExamplePhysics::help()
 
   PhysicsFactory::print();
   RcsGraph_printUsage(xmlFileName.c_str());
+  return s.str();
 }
 
 bool ExamplePhysics::initAlgo()
@@ -890,9 +897,9 @@ ExamplePhysics_Gyro::ExamplePhysics_Gyro(int argc, char** argv) : ExamplePhysics
 
 // Here we overwrite the parseArgs() method, since the bools are overwritten in it. Otherwise,
 // the skipGui flag cannot be changed.
-void ExamplePhysics_Gyro::parseArgs(int argc, char** argv)
+void ExamplePhysics_Gyro::initParameters()
 {
-  ExamplePhysics::parseArgs(argc, argv);
+  ExamplePhysics::initParameters();
   xmlFileName = "gGyro.xml";
   directory = "config/xml/Examples";
   physicsEngine = "NewtonEuler";
@@ -952,9 +959,9 @@ ExamplePhysics_HumanoidPendulum::ExamplePhysics_HumanoidPendulum(int argc, char*
 {
 }
 
-void ExamplePhysics_HumanoidPendulum::parseArgs(int argc, char** argv)
+void ExamplePhysics_HumanoidPendulum::initParameters()
 {
-  ExamplePhysics::parseArgs(argc, argv);
+  ExamplePhysics::initParameters();
   xmlFileName = "gHumanoidPendulum.xml";
   directory = "config/xml/Examples";
   physicsEngine = "NewtonEuler";

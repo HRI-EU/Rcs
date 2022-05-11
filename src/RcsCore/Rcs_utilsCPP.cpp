@@ -33,6 +33,7 @@
 
 #include "Rcs_utilsCPP.h"
 #include "Rcs_macros.h"
+#include "Rcs_resourcePath.h"
 
 #include <fstream>
 #include <algorithm>
@@ -41,15 +42,20 @@
 #include <dirent.h>
 #else
 #include <Windows.h>
-#include <stdio.h>
+#include <cstdio>
 #endif
 
 
-bool String_hasEnding(const std::string& fullString, const std::string& ending)
+namespace Rcs
+{
+
+bool String_endsWith(const std::string& fullString,
+                     const std::string& ending)
 {
   if (fullString.length() >= ending.length())
   {
-    return (0 == fullString.compare(fullString.length() - ending.length(), ending.length(), ending));
+    return (0 == fullString.compare(fullString.length() - ending.length(),
+                                    ending.length(), ending));
   }
   else
   {
@@ -57,7 +63,8 @@ bool String_hasEnding(const std::string& fullString, const std::string& ending)
   }
 }
 
-bool String_startsWith(const std::string& fullString, const std::string& beginning)
+bool String_startsWith(const std::string& fullString,
+                       const std::string& beginning)
 {
   if (fullString.length() >= beginning.length())
   {
@@ -70,8 +77,10 @@ bool String_startsWith(const std::string& fullString, const std::string& beginni
 }
 
 
-// Returns a list of files in a directory (except the ones that begin with a dot)
-std::list<std::string> getFilenamesInDirectory(const std::string& dirname, bool returnFullPath, const std::string& extension)
+// Returns a list of files in a directory (except these that begin with a dot)
+std::list<std::string> getFilenamesInDirectory(const std::string& dirname,
+                                               bool returnFullPath,
+                                               const std::string& extension)
 {
 #if defined(_MSC_VER)
 
@@ -92,11 +101,11 @@ std::list<std::string> getFilenamesInDirectory(const std::string& dirname, bool 
       std::string file = entry->d_name;
       if (file.compare(".") != 0 &&
           file.compare("..") != 0 &&
-          String_hasEnding(file, extension))
+          String_endsWith(file, extension))
       {
         if (returnFullPath)
         {
-          if (!String_hasEnding(dirname, "/"))
+          if (!String_endsWith(dirname, "/"))
           {
             file.insert(0, "/");
           }
@@ -244,6 +253,7 @@ std::vector<std::string> String_split(const std::string& toBeSplitted,
 }
 
 
+}   // namespace Rcs
 
 
 
@@ -251,6 +261,8 @@ std::vector<std::string> String_split(const std::string& toBeSplitted,
 #include <utility>
 #include <set>
 
+namespace Rcs
+{
 
 std::pair<int,int> getGridCell(const double xy[2], double gridSize)
 {
@@ -456,6 +468,7 @@ std::vector<std::pair<double,double>> Math_quadsFromPolygon2D(double polygon[][2
   return result;
 }
 
+} // namespace Rcs
 
 /*******************************************************************************
  *
@@ -465,6 +478,8 @@ std::vector<std::pair<double,double>> Math_quadsFromPolygon2D(double polygon[][2
 #include "Rcs_typedef.h"
 #include "Rcs_joint.h"
 
+namespace Rcs
+{
 std::vector<std::pair<int,double>> RcsGraph_readModelState(xmlNodePtr node,
                                                            const RcsGraph* self,
                                                            const std::string& mdlName)
@@ -593,3 +608,58 @@ std::vector<std::string> RcsGraph_getModelStateNames(const RcsGraph* graph)
 
   return result;
 }
+std::string getResourcePaths()
+{
+  std::string res;
+  std::vector<std::string> paths = getResourcePath();
+
+  for (size_t i = 0; i < paths.size(); ++i)
+  {
+    res += paths[i];
+    res += '\n';
+  }
+
+  return res;
+}
+
+std::string RcsGraph_printUsageToString(std::string xmlFile)
+{
+  std::string res;
+  char cfgFile[RCS_MAX_FILENAMELEN];
+  bool fileExists = Rcs_getAbsoluteFileName(xmlFile.c_str(), cfgFile);
+
+  if (!fileExists)
+  {
+    RLOG(1, "XML file \"%s\" not found in resource paths", xmlFile);
+    return res;
+  }
+
+  xmlDocPtr docPtr;
+  xmlNodePtr node = parseXMLFile(cfgFile, "Graph", &docPtr);
+
+  if (node == NULL)
+  {
+    RLOG(1, "Node \"Graph\" not found in \"%s\"", cfgFile);
+    return res;
+  }
+
+  xmlChar* usage = xmlGetProp(node, (const xmlChar*)"usage");
+
+  if (usage)
+  {
+    res = "Usage: \n";
+    res += (char*)usage;
+    res += '\n';
+  }
+  else
+  {
+    res = "No usage description\n";
+  }
+
+  xmlFreeDoc(docPtr);
+
+  return res;
+}
+
+
+} // namespace Rcs

@@ -62,11 +62,15 @@ public:
   const QWidget* getWidget() const;
 
   QWidget* getWidget();
+
   // Emits an event that calls construct() from the Gui thread
   void launch();
 
   // Emits an event that calls destroy() from the Gui thread
   void unlaunch();
+
+  // Blocks until widget has been deleted.
+  void wait();
 
 protected:
 
@@ -77,7 +81,7 @@ protected:
   virtual void destroy();
 
 private:
-  bool launched;
+  bool launched;   // Fully mutex protected
   QWidget* w;
   static int refCount;
   mutable QMutex launchMtx;

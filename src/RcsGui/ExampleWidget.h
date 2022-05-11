@@ -30,7 +30,7 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *******************************************************************************/
-
+#if 0
 #ifndef EXAMPLEWIDGET_H
 #define EXAMPLEWIDGET_H
 
@@ -79,3 +79,4 @@ private:
 }   // namespace Rcs
 
 #endif // EXAMPLEWIDGET_H
+#endif

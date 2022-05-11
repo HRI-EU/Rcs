@@ -54,7 +54,7 @@ ControllerGui::ControllerGui(ControllerBase* cntrl_,
                              const MatNd* x_curr_,
                              pthread_mutex_t* lock_,
                              bool showOnly_) :
-  cntrl(cntrl_), a_des(a_des_), a_curr(NULL),
+  AsyncWidget(), cntrl(cntrl_), a_des(a_des_), a_curr(NULL),
   x_des(x_des_), x_curr(x_curr_), lock(lock_),
   showOnly(showOnly_)
 {
@@ -70,7 +70,7 @@ ControllerGui::ControllerGui(ControllerBase* cntrl_,
                              const MatNd* x_curr_,
                              pthread_mutex_t* lock_,
                              bool showOnly_) :
-  cntrl(cntrl_), a_des(a_des_), a_curr(a_curr_),
+  AsyncWidget(), cntrl(cntrl_), a_des(a_des_), a_curr(a_curr_),
   x_des(x_des_), x_curr(x_curr_), lock(lock_),
   showOnly(showOnly_)
 {

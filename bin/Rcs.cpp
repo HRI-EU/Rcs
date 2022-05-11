@@ -780,7 +780,7 @@ int main(int argc, char** argv)
           {
             std::string mdlState;
             RMSG("Changing model state. Options are:\n");
-            std::vector<std::string> ms = RcsGraph_getModelStateNames(graph);
+            std::vector<std::string> ms = Rcs::RcsGraph_getModelStateNames(graph);
             ms.push_back("Zero");
             for (size_t i=0; i<ms.size(); ++i)
             {

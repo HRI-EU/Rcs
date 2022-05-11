@@ -54,7 +54,8 @@ void ExampleBase::init(int argc, char** argv)
   RLOG(1, "initParameters");
   initParameters();
   RLOG(1, "parseArgs");
-  parseArgs(argc, argv);
+  CmdLineParser argP(argc, argv);
+  parseArgs(&argP);
   RLOG(1, "initAlgo");
   bool success = initAlgo();
   RLOG(1, "%s initAlgo", success ? "Success" : "Failure");
@@ -72,7 +73,7 @@ void ExampleBase::initParameters()
 {
 }
 
-void ExampleBase::parseArgs(int argc, char** argv)
+void ExampleBase::parseArgs(CmdLineParser* parser)
 {
 }
 
@@ -117,9 +118,9 @@ void ExampleBase::handleKeys()
 {
 }
 
-void ExampleBase::help()
+std::string ExampleBase::help()
 {
-  printf("No help message implemented");
+  return "No help message implemented";
 }
 
 }   // namespace Rcs

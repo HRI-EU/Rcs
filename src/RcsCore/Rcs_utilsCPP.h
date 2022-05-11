@@ -46,6 +46,8 @@
 
 
 
+namespace Rcs
+{
 /*! \ingroup RcsUtilsFunctions
  *  \brief Returns a list of string containing all file names of given directory
  *         that end with a given extension. If returnFullPath is true (default)
@@ -105,7 +107,7 @@ std::vector<std::string> String_split(const std::string& stringToBeSplitted,
  *  \brief Checks if a given string ends with another string. Basically for
  *         checking if a file has a given extension
  */
-bool String_hasEnding(const std::string& fullString,
+  bool String_endsWith(const std::string& fullString,
                       const std::string& ending);
 
 /*! \ingroup RcsUtilsFunctions
@@ -127,5 +129,10 @@ std::vector<std::pair<int,double>> RcsGraph_readModelState(xmlNodePtr node,
                                                            const std::string& mdlName);
 
 std::vector<std::string> RcsGraph_getModelStateNames(const RcsGraph* graph);
+  std::string getResourcePaths();
+
+  std::string RcsGraph_printUsageToString(std::string xmlFile);
+
+} // namespace Rcs
 
 #endif   // RCS_UTILSCPP_H
