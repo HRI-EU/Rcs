@@ -35,7 +35,6 @@
 #define EXAMPLEGUI_H
 
 #include "AsyncWidget.h"
-#include "ExampleWidget.h"
 #include "CmdLineWidget.h"
 
 #include <ExampleBase.h>
