@@ -3,15 +3,27 @@
 # CMakeLists file for the RcsCore library
 #
 ###############################################################################
-OPTION(USE_EIGEN3 "Use Eigen3 in RcsCore" OFF)
-OPTION(USE_OCTOMAP "Use OctoMap library for distance calculation" OFF)
+FIND_PACKAGE(octomap QUIET)
+IF (octomap_FOUND)
+  OPTION(USE_OCTOMAP "Use OctoMap library for distance calculation" ON)
+ELSE(octomap_FOUND)
+  OPTION(USE_OCTOMAP "Use OctoMap library for distance calculation" OFF)
+ENDIF(octomap_FOUND)
+
+FIND_PACKAGE (Eigen3 3.2.0 QUIET)
+IF (Eigen3_FOUND)
+  OPTION(USE_EIGEN3 "Use Eigen3 in RcsCore" ON)
+ELSE(Eigen3_FOUND)
+  OPTION(USE_EIGEN3 "Use Eigen3 in RcsCore" OFF)
+ENDIF(Eigen3_FOUND)
 
 FIND_PACKAGE(WM5 QUIET)
 IF (WM5_FOUND)
   OPTION(USE_WM5 "Use Wildmagic library" ON)
-ELSE()
+ELSE(WM5_FOUND)
   OPTION(USE_WM5 "Use Wildmagic library" OFF)
-ENDIF()
+ENDIF(WM5_FOUND)
+
 SET(RCS_CORE_SRCS
 CompositeTask.cpp
 ControllerBase.cpp
@@ -132,7 +144,6 @@ ELSE(WIN32)
 ENDIF(WIN32)
 
 IF(USE_EIGEN3)
-  FIND_PACKAGE (Eigen3 3.2.0 REQUIRED)
   IF (Eigen3_FOUND)
     SET(SRC_EIGEN3 Rcs_eigen.cpp)
     LIST(APPEND RCS_CORE_SRCS ${SRC_EIGEN3})
@@ -140,19 +151,18 @@ IF(USE_EIGEN3)
     SET_PROPERTY(SOURCE Rcs_linAlg.c PROPERTY COMPILE_DEFINITIONS USE_EIGEN3 EIGEN_MPL2_ONLY)
     SET_PROPERTY(SOURCE ${SRC_EIGEN3} PROPERTY COMPILE_FLAGS -I${EIGEN3_INCLUDE_DIR})
   ELSE(Eigen3_FOUND)
-    MESSAGE(FATAL_ERROR "Option USE_EIGEN3 is set, but Eigen3 was not found")
+    MESSAGE(WARNING "Option USE_EIGEN3 is set, but Eigen3 was not found - skipping Eigen3 dependencies")
   ENDIF(Eigen3_FOUND)
 ENDIF()
 
 IF(USE_WM5)
-  FIND_PACKAGE(WM5)
   IF (WM5_FOUND)
     SET(SRC_WM5 Rcs_intersectionWM5.cpp Rcs_distanceWM5.cpp)
     SET_PROPERTY(SOURCE ${SRC_WM5} PROPERTY COMPILE_DEFINITIONS ${WM5_DEFINITIONS})
     SET_PROPERTY(SOURCE ${SRC_WM5} PROPERTY COMPILE_FLAGS -I${WM5_INCLUDE_DIR} )
     SET_PROPERTY(SOURCE ${SRC_WM5} APPEND_STRING PROPERTY COMPILE_FLAGS " ${WM5_FLAGS} ")
   ELSE(WM5_FOUND)
-    MESSAGE(FATAL_ERROR "Option USE_WM5 is set, but WM5 was not found")
+    MESSAGE(WARNING "Option USE_WM5 is set, but WM5 was not found - skipping WM5 dependencies")
   ENDIF(WM5_FOUND)
 ENDIF(USE_WM5)
 
@@ -184,16 +194,14 @@ IF(WM5_FOUND)
 ENDIF(WM5_FOUND)
 
 IF(USE_OCTOMAP)
-  FIND_PACKAGE(octomap QUIET)
-
   IF (octomap_FOUND)
     SET(OCTOMAP_DEFINITIONS -DUSE_OCTOMAP)
     TARGET_COMPILE_DEFINITIONS(RcsCore PRIVATE ${OCTOMAP_DEFINITIONS})
     TARGET_INCLUDE_DIRECTORIES(RcsCore SYSTEM PRIVATE ${OCTOMAP_INCLUDE_DIRS})
     TARGET_LINK_LIBRARIES(RcsCore ${OCTOMAP_LIBRARIES})
-  ELSE()
+  ELSE(octomap_FOUND)
     MESSAGE(STATUS "Compiling RcsCore without OctoMap support")
-  ENDIF()
+  ENDIF(octomap_FOUND)
 ENDIF(USE_OCTOMAP)
 
 # copy the .dll file to the same folder as the executable

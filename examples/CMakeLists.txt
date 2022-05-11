@@ -28,6 +28,9 @@ IF(NOT HEADLESS_BUILD)
     TARGET_LINK_OPTIONS(ExampleCollection PUBLIC /INCLUDE:ExampleInfo)
   ENDIF()
 
+  # Mark for export
+  RCS_ADD_EXPORT_LIBRARY(ExampleCollection)
+
   # copy the .dll file to the same folder as the executable
  IF (WIN32)
   ADD_CUSTOM_COMMAND(
@@ -62,5 +65,6 @@ IF(NOT HEADLESS_BUILD)
 
   # Install the binaries
   INSTALL(TARGETS ExampleRunner ExampleHighGui ExamplePrioritizedIK ExampleForwardKinematics ExampleKinetics RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
+  INSTALL(TARGETS ExampleCollection EXPORT RcsExport DESTINATION lib)
 
 ENDIF(NOT HEADLESS_BUILD)
