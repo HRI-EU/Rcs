@@ -779,6 +779,11 @@ public:
    */
   static void printUsage(const std::string& xmlFile);
 
+  /*! \brief Prints whatever is written in the xml-file under the node tag
+   *         usage to a string.
+   */
+  static std::string printUsageToString(const std::string& xmlFile);
+
   /*! \brief Computes the inverse dynamics for joint-space tracking:
    *         \f[
    *         T_{des} = M a_q + h + g

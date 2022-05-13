@@ -608,16 +608,20 @@ std::vector<std::string> RcsGraph_getModelStateNames(const RcsGraph* graph)
 
   return result;
 }
+
 std::string getResourcePaths()
 {
-  std::string res;
+  std::string res = "Resource paths:\n";
   std::vector<std::string> paths = getResourcePath();
 
   for (size_t i = 0; i < paths.size(); ++i)
   {
+    res += '\t';
     res += paths[i];
     res += '\n';
   }
+
+  res += '\n';
 
   return res;
 }
@@ -630,7 +634,7 @@ std::string RcsGraph_printUsageToString(std::string xmlFile)
 
   if (!fileExists)
   {
-    RLOG(1, "XML file \"%s\" not found in resource paths", xmlFile);
+    RLOG_CPP(1, "XML file \"" << xmlFile << "\" not found in resource paths");
     return res;
   }
 
@@ -647,13 +651,13 @@ std::string RcsGraph_printUsageToString(std::string xmlFile)
 
   if (usage)
   {
-    res = "Usage: \n";
+    res = "Graph usage description: \n";
     res += (char*)usage;
     res += '\n';
   }
   else
   {
-    res = "No usage description\n";
+    res = "No graph usage description\n";
   }
 
   xmlFreeDoc(docPtr);

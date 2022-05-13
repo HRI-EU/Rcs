@@ -241,26 +241,23 @@ void ExamplePhysics::parseArgs(CmdLineParser* argP)
 std::string ExamplePhysics::help()
 {
   std::stringstream s;
-  RMSG("Mode 4: Rcs -m 4 -dir <graph-directory> -f "
-       "<graph-file>\n\n\t- Creates a graph from an xml file\n\t"
-       "- Creates a viewer (if option -valgrind is not set)\n\t"
-       "- Creates a StateGui (if option -valgrind is not set)\n\t"
-       "- Runs the forward kinematics in a physics enabled loop\n\n\t"
-       "The joints angles can be modified by the sliders\n");
-  printf("Here are a few examples:\n");
-  printf("bin/Rcs -m 4 -dir config/xml/PPStest\n");
-  printf("bin/Rcs -m 4 -skipGui -dir config/xml/Examples -f gGyro.xml -physicsEngine NewtonEuler -gz 0\n");
-  printf("bin/Rcs -m 4 -skipGui -dir config/xml/Examples -f gGyro.xml -physicsEngine Bullet -gz 0\n");
-  printf("bin/Rcs -m 4 -f config/xml/Examples/gHumanoidPendulum.xml -physicsEngine NewtonEuler -skipGui\n");
-  printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f cSitToStand.xml -physicsEngine NewtonEuler -skipGui\n");
-  printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f gSoftPhysics.xml -physicsEngine SoftBullet\n");
-  printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f cSoftPhysicsIK.xml -physicsEngine SoftBullet\n");
-  printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f gSoftShirtPerson.xml -physicsEngine SoftBullet\n");
-  printf("bin/Rcs -m 4 -dir config/xml/WAM -f gScenario.xml -gc -damping 3 -physicsEngine NewtonEuler -gravComp\n");
-  printf("bin/Rcs -m 4 -dir config/xml/Examples/ -f cWeldConstraint.xml -physicsEngine NewtonEuler -skipGui\n");
+  s << "\tPhysics simulation test\n\n";
+  s << "\tHere are a few examples:\n";
+  s << "\t-dir config/xml/PPStest\n";
+  s << "\t-skipGui -dir config/xml/Examples -f gGyro.xml -physicsEngine NewtonEuler -gz 0\n";
+  s << "\t-skipGui -dir config/xml/Examples -f gGyro.xml -physicsEngine Bullet -gz 0\n";
+  s << "\t-f config/xml/Examples/gHumanoidPendulum.xml -physicsEngine NewtonEuler -skipGui\n";
+  s << "\t-dir config/xml/Examples/ -f cSitToStand.xml -physicsEngine NewtonEuler -skipGui\n";
+  s << "\t-dir config/xml/Examples/ -f gSoftPhysics.xml -physicsEngine SoftBullet\n";
+  s << "\t-dir config/xml/Examples/ -f cSoftPhysicsIK.xml -physicsEngine SoftBullet\n";
+  s << "\t-dir config/xml/Examples/ -f gSoftShirtPerson.xml -physicsEngine SoftBullet\n";
+  s << "\t-dir config/xml/WAM -f gScenario.xml -gc -damping 3 -physicsEngine NewtonEuler -gravComp\n";
+  s << "\t-dir config/xml/Examples/ -f cWeldConstraint.xml -physicsEngine NewtonEuler -skipGui\n\n";
 
-  PhysicsFactory::print();
-  RcsGraph_printUsage(xmlFileName.c_str());
+  s << PhysicsFactory::printToString();
+  s << Rcs::getResourcePaths();
+  s << Rcs::CmdLineParser::printToString();
+  s << Rcs::RcsGraph_printUsageToString(xmlFileName);
   return s.str();
 }
 

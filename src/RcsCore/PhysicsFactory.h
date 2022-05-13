@@ -86,6 +86,10 @@ public:
    */
   static void print();
 
+  /*! \brief Prints the list of all registered physics simulations to a string.
+   */
+  static std::string printToString();
+
 
   /*! \brief Signature of physics engine creator function.
    */

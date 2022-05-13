@@ -142,36 +142,36 @@ int AsyncGuiFactory::create(int argc_, char** argv_)
 {
   if (QApplication::instance())
   {
-    RLOG(0, "AsyncGuiFactory already running");
+    RLOG(1, "AsyncGuiFactory already running");
     return -1;
   }
 
-  RLOG(0, "Creating AsyncGuiFactory thread");
+  RLOG(5, "Creating AsyncGuiFactory thread");
   argc = argc_;
   argv = argv_;
 
-  RLOG(0, "Construct event: %d   Destroy event: %d",
+  RLOG(5, "Construct event: %d   Destroy event: %d",
        constructEvent, destroyEvent);
   pthread_create(&myThread, NULL, AsyncGuiFactory::threadFunc, NULL);
 
   // Return only once the QApplication has completely been constructed.
   // Otherwise there might be issues when calling moveToThread for subsequent
   // widgets.
-  RLOG(0, "Waiting for QApplication::instance()");
+  RLOG(5, "Waiting for QApplication::instance()");
   while (QApplication::startingUp())
   {
-    RLOG(0, "... starting up");
+    RLOG(5, "... starting up");
     Timer_usleep(10000);
   }
 
-  RLOG_CPP(0, "Done: QApplication");
+  RLOG_CPP(5, "Done: QApplication");
 
   return 0;
 }
 
 int AsyncGuiFactory::destroy()
 {
-  RLOG(0, "Destroying AsyncGuiFactory");
+  RLOG(5, "Destroying AsyncGuiFactory");
   // Uncomment his when there are warnings about non-stoppable timers after
   // exit()
   //qInstallMessageHandler(myMessageOutput);
@@ -181,13 +181,13 @@ int AsyncGuiFactory::destroy()
 
   while (QApplication::closingDown())
   {
-    RLOG(0, "... shutting down");
+    RLOG(5, "... shutting down");
     Timer_usleep(10000);
   }
 
-  RLOG(0, "QApplication quit() done");
+  RLOG(5, "QApplication quit() done");
   pthread_join(myThread, NULL);
-  RLOG(0, "myThread joined");
+  RLOG(5, "myThread joined");
   return 0;
 }
 
@@ -210,7 +210,7 @@ void* AsyncGuiFactory::threadFunc(void*)
   guiThreadId = pthread_self();
   threadRunning = true;
 
-  RLOG(0, "threadFunc took off");
+  RLOG(5, "threadFunc took off");
   QApplication app(argc, argv);
   app.setQuitOnLastWindowClosed(false);
 
@@ -220,9 +220,9 @@ void* AsyncGuiFactory::threadFunc(void*)
 
   app.exec();
 
-  RLOG_CPP(0, "Widgets: " << app.allWidgets().size());
-  RLOG_CPP(0, "Event count: " << qGlobalPostedEventsCount());
-  RLOG(0, "threadFunc exits, %zu widgets alive", myLauncher.numWidgets());
+  RLOG_CPP(5, "Widgets: " << app.allWidgets().size());
+  RLOG_CPP(5, "Event count: " << qGlobalPostedEventsCount());
+  RLOG(5, "threadFunc exits, %zu widgets alive", myLauncher.numWidgets());
 
   threadRunning = false;
   launcher = NULL;
@@ -264,7 +264,7 @@ public:
 
   ~AsyncWidgetEvent()
   {
-    RLOG(0, "Deleting AsyncWidgetEvent");
+    RLOG(5, "Deleting AsyncWidgetEvent");
   }
 
   AsyncWidget* widget;
@@ -280,42 +280,42 @@ WidgetLauncher::WidgetLauncher() : QObject(NULL)
 
 WidgetLauncher::~WidgetLauncher()
 {
-  RLOG_CPP(0, "Deleting GuiLauncher " << objectName().toStdString());
+  RLOG_CPP(5, "Deleting GuiLauncher " << objectName().toStdString());
 }
 
 bool WidgetLauncher::event(QEvent* ev)
 {
-  RLOG_CPP(0, "Received event - event count: " << qGlobalPostedEventsCount());
+  RLOG_CPP(5, "Received event - event count: " << qGlobalPostedEventsCount());
 
 
   AsyncWidgetEvent* mev = dynamic_cast<AsyncWidgetEvent*>(ev);
 
   if (!mev)
   {
-    RLOG(0, "Received NON-AsyncWidgetEvent");
+    RLOG(5, "Received NON-AsyncWidgetEvent");
     return false;
   }
 
   if (ev->type() == AsyncGuiFactory::constructEvent)
   {
-    RLOG(0, "Received AsyncGuiFactory::constructEvent");
+    RLOG(5, "Received AsyncGuiFactory::constructEvent");
 
     if (!mev->widget->w)
     {
-      RLOG(0, "Constructing and connecting onCloseWindow");
+      RLOG(5, "Constructing and connecting onCloseWindow");
       mev->widget->construct();
       mev->widget->w->setAttribute(Qt::WA_DeleteOnClose);
       mev->widget->w->show();
       connect(mev->widget->w, SIGNAL(destroyed(QObject*)), this,
               SLOT(onCloseWindow(QObject*)));
-      RLOG(0, "done");
+      RLOG(5, "done");
       mev->widget->setLaunched(true);
       asyncWidgets.push_back(mev->widget);
-      RLOG_CPP(0, "Widgets alive: " << asyncWidgets.size());
+      RLOG_CPP(5, "Widgets alive: " << asyncWidgets.size());
     }
     else
     {
-      RLOG_CPP(0, "Widget " << mev->widget->w->objectName().toStdString()
+      RLOG_CPP(5, "Widget " << mev->widget->w->objectName().toStdString()
                << " already up and running");
     }
 
@@ -323,7 +323,7 @@ bool WidgetLauncher::event(QEvent* ev)
   }
   else if (ev->type() == AsyncGuiFactory::destroyEvent)
   {
-    RLOG(0, "Received AsyncGuiFactory::destroyEvent");
+    RLOG(5, "Received AsyncGuiFactory::destroyEvent");
 
     mev->widget->destroy();
     mev->widget->setLaunched(false);
@@ -336,7 +336,7 @@ bool WidgetLauncher::event(QEvent* ev)
 
       if (aw == mev->widget)
       {
-        RLOG_CPP(0, "Removing AsyncWidget holding "
+        RLOG_CPP(5, "Removing AsyncWidget holding "
                  << aw->w->objectName().toStdString()
                  << " from queue");
         it = asyncWidgets.erase(it);
@@ -347,12 +347,12 @@ bool WidgetLauncher::event(QEvent* ev)
       }
     }
 
-    RLOG_CPP(0, "Widgets alive: " << asyncWidgets.size());
+    RLOG_CPP(5, "Widgets alive: " << asyncWidgets.size());
     return true;
   }
   else if (ev->type() == AsyncGuiFactory::resetEvent)
   {
-    RLOG(0, "Destroying GuiFactory");
+    RLOG(5, "Destroying GuiFactory");
     AsyncGuiFactory::destroy();
     return true;
   }
@@ -362,19 +362,19 @@ bool WidgetLauncher::event(QEvent* ev)
 
 void WidgetLauncher::onCloseWindow(QObject* obj)
 {
-  RLOG(0, "Catching close window event");
+  RLOG(5, "Catching close window event");
   std::vector<AsyncWidget*>::iterator it = asyncWidgets.begin();
 
   while (it != asyncWidgets.end())
   {
     AsyncWidget* aw = *it;
 
-    RLOG_CPP(0, "aw->name:  " << aw->w->objectName().toStdString());
-    RLOG_CPP(0, "obj->name: " << obj->objectName().toStdString());
+    RLOG_CPP(5, "aw->name:  " << aw->w->objectName().toStdString());
+    RLOG_CPP(5, "obj->name: " << obj->objectName().toStdString());
 
     if (aw->w == obj)
     {
-      RLOG_CPP(0, "Setting AsyncWidget's "
+      RLOG_CPP(5, "Setting AsyncWidget's "
                << obj->objectName().toStdString() << " to NULL");
       disconnect(aw->w, SIGNAL(destroyed(QObject*)),
                  this, SLOT(onCloseWindow(QObject*)));

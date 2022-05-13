@@ -51,26 +51,65 @@
 #include <QHeaderView>
 #include <QTimer>
 
+#include <sstream>
+
 
 
 namespace Rcs
 {
 
+class LogLine : public ParameterCollection::Entry
+{
+public:
+
+  void setParam(std::string paramString)
+  {
+    RcsLogLevel = atoi(paramString.c_str());
+  }
+
+  virtual std::string getParamAsString() const
+  {
+    std::stringstream  sstream;
+    sstream << RcsLogLevel;
+    return sstream.str();
+  }
+
+  std::string getName() const
+  {
+    return "Log level";
+  }
+
+  std::string getDescription() const
+  {
+    return "";
+  }
+
+};
+
+
+
+
+
+
+
+
+
+
 ExampleGui::ExampleGui(int argc_, char** argv_) :
   AsyncWidget(), argc(argc_), argv(argv_)
 {
-  RLOG(0, "Before launch");
+  RLOG(5, "Before launch");
   launch();
-  RLOG(0, "After launch");
+  RLOG(5, "After launch");
 }
 
 void ExampleGui::construct()
 {
-  RLOG(0, "Constructing test");
+  RLOG(5, "Constructing test");
   QWidget* test = new ExampleWidget(argc, argv);
-  RLOG(0, "Setting widget");
+  RLOG(5, "Setting widget");
   setWidget(test);
-  RLOG(0, "Done");
+  RLOG(5, "Done");
 }
 
 class ExampleWorker : public QObject
@@ -79,12 +118,12 @@ public:
   ExampleWorker(ExampleBase* example_, int argc_, char** argv_) :
     example(example_), argc(argc_), argv(argv_)
   {
-    RLOG(0, "ExampleWorker created");
+    RLOG(5, "ExampleWorker created");
   }
 
   ~ExampleWorker()
   {
-    RLOG(0, "ExampleWorker deleted");
+    RLOG(5, "ExampleWorker deleted");
   }
 
   void doWork()
@@ -92,7 +131,7 @@ public:
     // example->init(argc, argv);
     // RLOG(0, "doWork() started");
     example->start();
-    RLOG(0, "doWork() finished");
+    RLOG(5, "doWork() finished");
   }
 
   ExampleBase* example;
@@ -126,7 +165,7 @@ ExampleItem::ExampleItem(int argc_, char** argv_,
 
 ExampleItem::~ExampleItem()
 {
-  RLOG_CPP(0, "Deleting ExampleItem " << categoryName.toStdString()
+  RLOG_CPP(5, "Deleting ExampleItem " << categoryName.toStdString()
            << "::" << text().toStdString());
 
   // Cleaníng up will properly shut down the running thread and delete the example.
@@ -153,11 +192,11 @@ void ExampleItem::timerCallback()
 
 void ExampleItem::start()
 {
-  RLOG(1, "Initializing example");
+  RLOG(5, "Initializing example");
   example = ExampleFactory::create(categoryName.toStdString(), text().toStdString(), argc, argv);
   RCHECK(example);
 
-  RLOG(1, "Starting example");
+  RLOG(5, "Starting example");
   ExampleWorker* worker = new ExampleWorker(example, argc, argv);
   worker->moveToThread(&exampleThread);
   connect(&exampleThread, &QThread::finished, worker, &QObject::deleteLater);
@@ -190,11 +229,11 @@ void startWork()
 
 void ExampleItem::stop()
 {
-  RLOG(1, "Stopping example");
+  RLOG(5, "Stopping example");
   example->stop();
   exampleThread.quit();
   exampleThread.wait();
-  RLOG(1, "... stopped");
+  RLOG(5, "... stopped");
   timer->stop();
   parsingFinished = false;
   delete helpWin;
@@ -206,7 +245,7 @@ void ExampleItem::stop()
 void ExampleItem::destroy()
 {
   stop();
-  RLOG(1, "Deleting example");
+  RLOG(5, "Deleting example");
   delete example;
   example = NULL;
 }
@@ -215,15 +254,20 @@ void ExampleItem::destroy()
 ExampleWidget::ExampleWidget(int argc, char** argv, QWidget* parent) :
   QMainWindow(parent)
 {
-  QWidget* mainWidget = new QWidget(this);
-  QTreeView* tree = new QTreeView(mainWidget);
-  QHBoxLayout* mainGrid = new QHBoxLayout();
   setObjectName("Rcs::ExampleGui");
 
-  mainGrid->setMargin(0);
-  mainGrid->setSpacing(0);
-  mainGrid->addWidget(tree);
-  mainWidget->setLayout(mainGrid);
+  QWidget* mainWidget = new QWidget(this);
+  QTreeView* tree = new QTreeView(mainWidget);
+  QVBoxLayout* vBox = new QVBoxLayout();
+  vBox->setMargin(0);
+  vBox->setSpacing(0);
+
+  // Rcs log level as first field
+  LogLine* logLine = new LogLine;
+  vBox->addWidget(new CmdLineEntry(logLine));
+
+  vBox->addWidget(tree);
+  mainWidget->setLayout(vBox);
   setCentralWidget(mainWidget);
 
   std::set<std::string> categories = ExampleFactory::getCategories();
@@ -294,7 +338,7 @@ ExampleWidget::ExampleWidget(int argc, char** argv, QWidget* parent) :
 
 ExampleWidget::~ExampleWidget()
 {
-  RLOG(0, "Deleting ExampleWidget");
+  RLOG(5, "Deleting ExampleWidget");
   delete this->model;
 }
 
@@ -306,14 +350,14 @@ void ExampleWidget::itemClicked(const QModelIndex& idx)
   }
 
   QStandardItem* item = model->itemFromIndex(idx);
-  RLOG(0, "row: %d   col: %d", idx.row(), idx.column());
+  RLOG(5, "row: %d   col: %d", idx.row(), idx.column());
 
   ExampleItem* ei = dynamic_cast<ExampleItem*>(item);
 
   if (ei)
   {
     ei->clicked = !ei->clicked;
-    RLOG(1, "Item: %d %d -> %s (%s)", idx.parent().row(), idx.row(),
+    RLOG(5, "Item: %d %d -> %s (%s)", idx.parent().row(), idx.row(),
          item->text().toStdString().c_str(),
          ei->clicked ? "Clicked" : "Not clicked");
 
@@ -338,19 +382,19 @@ void ExampleWidget::itemClicked(const QModelIndex& idx)
     switch (cs)
     {
       case Qt::Checked:
-        RLOG_CPP(1, "Checked");
+        RLOG_CPP(5, "Checked");
         sib->withArgParser = true;
         break;
 
       case Qt::Unchecked:
-        RLOG_CPP(1, "Unchecked");
+        RLOG_CPP(5, "Unchecked");
         sib->withArgParser = false;
         break;
 
       default:
         RLOG_CPP(1, "Unknown checked mode: " << cs);
     }
-    RLOG_CPP(0, "Clicked on item with: " << item->text().toStdString());
+    RLOG_CPP(5, "Clicked on item with: " << item->text().toStdString());
   }
 }
 

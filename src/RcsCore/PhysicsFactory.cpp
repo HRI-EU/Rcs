@@ -141,22 +141,31 @@ void Rcs::PhysicsFactory::registerPhysics(const char* name,
  ******************************************************************************/
 void Rcs::PhysicsFactory::print()
 {
+  std::cout << printToString();
+}
+
+/*******************************************************************************
+ * Prints all registered physics engines to the console
+ ******************************************************************************/
+std::string Rcs::PhysicsFactory::printToString()
+{
   if (constructorMap().empty())
   {
-    RMSG("No physics engines found");
-    return;
+    return std::string("No physics engines found");
   }
 
-
-  RMSG("Registered physics engines are\n");
+  std::string res = "Registered physics engines are:\n";
 
   std::map<std::string, PhysicsCreateFunction>::const_iterator it;
 
-  for (it = constructorMap().begin();
-       it != constructorMap().end(); ++it)
+  for (it = constructorMap().begin(); it != constructorMap().end(); ++it)
   {
-    printf("%s\n", it->first.c_str());
+    res += '\t';
+    res += it->first;
+    res += '\n';
   }
+
+  res += '\n';
+
+  return res;
 }
-
-

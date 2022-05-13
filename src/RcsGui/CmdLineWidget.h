@@ -92,6 +92,8 @@ public:
   bool getArgument(const char* tag, float* result,
                    const char* description=NULL, ...);
 
+  bool hasArgument(const char* tag, const char* description=NULL, ...);
+
   size_t size() const;
   Entry* getEntry(size_t index);
   void clear();

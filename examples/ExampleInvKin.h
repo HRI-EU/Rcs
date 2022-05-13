@@ -70,10 +70,10 @@ public:
   virtual void clear();
 
 protected:
-  bool valgrind, simpleGraphics;
+  bool valgrind, simpleGraphics, nomutex, testLocale;
   pthread_mutex_t graphLock;
   pthread_mutex_t* mtx;
-
+  std::string localeStr;
   int algo, guiHandle;
   double alpha, lambda, tmc, dt, dt_calc, jlCost, dJlCost, clipLimit, det,
          scaleDragForce;

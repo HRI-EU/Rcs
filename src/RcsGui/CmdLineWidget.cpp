@@ -338,6 +338,12 @@ bool ParameterCollection::getArgument(const char* name, float* value,
   paramLine.push_back(new ParameterLineFloat(name, buffer, value));
   return true;
 }
+bool ParameterCollection::hasArgument(const char* tag,
+                                      const char* description, ...)
+{
+  RLOG(0, "This function does not work as you expect it!");
+  return false;
+}
 size_t ParameterCollection::size() const
 {
   return paramLine.size();
@@ -388,6 +394,10 @@ CmdLineWidget::CmdLineWidget(ParameterCollection* collection, QWidget* parent) :
   QWidget* scrollWidget = new QWidget(this);
   scrollWidget->setLayout(gridLayout);
   this->setWidget(scrollWidget);
+
+  // // Rcs log level as first field
+  // ParameterCollection::Entry* logLine = new ParameterLineInt("Log level", "Log Level", &RcsLogLevel);
+  // gridLayout->addWidget(new CmdLineEntry(logLine));
 
   for (size_t i=0; i<collection->size(); ++i)
   {

@@ -160,6 +160,7 @@ public:
   /*! \brief Prints out all parsed arguments to a returned string.
    */
   static std::string printToString();
+
   /*! \brief Adds a command line description that will be printed to the
    *         console.
    */

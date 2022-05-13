@@ -68,10 +68,10 @@ static ExampleFactoryRegistrar<ExampleIK> ExampleIK_("Inverse kinematics", "Dexb
 
 
 ExampleIK::ExampleIK(int argc, char** argv) : ExampleBase(argc, argv),
-  valgrind(false), simpleGraphics(false), mtx(NULL), algo(1), guiHandle(-1),
-  alpha(0.05), lambda(1.0e-8), tmc(0.1), dt(0.01), dt_calc(0.0),
-  jlCost(0.0), dJlCost(0.0), clipLimit(DBL_MAX), det(0.0), scaleDragForce(0.01),
-  calcDistance(false),
+  valgrind(false), simpleGraphics(false), nomutex(false), testLocale(false),
+  mtx(NULL), algo(1), guiHandle(-1), alpha(0.05), lambda(1.0e-8), tmc(0.1),
+  dt(0.01), dt_calc(0.0), jlCost(0.0), dJlCost(0.0), clipLimit(DBL_MAX),
+  det(0.0), scaleDragForce(0.01), calcDistance(false),
   ffwd(false), skipGui(false), pause(false), launchJointWidget(false),
   manipulability(false), cAvoidance(false),
   constraintIK(false), initToQ0(false), testCopying(false), noHud(false),
@@ -138,19 +138,15 @@ void ExampleIK::initParameters()
   directory = "config/xml/DexBot";
   physicsCfg = "config/physics/physics.xml";
   integrator = "Fehlberg";
+  localeStr = "de_DE.utf8";
 }
 
 void ExampleIK::parseArgs(CmdLineParser* argP)
 {
-  valgrind = argP->hasArgument("-valgrind",
-                               "Start without Guis and graphics");
-  simpleGraphics = argP->hasArgument("-simpleGraphics", "OpenGL without fan"
-                                     "cy stuff (shadows, anti-aliasing)");
-  if (argP->hasArgument("-nomutex", "Graphics without mutex"))
-  {
-    mtx = NULL;
-  }
-
+  argP->getArgument("-valgrind", &valgrind, "Start without Guis and graphics");
+  argP->getArgument("-simpleGraphics", &simpleGraphics, "OpenGL without fancy "
+                    "stuff (shadows, anti-aliasing)");
+  argP->getArgument("-nomutex", &nomutex, "Graphics without mutex");
   argP->getArgument("-i", &integrator, "Integrator for Newton-Euler "
                     "simulation (default is \"%s\")", integrator.c_str());
   argP->getArgument("-algo", &algo, "IK algorithm: 0: left inverse, 1: "
@@ -176,36 +172,63 @@ void ExampleIK::parseArgs(CmdLineParser* argP)
                     "(default is \"%s\")", physicsEngine.c_str());
   argP->getArgument("-scaleDragForce", &scaleDragForce, "Scale factor for"
                     " mouse dragger (default is \"%f\")", scaleDragForce);
+  argP->getArgument("-ffwd", &ffwd, "Feed-forward dx only");
+  argP->getArgument("-skipGui", &skipGui, "No GUIs, only viewer");
+  argP->getArgument("-pause", &pause, "Pause after each iteration");
+  argP->getArgument("-jointWidget", &launchJointWidget, "Launch JointWidget");
+  argP->getArgument("-manipulability", &manipulability, "Manipulability "
+                    "criterion in null space");
+  argP->getArgument("-ca", &cAvoidance, "Collision avoidance in null space");
+  argP->getArgument("-constraintIK", &constraintIK, "Use constraint IK solver");
+  argP->getArgument("-setDefaultStateFromInit", &initToQ0, "Set the "
+                    "joint center defaults from the initial state");
+  argP->getArgument("-copy", &testCopying, "Test copying");
+  argP->getArgument("-noHud", &noHud, "Don't show HUD");
+  argP->getArgument("-posCntrl", &posCntrl, "Enforce position control "
+                    "with physics");
 
-  ffwd = argP->hasArgument("-ffwd", "Feed-forward dx only");
-  skipGui = argP->hasArgument("-skipGui", "No GUIs, only viewer");
-  pause = argP->hasArgument("-pause", "Pause after each iteration");
-  launchJointWidget = argP->hasArgument("-jointWidget",
-                                        "Launch JointWidget");
-  manipulability = argP->hasArgument("-manipulability",
-                                     "Manipulability criterion in "
-                                     "null space");
-  cAvoidance = argP->hasArgument("-ca", "Collision avoidance in "
-                                 "null space");
-  constraintIK = argP->hasArgument("-constraintIK", "Use constraint IK"
-                                   " solver");
-  initToQ0 = argP->hasArgument("-setDefaultStateFromInit", "Set the "
-                               "joint center defaults from the initial"
-                               " state");
-  testCopying = argP->hasArgument("-copy", "Test copying");
-  noHud = argP->hasArgument("-noHud", "Don't show HUD");
-  posCntrl = argP->hasArgument("-posCntrl",
-                               "Enforce position control with physics");
+  // Option to set locale - for parsing tests
+  argP->getArgument("-testLocale", &testLocale, "Test locale");
+  argP->getArgument("-locale", &localeStr, "Locale to be tested (default: %s)",
+                    localeStr.c_str());
+}
 
-  // Option to set locale - mainly for parsing tests
-  if (argP->hasArgument("-locale", "Set locale"))
+std::string ExampleIK::help()
+{
+  std::stringstream s;
+  s << "  Resolved motion rate control test\n\n";
+  s << "  Here are a few examples:\n";
+  s << "  -dir config/xml/DexBot -f cAction.xml\n";
+  s << "  -f config/xml/Examples/cContactGrasping.xml -algo 1 -lambda 0.001 -alpha 0\n";
+  s << "  -f config/xml/Examples/cDistanceTask.xml\n";
+  s << "  -f config/xml/Examples/cNormalAlign.xml -algo 1 -alpha 0.01 -lambda 0 -scaleDragForce 0.001\n";
+  s << "  -f config/xml/Examples/cFace.xml\n";
+  s << "  -f config/xml/Examples/cSoftPhysicsIK.xml -physicsEngine SoftBullet\n";
+  s << "  -dir config/xml/Examples/ -f cSitToStand.xml -physicsEngine NewtonEuler -algo 1 -lamba 0 -dt 0.01\n";
+  s << "  -dir config/xml/Dressing -f cRoboSleeve.xml -algo 1 -physicsEngine SoftBullet -dt 0.002\n";
+  s << "  -dir config/xml/AvatarSkeleton -f cOpenSimWholeBody.xml -physicsEngine NewtonEuler -algo 1 -lambda 0 -i Euler\n\n";
+  s << ControllerBase::printUsageToString(xmlFileName);
+  s << Rcs::getResourcePaths();
+  s << Rcs::CmdLineParser::printToString();
+  s << Rcs::RcsGraph_printUsageToString(xmlFileName);
+  return s.str();
+}
+
+bool ExampleIK::initAlgo()
+{
+  Rcs_addResourcePath(directory.c_str());
+
+  if (nomutex)
   {
-    char localeStr[256] = "de_DE.utf8";
-    argP->getArgument("-locale", localeStr);
-    char* res = setlocale(LC_ALL, localeStr);
+    mtx = NULL;
+  }
+
+  if (testLocale)
+  {
+    char* res = setlocale(LC_ALL, localeStr.c_str());
     if (res == NULL)
     {
-      RLOG(1, "Failed to set locale \"%s\"", localeStr);
+      RLOG(1, "Failed to set locale \"%s\"", localeStr.c_str());
     }
     else
     {
@@ -215,29 +238,6 @@ void ExampleIK::parseArgs(CmdLineParser* argP)
     }
   }
 
-}
-
-std::string ExampleIK::help()
-{
-  std::stringstream s;
-  printf("Resolved motion rate control test\n\n");
-  printf("Here are a few examples:\n");
-  printf("bin/Rcs -m 5 -dir config/xml/DexBot -f cAction.xml\n");
-  printf("bin/Rcs -m 5 -f config/xml/Examples/cContactGrasping.xml -algo 1 -lambda 0.001 -alpha 0\n");
-  printf("bin/Rcs -m 5 -f config/xml/Examples/cDistanceTask.xml\n");
-  printf("bin/Rcs -m 5 -f config/xml/Examples/cNormalAlign.xml -algo 1 -alpha 0.01 -lambda 0 -scaleDragForce 0.001\n");
-  printf("bin/Rcs -m 5 -f config/xml/Examples/cFace.xml\n");
-  printf("bin/Rcs -m 5 -f config/xml/Examples/cSoftPhysicsIK.xml -physicsEngine SoftBullet\n");
-  printf("bin/Rcs -m 5 -dir config/xml/Examples/ -f cSitToStand.xml -physicsEngine NewtonEuler -algo 1 -lamba 0 -dt 0.01\n");
-  printf("bin/Rcs -m 5 -dir config/xml/Dressing -f cRoboSleeve.xml -algo 1 -physicsEngine SoftBullet -dt 0.002\n");
-  printf("bin/Rcs -m 5 -dir config/xml/AvatarSkeleton -f cOpenSimWholeBody.xml -physicsEngine NewtonEuler -algo 1 -lambda 0 -i Euler\n");
-  ControllerBase::printUsage(xmlFileName);
-  return s.str();
-}
-
-bool ExampleIK::initAlgo()
-{
-  Rcs_addResourcePath(directory.c_str());
   controller = new ControllerBase(xmlFileName.c_str());
 
   if (testCopying)

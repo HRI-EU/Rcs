@@ -58,7 +58,7 @@ public:
 
   ~AsyncWidgetEvent()
   {
-    RLOG(0, "Deleting AsyncWidgetEvent");
+    RLOG(5, "Deleting AsyncWidgetEvent");
   }
 
   AsyncWidget* widget;
@@ -73,23 +73,23 @@ AsyncWidget::AsyncWidget() : launched(false), w(NULL)
 {
   if (!QApplication::instance())
   {
-    RLOG(0, "refCount is 0 - creating GuiFactory");
+    RLOG(5, "refCount is 0 - creating GuiFactory");
     AsyncGuiFactory::create();
   }
 
   refCount++;
-  RLOG(0, "AsyncWidget created: refCount = %d", refCount);
+  RLOG(5, "AsyncWidget created: refCount = %d", refCount);
 }
 
 AsyncWidget::~AsyncWidget()
 {
   unlaunch();
   refCount--;
-  RLOG(0, "AsyncWidget deleted: refCount = %d", refCount);
+  RLOG(5, "AsyncWidget deleted: refCount = %d", refCount);
 
   if (refCount == 0)
   {
-    RLOG(0, "Quitting QApplication with event");
+    RLOG(5, "Quitting QApplication with event");
     AsyncWidgetEvent* ae = new AsyncWidgetEvent(this, AsyncGuiFactory::resetEvent);
 
     if (!AsyncGuiFactory::isGuiThread())
@@ -98,19 +98,19 @@ AsyncWidget::~AsyncWidget()
 
       while (AsyncGuiFactory::isThreadRunning())
       {
-        RLOG(0, "Waiting util Gui factory thread finished");
+        RLOG(5, "Waiting util Gui factory thread finished");
         Timer_waitDT(0.1);
       }
 
     }
     else
     {
-      RLOG(0, "Quitting QApplication straight away");
+      RLOG(5, "Quitting QApplication straight away");
       AsyncGuiFactory::getLauncher()->event(ae);
       delete ae;
     }
 
-    RLOG(0, "Gui factory thread finished");
+    RLOG(5, "Gui factory thread finished");
   }
 
 }
@@ -139,13 +139,13 @@ void AsyncWidget::launch()
 
   if (AsyncGuiFactory::isGuiThread())
   {
-    RLOG(0, "launch(): Calling construct right away");
+    RLOG(5, "launch(): Calling construct right away");
     AsyncGuiFactory::getLauncher()->event(ae);
     delete ae;
   }
   else
   {
-    RLOG(0, "launch(): Constructing by posting event to Gui thread");
+    RLOG(5, "launch(): Constructing by posting event to Gui thread");
     QCoreApplication::postEvent(AsyncGuiFactory::getLauncher(), ae);
   }
 
@@ -157,7 +157,7 @@ void AsyncWidget::launch()
     double duration = Timer_getSystemTime() - t_launch;
     if (duration > 3.0)
     {
-      RLOG(0, "Waiting for launch: %.2f seconds", duration);
+      RLOG(1, "Waiting for launch: %.2f seconds", duration);
     }
   }
 }
@@ -169,13 +169,13 @@ void AsyncWidget::unlaunch()
 
   if (AsyncGuiFactory::isGuiThread())
   {
-    RLOG(0, "unlaunch(): Calling destroy right away");
+    RLOG(5, "unlaunch(): Calling destroy right away");
     AsyncGuiFactory::getLauncher()->event(ae);
     delete ae;
   }
   else
   {
-    RLOG(0, "unlaunch(): Destroying by posting event to Gui thread");
+    RLOG(5, "unlaunch(): Destroying by posting event to Gui thread");
     QCoreApplication::postEvent(AsyncGuiFactory::getLauncher(), ae);
   }
 
@@ -187,7 +187,7 @@ void AsyncWidget::unlaunch()
     double duration = Timer_getSystemTime() - t_unlaunch;
     if (duration > 3.0)
     {
-      RLOG(0, "Waiting for unlaunch: %.2f seconds", duration);
+      RLOG(1, "Waiting for unlaunch: %.2f seconds", duration);
     }
   }
 }
@@ -197,18 +197,18 @@ void AsyncWidget::destroy()
 {
   if (!AsyncGuiFactory::isGuiThread())
   {
-    RLOG(0, "WARNING: You must call this from the Gui thread using unlaunch()");
+    RLOG(1, "WARNING: You must call this from the Gui thread using unlaunch()");
   }
 
   if (w)
   {
-    RLOG_CPP(0, "Deleting widget " << w->objectName().toStdString());
+    RLOG_CPP(5, "Deleting widget " << w->objectName().toStdString());
     delete w;
     w = NULL;
   }
   else
   {
-    RLOG(0, "Widget already destroyed");
+    RLOG(5, "Widget already destroyed");
   }
 }
 
@@ -216,7 +216,7 @@ void AsyncWidget::setWidget(QWidget* widget)
 {
   if (!AsyncGuiFactory::isGuiThread())
   {
-    RLOG(0, "WARNING: Calling setWidget() from non-Gui thread");
+    RLOG(1, "WARNING: Calling setWidget() from non-Gui thread");
   }
 
   w = widget;
@@ -239,7 +239,7 @@ void AsyncWidget::wait()
     Timer_usleep(100000);
   }
 
-  RLOG(0, "Thank you for waiting");
+  RLOG(5, "Thank you for waiting");
 }
 
 } // namespace Rcs

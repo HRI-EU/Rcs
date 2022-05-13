@@ -177,27 +177,12 @@ void ExampleFK::parseArgs(CmdLineParser* argP)
 std::string ExampleFK::help()
 {
   std::stringstream s;
-  RMSG("ExampleRunner -dir <graph-directory> -f "
-       "<graph-file>\n\n\t- Creates a graph from an xml file\n\t"
-       "- Creates a viewer (if option -valgrind is not set)\n\t"
-       "- Creates a JointWidget (if option -valgrind is not set)\n\t"
-       "- Runs the forward kinematics in a loop\n\n\t"
-       "The joints angles can be modified by the sliders\n");
-  printf("\n\tForward kinematics:\n");
-  printf("\t-dir\t<directory=%s>   Configuration file directory\n",
-         directory.c_str());
-  printf("\t-f\t<configFile=%s>   Configuration file\n",
-         xmlFileName.c_str());
-  printf("\t-edit\t   Don't launch JointWidget. Otherwise, reloading"
-         " doesn't work with the widget being active.\n");
-  printf("\n");
-  printf("\n");
-  printf("\tExamples: Rcs -m 2\n");
-  printf("\t-dir config/xml/LWR -f lbr_iiwa_14_r820.urdf\n");
-  printf("\t-dir config/xml/DarwinOP -f robotis_op.urdf\n");
-  printf("\t-dir config/xml/Husky -f dual_arm_husky_original.urdf\n");
-  printf("\t-dir config/xml/Valkyrie -f valkyrie_sim.urdf\n");
-  printf("\n");
+  s << "  Forward kineamtics test\n\n";
+  s << "  Here are a few examples:\n";
+  s << "\t-dir config/xml/LWR -f lbr_iiwa_14_r820.urdf\n";
+  s << "\t-dir config/xml/DarwinOP -f robotis_op.urdf\n";
+  s << "\t-dir config/xml/Husky -f dual_arm_husky_original.urdf\n";
+  s << "\t-dir config/xml/Valkyrie -f valkyrie_sim.urdf\n\n";
   s << Rcs::getResourcePaths();
   s << Rcs::CmdLineParser::printToString();
   s << Rcs::RcsGraph_printUsageToString(xmlFileName);
@@ -206,6 +191,8 @@ std::string ExampleFK::help()
 
 bool ExampleFK::initAlgo()
 {
+  Rcs_addResourcePath(directory.c_str());
+
   // Option without mutex for viewer
   if (noMutex)
   {
@@ -216,7 +203,7 @@ bool ExampleFK::initAlgo()
   {
     help();
   }
-  Rcs_addResourcePath(directory.c_str());
+
   if (randomGraph)
   {
     graph = RcsGraph_createRandom(30, 5);

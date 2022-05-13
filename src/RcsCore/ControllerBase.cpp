@@ -2477,13 +2477,22 @@ void ControllerBase::swapTaskVec(std::vector<Task*>& newTasks,
  ******************************************************************************/
 void ControllerBase::printUsage(const std::string& xmlFile)
 {
+  std::cout << printUsageToString(xmlFile);
+}
+
+/*******************************************************************************
+ * Print the usage description if any
+ ******************************************************************************/
+std::string ControllerBase::printUsageToString(const std::string& xmlFile)
+{
+  std::string res;
   char cfgFile[256];
   bool fileExists = Rcs_getAbsoluteFileName(xmlFile.c_str(), cfgFile);
 
   if (!fileExists)
   {
     RLOG(1, "XML file \"%s\" not found in resource paths", xmlFile.c_str());
-    return;
+    return res;
   }
 
   xmlDocPtr docPtr;
@@ -2492,29 +2501,32 @@ void ControllerBase::printUsage(const std::string& xmlFile)
   if (node==NULL)
   {
     RLOG(1, "Node \"Controller\" not found in \"%s\"", cfgFile);
-    return;
+    return res;
   }
 
   xmlChar* usage = xmlGetProp(node, (const xmlChar*) "usage");
 
   if (usage)
   {
-    std::cout << "Usage: " << std::endl << usage << std::endl;
+    res = "Controller usage description: \n";
+    res += (char*)usage;
+    res += '\n';
   }
   else
   {
-    std::cout << "No usage description" << std::endl;
+    res = "No controller usage description\n";
   }
 
   xmlFreeDoc(docPtr);
+
+  return res;
 }
 
 /*******************************************************************************
- *
+ * Print information for each task
  ******************************************************************************/
 void ControllerBase::print() const
 {
-  // Print information for each task
   for (size_t i = 0; i < getNumberOfTasks(); i++)
   {
     tasks[i]->print();
