@@ -665,5 +665,81 @@ std::string RcsGraph_printUsageToString(std::string xmlFile)
   return res;
 }
 
+}   // namespace Rcs
+
+
+/*******************************************************************************
+ * Prints the distance function array to a file
+ ******************************************************************************/
+#include <Rcs_shape.h>
+
+namespace Rcs
+{
+std::string RcsShape_distanceFunctionsToString()
+{
+  std::string msg;
+  char tmp[32];
+  size_t nBytes = 0;
+
+  for (size_t i = 0; i < RCSSHAPE_SHAPE_MAX; ++i)
+  {
+    const char* name_i = RcsShape_name(i);
+    size_t nameLen = strlen(name_i);
+    if (nameLen > nBytes)
+    {
+      nBytes = nameLen;
+    }
+  }
+  nBytes += 4;
+
+  for (size_t i = 0; i < nBytes + 2; ++i)
+  {
+    msg += " ";
+  }
+
+  for (int i = 0; i < RCSSHAPE_SHAPE_MAX; ++i)
+  {
+    if ((i == RCSSHAPE_NONE) || (i == RCSSHAPE_REFFRAME))
+    {
+      continue;
+    }
+    snprintf(tmp, 32, "%3d", i);
+    msg += tmp;
+  }
+  msg += '\n';
+
+
+  for (int i = 0; i < RCSSHAPE_SHAPE_MAX; ++i)
+  {
+    if ((i == RCSSHAPE_NONE) || (i == RCSSHAPE_REFFRAME))
+    {
+      continue;
+    }
+    const char* name_i = RcsShape_name(i);
+    snprintf(tmp, 32, "%2d %s", i, name_i);
+    msg += tmp;
+    for (size_t k = 0; k < nBytes - strlen(name_i); ++k)
+    {
+      msg += " ";
+    }
+
+    for (int j = 0; j < RCSSHAPE_SHAPE_MAX; ++j)
+    {
+      if ((j == RCSSHAPE_NONE) || (j == RCSSHAPE_REFFRAME))
+      {
+        continue;
+      }
+
+      RcsDistanceFunction fnc = RcsShape_getDistanceFunction(i, j);
+      RcsDistanceFunction noDist = RcsShape_getDistanceFunction(RCSSHAPE_SHAPE_MAX, RCSSHAPE_SHAPE_MAX);
+
+      snprintf(tmp, 32, "%s", fnc == noDist ? " - " : " o ");
+      msg += tmp;
+    }
+    msg += '\n';
+  }
+
+  return msg;
+}
 
 } // namespace Rcs

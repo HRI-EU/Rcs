@@ -151,7 +151,15 @@ public:
 
   void construct()
   {
-    setWidget(new QLabel(QString::fromStdString(text)));
+    QFont font = QFont("Courier");
+    font.setStyleHint(QFont::Monospace);
+    font.setPointSize(8);
+    font.setFixedPitch(true);
+
+    QLabel* label = new QLabel(QString::fromStdString(text));
+    label->setFont(font);
+    label->setWordWrap(true);
+    setWidget(label);
   }
 
 protected:

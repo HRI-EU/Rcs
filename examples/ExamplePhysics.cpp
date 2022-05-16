@@ -99,6 +99,7 @@ ExamplePhysics::ExamplePhysics(int argc, char** argv) : ExampleBase(argc, argv)
   valgrind = false;
   simpleGraphics = false;
   bodyAdded = false;
+  nomutex = false;
 
   loopCount = 0;
 
@@ -183,14 +184,7 @@ void ExamplePhysics::initParameters()
 
 void ExamplePhysics::parseArgs(CmdLineParser* argP)
 {
-  // Option without mutex for viewer
-  bool noMutex = false;
-  argP->getArgument("-nomutex", &noMutex, "Graphics without mutex");
-
-  if (noMutex)
-  {
-    mtx = NULL;
-  }
+  argP->getArgument("-nomutex", &nomutex, "Graphics without mutex");
 
   argP->getArgument("-pause", &pause, "Hit key for each iteration");
   argP->getArgument("-posCntrl", &posCntrl, "Enforce position control");
@@ -263,6 +257,10 @@ std::string ExamplePhysics::help()
 
 bool ExamplePhysics::initAlgo()
 {
+  if (nomutex)
+  {
+    mtx = NULL;
+  }
   Rcs_addResourcePath(directory.c_str());
 
   graph = RcsGraph_create(xmlFileName.c_str());

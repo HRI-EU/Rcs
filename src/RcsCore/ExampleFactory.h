@@ -38,6 +38,7 @@
 #include <string>
 #include <map>
 #include <set>
+#include <utility>
 
 
 
@@ -95,8 +96,9 @@ public:
   /*! \brief Signature of example creation function.
      */
   typedef ExampleBase* (*ExampleMaker)(int argc, char** argv);
+  typedef std::map<std::pair<std::string, std::string>, ExampleMaker> ExampleMap;
 
-  static std::map<std::string, ExampleFactory::ExampleMaker>& constructorMap();
+  static ExampleMap& constructorMap();
 
 private:
 

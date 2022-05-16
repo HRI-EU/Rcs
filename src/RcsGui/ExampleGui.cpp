@@ -275,9 +275,7 @@ ExampleWidget::ExampleWidget(int argc, char** argv, QWidget* parent) :
   this->model = new QStandardItemModel();
   QStandardItem* parentItem = model->invisibleRootItem();
 
-  typedef std::map<std::string, ExampleFactory::ExampleMaker> ExampleMap;
-
-  ExampleMap cMap = ExampleFactory::constructorMap();
+  ExampleFactory::ExampleMap cMap = ExampleFactory::constructorMap();
 
   std::set<std::string>::iterator categories_it = categories.begin();
 
@@ -289,18 +287,14 @@ ExampleWidget::ExampleWidget(int argc, char** argv, QWidget* parent) :
     parentItem->appendRow(item);
 
     int i=0;
-    ExampleMap::iterator it = cMap.begin();
+    ExampleFactory::ExampleMap::iterator it = cMap.begin();
     while (it != cMap.end())
     {
-      std::vector<std::string> strings = String_split(it->first, "_");
-      RCHECK_MSG(strings.size()==2, "Splitted into %zu strings: %s",
-                 strings.size(), it->first.c_str());
-
-      if (strings[0]==category_i)
+      if (it->first.first==category_i)
       {
         ExampleItem* child = new ExampleItem(argc, argv,
-                                             QString::fromStdString(strings[0]),
-                                             QString::fromStdString(strings[1]));
+                                             QString::fromStdString(it->first.first),
+                                             QString::fromStdString(it->first.second));
         child->setEditable(false);
         //child->setSelectable(false);
         item->setChild(i, 0, child);

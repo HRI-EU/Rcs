@@ -18,7 +18,7 @@ IF(NOT HEADLESS_BUILD)
   ADD_EXECUTABLE(ExampleKinetics ExampleKinetics.cpp)
   TARGET_LINK_LIBRARIES(ExampleKinetics RcsCore RcsGui RcsGraphics RcsPhysics)
 
-  ADD_LIBRARY(ExampleCollection ExampleFK.cpp ExampleInvKin.cpp ExampleMath.cpp ExamplePhysics.cpp)
+  ADD_LIBRARY(ExampleCollection ExampleFK.cpp ExampleInvKin.cpp ExampleMath.cpp ExamplePhysics.cpp ExampleDistance.cpp)
   TARGET_LINK_LIBRARIES(ExampleCollection RcsGraphics RcsPhysics RcsGui)
 
   # We add this option to force the linker to export the symbols. This

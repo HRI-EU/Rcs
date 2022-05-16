@@ -31,106 +31,57 @@
 
 *******************************************************************************/
 
-#ifndef RCS_EXAMPLEPHYSICS_H
-#define RCS_EXAMPLEPHYSICS_H
+#ifndef RCS_EXAMPLEDISTANCE_H
+#define RCS_EXAMPLEDISTANCE_H
 
 #include <ExampleBase.h>
 #include <Rcs_graph.h>
-#include <Rcs_timer.h>
 
 #include <RcsViewer.h>
-#include <KeyCatcher.h>
-#include <GraphNode.h>
-#include <SphereNode.h>
 #include <HUD.h>
-#include <JointWidget.h>
-#include <PhysicsNode.h>
 
 #include <pthread.h>
 
 
-
-extern "C" {
-  void ExampleInfo();
-}
-
 namespace Rcs
 {
 
-class ExamplePhysics : public ExampleBase
+class ExampleDistance : public ExampleBase
 {
 public:
-  ExamplePhysics(int argc, char** argv);
-  virtual ~ExamplePhysics();
-  virtual void initParameters();
+  ExampleDistance(int argc, char** argv);
+  virtual ~ExampleDistance();
   virtual void parseArgs(CmdLineParser* parser);
   virtual bool initAlgo();
   virtual void initGraphics();
-  virtual void initGuis();
   virtual void step();
-  virtual void handleKeys();
   virtual std::string help();
-  virtual void clear();
 
 protected:
+  int shapeType1;
+  int shapeType2;
+  char textLine[2056];
+  bool valgrind;
+  bool simpleGraphics;
+  bool nomutex;
   pthread_mutex_t graphLock;
   pthread_mutex_t* mtx;
-  double dt, tmc, damping, shootMass;
-  double gVec[3];
-  char hudText[2056];
-  std::string physicsEngine;
-  std::string integrator;
-  std::string physicsCfg;
-  std::string xmlFileName;
-  std::string directory;
-  std::string bgColor;
-  bool pause, posCntrl, skipGui, skipControl, disableCollisions,
-       disableJointLimits, testCopy, withPPS, gravComp, resizeable,
-       syncHard, seqSim, valgrind, simpleGraphics, bodyAdded, nomutex;
-  size_t loopCount;
+
   RcsGraph* graph;
-  PhysicsBase* sim;
+  RcsBody* b1;
+  RcsBody* b2;
+  RcsShape* sh1;
+  RcsShape* sh2;
+  double I_closestPts[6];
+  double* cp0;
+  double* cp1;
+  double n01[3];
 
-  MatNd* q0, *q_des, *q_des_f, *q_curr, *q_dot_curr, *T_gravity, *T_curr;
-
-  KeyCatcher* kc;
-  Viewer* viewer;
-  HUD* hud;
-  PhysicsNode* simNode;
-
-  JointGui* jGui;
-
-  Timer* timer;
+  Rcs::Viewer* viewer;
+  osg::ref_ptr<Rcs::HUD> hud;
 };
 
-class ExamplePhysics_Gyro : public ExamplePhysics
-{
-public:
-  ExamplePhysics_Gyro(int argc, char** argv);
-  virtual void initParameters();
-};
-
-class ExamplePhysics_SoftBullet : public ExamplePhysics
-{
-public:
-  ExamplePhysics_SoftBullet(int argc, char** argv);
-  virtual void initParameters();
-};
-
-class ExamplePhysics_SitToStand : public ExamplePhysics
-{
-public:
-  ExamplePhysics_SitToStand(int argc, char** argv);
-  virtual void initParameters();
-};
-
-class ExamplePhysics_HumanoidPendulum : public ExamplePhysics
-{
-public:
-  ExamplePhysics_HumanoidPendulum(int argc, char** argv);
-  virtual void initParameters();
-};
 
 }   // namespace
 
-#endif   // RCS_EXAMPLEPHYSICS_H
+#endif   // RCS_EXAMPLEDISTANCE_H

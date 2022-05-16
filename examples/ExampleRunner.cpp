@@ -138,6 +138,7 @@ int main(int argc, char** argv)
       printf("\t-m");
       printf("\t0   Print this message\n");
       printf("\t\t1   Example runner with Gui\n");
+      printf("\t\t2   Example runner with specific example\n");
       break;
     }
 
@@ -156,7 +157,7 @@ int main(int argc, char** argv)
     // ==============================================================
     case 2:
     {
-      std::string categoryName = "Forward kinematics";
+      std::string categoryName = "Forward kinematicsx";
       std::string exampleName = "Dexbot";
       argP.getArgument("-c", &categoryName, "Category name (default: %s)",
                        categoryName.c_str());
@@ -165,7 +166,12 @@ int main(int argc, char** argv)
       Rcs::ExampleBase* example = Rcs::ExampleFactory::create(categoryName,
                                                               exampleName,
                                                               argc, argv);
-      RCHECK_MSG(example, "Example %s unknown", exampleName.c_str());
+      if (!example)
+      {
+        RMSG("Example %s unknown", exampleName.c_str());
+        Rcs::ExampleFactory::print();
+        break;
+      }
       example->init(argc, argv);
       example->start();
       example->stop();

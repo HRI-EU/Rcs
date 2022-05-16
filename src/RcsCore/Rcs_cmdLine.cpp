@@ -462,17 +462,21 @@ void Rcs::CmdLineParser::addDescription(const char* tag,
 }
 
 /*******************************************************************************
- * See header.
+ * \todo: Multiple descriptions with the same content gat appended too.
  ******************************************************************************/
 void Rcs::CmdLineParser::appendDescription(const char* tag,
                                            const char* description,
                                            va_list args)
 {
-  RCHECK(description != NULL);
+  if (!description)
+  {
+    RLOG(4, "Failed to add description to command line argument %s",
+         tag ? tag : "NULL");
+    return;
+  }
 
   char buffer[512] = "";
-  int writtenBytes = vsprintf(buffer, description, args);
-  RCHECK(writtenBytes<512);
+  vsnprintf(buffer, sizeof(buffer), description, args);
 
   if (parsedArguments.find(std::string(tag)) == parsedArguments.end())
   {

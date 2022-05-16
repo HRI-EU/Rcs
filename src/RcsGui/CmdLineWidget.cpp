@@ -42,6 +42,7 @@
 #include <QSignalMapper>
 #include <QTextStream>
 #include <QDebug>
+#include <QtGlobal>
 
 #include <algorithm>
 #include <sstream>
@@ -245,7 +246,7 @@ bool ParameterCollection::getArgument(const char* name, char* value,
   char buffer[512] = "";
   va_list args;
   va_start(args, description);
-  vsprintf(buffer, description, args);
+  vsnprintf(buffer, sizeof(buffer), description, args);
   va_end(args);
   paramLine.push_back(new ParameterLineChar(name, buffer, value));
   return true;
@@ -256,7 +257,7 @@ bool ParameterCollection::getArgument(const char* name, int* value,
   char buffer[512] = "";
   va_list args;
   va_start(args, description);
-  vsprintf(buffer, description, args);
+  vsnprintf(buffer, sizeof(buffer), description, args);
   va_end(args);
   paramLine.push_back(new ParameterLineInt(name, buffer, value));
   return true;
@@ -267,7 +268,7 @@ bool ParameterCollection::getArgument(const char* name, unsigned int* value,
   char buffer[512] = "";
   va_list args;
   va_start(args, description);
-  vsprintf(buffer, description, args);
+  vsnprintf(buffer, sizeof(buffer), description, args);
   va_end(args);
   paramLine.push_back(new ParameterLineUnsignedInt(name, buffer, value));
   return true;
@@ -278,7 +279,7 @@ bool ParameterCollection::getArgument(const char* name, unsigned long* value,
   char buffer[512] = "";
   va_list args;
   va_start(args, description);
-  vsprintf(buffer, description, args);
+  vsnprintf(buffer, sizeof(buffer), description, args);
   va_end(args);
   paramLine.push_back(new ParameterLineUnsignedLong(name, buffer, value));
   return true;
@@ -289,7 +290,7 @@ bool ParameterCollection::getArgument(const char* name, unsigned long long* valu
   char buffer[512] = "";
   va_list args;
   va_start(args, description);
-  vsprintf(buffer, description, args);
+  vsnprintf(buffer, sizeof(buffer), description, args);
   va_end(args);
   paramLine.push_back(new ParameterLineUnsignedLongLong(name, buffer, value));
   return true;
@@ -300,7 +301,7 @@ bool ParameterCollection::getArgument(const char* name, bool* value,
   char buffer[512] = "";
   va_list args;
   va_start(args, description);
-  vsprintf(buffer, description, args);
+  vsnprintf(buffer, sizeof(buffer), description, args);
   va_end(args);
   paramLine.push_back(new ParameterLineBool(name, buffer, value));
   return true;
@@ -311,7 +312,7 @@ bool ParameterCollection::getArgument(const char* name, std::string* value,
   char buffer[512] = "";
   va_list args;
   va_start(args, description);
-  vsprintf(buffer, description, args);
+  vsnprintf(buffer, sizeof(buffer), description, args);
   va_end(args);
   paramLine.push_back(new ParameterLineString(name, buffer, value));
   return true;
@@ -322,7 +323,7 @@ bool ParameterCollection::getArgument(const char* name, double* value,
   char buffer[512] = "";
   va_list args;
   va_start(args, description);
-  vsprintf(buffer, description, args);
+  vsnprintf(buffer, sizeof(buffer), description, args);
   va_end(args);
   paramLine.push_back(new ParameterLineDouble(name, buffer, value));
   return true;
@@ -333,7 +334,7 @@ bool ParameterCollection::getArgument(const char* name, float* value,
   char buffer[512] = "";
   va_list args;
   va_start(args, description);
-  vsprintf(buffer, description, args);
+  vsnprintf(buffer, sizeof(buffer), description, args);
   va_end(args);
   paramLine.push_back(new ParameterLineFloat(name, buffer, value));
   return true;
@@ -341,7 +342,7 @@ bool ParameterCollection::getArgument(const char* name, float* value,
 bool ParameterCollection::hasArgument(const char* tag,
                                       const char* description, ...)
 {
-  RLOG(0, "This function does not work as you expect it!");
+  RLOG(1, "This function does not work as you expect it!");
   return false;
 }
 size_t ParameterCollection::size() const
@@ -395,10 +396,6 @@ CmdLineWidget::CmdLineWidget(ParameterCollection* collection, QWidget* parent) :
   scrollWidget->setLayout(gridLayout);
   this->setWidget(scrollWidget);
 
-  // // Rcs log level as first field
-  // ParameterCollection::Entry* logLine = new ParameterLineInt("Log level", "Log Level", &RcsLogLevel);
-  // gridLayout->addWidget(new CmdLineEntry(logLine));
-
   for (size_t i=0; i<collection->size(); ++i)
   {
     gridLayout->addWidget(new CmdLineEntry(collection->getEntry(i)));
@@ -419,7 +416,11 @@ CmdLineEntry::CmdLineEntry(ParameterCollection::Entry* line_) : line(line_)
   textParam->setText(QString::fromStdString(line->getParamAsString()));
   QString text = textParam->text();
   QFontMetrics fm(textParam->font());
+#if QT_VERSION < QT_VERSION_CHECK(5, 11, 0)
+  int pixelsWide = fm.width(text);
+#else
   int pixelsWide = fm.horizontalAdvance(text);
+#endif
   textParam->setFixedWidth(50+pixelsWide);
   connect(textParam, SIGNAL(returnPressed()), this, SLOT(handleText()));
   hbox->addWidget(textParam);

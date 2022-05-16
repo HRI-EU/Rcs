@@ -54,30 +54,15 @@ ExampleFactory::ExampleFactory()
  ******************************************************************************/
 void ExampleFactory::print()
 {
-  auto it = constructorMap().begin();
 
   std::cout << constructorMap().size() << " registered examples:\n";
 
+  ExampleMap::iterator it = constructorMap().begin();
   while (it != constructorMap().end())
   {
-    std::vector<std::string> strings = String_split(it->first, "_");
-    RCHECK_MSG(strings.size()==2, "Splitted into %zu strings: %s",
-               strings.size(), it->first.c_str());
-
-    std::cout << "  " << strings[1] << std::endl;
+    std::cout << "\tCategory: \"" << it->first.first
+              << "\"\tExample: \"" << it->first.second << "\"" << std::endl;
     it++;
-  }
-
-  std::set<std::string> categories = getCategories();
-  std::cout << categories.size() << " registered categories:\n";
-
-
-  std::set<std::string>::iterator cit = categories.begin();
-  // Iterate till the end of set
-  while (cit != categories.end())
-  {
-    std::cout << "  " << (*cit) << std::endl;
-    cit++;
   }
 
 }
@@ -89,14 +74,10 @@ std::set<std::string> ExampleFactory::getCategories()
 {
   std::set<std::string> categories;
 
-  auto it = constructorMap().begin();
+  ExampleMap::iterator it = constructorMap().begin();
   while (it != constructorMap().end())
   {
-    std::vector<std::string> strings = String_split(it->first, "_");
-    RCHECK_MSG(strings.size()==2, "Splitted into %zu strings: %s",
-               strings.size(), it->first.c_str());
-
-    categories.insert(strings[0]);
+    categories.insert(it->first.first);
     it++;
   }
 
@@ -111,10 +92,9 @@ ExampleBase* ExampleFactory::create(std::string category,
                                     int argc,
                                     char** argv)
 {
-  std::string name = category + "_" + example;
+  std::pair<std::string, std::string> exPair(category, example);
   ExampleBase* newExample = NULL;
-  std::map<std::string, ExampleMaker>::iterator it;
-  it = constructorMap().find(name);
+  ExampleMap::iterator it = constructorMap().find(exPair);
 
   if (it != constructorMap().end())
   {
@@ -122,7 +102,8 @@ ExampleBase* ExampleFactory::create(std::string category,
   }
   else
   {
-    RLOG_CPP(1, "Couldn't find constructor for class " << name);
+    RLOG_CPP(1, "Couldn't find constructor for category " << category
+             << " and example " << example);
   }
 
   return newExample;
@@ -133,8 +114,8 @@ ExampleBase* ExampleFactory::create(std::string category,
  ******************************************************************************/
 bool ExampleFactory::hasExample(std::string category, std::string example)
 {
-  std::string name = category + "_" + example;
-  return (constructorMap().find(name) != constructorMap().end());
+  std::pair<std::string, std::string> exPair(category,example);
+  return (constructorMap().find(exPair) != constructorMap().end());
 }
 
 /*******************************************************************************
@@ -146,25 +127,24 @@ void ExampleFactory::registerExample(std::string category,
                                      std::string example,
                                      ExampleMaker createFunction)
 {
-  std::string name = category + "_" + example;
-  std::map<std::string, ExampleMaker>::iterator it;
-  it = constructorMap().find(name);
+  std::pair<std::string, std::string> exPair(category, example);
+  ExampleMap::iterator it = constructorMap().find(exPair);
   if (it != constructorMap().end())
   {
     // No log level, this happens before main()
-    RMSG("Overwriting a constraint creation function: \"%s\"", name.c_str());
+    RMSG_CPP("Overwriting a example creation function: Example: "
+             << example << "Category: " << category);
   }
 
-  constructorMap()[name] = createFunction;
+  constructorMap()[exPair] = createFunction;
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-std::map<std::string, ExampleFactory::ExampleMaker>&
-ExampleFactory::constructorMap()
+ExampleFactory::ExampleMap& ExampleFactory::constructorMap()
 {
-  static std::map<std::string, ExampleMaker> em;
+  static ExampleMap em;
   return em;
 }
 

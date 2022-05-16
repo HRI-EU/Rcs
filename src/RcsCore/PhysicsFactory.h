@@ -36,6 +36,7 @@
 
 #include "PhysicsBase.h"
 
+#include <string>
 
 namespace Rcs
 {

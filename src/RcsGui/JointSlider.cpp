@@ -42,8 +42,8 @@
 #include <QHBoxLayout>
 #include <QGroupBox>
 
-#include <stdio.h>
-#include <math.h>
+#include <cstdio>
+#include <cmath>
 
 
 

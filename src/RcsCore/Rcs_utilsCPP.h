@@ -107,8 +107,8 @@ std::vector<std::string> String_split(const std::string& stringToBeSplitted,
  *  \brief Checks if a given string ends with another string. Basically for
  *         checking if a file has a given extension
  */
-  bool String_endsWith(const std::string& fullString,
-                      const std::string& ending);
+bool String_endsWith(const std::string& fullString,
+                     const std::string& ending);
 
 /*! \ingroup RcsUtilsFunctions
  * \brief Checks if a given string starts with another string.
@@ -129,9 +129,10 @@ std::vector<std::pair<int,double>> RcsGraph_readModelState(xmlNodePtr node,
                                                            const std::string& mdlName);
 
 std::vector<std::string> RcsGraph_getModelStateNames(const RcsGraph* graph);
-  std::string getResourcePaths();
+std::string getResourcePaths();
 
-  std::string RcsGraph_printUsageToString(std::string xmlFile);
+std::string RcsGraph_printUsageToString(std::string xmlFile);
+std::string RcsShape_distanceFunctionsToString();
 
 } // namespace Rcs
 
