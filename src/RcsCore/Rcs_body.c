@@ -193,11 +193,36 @@ unsigned int RcsBody_numDistanceShapes(const RcsBody* self)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+unsigned int RcsBody_numShapesOfType(const RcsBody* self, int type)
+{
+  if (self == NULL)
+  {
+    return 0;
+  }
+
+  unsigned int nShapes = 0;
+
+  for (unsigned int i=0; i<self->nShapes; ++i)
+  {
+    if (RcsShape_isOfComputeType(&self->shapes[i], type))
+    {
+      nShapes++;
+    }
+  }
+
+  return nShapes;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 RcsShape* RcsBody_appendShape(RcsBody* self)
 {
   self->nShapes++;
-  self->shapes = (RcsShape*) realloc(self->shapes,
-                                     self->nShapes*sizeof(RcsShape));
+  RcsShape* tmp = (RcsShape*) realloc(self->shapes,
+                                      self->nShapes*sizeof(RcsShape));
+  RCHECK(tmp);
+  self->shapes = tmp;
   RcsShape* newShape = &self->shapes[self->nShapes-1];
   RcsShape_init(newShape);
 

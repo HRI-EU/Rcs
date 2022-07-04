@@ -943,6 +943,40 @@ int main(int argc, char** argv)
       break;
     }
 
+    // ==============================================================
+    // Inertia tensor test
+    // ==============================================================
+    case 10:
+    {
+      RcsBody* bdy = RcsBody_create();
+      bdy->m = 1.0;
+      RcsShape* sh = RcsBody_appendShape(bdy);
+      sh->type = RCSSHAPE_BOX;
+      Mat3d_rotateSelfAboutXYZAxis(sh->A_CB.rot, 2, RCS_DEG2RAD(0*60.0));
+      Vec3d_set(sh->A_CB.org, 0.0, 0.0, 0.0);
+      Vec3d_set(sh->extents, 0.9, 0.5, 0.2);
+
+      RcsBody_computeInertiaTensor(bdy, &bdy->Inertia);
+      HTr_printComment("Inertia", &bdy->Inertia);
+
+
+      double lambda[3], A_PB[3][3], ea[3];
+      Mat3d_getEigenVectors(A_PB, lambda, (double(*)[3])bdy->Inertia.rot);
+      Mat3d_transposeSelf(A_PB);
+      Mat3d_printCommentDigits("Eigenvectors", A_PB, 6);
+      Vec3d_printFormatted("Eigenvalues", "%f", lambda);
+      Mat3d_toEulerAngles(ea, A_PB);
+      Vec3d_constMulSelf(ea, 180.0 / M_PI);
+      Vec3d_printFormatted("Euler", "%f", ea);
+
+      Vec3d_constMulSelf(A_PB[0], lambda[0]);
+      Vec3d_constMulSelf(A_PB[1], lambda[1]);
+      Vec3d_constMulSelf(A_PB[2], lambda[2]);
+      Mat3d_printCommentDigits("Reconstructed", A_PB, 6);
+
+      RFREE(sh);
+      RFREE(bdy);
+    }
     default:
     {
       RMSG("there is no mode %d", mode);

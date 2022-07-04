@@ -105,6 +105,12 @@ unsigned int RcsBody_numShapes(const RcsBody* self);
 unsigned int RcsBody_numDistanceShapes(const RcsBody* self);
 
 /*! \ingroup RcsBodyFunctions
+ *  \brief Returns the number of shapes attached to the body that are of the
+ *         given shape type.
+ */
+unsigned int RcsBody_numShapesOfType(const RcsBody* self, int type);
+
+/*! \ingroup RcsBodyFunctions
  *  \brief Appends a shape to the bodie's shapes. The shapes array will be
  *         resized if needed (using realloc). The bodie's shape count will be
  *         incremented. The new shape is initialized with the defaults

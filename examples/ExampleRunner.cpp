@@ -157,12 +157,18 @@ int main(int argc, char** argv)
     // ==============================================================
     case 2:
     {
-      std::string categoryName = "Forward kinematicsx";
-      std::string exampleName = "Dexbot";
+      std::string categoryName = "Physics";
+      std::string exampleName = "Gyro";
       argP.getArgument("-c", &categoryName, "Category name (default: %s)",
                        categoryName.c_str());
       argP.getArgument("-e", &exampleName, "Example name (default: %s)",
                        exampleName.c_str());
+
+      if (argP.hasArgument("-h"))
+      {
+        break;
+      }
+
       Rcs::ExampleBase* example = Rcs::ExampleFactory::create(categoryName,
                                                               exampleName,
                                                               argc, argv);
@@ -239,6 +245,13 @@ int main(int argc, char** argv)
 
   } // switch(mode)
 
+
+  if (argP.hasArgument("-h"))
+  {
+    argP.print();
+    Rcs_printResourcePath();
+    Rcs::ExampleFactory::print();
+  }
 
   xmlCleanupParser();
 
