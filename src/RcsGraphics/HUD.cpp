@@ -67,8 +67,10 @@
 
 #include "HUD.h"
 #include "Rcs_graphicsUtils.h"
-#include "Rcs_resourcePath.h"
-#include "Rcs_macros.h"
+
+#include <Rcs_resourcePath.h>
+#include <Rcs_macros.h>
+#include <Rcs_material.h>
 
 #include <osg/MatrixTransform>
 #include <osg/Version>
@@ -300,7 +302,9 @@ void Rcs::HUD::setFontSize(int fontSize)
  ******************************************************************************/
 void Rcs::HUD::setColor(const char* colorName)
 {
-  osg::Vec4 colorVec = colorFromString(colorName);
+  double rgba[4];
+  Rcs_colorFromString(colorName, rgba);
+  osg::Vec4 colorVec(rgba[0], rgba[1], rgba[2], rgba[3]);
   OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mutex);
   hudText->setColor(colorVec);
 }
@@ -361,14 +365,16 @@ void Rcs::HUD::init(int llx, int lly, int sizeX, int sizeY,
   // draw subgraph after main camera view.
   setRenderOrder(osg::Camera::POST_RENDER);
 
-  // we don't want the camera to grab event focus from the viewers main camera(s).
+  // we don't want the camera to grab event focus from the viewers main
+  // camera(s).
   setAllowEventFocus(false);
 
   this->switchNd = new osg::Switch();
 
   this->geode = new osg::Geode();
 
-  // turn lighting off for the text and disable depth test to ensure it's always ontop.
+  // turn lighting off for the text and disable depth test to ensure it's
+  // always ontop.
   osg::StateSet* stateset = geode->getOrCreateStateSet();
   stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
 
@@ -380,7 +386,11 @@ void Rcs::HUD::init(int llx, int lly, int sizeX, int sizeY,
   hudText->setPosition(osg::Vec3(llx + margin, lly + margin, -1.0));
   hudText->setAxisAlignment(osgText::Text::SCREEN);
   hudText->setAlignment(osgText::TextBase::LEFT_BOTTOM);
-  hudText->setColor(colorFromString(textColor));
+
+
+  double rgba[4];
+  Rcs_colorFromString(textColor, rgba);
+  hudText->setColor(osg::Vec4(rgba[0], rgba[1], rgba[2], rgba[3]));
 
   char fontFile[256];
   bool fontFound = Rcs_getAbsoluteFileName("fonts/VeraMono.ttf", fontFile);

@@ -35,6 +35,7 @@
 #include "Rcs_graphicsUtils.h"
 
 #include <Rcs_resourcePath.h>
+#include <Rcs_material.h>
 #include <Rcs_Vec3d.h>
 #include <Rcs_Mat3d.h>
 #include <Rcs_typedef.h>
@@ -239,7 +240,10 @@ osg::Switch* BodyNode::addDebugInformation(const RcsGraph* graph)
   _debugText->setText(std::string("-----") + getName());
   _debugText->setAlignment(osgText::Text::LEFT_CENTER);
   _debugText->setAxisAlignment(osgText::Text::SCREEN);
-  _debugText->setColor(colorFromString("RED"));
+  double rgba[4];
+  Rcs_colorFromString("RED", rgba);
+  osg::Vec4 col(rgba[0], rgba[1], rgba[2], rgba[3]);
+  _debugText->setColor(col);
   geode->addDrawable(_debugText.get());
 
 
@@ -782,15 +786,17 @@ void BodyNode::setGhostMode(bool enabled, const std::string& matname)
     osg::Material* material = new osg::Material();
     if (!matname.empty())
     {
-      RcsMaterialData* matDataPtr = getMaterial(matname);
+      const RcsMaterial* m = Rcs_getMaterial(matname.c_str());
 
-      if (matDataPtr != NULL)
+      if (m)
       {
-        material->setAmbient(osg::Material::FRONT_AND_BACK, matDataPtr->amb);
-        material->setDiffuse(osg::Material::FRONT_AND_BACK, matDataPtr->diff);
-        material->setSpecular(osg::Material::FRONT_AND_BACK, matDataPtr->spec);
-        material->setShininess(osg::Material::FRONT_AND_BACK,
-                               matDataPtr->shininess);
+        osg::Vec4 amb(m->amb[0], m->amb[1], m->amb[2], m->amb[3]);
+        osg::Vec4 diff(m->diff[0], m->diff[1], m->diff[2], m->diff[3]);
+        osg::Vec4 spec(m->spec[0], m->spec[1], m->spec[2], m->spec[3]);
+        material->setAmbient(osg::Material::FRONT_AND_BACK, amb);
+        material->setDiffuse(osg::Material::FRONT_AND_BACK, diff);
+        material->setSpecular(osg::Material::FRONT_AND_BACK, spec);
+        material->setShininess(osg::Material::FRONT_AND_BACK, m->shininess);
       }
       else
       {

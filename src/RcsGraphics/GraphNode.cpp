@@ -40,6 +40,7 @@
 #include <Rcs_macros.h>
 #include <Rcs_utils.h>
 #include <Rcs_body.h>
+#include <Rcs_material.h>
 
 #include <osg/StateSet>
 #include <osg/PolygonMode>
@@ -593,14 +594,17 @@ void GraphNode::setGhostMode(bool enabled, const std::string& matname)
     osg::Material* material = new osg::Material();
     if (!matname.empty())
     {
-      RcsMaterialData* matDataPtr = getMaterial(matname);
+      const RcsMaterial* m = Rcs_getMaterial(matname.c_str());
 
-      if (matDataPtr)
+      if (m)
       {
-        material->setAmbient(osg::Material::FRONT_AND_BACK, matDataPtr->amb);
-        material->setDiffuse(osg::Material::FRONT_AND_BACK, matDataPtr->diff);
-        material->setSpecular(osg::Material::FRONT_AND_BACK, matDataPtr->spec);
-        material->setShininess(osg::Material::FRONT_AND_BACK, matDataPtr->shininess);
+        osg::Vec4 amb(m->amb[0], m->amb[1], m->amb[2], m->amb[3]);
+        osg::Vec4 diff(m->diff[0], m->diff[1], m->diff[2], m->diff[3]);
+        osg::Vec4 spec(m->spec[0], m->spec[1], m->spec[2], m->spec[3]);
+        material->setAmbient(osg::Material::FRONT_AND_BACK, amb);
+        material->setDiffuse(osg::Material::FRONT_AND_BACK, diff);
+        material->setSpecular(osg::Material::FRONT_AND_BACK, spec);
+        material->setShininess(osg::Material::FRONT_AND_BACK, m->shininess);
       }
       else
       {

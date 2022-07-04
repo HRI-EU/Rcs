@@ -39,6 +39,7 @@
 #include <Rcs_Vec3d.h>
 #include <Rcs_Mat3d.h>
 #include <Rcs_macros.h>
+#include <Rcs_material.h>
 #include <Rcs_resourcePath.h>
 
 #include <osgText/Text>
@@ -113,7 +114,11 @@ Rcs::PPSSensorNode::PPSSensorNode(const RcsSensor* pps, const RcsGraph* graph,
                              1.5*txi->extents[2]);
         texelNumber->setPosition(osg::Vec3(textPos[0], textPos[1], textPos[2]));
         texelNumber->setRotation(QuatFromHTr(&relTrans));
-        texelNumber->setColor(colorFromString("RED"));
+
+        double rgba[4];
+        Rcs_colorFromString("RED", rgba);
+        osg::Vec4 col(rgba[0], rgba[1], rgba[2], rgba[3]);
+        texelNumber->setColor(col);
         textGeode->addDrawable(texelNumber.get());
       }
 

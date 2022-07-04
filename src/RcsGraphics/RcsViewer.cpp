@@ -39,6 +39,7 @@
 #include <KeyCatcherBase.h>
 #include <Rcs_Vec3d.h>
 #include <Rcs_VecNd.h>
+#include <Rcs_material.h>
 
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
@@ -459,8 +460,10 @@ void Viewer::create(bool fancy, bool startupWithShadow)
   rootnode->setName("rootnode");
 
   // Light grayish green universe
+  double rgba[4];
+  Rcs_colorFromString("LIGHT_GRAYISH_GREEN", rgba);
   this->clearNode = new osg::ClearNode;
-  this->clearNode->setClearColor(colorFromString("LIGHT_GRAYISH_GREEN"));
+  this->clearNode->setClearColor(osg::Vec4(rgba[0], rgba[1], rgba[2], rgba[3]));
   this->rootnode->addChild(this->clearNode.get());
 
   // Light model: We switch off the default viewer light, and configure two
@@ -1416,9 +1419,14 @@ void Viewer::handleUserEvents(const osg::Referenced* userEvent)
       break;
 
     case ViewerEventData::SetBackgroundColor:
+    {
       RLOG_CPP(5, "Setting background color to" << ev->childName);
-      this->clearNode->setClearColor(colorFromString(ev->childName.c_str()));
-      break;
+      double rgba[4];
+      Rcs_colorFromString(ev->childName.c_str(), rgba);
+      osg::Vec4 col(rgba[0], rgba[1], rgba[2], rgba[3]);
+      this->clearNode->setClearColor(col);
+    }
+    break;
 
     case ViewerEventData::SetShadowEnabled:
     {

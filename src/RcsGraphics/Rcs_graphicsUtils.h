@@ -56,19 +56,6 @@
 namespace Rcs
 {
 
-typedef struct
-{
-  osg::Vec4d amb;
-  osg::Vec4d diff;
-  osg::Vec4d spec;
-  double shininess;
-
-} RcsMaterialData;
-
-
-
-
-
 /*! \ingroup RcsGraphicsUtilsFunctions
  *  \brief Creates the view matrix in Rcs xyz conventions according to a
  *         given HTr transformation.
@@ -79,31 +66,6 @@ osg::Matrix viewMatrixFromHTr(const HTr* A_KI);
  *  \brief Returns an osg quaternion holding the transformation of the HTr A.
  */
 osg::Quat QuatFromHTr(const HTr* A);
-
-/*! \ingroup RcsGraphicsUtilsFunctions
- *  \brief Returns the ambient portion of the color given by string color.
- *         The following colors are defined (case insensitive):
- *         - RED
- *         - WHITE
- *         - BLACK
- *         - GREEN
- *         - BLUE
- *         - RUBY
- *         - YELLOW
- *         - BRASS
- *         - PEWTER
- *         - BRONZE
- *         - EMERALD
- *         - LIGHT_GRAYISH_BLUE
- *         - LIGHT_GRAYISH_YELLOW
- *         - LIGHT_GRAYISH_GREEN
- *         - RED_TRANS
- *         - GREEN_TRANS
- *         - BLUE_TRANS
- *         If the string color is none of them or NULL, WHITE will be returned
- *         and a warning on debug level 4 will be displayed.
- */
-osg::Vec4 colorFromString(const char* color);
 
 /*! \ingroup RcsGraphicsUtilsFunctions
  *  \brief Generates a transformation of a transformation matrix in world
@@ -262,44 +224,10 @@ T getNodeUnderMouse(const osgGA::GUIEventAdapter& ea,
 }
 
 /*! \ingroup RcsGraphicsUtilsFunctions
- *  \brief Get a material, load it from file if necessary. The returned data
- *         is put into a material map for a fast look-up. Therefore, the caller
- *         must not delete it.
- *
- * Returns NULL if material could not be found
- */
-RcsMaterialData* getMaterial(const std::string& matString);
-
-
-/*! \ingroup RcsGraphicsUtilsFunctions
  *  \brief Sets a node's material, loads it from file if necessary
- *
- * Method was formerly defined in BodyNode
  */
 bool setNodeMaterial(const std::string& matString, osg::Node* node,
                      double alpha = -1.0);
-
-/*! \ingroup RcsGraphicsUtilsFunctions
- *  \brief Reads material properties from a file and copies them in the
- *         fields.
- */
-bool getMaterialFromFile(const char* materialFile, const char* material,
-                         double amb[4], double diff[4], double spec[4],
-                         double* sh);
-
-/*! \ingroup RcsGraphicsUtilsFunctions
- *  \brief Creates material properties from a a given color string of type
- *         "#RRGGBB" or "#RRGGBBAA"
- * \param matString The color string
- * \param amb Ambient color (= 0.2 * r, 0.2 * g, 0.2 * b, a)
- * \param diff Diffuse color (= r, g, b, a)
- * \param spec Specular color (= 0.2, 0.2, 0.2, a)
- * \param sh Shininess (= 100.0)
- * \return True on success
- */
-bool createMaterialFromColorString(const std::string& matString,
-                                   double amb[4], double diff[4],
-                                   double spec[4], double* sh);
 
 /*! \ingroup RcsGraphicsUtilsFunctions
  *  \brief Converts a hex string to an unsigned integer (e.g., "FF" --> 255)

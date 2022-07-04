@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-  Copyright (c) 2017, Honda Research Institute Europe GmbH
+  Copyright (c) Honda Research Institute Europe GmbH
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are
@@ -31,58 +31,64 @@
 
 *******************************************************************************/
 
-#include "TextNode3D.h"
+#ifndef RCS_MATERIAL_H
+#define RCS_MATERIAL_H
 
-#include <Rcs_graphicsUtils.h>
-#include <Rcs_resourcePath.h>
-#include <Rcs_material.h>
-
-#include <osg/Geode>
-#include <osg/ShapeDrawable>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 
-
-Rcs::TextNode3D::TextNode3D(std::string text) : NodeBase()
+typedef struct
 {
-  init(text);
+  double amb[4];
+  double diff[4];
+  double spec[4];
+  double shininess;
+
+} RcsMaterial;
+
+
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Get a material, load it from file config/colors/colors.xml if
+ *         necessary. The returned data is added to a material map for a fast
+ *         look-up. Therefore, the caller must not delete it.
+ *
+ * Returns Pointer to material, or NULL if material could not be found.
+ */
+const RcsMaterial* Rcs_getMaterial(const char* materialName);
+
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Returns the ambient portion of the color given by string color.
+ *         The following colors are defined (case insensitive):
+ *         - RED
+ *         - WHITE
+ *         - BLACK
+ *         - GREEN
+ *         - BLUE
+ *         - RUBY
+ *         - YELLOW
+ *         - BRASS
+ *         - PEWTER
+ *         - BRONZE
+ *         - EMERALD
+ *         - LIGHT_GRAYISH_BLUE
+ *         - LIGHT_GRAYISH_YELLOW
+ *         - LIGHT_GRAYISH_GREEN
+ *         - RED_TRANS
+ *         - GREEN_TRANS
+ *         - BLUE_TRANS
+ *         If the string color is none of them or NULL, false will be returned,
+ *         white will be copied into rgba, and a warning on debug level 4 will
+ *         be displayed.
+ */
+bool Rcs_colorFromString(const char* color, double rgba[4]);
+
+
+#ifdef __cplusplus
 }
+#endif
 
-Rcs::TextNode3D::TextNode3D(std::string text, const double pos[3]) : NodeBase()
-{
-  init(text);
-  setPosition(pos);
-}
-
-void Rcs::TextNode3D::init(std::string text)
-{
-  setName("TextNode3D");
-  osg::ref_ptr<osg::Geode> textGeode = new osg::Geode();
-  addChild(textGeode.get());
-
-  this->text3D = new osgText::Text;
-  text3D->setCharacterSize(0.05);
-  text3D->setText(text);
-  text3D->setAlignment(osgText::Text::LEFT_CENTER);
-  text3D->setAxisAlignment(osgText::Text::SCREEN);
-  char fontFile[256] = "";
-  bool fontFound = Rcs_getAbsoluteFileName("fonts/VeraMono.ttf", fontFile);
-  if (fontFound)
-  {
-    text3D->setFont(fontFile);
-  }
-
-  textGeode->addDrawable(text3D.get());
-}
-
-void Rcs::TextNode3D::setMaterial(const std::string& material, double alpha)
-{
-  double rgba[4];
-  Rcs_colorFromString(material.c_str(), rgba);
-  osg::Vec4 col(rgba[0], rgba[1], rgba[2], rgba[3]);
-  text3D->setColor(col);
-}
-
-osg::ref_ptr<osgText::Text> Rcs::TextNode3D::getText()
-{
-  return this->text3D;
-}
+#endif   // RCS_MATERIAL_H

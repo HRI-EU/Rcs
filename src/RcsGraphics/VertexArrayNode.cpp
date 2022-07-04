@@ -37,6 +37,7 @@
 
 #include <KeyCatcherBase.h>
 #include <Rcs_macros.h>
+#include <Rcs_material.h>
 
 #include <osg/Material>
 #include <osg/LineWidth>
@@ -254,16 +255,20 @@ bool Rcs::VertexArrayNode::updatePoints()
  ******************************************************************************/
 bool Rcs::VertexArrayNode::setColor(const std::string& color)
 {
-  RcsMaterialData* material = getMaterial(color);
+  const RcsMaterial* mPtr = Rcs_getMaterial(color.c_str());
 
-  if (material == NULL)
+  if (!mPtr)
   {
     RLOG(4, "Failed to set color \"%s\"", color.c_str());
     return false;
   }
 
+  osg::Vec4 amb(mPtr->amb[0], mPtr->amb[1], mPtr->amb[2], mPtr->amb[3]);
+  osg::Vec4 diff(mPtr->diff[0], mPtr->diff[1], mPtr->diff[2], mPtr->diff[3]);
+  osg::Vec4 spec(mPtr->spec[0], mPtr->spec[1], mPtr->spec[2], mPtr->spec[3]);
+
   this->colors->clear();
-  this->colors->push_back(material->diff);
+  this->colors->push_back(amb + diff + spec);   // was diff
   this->geometry->setColorArray(this->colors.get());
   this->geometry->setColorBinding(osg::Geometry::BIND_OVERALL);
   //this->geometry->setColorBinding(osg::Geometry::BIND_PER_PRIMITIVE_SET);
