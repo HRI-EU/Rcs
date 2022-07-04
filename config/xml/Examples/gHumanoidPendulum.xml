@@ -29,7 +29,7 @@
 
 <Graph name="DefaultPose" >
 
-  <Body name="Ground Plane" >
+  <Body name="Ground Plane" physics="kinematic" >
     <Shape type="BOX" extents="6 6 0.04" physics="true" graphics="true" transform="0 0 -0.02 0 0 0" color="PEWTER" />
   </Body>
 
@@ -92,21 +92,22 @@
     <Shape type="BOX" extents="0.12 0.02 0.1" physics="true" graphics="true" transform="0.1 0 0 0 0 0" color="BLUE" />
   </Body>
 
- <Body name="RightSh0" prev="UpperBody" mass="1" >
+ <Body name="RightSh0" prev="UpperBody" physics="dynamic" mass="1" >
     <Joint name="DofSh0R" range="-120 100 180" type="RotY" transform="0.05 -0.18 0.36 -20 0 0" torqueLimit="0" speedLimit="100" ctrlType="Torque" />
     <Shape type="SSL" length="0.075" radius="0.05"  physics="true" graphics="true" transform="0 0 -0.04 0 0 0" color="PEWTER" />
   </Body>
 
-  <Body name="RightSh1" prev="RightSh0" mass="1" >
+  <Body name="RightSh1" prev="RightSh0" physics="dynamic" mass="1" >
     <Joint name="DofSh1R" range="-85 -25 10" type="RotZ" torqueLimit="0" speedLimit="177" ctrlType="Torque" />
-  </Body>
+     <Shape type="SPHERE" radius="0.02"  physics="true" graphics="true" transform="0 0 -0.04 0 0 0" color="PEWTER" />
+ </Body>
 
-  <Body name="RightUpperArm" prev="RightSh1" mass="2" >
+  <Body name="RightUpperArm" prev="RightSh1" physics="dynamic" mass="2" >
     <Joint name="DofSh2R" range="-85 -30 85" type="RotX" torqueLimit="0" speedLimit="100" ctrlType="Torque" />
     <Shape type="SSL" length="0.12" radius="0.05"  physics="true" graphics="true" transform="0.05 0 0 0 90 0" color="BRONZE" />
   </Body>
 
-  <Body name="RightForeArm" prev="RightUpperArm" physics="kinematic" mass="2" >
+  <Body name="RightForeArm" prev="RightUpperArm" physics="dynamic" mass="2" >
     <Joint name="DofElbowR" range="-120 -60 0" type="RotY" transform="0.2 0 0 0 0 0" torqueLimit="0" speedLimit="100" ctrlType="Torque" />
     <Shape type="SSL" length="0.2" radius="0.045"  physics="true" graphics="true" transform="0 0 0 0 90 0" color="EMERALD_S" />
   </Body>
@@ -132,10 +133,12 @@
 
   <Body name="Leg1ZL" prev="UpperBody" mass="1" physics="dynamic" >
     <Joint name="DofLeg1ZL" range="-40 0 40" type="RotZ" transform="0 0.09 0 0 0 0" speedLimit="100" ctrlType="Torque" />
+    <Shape type="SPHERE" radius="0.01" distance="false" physics="true" graphics="false" />
   </Body>
 
   <Body name="Leg1XL" prev="Leg1ZL" mass="1" physics="dynamic" >
     <Joint name="DofLeg1XL" range="-100 0 100" type="RotX" speedLimit="100" ctrlType="Torque" />
+    <Shape type="SPHERE" radius="0.01" distance="false" physics="true" graphics="false" />
   </Body>
 
   <Body name="ThighL" prev="Leg1XL" mass="2" physics="dynamic" >
@@ -150,6 +153,7 @@
 
   <Body name="AnkleL" prev="ShankL" mass="1" physics="dynamic" >
     <Joint name="DofAnkleYL" range="-30 -15 30" type="RotY" transform="0 0 -0.25 0 0 0" speedLimit="100" ctrlType="Torque" />
+    <Shape type="SPHERE" radius="0.01" distance="false" physics="true" graphics="false" />
   </Body>
 
   <Body name="FootL" prev="AnkleL" transform="0 0 -0.1 0 0 0" mass="2" cogVector="0.02 0.01 0.02" physics="dynamic" >
@@ -160,10 +164,12 @@
 
   <Body name="Leg1ZR" prev="UpperBody" mass="1" physics="dynamic" >
     <Joint name="DofLeg1ZR" range="-40 0 40" type="RotZ" transform="0 -0.09 0 0 0 0" speedLimit="100" ctrlType="Torque" />
+    <Shape type="SPHERE" radius="0.01" distance="false" physics="true" graphics="false" />
   </Body>
 
   <Body name="Leg1XR" prev="Leg1ZR" mass="1" physics="dynamic" >
     <Joint name="DofLeg1XR" range="-100 0 100" type="RotX" speedLimit="100" ctrlType="Torque" />
+    <Shape type="SPHERE" radius="0.01" distance="false" physics="true" graphics="false" />
   </Body>
 
   <Body name="ThighR" prev="Leg1XR" mass="2" physics="dynamic" >
@@ -178,6 +184,7 @@
 
   <Body name="AnkleR" prev="ShankR" mass="1" physics="dynamic" >
     <Joint name="DofAnkleYR" range="-30 -15 30" type="RotY" transform="0 0 -0.25 0 0 0" speedLimit="100" ctrlType="Torque" />
+    <Shape type="SPHERE" radius="0.01" distance="false" physics="true" graphics="false" />
   </Body>
 
   <Body name="FootR" prev="AnkleR" transform="0 0 -0.1 0 0 0" mass="2" cogVector="0.02 -0.01 0.02" physics="dynamic" >
@@ -185,5 +192,7 @@
     <Shape type="BOX" extents="0.2 0.14 0.04" physics="true" graphics="true" transform="0.02 -0.01 0.02 0 0 0" color="RED" />
     <Shape type="FRAME" scale="0.25" />
   </Body>
-
+  
+  <!--
+-->
 </Graph>

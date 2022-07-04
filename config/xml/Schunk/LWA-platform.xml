@@ -15,7 +15,7 @@
   <Shape type="BOX" extents="0.24 0.2 0.06" transform="0.16 0 0.49 0 0 0" textureFile="textures/brushed-metal.jpg" graphics="true" />
 </Body>
 
-<Body name="Arm" prev="Table" physics="kinematic" transform="0.1975 0 0 0 0 0" > <!-- 0.85m + 0.475m -->
+<Body name="Arm" prev="Table" physics="kinematic" transform="0.1975 0 0 0 0 0" mass="1" > <!-- 0.85m + 0.475m -->
     <Joint name="ArmHeight" type="TransZ" transform="0 0 0 0 0 0" range="0 1.325 2" torqueLimit="500" constraint="true" />
   <Shape type="FRAME" scale="0.3" />
   <Shape type="BOX" extents="0.16 0.16 0.485" transform="0 0 -0.2725 0 0 0" textureFile="textures/aluminium-profile.jpg" graphics="true" />

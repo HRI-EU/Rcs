@@ -34,7 +34,8 @@
 &#xA;  principal inertia axes. The red and blue boxes rotate about the 
 &#xA;  smallest and largest axis, the green box around the middle axis.         
 &#xA;  According to Leonhard Euler, the rotation about the middle axis is 
-&#xA;  instable. This can clearly be observed.                                                
+&#xA;  instable.  This results in the Dschanibekov-effect that is explained
+&#xA;  here: https://en.wikipedia.org/wiki/Tennis_racket_theorem                                                
 &#xA; 
 &#xA;  Here is how to start an example:
 &#xA;  
@@ -45,8 +46,7 @@
 
   <Body name="Ground Plane" physics="kinematic" >
     <Shape type="BOX" extents="4.0 4.0 0.04" transform="0 0 -0.02 0 0 0" 
-           textureFile="textures/floor/white-hardwood-floor.jpg" color="PEWTER" 
-	   graphics="true" physics="true" distance="false" />
+           color="PEWTER" graphics="true" physics="true" distance="false" />
     <Shape type="FRAME" />
   </Body>
   
@@ -57,7 +57,9 @@
     <Joint name="a1" range="10" type="RotX"   ctrlType="Torque"/>
     <Joint name="b1" range="10" type="RotY"   ctrlType="Torque"/>
     <Joint name="c1" range="10" type="RotZ"   ctrlType="Torque"/>
-    <Shape type="BOX" extents="0.9 0.6 0.2" color="RED" graphics="true" physics="true" />
+    <xShape type="BOX" extents="0.9 0.6 0.2" color="RED" graphics="true" physics="true" />
+    <Shape type="CYLINDER" radius="0.1" length="0.9" color="RED" graphics="true" physics="true" transform="0.18 0 0 0 90 0" />
+    <Shape type="CYLINDER" radius="0.1" length="0.6" color="RED" graphics="true" physics="true" transform="-0.27 0 0 90 0 0" />
     <Shape type="FRAME" graphics="true" physics="true" />
   </Body>
   
@@ -68,7 +70,9 @@
     <Joint name="a2" range="10" type="RotX"   ctrlType="Torque"/>
     <Joint name="b2" range="10" type="RotY"   ctrlType="Torque"/>
     <Joint name="c2" range="10" type="RotZ"   ctrlType="Torque"/>
-    <Shape type="BOX" extents="0.9 0.6 0.2" color="GREEN" graphics="true" physics="true" />
+    <xShape type="BOX" extents="0.9 0.6 0.2" color="GREEN" graphics="true" physics="true" />
+    <Shape type="CYLINDER" radius="0.1" length="0.9" color="RED" graphics="true" physics="true" transform="0.18 0 0 0 90 0" />
+    <Shape type="CYLINDER" radius="0.1" length="0.6" color="RED" graphics="true" physics="true" transform="-0.27 0 0 90 0 0" />
     <Shape type="FRAME" graphics="true" physics="true" />
   </Body>
   
@@ -79,7 +83,9 @@
     <Joint name="a3" range="10" type="RotX"   ctrlType="Torque"/>
     <Joint name="b3" range="10" type="RotY"   ctrlType="Torque"/>
     <Joint name="c3" range="10" type="RotZ"   ctrlType="Torque"/>
-    <Shape type="BOX" extents="0.9 0.6 0.2" color="BLUE" graphics="true" physics="true" />
+    <xShape type="BOX" extents="0.9 0.6 0.2" color="BLUE" graphics="true" physics="true" />
+    <Shape type="CYLINDER" radius="0.1" length="0.9" color="RED" graphics="true" physics="true" transform="0.18 0 0 0 90 0" />
+    <Shape type="CYLINDER" radius="0.1" length="0.6" color="RED" graphics="true" physics="true" transform="-0.27 0 0 90 0 0" />
     <Shape type="FRAME" graphics="true" physics="true" />
   </Body>
 
