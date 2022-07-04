@@ -162,7 +162,11 @@ public:
                              const PhysicsConfig* config)
   {
     PhysicsBase* sim = new T();
-    sim->initialize(graph, config);
+    bool success = sim->initialize(graph, config);
+    if (!success)
+    {
+      return NULL;
+    }
     return sim;
     //return new T(graph, config);
   }
