@@ -111,6 +111,7 @@
 #include <MatNdWidget.h>
 #include <TargetSetter.h>
 #include <PPSGui.h>
+#include <Rcs_mujocoParser.h>
 #include <SegFaultHandler.h>
 
 #include <iostream>
@@ -2640,7 +2641,7 @@ int main(int argc, char** argv)
         }
 
         loopCount++;
-        Timer_waitDT(0.01);
+        Timer_waitDT(dt);
       }
 
 
@@ -3846,6 +3847,28 @@ int main(int argc, char** argv)
 
       break;
     }
+
+
+    // ==============================================================
+    // Mujoco xml file converter test
+    // ==============================================================
+    case 13:
+    {
+      strcpy(xmlFileName, "config/xml/Examples/gHumanoidPendulum.xml");
+      strcpy(directory, "config/xml/Examples");
+      argP.getArgument("-f", xmlFileName, "Configuration file name (default "
+                       "is \"%s\")", xmlFileName);
+      argP.getArgument("-dir", directory, "Configuration file directory "
+                       "(default is \"%s\")", directory);
+      Rcs_addResourcePath(directory);
+
+      RcsGraph* graph = RcsGraph_create(xmlFileName);
+      bool success = RcsGraph_toMujocoFile("mujoco.xml", graph);
+      RMSG("%s converting graph to mujoco.xml", success ? "Success" : "Failure");
+      break;
+    }
+
+
 
     // ==============================================================
     // That's it.

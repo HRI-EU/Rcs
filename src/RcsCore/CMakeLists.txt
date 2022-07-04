@@ -67,11 +67,13 @@ Rcs_shape.c
 Rcs_stackTrace.cpp
 Rcs_stlParser.cpp
 Rcs_timer.c
+Rcs_mujocoParser.c
 Rcs_URDFParser.c
 Rcs_utils.c
 Rcs_utilsCPP.cpp
 Rcs_Vec3d.c
 Rcs_VecNd.c
+Rcs_material.cpp
 SolverRAC.cpp
 TaskAngularMomentum3D.cpp
 #TaskCollision.cpp
