@@ -154,8 +154,8 @@ void Quat_fromEulerAngles(double q[4], const double ea[3]);
  *         (x-y-z order). This function always succeeds. It expects a
  *         normalized quaternion as input. This is not checked.
  *
- *  \param[out] ea     Normalized quaternion in ordering [qw qx qy qz]
- *  \param[in]  q      Euler angles
+ *  \param[out] ea     Euler angles in x-y-z order
+ *  \param[in]  q      Normalized quaternion in ordering [qw qx qy qz]
  */
 void Quat_toEulerAngles(double ea[3], const double q[4]);
 

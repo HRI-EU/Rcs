@@ -170,6 +170,11 @@ void VecNd_setZero(double* dst, unsigned int n);
 void VecNd_setElementsTo(double* dst, double value, unsigned int n);
 
 /*! \ingroup RcsVecNFunctions
+ *  \brief Sets 4 elements of dst to the given value a ... d.
+ */
+void VecNd_set4(double* vec, double a, double b, double c, double d);
+
+/*! \ingroup RcsVecNFunctions
  *  \brief Sets 6 elements of dst to the given value a ... f.
  */
 void VecNd_set6(double* vec, double a, double b, double c, double d, double e,

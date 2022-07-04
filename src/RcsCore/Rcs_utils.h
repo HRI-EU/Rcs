@@ -235,6 +235,14 @@ char* String_createRandom(unsigned int size);
 bool String_removeSuffix(char* dst, const char* src, char suffix);
 
 /*! \ingroup RcsUtilsFunctions
+ * \brief Returns a pointer to the filename without path.
+ *
+ *  \param[in] fullName   File name including full path 
+ *  \return Pointer to the file name without path.
+ */
+const char* String_stripPath(const char* fullName);
+
+/*! \ingroup RcsUtilsFunctions
  * \brief Safe wrapper around getenv() function. This eliminates static code
  *        analysis warnings and makes the library robust agains vulnerabilities.
  *

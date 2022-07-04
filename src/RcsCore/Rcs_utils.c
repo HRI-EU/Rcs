@@ -39,6 +39,7 @@
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <string.h>
 
 #if !defined(_MSC_VER)
 #include <unistd.h>
@@ -582,6 +583,22 @@ bool String_removeSuffix(char* dst, const char* src, char suffix)
   dst[namelen] = '\0';
 
   return true;
+}
+
+/*******************************************************************************
+ * See header
+ ******************************************************************************/
+const char* String_stripPath(const char* fullName)
+{
+#if defined (_MSC_VER)
+  const char* pos = strrchr(fullName, '\\');
+  if (pos)
+    pos = strrchr(fullName, '/');
+#else
+  const char* pos = strrchr(fullName, '/');
+#endif
+
+  return (pos == NULL) ? fullName : pos+1;
 }
 
 /*******************************************************************************
