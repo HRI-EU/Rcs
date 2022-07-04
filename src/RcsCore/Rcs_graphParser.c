@@ -989,10 +989,10 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
                "The name \"GenericBody\" is reserved for internal use");
   }
 
-  /* RLOG(0, "Body %s: firstInGroup is %s", */
-  /*      name, firstInGroup ? "TRUE" : "FALSE"); */
+  //RLOG(0, "Body %s: firstInGroup is %s",
+  //     name, firstInGroup ? "TRUE" : "FALSE"); 
 
-  char msg[RCS_MAX_NAMELEN];
+  char msg[RCS_MAX_NAMELEN] = "";
   RcsBody* parentBdy = root;
   if (getXMLNodePropertyStringN(bdyNode, "prev", msg, RCS_MAX_NAMELEN) > 0)
   {
@@ -1793,7 +1793,7 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
   int rootId[RCSGRAPH_MAX_GROUPDEPTH];
   for (unsigned int i=0; i<RCSGRAPH_MAX_GROUPDEPTH; ++i)
   {
-    rootId[i] = 0;
+    rootId[i] = -1;// 0;
   }
 
   // Initialize generic bodies to refer to no graph body.
