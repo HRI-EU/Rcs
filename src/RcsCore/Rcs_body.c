@@ -601,7 +601,7 @@ void RcsBody_computeInertiaTensor(const RcsBody* self, HTr* I)
     return;
   }
 
-  double v_bdy = RcsBody_computeVolume(self);
+  const double v_bdy = RcsBody_computeVolume(self);
 
   if (v_bdy == 0.0)
   {
@@ -609,7 +609,7 @@ void RcsBody_computeInertiaTensor(const RcsBody* self, HTr* I)
     return;
   }
 
-  double density = self->m/v_bdy;   // Density: rho = m / V
+  const double density = self->m/v_bdy;   // Density: rho = m / V
 
   RCSBODY_TRAVERSE_SHAPES(self)
   {
@@ -623,11 +623,12 @@ void RcsBody_computeInertiaTensor(const RcsBody* self, HTr* I)
     Mat3d_similarityTransform(I_s, (double (*)[3]) SHAPE->A_CB.rot, I_s);
 
     // Add Steiner term related to gravity center of shape in body frame
+    // See https://de.wikipedia.org/wiki/Steinerscher_Satz
     double r_b_sgc[3];   // Vector from body origin to shape gravity center
     RcsShape_computeLocalCOM(SHAPE, r_b_sgc);
     double r_sgc_bgc[3];   // Vector from shape COM to body COM
     Vec3d_sub(r_sgc_bgc, I->org, r_b_sgc);
-    double m_sh = density*RcsShape_computeVolume(SHAPE);
+    const double m_sh = density*RcsShape_computeVolume(SHAPE);
     Math_addSteinerToInertia(I_s, r_sgc_bgc, m_sh);
     Mat3d_addSelf(I->rot, I_s);
   }

@@ -64,9 +64,16 @@ public:
   TaskCompositeXml(const std::string& className, xmlNode* node,
                    const RcsGraph* graph);
 
+  /*! \brief Copy constructor doing deep copying with optional new graph
+   *         pointer.
+   *
+   *  \param[in] copyFromMe Task to be copied from.
+   */
+  TaskCompositeXml(const TaskCompositeXml& copyFromMe);
+
   /*! \brief Virtual copy constructor with optional new graph
    */
-  TaskCompositeXml* clone(RcsGraph* newGraph=NULL) const;
+  TaskCompositeXml* clone(const RcsGraph* newGraph=NULL) const;
 
   /*! \brief Writes the specific task's xml representation to a file
    *         desriptor. Here it is the vector of sub-tasks.

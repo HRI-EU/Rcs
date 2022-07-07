@@ -35,6 +35,7 @@
 #include "TaskFactory.h"
 #include "Rcs_parser.h"
 #include "Rcs_stlParser.h"
+#include "Rcs_macros.h"
 
 
 static Rcs::TaskFactoryRegistrar<Rcs::TaskCompositeXml> registrar("Composite");
@@ -65,9 +66,17 @@ Rcs::TaskCompositeXml::TaskCompositeXml(const std::string& className_,
 }
 
 /*******************************************************************************
+ * Copy constructor doing deep copying
+ ******************************************************************************/
+Rcs::TaskCompositeXml::TaskCompositeXml(const Rcs::TaskCompositeXml& copyFromMe) :
+  CompositeTask(copyFromMe)
+{
+}
+
+/*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskCompositeXml* Rcs::TaskCompositeXml::clone(RcsGraph* newGraph) const
+Rcs::TaskCompositeXml* Rcs::TaskCompositeXml::clone(const RcsGraph* newGraph) const
 {
   TaskCompositeXml* task = new Rcs::TaskCompositeXml(*this);
   task->setGraph(newGraph);
