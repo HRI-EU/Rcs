@@ -346,11 +346,14 @@ RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* body,
 void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph);
 
 /*! \ingroup RcsBodyFunctions
- *  \brief Checks if a body has 6 degrees of freedom. This is independent of the
- *         rigid_body_joints flag. It is also ignored if the joints are
- *         constrained or not. If the body is NULL, the function returns false.
+ *  \brief Checks if a body has rigid body degrees of freedom. The function
+ *         does not check the rigid_body_joints flag, but goes through the
+ *         first six joints of a body and checks if the body has 6 joints
+ *         in the order xyzabc. It is ignored if the joints are constrained
+ *         or not. If the body is NULL, the function returns false.
  *
- *  \return true if the body has 6 joints in the order xyzabc, false otherwise.
+ *  \return true if the bodie's first 6 joints are in the order xyzabc,
+ *          false otherwise.
  */
 bool RcsBody_isFloatingBase(const RcsGraph* graph, const RcsBody* self);
 

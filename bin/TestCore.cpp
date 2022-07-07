@@ -404,7 +404,13 @@ static bool test_localeFreeParsing()
     }
   }
 
+  // Reset the locale to the system's default.
+  // See https://en.cppreference.com/w/c/locale/setlocale for details
+  res = setlocale(LC_ALL, "C");
+  RLOG(4, "setlocale() returned \"%s\"", res ? res : "NULL");
+
   RLOGS(1, "%s testing locale-free parsing", success ? "SUCCESS" : "FAILURE");
+
 
   return success;
 }
@@ -461,7 +467,7 @@ static bool test_DoubleToString()
   RLOG(3, "%.8f = \"%s\"", value, buf);
   RLOG_CPP(3, "len: " << strlen(buf));
 
-  if (std::string(buf) == "3.14159265")
+  if (std::string(buf) != "3.14159265")
   {
     success = false;
   }

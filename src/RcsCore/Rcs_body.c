@@ -1625,12 +1625,7 @@ bool RcsBody_isFloatingBase(const RcsGraph* graph, const RcsBody* self)
   unsigned int nJoints = 0;
   RCSBODY_FOREACH_JOINT(graph, self)
   {
-    if (nJoints > 5)
-    {
-      return false;
-    }
-
-    if (JNT->type != desiredOrder[nJoints])
+    if ((nJoints<6) && (JNT->type != desiredOrder[nJoints]))
     {
       return false;
     }
@@ -1638,7 +1633,7 @@ bool RcsBody_isFloatingBase(const RcsGraph* graph, const RcsBody* self)
     nJoints++;
   }
 
-  if (nJoints != 6)
+  if (nJoints < 6)
   {
     return false;
   }
