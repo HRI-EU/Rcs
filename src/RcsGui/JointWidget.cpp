@@ -81,9 +81,9 @@ JointGui::JointGui(RcsGraph* graph_,
   q_des(q_des_), q_curr(q_curr_), alwaysWriteToQ(alwaysWriteToQ_),
   passive(passive_)
 {
-  RLOG(0, "Before launch");
+  RLOG(5, "Before launch");
   launch();
-  RLOG(0, "After launch");
+  RLOG(5, "After launch");
 }
 
 void JointGui::construct()
@@ -93,9 +93,9 @@ void JointGui::construct()
   QWidget* test = new JointWidget(graph, constGraph, graphLock,
                                   q_des, q_curr, alwaysWriteToQ, passive);
   //QWidget* test = new QLabel("Seppl");
-  RLOG(0, "Setting widget");
+  RLOG(5, "Setting widget");
   setWidget(test);
-  RLOG(0, "Done");
+  RLOG(5, "Done");
 }
 
 /*******************************************************************************
@@ -210,7 +210,7 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
   _q_curr(q_curr ? q_curr : constGraph->q),
   mutex(graphLock)
 {
-  RLOG(0, "Creating Widget with %d dof", _constGraph->dof);
+  RLOG(5, "Creating Widget with %d dof", _constGraph->dof);
 
   setWindowTitle("RCS Joint Control");
   setObjectName("Rcs::JointWidget");
@@ -348,7 +348,7 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
     _timer->start(40);
   }
 
-  RLOG(0, "JointWidget generated");
+  RLOG(5, "JointWidget generated");
 }
 
 /*******************************************************************************
@@ -356,7 +356,7 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
  ******************************************************************************/
 JointWidget::~JointWidget()
 {
-  RLOG(0, "JointWidget deleted");
+  RLOG(5, "JointWidget deleted");
 }
 
 /*******************************************************************************

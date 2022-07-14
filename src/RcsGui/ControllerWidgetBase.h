@@ -67,6 +67,7 @@ public:
                 bool showOnly = false);
 
   void construct();
+  void reset(const MatNd* a_des, const MatNd* x_des);
 
 protected:
   ControllerBase* cntrl;

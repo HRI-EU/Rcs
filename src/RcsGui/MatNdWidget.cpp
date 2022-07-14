@@ -42,6 +42,69 @@
 namespace Rcs
 {
 
+
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+MatNdGui::MatNdGui(MatNd* mat_, const char* title_, pthread_mutex_t* mutex) :
+  AsyncWidget(), mat(mat_), dispMat(mat_), mtx(mutex), lower(0.0), upper(1.0)
+{
+  if (title_)
+  {
+    title = std::string(title_);
+  }
+
+  launch();
+}
+
+MatNdGui::MatNdGui(MatNd* mat_, double lb, double ub, const char* title_,
+                   pthread_mutex_t* mutex) :
+  AsyncWidget(), mat(mat_), dispMat(mat_), mtx(mutex), lower(lb), upper(ub)
+{
+  if (title_)
+  {
+    title = std::string(title_);
+  }
+
+  launch();
+}
+
+MatNdGui::MatNdGui(MatNd* mat_, const MatNd* dispMat_, double lb, double ub,
+                   const char* title_, pthread_mutex_t* mutex) :
+  AsyncWidget(), mat(mat_), dispMat(dispMat_), mtx(mutex), lower(lb), upper(ub)
+{
+  if (title_)
+  {
+    title = std::string(title_);
+  }
+
+  launch();
+}
+
+void MatNdGui::construct()
+{
+  setWidget(new Rcs::MatNdWidget(mat, dispMat, lower, upper, title.c_str(), mtx));
+}
+
+void MatNdGui::setLabels(std::vector<std::string>& labels)
+{
+  MatNdWidget* mw = dynamic_cast<MatNdWidget*>(getWidget());
+
+  if (mw)
+  {
+    mw->setLabels(labels);
+  }
+  else
+  {
+    RLOG(4, "Couldn't set labels");
+  }
+}
+
+
+
+
+
 /*******************************************************************************
  *
  ******************************************************************************/
@@ -172,7 +235,7 @@ MatNdWidget::MatNdWidget(MatNd* mat_, const MatNd* dispMat_,
  ******************************************************************************/
 MatNdWidget::~MatNdWidget()
 {
-  RLOG(0, "Destroying MatNdWidget");
+  RLOG(5, "Destroying MatNdWidget");
 }
 
 /*******************************************************************************
@@ -422,6 +485,5 @@ void MatNdWidget::reset(const MatNd* values)
   }
 }
 
+
 }   // namespace Rcs
-
-

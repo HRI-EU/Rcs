@@ -364,6 +364,17 @@ void ParameterCollection::clear()
   paramLine.clear();
 }
 
+static bool sortFunc(ParameterCollection::Entry* e1, ParameterCollection::Entry* e2)
+{
+  return (e1->getName() < e2->getName());
+}
+
+void ParameterCollection::sort()
+{
+  // Alphabetically sort the collection
+  std::sort(paramLine.begin(), paramLine.end(), sortFunc);
+}
+
 
 
 

@@ -190,6 +190,7 @@ void ExampleItem::timerCallback()
 
 }
 
+
 void ExampleItem::start()
 {
   RLOG(5, "Initializing example");
@@ -211,6 +212,7 @@ void ExampleItem::start()
     pc.clear();
     example->parseArgs(&pc);
     example->parseArgs(&argP);
+    pc.sort();   // Sort alphabetically
     gui = new CmdLineGui(&pc);
     helpWin = new TextGui(example->help());
     timer->start(40);

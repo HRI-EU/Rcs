@@ -58,9 +58,9 @@ ControllerGui::ControllerGui(ControllerBase* cntrl_,
   x_des(x_des_), x_curr(x_curr_), lock(lock_),
   showOnly(showOnly_)
 {
-  RLOG(0, "Before launch");
+  RLOG(5, "Before launch");
   launch();
-  RLOG(0, "After launch");
+  RLOG(5, "After launch");
 }
 
 ControllerGui::ControllerGui(ControllerBase* cntrl_,
@@ -81,15 +81,31 @@ ControllerGui::ControllerGui(ControllerBase* cntrl_,
 
 void ControllerGui::construct()
 {
-  RLOG(0, "Constructing test");
+  RLOG(5, "Constructing ControllerGui");
 
   QWidget* test = new ControllerWidgetBase(cntrl, a_des, a_curr,
                                            x_des, x_curr, lock, showOnly);
   //QWidget* test = new QLabel("Seppl");
-  RLOG(0, "Setting widget");
+  RLOG(5, "Setting widget");
   setWidget(test);
-  RLOG(0, "Done");
+  RLOG(5, "Done");
 }
+
+void ControllerGui::reset(const MatNd* a_des, const MatNd* x_des)
+{
+  ControllerWidgetBase* w = dynamic_cast<ControllerWidgetBase*>(getWidget());
+
+  if (w)
+  {
+    w->reset(a_des, x_des);
+  }
+  else
+  {
+    RLOG(4, "Couldn't reset ControllerGui");
+  }
+
+}
+
 typedef struct
 {
   void* ptr[10];

@@ -97,6 +97,7 @@ public:
   size_t size() const;
   Entry* getEntry(size_t index);
   void clear();
+  void sort();
 
 protected:
   std::vector<Entry*> paramLine;

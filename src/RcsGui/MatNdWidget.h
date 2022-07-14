@@ -49,23 +49,44 @@
 namespace Rcs
 {
 
+class MatNdGui : public Rcs::AsyncWidget
+{
+public:
+  MatNdGui(MatNd* mat, const char* title=NULL, pthread_mutex_t* mutex=NULL);
+  MatNdGui(MatNd* mat, double lower, double upper, const char* title=NULL,
+           pthread_mutex_t* mutex=NULL);
+  MatNdGui(MatNd* mat, const MatNd* dispMat, double lower, double upper,
+           const char* title=NULL, pthread_mutex_t* mutex=NULL);
+
+  void construct();
+  void setLabels(std::vector<std::string>& labels);
+
+protected:
+  MatNd* mat;
+  const MatNd* dispMat;
+  pthread_mutex_t* mtx;
+  std::string title;
+  double lower;
+  double upper;
+};
+
 class MatNdWidget : public QScrollArea
 {
   Q_OBJECT
 
 public:
 
-  static MatNdWidget* create(MatNd* mat, const char* title = NULL,
+  static MatNdWidget* create(MatNd* mat, const char* title=NULL,
                              pthread_mutex_t* mutex = NULL);
 
   static MatNdWidget* create(MatNd* mat, double lower, double upper,
-                             const char* title = NULL,
-                             pthread_mutex_t* mutex = NULL);
+                             const char* title=NULL,
+                             pthread_mutex_t* mutex=NULL);
 
   static MatNdWidget* create(MatNd* mat, const MatNd* dispMat,
                              double lower, double upper,
-                             const char* title = NULL,
-                             pthread_mutex_t* mutex = NULL);
+                             const char* title=NULL,
+                             pthread_mutex_t* mutex=NULL);
 
   MatNdWidget(MatNd* mat, const MatNd* dispMat, double lower, double upper,
               const char* title, pthread_mutex_t* mutex);

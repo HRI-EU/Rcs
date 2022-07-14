@@ -18,6 +18,7 @@ JointSlider.cpp
 JointWidget.cpp
 LcdSlider.cpp
 MatNdWidget.cpp
+TextEditGui.cpp
 PPSGui.cpp
 PPSWidget.cpp
 Rcs_guiFactory.c
