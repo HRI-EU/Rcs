@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-  Copyright (c) 2017, Honda Research Institute Europe GmbH
+  Copyright (c) Honda Research Institute Europe GmbH
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are
@@ -52,6 +52,10 @@ public:
   TaskStaticEffort(const std::string& className, xmlNode* node,
                    const RcsGraph* graph, int dim=1);
 
+  /*! Copy constructor
+   */
+  TaskStaticEffort(const TaskStaticEffort& copyFromMe);
+
   /*! \brief Virtual copy constructor with optional new graph
    */
   virtual TaskStaticEffort* clone(const RcsGraph* newGraph=NULL) const;
@@ -74,14 +78,16 @@ public:
    */
   void getForceInWorldCoords(double f[3]) const;
 
+  void toXMLBody(FILE* out) const;
+
   /*! \brief Returns true for success, false for failure:
-   *         - Xml tag "effector" doesn't exist
-   *         - Body with name in tag "effector" not in graph
-   *         - Xml tag "sensor" doesn't exist
-   *         - Sensor with name in tag "sensor" not in graph
-   *         - More or less than 1 sensor are found
-   *         - Sensor is not of type "RCSSENSOR_LOAD_CELL"
-   */
+     *         - Xml tag "effector" doesn't exist
+     *         - Body with name in tag "effector" not in graph
+     *         - Xml tag "sensor" doesn't exist
+     *         - Sensor with name in tag "sensor" not in graph
+     *         - More or less than 1 sensor are found
+     *         - Sensor is not of type "RCSSENSOR_LOAD_CELL"
+     */
   static bool isValid(xmlNode* xml_node, const RcsGraph* graph);
 
 protected:

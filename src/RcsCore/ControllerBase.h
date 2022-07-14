@@ -224,8 +224,15 @@ public:
    *         of the tag "active", if both exist. If none of the tags
    *         exists, the activation value in a_init is set to 0. Vector
    *         activation is reshaped to nTasks x 1.
+   *
+   *  \param[in,out]   activation Valid activation vector, must be of size
+   *                   nTasks x 1.
+   *  \return true for success, false otherwise: Activation vector is NULL,
+   *          has invalid size, or the controller has not been created from
+   *          an xml file. The failure reason is reported on debug level 1.
+   *          Upon failure, the passed activation array will remain unchanged.
    */
-  void readActivationsFromXML(MatNd* activation) const;
+  bool readActivationsFromXML(MatNd* activation) const;
 
   /*! \brief Reads the activation vector from the xml file. If the xml field
    *         of the task has the given tag, the activation will be set to

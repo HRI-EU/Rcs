@@ -646,12 +646,20 @@ double RcsBody_distance(const RcsBody* b1,
 {
   RCHECK(b1 && b2);
 
-  if ((b1->shapes==NULL) || (b2->shapes==NULL))
+  double d_closest = Math_infinity();
+
+  if (b1->shapes==NULL)
   {
-    RFATAL("Body has no shape in distance computation");
+    RLOG(5, "Body %s has no shape in distance computation", b1->name);
+    return d_closest;
   }
 
-  double d_closest = Math_infinity();
+  if (b2->shapes==NULL)
+  {
+    RLOG(5, "Body %s has no shape in distance computation", b2->name);
+    return d_closest;
+  }
+
   double d, p1[3], p2[3], ni[3];
 
   if (cp1 != NULL)
@@ -745,6 +753,59 @@ double RcsBody_distanceToPoint(const RcsBody* body,
   ptBdy.nShapes = 1;
 
   return RcsBody_distance(body, &ptBdy, I_cpBdy, NULL, I_nBdyPt);
+}
+
+/*******************************************************************************
+ * Calls functions from the Wildmagic library
+ ******************************************************************************/
+const RcsBody* RcsBody_closestInDirection(const RcsGraph* graph,
+                                          const double pt[3],
+                                          const double direction[3],
+                                          double I_cp[3],
+                                          double* distance)
+{
+  const RcsBody* closest = NULL;
+  double d_min = DBL_MAX;
+  double tmp[3];
+
+  RCSGRAPH_FOREACH_BODY(graph)
+  {
+    RCSBODY_TRAVERSE_SHAPES(BODY)
+    {
+      if (!RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_DISTANCE))
+      {
+        continue;
+      }
+
+      bool intersects = RcsShape_computeRayIntersection(pt, direction,
+                                                        &BODY->A_BI, SHAPE,
+                                                        tmp);
+
+      if (intersects)
+      {
+        const double d = Vec3d_distance(tmp, pt);
+
+        if (d < d_min)
+        {
+          d_min = d;
+          closest = BODY;
+          if (I_cp)
+          {
+            Vec3d_copy(I_cp, tmp);
+          }
+        }
+
+      }
+    }
+
+  }
+
+  if (distance && closest)
+  {
+    *distance = d_min;
+  }
+
+  return closest;
 }
 
 /*******************************************************************************

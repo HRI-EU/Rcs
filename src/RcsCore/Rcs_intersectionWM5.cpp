@@ -49,6 +49,16 @@
 #include <Wm5IntrLine3Torus3.h>
 #include <Wm5IntrLine3Cone3.h>
 #include <Wm5IntrLine3Plane3.h>
+
+#include <Wm5IntrRay3Box3.h>
+#include <Wm5IntrRay3Cylinder3.h>
+#include <Wm5IntrRay3Capsule3.h>
+#include <Wm5IntrRay3Sphere3.h>
+//#include <Wm5IntrRay3Torus3.h>
+//#include <Wm5IntrRay3Cone3.h>
+#include <Wm5IntrRay3Plane3.h>
+
+
 #include <Wm5IntrPlane3Cylinder3.h>
 #include <Wm5PolynomialRoots.h>
 
@@ -68,9 +78,74 @@ typedef Wm5::Vector3d Vec3;
  *
  ******************************************************************************/
 template <typename T>
+static bool intersectsLineHalfSpace(double* closestLinePt, T intrsec,
+                                    const double linePt[3],
+                                    const double lineDir[3],
+                                    const bool testImplemented)
+{
+
+  if (testImplemented && (closestLinePt == NULL))
+  {
+    //intrsec.Test() is e.g. not implemented for cylinders
+    if (!intrsec.Test())
+    {
+      return false;
+    }
+  }
+  else
+  {
+    intrsec.Find();
+
+    if (intrsec.GetQuantity() < 1)
+    {
+      return false;
+    }
+  }
+
+  bool nIntersectionsFound = false;
+
+  // return the closest point to linePt
+  double dist = std::numeric_limits<double>::infinity();
+
+  for (int i = 0; i < intrsec.GetQuantity(); i++)
+  {
+    Vec3 v = intrsec.GetPoint(i);
+    double pt[3] = { v[0], v[1], v[2] };
+
+    double connectionLine[3];
+    Vec3d_sub(connectionLine, pt, linePt);   // linePt -> intersection point
+
+    // The inner product becomes negative if the connection line and the
+    // search line point into different directions. In this case, we
+    // exclude the point.
+    double dirSgn = Vec3d_innerProduct(connectionLine, lineDir);
+
+    if (dirSgn >= 0.0)
+    {
+      double d = Vec3d_getLength(connectionLine);
+      if (d < dist)
+      {
+        dist = d;
+        if (closestLinePt)
+        {
+          Vec3d_copy(closestLinePt, pt);
+        }
+        nIntersectionsFound = true;
+      }
+    }
+
+  }
+
+  return nIntersectionsFound;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+template <typename T>
 static bool intersectsLine(double* closestLinePt, T intrsec,
                            const double linePt[3],
-                           const bool testImplemented=true)
+                           const bool testImplemented)
 {
 
   if (testImplemented && (closestLinePt==NULL))
@@ -95,6 +170,7 @@ static bool intersectsLine(double* closestLinePt, T intrsec,
   {
     // return the closest point to linePt
     double dist = std::numeric_limits<double>::infinity();
+
     for (int i = 0; i < intrsec.GetQuantity(); i++)
     {
       Vec3 v = intrsec.GetPoint(i);
@@ -119,27 +195,37 @@ static bool intersectsLine(double* closestLinePt, T intrsec,
  * and a box. The function returns true if both intersect, and stores the
  * closest intersection point in closestLinePt (if it is not NULL).
  ******************************************************************************/
-bool Rcs_intersectionLineBox(const double linePt[3],
-                             const double lineDir[3],
-                             const HTr* A_box,
-                             const double extentsBox[3],
-                             double* closestLinePt)
+static bool Rcs_intersectionLineBox(const double linePt[3],
+                                    const double lineDir[3],
+                                    const HTr* A_box,
+                                    const double extentsBox[3],
+                                    double* closestLinePt,
+                                    bool lineAndNotRay)
 {
-  // COG line
-  Wm5::Line3d line(Vec3(linePt[0], linePt[1], linePt[2]),
-                   Vec3(lineDir[0], lineDir[1], lineDir[2]));
-
-  // Box
   Wm5::Box3d box(Vec3(A_box->org[0], A_box->org[1], A_box->org[2]),
                  Vec3(A_box->rot[0][0], A_box->rot[0][1], A_box->rot[0][2]),
                  Vec3(A_box->rot[1][0], A_box->rot[1][1], A_box->rot[1][2]),
                  Vec3(A_box->rot[2][0], A_box->rot[2][1], A_box->rot[2][2]),
                  0.5 * extentsBox[0], 0.5 * extentsBox[1], 0.5 * extentsBox[2]);
 
-  Wm5::IntrLine3Box3d intrsec(line, box);
+  bool res;
 
-  return intersectsLine<Wm5::IntrLine3Box3d>(closestLinePt, intrsec,
-                                             linePt);
+  if (lineAndNotRay)
+  {
+    Wm5::Line3d line(Vec3(linePt[0], linePt[1], linePt[2]),
+                     Vec3(lineDir[0], lineDir[1], lineDir[2]));
+    Wm5::IntrLine3Box3d intrsec(line, box);
+    res = intersectsLine<Wm5::IntrLine3Box3d>(closestLinePt, intrsec, linePt, true);
+  }
+  else
+  {
+    Wm5::Ray3d ray(Vec3(linePt[0], linePt[1], linePt[2]),
+                   Vec3(lineDir[0], lineDir[1], lineDir[2]));
+    Wm5::IntrRay3Box3d intrsec(ray, box);
+    res = intersectsLine<Wm5::IntrRay3Box3d>(closestLinePt, intrsec, linePt, true);
+  }
+
+  return res;
 }
 
 /*******************************************************************************
@@ -147,29 +233,41 @@ bool Rcs_intersectionLineBox(const double linePt[3],
  * and a cylinder. The function returns true if both intersect, and stores the
  * closest intersection point in closestLinePt (if it is not NULL).
  ******************************************************************************/
-bool Rcs_intersectionLineCylinder(const double linePt[3],
-                                  const double lineDir[3],
-                                  const HTr* A_cyl,
-                                  double height,
-                                  double radius,
-                                  double* closestLinePt)
+static bool Rcs_intersectionLineCylinder(const double linePt[3],
+                                         const double lineDir[3],
+                                         const HTr* A_cyl,
+                                         double height,
+                                         double radius,
+                                         double* closestLinePt,
+                                         bool lineAndNotRay)
 {
-  // COG line
-  Wm5::Line3d line(Vec3(linePt[0], linePt[1], linePt[2]),
-                   Vec3(lineDir[0], lineDir[1], lineDir[2]));
 
   // Cylinder
   Wm5::Line3d cylLine(Vec3(A_cyl->org[0], A_cyl->org[1], A_cyl->org[2]),
                       Vec3(A_cyl->rot[2][0], A_cyl->rot[2][1],
                            A_cyl->rot[2][2]));
-
   Wm5::Cylinder3d cylinder(cylLine, radius, height);
 
-  Wm5::IntrLine3Cylinder3d intrsec(line, cylinder);
+  bool res;
 
-  return intersectsLine<Wm5::IntrLine3Cylinder3d>(closestLinePt,
-                                                  intrsec, linePt,
-                                                  false);
+  if (lineAndNotRay)
+  {
+    Wm5::Line3d line(Vec3(linePt[0], linePt[1], linePt[2]),
+                     Vec3(lineDir[0], lineDir[1], lineDir[2]));
+    Wm5::IntrLine3Cylinder3d intrsec(line, cylinder);
+    res = intersectsLine<Wm5::IntrLine3Cylinder3d>(closestLinePt, intrsec,
+                                                   linePt, false);
+  }
+  else
+  {
+    Wm5::Ray3d ray(Vec3(linePt[0], linePt[1], linePt[2]),
+                   Vec3(lineDir[0], lineDir[1], lineDir[2]));
+    Wm5::IntrRay3Cylinder3d intrsec(ray, cylinder);
+    res = intersectsLine<Wm5::IntrRay3Cylinder3d>(closestLinePt, intrsec,
+                                                  linePt, false);
+  }
+
+  return res;
 }
 
 /*******************************************************************************
@@ -177,29 +275,39 @@ bool Rcs_intersectionLineCylinder(const double linePt[3],
  * and a SSL/capsule. The function returns true if both intersect, and stores
  * the closest intersection point in closestLinePt (if it is not NULL).
  ******************************************************************************/
-bool Rcs_intersectionLineSSL(const double linePt[3],
-                             const double lineDir[3],
-                             const HTr* A_cap,
-                             double height,
-                             double radius,
-                             double* closestLinePt)
+static bool Rcs_intersectionLineSSL(const double linePt[3],
+                                    const double lineDir[3],
+                                    const HTr* A_cap,
+                                    double height,
+                                    double radius,
+                                    double* closestLinePt,
+                                    bool lineAndNotRay)
 {
-  // COG line
-  Wm5::Line3d line(Vec3(linePt[0], linePt[1], linePt[2]),
-                   Vec3(lineDir[0], lineDir[1], lineDir[2]));
-
-  // SSL/Capsule
   Wm5::Segment3d capSegment(Vec3(A_cap->org[0], A_cap->org[1], A_cap->org[2]),
                             Vec3(A_cap->org[0]+height*A_cap->rot[2][0],
                                  A_cap->org[1]+height*A_cap->rot[2][1],
                                  A_cap->org[2]+height*A_cap->rot[2][2]));
-
   Wm5::Capsule3d capsule(capSegment, radius);
+  bool res;
 
-  Wm5::IntrLine3Capsule3d intrsec(line, capsule);
+  if (lineAndNotRay)
+  {
+    Wm5::Line3d line(Vec3(linePt[0], linePt[1], linePt[2]),
+                     Vec3(lineDir[0], lineDir[1], lineDir[2]));
+    Wm5::IntrLine3Capsule3d intrsec(line, capsule);
+    res = intersectsLine<Wm5::IntrLine3Capsule3d>(closestLinePt,
+                                                  intrsec, linePt, true);
+  }
+  else
+  {
+    Wm5::Ray3d ray(Vec3(linePt[0], linePt[1], linePt[2]),
+                   Vec3(lineDir[0], lineDir[1], lineDir[2]));
+    Wm5::IntrRay3Capsule3d intrsec(ray, capsule);
+    res = intersectsLine<Wm5::IntrRay3Capsule3d>(closestLinePt,
+                                                 intrsec, linePt, true);
+  }
 
-  return intersectsLine<Wm5::IntrLine3Capsule3d>(closestLinePt,
-                                                 intrsec, linePt);
+  return res;
 }
 
 /*******************************************************************************
@@ -207,24 +315,34 @@ bool Rcs_intersectionLineSSL(const double linePt[3],
  * and a sphere. The function returns true if both intersect, and stores the
  * closest intersection point in closestLinePt (if it is not NULL).
  ******************************************************************************/
-bool Rcs_intersectionLineSphere(const double linePt[3],
-                                const double lineDir[3],
-                                const HTr* A_sph,
-                                double radius,
-                                double* closestLinePt)
+static bool Rcs_intersectionLineSphere(const double linePt[3],
+                                       const double lineDir[3],
+                                       const HTr* A_sph,
+                                       double radius,
+                                       double* closestPt,
+                                       bool lineAndNotRay)
 {
-  // COG line
-  Wm5::Line3d line(Vec3(linePt[0], linePt[1], linePt[2]),
-                   Vec3(lineDir[0], lineDir[1], lineDir[2]));
-
-  // Sphere
   Wm5::Sphere3d sphere(Vec3(A_sph->org[0], A_sph->org[1], A_sph->org[2]),
                        radius);
 
-  Wm5::IntrLine3Sphere3d intrsec(line, sphere);
+  bool res;
 
-  return intersectsLine<Wm5::IntrLine3Sphere3d>(closestLinePt,
-                                                intrsec, linePt);
+  if (lineAndNotRay)
+  {
+    Wm5::Line3d line(Vec3(linePt[0], linePt[1], linePt[2]),
+                     Vec3(lineDir[0], lineDir[1], lineDir[2]));
+    Wm5::IntrLine3Sphere3d intrsec(line, sphere);
+    res = intersectsLine<Wm5::IntrLine3Sphere3d>(closestPt, intrsec, linePt, true);
+  }
+  else
+  {
+    Wm5::Ray3d ray(Vec3(linePt[0], linePt[1], linePt[2]),
+                   Vec3(lineDir[0], lineDir[1], lineDir[2]));
+    Wm5::IntrRay3Sphere3d intrsec(ray, sphere);
+    res = intersectsLine<Wm5::IntrRay3Sphere3d>(closestPt, intrsec, linePt, true);
+  }
+
+  return res;
 }
 
 /*******************************************************************************
@@ -237,7 +355,8 @@ bool Rcs_intersectionLineTorus(const double linePt[3],
                                const HTr* A_tor,
                                double height,
                                double radius,
-                               double* closestLinePt)
+                               double* closestLinePt,
+                               bool lineAndNotRay)
 {
   // Wm5 torus is always at (0,0,0) with rotation axis in z direction
   double linePtTrafo[3];
@@ -255,15 +374,22 @@ bool Rcs_intersectionLineTorus(const double linePt[3],
 
   Wm5::IntrLine3Torus3d intrsec(line, torus);
 
-  bool res = intersectsLine<Wm5::IntrLine3Torus3d>(closestLinePt,
-                                                   intrsec,
-                                                   linePtTrafo,
-                                                   false);
+  bool res;
+
+  if (lineAndNotRay)
+  {
+    res = intersectsLine<Wm5::IntrLine3Torus3d>(closestLinePt, intrsec, linePtTrafo, false);
+  }
+  else
+  {
+    res = intersectsLineHalfSpace<Wm5::IntrLine3Torus3d>(closestLinePt, intrsec, linePtTrafo, lineDiHTrafo, false);
+  }
 
   if (closestLinePt && res)
   {
     Vec3d_transformSelf(closestLinePt, A_tor);
   }
+
   return res;
 }
 
@@ -277,7 +403,8 @@ bool Rcs_intersectionLineCone(const double linePt[3],
                               const HTr* A_cone,
                               double height,
                               double radius,
-                              double* closestLinePt)
+                              double* closestLinePt,
+                              bool lineAndNotRay)
 {
   // COG line
   Wm5::Line3d line(Vec3(linePt[0], linePt[1], linePt[2]),
@@ -303,10 +430,18 @@ bool Rcs_intersectionLineCone(const double linePt[3],
   // If an intersection is detected, the intersection with the base disc could
   // be closer, which needs to be checked additionally
   double temp_closestLinePt[3];
+  bool res;
 
-  bool res = intersectsLine<Wm5::IntrLine3Cone3d>(temp_closestLinePt,
-                                                  intrsec, linePt,
-                                                  false);
+  if (lineAndNotRay)
+  {
+    res = intersectsLine<Wm5::IntrLine3Cone3d>(temp_closestLinePt,
+                                               intrsec, linePt, false);
+  }
+  else
+  {
+    res = intersectsLineHalfSpace<Wm5::IntrLine3Cone3d>(temp_closestLinePt,
+                                                        intrsec, linePt, lineDir, false);
+  }
 
   if (Vec3d_distance(temp_closestLinePt,vertex) >
       sqrt(height*height + radius*radius) || (!res))
@@ -366,12 +501,14 @@ bool Rcs_intersectionLineSSR(const double linePt[3],
                              const double lineDir[3],
                              const HTr* A_ssr,
                              const double extentsSSR[3],
-                             double* closestLinePt)
+                             double* closestLinePt,
+                             bool lineAndNotRay)
 {
   double temp_closestLinePt[3];
 
   bool res = Rcs_intersectionLineBox(linePt, lineDir, A_ssr,
-                                     extentsSSR, closestLinePt);
+                                     extentsSSR, closestLinePt,
+                                     lineAndNotRay);
   if (closestLinePt==NULL && res)
   {
     // if we only want to detect an intersection we are done
@@ -399,6 +536,8 @@ bool Rcs_intersectionLineSSR(const double linePt[3],
   // now we check for intersections with the 4 SSL/capsules
   Wm5::Line3d line(Vec3(linePt[0], linePt[1], linePt[2]),
                    Vec3(lineDir[0], lineDir[1], lineDir[2]));
+  Wm5::Ray3d ray(Vec3(linePt[0], linePt[1], linePt[2]),
+                 Vec3(lineDir[0], lineDir[1], lineDir[2]));
 
   for (size_t id = 0; id < 4; id++)
   {
@@ -406,12 +545,22 @@ bool Rcs_intersectionLineSSR(const double linePt[3],
 
     Wm5::Segment3d cap(Vec3(corners[id][0], corners[id][1], corners[id][2]),
                        Vec3(corners[id2][0], corners[id2][1], corners[id2][2]));
-
     Wm5::Capsule3d capsule(cap, extentsSSR[2]/2.);
 
-    Wm5::IntrLine3Capsule3d intrsec(line, capsule);
 
-    if (intersectsLine<Wm5::IntrLine3Capsule3d>(closestLinePt, intrsec, linePt))
+    bool intrsecRes;
+    if (lineAndNotRay)
+    {
+      Wm5::IntrLine3Capsule3d intrsec(line, capsule);
+      intrsecRes = intersectsLine<Wm5::IntrLine3Capsule3d>(closestLinePt, intrsec, linePt, true);
+    }
+    else
+    {
+      Wm5::IntrRay3Capsule3d intrsec(ray, capsule);
+      intrsecRes = intersectsLine<Wm5::IntrRay3Capsule3d>(closestLinePt, intrsec, linePt, true);
+    }
+
+    if (intrsecRes)
     {
       if (closestLinePt==NULL)
       {
@@ -430,6 +579,7 @@ bool Rcs_intersectionLineSSR(const double linePt[3],
         Vec3d_copy(temp_closestLinePt, closestLinePt);
       }
     }
+
   }
 
   if (closestLinePt && res)
@@ -482,6 +632,133 @@ bool Rcs_intersectionPlaneCylinder(const double planePt[3],
   return fabs(sDist) <= term;
 }
 
+static bool RcsShape_computeLineOrRayIntersection(const double linePt[3],
+                                                  const double lineDir[3],
+                                                  const HTr* A_BI,
+                                                  const RcsShape* shape,
+                                                  double closestLinePt[3],
+                                                  bool lineAndNotRay)
+{
+  HTr A_CI;
+  HTr_transform(&A_CI, A_BI, &shape->A_CB);
+
+  if (Vec3d_sqrLength(lineDir) == 0.0)
+  {
+    RLOG(4, "Skipping degenerate line or ray intersection computation with "
+         "zero-length direction vector");
+    return false;
+  }
+
+  switch (shape->type)
+  {
+    case RCSSHAPE_BOX:
+    {
+      return Rcs_intersectionLineBox(linePt, lineDir, &A_CI,
+                                     shape->extents, closestLinePt,
+                                     lineAndNotRay);
+    }
+    case RCSSHAPE_SSL:
+    {
+      return Rcs_intersectionLineSSL(linePt, lineDir, &A_CI,
+                                     shape->extents[2], shape->extents[0],
+                                     closestLinePt, lineAndNotRay);
+    }
+    case RCSSHAPE_CYLINDER:
+    {
+      return Rcs_intersectionLineCylinder(linePt, lineDir, &A_CI,
+                                          shape->extents[2],
+                                          shape->extents[0],
+                                          closestLinePt, lineAndNotRay);
+    }
+    case RCSSHAPE_SPHERE:
+    {
+      return Rcs_intersectionLineSphere(linePt, lineDir, &A_CI,
+                                        shape->extents[0], closestLinePt,
+                                        lineAndNotRay);
+    }
+    case RCSSHAPE_CONE:
+    {
+      return Rcs_intersectionLineCone(linePt, lineDir, &A_CI,
+                                      shape->extents[2], shape->extents[0],
+                                      closestLinePt, lineAndNotRay);
+    }
+    case RCSSHAPE_SSR:
+    {
+      return Rcs_intersectionLineSSR(linePt, lineDir, &A_CI, shape->extents,
+                                     closestLinePt, lineAndNotRay);
+    }
+    case RCSSHAPE_TORUS:
+    {
+      return Rcs_intersectionLineTorus(linePt, lineDir, &A_CI,
+                                       shape->extents[2], shape->extents[0],
+                                       closestLinePt, lineAndNotRay);
+    }
+    case RCSSHAPE_REFFRAME:
+    {
+      return false;
+    }
+    case RCSSHAPE_MESH:
+    {
+      RLOG(4, "MESH intersection not implemented");
+      return false;
+    }
+    case RCSSHAPE_OCTREE:
+    {
+      RLOG(4, "OCTREE intersection not implemented");
+      return false;
+    }
+    case RCSSHAPE_POINT:
+    {
+      double tmp[3];
+      double d = sqrt(Math_sqrDistPointLine(A_CI.org, linePt, lineDir, tmp));
+
+      if (d != 0.0)
+      {
+        return false;
+      }
+
+      if (lineAndNotRay)
+      {
+        if (closestLinePt)
+        {
+          Vec3d_copy(closestLinePt, A_CI.org);
+        }
+        return true;
+      }
+      else
+      {
+        double linePtToPt[3];
+        Vec3d_sub(linePtToPt, A_CI.org, linePt);
+        double dirSgn = Vec3d_innerProduct(lineDir, linePtToPt);
+        bool success = (dirSgn >= 0.0) ? true : false;
+
+        if (success && closestLinePt)
+        {
+          Vec3d_copy(closestLinePt, A_CI.org);
+        }
+
+        return success;
+      }
+    }
+    default:
+    {
+      RFATAL("Unknown shape type %d", shape->type);
+      return false;
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 /*******************************************************************************
  * Intersection tests
  ******************************************************************************/
@@ -492,79 +769,18 @@ extern "C" {
                                         const RcsShape* shape,
                                         double closestLinePt[3])
   {
-    HTr A_CI;
-    HTr_transform(&A_CI, A_BI, &shape->A_CB);
+    return RcsShape_computeLineOrRayIntersection(linePt, lineDir, A_BI, shape,
+                                                 closestLinePt, true);
+  }
 
-    switch (shape->type)
-    {
-      case RCSSHAPE_BOX:
-      {
-        return Rcs_intersectionLineBox(linePt, lineDir, &A_CI,
-                                       shape->extents, closestLinePt);
-      }
-      case RCSSHAPE_SSL:
-      {
-        return Rcs_intersectionLineSSL(linePt, lineDir, &A_CI,
-                                       shape->extents[2], shape->extents[0],
-                                       closestLinePt);
-      }
-      case RCSSHAPE_CYLINDER:
-      {
-        return Rcs_intersectionLineCylinder(linePt, lineDir, &A_CI,
-                                            shape->extents[2],
-                                            shape->extents[0], closestLinePt);
-      }
-      case RCSSHAPE_SPHERE:
-      {
-        return Rcs_intersectionLineSphere(linePt, lineDir, &A_CI,
-                                          shape->extents[0], closestLinePt);
-      }
-      case RCSSHAPE_CONE:
-      {
-        return Rcs_intersectionLineCone(linePt, lineDir, &A_CI,
-                                        shape->extents[2], shape->extents[0],
-                                        closestLinePt);
-      }
-      case RCSSHAPE_SSR:
-      {
-        return Rcs_intersectionLineSSR(linePt, lineDir, &A_CI, shape->extents,
-                                       closestLinePt);
-      }
-      case RCSSHAPE_TORUS:
-      {
-        return Rcs_intersectionLineTorus(linePt, lineDir, &A_CI,
-                                         shape->extents[2], shape->extents[0],
-                                         closestLinePt);
-      }
-      case RCSSHAPE_REFFRAME:
-      {
-        return false;
-      }
-      case RCSSHAPE_MESH:
-      {
-        RLOG(4, "MESH intersection not implemented");
-        return false;
-      }
-      case RCSSHAPE_OCTREE:
-      {
-        RLOG(4, "OCTREE intersection not implemented");
-        return false;
-      }
-      case RCSSHAPE_POINT:
-      {
-        double d, linePt2[3];
-        Vec3d_add(linePt2, linePt, lineDir);
-        //d = Rcs_distancePointLine(A_CI.org, linePt, linePt2, NULL);
-        double tmp[3];
-        d = sqrt(Math_sqrDistPointLine(A_CI.org, linePt, lineDir, tmp));
-        return (d==0.0) ? true : false;
-      }
-      default:
-      {
-        RFATAL("Unknown shape type %d", shape->type);
-        return false;
-      }
-    }
+  bool RcsShape_computeRayIntersection(const double linePt[3],
+                                       const double lineDir[3],
+                                       const HTr* A_BI,
+                                       const RcsShape* shape,
+                                       double closestLinePt[3])
+  {
+    return RcsShape_computeLineOrRayIntersection(linePt, lineDir, A_BI, shape,
+                                                 closestLinePt, false);
   }
 } // extern "C"
 
@@ -757,6 +973,17 @@ extern "C" {
                                         double closestLinePt[3])
   {
     RLOG(4, "RcsShape_computeLineIntersection requires GeometricTools library"
+         " - not available");
+    return false;
+  }
+
+  bool RcsShape_computeRayIntersection(const double linePt[3],
+                                       const double lineDir[3],
+                                       const HTr* A_BI,
+                                       const RcsShape* shape,
+                                       double closestLinePt[3])
+  {
+    RLOG(4, "RcsShape_computeRayIntersection requires GeometricTools library"
          " - not available");
     return false;
   }

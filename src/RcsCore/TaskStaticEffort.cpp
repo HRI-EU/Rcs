@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-  Copyright (c) 2017, Honda Research Institute Europe GmbH
+  Copyright (c) Honda Research Institute Europe GmbH
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are
@@ -41,31 +41,53 @@
 #include "Rcs_Vec3d.h"
 #include "Rcs_HTr.h"
 #include "Rcs_kinematics.h"
+#include "Rcs_stlParser.h"
 
 
 
-static Rcs::TaskFactoryRegistrar<Rcs::TaskStaticEffort> registrar("StaticEffort");
+namespace Rcs
+{
+
+static TaskFactoryRegistrar<TaskStaticEffort> registrar("StaticEffort");
 
 
+/*******************************************************************************
+ * \todo: Joint weights parsing
+ ******************************************************************************/
+TaskStaticEffort::TaskStaticEffort(const std::string& className,
+                                   xmlNode* node,
+                                   const RcsGraph* _graph,
+                                   int dim):
+  TaskGenericIK(className, node, _graph, dim), sensorId(-1)
+{
+  std::string sensorName = getXMLNodePropertySTLString(node, "sensor");
+
+  for (unsigned int i=0; i<getGraph()->nSensors; ++i)
+  {
+    if (std::string(graph->sensors[i].name) == sensorName)
+    {
+      sensorId = i;
+      break;
+    }
+  }
+
+  jointWeights = std::vector<double>(getGraph()->dof, 1.0);
+
+  resetParameter(Parameters(0.0, 1.0, 1.0, "Effort"));
+}
 
 /*******************************************************************************
  *
  ******************************************************************************/
-Rcs::TaskStaticEffort::TaskStaticEffort(const std::string& className,
-                                        xmlNode* node,
-                                        const RcsGraph* _graph,
-                                        int dim):
-  TaskGenericIK(className, node, _graph, dim),
-  sensorId(-1)
+TaskStaticEffort::TaskStaticEffort(const TaskStaticEffort& copyFromMe):
+  jointWeights(copyFromMe.jointWeights), sensorId(copyFromMe.sensorId)
 {
-  RFATAL("Parsing sensor and W missing, also toXML needs update");
-  resetParameter(Parameters(0.0, 1.0, 1.0, "Effort"));
 }
 
 /*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskStaticEffort* Rcs::TaskStaticEffort::clone(const RcsGraph* newGraph) const
+TaskStaticEffort* TaskStaticEffort::clone(const RcsGraph* newGraph) const
 {
   TaskStaticEffort* task = new TaskStaticEffort(*this);
   task->setGraph(newGraph);
@@ -75,7 +97,7 @@ Rcs::TaskStaticEffort* Rcs::TaskStaticEffort::clone(const RcsGraph* newGraph) co
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskStaticEffort::getForceInWorldCoords(double f[3]) const
+void TaskStaticEffort::getForceInWorldCoords(double f[3]) const
 {
   Vec3d_copy(f, getSensor()->rawData->ele);
   HTr A_SI;
@@ -87,7 +109,7 @@ void Rcs::TaskStaticEffort::getForceInWorldCoords(double f[3]) const
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskStaticEffort::computeX(double* x_res) const
+void TaskStaticEffort::computeX(double* x_res) const
 {
   double fbuf[3];
   MatNd f = MatNd_fromPtr(3, 1, fbuf);
@@ -103,14 +125,14 @@ void Rcs::TaskStaticEffort::computeX(double* x_res) const
 /*******************************************************************************
  *
  ******************************************************************************/
-MatNd* Rcs::TaskStaticEffort::getJointWeights() const
+MatNd* TaskStaticEffort::getJointWeights() const
 {
   MatNd* wj = NULL;
 
   if (!jointWeights.empty())
   {
     RCHECK(graph->nJ == jointWeights.size());
-    MatNd_create2(wj, graph->nJ, 1);
+    wj = MatNd_create(graph->nJ, 1);
     for (size_t i = 0; i < jointWeights.size(); ++i)
     {
       wj->ele[i] = jointWeights[i];
@@ -123,7 +145,7 @@ MatNd* Rcs::TaskStaticEffort::getJointWeights() const
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskStaticEffort::computeJ(MatNd* dH) const
+void TaskStaticEffort::computeJ(MatNd* dH) const
 {
   MatNd_reshape(dH, this->graph->nJ, 1);
   double fbuf[3];
@@ -142,7 +164,7 @@ void Rcs::TaskStaticEffort::computeJ(MatNd* dH) const
  *  are called, and just the relevant elements are copied. Their index is given
  *  in this->index (see constructor).
  ******************************************************************************/
-void Rcs::TaskStaticEffort::computeH(MatNd* hessian) const
+void TaskStaticEffort::computeH(MatNd* hessian) const
 {
   RFATAL("Not yet implemented");
 }
@@ -150,18 +172,26 @@ void Rcs::TaskStaticEffort::computeH(MatNd* hessian) const
 /*******************************************************************************
  *
  ******************************************************************************/
-const RcsSensor* Rcs::TaskStaticEffort::getSensor() const
+const RcsSensor* TaskStaticEffort::getSensor() const
 {
   RCHECK((sensorId>=0) && (sensorId<(int)graph->nSensors));
   return &graph->sensors[sensorId];
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+void TaskStaticEffort::toXMLBody(FILE* out) const
+{
+  fprintf(out, " sensor=\"%d\"", sensorId);
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
-bool Rcs::TaskStaticEffort::isValid(xmlNode* node, const RcsGraph* graph)
+bool TaskStaticEffort::isValid(xmlNode* node, const RcsGraph* graph)
 {
-  bool success = Rcs::Task::isValid(node, graph, "StaticEffort");
+  bool success = Task::isValid(node, graph, "StaticEffort");
 
   if (success == false)
   {
@@ -228,3 +258,7 @@ bool Rcs::TaskStaticEffort::isValid(xmlNode* node, const RcsGraph* graph)
 
   return true;
 }
+
+
+
+}   // namespace Rcs

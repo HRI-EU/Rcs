@@ -921,6 +921,7 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
     getXMLNodePropertyStringN(node, "coupledTo", jnt->coupledJntName,
                               RCS_MAX_NAMELEN);
     strcat(jnt->coupledJntName, suffix);
+    RLOG(5, "Joint %s is coupled to %s", jnt->name, jnt->coupledJntName);
 
     unsigned int polyGrad = getXMLNodeNumStrings(node, "couplingFactor");
     if (polyGrad == 0)
@@ -990,7 +991,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   }
 
   //RLOG(0, "Body %s: firstInGroup is %s",
-  //     name, firstInGroup ? "TRUE" : "FALSE"); 
+  //     name, firstInGroup ? "TRUE" : "FALSE");
 
   char msg[RCS_MAX_NAMELEN] = "";
   RcsBody* parentBdy = root;

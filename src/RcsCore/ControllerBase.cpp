@@ -572,11 +572,17 @@ RcsCollisionMdl* ControllerBase::getCollisionMdl() const
  * Reads the activation vector from the configuration file. TODO: Check if
  * ctor xml file is open and use this in that case.
  ******************************************************************************/
-void ControllerBase::readActivationsFromXML(MatNd* a_init) const
+bool ControllerBase::readActivationsFromXML(MatNd* a_init_) const
 {
-  unsigned int nTasks = getNumberOfTasks(), taskCount = 0;
+  if (this->xmlFile.empty())
+  {
+    RLOG(1, "Controller was not created from xml file");
+    return false;
+  }
 
-  MatNd_reshapeAndSetZero(a_init, nTasks, 1);
+  const unsigned int nTasks = getNumberOfTasks();
+  unsigned int taskCount = 0;
+  MatNd* a_init = MatNd_createLike(a_init_);
 
   xmlDocPtr docPtr;
   xmlNodePtr node = parseXMLFile(this->xmlFile.c_str(), "Controller", &docPtr);
@@ -616,7 +622,12 @@ void ControllerBase::readActivationsFromXML(MatNd* a_init) const
   {
     RLOG(1, "Mismatch in initialization of activations: "
          "Parsed %d tasks, should be %d", taskCount, nTasks);
+    MatNd_destroy(a_init);
+    return false;
   }
+  MatNd_copy(a_init_, a_init);
+
+  return true;
 }
 
 /*******************************************************************************

@@ -2692,10 +2692,17 @@ void RcsGraph_makeJointsConsistent(RcsGraph* self)
   {
     MatNd_set(self->q, JNT->jointIndex, 0, JNT->q0);
 
+    if (strlen(JNT->coupledJntName)==0)
+    {
+      continue;
+    }
+
     RcsJoint* master = RcsGraph_getJointByName(self, JNT->coupledJntName);
 
     if (master == NULL)
     {
+      RLOG(1, "Joint coupling between %s to %s not found - latter one not found",
+           JNT->name, JNT->coupledJntName);
       continue;
     }
 

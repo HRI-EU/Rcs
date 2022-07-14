@@ -221,6 +221,31 @@ double RcsBody_distanceToPoint(const RcsBody* body, const double I_pt[3],
                                double I_cpBdy[3], double I_nBdyPt[3]);
 
 /*! \ingroup RcsBodyFunctions
+ *  \brief Computes the distance to the closest body in a given direction. This
+ *         is equivalent to a ray cast. Only shapes with RcsShape::computeType
+ *         RCSSHAPE_DISTANCE are considered. If no intersection was found, all
+ *         output arguments remain unchanged.
+ *
+ *  \param[in]  graph       RcsGraph containing the body
+ *  \param[in]  pt          Point in world coordinates from which the distance
+ *                          is to be computed
+ *  \param[in]  direction   Direction vector in world coordinates. It does not
+ *                          need to be of unit length. If it is degenerate, the
+ *                          function will return no intersection and warn on
+ *                          debug level 4.
+ *  \param[out] I_cpBdy     Closest point on the body in world coordinates. If
+ *                          it is NULL, it will be ignored.
+ *  \param[out] distance    Closest distance along line direction. If it is
+ *                          NULL, it will be ignored.
+ *  \return Closest body, or NULL if no intersection is found.
+ */
+const RcsBody* RcsBody_closestInDirection(const RcsGraph* graph,
+                                          const double pt[3],
+                                          const double direction[3],
+                                          double I_cpBdy[3],
+                                          double* distance);
+
+/*! \ingroup RcsBodyFunctions
  *  \brief Computes the distance of the center points of two objects. The
  *         used center points are the bodie's origin, with an offset given
  *         in body coordinates in vectors k_p1 and k_p2. If these vectors

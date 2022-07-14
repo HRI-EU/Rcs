@@ -423,13 +423,61 @@ bool RcsGraph_toMujocoFile(const char* fileName, const RcsGraph* graph)
   MatNd_setZero(gCopy->q_dot);
   RcsGraph_setState(gCopy, gCopy->q, gCopy->q_dot);
   recurse(fd, gCopy, &gCopy->bodies[gCopy->rootId], 2);
-  RcsGraph_destroy(gCopy);
 
 
 
   fprintf(fd, "\n</worldbody>\n\n");
+
+
+  // Add actuators here
+  fprintf(fd, "<actuator>\n");
+  RCSGRAPH_FOREACH_BODY(gCopy)
+  {
+    RCSBODY_FOREACH_JOINT(gCopy, BODY)
+    {
+      if (BODY->physicsSim==RCSBODY_PHYSICS_NONE)
+      {
+        continue;
+      }
+
+      if (BODY->rigid_body_joints)
+      {
+        continue;
+      }
+
+      // See https://github.com/willwhitney/jaco-simulation/blob/master/jaco_other.xml
+      if (JNT->ctrlType == RCSJOINT_CTRL_POSITION)
+      {
+        //fprintf(fd, "  <motor ctrllimited=\"false\" ctrlrange=\" -0.4 0.4\" ");
+        //fprintf(fd, "joint=\"%s\" name=\"%s\" gear=\"1\" />\n", JNT->name, JNT->name);
+
+
+        //fprintf(fd, "  <position joint=\"%s\" name=\"%s\" gear=\"20\" ctrllimited=\"false\" kp=\"5\" forcelimited=\"true\" forcerange=\"-20 20\" ctrlrange=\"-1.0 1.0\" />", JNT->name, JNT->name);
+        //fprintf(fd, "  <position joint=\"%s\" gear=\"1\" name=\"%s\" ctrllimited=\"false\" kp=\"100\" ctrlrange=\"-10.0 10.0\" />\n", JNT->name, JNT->name);
+        const double kp = 10.0;
+        double kv = 0.5 * sqrt(4.0 * kp);
+
+        //fprintf(fd, "  <position joint=\"%s\" name=\"%s\" kp=\"%f\" />\n", JNT->name, JNT->name, kp);
+        //fprintf(fd, "  <velocity joint=\"%s\" name=\"%s_vel\" kv=\"%f\" />\n", JNT->name, JNT->name, kv);
+      }
+
+
+      fprintf(fd, "  <velocity joint='%s'  name='%s' kv='0.1' ctrlrange='-1 1' />\n", JNT->name, JNT->name);
+
+
+
+    }
+  }
+
+
+  fprintf(fd, "</actuator>\n");
+  // End actuators here
+
+
+
   fprintf(fd, "</mujoco>\n");
 
+  RcsGraph_destroy(gCopy);
   fclose(fd);
 
   return true;

@@ -38,15 +38,17 @@
 #include "Rcs_macros.h"
 
 
-static Rcs::TaskFactoryRegistrar<Rcs::TaskCompositeXml> registrar("Composite");
+namespace Rcs
+{
 
+static TaskFactoryRegistrar<TaskCompositeXml> registrar("Composite");
 
 /*******************************************************************************
  * Constructor based on xml parsing
  ******************************************************************************/
-Rcs::TaskCompositeXml::TaskCompositeXml(const std::string& className_,
-                                        xmlNode* node,
-                                        const RcsGraph* _graph):
+TaskCompositeXml::TaskCompositeXml(const std::string& className_,
+                                   xmlNode* node,
+                                   const RcsGraph* _graph):
   CompositeTask(className_, node, _graph)
 {
   // Descend one level in XML parsing to find Task et al.
@@ -68,7 +70,7 @@ Rcs::TaskCompositeXml::TaskCompositeXml(const std::string& className_,
 /*******************************************************************************
  * Copy constructor doing deep copying
  ******************************************************************************/
-Rcs::TaskCompositeXml::TaskCompositeXml(const Rcs::TaskCompositeXml& copyFromMe) :
+TaskCompositeXml::TaskCompositeXml(const TaskCompositeXml& copyFromMe) :
   CompositeTask(copyFromMe)
 {
 }
@@ -76,9 +78,9 @@ Rcs::TaskCompositeXml::TaskCompositeXml(const Rcs::TaskCompositeXml& copyFromMe)
 /*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskCompositeXml* Rcs::TaskCompositeXml::clone(const RcsGraph* newGraph) const
+TaskCompositeXml* TaskCompositeXml::clone(const RcsGraph* newGraph) const
 {
-  TaskCompositeXml* task = new Rcs::TaskCompositeXml(*this);
+  TaskCompositeXml* task = new TaskCompositeXml(*this);
   task->setGraph(newGraph);
   return task;
 }
@@ -86,7 +88,7 @@ Rcs::TaskCompositeXml* Rcs::TaskCompositeXml::clone(const RcsGraph* newGraph) co
 /*******************************************************************************
  *
  ******************************************************************************/
-void Rcs::TaskCompositeXml::toXML(FILE* out, bool activation) const
+void TaskCompositeXml::toXML(FILE* out, bool activation) const
 {
   Task::toXMLStart(out);
   fprintf(out, " active=\"%s\" >\n", activation ? "true" : "false");
@@ -104,7 +106,7 @@ void Rcs::TaskCompositeXml::toXML(FILE* out, bool activation) const
  * We traverse the node's children and try to instantiate each task. If one of
  * them fails, we know that it is invalid, and we can return false.
  ******************************************************************************/
-bool Rcs::TaskCompositeXml::isValid(xmlNode* node, const RcsGraph* graph)
+bool TaskCompositeXml::isValid(xmlNode* node, const RcsGraph* graph)
 {
   bool success = true;
 
@@ -137,3 +139,5 @@ bool Rcs::TaskCompositeXml::isValid(xmlNode* node, const RcsGraph* graph)
 
   return success;
 }
+
+}   // namespace Rcs
