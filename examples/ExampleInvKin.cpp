@@ -44,32 +44,22 @@
 #include <Rcs_timer.h>
 #include <Rcs_sensor.h>
 #include <Rcs_utilsCPP.h>
+#include <Rcs_graphParser.h>
 #include <ExampleFactory.h>
 #include <IkSolverConstraintRMR.h>
 #include <PhysicsFactory.h>
 
-#include <RcsViewer.h>
-#include <KeyCatcher.h>
-#include <GraphNode.h>
-#include <SphereNode.h>
-#include <HUD.h>
-
-#include <JointWidget.h>
-#include <Rcs_guiFactory.h>
-#include <ControllerWidgetBase.h>
-#include <MatNdWidget.h>
 
 
 namespace Rcs
 {
 
-//REGISTER_EXAMPLE(ExampleIK);
 static ExampleFactoryRegistrar<ExampleIK> ExampleIK_("Inverse kinematics", "Dexbot with Task Interval");
 
 
 ExampleIK::ExampleIK(int argc, char** argv) : ExampleBase(argc, argv),
   valgrind(false), simpleGraphics(false), nomutex(false), testLocale(false),
-  mtx(NULL), algo(1), guiHandle(-1), alpha(0.05), lambda(1.0e-8), tmc(0.1),
+  mtx(NULL), algo(1), alpha(0.05), lambda(1.0e-8), tmc(0.1),
   dt(0.01), dt_calc(0.0), jlCost(0.0), dJlCost(0.0), clipLimit(DBL_MAX),
   det(0.0), scaleDragForce(0.01), calcDistance(false),
   ffwd(false), skipGui(false), pause(false), launchJointWidget(false),
@@ -81,7 +71,8 @@ ExampleIK::ExampleIK(int argc, char** argv) : ExampleBase(argc, argv),
   x_des(NULL), x_des_f(NULL), dx_des(NULL), dH(NULL),
   effortBdy(NULL), F_effort(NULL),
   sim(NULL), simController(NULL), simGraph(NULL), physicsFeedback(false),
-  v(NULL), cGui(NULL), loopCount(0)
+  v(NULL), cGui(NULL), effortGui(NULL), dxGui(NULL), activationGui(NULL),
+  jGui(NULL), loopCount(0)
 {
   pthread_mutex_init(&graphLock, NULL);
   Vec3d_setZero(r_com);
@@ -97,13 +88,18 @@ ExampleIK::~ExampleIK()
 
 void ExampleIK::clear()
 {
-  if (valgrind == false)
-  {
-    delete v;
-    v = NULL;
-    delete cGui;
-    cGui = NULL;
-  }
+  delete v;
+  v = NULL;
+  delete cGui;
+  cGui = NULL;
+  delete effortGui;
+  effortGui = NULL;
+  delete dxGui;
+  dxGui = NULL;
+  delete activationGui;
+  activationGui = NULL;
+  delete jGui;
+  jGui = NULL;
 
   MatNd_destroy(dq_des);
   MatNd_destroy(q_dot_des);
@@ -281,7 +277,7 @@ bool ExampleIK::initAlgo()
   // Body for static effort null space gradient
   effortBdy = RcsGraph_getBodyByName(controller->getGraph(),
                                      effortBdyName.c_str());
-  F_effort = MatNd_create(3, 1);
+  F_effort = MatNd_create(4, 1);   // 4-th element is gain
 
   // Overall COM
   Vec3d_setZero(r_com);
@@ -411,9 +407,6 @@ void ExampleIK::initGuis()
         cGui = new ControllerGui(controller, a_des,
                                  ikSolver->getCurrentActivation(),
                                  x_des, x_curr, mtx);
-        //guiHandle = ControllerWidgetBase::create(controller, a_des,
-        //                                         ikSolver->getCurrentActivation(),
-        //                                         x_des, x_curr, mtx);
       }
       else
       {
@@ -423,15 +416,11 @@ void ExampleIK::initGuis()
           // current values from physics.
           cGui = new ControllerGui(controller, a_des,
                                    x_des, x_physics, mtx);
-          //guiHandle = ControllerWidgetBase::create(controller, a_des,
-          //                                         x_des, x_physics, mtx);
         }
         else
         {
           cGui = new ControllerGui(controller, a_des,
                                    x_des, x_curr, mtx);
-          //guiHandle = ControllerWidgetBase::create(controller, a_des,
-          //                                         x_des, x_curr, mtx);
         }
       }
     }
@@ -441,9 +430,7 @@ void ExampleIK::initGuis()
     if (!skipGui)
     {
       // Launch the task widget
-      MatNdWidget* mw = MatNdWidget::create(dx_des, x_curr,
-                                            -1.0, 1.0, "dx",
-                                            mtx);
+      dxGui = new MatNdGui(dx_des, x_curr, -1.0, 1.0, "dx", mtx);
 
       std::vector<std::string> labels;
       for (size_t id = 0; id < controller->getNumberOfTasks(); id++)
@@ -454,37 +441,33 @@ void ExampleIK::initGuis()
                            controller->getTask(id)->getParameter(j).name);
       }
 
-      mw->setLabels(labels);
+      dxGui->setLabels(labels);
 
-      mw = Rcs::MatNdWidget::create(a_des, a_des,
-                                    0.0, 1.0, "activation",
-                                    &graphLock);
+      activationGui = new MatNdGui(a_des, a_des, 0.0, 1.0, "activation", &graphLock);
       labels.clear();
       for (size_t id = 0; id < controller->getNumberOfTasks(); id++)
       {
         labels.push_back(controller->getTaskName(id));
       }
-      mw->setLabels(labels);
+      activationGui->setLabels(labels);
     }
   }
 
 
   if (launchJointWidget == true)
   {
-    Rcs::JointWidget::create(controller->getGraph(), mtx);
+    jGui = new JointGui(controller->getGraph(), mtx);
   }
 
   if (effortBdy)
   {
     std::vector<std::string> labels;
-    Rcs::MatNdWidget* mw = Rcs::MatNdWidget::create(F_effort, F_effort,
-                                                    -1.0, 1.0,
-                                                    "F_effort", mtx);
+    effortGui = new MatNdGui(F_effort, F_effort, -1.0, 1.0, "F_effort", mtx);
     labels.push_back("Fx");
     labels.push_back("Fy");
     labels.push_back("Fz");
     labels.push_back("gain");
-    mw->setLabels(labels);
+    effortGui->setLabels(labels);
   }
 
 }
@@ -544,8 +527,9 @@ void ExampleIK::step()
 
     RcsGraph_stateVectorToIKSelf(controller->getGraph(), W_ef);
     MatNd* effortGrad = MatNd_create(1, controller->getGraph()->nJ);
+    MatNd F_effort3 = MatNd_fromPtr(3, 1, F_effort->ele);
     RcsGraph_staticEffortGradient(controller->getGraph(), effortBdy,
-                                  F_effort, W_ef, NULL, effortGrad);
+                                  &F_effort3, W_ef, NULL, effortGrad);
     MatNd_destroy(W_ef);
     MatNd_constMulSelf(effortGrad, 1000.0*MatNd_get(F_effort, 3, 0));
     MatNd_addSelf(dH, effortGrad);
@@ -589,8 +573,7 @@ void ExampleIK::step()
     simController->computeX(x_physics);
     if (physicsFeedback)
     {
-      RcsGraph_setState(controller->getGraph(), simGraph->q,
-                        simGraph->q_dot);
+      RcsGraph_setState(controller->getGraph(), simGraph->q, simGraph->q_dot);
     }
 
     else
@@ -615,11 +598,11 @@ void ExampleIK::step()
 
   // Compute inside mutex, otherwise clicking activation boxes in the Gui
   // can lead to crashes.
+  MatNd F_effort3 = MatNd_fromPtr(3, 1, F_effort->ele);
   double manipIdx = controller->computeManipulabilityCost(a_des);
   double staticEff = RcsGraph_staticEffort(controller->getGraph(),
-                                           effortBdy, F_effort,
+                                           effortBdy, &F_effort3,
                                            NULL, NULL);
-
   pthread_mutex_unlock(&graphLock);
 
 
@@ -757,9 +740,7 @@ void ExampleIK::handleKeys()
       MatNd_copy(x_physics, x_curr);
     }
 
-    void* ptr = RcsGuiFactory_getPointer(guiHandle);
-    Rcs::ControllerWidgetBase* cw = static_cast<Rcs::ControllerWidgetBase*>(ptr);
-    cw->reset(a_des, x_curr);
+    cGui->reset(a_des, x_curr);
   }
   else if (kc->getAndResetKey('k') && gn)
   {
@@ -919,6 +900,49 @@ void ExampleIK_AssistiveDressing::initParameters()
   algo = 1;
   dt = 0.002;
   physicsEngine = "SoftBullet";
+}
+
+
+static ExampleFactoryRegistrar<ExampleIK_StaticEffort> ExampleIK_StaticEffort_("Inverse kinematics", "Static effort");
+
+ExampleIK_StaticEffort::ExampleIK_StaticEffort(int argc, char** argv) : ExampleIK(argc, argv)
+{
+}
+
+void ExampleIK_StaticEffort::initParameters()
+{
+  ExampleIK::initParameters();
+  effortBdyName = "sdh-base_R";
+  algo = 1;
+}
+
+bool ExampleIK_StaticEffort::initAlgo()
+{
+  bool success = ExampleIK::initAlgo();
+  MatNd_set(F_effort, 2, 0, -1.0);   // Downwards force
+  success = RcsGraph_getModelStateFromXML(controller->getGraph()->q, controller->getGraph(), "StaticEffort", 0) && success;
+  RcsGraph_setState(controller->getGraph(), NULL, NULL);
+  controller->computeX(x_curr);
+  MatNd_copy(x_des, x_curr);
+  MatNd_copy(x_des_f, x_curr);
+  MatNd_copy(x_physics, x_curr);
+  return success;
+}
+
+std::string ExampleIK_StaticEffort::help()
+{
+  std::stringstream s;
+  s << "  Static effort test:\n\n";
+  s << "  The Gui shows the 3 force compoents that are applied to the right hand.\n";
+  s << "  The 4th slider (gain) allows to adjust the amplification of the static effort\n";
+  s << "  gradient to the null space of the system. A positive gain should decrease the\n";
+  s << "  static effort, a negative value should increase it. The static effort is\n";
+  s << "  displayed in the HUD\n\n";
+  s << ControllerBase::printUsageToString(xmlFileName);
+  s << Rcs::getResourcePaths();
+  s << Rcs::CmdLineParser::printToString();
+  s << Rcs::RcsGraph_printUsageToString(xmlFileName);
+  return s.str();
 }
 
 

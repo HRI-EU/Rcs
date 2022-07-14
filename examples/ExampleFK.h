@@ -82,6 +82,7 @@ protected:
   bool editMode;
   bool playBVH;
   bool noHud;
+  bool updateHud;
   bool randomGraph;
   bool shapifyReplace;
   bool noMutex;
@@ -110,6 +111,22 @@ class ExampleFK_Octree : public ExampleFK
 public:
   ExampleFK_Octree(int argc, char** argv);
   virtual void initParameters();
+};
+
+class ExampleFK_Below : public ExampleFK
+{
+public:
+  ExampleFK_Below(int argc, char** argv);
+  virtual void initParameters();
+  virtual void initGraphics();
+  virtual bool initAlgo();
+  virtual void step();
+  virtual std::string help();
+
+protected:
+  std::string belowBdy;
+  osg::ref_ptr<Rcs::SphereNode> belowNd;
+  double belowPt[3];
 };
 
 }   // namespace

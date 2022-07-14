@@ -47,6 +47,8 @@
 #include <VertexArrayNode.h>
 #include <SphereNode.h>
 #include <ControllerWidgetBase.h>
+#include <MatNdWidget.h>
+#include <JointWidget.h>
 
 #include <pthread.h>
 
@@ -74,7 +76,7 @@ protected:
   pthread_mutex_t graphLock;
   pthread_mutex_t* mtx;
   std::string localeStr;
-  int algo, guiHandle;
+  int algo;
   double alpha, lambda, tmc, dt, dt_calc, jlCost, dJlCost, clipLimit, det,
          scaleDragForce;
   bool calcDistance;
@@ -105,6 +107,10 @@ protected:
   osg::ref_ptr<SphereNode> comNd;
   char hudText[2056];
   ControllerGui* cGui;
+  MatNdGui* effortGui;
+  MatNdGui* dxGui;
+  MatNdGui* activationGui;
+  JointGui* jGui;
   unsigned int loopCount;
 };
 
@@ -128,6 +134,15 @@ class ExampleIK_AssistiveDressing : public ExampleIK
 public:
   ExampleIK_AssistiveDressing(int argc, char** argv);
   virtual void initParameters();
+};
+
+class ExampleIK_StaticEffort : public ExampleIK
+{
+public:
+  ExampleIK_StaticEffort(int argc, char** argv);
+  virtual void initParameters();
+  virtual bool initAlgo();
+  virtual std::string help();
 };
 
 }   // namespace

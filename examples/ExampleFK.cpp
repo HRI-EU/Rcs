@@ -38,6 +38,7 @@
 #include <Rcs_macros.h>
 #include <Rcs_typedef.h>
 #include <Rcs_body.h>
+#include <Rcs_shape.h>
 #include <Rcs_utils.h>
 #include <Rcs_graphParser.h>
 #include <Rcs_kinematics.h>
@@ -79,6 +80,7 @@ ExampleFK::ExampleFK(int argc, char** argv) : ExampleBase(argc, argv)
   editMode = false;
   playBVH = false;
   noHud = false;
+  updateHud = true;
   randomGraph = false;
   shapifyReplace = false;
   noMutex = false;
@@ -467,13 +469,16 @@ void ExampleFK::step()
     strcat(hudText, a);
   }
 
-  if (hud)
+  if (updateHud)
   {
-    hud->setText(hudText);
-  }
-  else
-  {
-    std::cout << hudText;
+    if (hud)
+    {
+      hud->setText(hudText);
+    }
+    else
+    {
+      std::cout << hudText;
+    }
   }
 
   REXEC(6)
@@ -873,7 +878,6 @@ void ExampleFK::handleKeys()
 
 
 
-//REGISTER_EXAMPLE(ExampleFK_Octree);
 static ExampleFactoryRegistrar<ExampleFK_Octree> ExampleFK_Octree_("Forward kinematics", "Octree");
 
 ExampleFK_Octree::ExampleFK_Octree(int argc, char** argv) : ExampleFK(argc, argv)
@@ -888,6 +892,103 @@ void ExampleFK_Octree::initParameters()
 }
 
 
+
+static ExampleFactoryRegistrar<ExampleFK_Below> ExampleFK_Below_("Forward kinematics", "Below");
+
+ExampleFK_Below::ExampleFK_Below(int argc, char** argv) : ExampleFK(argc, argv)
+{
+  Vec3d_setZero(belowPt);
+}
+
+void ExampleFK_Below::initGraphics()
+{
+  ExampleFK::initGraphics();
+
+  gn->displayReferenceFrames(false);
+
+  belowNd = new Rcs::SphereNode(belowPt, 0.05);
+  belowNd->makeDynamic(belowPt);
+  belowNd->setMaterial("RED");
+  viewer->add(belowNd);
+}
+
+void ExampleFK_Below::initParameters()
+{
+  ExampleFK::initParameters();
+  xmlFileName = "gScenario.xml";
+  directory = "config/xml/PPStest";
+  editMode = true;
+  updateHud = false;   // Class writes its own text into the Hud
+  belowBdy = "Sphere";
+}
+
+bool ExampleFK_Below::initAlgo()
+{
+  ExampleFK::initAlgo();
+  RCSGRAPH_FOREACH_BODY(graph)
+  {
+    RCSBODY_TRAVERSE_SHAPES(BODY)
+    {
+      RcsShape_setComputeType(SHAPE, RCSSHAPE_COMPUTE_DISTANCE, true);
+    }
+  }
+
+  const RcsBody* bb = RcsGraph_getBodyByName(graph, belowBdy.c_str());
+  RCSBODY_TRAVERSE_SHAPES(bb)
+  {
+    RcsShape_setComputeType(SHAPE, RCSSHAPE_COMPUTE_DISTANCE, false);
+  }
+
+  return true;
+}
+
+void ExampleFK_Below::step()
+{
+  ExampleFK::step();
+
+  const RcsBody* bb = RcsGraph_getBodyByName(graph, belowBdy.c_str());
+
+  if (!bb)
+  {
+    RLOG(0, "Below-body %s not found", belowBdy.c_str());
+    return;
+  }
+
+
+  double direction[3], distance;
+  Vec3d_set(direction, 0.0, 0.0, -1.0);
+  pthread_mutex_lock(&graphLock);
+  const RcsBody* closest = RcsBody_closestInDirection(graph, bb->A_BI.org, direction, belowPt, &distance);
+  pthread_mutex_unlock(&graphLock);
+
+  snprintf(hudText, 256, "Body below %s is %s \nd=%f   pt=[%f %f %f]\n",
+           bb->name, closest ? closest->name : "NULL", distance,
+           belowPt[0], belowPt[1], belowPt[2]);
+  if (hud)
+  {
+    hud->setText(hudText);
+  }
+  else
+  {
+    std::cout << hudText;
+  }
+}
+
+std::string ExampleFK_Below::help()
+{
+  std::stringstream s;
+  s << "  Raycast test\n\n";
+  s << "  Here is how it works:\n";
+  s << "\tWhen pressing the TAB-key, the green sphere can be dragged with \n";
+  s << "\tthe TargetSetter. The red sphere below is indicating the \n";
+  s << "\tintersection from the sphere's frame origin, casted vertically\n";
+  s << "\tdownwards. In this example, all shapes regardless of their compute \n";
+  s << "\ttype are considered.\n\n";
+  s << Rcs::getResourcePaths();
+  s << Rcs::CmdLineParser::printToString();
+  s << Rcs::RcsGraph_printUsageToString(xmlFileName);
+  return s.str();
+}
 
 
 
