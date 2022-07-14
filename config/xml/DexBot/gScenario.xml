@@ -61,5 +61,30 @@
   </model_state>
 
 
+<model_state model="StaticEffort" time_stamp="">
+  <joint_state joint="DofChestZ" position="0.811087" />
+  <joint_state joint="lbr_joint_1_L" position="30.019255" />
+  <joint_state joint="lbr_joint_2_L" position="50.012604" />
+  <joint_state joint="lbr_joint_3_L" position="30.232385" />
+  <joint_state joint="lbr_joint_4_L" position="69.768945" />
+  <joint_state joint="lbr_joint_5_L" position="-19.990683" />
+  <joint_state joint="lbr_joint_6_L" position="-29.821518" />
+  <joint_state joint="lbr_joint_7_L" position="20" />
+  <joint_state joint="knuck3-base_L" position="1" />
+  <joint_state joint="fing3-knuck3_L" position="0" />
+  <joint_state joint="knuck1-base_L" position="1" />
+  <joint_state joint="fing1-knuck1_L" position="0" />
+  <joint_state joint="lbr_joint_1_R" position="-13.667749" />
+  <joint_state joint="lbr_joint_2_R" position="-13.851614" />
+  <joint_state joint="lbr_joint_3_R" position="-12.738288" />
+  <joint_state joint="lbr_joint_4_R" position="-72.916389" />
+  <joint_state joint="lbr_joint_5_R" position="22.927125" />
+  <joint_state joint="lbr_joint_6_R" position="26.164137" />
+  <joint_state joint="lbr_joint_7_R" position="20" />
+  <joint_state joint="knuck3-base_R" position="1" />
+  <joint_state joint="fing3-knuck3_R" position="0" />
+  <joint_state joint="knuck1-base_R" position="1" />
+  <joint_state joint="fing1-knuck1_R" position="0" />
+</model_state>
 
 </Graph>

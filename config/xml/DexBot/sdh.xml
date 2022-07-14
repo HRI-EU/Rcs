@@ -3,9 +3,9 @@
   <Body name="sdh-base" transform="0 0 0.0003 0 0 0" physics="fixed" 
 	mass="1.054" inertia="0.001757 0 0   0 0.001757 0   0 0 0.001757" >
     <Shape type="MESH" distance="false" physics="false" graphics="true" 
-	   transform="0 0 0.049 0 0 0" meshFile="Schunk/SDH_Gehaeuse_x.tri" />
+	   transform="0 0 0.049 0 0 0" meshFile="Schunk/SDH_Gehaeuse_x.stl" />
     <Shape type="MESH" distance="false" physics="true" graphics="false" 
-	   transform="0 0 0.049 0 0 0" meshFile="Schunk/SDH_Gehaeuse_x.tri" />
+	   transform="0 0 0.049 0 0 0" meshFile="Schunk/SDH_Gehaeuse_x.stl" />
     <Shape type="SSL" radius="0.065" color="RED" graphics="false" 
 	   physics="false" distance="true" length="0.02" 
 	   transform="0 0 0.02 0 0 0" />
@@ -14,7 +14,7 @@
     <Shape type="FRAME" scale="0.2" transform="0 0 0 0 0 -165" />
     <Shape type="MESH" distance="false" physics="false" graphics="true" 
 	   transform="-0.038105 0 0.072 90 -90 0" 
-	   meshFile="Schunk/SDH_Gelenk_Finger1_x.tri" />
+	   meshFile="Schunk/SDH_Gelenk_Finger1_x.stl" />
   </Body>
 
   <Body name="knuck3" prev="sdh-base" physics="dynamic" mass="0.04" 
@@ -25,7 +25,7 @@
 	   constraint="true" />
     <Shape type="MESH" distance="false" physics="false" graphics="true" 
 	   transform="0 0 -0.017 90 -90 0" 
-	   meshFile="Schunk/SDH_Gelenk_Finger1_x.tri" />
+	   meshFile="Schunk/SDH_Gelenk_Finger1_x.stl" />
     <Shape type="CYLINDER" length="0.048" radius="0.000015" distance="false" 
 	   physics="true" graphics="false" transform="0 0.003 0 90 0 0" 
 	   color="RED" />
@@ -37,10 +37,10 @@
 	   type="RotY" torqueLimit="2.1" speedLimit="210" />
     <Shape type="MESH" distance="false" physics="false" graphics="true" 
 	   transform="0 0 -0.017 90 -90 0" 
-	   meshFile="Schunk/SDH_Mittelteil_Finger1_x.tri" />
+	   meshFile="Schunk/SDH_Mittelteil_Finger1_x.stl" />
     <Shape type="MESH" distance="false" physics="true" graphics="false" 
 	   transform="0 0 -0.017 90 -90 0" 
-	   meshFile="Schunk/SDH_Mittelteil_Finger1_x.tri" />
+	   meshFile="Schunk/SDH_Mittelteil_Finger1_x.stl" />
     <xShape type="SSR" extents="0.075 0.018 0.01" distance="false" 
 	   physics="true" graphics="false" color="RED"
 	   transform="0.0105 0 0.045 0 90 0" material="soft_object" />
@@ -141,10 +141,10 @@
 	   transform="0 0 0.0865 0 0 0" torqueLimit="1.4" speedLimit="210" />
     <Shape type="MESH" distance="false" physics="false" graphics="true" 
 	   transform="0 0 -0.1035 90 -90 0" 
-	   meshFile="Schunk/SDH_Kuppe_Finger1_x.tri" />
+	   meshFile="Schunk/SDH_Kuppe_Finger1_x.stl" />
     <Shape type="MESH" distance="false" physics="true" graphics="false" 
 	   transform="0 0 -0.1035 90 -90 0" 
-	   meshFile="Schunk/SDH_Kuppe_Finger1_x.tri" />
+	   meshFile="Schunk/SDH_Kuppe_Finger1_x.stl" />
     <Shape type="SSL" length="0.05" radius="0.02" distance="true" color="RED" 
 	   physics="false" graphics="false" material="soft_object" />
     <xShape type="SSR" extents="0.03 0.018 0.01" distance="false" 
@@ -255,7 +255,7 @@
 	   transform="0.019052 -0.033 0.089 180 0 0" speedLimit="210" />
     <Shape type="MESH" distance="false" physics="false" graphics="true" 
 	   transform="0 0 0.017 -90 90 0" 
-	   meshFile="Schunk/SDH_Gelenk_Finger1_x.tri" />
+	   meshFile="Schunk/SDH_Gelenk_Finger1_x.stl" />
     <Shape type="CYLINDER" length="0.048" radius="0.000015" distance="false" 
 	   physics="true" graphics="false" transform="0 0.003 0 90 0 0" 
 	   color="RED" />
@@ -268,10 +268,10 @@
 	   speedLimit="210" />
     <Shape type="MESH" distance="false" physics="false" graphics="true" 
 	   transform="0 0 -0.017 90 -90 0" 
-	   meshFile="Schunk/SDH_Mittelteil_Finger1_x.tri" />
+	   meshFile="Schunk/SDH_Mittelteil_Finger1_x.stl" />
     <Shape type="MESH" distance="false" physics="true" graphics="false" 
 	   transform="0 0 -0.017 90 -90 0" 
-	   meshFile="Schunk/SDH_Mittelteil_Finger1_x.tri" />
+	   meshFile="Schunk/SDH_Mittelteil_Finger1_x.stl" />
     <xShape type="SSR" extents="0.075 0.018 0.01" distance="false" 
 	    physics="true" graphics="false" transform="0.0105 0 0.045 0 90 0" 
 	    color="RED" material="soft_object" />
@@ -372,10 +372,10 @@
 	   transform="0 0 0.0865 0 0 0" torqueLimit="1.4" speedLimit="210" />
     <Shape type="MESH" distance="false" physics="false" graphics="true" 
 	   transform="0 0 -0.1035 90 -90 0" 
-	   meshFile="Schunk/SDH_Kuppe_Finger1_x.tri" />
+	   meshFile="Schunk/SDH_Kuppe_Finger1_x.stl" />
     <Shape type="MESH" distance="false" physics="true" graphics="false" 
 	   transform="0 0 -0.1035 90 -90 0" 
-	   meshFile="Schunk/SDH_Kuppe_Finger1_x.tri" />
+	   meshFile="Schunk/SDH_Kuppe_Finger1_x.stl" />
     <Shape type="SSL" length="0.05" radius="0.02" distance="true" color="RED" 
 	   physics="false" graphics="false" material="soft_object" />
     <xShape type="SSR" extents="0.03 0.018 0.01" distance="false" 
@@ -487,10 +487,10 @@
 	   transform="-0.038105 0 0.089 0 0 0" />
     <Shape type="MESH" distance="false" physics="false" graphics="true" 
 	   transform="0 0 -0.017 90 -90 0" 
-	   meshFile="Schunk/SDH_Mittelteil_Finger1_x.tri" />
+	   meshFile="Schunk/SDH_Mittelteil_Finger1_x.stl" />
     <Shape type="MESH" distance="false" physics="true" graphics="false" 
 	   transform="0 0 -0.017 90 -90 0" 
-	   meshFile="Schunk/SDH_Mittelteil_Finger1_x.tri" />
+	   meshFile="Schunk/SDH_Mittelteil_Finger1_x.stl" />
     <xShape type="SSR" extents="0.075 0.018 0.01" distance="false" 
 	    physics="true" graphics="false" transform="0.0105 0 0.045 0 90 0" 
 	    color="RED" material="soft_object" />
@@ -591,10 +591,10 @@
 	   transform="0 0 0.0865 0 0 0" torqueLimit="1.4" speedLimit="210" />
     <Shape type="MESH" distance="false" physics="false" graphics="true" 
 	   transform="0 0 -0.1035 90 -90 0" 
-	   meshFile="Schunk/SDH_Kuppe_Finger1_x.tri" />
+	   meshFile="Schunk/SDH_Kuppe_Finger1_x.stl" />
     <Shape type="MESH" distance="false" physics="true" graphics="false" 
 	   transform="0 0 -0.1035 90 -90 0" 
-	   meshFile="Schunk/SDH_Kuppe_Finger1_x.tri" />
+	   meshFile="Schunk/SDH_Kuppe_Finger1_x.stl" />
     <Shape type="SSL" length="0.05" radius="0.02" distance="true" color="RED" 
 	   physics="false" graphics="false" material="soft_object" />
     <xShape type="SSR" extents="0.03 0.018 0.01" distance="false" 
