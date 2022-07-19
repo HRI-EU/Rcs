@@ -188,13 +188,18 @@ RcsBody* RcsBody_depthFirstTraversalGetNextById(const RcsGraph* graph,
  */
 RcsBody* RcsBody_getLastLeaf(const RcsGraph* graph, RcsBody* b);
 
+/*! \ingroup RcsGraphFunctions
+ *  \brief Returns the root body of the graph. It is the first one in the
+ *         depth-first traversal.
+ */
+RcsBody* RcsGraph_getRootBody(const RcsGraph* self);
 /*! \ingroup RcsGraphTraversalFunctions
  *  \brief Depth-first traversal through all bodies of the graph, starting
  *         from the root body. The bodies can be accessed with variable
  *         "BODY".
  */
 #define RCSGRAPH_TRAVERSE_BODIES(graph)                                    \
-  for (RcsBody* BODY = &(graph)->bodies[graph->rootId]; BODY;              \
+  for (RcsBody* BODY = RcsGraph_getRootBody(graph); BODY;                  \
        BODY = RcsBody_depthFirstTraversalGetNextById(graph, BODY))
 
 /*! \ingroup RcsGraphTraversalFunctions
@@ -489,12 +494,19 @@ double RcsGraph_mass(const RcsGraph* self);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Returns the summed mass of all bodies of the graph. If root is
- *         not NULL it refers to the root body
+ *         not NULL it refers to the body from which the mass is being
+ *         computed in a depth-first traversal. In this case, only the
+ *         body and its sub-tree are considered, but not its neighbors
+ *         (refered to with the nextId).
  */
 double RcsGraph_massFromBody(const RcsGraph* self, const char* root);
 
 /*! \ingroup RcsGraphFunctions
- *  \brief Returns the number of bodies in the graph.
+ *  \brief Returns the number of bodies in the graph. The function performs a
+ *         depth-first traversal and counts all traversed bodies. Therefore it
+ *         computes the "true" number of bodies, which might differ from the
+ *         RcsGraph::nBodies member once bodies have been deleted from the
+ *         graph.
  */
 unsigned int RcsGraph_numBodies(const RcsGraph* self);
 
@@ -513,6 +525,7 @@ void RcsGraph_bodyTorque(const RcsGraph* self, const RcsBody* body,
  *
  *         Failing the following checks is considered to be an error:
  *         - self is NULL pointer
+ *         - Root body not set, has parent or previous body
  *         - bodies with rigid body joints have 6 joints in the order
  *           transX-transY-transZ-rotX-rotY-rotZ (rotations are relative to
  *           previous frame, not static axis representation), and NULL or
@@ -553,6 +566,15 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors, int* nWarnings);
  *                  related to memory allocations.
  */
 RcsGraph* RcsGraph_clone(const RcsGraph* src);
+/*! \ingroup RcsGraphFunctions
+ *  \brief Returns a copy of the subgraph starting at the given rootId. The
+ *         root node will not have any next neighbor.
+ *
+ *  \param[in] src  Pointer to the graph to be copied.
+ *  \return Pointer to copy of the subgraph. If argument src is NULL, or
+ *                  copying failed, the function returns NULL.
+ */
+RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Sets the bdyNum-th generic body pointer to the given body.

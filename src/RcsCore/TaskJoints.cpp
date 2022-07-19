@@ -466,6 +466,11 @@ bool Rcs::TaskJoints::isValid(xmlNode* node, const RcsGraph* graph)
         success = false;
         RLOG(4, "Joint not found: %s", jntVec[idx].c_str());
       }
+      else if (jnt->constrained)
+      {
+        success = false;
+        RLOG(4, "Joint %s is constrained", jntVec[idx].c_str());
+      }
     }
   }
 
@@ -571,8 +576,6 @@ bool Rcs::TaskJoints::isValid(xmlNode* node, const RcsGraph* graph)
              <<  "  should be 0, 1 or " << jntVec.size());
     success = false;
   }
-
-  RCHECK(success);
 
   return success;
 }

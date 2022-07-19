@@ -132,8 +132,8 @@ Rcs::TaskJoint::TaskJoint(const RcsJoint* joint,
 
   // We require the joint to be unconstrained. Otherwise, we'll have a zero
   // Jacobian.
-  RCHECK_MSG(joint->constrained==false, "Joint \"%s\" is constrained",
-             joint->name);
+  RCHECK_MSG(joint->constrained==false, "Task \"%s\": Joint \"%s\" is constrained",
+             getName().c_str(), joint->name);
 
   // re-initialize parameters
   if (RcsJoint_isTranslation(joint) == true)

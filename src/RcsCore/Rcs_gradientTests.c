@@ -1249,12 +1249,7 @@ static void Rcs_setRndBdy(RcsGraph* self, RcsBody** bdy)
   RCHECK(nBodies>0);
 
   unsigned int rnd1 = Math_getRandomInteger(0, nBodies-1);
-  RcsBody* bPtr = &self->bodies[self->rootId];
-
-  for (unsigned int i = 0; i < rnd1; i++)
-  {
-    bPtr = RcsBody_depthFirstTraversalGetNextById(self, bPtr);
-  }
+  RcsBody* bPtr = &self->bodies[rnd1];
 
   RCHECK(bPtr);
   *bdy = bPtr;

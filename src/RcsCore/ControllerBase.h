@@ -678,6 +678,10 @@ public:
   virtual bool add(const ControllerBase& other, const char* suffix,
                    const HTr* A_BP);
 
+  /*! \brief Deletes all tasks and empties all vectors. After calling this
+   *         function, the class is consistently bare of any task.
+   */
+  void eraseTasks();
   /*! \brief Erases the task with the given index and recomputes all indices.
    *         The function returns false if index is out of range, true
    *         otherwise.

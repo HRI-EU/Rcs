@@ -78,11 +78,11 @@ void myMessageOutput(QtMsgType type,
   switch (type)
   {
     case QtDebugMsg:
-      fprintf(stderr, "xDebug: %s (%s:%u, %s)\n",
+      fprintf(stderr, "Debug: %s (%s:%u, %s)\n",
               localMsg.constData(), file, context.line, function);
       break;
     case QtInfoMsg:
-      fprintf(stderr, "xInfo: %s (%s:%u, %s)\n",
+      fprintf(stderr, "Info: %s (%s:%u, %s)\n",
               localMsg.constData(), file, context.line, function);
       break;
     case QtWarningMsg:
@@ -90,15 +90,15 @@ void myMessageOutput(QtMsgType type,
       //localMsg.constData(), file, context.line, function);
       break;
     case QtCriticalMsg:
-      fprintf(stderr, "xCritical: %s (%s:%u, %s)\n",
+      fprintf(stderr, "Critical: %s (%s:%u, %s)\n",
               localMsg.constData(), file, context.line, function);
       break;
     case QtFatalMsg:
-      fprintf(stderr, "xFatal: %s (%s:%u, %s)\n",
+      fprintf(stderr, "Fatal: %s (%s:%u, %s)\n",
               localMsg.constData(), file, context.line, function);
       break;
     default:
-      fprintf(stderr, "xNo category: %s (%s:%u, %s)\n",
+      fprintf(stderr, "No category: %s (%s:%u, %s)\n",
               localMsg.constData(), file, context.line, function);
   }
 }
@@ -172,9 +172,12 @@ int AsyncGuiFactory::create(int argc_, char** argv_)
 int AsyncGuiFactory::destroy()
 {
   RLOG(5, "Destroying AsyncGuiFactory");
-  // Uncomment his when there are warnings about non-stoppable timers after
-  // exit()
-  //qInstallMessageHandler(myMessageOutput);
+  // Uncomment his when there are warnings about non-stoppable timers from
+  // another thread
+  if (RcsLogLevel <= 0)
+  {
+    qInstallMessageHandler(myMessageOutput);
+  }
   RCHECK(isGuiThread());
 
   QApplication::quit();

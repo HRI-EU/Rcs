@@ -422,7 +422,7 @@ bool RcsGraph_toMujocoFile(const char* fileName, const RcsGraph* graph)
   MatNd_setZero(gCopy->q);
   MatNd_setZero(gCopy->q_dot);
   RcsGraph_setState(gCopy, gCopy->q, gCopy->q_dot);
-  recurse(fd, gCopy, &gCopy->bodies[gCopy->rootId], 2);
+  recurse(fd, gCopy, RcsGraph_getRootBody(gCopy), 2);
 
 
 

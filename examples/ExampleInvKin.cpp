@@ -65,14 +65,14 @@ ExampleIK::ExampleIK(int argc, char** argv) : ExampleBase(argc, argv),
   ffwd(false), skipGui(false), pause(false), launchJointWidget(false),
   manipulability(false), cAvoidance(false),
   constraintIK(false), initToQ0(false), testCopying(false), noHud(false),
-  posCntrl(false),
+  posCntrl(false), showAlphaSlider(false),
   controller(NULL), ikSolver(NULL),
   dq_des(NULL), q_dot_des(NULL), a_des(NULL), x_curr(NULL), x_physics(NULL),
   x_des(NULL), x_des_f(NULL), dx_des(NULL), dH(NULL),
   effortBdy(NULL), F_effort(NULL),
   sim(NULL), simController(NULL), simGraph(NULL), physicsFeedback(false),
   v(NULL), cGui(NULL), effortGui(NULL), dxGui(NULL), activationGui(NULL),
-  jGui(NULL), loopCount(0)
+  jGui(NULL), alphaSlider(NULL), loopCount(0)
 {
   pthread_mutex_init(&graphLock, NULL);
   Vec3d_setZero(r_com);
@@ -100,6 +100,8 @@ void ExampleIK::clear()
   activationGui = NULL;
   delete jGui;
   jGui = NULL;
+  delete alphaSlider;
+  alphaSlider = NULL;
 
   MatNd_destroy(dq_des);
   MatNd_destroy(q_dot_des);
@@ -182,6 +184,7 @@ void ExampleIK::parseArgs(CmdLineParser* argP)
   argP->getArgument("-noHud", &noHud, "Don't show HUD");
   argP->getArgument("-posCntrl", &posCntrl, "Enforce position control "
                     "with physics");
+  argP->getArgument("-alphaSlider", &showAlphaSlider, "Launch slider to set alpha");
 
   // Option to set locale - for parsing tests
   argP->getArgument("-testLocale", &testLocale, "Test locale");
@@ -454,6 +457,10 @@ void ExampleIK::initGuis()
   }
 
 
+  if (showAlphaSlider == true)
+  {
+    alphaSlider = new SliderGui(&alpha, &alpha, "alpha", 0.0, alpha, 1.0, 0.001, &graphLock);
+  }
   if (launchJointWidget == true)
   {
     jGui = new JointGui(controller->getGraph(), mtx);

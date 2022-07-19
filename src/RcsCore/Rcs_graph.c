@@ -1150,6 +1150,14 @@ RcsBody* RcsGraph_getBodyByName(const RcsGraph* self, const char* name)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+RcsBody* RcsGraph_getRootBody(const RcsGraph* self)
+{
+  return RCSBODY_BY_ID(self, self->rootId);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 RcsBody* RcsGraph_getBodyByTruncatedName(const RcsGraph* self, const char* name)
 {
   if ((name==NULL) || (self==NULL))
@@ -1911,6 +1919,28 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
          self->cfgFile);
   }
 
+  // Check root body consistence
+  if (self->rootId == -1)
+  {
+    nErrors++;
+    RLOG(1, "Graph's root body not set - id is -1");
+  }
+
+  const RcsBody* rootBdy = &self->bodies[self->rootId];
+
+  if (rootBdy->prevId != -1)
+  {
+    nErrors++;
+    RLOG(1, "Graph's root body has a \"prev\" body with id %d",
+         rootBdy->prevId);
+  }
+
+  if (rootBdy->parentId != -1)
+  {
+    nErrors++;
+    RLOG(1, "Graph's root body has a \"parent\" body with id %d",
+         rootBdy->parentId);
+  }
   // Check for
   //  - body name truncations
   //  - file name truncations in all shapes
@@ -2328,6 +2358,146 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src)
     RCHECK_MSG(RcsGraph_check(dst, NULL, NULL),
                "Consistency check for graph \"%s\" failed", dst->cfgFile);
   }
+  return dst;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
+{
+  if (src == NULL)
+  {
+    RLOG(1, "Can't clone NULL graph");
+    return NULL;
+  }
+
+  RcsGraph* dst = RALLOC(RcsGraph);
+
+  if (!dst)
+  {
+    RLOG(1, "Failed to allocate memory for cloning graph");
+    return NULL;
+  }
+
+  RcsBody* rootBdy = RcsGraph_getBodyByName(src, rootName);
+  int rootId = rootBdy->id;
+
+  if (!rootBdy)
+  {
+    RLOG(1, "Failed to find root body \"%s\"", rootName ? rootName : "NULL");
+    return NULL;
+  }
+
+  RcsBody* lastLeaf = RcsBody_getLastLeaf(src, rootBdy);
+  RCHECK(lastLeaf);
+
+  RLOG(1, "Cloning between %s and %s", rootBdy->name, lastLeaf->name);
+
+  dst->nBodies = lastLeaf->id - rootId + 1;
+  dst->bodies = RNALLOC(dst->nBodies, RcsBody);
+  memcpy(dst->bodies, &src->bodies[rootId], dst->nBodies*sizeof(RcsBody));
+
+  // Body 0 is root without upwards and sideways connections
+  dst->bodies[0].parentId = -1;
+  dst->bodies[0].prevId = -1;
+  dst->bodies[0].nextId = -1;
+
+
+  int bdyNum = 0;
+  RCSGRAPH_FOREACH_BODY(dst)
+  {
+    const RcsBody* bdySrc = RCSBODY_BY_ID(src, BODY->id);
+    RCHECK(bdySrc);
+
+    BODY->id = Math_iClip(BODY->id - rootId, -1, dst->nBodies);
+    BODY->parentId = Math_iClip(BODY->parentId - rootId, -1, dst->nBodies);
+    BODY->firstChildId = Math_iClip(BODY->firstChildId - rootId, -1, dst->nBodies);
+    BODY->lastChildId = Math_iClip(BODY->lastChildId - rootId, -1, dst->nBodies);
+    BODY->nextId = Math_iClip(BODY->nextId - rootId, -1, dst->nBodies);
+    BODY->prevId = Math_iClip(BODY->prevId - rootId, -1, dst->nBodies);
+
+    // Make a copy of all body shapes. We don't do a block copy to avoid
+    // shallow-copying of the meshes.
+    BODY->nShapes = bdySrc->nShapes;
+    BODY->shapes = RNALLOC(bdySrc->nShapes, RcsShape);
+    for (unsigned int i = 0; i < BODY->nShapes; i++)
+    {
+      RcsShape_copy(&BODY->shapes[i], &bdySrc->shapes[i]);
+    }
+
+    bdyNum++;
+  }
+
+  // Joints and q-vector
+  int minJntId = src->dof, maxJntId = -1;
+  RCSGRAPH_FOREACH_BODY(dst)
+  {
+    RcsJoint* jnt = RCSJOINT_BY_ID(src, BODY->jntId);
+    for (RcsJoint* JNT = jnt; JNT; JNT = RcsJoint_next(JNT, src))
+    {
+      if (JNT->id<minJntId)
+      {
+        minJntId = JNT->id;
+      }
+      if (JNT->id>maxJntId)
+      {
+        maxJntId = JNT->id;
+      }
+    }
+
+  }
+
+  dst->dof = maxJntId-minJntId+1;
+  dst->joints = RNALLOC(dst->dof, RcsJoint);
+  memcpy(dst->joints, &src->joints[minJntId], dst->dof*sizeof(RcsJoint));
+
+  RCSGRAPH_FOREACH_BODY(dst)
+  {
+    if (BODY->jntId>=0)
+    {
+      BODY->jntId -= minJntId;
+    }
+  }
+
+  for (unsigned int i=0; i<dst->dof; ++i)
+  {
+    dst->joints[i].id -= minJntId;
+    if (dst->joints[i].prevId!=-1)
+    {
+      dst->joints[i].prevId -= minJntId;
+    }
+    if (dst->joints[i].nextId!=-1)
+    {
+      dst->joints[i].nextId -= minJntId;
+    }
+    if (dst->joints[i].coupledToId!=-1)
+    {
+      dst->joints[i].coupledToId -= minJntId;
+
+      // There might be couplings to out-of-subgraph joints. These
+      // are handled here explicitely.
+      if ((dst->joints[i].coupledToId<-1) ||
+          (dst->joints[i].coupledToId>=dst->dof))
+      {
+        dst->joints[i].coupledToId = -1;
+        dst->joints[i].nCouplingCoeff = 0;
+      }
+    }
+
+    if (dst->joints[i].jacobiIndex!=-1)
+    {
+      dst->joints[i].jacobiIndex -= minJntId;
+    }
+
+    dst->joints[i].jointIndex -= minJntId;
+
+  }
+
+  dst->q = MatNd_create(dst->dof, 1);
+  dst->q_dot = MatNd_create(dst->dof, 1);
+  VecNd_copy(dst->q->ele, src->q->ele+minJntId, dst->q->size);
+  VecNd_copy(dst->q_dot->ele, src->q_dot->ele+minJntId, dst->q_dot->size);
 
   return dst;
 }
@@ -2962,16 +3132,11 @@ bool RcsGraph_removeBody(RcsGraph* self, const char* name,
 
     if (nextBdy)
     {
-      self->rootId = nextBdy->id;
       // The children of the previous root must be moved to the root's next.
       if (bdy->firstChildId != -1)
       {
         RFATAL("Not yet implemented");
       }
-    }
-    else
-    {
-      self->rootId = bdy->firstChildId;
     }
   }
 
@@ -3162,8 +3327,8 @@ void RcsGraph_setShapesResizeable(RcsGraph* self, bool resizeable)
 void RcsGraph_copyResizeableShapes(RcsGraph* dst, const RcsGraph* src,
                                    int level)
 {
-  const RcsBody* bSrc = &src->bodies[src->rootId];
-  RcsBody* bDst = &dst->bodies[dst->rootId];
+  const RcsBody* bSrc = RcsGraph_getRootBody(src);
+  RcsBody* bDst = RcsGraph_getRootBody(dst);
 
   do
   {
@@ -3545,13 +3710,12 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self,
     return false;
   }
 
-  RcsBody* otherRoot = &other->bodies[other->rootId];
+  RcsBody* otherRoot = RcsGraph_getRootBody(other);
   if (otherRoot->nextId != -1)
   {
     RcsBody* otherRootNext = &other->bodies[otherRoot->nextId];
-    RLOG(1, "Currently we can't handle multiple root bodies - your graph has "
-         "body \"%s\" next to root (%s)", otherRootNext->name,
-         otherRoot->name);
+    RLOG(1, "Multiple root-level bodies not yet supported - graph has body "
+         "\"%s\" next to root (%s)", otherRootNext->name, otherRoot->name);
     RcsGraph_destroy(other);
     return false;
   }
@@ -3612,7 +3776,7 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self,
       else
       {
         // Find last body on the first level
-        RcsBody* b = &self->bodies[self->rootId];
+        RcsBody* b = RcsGraph_getRootBody(self);
         while (b->nextId != -1)
         {
           b = &self->bodies[b->nextId];

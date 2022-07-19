@@ -895,7 +895,7 @@ int main(int argc, char** argv)
 
       RcsGraph* graph = RcsGraph_create(xmlFileName);
       RCHECK(graph);
-      strcpy(rootBdy, RCSBODY_BY_ID(graph, graph->rootId)->name);
+      strcpy(rootBdy, RCSBODY_NAME_BY_ID(graph, graph->rootId));
       argP.getArgument("-root", rootBdy, "Name of body to start traversals ("
                        "default is %s)", rootBdy);
 

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-  Copyright (c) 2022, Honda Research Institute Europe GmbH
+  Copyright (c) Honda Research Institute Europe GmbH
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are
@@ -851,7 +851,7 @@ void ExampleFK::handleKeys()
            success ? "SUCCEEDED" : "FAILED");
     }
 
-    RcsBody* rootBdy = RCSBODY_BY_ID(graph, graph->rootId);
+    RcsBody* rootBdy = RcsGraph_getRootBody(graph);
     RcsBody* first = RcsBody_depthFirstTraversalGetNextById(graph, rootBdy);
 
     while (first)

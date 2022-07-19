@@ -1978,6 +1978,20 @@ bool ControllerBase::add(const ControllerBase* other,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+void ControllerBase::eraseTasks()
+{
+  for (size_t i = 0; i < tasks.size(); ++i)
+  {
+    delete tasks[i];
+  }
+
+  tasks.clear();
+  taskArrayIdx.clear();
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 bool ControllerBase::eraseTask(size_t index)
 {
   if (index > tasks.size() - 1)
@@ -2405,8 +2419,8 @@ bool ControllerBase::checkLimits(bool checkJointLimits,
     if (aor > 0)
     {
       success = false;
-      RLOG(3, "%d joint limit violations", aor);
-      REXEC(4)
+      RLOG(5, "%d joint limit violations", aor);
+      REXEC(5)
       {
         RcsGraph_printState(getGraph(), getGraph()->q);
       }
@@ -2423,9 +2437,9 @@ bool ControllerBase::checkLimits(bool checkJointLimits,
     if (minDist < distLimit)
     {
       success = false;
-      RLOG(3, "Found collision distance of %f (must be >%f)",
+      RLOG(5, "Found collision distance of %f (must be >%f)",
            minDist, distLimit);
-      REXEC(4)
+      REXEC(5)
       {
         RcsCollisionModel_fprintCollisions(stdout, getCollisionMdl(),
                                            distLimit);
@@ -2451,7 +2465,7 @@ bool ControllerBase::checkLimits(bool checkJointLimits,
       {
         success = false;
         const double sf = isRot ? 180.0 / M_PI : 1.0;
-        RLOG(4, "%s: q_dot=%f   limit=%f [%s]", JNT->name, sf*q_dot,
+        RLOG(5, "%s: q_dot=%f   limit=%f [%s]", JNT->name, sf*q_dot,
              sf*(JNT->speedLimit-margin), isRot ? "deg/sec" : "m/sec");
       }
     }

@@ -983,7 +983,7 @@ int RcsGraph_rootBodyFromURDFFile(RcsGraph* graph,
   // order for the Jacobian backward traversal. Therefore, after calling
   // connectURDF, this function must be called for making the joint order
   // consistent.
-  RcsBody* rootBdy = RCSBODY_BY_ID(graph, graph->rootId);
+  RcsBody* rootBdy = RcsGraph_getRootBody(graph);
   RCSBODY_TRAVERSE_BODIES(graph, rootBdy)
   {
     const RcsBody* parentBdy = RCSBODY_BY_ID(graph, BODY->parentId);

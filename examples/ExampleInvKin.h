@@ -49,6 +49,7 @@
 #include <ControllerWidgetBase.h>
 #include <MatNdWidget.h>
 #include <JointWidget.h>
+#include <Slider1Dof.h>
 
 #include <pthread.h>
 
@@ -83,7 +84,7 @@ protected:
   std::string xmlFileName, directory, effortBdyName, physicsEngine, physicsCfg,
       integrator;
   bool ffwd, skipGui, pause, launchJointWidget, manipulability, cAvoidance,
-       constraintIK, initToQ0, testCopying, noHud, posCntrl;
+       constraintIK, initToQ0, testCopying, noHud, posCntrl, showAlphaSlider;
   ControllerBase* controller;
   IkSolverRMR* ikSolver;
   MatNd* dq_des, *q_dot_des, *a_des, *x_curr, *x_physics, *x_des, *x_des_f,
@@ -111,6 +112,7 @@ protected:
   MatNdGui* dxGui;
   MatNdGui* activationGui;
   JointGui* jGui;
+  SliderGui* alphaSlider;
   unsigned int loopCount;
 };
 

@@ -75,30 +75,13 @@ void quit(int /*sig*/)
   }
 }
 
-class MatWidget : public Rcs::AsyncWidget
-{
-public:
-  MatWidget(MatNd* mat_) : mat(mat_)
-  {
-    launch();
-  }
-
-  void construct()
-  {
-    setWidget(new Rcs::MatNdWidget(mat, mat, 0.0, 1.0, "Matrix", NULL));
-  }
-
-protected:
-  MatNd* mat;
-};
-
 void testAsyncFactory(int argc, char** argv)
 {
   {
     MatNd* mat = MatNd_create(3, 1);
-    MatWidget mw(mat);
-    MatWidget mw2(mat);
-    MatWidget mw3(mat);
+    Rcs::MatNdGui mw(mat);
+    Rcs::MatNdGui mw2(mat);
+    Rcs::MatNdGui mw3(mat);
     RPAUSE();
     //mw3.destroy();
   }
@@ -107,9 +90,9 @@ void testAsyncFactory(int argc, char** argv)
   //Rcs::MyGuiFactory::create(argc, argv);
   {
     MatNd* mat = MatNd_create(3, 1);
-    MatWidget mw(mat);
-    MatWidget mw2(mat);
-    MatWidget mw3(mat);
+    Rcs::MatNdGui mw(mat);
+    Rcs::MatNdGui mw2(mat);
+    Rcs::MatNdGui mw3(mat);
 
     //mw.launch();
     RPAUSE_MSG("Hit enter to unlaunch");

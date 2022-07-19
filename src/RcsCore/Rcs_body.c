@@ -265,7 +265,7 @@ bool RcsBody_removeShape(RcsBody* self, unsigned int idx)
  ******************************************************************************/
 RcsBody* RcsBody_getLastInGraph(const RcsGraph* self)
 {
-  RcsBody* b = &self->bodies[self->rootId];
+  RcsBody* b = &self->bodies[self->nBodies-1];   // That's usually the last one
   RcsBody* next = RCSBODY_BY_ID(self, b->nextId);
   RcsBody* lastChild = RCSBODY_BY_ID(self, b->lastChildId);
 
@@ -395,23 +395,38 @@ void RcsBody_fprint(FILE* out, const RcsBody* b, const RcsGraph* graph)
   fprintf(out, "[RcsGraph_fprintBody():%d] \n\tBody \"%s\"\n",
           __LINE__, b->name);
 
-  // Previous body name
+  // Parent body name
   const RcsBody* parentBdy = RCSBODY_BY_ID(graph, b->parentId);
-  if (parentBdy)
-  {
-    fprintf(out, "\tis connected to \"%s\"\n", parentBdy->name);
-  }
-  else
-  {
-    fprintf(out, "\tis root-level node\n");
-  }
+  fprintf(out, "\tparent is \"%s\" (id: %d)\n",
+          parentBdy ? parentBdy->name : "NULL", b->parentId);
+
+  // prev
+  const RcsBody* prevBdy = RCSBODY_BY_ID(graph, b->prevId);
+  fprintf(out, "\tprev is \"%s\" (id: %d)\n",
+          prevBdy ? prevBdy->name : "NULL", b->prevId);
+
+  // next
+  const RcsBody* nextBdy = RCSBODY_BY_ID(graph, b->nextId);
+  fprintf(out, "\tnext is \"%s\" (id: %d)\n",
+          nextBdy ? nextBdy->name : "NULL", b->nextId);
+
+  // first child
+  const RcsBody* firstChildBdy = RCSBODY_BY_ID(graph, b->firstChildId);
+  fprintf(out, "\tfirst child is \"%s\" (id: %d)\n",
+          firstChildBdy ? firstChildBdy->name : "NULL", b->firstChildId);
+
+  // last child
+  const RcsBody* lastChildBdy = RCSBODY_BY_ID(graph, b->lastChildId);
+  fprintf(out, "\tlast child is \"%s\" (id: %d)\n",
+          lastChildBdy ? lastChildBdy->name : "NULL", b->lastChildId);
 
   // Next body name
-  const RcsBody* attachedBody = RcsBody_depthFirstTraversalGetNextById(graph, b);
+  const RcsBody* dfsBody = RcsBody_depthFirstTraversalGetNextById(graph, b);
 
-  if (attachedBody!=NULL)
+  if (dfsBody !=NULL)
   {
-    fprintf(out, "\thas body \"%s\" attached\n", attachedBody->name);
+    fprintf(out, "\thas body \"%s\" as depth-first-traversal follower\n",
+            dfsBody->name);
   }
   else
   {
@@ -2600,7 +2615,7 @@ bool RcsBody_attachToBodyId(RcsGraph* graph, int bodyId, int targetId)
   {
     body->parentId = -1;
 
-    RcsBody* t = &graph->bodies[graph->rootId];
+    RcsBody* t = RcsGraph_getRootBody(graph);
     while (t->nextId!=-1)
     {
       t = RCSBODY_BY_ID(graph, t->nextId);

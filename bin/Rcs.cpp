@@ -342,8 +342,8 @@ int main(int argc, char** argv)
         RcsGraph_fprint(stderr, graph);
       }
 
-      RMSG("Writing graph to dot file \"RcsGraph.dot\"");
-      RcsGraph_writeDotFile(graph, "RcsGraph.dot");
+      RMSG("Writing graph to dot file \"%s\"", dotFile);
+      RcsGraph_writeDotFile(graph, dotFile);
       RcsGraph_writeDotFileDfsTraversal(graph, "RcsGraphDFS.dot");
 
       RMSG("Writing graph to xml file \"graph.xml\"");
@@ -1090,7 +1090,7 @@ int main(int argc, char** argv)
                    success ? "SUCCEEDED" : "FAILED");
             }
 
-            RcsBody* rootBdy = RCSBODY_BY_ID(graph, graph->rootId);
+            RcsBody* rootBdy = RcsGraph_getRootBody(graph);
             RcsBody* first = RcsBody_depthFirstTraversalGetNextById(graph, rootBdy);
 
             while (first)
@@ -3865,6 +3865,42 @@ int main(int argc, char** argv)
       RcsGraph* graph = RcsGraph_create(xmlFileName);
       bool success = RcsGraph_toMujocoFile("mujoco.xml", graph);
       RMSG("%s converting graph to mujoco.xml", success ? "Success" : "Failure");
+      break;
+    }
+
+
+    // ==============================================================
+    // Test for cloning sub-graphs
+    // ==============================================================
+    case 14:
+    {
+      char rootName[64] = "Lab Frame_1";
+      argP.getArgument("-root", rootName, "Root body name (default "
+                       "is \"%s\")", rootName);
+
+      RcsGraph* graph = RcsGraph_create("PoseGraph.xml");
+      RLOG(1, "Start cloning subgraph");
+      RcsGraph* subGraph = RcsGraph_cloneSubGraph(graph, rootName);
+      RLOG(1, "Done cloning subgraph");
+
+      int nW = 0, nE = 0;
+      RLOG(1, "Checking graph");
+      RcsGraph_check(subGraph, &nE, &nW);
+      RLOG(1, "Check passed with %d warnings and %d errors", nW, nE);
+      RCHECK(nE==0);
+
+      RcsGraph_writeDotFile(subGraph, "subgraph.dot");
+      FILE* out = fopen("subgraph.xml", "w+");
+      RCHECK(out);
+      RcsGraph_fprintXML(out, subGraph);
+      fclose(out);
+      nE = system("dotty subgraph.dot");
+      if (nE==-1)
+      {
+        RMSG("Couldn't start dot file viewer!");
+      }
+      RcsGraph_destroy(graph);
+      RcsGraph_destroy(subGraph);
       break;
     }
 

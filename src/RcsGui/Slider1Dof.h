@@ -34,13 +34,39 @@
 #ifndef SLIDER1DOF_H
 #define SLIDER1DOF_H
 
+#include "AsyncWidget.h"
 #include <QFrame>
 #include <QLCDNumber>
 #include <QPushButton>
 
 #include <pthread.h>
+#include <string>
 
 
+class SliderGui : public Rcs::AsyncWidget
+{
+public:
+  SliderGui(double* q_des,
+            double* q_curr,
+            const char* title=NULL,
+            double lowerBound=-1.0,
+            double zeroPos=0.0,
+            double upperBound=1.0,
+            double ticSize=1.0,
+            pthread_mutex_t* mutex=NULL);
+
+  void construct();
+
+protected:
+  double* q_des;
+  double* q_curr;
+  std::string title;
+  double lowerBound;
+  double zeroPos;
+  double upperBound;
+  double ticSize;
+  pthread_mutex_t* mutex;
+};
 
 class QwtSlider;
 

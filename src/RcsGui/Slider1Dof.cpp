@@ -49,6 +49,28 @@
 
 
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+SliderGui::SliderGui(double* q_des_, double* q_curr_, const char* title_,
+                     double lowerBound_, double zeroPos_, double upperBound_,
+                     double ticSize_, pthread_mutex_t* mtx) :
+  AsyncWidget(), q_des(q_des_), q_curr(q_curr_), lowerBound(lowerBound_),
+  zeroPos(zeroPos_), upperBound(upperBound_), ticSize(ticSize_), mutex(mtx)
+{
+  if (title_)
+  {
+    title = std::string(title_);
+  }
+
+  launch();
+}
+
+void SliderGui::construct()
+{
+  setWidget(new Slider1Dof(q_des, q_curr, title.empty() ? NULL : title.c_str(),
+                           lowerBound, zeroPos, upperBound, ticSize, mutex));
+}
 /******************************************************************************
 
   \brief Factory instantiation method for Qt thread.
