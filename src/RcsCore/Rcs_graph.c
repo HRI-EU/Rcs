@@ -2457,6 +2457,16 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
 
   }
 
+  // Find the Jacobi-index offset
+  int minJacobiIdx = -1;
+  for (unsigned int i=0; i<=minJntId; ++i)
+  {
+    if (src->joints[i].jacobiIndex>minJacobiIdx)
+    {
+      minJacobiIdx = src->joints[i].jacobiIndex;
+    }
+  }
+
   // Check that there are joints in the subgraph. If not, we don't clone
   // anything and just allocate empty q and q_dot vectors.
   if (maxJntId > minJntId)
@@ -2500,7 +2510,7 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
 
       if (dst->joints[i].jacobiIndex!=-1)
       {
-        dst->joints[i].jacobiIndex -= minJntId;
+        dst->joints[i].jacobiIndex -= minJacobiIdx;
       }
 
       dst->joints[i].jointIndex -= minJntId;

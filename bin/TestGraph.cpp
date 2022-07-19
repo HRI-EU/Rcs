@@ -950,10 +950,14 @@ int main(int argc, char** argv)
     case 10:
     {
       char rootName[64] = "Lab Frame_1";
+      strcpy(xmlFileName, "PoseGraph.xml");
       argP.getArgument("-root", rootName, "Root body name (default "
                        "is \"%s\")", rootName);
+      argP.getArgument("-f", xmlFileName, "RcsGraph's configuration file name");
+      argP.getArgument("-dir", directory, "Configuration file directory");
+      Rcs_addResourcePath(directory);
 
-      RcsGraph* graph = RcsGraph_create("PoseGraph.xml");
+      RcsGraph* graph = RcsGraph_create(xmlFileName);
       RLOG(1, "Start cloning subgraph");
       RcsGraph* subGraph = RcsGraph_cloneSubGraph(graph, rootName);
       RLOG(1, "Done cloning subgraph");
