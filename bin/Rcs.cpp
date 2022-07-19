@@ -3869,42 +3869,6 @@ int main(int argc, char** argv)
     }
 
 
-    // ==============================================================
-    // Test for cloning sub-graphs
-    // ==============================================================
-    case 14:
-    {
-      char rootName[64] = "Lab Frame_1";
-      argP.getArgument("-root", rootName, "Root body name (default "
-                       "is \"%s\")", rootName);
-
-      RcsGraph* graph = RcsGraph_create("PoseGraph.xml");
-      RLOG(1, "Start cloning subgraph");
-      RcsGraph* subGraph = RcsGraph_cloneSubGraph(graph, rootName);
-      RLOG(1, "Done cloning subgraph");
-
-      int nW = 0, nE = 0;
-      RLOG(1, "Checking graph");
-      RcsGraph_check(subGraph, &nE, &nW);
-      RLOG(1, "Check passed with %d warnings and %d errors", nW, nE);
-      RCHECK(nE==0);
-
-      RcsGraph_writeDotFile(subGraph, "subgraph.dot");
-      FILE* out = fopen("subgraph.xml", "w+");
-      RCHECK(out);
-      RcsGraph_fprintXML(out, subGraph);
-      fclose(out);
-      nE = system("dotty subgraph.dot");
-      if (nE==-1)
-      {
-        RMSG("Couldn't start dot file viewer!");
-      }
-      RcsGraph_destroy(graph);
-      RcsGraph_destroy(subGraph);
-      break;
-    }
-
-
 
     // ==============================================================
     // That's it.

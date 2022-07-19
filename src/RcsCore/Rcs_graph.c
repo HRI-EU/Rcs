@@ -2362,7 +2362,11 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src)
 }
 
 /*******************************************************************************
- * See header.
+ * This function assumes a few things:
+ * - The subgraph is contiguously contained in q, q_dot, bodies and joints
+ *   arrays.
+ * - Joints that are kinematically coupled to other joints outside the graph
+ *   will loose their coupling.
  ******************************************************************************/
 RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
 {
@@ -2381,7 +2385,6 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
   }
 
   RcsBody* rootBdy = RcsGraph_getBodyByName(src, rootName);
-  int rootId = rootBdy->id;
 
   if (!rootBdy)
   {
@@ -2389,11 +2392,19 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
     return NULL;
   }
 
+
   RcsBody* lastLeaf = RcsBody_getLastLeaf(src, rootBdy);
-  RCHECK(lastLeaf);
 
-  RLOG(1, "Cloning between %s and %s", rootBdy->name, lastLeaf->name);
+  if (!rootBdy)
+  {
+    RLOG(1, "Failed to find last leaf of root body \"%s\"", rootName);
+    return NULL;
+  }
 
+
+  RLOG(5, "Cloning between %s and %s", rootBdy->name, lastLeaf->name);
+
+  const int rootId = rootBdy->id;
   dst->nBodies = lastLeaf->id - rootId + 1;
   dst->bodies = RNALLOC(dst->nBodies, RcsBody);
   memcpy(dst->bodies, &src->bodies[rootId], dst->nBodies*sizeof(RcsBody));
@@ -2404,7 +2415,6 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
   dst->bodies[0].nextId = -1;
 
 
-  int bdyNum = 0;
   RCSGRAPH_FOREACH_BODY(dst)
   {
     const RcsBody* bdySrc = RCSBODY_BY_ID(src, BODY->id);
@@ -2426,7 +2436,6 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
       RcsShape_copy(&BODY->shapes[i], &bdySrc->shapes[i]);
     }
 
-    bdyNum++;
   }
 
   // Joints and q-vector
@@ -2448,56 +2457,67 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
 
   }
 
-  dst->dof = maxJntId-minJntId+1;
-  dst->joints = RNALLOC(dst->dof, RcsJoint);
-  memcpy(dst->joints, &src->joints[minJntId], dst->dof*sizeof(RcsJoint));
-
-  RCSGRAPH_FOREACH_BODY(dst)
+  // Check that there are joints in the subgraph. If not, we don't clone
+  // anything and just allocate empty q and q_dot vectors.
+  if (maxJntId > minJntId)
   {
-    if (BODY->jntId>=0)
-    {
-      BODY->jntId -= minJntId;
-    }
-  }
+    dst->dof = maxJntId-minJntId+1;
+    dst->joints = RNALLOC(dst->dof, RcsJoint);
+    memcpy(dst->joints, &src->joints[minJntId], dst->dof*sizeof(RcsJoint));
 
-  for (unsigned int i=0; i<dst->dof; ++i)
-  {
-    dst->joints[i].id -= minJntId;
-    if (dst->joints[i].prevId!=-1)
+    RCSGRAPH_FOREACH_BODY(dst)
     {
-      dst->joints[i].prevId -= minJntId;
-    }
-    if (dst->joints[i].nextId!=-1)
-    {
-      dst->joints[i].nextId -= minJntId;
-    }
-    if (dst->joints[i].coupledToId!=-1)
-    {
-      dst->joints[i].coupledToId -= minJntId;
-
-      // There might be couplings to out-of-subgraph joints. These
-      // are handled here explicitely.
-      if ((dst->joints[i].coupledToId<-1) ||
-          (dst->joints[i].coupledToId>=dst->dof))
+      if (BODY->jntId>=0)
       {
-        dst->joints[i].coupledToId = -1;
-        dst->joints[i].nCouplingCoeff = 0;
+        BODY->jntId -= minJntId;
       }
     }
 
-    if (dst->joints[i].jacobiIndex!=-1)
+    for (unsigned int i=0; i<dst->dof; ++i)
     {
-      dst->joints[i].jacobiIndex -= minJntId;
+      dst->joints[i].id -= minJntId;
+      if (dst->joints[i].prevId!=-1)
+      {
+        dst->joints[i].prevId -= minJntId;
+      }
+      if (dst->joints[i].nextId!=-1)
+      {
+        dst->joints[i].nextId -= minJntId;
+      }
+      if (dst->joints[i].coupledToId!=-1)
+      {
+        dst->joints[i].coupledToId -= minJntId;
+
+        // There might be couplings to out-of-subgraph joints. These
+        // are handled here explicitely.
+        if ((dst->joints[i].coupledToId<-1) ||
+            (dst->joints[i].coupledToId>=dst->dof))
+        {
+          dst->joints[i].coupledToId = -1;
+          dst->joints[i].nCouplingCoeff = 0;
+        }
+      }
+
+      if (dst->joints[i].jacobiIndex!=-1)
+      {
+        dst->joints[i].jacobiIndex -= minJntId;
+      }
+
+      dst->joints[i].jointIndex -= minJntId;
+
     }
 
-    dst->joints[i].jointIndex -= minJntId;
+    dst->q = MatNd_create(dst->dof, 1);
+    dst->q_dot = MatNd_create(dst->dof, 1);
+    VecNd_copy(dst->q->ele, src->q->ele+minJntId, dst->q->size);
+    VecNd_copy(dst->q_dot->ele, src->q_dot->ele+minJntId, dst->q_dot->size);
 
+  }   // if (maxJntId > minJntId)
+  else
+  {
+    dst->q = MatNd_create(0, 1);
+    dst->q_dot = MatNd_create(0, 1);
   }
-
-  dst->q = MatNd_create(dst->dof, 1);
-  dst->q_dot = MatNd_create(dst->dof, 1);
-  VecNd_copy(dst->q->ele, src->q->ele+minJntId, dst->q->size);
-  VecNd_copy(dst->q_dot->ele, src->q_dot->ele+minJntId, dst->q_dot->size);
 
   return dst;
 }
