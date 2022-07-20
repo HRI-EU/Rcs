@@ -2458,12 +2458,22 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
   }
 
   // Find the Jacobi-index offset
-  int minJacobiIdx = -1;
-  for (unsigned int i=0; i<=minJntId; ++i)
+  //int minJacobiIdx = -1;
+  //for (unsigned int i=0; i<=minJntId; ++i)
+  //{
+  //  if (src->joints[i].jacobiIndex>minJacobiIdx)
+  //  {
+  //    minJacobiIdx = src->joints[i].jacobiIndex;
+  //  }
+  //}
+
+  int minJacobiIdx = 0;
+  for (int i = minJntId; i >= 0; --i)
   {
-    if (src->joints[i].jacobiIndex>minJacobiIdx)
+    if (src->joints[i].jacobiIndex > 0)
     {
       minJacobiIdx = src->joints[i].jacobiIndex;
+      break;
     }
   }
 

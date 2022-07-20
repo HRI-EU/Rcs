@@ -2324,9 +2324,25 @@ int main(int argc, char** argv)
         if (effortBdy != NULL)
         {
           MatNd* W_ef = MatNd_create(controller.getGraph()->dof, 1);
-          RCSGRAPH_TRAVERSE_JOINTS(controller.getGraph())
+          MatNd_setElementsTo(W_ef, 1.0);
+
+          MatNd* T_limit = MatNd_createLike(W_ef);
+          RcsGraph_getTorqueLimits(controller.getGraph(), T_limit, RcsStateFull);
+
+          // Here we construct a weighting matrix that has entries being the
+          // ratio between min  and max joint torques of all joints, related
+          // to the individual joint's maxTorque. In case any joint torque
+          // limit is zero, the weighting remains identity.
+          const double minAbsTorque = MatNd_minAbsEle(T_limit);
+          const double maxAbsTorque = MatNd_maxAbsEle(T_limit);
+          const double tRange = fabs(maxAbsTorque-minAbsTorque);
+
+          if (minAbsTorque!=0.0)
           {
-            W_ef->ele[JNT->jointIndex] = 1.0/JNT->maxTorque;
+            RCSGRAPH_TRAVERSE_JOINTS(controller.getGraph())
+            {
+              W_ef->ele[JNT->jointIndex] = tRange/JNT->maxTorque;
+            }
           }
 
           RcsGraph_stateVectorToIKSelf(controller.getGraph(), W_ef);
@@ -2334,6 +2350,7 @@ int main(int argc, char** argv)
           RcsGraph_staticEffortGradient(controller.getGraph(), effortBdy,
                                         &F_effort3, W_ef, NULL, effortGrad);
           MatNd_destroy(W_ef);
+          MatNd_destroy(T_limit);
           MatNd_constMulSelf(effortGrad, 1000.0*MatNd_get(F_effort, 3, 0));
           MatNd_addSelf(dH, effortGrad);
 
