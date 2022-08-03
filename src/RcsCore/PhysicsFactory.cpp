@@ -57,7 +57,7 @@ Rcs::PhysicsFactory::PhysicsFactory()
  * Creates the physics engine for className and the given graph and xml content
  ******************************************************************************/
 Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const char* className,
-                                              RcsGraph* graph,
+                                              const RcsGraph* graph,
                                               const char* cfgFile)
 {
   Rcs::PhysicsBase* sim = NULL;
@@ -87,7 +87,7 @@ Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const char* className,
  * Creates the physics engine for className and the given graph and config obj
  ******************************************************************************/
 Rcs::PhysicsBase* Rcs::PhysicsFactory::create(const char* className,
-                                              RcsGraph* graph,
+                                              const RcsGraph* graph,
                                               const PhysicsConfig* config)
 {
   Rcs::PhysicsBase* sim = NULL;

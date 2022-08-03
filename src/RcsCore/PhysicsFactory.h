@@ -59,7 +59,7 @@ public:
    * \param cfgFile   Name of xml configuration file
    * \return          New PhysicsBase instance or NULL if failure happened
    */
-  static PhysicsBase* create(const char* className, RcsGraph* graph,
+  static PhysicsBase* create(const char* className, const RcsGraph* graph,
                              const char* cfgFile);
 
   /*! \brief Creates a new Physics simulation instance by name using the
@@ -71,7 +71,7 @@ public:
    * \param config Loaded physics configuration
    * \return New PhysicsBase instance
    */
-  static PhysicsBase* create(const char* className, RcsGraph* graph,
+  static PhysicsBase* create(const char* className, const RcsGraph* graph,
                              const PhysicsConfig* config);
 
   /*! \brief Checks if a physics engine with the given name has been
@@ -95,7 +95,7 @@ public:
   /*! \brief Signature of physics engine creator function.
    */
   typedef PhysicsBase* (*PhysicsCreateFunction)(const char* className,
-                                                RcsGraph* graph,
+                                                const RcsGraph* graph,
                                                 const PhysicsConfig* config);
 private:
 
@@ -158,7 +158,7 @@ public:
    * \param config    Name of xml configuration file
    * \return          New physics simulation instance of type T
    */
-  static PhysicsBase* create(const char* className, RcsGraph* graph,
+  static PhysicsBase* create(const char* className, const RcsGraph* graph,
                              const PhysicsConfig* config)
   {
     PhysicsBase* sim = new T();
