@@ -138,6 +138,18 @@ bool String_hasEnding(const char* str, const char* ending, bool caseSensitive);
 bool String_toBool(const char* str);
 
 /*! \ingroup RcsUtilsFunctions
+ * \brief Applies the tolower function to all elements of the string. It is
+ *        assumed to be properly terminated.
+ */
+void String_tolower(char* str);
+
+/*! \ingroup RcsUtilsFunctions
+ * \brief Applies the toupper function to all elements of the string. It is
+ *        assumed to be properly terminated.
+ */
+void String_toupper(char* str);
+
+/*! \ingroup RcsUtilsFunctions
  * \brief Returns the number of strings in str that are separated by delim.
  */
 unsigned int String_countSubStrings(const char* str, const char* delim);
@@ -237,7 +249,7 @@ bool String_removeSuffix(char* dst, const char* src, char suffix);
 /*! \ingroup RcsUtilsFunctions
  * \brief Returns a pointer to the filename without path.
  *
- *  \param[in] fullName   File name including full path 
+ *  \param[in] fullName   File name including full path
  *  \return Pointer to the file name without path.
  */
 const char* String_stripPath(const char* fullName);
@@ -262,6 +274,22 @@ const char* String_getEnv(const char* name);
  *          not be properly terminated.
  */
 unsigned int String_getLength(const char* str, unsigned int len);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Fuzzy string compare according to Levenshtein Distance. See details
+ *         here: https://en.wikipedia.org/wiki/Levenshtein_distance. The
+ *         function first converts both strings to lower case, and performs the
+ *         comparison based on the lower case representation. The computed
+ *         distance is zero if the words are identical, and larger for larger
+ *         word distances. The function does not allocate any memory if both
+ *         words are shorter than 64 characters, and the product
+ *         (strlen(s1)+1)*(strlen(s2)+1) is less than 1024.
+ *
+ *  \param[in] s1   First strings
+ *  \param[in] s2   Second strings
+ *  \return Levenshtein Distance between both strings
+ */
+int String_LevenshteinDistance(const char* s1, const char* s2);
 
 ///@}
 

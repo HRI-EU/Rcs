@@ -76,6 +76,24 @@ static void quit(int /*sig*/)
 /******************************************************************************
  *
  *****************************************************************************/
+static bool testFuzzyStringMatching()
+{
+  Rcs::CmdLineParser argP;
+  std::string w1, w2;
+  argP.getArgument("-w1", &w1, "String 1 (default is %s)", w1.c_str());
+  argP.getArgument("-w2", &w2, "String 2 (default is %s)", w2.c_str());
+
+  int dist = String_LevenshteinDistance(w1.c_str(), w2.c_str());
+
+  RLOG(1, "Distance between \"%s\" and \"%s\" is %d",
+       w1.c_str(), w2.c_str(), dist);
+
+  return true;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
 static bool test_stringSplit(std::string src, std::string delim,
                              size_t expectedSize)
 {
@@ -645,6 +663,7 @@ static bool testMode(int mode, int argc, char** argv)
       fprintf(stderr, "\t\t10  Test String_removeSuffix()\n");
       fprintf(stderr, "\t\t11  Test resource path functions\n");
       fprintf(stderr, "\t\t12  Test mesh conversion\n");
+      fprintf(stderr, "\t\t13  Test fuzzy string matching\n");
       fprintf(stderr, "\n\nResource path:\n");
       Rcs_printResourcePath();
       break;
@@ -763,6 +782,12 @@ static bool testMode(int mode, int argc, char** argv)
     case 12:
     {
       success = testMeshConversion();
+      break;
+    }
+
+    case 13:
+    {
+      success = testFuzzyStringMatching();
       break;
     }
 

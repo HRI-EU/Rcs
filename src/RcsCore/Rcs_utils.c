@@ -34,12 +34,14 @@
 #include "Rcs_utils.h"
 #include "Rcs_macros.h"
 #include "Rcs_timer.h"
+#include "Rcs_basicMath.h"
 
 #include <locale.h>
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <ctype.h>
 
 #if !defined(_MSC_VER)
 #include <unistd.h>
@@ -58,19 +60,18 @@
  ******************************************************************************/
 char* String_clone(const char* src)
 {
-  char* dst = NULL;
-
-  if (src != NULL)
+  if (!src)
   {
-    // strlen does not include the trailing zero
-    size_t len = 1+strlen(src);
-    dst = RNALLOC(len, char);
+    return NULL;
+  }
 
-    if (dst)
-    {
-      snprintf(dst, len, "%s", src);
-    }
+  // strlen does not include the trailing zero
+  size_t len = 1+strlen(src);
+  char* dst = RNALLOC(len, char);
 
+  if (dst)
+  {
+    snprintf(dst, len, "%s", src);
   }
 
   return dst;
@@ -350,6 +351,32 @@ bool String_toBool(const char* str)
 /*******************************************************************************
  * See header
  ******************************************************************************/
+void String_tolower(char* str)
+{
+  const size_t len = strlen(str);
+
+  for (int i = 0; i<len; ++i)
+  {
+    str[i] = tolower(str[i]);
+  }
+}
+
+/*******************************************************************************
+ * See header
+ ******************************************************************************/
+void String_toupper(char* str)
+{
+  const size_t len = strlen(str);
+
+  for (int i = 0; i<len; ++i)
+  {
+    str[i] = toupper(str[i]);
+  }
+}
+
+/*******************************************************************************
+ * See header
+ ******************************************************************************/
 unsigned int String_countSubStrings(const char* str, const char* delim)
 {
   // Make a local copy of str, since strtok modifies it during processing
@@ -593,7 +620,9 @@ const char* String_stripPath(const char* fullName)
 #if defined (_MSC_VER)
   const char* pos = strrchr(fullName, '\\');
   if (pos)
+  {
     pos = strrchr(fullName, '/');
+  }
 #else
   const char* pos = strrchr(fullName, '/');
 #endif
@@ -626,6 +655,72 @@ unsigned int String_getLength(const char* str, unsigned int len)
   }
 
   return i;
+}
+
+/*******************************************************************************
+ * See header
+ ******************************************************************************/
+int String_LevenshteinDistance(const char* s1_, const char* s2_)
+{
+  const size_t maxStackTableLen = 1024;
+  const size_t maxStackWordLen = 64;
+  const size_t len1 = strlen(s1_);
+  const size_t len2 = strlen(s2_);
+  int stackBuf[maxStackTableLen];
+  char stackW1[maxStackWordLen], stackW2[maxStackWordLen];
+
+  char* s1 = (len1>=maxStackWordLen) ? RNALLOC(len1+1, char) : stackW1;
+  char* s2 = (len2>=maxStackWordLen) ? RNALLOC(len2+1, char) : stackW2;
+
+  snprintf(s1, maxStackWordLen, "%s", s1_);
+  snprintf(s2, maxStackWordLen, "%s", s2_);
+
+  String_tolower(s1);
+  String_tolower(s2);
+
+  const size_t rows = len2 + 1;
+  const size_t cols = len1 + 1;
+  const size_t tbSize = rows*cols;
+  int* dist = (tbSize>maxStackTableLen) ? RNALLOC(tbSize, int) : stackBuf;
+
+  for (size_t i=0; i<cols; ++i)
+  {
+    dist[i] = i;
+  }
+
+  for (size_t i=0; i<rows; ++i)
+  {
+    dist[i*cols] = i;
+  }
+
+  for (size_t j=1; j<cols; ++j)   // j is columns
+  {
+    for (size_t i=1; i<rows; ++i)   // i is rows
+    {
+      const int substitutionCost = (s1[i-1] == s2[j-1]) ? 0 : 1;
+      dist[i*cols+j] = Math_imin3(dist[(i-1)*cols+j]+1,               // deletion
+                                  dist[i*cols+j-1]+1,                     // insertion
+                                  dist[(i-1)*cols+j-1]+substitutionCost); // substitution
+    }
+  }
+  int res = dist[tbSize - 1];   // Last table element
+
+  if (s1!=stackW1)
+  {
+    RFREE(s1);
+  }
+
+  if (s2!=stackW2)
+  {
+    RFREE(s2);
+  }
+
+  if (dist!=stackBuf)
+  {
+    RFREE(dist);
+  }
+
+  return res;
 }
 
 /*******************************************************************************
