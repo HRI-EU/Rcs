@@ -2312,6 +2312,7 @@ int main(int argc, char** argv)
                                     1.0, RcsStateIK);
           MatNd_constMulSelf(dH_ca, 0.01);
           MatNd_addSelf(dH, dH_ca);
+          MatNd_destroy(dH_ca);
         }
 
         if (manipulability)

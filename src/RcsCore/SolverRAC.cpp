@@ -67,7 +67,7 @@ void Rcs::SolverRAC::solve(MatNd* qpp_des,
                            const MatNd* dH_,
                            double lambda)
 {
-  RcsGraph* graph = controller->getGraph();
+  const RcsGraph* graph = controller->getGraph();
   unsigned int nq = graph->dof;
   unsigned int nJ = graph->nJ;
   unsigned int nx = controller->getTaskDim();

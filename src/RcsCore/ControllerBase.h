@@ -206,7 +206,11 @@ public:
 
   /*! \brief Return a pointer to the controller's underlying graph
    */
-  RcsGraph* getGraph() const;
+  const RcsGraph* getGraph() const;
+
+  /*! \brief Return a pointer to the controller's underlying graph
+   */
+  RcsGraph* getGraph();
 
   /*! \brief Return the graph file name (e.g., gScenario.xml)
    */

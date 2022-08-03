@@ -139,7 +139,7 @@ void* RcsGuiFactory_getPointerDirectly(int handle)
 {
   if ((handle >= 0) && (handle < MAX_GUIS))
   {
-  return RCSGUIFACTORY_HANDLE[handle];
+    return RCSGUIFACTORY_HANDLE[handle];
   }
 
   return NULL;

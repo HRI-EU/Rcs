@@ -54,10 +54,7 @@ namespace Rcs
 /*******************************************************************************
  * Construction without tasks and default settings.
  ******************************************************************************/
-ControllerBase::ControllerBase() :
-  graph(NULL),
-  ownsGraph(true),
-  cMdl(NULL)
+ControllerBase::ControllerBase() : graph(NULL), ownsGraph(true), cMdl(NULL)
 {
 }
 
@@ -65,10 +62,7 @@ ControllerBase::ControllerBase() :
  * Constructor based on xml parsing.
  ******************************************************************************/
 ControllerBase::ControllerBase(const std::string& xmlDescription) :
-  graph(NULL),
-  ownsGraph(true),
-  cMdl(NULL),
-  xmlFile(xmlDescription)
+  graph(NULL), ownsGraph(true), cMdl(NULL), xmlFile(xmlDescription)
 {
   char txt[RCS_MAX_FILENAMELEN];
   bool fileExists = Rcs_getAbsoluteFileName(xmlDescription.c_str(), txt);
@@ -173,8 +167,9 @@ bool ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
     {
       RCHECK_MSG(this->graph==NULL, "Found xml tag <Graph>, but already graph"
                  " loaded graph from file \"%s\"", graph->cfgFile);
-      this->graph = RcsGraph_createFromXmlNode(node);
-      strcpy(graph->cfgFile, xmlFile.c_str());
+      RcsGraph* g = RcsGraph_createFromXmlNode(node);
+      snprintf(g->cfgFile, RCS_MAX_FILENAMELEN, "%s", xmlFile.c_str());
+      this->graph = g;
       RCHECK_MSG(this->graph, "Failed to create inlined graph");
     }
 
@@ -547,7 +542,15 @@ std::string ControllerBase::getTaskType(size_t id) const
 /*******************************************************************************
  * Return the controller graph.
  ******************************************************************************/
-RcsGraph* ControllerBase::getGraph() const
+const RcsGraph* ControllerBase::getGraph() const
+{
+  return this->graph;
+}
+
+/*******************************************************************************
+ * Return the controller graph.
+ ******************************************************************************/
+RcsGraph* ControllerBase::getGraph()
 {
   return this->graph;
 }
@@ -1892,7 +1895,7 @@ bool ControllerBase::add(const ControllerBase* other,
                          const char* suffixPtr,
                          const HTr* A_BP)
 {
-  bool success = RcsGraph_appendCopyOfGraph(getGraph(), NULL, other->getGraph(),
+  bool success = RcsGraph_appendCopyOfGraph(this->graph, NULL, other->getGraph(),
                                             suffixPtr, A_BP);
 
   if (success == false)

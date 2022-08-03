@@ -137,16 +137,19 @@ void AsyncWidget::launch()
 {
   AsyncWidgetEvent* ae = new AsyncWidgetEvent(this, AsyncGuiFactory::constructEvent);
 
+  WidgetLauncher* wLauncher = AsyncGuiFactory::getLauncher();
+  RCHECK(wLauncher);
+
   if (AsyncGuiFactory::isGuiThread())
   {
     RLOG(5, "launch(): Calling construct right away");
-    AsyncGuiFactory::getLauncher()->event(ae);
+    wLauncher->event(ae);
     delete ae;
   }
   else
   {
     RLOG(5, "launch(): Constructing by posting event to Gui thread");
-    QCoreApplication::postEvent(AsyncGuiFactory::getLauncher(), ae);
+    QCoreApplication::postEvent(wLauncher, ae);
   }
 
   double t_launch = Timer_getSystemTime();

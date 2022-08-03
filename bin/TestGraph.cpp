@@ -957,22 +957,34 @@ int main(int argc, char** argv)
       argP.getArgument("-dir", directory, "Configuration file directory");
       Rcs_addResourcePath(directory);
 
+      int nW = 0, nE = 0;
       RcsGraph* graph = RcsGraph_create(xmlFileName);
+      REXEC(2)
+      {
+        RLOG(1, "Checking graph");
+        RcsGraph_check(graph, &nE, &nW);
+        RLOG(1, "Check for graph passed with %d warnings and %d errors", nW, nE);
+      }
       RLOG(1, "Start cloning subgraph");
       RcsGraph* subGraph = RcsGraph_cloneSubGraph(graph, rootName);
       RLOG(1, "Done cloning subgraph");
 
-      int nW = 0, nE = 0;
-      RLOG(1, "Checking graph");
+      RLOG(1, "Checking subgraph");
       RcsGraph_check(subGraph, &nE, &nW);
-      RLOG(1, "Check passed with %d warnings and %d errors", nW, nE);
-      RCHECK(nE==0);
+      RLOG(1, "Check for subgraph passed with %d warnings and %d errors", nW, nE);
+      //RCHECK(nE==0);
 
       RcsGraph_writeDotFile(subGraph, "subgraph.dot");
-      FILE* out = fopen("subgraph.xml", "w+");
-      RCHECK(out);
-      RcsGraph_fprintXML(out, subGraph);
-      fclose(out);
+      RcsGraph_writeXmlFile(subGraph, "subgraph.xml");
+
+      RcsGraph* sub2 = RcsGraph_clone(subGraph);
+      MatNd_setRandom(sub2->q, -1.0, 1.0);
+      RcsGraph_setState(sub2, NULL, NULL);
+      bool success = RcsGraph_copySubGraph(sub2, graph);
+      RCHECK_MSG(success, "Failed to copy subgraph");
+      success = RcsGraph_isEqual(subGraph, sub2);
+      RLOG(0, "Copy and clone are %s", success ? "IDENTICAL" : "DIFFERENT");
+      RcsGraph_destroy(sub2);
       nE = system("dotty subgraph.dot");
       if (nE==-1)
       {

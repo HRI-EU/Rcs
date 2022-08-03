@@ -57,9 +57,9 @@ static TaskFactoryRegistrar<TaskPolarSurfaceNormal> regZ("POLAR_SURFACE_Z");
  * Constructor based on xml parsing
  ******************************************************************************/
 TaskPolarSurfaceNormal::TaskPolarSurfaceNormal(const std::string& className,
-                                                    xmlNode* node,
+                                               xmlNode* node,
                                                const RcsGraph* _graph,
-                                                    int dim) :
+                                               int dim) :
   Task(className, node, _graph, dim), direction(2), gainDX(1.0)
 {
   if (getClassName()=="POLAR_SURFACE_X" ||
@@ -129,8 +129,8 @@ void TaskPolarSurfaceNormal::computeX(double* x_curr) const
  *
  ******************************************************************************/
 void TaskPolarSurfaceNormal::computeDX(double* dx_ik,
-                                            const double* x_des,
-                                            const double* x_curr) const
+                                       const double* x_des,
+                                       const double* x_curr) const
 {
   double phi_des = Math_clip(x_des[0], 0.0, M_PI);
   dx_ik[0] = this->gainDX*(x_curr[0] - phi_des);
@@ -269,14 +269,14 @@ bool TaskPolarSurfaceNormal::isValid(xmlNode* node, const RcsGraph* graph)
     {
       RLOG(4, "Surface body \"%s\" not found in graph for task \"%s\"",
            surfBodies[i].c_str(), taskName);
-    success = false;
-  }
+      success = false;
+    }
 
     if (RcsBody_getNumDistanceQueries(effector, bi) == 0)
-  {
-    RLOG(1, "Task \"%s\": No distance function between \"%s\" and \"%s\"!",
+    {
+      RLOG(1, "Task \"%s\": No distance function between \"%s\" and \"%s\"!",
            taskName, effector->name, bi->name);
-    success = false;
+      success = false;
     }
 
   }

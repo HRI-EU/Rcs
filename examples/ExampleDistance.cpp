@@ -103,7 +103,7 @@ void ExampleDistance::parseArgs(CmdLineParser* argP)
 std::string ExampleDistance::help()
 {
   std::stringstream s;
-  s << RcsShape_distanceFunctionsToString(); 
+  s << RcsShape_distanceFunctionsToString();
   return s.str();
 }
 

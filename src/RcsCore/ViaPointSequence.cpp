@@ -364,8 +364,8 @@ bool ViaPointSequence::computeB_poly5(MatNd* B, const MatNd* vDescr)
         if (t_base>=t)
         {
           REXEC(1)
-        {
-          MatNd_printCommentDigits("viaDesc", vDescr, 5);
+          {
+            MatNd_printCommentDigits("viaDesc", vDescr, 5);
             RLOG_CPP(1, "Row " << i << " pivot " << j << ": t_base: "
                      << t_base << " t: " << t);
           }
@@ -410,8 +410,8 @@ bool ViaPointSequence::computeB_poly5(MatNd* B, const MatNd* vDescr)
         if (t_base>=t)
         {
           REXEC(1)
-        {
-          MatNd_printCommentDigits("viaDesc", vDescr, 5);
+          {
+            MatNd_printCommentDigits("viaDesc", vDescr, 5);
             RLOG_CPP(1, "Row " << i << " pivot " << j << ": t_base: "
                      << t_base << " t: " << t);
           }
@@ -456,8 +456,8 @@ bool ViaPointSequence::computeB_poly5(MatNd* B, const MatNd* vDescr)
         if (t_base>=t)
         {
           REXEC(1)
-        {
-          MatNd_printCommentDigits("viaDesc", vDescr, 5);
+          {
+            MatNd_printCommentDigits("viaDesc", vDescr, 5);
             RLOG_CPP(1, "Row " << i << " pivot " << j << ": t_base: "
                      << t_base << " t: " << t);
           }
@@ -781,7 +781,7 @@ bool ViaPointSequence::init(const MatNd* viaDescr_)
         return false;
       }
     }
-      break;
+    break;
 
     case LinearAcceleration:
       computeB_linAcc(this->B, this->viaDescr);

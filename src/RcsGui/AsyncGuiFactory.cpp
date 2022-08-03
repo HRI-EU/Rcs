@@ -53,6 +53,13 @@ To implement this class, these things have been considerd:
 
  */
 
+
+/*
+ Upon startup, we sometimes receive this error message:
+
+  QCoreApplication::postEvent: Unexpected null receiver
+ */
+
 #include "AsyncGuiFactory.h"
 
 #include <Rcs_cmdLine.h>
