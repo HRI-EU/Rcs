@@ -38,7 +38,6 @@
 #include "Rcs_typedef.h"
 #include "Rcs_parser.h"
 #include "Rcs_VecNd.h"
-#include "Rcs_macros.h"
 
 #include <cmath>
 
@@ -55,20 +54,22 @@ Rcs::TaskPose6D::TaskPose6D(const std::string& className_,
   CompositeTask(className_, node, _graph)
 {
   addTask(new TaskPosition3D("XYZ", node, _graph, 3));
-
-  Rcs::Task* abc = new TaskEuler3D("ABC", node, _graph, 3);
-
-  abc->setRefFrameId(abc->getRefBodyId());
-
-  addTask(abc);
+  addTask(new TaskEuler3D("ABC", node, _graph, 3));
 
   if (getClassName() == "XYZABC")
   {
+    // When we read the values from xml, the angles are represented in degrees.
+    // We therefore first initialize the ranges in degrees and bring them into
+    // SI units later.
+    const double scaleF = 180.0/M_PI;
     double guiMax[6], guiMin[6];
-    VecNd_set6(guiMin, -2.5, -2.5, -2.5, -M_PI, -M_PI, -M_PI);
-    VecNd_set6(guiMax, 2.5, 2.5, 2.5, M_PI, M_PI, M_PI);
+    VecNd_set6(guiMin, -2.5, -2.5, -2.5, -180.0, -180.0, -180.0);
+    VecNd_set6(guiMax, 2.5, 2.5, 2.5, 180.0, 180.0, 180.0);
     getXMLNodePropertyVecN(node, "guiMax", guiMax, 6);
     getXMLNodePropertyVecN(node, "guiMin", guiMin, 6);
+
+    VecNd_constMulSelf(&guiMin[3], 1.0/scaleF, 3);
+    VecNd_constMulSelf(&guiMax[3], 1.0/scaleF, 3);
 
     bool hide = false;
     getXMLNodePropertyBoolString(node, "hide", &hide);
@@ -80,16 +81,18 @@ Rcs::TaskPose6D::TaskPose6D(const std::string& className_,
     resetParameter(Parameters(guiMin[0], guiMax[0], 1.0, "X [m]"));
     addParameter(Parameters(guiMin[1], guiMax[1], 1.0, "Y [m]"));
     addParameter(Parameters(guiMin[2], guiMax[2], 1.0, "Z [m]"));
-    addParameter(Parameters(guiMin[3], guiMax[3], (180.0 / M_PI), "A [deg]"));
-    addParameter(Parameters(guiMin[4], guiMax[4], (180.0 / M_PI), "B [deg]"));
-    addParameter(Parameters(guiMin[5], guiMax[5], (180.0 / M_PI), "C [deg]"));
+
+    addParameter(Parameters(guiMin[3], guiMax[3], scaleF, "A [deg]"));
+    addParameter(Parameters(guiMin[4], guiMax[4], scaleF, "B [deg]"));
+    addParameter(Parameters(guiMin[5], guiMax[5], scaleF, "C [deg]"));
+
     getSubTask(0)->resetParameter(Parameters(guiMin[0], guiMax[0], 1.0, "X [m]"));
     getSubTask(0)->addParameter(Parameters(guiMin[1], guiMax[1], 1.0, "Y [m]"));
     getSubTask(0)->addParameter(Parameters(guiMin[2], guiMax[2], 1.0, "Z [m]"));
 
-    getSubTask(1)->resetParameter(Parameters(guiMin[3], guiMax[3], (180.0 / M_PI), "A [deg]"));
-    getSubTask(1)->addParameter(Parameters(guiMin[4], guiMax[4], (180.0 / M_PI), "B [deg]"));
-    getSubTask(1)->addParameter(Parameters(guiMin[5], guiMax[5], (180.0 / M_PI), "C [deg]"));
+    getSubTask(1)->resetParameter(Parameters(guiMin[3], guiMax[3], scaleF, "A [deg]"));
+    getSubTask(1)->addParameter(Parameters(guiMin[4], guiMax[4], scaleF, "B [deg]"));
+    getSubTask(1)->addParameter(Parameters(guiMin[5], guiMax[5], scaleF, "C [deg]"));
   }
 
 }

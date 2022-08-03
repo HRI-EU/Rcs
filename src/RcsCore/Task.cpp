@@ -1592,17 +1592,18 @@ void Rcs::Task::toXMLBody(FILE* out) const
       fprintf(out, " refFrame=\"%s\"", getRefFrame()->name);
     }
   }
+
   fprintf(out, " guiMin=\"");
   for (size_t i = 0; i < getParameters().size(); ++i)
   {
-    fprintf(out, "%g ", getParameter(i).minVal);
+    fprintf(out, "%g ", getParameter(i).minVal*getParameter(i).scaleFactor);
   }
   fprintf(out, "\"");
 
   fprintf(out, " guiMax=\"");
   for (size_t i = 0; i < getParameters().size(); ++i)
   {
-    fprintf(out, "%g ", getParameter(i).maxVal);
+    fprintf(out, "%g ", getParameter(i).maxVal*getParameter(i).scaleFactor);
   }
   fprintf(out, "\"");
 
