@@ -43,7 +43,7 @@ SET(SRCS
     VortexSimulation.cpp)
 
 # Define the library
-ADD_LIBRARY(RcsVortex ${SRCS})
+ADD_LIBRARY(RcsVortex SHARED ${SRCS})
 
 # Vortex dependency
 TARGET_INCLUDE_DIRECTORIES(RcsVortex SYSTEM PRIVATE ${VORTEX_INCLUDE_DIR})
