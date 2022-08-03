@@ -69,19 +69,39 @@ double Math_fmodAngle(double angle)
  ******************************************************************************/
 double Math_fmin3(double x, double y, double z)
 {
-  double min = x;
+  double minVal = x;
 
-  if (y < min)
+  if (y < minVal)
   {
-    min = y;
+    minVal = y;
   }
 
-  if (z < min)
+  if (z < minVal)
   {
-    min = z;
+    minVal = z;
   }
 
-  return min;
+  return minVal;
+}
+
+/*******************************************************************************
+ * See header
+ ******************************************************************************/
+int Math_imin3(int x, int y, int z)
+{
+  int minVal = x;
+
+  if (y < minVal)
+  {
+    minVal = y;
+  }
+
+  if (z < minVal)
+  {
+    minVal = z;
+  }
+
+  return minVal;
 }
 
 /*******************************************************************************
@@ -89,19 +109,39 @@ double Math_fmin3(double x, double y, double z)
  ******************************************************************************/
 double Math_fmax3(double x, double y, double z)
 {
-  double max = x;
+  double maxVal = x;
 
-  if (y > max)
+  if (y > maxVal)
   {
-    max = y;
+    maxVal = y;
   }
 
-  if (z > max)
+  if (z > maxVal)
   {
-    max = z;
+    maxVal = z;
   }
 
-  return max;
+  return maxVal;
+}
+
+/*******************************************************************************
+ * See header
+ ******************************************************************************/
+int Math_imax3(int x, int y, int z)
+{
+  int maxVal = x;
+
+  if (y > maxVal)
+  {
+    maxVal = y;
+  }
+
+  if (z > maxVal)
+  {
+    maxVal = z;
+  }
+
+  return maxVal;
 }
 
 /*******************************************************************************

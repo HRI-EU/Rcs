@@ -92,6 +92,11 @@ bool RcsJoint_isRotation(const RcsJoint* joint);
 bool RcsJoint_isTranslation(const RcsJoint* joint);
 
 /*! \ingroup RcsJointFunctions
+ *  \brief Returns true if the joints are equal, false otherwise.
+ */
+bool RcsJoint_isEqual(const RcsJoint* j1, const RcsJoint* j2);
+
+/*! \ingroup RcsJointFunctions
  *  \brief Prints the type of the joint to a file descriptor.
  */
 void RcsJoint_fprintType(FILE* out, const RcsJoint* jnt);

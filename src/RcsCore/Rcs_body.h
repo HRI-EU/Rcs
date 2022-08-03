@@ -73,16 +73,15 @@ void RcsBody_clear(RcsBody* self);
 /*! \ingroup RcsBodyFunctions
  *  \brief Creates a shallow copy of the body (Shapes etc. are not copied).
  *         These members are left unchanged and need to be handled separately:
- *         - parent
- *         - child
- *         - last
- *         - next
- *         - prev
- *         - shape
- *         - jnt
- *         - actor
- *         - extraInfo
- *         - extraInfoVortex
+ *         - id
+ *         - parentId
+ *         - firstChildId
+ *         - lastChildId
+ *         - nextId
+ *         - prevId
+ *         - jntId
+ *         - nShapes
+ *         - shapes
  */
 void RcsBody_copy(RcsBody* dst, const RcsBody* src);
 
@@ -172,6 +171,11 @@ bool RcsBody_isArticulated(const RcsGraph* graph, const RcsBody* self);
  *  \brief Returns true if the body is part of the graph, false otherwise.
  */
 bool RcsBody_isInGraph(const RcsBody* self, const RcsGraph* graph);
+/*! \ingroup RcsBodyFunctions
+ *  \brief Returns true if the bodies are indentical, false otherwise. The
+ *         data of the bodies as well as all of their shapes are checked.
+ */
+bool RcsBody_isEqual(const RcsBody* b1, const RcsBody* b2);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Prints out the body to a file descriptor.

@@ -57,11 +57,7 @@ void RcsSensor_init(RcsSensor* self, unsigned int type, const char* name,
                     RcsBody* parentBody, HTr* offset);
 
 /*! \ingroup RcsSensorFunctions
- *  \brief Shallow copy of all members except for these pointers:
- *         - next
- *         - body
- *         - extraInfo
- *         They are left unchanged
+ *  \brief Deep copy of all members including members pointed to.
  */
 void RcsSensor_copy(RcsSensor* dst, const RcsSensor* src);
 
@@ -179,6 +175,11 @@ bool RcsSensor_computePPS(RcsGraph* graph, const RcsSensor* self,
  *         sensor type exists, "Unknown sensor type" is returned.
  */
 const char* RcsSensor_name(int shapeType);
+/*! \ingroup RcsSensorFunctions
+ *  \brief Returns true if the sensors are equal, false otherwise. All
+ *         texels and the raw data are also compared.
+ */
+bool RcsSensor_isEqual(const RcsSensor* s1, const RcsSensor* s2);
 
 
 

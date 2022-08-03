@@ -61,7 +61,7 @@
 
 std::vector<std::string> getResourcePath();
 extern "C" {
-#endif 
+#endif
 
 
 
@@ -133,7 +133,7 @@ unsigned int Rcs_numResourcePaths(void);
 
 #ifdef __cplusplus
 }
-#endif 
+#endif
 
 
 

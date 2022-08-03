@@ -2179,3 +2179,49 @@ double* RcsMesh_createNormalArray(const RcsMeshData* mesh)
 
   return normals;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool RcsMesh_isEqual(const RcsMeshData* m1, const RcsMeshData* m2)
+{
+  // Both are NULL
+  if (m1==NULL && m2==NULL)
+  {
+    return true;
+  }
+
+  // m1 is NULL, m2 isn't
+  if (m1 == NULL)
+  {
+    return false;
+  }
+
+  // m2 is NULL, m1 isn't
+  if (m2 == NULL)
+  {
+    return false;
+  }
+
+  if (m1->nVertices != m2->nVertices)
+  {
+    return false;
+  }
+
+  if (m1->nFaces != m2->nFaces)
+  {
+    return false;
+  }
+
+  if (memcmp(m1->vertices, m2->vertices, m1->nVertices * sizeof(double)) != 0)
+  {
+    return false;
+  }
+
+  if (memcmp(m1->faces, m2->faces, m1->nFaces * sizeof(unsigned int)) != 0)
+  {
+    return false;
+  }
+
+  return true;
+}

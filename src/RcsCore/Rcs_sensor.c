@@ -722,3 +722,29 @@ RcsSensor* RcsSensor_last(const RcsGraph* graph)
 {
   return (graph->nSensors>0) ? &graph->sensors[graph->nSensors-1] : NULL;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool RcsSensor_isEqual(const RcsSensor* s1, const RcsSensor* s2)
+{
+  if (memcmp(s1, s2, sizeof(RcsSensor) - sizeof(RcsTexel*) - sizeof(MatNd*)) != 0)
+  {
+    return false;
+  }
+
+  if (!MatNd_isEqual(s1->rawData, s2->rawData, 0.0))
+  {
+    return false;
+  }
+
+  for (unsigned int i = 0; i < s1->nTexels; ++i)
+  {
+    if (memcmp(&s1->texel[i], &s2->texel[i], sizeof(RcsTexel)) != 0)
+    {
+      return false;
+    }
+  }
+
+  return true;
+}

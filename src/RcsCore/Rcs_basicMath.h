@@ -68,9 +68,19 @@ double Math_fmodAngle(double angle);
 double Math_fmin3(double x, double y, double z);
 
 /*! \ingroup RcsBasicMathFunctions
+ *  \brief Returns the smallest of 3 integer values.
+ */
+int Math_imin3(int x, int y, int z);
+
+/*! \ingroup RcsBasicMathFunctions
  *  \brief Returns the largest of 3 double values.
  */
 double Math_fmax3(double x, double y, double z);
+
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Returns the largest of 3 integer values.
+ */
+int Math_imax3(int x, int y, int z);
 
 /*! \ingroup RcsBasicMathFunctions
  *  \brief Returns x clipped to the range [min , max].

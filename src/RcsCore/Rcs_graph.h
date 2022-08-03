@@ -186,7 +186,7 @@ RcsBody* RcsBody_depthFirstTraversalGetNextById(const RcsGraph* graph,
  *         starting from the body b. If b is the final leaf, b will be
  *         returned. If b is NULL, the function retuens NULL.
  */
-RcsBody* RcsBody_getLastLeaf(const RcsGraph* graph, RcsBody* b);
+RcsBody* RcsBody_getLastLeaf(const RcsGraph* graph, const RcsBody* b);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Returns the root body of the graph. It is the first one in the
@@ -462,15 +462,46 @@ void RcsGraph_getInvWq(const RcsGraph* self, MatNd* invWq,
  *         several bodies have the same name, the closest one to the root
  *         node (depth first traversal) will be taken. If no matching
  *         body is found, NULL will be returned. If name or self are NULL, also
- *         NULL is returned.
+ *         NULL is returned. If name is "GenericBodyxxx" with xxx being the
+ *         index of the generic body (smaller than RCS_NUM_GENERIC_BODIES),
+ *         then the name of the generic body reference is looked up, and the
+ *         referenced body is returned.
  *
  *  \param[in] self   Pointer to graph. If it is NULL, the function returns
  *                    NULL.
  *  \param[in] name   Character array holding the the joint name. If it is NULL,
  *                    the function returns NULL.
- *  \return Pointer to the body with the name, or NULL if no match has been found.
+ *  \return Pointer to the body with the name, or NULL if no match has been
+ *          found.
  */
 RcsBody* RcsGraph_getBodyByName(const RcsGraph* self, const char* name);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Same as RcsGraph_getBodyByName(), except that the string comparison
+ *         is carried out case-insensitive.
+ *
+ *  \param[in] self   Pointer to graph. If it is NULL, the function returns
+ *                    NULL.
+ *  \param[in] name   Character array holding the the joint name. If it is NULL,
+ *                    the function returns NULL.
+ *  \return Pointer to the body with the name, or NULL if no match has been
+ *          found.
+ */
+RcsBody* RcsGraph_getBodyByNameNoCase(const RcsGraph* self, const char* name);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Same as RcsGraph_getBodyByName(), except that the string comparison
+ *         is carried out with a fuzzx string compare algorithm, see
+ *          String_LevenshteinDistance() for details.
+ *
+ *  \param[in] self   Pointer to graph. If it is NULL, the function returns
+ *                    NULL.
+ *  \param[in] name   Character array holding the the joint name. If it is NULL,
+ *                    the function returns NULL.
+ *  \return Pointer to the body with the name, or NULL if no match has been
+ *          found.
+ */
+RcsBody* RcsGraph_getBodyByNameFuzzy(const RcsGraph* self, const char* name);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Similar to RcsGraph_RcsGraph_getBodyByName() except that only the
@@ -542,6 +573,7 @@ void RcsGraph_bodyTorque(const RcsGraph* self, const RcsBody* body,
  *         - dof and dimension of q-vector match number of joints
  *         - finiteness of q and q_dot
  *         - bodies have a mass >= 0
+ *         - body indices either -1 or within [0 ... RcsGraph::nBodies-1]
  *
  *         Failing the following checks is considered to be a warning:
  *         - joint centers out of range
@@ -575,6 +607,20 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src);
  *                  copying failed, the function returns NULL.
  */
 RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Copies the subtree of graph into the subgraph. The subGraph is
+ *         expected to correspond to a depth-first traversal of graph.
+ *         These assumptions are made:
+ *         - Coupled joints are not prppoerly considered in cases where
+ *           the subgraph was cloned from the graph, and these have been
+ *           modified in the graph.
+ *
+ *  \param[out] subGraph    Graph to be updated
+ *  \param[in] graph        Graph to be copied from
+ *  \return True for success, false otherwise.
+ */
+bool RcsGraph_copySubGraph(RcsGraph* subGraph, const RcsGraph* graph);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Sets the bdyNum-th generic body pointer to the given body.
@@ -764,8 +810,15 @@ void RcsGraph_setShapesResizeable(RcsGraph* self, bool resizeable);
  */
 void RcsGraph_copyResizeableShapes(RcsGraph* dst, const RcsGraph* src,
                                    int level);
+/*! \ingroup RcsGraphFunctions
+ *  \brief Deep copy of src into dst. Reallocations will be done if needed.
+ */
 void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src);
 
+/*! \ingroup RcsGraphFunctions
+ *  \brief Returns true if the graphs are indentical, false otherwise.
+ */
+bool RcsGraph_isEqual(const RcsGraph* gb1, const RcsGraph* g2);
 
 /**
  * @name Joints

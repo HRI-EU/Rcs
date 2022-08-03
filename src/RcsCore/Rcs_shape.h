@@ -324,6 +324,11 @@ void RcsShape_setComputeType(RcsShape* shape, char computeType, bool enable);
  */
 bool RcsShape_isOfComputeType(const RcsShape* shape, int computeType);
 
+/*! \ingroup RcsShapeFunctions
+ *  \brief Returns true if the shapes are indentical, false otherwise. If
+ *         a mesh is associated with the shape, it will also be compared.
+ */
+bool RcsShape_isEqual(const RcsShape* s1, const RcsShape* s2);
 
 #ifdef __cplusplus
 }

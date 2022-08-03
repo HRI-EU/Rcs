@@ -383,6 +383,28 @@ bool RcsBody_isInGraph(const RcsBody* self, const RcsGraph* graph)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+bool RcsBody_isEqual(const RcsBody* b1, const RcsBody* b2)
+{
+  // We compare the bodie's contents except for the pointer to the shapes
+  if (memcmp(b1, b2, sizeof(RcsBody) - sizeof(RcsShape*)) != 0)
+  {
+    return false;
+  }
+
+  for (unsigned int i = 0; i < b1->nShapes; ++i)
+  {
+    if (!RcsShape_isEqual(&b1->shapes[i], &b2->shapes[i]))
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 void RcsBody_fprint(FILE* out, const RcsBody* b, const RcsGraph* graph)
 {
   if (b == NULL)
@@ -2482,7 +2504,7 @@ RcsBody* RcsBody_depthFirstTraversalGetNextById(const RcsGraph* graph,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-RcsBody* RcsBody_getLastLeaf(const RcsGraph* graph, RcsBody* b)
+RcsBody* RcsBody_getLastLeaf(const RcsGraph* graph, const RcsBody* b)
 {
   if (!b)
   {
@@ -2494,7 +2516,7 @@ RcsBody* RcsBody_getLastLeaf(const RcsGraph* graph, RcsBody* b)
     b = &graph->bodies[b->lastChildId];
   }
 
-  return b;
+  return (RcsBody*) b;
 }
 
 /*******************************************************************************

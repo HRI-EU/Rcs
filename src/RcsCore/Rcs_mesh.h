@@ -480,6 +480,10 @@ void RcsMesh_computeInertia(RcsMeshData* mesh, double I[3][3], double com[3]);
  */
 double* RcsMesh_createNormalArray(const RcsMeshData* mesh);
 
+/*! \ingroup RcsMeshFunctions
+ *  \brief Returns true if the meshes are indentical, false otherwise.
+ */
+bool RcsMesh_isEqual(const RcsMeshData* m1, const RcsMeshData* m2);
 
 #ifdef __cplusplus
 }

@@ -1132,7 +1132,7 @@ RcsBody* RcsGraph_getBodyByName(const RcsGraph* self, const char* name)
 
   if (STRNEQ(name, "GenericBody", 11))
   {
-    int num = atoi(&name[11]);
+    const int num = atoi(&name[11]);
 
     if ((num < 0) || (num >= RCS_NUM_GENERIC_BODIES))
     {
@@ -1150,9 +1150,83 @@ RcsBody* RcsGraph_getBodyByName(const RcsGraph* self, const char* name)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-RcsBody* RcsGraph_getRootBody(const RcsGraph* self)
+RcsBody* RcsGraph_getBodyByNameNoCase(const RcsGraph* self, const char* name)
 {
-  return RCSBODY_BY_ID(self, self->rootId);
+  if ((name == NULL) || (self == NULL))
+  {
+    return NULL;
+  }
+
+  RCSGRAPH_FOREACH_BODY(self)
+  {
+    if (STRCASEEQ(name, BODY->name) && (BODY->id != -1))
+    {
+      return BODY;
+    }
+  }
+
+  if (STRNEQ(name, "GenericBody", 11))
+  {
+    const int num = atoi(&name[11]);
+
+    if ((num < 0) || (num >= RCS_NUM_GENERIC_BODIES))
+    {
+      RLOG(1, "GenericBody \"%s\": suffix must be [0...%d]",
+           name, RCS_NUM_GENERIC_BODIES - 1);
+      return NULL;
+    }
+
+    return RCSBODY_BY_ID(self, self->gBody[num]);
+  }
+
+  return NULL;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+RcsBody* RcsGraph_getBodyByNameFuzzy(const RcsGraph* self, const char* name)
+{
+  if ((name == NULL) || (self == NULL) || (strlen(name)==0))
+  {
+    return NULL;
+  }
+
+  // If a generic body is passed, we retrieve the body it is refering to, and
+  // perform the fuzzy compare against the referred body name.
+  if (STRNEQ(name, "GenericBody", 11))
+  {
+    const int num = atoi(&name[11]);
+
+    if ((num < 0) || (num >= RCS_NUM_GENERIC_BODIES))
+    {
+      RLOG(1, "GenericBody \"%s\": suffix must be [0...%d]",
+           name, RCS_NUM_GENERIC_BODIES - 1);
+      return NULL;
+    }
+
+    name = RCSBODY_NAME_BY_ID(self, self->gBody[num]);
+  }
+
+  MatNd* levDist = MatNd_create(self->nBodies, 1);
+
+  for (unsigned int i=0; i<self->nBodies; ++i)
+  {
+    levDist->ele[i] = String_LevenshteinDistance(name, self->bodies[i].name);
+
+    // Early exit if we find an exact match
+    if (levDist->ele[i] == 0.0)
+    {
+      MatNd_destroy(levDist);
+      return &self->bodies[i];
+    }
+  }
+
+  unsigned int minIdx = MatNd_minAbsEleIndex(levDist);
+
+  MatNd_destroy(levDist);
+
+  return &self->bodies[minIdx];
 }
 
 /*******************************************************************************
@@ -1163,15 +1237,6 @@ RcsBody* RcsGraph_getBodyByTruncatedName(const RcsGraph* self, const char* name)
   if ((name==NULL) || (self==NULL))
   {
     return NULL;
-  }
-
-  size_t nameLen = strlen(name);
-  RCSGRAPH_TRAVERSE_BODIES(self)
-  {
-    if (STRNEQ(name, BODY->name, nameLen))
-    {
-      return BODY;
-    }
   }
 
   if (STRNEQ(name, "GenericBody", 11))
@@ -1185,10 +1250,27 @@ RcsBody* RcsGraph_getBodyByTruncatedName(const RcsGraph* self, const char* name)
       return NULL;
     }
 
-    return RCSBODY_BY_ID(self, self->gBody[num]);
+    name = RCSBODY_NAME_BY_ID(self, self->gBody[num]);
+  }
+
+  size_t nameLen = strlen(name);
+  RCSGRAPH_TRAVERSE_BODIES(self)
+  {
+    if (STRNEQ(name, BODY->name, nameLen))
+    {
+      return BODY;
+    }
   }
 
   return NULL;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+RcsBody* RcsGraph_getRootBody(const RcsGraph* self)
+{
+  return RCSBODY_BY_ID(self, self->rootId);
 }
 
 /*******************************************************************************
@@ -1461,14 +1543,18 @@ void RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q)
     }
 
     int idx = (stateType==RcsStateIK) ? JNT->jacobiIndex : JNT->jointIndex;
+    double qi = MatNd_get(q, idx, 0);
 
     // We ignore entries that equal the initial q_init values
-    if (fabs(q->ele[idx]-JNT->q_init)<1.0e-6)
+    if (fabs(qi-JNT->q_init)<1.0e-6)
     {
       continue;
     }
 
-    double qi = RcsJoint_isRotation(JNT)?RCS_RAD2DEG(q->ele[idx]):q->ele[idx];
+    if (RcsJoint_isRotation(JNT))
+    {
+      qi = RCS_RAD2DEG(qi);
+    }
 
     fprintf(out, "  <joint_state joint=\"%s\" position=\"%s\" />\n",
             JNT->name, String_fromDouble(buf, qi, 6));
@@ -1959,6 +2045,48 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
       RLOG(1, "Found body with empty body name");
     }
 
+    if ((BODY->id < -1) || (BODY->id >= (int)self->nBodies))
+    {
+      nErrors++;
+      RLOG(1, "Body \"%s\" id out of range: %d not inside [-1 ... %d]",
+           BODY->name, BODY->id, self->nBodies - 1);
+    }
+
+    if ((BODY->parentId < -1) || (BODY->parentId >= (int)self->nBodies))
+    {
+      nErrors++;
+      RLOG(1, "Body \"%s\" parentId out of range: %d not inside [-1 ... %d]",
+           BODY->name, BODY->parentId, self->nBodies - 1);
+    }
+
+    if ((BODY->firstChildId < -1) || (BODY->firstChildId >= (int)self->nBodies))
+    {
+      nErrors++;
+      RLOG(1, "Body \"%s\" firstChildId out of range: %d not inside [-1 ... %d]",
+           BODY->name, BODY->firstChildId, self->nBodies - 1);
+    }
+
+    if ((BODY->lastChildId < -1) || (BODY->lastChildId >= (int)self->nBodies))
+    {
+      nErrors++;
+      RLOG(1, "Body \"%s\" lastChildId out of range: %d not inside [-1 ... %d]",
+           BODY->name, BODY->lastChildId, self->nBodies - 1);
+    }
+
+    if ((BODY->prevId < -1) || (BODY->prevId >= (int)self->nBodies))
+    {
+      nErrors++;
+      RLOG(1, "Body \"%s\" prevId out of range: %d not inside [-1 ... %d]",
+           BODY->name, BODY->prevId, self->nBodies - 1);
+    }
+
+    if ((BODY->nextId < -1) || (BODY->nextId >= (int)self->nBodies))
+    {
+      nErrors++;
+      RLOG(1, "Body \"%s\" nextId out of range: %d not inside [-1 ... %d]",
+           BODY->name, BODY->nextId, self->nBodies - 1);
+    }
+
     RCSBODY_TRAVERSE_SHAPES(BODY)
     {
       if (strlen(SHAPE->meshFile) >= RCS_MAX_FILENAMELEN-1)
@@ -2142,8 +2270,8 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
       if (JNT->coupledToId == -1)
       {
         nErrors++;
-        RLOG(1, "Joint \"%s\": Coupled joint is NULL, but coupling factors"
-             " are defined", JNT->name);
+        RLOG(1, "Joint \"%s\": Coupled joint is NULL, but %d coupling factors"
+             " are defined", JNT->name, JNT->nCouplingCoeff);
       }
 
       if ((JNT->nCouplingCoeff!=1))
@@ -2365,6 +2493,121 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src)
  * This function assumes a few things:
  * - The subgraph is contiguously contained in q, q_dot, bodies and joints
  *   arrays.
+ * - All sizes are correct
+ ******************************************************************************/
+bool RcsGraph_copySubGraph(RcsGraph* subGraph, const RcsGraph* graph)
+{
+  const char* firstBdyName = RCSBODY_NAME_BY_ID(subGraph, subGraph->rootId);
+
+  if (!firstBdyName)
+  {
+    RLOG(1, "Sub-graph has no root body");
+    return false;
+  }
+
+  const RcsBody* srcFirstBdy = RcsGraph_getBodyByName(graph, firstBdyName);
+  if (!srcFirstBdy)
+  {
+    RLOG(1, "Couldn't match first body \"%s\"", firstBdyName);
+    return false;
+  }
+
+  const int rootId = srcFirstBdy->id;
+  if (rootId==-1)
+  {
+    RLOG(1, "The root body to be copied does not seem to exist");
+    return false;
+  }
+
+  const char* firstJntName = NULL;
+  RCSGRAPH_TRAVERSE_BODIES(subGraph)
+  {
+    if (BODY->jntId != -1)
+    {
+      firstJntName = subGraph->joints[BODY->jntId].name;
+      break;
+    }
+  }
+
+  subGraph->nJ = 0;   // We renew he joint indices and the Jacobian size
+  if (firstJntName)
+  {
+    const RcsJoint* srcFirstJnt = RcsGraph_getJointByName(graph, firstJntName);
+    if (!srcFirstJnt)
+    {
+      RLOG(1, "Couldn't match first joint \"%s\"", firstJntName);
+      return false;
+    }
+
+    int minJntId = srcFirstJnt->jointIndex;
+
+    // Copy all joints except for adjacency information
+    for (unsigned int i = 0; i < subGraph->dof; ++i)
+    {
+      RcsJoint* jnt = &subGraph->joints[i];
+      unsigned int ctmp = jnt->nCouplingCoeff;
+      double tmpPoly[RCS_MAX_COUPLING_COEFF];
+      VecNd_copy(tmpPoly, jnt->couplingPoly, RCS_MAX_COUPLING_COEFF);
+
+      RcsJoint_copy(jnt, &graph->joints[minJntId+i]);
+
+      if (graph->joints[minJntId + i].jacobiIndex != -1)
+      {
+        jnt->jacobiIndex = subGraph->nJ;
+        subGraph->nJ++;
+      }
+
+      jnt->jointIndex = i;
+      jnt->nCouplingCoeff = ctmp;
+      VecNd_copy(jnt->couplingPoly, tmpPoly, RCS_MAX_COUPLING_COEFF);
+    }
+
+    VecNd_copy(subGraph->q->ele, graph->q->ele + minJntId, subGraph->dof);
+    VecNd_copy(subGraph->q_dot->ele, graph->q_dot->ele + minJntId, subGraph->dof);
+  }   // if (firstJntName)
+
+
+  // Copy all bodies, except for adjacency information
+  for (unsigned int i = 0; i < subGraph->nBodies; ++i)
+  {
+    RcsBody_copy(&subGraph->bodies[i], &graph->bodies[rootId+i]);
+  }
+
+  // Sensors. We assume there are ordered in the same way as in the graph we
+  // are copying from. Sensors with non-existing body ids are skipped.
+  int nSensors = 0;
+  RCSGRAPH_FOREACH_SENSOR(graph)
+  {
+    const int dstBdyId = SENSOR->bodyId - rootId;
+    if ((dstBdyId >= 0) && (dstBdyId < (int)subGraph->nBodies))
+    {
+      RcsSensor_copy(&subGraph->sensors[nSensors], SENSOR);
+      subGraph->sensors[nSensors].bodyId = dstBdyId;
+      nSensors++;
+    }
+
+  }
+
+  subGraph->nSensors = nSensors;
+
+
+  // We use the same configuration file name
+  strcpy(subGraph->cfgFile, graph->cfgFile);
+
+  // Generic bodies
+  for (unsigned int i = 0; i < RCS_NUM_GENERIC_BODIES; ++i)
+  {
+    subGraph->gBody[i] = Math_iClip(graph->gBody[i]-rootId, -1, subGraph->nBodies);
+  }
+
+
+  return true;
+}
+
+/*******************************************************************************
+ * This function assumes a few things:
+ * - The subgraph is contiguously contained in q, q_dot, bodies and joints
+ *   arrays.
  * - Joints that are kinematically coupled to other joints outside the graph
  *   will loose their coupling.
  ******************************************************************************/
@@ -2395,7 +2638,7 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
 
   RcsBody* lastLeaf = RcsBody_getLastLeaf(src, rootBdy);
 
-  if (!rootBdy)
+  if (!lastLeaf)
   {
     RLOG(1, "Failed to find last leaf of root body \"%s\"", rootName);
     return NULL;
@@ -2442,8 +2685,8 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
   int minJntId = src->dof, maxJntId = -1;
   RCSGRAPH_FOREACH_BODY(dst)
   {
-    RcsJoint* jnt = RCSJOINT_BY_ID(src, BODY->jntId);
-    for (RcsJoint* JNT = jnt; JNT; JNT = RcsJoint_next(JNT, src))
+    const RcsJoint* jnt = RCSJOINT_BY_ID(src, BODY->jntId);
+    for (const RcsJoint* JNT = jnt; JNT; JNT = RcsJoint_next(JNT, src))
     {
       if (JNT->id<minJntId)
       {
@@ -2457,30 +2700,25 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
 
   }
 
-  // Find the Jacobi-index offset
-  //int minJacobiIdx = -1;
-  //for (unsigned int i=0; i<=minJntId; ++i)
-  //{
-  //  if (src->joints[i].jacobiIndex>minJacobiIdx)
-  //  {
-  //    minJacobiIdx = src->joints[i].jacobiIndex;
-  //  }
-  //}
-
-  int minJacobiIdx = 0;
-  for (int i = minJntId; i >= 0; --i)
-  {
-    if (src->joints[i].jacobiIndex > 0)
-    {
-      minJacobiIdx = src->joints[i].jacobiIndex;
-      break;
-    }
-  }
-
   // Check that there are joints in the subgraph. If not, we don't clone
   // anything and just allocate empty q and q_dot vectors.
   if (maxJntId > minJntId)
   {
+    // Find the Jacobi-index offset. Since the indices are increasing, it's
+    // efficient to search from the highest-index joint backwards and
+    // break the loop as soon as a non-negative Jacobi index was found.
+    // In most cases, that's only one iteration.
+
+    int minJacobiIdx = 0;
+    for (int i = minJntId; i >= 0; --i)
+    {
+      if (src->joints[i].jacobiIndex > 0)
+      {
+        minJacobiIdx = src->joints[i].jacobiIndex;
+        break;
+      }
+    }
+
     dst->dof = maxJntId-minJntId+1;
     dst->joints = RNALLOC(dst->dof, RcsJoint);
     memcpy(dst->joints, &src->joints[minJntId], dst->dof*sizeof(RcsJoint));
@@ -2495,36 +2733,37 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
 
     for (unsigned int i=0; i<dst->dof; ++i)
     {
-      dst->joints[i].id -= minJntId;
-      if (dst->joints[i].prevId!=-1)
+      RcsJoint* dstJnt = &dst->joints[i];
+      dstJnt->id -= minJntId;
+      if (dstJnt->prevId!=-1)
       {
-        dst->joints[i].prevId -= minJntId;
+        dstJnt->prevId -= minJntId;
       }
-      if (dst->joints[i].nextId!=-1)
+      if (dstJnt->nextId!=-1)
       {
-        dst->joints[i].nextId -= minJntId;
+        dstJnt->nextId -= minJntId;
       }
-      if (dst->joints[i].coupledToId!=-1)
+      if (dstJnt->coupledToId!=-1)
       {
-        dst->joints[i].coupledToId -= minJntId;
+        dstJnt->coupledToId -= minJntId;
 
         // There might be couplings to out-of-subgraph joints. These
         // are handled here explicitely.
-        if ((dst->joints[i].coupledToId<-1) ||
-            (dst->joints[i].coupledToId>=dst->dof))
+        if ((dstJnt->coupledToId<=-1) ||
+            (dstJnt->coupledToId>=(int)dst->dof))
         {
-          dst->joints[i].coupledToId = -1;
-          dst->joints[i].nCouplingCoeff = 0;
+          dstJnt->coupledToId = -1;
+          dstJnt->nCouplingCoeff = 0;
         }
       }
 
-      if (dst->joints[i].jacobiIndex!=-1)
+      if (dstJnt->jacobiIndex!=-1)
       {
-        dst->joints[i].jacobiIndex -= minJacobiIdx;
+        dstJnt->jacobiIndex -= minJacobiIdx;
+        dst->nJ++;
       }
 
-      dst->joints[i].jointIndex -= minJntId;
-
+      dstJnt->jointIndex -= minJntId;
     }
 
     dst->q = MatNd_create(dst->dof, 1);
@@ -2539,6 +2778,27 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
     dst->q_dot = MatNd_create(0, 1);
   }
 
+  // Clone sensors. We only clone those who have an existing body that they
+  // are linked to.
+  RCSGRAPH_FOREACH_SENSOR(src)
+  {
+    const int dstBdyId = SENSOR->bodyId - rootId;
+    if ((dstBdyId >=0) && (dstBdyId <(int)dst->nBodies))
+    {
+      RcsSensor* si = RcsGraph_insertSensor(dst);
+      RcsSensor_copy(si, SENSOR);
+      si->bodyId -= rootId;
+    }
+  }
+
+  // We use the same configuration file name
+  strcpy(dst->cfgFile, src->cfgFile);
+
+  // Generic bodies
+  for (unsigned int i = 0; i < RCS_NUM_GENERIC_BODIES; ++i)
+  {
+    dst->gBody[i] = Math_iClip(src->gBody[i]-rootId, -1, dst->nBodies);
+  }
   return dst;
 }
 
@@ -3719,6 +3979,93 @@ void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src)
 
   // Copy the connection information of the Generic Bodies
   memcpy(dst->gBody, src->gBody, RCS_NUM_GENERIC_BODIES*sizeof(int));
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+bool RcsGraph_isEqual(const RcsGraph* g1, const RcsGraph* g2)
+{
+  if (g1->rootId != g2->rootId)
+  {
+    RLOG(1, "rootId differs: %d - %d", g1->rootId, g2->rootId);
+    return false;
+  }
+
+  if ((g1->dof != g2->dof) || (g1->nJ != g2->nJ))
+  {
+    RLOG(1, "dof or nJ differs: dof: %d - %d   nJ: %d - %d",
+         g1->dof, g2->dof, g1->nJ, g2->nJ);
+    return false;
+  }
+
+  // Joints are a single memory block without any pointers
+  if (memcmp(g1->joints, g2->joints, g1->dof*sizeof(RcsJoint)) != 0)
+  {
+    RLOG(1, "Joints differ");
+    return false;
+  }
+
+  if (g1->nBodies != g2->nBodies)
+  {
+    RLOG(1, "nBodies differ");
+    return false;
+  }
+
+  for (unsigned int i = 0; i < g1->nBodies; ++i)
+  {
+    if (!RcsBody_isEqual(&g1->bodies[i], &g2->bodies[i]))
+    {
+      RLOG(1, "Body %d differs", i);
+      return false;
+    }
+  }
+
+  // Sensors
+  if (g1->nSensors != g2->nSensors)
+  {
+    RLOG(1, "nSensors differs: %d - %d", g1->nSensors, g2->nSensors);
+    return false;
+  }
+
+  for (unsigned int i = 0; i < g1->nSensors; ++i)
+  {
+    if (!RcsSensor_isEqual(&g1->sensors[i], &g2->sensors[i]))
+    {
+      RLOG(1, "Sensor %d differs", i);
+      return false;
+    }
+  }
+
+  // State vectors
+  if (!MatNd_isEqual(g1->q, g2->q, 0.0))
+  {
+    RLOG(1, "q differs");
+    return false;
+  }
+
+  if (!MatNd_isEqual(g1->q_dot, g2->q_dot, 0.0))
+  {
+    RLOG(1, "q_dot differs");
+    return false;
+  }
+
+  if (!STREQ(g1->cfgFile, g2->cfgFile))
+  {
+    RLOG(1, "cfgFile differs");
+    return false;
+  }
+
+  for (unsigned int i = 0; i < RCS_NUM_GENERIC_BODIES; ++i)
+  {
+    if (g1->gBody[i] != g2->gBody[i])
+    {
+      RLOG(1, "Generic body %d differs", i);
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /*******************************************************************************

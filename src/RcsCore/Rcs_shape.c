@@ -2073,3 +2073,17 @@ bool RcsShape_isOfComputeType(const RcsShape* shape, int computeType)
 
   return true;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool RcsShape_isEqual(const RcsShape* s1, const RcsShape* s2)
+{
+  // We compare the shape's contents except for the pointer to the mesh
+  if (memcmp(s1, s2, sizeof(RcsShape) - sizeof(RcsMeshData*)) != 0)
+  {
+    return false;
+  }
+
+  return RcsMesh_isEqual(s1->mesh, s2->mesh);   // Can deal with NULL pointers
+}

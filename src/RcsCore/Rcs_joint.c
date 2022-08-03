@@ -140,6 +140,37 @@ bool RcsJoint_isTranslation(const RcsJoint* joint)
  *
  ******************************************************************************/
 
+bool RcsJoint_isEqual(const RcsJoint* j1, const RcsJoint* j2)
+{
+
+  if ((j1 == NULL) && (j2 == NULL))
+  {
+    return true;
+  }
+
+  if (j1 == NULL)
+  {
+    return false;
+  }
+
+  if (j2 == NULL)
+  {
+    return false;
+  }
+
+  if (memcmp(j1, j2, sizeof(RcsJoint)) != 0)
+  {
+    return false;
+  }
+
+  return true;
+}
+
+
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void RcsJoint_fprint(FILE* out, const RcsJoint* jnt, const RcsGraph* graph)
 {
   if (jnt==NULL)
@@ -153,7 +184,37 @@ void RcsJoint_fprint(FILE* out, const RcsJoint* jnt, const RcsGraph* graph)
   fprintf(out, "\tq_init       = %f\n", jnt->q_init);
   fprintf(out, "\tq_min        = %f\n", jnt->q_min);
   fprintf(out, "\tq_max        = %f\n", jnt->q_max);
-  fprintf(out, "\tmaxTorque    = %f\n", jnt->maxTorque);
+  fprintf(out, "\tweightJL     = %f\n", jnt->weightJL);
+  fprintf(out, "\tweightCA     = %f\n", jnt->weightCA);
+  fprintf(out, "\tweightMetric = %f\n", jnt->weightMetric);
+  fprintf(out, "\tconstrained  = %s\n", jnt->constrained ? "true" : "false");
+  fprintf(out, "\ttype         = %s\n", RcsJoint_typeName(jnt->type));
+  fprintf(out, "\tdirIdx       = %d\n", jnt->dirIdx);
+  fprintf(out, "\tJacobi index = %d\n", jnt->jacobiIndex);
+  fprintf(out, "\tJoint index  = %d\n", jnt->jointIndex);
+
+  fprintf(out, "\tA_JP         = ");
+  if (HTr_isIdentity(&jnt->A_JP))
+  {
+    fprintf(out, "Identity\n");
+  }
+  else
+  {
+    fprintf(out, "\n");
+    HTr_fprint(out, &jnt->A_JP);
+  }
+
+  fprintf(out, "\tA_JI         =\n");
+  HTr_fprint(out, &jnt->A_JI);
+
+  if (jnt->maxTorque == DBL_MAX)
+  {
+    fprintf(out, "\tmaxTorque   = DBL_MAX\n");
+  }
+  else
+  {
+    fprintf(out, "\tmaxTorque    = %f\n", jnt->maxTorque);
+  }
 
   if (jnt->speedLimit==DBL_MAX)
   {
@@ -182,37 +243,18 @@ void RcsJoint_fprint(FILE* out, const RcsJoint* jnt, const RcsGraph* graph)
     fprintf(out, "\tdecLimit   = %f\n", jnt->decLimit);
   }
 
-  fprintf(out, "\tweightJL     = %f\n", jnt->weightJL);
-  fprintf(out, "\tweightCA     = %f\n", jnt->weightCA);
-  fprintf(out, "\tweightMetric = %f\n", jnt->weightMetric);
-  fprintf(out, "\tconstrained  = %d\n", jnt->constrained);
-  fprintf(out, "\ttype         = %s\n", RcsJoint_typeName(jnt->type));
-
-  fprintf(out, "\tdirection    = %f   %f   %f\n",
-          jnt->A_JI.rot[jnt->dirIdx][0],
-          jnt->A_JI.rot[jnt->dirIdx][1],
-          jnt->A_JI.rot[jnt->dirIdx][2]);
+  fprintf(out, "\tctrlType     = %d\n", jnt->ctrlType);
+  fprintf(out, "\tname     = %s\n", jnt->name);
+  fprintf(out, "\tcoupled to %s\n", jnt->coupledJntName);
+  fprintf(out, "\tnCouplingCoeff = %d\n", jnt->nCouplingCoeff);
 
   const RcsJoint* prevJnt = RCSJOINT_BY_ID(graph, jnt->prevId);
   const RcsJoint* nextJnt = RCSJOINT_BY_ID(graph, jnt->nextId);
 
   fprintf(out, "\tprev. joint  = %s\n", prevJnt ? prevJnt->name : "NULL");
   fprintf(out, "\tnext  joint  = %s\n", nextJnt ? nextJnt->name : "NULL");
-  fprintf(out, "\tJacobi index = %d\n", jnt->jacobiIndex);
-  fprintf(out, "\tq-index = %d\n", jnt->jointIndex);
   fprintf(out, "\tid = %d\n", jnt->id);
-  fprintf(out, "\tA_JP         = ");
-  if (HTr_isIdentity(&jnt->A_JP))
-  {
-    fprintf(out, "Identity");
-  }
-  else
-  {
-    HTr_fprint(out, &jnt->A_JP);
-  }
-
-  fprintf(out, "\tA_JI         = ");
-  HTr_fprint(out, &jnt->A_JI);
+  fprintf(out, "\tcoupled to id = %d\n", jnt->coupledToId);
 }
 
 
@@ -587,12 +629,12 @@ void RcsJoint_fprintXML(FILE* out, const RcsJoint* self, const RcsGraph* graph)
   {
     fprintf(out, "couplingFactor=\"");
 
-    for (unsigned int i=0; i<self->nCouplingCoeff; i++)
+    for (unsigned int i=0; i<self->nCouplingCoeff-1; i++)
     {
       fprintf(out, "%s ", String_fromDouble(buf, self->couplingPoly[i], 6));
     }
 
-    fprintf(out, "\"");
+    fprintf(out, "%s\"", String_fromDouble(buf, self->couplingPoly[self->nCouplingCoeff-1], 6));
   }
 
   fprintf(out, "/>\n");
