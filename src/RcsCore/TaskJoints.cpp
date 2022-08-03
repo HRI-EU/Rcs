@@ -147,10 +147,11 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
   if (getClassName() == "Joints")
   {
     std::vector<const RcsJoint*> jnts = Rcs::TaskJoints::getJoints();
-    double* guiMin = new double[jnts.size()];
-    double* guiMax = new double[jnts.size()];
+    const size_t jntDim = jnts.size();
+    double* guiMin = new double[jntDim];
+    double* guiMax = new double[jntDim];
 
-    for (size_t i = 0; i < jnts.size(); ++i)
+    for (size_t i = 0; i < jntDim; ++i)
     {
       double xml2SI = RcsJoint_isTranslation(jnts[i]) ? 1.0 : M_PI / 180.0;
       guiMin[i] = jnts[i]->q_min / xml2SI;
@@ -160,7 +161,7 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
     getXMLNodePropertyVecN(node, "guiMax", guiMax, jnts.size());
     getXMLNodePropertyVecN(node, "guiMin", guiMin, jnts.size());
 
-    for (size_t i = 0; i < jnts.size(); ++i)
+    for (size_t i = 0; i < jntDim; ++i)
     {
       double xml2SI = RcsJoint_isTranslation(jnts[i]) ? 1.0 : M_PI / 180.0;
       guiMin[i] *= xml2SI;
@@ -171,13 +172,13 @@ Rcs::TaskJoints::TaskJoints(const std::string& className_,
     getXMLNodePropertyBoolString(node, "hide", &hide);
     if (hide)
     {
-      VecNd_setZero(guiMin, jnts.size());
-      VecNd_setZero(guiMax, jnts.size());
+      VecNd_setZero(guiMin, jntDim);
+      VecNd_setZero(guiMax, jntDim);
     }
 
     clearParameters();
 
-    for (size_t i = 0; i < jnts.size(); ++i)
+    for (size_t i = 0; i < jntDim; ++i)
     {
       if (RcsJoint_isTranslation(jnts[i]) == true)
       {

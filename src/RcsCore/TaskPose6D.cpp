@@ -38,6 +38,7 @@
 #include "Rcs_typedef.h"
 #include "Rcs_parser.h"
 #include "Rcs_VecNd.h"
+#include "Rcs_macros.h"
 
 #include <cmath>
 
@@ -82,6 +83,13 @@ Rcs::TaskPose6D::TaskPose6D(const std::string& className_,
     addParameter(Parameters(guiMin[3], guiMax[3], (180.0 / M_PI), "A [deg]"));
     addParameter(Parameters(guiMin[4], guiMax[4], (180.0 / M_PI), "B [deg]"));
     addParameter(Parameters(guiMin[5], guiMax[5], (180.0 / M_PI), "C [deg]"));
+    getSubTask(0)->resetParameter(Parameters(guiMin[0], guiMax[0], 1.0, "X [m]"));
+    getSubTask(0)->addParameter(Parameters(guiMin[1], guiMax[1], 1.0, "Y [m]"));
+    getSubTask(0)->addParameter(Parameters(guiMin[2], guiMax[2], 1.0, "Z [m]"));
+
+    getSubTask(1)->resetParameter(Parameters(guiMin[3], guiMax[3], (180.0 / M_PI), "A [deg]"));
+    getSubTask(1)->addParameter(Parameters(guiMin[4], guiMax[4], (180.0 / M_PI), "B [deg]"));
+    getSubTask(1)->addParameter(Parameters(guiMin[5], guiMax[5], (180.0 / M_PI), "C [deg]"));
   }
 
 }
@@ -114,9 +122,9 @@ Rcs::TaskPose6D::TaskPose6D(const RcsGraph* graph_,
   setName(taskName);
   addTask(new TaskPosition3D(graph_, effector, refBdy, refFrame));
   addTask(new TaskEuler3D(graph_, effector, refBdy, refFrame));
-  setEffectorId(effector ? effector->id : -1);
-  setRefBodyId(refBdy ? refBdy->id : -1);
-  setRefFrameId(refFrame ? refFrame->id : getRefBodyId());
+  Task::setEffectorId(effector ? effector->id : -1);
+  Task::setRefBodyId(refBdy ? refBdy->id : -1);
+  Task::setRefFrameId(refFrame ? refFrame->id : getRefBodyId());
 }
 
 /*******************************************************************************
@@ -130,27 +138,39 @@ Rcs::TaskPose6D* Rcs::TaskPose6D::clone(const RcsGraph* newGraph) const
 }
 
 /*******************************************************************************
- *
+ * Overwrites the refFrame  body of the task
  ******************************************************************************/
-const RcsBody* Rcs::TaskPose6D::getEffector() const
+void Rcs::TaskPose6D::setRefFrameId(int id)
 {
-  return getSubTask(0)->getEffector();
+  Task::setRefFrameId(id);
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    subTask[i]->setRefFrameId(id);
+  }
 }
 
 /*******************************************************************************
- *
+ * Overwrites the effector body of the task
  ******************************************************************************/
-const RcsBody* Rcs::TaskPose6D::getRefBody() const
+void Rcs::TaskPose6D::setEffectorId(int id)
 {
-  return getSubTask(0)->getRefBody();
+  Task::setEffectorId(id);
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    subTask[i]->setEffectorId(id);
+  }
 }
 
 /*******************************************************************************
- *
+ * Overwrites the refBody of the task
  ******************************************************************************/
-const RcsBody* Rcs::TaskPose6D::getRefFrame() const
+void Rcs::TaskPose6D::setRefBodyId(int id)
 {
-  return getSubTask(0)->getRefFrame();
+  Task::setRefBodyId(id);
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    subTask[i]->setRefBodyId(id);
+  }
 }
 
 /*******************************************************************************

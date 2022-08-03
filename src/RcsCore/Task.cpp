@@ -1573,7 +1573,9 @@ void Rcs::Task::toXMLBody(FILE* out) const
   }
   else if (getRefBodyId()>=0)
   {
-    fprintf(out, " refBdy=\"%s\"", getRefBody()->name);
+    const RcsBody* refBdy = getRefBody();
+    RCHECK_MSG(refBdy, "Ref-body with id %d not found", getRefBodyId());
+    fprintf(out, " refBdy=\"%s\"", refBdy->name);
   }
 
   if (getRefFrameId()<=-10)
@@ -1590,6 +1592,19 @@ void Rcs::Task::toXMLBody(FILE* out) const
       fprintf(out, " refFrame=\"%s\"", getRefFrame()->name);
     }
   }
+  fprintf(out, " guiMin=\"");
+  for (size_t i = 0; i < getParameters().size(); ++i)
+  {
+    fprintf(out, "%g ", getParameter(i).minVal);
+  }
+  fprintf(out, "\"");
+
+  fprintf(out, " guiMax=\"");
+  for (size_t i = 0; i < getParameters().size(); ++i)
+  {
+    fprintf(out, "%g ", getParameter(i).maxVal);
+  }
+  fprintf(out, "\"");
 
 }
 

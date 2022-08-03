@@ -63,8 +63,13 @@ TaskPosition3D::TaskPosition3D(const std::string& className,
     double guiMax[3], guiMin[3];
     Vec3d_setElementsTo(guiMax, 2.5);
     Vec3d_setElementsTo(guiMin, -2.5);
-    getXMLNodePropertyVec3(node, "guiMax", guiMax);
-    getXMLNodePropertyVec3(node, "guiMin", guiMin);
+    // This can be a subtask of a CompositeTask with more than 3 parameters.
+    const size_t nParams = getXMLNodeNumStrings(node, "guiMax");
+    if (getParameters().size()== nParams)
+    {
+      getXMLNodePropertyVec3(node, "guiMax", guiMax);
+      getXMLNodePropertyVec3(node, "guiMin", guiMin);
+    }
     bool hide = false;
     getXMLNodePropertyBoolString(node, "hide", &hide);
     if (hide)

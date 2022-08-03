@@ -62,17 +62,17 @@ public:
    */
   TaskPose6D* clone(const RcsGraph* newGraph=NULL) const;
 
-  /*! \brief Returns the effector body of the first sub-task.
+  /*! \brief Sets the effector body for the composite class and all subtasks.
    */
-  virtual const RcsBody* getEffector() const;
+  virtual void setEffectorId(int effectorId);
 
-  /*! \brief Returns the refBdy of the first sub-task.
+  /*! \brief Sets the ref-body for the composite class and all subtasks.
    */
-  virtual const RcsBody* getRefBody() const;
+  virtual void setRefBodyId(int effectorId);
 
-  /*! \brief Returns the refFrame of the first sub-task.
+  /*! \brief Sets the ref-frame for the composite class and all subtasks.
    */
-  virtual const RcsBody* getRefFrame() const;
+  virtual void setRefFrameId(int effectorId);
 
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise. The following checks are performed:

@@ -71,7 +71,7 @@ void Rcs::TaskGenericIK::computeDX(double* dx,
   }
   else
   {
-  VecNd_sub(dx, x_des, x_curr, getDim());
+    VecNd_sub(dx, x_des, x_curr, getDim());
   }
 
 }

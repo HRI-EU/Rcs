@@ -118,9 +118,9 @@ static void Eul2RotMatrix(double A_KI[3][3], const double ea[3], int eulerOrder)
  * Constructor based on xml parsing
  ******************************************************************************/
 TaskGenericEuler3D::TaskGenericEuler3D(const std::string& className_,
-                                            xmlNode* node,
+                                       xmlNode* node,
                                        const RcsGraph* _graph,
-                                            int dim):
+                                       int dim):
   Task(className_, node, _graph, dim)
 {
   char eulerOrderChar[64] = "ABCr";
@@ -259,10 +259,10 @@ TaskGenericEuler3D::TaskGenericEuler3D(const std::string& className_,
  *
  ******************************************************************************/
 TaskGenericEuler3D::TaskGenericEuler3D(const RcsGraph* graph_,
-                                            const char* eulerOrderChar,
-                                            const RcsBody* effector,
-                                            const RcsBody* refBdy,
-                                            const RcsBody* refFrame)
+                                       const char* eulerOrderChar,
+                                       const RcsBody* effector,
+                                       const RcsBody* refBdy,
+                                       const RcsBody* refFrame)
 {
   // Populate classname and taskname manually
   this->graph = graph_;
@@ -462,9 +462,9 @@ void TaskGenericEuler3D::computeH(MatNd* hessian) const
  * Computes the current value of the task variable: Euler angles
  ******************************************************************************/
 void TaskGenericEuler3D::computeEulerAngles(double* ea,
-                                                 const RcsBody* effector,
-                                                 const RcsBody* referenceBody,
-                                                 const int eulerOrder)
+                                            const RcsBody* effector,
+                                            const RcsBody* referenceBody,
+                                            const int eulerOrder)
 {
   // Determine the rotation matrix
   double A_curr[3][3];
@@ -522,8 +522,8 @@ void TaskGenericEuler3D::computeXpp(double* eapp, const MatNd* qpp) const
  * Computes the delta in task space for the differential kinematics
  ******************************************************************************/
 void TaskGenericEuler3D::computeDX(double* dx,
-                                        const double* x_des,
-                                        const double* x_curr) const
+                                   const double* x_des,
+                                   const double* x_curr) const
 {
   double A_curr[3][3], A_des[3][3];
   Eul2RotMatrix(A_curr, x_curr, this->eulerOrder);
@@ -546,7 +546,7 @@ void TaskGenericEuler3D::computeDX(double* dx,
  * Computes the velocity error
  ******************************************************************************/
 void TaskGenericEuler3D::computeDXp(double* delta_om,
-                                         const double* eap_des) const
+                                    const double* eap_des) const
 {
   double om_curr[3], ea[3], B[3][3];
   computeOmega(om_curr);
@@ -571,13 +571,13 @@ void TaskGenericEuler3D::computeDXp(double* delta_om,
  * See header
  ******************************************************************************/
 void TaskGenericEuler3D::computeAF(double* ft_res,
-                                        double* ft_int,
-                                        const double* ft_des,
-                                        const double* selection,
-                                        const double* ft_task,
-                                        const double a_des,
-                                        const double kp,
-                                        const double ki) const
+                                   double* ft_int,
+                                   const double* ft_des,
+                                   const double* selection,
+                                   const double* ft_task,
+                                   const double a_des,
+                                   const double kp,
+                                   const double ki) const
 {
   Task::computeAF(ft_res, ft_int, ft_des, selection, ft_task, a_des, kp, ki);
 
@@ -593,7 +593,7 @@ void TaskGenericEuler3D::computeAF(double* ft_res,
  * Computes the feed forward acceleration
  ******************************************************************************/
 void TaskGenericEuler3D::computeFfXpp(double* omegap_des,
-                                           const double* eapp_des) const
+                                      const double* eapp_des) const
 {
   //wp = dB/dt ap + B app
   double ea[3], eap[3];
@@ -630,7 +630,7 @@ void TaskGenericEuler3D::forceTrafo(double* ft_task) const
  * Transforms the selection into the Jacobian coordinates
  ******************************************************************************/
 void TaskGenericEuler3D::selectionTrafo(double* S_des_trafo,
-                                             const double* S_des) const
+                                        const double* S_des) const
 {
   double sqrLengthS = Vec3d_sqrLength(S_des);
 
@@ -660,8 +660,8 @@ void TaskGenericEuler3D::selectionTrafo(double* S_des_trafo,
  * see Rcs/1.4/RcsController/1.4/doc/latex Sect. 1.7
  ******************************************************************************/
 void TaskGenericEuler3D::EulerRateToOmegasMat(double B[3][3],
-                                                   const double ea[3],
-                                                   const int eulerOrderVect[4])
+                                              const double ea[3],
+                                              const int eulerOrderVect[4])
 {
   //basis vectors for the individual coordinates
   double e0[3];
@@ -727,8 +727,8 @@ void TaskGenericEuler3D::EulerRateToOmegasMat(double B[3][3],
  * See header
  ******************************************************************************/
 void TaskGenericEuler3D::OmegasToEulerRateMat(double Binv[3][3],
-                                                   const double ea[3],
-                                                   const int eulerOrderVect[4])
+                                              const double ea[3],
+                                              const int eulerOrderVect[4])
 {
   double B[3][3];
   EulerRateToOmegasMat(B, ea, eulerOrderVect);
@@ -839,9 +839,9 @@ void TaskGenericEuler3D::EulerRateToOmegasDerivativeTimesEulerVel(double dBeap[3
  *
  ******************************************************************************/
 void TaskGenericEuler3D::integrateXp_ik(double* x_res,
-                                             const double* ea_curr,
-                                             const double* omega,
-                                             double dt) const
+                                        const double* ea_curr,
+                                        const double* omega,
+                                        double dt) const
 {
   // Determine the rotation matrix A_CI for ea_curr
   double A_CI[3][3];
