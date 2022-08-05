@@ -175,6 +175,7 @@ bool RcsSensor_computePPS(RcsGraph* graph, const RcsSensor* self,
  *         sensor type exists, "Unknown sensor type" is returned.
  */
 const char* RcsSensor_name(int shapeType);
+
 /*! \ingroup RcsSensorFunctions
  *  \brief Returns true if the sensors are equal, false otherwise. All
  *         texels and the raw data are also compared.

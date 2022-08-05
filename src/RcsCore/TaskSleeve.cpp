@@ -274,6 +274,15 @@ const RcsBody* Rcs::TaskSleeve::getSlider() const
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::TaskSleeve::setIdsToSuffix(const std::string& suffix)
+{
+  RFATAL("Implement me");
+  return false;
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
 bool Rcs::TaskSleeve::isValid(xmlNode* node, const RcsGraph* graph)

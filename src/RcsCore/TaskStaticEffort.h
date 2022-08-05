@@ -80,6 +80,10 @@ public:
 
   void toXMLBody(FILE* out) const;
 
+  /*! \brief Sets all effectorVec ids to bodies with the given suffix appended.
+   */
+  virtual bool setIdsToSuffix(const std::string& suffix);
+
   /*! \brief Returns true for success, false for failure:
      *         - Xml tag "effector" doesn't exist
      *         - Body with name in tag "effector" not in graph

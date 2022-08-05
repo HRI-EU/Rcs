@@ -33,8 +33,6 @@
 
 #include "ControllerBase.h"
 #include "TaskFactory.h"
-#include "TaskJoints.h"
-#include "TaskJoint.h"
 #include "Rcs_math.h"
 #include "Rcs_macros.h"
 #include "Rcs_typedef.h"
@@ -628,7 +626,9 @@ bool ControllerBase::readActivationsFromXML(MatNd* a_init_) const
     MatNd_destroy(a_init);
     return false;
   }
+
   MatNd_copy(a_init_, a_init);
+  MatNd_destroy(a_init);
 
   return true;
 }
@@ -1846,16 +1846,6 @@ void ControllerBase::computeTaskForce(MatNd* ft_task,
 
 
 /*******************************************************************************
- * See header.
- ******************************************************************************/
-bool ControllerBase::add(const ControllerBase& other,
-                         const char* suffix,
-                         const HTr* A_BP)
-{
-  return add(&other, suffix, A_BP);
-}
-
-/*******************************************************************************
  *
  ******************************************************************************/
 static inline int getBodyIdWithSuffix(const RcsBody* bdy, std::string suffix,
@@ -1891,6 +1881,16 @@ static inline const RcsBody* getBodyWithSuffix(const RcsBody* bdy,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+bool ControllerBase::add(const ControllerBase& other,
+                         const char* suffix,
+                         const HTr* A_BP)
+{
+  return add(&other, suffix, A_BP);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 bool ControllerBase::add(const ControllerBase* other,
                          const char* suffixPtr,
                          const HTr* A_BP)
@@ -1911,66 +1911,26 @@ bool ControllerBase::add(const ControllerBase* other,
 
   const std::vector<Task*>& otherTasks = other->taskVec();
 
+
   for (size_t i=0; i<otherTasks.size(); ++i)
   {
     Task* copyOfOtherTask = otherTasks[i]->clone(this->graph);
 
     // Set the new task's name uniquely considering the suffix. We only do this
     // if the task has a name so that unnamed tasks don't show up in the GUIs
-    // \todo: Should go into a task-specific function
+    // The names of sub-tasks of CompositeTasks are not updated.
     if (!copyOfOtherTask->getName().empty())
     {
       copyOfOtherTask->setName(copyOfOtherTask->getName() + suffix);
     }
 
-    // \todo: Should go into a task-specific function
-    copyOfOtherTask->setEffectorId(getBodyIdWithSuffix(copyOfOtherTask->getEffector(), suffix, getGraph()));
-    copyOfOtherTask->setRefBodyId(getBodyIdWithSuffix(copyOfOtherTask->getRefBody(), suffix, getGraph()));
-    copyOfOtherTask->setRefFrameId(getBodyIdWithSuffix(copyOfOtherTask->getRefFrame(), suffix, getGraph()));
-
-    // Reassign sub-tasks in CompositeTask
-    // \todo: Should go into a task-specific function
-    if (dynamic_cast<CompositeTask*>(copyOfOtherTask))
-    {
-      CompositeTask* cTask = dynamic_cast<CompositeTask*>(copyOfOtherTask);
-
-      for (size_t i=0; i<cTask->getNumberOfTasks(); ++i)
-      {
-        Task* ti = cTask->getSubTask(i);
-        ti->setEffectorId(getBodyIdWithSuffix(ti->getEffector(), suffix, getGraph()));
-        ti->setRefBodyId(getBodyIdWithSuffix(ti->getRefBody(), suffix, getGraph()));
-        ti->setRefFrameId(getBodyIdWithSuffix(ti->getRefFrame(), suffix, getGraph()));
-      }
-
-    }
-
-    // Rename joint names for TaskJoint
-    // \todo: Should go into a task-specific function
-    if (dynamic_cast<TaskJoint*>(copyOfOtherTask))
-    {
-      TaskJoint* jntTask = dynamic_cast<TaskJoint*>(copyOfOtherTask);
-      std::string newName = std::string(jntTask->getJoint()->name) + suffix;
-      jntTask->setJoint(RcsGraph_getJointByName(getGraph(), newName.c_str()));
-      RCHECK_MSG(jntTask->getJoint(), "Not found: joint %s", newName.c_str());
-    }
-
-    // Rename joint names for TaskJoints
-    // \todo: Should go into a task-specific function
-    if (dynamic_cast<TaskJoints*>(copyOfOtherTask))
-    {
-      RLOG(5, "Copying joints task %s", copyOfOtherTask->getName().c_str());
-      TaskJoints* jntsTask = dynamic_cast<TaskJoints*>(copyOfOtherTask);
-
-      for (size_t i=0; i<jntsTask->getNumberOfTasks(); ++i)
-      {
-        TaskJoint* jntTask = dynamic_cast<TaskJoint*>(jntsTask->getSubTask(i));
-        RCHECK(jntTask);
-        std::string newName = std::string(jntTask->getJoint()->name) + suffix;
-        jntTask->setJoint(RcsGraph_getJointByName(getGraph(), newName.c_str()));
-        RCHECK_MSG(jntTask->getJoint(), "Not found: joint %s", newName.c_str());
-      }
-    }
-
+    // We refer all effectors, refBodies and refFrames to the suffixed body.
+    // The below methods are overwritten for CompositeTask classes so that
+    // the suffixes will be applied properly to all related subtasks.
+    success = copyOfOtherTask->setIdsToSuffix(suffix);
+    RCHECK_MSG(success, "Task: \"%s\" of type \"%s\"",
+               copyOfOtherTask->getName().c_str(),
+               copyOfOtherTask->getClassName().c_str());
 
     add(copyOfOtherTask);
   }

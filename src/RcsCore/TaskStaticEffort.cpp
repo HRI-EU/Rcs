@@ -187,6 +187,26 @@ void TaskStaticEffort::toXMLBody(FILE* out) const
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+bool TaskStaticEffort::setIdsToSuffix(const std::string& suffix)
+{
+  std::string newName = std::string(getSensor()->name) + suffix;
+  int sid = RcsGraph_getSensorIdByName(graph, newName.c_str());
+
+  if (sid == -1)
+  {
+    RLOG(1, "Sensor \"%s\" not found - setIdsToSuffix() failed",
+         newName.c_str());
+    return false;
+  }
+
+  sensorId = sid;
+
+  return true;
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
 bool TaskStaticEffort::isValid(xmlNode* node, const RcsGraph* graph)

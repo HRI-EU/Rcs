@@ -38,6 +38,7 @@
 #include "Rcs_typedef.h"
 #include "Rcs_parser.h"
 #include "Rcs_VecNd.h"
+#include "Rcs_macros.h"
 
 #include <cmath>
 
@@ -138,42 +139,6 @@ Rcs::TaskPose6D* Rcs::TaskPose6D::clone(const RcsGraph* newGraph) const
   TaskPose6D* task = new Rcs::TaskPose6D(*this);
   task->setGraph(newGraph);
   return task;
-}
-
-/*******************************************************************************
- * Overwrites the refFrame  body of the task
- ******************************************************************************/
-void Rcs::TaskPose6D::setRefFrameId(int id)
-{
-  Task::setRefFrameId(id);
-  for (size_t i = 0; i < subTask.size(); ++i)
-  {
-    subTask[i]->setRefFrameId(id);
-  }
-}
-
-/*******************************************************************************
- * Overwrites the effector body of the task
- ******************************************************************************/
-void Rcs::TaskPose6D::setEffectorId(int id)
-{
-  Task::setEffectorId(id);
-  for (size_t i = 0; i < subTask.size(); ++i)
-  {
-    subTask[i]->setEffectorId(id);
-  }
-}
-
-/*******************************************************************************
- * Overwrites the refBody of the task
- ******************************************************************************/
-void Rcs::TaskPose6D::setRefBodyId(int id)
-{
-  Task::setRefBodyId(id);
-  for (size_t i = 0; i < subTask.size(); ++i)
-  {
-    subTask[i]->setRefBodyId(id);
-  }
 }
 
 /*******************************************************************************

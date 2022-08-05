@@ -376,17 +376,17 @@ void Rcs::Task::print() const
 
   if (getEffector())
   {
-    printf("Effector: \"%s\"\n", getEffector()->name);
+    printf("Effector: \"%s\" (%d)\n", getEffector()->name, getEffectorId());
   }
 
   if (getRefBody())
   {
-    printf("Reference body: \"%s\"\n", getRefBody()->name);
+    printf("Reference body: \"%s\" (%d)\n", getRefBody()->name, getRefBodyId());
   }
 
   if (getRefFrame())
   {
-    printf("Reference frame: \"%s\"\n", getRefFrame()->name);
+    printf("Reference frame: \"%s\" (%d)\n", getRefFrame()->name, getRefFrameId());
   }
 }
 
@@ -1357,7 +1357,7 @@ const RcsBody* Rcs::Task::getEffector() const
   // Generic bodies
   if (this->effectorId<=-10)
   {
-    int gBdyId = -this->effectorId-10;
+    const int gBdyId = -this->effectorId-10;
     RCHECK(gBdyId<RCS_NUM_GENERIC_BODIES);
     return RCSBODY_BY_ID(this->graph, graph->gBody[gBdyId]);
   }
@@ -1378,7 +1378,7 @@ const RcsBody* Rcs::Task::getRefBody() const
   // Generic bodies
   if (this->refBodyId<=-10)
   {
-    int gBdyId = -this->refBodyId-10;
+    const int gBdyId = -this->refBodyId-10;
     RCHECK(gBdyId<RCS_NUM_GENERIC_BODIES);
     return RCSBODY_BY_ID(this->graph, graph->gBody[gBdyId]);
   }
@@ -1399,7 +1399,7 @@ const RcsBody* Rcs::Task::getRefFrame() const
   // Generic bodies
   if (this->refFrameId<=-10)
   {
-    int gBdyId = -this->refFrameId-10;
+    const int gBdyId = -this->refFrameId-10;
     RCHECK(gBdyId<RCS_NUM_GENERIC_BODIES);
     return RCSBODY_BY_ID(this->graph, graph->gBody[gBdyId]);
   }
@@ -1429,6 +1429,94 @@ void Rcs::Task::setEffectorId(int effectorId)
 void Rcs::Task::setRefBodyId(int referenceBodyId)
 {
   this->refBodyId = referenceBodyId;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::Task::setEffectorIdToSuffix(const std::string& suffix)
+{
+  if (getEffectorId()==-1)
+  {
+    return true;
+  }
+
+  std::string newName = std::string(getEffector()->name) + suffix;
+  const RcsBody* bdy_suffixed = RcsGraph_getBodyByName(graph, newName.c_str());
+
+  if ((!bdy_suffixed) || (bdy_suffixed->id == -1))
+  {
+    RLOG(1, "Body \"%s\" not found or invalid - setEffectorIdToSuffix() failed",
+         newName.c_str());
+    return false;
+  }
+
+  Task::setEffectorId(bdy_suffixed->id);
+
+  return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::Task::setRefBodyIdToSuffix(const std::string& suffix)
+{
+  if (getRefBodyId()==-1)
+  {
+    return true;
+  }
+
+  std::string newName = std::string(getRefBody()->name) + suffix;
+  const RcsBody* bdy_suffixed = RcsGraph_getBodyByName(graph, newName.c_str());
+
+  if ((!bdy_suffixed) || (bdy_suffixed->id == -1))
+  {
+    RLOG(1, "Body \"%s\" not found or invalid - setRefBodyIdToSuffix() failed",
+         newName.c_str());
+    return false;
+  }
+
+  Task::setRefBodyId(bdy_suffixed->id);
+
+  return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::Task::setRefFrameIdToSuffix(const std::string& suffix)
+{
+  if (getRefFrameId()==-1)
+  {
+    return true;
+  }
+
+  std::string newName = std::string(getRefFrame()->name) + suffix;
+  const RcsBody* bdy_suffixed = RcsGraph_getBodyByName(graph, newName.c_str());
+
+  if ((!bdy_suffixed) || (bdy_suffixed->id == -1))
+  {
+    RLOG(1, "Body \"%s\" not found or invalid - setRefFrameIdToSuffix() failed",
+         newName.c_str());
+    return false;
+  }
+
+  Task::setRefFrameId(bdy_suffixed->id);
+
+  return true;
+}
+
+/*******************************************************************************
+ * Since we have overwritten this function for CompositeTasks, we must not
+ * call the derieved version. That''s why we have the Task:: specialization.
+ ******************************************************************************/
+bool Rcs::Task::setIdsToSuffix(const std::string& suffix)
+{
+  bool success = Task::setEffectorIdToSuffix(suffix);
+  success = Task::setRefBodyIdToSuffix(suffix) && success;
+  success = Task::setRefFrameIdToSuffix(suffix) && success;
+
+  return success;
 }
 
 /*******************************************************************************
@@ -1593,19 +1681,30 @@ void Rcs::Task::toXMLBody(FILE* out) const
     }
   }
 
-  fprintf(out, " guiMin=\"");
-  for (size_t i = 0; i < getParameters().size(); ++i)
+  if (!getParameters().empty())
   {
-    fprintf(out, "%g ", getParameter(i).minVal*getParameter(i).scaleFactor);
-  }
-  fprintf(out, "\"");
+    fprintf(out, " guiMin=\"");
+    for (size_t i = 0; i < getParameters().size(); ++i)
+    {
+      fprintf(out, "%g", getParameter(i).minVal*getParameter(i).scaleFactor);
+      if (i<getParameters().size()-1)
+      {
+        fprintf(out, " ");
+      }
+    }
+    fprintf(out, "\"");
 
-  fprintf(out, " guiMax=\"");
-  for (size_t i = 0; i < getParameters().size(); ++i)
-  {
-    fprintf(out, "%g ", getParameter(i).maxVal*getParameter(i).scaleFactor);
+    fprintf(out, " guiMax=\"");
+    for (size_t i = 0; i < getParameters().size(); ++i)
+    {
+      fprintf(out, "%g", getParameter(i).maxVal*getParameter(i).scaleFactor);
+      if (i<getParameters().size()-1)
+      {
+        fprintf(out, " ");
+      }
+    }
+    fprintf(out, "\"");
   }
-  fprintf(out, "\"");
 
 }
 

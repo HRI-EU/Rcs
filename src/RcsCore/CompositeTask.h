@@ -83,6 +83,43 @@ public:
    */
   virtual CompositeTask* clone(const RcsGraph* newGraph=NULL) const;
 
+  /*! \brief Sets the effector body for the composite class and all subtasks.
+   */
+  virtual void setEffectorId(int effectorId);
+
+  /*! \brief Sets the ref-body for the composite class and all subtasks.
+   */
+  virtual void setRefBodyId(int effectorId);
+
+  /*! \brief Sets the ref-frame for the composite class and all subtasks.
+   */
+  virtual void setRefFrameId(int effectorId);
+
+  /*! \brief Sets the ref-body id to a body with name+suffix for the task and
+   *         all sub-tasks.
+   */
+  virtual bool setEffectorIdToSuffix(const std::string& suffix);
+
+  /*! \brief Sets the effector id to a body with name and suffix for the task
+   *         and all sub-tasks.
+   */
+  virtual bool setRefBodyIdToSuffix(const std::string& suffix);
+
+  /*! \brief Sets the ref-frame id to a body with name and suffix for the task
+   *         and all sub-tasks.
+   */
+  virtual bool setRefFrameIdToSuffix(const std::string& suffix);
+
+  /*! \brief Sets all classes id members to the corresponding bodies, joints
+   *         or sensors with a name and the given suffix. Goes also through
+   *         all subtasks.
+   *
+   *  \param[in]  suffix   Suffix to be appended to body / joint / sensor name
+   *  \return true for success, false if any of the called functions
+   *          returns false.
+   */
+  virtual bool setIdsToSuffix(const std::string& suffix);
+
   /*! \brief Adds a sub-task, updates the task dimension, and appends the
    *         sub-tasks parameters.
    */

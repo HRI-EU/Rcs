@@ -125,6 +125,11 @@ public:
    */
   static bool isValid(xmlNode* node, const RcsGraph* graph);
 
+  /*! \brief Updates jointId and refJointId to their name with the
+   *         suffix appended.
+   */
+  virtual bool setIdsToSuffix(const std::string& suffix);
+
   /*! \brief See \ref TaskGenericIK::computeAX
    */
   virtual void computeAX(double* a_res,

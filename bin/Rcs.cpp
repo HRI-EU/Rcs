@@ -1980,6 +1980,7 @@ int main(int argc, char** argv)
       std::string physicsEngine;
       char physicsCfg[128] = "config/physics/physics.xml";
       std::string integrator = "Fehlberg";
+      std::string xDesFile;
 
       argP.getArgument("-i", &integrator, "Integrator for Newton-Euler "
                        "simulation (default is \"%s\")", integrator.c_str());
@@ -2006,6 +2007,7 @@ int main(int argc, char** argv)
                        "(default is \"%s\")", physicsEngine.c_str());
       argP.getArgument("-scaleDragForce", &scaleDragForce, "Scale factor for"
                        " mouse dragger (default is \"%f\")", scaleDragForce);
+      argP.getArgument("-xDesFile", &xDesFile, "File to be read into x_des (default none)");
       bool ffwd = argP.hasArgument("-ffwd", "Feed-forward dx only");
       bool skipGui = argP.hasArgument("-skipGui", "No GUIs, only viewer");
       bool pause = argP.hasArgument("-pause", "Pause after each iteration");
@@ -2050,8 +2052,12 @@ int main(int argc, char** argv)
 
       if (testCopying)
       {
+        RMSG("Before copying");
+        controller.print();
         Rcs::ControllerBase tmp(controller);
         controller = tmp;
+        RMSG("After copying");
+        controller.print();
       }
 
       if (initToQ0)
@@ -2088,6 +2094,11 @@ int main(int argc, char** argv)
       MatNd_copy(x_des, x_curr);
       MatNd_copy(x_des_f, x_curr);
       MatNd_copy(x_physics, x_curr);
+
+      if (!xDesFile.empty())
+      {
+        MatNd_fromFile(x_des, xDesFile.c_str());
+      }
 
       // Body for static effort null space gradient
       const RcsBody* effortBdy = RcsGraph_getBodyByName(controller.getGraph(),

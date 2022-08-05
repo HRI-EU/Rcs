@@ -68,6 +68,10 @@ public:
    */
   virtual void computeH(MatNd* hessian) const;
 
+  /*! \brief Sets all effectorVec ids to bodies with the given suffix appended.
+   */
+  virtual bool setIdsToSuffix(const std::string& suffix);
+
   /*! \brief Returns true if the task is specified correctly
    */
   static bool isValid(xmlNode* node, const RcsGraph* graph);

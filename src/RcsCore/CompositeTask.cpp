@@ -397,10 +397,132 @@ size_t Rcs::CompositeTask::getNumberOfTasks() const
 }
 
 /*******************************************************************************
+ * Overwrites the effector body of the task
+ ******************************************************************************/
+void Rcs::CompositeTask::setEffectorId(int id)
+{
+  Task::setEffectorId(id);
+
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    RCHECK_MSG(subTask[i]->getEffectorId()==subTask[0]->getEffectorId(),
+               "Task %zu \"%s\" has different ids in subtasks: %d != %d",
+               i, getName().c_str(), subTask[i]->getEffectorId(),
+               subTask[0]->getEffectorId());
+  }
+
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    subTask[i]->setEffectorId(id);
+  }
+}
+
+/*******************************************************************************
+ * Overwrites the refBody of the task
+ ******************************************************************************/
+void Rcs::CompositeTask::setRefBodyId(int id)
+{
+  Task::setRefBodyId(id);
+
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    RCHECK_MSG(subTask[i]->getRefBodyId()==subTask[0]->getRefBodyId(),
+               "Task %zu \"%s\" has different ids in subtasks: %d != %d",
+               i, getName().c_str(), subTask[i]->getRefBodyId(),
+               subTask[0]->getRefBodyId());
+  }
+
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    subTask[i]->setRefBodyId(id);
+  }
+}
+
+/*******************************************************************************
+ * Overwrites the refFrame  body of the task
+ ******************************************************************************/
+void Rcs::CompositeTask::setRefFrameId(int id)
+{
+  Task::setRefFrameId(id);
+
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    RCHECK_MSG(subTask[i]->getRefFrameId()==subTask[0]->getRefFrameId(),
+               "Task %zu \"%s\" has different ids in subtasks: %d != %d",
+               i, getName().c_str(), subTask[i]->getRefFrameId(),
+               subTask[0]->getRefFrameId());
+  }
+
+  for (size_t i = 0; i < subTask.size(); ++i)
+  {
+    subTask[i]->setRefFrameId(id);
+  }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::CompositeTask::setEffectorIdToSuffix(const std::string& suffix)
+{
+  bool success = Task::setEffectorIdToSuffix(suffix);
+
+  for (size_t i=0; i<subTask.size(); ++i)
+  {
+    success = subTask[i]->setEffectorIdToSuffix(suffix) && success;
+  }
+
+  return success;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::CompositeTask::setRefBodyIdToSuffix(const std::string& suffix)
+{
+  bool success = Task::setRefBodyIdToSuffix(suffix);
+
+  for (size_t i=0; i<subTask.size(); ++i)
+  {
+    success = subTask[i]->setRefBodyIdToSuffix(suffix) && success;
+  }
+
+  return success;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::CompositeTask::setRefFrameIdToSuffix(const std::string& suffix)
+{
+  bool success = Task::setRefFrameIdToSuffix(suffix);
+
+  for (size_t i=0; i<subTask.size(); ++i)
+  {
+    success = subTask[i]->setRefFrameIdToSuffix(suffix) && success;
+  }
+
+  return success;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::CompositeTask::setIdsToSuffix(const std::string& suffix)
+{
+  bool success = Task::setIdsToSuffix(suffix);
+
+  for (size_t i=0; i<subTask.size(); ++i)
+  {
+    success = subTask[i]->setIdsToSuffix(suffix) && success;
+  }
+
+  return success;
+}
+
+/*******************************************************************************
  *
  ******************************************************************************/
 void Rcs::CompositeTask::toXML(FILE* out, bool activation) const
 {
-  //RFATAL("Implement me in your derived class \"%s\"", getClassName().c_str());
   Task::toXML(out, activation);
 }

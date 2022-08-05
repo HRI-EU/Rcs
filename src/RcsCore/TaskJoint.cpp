@@ -357,6 +357,27 @@ void Rcs::TaskJoint::setRefGain(double gain)
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs::TaskJoint::setIdsToSuffix(const std::string& suffix)
+{
+  std::string newName = std::string(getJoint()->name) + suffix;
+  const RcsJoint* jnt = RcsGraph_getJointByName(getGraph(), newName.c_str());
+
+  if (!jnt)
+  {
+    RLOG(1, "Joint \"%s\" not found - setIdsToSuffix() failed",
+         newName.c_str());
+    return false;
+  }
+
+  setJoint(RcsGraph_getJointByName(getGraph(), newName.c_str()));
+  setRefJoint(RcsGraph_getJointByName(getGraph(), newName.c_str()));
+
+  return true;
+}
+
+/*******************************************************************************
  * See header.
  ******************************************************************************/
 bool Rcs::TaskJoint::isValid(xmlNode* node, const RcsGraph* graph)

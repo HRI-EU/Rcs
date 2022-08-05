@@ -111,6 +111,10 @@ public:
   virtual void computeDX(double* omega, const double* polar_des,
                          const double* polar_curr) const;
 
+  /*! \brief Sets all surfaceBodies ids to bodies with the given suffix appended.
+   */
+  virtual bool setIdsToSuffix(const std::string& suffix);
+
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise. The task is invalid if
    *         - The direction index in tag "axisDirection" exists, but

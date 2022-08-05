@@ -229,6 +229,47 @@ const RcsBody* TaskPolarSurfaceNormal::closestSurfaceBody() const
 /*******************************************************************************
  *
  ******************************************************************************/
+bool TaskPolarSurfaceNormal::setIdsToSuffix(const std::string& suffix)
+{
+  bool success = true;
+  std::vector<int> newSurfaceBodies = surfaceBodies;
+
+  for (size_t i=0; i<surfaceBodies.size(); ++i)
+  {
+    const RcsBody* bdy = RCSBODY_BY_ID(getGraph(), surfaceBodies[i]);
+
+    if (!bdy)
+    {
+      RLOG(1, "Task \"%s\": Found NULL body in effectorVec[%zu]",
+           getName().c_str(), i);
+      success = false;
+      continue;
+    }
+
+    std::string newName = std::string(bdy->name) + suffix;
+    const RcsBody* bdy_suffixed = RcsGraph_getBodyByName(graph, newName.c_str());
+
+    if ((!bdy_suffixed) || (bdy_suffixed->id == -1))
+    {
+      RLOG(1, "Body \"%s\" not found or invalid - setIdsToSuffix() failed",
+           newName.c_str());
+      success = false;
+    }
+
+    newSurfaceBodies[i] = bdy_suffixed->id;
+  }
+
+  if (success)
+  {
+    surfaceBodies = newSurfaceBodies;
+  }
+
+  return success;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 bool TaskPolarSurfaceNormal::isValid(xmlNode* node, const RcsGraph* graph)
 {
   std::vector<std::string> cVars;

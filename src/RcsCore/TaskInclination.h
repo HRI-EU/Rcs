@@ -109,6 +109,10 @@ public:
    */
   virtual double computeRotationAxis(double a_rot[3], size_t num) const;
 
+  /*! \brief Sets all effectorVec ids to bodies with the given suffix appended.
+   */
+  virtual bool setIdsToSuffix(const std::string& suffix);
+
   /*! \brief Returns true if the task is specified correctly, false
    *         otherwise. The task is invalid if
    *         - The direction index in tag "axisDirection" exists, but

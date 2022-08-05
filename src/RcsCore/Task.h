@@ -96,6 +96,9 @@
  *          - Rcs::Task::computeXpp()
  *          - Rcs::Task::computeFfXpp()
  *
+ *  In case a new class has a member that is an id to a body, joint or sensor,
+ *  it needs to make sure that the setIdsToSuffix and related methods are
+ *  implemented.
  *
  *  The following methods are automatically computed (see implementation in
  *  Task.cpp):
@@ -657,6 +660,36 @@ public:
   /*! \brief Overwrites the reference frame of the task.
    */
   virtual void setRefFrameId(int referenceFrameId);
+
+  /*! \brief Sets the effector id to a body with name+suffix. If the body id is
+   *         -1, nothing will be changed. If no such body exists, the id will
+   *         be set to -1, and a warning will be logged on debug level 1.
+   *
+   *  \param[in]  suffix   Body suffix to be appended to body name
+   *  \return true for success, false otherwise:
+   *          - No body with name+suffix was found.
+   *          - Body with name+suffix was found, but body is invalid (id=-1).
+   */
+  virtual bool setEffectorIdToSuffix(const std::string& suffix);
+
+  /*! \brief See setEffectorIdToSuffix().
+   */
+  virtual bool setRefBodyIdToSuffix(const std::string& suffix);
+
+  /*! \brief See setEffectorIdToSuffix().
+   */
+  virtual bool setRefFrameIdToSuffix(const std::string& suffix);
+
+  /*! \brief Sets all classes id members to the corresponding bodies, joints
+   *         or sensors with a name and the given suffix. In this classes
+   *         implementation, the methods setEffectorIdToSuffix,
+   *         setRefBodyIdToSuffix and setRefFrameIdToSuffix are called.
+   *
+   *  \param[in]  suffix   Suffix to be appended to body / joint / sensor name
+   *  \return true for success, false if any of the called functions
+   *          returns false.
+   */
+  virtual bool setIdsToSuffix(const std::string& suffix);
 
   /*! \brief Computes the relative rotation matrix between effector and
    *         reference body according to
