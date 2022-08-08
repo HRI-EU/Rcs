@@ -224,10 +224,11 @@ Rcs::TaskJoints::TaskJoints(const RcsBody* effector, const RcsBody* refBdy,
   CompositeTask(graph_)
 {
   setClassName("Joints");
-  setEffectorId(effector ? effector->id : -1);
+  RCHECK(effector);
+  setEffectorId(effector->id);
   setRefBodyId(refBdy ? refBdy->id : -1);
   const unsigned int nJoints = RcsBody_numJoints(graph, effector);
-  RCHECK_MSG(nJoints > 0, "Body \"%s\"", effector ? effector->name : "NULL");
+  RCHECK_MSG(nJoints > 0, "Body \"%s\"", effector->name);
 
   const RcsJoint* jRef = refBdy ? RCSJOINT_BY_ID(graph_, refBdy->jntId) : NULL;
 

@@ -1434,76 +1434,19 @@ void Rcs::Task::setRefBodyId(int referenceBodyId)
 /*******************************************************************************
  *
  ******************************************************************************/
-bool Rcs::Task::setEffectorIdToSuffix(const std::string& suffix)
+int Rcs::Task::getIdOfBodyWithSuffix(int bdyId, const std::string& suffix)
 {
-  if (getEffectorId()==-1)
-  {
-    return true;
-  }
-
-  std::string newName = std::string(getEffector()->name) + suffix;
+  std::string newName = std::string(graph->bodies[bdyId].name) + suffix;
   const RcsBody* bdy_suffixed = RcsGraph_getBodyByName(graph, newName.c_str());
 
   if ((!bdy_suffixed) || (bdy_suffixed->id == -1))
   {
     RLOG(1, "Body \"%s\" not found or invalid - setEffectorIdToSuffix() failed",
          newName.c_str());
-    return false;
+    return -1;
   }
 
-  Task::setEffectorId(bdy_suffixed->id);
-
-  return true;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-bool Rcs::Task::setRefBodyIdToSuffix(const std::string& suffix)
-{
-  if (getRefBodyId()==-1)
-  {
-    return true;
-  }
-
-  std::string newName = std::string(getRefBody()->name) + suffix;
-  const RcsBody* bdy_suffixed = RcsGraph_getBodyByName(graph, newName.c_str());
-
-  if ((!bdy_suffixed) || (bdy_suffixed->id == -1))
-  {
-    RLOG(1, "Body \"%s\" not found or invalid - setRefBodyIdToSuffix() failed",
-         newName.c_str());
-    return false;
-  }
-
-  Task::setRefBodyId(bdy_suffixed->id);
-
-  return true;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-bool Rcs::Task::setRefFrameIdToSuffix(const std::string& suffix)
-{
-  if (getRefFrameId()==-1)
-  {
-    return true;
-  }
-
-  std::string newName = std::string(getRefFrame()->name) + suffix;
-  const RcsBody* bdy_suffixed = RcsGraph_getBodyByName(graph, newName.c_str());
-
-  if ((!bdy_suffixed) || (bdy_suffixed->id == -1))
-  {
-    RLOG(1, "Body \"%s\" not found or invalid - setRefFrameIdToSuffix() failed",
-         newName.c_str());
-    return false;
-  }
-
-  Task::setRefFrameId(bdy_suffixed->id);
-
-  return true;
+  return bdy_suffixed->id;
 }
 
 /*******************************************************************************
@@ -1512,9 +1455,39 @@ bool Rcs::Task::setRefFrameIdToSuffix(const std::string& suffix)
  ******************************************************************************/
 bool Rcs::Task::setIdsToSuffix(const std::string& suffix)
 {
-  bool success = Task::setEffectorIdToSuffix(suffix);
-  success = Task::setRefBodyIdToSuffix(suffix) && success;
-  success = Task::setRefFrameIdToSuffix(suffix) && success;
+  bool success = true;
+  int eid=-1, rid=-1, fid=-1;
+
+  if (getEffectorId() != -1)
+  {
+    eid = getIdOfBodyWithSuffix(getEffectorId(), suffix);
+    success = success && ((eid == -1) ? false : true);
+  }
+
+  if (getRefBodyId() != -1)
+  {
+    rid = getIdOfBodyWithSuffix(getRefBodyId(), suffix);
+    success = success && ((rid == -1) ? false : true);
+  }
+
+  if (getRefFrameId() != -1)
+  {
+    fid = getIdOfBodyWithSuffix(getRefFrameId(), suffix);
+    success = success && ((fid == -1) ? false : true);
+  }
+
+  if (success)
+  {
+    this->effectorId = eid;
+    this->refBodyId = rid;
+    this->refFrameId = fid;
+  }
+
+  else
+  {
+    RLOG(1, "Task \"%s\": Failed to find suffixed bodies for suffix \"%s\"",
+         getName().c_str(), suffix.c_str());
+  }
 
   return success;
 }

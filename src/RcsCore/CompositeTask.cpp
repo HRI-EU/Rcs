@@ -462,51 +462,6 @@ void Rcs::CompositeTask::setRefFrameId(int id)
 /*******************************************************************************
  *
  ******************************************************************************/
-bool Rcs::CompositeTask::setEffectorIdToSuffix(const std::string& suffix)
-{
-  bool success = Task::setEffectorIdToSuffix(suffix);
-
-  for (size_t i=0; i<subTask.size(); ++i)
-  {
-    success = subTask[i]->setEffectorIdToSuffix(suffix) && success;
-  }
-
-  return success;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-bool Rcs::CompositeTask::setRefBodyIdToSuffix(const std::string& suffix)
-{
-  bool success = Task::setRefBodyIdToSuffix(suffix);
-
-  for (size_t i=0; i<subTask.size(); ++i)
-  {
-    success = subTask[i]->setRefBodyIdToSuffix(suffix) && success;
-  }
-
-  return success;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-bool Rcs::CompositeTask::setRefFrameIdToSuffix(const std::string& suffix)
-{
-  bool success = Task::setRefFrameIdToSuffix(suffix);
-
-  for (size_t i=0; i<subTask.size(); ++i)
-  {
-    success = subTask[i]->setRefFrameIdToSuffix(suffix) && success;
-  }
-
-  return success;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
 bool Rcs::CompositeTask::setIdsToSuffix(const std::string& suffix)
 {
   bool success = Task::setIdsToSuffix(suffix);
