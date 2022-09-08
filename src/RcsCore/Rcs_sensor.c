@@ -422,8 +422,9 @@ void RcsSensor_fprint(FILE* out, const RcsSensor* s)
  *        - transform
  *        - extra_info
  ******************************************************************************/
-void RcsSensor_fprintXML(FILE* out, const RcsSensor* self)
+int RcsSensor_fprintXML(FILE* out, const RcsSensor* self)
 {
+  int nErr = 0;
   char buf[256];
   bool ppsExtentsEqual = true;
 
@@ -472,7 +473,8 @@ void RcsSensor_fprintXML(FILE* out, const RcsSensor* self)
       break;
 
     default:
-      RFATAL("Unknown sensor type: %d", self->type);
+      RLOG(1, "Unknown sensor type: %d", self->type);
+      nErr++;
   }
 
   // Relative transformation only if non-zero elements exist
@@ -528,6 +530,8 @@ void RcsSensor_fprintXML(FILE* out, const RcsSensor* self)
   {
     fprintf(out, "/>\n");
   }
+
+  return nErr;
 }
 
 /******************************************************************************

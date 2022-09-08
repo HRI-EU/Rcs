@@ -1587,8 +1587,9 @@ RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* b,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
+int RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
 {
+  int nErr = 0;
   char buf[256];
 
   fprintf(out, "  <Body name=\"%s\" ", self->name);
@@ -1634,14 +1635,40 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
       break;
 
     default:
-      RFATAL("Unknown physics simulation type: %d", self->physicsSim);
+      RLOG(1, "Unknown physics simulation type: %d", self->physicsSim);
+      nErr++;
   }
 
-  // We create all joints explicitely
-  // if(self->rigid_body_joints == true)
-  //   {
-  //     fprintf(out, "rigid_body_joints=\"true\" ");
-  //   }
+  // Create joints via rigid_body_joints attribute
+  if (self->rigid_body_joints)
+  {
+    const RcsJoint* jRB = RCSJOINT_BY_ID(graph, self->jntId);
+
+    if (!jRB)
+    {
+      nErr++;
+      RLOG(1, "Body %s: Has rigid_body_joints attribute, but jntId is -1",
+           self->name);
+    }
+    else
+    {
+      const double* qRB = &graph->q->ele[jRB->jointIndex];
+      if (VecNd_isZero(qRB, 6))
+      {
+        fprintf(out, "rigid_body_joints=\"true\" ");
+      }
+      else
+      {
+        fprintf(out, "rigid_body_joints=\"");
+        fprintf(out, "%s ", String_fromDouble(buf, qRB[0], 6));
+        fprintf(out, "%s ", String_fromDouble(buf, qRB[1], 6));
+        fprintf(out, "%s ", String_fromDouble(buf, qRB[2], 6));
+        fprintf(out, "%s ", String_fromDouble(buf, RCS_RAD2DEG(qRB[3]), 6));
+        fprintf(out, "%s ", String_fromDouble(buf, RCS_RAD2DEG(qRB[4]), 6));
+        fprintf(out, "%s\" ", String_fromDouble(buf, RCS_RAD2DEG(qRB[5]), 6));
+      }
+    }
+  }
 
   if (self->m > 0.0)
   {
@@ -1676,16 +1703,19 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
   // End body tag
   fprintf(out, ">\n");
 
+  if (!self->rigid_body_joints)
+  {
   RCSBODY_FOREACH_JOINT(graph, self)
   {
-    RcsJoint_fprintXML(out, JNT, graph);
+      nErr += RcsJoint_fprintXML(out, JNT, graph);
+    }
   }
 
   if (self->shapes != NULL)
   {
     RCSBODY_TRAVERSE_SHAPES(self)
     {
-      RcsShape_fprintXML(out, SHAPE);
+      nErr += RcsShape_fprintXML(out, SHAPE);
     }
   }
 
@@ -1695,11 +1725,13 @@ void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
     const RcsSensor* si = &graph->sensors[i];
     if (si->bodyId==self->id)
     {
-      RcsSensor_fprintXML(out, si);
+      nErr += RcsSensor_fprintXML(out, si);
     }
   }
 
   fprintf(out, "  </Body>\n\n");
+
+  return nErr;
 }
 
 /*******************************************************************************

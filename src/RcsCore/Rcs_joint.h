@@ -149,8 +149,14 @@ double RcsJoint_computeSlaveJointVelocity(const RcsGraph* graph,
  *  \brief Prints the joint's xml representation to the given file
  *         descriptor. Both arguments are assumed to be not NULL. Otherwise,
  *         the function exits with a fatal error.
+ *
+ *  \param[in] out     File to write to.
+ *  \param[in] self    Joint to write to the xml file.
+ *  \param[in] graph   Graph the body is represented in.
+ *
+ *  \return Number of errors encountered. Errors are reported on debug level 1.
  */
-void RcsJoint_fprintXML(FILE* out, const RcsJoint* self, const RcsGraph* graph);
+int RcsJoint_fprintXML(FILE* out, const RcsJoint* self, const RcsGraph* graph);
 
 /*! \ingroup RcsJointFunctions
  *  \brief Returns the joint's index in an array of RcsGraph::dof elements. If

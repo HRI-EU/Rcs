@@ -152,10 +152,14 @@ void RcsSensor_fprint(FILE* out, const RcsSensor* s);
 
 /*! \ingroup RcsSensorFunctions
  *  \brief Prints the sensor's xml representation to the given file
- *         descriptor. Both arguments are assumed to be not NULL. Otherwise,
- *         the function exits with a fatal error.
+ *         descriptor. Both arguments are assumed to be not NULL.
+ *
+ *  \param[in] out     File to write to.
+ *  \param[in] self    Sensor to write to the xml file.
+ *
+ *  \return Number of errors encountered. Errors are reported on debug level 1.
  */
-void RcsSensor_fprintXML(FILE* out, const RcsSensor* self);
+int RcsSensor_fprintXML(FILE* out, const RcsSensor* self);
 
 /*! \ingroup RcsSensorFunctions
  *  \brief Computes the pressure distribution of the PPS sensor self. If the

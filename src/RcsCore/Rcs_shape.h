@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -50,6 +50,220 @@ extern "C" {
  *
  */
 
+/*!
+ * @name Accessors and generic functions
+ *
+ */
+
+///@{
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Clears the memory for all meshes / octrees. The function does
+ *         nothing if self is NULL.
+ */
+void RcsShape_clear(RcsShape* self);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Returns the name of the shape (see enum RCSSHAPE_TYPE)
+ *         as char pointer for debugging purposes. If no corresponding
+ *         shape type exists, "Unknown shape type" is returned.
+ */
+const char* RcsShape_name(int shapeType);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Makes a deep copy of a shape. The userData pointer is copied if the
+ *         shape is of type MARKER or OCTREE. If the sizes of the character
+ *         strings don't match, they are re-allocated. The memory areas between
+ *         src and dst must not overlap.
+ */
+void RcsShape_copy(RcsShape* dst, const RcsShape* src);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Returns a deep copy of a shape. See RcsShape_copy() for details.
+ */
+RcsShape* RcsShape_clone(const RcsShape* src);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Initializes an empty shape with everything zeroed except for these
+ *         defaults:
+ *         - scale3d is (1, 1, 1)
+ *         - A_CB is identity transform
+ */
+void RcsShape_init(RcsShape* self);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Returns a random shape type that is supported by the compiled
+ *         version. For instance, the function will not return a RCSSHAPE_OCTREE
+ *         type if the OctoMap support has not been compiled.
+ */
+int RcsShape_randomShapeType();
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Returns true if the shape type is supported by the compiled
+ *         version. For instance, the function will return false if a
+ *         RCSSHAPE_OCTREE type if the OctoMap support has not been compiled.
+ */
+bool RcsShape_isSupported(int shapeType);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Initializes a shape to the given type with random parameters. Used
+ *         for distance function testing. Returns false in case the shape
+ *         type is out of range or not supported, or the shape is NULL.
+ */
+bool RcsShape_initRandom(RcsShape* shape, int shapeType);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Creates a frame shape with default parameters and the given scaling.
+ */
+RcsShape* RcsShape_createFrameShape(double scale);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Returns a mesh for the given shape. The following shape types are
+ *         supported:
+ *         - RCSSHAPE_SSL
+ *         - RCSSHAPE_SSR
+ *         - RCSSHAPE_MESH
+ *         - RCSSHAPE_BOX
+ *         - RCSSHAPE_CYLINDER
+ *         - RCSSHAPE_SPHERE
+ *         - RCSSHAPE_CONE
+ *         - RCSSHAPE_TORUS
+ *
+ *  \param[in] self  Shape to be represented in the mesh.
+ *  \return Mesh data structure, or NULL in case of failure.
+ */
+RcsMeshData* RcsShape_createMesh(const RcsShape* self);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Sets or clears the bit of the shape's compute type. For instance:
+ *         RcsShape_setComputeType(shape, RCSSHAPE_COMPUTE_DISTANCE)
+ *         activates the distance computation of the shape.
+ *         RcsShape_clearComputeType(shape, RCSSHAPE_COMPUTE_DISTANCE)
+ *         deactivates the distance computation of the shape.
+ */
+void RcsShape_setComputeType(RcsShape* shape, char computeType, bool enable);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Returns true if the compute type is set, false otherwise.
+ */
+bool RcsShape_isOfComputeType(const RcsShape* shape, int computeType);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Returns true if the shapes are indentical, false otherwise. If
+ *         a mesh is associated with the shape, it will also be compared.
+ */
+bool RcsShape_isEqual(const RcsShape* s1, const RcsShape* s2);
+
+///@}
+
+
+
+/*!
+ * @name Geometric functions
+ *
+ */
+
+///@{
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Returns the volume of the shape in cubic meter. The volume of
+ *         meshes can not yet be computed, the function will return zero
+ *         and issue a warning on debug level 1. The following shape types
+ *         will have a volume of zero:
+ *         - RCSSHAPE_REFFRAME
+ *         - RCSSHAPE_POINT
+ *         Shapes of type RCSSHAPE_OCTREE will report correct results only if
+ *         the octomap library is linked.
+ */
+double RcsShape_computeVolume(const RcsShape* self);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Computes the local COM of the shape in the bodie's frame according
+ *         to its relative transformation A_CB from body frame to shape frame.
+ *         For most shapes it is the origin of the relative transformation,
+ *         for a few shapes (e.g. cone, capsule) there is an additional
+ *         offset that is considered.
+ */
+void RcsShape_computeLocalCOM(const RcsShape* self, double r_com[3]);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Computes the inertia tensor of the shape with respect to its center
+ *         of mass (not its origin), and represented in the shape's frame of
+ *         reference.
+ */
+void RcsShape_computeInertiaTensor(const RcsShape* self, const double density,
+                                   double I[3][3]);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Prints the distance function table to out.
+ */
+void* RcsShape_addOctree(RcsShape* self, const char* fileName);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief This function computes the axis-aligned bounding box of a shape.
+ *
+ *  \param[in] self       Shape data. If it is NULL, the AABB is set to zero,
+ *                        size, and a debug message is issued on debul level 4.
+ *  \param[in] xyzMin     Minimum point of the box
+ *  \param[in] xyzMax     Maximum point of the box
+ */
+void RcsShape_computeAABB(const RcsShape* self,
+                          double xyzMin[3], double xyzMax[3]);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Scales the geometry of the shape.
+ *
+ *  \param[in,out] self      Shape to be scaled.
+ *  \param[in] scale         Scaling factor.
+ */
+void RcsShape_scale(RcsShape* self, double scale);
+
+///@}
+
+
+/*!
+ * @name Printing
+ *
+ */
+
+///@{
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Prints out the shape's information to out. The function accepts
+ *         if s is NULL.
+ */
+void RcsShape_fprint(FILE* out, const RcsShape* s);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Prints the shape's xml representation to the given file
+ *         descriptor. Both arguments are assumed to be not NULL. Otherwise,
+ *         the function exits with a fatal error.
+ *
+ *  \param[in] out     File to write to.
+ *  \param[in] self    Shape to write to the xml file.
+ *
+ *  \return Number of errors encountered. Errors are reported on debug level 1.
+ */
+int RcsShape_fprintXML(FILE* out, const RcsShape* self);
+
+///@}
+
+
+/*!
+ * @name Distance functions
+ *
+ */
+
+///@{
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Prints the distance function table to out.
+ */
+void RcsShape_fprintDistanceFunctions(FILE* out);
+
+/*! \ingroup RcsShapeFunctions
+ *  \brief Distance function signature.
+ */
 typedef double(*RcsDistanceFunction)(const RcsShape*, const RcsShape*,
                                      const HTr*, const HTr*,
                                      double[3], double[3], double[3]);
@@ -126,33 +340,6 @@ double RcsShape_distanceToPoint(const RcsShape* shape,
                                 double I_nShapePt[3]);
 
 /*! \ingroup RcsShapeFunctions
- *  \brief Returns the volume of the shape in cubic meter. The volume of
- *         meshes can not yet be computed, the function will return zero
- *         and issue a warning on debug level 1. The following shape types
- *         will have a volume of zero:
- *         - RCSSHAPE_REFFRAME
- *         - RCSSHAPE_MESH
- */
-double RcsShape_computeVolume(const RcsShape* self);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Computes the local COM of the shape in the bodie's frame according
- *         to its relative transformation A_CB from body frame to shape frame.
- *         For most shapes it is the origin of the relative transformation,
- *         for a few shapes (e.g. cone, capsule) there is an additional
- *         offset that is considered.
- */
-void RcsShape_computeLocalCOM(const RcsShape* self, double r_com[3]);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Computes the inertia tensor of the shape with respect to its center
- *         of mass (not its origin), and represented in the shape's frame of
- *         reference.
- */
-void RcsShape_computeInertiaTensor(const RcsShape* self, const double density,
-                                   double I[3][3]);
-
-/*! \ingroup RcsShapeFunctions
  *  \brief Computes the intersection between a line given by a point and a
  *         direction and a shape. The function returns true if both intersect,
  *         and stores the closest intersection point in closestLinePt (if it
@@ -191,144 +378,10 @@ double RcsShape_boundingSphereDistance(const double Pt[3],
                                        const HTr* A_BI,
                                        const RcsShape* shape);
 
-/*! \ingroup RcsShapeFunctions
- *  \brief Clears the memory for all meshes / octrees. The function does
- *         nothing if self is NULL.
- */
-void RcsShape_clear(RcsShape* self);
 
-/*! \ingroup RcsShapeFunctions
- *  \brief Returns the name of the shape (see enum RCSSHAPE_TYPE)
- *         as char pointer for debugging purposes. If no corresponding
- *         shape type exists, "Unknown shape type" is returned.
- */
-const char* RcsShape_name(int shapeType);
+///@}
 
-/*! \ingroup RcsShapeFunctions
- *  \brief Makes a deep copy of a shape. The userData pointer is copied if the
- *         shape is of type MARKER or OCTREE. If the sizes of the character
- *         strings don't match, they are re-allocated. The memory areas between
- *         src and dst must not overlap.
- */
-void RcsShape_copy(RcsShape* dst, const RcsShape* src);
 
-/*! \ingroup RcsShapeFunctions
- *  \brief Returns a deep copy of a shape. See RcsShape_copy() for details.
- */
-RcsShape* RcsShape_clone(const RcsShape* src);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Prints out the shape's information to out. The function accepts
- *         if s is NULL.
- */
-void RcsShape_fprint(FILE* out, const RcsShape* s);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Prints the shape's xml representation to the given file
- *         descriptor. Both arguments are assumed to be not NULL. Otherwise,
- *         the function exits with a fatal error.
- */
-void RcsShape_fprintXML(FILE* out, const RcsShape* self);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Initializes an empty shape with everything zeroed except for these
- *         defaults:
- *         - scale3d is (1, 1, 1)
- *         - A_CB is identity transform
- */
-void RcsShape_init(RcsShape* self);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Returns a random shape type that is supported by the compiled
- *         version. For instance, the function will not return a RCSSHAPE_OCTREE
- *         type if the OctoMap support has not been compiled.
- */
-int RcsShape_randomShapeType();
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Returns true if the shape type is supported by the compiled
- *         version. For instance, the function will return false if a
- *         RCSSHAPE_OCTREE type if the OctoMap support has not been compiled.
- */
-bool RcsShape_isSupported(int shapeType);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Initializes a shape to the given type with random parameters. Used
- *         for distance function testing. Returns false in case the shape
- *         type is out of range or not supported, or the shape is NULL.
- */
-bool RcsShape_initRandom(RcsShape* shape, int shapeType);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Creates a frame shape with default parameters and the given scaling.
- */
-RcsShape* RcsShape_createFrameShape(double scale);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Prints the distance function table to out.
- */
-void RcsShape_fprintDistanceFunctions(FILE* out);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Prints the distance function table to out.
- */
-void* RcsShape_addOctree(RcsShape* self, const char* fileName);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief This function computes the axis-aligned bounding box of a shape.
- *
- *  \param[in] self       Shape data. If it is NULL, the AABB is set to zero,
- *                        size, and a debug message is issued on debul level 4.
- *  \param[in] xyzMin     Minimum point of the box
- *  \param[in] xyzMax     Maximum point of the box
- */
-void RcsShape_computeAABB(const RcsShape* self,
-                          double xyzMin[3], double xyzMax[3]);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Scales the geometry of the shape.
- *
- *  \param[in,out] self      to be reshaped.
- *  \param[in] scale        Scaling factor.
- */
-void RcsShape_scale(RcsShape* self, double scale);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Returns a mesh for the given shape. The following shape types are
- *         supported:
- *         - RCSSHAPE_SSL
- *         - RCSSHAPE_SSR
- *         - RCSSHAPE_MESH
- *         - RCSSHAPE_BOX
- *         - RCSSHAPE_CYLINDER
- *         - RCSSHAPE_SPHERE
- *         - RCSSHAPE_CONE
- *         - RCSSHAPE_TORUS
- *
- *  \param[in] self  Shape to be represented in the mesh.
- *  \return Mesh data structure, or NULL in case of failure.
- */
-RcsMeshData* RcsShape_createMesh(const RcsShape* self);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Sets or clears the bit of the shape's compute type. For instance:
- *         RcsShape_setComputeType(shape, RCSSHAPE_COMPUTE_DISTANCE)
- *         activates the distance computation of the shape.
- *         RcsShape_clearComputeType(shape, RCSSHAPE_COMPUTE_DISTANCE)
- *         deactivates the distance computation of the shape.
- */
-void RcsShape_setComputeType(RcsShape* shape, char computeType, bool enable);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Returns true if the compute type is set, false otherwise.
- */
-bool RcsShape_isOfComputeType(const RcsShape* shape, int computeType);
-
-/*! \ingroup RcsShapeFunctions
- *  \brief Returns true if the shapes are indentical, false otherwise. If
- *         a mesh is associated with the shape, it will also be compared.
- */
-bool RcsShape_isEqual(const RcsShape* s1, const RcsShape* s2);
 
 #ifdef __cplusplus
 }

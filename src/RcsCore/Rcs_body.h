@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -171,6 +171,7 @@ bool RcsBody_isArticulated(const RcsGraph* graph, const RcsBody* self);
  *  \brief Returns true if the body is part of the graph, false otherwise.
  */
 bool RcsBody_isInGraph(const RcsBody* self, const RcsGraph* graph);
+
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns true if the bodies are indentical, false otherwise. The
  *         data of the bodies as well as all of their shapes are checked.
@@ -367,12 +368,16 @@ RcsJoint* RcsBody_createOrdered6DofJoints(RcsGraph* self, RcsBody* body,
                                           const int indexOrdering[6]);
 
 /*! \ingroup RcsBodyFunctions
- *  \brief Prints the bodie's xml representation to the given file
- *         descriptor. The arguments are assumed to be not NULL. Otherwise,
- *         the function exits with a fatal error. The graph is needed to
- *         find the sensors.
+ *  \brief Prints the bodie's xml representation to the given file descriptor.
+ *         The arguments are assumed to be not NULL.
+ *
+ *  \param[in] out     File to write to.
+ *  \param[in] self    Body to write to the xml file.
+ *  \param[in] graph   Graph the body is represented in.
+ *
+ *  \return Number of errors encountered. Errors are reported on debug level 1.
  */
-void RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph);
+int RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Checks if a body has rigid body degrees of freedom. The function

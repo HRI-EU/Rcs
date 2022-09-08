@@ -497,8 +497,9 @@ double RcsJoint_computeSlaveJointVelocity(const RcsGraph* graph,
  *
  ******************************************************************************/
 
-void RcsJoint_fprintXML(FILE* out, const RcsJoint* self, const RcsGraph* graph)
+int RcsJoint_fprintXML(FILE* out, const RcsJoint* self, const RcsGraph* graph)
 {
+  int nErr = 0;
   char buf[256];
   const double scaleToXML = RcsJoint_isRotation(self) ? (180.0/M_PI) : 1.0;
 
@@ -616,7 +617,8 @@ void RcsJoint_fprintXML(FILE* out, const RcsJoint* self, const RcsGraph* graph)
       break;
 
     default:
-      RFATAL("Unknown control type: %d", self->ctrlType);
+      RLOG(1, "Unknown control type: %d", self->ctrlType);
+      nErr++;
   }
 
   if (self->coupledToId != -1)
@@ -638,9 +640,9 @@ void RcsJoint_fprintXML(FILE* out, const RcsJoint* self, const RcsGraph* graph)
   }
 
   fprintf(out, "/>\n");
+
+  return nErr;
 }
-
-
 
 /*******************************************************************************
  *
@@ -650,8 +652,6 @@ int RcsJoint_getJointIndex(const RcsJoint* self)
 {
   return self ? self->jointIndex : -1;
 }
-
-
 
 /*******************************************************************************
  *

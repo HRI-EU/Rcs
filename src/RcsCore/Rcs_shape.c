@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -672,8 +672,9 @@ void RcsShape_fprint(FILE* out, const RcsShape* s)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void RcsShape_fprintXML(FILE* out, const RcsShape* self)
+int RcsShape_fprintXML(FILE* out, const RcsShape* self)
 {
+  int nErr = 0;
   char buf[256];
 
   fprintf(out, "    <Shape ");
@@ -725,7 +726,8 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
       break;
 
     default:
-      RFATAL("Unknown shape type: %d", self->type);
+      RLOG(1, "Unknown shape type: %d", self->type);
+      nErr++;
   }
 
   // Extents
@@ -853,6 +855,8 @@ void RcsShape_fprintXML(FILE* out, const RcsShape* self)
 
 
   fprintf(out, "/>\n");
+
+  return nErr;
 }
 
 /*******************************************************************************
