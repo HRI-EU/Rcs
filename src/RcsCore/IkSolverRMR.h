@@ -106,7 +106,7 @@ public:
    *                          unconstrained dofs.
    *  \param[in]  lambda      Regularization factor for the pseudo-inverse.
    *  \param[in]  recomputeKinematics If this is true, the function
-   *                                  \ref computeKinematics is called before
+   *                                  computeKinematics is called before
    *                                  calculating the above equations.
    */
   virtual double solveLeftInverse(MatNd* dq_ts, MatNd* dq_ns, const MatNd* dx,

@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -444,32 +444,38 @@ double IkSolverRMR::solveRightInverse(MatNd* dq_ts,
 
   if (hasTaskRegions)
   {
-#if 1
     // Compute null space -> task space re-projection: (dH^T J#)^T
     MatNd_reshape(this->dHr, dHr->n, dHr->m);
     MatNd_reshape(this->dx_proj, 1, pinvJ->n);
     MatNd_mul(this->dx_proj, this->dHr, this->pinvJ);
     MatNd_reshape(this->dHr, dHr->n, dHr->m);
     MatNd_reshape(this->dx_proj, pinvJ->n, 1);
-#else
-    // Compute null space -> task space re-projection: J dH^T
-    MatNd_reshape(this->dx_proj, J->m, 1);
-    MatNd_mul(this->dx_proj, this->J, this->dHr);
-#endif
 
-    // Here comes the sinister HACK
+    // Compute null space -> task space re-projection: J dH^T. That's wrong.
+    // MatNd_reshape(this->dx_proj, J->m, 1);
+    // MatNd_mul(this->dx_proj, this->J, this->dHr);
+
+    // Count up the task array index for only active tasks, since dx_proj is of
+    // dimension of all active task dims.
+    size_t idx = 0;
     for (size_t i=0; i< controller->getNumberOfTasks(); ++i)
     {
+      if ((activation!=NULL) && (activation->ele[i]==0.0))
+      {
+        continue;
+      }
+
       Task* tsk = controller->getTask(i);
       TaskRegion* tsr = tsk->getTaskRegion();
 
       if (tsr)
       {
-        size_t idx = controller->getTaskArrayIndex(i);
         const double* xi = &dx_proj->ele[idx];
         std::vector<double> dx_proj(xi, xi+tsk->getDim());
         tsr->setTaskReprojection(dx_proj);
       }
+
+      idx += tsk->getDim();
     }
 
   }   // if (hasTaskRegions)
