@@ -1093,6 +1093,7 @@ static double* RcsMesh_readSTLFile(const char* fileName,
     if (*numVertices==0)
     {
       RLOG(5, "ASCII file has no vertices - try parsing binary STL file");
+      RFREE(verts);
       rewind(fd);
       verts = RcsMesh_readBinarySTLFile(fd, numVertices);
     }
