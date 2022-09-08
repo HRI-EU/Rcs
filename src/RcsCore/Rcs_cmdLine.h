@@ -39,6 +39,7 @@
 #include <cstdio>
 #include <cstdarg>
 
+
 namespace Rcs
 {
 
@@ -77,9 +78,10 @@ public:
    *         The argument is copied into str, assuming str has sufficiently
    *         memory. <br>
    *         Example: Executable is called with <br>
-   *         Rcs.exe -m 5 -dir xml/Humanoids08 -f cAction.xml <br>
-   *         getArgumentTag("-m", (char*) myArg) <br>
-   *         will copy 5 into character array myArg.
+   *         Rcs.exe -m 5 -dir xml/Examples -f cAction.xml <br>
+   *         char dir[256]; <br>
+   *         getArgumentTag("-dir", dir) <br>
+   *         will copy "xml/Examples" into character array dir.
    */
   virtual bool getArgument(const char* tag, char* result,
                            const char* description=NULL, ...);
@@ -89,8 +91,9 @@ public:
    *         Compared to getArgumentTag with char* it is memory save<br>
    *         Example: Executable is called with <br>
    *         Rcs.exe -m 5 -dir xml/Humanoids08 -f cAction.xml <br>
-   *         getArgumentTag("-m", (std::string*) myArg) <br>
-   *         will copy 5 into the string myArg.
+   *         std::string myArg; <br>
+   *         getArgumentTag("-f", &myArg) <br>
+   *         will copy "cAction.xml" into the string myArg.
    */
   virtual bool getArgument(const char* tag, std::string* result,
                            const char* description=NULL, ...);
@@ -99,7 +102,8 @@ public:
    *         argument is copied into res. <br>
    *         Example: Executable is called with <br>
    *         Rcs.exe -m 5 -dir xml/Humanoids08 -f cAction.xml <br>
-   *         getArgumentTag("-m", (int*) myArg) <br>
+   *         int myArg; <br>
+   *         getArgumentTag("-m", &myArg) <br>
    *         will copy 5 into integer myArg.
    */
   virtual bool getArgument(const char* tag, int* result,
@@ -128,8 +132,12 @@ public:
                            const char* description=NULL, ...);
 
   /*! \brief Returns the argument after string "tag" as a boolean. Tag must
-   *         be "true" (case not considereed) in order to become true. All
-   *         other attributes will leave result unchanged.
+   *         be "true" (case not considered) in order to become true. All
+   *         other attributes will leave result unchanged. The function also
+   *         considers some cases without an explicit argument specifier. In
+   *         the case where tag is the last entry in the command line args,
+   *         and in the case when the next tag starts with a '-', the function
+   *         sets result to "true".
    */
   virtual bool getArgument(const char* tag, bool* result,
                            const char* description=NULL, ...);
@@ -166,8 +174,8 @@ public:
    */
   virtual void addDescription(const char* tag, const char* description, ...);
 
-  /*! \brief Query the arguments vector and number of arguments. If they habe not
-   *         been parsed, argc is 0 and argv points to NULL.
+  /*! \brief Query the arguments vector and number of arguments. If they have
+   *         not been parsed, argc is 0 and argv points to NULL.
    */
   virtual int getArgs(char** * argv) const;
 

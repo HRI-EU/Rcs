@@ -71,7 +71,7 @@ Rcs::CmdLineParser::CmdLineParser(int argc_, char** argv_)
  ******************************************************************************/
 Rcs::CmdLineParser::CmdLineParser()
 {
-  if (argv == NULL)
+  if (!argv)
   {
     RFATAL("You created a CmdLineParser with no arguments before "
            "instantiating it with argc and argv!");
@@ -332,12 +332,24 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, bool* res,
 
   if (idx == -1)
   {
+    // Here we check if the last string in the arguments vector corresponds to
+    // the tag. In this case, we return true.
+    if (STREQ(argv[argc-1], tag))
+    {
+      *res = true;
+      return true;
+    }
+
     return false;
   }
 
   const char* arg = argv[idx + 1];
 
-  if (STRCASEEQ(arg, "true"))
+  // This catches also the case that there is no "true" or "false" given, but
+  // another argument follows this one directly. We therefore check for the
+  // next argument starting with the '-' character, indicating another command
+  // line argument.
+  if (STRCASEEQ(arg, "true") || (arg[0]=='-'))
   {
     *res = true;
   }
@@ -359,7 +371,7 @@ bool Rcs::CmdLineParser::hasArgument(const char* tag,
     va_end(args);
   }
 
-  if (tag==NULL)
+  if (!tag)
   {
     RLOGS(4, "Tag is NULL - skipping");
     return false;
@@ -369,7 +381,7 @@ bool Rcs::CmdLineParser::hasArgument(const char* tag,
   // any content here and theoretically could be at the last index.
   for (int i = 0; i < argc; i++)
   {
-    if (std::string(argv[i]) == std::string(tag))
+    if (STREQ(argv[i], tag))
     {
       return true;
     }
@@ -446,7 +458,7 @@ void Rcs::CmdLineParser::addDescription(const char* tag,
                                         const char* description,
                                         ...)
 {
-  if (tag==NULL)
+  if (!tag)
   {
     RLOG(4, "Tag is NULL - skipping");
     return;
@@ -475,17 +487,30 @@ void Rcs::CmdLineParser::appendDescription(const char* tag,
     return;
   }
 
+  // Only when this returned value is non-negative and less than sizeof(buffer),
+  // the string has been completely written.
   char buffer[512] = "";
-  vsnprintf(buffer, sizeof(buffer), description, args);
-
-  if (parsedArguments.find(std::string(tag)) == parsedArguments.end())
+  std::string stag = std::string(tag);
+  int res = vsnprintf(buffer, sizeof(buffer), description, args);
+  if (res<0)
   {
-    parsedArguments[std::string(tag)] = std::string(buffer);
+    RLOG(4, "Description for argument \"%s\" not written correctly due to "
+         "encoding error", tag);
+  }
+  else if (res>=(int)sizeof(buffer))
+  {
+    RLOG(4, "Description for argument \"%s\" not complete (%d of %d bytes)",
+         tag, res, sizeof(buffer));
+  }
+
+  if (parsedArguments.find(stag) == parsedArguments.end())
+  {
+    parsedArguments[stag] = std::string(buffer);
   }
   else
   {
-    parsedArguments[std::string(tag)] += " / ";
-    parsedArguments[std::string(tag)] += std::string(buffer);
+    parsedArguments[stag] += " / ";
+    parsedArguments[stag] += std::string(buffer);
   }
 
 }
@@ -496,14 +521,14 @@ void Rcs::CmdLineParser::appendDescription(const char* tag,
  ******************************************************************************/
 int Rcs::CmdLineParser::getTagIndex(const char* tag) const
 {
-  if (tag == NULL)
+  if (!tag)
   {
     return -1;
   }
 
   for (int i = 0; i < argc-1; i++)
   {
-    if (std::string(argv[i]) == std::string(tag))
+    if (STREQ(argv[i], tag))
     {
       return i;
     }
