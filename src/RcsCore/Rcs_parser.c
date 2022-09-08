@@ -461,12 +461,11 @@ bool getXMLNodePropertyInt(xmlNodePtr node, const char* tag, int* x)
   bool exists = false;
   xmlChar* txt = xmlGetProp(node, (const xmlChar*) tag);
 
-  if (txt != NULL)
+  if (txt)
   {
-    if (x != NULL)
+    if (x)
     {
       *x = atoi((const char*) txt);
-      //RCHECK(isfinite(*x));
     }
 
     exists = true;
@@ -487,12 +486,11 @@ bool getXMLNodePropertyUnsignedInt(xmlNodePtr node, const char* tag,
 
   if (txt)
   {
-    errno = 0;
     if (x)
     {
+      errno = 0;
       *x = strtoul((const char*) txt, 0, 0);
       RCHECK(errno == 0);
-      //RCHECK(isfinite(*x));
       RCHECK(*x<UINT_MAX);
     }
 

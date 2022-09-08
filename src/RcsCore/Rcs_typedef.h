@@ -264,6 +264,9 @@ struct _RcsGraph
 
 
 #define RCSJOINT_BY_ID(graph, id) ((id)==-1 ? NULL : &(graph)->joints[id])
+#define RCSJOINT_NAME_BY_ID(graph, id)  \
+  ((id)==-1 ? "NULL ": (graph)->joints[id].name)
+
 #define RCSBODY_BY_ID(graph, id)  ((id)==-1 ? NULL : &(graph)->bodies[id])
 #define RCSBODY_NAME_BY_ID(graph, id)  \
   ((id)==-1 ? "NULL ": (graph)->bodies[id].name)
