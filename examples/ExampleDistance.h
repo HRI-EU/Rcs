@@ -39,6 +39,7 @@
 
 #include <RcsViewer.h>
 #include <HUD.h>
+#include <KeyCatcher.h>
 
 #include <pthread.h>
 
@@ -56,6 +57,7 @@ public:
   virtual void initGraphics();
   virtual void step();
   virtual std::string help();
+  virtual void handleKeys();
 
 protected:
   int shapeType1;
@@ -78,7 +80,8 @@ protected:
   double n01[3];
 
   Rcs::Viewer* viewer;
-  osg::ref_ptr<Rcs::HUD> hud;
+  osg::ref_ptr<HUD> hud;
+  osg::ref_ptr<KeyCatcher> kc;
 };
 
 

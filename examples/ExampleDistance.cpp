@@ -144,6 +144,9 @@ void ExampleDistance::initGraphics()
   hud = new Rcs::HUD();
   viewer->add(hud.get());
 
+  kc = new Rcs::KeyCatcher();
+  viewer->add(kc.get());
+
   // BodyNodes
   Rcs::BodyNode* bNd1 = new Rcs::BodyNode(b1, graph, 1.0, false);
   Rcs::BodyNode* bNd2 = new Rcs::BodyNode(b2, graph, 1.0, false);
@@ -178,7 +181,7 @@ void ExampleDistance::initGraphics()
 
   Rcs::SphereNode* sphereCP1 = new Rcs::SphereNode(cp1, 0.015);
   sphereCP1->makeDynamic(cp1);
-  sphereCP1->setMaterial("RED");
+  sphereCP1->setMaterial("GREEN");
   viewer->add(sphereCP1);
 
   // ArrowNode for normal vector
@@ -191,6 +194,7 @@ void ExampleDistance::initGraphics()
 void ExampleDistance::step()
 {
   double dt, dist;
+  char buf[512];
 
   pthread_mutex_lock(&graphLock);
   dt = Timer_getTime();
@@ -198,8 +202,15 @@ void ExampleDistance::step()
   dt = Timer_getTime() - dt;
   pthread_mutex_unlock(&graphLock);
 
-  sprintf(textLine, "Distance: D = % 3.2f mm took %3.2f usec\n",
+  sprintf(buf, "Distance: D = % 3.2f mm took %3.2f usec\n",
           dist * 1000.0, dt * 1.0e6);
+  strcpy(textLine, buf);
+  sprintf(buf, "cp1: %.5f %.5f %.5f   cp2: %.5f %.5f %.5f\n",
+          cp0[0], cp0[1], cp0[2], cp1[0], cp1[1], cp1[2]);
+  strcat(textLine, buf);
+  sprintf(buf, "normal: %.5f %.5f %.5f (len: %.5f)\n",
+          n01[0], n01[1], n01[2], Vec3d_getLength(n01));
+  strcat(textLine, buf);
   if (hud.valid())
   {
     hud->setText(textLine);
@@ -218,7 +229,23 @@ void ExampleDistance::step()
   }
 }
 
+void ExampleDistance::handleKeys()
+{
+  if (!kc)
+  {
+    return;
+  }
 
+  //////////////////////////////////////////////////////////////
+  // Keycatcher
+  /////////////////////////////////////////////////////////////////
+  if (kc->getAndResetKey('q'))
+  {
+    RMSGS("Quitting run loop");
+    runLoop = false;
+  }
+
+}
 
 
 }   // namespace Rcs
