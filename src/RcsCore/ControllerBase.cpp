@@ -2453,7 +2453,7 @@ void ControllerBase::swapTaskVec(std::vector<Task*>& newTasks,
 
     for (size_t i=0; i<tasks.size()-1; ++i)
     {
-      size_t idx = this->taskArrayIdx.back() + this->tasks.back()->getDim();
+      size_t idx = this->taskArrayIdx.back() + this->tasks[i]->getDim();
       this->taskArrayIdx.push_back(idx);
     }
   }
@@ -2685,6 +2685,26 @@ void ControllerBase::recomputeIndices()
     taskArrayIdx.push_back(taskArrayIdx[i-1] + tasks[i-1]->getDim());
   }
 
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void ControllerBase::setGraph(RcsGraph* newGraph, bool deleteOriginalGraph)
+{
+  if (deleteOriginalGraph)
+  {
+    RcsGraph_destroy(this->graph);
+  }
+
+  this->graph = newGraph;
+
+  for (size_t i = 0; i < tasks.size(); ++i)
+  {
+    tasks[i]->setGraph(newGraph);
+  }
+
+  recomputeIndices();
 }
 
 }   // namespace Rcs

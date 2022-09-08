@@ -865,6 +865,10 @@ public:
    */
   void recomputeIndices();
 
+  /*! \brief Updates all tasks to the new graph.
+   */
+  virtual void setGraph(RcsGraph* graph, bool deleteOriginalGraph=true);
+
 private:
 
   bool initFromXmlNode(xmlNodePtr xmlNodeController);
