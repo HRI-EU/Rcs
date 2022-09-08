@@ -64,6 +64,8 @@ QCoreApplication::postEvent: Unexpected null receiver
 
 RCS_INSTALL_ERRORHANDLERS
 
+Rcs::ExampleBase* example = NULL;
+
 bool runLoop = true;
 
 
@@ -83,6 +85,10 @@ void quit(int /*sig*/)
 {
   static int kHit = 0;
   runLoop = false;
+  if (example)
+  {
+    example->stop();
+  }
   fprintf(stderr, "Trying to exit gracefully - %dst attempt\n", kHit + 1);
   kHit++;
 
@@ -164,20 +170,24 @@ int main(int argc, char** argv)
       argP.getArgument("-e", &exampleName, "Example name (default: %s)",
                        exampleName.c_str());
 
-      if (argP.hasArgument("-h"))
-      {
-        break;
-      }
-
-      Rcs::ExampleBase* example = Rcs::ExampleFactory::create(categoryName,
-                                                              exampleName,
-                                                              argc, argv);
+      example = Rcs::ExampleFactory::create(categoryName, exampleName,
+                                            argc, argv);
       if (!example)
       {
         RMSG("Example %s unknown", exampleName.c_str());
         Rcs::ExampleFactory::print();
         break;
       }
+
+      if (argP.hasArgument("-h"))
+      {
+        example->initParameters();
+        example->parseArgs(&argP);
+        delete example;
+        example = NULL;
+        break;
+      }
+
       example->init(argc, argv);
       example->start();
       example->stop();
