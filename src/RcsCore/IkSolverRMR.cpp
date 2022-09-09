@@ -62,8 +62,7 @@ IkSolverRMR::IkSolverRMR(ControllerBase* controller_) :
   this->hasCoupledJoints = (nCpldJnts > 0);
   RcsGraph_coupledJointMatrix(controller->getGraph(), this->A, this->invA);
 
-
-  // Joint space weghting matrix
+  // Joint space weighting matrix
   this->invWq = MatNd_create(dof, 1);
   RcsGraph_getInvWq(controller->getGraph(), this->invWq, RcsStateIK);
   MatNd_preMulSelf(this->invWq, this->invA);

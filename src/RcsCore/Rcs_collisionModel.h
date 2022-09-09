@@ -148,6 +148,16 @@ bool RcsCollisionMdl_isEqual(const RcsCollisionMdl* self,
 void RcsCollisionModel_fprintCollisions(FILE* fd, const RcsCollisionMdl* self,
                                         double distanceThreshold);
 
+/*! \ingroup RcsCollisionMdlFunctions
+ *  \brief Prints the collision model xml representation to the given file
+ *         descriptor. The arguments are assumed to be not NULL.
+ *
+ *  \param[in] out     File to write to.
+ *  \param[in] self    Collision model to write.
+ *
+ *  \return Number of errors encountered. Errors are reported on debug level 1.
+ */
+int RcsCollisionModel_fprintXML(FILE* out, const RcsCollisionMdl* self);
 
 #ifdef __cplusplus
 }

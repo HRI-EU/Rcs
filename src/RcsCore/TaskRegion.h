@@ -118,6 +118,11 @@ public:
    */
   virtual void setTaskReprojection(const std::vector<double>& dx_proj);
 
+  /*! \brief Writes the task region's xml representation to a file desriptor.
+   *         In this base class implementation, the function does nothing.
+   */
+  virtual void toXML(FILE* out, bool activation) const;
+
 protected:
 
   std::vector<double> dx_proj;

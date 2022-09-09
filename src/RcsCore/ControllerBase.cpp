@@ -2563,6 +2563,9 @@ bool ControllerBase::toXML(const std::string& fileName,
     tasks[i]->toXML(out, ai);
   }
 
+  // Print the collision model (if any)
+  fprintf(out, "\n");
+  RcsCollisionModel_fprintXML(out, getCollisionMdl());
   fprintf(out, "\n</Controller>\n");
 
   fclose(out);

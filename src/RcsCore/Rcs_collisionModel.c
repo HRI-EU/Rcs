@@ -37,6 +37,7 @@
 #include "Rcs_body.h"
 #include "Rcs_math.h"
 #include "Rcs_macros.h"
+#include "Rcs_utils.h"
 
 #include <float.h>
 
@@ -340,6 +341,65 @@ void RcsCollisionModel_fprint(FILE* fd, const RcsCollisionMdl* self)
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+int RcsCollisionModel_fprintXML(FILE* out, const RcsCollisionMdl* self)
+{
+  int nErr = 0;
+
+  if (out == NULL)
+  {
+    RLOG(1, "You are trying to print a collision model to a NULL file "
+         "descriptor - ignoring");
+    nErr++;
+    return nErr;
+  }
+
+  if (self == NULL || self->nPairs==0)
+  {
+    return nErr;
+  }
+
+  char buf[64];
+  fprintf(out, "<CollisionModel ");
+
+  if (self->sMixtureCost != 0.0)
+  {
+    fprintf(out, "MixtureCost=\"%s\" ", 
+            String_fromDouble(buf, self->sMixtureCost, 6));
+  }
+
+  fprintf(out, "PenetrationSlope=\"%s\" ",
+          String_fromDouble(buf, self->penetrationSlope, 6));
+
+  fprintf(out, ">\n");
+
+  for (unsigned int i = 0; i < self->nPairs; ++i)
+    {
+      const RcsPair* pair = &self->pair[i];
+
+      fprintf(out, "  <CollisionPair ");
+      fprintf(out, "body1=\"%s\" ", RCSBODY_NAME_BY_ID(self->graph, pair->b1));
+      fprintf(out, "body2=\"%s\" ", RCSBODY_NAME_BY_ID(self->graph, pair->b2));
+      fprintf(out, "DistanceThreshold=\"%s\" ", 
+              String_fromDouble(buf, pair->dThreshold, 6));
+
+      if (pair->weight != 1.0)
+      {
+        fprintf(out, "weight=\"%s\" ", 
+                String_fromDouble(buf, pair->weight, 6));
+      }
+
+      fprintf(out, "/>\n");
+    }
+
+
+  fprintf(out, "</CollisionModel>\n");
+
+  return nErr;
+}
+
+/*******************************************************************************
  * It is safe to call free on NULL
  ******************************************************************************/
 void RcsCollisionModel_destroy(RcsCollisionMdl* self)
@@ -524,6 +584,13 @@ void RcsCollisionMdl_gradient(const RcsCollisionMdl* self, MatNd* grad)
     double* cp2 = MatNd_getRowPtr(self->cp, PAIR->cp2);
     double* n1 = MatNd_getRowPtr(self->cp, PAIR->n1);
     RcsBody_distanceGradient(self->graph, b1, b2, repelling, cp1, cp2, n1, dDpdq);
+
+    /* REXEC(1) */
+    /* { */
+    /*   MatNd_transposeSelf(dDpdq); */
+    /*   MatNd_printCommentDigits("dpDdq", dDpdq, 8); */
+    /*   MatNd_transposeSelf(dDpdq); */
+    /* } */
 
     if (d < 0.0)
     {

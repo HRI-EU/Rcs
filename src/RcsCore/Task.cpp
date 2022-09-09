@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -394,6 +394,14 @@ void Rcs::Task::print() const
  *
  ******************************************************************************/
 Rcs::TaskRegion* Rcs::Task::getTaskRegion()
+{
+  return this->tsr;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+const Rcs::TaskRegion* Rcs::Task::getTaskRegion() const
 {
   return this->tsr;
 }
@@ -1451,7 +1459,7 @@ int Rcs::Task::getIdOfBodyWithSuffix(int bdyId, const std::string& suffix)
 
 /*******************************************************************************
  * Since we have overwritten this function for CompositeTasks, we must not
- * call the derieved version. That''s why we have the Task:: specialization.
+ * call the derieved version. That's why we have the Task:: specialization.
  ******************************************************************************/
 bool Rcs::Task::setIdsToSuffix(const std::string& suffix)
 {
@@ -1686,5 +1694,16 @@ void Rcs::Task::toXMLBody(FILE* out) const
  ******************************************************************************/
 void Rcs::Task::toXMLEnd(FILE* out, bool activation) const
 {
-  fprintf(out, " active=\"%s\" />\n", activation ? "true" : "false");
+  const TaskRegion* tsr = getTaskRegion();
+
+  if (getTaskRegion())
+  {
+    fprintf(out, " active=\"%s\" >\n", activation ? "true" : "false");
+    tsr->toXML(out, activation);
+    fprintf(out, "</Task>\n");
+  }
+  else
+  {
+    fprintf(out, " active=\"%s\" />\n", activation ? "true" : "false");
+  }
 }

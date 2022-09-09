@@ -186,12 +186,6 @@ public:
    */
   virtual size_t getNumberOfTasks() const;
 
-  /*! \brief Writes the specific task's xml representation to a file
-   *         desriptor. This one just exits fatally to be reminded that
-   *         the derived class needs to implement it.
-   */
-  virtual void toXML(FILE* out, bool activation=true) const;
-
 protected:
 
   /*! \brief Updates the task to the new graph.

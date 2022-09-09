@@ -91,4 +91,8 @@ void Rcs::TaskRegion::setTaskReprojection(const std::vector<double>& dx)
   dx_proj = dx;
 }
 
+void Rcs::TaskRegion::toXML(FILE* out, bool activation) const
+{
+}
+
 }

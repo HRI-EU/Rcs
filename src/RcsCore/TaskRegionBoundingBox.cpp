@@ -38,6 +38,7 @@
 #include "Rcs_macros.h"
 #include "Rcs_basicMath.h"
 #include "Rcs_VecNd.h"
+#include "Rcs_utils.h"
 
 #include <cfloat>
 
@@ -77,6 +78,41 @@ void TaskRegionBoundingBox::computeDX(const Task* task, double* dx,
     dx[i] = x_bb - x_curr[i];
   }
 
+}
+
+void Rcs::TaskRegionBoundingBox::toXML(FILE* out, bool activation) const
+{
+  char buf[64];
+  fprintf(out, "  <TaskRegion type=\"BoundingBox\" ");
+  fprintf(out, "min=\"");
+
+  for (size_t i = 0; i < bbMin.size(); ++i)
+  {
+    if (i < bbMin.size() - 1)
+    {
+      fprintf(out, "%s ", String_fromDouble(buf, bbMin[i], 6));
+    }
+    else
+    {
+      fprintf(out, "%s\" ", String_fromDouble(buf, bbMin[i], 6));
+    }
+  }
+
+  fprintf(out, "max=\"");
+
+  for (size_t i = 0; i < bbMax.size(); ++i)
+  {
+    if (i < bbMax.size() - 1)
+    {
+      fprintf(out, "%s ", String_fromDouble(buf, bbMax[i], 6));
+    }
+    else
+    {
+      fprintf(out, "%s\" ", String_fromDouble(buf, bbMax[i], 6));
+    }
+  }
+
+  fprintf(out, "/>\n");
 }
 
 }   // namespace Rcs

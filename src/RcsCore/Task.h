@@ -290,6 +290,8 @@ public:
 
   TaskRegion* getTaskRegion();
 
+  const TaskRegion* getTaskRegion() const;
+
   /**
    * @name TaskSpecialization
    *

@@ -65,7 +65,7 @@ namespace Rcs
  *           file: REGISTER_EXAMPLE(MyNewExample);
  *
  *         Most of the classes in this library have been implemented like this.
- *         See for instance \ref ExampleFK.
+ *         See for instance ExampleFK.
  */
 class ExampleFactory
 {
@@ -76,9 +76,11 @@ public:
   /*! \brief Creates a new example by name using the registered construction
    *         function.
    *
-   * \param argc      Number of command line arguments
-   * \param argv      String array of command line arguments
-   * \return          New ExampleBase instance or NULL incase of failure
+   * \param[in] category  Name of the example category
+   * \param[in] example   Name of the example
+   * \param[in] argc      Number of command line arguments
+   * \param[in] argv      String array of command line arguments
+   * \return              New ExampleBase instance or NULL incase of failure
    */
   static ExampleBase* create(std::string category, std::string example,
                              int argc, char** argv);
@@ -138,8 +140,8 @@ public:
    *         Then, you can create a MyCoolNewExample such as
    *         ExampleBase* ex = ExampleFactory::create(argc, argv);
    *
-   *  \param className The name that is used for instanciating a new
-   *                   example by name
+   *  \param[in] category  Name of the example category
+   *  \param[in] example   Name of the example
    */
   ExampleFactoryRegistrar(std::string category, std::string example)
   {

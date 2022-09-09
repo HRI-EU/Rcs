@@ -473,11 +473,3 @@ bool Rcs::CompositeTask::setIdsToSuffix(const std::string& suffix)
 
   return success;
 }
-
-/*******************************************************************************
- *
- ******************************************************************************/
-void Rcs::CompositeTask::toXML(FILE* out, bool activation) const
-{
-  Task::toXML(out, activation);
-}
