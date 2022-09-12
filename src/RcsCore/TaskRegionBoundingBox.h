@@ -57,7 +57,7 @@ class TaskRegionBoundingBox : public TaskRegion
 {
 public:
 
-  TaskRegionBoundingBox(const Task* task, xmlNode* node);
+  TaskRegionBoundingBox(const Task* task, const xmlNodePtr node);
 
   virtual ~TaskRegionBoundingBox();
 

@@ -42,7 +42,7 @@
  *  A library for generalizing task space commands to the Task Interval (or
  *  Task Space Region) concept. Here is the corresponding paper:
  *
- *    Gienger, Michael, Herbert Janben, and Christian Goerick:
+ *    Gienger, Michael, Herbert Janssen, and Christian Goerick:
  *    Exploiting task intervals for whole body robot control.
  *    2006 IEEE/RSJ International Conference on Intelligent Robots and Systems.
  *    IEEE, 2006.
@@ -80,7 +80,7 @@ public:
   /*! \brief Constructor used in xml factory. This needs to be re-implemented
    *         for each class if parameters need to be parsed.
    */
-  TaskRegion(const Task* task, xmlNode* node);
+  TaskRegion(const Task* task, const xmlNodePtr node);
 
   /*! \brief Copy constructor. This needs to be implemented in each derieved
    *         class to support copying.

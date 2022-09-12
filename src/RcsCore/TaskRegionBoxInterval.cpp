@@ -49,7 +49,8 @@ namespace Rcs
 {
 REGISTER_TASKREGION(TaskRegionBoxInterval, "BoxInterval");
 
-TaskRegionBoxInterval::TaskRegionBoxInterval(const Task* task, xmlNode* node) :
+TaskRegionBoxInterval::TaskRegionBoxInterval(const Task* task, 
+                                             const xmlNodePtr node) :
   TaskRegion(task, node), slowDownRatio(0.0)
 {
   getXMLNodePropertyDouble(node, "slowDownRatio", &slowDownRatio);

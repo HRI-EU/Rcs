@@ -87,7 +87,7 @@ public:
    *         exits fatally if the number of parameters in min and max do not
    *         correspond to the task's dimension.
    */
-  TaskRegionBoxInterval(const Task* task, xmlNode* node);
+  TaskRegionBoxInterval(const Task* task, const xmlNodePtr node);
 
   virtual ~TaskRegionBoxInterval();
 

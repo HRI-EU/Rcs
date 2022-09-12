@@ -62,7 +62,7 @@ namespace Rcs
 {
 REGISTER_TASKREGION(TaskRegion, "SetPoint");
 
-TaskRegion::TaskRegion(const Task* task, xmlNode* node)
+TaskRegion::TaskRegion(const Task* task, const xmlNodePtr node)
 {
   dx_proj = std::vector<double>(task->getDim(), 0.0);
 }

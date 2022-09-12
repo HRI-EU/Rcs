@@ -47,7 +47,8 @@ namespace Rcs
 {
 REGISTER_TASKREGION(TaskRegionBoundingBox, "BoundingBox");
 
-TaskRegionBoundingBox::TaskRegionBoundingBox(const Task* task, xmlNode* node) :
+TaskRegionBoundingBox::TaskRegionBoundingBox(const Task* task, 
+                                             const xmlNodePtr node) :
   TaskRegion(task, node)
 {
   bbMin = std::vector<double>(task->getDim(), -DBL_MAX);
