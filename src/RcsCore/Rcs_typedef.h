@@ -227,7 +227,7 @@ struct _RcsPair
   double distance;       ///< Shortest distance between b1 and b2
   int cp1;               ///< Row number of closest point on body 1
   int cp2;               ///< Row number of closest point on body 2
-  int n1;                ///< Unit normal on body 1 (pointing outwards)
+  int n1;                ///< Row number of unit normal on body 1 (1->2)
 };
 
 
