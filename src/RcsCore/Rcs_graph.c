@@ -807,11 +807,17 @@ void RcsGraph_getTorqueLimits(const RcsGraph* self, MatNd* T_limit,
  ******************************************************************************/
 void RcsGraph_setDefaultState(RcsGraph* self)
 {
-  RCSGRAPH_TRAVERSE_JOINTS(self)
-  {
-    MatNd_set2(self->q, JNT->jointIndex, 0, JNT->q0);
-  }
+  RcsGraph_getDefaultState(self, self->q);
+  MatNd_setZero(self->q_dot);
+  RcsGraph_setState(self, NULL, self->q_dot);
+}
 
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void RcsGraph_setInitState(RcsGraph* self)
+{
+  RcsGraph_getInitState(self, self->q);
   MatNd_setZero(self->q_dot);
   RcsGraph_setState(self, NULL, self->q_dot);
 }
@@ -1506,8 +1512,10 @@ void RcsGraph_printState(const RcsGraph* self, const MatNd* q)
  *   <joint_state joint="jnt2" position="20" />
  * </model_state>
  ******************************************************************************/
-void RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q)
+int RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q,
+                              const char* mdlStateName, int timeStmp)
 {
+  int nErr = 0;
   RcsStateType stateType;
 
   if (q->m == self->dof)
@@ -1520,19 +1528,22 @@ void RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q)
   }
   else
   {
-    fprintf(out, "Warning: q->m=%d is neither dof (%d) nor nJ (%d)",
-            q->m, self->dof, self->nJ);
-    return;
+    RLOG(1, "Warning: q->m=%d is neither dof (%d) nor nJ (%d)",
+         q->m, self->dof, self->nJ);
+    nErr++;
+    return nErr;
   }
 
   if (q->n != 1)
   {
-    fprintf(out, "Warning: q->n=%d but should be 1", q->n);
-    return;
+    RLOG(1, "Warning: q->n=%d but should be 1", q->n);
+    nErr++;
+    return nErr;
   }
 
   char buf[256];
-  fprintf(out, "<model_state model=\"DefaultPose\" time_stamp=\"\">\n");
+  fprintf(out, "<model_state model=\"%s\" time_stamp=\"%d\">\n",
+          mdlStateName ? mdlStateName : "DefaultPose", timeStmp);
 
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {
@@ -1561,6 +1572,8 @@ void RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q)
   }
 
   fprintf(out, "</model_state>\n");
+
+  return nErr;
 }
 
 /*******************************************************************************
@@ -1730,36 +1743,6 @@ bool RcsGraph_writeDotFileDfsTraversal(const RcsGraph* self,
 
   // File end
   fprintf(fd, "}\n");
-  fclose(fd);
-
-  return true;
-}
-
-/*******************************************************************************
- * See header.
- ******************************************************************************/
-bool RcsGraph_writeXmlFile(const RcsGraph* self, const char* filename)
-{
-  if (filename==NULL)
-  {
-    RLOG(4, "File name is NULL");
-    return false;
-  }
-
-  if (self==NULL)
-  {
-    RLOG(4, "Couldn't write NULL graph to file \"%s\"", filename);
-    return false;
-  }
-
-  FILE* fd = fopen(filename, "w+");
-
-  if (fd==NULL)
-  {
-    return false;
-  }
-
-  RcsGraph_fprintXML(fd, self);
   fclose(fd);
 
   return true;
@@ -2490,10 +2473,7 @@ RcsGraph* RcsGraph_clone(const RcsGraph* src)
 }
 
 /*******************************************************************************
- * This function assumes a few things:
- * - The subgraph is contiguously contained in q, q_dot, bodies and joints
- *   arrays.
- * - All sizes are correct
+ * See header.
  ******************************************************************************/
 bool RcsGraph_copySubGraph(RcsGraph* subGraph, const RcsGraph* graph)
 {
@@ -3233,12 +3213,14 @@ void RcsGraph_makeJointsConsistent(RcsGraph* self)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void RcsGraph_fprintXML(FILE* out, const RcsGraph* self)
+int RcsGraph_fprintXML(FILE* out, const RcsGraph* self)
 {
+  int nErr = 0;
   if (out==NULL)
   {
     RLOG(1, "Can't write graph to NULL xml file");
-    return;
+    nErr++;
+    return nErr;
   }
 
   fprintf(out, "<Graph name=\"DefaultPose\"");
@@ -3256,44 +3238,49 @@ void RcsGraph_fprintXML(FILE* out, const RcsGraph* self)
 
   RCSGRAPH_TRAVERSE_BODIES(self)
   {
-    RcsBody_fprintXML(out, BODY, self);
+    nErr += RcsBody_fprintXML(out, BODY, self);
   }
 
-  RcsGraph_fprintModelState(out, self, self->q);
+  RcsGraph_fprintModelState(out, self, self->q, NULL, 0);
 
-  fprintf(out, "</Graph>\n");
+  fprintf(out, "\n</Graph>\n");
+
+  return nErr;
 }
 
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-bool RcsGraph_toXML(const char* fileName, const RcsGraph* self)
+int RcsGraph_toXML(const RcsGraph* self, const char* filename)
 {
-  if (fileName==NULL)
+  int nErr = 0;
+  if (filename==NULL)
   {
-    RLOG(1, "File name is NULL - can't write xml file");
-    return false;
+    RLOG(1, "File name is NULL");
+    nErr++;
+    return nErr;
   }
 
   if (self==NULL)
   {
-    RLOG(1, "Graph is NULL - can't write xml file");
-    return false;
+    RLOG(1, "Couldn't write NULL graph to file \"%s\"", filename);
+    nErr++;
+    return nErr;
   }
 
-
-  FILE* fd = fopen(fileName, "w+");
+  FILE* fd = fopen(filename, "w+");
 
   if (fd==NULL)
   {
-    RLOG(1, "Failed to open file \"%s\" - can't write xml file", fileName);
-    return false;
+    RLOG(1, "Couldn't open file \"%s\" for writing", filename);
+    nErr++;
+    return nErr;
   }
 
-  RcsGraph_fprintXML(fd, self);
+  nErr += RcsGraph_fprintXML(fd, self);
   fclose(fd);
 
-  return true;
+  return nErr;
 }
 
 /*******************************************************************************
@@ -4421,4 +4408,57 @@ RcsGraph* RcsGraph_createRandom(unsigned int nBodies, unsigned int branching)
   }
 
   return graph;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void RcsGraph_changeSuffix(RcsGraph* graph,
+                           const char* oldSuffix,
+                           const char* newSuffix)
+{
+  const int oldSfxLen = oldSuffix ? strlen(oldSuffix) : 0;
+
+  for (unsigned int i=0; i<graph->nBodies; ++i)
+  {
+    RcsBody* bdy = &graph->bodies[i];
+
+    if (String_hasEnding(bdy->name, oldSuffix, true))
+    {
+      bdy->name[strlen(bdy->name)-oldSfxLen] = '\0';
+      if (newSuffix)
+      {
+        strcat(bdy->name, newSuffix);
+      }
+    }
+  }
+
+  for (unsigned int i=0; i<graph->dof; ++i)
+  {
+    RcsJoint* jnt = &graph->joints[i];
+
+    if (String_hasEnding(jnt->name, oldSuffix, true))
+    {
+      jnt->name[strlen(jnt->name)-oldSfxLen] = '\0';
+      if (newSuffix)
+      {
+        strcat(jnt->name, newSuffix);
+      }
+    }
+  }
+
+  for (unsigned int i=0; i<graph->nSensors; ++i)
+  {
+    RcsSensor* sensor = &graph->sensors[i];
+
+    if (String_hasEnding(sensor->name, oldSuffix, true))
+    {
+      sensor->name[strlen(sensor->name)-oldSfxLen] = '\0';
+      if (newSuffix)
+      {
+        strcat(sensor->name, newSuffix);
+      }
+    }
+  }
+
 }

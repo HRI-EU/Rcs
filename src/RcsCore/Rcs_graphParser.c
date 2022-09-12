@@ -54,6 +54,205 @@
 /*******************************************************************************
  *
  ******************************************************************************/
+static void RcsGraph_parseModelStateDetail(xmlNodePtr node,
+                                           const RcsGraph* self,
+                                           const char* mdlName,
+                                           int mdlTimeStamp,
+                                           MatNd* q,
+                                           MatNd* changedQ,
+                                           MatNd* q_dot,
+                                           MatNd* changedQ_dot)
+{
+  // Node is on <Graph> level, we need to descent one level
+  node = node->children;
+
+  MatNd_reshapeAndSetZero(changedQ, self->dof, 1);
+  MatNd_reshapeAndSetZero(changedQ_dot, self->dof, 1);
+  MatNd_reshape(q, self->dof, 1);
+  MatNd_reshape(q_dot, self->dof, 1);
+
+  while (node)
+  {
+
+    if (!isXMLNodeNameNoCase(node, "model_state"))
+    {
+      node = node->next;
+      continue;
+    }
+
+    char stateName[RCS_MAX_NAMELEN] = "";
+    getXMLNodePropertyStringN(node, "model", stateName, RCS_MAX_NAMELEN);
+
+    if (!STREQ(mdlName, stateName))
+    {
+      node = node->next;
+      continue;
+    }
+
+    int timeStamp = -1;
+    getXMLNodePropertyInt(node, "time_stamp", &timeStamp);
+
+    // Here we catch the case that the xml string is empty.
+    if (getXMLNodeBytes(node, "time_stamp")==1)
+    {
+      timeStamp = -1;
+    }
+
+    if ((timeStamp!=mdlTimeStamp) && (mdlTimeStamp!=-1))
+    {
+      node = node->next;
+      continue;
+    }
+
+    xmlNodePtr jntStateNode = node->children;
+
+    // Search for all joints that are kinematically coupled. We store them in
+    // tuples [MasterJointIdx - JntId] so that we can later adjust all coupled
+    // joints of ones that have been specified in the model_state description.
+    MatNd* cpldId = MatNd_create(0, 2);
+
+    for (unsigned int i=0; i<self->dof; ++i)
+    {
+      const RcsJoint* JNT = &self->joints[i];
+      if (JNT->coupledToId != -1)
+      {
+        double tmp[2];
+        tmp[0] = self->joints[JNT->coupledToId].jointIndex;
+        tmp[1] = JNT->id;
+        MatNd cplTmp = MatNd_fromPtr(1, 2, tmp);
+        MatNd_appendRows(cpldId, &cplTmp);
+      }
+    }
+
+    // From here, we go through all joints of the joint state xml description.
+    while (jntStateNode)
+    {
+      if (!isXMLNodeNameNoCase(jntStateNode, "joint_state"))
+      {
+        jntStateNode = jntStateNode->next;
+        continue;
+      }
+
+      char name[RCS_MAX_NAMELEN] = "";
+      getXMLNodePropertyStringN(jntStateNode, "joint", name, RCS_MAX_NAMELEN);
+      const RcsJoint* jnt = RcsGraph_getJointByName(self, name);
+
+      if (!jnt)
+      {
+        RLOG(4, "Joint \"%s\" not found", name);
+        jntStateNode = jntStateNode->next;
+        continue;
+      }
+
+      double qi, qi_dot;
+      bool hasPos = getXMLNodePropertyDouble(jntStateNode, "position", &qi);
+      bool hasVel = getXMLNodePropertyDouble(jntStateNode, "velocity", &qi_dot);
+
+      if (hasPos || hasVel)
+      {
+        if (jnt->coupledToId != -1)
+        {
+          RLOG(4, "You are setting the state of a kinematically coupled"
+               " joint (\"%s\") - this has no effect", jnt->name);
+        }
+
+        if (hasPos)
+        {
+          qi *= RcsJoint_isRotation(jnt) ? (M_PI/180.0) : 1.0;
+          q->ele[jnt->jointIndex] = qi;
+          changedQ->ele[jnt->jointIndex] = 1.0;
+        }
+
+        if (hasVel)
+        {
+          qi_dot *= RcsJoint_isRotation(jnt) ? (M_PI/180.0) : 1.0;
+          q_dot->ele[jnt->jointIndex] = qi_dot;
+          changedQ_dot->ele[jnt->jointIndex] = 1.0;
+        }
+
+      }   // if (hasPos || hasVel)
+
+      jntStateNode = jntStateNode->next;
+    }  // while (jntStateNode != NULL)
+
+
+    // If any of the coupled joints refers to one that has been specified
+    // within the model_state, we adjust it here to match the coupling.
+    for (unsigned int i=0; i<cpldId->m; ++i)
+    {
+      // Index mjidx is the joint index of the joint that the jCpld is
+      // coupled to (the "master" joint).
+      const int mjidx = lround(MatNd_get(cpldId, i, 0));
+      const RcsJoint* jCpld = &self->joints[lround(MatNd_get(cpldId, i, 1))];
+
+      if (changedQ->ele[mjidx]>0.0)
+      {
+        q->ele[jCpld->jointIndex] =
+          RcsJoint_computeSlaveJointAngle(self, jCpld, q->ele[mjidx]);
+        changedQ->ele[jCpld->jointIndex] = 1.0;
+      }
+
+      if (changedQ_dot->ele[mjidx]>0.0)
+      {
+        q_dot->ele[jCpld->jointIndex] =
+          RcsJoint_computeSlaveJointVelocity(self, jCpld, q->ele[mjidx],
+                                             q_dot->ele[mjidx]);
+        changedQ_dot->ele[jCpld->jointIndex] = 1.0;
+      }
+
+    }
+
+    MatNd_destroy(cpldId);
+
+    // Next model state
+    node = node->next;
+  }
+
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static bool RcsGraph_parseModelState2(xmlNodePtr node, RcsGraph* self,
+                                      const char* mdlName)
+{
+  MatNd* q = MatNd_clone(self->q);
+  MatNd* q_dot = MatNd_createLike(self->q);
+  MatNd* changedQ = MatNd_createLike(self->q);
+  MatNd* changedQ_dot = MatNd_createLike(self->q);
+  RcsGraph_parseModelStateDetail(node, self, mdlName, -1,
+                                 q, changedQ, q_dot, changedQ_dot);
+
+
+  // To go into separate function
+  for (unsigned int i=0; i<changedQ->m; ++i)
+  {
+    if (changedQ->ele[i]>0.0)
+    {
+      self->q->ele[i] = q->ele[i];
+
+      RcsJoint* ji = RcsGraph_getJointByIndex(self, i, RcsStateFull);
+      ji->q0 = q->ele[i];
+    }
+  }
+
+  // To go into separate function
+  for (unsigned int i=0; i<changedQ_dot->m; ++i)
+  {
+    if (changedQ_dot->ele[i]>0.0)
+    {
+      self->q_dot->ele[i] = q_dot->ele[i];
+    }
+  }
+
+  MatNd_destroyN(4, q, q_dot, changedQ, changedQ_dot);
+
+  return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 static bool RcsGraph_parseModelState(xmlNodePtr node, RcsGraph* self,
                                      const char* mdlName)
 {
@@ -131,9 +330,10 @@ static bool RcsGraph_parseModelState(xmlNodePtr node, RcsGraph* self,
           }
 
           jntStateNode = jntStateNode->next;
-        }
+        }  // while (jntStateNode != NULL)
 
       }   // if (STREQ(stateName, mdlStateName))
+
     }   // if (isXMLNodeNameNoCase(node, "model_state"))
 
     node = node->next;
@@ -783,10 +983,11 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
       jnt->q_max = ka[0];
     }
 
-    RCHECK_MSG(jnt->q_min <= jnt->q_max, "q_min=%f q_max=%f",
-               jnt->q_min, jnt->q_max);
-    RCHECK_MSG((jnt->q0 >= jnt->q_min) && (jnt->q0 <= jnt->q_max),
-               "q_min=%f q0=%f q_max=%f", jnt->q_min, jnt->q0, jnt->q_max);
+    /* RCHECK_MSG(jnt->q_min <= jnt->q_max, "Joint \"%s\": q_min=%f q_max=%f", */
+    /*            jnt->name, jnt->q_min, jnt->q_max); */
+    /* RCHECK_MSG((jnt->q0 >= jnt->q_min) && (jnt->q0 <= jnt->q_max), */
+    /*            "Joint \"%s\": q_min=%f q0=%f q_max=%f", */
+    /*            jnt->name, jnt->q_min, jnt->q0, jnt->q_max); */
 
     if (RcsJoint_isRotation(jnt) == true)
     {
@@ -1730,8 +1931,8 @@ bool RcsGraph_setModelStateFromXML(RcsGraph* self, const char* modelStateName,
  * We make a copy, since the RcsGraph_parseModelState() function changes the
  * graph.
  ******************************************************************************/
-bool RcsGraph_getModelStateFromXML(MatNd* q, const RcsGraph* self,
-                                   const char* modelStateName, int timeStamp)
+bool RcsGraph_getModelStateFromXML_old(MatNd* q, const RcsGraph* self,
+                                       const char* modelStateName, int timeStamp)
 {
   if ((self==NULL) || (modelStateName==NULL))
   {
@@ -1769,6 +1970,40 @@ bool RcsGraph_getModelStateFromXML(MatNd* q, const RcsGraph* self,
 /*******************************************************************************
  *
  ******************************************************************************/
+bool RcsGraph_getModelStateFromXML(MatNd* q, const RcsGraph* self,
+                                   const char* modelStateName, int timeStamp)
+{
+  if ((self==NULL) || (modelStateName==NULL))
+  {
+    return false;
+  }
+
+  // Read XML file
+  xmlDocPtr doc;
+  xmlNodePtr node = parseXMLFile(self->cfgFile, "Graph", &doc);
+
+  if (node == NULL)
+  {
+    xmlFreeDoc(doc);
+    return false;
+  }
+
+  MatNd* q_dot = MatNd_createLike(self->q);
+  MatNd* changedQ = MatNd_createLike(self->q);
+  MatNd* changedQ_dot = MatNd_createLike(self->q);
+  //MatNd_copy(q, self->q);
+  RcsGraph_parseModelStateDetail(node, self, modelStateName, timeStamp,
+                                 q, changedQ, q_dot, changedQ_dot);
+  MatNd_destroyN(3, q_dot, changedQ, changedQ_dot);
+
+  xmlFreeDoc(doc);
+
+  return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
 {
   if (node == NULL)
@@ -1781,7 +2016,6 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
   // The RcsGraph_insertBody() takes care of reallocating it if needed.
   RcsGraph* self = RALLOC(RcsGraph);
   strcpy(self->cfgFile, "Created_from_xml_node");
-
 
   // This is the arrays for the state vectors and velocities. We need to
   // create them here, since in the RcsJoint data structure a pointer will
@@ -1798,7 +2032,7 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
   }
 
   // Initialize generic bodies to refer to no graph body.
-  for (int i = 0; i < RCS_NUM_GENERIC_BODIES; i++)
+  for (int i = 0; i < RCS_NUM_GENERIC_BODIES; ++i)
   {
     self->gBody[i] = -1;
   }
@@ -1817,7 +2051,8 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
 
   // Apply model state
   char mdlName[RCS_MAX_NAMELEN] = "";
-  int nBytes = getXMLNodePropertyStringN(node, "name", mdlName, RCS_MAX_NAMELEN);
+  int nBytes = getXMLNodePropertyStringN(node, "name", mdlName,
+                                         RCS_MAX_NAMELEN);
   if (nBytes > 0)
   {
     RcsGraph_parseModelState(node, self, mdlName);

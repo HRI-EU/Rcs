@@ -48,12 +48,13 @@
 
 namespace Rcs
 {
+
 /*! \ingroup RcsUtilsFunctions
  *  \brief Returns a list of string containing all file names of given directory
  *         that end with a given extension. If returnFullPath is true (default)
  *         then the full path including the provided directory name is returned
  */
-std::list<std::string> getFilenamesInDirectory(const std::string& dirname,
+std::vector<std::string> getFilenamesInDirectory(const std::string& dirname,
                                                bool returnFullPath=true,
                                                const std::string& extension="");
 
@@ -124,14 +125,49 @@ std::vector<std::pair<double,double>> Math_quadsFromPolygon2D(double polygon[][2
                                                               unsigned int nVertices,
                                                               double gridSize);
 
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Reads the model_state of the given xml node in the form of
+ *         <jointIndex - value>
+ *                ...
+ *         <jointIndex - value>
+ *
+ *         Only joint positions are considered, and and joint couplings are
+ *         ignored.
+ */
 std::vector<std::pair<int,double>> RcsGraph_readModelState(xmlNodePtr node,
                                                            const RcsGraph* self,
                                                            const std::string& mdlName);
 
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Returns all model state names of a graph. The RcsGraph::cfgFile is
+ *         parsed for this. If several model states exist (for instance with
+ *         different time stamps), they will show up several times in the
+ *         returned vector.
+ */
 std::vector<std::string> RcsGraph_getModelStateNames(const RcsGraph* graph);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Returns all time stamps for a model state of a given name. The time
+ *         stamps are added to the vector in the order of their occurence in
+ *         the xml file.
+ */
+std::vector<int> RcsGraph_getModelStateTimeStamps(const RcsGraph* graph,
+                                                  const std::string& mdlName);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Returns the text describing the resource paths as std::string.
+ */
 std::string getResourcePaths();
 
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Returns the text stored in a graph's xml file as std::string.
+ */
 std::string RcsGraph_printUsageToString(std::string xmlFile);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Returns the text describing the distance function table as
+ *         std::string.
+ */
 std::string RcsShape_distanceFunctionsToString();
 
 } // namespace Rcs

@@ -126,14 +126,14 @@ ExamplePhysics::ExamplePhysics(int argc, char** argv) : ExampleBase(argc, argv)
 
 ExamplePhysics::~ExamplePhysics()
 {
-  RLOG(0, "ExamplePhysics destructor");
+  RLOG(5, "ExamplePhysics destructor");
   clear();
   pthread_mutex_destroy(&graphLock);
 }
 
 void ExamplePhysics::clear()
 {
-  RLOG(0, "Calling clear()");
+  RLOG(5, "Calling clear()");
   Timer_destroy(timer);
   timer = NULL;
 
@@ -168,7 +168,7 @@ void ExamplePhysics::clear()
 
   Rcs_removeResourcePath(directory.c_str());
 
-  RLOG(0, "Done clear()");
+  RLOG(5, "Done clear()");
 }
 
 void ExamplePhysics::initParameters()
@@ -488,9 +488,11 @@ void ExamplePhysics::step()
   }
 
   snprintf(hudText, 2056,
+           "%s\n"
            "[%s]: Sim-step: %.1f ms\nSim time: %.1f (%.1f) sec\n"
            "Bodies: %d   Joints: %d\n"
            "Gravity compensation: %s\nDisplaying %s",
+           sim->getGraph()->cfgFile,
            sim->getClassName(), dtSim * 1000.0, sim->time(),
            Timer_get(timer),
            sim->getGraph()->nBodies, sim->getGraph()->dof,
@@ -579,7 +581,7 @@ void ExamplePhysics::handleKeys()
   }
   else if (kc->getAndResetKey('Q'))
   {
-    RcsGraph_fprintModelState(stdout, graph, graph->q);
+    RcsGraph_fprintModelState(stdout, graph, graph->q, NULL, 0);
   }
   else if (kc->getAndResetKey('t'))
   {
@@ -873,7 +875,7 @@ void ExamplePhysics::handleKeys()
     }
 
     sim->print();
-    RcsGraph_toXML("gSim.xml", sim->getGraph());
+    RcsGraph_toXML(sim->getGraph(), "gSim.xml");
   }
 
 }
@@ -959,7 +961,28 @@ void ExamplePhysics_HumanoidPendulum::initParameters()
   ExamplePhysics::initParameters();
   xmlFileName = "gHumanoidPendulum.xml";
   directory = "config/xml/Examples";
-  physicsEngine = "NewtonEuler";
+  physicsEngine = "Mujoco";
+  skipGui = true;
+}
+
+
+
+
+
+
+// Rcs -m 4 -f config/xml/PPStest -f gScenario.xml -physicsEngine NewtonEuler -skipGui
+static ExampleFactoryRegistrar<ExamplePhysics_PPStest> ExamplePhysics_PPStest("Physics", "Pressure sensors");
+
+ExamplePhysics_PPStest::ExamplePhysics_PPStest(int argc, char** argv) : ExamplePhysics(argc, argv)
+{
+}
+
+void ExamplePhysics_PPStest::initParameters()
+{
+  ExamplePhysics::initParameters();
+  xmlFileName = "gScenario.xml";
+  directory = "config/xml/PPStest";
+  physicsEngine = "Mujoco";
   skipGui = true;
 }
 

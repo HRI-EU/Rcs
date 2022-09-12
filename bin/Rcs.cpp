@@ -90,6 +90,7 @@
 #include <Rcs_utilsCPP.h>
 #include <Rcs_filters.h>
 #include <IkSolverConstraintRMR.h>
+#include <IkSolverQPOA.h>
 #include <SolverRAC.h>
 #include <TaskFactory.h>
 #include <TaskRegionFactory.h>
@@ -789,6 +790,11 @@ int main(int argc, char** argv)
             }
             printf("\nEnter name of model state: ");
             std::cin >> mdlState;
+
+            int timeStamp = 0;
+            printf("\nEnter time stamp: ");
+            std::cin >> timeStamp;
+
             pthread_mutex_lock(&graphLock);
             bool ok = true;
 
@@ -799,12 +805,12 @@ int main(int argc, char** argv)
             }
             else
             {
-              ok = RcsGraph_setModelStateFromXML(graph, mdlState.c_str(), 0);
+              ok = RcsGraph_setModelStateFromXML(graph, mdlState.c_str(), timeStamp);
             }
 
             pthread_mutex_unlock(&graphLock);
-            RMSG("%s changing model state to %s",
-                 ok ? "SUCCEEDED" : "FAILED", mdlState.c_str());
+            RMSG("%s changing model state to %s %d",
+                 ok ? "SUCCEEDED" : "FAILED", mdlState.c_str(), timeStamp);
           }
           else if (kc->getAndResetKey('j'))
           {
@@ -900,7 +906,7 @@ int main(int argc, char** argv)
             RMSG("%s changing attachement", success ? "SUCCESS" : "FAILURE");
 
             RcsGraph_fprintJointRecursion(stdout, graph, parentName.c_str());
-            RcsGraph_toXML("graph.xml", graph);
+            RcsGraph_toXML(graph, "graph.xml");
             RcsGraph_writeDotFile(graph, dotFile);
             RCHECK(RcsGraph_check(graph, NULL, NULL));
 
@@ -927,7 +933,7 @@ int main(int argc, char** argv)
               RcsGraph_fprint(stderr, graph);
               RLOGS(0, "m=%f   r_com=%f %f %f",
                     mass, r_com[0], r_com[1], r_com[2]);
-              RcsGraph_fprintModelState(stdout, graph, graph->q);
+              RcsGraph_fprintModelState(stdout, graph, graph->q, NULL, 0);
             }
           }
           else if (kc->getAndResetKey('b'))
@@ -1497,7 +1503,7 @@ int main(int argc, char** argv)
         }
         else if (kc && kc->getAndResetKey('Q'))
         {
-          RcsGraph_fprintModelState(stdout, graph, graph->q);
+          RcsGraph_fprintModelState(stdout, graph, graph->q, NULL, 0);
         }
         else if (kc && kc->getAndResetKey('t'))
         {
@@ -1788,7 +1794,7 @@ int main(int argc, char** argv)
           }
 
           sim->print();
-          RcsGraph_toXML("gSim.xml", sim->getGraph());
+          RcsGraph_toXML(sim->getGraph(), "gSim.xml");
         }   // if (kc && ...)
 
         if (valgrind)
@@ -2020,6 +2026,7 @@ int main(int argc, char** argv)
                                          "null space");
       bool constraintIK = argP.hasArgument("-constraintIK", "Use constraint IK"
                                            " solver");
+      bool qpoa = argP.hasArgument("-qpOases", "Use qpOASES IK solver");
       bool initToQ0 = argP.hasArgument("-setDefaultStateFromInit", "Set the "
                                        "joint center defaults from the initial"
                                        " state");
@@ -2070,13 +2077,21 @@ int main(int argc, char** argv)
 
       Rcs::IkSolverRMR* ikSolver = NULL;
 
+      std::string ikSolverName;
       if (constraintIK==true)
       {
         ikSolver = new Rcs::IkSolverConstraintRMR(&controller);
+        ikSolverName = "IkSolverConstraintRMR";
+      }
+      else if (qpoa==true)
+      {
+        ikSolver = new Rcs::IkSolverQPOA(&controller);
+        ikSolverName = "IkSolverQPOA";
       }
       else
       {
         ikSolver = new Rcs::IkSolverRMR(&controller);
+        ikSolverName = "IkSolverRMR";
       }
 
       MatNd* dq_des    = MatNd_create(controller.getGraph()->dof, 1);
@@ -2590,7 +2605,7 @@ int main(int argc, char** argv)
         else if (kc && kc->getAndResetKey('v'))
         {
           RcsGraph_fprintModelState(stdout, controller.getGraph(),
-                                    controller.getGraph()->q);
+                                    controller.getGraph()->q, NULL, 0);
         }
         else if (kc && kc->getAndResetKey('p'))
         {
@@ -2626,13 +2641,13 @@ int main(int argc, char** argv)
         }
 
         snprintf(hudText, 2056,
-                 "IK calculation: %s\ndof: %d nJ: %d "
+                 "[%s] IK calculation: %s\ndof: %d nJ: %d "
                  "nqr: %d nx: %d\nJL-cost: %.6f dJL-cost: %.6f %s %s"
                  "\nalgo: %d lambda:%g alpha: %g tmc: %.3f\n"
                  "Manipulability index: %.6f\n"
                  "Static effort: %.6f\n"
                  "Robot pose %s",
-                 timeStr, controller.getGraph()->dof,
+                 ikSolverName.c_str(), timeStr, controller.getGraph()->dof,
                  controller.getGraph()->nJ, ikSolver->getInternalDof(),
                  (int) controller.getActiveTaskDim(a_des),
                  jlCost, dJlCost,

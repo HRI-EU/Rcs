@@ -102,6 +102,8 @@ void ExampleIK::clear()
   jGui = NULL;
   delete alphaSlider;
   alphaSlider = NULL;
+  delete sim;
+  sim = NULL;
 
   MatNd_destroy(dq_des);
   MatNd_destroy(q_dot_des);
@@ -112,6 +114,7 @@ void ExampleIK::clear()
   MatNd_destroy(x_des_f);
   MatNd_destroy(dx_des);
   MatNd_destroy(dH);
+  MatNd_destroy(F_effort);
   dq_des = NULL;
   q_dot_des = NULL;
   a_des = NULL;
@@ -121,7 +124,10 @@ void ExampleIK::clear()
   x_des_f = NULL;
   dx_des = NULL;
   dH = NULL;
+  F_effort = NULL;
 
+  delete controller;
+  controller = NULL;
   delete simController;   // It's safe even if simController is NULL
   simController = NULL;
   delete ikSolver;
@@ -237,7 +243,12 @@ bool ExampleIK::initAlgo()
     }
   }
 
+  // This allows to call the function from derived classes where a controller
+  // has already been constructed.
+  if (!controller)
+  {
   controller = new ControllerBase(xmlFileName.c_str());
+  }
 
   if (testCopying)
   {
@@ -250,6 +261,7 @@ bool ExampleIK::initAlgo()
     MatNd* q_init = MatNd_createLike(controller->getGraph()->q);
     RcsGraph_getInitState(controller->getGraph(), q_init);
     RcsGraph_changeDefaultState(controller->getGraph(), q_init);
+    MatNd_destroy(q_init);
   }
 
   if (constraintIK == true)
@@ -263,15 +275,23 @@ bool ExampleIK::initAlgo()
 
   dq_des = MatNd_create(controller->getGraph()->dof, 1);
   q_dot_des = MatNd_create(controller->getGraph()->dof, 1);
+
+  // This allows to call the function from derived classes where an activation
+  // vector has already been constructed.
+  if (!a_des)
+  {
   a_des = MatNd_create(controller->getNumberOfTasks(), 1);
+    controller->readActivationsFromXML(a_des);
+  }
+
   x_curr = MatNd_create(controller->getTaskDim(), 1);
   x_physics = MatNd_create(controller->getTaskDim(), 1);
   x_des = MatNd_create(controller->getTaskDim(), 1);
   x_des_f = MatNd_create(controller->getTaskDim(), 1);
   dx_des = MatNd_create(controller->getTaskDim(), 1);
-  dH = MatNd_create(1, controller->getGraph()->nJ);
+  dH = MatNd_create(1, controller->getGraph()->dof);
+  MatNd_reshape(dH, 1, controller->getGraph()->nJ);
 
-  controller->readActivationsFromXML(a_des);
   controller->computeX(x_curr);
   MatNd_copy(x_des, x_curr);
   MatNd_copy(x_des_f, x_curr);
@@ -282,14 +302,11 @@ bool ExampleIK::initAlgo()
                                      effortBdyName.c_str());
   F_effort = MatNd_create(4, 1);   // 4-th element is gain
 
-  // Overall COM
-  Vec3d_setZero(r_com);
-
   // Physics engine
   if (PhysicsFactory::hasEngine(physicsEngine.c_str()))
   {
     simController = new Rcs::ControllerBase(*controller);
-    simGraph = simController->getGraph();//RcsGraph_clone(controller.getGraph());
+    simGraph = simController->getGraph();
 
     if (posCntrl)
     {
@@ -550,7 +567,8 @@ void ExampleIK::step()
     }
 
     RcsGraph_stateVectorToIKSelf(controller->getGraph(), W_ef);
-    MatNd* effortGrad = MatNd_create(1, controller->getGraph()->nJ);
+    MatNd* effortGrad = MatNd_create(1, controller->getGraph()->dof);
+    MatNd_reshape(effortGrad, 1, controller->getGraph()->nJ);
     MatNd F_effort3 = MatNd_fromPtr(3, 1, F_effort->ele);
     RcsGraph_staticEffortGradient(controller->getGraph(), effortBdy,
                                   &F_effort3, W_ef, NULL, effortGrad);
@@ -852,7 +870,7 @@ void ExampleIK::handleKeys()
   else if (kc->getAndResetKey('v'))
   {
     RcsGraph_fprintModelState(stdout, controller->getGraph(),
-                              controller->getGraph()->q);
+                              controller->getGraph()->q, NULL, 0);
   }
   else if (kc->getAndResetKey('p'))
   {

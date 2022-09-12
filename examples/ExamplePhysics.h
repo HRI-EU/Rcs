@@ -131,6 +131,12 @@ public:
   virtual void initParameters();
 };
 
+class ExamplePhysics_PPStest : public ExamplePhysics
+{
+public:
+  ExamplePhysics_PPStest(int argc, char** argv);
+  virtual void initParameters();
+};
 }   // namespace
 
 #endif   // RCS_EXAMPLEPHYSICS_H

@@ -21,6 +21,14 @@ IF(NOT HEADLESS_BUILD)
   ADD_LIBRARY(ExampleCollection ExampleFK.cpp ExampleInvKin.cpp ExampleMath.cpp ExamplePhysics.cpp ExampleDistance.cpp)
   TARGET_LINK_LIBRARIES(ExampleCollection RcsGraphics RcsPhysics RcsGui)
 
+  TARGET_INCLUDE_DIRECTORIES(ExampleCollection PUBLIC
+    # Header source location
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    
+    # Header install location
+    $<INSTALL_INTERFACE:include/examples>
+  )
+ 
   # We add this option to force the linker to export the symbols. This
   # solves the issue that it will not be exposed, since all initialization 
   # happens inside statically. Under Unix, we can use -Wl,--no-as-needed

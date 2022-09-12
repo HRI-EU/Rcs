@@ -78,22 +78,22 @@ bool String_startsWith(const std::string& fullString,
 
 
 // Returns a list of files in a directory (except these that begin with a dot)
-std::list<std::string> getFilenamesInDirectory(const std::string& dirname,
+std::vector<std::string> getFilenamesInDirectory(const std::string& dirname,
                                                bool returnFullPath,
                                                const std::string& extension)
 {
+  std::vector<std::string> files;
+
 #if defined(_MSC_VER)
 
-  std::list<std::string> out;
-  RFATAL("No implementation under windows");
+  RLOG(1, "No implementation under windows");
 
-  return out;
+  return files;
 
 #else
 
   DIR* pDIR;
   struct dirent* entry;
-  std::list<std::string> files;
   if ((pDIR = opendir(dirname.c_str())))
   {
     while ((entry = readdir(pDIR)))
@@ -601,6 +601,67 @@ std::vector<std::string> RcsGraph_getModelStateNames(const RcsGraph* graph)
     int len = Rcs::getXMLNodePropertySTLString(node, "model", stateName);
     RCHECK_MSG(len>0, "Tag \"mode_state\" lacks \"model\" attribute");
     result.push_back(stateName);
+    node = node->next;
+  }
+
+  xmlFreeDoc(doc);
+
+  return result;
+}
+
+std::vector<int> RcsGraph_getModelStateTimeStamps(const RcsGraph* graph,
+                                                  const std::string& mdlName)
+{
+  std::vector<int>  result;
+
+  if (graph==NULL)
+  {
+    return result;
+  }
+
+  // Read XML file
+  xmlDocPtr doc;
+  xmlNodePtr node = parseXMLFile(graph->cfgFile, "Graph", &doc);
+
+  if ((node==NULL) || (node->children==NULL))
+  {
+    xmlFreeDoc(doc);
+    return result;
+  }
+
+  node = node->children;
+
+
+  while (node != NULL)
+  {
+    if (!isXMLNodeNameNoCase(node, "model_state"))
+    {
+      node = node->next;
+      continue;
+    }
+
+    std::string stateName = Rcs::getXMLNodePropertySTLString(node, "model");
+
+    if (stateName != mdlName)
+    {
+      node = node->next;
+      continue;
+    }
+
+    int timeStamp = -1;
+    getXMLNodePropertyInt(node, "time_stamp", &timeStamp);
+
+    // Here we catch the case that the xml string is empty.
+    if (getXMLNodeBytes(node, "time_stamp")==1)
+    {
+      timeStamp = -1;
+    }
+
+    if (timeStamp!=-1)
+    {
+      result.push_back(timeStamp);
+    }
+
     node = node->next;
   }
 

@@ -309,6 +309,19 @@ void RcsGraph_destroy(RcsGraph* self);
 void RcsGraph_scale(RcsGraph* self, double scaleFactor);
 
 /*! \ingroup RcsGraphFunctions
+ *  \brief For each body, joint and sensor, this function changes the oldSuffix
+ *         to the newSuffix if the name ends with the oldSuffix. If not, it
+ *         remains unchanged. If newSuffix is NULL, just the oldSuffix is
+ *         removed.
+ *
+ *  \param[in,out] self   Pointer to a valid RcsGraph
+ *  \param[in] oldSuffix  String with suffix to be changed
+ *  \param[in] newSuffix  String with new suffix to change oldSuffix
+ */
+void RcsGraph_changeSuffix(RcsGraph* self, const char* oldSuffix,
+                           const char* newSuffix);
+
+/*! \ingroup RcsGraphFunctions
  *  \brief Blows the vector of Jacobian coordinates up to the full state
  *         vector.
  */
@@ -400,11 +413,21 @@ void RcsGraph_computeBodyKinematics(RcsGraph* self, RcsBody* bdy,
  *  \brief Sets the state default state vector, computes the forward
  *         kinematics and recomputes the index vector for the accelerated
  *         Jacobian computation. The default state vector corresponds to
- *         the center joint angles q_init of each joint in the XML file.
+ *         the center joint angles q0 of each joint in the XML file.
  *         If it is not specified, the center is assumed to be 0. The
  *         velocities are set to zero.
  */
 void RcsGraph_setDefaultState(RcsGraph* self);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Sets the state to the initial state vector, computes the forward
+ *         kinematics and recomputes the index vector for the accelerated
+ *         Jacobian computation. The initial state vector corresponds to
+ *         the joint angles q_init of each joint in the XML file.
+ *         If it is not specified, the center is assumed to be 0. The
+ *         velocities are set to zero.
+ */
+void RcsGraph_setInitState(RcsGraph* self);
 
 /*! \ingroup RcsGraphFunctions
  * \brief This function overwrites the joint centers with the given values.
@@ -598,21 +621,30 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors, int* nWarnings);
  *                  related to memory allocations.
  */
 RcsGraph* RcsGraph_clone(const RcsGraph* src);
+
 /*! \ingroup RcsGraphFunctions
  *  \brief Returns a copy of the subgraph starting at the given rootId. The
  *         root node will not have any next neighbor.
  *
- *  \param[in] src  Pointer to the graph to be copied.
+ *  \param[in] src       Pointer to the graph to be copied.
+ *  \param[in] rootName  Root body to clone from. The sub-tree (including the
+ *                       root body) will be cloned.
  *  \return Pointer to copy of the subgraph. If argument src is NULL, or
- *                  copying failed, the function returns NULL.
+ *          copying failed, the function returns NULL.
  */
 RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Copies the subtree of graph into the subgraph. The subGraph is
  *         expected to correspond to a depth-first traversal of graph.
+ *
  *         These assumptions are made:
- *         - Coupled joints are not prppoerly considered in cases where
+ *         - The subgraph is contiguously contained in q, q_dot, bodies and
+ *           joints arrays.
+ *         - All sizes are consistent.
+ *
+ *         Limitations:
+ *         - Coupled joints are not properly considered in cases where
  *           the subgraph was cloned from the graph, and these have been
  *           modified in the graph.
  *
@@ -1204,20 +1236,13 @@ bool RcsGraph_setRigidBodyDoFs(RcsGraph* self, const RcsBody* body,
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Prints the graph's xml representation to a file with the given name.
- *         If the file cannot be written, the function returns false and
- *         complains on debug level 1.
  *
- *  \param[in] fileName   Desired file name for xml file
  *  \param[in] self       Pointer to a valid RcsGraph
- */
-bool RcsGraph_toXML(const char* fileName, const RcsGraph* self);
-
-/*! \ingroup RcsGraphFunctions
- *  \brief Prints the graph's usage description to stdout.
+ *  \param[in] fileName   Desired file name for xml file
  *
- *  \param[in] xmlFile   RcsGraph xml file (not required to be full path)
+ *  \return Number of errors encountered. Errors are reported on debug level 1.
  */
-void RcsGraph_printUsage(const char* xmlFile);
+int RcsGraph_toXML(const RcsGraph* self, const char* fileName);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Prints the graph's xml representation to the given file
@@ -1226,8 +1251,17 @@ void RcsGraph_printUsage(const char* xmlFile);
  *
  *  \param[in] out  Valid file descriptor for xml file
  *  \param[in] self  Pointer to a valid RcsGraph
+ *
+ *  \return Number of errors encountered. Errors are reported on debug level 1.
  */
-void RcsGraph_fprintXML(FILE* out, const RcsGraph* self);
+int RcsGraph_fprintXML(FILE* out, const RcsGraph* self);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief Prints the graph's usage description to stdout.
+ *
+ *  \param[in] xmlFile   RcsGraph xml file (not required to be full path)
+ */
+void RcsGraph_printUsage(const char* xmlFile);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Prints out the graph to a file descriptor.
@@ -1260,10 +1294,20 @@ void RcsGraph_printState(const RcsGraph* self, const MatNd* q);
  *  \brief Prints out the state vector in the format of the xml model state. The
  *         function automatically determines if the vector is of type
  *         RcsStateFull or RcsStateIK. If neither is the case or the array
- *         has not exactly one column, it will be printed without human-
- *         readable units, and a warning will be issued.
+ *         has not exactly one column, the function does not write anything and
+ *         returns an error count of one.
+ *
+ *  \param[in] out           File to write to.
+ *  \param[in] self          Graph corresponding to the below argument q.
+ *  \param[in] q             Graph's state vector to be written.
+ *  \param[in] mdlStateName  Name of the model state. If NULL, it is named
+ *                           DefaultPose
+ *  \param[in] timeStmp      Time stamp of the model state.
+ *
+ *  \return Number of errors encountered. Errors are reported on debug level 1.
  */
-void RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q);
+int RcsGraph_fprintModelState(FILE* out, const RcsGraph* self, const MatNd* q,
+                              const char* mdlStateName, int timeStmp);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Writes the graph to a file in the Graphviz dot format. The graph
@@ -1283,14 +1327,6 @@ bool RcsGraph_writeDotFile(const RcsGraph* self, const char* filename);
  */
 bool RcsGraph_writeDotFileDfsTraversal(const RcsGraph* self,
                                        const char* filename);
-
-/*! \ingroup RcsGraphFunctions
- *  \brief Writes the graph to a xml file in the Rcs standard format. The graph
- *         can then be visualized with for instance Rcs test mode 2.
- *
- *  \return True for success, false if the file could not be written.
- */
-bool RcsGraph_writeXmlFile(const RcsGraph* self, const char* filename);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Creates a mesh of the overall graph by traversing through all bodies

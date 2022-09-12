@@ -153,6 +153,8 @@ int main(int argc, char** argv)
       fprintf(stderr, "\t\t8   Test body lookup by name\n");
       fprintf(stderr, "\t\t9   Test body traversals\n");
       fprintf(stderr, "\t\t10  Test cloning sub-graphs\n");
+      fprintf(stderr, "\t\t11  Inertia tensor test\n");
+      fprintf(stderr, "\t\t12  Change graph suffix test\n");
       fprintf(stderr, "\n\nResource path:\n");
       Rcs_printResourcePath();
       break;
@@ -628,7 +630,7 @@ int main(int argc, char** argv)
 
       bool silent = (RcsLogLevel < 3) ? true : false;
 
-      std::list<std::string> files;
+      std::vector<std::string> files;
       if (argP.hasArgument("-f", "Graph file name. If none is given, "
                            "all graph files from the directory are "
                            "tested"))
@@ -644,7 +646,7 @@ int main(int argc, char** argv)
 
       RLOGS(1, "Found %zu files in directory %s", files.size(), directory);
 
-      std::list<std::string>::const_iterator it;
+      std::vector<std::string>::const_iterator it;
       for (it = files.begin(); it != files.end(); ++it)
       {
         const char* fileName = (*it).c_str();
@@ -963,7 +965,8 @@ int main(int argc, char** argv)
       {
         RLOG(1, "Checking graph");
         RcsGraph_check(graph, &nE, &nW);
-        RLOG(1, "Check for graph passed with %d warnings and %d errors", nW, nE);
+        RLOG(1, "Check for graph passed with %d warnings and %d errors",
+             nW, nE);
       }
       RLOG(1, "Start cloning subgraph");
       RcsGraph* subGraph = RcsGraph_cloneSubGraph(graph, rootName);
@@ -971,11 +974,12 @@ int main(int argc, char** argv)
 
       RLOG(1, "Checking subgraph");
       RcsGraph_check(subGraph, &nE, &nW);
-      RLOG(1, "Check for subgraph passed with %d warnings and %d errors", nW, nE);
+      RLOG(1, "Check for subgraph passed with %d warnings and %d errors",
+           nW, nE);
       //RCHECK(nE==0);
 
       RcsGraph_writeDotFile(subGraph, "subgraph.dot");
-      RcsGraph_writeXmlFile(subGraph, "subgraph.xml");
+      RcsGraph_toXML(subGraph, "subgraph.xml");
 
       RcsGraph* sub2 = RcsGraph_clone(subGraph);
       MatNd_setRandom(sub2->q, -1.0, 1.0);
@@ -1028,6 +1032,34 @@ int main(int argc, char** argv)
 
       RFREE(sh);
       RFREE(bdy);
+      break;
+    }
+
+
+
+    // ==============================================================
+    // Graph parsing and dot file output
+    // ==============================================================
+    case 12:
+    {
+      std::string oldSfx = "_1";
+      std::string newSfx = "_A";
+      strcpy(xmlFileName, "gScenario.xml");
+      strcpy(directory, "config/xml/WAM");
+      argP.getArgument("-f", xmlFileName, "RcsGraph's configuration file name");
+      argP.getArgument("-dir", directory, "Configuration file directory");
+      argP.getArgument("-oldSfx", &oldSfx, "Old suffix (default: %s)",
+                       oldSfx.c_str());
+      Rcs_addResourcePath(directory);
+
+      RcsGraph* graph = RcsGraph_create(xmlFileName);
+      RCHECK(graph);
+
+      RMSG("Changing suffix from \"%s\" to \"%s\":",
+           oldSfx.c_str(), newSfx.c_str());
+      RcsGraph_changeSuffix(graph, oldSfx.c_str(), newSfx.c_str());
+      RcsGraph_toXML(graph, "gNewSuffix.xml");
+      RcsGraph_destroy(graph);
       break;
     }
 
