@@ -52,19 +52,19 @@ namespace Rcs
  *
  *  \return number of read bytes (including trailing '\\0')
  */
-size_t getXMLNodePropertySTLString(xmlNodePtr node, const char* tag,
+size_t getXMLNodePropertySTLString(const xmlNodePtr node, const char* tag,
                                    std::string& str);
 
 
 /*! \ingroup RcsParserFunctions
  *  \brief Read node property into a STL string
  *
- *  \param[in] node The xml node to read from
+ *  \param[in] nd  The xml node to read from
  *  \param[in] tag The name of node property to read
  *
  *  \return STL string with content of tag, or empty vector otherwise.
  */
-std::string getXMLNodePropertySTLString(xmlNodePtr node, const char* tag);
+std::string getXMLNodePropertySTLString(const xmlNodePtr nd, const char* tag);
 
 
 /*! \ingroup RcsParserFunctions
@@ -75,7 +75,7 @@ std::string getXMLNodePropertySTLString(xmlNodePtr node, const char* tag);
  *
  *  \return Vector of std::strings containing the contents of what's in tag.
  */
-std::vector<std::string> getXMLNodePropertyVecSTLString(xmlNodePtr node,
+std::vector<std::string> getXMLNodePropertyVecSTLString(const xmlNodePtr node,
                                                         const char* tag);
 
 
@@ -87,7 +87,7 @@ std::vector<std::string> getXMLNodePropertyVecSTLString(xmlNodePtr node,
  *
  *  \return Vector of double values found in the xml tag
  */
-std::vector<double> getXMLNodePropertyVecSTLDouble(xmlNodePtr node,
+std::vector<double> getXMLNodePropertyVecSTLDouble(const xmlNodePtr node,
                                                    const char* tag);
 
 
@@ -101,7 +101,7 @@ std::vector<double> getXMLNodePropertyVecSTLDouble(xmlNodePtr node,
  *
  *  \return Number of values in vec.
  */
-size_t getXMLNodePropertyVecSTLDouble(xmlNodePtr node, const char* tag,
+size_t getXMLNodePropertyVecSTLDouble(const xmlNodePtr node, const char* tag,
                                       std::vector<double>& vec);
 
 

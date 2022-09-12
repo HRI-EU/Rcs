@@ -46,11 +46,11 @@ namespace Rcs
 /*******************************************************************************
  *
  ******************************************************************************/
-size_t getXMLNodePropertySTLString(xmlNodePtr node, const char* tag,
+size_t getXMLNodePropertySTLString(const xmlNodePtr node, const char* tag,
                                    std::string& str)
 {
   size_t len = 0;
-  xmlChar* txt = xmlGetProp(node, (const xmlChar*) tag);
+  xmlChar* txt = xmlGetProp(node, BAD_CAST tag);
 
   if (txt)
   {
@@ -66,7 +66,8 @@ size_t getXMLNodePropertySTLString(xmlNodePtr node, const char* tag,
 /*******************************************************************************
  *
  ******************************************************************************/
-std::string getXMLNodePropertySTLString(xmlNodePtr node, const char* tag)
+std::string getXMLNodePropertySTLString(const xmlNodePtr node, 
+                                        const char* tag)
 {
   std::string str;
   getXMLNodePropertySTLString(node, tag, str);
@@ -76,7 +77,8 @@ std::string getXMLNodePropertySTLString(xmlNodePtr node, const char* tag)
 /*******************************************************************************
  *
  ******************************************************************************/
-static size_t getXMLNodePropertyVecSTLString(xmlNodePtr node, const char* tag,
+static size_t getXMLNodePropertyVecSTLString(const xmlNodePtr node, 
+                                             const char* tag,
                                              std::vector<std::string>& vec)
 {
   std::string tmp;
@@ -100,7 +102,7 @@ static size_t getXMLNodePropertyVecSTLString(xmlNodePtr node, const char* tag,
 /*******************************************************************************
  *
  ******************************************************************************/
-std::vector<std::string> getXMLNodePropertyVecSTLString(xmlNodePtr node,
+std::vector<std::string> getXMLNodePropertyVecSTLString(const xmlNodePtr node,
                                                         const char* tag)
 {
   std::vector<std::string> str;
@@ -111,7 +113,7 @@ std::vector<std::string> getXMLNodePropertyVecSTLString(xmlNodePtr node,
 /*******************************************************************************
  *
  ******************************************************************************/
-size_t getXMLNodePropertyVecSTLDouble(xmlNodePtr node, const char* tag,
+size_t getXMLNodePropertyVecSTLDouble(const xmlNodePtr node, const char* tag,
                                       std::vector<double>& vec)
 {
   std::vector<double> dVec = getXMLNodePropertyVecSTLDouble(node, tag);
@@ -129,7 +131,7 @@ size_t getXMLNodePropertyVecSTLDouble(xmlNodePtr node, const char* tag,
 /*******************************************************************************
  *
  ******************************************************************************/
-std::vector<double> getXMLNodePropertyVecSTLDouble(xmlNodePtr node,
+std::vector<double> getXMLNodePropertyVecSTLDouble(const xmlNodePtr node,
                                                    const char* tag)
 {
   std::vector<std::string> str = getXMLNodePropertyVecSTLString(node, tag);
