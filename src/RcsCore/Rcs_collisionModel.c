@@ -445,6 +445,86 @@ RcsCollisionMdl* RcsCollisionModel_clone(const RcsCollisionMdl* src,
 /*******************************************************************************
  *
  ******************************************************************************/
+bool RcsCollisionModel_append(RcsCollisionMdl* self,
+                              const RcsCollisionMdl* other,
+                              const char* suffix)
+{
+  if (!self)
+  {
+    RLOG(1, "Can't append to NULL collision model");
+    return false;
+  }
+
+  if (!other)
+  {
+    return true; // Nothing to do
+  }
+
+  // From here on, both self and other are valid collision models
+
+  // Append pairs
+  if (self->nPairs + other->nPairs > 0)
+  {
+    self->pair = RREALLOC(self->pair, self->nPairs + other->nPairs, RcsPair);
+    RCHECK(self->pair);
+    memcpy(&self->pair[self->nPairs], other->pair, other->nPairs * sizeof(RcsPair));
+  }
+
+  // Append closest point and normal arrays. It does reallocations if needed.
+  MatNd_appendRows(self->cp, other->cp);
+  MatNd_appendRows(self->n1, other->n1);
+
+  // Adjust body ids if graphs are different.
+  if (other->graph != self->graph)
+  {
+    for (unsigned int i = 0; i < other->nPairs; ++i)
+    {
+      char bdyName[RCS_MAX_NAMELEN];
+
+      const char* obn = RCSBODY_NAME_BY_ID(other->graph, other->pair[i].b1);
+      strcpy(bdyName, obn);
+      if (suffix)
+      {
+        strcat(bdyName, suffix);
+      }
+      const RcsBody* bdy = RcsGraph_getBodyByName(self->graph, bdyName);
+      RCHECK_MSG(bdy, "%s", bdyName);
+      self->pair[self->nPairs + i].b1 = bdy->id;
+
+      obn = RCSBODY_NAME_BY_ID(other->graph, other->pair[i].b2);
+      strcpy(bdyName, obn);
+      if (suffix)
+      {
+        strcat(bdyName, suffix);
+      }
+      bdy = RcsGraph_getBodyByName(self->graph, bdyName);
+      RCHECK_MSG(bdy, "%s", bdyName);
+      self->pair[self->nPairs + i].b2 = bdy->id;
+    }
+  }
+
+  // We do this last, it's a bit easier for the above re-indexing.
+  self->nPairs += other->nPairs;
+
+  // Warn if global settings don't match
+  if (other->sMixtureCost != self->sMixtureCost)
+  {
+    RLOG(1, "Mixture costs differ: %f != %f", 
+         self->sMixtureCost, other->sMixtureCost);
+  }
+
+  if (other->penetrationSlope != self->penetrationSlope)
+  {
+    RLOG(1, "Penetration slopes differ: %f != %f",
+         self->penetrationSlope, other->penetrationSlope);
+  }
+
+  return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 double RcsCollisionMdl_getMinDist(const RcsCollisionMdl* self)
 {
   return RcsCollisionMdl_getMinDistPair(self, NULL);

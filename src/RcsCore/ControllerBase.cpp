@@ -1895,10 +1895,10 @@ bool ControllerBase::add(const ControllerBase* other,
                          const char* suffixPtr,
                          const HTr* A_BP)
 {
-  bool success = RcsGraph_appendCopyOfGraph(this->graph, NULL, other->getGraph(),
-                                            suffixPtr, A_BP);
+  bool success = RcsGraph_appendCopyOfGraph(this->graph, NULL, 
+                                            other->getGraph(), suffixPtr, A_BP);
 
-  if (success == false)
+  if (!success)
   {
     return false;
   }
@@ -1933,6 +1933,25 @@ bool ControllerBase::add(const ControllerBase* other,
                copyOfOtherTask->getClassName().c_str());
 
     add(copyOfOtherTask);
+  }
+
+  // Append the collision model
+  if (other->getCollisionMdl())
+  {
+    // In case there is no collision model, we create an empty one and set the
+    // parameters to the one we append.
+    if (!this->cMdl)
+    {
+      this->cMdl = RALLOC(RcsCollisionMdl);
+      cMdl->graph = graph;
+      cMdl->sMixtureCost = other->getCollisionMdl()->sMixtureCost;
+      cMdl->penetrationSlope = other->getCollisionMdl()->penetrationSlope;
+    }
+
+    success = RcsCollisionModel_append(this->cMdl, other->getCollisionMdl(), 
+                                       suffixPtr);
+    RCHECK_MSG(success, "Failed to append collision model for suffix \"%s\"",
+               suffixPtr ? suffixPtr : "NULL");
   }
 
   return true;
