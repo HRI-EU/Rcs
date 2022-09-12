@@ -95,7 +95,7 @@ Rcs::Task::Task():
  * Constructor based on xml parsing
  ******************************************************************************/
 Rcs::Task::Task(const std::string& className_,
-                xmlNode* node,
+                const xmlNodePtr node_,
                 const RcsGraph* graph_,
                 int dim):
   graph(graph_),
@@ -106,10 +106,8 @@ Rcs::Task::Task(const std::string& className_,
   taskDim(dim),
   className(className_)
 {
-  RCHECK(node);
-  RCHECK(graph);
+  xmlNodePtr node = node_;
 
-  // parse the xml node
   // Task name
   this->name = getXMLNodePropertySTLString(node, "name");
 

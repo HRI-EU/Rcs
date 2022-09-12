@@ -174,8 +174,8 @@ public:
 
   /*! \brief Constructor based on xml parsing
    */
-  Task(const std::string& className, xmlNode* node, const RcsGraph* graph,
-       int dim=0);
+  Task(const std::string& className, const xmlNodePtr node, 
+       const RcsGraph* graph, int dim=0);
 
   /*! \brief Virtual destructor to support Polymorphism. Tasks might often be
    *         be created through the TaskFactory, and therefore being deleted
