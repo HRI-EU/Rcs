@@ -361,18 +361,33 @@ void Rcs::TaskJoint::setRefGain(double gain)
  ******************************************************************************/
 bool Rcs::TaskJoint::setIdsToSuffix(const std::string& suffix)
 {
-  std::string newName = std::string(getJoint()->name) + suffix;
-  const RcsJoint* jnt = RcsGraph_getJointByName(getGraph(), newName.c_str());
+  std::string newJntName = std::string(getJoint()->name) + suffix;
+  const RcsJoint* jnt = RcsGraph_getJointByName(getGraph(), newJntName.c_str());
 
   if (!jnt)
   {
     RLOG(1, "Joint \"%s\" not found - setIdsToSuffix() failed",
-         newName.c_str());
+         newJntName.c_str());
     return false;
   }
 
-  setJoint(RcsGraph_getJointByName(getGraph(), newName.c_str()));
-  setRefJoint(RcsGraph_getJointByName(getGraph(), newName.c_str()));
+  if (refJointId!=-1)
+  {
+    std::string newRefJntName = std::string(getRefJoint()->name) + suffix;
+    const RcsJoint* refJnt = RcsGraph_getJointByName(getGraph(),
+                                                     newRefJntName.c_str());
+
+    if (!refJnt)
+    {
+      RLOG(1, "Reference joint \"%s\" not found - setIdsToSuffix() failed",
+           newRefJntName.c_str());
+      return false;
+    }
+
+    setRefJoint(RcsGraph_getJointByName(getGraph(), newRefJntName.c_str()));
+  }
+
+  setJoint(RcsGraph_getJointByName(getGraph(), newJntName.c_str()));
 
   return true;
 }
