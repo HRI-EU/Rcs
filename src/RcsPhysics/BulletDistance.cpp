@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -310,7 +310,6 @@ double RcsShape_distanceBullet(const RcsShape* s1, const RcsShape* s2,
   pthread_mutex_lock(&mtx);
   double distance = std::numeric_limits<double>::max();
   static btVoronoiSimplexSolver sGjkSimplexSolver;
-  btGjkEpaPenetrationDepthSolver epa;
 
   HTr A_C1I, A_C2I, A_S1B, A_S2B;
   btConvexShape* sh1 = createShape(s1, &A_S1B);
@@ -348,6 +347,7 @@ double RcsShape_distanceBullet(const RcsShape* s1, const RcsShape* s2,
   input.m_transformA = Rcs::btTransformFromHTr(&A_C1I);
   input.m_transformB = Rcs::btTransformFromHTr(&A_C2I);
 
+  btGjkEpaPenetrationDepthSolver epa;
   btGjkPairDetector convexConvex(sh1, sh2, &sGjkSimplexSolver, &epa);
   btPointCollector gjkOutput;
   convexConvex.getClosestPoints(input, gjkOutput, NULL);

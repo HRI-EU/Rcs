@@ -2846,6 +2846,8 @@ static bool setWildMagicDistanceFunctions()
 {
   bool success = true;
 
+  return success;
+
   // SSL
   if (RcsShape_getDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_SSL)==NULL)
   {
