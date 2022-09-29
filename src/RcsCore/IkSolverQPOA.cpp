@@ -55,6 +55,10 @@
 
 USING_NAMESPACE_QPOASES
 
+
+QProblem* qp_hack = NULL;
+
+
 static const char* errorCode(int idx)
 {
   static char errCode[][256] =
@@ -336,14 +340,12 @@ double IkSolverQPOA::solveLeftInverse(MatNd* dq, const MatNd* dx, const MatNd* d
   MatNd* Jc = MatNd_create(1, nq);
   MatNd* xc = MatNd_create(1, 1);
   getCollisionConstraints(Jc, xc);
-  MatNd_appendRows(dxr_lb, xc);
+  //MatNd_appendRows(dxr_lb, xc);
   MatNd_appendRows(J, Jc);
   MatNd* coll_ub = MatNd_create(xc->m, xc->n);
   MatNd_setElementsTo(coll_ub, 100000.0);
-  MatNd_appendRows(dxr_ub, coll_ub);
+  //MatNd_appendRows(dxr_ub, coll_ub);
   MatNd_destroy(coll_ub);
-  //RLOG(0, "lb ub");
-  //MatNd_printTwoArrays(dxr_lb, dxr_ub, 5);
 
   // Joint limit constraints
   MatNd* q_lower = MatNd_create(controller->getGraph()->dof, 1);
@@ -355,10 +357,12 @@ double IkSolverQPOA::solveLeftInverse(MatNd* dq, const MatNd* dx, const MatNd* d
   RcsGraph_stateVectorToIKSelf(controller->getGraph(), q_upper);
 
   const int nc = J->m;
-  QProblem qp(nq, nc);
+  // QProblem qp(nq, nc);
   Options myOptions;
   setOptions(myOptions);
-  qp.setOptions(myOptions);
+  // qp.setOptions(myOptions);
+
+
 
   MatNd* H_ = MatNd_create(nq, nq);
   MatNd_setDiag(H_, invWq);
@@ -367,23 +371,39 @@ double IkSolverQPOA::solveLeftInverse(MatNd* dq, const MatNd* dx, const MatNd* d
   real_t* H = H_->ele;
   real_t* A = J->ele;
   real_t* g = dH->ele;
-  real_t* lb = q_lower->ele;
-  real_t* ub = q_upper->ele;
+  real_t* lb = NULL;//q_lower->ele;
+  real_t* ub = NULL;//q_upper->ele;
   real_t* lbA = dxr_lb->ele;
   real_t* ubA = dxr_ub->ele;
 
   /* Solve first QP. */
   int_t nWSR = 1000;
-  returnValue ret = qp.init(H, g, A, lb, ub, lbA, ubA, nWSR);
+  returnValue ret;
+
+  if (qp_hack==NULL)
+  {
+    // ret = qp.init(H, g, A, lb, ub, lbA, ubA, nWSR);
+    qp_hack = new QProblem(nq, nc);
+    qp_hack->setOptions(myOptions);
+    ret = qp_hack->init(H, g, A, lb, ub, lbA, ubA, nWSR);
+  }
+  else
+  {
+    // ret = qp.hotstart(g, lb, ub, lbA, ubA, nWSR);
+    ret = qp_hack->hotstart(g, lb, ub, lbA, ubA, nWSR);
+    //ret = qp_hack->init(H, g, A, lb, ub, lbA, ubA, nWSR);
+  }
+
 
   /* Get and print solution of second QP. */
   MatNd* dq_ = MatNd_create(nqr, 1);
   real_t* xOpt = dq_->ele;
-  qp.getPrimalSolution(xOpt);
+  // qp.getPrimalSolution(xOpt);
+  qp_hack->getPrimalSolution(xOpt);
 
   if (ret != SUCCESSFUL_RETURN)
   {
-    RLOG(0, "No solution: %d", ret);
+    RLOG(0, "No solution: %d (%s)", ret, errorCode(ret));
     MatNd_setZero(dq_);
   }
 
@@ -408,7 +428,8 @@ double IkSolverQPOA::solveLeftInverse(MatNd* dq, const MatNd* dx, const MatNd* d
   MatNd_destroy(Jc);
   MatNd_destroy(xc);
 
-  return qp.getObjVal();
+  // return qp.getObjVal();
+  return qp_hack->getObjVal();
 }
 
 double IkSolverQPOA::solveRightInverse(MatNd* dq, const MatNd* dx, const MatNd* dH, const MatNd* activation, double lambda)
