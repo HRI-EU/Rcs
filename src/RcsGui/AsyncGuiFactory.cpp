@@ -60,6 +60,77 @@ To implement this class, these things have been considerd:
   QCoreApplication::postEvent: Unexpected null receiver
  */
 
+
+/*
+
+[Rcs/src/RcsGui/AsyncWidget.cpp: launch(141)]: Check failed: wLauncher - Exiting
+
+########## Stacktrace ##########
+[Rcs/src/RcsGui/AsyncGuiFactory.cpp : threadFunc(230)]: Launcher assigned - after this, no crash should occur
+  0: <Rcs::AsyncWidget::launch()+1039> RcsGui/AsyncWidget.cpp:141 (discriminator 1)
+  1: <Rcs::ControllerGui::ControllerGui()+266> RcsGui/ControllerWidgetBase.cpp:63
+  2: <Rcs::ExampleIK::initGuis()+1063> examples/ExampleInvKin.cpp:443
+  3: <Rcs::ExampleBase::init()+1371> RcsCore/ExampleBase.cpp:65
+  4: <NULL+94119907723698> bin/TestPoseGraph.cpp:806
+  5: <main+452> bin/TestPoseGraph.cpp:851
+################################
+
+
+SIGABORT! Hey mgienger, go FIX your code!!!
+
+########## Stacktrace ##########
+  0: <NULL+94119907713225> RcsCore/SegFaultHandler.h:152
+  1: <NULL+140128593196064> sigaction.c:?
+addr2line: DWARF error: section .debug_info is larger than its filesize! (0x93ef57 vs 0x530ea0)
+  2: <gsignal+203> ??:?
+addr2line: DWARF error: section .debug_info is larger than its filesize! (0x93ef57 vs 0x530ea0)
+  3: <abort+299> ??:?
+  4: <Rcs::AsyncWidget::launch()+1044> RcsGui/AsyncWidget.cpp:141 (discriminator 1)
+  5: <Rcs::ControllerGui::ControllerGui()+266> RcsGui/ControllerWidgetBase.cpp:63
+  6: <Rcs::ExampleIK::initGuis()+1063> examples/ExampleInvKin.cpp:443
+  7: <Rcs::ExampleBase::init()+1371> RcsCore/ExampleBase.cpp:65
+  8: <NULL+94119907723698> bin/TestPoseGraph.cpp:806
+  9: <main+452> bin/TestPoseGraph.cpp:851
+################################
+
+
+
+
+
+
+
+[Rcs/src/RcsGui/AsyncWidget.cpp: launch(141)]: Check failed: wLauncher - Exiting
+
+########## Stacktrace ##########
+[Rcs/src/RcsGui/AsyncGuiFactory.cpp : threadFunc(230)]: Launcher assigned - after this, no crash should occur
+  0: <Rcs::AsyncWidget::launch()+1039> RcsGui/AsyncWidget.cpp:141 (discriminator 1)
+  1: <Rcs::ControllerGui::ControllerGui()+266> RcsGui/ControllerWidgetBase.cpp:63
+  2: <Rcs::ExampleIK::initGuis()+1063> examples/ExampleInvKin.cpp:443
+  3: <Rcs::ExampleBase::init()+1371> RcsCore/ExampleBase.cpp:65
+  4: <NULL+94576605325635> bin/TestPoseGraph.cpp:799
+  5: <main+452> bin/TestPoseGraph.cpp:844
+################################
+
+
+SIGABORT! Hey mgienger, go FIX your code!!!
+
+########## Stacktrace ##########
+  0: <NULL+94576605315225> RcsCore/SegFaultHandler.h:152
+  1: <NULL+140377886176288> sigaction.c:?
+addr2line: DWARF error: section .debug_info is larger than its filesize! (0x93ef57 vs 0x530ea0)
+  2: <gsignal+203> ??:?
+addr2line: DWARF error: section .debug_info is larger than its filesize! (0x93ef57 vs 0x530ea0)
+  3: <abort+299> ??:?
+  4: <Rcs::AsyncWidget::launch()+1044> RcsGui/AsyncWidget.cpp:141 (discriminator 1)
+  5: <Rcs::ControllerGui::ControllerGui()+266> RcsGui/ControllerWidgetBase.cpp:63
+  6: <Rcs::ExampleIK::initGuis()+1063> examples/ExampleInvKin.cpp:443
+  7: <Rcs::ExampleBase::init()+1371> RcsCore/ExampleBase.cpp:65
+  8: <NULL+94576605325635> bin/TestPoseGraph.cpp:799
+  9: <main+452> bin/TestPoseGraph.cpp:844
+################################
+
+ */
+
 #include "AsyncGuiFactory.h"
 
 #include <Rcs_cmdLine.h>
@@ -122,6 +193,7 @@ QEvent::Type AsyncGuiFactory::constructEvent = QEvent::None;
 QEvent::Type AsyncGuiFactory::destroyEvent = QEvent::None;
 QEvent::Type AsyncGuiFactory::resetEvent = QEvent::None;
 bool AsyncGuiFactory::threadRunning = false;
+bool AsyncGuiFactory::launcherRunning = false;
 
 pthread_t guiThreadId;
 
@@ -165,7 +237,7 @@ int AsyncGuiFactory::create(int argc_, char** argv_)
   // Otherwise there might be issues when calling moveToThread for subsequent
   // widgets.
   RLOG(5, "Waiting for QApplication::instance()");
-  while (QApplication::startingUp())
+  while (QApplication::startingUp() && (!launcherRunning))
   {
     RLOG(5, "... starting up");
     Timer_usleep(10000);
@@ -227,7 +299,8 @@ void* AsyncGuiFactory::threadFunc(void*)
   WidgetLauncher myLauncher;
   myLauncher.setObjectName("myLauncher");
   launcher = &myLauncher;
-
+  launcherRunning = true;
+  RLOG(0, "Launcher assigned - after this, no crash should occur");
   app.exec();
 
   RLOG_CPP(5, "Widgets: " << app.allWidgets().size());

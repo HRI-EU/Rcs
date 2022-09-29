@@ -365,7 +365,7 @@ int RcsCollisionModel_fprintXML(FILE* out, const RcsCollisionMdl* self)
 
   if (self->sMixtureCost != 0.0)
   {
-    fprintf(out, "MixtureCost=\"%s\" ", 
+    fprintf(out, "MixtureCost=\"%s\" ",
             String_fromDouble(buf, self->sMixtureCost, 6));
   }
 
@@ -375,23 +375,23 @@ int RcsCollisionModel_fprintXML(FILE* out, const RcsCollisionMdl* self)
   fprintf(out, ">\n");
 
   for (unsigned int i = 0; i < self->nPairs; ++i)
+  {
+    const RcsPair* pair = &self->pair[i];
+
+    fprintf(out, "  <CollisionPair ");
+    fprintf(out, "body1=\"%s\" ", RCSBODY_NAME_BY_ID(self->graph, pair->b1));
+    fprintf(out, "body2=\"%s\" ", RCSBODY_NAME_BY_ID(self->graph, pair->b2));
+    fprintf(out, "DistanceThreshold=\"%s\" ",
+            String_fromDouble(buf, pair->dThreshold, 6));
+
+    if (pair->weight != 1.0)
     {
-      const RcsPair* pair = &self->pair[i];
-
-      fprintf(out, "  <CollisionPair ");
-      fprintf(out, "body1=\"%s\" ", RCSBODY_NAME_BY_ID(self->graph, pair->b1));
-      fprintf(out, "body2=\"%s\" ", RCSBODY_NAME_BY_ID(self->graph, pair->b2));
-      fprintf(out, "DistanceThreshold=\"%s\" ", 
-              String_fromDouble(buf, pair->dThreshold, 6));
-
-      if (pair->weight != 1.0)
-      {
-        fprintf(out, "weight=\"%s\" ", 
-                String_fromDouble(buf, pair->weight, 6));
-      }
-
-      fprintf(out, "/>\n");
+      fprintf(out, "weight=\"%s\" ",
+              String_fromDouble(buf, pair->weight, 6));
     }
+
+    fprintf(out, "/>\n");
+  }
 
 
   fprintf(out, "</CollisionModel>\n");
@@ -509,7 +509,7 @@ bool RcsCollisionModel_append(RcsCollisionMdl* self,
   // Warn if global settings don't match
   if (other->sMixtureCost != self->sMixtureCost)
   {
-    RLOG(1, "Mixture costs differ: %f != %f", 
+    RLOG(1, "Mixture costs differ: %f != %f",
          self->sMixtureCost, other->sMixtureCost);
   }
 

@@ -457,7 +457,7 @@ public:
   /*! \addtogroup TaskMethodsThroughInheritance
    *  \brief Computes a scalar penalty for reaching a given target as
    *         \f[
-   *         c = \mathbf{ \Delta x^T W \Delta x }
+   *         c = \frac{1}{2} \mathbf{ \Delta x^T W \Delta x }
    *         \f]
    *         where \f$ \mathbf{\Delta x} \f$ is being computed with the
    *         function computeDX(). If W is NULL, an identity weighting matrix

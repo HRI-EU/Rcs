@@ -1705,8 +1705,8 @@ int RcsBody_fprintXML(FILE* out, const RcsBody* self, const RcsGraph* graph)
 
   if (!self->rigid_body_joints)
   {
-  RCSBODY_FOREACH_JOINT(graph, self)
-  {
+    RCSBODY_FOREACH_JOINT(graph, self)
+    {
       nErr += RcsJoint_fprintXML(out, JNT, graph);
     }
   }

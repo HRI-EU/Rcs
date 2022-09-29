@@ -269,7 +269,7 @@ void RcsSensor_init(RcsSensor* self,
 }
 
 /*******************************************************************************
- * Copies a RcsSensor data structure except for a few unknown members.
+ *
  ******************************************************************************/
 void RcsSensor_copy(RcsSensor* self, const RcsSensor* src)
 {
@@ -277,7 +277,14 @@ void RcsSensor_copy(RcsSensor* self, const RcsSensor* src)
   self->bodyId = src->bodyId;
   snprintf(self->name, RCS_MAX_NAMELEN, "%s", src->name);
   HTr_copy(&self->A_SB, &src->A_SB);
-  MatNd_resizeCopy(&self->rawData, src->rawData);
+  if (!self->rawData)
+  {
+    self->rawData = MatNd_clone(src->rawData);
+  }
+  else
+  {
+    MatNd_resizeCopy(self->rawData, src->rawData);
+  }
 
   // Only realloc if memory increases
   if (src->nTexels>self->nTexels)

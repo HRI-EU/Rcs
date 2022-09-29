@@ -1427,7 +1427,7 @@ bool RcsMesh_readFromFile(const char* meshFile, RcsMeshData* meshData)
     fclose(fd);
     return true;
   }
-  else if (String_hasEnding(meshFile, ".obj", false) == true)
+  else if (String_hasEnding(meshFile, ".obj", true) == true)
   {
     return RcsMesh_readObjFile(meshFile, meshData);
   }

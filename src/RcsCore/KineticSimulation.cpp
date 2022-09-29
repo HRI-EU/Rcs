@@ -124,10 +124,10 @@ KineticSimulation& KineticSimulation::operator= (const KineticSimulation& other)
   }
 
   PhysicsBase::operator =(other);
-  MatNd_resizeCopy(&this->draggerTorque, other.draggerTorque);
-  MatNd_resizeCopy(&this->jointTorque, other.jointTorque);
-  MatNd_resizeCopy(&this->contactForces, other.contactForces);
-  MatNd_resizeCopy(&this->contactPositions, other.contactPositions);
+  MatNd_resizeCopy(this->draggerTorque, other.draggerTorque);
+  MatNd_resizeCopy(this->jointTorque, other.jointTorque);
+  MatNd_resizeCopy(this->contactForces, other.contactForces);
+  MatNd_resizeCopy(this->contactPositions, other.contactPositions);
   this->integrator = other.integrator;
   this->energy = other.energy;
   this->dt_opt = other.dt_opt;

@@ -115,9 +115,9 @@ Rcs::PhysicsBase& Rcs::PhysicsBase::operator= (const Rcs::PhysicsBase& copyFromM
     return *this;
   }
 
-  MatNd_resizeCopy(&this->T_des, copyFromMe.T_des);
-  MatNd_resizeCopy(&this->q_des, copyFromMe.q_des);
-  MatNd_resizeCopy(&this->q_dot_des, copyFromMe.q_dot_des);
+  MatNd_resizeCopy(this->T_des, copyFromMe.T_des);
+  MatNd_resizeCopy(this->q_des, copyFromMe.q_des);
+  MatNd_resizeCopy(this->q_dot_des, copyFromMe.q_dot_des);
 
   this->simTime = copyFromMe.time();
   this->enablePPS = copyFromMe.getEnablePPS();

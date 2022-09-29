@@ -84,6 +84,7 @@ private:
   static char** argv;
   static WidgetLauncher* launcher;
   static bool threadRunning;
+  static bool launcherRunning;
 };
 
 

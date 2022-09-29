@@ -400,8 +400,6 @@ Rcs::SecondOrderLPFND::SecondOrderLPFND(const double* x, double tmc, double dt,
                                         size_t dim_) :
   filt(NULL), dim(dim_)
 {
-  RCHECK(dim>0);
-
   filt = new SecondOrderLPF1D*[dim];
 
   for (size_t i=0; i<dim; i++)

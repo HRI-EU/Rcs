@@ -105,13 +105,13 @@ RcsCollisionMdl* RcsCollisionModel_clone(const RcsCollisionMdl* self,
 /*! \ingroup RcsCollisionMdlFunctions
  *  \brief Appends another collision model.
  */
-bool RcsCollisionModel_append(RcsCollisionMdl* self, 
+bool RcsCollisionModel_append(RcsCollisionMdl* self,
                               const RcsCollisionMdl* other,
                               const char* suffix);
 
 /*! \ingroup RcsCollisionMdlFunctions
  *  \brief Returns the minimum distance inside the collision model. If self
- *         is NULL, DBL_MAX will be returned.
+ *         is NULL, or the model contains no pairs, DBL_MAX will be returned.
  */
 double RcsCollisionMdl_getMinDist(const RcsCollisionMdl* self);
 

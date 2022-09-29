@@ -595,7 +595,6 @@ bool ShapeNode::addTexture(const char* textureFile)
   // texture not found, let's create new one
   if (!texture.valid())
   {
-
     // load an image by reading a file:
     osg::ref_ptr<osg::Image> texture_image = osgDB::readImageFile(textureFile);
 
