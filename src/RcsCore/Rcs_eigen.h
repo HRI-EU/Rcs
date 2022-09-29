@@ -139,6 +139,10 @@ bool MatNd_getEigenVectors(MatNd* V, double* d, const MatNd* A);
  */
 void MatNd_HouseholderQR(MatNd* X, const MatNd* A, const MatNd* B);
 
+double MatNd_choleskyDecomposition_E3(MatNd* L, const MatNd* A);
+double MatNd_choleskySolve_E3(MatNd* x, const MatNd* A, const MatNd* b);
+double MatNd_choleskyInverse_E3(MatNd* invA, const MatNd* A);
+
 #ifdef __cplusplus
 }
 #endif

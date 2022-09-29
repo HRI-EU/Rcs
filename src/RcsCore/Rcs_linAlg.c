@@ -34,7 +34,9 @@
 #include "Rcs_MatNd.h"
 #include "Rcs_macros.h"
 
-
+#if defined (USE_EIGEN3)
+#include "Rcs_eigen.h"
+#endif
 
 /*******************************************************************************
  * Dot product of two vectors considering stride. This way, any combination of
@@ -132,6 +134,12 @@ double MatNd_choleskyDecomposition(MatNd* L, const MatNd* A)
 *******************************************************************************/
 double MatNd_choleskySolve(MatNd* x_, const MatNd* A, const MatNd* b_)
 {
+#if defined (USE_EIGEN3)
+
+  RLOG(0, "Eigen Cholesky");
+  return MatNd_choleskySolve_E3(x_, A, b_);
+
+#else
   const int cols = x_->n;
   const int n = A->m;
   int i, j, i_n, col, i_cols;
@@ -188,6 +196,7 @@ double MatNd_choleskySolve(MatNd* x_, const MatNd* A, const MatNd* b_)
   MatNd_destroy(L_);
 
   return det;
+#endif
 }
 
 /*******************************************************************************
@@ -269,6 +278,12 @@ static inline void MatNd_inverseLowerTriangularMatrix(MatNd* X_,
  ******************************************************************************/
 double MatNd_choleskyInverse(MatNd* A_inv, const MatNd* A)
 {
+#if defined (USE_EIGEN3)
+
+  RLOG(5, "Eigen Cholesky inverse");
+  return MatNd_choleskyInverse_E3(A_inv, A);
+
+#else
   const unsigned int n = A->m;
 
   MatNd* L = NULL;
@@ -304,6 +319,7 @@ double MatNd_choleskyInverse(MatNd* A_inv, const MatNd* A)
   MatNd_destroy(L);
 
   return det;
+#endif
 }
 
 /*******************************************************************************
