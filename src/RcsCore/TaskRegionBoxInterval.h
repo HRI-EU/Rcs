@@ -74,7 +74,7 @@ namespace Rcs
  *  \code
  *    <Task name="Position XYZ" controlVariable="XYZ" effector="EndEffector" >
  *      <TaskRegion type="BoxInterval" min="-0.1 -0.2 -0.05" max="0.1"
- *                  slowDownRatio="0.5" />
+ *                  slowDownRatio="0.5" maxStep="0.001" />
  *    </Task>
  *  \endcode
  */
@@ -100,7 +100,7 @@ public:
 
 private:
 
-  std::vector<double> bbMin, bbMax;
+  std::vector<double> bbMin, bbMax, maxStep;
   double slowDownRatio;
 };
 

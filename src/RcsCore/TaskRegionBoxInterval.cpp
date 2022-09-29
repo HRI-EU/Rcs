@@ -49,7 +49,7 @@ namespace Rcs
 {
 REGISTER_TASKREGION(TaskRegionBoxInterval, "BoxInterval");
 
-TaskRegionBoxInterval::TaskRegionBoxInterval(const Task* task, 
+TaskRegionBoxInterval::TaskRegionBoxInterval(const Task* task,
                                              const xmlNodePtr node) :
   TaskRegion(task, node), slowDownRatio(0.0)
 {
@@ -90,7 +90,23 @@ TaskRegionBoxInterval::TaskRegionBoxInterval(const Task* task,
   }
   else if (!tmp.empty())
   {
-    RFATAL("Dimension mismatch: attribute \"min\" has %zu values, but task"
+    RFATAL("Dimension mismatch: attribute \"max\" has %zu values, but task"
+           " dimension is %u", tmp.size(), task->getDim());
+  }
+
+  tmp = getXMLNodePropertyVecSTLDouble(node, "maxStep");
+
+  if (tmp.size() == 1)
+  {
+    maxStep = std::vector<double>(task->getDim(), tmp[0]);
+  }
+  else if (tmp.size() == task->getDim())
+  {
+    maxStep = tmp;
+  }
+  else if (!tmp.empty())
+  {
+    RFATAL("Dimension mismatch: attribute \"maxStep\" has %zu values, but task"
            " dimension is %u", tmp.size(), task->getDim());
   }
 
@@ -143,6 +159,12 @@ void TaskRegionBoxInterval::computeDX(const Task* task, double* dx,
       dx[i] -=  x_next - x_ub;
     }
 
+  }
+
+  // Clip it to the limit
+  for (size_t i = 0; i < maxStep.size(); ++i)
+  {
+    dx[i] = Math_clip(dx[i], -maxStep[i], maxStep[i]);
   }
 
 }
