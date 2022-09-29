@@ -46,6 +46,7 @@
 #include <DynamicDataPlot.h>
 #include <AsyncWidget.h>
 #include <MatNdWidget.h>
+#include <STTGui.h>
 #include <PPSGui.h>
 #include <SegFaultHandler.h>
 
@@ -57,6 +58,11 @@ bool runLoop = true;
 
 
 
+void testSTT(int argc, char** argv)
+{
+  Rcs::STTGui gui;
+  RPAUSE();
+}
 /*******************************************************************************
  * Ctrl-C destructor. Tries to quit gracefully with the first Ctrl-C
  * press, then just exits.
@@ -283,6 +289,15 @@ int main(int argc, char** argv)
     case 5:
     {
       testAsyncFactory(argc, argv);
+      break;
+    }
+
+    // ==============================================================
+    // Speech to text test with windows dictation (press Windows-h)
+    // ==============================================================
+    case 6:
+    {
+      testSTT(argc, argv);
       break;
     }
 
