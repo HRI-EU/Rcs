@@ -283,10 +283,18 @@ ControllerBase::~ControllerBase()
     delete (this->tasks[i]);
   }
 
-  if (this->ownsGraph == true)
+  if (this->ownsGraph)
   {
     RcsGraph_destroy(this->graph);
   }
+}
+
+/*******************************************************************************
+ * 
+ ******************************************************************************/
+void ControllerBase::setGraphOwnership(bool classOwnsIt)
+{
+  this->ownsGraph = classOwnsIt;
 }
 
 /*******************************************************************************
@@ -567,6 +575,19 @@ std::string ControllerBase::getGraphFileName() const
 RcsCollisionMdl* ControllerBase::getCollisionMdl() const
 {
   return this->cMdl;
+}
+
+/*******************************************************************************
+ * Return the collision model.
+ ******************************************************************************/
+void ControllerBase::setCollisionMdl(RcsCollisionMdl* newMdl, bool destroyOldOne)
+{
+  if (destroyOldOne)
+  {
+    RcsCollisionModel_destroy(this->cMdl);
+  }
+
+  this->cMdl = newMdl;
 }
 
 /*******************************************************************************
@@ -1895,7 +1916,7 @@ bool ControllerBase::add(const ControllerBase* other,
                          const char* suffixPtr,
                          const HTr* A_BP)
 {
-  bool success = RcsGraph_appendCopyOfGraph(this->graph, NULL, 
+  bool success = RcsGraph_appendCopyOfGraph(this->graph, NULL,
                                             other->getGraph(), suffixPtr, A_BP);
 
   if (!success)
@@ -1948,7 +1969,7 @@ bool ControllerBase::add(const ControllerBase* other,
       cMdl->penetrationSlope = other->getCollisionMdl()->penetrationSlope;
     }
 
-    success = RcsCollisionModel_append(this->cMdl, other->getCollisionMdl(), 
+    success = RcsCollisionModel_append(this->cMdl, other->getCollisionMdl(),
                                        suffixPtr);
     RCHECK_MSG(success, "Failed to append collision model for suffix \"%s\"",
                suffixPtr ? suffixPtr : "NULL");
@@ -2153,6 +2174,39 @@ void ControllerBase::computeAdmittance(MatNd* compliantFrame,
 
   }   // for (int taskIdx = 0; taskIdx < this->tasks.size(); taskIdx++)
 
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void ControllerBase::computeActiveJointMask(MatNd* mask,
+                                            const MatNd* activation) const
+{
+  MatNd_reshapeAndSetZero(mask, graph->nJ, 1);
+
+  const unsigned int xDim = getActiveTaskDim(activation);
+
+  // No tasks: No joints contribute, mask is all zero.
+  if (xDim == 0)
+  {
+    return;
+  }
+
+  MatNd* J_task = MatNd_create(xDim, graph->nJ);
+  computeJ(J_task, activation);
+  MatNd_fabsEleSelf(J_task);
+
+  MatNd row_0 = MatNd_getRowView(J_task, 0);
+  for (unsigned int i = 1; i < J_task->m; ++i)
+  {
+    MatNd row_i = MatNd_getRowView(J_task, i);
+    MatNd_addSelf(&row_0, &row_i);
+  }
+
+  MatNd_binarizeSelf(&row_0, 0.0);
+  VecNd_copy(mask->ele, row_0.ele, graph->nJ);
+
+  MatNd_destroy(J_task);
 }
 
 /*******************************************************************************

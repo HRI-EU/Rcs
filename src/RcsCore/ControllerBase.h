@@ -91,6 +91,15 @@ public:
    */
   ControllerBase(const ControllerBase& copyFromMe);
 
+  /*! \brief Sets the ownership of the class's graph. The graph is per default
+   *         owned by the class, and therefore destroyed in the desructor. 
+   *         Under certain circumstances, this might not be desired. This
+   *         function allows to set the ownership of the graph, and therefore
+   *         explicitely enabling or disabling graph destruction in the class's
+   *         destructor.
+   */
+  void setGraphOwnership(bool classOwnsIt);
+
   /*! \brief Assignment operator. The new class owns a deep copy of the graph
    *         and the collision model (if any).
    */
@@ -215,10 +224,6 @@ public:
   /*! \brief Return the graph file name (e.g., gScenario.xml)
    */
   std::string getGraphFileName() const;
-
-  /*! \brief Return a pointer to the underlying collision model.
-   */
-  RcsCollisionMdl* getCollisionMdl() const;
 
   /*! \brief Reads the activation vector from the xml file. If the xml field
    *         of the task has a tag "active", the activation will be set to
@@ -485,48 +490,6 @@ public:
   virtual void computeJointlimitBorderGradient(MatNd* grad,
                                                double borderRatio) const;
 
-  /*! \brief Computes the collision model. This function traverses the
-   *         collision pairs that are defined in the underlying collision
-   *         model (member cMdl), and calculatse the proximities between
-   *         them.
-   */
-  virtual void computeCollisionModel();
-
-  /*! \brief Computes the collision costs. This function updates the
-   *         collision model with \ref computeCollisionModel(), and then
-   *         calculates the cost contribution of each pair to an overall
-   *         cost.
-   */
-  virtual double computeCollisionCost();
-
-  /*! \brief Computes the collision costs. This function assumes an updated
-   *         collision model that has been computed with
-   *         \ref computeCollisionModel() before. It calculates the cost
-   *         contribution of each pair to an overall cost.
-   */
-  virtual double getCollisionCost() const;
-
-  /*! \brief Gradient for the function computeCollisionCost(). The function
-   *         computes the collision model using \ref computeCollisionModel()
-   *
-   *  \param[out] grad Collision gradient as a 1 x dof vector, where dof is
-   *              the number of unconstrained (RcsGraph::nJ) degrees of
-   *              freedom of the system.
-   */
-  virtual void computeCollisionGradient(MatNd* grad);
-
-  /*! \brief Gradient for the function computeCollisionCost(). The gradient
-   *         is an 1 x dof vector, where dof is the number of unconstrained
-   *         degrees of freedom of the system. This function does not
-   *         compute the collision model, but retrieves it from the member
-   *         \ref cMdl.
-   *
-   *  \param[out] grad Collision gradient as a 1 x dof vector, where dof is
-   *              the number of unconstrained (RcsGraph::nJ) degrees of
-   *              freedom of the system.
-   */
-  virtual void getCollisionGradient(MatNd* grad) const;
-
   /*! \brief Calculates the squared distance to the target in task
    *         coordinates as
    *         \f[
@@ -653,6 +616,16 @@ public:
                                  const MatNd* Kp,
                                  const MatNd* a_des);
 
+  /*! \brief For the given activation vector, this method computes a logical
+   *         vector of dimention RcsGraph::nJ x 1 that contains ones for
+   *         joints that contribute to the active task set, and zero for the
+   *         ones that don't.
+   *
+   *  \param[out] mask         Logical vector with ones for contributing joints.
+   *  \param[in] activation    Activation vector for tasks to be considered.
+   */
+  void computeActiveJointMask(MatNd* mask, const MatNd* activation) const;
+
   /*! \brief Returns the name (full path) of the controller's xml file.
    *
    *  \return Reference to  string.
@@ -686,6 +659,7 @@ public:
    *         function, the class is consistently bare of any task.
    */
   void eraseTasks();
+
   /*! \brief Erases the task with the given index and recomputes all indices.
    *         The function returns false if index is out of range, true
    *         otherwise.
@@ -868,6 +842,68 @@ public:
   /*! \brief Updates all tasks to the new graph.
    */
   virtual void setGraph(RcsGraph* graph, bool deleteOriginalGraph=true);
+
+  /**
+   * @name CollisionModel
+   *
+   * Methods related to collision handling
+   */
+
+  ///@{
+
+  /*! \brief Return a pointer to the underlying collision model.
+   */
+  RcsCollisionMdl* getCollisionMdl() const;
+
+  /*! \brief Replaces the collision model with the new one. The old one will
+   *         be destroyed if destroyOldOne is true.
+   */
+  void setCollisionMdl(RcsCollisionMdl* newMdl, bool destroyOldOne=true);
+
+  /*! \brief Computes the collision model. This function traverses the
+   *         collision pairs that are defined in the underlying collision
+   *         model (member cMdl), and calculatse the proximities between
+   *         them.
+   */
+  virtual void computeCollisionModel();
+
+  /*! \brief Computes the collision costs. This function updates the
+   *         collision model with \ref computeCollisionModel(), and then
+   *         calculates the cost contribution of each pair to an overall
+   *         cost.
+   */
+  virtual double computeCollisionCost();
+
+  /*! \brief Computes the collision costs. This function assumes an updated
+   *         collision model that has been computed with
+   *         \ref computeCollisionModel() before. It calculates the cost
+   *         contribution of each pair to an overall cost.
+   */
+  virtual double getCollisionCost() const;
+
+  /*! \brief Gradient for the function computeCollisionCost(). The function
+   *         computes the collision model using \ref computeCollisionModel()
+   *
+   *  \param[out] grad Collision gradient as a 1 x dof vector, where dof is
+   *              the number of unconstrained (RcsGraph::nJ) degrees of
+   *              freedom of the system.
+   */
+  virtual void computeCollisionGradient(MatNd* grad);
+
+  /*! \brief Gradient for the function computeCollisionCost(). The gradient
+   *         is an 1 x dof vector, where dof is the number of unconstrained
+   *         degrees of freedom of the system. This function does not
+   *         compute the collision model, but retrieves it from the member
+   *         \ref cMdl.
+   *
+   *  \param[out] grad Collision gradient as a 1 x dof vector, where dof is
+   *              the number of unconstrained (RcsGraph::nJ) degrees of
+   *              freedom of the system.
+   */
+  virtual void getCollisionGradient(MatNd* grad) const;
+
+
+  ///@}
 
 private:
 
