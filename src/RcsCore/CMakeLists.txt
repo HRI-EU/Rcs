@@ -133,8 +133,8 @@ TaskVelocity1D.cpp
 TaskVelocity3D.cpp
 TaskVelocityJoint.cpp
 ViaPointSequence.cpp
-${RCS_THIRDPARTY_DIR}/Rcs_thirdPartyMath.c
-${RCS_THIRDPARTY_DIR}/EulerAngles.c
+Rcs_thirdPartyMath.c
+EulerAngles.c
 TaskRegion.cpp
 TaskRegionBoundingBox.cpp
 TaskRegionBoxInterval.cpp
@@ -207,7 +207,6 @@ ENDIF()
 TARGET_INCLUDE_DIRECTORIES(RcsCore PUBLIC
     # Header source location
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<BUILD_INTERFACE:${RCS_THIRDPARTY_DIR}>
     
     # Header install location
     $<INSTALL_INTERFACE:include/RcsCore>
@@ -254,12 +253,6 @@ INSTALL(
   DIRECTORY . 
   DESTINATION include/RcsCore
   FILES_MATCHING PATTERN "*.h"
-)
-# The external headers go to the same directory
-INSTALL(
-  FILES ${RCS_THIRDPARTY_DIR}/EulerAngles.h
-        ${RCS_THIRDPARTY_DIR}/QuatTypes.h
-  DESTINATION include/RcsCore
 )
 # Install the binaries
 INSTALL(TARGETS RcsCore EXPORT RcsExport DESTINATION lib)
