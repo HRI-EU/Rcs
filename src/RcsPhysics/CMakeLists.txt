@@ -3,6 +3,14 @@
 # CMakeLists file for the RcsPhysics library
 #
 ###############################################################################
+LIST(APPEND CMAKE_PREFIX_PATH $ENV{SIT}/External/mujoco/lib/cmake/mujoco)
+FIND_PACKAGE(mujoco QUIET)
+IF (mujoco_FOUND)
+  OPTION(USE_MUJOCO "Use the Mujoco physics library" ON)
+ELSE()
+  OPTION(USE_MUJOCO "Use the Mujoco physics library" OFF)
+ENDIF()
+
 FIND_PACKAGE(Vortex QUIET)
 IF (VORTEX_FOUND)
   OPTION(USE_VORTEX "Use the Vortex physics library" ON)
@@ -68,7 +76,7 @@ ENDIF(USE_VORTEX AND VORTEX_FOUND)
 
 # Build a separate library for Bullet physics. We separate it since we
 # have to link it to the RcsPhysics library with the no-as-needed linker
-# option. Otherwise, te static self-registration meachnism (for
+# option. Otherwise, the static self-registration meachnism (for
 # instance in the function table initialization) will never be called.
 IF(USE_BULLET)
   SET(RCS_BULLET_SRCS 
@@ -96,7 +104,7 @@ IF(USE_BULLET)
   ENDIF(HEADLESS_BUILD)
 
   TARGET_INCLUDE_DIRECTORIES(RcsBullet SYSTEM PRIVATE ${BULLET_INCLUDE_DIR})
-  TARGET_COMPILE_DEFINITIONS(RcsBullet PRIVATE ${BULLET_DEFINITIONS})
+  TARGET_COMPILE_DEFINITIONS(RcsBullet PRIVATE ${BULLET_DEFINITIONS} -DUSE_BULLET)
 
   # We add this option to force the linker to export this symbol. This
   # solves the issue that it will not be exposed, since all initialization 
@@ -111,6 +119,14 @@ ENDIF(USE_BULLET)
 # Build the actual physics library. The PhysicsHeadless.cpp exists for the case
 # that no other sources are added to the RcsPhysics target.
 SET(RCS_PHYSICS_SRCS PhysicsHeadless.cpp)
+
+# Add Mujoco source files. We directly link it into the RcsPhysics library later.
+IF(USE_MUJOCO)
+  MESSAGE(STATUS "Enabling Mujoco simulation")
+  LIST(APPEND RCS_PHYSICS_SRCS MujocoSimulation.cpp MujocoDebugWindow.cpp)
+  SET (MUJOCO_LIBRARIES mujoco::mujoco)
+ENDIF(USE_MUJOCO)
+
 IF(NOT HEADLESS_BUILD)
   LIST(APPEND RCS_PHYSICS_SRCS 
        ContactsNode.cpp 
@@ -141,7 +157,7 @@ ENDIF()
 # be added explicitely, see for instance the target ExampleBullet.
 IF(USE_BULLET)
   TARGET_INCLUDE_DIRECTORIES(RcsPhysics SYSTEM PRIVATE ${BULLET_INCLUDE_DIR})
-  TARGET_COMPILE_DEFINITIONS(RcsPhysics PRIVATE ${BULLET_DEFINITIONS})
+  TARGET_COMPILE_DEFINITIONS(RcsPhysics PRIVATE ${BULLET_DEFINITIONS} -DUSE_BULLET)
   SET(BULLET_INSTALL_TARGET RcsBullet)
 
   IF (UNIX)
@@ -151,6 +167,16 @@ IF(USE_BULLET)
   ENDIF()
   
 ENDIF(USE_BULLET)
+
+# Link MujocoSimulation into the RcsPhysics library.
+IF(USE_MUJOCO)
+  IF (WIN32)
+    FIND_PACKAGE(glfw3 CONFIG REQUIRED)
+  ENDIF(WIN32)
+  
+  TARGET_LINK_LIBRARIES(RcsPhysics mujoco::mujoco glfw)
+  TARGET_COMPILE_DEFINITIONS(RcsPhysics PRIVATE -DUSE_MUJOCO)
+ENDIF(USE_MUJOCO)
 
 IF(USE_VORTEX AND VORTEX_FOUND)
   # Link RcsVortex library here, so RcsPhysics is still the goto dependency for
@@ -177,6 +203,15 @@ IF (WIN32)
       ${LIBRARY_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsBullet.dll
       ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsBullet.dll)
   ENDIF(USE_BULLET)
+
+  IF(USE_MUJOCO)
+    ADD_CUSTOM_COMMAND(
+      TARGET RcsPhysics POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy
+      $ENV{SIT}/External/mujoco/bin/mujoco.dll
+      ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/mujoco.dll)
+  ENDIF(USE_MUJOCO)
+
 ENDIF(WIN32)
 
 # Mark for export

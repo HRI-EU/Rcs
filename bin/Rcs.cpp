@@ -90,6 +90,7 @@
 #include <Rcs_utilsCPP.h>
 #include <Rcs_filters.h>
 #include <IkSolverConstraintRMR.h>
+#include <IkSolverProjectedQP.h>
 #include <IkSolverQPOA.h>
 #include <SolverRAC.h>
 #include <TaskFactory.h>
@@ -1759,11 +1760,11 @@ int main(int argc, char** argv)
               sim->print();
             }
 
-            MatNd_resizeCopy(&q0, graph->q);
-            MatNd_resizeCopy(&q_des, graph->q);
-            MatNd_resizeCopy(&q_des_f, graph->q);
-            MatNd_resizeCopy(&q_curr, graph->q);
-            MatNd_resizeCopy(&q_dot_curr, graph->q_dot);
+            MatNd_resizeCopy(q0, graph->q);
+            MatNd_resizeCopy(q_des, graph->q);
+            MatNd_resizeCopy(q_des_f, graph->q);
+            MatNd_resizeCopy(q_curr, graph->q);
+            MatNd_resizeCopy(q_dot_curr, graph->q_dot);
             T_curr = MatNd_realloc(T_curr, graph->dof, 1);
             MatNd_setZero(T_curr);
             T_gravity = MatNd_realloc(T_gravity, graph->dof, 1);
@@ -2027,6 +2028,7 @@ int main(int argc, char** argv)
       bool constraintIK = argP.hasArgument("-constraintIK", "Use constraint IK"
                                            " solver");
       bool qpoa = argP.hasArgument("-qpOases", "Use qpOASES IK solver");
+      bool prjQP = argP.hasArgument("-projectedQP", "Use projected QP IK solver");
       bool initToQ0 = argP.hasArgument("-setDefaultStateFromInit", "Set the "
                                        "joint center defaults from the initial"
                                        " state");
@@ -2087,6 +2089,11 @@ int main(int argc, char** argv)
       {
         ikSolver = new Rcs::IkSolverQPOA(&controller);
         ikSolverName = "IkSolverQPOA";
+      }
+      else if (prjQP == true)
+      {
+        ikSolver = new Rcs::IkSolverProjectedQP(&controller);
+        ikSolverName = "IkSolverProjectedQP";
       }
       else
       {

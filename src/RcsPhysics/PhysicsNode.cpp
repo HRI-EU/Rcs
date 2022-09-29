@@ -41,6 +41,10 @@
 #include "BulletDebugDrawer.h"
 #endif
 
+#if defined (USE_MUJOCO)
+#include "MujocoSimulation.h"
+#endif
+
 #include <Rcs_typedef.h>
 #include <Rcs_macros.h>
 #include <Rcs_basicMath.h>
@@ -247,40 +251,45 @@ bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
       if (ea.getKey() == 'd')
       {
 #if defined (USE_BULLET)
-        Rcs::BulletSimulation* s = dynamic_cast<Rcs::BulletSimulation*>(sim);
 
-        if (s == NULL)
+        if (dynamic_cast<Rcs::BulletSimulation*>(sim))
         {
-          RLOG(1, "No debug drawer for other simulations than Bullet");
-          break;
-        }
+          Rcs::BulletSimulation* s = dynamic_cast<Rcs::BulletSimulation*>(sim);
+          BulletDebugDrawer* dDraw = s->getDebugDrawer();
 
-        BulletDebugDrawer* dDraw = s->getDebugDrawer();
-
-        if (dDraw != NULL)   // Disable the debug drawer
-        {
-          RLOG(0, "Disabling debug drawer");
-          dDraw->hide();
-          s->setDebugDrawer(NULL);
-        }
-        else   // Enable the debug drawer
-        {
-          BulletDebugDrawer* nd_i = NULL;
-
-          // Find the debug drawer from the children of this class
-          for (unsigned int i=0; i<pat->getNumChildren(); ++i)
+          if (dDraw)   // Disable the debug drawer
           {
-            nd_i = dynamic_cast<BulletDebugDrawer*>(pat->getChild(i));
+            RLOG(1, "Disabling debug drawer");
+            dDraw->hide();
+            s->setDebugDrawer(NULL);
           }
-
-          if (nd_i != NULL)
+          else   // Enable the debug drawer
           {
-            RLOG(0, "Enabling debug drawer");
-            nd_i->show();
-            s->setDebugDrawer(nd_i);
-          }
+            BulletDebugDrawer* nd_i = NULL;
 
+            // Find the debug drawer from the children of this class
+            for (unsigned int i=0; i<pat->getNumChildren(); ++i)
+            {
+              nd_i = dynamic_cast<BulletDebugDrawer*>(pat->getChild(i));
+            }
+
+            if (nd_i)
+            {
+              RLOG(1, "Enabling debug drawer");
+              nd_i->show();
+              s->setDebugDrawer(nd_i);
+            }
+          }
         }
+
+#elif defined (USE_MUJOCO)
+
+        else if (dynamic_cast<Rcs::MujocoSimulation*>(sim))
+        {
+          Rcs::MujocoSimulation* s = dynamic_cast<Rcs::MujocoSimulation*>(sim);
+          s->toggleDebugWindow();
+        }
+
 #endif
       }
       /////////////////////////////////////////////////////////////
