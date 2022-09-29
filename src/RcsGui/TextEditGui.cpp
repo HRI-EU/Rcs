@@ -45,20 +45,50 @@ namespace Rcs
 /*******************************************************************************
  *
  ******************************************************************************/
-TextEditGui::TextEditGui()
+TextEditGui::TextEditGui() : AsyncWidget()
 {
   launch();
 }
 
+TextEditGui::~TextEditGui()
+{
+  for (size_t i = 0; i < callback.size(); ++i)
+  {
+    delete callback[i];
+  }
+}
+
 void TextEditGui::construct()
 {
-  setWidget(new Rcs::TextEditWidget());
+  Rcs::TextEditWidget* w = new Rcs::TextEditWidget();
+  for (size_t i = 0; i < callback.size(); ++i)
+  {
+    w->registerCallback(callback[i]);
+  }
+  callback.clear();
+  setWidget(w);
 }
 
 std::string TextEditGui::getAndResetText()
 {
   TextEditWidget* tew = dynamic_cast<TextEditWidget*>(getWidget());
   return tew->getAndResetText();
+}
+
+void TextEditGui::registerCallback(TextEditWidget::TextChangeCallback* cb)
+{
+  if (!getWidget())
+  {
+    callback.push_back(cb);
+  }
+  else
+  {
+    Rcs::TextEditWidget* tew = dynamic_cast<Rcs::TextEditWidget*>(getWidget());
+    if (tew)
+    {
+      tew->registerCallback(cb);
+    }
+  }
 }
 
 /*******************************************************************************
@@ -76,6 +106,10 @@ TextEditWidget::TextEditWidget() : QScrollArea()
 
 TextEditWidget::~TextEditWidget()
 {
+  for (size_t i = 0; i < callback.size(); ++i)
+  {
+    delete callback[i];
+  }
 }
 
 std::string TextEditWidget::getAndResetText()
@@ -94,6 +128,16 @@ void TextEditWidget::handleText()
   text = lineEdit->text().toStdString();
   mtx.unlock();
   lineEdit->clear();
+  for (size_t i = 0; i < callback.size(); ++i)
+  {
+    callback[i]->callback(text);
+  }
+
+}
+
+void TextEditWidget::registerCallback(TextChangeCallback* cb)
+{
+  callback.push_back(cb);
 }
 
 

@@ -47,13 +47,6 @@
 namespace Rcs
 {
 
-class TextEditGui : public Rcs::AsyncWidget
-{
-public:
-  TextEditGui();
-  void construct();
-  std::string getAndResetText();
-};
 
 class TextEditWidget : public QScrollArea
 {
@@ -61,9 +54,16 @@ class TextEditWidget : public QScrollArea
 
 public:
 
+  class TextChangeCallback
+  {
+  public:
+    virtual void callback(std::string text) = 0;
+  };
   TextEditWidget();
 
   virtual ~TextEditWidget();
+  // Takes ownership of the callback
+  void registerCallback(TextChangeCallback* callback);
 
   std::string getAndResetText();
 
@@ -74,6 +74,22 @@ private:
   std::string text;
   QLineEdit* lineEdit;
   QMutex mtx;
+  std::vector<TextChangeCallback*> callback;
+};
+
+class TextEditGui : public Rcs::AsyncWidget
+{
+public:
+  TextEditGui();
+  ~TextEditGui();
+  void construct();
+  std::string getAndResetText();
+
+  // Takes ownership of the callback
+  void registerCallback(TextEditWidget::TextChangeCallback* callback);
+
+private:
+  std::vector<TextEditWidget::TextChangeCallback*> callback;
 };
 
 }   // namespace Rcs

@@ -101,6 +101,10 @@ TaskWidget::TaskWidget(const Task* task,
  ******************************************************************************/
 TaskWidget::~TaskWidget()
 {
+  for (size_t i = 0; i < callback.size(); ++i)
+  {
+    delete callback[i];
+  }
 }
 
 /*******************************************************************************
