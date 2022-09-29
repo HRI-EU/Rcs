@@ -1431,6 +1431,42 @@ void RcsGraph_fprintJointRecursion(FILE* out,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+void RcsGraph_computeJointRecursionMask(const RcsGraph* self,
+                                        const RcsBody* b,
+                                        MatNd* mask)
+{
+  MatNd_reshapeAndSetZero(mask, self->nJ, 1);
+
+  // No recursion possible from NULL body.
+  if (!b)
+  {
+    return;
+  }
+
+  const RcsJoint* jnt = RcsBody_lastJointBeforeBody(self, b);
+
+  // No recursion possible if body is not connected to joints.
+  if (!jnt)
+  {
+    return;
+  }
+
+  // Here the recursion starts
+  while (jnt->prevId!=-1)
+  {
+    if (jnt->jacobiIndex != -1)
+    {
+      mask->ele[jnt->jacobiIndex] = 1.0;
+    }
+
+    jnt = &self->joints[jnt->prevId];
+  }
+
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 bool RcsGraph_setJoint(RcsGraph* self, const char* name, double val)
 {
   RcsJoint* j = RcsGraph_getJointByName(self, name);
@@ -2599,14 +2635,6 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
     return NULL;
   }
 
-  RcsGraph* dst = RALLOC(RcsGraph);
-
-  if (!dst)
-  {
-    RLOG(1, "Failed to allocate memory for cloning graph");
-    return NULL;
-  }
-
   RcsBody* rootBdy = RcsGraph_getBodyByName(src, rootName);
 
   if (!rootBdy)
@@ -2624,12 +2652,21 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, const char* rootName)
     return NULL;
   }
 
+  RcsGraph* dst = RALLOC(RcsGraph);
+
+  if (!dst)
+  {
+    RLOG(1, "Failed to allocate memory for cloning graph");
+    return NULL;
+  }
 
   RLOG(5, "Cloning between %s and %s", rootBdy->name, lastLeaf->name);
 
   const int rootId = rootBdy->id;
+  RCHECK(lastLeaf->id > rootId + 1);
   dst->nBodies = lastLeaf->id - rootId + 1;
   dst->bodies = RNALLOC(dst->nBodies, RcsBody);
+  RCHECK(dst->bodies);
   memcpy(dst->bodies, &src->bodies[rootId], dst->nBodies*sizeof(RcsBody));
 
   // Body 0 is root without upwards and sideways connections
@@ -3930,7 +3967,7 @@ void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src)
     memcpy(&dst->sensors[i], &src->sensors[i], sizeof(RcsSensor));
     dst->sensors[i].rawData = tmpRaw;
     dst->sensors[i].texel = tmpTex;
-    MatNd_resizeCopy(&dst->sensors[i].rawData, src->sensors[i].rawData);
+    MatNd_resizeCopy(dst->sensors[i].rawData, src->sensors[i].rawData);
 
     // In the unlikely event of different texel numbers, we perform a deep
     // copy of the src texels over the dst texels. This is only performed
@@ -3959,8 +3996,8 @@ void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src)
 
   // Copy the configuration space arrays and corresponding dimensions
   dst->nJ = src->nJ;
-  MatNd_resizeCopy(&dst->q, src->q);
-  MatNd_resizeCopy(&dst->q_dot, src->q_dot);
+  MatNd_resizeCopy(dst->q, src->q);
+  MatNd_resizeCopy(dst->q_dot, src->q_dot);
   snprintf(dst->cfgFile, RCS_MAX_FILENAMELEN, "%s", src->cfgFile);
 
 

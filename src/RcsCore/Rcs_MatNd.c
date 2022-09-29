@@ -1296,10 +1296,10 @@ void MatNd_reshapeCopy(MatNd* dst, const MatNd* src)
 /*******************************************************************************
  *
  ******************************************************************************/
-void MatNd_resizeCopy(MatNd** dst, const MatNd* src)
+void MatNd_resizeCopy(MatNd* dst, const MatNd* src)
 {
-  *dst = MatNd_realloc(*dst, src->m, src->n);
-  MatNd_copy(*dst, src);
+  MatNd_realloc(dst, src->m, src->n);
+  MatNd_copy(dst, src);
 }
 
 /*******************************************************************************
@@ -5610,6 +5610,24 @@ void MatNd_softMax(MatNd* dst, const MatNd* src, double beta)
     for (unsigned int i = 0; i < src->m; i++)
     {
       MatNd_set2(dst, i, j, exp(beta*MatNd_get2(src, i, j))/dnom);
+    }
+  }
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void MatNd_binarizeSelf(MatNd* self, double zeroThreshold)
+{
+  for (unsigned int i=0; i<self->m*self->n; ++i)
+  {
+    if (fabs(self->ele[i])<=zeroThreshold)
+    {
+      self->ele[i] = 0.0;
+    }
+    else
+    {
+      self->ele[i] = 1.0;
     }
   }
 }

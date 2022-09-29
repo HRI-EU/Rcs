@@ -840,11 +840,11 @@ void ExamplePhysics::handleKeys()
         sim->print();
       }
 
-      MatNd_resizeCopy(&q0, graph->q);
-      MatNd_resizeCopy(&q_des, graph->q);
-      MatNd_resizeCopy(&q_des_f, graph->q);
-      MatNd_resizeCopy(&q_curr, graph->q);
-      MatNd_resizeCopy(&q_dot_curr, graph->q_dot);
+      MatNd_resizeCopy(q0, graph->q);
+      MatNd_resizeCopy(q_des, graph->q);
+      MatNd_resizeCopy(q_des_f, graph->q);
+      MatNd_resizeCopy(q_curr, graph->q);
+      MatNd_resizeCopy(q_dot_curr, graph->q_dot);
       T_curr = MatNd_realloc(T_curr, graph->dof, 1);
       MatNd_setZero(T_curr);
       T_gravity = MatNd_realloc(T_gravity, graph->dof, 1);

@@ -739,6 +739,441 @@ bool MatNd_fromFile(MatNd* M, const char* fileName);
 
 
 /**
+ * @name Matrix multiplications
+ *
+ * Functions to multiplay matrices in various orders
+ */
+
+///@{
+
+/*! \ingroup MatNdFunctions
+ *  \brief C = A * B.
+ */
+void MatNd_mul(MatNd* C, const MatNd* A, const MatNd* B);
+
+/*! \ingroup MatNdFunctions
+ *  \brief C = C + A * B.
+ */
+void MatNd_mulAndAddSelf(MatNd* C, const MatNd* A, const MatNd* B);
+
+/*! \ingroup MatNdFunctions
+ *  \brief \f$\mathbf{C} = \mathbf{A  B A^T}\f$
+ *
+ *         This function works for matrix B
+ *         - being square
+ *         - being a vector (A->n x 1)
+ *         - being a scalar value (1 x 1)
+ *         - being NULL (A * A^T then)
+ *         If the size of m*n of A and B is smaller or equal
+ *         MATND_MAX_STACK_MATRIX_SIZE doubles, no heap memory will be
+ *         allocated.
+ */
+void MatNd_sqrMulABAt(MatNd* C, const MatNd* A, const MatNd* B);
+
+/*! \ingroup MatNdFunctions
+ *  \brief \f$\mathbf{C} = \mathbf{A^T  B A}\f$
+ *
+ *         This function works for matrix \f$\mathbf{B}\f$
+ *         - being square
+ *         - being a vector (A->m x 1)
+ *         - being NULL (\f$\mathbf{A^T  A}\f$ then).
+ *
+ *         If the size of m*n of \f$\mathbf{A}\f$ and \f$\mathbf{B}\f$ is
+ *         smaller or equal MATND_MAX_STACK_MATRIX_SIZE doubles, no heap
+ *         memory will be allocated.
+ */
+void MatNd_sqrMulAtBA(MatNd* C, const MatNd* A, const MatNd* B);
+
+/*! \ingroup MatNdFunctions
+ *  \brief \f$\mathbf{C} = \mathbf{C + A^T  B A}\f$
+ *         See MatNd_sqrMulABAt().
+ *         If the size of n*n of A is smaller or equal
+ *         MATND_MAX_STACK_MATRIX_SIZE doubles, no heap memory will be
+ *         allocated.
+ */
+void MatNd_sqrMulAndAddAtBA(MatNd* C, const MatNd* A, const MatNd* B);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Rotates a 3xn array about the rotation matrix of A_KI:
+ *         self = A_KI*self
+ */
+void MatNd_rotateSelf(MatNd* self, double A_KI[3][3]);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Rotates a 3xn array about the transpose rotation matrix of A_KI:
+ *         self = transpose(A_KI)*self
+ */
+void MatNd_invRotateSelf(MatNd* self, double A_KI[3][3]);
+
+/*! \ingroup MatNdFunctions
+ *  \brief A = B*A.
+ *         If the size of A is smaller or equal
+ *         MATND_MAX_STACK_MATRIX_SIZE doubles, no heap memory will be
+ *         allocated.
+ */
+void MatNd_preMulSelf(MatNd* A, const MatNd* B);
+
+/*! \ingroup MatNdFunctions
+ *  \brief A = A*B.
+ *         If the size of A is smaller or equal
+ *         MATND_MAX_STACK_MATRIX_SIZE doubles, no heap memory will be
+ *         allocated.
+ */
+void MatNd_postMulSelf(MatNd* A, const MatNd* B);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Computes the dyadic product: dst = src^T * src.
+ *         If m*n of src is smaller or equal MATND_MAX_STACK_MATRIX_SIZE
+ *         doubles, no heap memory will be allocated.
+ */
+void MatNd_dyadicProduct(MatNd* dst, const MatNd* src);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Pre-multiplies dst with a diagonal matrix with the elements
+ *         stored in vec: dst = vec*dst
+ *         Array vec must have 1 row or the same number of rows as dst,
+ *         and 1 column. Each row is multiplied with the corresponding
+ *         value of vec.
+ */
+void MatNd_preMulDiagSelf(MatNd* dst, const MatNd* vec);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Post-multiplies dst with a diagonal matrix with the elements
+ *         stored in vec: dst = dst*vec
+ *         Array vec must have 1 row or as many rows as there is columns
+ *         in dst, and 1 column. Each row of dst is element-wise multiplied
+ *         with vec. A code example is in the tests.
+ */
+void MatNd_postMulDiagSelf(MatNd* dst, const MatNd* vec);
+
+///@}
+
+
+
+
+
+/**
+ * @name Column operations
+ *
+ * Column operations
+ */
+
+///@{
+
+/*! \ingroup MatNdFunctions
+ *  \brief Copies a set of columns from an array. The memory pointed to by
+ *         cols must hold an index array of the columns to be used, which is
+ *         terminated with a  value of -1. It must not point to NULL. The
+ *         number of columns must not exceed the columns of the array dst.
+ *         The order of the columns given in cols is preserved. It is also
+ *         possible to have the same column several times. A code example
+ *         is in the tests.
+ */
+void MatNd_copyColumns(MatNd* dst, const MatNd* src, const int* cols);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Copies one column from the source to the destination matrix
+ */
+void MatNd_copyColumn(MatNd* dst, unsigned int dst_column,
+                      const MatNd* src, unsigned int src_column);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Sets the n elements of the c-th column of A with the values
+ *         pointed to by p. The function will exit with a fatal error if
+ *         - c is equal or larger than A->n
+ *         - n is larget than A->m.
+ */
+void MatNd_setColumn(MatNd* A, int c, const double* p, int n);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Appends the columns of src to the last column of dst. This is a
+ *         convenience function and calls MatNd_insertColumns().
+ */
+void MatNd_appendColumns(MatNd* dst, const MatNd* src);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Adds the n elements of the c-th column of A with the values
+ *         pointed to by p. The function will exit with a fatal error if
+ *         - c is equal or larger than A->n
+ *         - n is larget than A->m.
+ */
+void MatNd_addToColumn(MatNd* A, int c, const double* p, int n);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Sets the n elements of the c-th column of A with the values.
+ */
+void MatNd_setColumnToValue(MatNd* self, unsigned int column, double value);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Sets all elements of the respective column to zero.
+ */
+void MatNd_setColumnZero(MatNd* M, unsigned int column);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Copies the c-th column of A into B. Array B will be
+ *         reshaped to match the dimensions. If c is out of range,
+ *         the function will exit fatally.
+ */
+void MatNd_getColumn(MatNd* B, int c, const MatNd* A);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Deletes the index-th column and reshapes the array.
+ */
+void MatNd_deleteColumn(MatNd* self, int index);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Deletes the columns from first to last. First and last are
+ *         included. The array is automatically reshaped.
+ */
+void MatNd_deleteColumns(MatNd* self, int first, int last);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Returns the sum of the elements of the column-th column. If column
+ *         is out of range, the function will exit with a fatal error.
+ */
+double MatNd_columnSum(const MatNd* self, unsigned int column);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Performs the cross product on each column of a 3 x n array:
+ *         column_i(dst) = vec x column_i(src)
+ *         The function allows an in-place operation on dst. For
+ *         convenience please use MatNd_columnCrossProductSelf().
+ */
+void MatNd_columnCrossProduct(MatNd* dst, const MatNd* src,
+                              const double vec[3]);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Performs the cross product on each column of a 3xn array:
+ *         column_i(self) = vec x column_i(self)
+ */
+void MatNd_columnCrossProductSelf(MatNd* self, const double vec[3]);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Does the same as MatNd_insertRows(), just for the transposed
+ *         case. A code example is in the tests.
+ *         If the size of m*n doubles of "from" is smaller or equal
+ *         MATND_MAX_STACK_MATRIX_SIZE doubles, no heap memory will be
+ *         allocated.
+ */
+void MatNd_insertColumns(MatNd* self, int colDst, const MatNd* from,
+                         int colSrc, int nRows);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Interprets the columns of src as a time series and copies its
+ *         numerical derivative (1st order Euler approximation) into dst.
+ *         The derivative is computed as dx = x[k+1] - x[k]. The last
+ *         row is copied from the second last one.
+ */
+void MatNd_columnDerivative(MatNd* dst, const MatNd* src);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Interprets the columns of x as a time series and copies its
+ *         numerical integral (sum) into x_int. If array x0 is not NULL, it
+ *         is the initial value of x_int. In this case, x0 must have 1 row
+ *         and the same number of columns as x, otherwise the function exits
+ *         with a fatal error.
+ */
+void MatNd_columnIntegral(MatNd* x_int, const MatNd* x, const MatNd* x0);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Interprets the columns of x as a time series and copies its
+ *         absolute lengths into x_length.
+ */
+void MatNd_columnLength(MatNd* x_length, const MatNd* x);
+
+///@}
+
+
+
+
+
+
+/**
+ * @name Row operations
+ *
+ * Row operations
+ */
+
+///@{
+
+/*! \ingroup MatNdFunctions
+ *  \brief Deletes the index-th row and reshapes the array.
+ */
+void MatNd_deleteRow(MatNd* self, int index);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Deletes the rows from first to last. First and last are
+ *         included. The array is automatically reshaped.
+ */
+void MatNd_deleteRows(MatNd* self, int first, int last);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Sets the n elements of the r-th row of A with the values
+ *         pointed to by p. If n is larger than A->n then subsequent
+ *         rows are set too (but n needs to be a multiple of A->n).
+ *         The memory pointed to by p may overlap with the arrays
+ *         memory.
+ */
+void MatNd_setRow(MatNd* A, int r, const double* p, int n);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Sets all elements of the respective row to zero.
+ */
+void MatNd_setRowZero(MatNd* M, unsigned int row);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Copies the row-th column of A into B. Array B will be
+ *         reshaped to match the dimensions.
+ */
+void MatNd_getRow(MatNd* B, int row, const MatNd* A);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Returns a row-vector of the row-th row of B. The returned matrix
+ *         is just a view on the row, the memory still belongs to B.
+ */
+MatNd MatNd_getRowView(const MatNd* B, int row);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Returns a column-vector of the row-th row of B. The returned
+ *         matrix is just a view on the row, the memory still belongs to B.
+ */
+MatNd MatNd_getRowViewTranspose(const MatNd* B, int row);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Appends the rows of src to the last row of dst. This is a
+ *         convenience function and calls \ref MatNd_insertRows().
+ */
+void MatNd_appendRows(MatNd* dst, const MatNd* src);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Inserts src before dst. This is a convenience function and calls
+ *         \ref MatNd_insertRows().
+ */
+void MatNd_prependRows(MatNd* dst, const MatNd* src);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Insert nRows rows of array from after the rowDst-th row of self.
+ *         If rowDst is -1, the rows will be prepended. Array self will be
+ *         reallocated if its memory is too small.
+ *         The function exits with a fatal error if
+ *         - the arrays don't have the same number of columns
+ *         - the row rowDst is not within [-1...self->m-1]
+ *         - the block to be copied gets out of the memory of from
+ */
+void MatNd_insertRows(MatNd* self, int rowDst, const MatNd* from,
+                      int rowSrc, unsigned int nRows);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Copies every 1/ratio-th row of src to dst. Array dst will be
+ *         reshaped accordingly. The value ratio must be within ]0...1[. If
+ *         not, a warning is issued on debug level 1, and dst is not
+ *         modified.
+ */
+void MatNd_condenseRows(MatNd* dst, const MatNd* src, double ratio);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Perform linear interpolation to fill dst matrix from src matrix
+ */
+void MatNd_interpolateRows(MatNd* dst, const MatNd* src);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Perform linear interpolation to fill dst matrix from src matrix
+ *         by assuming that the 3 columns of src and dst are Euler angles
+ *
+ */
+void MatNd_interpolateRowsEuler(MatNd* dst, const MatNd* src);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Copies the interpolated row according to parameter s into dst.
+ *         If s<=0, the first row is copied. If s >= 1, the last row is
+ *         copied. If src has only 1 row, it is copied into dst. If src
+ *         has 0 columns, the array dst is reshaped to 1 x 0, and nothing
+ *         is copied.
+ *
+ *  \param[out] dst   Interpolated array, will be reshaped automatically
+ *  \param[in]  src   Array to be interpolated. It must have at least one
+ *                    row (otherwise the function will exit fatally)
+ *  \param[in]  s     Interpolation value, should be between 0 and 1
+ */
+void MatNd_rowLerp(MatNd* dst, const MatNd* src, const double s);
+
+///@}
+
+
+
+
+
+/**
+ * @name Querying matrices
+ *
+ * Functions to query and check matrices
+ */
+
+///@{
+
+/*! \ingroup MatNdFunctions
+ *  \brief Returns true if one of the arrays elements is NAN.
+ *
+ *  \param[in] self Array to be checked. The self->m*self->n elements
+ *                  are checked.
+ */
+bool MatNd_isNAN(const MatNd* self);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Returns true if one or more of the array elements is infinite.
+ *
+ *  \param[in] self Array to be checked. The self->m*self->n elements
+ *                  are checked.
+ */
+bool MatNd_isINF(const MatNd* self);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Returns true if all array elements are finite, false otherwise.
+ *
+ *  \param[in] self Array to be checked. The self->m*self->n elements
+ *                  are checked.
+ */
+bool MatNd_isFinite(const MatNd* self);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Checks if a matrix is symmetric:
+ *         \f$
+ *         \mathbf{A} = \mathbf{A}^T
+ *         \f$
+ *         <br>
+ *         Value eps is the tolerance the elements of the upper and lower
+ *         triangle may differ. If the matrix is not square, the function
+ *         terminates with a fatal error.
+ */
+bool MatNd_isSymmetric(const MatNd* A, double eps);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Checks if a matrix is an identity matrix. Value eps is the
+ *         threshold allowed to deviate from the identity matrix values.
+ *         If the matrix is not square, the function returns false.
+ */
+bool MatNd_isIdentity(const MatNd* A, double eps);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Checks if a matrix is diagonal. Value eps is the threshold allowed
+ *         for the off-diagonal elements. If the matrix is not square, the
+ *         function terminates with a fatal error.
+ */
+bool MatNd_isDiagonal(const MatNd* A, double eps);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Returns true if the arrays are element-wise equal with a
+ *         tolerance less than eps.
+ */
+bool MatNd_isEqual(const MatNd* m1, const MatNd* m2, double eps);
+
+///@}
+
+
+
+
+
+/**
  * @name Elementary functions
  *
  * Basic MatNd functions
@@ -752,9 +1187,12 @@ bool MatNd_fromFile(MatNd* M, const char* fileName);
 void MatNd_setZero(MatNd* M);
 
 /*! \ingroup MatNdFunctions
- *  \brief Sets all elements of the respective row to zero.
+ *  \brief Sets all elements with an absolute value that is equal or smaller
+ *         than the given zeroThreshold to zero, the others to 1. The parameter
+ *         zeroThreshold is expected to be equal or larger than zero, otherwise
+ *         all elements will be 1.
  */
-void MatNd_setRowZero(MatNd* M, unsigned int row);
+void MatNd_binarizeSelf(MatNd* self, double zeroThreshold);
 
 /*! \ingroup MatNdFunctions
  *  \brief Sets self to the identity matrix. Self must be square,
@@ -840,16 +1278,6 @@ void MatNd_add(MatNd* dst, const MatNd* m1, const MatNd* m2);
 void MatNd_addSelf(MatNd* dst, const MatNd* m);
 
 /*! \ingroup MatNdFunctions
- *  \brief C = A * B.
- */
-void MatNd_mul(MatNd* C, const MatNd* A, const MatNd* B);
-
-/*! \ingroup MatNdFunctions
- *  \brief C = C + A * B.
- */
-void MatNd_mulAndAddSelf(MatNd* C, const MatNd* A, const MatNd* B);
-
-/*! \ingroup MatNdFunctions
  *  \brief Returns the Euclidean norm (L2-norm, Frobenius norm, length) of
  *         the array: <br>
  *         \f$
@@ -892,24 +1320,7 @@ void MatNd_reshapeCopy(MatNd* dst, const MatNd* src);
  *  \brief Copies src into dst. The array dst Array dst is resized to the
  *         size of src.
  */
-void MatNd_resizeCopy(MatNd** dst, const MatNd* src);
-
-/*! \ingroup MatNdFunctions
- *  \brief Copies a set of columns from an array. The memory pointed to by
- *         cols must hold an index array of the columns to be used, which is
- *         terminated with a  value of -1. It must not point to NULL. The
- *         number of columns must not exceed the columns of the array dst.
- *         The order of the columns given in cols is preserved. It is also
- *         possible to have the same column several times. A code example
- *         is in the tests.
- */
-void MatNd_copyColumns(MatNd* dst, const MatNd* src, const int* cols);
-
-/*! \ingroup MatNdFunctions
- *  \brief Copies one column from the source to the destination matrix
- */
-void MatNd_copyColumn(MatNd* dst, unsigned int dst_column,
-                      const MatNd* src, unsigned int src_column);
+void MatNd_resizeCopy(MatNd* dst, const MatNd* src);
 
 /*! \ingroup MatNdFunctions
  *  \brief Sets the row number to m and the column number to n.
@@ -923,54 +1334,6 @@ void MatNd_reshape(MatNd* self, int m, int n);
  *         equal to the size of the array.
  */
 void MatNd_reshapeAndSetZero(MatNd* self, int m, int n);
-
-/*! \ingroup MatNdFunctions
- *  \brief Appends the rows of src to the last row of dst. This is a
- *         convenience function and calls \ref MatNd_insertRows().
- */
-void MatNd_appendRows(MatNd* dst, const MatNd* src);
-
-/*! \ingroup MatNdFunctions
- *  \brief Inserts src before dst. This is a convenience function and calls
- *         \ref MatNd_insertRows().
- */
-void MatNd_prependRows(MatNd* dst, const MatNd* src);
-
-/*! \ingroup MatNdFunctions
- *  \brief Insert nRows rows of array from after the rowDst-th row of self.
- *         If rowDst is -1, the rows will be prepended. Array self will be
- *         reallocated if its memory is too small.
- *         The function exits with a fatal error if
- *         - the arrays don't have the same number of columns
- *         - the row rowDst is not within [-1...self->m-1]
- *         - the block to be copied gets out of the memory of from
- */
-void MatNd_insertRows(MatNd* self, int rowDst, const MatNd* from,
-                      int rowSrc, unsigned int nRows);
-
-/*! \ingroup MatNdFunctions
- *  \brief Appends the columns of src to the last column of dst. This is a
- *         convenience function and calls MatNd_insertColumns().
- */
-void MatNd_appendColumns(MatNd* dst, const MatNd* src);
-
-/*! \ingroup MatNdFunctions
- *  \brief Does the same as MatNd_insertRows(), just for the transposed
- *         case. A code example is in the tests.
- *         If the size of m*n doubles of "from" is smaller or equal
- *         MATND_MAX_STACK_MATRIX_SIZE doubles, no heap memory will be
- *         allocated.
- */
-void MatNd_insertColumns(MatNd* self, int colDst, const MatNd* from,
-                         int colSrc, int nRows);
-
-/*! \ingroup MatNdFunctions
- *  \brief Copies every 1/ratio-th row of src to dst. Array dst will be
- *         reshaped accordingly. The value ratio must be within ]0...1[. If
- *         not, a warning is issued on debug level 1, and dst is not
- *         modified.
- */
-void MatNd_condenseRows(MatNd* dst, const MatNd* src, double ratio);
 
 /*! \ingroup MatNdFunctions
  *  \brief Assigns val to (row m, column n) of the array self. If an index
@@ -1001,88 +1364,6 @@ double* MatNd_getElePtr(const MatNd* self, int m, int n);
  *         checks if the indices are within the range of the matrices.
  */
 void MatNd_swapElements(MatNd* A, int m1, int n1, int m2, int n2);
-
-/*! \ingroup MatNdFunctions
- *  \brief Sets the n elements of the c-th column of A with the values
- *         pointed to by p. The function will exit with a fatal error if
- *         - c is equal or larger than A->n
- *         - n is larget than A->m.
- */
-void MatNd_setColumn(MatNd* A, int c, const double* p, int n);
-
-/*! \ingroup MatNdFunctions
- *  \brief Adds the n elements of the c-th column of A with the values
- *         pointed to by p. The function will exit with a fatal error if
- *         - c is equal or larger than A->n
- *         - n is larget than A->m.
- */
-void MatNd_addToColumn(MatNd* A, int c, const double* p, int n);
-
-/*! \ingroup MatNdFunctions
- *  \brief Sets the n elements of the c-th column of A with the values.
- */
-void MatNd_setColumnToValue(MatNd* self, unsigned int column, double value);
-
-/*! \ingroup MatNdFunctions
- *  \brief Sets all elements of the respective column to zero.
- */
-void MatNd_setColumnZero(MatNd* M, unsigned int column);
-
-/*! \ingroup MatNdFunctions
- *  \brief Copies the c-th column of A into B. Array B will be
- *         reshaped to match the dimensions. If c is out of range,
- *         the function will exit fatally.
- */
-void MatNd_getColumn(MatNd* B, int c, const MatNd* A);
-
-/*! \ingroup MatNdFunctions
- *  \brief Deletes the index-th column and reshapes the array.
- */
-void MatNd_deleteColumn(MatNd* self, int index);
-
-/*! \ingroup MatNdFunctions
- *  \brief Deletes the columns from first to last. First and last are
- *         included. The array is automatically reshaped.
- */
-void MatNd_deleteColumns(MatNd* self, int first, int last);
-
-/*! \ingroup MatNdFunctions
- *  \brief Deletes the index-th row and reshapes the array.
- */
-void MatNd_deleteRow(MatNd* self, int index);
-
-/*! \ingroup MatNdFunctions
- *  \brief Deletes the rows from first to last. First and last are
- *         included. The array is automatically reshaped.
- */
-void MatNd_deleteRows(MatNd* self, int first, int last);
-
-/*! \ingroup MatNdFunctions
- *  \brief Sets the n elements of the r-th row of A with the values
- *         pointed to by p. If n is larger than A->n then subsequent
- *         rows are set too (but n needs to be a multiple of A->n).
- *         The memory pointed to by p may overlap with the arrays
- *         memory.
- */
-void MatNd_setRow(MatNd* A, int r, const double* p, int n);
-
-/*! \ingroup MatNdFunctions
- *  \brief Copies the row-th column of A into B. Array B will be
- *         reshaped to match the dimensions.
- */
-void MatNd_getRow(MatNd* B, int row, const MatNd* A);
-
-/*! \ingroup MatNdFunctions
- *  \brief Returns a row-vector of the row-th row of B. The returned matrix
- *         is just a view on the row, the memory still belongs to B.
- */
-MatNd MatNd_getRowView(const MatNd* B, int row);
-
-/*! \ingroup MatNdFunctions
- *  \brief Returns a column-vector of the row-th row of B. The returned
- *         matrix is just a view on the row, the memory still belongs to B.
- */
-MatNd MatNd_getRowViewTranspose(const MatNd* B, int row);
 
 /*! \ingroup MatNdFunctions
  *  \brief Constructs the transpose from src into dst. The
@@ -1139,12 +1420,6 @@ void MatNd_fromArray(MatNd* self, const double* p, int n);
  *  \brief Returns the sum of all (m x n) elements of the array.
  */
 double MatNd_sumEle(const MatNd* self);
-
-/*! \ingroup MatNdFunctions
- *  \brief Returns the sum of the elements of the column-th column. If column
- *         is out of range, the function will exit with a fatal error.
- */
-double MatNd_columnSum(const MatNd* self, unsigned int column);
 
 /*! \ingroup MatNdFunctions
  *  \brief Returns the lowest (f)absolut value of the array. The norm of
@@ -1264,49 +1539,6 @@ double MatNd_rmsqError(const MatNd* a1, const MatNd* a2);
 double* MatNd_getRowPtr(const MatNd* self, int row);
 
 /*! \ingroup MatNdFunctions
- *  \brief Rotates a 3xn array about the rotation matrix of A_KI:
- *         self = A_KI*self
- */
-void MatNd_rotateSelf(MatNd* self, double A_KI[3][3]);
-
-/*! \ingroup MatNdFunctions
- *  \brief Rotates a 3xn array about the transpose rotation matrix of A_KI:
- *         self = transpose(A_KI)*self
- */
-void MatNd_invRotateSelf(MatNd* self, double A_KI[3][3]);
-
-/*! \ingroup MatNdFunctions
- *  \brief Performs the cross product on each column of a 3 x n array:
- *         column_i(dst) = vec x column_i(src)
- *         The function allows an in-place operation on dst. For
- *         convenience please use MatNd_columnCrossProductSelf().
- */
-void MatNd_columnCrossProduct(MatNd* dst, const MatNd* src,
-                              const double vec[3]);
-
-/*! \ingroup MatNdFunctions
- *  \brief Performs the cross product on each column of a 3xn array:
- *         column_i(self) = vec x column_i(self)
- */
-void MatNd_columnCrossProductSelf(MatNd* self, const double vec[3]);
-
-/*! \ingroup MatNdFunctions
- *  \brief A = B*A.
- *         If the size of A is smaller or equal
- *         MATND_MAX_STACK_MATRIX_SIZE doubles, no heap memory will be
- *         allocated.
- */
-void MatNd_preMulSelf(MatNd* A, const MatNd* B);
-
-/*! \ingroup MatNdFunctions
- *  \brief A = A*B.
- *         If the size of A is smaller or equal
- *         MATND_MAX_STACK_MATRIX_SIZE doubles, no heap memory will be
- *         allocated.
- */
-void MatNd_postMulSelf(MatNd* A, const MatNd* B);
-
-/*! \ingroup MatNdFunctions
  *  \brief Sets the elements of the array to uniformly distributed random
  *         numbers within the given range: lower <= result < upper. The
  *         random numbers are seeded with the computer clock, so that they
@@ -1336,13 +1568,6 @@ void MatNd_eleMul(MatNd* dst, const MatNd* m1, const MatNd* m2);
 double MatNd_variance(const MatNd* self);
 
 /*! \ingroup MatNdFunctions
- *  \brief Computes the dyadic product: dst = src^T * src.
- *         If m*n of src is smaller or equal MATND_MAX_STACK_MATRIX_SIZE
- *         doubles, no heap memory will be allocated.
- */
-void MatNd_dyadicProduct(MatNd* dst, const MatNd* src);
-
-/*! \ingroup MatNdFunctions
  *  \brief Initializes a MatNd with a string. The elements must be
  *         separated with a blank, a new row is indicated with a comma. A
  *         comma must have a blank before and after.
@@ -1367,38 +1592,6 @@ void MatNd_copyLowerTriangle(MatNd* dst, const MatNd* src);
  *         terminate with a fatal error.
  */
 void MatNd_copyMainDiagonal(MatNd* dst, const MatNd* src);
-
-/*! \ingroup MatNdFunctions
- *  \brief Checks if a matrix is symmetric:
- *         \f$
- *         \mathbf{A} = \mathbf{A}^T
- *         \f$
- *         <br>
- *         Value eps is the tolerance the elements of the upper and lower
- *         triangle may differ. If the matrix is not square, the function
- *         terminates with a fatal error.
- */
-bool MatNd_isSymmetric(const MatNd* A, double eps);
-
-/*! \ingroup MatNdFunctions
- *  \brief Checks if a matrix is an identity matrix. Value eps is the
- *         threshold allowed to deviate from the identity matrix values.
- *         If the matrix is not square, the function returns false.
- */
-bool MatNd_isIdentity(const MatNd* A, double eps);
-
-/*! \ingroup MatNdFunctions
- *  \brief Checks if a matrix is diagonal. Value eps is the threshold allowed
- *         for the off-diagonal elements. If the matrix is not square, the
- *         function terminates with a fatal error.
- */
-bool MatNd_isDiagonal(const MatNd* A, double eps);
-
-/*! \ingroup MatNdFunctions
- *  \brief Returns true if the arrays are element-wise equal with a
- *         tolerance less than eps.
- */
-bool MatNd_isEqual(const MatNd* m1, const MatNd* m2, double eps);
 
 /*! \ingroup MatNdFunctions
  *  \brief Line search algorithm adapted from Numerical Recipes in C.
@@ -1488,67 +1681,6 @@ void MatNd_setBlockZero(MatNd* dst, unsigned int m0, unsigned int n0,
                         unsigned int m1, unsigned int n1);
 
 /*! \ingroup MatNdFunctions
- *  \brief \f$\mathbf{C} = \mathbf{A  B A^T}\f$
- *
- *         This function works for matrix B
- *         - being square
- *         - being a vector (A->n x 1)
- *         - being a scalar value (1 x 1)
- *         - being NULL (A * A^T then)
- *         If the size of m*n of A and B is smaller or equal
- *         MATND_MAX_STACK_MATRIX_SIZE doubles, no heap memory will be
- *         allocated.
- */
-void MatNd_sqrMulABAt(MatNd* C, const MatNd* A, const MatNd* B);
-
-/*! \ingroup MatNdFunctions
- *  \brief \f$\mathbf{C} = \mathbf{A^T  B A}\f$
- *
- *         This function works for matrix \f$\mathbf{B}\f$
- *         - being square
- *         - being a vector (A->m x 1)
- *         - being NULL (\f$\mathbf{A^T  A}\f$ then).
- *
- *         If the size of m*n of \f$\mathbf{A}\f$ and \f$\mathbf{B}\f$ is
- *         smaller or equal MATND_MAX_STACK_MATRIX_SIZE doubles, no heap
- *         memory will be allocated.
- */
-void MatNd_sqrMulAtBA(MatNd* C, const MatNd* A, const MatNd* B);
-
-/*! \ingroup MatNdFunctions
- *  \brief \f$\mathbf{C} = \mathbf{C + A^T  B A}\f$
- *         See MatNd_sqrMulABAt().
- *         If the size of n*n of A is smaller or equal
- *         MATND_MAX_STACK_MATRIX_SIZE doubles, no heap memory will be
- *         allocated.
- */
-void MatNd_sqrMulAndAddAtBA(MatNd* C, const MatNd* A, const MatNd* B);
-
-/*! \ingroup MatNdFunctions
- *  \brief Returns true if one of the arrays elements is NAN.
- *
- *  \param[in] self Array to be checked. The self->m*self->n elements
- *                  are checked.
- */
-bool MatNd_isNAN(const MatNd* self);
-
-/*! \ingroup MatNdFunctions
- *  \brief Returns true if one or more of the array elements is infinite.
- *
- *  \param[in] self Array to be checked. The self->m*self->n elements
- *                  are checked.
- */
-bool MatNd_isINF(const MatNd* self);
-
-/*! \ingroup MatNdFunctions
- *  \brief Returns true if all array elements are finite, false otherwise.
- *
- *  \param[in] self Array to be checked. The self->m*self->n elements
- *                  are checked.
- */
-bool MatNd_isFinite(const MatNd* self);
-
-/*! \ingroup MatNdFunctions
  *  \brief Returns a MatNd with the given dimensions and the element
  *         pointer pointing to ptr. It is assumed that ptr points to
  *         memory with at leaset m*n doubles.
@@ -1568,47 +1700,6 @@ MatNd MatNd_fromPtr(int m, int n, double* ptr);
  *  \return MatNd struct with dimension 3 x 3 pointing to mat.
  */
 MatNd MatNd_fromMat3d(double mat[3][3]);
-
-/*! \ingroup MatNdFunctions
- *  \brief Pre-multiplies dst with a diagonal matrix with the elements
- *         stored in vec: dst = vec*dst
- *         Array vec must have 1 row or the same number of rows as dst,
- *         and 1 column. Each row is multiplied with the corresponding
- *         value of vec.
- */
-void MatNd_preMulDiagSelf(MatNd* dst, const MatNd* vec);
-
-/*! \ingroup MatNdFunctions
- *  \brief Post-multiplies dst with a diagonal matrix with the elements
- *         stored in vec: dst = dst*vec
- *         Array vec must have 1 row or as many rows as there is columns
- *         in dst, and 1 column. Each row of dst is element-wise multiplied
- *         with vec. A code example is in the tests.
- */
-void MatNd_postMulDiagSelf(MatNd* dst, const MatNd* vec);
-
-/*! \ingroup MatNdFunctions
- *  \brief Interprets the columns of src as a time series and copies its
- *         numerical derivative (1st order Euler approximation) into dst.
- *         The derivative is computed as dx = x[k+1] - x[k]. The last
- *         row is copied from the second last one.
- */
-void MatNd_columnDerivative(MatNd* dst, const MatNd* src);
-
-/*! \ingroup MatNdFunctions
- *  \brief Interprets the columns of x as a time series and copies its
- *         numerical integral (sum) into x_int. If array x0 is not NULL, it
- *         is the initial value of x_int. In this case, x0 must have 1 row
- *         and the same number of columns as x, otherwise the function exits
- *         with a fatal error.
- */
-void MatNd_columnIntegral(MatNd* x_int, const MatNd* x, const MatNd* x0);
-
-/*! \ingroup MatNdFunctions
- *  \brief Interprets the columns of x as a time series and copies its
- *         absolute lengths into x_length.
- */
-void MatNd_columnLength(MatNd* x_length, const MatNd* x);
 
 /*! \ingroup MatNdFunctions
  *  \brief Computes the (symmetric) null space projection matrix N as <br>
@@ -1721,18 +1812,6 @@ double MatNd_DTW(MatNd* warped, const MatNd* dst, const MatNd* src,
 void MatNd_applyFctEle(MatNd* dst, double (*func)(double));
 
 /*! \ingroup MatNdFunctions
- *  \brief Perform linear interpolation to fill dst matrix from src matrix
- */
-void MatNd_interpolateRows(MatNd* dst, const MatNd* src);
-
-/*! \ingroup MatNdFunctions
- *  \brief Perform linear interpolation to fill dst matrix from src matrix
- *         by assuming that the 3 columns of src and dst are Euler angles
- *
- */
-void MatNd_interpolateRowsEuler(MatNd* dst, const MatNd* src);
-
-/*! \ingroup MatNdFunctions
  *  \brief Reverse the matrix row-wise --> last row will become first row,
  *         and so on.
  */
@@ -1743,20 +1822,6 @@ void MatNd_reverseSelf(MatNd* mat);
  *         square, the function exits with a fatal error.
  */
 double MatNd_trace(const MatNd* self);
-
-/*! \ingroup MatNdFunctions
- *  \brief Copies the interpolated row according to parameter s into dst.
- *         If s<=0, the first row is copied. If s >= 1, the last row is
- *         copied. If src has only 1 row, it is copied into dst. If src
- *         has 0 columns, the array dst is reshaped to 1 x 0, and nothing
- *         is copied.
- *
- *  \param[out] dst   Interpolated array, will be reshaped automatically
- *  \param[in]  src   Array to be interpolated. It must have at least one
- *                    row (otherwise the function will exit fatally)
- *  \param[in]  s     Interpolation value, should be between 0 and 1
- */
-void MatNd_rowLerp(MatNd* dst, const MatNd* src, const double s);
 
 /*! \ingroup MatNdFunctions
  *  \brief Linear interpolation between rows. The size of the target array

@@ -1282,6 +1282,16 @@ void RcsGraph_fprintJointRecursion(FILE* out, const RcsGraph* self,
                                    const char* bdyName);
 
 /*! \ingroup RcsGraphFunctions
+ *  \brief Computes a logical vector o dimension RcsGraph::nJ x 1 that
+ *         is composed of ones for joint indices that are traversed from the
+ *         given body, zero otherwise. If bdyToRecurseFrom is NULL or has
+ *         no joints, the mask will be zero.
+ */
+void RcsGraph_computeJointRecursionMask(const RcsGraph* self,
+                                        const RcsBody* bdyToRecurseFrom,
+                                        MatNd* mask);
+
+/*! \ingroup RcsGraphFunctions
  *  \brief Prints out the state vector in a human readeable form. The
  *         function automatically determines if the vector is of type
  *         RcsStateFull or RcsStateIK. If neither is the case or the array
