@@ -300,7 +300,7 @@ void* AsyncGuiFactory::threadFunc(void*)
   myLauncher.setObjectName("myLauncher");
   launcher = &myLauncher;
   launcherRunning = true;
-  RLOG(0, "Launcher assigned - after this, no crash should occur");
+  RLOG(5, "Launcher assigned - after this, no crash should occur");
   app.exec();
 
   RLOG_CPP(5, "Widgets: " << app.allWidgets().size());
@@ -309,6 +309,7 @@ void* AsyncGuiFactory::threadFunc(void*)
 
   threadRunning = false;
   launcher = NULL;
+  launcherRunning = false;
 
   return NULL;
 }
@@ -330,6 +331,15 @@ bool AsyncGuiFactory::isThreadRunning()
 
 WidgetLauncher* AsyncGuiFactory::getLauncher()
 {
+  // This is a static method, therefore we need to wait here. Otherwise,
+  // there are crashes due to launcher being NULL if the create() method
+  // didn't complete.
+  while (!launcherRunning)
+  {
+    RLOG(5, "Waiting for launcher ...");
+    Timer_usleep(10000);
+  }
+
   return launcher;
 }
 
