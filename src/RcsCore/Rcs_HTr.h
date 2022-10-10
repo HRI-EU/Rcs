@@ -301,6 +301,18 @@ bool HTr_computeChaslesPole(const HTr* A_BW,
  */
 void HTr_copyOrRecreate(HTr** dst, const HTr* src);
 
+/*! \ingroup RcsHTrFunctions
+ *  \brief Filters the transform filt with a simple first-order low-pass
+ *         filter: filt = tmc*raw + (1-tmc) filt. For the orientation part,
+ *         the function Mat3d_firstOrderLPF() is called.
+ *
+ *  \param[out] filt   Target transform to be filtered.
+ *  \param[in]  raw    Transform with "raw" values.
+ *  \param[in]  tmc    Time constant: 1: raw values, smaller: stronger 
+ *                     smoothing. It is not checked that tmc is in the
+ *                     range [0 ... 1].
+ */
+void HTr_firstOrderLPF(HTr* filt, const HTr* raw, double tmc);
 
 #ifdef __cplusplus
 }

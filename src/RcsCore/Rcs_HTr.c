@@ -643,3 +643,17 @@ void HTr_copyOrRecreate(HTr** dst, const HTr* src)
   }
 
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void HTr_firstOrderLPF(HTr* filt, const HTr* raw, double tmc)
+{
+  Mat3d_firstOrderLPF(filt->rot, (double(*)[3])raw->rot, tmc);
+
+  for (int i = 0; i < 3; ++i)
+  {
+    filt->org[i] = tmc*raw->org[i] + (1.0-tmc) * filt->org[i];
+  }
+
+}
