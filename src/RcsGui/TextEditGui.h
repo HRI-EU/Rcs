@@ -58,6 +58,9 @@ public:
   {
   public:
     virtual void callback(std::string text) = 0;
+    virtual ~TextChangeCallback()
+    {
+    }
   };
   TextEditWidget();
 

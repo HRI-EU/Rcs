@@ -52,10 +52,13 @@ TextEditGui::TextEditGui() : AsyncWidget()
 
 TextEditGui::~TextEditGui()
 {
+  RLOG(1, "Deleting TextEditGui with %zu callbacks", callback.size());
   for (size_t i = 0; i < callback.size(); ++i)
   {
+    RLOG(1, "Deleting callback %zu", i);
     delete callback[i];
   }
+  RLOG(1, "Done deleting TextEditGui");
 }
 
 void TextEditGui::construct()
@@ -96,7 +99,8 @@ void TextEditGui::registerCallback(TextEditWidget::TextChangeCallback* cb)
  ******************************************************************************/
 TextEditWidget::TextEditWidget() : QScrollArea()
 {
-  QHBoxLayout* gridLayout = new QHBoxLayout;
+  setObjectName("Rcs::TextEditWidget");
+  QHBoxLayout* gridLayout = new QHBoxLayout(this);
   gridLayout->setContentsMargins(0, 0, 0, 0);
 
   this->lineEdit = new QLineEdit(this);
