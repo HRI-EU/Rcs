@@ -657,6 +657,34 @@ void RcsShape_fprint(FILE* out, const RcsShape* s)
   {
     fprintf(out, "graphics ");
   }
+  if ((s->computeType & RCSSHAPE_COMPUTE_CONTACT) != 0)
+  {
+    fprintf(out, "contact ");
+  }
+  if ((s->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS) != 0)
+  {
+    fprintf(out, "softPhysics ");
+  }
+  if ((s->computeType & RCSSHAPE_COMPUTE_DEPTHBUFFER) != 0)
+  {
+    fprintf(out, "depth ");
+  }
+  if ((s->computeType & RCSSHAPE_COMPUTE_ATTACHMENT) != 0)
+  {
+    fprintf(out, "attachement ");
+  }
+  if ((s->computeType & RCSSHAPE_COMPUTE_WELDPOS) != 0)
+  {
+    fprintf(out, "weldPos ");
+  }
+  if ((s->computeType & RCSSHAPE_COMPUTE_WELDORI) != 0)
+  {
+    fprintf(out, "weldOri ");
+  }
+  if ((s->computeType & RCSSHAPE_COMPUTE_MARKER) != 0)
+  {
+    fprintf(out, "marker ");
+  }
   fprintf(out, "\n");
 
   // Resizeable
@@ -785,6 +813,40 @@ int RcsShape_fprintXML(FILE* out, const RcsShape* self)
     else
     {
       fprintf(out, "graphics=\"false\" ");
+    }
+    if (self->computeType & RCSSHAPE_COMPUTE_SOFTPHYSICS)
+    {
+      fprintf(out, "softPhysics=\"true\" ");
+    }
+
+    if (self->computeType & RCSSHAPE_COMPUTE_CONTACT)
+    {
+      fprintf(out, "contact=\"true\" ");
+    }
+
+    if (self->computeType & RCSSHAPE_COMPUTE_DEPTHBUFFER)
+    {
+      fprintf(out, "depth=\"true\" ");
+    }
+
+    if (self->computeType & RCSSHAPE_COMPUTE_ATTACHMENT)
+    {
+      fprintf(out, "attachment=\"true\" ");
+    }
+
+    if (self->computeType & RCSSHAPE_COMPUTE_WELDPOS)
+    {
+      fprintf(out, "weldpos=\"true\" ");
+    }
+
+    if (self->computeType & RCSSHAPE_COMPUTE_WELDORI)
+    {
+      fprintf(out, "weldori=\"true\" ");
+    }
+
+    if (self->computeType & RCSSHAPE_COMPUTE_MARKER)
+    {
+      fprintf(out, "marker=\"true\" ");
     }
   }
 
