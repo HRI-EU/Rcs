@@ -538,7 +538,7 @@ void RcsBody_fprint(FILE* out, const RcsBody* b, const RcsGraph* graph)
   HTr_fprint(out, &b->A_BI);
   double ea[3];
   Mat3d_toEulerAngles(ea, (double(*)[3])b->A_BI.rot);
-  fprintf(out, "\n\tEuler angles:%f %f %f [deg]\n",
+  fprintf(out, "\n\tEuler angles: %f %f %f [deg]\n",
           RCS_RAD2DEG(ea[0]), RCS_RAD2DEG(ea[1]), RCS_RAD2DEG(ea[2]));
 
   // Relative transformation

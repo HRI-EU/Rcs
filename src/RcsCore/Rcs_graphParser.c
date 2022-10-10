@@ -54,7 +54,7 @@
 /*******************************************************************************
  *
  ******************************************************************************/
-static void RcsGraph_parseModelStateDetail(xmlNodePtr node,
+static bool RcsGraph_parseModelStateDetail(xmlNodePtr node,
                                            const RcsGraph* self,
                                            const char* mdlName,
                                            int mdlTimeStamp,
@@ -63,6 +63,8 @@ static void RcsGraph_parseModelStateDetail(xmlNodePtr node,
                                            MatNd* q_dot,
                                            MatNd* changedQ_dot)
 {
+  bool foundModelState = false;
+
   // Node is on <Graph> level, we need to descent one level
   node = node->children;
 
@@ -103,6 +105,8 @@ static void RcsGraph_parseModelStateDetail(xmlNodePtr node,
       node = node->next;
       continue;
     }
+
+    foundModelState = true;
 
     xmlNodePtr jntStateNode = node->children;
 
@@ -208,6 +212,7 @@ static void RcsGraph_parseModelStateDetail(xmlNodePtr node,
     node = node->next;
   }
 
+  return foundModelState;
 }
 
 /*******************************************************************************
@@ -594,7 +599,7 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   // Compute type
   bool distance = true, graphics = true, physics = true, softPhysics = false;
   bool depth=false, contact=false, attachment = false;
-  bool weldpos=false, weldori=false;
+  bool weldpos=false, weldori=false, marker=false;
 
   // Physics computation is not carried out for non-physics objects by default.
   if (body->physicsSim == RCSBODY_PHYSICS_NONE)
@@ -632,6 +637,7 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   getXMLNodePropertyBoolString(node, "attachment", &attachment);
   getXMLNodePropertyBoolString(node, "weldpos", &weldpos);
   getXMLNodePropertyBoolString(node, "weldori", &weldori);
+  getXMLNodePropertyBoolString(node, "marker", &marker);
 
   // Color
   strcpy(shape->color, bodyColor ? bodyColor : "DEFAULT");
@@ -706,6 +712,13 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   if (weldpos || weldori)
   {
     getXMLNodePropertyStringN(node, "refBdy", shape->material, RCS_MAX_FILENAMELEN);
+  }
+
+  if (marker == true)
+  {
+    shape->computeType |= RCSSHAPE_COMPUTE_MARKER;
+    RCHECK(shape->type == RCSSHAPE_REFFRAME);
+    getXMLNodePropertyStringN(node, "markerName", shape->material, RCS_MAX_FILENAMELEN);
   }
 
 
@@ -1992,13 +2005,14 @@ bool RcsGraph_getModelStateFromXML(MatNd* q, const RcsGraph* self,
   MatNd* changedQ = MatNd_createLike(self->q);
   MatNd* changedQ_dot = MatNd_createLike(self->q);
   //MatNd_copy(q, self->q);
-  RcsGraph_parseModelStateDetail(node, self, modelStateName, timeStamp,
-                                 q, changedQ, q_dot, changedQ_dot);
+  bool success = RcsGraph_parseModelStateDetail(node, self, modelStateName,
+                                                timeStamp, q, changedQ, q_dot,
+                                                changedQ_dot);
   MatNd_destroyN(3, q_dot, changedQ, changedQ_dot);
 
   xmlFreeDoc(doc);
 
-  return true;
+  return success;
 }
 
 /*******************************************************************************
