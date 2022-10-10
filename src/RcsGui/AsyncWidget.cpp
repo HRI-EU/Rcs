@@ -83,6 +83,7 @@ AsyncWidget::AsyncWidget() : launched(false), w(NULL)
 
 AsyncWidget::~AsyncWidget()
 {
+  RLOG(5, "Calling AsyncWidget::unlaunch(): refCount = %d", refCount);
   unlaunch();
   refCount--;
   RLOG(5, "AsyncWidget deleted: refCount = %d", refCount);
@@ -178,8 +179,10 @@ void AsyncWidget::unlaunch()
   }
   else
   {
-    RLOG(5, "unlaunch(): Destroying by posting event to Gui thread");
+    RLOG(5, "unlaunch(): Destroying widget \"%s\" by posting event to Gui thread", 
+         getWidget()->objectName().toStdString().c_str());
     QCoreApplication::postEvent(AsyncGuiFactory::getLauncher(), ae);
+    RLOG(5, "Destroy event posted");
   }
 
   double t_unlaunch = Timer_getSystemTime();
@@ -190,7 +193,8 @@ void AsyncWidget::unlaunch()
     double duration = Timer_getSystemTime() - t_unlaunch;
     if (duration > 3.0)
     {
-      RLOG(1, "Waiting for unlaunch: %.2f seconds", duration);
+      RLOG(1, "Waiting for unlaunch (Widget \"%s\"): %.2f seconds", 
+           getWidget()->objectName().toStdString().c_str(), duration);
     }
   }
 }

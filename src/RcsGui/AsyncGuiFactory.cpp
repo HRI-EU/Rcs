@@ -336,7 +336,8 @@ WidgetLauncher* AsyncGuiFactory::getLauncher()
   // didn't complete.
   while (!launcherRunning)
   {
-    RLOG(5, "Waiting for launcher ...");
+    RLOG(5, "Waiting for launcher %s ...", 
+         launcher->objectName().toStdString().c_str());
     Timer_usleep(10000);
   }
 
@@ -369,6 +370,7 @@ public:
 
 WidgetLauncher::WidgetLauncher() : QObject(NULL)
 {
+  setObjectName("Rcs::WidgetLauncher");
 }
 
 WidgetLauncher::~WidgetLauncher()
