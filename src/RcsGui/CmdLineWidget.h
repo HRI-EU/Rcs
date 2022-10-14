@@ -142,6 +142,7 @@ protected:
   QLineEdit* textParam;
   ParameterCollection::Entry* line;
 };
+
 class TextGui : public Rcs::AsyncWidget
 {
 public:
@@ -160,7 +161,12 @@ public:
     QLabel* label = new QLabel(QString::fromStdString(text));
     label->setFont(font);
     label->setWordWrap(true);
-    setWidget(label);
+
+    QScrollArea* scrollArea = new QScrollArea;
+    scrollArea->setWidget(label);
+    scrollArea->setWidgetResizable(true);
+
+    setWidget(scrollArea);
   }
 
 protected:
