@@ -272,7 +272,8 @@ bool Rcs::MouseDragger::callback(const osgGA::GUIEventAdapter& ea,
 
       if (_enableArrowKeyTranslation)
       {
-        RcsBody* bdy = Rcs::MouseDragger::getBodyUnderMouse(ea, aa);
+        //RcsBody* bdy = Rcs::MouseDragger::getBodyUnderMouse(ea, aa);
+        RcsBody* bdy = getBodyUnderMouse(ea, aa);
         if (bdy)
         {
           const double disp = 0.01;
