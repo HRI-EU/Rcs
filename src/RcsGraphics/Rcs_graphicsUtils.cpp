@@ -394,56 +394,92 @@ bool setNodeMaterial(const std::string& matString, osg::Node* node,
 }
 
 /*******************************************************************************
-
-  \brief Creates material properties from a a given color string of type
-         "#RRGGBB" or "#RRGGBBAA"
-  \param matString The color string
-  \param amb Ambient color (= 0.2 * r, 0.2 * g, 0.2 * b, a)
-  \param diff Diffuse color (= r, g, b, a)
-  \param spec Specular color (= 0.2, 0.2, 0.2, a)
-  \param sh Shininess (= 100.0)
-  \return True on success
-
+ * Sets a node's transparency
  ******************************************************************************/
-// static bool createMaterialFromColorString(const std::string& matString,
-//                                           double amb[4], double diff[4],
-//                                           double spec[4], double* sh)
-// {
-//   if (matString.length() != 7 && matString.length() != 9)
-//   {
-//     RLOG(0, "Color string has to be of form #RRGGBB or #RRGGBBAA, you provided"
-//          " \"%s\" (len=%zu (should be 7 or 9))",
-//          matString.c_str(), matString.length());
-//     return false;
-//   }
+bool setNodeAlpha(osg::Node* node, double alpha)
+{
+  if (node == NULL)
+  {
+    RLOG(4, "osg::Node is NULL - doing nothing");
+    return false;
+  }
 
-//   double r = (double) hexStringToUInt(matString.substr(1, 2)) / 255.0;
-//   double g = (double) hexStringToUInt(matString.substr(3, 2)) / 255.0;
-//   double b = (double) hexStringToUInt(matString.substr(5, 2)) / 255.0;
-//   double a = (matString.length() == 9) ?
-//              ((double) hexStringToUInt(matString.substr(7, 2)) / 255.0) : 1.0;
+  if ((alpha < 0.0) && (alpha > 1.0))
+  {
+    RLOG(4, "Ignoring alpha value %.16f, must be [0 ... 1]", alpha);
+    return false;
+  }
 
-//   amb[0] = 0.2 * r;
-//   amb[1] = 0.2 * g;
-//   amb[2] = 0.2 * b;
-//   amb[3] = a;
+  osg::Material* material = NULL;
+  osg::ref_ptr<osg::StateSet> ss = node->getStateSet();
+  if (ss.valid())
+  {
+    material = (osg::Material*)ss->getAttribute(osg::StateAttribute::MATERIAL);
+  }
 
-//   diff[0] = r;
-//   diff[1] = g;
-//   diff[2] = b;
-//   diff[3] = a;
+  if (!material)
+  {
+    material = new osg::Material;
+  }
 
-//   spec[0] = 0.2;
-//   spec[1] = 0.2;
-//   spec[2] = 0.2;
-//   spec[3] = a;
+  material->setAlpha(osg::Material::FRONT_AND_BACK, alpha);
+  //material->setTransparency(osg::Material::FRONT, alpha);
 
-//   *sh = 100.0;
+  // Assign material through state set
+  osg::ref_ptr<osg::StateSet> stateset = node->getOrCreateStateSet();
 
-//   RLOG(5, "Created color %s", matString.c_str());
+  stateset->setMode(GL_BLEND,
+                    osg::StateAttribute::OVERRIDE |
+                    osg::StateAttribute::ON);
 
-//   return true;
-// }
+  stateset->setMode(GL_LIGHTING,
+                    osg::StateAttribute::OVERRIDE |
+                    osg::StateAttribute::ON);
+
+  stateset->setMode(GL_ALPHA_TEST,
+                    osg::StateAttribute::OVERRIDE |
+                    osg::StateAttribute::ON);
+
+  stateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+
+  stateset->setAttributeAndModes(material,
+                                 osg::StateAttribute::OVERRIDE |
+                                 osg::StateAttribute::ON);
+
+  // Makes material scale-invariant
+  stateset->setMode(GL_RESCALE_NORMAL,
+                    // osg::StateAttribute::OVERRIDE |
+                    osg::StateAttribute::ON);
+
+  // if we set a material which is translucent then we don't cast shadows
+  if (material->getAmbient(osg::Material::FRONT).a() <
+      RCS_VIEWER_ALPHA_CAST_SHADOW_THRESHOLD)
+  {
+    node->setNodeMask(node->getNodeMask() & ~CastsShadowTraversalMask);
+  }
+
+  return true;
+}
+
+/*******************************************************************************
+ * Gets a node's transparency
+ ******************************************************************************/
+double getNodeAlpha(osg::Node* node)
+{
+  double alpha = 1.0;
+  osg::ref_ptr<osg::StateSet> ss = node->getStateSet();
+  if (ss.valid())
+  {
+    osg::Material* material = (osg::Material*)ss->getAttribute(osg::StateAttribute::MATERIAL);
+    if (material)
+    {
+      osg::Vec4 v = material->getAmbient(osg::Material::FRONT);
+      alpha = v[3];
+    }
+  }
+
+  return alpha;
+}
 
 /*******************************************************************************
  *

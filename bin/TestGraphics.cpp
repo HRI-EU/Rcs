@@ -738,11 +738,14 @@ static void testMeshNode()
   Rcs::KeyCatcherBase::registerKey("p", "Print mesh to console and file");
 
   std::string meshFile, outfile="outmesh.stl";
+  double alpha = 1.0;
   Rcs::CmdLineParser argP;
   argP.getArgument("-f", &meshFile, "Mesh file (default is %s)",
                    meshFile.c_str());
   argP.getArgument("-outFile", &outfile, "Mesh file to be written (default "
                    "is %s)", outfile.c_str());
+  argP.getArgument("-alpha", &alpha, "Transparency alpha value (default "
+                   "is %f)", alpha);
   bool withScaling = argP.hasArgument("-scaling", "Slider for dynamic scaling");
   bool withAABB = argP.hasArgument("-aabb", "Show axis-aligned bounding box");
 
@@ -768,6 +771,11 @@ static void testMeshNode()
                            mesh->faces, mesh->nFaces);
   }
 
+  if (alpha < 1.0)
+  {
+    RMSG("Setting alpha value to %f", alpha);
+    Rcs::setNodeAlpha(mn, alpha);
+  }
 
   Rcs::Viewer* viewer = new Rcs::Viewer();
   viewer->add(mn.get());

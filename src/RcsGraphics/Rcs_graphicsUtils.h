@@ -230,6 +230,17 @@ bool setNodeMaterial(const std::string& matString, osg::Node* node,
                      double alpha = -1.0);
 
 /*! \ingroup RcsGraphicsUtilsFunctions
+ *  \brief Sets a node's alpha value, which must be within [0 ... 1[.
+ */
+bool setNodeAlpha(osg::Node* node, double alpha);
+
+/*! \ingroup RcsGraphicsUtilsFunctions
+ *  \brief Returns a node's alpha value, taken from the ambient color. If no
+ *         material has been assigned to the node, a value of 1 is returned.
+ */
+double getNodeAlpha(osg::Node* node);
+
+/*! \ingroup RcsGraphicsUtilsFunctions
  *  \brief Converts a hex string to an unsigned integer (e.g., "FF" --> 255)
  *  \param str String holding a hex number
  *  \return The converted string
