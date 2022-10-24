@@ -1,0 +1,39 @@
+<Controller xmlns:xi="http://www.w3.org/2003/XInclude" 
+resourcePath="${SIT}/Data/RobotMeshes/1.0/data" 
+name="JacoDefaultPose" >
+
+<Graph xmlns:xi="http://www.w3.org/2003/XInclude" resourcePath="${SIT}/Data/RobotMeshes/1.0/data" name="JacoDefaultPose" >
+ 
+  <Body name="Lab Frame" physics="kinematic" >
+    <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0"
+           color="PEWTER" graphics="true" physics="true" distance="true"/>
+    <Shape type="FRAME" scale="0.5" />
+  </Body>
+
+  <Group prev="Lab Frame" >
+    <xi:include href="kinova_ulw2_sph_7dof.xml" />
+  </Group>
+
+  <Body name="EE" prev="j2s7s300_link_7" transform="0 0 -0.12 0 -90 0" >
+    <Shape type="FRAME" scale="0.2" />
+  </Body>
+
+  <model_state model="JacoDefaultPose" time_stamp="">
+    <joint_state joint="j2s7s300_joint_1" position="0" />
+    <joint_state joint="j2s7s300_joint_2" position="200" />
+    <joint_state joint="j2s7s300_joint_3" position="180" />
+    <joint_state joint="j2s7s300_joint_4" position="100" />
+    <joint_state joint="j2s7s300_joint_5" position="0" />
+    <joint_state joint="j2s7s300_joint_6" position="210" />
+    <joint_state joint="j2s7s300_joint_7" position="0" />
+    <joint_state joint="j2s7s300_joint_finger_1" position="10" />
+    <joint_state joint="j2s7s300_joint_finger_2" position="10" />
+    <joint_state joint="j2s7s300_joint_finger_3" position="10" />
+    </model_state>
+
+</Graph>
+
+<Task name="XYZ" controlVariable="XYZ" effector="EE" active="true" />
+<Task name="ABC" controlVariable="ABC" effector="EE" active="true" /> 
+  
+</Controller>
