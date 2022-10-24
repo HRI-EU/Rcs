@@ -3920,6 +3920,269 @@ int main(int argc, char** argv)
     }
 
 
+      // ==============================================================
+      // Joint weighting per task IK
+      // ==============================================================
+    case 14:
+      {
+        strcpy(xmlFileName, "cJaco7.xml");
+        strcpy(directory, "config/xml/Kinova");
+        argP.getArgument("-f", xmlFileName, "Configuration file name (default "
+                         "is \"%s\")", xmlFileName);
+        argP.getArgument("-dir", directory, "Configuration file directory "
+                         "(default is \"%s\")", directory);
+        Rcs_addResourcePath(directory);
+
+        Rcs::ControllerBase controller(xmlFileName);
+        Rcs::Viewer viewer;
+        viewer.add(new Rcs::GraphNode(controller.getGraph()));
+        viewer.runInThread();
+
+        const double dt = 0.01;
+        const unsigned int nq = controller.getGraph()->nJ;
+        const Rcs::Task* xyz = controller.getTask(0);
+        const Rcs::Task* abc = controller.getTask(1);
+
+        MatNd* dx = MatNd_create(6, 1);
+        MatNd* x = MatNd_create(6, 1);
+        MatNd* dq = MatNd_create(2*nq, 1);
+
+        Rcs::MatNdGui dxGui(dx, x, -1.0, 1.0, "dx");
+
+        while (runLoop)
+        {
+
+          // Weight matrices: Distal joints contribute stronger to orientations
+          MatNd* Wq1 = MatNd_create(nq, 1);
+          MatNd* Wq2 = MatNd_create(nq, 1);
+          MatNd_setElementsTo(Wq1, 1.0);
+          MatNd_setElementsTo(Wq2, 1.0);
+          VecNd_setElementsTo(Wq1->ele, 1.0, 4);
+          VecNd_setElementsTo(&Wq1->ele[4], 0.1, 3);
+          VecNd_setElementsTo(Wq2->ele, 0.1, 4);
+          VecNd_setElementsTo(&Wq1->ele[4], 1.0, 3);
+
+          // Compute weighted Jacobians 
+          MatNd* J1 = MatNd_create(xyz->getDim(), nq);
+          MatNd* J2 = MatNd_create(abc->getDim(), nq);
+          xyz->computeJ(J1);
+          abc->computeJ(J2);
+          MatNd_postMulDiagSelf(J1, Wq1);
+          MatNd_postMulDiagSelf(J2, Wq2);
+          MatNd* JTJ1 = MatNd_create(nq, nq);
+          MatNd* JTJ2 = MatNd_create(nq, nq);
+          MatNd_sqrMulAtBA(JTJ1, J1, NULL);
+          MatNd_sqrMulAtBA(JTJ2, J2, NULL);
+          MatNd_addConstToDiag(JTJ1, 1.0);
+          MatNd_addConstToDiag(JTJ2, -1.0);
+
+          // The big matrix A
+          MatNd* A = MatNd_create(2 * nq, 2 * nq);
+          for (unsigned int i = 0; i < nq; ++i)
+          {
+            for (unsigned int j = 0; j < nq; ++j)
+            {
+              // Upper left
+              double* dst = MatNd_getElePtr(A, i, j);
+              *dst = MatNd_get(JTJ1, i, j);
+
+              // Upper right
+              dst = MatNd_getElePtr(A, i, j + nq);
+              *dst = (i == j) ? -1.0 : 0.0;
+
+              // Lower left
+              dst = MatNd_getElePtr(A, i+nq, j);
+              *dst = (i == j) ? 1.0 : 0.0;
+
+              // Lower right
+              dst = MatNd_getElePtr(A, i + nq, j+nq);
+              *dst = MatNd_get(JTJ2, i, j);
+            }
+          }
+
+          // The RHS vector b
+          MatNd_transposeSelf(J1);
+          MatNd_transposeSelf(J2);
+          MatNd dxPos = MatNd_fromPtr(3, 1, dx->ele);
+          MatNd dxOri = MatNd_fromPtr(3, 1, dx->ele+3);
+          MatNd* b = MatNd_create(2 * nq, 1);
+          MatNd bPos = MatNd_fromPtr(nq, 1, b->ele);
+          MatNd bOri = MatNd_fromPtr(nq, 1, b->ele+nq);
+          MatNd_mul(&bPos, J1, &dxPos);
+          MatNd_mul(&bOri, J2, &dxOri);
+          MatNd_constMulSelf(b, dt);
+
+          // Solve it
+          MatNd_addConstToDiag(A, 1.0e-8);
+          double det = MatNd_gaussInverse(A, A);
+          RLOG(1, "Determinant is %f", det);
+          MatNd_mul(dq, A, b);
+
+          MatNd dq1 = MatNd_fromPtr(nq, 1, dq->ele);
+          MatNd dq2 = MatNd_fromPtr(nq, 1, dq->ele + nq);
+          
+          REXEC(2)
+          {
+            RLOG(2, "dq1    dq2");
+            MatNd_printTwoArraysDiff(&dq1, &dq2, 5);
+          }
+
+          MatNd* dqGraph = MatNd_createLike(controller.getGraph()->q);
+          MatNd_reshapeCopy(dqGraph, &dq1);
+          RcsGraph_stateVectorFromIKSelf(controller.getGraph(), dqGraph);
+          MatNd_addSelf(controller.getGraph()->q, dqGraph);
+          RcsGraph_setState(controller.getGraph(), NULL, NULL);
+          controller.computeX(x);
+
+          // Clean up
+          MatNd_destroyN(9, Wq1, Wq2, J1, J2, JTJ1, JTJ2, A, b, dqGraph);
+
+          Timer_waitDT(dt);
+        }
+        viewer.stopUpdateThread();
+
+        MatNd_destroyN(3, dx, x, dq);
+
+        break;
+      }
+
+
+
+      // ==============================================================
+      // Joint weighting per task IK - downprojected
+      // ==============================================================
+    case 15:
+      {
+        strcpy(xmlFileName, "cJaco7.xml");
+        strcpy(directory, "config/xml/Kinova");
+        argP.getArgument("-f", xmlFileName, "Configuration file name (default "
+                         "is \"%s\")", xmlFileName);
+        argP.getArgument("-dir", directory, "Configuration file directory "
+                         "(default is \"%s\")", directory);
+        Rcs_addResourcePath(directory);
+
+        Rcs::ControllerBase controller(xmlFileName);
+        Rcs::Viewer viewer;
+        viewer.add(new Rcs::GraphNode(controller.getGraph()));
+        viewer.runInThread();
+
+        const double dt = 0.01;
+        const unsigned int nq = controller.getGraph()->nJ;
+        const Rcs::Task* xyz = controller.getTask(0);
+        const Rcs::Task* abc = controller.getTask(1);
+
+        MatNd* dx = MatNd_create(6, 1);
+        MatNd* x = MatNd_create(6, 1);
+        MatNd* dq = MatNd_create(2 * nq, 1);
+
+        Rcs::MatNdGui dxGui(dx, x, -1.0, 1.0, "dx");
+
+        while (runLoop)
+        {
+
+          // Weight matrices: Distal joints contribute stronger to orientations
+          MatNd* Wq1 = MatNd_create(nq, 1);
+          MatNd* Wq2 = MatNd_create(nq, 1);
+          MatNd_setElementsTo(Wq1, 1.0);
+          MatNd_setElementsTo(Wq2, 1.0);
+          VecNd_setElementsTo(Wq1->ele, 1.0, 4);
+          VecNd_setElementsTo(&Wq1->ele[4], 0.1, 3);
+          VecNd_setElementsTo(Wq2->ele, 0.1, 4);
+          VecNd_setElementsTo(&Wq1->ele[4], 1.0, 3);
+
+          // Compute weighted Jacobians 
+          MatNd* J1 = MatNd_create(xyz->getDim(), nq);
+          MatNd* J2 = MatNd_create(abc->getDim(), nq);
+          xyz->computeJ(J1);
+          abc->computeJ(J2);
+          MatNd_postMulDiagSelf(J1, Wq1);
+          MatNd_postMulDiagSelf(J2, Wq2);
+          MatNd* JTJ1 = MatNd_create(nq, nq);
+          MatNd* JTJ2 = MatNd_create(nq, nq);
+          MatNd_sqrMulAtBA(JTJ1, J1, NULL);
+          MatNd_sqrMulAtBA(JTJ2, J2, NULL);
+          MatNd_addConstToDiag(JTJ1, 1.0);
+          MatNd_addConstToDiag(JTJ2, -1.0);
+          MatNd_preMulSelf(JTJ1, J1);
+          MatNd_preMulSelf(JTJ2, J2);
+
+          // The big matrix A
+          MatNd* A = MatNd_create(6, 2 * nq);
+          for (unsigned int col = 0; col < nq; ++col)
+          {
+            for (unsigned int row = 0; row < 3; ++row)
+            {
+              // Upper left
+              double* dst = MatNd_getElePtr(A, row, col);
+              *dst = MatNd_get(JTJ1, row, col);
+
+              // Upper right
+              dst = MatNd_getElePtr(A, row, col + nq);
+              *dst = -MatNd_get(J1, row, col);
+
+              // Lower left
+              dst = MatNd_getElePtr(A, row+3, col);
+              *dst = MatNd_get(J2, row, col);
+
+              // Lower right
+              dst = MatNd_getElePtr(A, row + 3, col + nq);
+              *dst = MatNd_get(JTJ2, row, col);
+            }
+          }
+
+          // The RHS vector b
+          MatNd* JT1 = MatNd_create(J1->n, J1->m);
+          MatNd* JT2 = MatNd_create(J2->n, J2->m);
+          MatNd_transpose(JT1, J1);
+          MatNd_transpose(JT2, J2);
+          MatNd* JJT1 = MatNd_create(3, 3);
+          MatNd* JJT2 = MatNd_create(3, 3);
+          MatNd_mul(JJT1, J1, JT1);
+          MatNd_mul(JJT2, J2, JT2);
+          MatNd dxPos = MatNd_fromPtr(3, 1, dx->ele);
+          MatNd dxOri = MatNd_fromPtr(3, 1, dx->ele + 3);
+          MatNd* b = MatNd_create(6, 1);
+          MatNd bPos = MatNd_fromPtr(3, 1, b->ele);
+          MatNd bOri = MatNd_fromPtr(3, 1, b->ele + 3);
+          MatNd_mul(&bPos, JJT1, &dxPos);
+          MatNd_mul(&bOri, JJT2, &dxOri);
+
+          // Solve it
+          MatNd* buf = MatNd_clone(A);
+          double det = MatNd_rwPinv(A, buf, NULL, NULL);
+          MatNd_destroy(buf);
+          RLOG(1, "Determinant is %f", det);
+          MatNd_mul(dq, A, b);
+
+          MatNd dq1 = MatNd_fromPtr(nq, 1, dq->ele);
+          MatNd dq2 = MatNd_fromPtr(nq, 1, dq->ele + nq);
+
+          REXEC(2)
+          {
+            RLOG(2, "dq1    dq2");
+            MatNd_printTwoArraysDiff(&dq1, &dq2, 5);
+          }
+
+          MatNd_constMulSelf(dq, dt);
+
+          MatNd* dqGraph = MatNd_createLike(controller.getGraph()->q);
+          MatNd_reshapeCopy(dqGraph, &dq1);
+          RcsGraph_stateVectorFromIKSelf(controller.getGraph(), dqGraph);
+          MatNd_addSelf(controller.getGraph()->q, dqGraph);
+          RcsGraph_setState(controller.getGraph(), NULL, NULL);
+          controller.computeX(x);
+
+          // Clean up
+          MatNd_destroyN(13, Wq1, Wq2, J1, J2, JTJ1, JTJ2, JT1, JT2, JJT1, JJT2, A, b, dqGraph);
+
+          Timer_waitDT(dt);
+        }
+        viewer.stopUpdateThread();
+
+        MatNd_destroyN(3, dx, x, dq);
+
+        break;
+      }
 
     // ==============================================================
     // That's it.
