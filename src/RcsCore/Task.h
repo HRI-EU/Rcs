@@ -133,7 +133,7 @@
  *  - Where does the dimension of the task come from?
  *    - It is a default argument in the constructor and needs to be specified
  *      in the header file's constructor declaration.
- *  - Why s the setGraph() method public?
+ *  - Why is the setGraph() method public?
  *    - It needs to be called for child tasks from the Composite task
  */
 

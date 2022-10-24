@@ -136,7 +136,7 @@ double MatNd_choleskySolve(MatNd* x_, const MatNd* A, const MatNd* b_)
 {
 #if defined (USE_EIGEN3)
 
-  RLOG(0, "Eigen Cholesky");
+  RLOG(5, "Eigen Cholesky");
   return MatNd_choleskySolve_E3(x_, A, b_);
 
 #else

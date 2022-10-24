@@ -70,6 +70,9 @@ public:
   class TaskChangeCallback
   {
   public:
+    virtual ~TaskChangeCallback()
+    {
+    }
     virtual void callback() = 0;
   };
 
