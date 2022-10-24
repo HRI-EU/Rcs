@@ -123,4 +123,9 @@ std::string ExampleBase::help()
   return "No help message implemented";
 }
 
+bool ExampleBase::isRunning() const
+{
+  return runLoop;
+}
+
 }   // namespace Rcs

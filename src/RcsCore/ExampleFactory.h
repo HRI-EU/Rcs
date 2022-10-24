@@ -85,6 +85,20 @@ public:
   static ExampleBase* create(std::string category, std::string example,
                              int argc, char** argv);
 
+  /*! \brief Creates a new example by name using the registered construction
+   *         function, and runs it in its own thread. To stop, call
+   *         ExampleBase::stop() on the returned ExampleBase instance.
+   *
+   * \param[in] category  Name of the example category
+   * \param[in] example   Name of the example
+   * \param[in] argc      Number of command line arguments
+   * \param[in] argv      String array of command line arguments
+   * \return              New ExampleBase instance or NULL incase of failure
+   */
+  static ExampleBase* runExample(std::string category,
+                                 std::string example,
+                                 int argc, char** argv);
+
   /*! \brief Prints out all registered examples to the console
    */
   static void print();

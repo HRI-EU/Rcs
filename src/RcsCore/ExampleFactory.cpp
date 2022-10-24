@@ -36,11 +36,25 @@
 #include <Rcs_parser.h>
 #include <Rcs_stlParser.h>
 #include <Rcs_utilsCPP.h>
+#include <Rcs_cmdLine.h>
+#include <Rcs_timer.h>
+
+#include <pthread.h>
 
 
 
 namespace Rcs
 {
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static void* exampleThreadFunc(void* param)
+{
+  ExampleBase* ex = (ExampleBase*) param;
+  ex->start();
+  return NULL;
+}
 
 /*******************************************************************************
  *
@@ -107,6 +121,48 @@ ExampleBase* ExampleFactory::create(std::string category,
   }
 
   return newExample;
+}
+
+/*******************************************************************************
+ * Runs the example for the given className
+ ******************************************************************************/
+ExampleBase* ExampleFactory::runExample(std::string category,
+                                        std::string example,
+                                        int argc,
+                                        char** argv)
+{
+  ExampleBase* ex = ExampleFactory::create(category, example, argc, argv);
+
+  if (!ex)
+  {
+    RLOG(1, "Example %s unknown", example.c_str());
+    Rcs::ExampleFactory::print();
+    return NULL;
+  }
+
+  Rcs::CmdLineParser argP(argc, argv);
+
+  if (argP.hasArgument("-h"))
+  {
+    ex->initParameters();
+    ex->parseArgs(&argP);
+    delete ex;
+    return NULL;
+  }
+
+  ex->init(argc, argv);
+
+  pthread_t exThread;
+  pthread_create(&exThread, NULL, &exampleThreadFunc, ex);
+  pthread_detach(exThread);
+
+  // We only return once the thread has entered the run loop.
+  while (!ex->isRunning())
+  {
+    Timer_waitDT(0.01);
+  }
+
+  return ex;
 }
 
 /*******************************************************************************

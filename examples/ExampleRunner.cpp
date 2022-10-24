@@ -170,27 +170,14 @@ int main(int argc, char** argv)
       argP.getArgument("-e", &exampleName, "Example name (default: %s)",
                        exampleName.c_str());
 
-      example = Rcs::ExampleFactory::create(categoryName, exampleName,
-                                            argc, argv);
-      if (!example)
+      example = Rcs::ExampleFactory::runExample(categoryName, exampleName,
+                                                argc, argv);
+      // RPAUSE_MSG("Hit enter to stop example");
+      while (example && example->isRunning())
       {
-        RMSG("Example %s unknown", exampleName.c_str());
-        Rcs::ExampleFactory::print();
-        break;
+        Timer_waitDT(0.1);
       }
 
-      if (argP.hasArgument("-h"))
-      {
-        example->initParameters();
-        example->parseArgs(&argP);
-        delete example;
-        example = NULL;
-        break;
-      }
-
-      example->init(argc, argv);
-      example->start();
-      example->stop();
       delete example;
       break;
     }

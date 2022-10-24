@@ -37,7 +37,6 @@
 #include <Rcs_cmdLine.h>
 
 
-
 namespace Rcs
 {
 
@@ -74,7 +73,8 @@ public:
    */
   virtual void initParameters();
 
-  /*  \brief Assign member variables according to supported command line options.
+  /*  \brief Assign member variables according to supported command line
+   *         options.
    */
   virtual void parseArgs(CmdLineParser* parser);
 
@@ -95,6 +95,7 @@ public:
   virtual void step();
   virtual void handleKeys();
   virtual std::string help();
+  virtual bool isRunning() const;
 
 protected:
   bool runLoop;
