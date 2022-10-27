@@ -290,7 +290,7 @@ ControllerBase::~ControllerBase()
 }
 
 /*******************************************************************************
- * 
+ *
  ******************************************************************************/
 void ControllerBase::setGraphOwnership(bool classOwnsIt)
 {
@@ -1997,6 +1997,11 @@ void ControllerBase::eraseTasks()
  ******************************************************************************/
 bool ControllerBase::eraseTask(size_t index)
 {
+  if (tasks.empty())
+  {
+    return false;
+  }
+
   if (index > tasks.size() - 1)
   {
     RLOG_CPP(1, "Failed to erase task with index " << index
