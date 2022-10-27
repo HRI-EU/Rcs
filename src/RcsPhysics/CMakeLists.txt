@@ -3,7 +3,7 @@
 # CMakeLists file for the RcsPhysics library
 #
 ###############################################################################
-LIST(APPEND CMAKE_PREFIX_PATH $ENV{SIT}/External/mujoco/lib/cmake/mujoco)
+LIST(APPEND CMAKE_PREFIX_PATH $ENV{SIT}/External/MuJoCo/1.0/${MKPLT}/lib/cmake/mujoco)
 FIND_PACKAGE(mujoco QUIET)
 IF (mujoco_FOUND)
   OPTION(USE_MUJOCO "Use the Mujoco physics library" ON)
