@@ -208,7 +208,7 @@ IF (WIN32)
     ADD_CUSTOM_COMMAND(
       TARGET RcsPhysics POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy
-      $ENV{SIT}/External/mujoco/bin/mujoco.dll
+      $ENV{SIT}/External/MuJoCo/1.0/${MKPLT}/bin/mujoco.dll
       ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/mujoco.dll)
   ENDIF(USE_MUJOCO)
 

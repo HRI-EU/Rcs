@@ -448,7 +448,7 @@ void Rcs::TaskJoint::toXMLBody(FILE* out) const
     fprintf(out, " refJnt=\"%s\"", getRefJoint()->name);
   }
 
-  if (getRefGain())
+  if (getRefGain()!=1.0)
   {
     fprintf(out, " refGain=\"%g\"", getRefGain());
   }
