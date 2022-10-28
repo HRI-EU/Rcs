@@ -247,8 +247,7 @@ ENDIF()
 # Mark for export
 RCS_ADD_EXPORT_LIBRARY(RcsCore)
 
-# Installation
-# Headers
+# Install the headers
 INSTALL(
   DIRECTORY . 
   DESTINATION include/RcsCore
