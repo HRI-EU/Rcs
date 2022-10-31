@@ -175,16 +175,21 @@ public:
   *          copies the mouse (world) coordinates, and the mouse coordinates
   *          in the bodies frame of reference. If no body is found under the
   *          mouse pointer, the mouse coordinates are left unchanged.
+  *          The argument graph will be set to the graph in which the returned
+  *          body is contained, or NULL if no body was found. If graph is
+  *          NULL, this argument is ignored.
   */
   virtual const RcsBody* getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
                                            osgGA::GUIActionAdapter& aa,
                                            double I_pt[3]=NULL,
-                                           double k_pt[3]=NULL) const;
+                                           double k_pt[3]=NULL,
+                                           RcsGraph** graph=NULL) const;
 
   virtual RcsBody* getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
                                      osgGA::GUIActionAdapter& aa,
                                      double I_pt[3]=NULL,
-                                     double k_pt[3]=NULL);
+                                     double k_pt[3]=NULL,
+                                     RcsGraph** graph=NULL);
 
 protected:
 

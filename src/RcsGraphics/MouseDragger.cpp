@@ -77,7 +77,8 @@ private:
  *****************************************************************************/
 static RcsBody* getBodyUnderMouseTip(const osgGA::GUIEventAdapter& ea,
                                      osgGA::GUIActionAdapter& aa,
-                                     double I_pt[3], double k_pt[3])
+                                     double I_pt[3], double k_pt[3],
+                                     RcsGraph** graph)
 {
   Rcs::BodyNode* nd = Rcs::getNodeUnderMouse<Rcs::BodyNode*>(ea, aa, I_pt);
 
@@ -93,6 +94,11 @@ static RcsBody* getBodyUnderMouseTip(const osgGA::GUIEventAdapter& ea,
     Vec3d_invTransform(k_pt, &bdy->A_BI, I_pt);
   }
 
+  if (graph)
+  {
+    *graph = (RcsGraph*) nd->getGraph();
+  }
+
   return bdy;
 }
 
@@ -101,9 +107,10 @@ static RcsBody* getBodyUnderMouseTip(const osgGA::GUIEventAdapter& ea,
  *****************************************************************************/
 RcsBody* Rcs::MouseDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
                                               osgGA::GUIActionAdapter& aa,
-                                              double I_pt[3], double k_pt[3])
+                                              double I_pt[3], double k_pt[3],
+                                              RcsGraph** graph)
 {
-  return getBodyUnderMouseTip(ea, aa, I_pt, k_pt);
+  return getBodyUnderMouseTip(ea, aa, I_pt, k_pt, graph);
 }
 
 /******************************************************************************
@@ -111,9 +118,10 @@ RcsBody* Rcs::MouseDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
  *****************************************************************************/
 const RcsBody* Rcs::MouseDragger::getBodyUnderMouse(const osgGA::GUIEventAdapter& ea,
                                                     osgGA::GUIActionAdapter& aa,
-                                                    double I_pt[3], double k_pt[3]) const
+                                                    double I_pt[3], double k_pt[3],
+                                                    RcsGraph** graph) const
 {
-  return getBodyUnderMouseTip(ea, aa, I_pt, k_pt);
+  return getBodyUnderMouseTip(ea, aa, I_pt, k_pt, graph);
 }
 
 /******************************************************************************
@@ -273,7 +281,12 @@ bool Rcs::MouseDragger::callback(const osgGA::GUIEventAdapter& ea,
       if (_enableArrowKeyTranslation)
       {
         //RcsBody* bdy = Rcs::MouseDragger::getBodyUnderMouse(ea, aa);
-        RcsBody* bdy = getBodyUnderMouse(ea, aa);
+        RcsGraph* g = NULL;
+        RcsBody* bdy = getBodyUnderMouse(ea, aa, NULL, NULL, &g);
+
+        // Rcs::BodyNode* nd = Rcs::getNodeUnderMouse<Rcs::BodyNode*>(ea, aa);
+        // RcsBody* bdy = nd ? nd->body() : NULL;
+
         if (bdy)
         {
           const double disp = 0.01;
@@ -306,7 +319,18 @@ bool Rcs::MouseDragger::callback(const osgGA::GUIEventAdapter& ea,
           }
 
           Vec3d_rotateSelf(dx, bdy->A_BI.rot);
-          Vec3d_addSelf(bdy->A_BP.org, dx);
+
+          if (bdy->rigid_body_joints)
+          {
+            RCHECK(g);
+            RcsJoint* rbJnt = RCSJOINT_BY_ID(g, bdy->jntId);
+            double* q_rbj = MatNd_getElePtr(g->q, rbJnt->jointIndex, 0);
+            Vec3d_addSelf(q_rbj, dx);
+          }
+          else
+          {
+            Vec3d_addSelf(bdy->A_BP.org, dx);
+          }
         }
 
       }

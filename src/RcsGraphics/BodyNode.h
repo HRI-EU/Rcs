@@ -112,6 +112,7 @@ public:
   void setParent(const RcsBody* parent);
   void setTransformPtr(const HTr* A_BI);
   const HTr* getTransformPtr() const;
+  const RcsGraph* getGraph() const;
 
 protected:
 
