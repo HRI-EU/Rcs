@@ -5,6 +5,7 @@ PROJECT(Rcs)
 
 STRING (REPLACE "\\" "/" HGR "$ENV{SIT}")
 STRING (REPLACE "\\" "/" MKPLT "$ENV{MAKEFILE_PLATFORM}")
+
 ################################################################################
 # Check if project is stand-alone or inside tree with dependencies
 ################################################################################
@@ -214,9 +215,9 @@ ADD_SUBDIRECTORY (src)
 
 IF (NOT BUILD_RCS_LIBRARIES_ONLY)
   ADD_SUBDIRECTORY (bin)
-  ADD_SUBDIRECTORY (examples)
 ENDIF()
 
+ADD_SUBDIRECTORY (examples)
 ADD_SUBDIRECTORY (doc)
 
 ################################################################################
