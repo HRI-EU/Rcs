@@ -73,8 +73,8 @@ Rcs::CmdLineParser::CmdLineParser()
 {
   if (!argv)
   {
-    RFATAL("You created a CmdLineParser with no arguments before "
-           "instantiating it with argc and argv!");
+    RLOG(1, "You created a CmdLineParser with no arguments before "
+         "instantiating it with argc and argv!");
   }
 }
 
