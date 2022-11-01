@@ -45,7 +45,7 @@ namespace Rcs
 /*******************************************************************************
  *
  ******************************************************************************/
-TextEditGui::TextEditGui() : AsyncWidget()
+TextEditGui::TextEditGui(const QString& title) : AsyncWidget(), windowTitle(title)
 {
   launch();
 }
@@ -63,7 +63,7 @@ TextEditGui::~TextEditGui()
 
 void TextEditGui::construct()
 {
-  Rcs::TextEditWidget* w = new Rcs::TextEditWidget();
+  Rcs::TextEditWidget* w = new Rcs::TextEditWidget(windowTitle);
   for (size_t i = 0; i < callback.size(); ++i)
   {
     w->registerCallback(callback[i]);
@@ -97,9 +97,10 @@ void TextEditGui::registerCallback(TextEditWidget::TextChangeCallback* cb)
 /*******************************************************************************
  *
  ******************************************************************************/
-TextEditWidget::TextEditWidget() : QScrollArea()
+TextEditWidget::TextEditWidget(const QString& windowTitle) : QScrollArea()
 {
   setObjectName("Rcs::TextEditWidget");
+  setWindowTitle(windowTitle);
   QHBoxLayout* gridLayout = new QHBoxLayout(this);
   gridLayout->setContentsMargins(0, 0, 0, 0);
 

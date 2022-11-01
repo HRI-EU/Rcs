@@ -62,7 +62,7 @@ public:
     {
     }
   };
-  TextEditWidget();
+  TextEditWidget(const QString& windowTitle="");
 
   virtual ~TextEditWidget();
   // Takes ownership of the callback
@@ -83,7 +83,7 @@ private:
 class TextEditGui : public Rcs::AsyncWidget
 {
 public:
-  TextEditGui();
+  TextEditGui(const QString& windowTitle="");
   ~TextEditGui();
   void construct();
   std::string getAndResetText();
@@ -93,6 +93,7 @@ public:
 
 private:
   std::vector<TextEditWidget::TextChangeCallback*> callback;
+  QString windowTitle;
 };
 
 }   // namespace Rcs
