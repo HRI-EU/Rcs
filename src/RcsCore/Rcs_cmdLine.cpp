@@ -499,7 +499,7 @@ void Rcs::CmdLineParser::appendDescription(const char* tag,
   }
   else if (res>=(int)sizeof(buffer))
   {
-    RLOG(4, "Description for argument \"%s\" not complete (%d of %d bytes)",
+    RLOG(4, "Description for argument \"%s\" not complete (%d of %zd bytes)",
          tag, res, sizeof(buffer));
   }
 
