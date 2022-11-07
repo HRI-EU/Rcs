@@ -682,7 +682,6 @@ double RcsBody_distance(const RcsBody* b1,
                         double n[3])
 {
   RCHECK(b1 && b2);
-
   double d_closest = Math_infinity();
 
   if (b1->shapes==NULL)

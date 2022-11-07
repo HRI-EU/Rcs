@@ -51,19 +51,12 @@ ExampleBase::~ExampleBase()
 
 void ExampleBase::init(int argc, char** argv)
 {
-  RLOG(1, "initParameters");
   initParameters();
-  RLOG(1, "parseArgs");
   CmdLineParser argP(argc, argv);
   parseArgs(&argP);
-  RLOG(1, "initAlgo");
   bool success = initAlgo();
-  RLOG(1, "%s initAlgo", success ? "Success" : "Failure");
-  RLOG(1, "initGraphics");
   initGraphics();
-  RLOG(1, "initGuis");
   initGuis();
-  RLOG(1, "done init");
 }
 
 void ExampleBase::clear()
