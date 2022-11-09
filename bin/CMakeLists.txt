@@ -30,7 +30,10 @@ IF(NOT HEADLESS_BUILD)
   ADD_EXECUTABLE(TestTasks TestTasks.cpp)
   TARGET_LINK_LIBRARIES(TestTasks RcsCore RcsGui RcsGraphics RcsPhysics)
 
+  ADD_EXECUTABLE(TestURDF TestURDF.cpp)
+  TARGET_LINK_LIBRARIES(TestURDF RcsCore RcsGui RcsGraphics RcsPhysics RcsUtils)
+
   # Install the binaries
-  INSTALL(TARGETS TestCore TestMath TestGraph Rcs TestGraphics TestGui TestOrientations TestGeometry TestTasks RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
+  INSTALL(TARGETS TestCore TestMath TestGraph Rcs TestGraphics TestGui TestOrientations TestGeometry TestTasks TestURDF RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
 
 ENDIF(NOT HEADLESS_BUILD)
