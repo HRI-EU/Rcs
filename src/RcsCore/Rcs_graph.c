@@ -3779,6 +3779,7 @@ RcsJoint* RcsGraph_insertGraphJoint(RcsGraph* graph, int bodyId)
 
   graph->dof++;
   graph->q = MatNd_realloc(graph->q, graph->dof, 1);
+  graph->q_dot = MatNd_realloc(graph->q_dot, graph->dof, 1);
   graph->joints = RREALLOC(graph->joints, graph->dof, RcsJoint);
   RCHECK(graph->joints);
   RcsJoint* newJoint = &graph->joints[graph->dof-1];
