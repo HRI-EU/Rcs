@@ -1122,7 +1122,8 @@ static void String_chopOff(char* dst, const char* src, const char* delim)
 {
   // Make a local copy of str, since strtok modifies it during processing
   char* lStr = String_clone(src);
-  char* pch = strtok(lStr, delim);
+  char* saveptr;
+  char* pch = String_safeStrtok(lStr, delim, &saveptr);
   if (pch)
   {
     strcpy(dst, pch);

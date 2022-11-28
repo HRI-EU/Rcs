@@ -2955,11 +2955,12 @@ void MatNd_fromString(MatNd* J, const char* str)
   // trailing '\0' not considered in strlen()
   char* lStr, *ele, eleStr[64];
   int numEle = 0, nRows = 0, nCols = 0, nColsPrev = -1;
+  char* saveptr;
 
   lStr = RNALLOC(strlen(str) + 1, char);
   RCHECK(lStr);
   strcpy(lStr, str);
-  ele = strtok(lStr, " ");
+  ele = String_safeStrtok(lStr, " ", &saveptr);
 
   while (ele != NULL)
   {
@@ -2986,7 +2987,7 @@ void MatNd_fromString(MatNd* J, const char* str)
     }
 
     // Switch to next row for each comma
-    ele = strtok(NULL, " ");
+    ele = String_safeStrtok(NULL, " ", &saveptr);
   }
 
   RFREE(lStr);

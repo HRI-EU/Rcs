@@ -1523,7 +1523,8 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
       char* resourceDir = RNALLOC(1024, char);
       getXMLNodePropertyStringN(node, "resourcePath", resourceDir, 1024);
 
-      char* pch = strtok(resourceDir, " ");
+      char* saveptr;
+      char* pch = String_safeStrtok(resourceDir, " ", &saveptr);
       char* path = RNALLOC(256, char);
       int nPaths = 0;
 
@@ -1535,7 +1536,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
         Rcs_addResourcePath(ePath);
         RFREE(ePath);
         RLOG(9, "Adding path %d to ressource path: \"%s\"", nPaths++, path);
-        pch = strtok(NULL, " ");
+        pch = String_safeStrtok(NULL, " ", &saveptr);
       }
 
       RFREE(resourceDir);

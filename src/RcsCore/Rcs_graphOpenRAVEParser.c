@@ -78,7 +78,8 @@ static bool getXMLNodeIntN(xmlNodePtr node, int* x, unsigned int n)
 
     if (len > 0)
     {
-      char* pch = strtok(tmp, " ");
+      char* saveptr;
+      char* pch = String_safeStrtok(tmp, " ", &saveptr);
       int value;
       unsigned int matched_tags = 0;
       while (pch != NULL)
@@ -91,7 +92,7 @@ static bool getXMLNodeIntN(xmlNodePtr node, int* x, unsigned int n)
             x[matched_tags - 1] = value;
           }
         }
-        pch = strtok(NULL, " ");
+        pch = String_safeStrtok(NULL, " ", &saveptr);
       }
       RCHECK_MSG(matched_tags == n, "during parsing, not all "
                  "(or more) values could be found (found %d, should be %d)",
@@ -117,7 +118,8 @@ static bool getXMLNodeVecN(xmlNodePtr nd, double* x, unsigned int n)
 
     if (len > 0)
     {
-      char* pch = strtok(tmp, " ");
+      char* saveptr;
+      char* pch = String_safeStrtok(tmp, " ", &saveptr);
       double value;
       unsigned int matched_tags = 0;
 
@@ -132,7 +134,7 @@ static bool getXMLNodeVecN(xmlNodePtr nd, double* x, unsigned int n)
             x[matched_tags - 1] = value;
           }
         }
-        pch = strtok(NULL, " ");
+        pch = String_safeStrtok(NULL, " ", &saveptr);
       }
       RCHECK_MSG(matched_tags == n, "during parsing, not all "
                  "(or more) values could be found (found %d, should be %d)",
@@ -863,4 +865,3 @@ void RcsGraph_createBodiesFromOpenRAVENode(RcsGraph* self, RcsBody* parent,
   }
 
 }
-

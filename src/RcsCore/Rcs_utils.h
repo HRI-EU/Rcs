@@ -77,6 +77,12 @@ extern "C" {
 ///@{
 
 /*! \ingroup RcsUtilsFunctions
+ *  \brief Thread-safe version of strtok (See strtok_r for Linux, strtok_s
+ *         for Windows).
+ */
+char* String_safeStrtok(char* str, const char* delim, char** saveptr);
+
+/*! \ingroup RcsUtilsFunctions
  *  \brief Returns an (deep) copy of src from the heap. The caller is
  *         responsible to free the returned memory. If src is NULL, no memory
  *         will be allocated and NULL is returned. If the memory allocation

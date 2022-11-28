@@ -538,7 +538,8 @@ bool getXMLNodePropertyIntN(xmlNodePtr nd, const char* tag, int* x,
   }
 
 
-  char* pch = strtok(tmp, " ");
+  char* saveptr;
+  char* pch = String_safeStrtok(tmp, " ", &saveptr);
   int value;
   unsigned int matchedStrings = 0;
   while (pch != NULL)
@@ -551,7 +552,7 @@ bool getXMLNodePropertyIntN(xmlNodePtr nd, const char* tag, int* x,
         x[matchedStrings - 1] = value;
       }
     }
-    pch = strtok(NULL, " ");
+    pch = String_safeStrtok(NULL, " ", &saveptr);
   }
   RCHECK_MSG(matchedStrings == n, "during parsing for tag \"%s\", not all "
              "(or more) values could be found (found %d, should be %d)",
@@ -598,7 +599,8 @@ bool getXMLNodePropertyUnsignedIntN(xmlNodePtr nd, const char* tag,
     return false;
   }
 
-  char* pch = strtok(tmp, " ");
+  char* saveptr;
+  char* pch = String_safeStrtok(tmp, " ", &saveptr);
   unsigned int value;
   unsigned int matchedStrings = 0;
 
@@ -612,7 +614,7 @@ bool getXMLNodePropertyUnsignedIntN(xmlNodePtr nd, const char* tag,
         x[matchedStrings - 1] = value;
       }
     }
-    pch = strtok(NULL, " ");
+    pch = String_safeStrtok(NULL, " ", &saveptr);
   }
   RCHECK_MSG(matchedStrings == n, "during parsing for tag \"%s\", not all "
              "(or more) values could be found (found %d, should be %d)",

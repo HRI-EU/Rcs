@@ -56,6 +56,15 @@
 
 
 /*******************************************************************************
+ * Thread-safe version of strtok.
+ ******************************************************************************/
+char* String_safeStrtok(char* str, const char* delim, char** saveptr)
+{
+  //return strtok(str, delim);
+  return strtok_r(str, delim, saveptr);
+}
+
+/*******************************************************************************
  * Clones a character array with dynamic memory allocation.
  ******************************************************************************/
 char* String_clone(const char* src)
@@ -381,13 +390,14 @@ unsigned int String_countSubStrings(const char* str, const char* delim)
 {
   // Make a local copy of str, since strtok modifies it during processing
   char* lStr = String_clone(str);
-  char* pch = strtok(lStr, delim);
+  char* saveptr;
+  char* pch = String_safeStrtok(lStr, delim, &saveptr);
 
   // Determine number of delim-separated sub-strings
   unsigned int nSubStrings = 0;
   while (pch != NULL)
   {
-    pch = strtok(NULL, delim);
+    pch = String_safeStrtok(NULL, delim, &saveptr);
     nSubStrings++;
   }
 
@@ -503,7 +513,8 @@ bool String_toDoubleArray_l(const char* str, double* x_, unsigned int n)
   }
 
   char* tmp = String_clone(str);
-  char* pch = strtok(tmp, " ");
+  char* saveptr;
+  char* pch = String_safeStrtok(tmp, " ", &saveptr);
   char buf[256];
   unsigned int matchedStrings = 0;
   double* x = RNALLOC(n, double);
@@ -527,7 +538,7 @@ bool String_toDoubleArray_l(const char* str, double* x_, unsigned int n)
       }
       matchedStrings++;
     }
-    pch = strtok(NULL, " ");
+    pch = String_safeStrtok(NULL, " ", &saveptr);
   }
 
   RFREE(tmp);
