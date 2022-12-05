@@ -61,7 +61,11 @@
 char* String_safeStrtok(char* str, const char* delim, char** saveptr)
 {
   //return strtok(str, delim);
+#if defined (_MSC_VER)
+  return strtok_s(str, delim, saveptr);
+#else
   return strtok_r(str, delim, saveptr);
+#endif
 }
 
 /*******************************************************************************

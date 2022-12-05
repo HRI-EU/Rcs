@@ -3882,6 +3882,8 @@ bool RcsGraph_addBodyDofs(RcsGraph* graph, RcsBody* parent, RcsBody* body,
  ******************************************************************************/
 void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src)
 {
+  RCHECK_MSG(dst, "Graph copying can only be done into non-NULL pointer");
+
   dst->rootId = src->rootId;
 
   // Copy memory block of joints. We only reallocate memory in case the
