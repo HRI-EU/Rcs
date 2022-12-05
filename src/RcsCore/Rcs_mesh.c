@@ -36,6 +36,7 @@
 #include "Rcs_macros.h"
 #include "Rcs_Vec3d.h"
 #include "Rcs_Mat3d.h"
+#include "Rcs_colladaParser.h"
 
 #include <stdint.h>
 #include <limits.h>
@@ -801,6 +802,41 @@ bool RcsMesh_readObjFile(const char* fileName, RcsMeshData* mesh)
   return true;
 }
 
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool RcsMesh_readDAEFile(const char* fileName, RcsMeshData* mesh)
+{
+  if (fileName==NULL)
+  {
+    RLOG(4, "Failed to file \"NULL\"");
+    return false;
+  }
+
+  RLOG(5, "Reading mesh file \"%s\"", fileName);
+
+  Collada* collada = NULL;
+  bool result = Rcs_parseDAEFile(fileName, &collada);
+  if (!result)
+  {
+    RLOG(4, "failed to parse dae file");
+    Rcs_freeCollada(collada);
+    return result;
+  }
+
+  result &= Rcs_parseMeshDataFromCollada(mesh, collada);
+  if (!result)
+  {
+    RLOG(4, "failed to parse dae file");
+    Rcs_freeCollada(collada);
+    return result;
+  }
+
+  Rcs_freeCollada(collada);
+  return true;
+}
+
 /*******************************************************************************
  * See header.
  ******************************************************************************/
@@ -957,6 +993,10 @@ bool RcsMesh_readFromFile(const char* meshFile, RcsMeshData* meshData)
   else if (String_hasEnding(meshFile, ".obj", false) == true)
   {
     return RcsMesh_readObjFile(meshFile, meshData);
+  }
+  else if (String_hasEnding(meshFile, ".dae", false) == true)
+  {
+    return RcsMesh_readDAEFile(meshFile, meshData);
   }
 
   return false;
