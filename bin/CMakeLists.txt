@@ -13,7 +13,7 @@ ENDIF(ENABLE_C++11)
 IF(NOT HEADLESS_BUILD)
 
   ADD_EXECUTABLE(Rcs Rcs.cpp)
-  TARGET_LINK_LIBRARIES(Rcs RcsCore RcsGui RcsGraphics RcsPhysics)
+  TARGET_LINK_LIBRARIES(Rcs RcsCore RcsGui RcsGraphics RcsPhysics RcsExamples)
 
   ADD_EXECUTABLE(TestGraphics TestGraphics.cpp)
   TARGET_LINK_LIBRARIES(TestGraphics RcsGraphics RcsGui)

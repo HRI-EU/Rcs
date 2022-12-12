@@ -49,25 +49,55 @@ ExampleBase::~ExampleBase()
 {
 }
 
-void ExampleBase::init(int argc, char** argv)
+bool ExampleBase::init(int argc, char** argv)
 {
-  initParameters();
+  bool success = initParameters();
+
+  if (!success)
+  {
+    RLOG(1, "Failed to initialize parameters");
+    return false;
+  }
+
   CmdLineParser argP(argc, argv);
-  parseArgs(&argP);
-  bool success = initAlgo();
-  initGraphics();
-  initGuis();
+  success = parseArgs(&argP);
+
+  if (!success)
+  {
+    RLOG(1, "Failed to parse parameters");
+    return false;
+  }
+
+  success = initAlgo();
+
+  if (!success)
+  {
+    RLOG(1, "Failed to initialize algorithm");
+    return false;
+  }
+
+  success = initGraphics();
+
+  if (!success)
+  {
+    RLOG(1, "Failed to initialize graphics");
+    return false;
+  }
+
+  success = initGuis();
+
+  if (!success)
+  {
+    RLOG(1, "Failed to initialize Guis");
+    return false;
+  }
+
+  return success;
 }
 
-void ExampleBase::clear()
+bool ExampleBase::initParameters()
 {
-}
-void ExampleBase::initParameters()
-{
-}
-
-void ExampleBase::parseArgs(CmdLineParser* parser)
-{
+  return true;
 }
 
 bool ExampleBase::initAlgo()
@@ -75,12 +105,23 @@ bool ExampleBase::initAlgo()
   return true;
 }
 
-void ExampleBase::initGraphics()
+bool ExampleBase::initGraphics()
+{
+  return true;
+}
+
+bool ExampleBase::initGuis()
+{
+  return true;
+}
+
+void ExampleBase::clear()
 {
 }
 
-void ExampleBase::initGuis()
+bool ExampleBase::parseArgs(CmdLineParser* parser)
 {
+  return true;
 }
 
 void ExampleBase::start()

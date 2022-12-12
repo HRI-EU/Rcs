@@ -81,21 +81,15 @@ JointGui::JointGui(RcsGraph* graph_,
   q_des(q_des_), q_curr(q_curr_), alwaysWriteToQ(alwaysWriteToQ_),
   passive(passive_)
 {
-  RLOG(5, "Before launch");
   launch();
-  RLOG(5, "After launch");
 }
 
 void JointGui::construct()
 {
-  RLOG(0, "Constructing test");
-
   QWidget* test = new JointWidget(graph, constGraph, graphLock,
                                   q_des, q_curr, alwaysWriteToQ, passive);
   //QWidget* test = new QLabel("Seppl");
-  RLOG(5, "Setting widget");
   setWidget(test);
-  RLOG(5, "Done");
 }
 
 /*******************************************************************************

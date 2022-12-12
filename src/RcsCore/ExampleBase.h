@@ -59,7 +59,23 @@ public:
    *         function, so that the init functions can be overwritten by
    *         derieved classes without any side effects.
    */
-  virtual void init(int argc, char** argv);
+  virtual bool init(int argc, char** argv);
+
+  /*  \brief Assign defaults to all member variables, allocate memory if needed.
+   */
+  virtual bool initParameters();
+
+  /*  \brief Initializations related to algorithmic steps, no gui or graphics.
+   */
+  virtual bool initAlgo();
+
+  /*  \brief Initializations for graphics windows, nodes etc.
+   */
+  virtual bool initGraphics();
+
+  /*  \brief Initializations for Guis and widgets.
+   */
+  virtual bool initGuis();
 
   /*  \brief Deletes all memory and brings the global variables into a
    *         state like before the class was instantiated. In order to
@@ -69,26 +85,10 @@ public:
    */
   virtual void clear();
 
-  /*  \brief Assign defaults to all member variables, allocate memory if needed.
-   */
-  virtual void initParameters();
-
   /*  \brief Assign member variables according to supported command line
    *         options.
    */
-  virtual void parseArgs(CmdLineParser* parser);
-
-  /*  \brief Initializations related to algorithmic steps, no gui or graphics.
-   */
-  virtual bool initAlgo();
-
-  /*  \brief Initializations for graphics windows, nodes etc.
-   */
-  virtual void initGraphics();
-
-  /*  \brief Initializations for Guis and widgets.
-   */
-  virtual void initGuis();
+  virtual bool parseArgs(CmdLineParser* parser);
   virtual void start();
   virtual void stop();
   virtual void run();

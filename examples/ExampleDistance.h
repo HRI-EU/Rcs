@@ -52,9 +52,9 @@ class ExampleDistance : public ExampleBase
 public:
   ExampleDistance(int argc, char** argv);
   virtual ~ExampleDistance();
-  virtual void parseArgs(CmdLineParser* parser);
+  virtual bool parseArgs(CmdLineParser* parser);
   virtual bool initAlgo();
-  virtual void initGraphics();
+  virtual bool initGraphics();
   virtual void step();
   virtual std::string help();
   virtual void handleKeys();

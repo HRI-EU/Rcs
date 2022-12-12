@@ -62,11 +62,11 @@ class ExampleIK : public ExampleBase
 public:
   ExampleIK(int argc, char** argv);
   virtual ~ExampleIK();
-  virtual void initParameters();
-  virtual void parseArgs(CmdLineParser* parser);
+  virtual bool initParameters();
+  virtual bool parseArgs(CmdLineParser* parser);
   virtual bool initAlgo();
-  virtual void initGraphics();
-  virtual void initGuis();
+  virtual bool initGraphics();
+  virtual bool initGuis();
   virtual void step();
   virtual void handleKeys();
   virtual std::string help();
@@ -121,28 +121,28 @@ class ExampleIK_ContactGrasping : public ExampleIK
 {
 public:
   ExampleIK_ContactGrasping(int argc, char** argv);
-  virtual void initParameters();
+  virtual bool initParameters();
 };
 
 class ExampleIK_OSimWholeBody : public ExampleIK
 {
 public:
   ExampleIK_OSimWholeBody(int argc, char** argv);
-  virtual void initParameters();
+  virtual bool initParameters();
 };
 
 class ExampleIK_AssistiveDressing : public ExampleIK
 {
 public:
   ExampleIK_AssistiveDressing(int argc, char** argv);
-  virtual void initParameters();
+  virtual bool initParameters();
 };
 
 class ExampleIK_StaticEffort : public ExampleIK
 {
 public:
   ExampleIK_StaticEffort(int argc, char** argv);
-  virtual void initParameters();
+  virtual bool initParameters();
   virtual bool initAlgo();
   virtual std::string help();
 };

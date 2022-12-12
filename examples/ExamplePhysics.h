@@ -62,11 +62,11 @@ class ExamplePhysics : public ExampleBase
 public:
   ExamplePhysics(int argc, char** argv);
   virtual ~ExamplePhysics();
-  virtual void initParameters();
-  virtual void parseArgs(CmdLineParser* parser);
+  virtual bool initParameters();
+  virtual bool parseArgs(CmdLineParser* parser);
   virtual bool initAlgo();
-  virtual void initGraphics();
-  virtual void initGuis();
+  virtual bool initGraphics();
+  virtual bool initGuis();
   virtual void step();
   virtual void handleKeys();
   virtual std::string help();
@@ -107,35 +107,41 @@ class ExamplePhysics_Gyro : public ExamplePhysics
 {
 public:
   ExamplePhysics_Gyro(int argc, char** argv);
-  virtual void initParameters();
+  virtual bool initParameters();
 };
 
 class ExamplePhysics_SoftBullet : public ExamplePhysics
 {
 public:
   ExamplePhysics_SoftBullet(int argc, char** argv);
-  virtual void initParameters();
+  virtual bool initParameters();
 };
 
 class ExamplePhysics_SitToStand : public ExamplePhysics
 {
 public:
   ExamplePhysics_SitToStand(int argc, char** argv);
-  virtual void initParameters();
+  virtual bool initParameters();
 };
 
 class ExamplePhysics_HumanoidPendulum : public ExamplePhysics
 {
 public:
   ExamplePhysics_HumanoidPendulum(int argc, char** argv);
-  virtual void initParameters();
+  virtual bool initParameters();
 };
 
 class ExamplePhysics_PPStest : public ExamplePhysics
 {
 public:
   ExamplePhysics_PPStest(int argc, char** argv);
-  virtual void initParameters();
+  virtual bool initParameters();
+};
+class ExamplePhysics_WeldNewtonEuler : public ExamplePhysics
+{
+public:
+  ExamplePhysics_WeldNewtonEuler(int argc, char** argv);
+  virtual bool initParameters();
 };
 }   // namespace
 

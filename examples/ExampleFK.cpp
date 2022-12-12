@@ -132,15 +132,17 @@ void ExampleFK::clear()
   RLOG(1, "Done clear()");
 }
 
-void ExampleFK::initParameters()
+bool ExampleFK::initParameters()
 {
   xmlFileName = "gScenario.xml";
   directory = "config/xml/DexBot";
   dotFile = "RcsGraph.dot";
   bgColor = "LIGHT_GRAYISH_GREEN";
+
+  return true;
 }
 
-void ExampleFK::parseArgs(CmdLineParser* argP)
+bool ExampleFK::parseArgs(CmdLineParser* argP)
 {
   argP->getArgument("-nomutex", &noMutex, "Graphics without mutex");
   argP->getArgument("-valgrind", &valgrind, "Start without Guis and graphics");
@@ -174,6 +176,8 @@ void ExampleFK::parseArgs(CmdLineParser* argP)
                     " / capsule as additional shape to bodies");
 
   argP->getArgument("-h", &helpMsg, "Print help message to console");
+
+  return true;
 }
 
 std::string ExampleFK::help()
@@ -297,7 +301,7 @@ bool ExampleFK::initAlgo()
   return true;
 }
 
-void ExampleFK::initGraphics()
+bool ExampleFK::initGraphics()
 {
   Rcs::KeyCatcherBase::registerKey("a", "Change body attachement");
   Rcs::KeyCatcherBase::registerKey("C", "Toggle COM display");
@@ -322,7 +326,7 @@ void ExampleFK::initGraphics()
 
   if (valgrind)
   {
-    return;
+    return true;
   }
 
   viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
@@ -367,14 +371,17 @@ void ExampleFK::initGraphics()
     }
   }
   viewer->runInThread(mtx);
+
+  return true;
 }
 
-void ExampleFK::initGuis()
+bool ExampleFK::initGuis()
 {
   if (valgrind)
   {
-    return;
+    return true;
   }
+
   if ((editMode == false) && (bvhTraj == NULL))
   {
 
@@ -387,6 +394,8 @@ void ExampleFK::initGuis()
 
     jGui = new JointGui(graph, mtx);
   }
+
+  return true;
 }
 
 void ExampleFK::step()
@@ -884,11 +893,13 @@ ExampleFK_Octree::ExampleFK_Octree(int argc, char** argv) : ExampleFK(argc, argv
 {
 }
 
-void ExampleFK_Octree::initParameters()
+bool ExampleFK_Octree::initParameters()
 {
   ExampleFK::initParameters();
   xmlFileName = "gOctree.xml";
   directory = "config/xml/Examples";
+
+  return true;
 }
 
 
@@ -900,7 +911,7 @@ ExampleFK_Below::ExampleFK_Below(int argc, char** argv) : ExampleFK(argc, argv)
   Vec3d_setZero(belowPt);
 }
 
-void ExampleFK_Below::initGraphics()
+bool ExampleFK_Below::initGraphics()
 {
   ExampleFK::initGraphics();
 
@@ -910,9 +921,11 @@ void ExampleFK_Below::initGraphics()
   belowNd->makeDynamic(belowPt);
   belowNd->setMaterial("RED");
   viewer->add(belowNd);
+
+  return true;
 }
 
-void ExampleFK_Below::initParameters()
+bool ExampleFK_Below::initParameters()
 {
   ExampleFK::initParameters();
   xmlFileName = "gScenario.xml";
@@ -920,6 +933,8 @@ void ExampleFK_Below::initParameters()
   editMode = true;
   updateHud = false;   // Class writes its own text into the Hud
   belowBdy = "Sphere";
+
+  return true;
 }
 
 bool ExampleFK_Below::initAlgo()

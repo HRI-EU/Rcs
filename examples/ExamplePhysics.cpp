@@ -171,7 +171,7 @@ void ExamplePhysics::clear()
   RLOG(5, "Done clear()");
 }
 
-void ExamplePhysics::initParameters()
+bool ExamplePhysics::initParameters()
 {
   Vec3d_set(gVec, 0.0, 0.0, -RCS_GRAVITY);
   physicsEngine = "Bullet";
@@ -180,9 +180,11 @@ void ExamplePhysics::initParameters()
   bgColor = "LIGHT_GRAYISH_GREEN";
   xmlFileName = "gScenario.xml";
   directory = "config/xml/DexBot";
+
+  return true;
 }
 
-void ExamplePhysics::parseArgs(CmdLineParser* argP)
+bool ExamplePhysics::parseArgs(CmdLineParser* argP)
 {
   argP->getArgument("-nomutex", &nomutex, "Graphics without mutex");
 
@@ -230,6 +232,8 @@ void ExamplePhysics::parseArgs(CmdLineParser* argP)
   argP->getArgument("-gx", &gVec[0], "Gravity x (default is %f)", gVec[0]);
   argP->getArgument("-gy", &gVec[1], "Gravity y (default is %f)", gVec[1]);
   argP->getArgument("-gz", &gVec[2], "Gravity z (default is %f)", gVec[2]);
+
+  return true;
 }
 
 std::string ExamplePhysics::help()
@@ -323,7 +327,7 @@ bool ExamplePhysics::initAlgo()
   return true;
 }
 
-void ExamplePhysics::initGraphics()
+bool ExamplePhysics::initGraphics()
 {
   Rcs::KeyCatcherBase::registerKey("q", "Quit");
   Rcs::KeyCatcherBase::registerKey("p", "Reset physics");
@@ -346,7 +350,7 @@ void ExamplePhysics::initGraphics()
   // Viewer and Gui
   if (valgrind)
   {
-    return;
+    return true;
   }
 
   viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
@@ -389,9 +393,11 @@ void ExamplePhysics::initGraphics()
 
     Rcs::PPSGui::create(ppsEntries, mtx);
   }
+
+  return true;
 }
 
-void ExamplePhysics::initGuis()
+bool ExamplePhysics::initGuis()
 {
   if (skipGui == false)
   {
@@ -402,7 +408,7 @@ void ExamplePhysics::initGuis()
     //jw = static_cast<Rcs::JointWidget*>(ptr);
   }
 
-
+  return true;
 }
 
 void ExamplePhysics::step()
@@ -894,7 +900,7 @@ ExamplePhysics_Gyro::ExamplePhysics_Gyro(int argc, char** argv) : ExamplePhysics
 
 // Here we overwrite the parseArgs() method, since the bools are overwritten in it. Otherwise,
 // the skipGui flag cannot be changed.
-void ExamplePhysics_Gyro::initParameters()
+bool ExamplePhysics_Gyro::initParameters()
 {
   ExamplePhysics::initParameters();
   xmlFileName = "gGyro.xml";
@@ -902,6 +908,8 @@ void ExamplePhysics_Gyro::initParameters()
   physicsEngine = "NewtonEuler";
   skipGui = true;
   Vec3d_setZero(gVec);
+
+  return true;
 }
 
 
@@ -916,12 +924,14 @@ ExamplePhysics_SoftBullet::ExamplePhysics_SoftBullet(int argc, char** argv) : Ex
 {
 }
 
-void ExamplePhysics_SoftBullet::initParameters()
+bool ExamplePhysics_SoftBullet::initParameters()
 {
   ExamplePhysics::initParameters();
   xmlFileName = "gSoftPhysics.xml";
   directory = "config/xml/Examples";
   physicsEngine = "SoftBullet";
+
+  return true;
 }
 
 
@@ -936,12 +946,14 @@ ExamplePhysics_SitToStand::ExamplePhysics_SitToStand(int argc, char** argv) : Ex
 {
 }
 
-void ExamplePhysics_SitToStand::initParameters()
+bool ExamplePhysics_SitToStand::initParameters()
 {
   ExamplePhysics::initParameters();
   xmlFileName = "cSitToStand.xml";
   directory = "config/xml/Examples";
   physicsEngine = "NewtonEuler";
+
+  return true;
 }
 
 
@@ -956,13 +968,15 @@ ExamplePhysics_HumanoidPendulum::ExamplePhysics_HumanoidPendulum(int argc, char*
 {
 }
 
-void ExamplePhysics_HumanoidPendulum::initParameters()
+bool ExamplePhysics_HumanoidPendulum::initParameters()
 {
   ExamplePhysics::initParameters();
   xmlFileName = "gHumanoidPendulum.xml";
   directory = "config/xml/Examples";
   physicsEngine = "Mujoco";
   skipGui = true;
+
+  return true;
 }
 
 
@@ -977,17 +991,37 @@ ExamplePhysics_PPStest::ExamplePhysics_PPStest(int argc, char** argv) : ExampleP
 {
 }
 
-void ExamplePhysics_PPStest::initParameters()
+bool ExamplePhysics_PPStest::initParameters()
 {
   ExamplePhysics::initParameters();
   xmlFileName = "gScenario.xml";
   directory = "config/xml/PPStest";
   physicsEngine = "Mujoco";
   skipGui = true;
+
+  return true;
 }
 
 
 
 
+
+// Rcs -m 4 -f config/xml/Examples -f cWeldConstraint.xml -physicsEngine NewtonEuler -skipGui
+static ExampleFactoryRegistrar<ExamplePhysics_WeldNewtonEuler> ExamplePhysics_WeldNewtonEuler("Physics", "Chain with weld constraints");
+
+ExamplePhysics_WeldNewtonEuler::ExamplePhysics_WeldNewtonEuler(int argc, char** argv) : ExamplePhysics(argc, argv)
+{
+}
+
+bool ExamplePhysics_WeldNewtonEuler::initParameters()
+{
+  ExamplePhysics::initParameters();
+  xmlFileName = "cWeldConstraint.xml";
+  directory = "config/xml/Examples";
+  physicsEngine = "NewtonEuler";
+  skipGui = true;
+
+  return true;
+}
 
 }   // namespace Rcs

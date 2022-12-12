@@ -212,12 +212,12 @@ ENDIF()
 #
 ################################################################################
 ADD_SUBDIRECTORY (src)
+ADD_SUBDIRECTORY (examples)
 
 IF (NOT BUILD_RCS_LIBRARIES_ONLY)
   ADD_SUBDIRECTORY (bin)
 ENDIF()
 
-ADD_SUBDIRECTORY (examples)
 ADD_SUBDIRECTORY (doc)
 
 ################################################################################

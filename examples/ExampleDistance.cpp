@@ -90,7 +90,7 @@ ExampleDistance::~ExampleDistance()
   pthread_mutex_destroy(&graphLock);
 }
 
-void ExampleDistance::parseArgs(CmdLineParser* argP)
+bool ExampleDistance::parseArgs(CmdLineParser* argP)
 {
   argP->getArgument("-t1", &shapeType1, "Shape type for shape 1");
   argP->getArgument("-t2", &shapeType2, "Shape type for shape 2");
@@ -98,6 +98,8 @@ void ExampleDistance::parseArgs(CmdLineParser* argP)
   argP->getArgument("-simpleGraphics", &simpleGraphics, "OpenGL without fancy "
                     "stuff (shadows, anti-aliasing)");
   argP->getArgument("-nomutex", &nomutex, "Graphics without mutex");
+
+  return true;
 }
 
 std::string ExampleDistance::help()
@@ -131,11 +133,11 @@ bool ExampleDistance::initAlgo()
   return true;
 }
 
-void ExampleDistance::initGraphics()
+bool ExampleDistance::initGraphics()
 {
   if (valgrind)
   {
-    return;
+    return true;
   }
 
   viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
@@ -189,6 +191,8 @@ void ExampleDistance::initGraphics()
   viewer->add(normalArrow);
 
   viewer->runInThread(mtx);
+
+  return true;
 }
 
 void ExampleDistance::step()

@@ -136,16 +136,18 @@ void ExampleIK::clear()
   Rcs_removeResourcePath(directory.c_str());
 }
 
-void ExampleIK::initParameters()
+bool ExampleIK::initParameters()
 {
   xmlFileName = "cAction.xml";
   directory = "config/xml/DexBot";
   physicsCfg = "config/physics/physics.xml";
   integrator = "Fehlberg";
   localeStr = "de_DE.utf8";
+
+  return true;
 }
 
-void ExampleIK::parseArgs(CmdLineParser* argP)
+bool ExampleIK::parseArgs(CmdLineParser* argP)
 {
   argP->getArgument("-valgrind", &valgrind, "Start without Guis and graphics");
   argP->getArgument("-simpleGraphics", &simpleGraphics, "OpenGL without fancy "
@@ -196,6 +198,8 @@ void ExampleIK::parseArgs(CmdLineParser* argP)
   argP->getArgument("-testLocale", &testLocale, "Test locale");
   argP->getArgument("-locale", &localeStr, "Locale to be tested (default: %s)",
                     localeStr.c_str());
+
+  return true;
 }
 
 std::string ExampleIK::help()
@@ -247,7 +251,7 @@ bool ExampleIK::initAlgo()
   // has already been constructed.
   if (!controller)
   {
-  controller = new ControllerBase(xmlFileName.c_str());
+    controller = new ControllerBase(xmlFileName.c_str());
   }
 
   if (testCopying)
@@ -280,7 +284,7 @@ bool ExampleIK::initAlgo()
   // vector has already been constructed.
   if (!a_des)
   {
-  a_des = MatNd_create(controller->getNumberOfTasks(), 1);
+    a_des = MatNd_create(controller->getNumberOfTasks(), 1);
     controller->readActivationsFromXML(a_des);
   }
 
@@ -341,7 +345,7 @@ bool ExampleIK::initAlgo()
   return true;
 }
 
-void ExampleIK::initGraphics()
+bool ExampleIK::initGraphics()
 {
   Rcs::KeyCatcherBase::registerKey("q", "Quit");
   Rcs::KeyCatcherBase::registerKey("t", "Run controller test");
@@ -364,11 +368,8 @@ void ExampleIK::initGraphics()
 
   if (valgrind)
   {
-    return;
+    return true;
   }
-
-
-
 
   v = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
   kc = new Rcs::KeyCatcher();
@@ -407,13 +408,15 @@ void ExampleIK::initGraphics()
   }
 
   v->runInThread(mtx);
+
+  return true;
 }
 
-void ExampleIK::initGuis()
+bool ExampleIK::initGuis()
 {
   if (valgrind || skipGui)
   {
-    return;
+    return true;
   }
 
 
@@ -494,6 +497,7 @@ void ExampleIK::initGuis()
     effortGui->setLabels(labels);
   }
 
+  return true;
 }
 
 void ExampleIK::step()
@@ -900,7 +904,7 @@ ExampleIK_ContactGrasping::ExampleIK_ContactGrasping(int argc, char** argv) : Ex
 {
 }
 
-void ExampleIK_ContactGrasping::initParameters()
+bool ExampleIK_ContactGrasping::initParameters()
 {
   ExampleIK::initParameters();
   xmlFileName = "cContactGrasping.xml";
@@ -908,6 +912,8 @@ void ExampleIK_ContactGrasping::initParameters()
   algo = 1;
   lambda = 0.001;
   alpha = 0.0;
+
+  return true;
 }
 
 
@@ -917,7 +923,7 @@ ExampleIK_OSimWholeBody::ExampleIK_OSimWholeBody(int argc, char** argv) : Exampl
 {
 }
 
-void ExampleIK_OSimWholeBody::initParameters()
+bool ExampleIK_OSimWholeBody::initParameters()
 {
   ExampleIK::initParameters();
   xmlFileName = "cOpenSimWholeBody.xml";
@@ -926,6 +932,8 @@ void ExampleIK_OSimWholeBody::initParameters()
   lambda = 0.0;
   physicsEngine = "NewtonEuler";
   integrator = "Euler";
+
+  return true;
 }
 
 
@@ -935,7 +943,7 @@ ExampleIK_AssistiveDressing::ExampleIK_AssistiveDressing(int argc, char** argv) 
 {
 }
 
-void ExampleIK_AssistiveDressing::initParameters()
+bool ExampleIK_AssistiveDressing::initParameters()
 {
   ExampleIK::initParameters();
   xmlFileName = "cRoboSleeve.xml";
@@ -943,6 +951,8 @@ void ExampleIK_AssistiveDressing::initParameters()
   algo = 1;
   dt = 0.002;
   physicsEngine = "SoftBullet";
+
+  return true;
 }
 
 
@@ -952,11 +962,13 @@ ExampleIK_StaticEffort::ExampleIK_StaticEffort(int argc, char** argv) : ExampleI
 {
 }
 
-void ExampleIK_StaticEffort::initParameters()
+bool ExampleIK_StaticEffort::initParameters()
 {
   ExampleIK::initParameters();
   effortBdyName = "sdh-base_R";
   algo = 1;
+
+  return true;
 }
 
 bool ExampleIK_StaticEffort::initAlgo()

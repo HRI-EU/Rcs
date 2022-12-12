@@ -93,11 +93,15 @@ public:
    * \param[in] example   Name of the example
    * \param[in] argc      Number of command line arguments
    * \param[in] argv      String array of command line arguments
+   * \param[in] threaded  Example runs in its own thred if true, in calling
+   *                      thread if false. Note that in the latter case, the
+   *                      function blocks.
    * \return              New ExampleBase instance or NULL incase of failure
    */
   static ExampleBase* runExample(std::string category,
                                  std::string example,
-                                 int argc, char** argv);
+                                 int argc, char** argv,
+                                 bool threaded=true);
 
   /*! \brief Prints out all registered examples to the console
    */

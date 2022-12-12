@@ -55,12 +55,12 @@ class ExampleFK : public ExampleBase
 public:
   ExampleFK(int argc, char** argv);
   virtual ~ExampleFK();
-  virtual void initParameters();
+  virtual bool initParameters();
   virtual void clear();
-  virtual void parseArgs(CmdLineParser* parser);
+  virtual bool parseArgs(CmdLineParser* parser);
   virtual bool initAlgo();
-  virtual void initGraphics();
-  virtual void initGuis();
+  virtual bool initGraphics();
+  virtual bool initGuis();
   virtual void step();
   virtual std::string help();
   virtual void handleKeys();
@@ -110,15 +110,15 @@ class ExampleFK_Octree : public ExampleFK
 {
 public:
   ExampleFK_Octree(int argc, char** argv);
-  virtual void initParameters();
+  virtual bool initParameters();
 };
 
 class ExampleFK_Below : public ExampleFK
 {
 public:
   ExampleFK_Below(int argc, char** argv);
-  virtual void initParameters();
-  virtual void initGraphics();
+  virtual bool initParameters();
+  virtual bool initGraphics();
   virtual bool initAlgo();
   virtual void step();
   virtual std::string help();

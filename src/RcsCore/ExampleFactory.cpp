@@ -129,7 +129,8 @@ ExampleBase* ExampleFactory::create(std::string category,
 ExampleBase* ExampleFactory::runExample(std::string category,
                                         std::string example,
                                         int argc,
-                                        char** argv)
+                                        char** argv,
+                                        bool threaded)
 {
   ExampleBase* ex = ExampleFactory::create(category, example, argc, argv);
 
@@ -153,13 +154,22 @@ ExampleBase* ExampleFactory::runExample(std::string category,
   ex->init(argc, argv);
 
   pthread_t exThread;
-  pthread_create(&exThread, NULL, &exampleThreadFunc, ex);
-  pthread_detach(exThread);
-
-  // We only return once the thread has entered the run loop.
-  while (!ex->isRunning())
+  if (threaded)
   {
-    Timer_waitDT(0.01);
+    pthread_create(&exThread, NULL, &exampleThreadFunc, ex);
+    pthread_detach(exThread);
+
+    // We only return once the thread has entered the run loop.
+    while (!ex->isRunning())
+    {
+      Timer_waitDT(0.01);
+    }
+  }
+  else
+  {
+    exampleThreadFunc((void*)ex);
+    delete ex;
+    ex = NULL;
   }
 
   return ex;
