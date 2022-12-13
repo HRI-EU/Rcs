@@ -258,6 +258,7 @@ bool ExampleIK::initAlgo()
   {
     Rcs::ControllerBase tmp(*controller);
     *controller = tmp;
+    tmp.toXML("CopiedController.xml");
   }
 
   if (initToQ0)

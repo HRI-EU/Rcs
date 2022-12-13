@@ -207,6 +207,23 @@ void TaskRegionBoxInterval::toXML(FILE* out, bool activation) const
             String_fromDouble(buf, slowDownRatio, 6));
   }
 
+  if (!maxStep.empty())
+  {
+    fprintf(out, "maxStep=\"");
+
+    for (size_t i = 0; i < bbMax.size(); ++i)
+    {
+      if (i < maxStep.size() - 1)
+      {
+        fprintf(out, "%s ", String_fromDouble(buf, maxStep[i], 6));
+      }
+      else
+      {
+        fprintf(out, "%s\" ", String_fromDouble(buf, maxStep[i], 6));
+      }
+    }
+  }
+
   fprintf(out, "/>\n");
 }
 
