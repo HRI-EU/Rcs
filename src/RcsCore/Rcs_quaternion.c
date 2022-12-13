@@ -159,10 +159,9 @@ void Quat_toRotationMatrix(double A_BI[3][3], const double q[4])
  *  qy = q[2]
  *  qz = q[3]
  ******************************************************************************/
-bool Quat_fromRotationMatrix(double q_[4], double rm[3][3])
+bool Quat_fromRotationMatrix(double q[4], double rm[3][3])
 {
   double t = 0.0;
-  double q[4];
 
   if (rm[2][2] < 0.0)
   {
@@ -211,10 +210,14 @@ bool Quat_fromRotationMatrix(double q_[4], double rm[3][3])
       RMSG("Mat3d is %s", Mat3d_isValid(rm) ? "VALID" : "INVALID");
       Mat3d_printFormatted("Rotation matrix", "%g ", rm);
     }
+    double ea[3];
+    Mat3d_toEulerAngles(ea, rm);
+    Quat_fromEulerAngles(q, ea);
+
     return false;
   }
 
-  VecNd_constMul(q_, q, 0.5/sqrt(t), 4);
+  VecNd_constMul(q, q, 0.5/sqrt(t), 4);
 
   return true;
 }

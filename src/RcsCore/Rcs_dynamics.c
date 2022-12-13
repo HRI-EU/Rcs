@@ -51,14 +51,14 @@ static inline const double* getDefaultGravity()
 /*******************************************************************************
  *
  ******************************************************************************/
-static void runge_kutta_fehlberg_1_2(int nz,
-                                     DirDynFunc FCN,
-                                     void* param,
-                                     double t,
-                                     double dt,
-                                     const double* x1,
-                                     double* x2,
-                                     double* err)
+/* static */ void runge_kutta_fehlberg_1_2(int nz,
+                                           DirDynFunc FCN,
+                                           void* param,
+                                           double t,
+                                           double dt,
+                                           const double* x1,
+                                           double* x2,
+                                           double* err)
 {
   double* k1 = RNALLOC(nz, double);
   double* k2 = RNALLOC(nz, double);

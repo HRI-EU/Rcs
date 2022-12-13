@@ -129,14 +129,17 @@ void Quat_toRotationMatrix(double A_BI[3][3], const double q[4]);
 
 /*! \ingroup RcsQuaternionFunctions
  *  \brief Converts a rotation matrix in row-major form to a quaternion
- *         q [qw qx qy qz]. This function may fail if the rotation matrix
- *         is invalid. In this case, the function returns false and leaves
- *         the target argument q unchanged.
+ *         q [qw qx qy qz]. The function follows the divide-and-conquer 
+ *         strategy of the article "Converting a Rotation Matrix to a 
+ *         Quaternion" by Mike Day, Insomniac Games. If this fails, the 
+ *         rotation matrix is converted to Euler angles, and then into a
+ *         quaternion. In this case, the function returns false.
  *
  *  \param[out]  q      Quaternion in ordering [qw qx qy qz]
  *  \param[in]   rm     Rotation matrix in row-major form
  *
- *  \return True for success, false otherwise.
+ *  \return True for success, false in case there might be something wrong
+ *          with the rotation matrix.
  */
 bool Quat_fromRotationMatrix(double q[4], double rm[3][3]);
 

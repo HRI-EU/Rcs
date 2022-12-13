@@ -218,6 +218,7 @@ static bool RcsGraph_parseModelStateDetail(xmlNodePtr node,
 /*******************************************************************************
  *
  ******************************************************************************/
+#if 0
 static bool RcsGraph_parseModelState2(xmlNodePtr node, RcsGraph* self,
                                       const char* mdlName)
 {
@@ -254,6 +255,7 @@ static bool RcsGraph_parseModelState2(xmlNodePtr node, RcsGraph* self,
 
   return true;
 }
+#endif
 
 /*******************************************************************************
  *

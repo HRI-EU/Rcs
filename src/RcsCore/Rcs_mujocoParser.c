@@ -454,8 +454,8 @@ bool RcsGraph_toMujocoFile(const char* fileName, const RcsGraph* graph)
 
         //fprintf(fd, "  <position joint=\"%s\" name=\"%s\" gear=\"20\" ctrllimited=\"false\" kp=\"5\" forcelimited=\"true\" forcerange=\"-20 20\" ctrlrange=\"-1.0 1.0\" />", JNT->name, JNT->name);
         //fprintf(fd, "  <position joint=\"%s\" gear=\"1\" name=\"%s\" ctrllimited=\"false\" kp=\"100\" ctrlrange=\"-10.0 10.0\" />\n", JNT->name, JNT->name);
-        const double kp = 10.0;
-        double kv = 0.5 * sqrt(4.0 * kp);
+        /* const double kp = 10.0; */
+        /* double kv = 0.5 * sqrt(4.0 * kp); */
 
         //fprintf(fd, "  <position joint=\"%s\" name=\"%s\" kp=\"%f\" />\n", JNT->name, JNT->name, kp);
         //fprintf(fd, "  <velocity joint=\"%s\" name=\"%s_vel\" kv=\"%f\" />\n", JNT->name, JNT->name, kv);
