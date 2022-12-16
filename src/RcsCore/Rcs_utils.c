@@ -462,6 +462,22 @@ double String_toDouble_l(const char* str)
 
 /*******************************************************************************
 *
+ ******************************************************************************/
+int String_toInt_l(const char* str)
+{
+#if defined (_MSC_VER)
+    _locale_t tmpLocale = _create_locale(LC_NUMERIC, "C");
+    int val = _atoi_l(str, tmpLocale);
+    _free_locale(tmpLocale);
+#else
+    int val = atoi(str);
+#endif
+
+    return val;
+}
+
+/*******************************************************************************
+*
 ******************************************************************************/
 bool String_toDoubleArray_l(const char* str, double* x_, unsigned int n)
 {
@@ -512,6 +528,60 @@ bool String_toDoubleArray_l(const char* str, double* x_, unsigned int n)
   RFREE(x);
 
   return true;
+}
+
+/*******************************************************************************
+*
+******************************************************************************/
+bool String_toIntArray_l(const char* str, int* x_, unsigned int n)
+{
+    if ((str==NULL) || (strlen(str) == 0) || (n == 0) || (x_==NULL))
+    {
+        return false;
+    }
+
+    char* tmp = String_clone(str);
+    char* pch = strtok(tmp, " ");
+    char buf[256];
+    unsigned int matchedStrings = 0;
+    int* x = RNALLOC(n, int);
+
+    while (pch != NULL)
+    {
+        if (sscanf(pch, "%255s", buf))
+        {
+            int value = String_toInt_l(buf);// locale-independent
+
+            if (value == INT_MAX || value == INT_MIN)
+            {
+                RLOG(1, "Found MAX/MIN INT during parsing");
+                RFREE(tmp);
+                return false;
+            }
+
+            if (matchedStrings < n)
+            {
+                x[matchedStrings] = value;
+            }
+            matchedStrings++;
+        }
+        pch = strtok(NULL, " ");
+    }
+
+    RFREE(tmp);
+
+    if (matchedStrings != n)
+    {
+        RLOG(1, "[%s]: %d values could be parsed (should be %d)",
+             str, matchedStrings, n);
+        RFREE(x);
+        return false;
+    }
+
+    memcpy(x_, x, n * sizeof(int));
+    RFREE(x);
+
+    return true;
 }
 
 /*******************************************************************************

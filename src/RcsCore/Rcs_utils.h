@@ -199,6 +199,27 @@ double String_toDouble_l(const char* str);
 bool String_toDoubleArray_l(const char* str, double* x, unsigned int n);
 
 /*! \ingroup RcsUtilsFunctions
+ * \brief Converts a string to an array of ints with n elements using the
+ *        C locale: It means that the decimal separator will be interpreted as
+ *        a point, and does not depend on the currently avtive locale.
+ *
+ *  \param[in] str   Terminated string with space-separated substrings that
+ *                   holding the character representation ofthe values
+ *  \param[out] x    Array of ints that the values are written into. It must
+ *                   provide memory for at least n elements.
+ *  \param[in] n     Number of expected values inside string.
+ *  \return True for success, false otherwise. In the case of false, the
+ *          argument array x is unchanged. Failure cases are:
+ *          - str is NULL or of zero length
+ *          - x is NULL
+ *          - n is 0
+ *          - any of the values is not finite
+ *          - number of substrings in str does not match n
+ *
+ */
+bool String_toIntArray_l(const char* str, int* x, unsigned int n);
+
+/*! \ingroup RcsUtilsFunctions
  * \brief Creates a unique string with 12 characters. It contains the system
  *        time in microseconds, chopped off at 1e6 seconds. After this period
  *        there is a theoretic chance the function returns the same string

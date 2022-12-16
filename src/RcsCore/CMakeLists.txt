@@ -52,6 +52,7 @@ Rcs_utils.c
 Rcs_utilsCPP.cpp
 Rcs_Vec3d.c
 Rcs_VecNd.c
+Rcs_colladaParser.c
 SensorComponent.cpp
 SolverRAC.cpp
 TaskAngularMomentum3D.cpp

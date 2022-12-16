@@ -431,7 +431,6 @@ static bool test_meshify()
   Rcs::CmdLineParser argP;
   argP.getArgument("-f", xmlFileName, "Configuration file name");
   argP.getArgument("-dir", directory, "Configuration file directory");
-  argP.getArgument("-scale", &scale, "Scaling factor, default is %f", scale);
   argP.getArgument("-computeType", &computeType, "Compute type: 1 distance, "
                    "2 physics, 4 graphics, default is %d", computeType);
 
@@ -449,6 +448,24 @@ static bool test_meshify()
   RcsGraph_destroy(graph);
 
   return success;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool test_meshFromDAEFile()
+{
+    char xmlFileName[128] = "config/xml/DAEExample/visual/finger.dae";
+    char directory[128] = "config/xml/DAEExample/visual";
+    Rcs::CmdLineParser argP;
+
+    Rcs_addResourcePath(directory);
+    RcsMeshData* mesh = RcsMesh_createFromFile(xmlFileName);
+
+    showMesh(mesh);
+    RcsMesh_destroy(mesh);
+
+    return true;
 }
 
 /*******************************************************************************
@@ -1273,6 +1290,7 @@ int main(int argc, char** argv)
       printf("\t\t19   Test pyramid mesh\n");
       printf("\t\t20   Test frustum mesh\n");
       printf("\t\t21   Test dynamic shape resizing\n");
+      printf("\t\t22   Test create mesh from collada file\n");
       printf("\n");
       printf("\t\tYou can write the meshes to a file with -f\n");
       break;
@@ -1398,6 +1416,13 @@ int main(int argc, char** argv)
     {
       test_dynamicShapeResizing();
       break;
+    }
+
+    // todo: New Test to show mesh from Collada File
+    case 22:
+    {
+        test_meshFromDAEFile();
+        break;
     }
 
     default:
