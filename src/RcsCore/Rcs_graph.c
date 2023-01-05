@@ -3199,6 +3199,16 @@ bool RcsGraph_appendCopyOfGraph(RcsGraph* self, RcsBody* root,
       JNT->name = newName;
     }
 
+    // update coupledJointName TODO: is this correct to handle it at here?
+    RCSGRAPH_TRAVERSE_JOINTS(other)
+    {
+        if (JNT->coupledJointName && JNT->coupledTo)
+        {
+            RFREE(JNT->coupledJointName);
+            JNT->coupledJointName = String_clone(JNT->coupledTo->name);
+        }
+    }
+
     // Add the suffix to all sensors that come new into the graph
     RCSGRAPH_TRAVERSE_SENSORS(other)
     {
@@ -3725,4 +3735,149 @@ void RcsGraph_copyResizeableShapes(RcsGraph* dst, const RcsGraph* src,
     bDst = RcsBody_depthFirstTraversalGetNext(bDst);
   }
   while (bSrc && bDst);
+}
+
+/*******************************************************************************
+ * see header
+ ******************************************************************************/
+RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, RcsBody* target)
+{
+    if (!src)
+        return NULL;
+
+    RcsGraph* res = RALLOC(RcsGraph);
+    RCHECK(res);
+
+    res->root = NULL;
+
+    // add dummy root.
+    RcsBody* root = RALLOC(RcsBody);
+    root->name = String_clone("dummy_root_link");
+    root->A_BP = HTr_create();
+    root->A_BI = HTr_create();
+    root->Inertia = HTr_create();
+    HTr_setZero(root->Inertia);
+
+    RcsGraph_insertBody(res, NULL, root);
+    // TODO: what to do with generic bodies?
+
+    // RcsSensor, copy sensor begin with this targetBody ?
+
+    // copy body
+    RCSBODY_TRAVERSE_BODIES(target)
+    {
+        // Make a copy of the body
+        RcsBody* b = RALLOC(RcsBody);
+        RcsBody_copy(b, BODY);
+
+        // to which body does the new one needs to be attached?
+        RcsBody* parent = NULL;
+
+        if (BODY->parent != NULL && BODY != target)
+        {
+            parent = RcsGraph_getBodyByName(res, BODY->parent->name);
+        }
+        else if (target == BODY)
+        {
+            parent = res->root;
+        }
+
+        // insert body into graph, the resulting graph structure will be the same
+        // as in src
+        RcsGraph_insertBody(res, parent, b);
+
+        // Make a copy of all body joints and attach them to the body
+
+        // Determine the previous joint to which the body is connected. That's
+        // the relevant one for the backward chain connectivity
+        RcsJoint* prevJoint = RcsBody_lastJointBeforeBody(b->parent);
+
+        if (prevJoint != NULL)
+        {
+            prevJoint->next = NULL;
+        }
+
+        int nBdyJnts = 0;
+
+        if (target != BODY)
+        {
+            RCSBODY_TRAVERSE_JOINTS(BODY)
+            {
+                RcsJoint* j = RALLOC(RcsJoint);
+                RcsJoint_copy(j, JNT);
+
+                // Connect forward chain.
+                if ((nBdyJnts!=0) && (prevJoint!=NULL))
+                {
+                    prevJoint->next = j;
+                }
+
+                if (nBdyJnts == 0)
+                {
+                    b->jnt = j;
+                }
+
+                // Connect backward chain.
+                j->prev = prevJoint;
+                prevJoint = j;
+                nBdyJnts++;
+                RLOG(6, "Copying joint %s of body %s - next is %s",
+                     JNT->name, BODY->name,
+                     JNT->next ? JNT->next->name : "NULL");
+
+            }   // RCSBODY_TRAVERSE_JOINTS(BODY)
+        }
+
+        // Make a copy of all body shapes and attach them to the body
+        int nShapes = RcsBody_numShapes(BODY);
+        b->shape = RNALLOC(nShapes + 1, RcsShape*);
+        for (int i = 0; i < nShapes; i++)
+        {
+            b->shape[i] = RALLOC(RcsShape);
+            RcsShape_copy(b->shape[i], BODY->shape[i]);
+        }
+
+    }   // RCSGRAPH_TRAVERSE_BODIES(src)
+
+    // handling coupled joints. TODO: How to handle the coupled joints which couple to the joints outside of the subgraph?
+    RCSGRAPH_TRAVERSE_JOINTS(res)
+    {
+        char* jntName = JNT->name;
+        RcsJoint* jnt = RcsGraph_getJointByName(src, jntName);
+        JNT->coupledJointName = String_clone(jnt->coupledJointName);
+        JNT->coupledTo = RcsGraph_getJointByName(res, JNT->coupledJointName);
+        JNT->couplingFactors = MatNd_clone(jnt->couplingFactors);
+    }
+
+    // what to do with dof and nJ?
+    // joint values. just copy the joint values after the target Body.
+    // joint velocities same as joint values
+    RCSGRAPH_TRAVERSE_JOINTS(res)
+    {
+        JNT->jointIndex = res->dof;
+        res->dof++;
+
+        if (JNT->constrained == true)
+        {
+            JNT->jacobiIndex = -1;
+        }
+        else
+        {
+            JNT->jacobiIndex = res->nJ;
+            res->nJ++;
+        }
+    }
+
+    res->q = MatNd_create(res->dof, 1);
+    res->q_dot = MatNd_create(res->dof, 1);
+
+    int nErrors = 0, nWarnings = 0;
+    if (!RcsGraph_check(res, &nErrors, &nWarnings))
+    {
+        RMSG("extracted subgraph invalid, nErrors=%d, nWarnings=%d", nErrors, nWarnings);
+        RcsGraph_destroy(res);
+        res = NULL;
+    }
+
+    return res;
 }

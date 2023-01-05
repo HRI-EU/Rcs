@@ -664,6 +664,25 @@ void RcsGraph_setShapesResizeable(RcsGraph* self, bool resizeable);
 void RcsGraph_copyResizeableShapes(RcsGraph* dst, const RcsGraph* src,
                                    int level);
 
+/*! \ingroup RcsGraphFunctions
+ *  \brief make a deep copy of the subgraph starting from target body in the
+ *  src graph in depth-first order. And the copied target body will be attached
+ *  to a dummy base link with fix joint in the subgraph and the joints before
+ *  the target body will be ignored. The subgraph should not have any joint
+ *  coupling out of the subgraph. The joints in subgraph can only have coupled
+ *  joints inside the subgraph. The q vector and q_dot vector are 0 values and
+ *  they should be assigned values by user. The siblings for target body will
+ *  not be copied.
+ *  TODO: The sensors in the subgraph for now will not be copied. Should it be
+ *  useful?
+ *
+ *  \param[in] src      Valid pointer to graph.
+ *  \param[in] target   the target body is the starting point of
+ *
+ *  \return Pointer to copied subgraph, if sucess. Null on failure.
+ */
+RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, RcsBody* target);
+
 
 /**
  * @name Joints
