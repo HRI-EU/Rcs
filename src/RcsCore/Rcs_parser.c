@@ -703,12 +703,20 @@ bool getXMLNodePropertyQuat(xmlNodePtr node, const char* tag, double A_BI[3][3])
  ******************************************************************************/
 bool getXMLNodePropertyHTr(xmlNodePtr node, const char* tag, HTr* A)
 {
+  xmlChar* txt = xmlGetProp(node, (const xmlChar*) tag);
+
+  if (txt == NULL)
+  {
+    return false;
+  }
+
   double x[12];
   unsigned int nItems = getXMLNodeNumStrings(node, tag);
   bool success = getXMLNodePropertyVecN(node, tag, x, nItems);
 
   if (!success)
   {
+    RLOG(1, "Tried to parse %d items - should be 6 or 12", nItems);
     return false;
   }
 
@@ -730,6 +738,7 @@ bool getXMLNodePropertyHTr(xmlNodePtr node, const char* tag, HTr* A)
       break;
 
     default:
+      RFATAL("Tried to parse %d items - should be 6 or 12", nItems);
       success = false;
       break;
   }

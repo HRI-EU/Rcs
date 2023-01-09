@@ -495,11 +495,17 @@ double String_toDouble_l(const char* str)
 {
 #if defined (_MSC_VER)
   _locale_t tmpLocale = _create_locale(LC_NUMERIC, "C");
-  double val = _strtod_l(str, NULL, tmpLocale);
+  char* end = NULL;
+  double val = _strtod_l(str, &end, tmpLocale);
+  RCHECK_MSG((end!=str) && (*end=='\0') && (val!=HUGE_VAL),
+             "When parsing \"%s\"", str);
   _free_locale(tmpLocale);
 #else
   locale_t tmpLocale = newlocale(LC_NUMERIC_MASK, "C", NULL);
-  double val = strtod_l(str, NULL, tmpLocale);
+  char* end = NULL;
+  double val = strtod_l(str, &end, tmpLocale);
+  RCHECK_MSG((end!=str) && (*end=='\0') && (val!=HUGE_VAL),
+             "When parsing \"%s\"", str);
   freelocale(tmpLocale);
 #endif
 
@@ -529,9 +535,9 @@ bool String_toDoubleArray_l(const char* str, double* x_, unsigned int n)
     {
       double value = String_toDouble_l(buf);// locale-independent
 
-      if (!isfinite(value))
+      if (!isfinite(value) || isnan(value))
       {
-        RLOG(1, "Found non-finite value during parsing");
+        RLOG(1, "Found invalid value during parsing: \"%s\" (from \"%s\")", pch, str);
         RFREE(tmp);
         return false;
       }
