@@ -1,25 +1,3 @@
-################################################################################
-#
-# Settings for finding files and directories
-#
-################################################################################
-
-#string (REPLACE "\\" "/" HGR "$ENV{SIT}")
-#string (REPLACE "\\" "/" MKPLT "$ENV{MAKEFILE_PLATFORM}")
-
-################################################################################
-#
-# Settings for bullet physics
-#
-################################################################################
-#IF(UNIX)
-#  SET(BT_LIB_PREFIX "lib")
-#  SET(BT_LIB_SUFFIX "so")
-#ELSEIF(WIN32)
-#  SET(BT_LIB_PREFIX "")
-#  SET(BT_LIB_SUFFIX "lib")
-#ENDIF()
-
 ##############################################################################
 # Bullet 2.83 double version
 ##############################################################################
@@ -81,50 +59,3 @@ ELSEIF(USE_BULLET STREQUAL 3.21_double)
   SET(BULLET_DEFINITIONS -DUSE_BULLET -DBT_USE_DOUBLE_PRECISION)
 
 ENDIF()
-
-################################################################################
-#
-# Settings for qwt
-#
-################################################################################
-#IF(NOT HEADLESS_BUILD)
-
-  #IF(WIN32)
-
-    #FIND_PACKAGE(Qwt REQUIRED)
-    #FIND_PACKAGE(Qwt REQUIRED HINTS "C:/Users/Win10/Documents/Software/Repos/vcpkg/installed/x64-windows-release")
-      
-    #IF (NOT MSVC_VERSION VERSION_LESS 1900)
-      
-      ##SET(QWT_INCLUDE_DIRS ${HGR}/External/qwt/6.1.3/include)
-	  #SET(QWT_INCLUDE_DIRS C:/Users/Win10/Documents/Software/Repos/vcpkg/installed/x64-windows-release/include/qwt)
-      ##SET(QWT_LIBRARY_DIR ${HGR}/External/qwt/6.1.3/lib/${MKPLT})
-      #SET(QWT_LIBRARY_DIR C:/Users/Win10/Documents/Software/Repos/vcpkg/installed/x64-windows-release/lib)
-      #SET(QWT_MAJOR_VERSION 6)
-
-      #ADD_LIBRARY(libqwt STATIC IMPORTED)
-      #SET_PROPERTY(TARGET libqwt PROPERTY IMPORTED_LOCATION ${QWT_LIBRARY_DIR}/qwt.lib)
-      #SET_PROPERTY(TARGET libqwt PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${QWT_INCLUDE_DIRS})
-      #SET(QWT_LIBRARIES libqwt)
-      
-    #ELSE()
-      
-      #SET(QWT_INCLUDE_DIRS ${HGR}/External/qwt/5.2/include)
-      #SET(QWT_INCLUDE_DIR ${HGR}/External/qwt/5.2/include)
-      #SET(QWT_LIBRARY_DIR ${HGR}/External/qwt/5.2/lib/${MKPLT})
-      #SET(QWT_MAJOR_VERSION 5)
-      
-      #ADD_LIBRARY(libqwt STATIC IMPORTED)
-      #SET_PROPERTY(TARGET libqwt PROPERTY IMPORTED_LOCATION ${QWT_LIBRARY_DIR}/qwt5${RCS_DEBUG_SUFFIX}.lib)
-      #SET_PROPERTY(TARGET libqwt PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${HGR}/External/qwt/5.2/include)
-      #SET(QWT_LIBRARIES libqwt)
-
-    #ENDIF()
-
- # ELSE(WIN32)
-
-  #  FIND_PACKAGE(Qwt REQUIRED)
-
- # ENDIF(WIN32)
-
-#ENDIF(NOT HEADLESS_BUILD)
