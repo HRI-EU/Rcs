@@ -717,6 +717,7 @@ bool getXMLNodePropertyHTr(xmlNodePtr node, const char* tag, HTr* A)
   if (!success)
   {
     RLOG(1, "Tried to parse %d items - should be 6 or 12", nItems);
+    xmlFree(txt);
     return false;
   }
 
@@ -742,6 +743,8 @@ bool getXMLNodePropertyHTr(xmlNodePtr node, const char* tag, HTr* A)
       success = false;
       break;
   }
+
+  xmlFree(txt);
 
   return success;
 }

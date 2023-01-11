@@ -2038,6 +2038,7 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
   // create them here, since in the RcsJoint data structure a pointer will
   // point to the self->q values.
   self->q = MatNd_create(0, 1);
+  self->q_dot = MatNd_create(0, 1);
 
   // Recurse through bodies
   HTr A_rel;
@@ -2060,7 +2061,8 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
 
   // Create velocity vector. It is done here since self->dof has been
   // computed during parsing.
-  self->q_dot = MatNd_create(self->dof, 1);
+  /* self->q_dot = MatNd_create(self->dof, 1); */
+  /* RCHECK(self->q_dot); */
 
   // Re-order joint indices to match depth-first traversal, and connect coupled
   // joints

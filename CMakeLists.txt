@@ -226,7 +226,11 @@ ADD_SUBDIRECTORY (doc)
 #
 ################################################################################
 IF(UNIX)
-  SET(TEST_EXE_DIR "${EXECUTABLE_OUTPUT_PATH}")
+  IF(DEFINED "${EXECUTABLE_OUTPUT_PATH}")
+    SET(TEST_EXE_DIR "${EXECUTABLE_OUTPUT_PATH}")
+  ELSE()
+    SET(TEST_EXE_DIR "${PROJECT_BINARY_DIR}/bin")
+  ENDIF()
   SET(TESTSCRIPT_NAME "${TEST_EXE_DIR}/rcs_unittest.sh")
 ELSEIF(WIN32)
   SET(TEST_EXE_DIR "${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}")
