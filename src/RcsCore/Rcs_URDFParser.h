@@ -66,7 +66,8 @@ RcsBody* RcsGraph_rootBodyFromURDFFile(const char* configFile,
 /*! \brief Creates a complete RcsGraph given the configuration file. The file
  *         is searched in the resource path. There is no assumption on the
  *         name of the configFile, however it is expected to be a valid urdf
- *         description file.
+ *         description file. Note: the transmission tag in the urdf will be
+ *         ignored. We do not use it in the Rcs.
  *
  *  \param[in] configFile   Full path of URDF configuration file. If it cannot
  *                          be accessed, NULL is returned, and a warning is
