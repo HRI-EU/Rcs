@@ -2846,6 +2846,25 @@ static bool setWildMagicDistanceFunctions()
 {
   bool success = true;
 
+  // TORUS - shapes
+  success = RcsShape_setDistanceFunction(RCSSHAPE_TORUS, RCSSHAPE_SSL,
+                                         RcsShape_closestTorusToSSL) && success;
+  success = RcsShape_setDistanceFunction(RCSSHAPE_TORUS, RCSSHAPE_SPHERE,
+                                         RcsShape_closestTorusToSphere) && success;
+  success = RcsShape_setDistanceFunction(RCSSHAPE_TORUS, RCSSHAPE_TORUS,
+                                         RcsShape_closestTorusToTorus) && success;
+  success = RcsShape_setDistanceFunction(RCSSHAPE_TORUS, RCSSHAPE_POINT,
+                                         RcsShape_closestTorusToPoint) && success;
+
+  // shapes - TORUS
+  success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_TORUS,
+                                         RcsShape_closestSSLToTorus) && success;
+  success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_TORUS,
+                                         RcsShape_closestSphereToTorus) && success;
+  success = RcsShape_setDistanceFunction(RCSSHAPE_POINT, RCSSHAPE_TORUS,
+                                         RcsShape_closestPointToTorus) && success;
+
+  // We return here, since the Bullet distance functions can also
   return success;
 
   // SSL
@@ -2864,8 +2883,6 @@ static bool setWildMagicDistanceFunctions()
   //          && success;
   //success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_CONE,
   //                                       RcsShape_closestSSLToCone) && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_SSL, RCSSHAPE_TORUS,
-                                         RcsShape_closestSSLToTorus) && success;
 
   // SSR
   success = RcsShape_setDistanceFunction(RCSSHAPE_SSR, RCSSHAPE_SSL,
@@ -2910,8 +2927,6 @@ static bool setWildMagicDistanceFunctions()
   //success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_CONE,
   //                                       RcsShape_closestSphereToCone)
   //          && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_SPHERE, RCSSHAPE_TORUS,
-                                         RcsShape_closestSphereToTorus) && success;
 
   // CONE
   //success = RcsShape_setDistanceFunction(RCSSHAPE_CONE, RCSSHAPE_SSL,
@@ -2922,16 +2937,6 @@ static bool setWildMagicDistanceFunctions()
   //success = RcsShape_setDistanceFunction(RCSSHAPE_CONE, RCSSHAPE_POINT,
   //                                       RcsShape_closestConeToSphere)
   //          && success;
-
-  // TORUS
-  success = RcsShape_setDistanceFunction(RCSSHAPE_TORUS, RCSSHAPE_SSL,
-                                         RcsShape_closestTorusToSSL) && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_TORUS, RCSSHAPE_SPHERE,
-                                         RcsShape_closestTorusToSphere) && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_TORUS, RCSSHAPE_TORUS,
-                                         RcsShape_closestTorusToTorus) && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_TORUS, RCSSHAPE_POINT,
-                                         RcsShape_closestTorusToPoint) && success;
 
   // Point
   //if (RcsShape_getDistanceFunction(RCSSHAPE_POINT, RCSSHAPE_SSR)==NULL)
@@ -2946,8 +2951,6 @@ static bool setWildMagicDistanceFunctions()
   //success = RcsShape_setDistanceFunction(RCSSHAPE_POINT, RCSSHAPE_CONE,
   //                                       RcsShape_closestSphereToCone)
   //          && success;
-  success = RcsShape_setDistanceFunction(RCSSHAPE_POINT, RCSSHAPE_TORUS,
-                                         RcsShape_closestPointToTorus) && success;
 
   NLOG(5, "%s WM5 distance functions",
        success ? "SUCCESFULLY added" : "FAILED to add");

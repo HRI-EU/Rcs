@@ -557,8 +557,6 @@ static bool setBulletDistanceFunctions()
                                          RcsShape_distanceBullet) && success;
   success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_TORUS,
                                          RcsShape_distanceShapeTorus) && success;
-  //success = RcsShape_setDistanceFunction(RCSSHAPE_BOX, RCSSHAPE_POINT,
-  //                                       RcsShape_distanceBullet) && success;
 
   // CYLINDER
   success = RcsShape_setDistanceFunction(RCSSHAPE_CYLINDER, RCSSHAPE_MESH,
@@ -615,8 +613,6 @@ static bool setBulletDistanceFunctions()
   // POINT
   success = RcsShape_setDistanceFunction(RCSSHAPE_POINT, RCSSHAPE_MESH,
                                          RcsShape_distanceBullet) && success;
-  //success = RcsShape_setDistanceFunction(RCSSHAPE_POINT, RCSSHAPE_BOX,
-  //                                       RcsShape_distanceBullet) && success;
 
 
   RLOG(5, "%s Bullet distance functions",
