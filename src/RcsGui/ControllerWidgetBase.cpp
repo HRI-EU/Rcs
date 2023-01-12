@@ -74,9 +74,9 @@ ControllerGui::ControllerGui(ControllerBase* cntrl_,
   x_des(x_des_), x_curr(x_curr_), lock(lock_),
   showOnly(showOnly_)
 {
-  RLOG(0, "Before launch");
+  RLOG(5, "Before launch");
   launch();
-  RLOG(0, "After launch");
+  RLOG(5, "After launch");
 }
 
 void ControllerGui::construct()

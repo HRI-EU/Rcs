@@ -190,8 +190,8 @@ void* MujocoDebugWindow::threadFuncPosix(void* param)
   mjr_defaultContext(&winData->con);
 
   // Adjust line settings for visualization
-  winData->m->vis.scale.framelength *= 0.5;
-  winData->m->vis.scale.framewidth *= 0.1;
+  winData->m->vis.scale.framelength *= 0.5f;
+  winData->m->vis.scale.framewidth *= 0.1f;
 
   // create scene and context
   mjv_makeScene(winData->m, &winData->scn, 2000);
