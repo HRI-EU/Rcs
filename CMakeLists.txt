@@ -1,8 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.4)
 SET(BST_INSTALL_CATEGORY Libraries) 
 
-PROJECT(Rcs)
-
 STRING (REPLACE "\\" "/" HGR "$ENV{SIT}")
 STRING (REPLACE "\\" "/" MKPLT "$ENV{MAKEFILE_PLATFORM}")
 
@@ -10,11 +8,12 @@ STRING (REPLACE "\\" "/" MKPLT "$ENV{MAKEFILE_PLATFORM}")
 # Check if project is stand-alone or inside tree with dependencies
 ################################################################################
 IF(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  MESSAGE(STATUS "Compiling Rcs as stand-alone project")
+  PROJECT(Rcs)
   IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     SET(CMAKE_INSTALL_PREFIX "$ENV{SIT}/Libraries/Rcs/1.0" CACHE PATH "Default sand box directory" FORCE)
   ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   
-  MESSAGE(STATUS "Compiling Rcs as stand-alone project")
   STRING(LENGTH "${CMAKE_SOURCE_DIR}/" RCS_BASE_PATH_LENGTH)
   ADD_DEFINITIONS("-DRCS_BASE_PATH_LENGTH=${RCS_BASE_PATH_LENGTH}")
 ENDIF()
@@ -31,7 +30,7 @@ ENDIF (NOT CMAKE_BUILD_TYPE)
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
-LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 SITE_NAME(HOSTNAME)
 
 MESSAGE(STATUS "Using cmake ${CMAKE_VERSION}")
@@ -138,7 +137,7 @@ ENDIF()
 # Dependency settings and compile settings. These must go after Externals.cmake
 #
 ################################################################################
-INCLUDE(Externals)
+#INCLUDE(Externals)
 
 IF (WIN32)
   ADD_DEFINITIONS(-D_USE_MATH_DEFINES)   # M_PI etc. for windows
