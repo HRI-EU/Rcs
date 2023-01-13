@@ -193,6 +193,7 @@ RcsBody* RcsBody_getLastLeaf(const RcsGraph* graph, const RcsBody* b);
  *         depth-first traversal.
  */
 RcsBody* RcsGraph_getRootBody(const RcsGraph* self);
+
 /*! \ingroup RcsGraphTraversalFunctions
  *  \brief Depth-first traversal through all bodies of the graph, starting
  *         from the root body. The bodies can be accessed with variable
@@ -218,11 +219,12 @@ RcsBody* RcsGraph_getRootBody(const RcsGraph* self);
  *         except that the body argument itself will not be traversed, but
  *         only its children.
  */
-#define RCSBODY_TRAVERSE_CHILD_BODIES(graph, body)                             \
-  for (RcsBody* BODY = RcsBody_depthFirstTraversalGetNextById((graph), (body)),\
-       *LAST_LEAF = RcsBody_getLastLeaf((graph), BODY),                        \
-       *LAST = RcsBody_depthFirstTraversalGetNextById((graph), LAST_LEAF);     \
-       BODY && BODY != LAST;                                                   \
+#define RCSBODY_TRAVERSE_CHILD_BODIES(graph, bdy)                              \
+  for (RcsBody* BODY = RcsBody_depthFirstTraversalGetNextById((graph), (bdy)), \
+       *LAST_LEAF = RcsBody_getLastLeaf((graph), (bdy)),                       \
+       *END_LEAF = RcsBody_depthFirstTraversalGetNextById((graph), LAST_LEAF), \
+       *END_BODY = END_LEAF ? END_LEAF : LAST_LEAF;                            \
+       BODY && BODY != END_BODY;                                               \
        BODY = RcsBody_depthFirstTraversalGetNextById((graph), BODY))
 
 /*! \ingroup RcsGraphTraversalFunctions
