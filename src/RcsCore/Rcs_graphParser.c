@@ -1176,7 +1176,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
                                       xmlNode* bdyNode,
                                       const char* defaultColor,
                                       const char* suffix,
-                                      const char* parentGroup,
+                                      xmlNodePtr parentGroupNode,
                                       HTr* A_group,
                                       bool firstInGroup,
                                       int level,
@@ -1206,8 +1206,8 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
                "The name \"GenericBody\" is reserved for internal use");
   }
 
-  //RLOG(0, "Body %s: firstInGroup is %s",
-  //     name, firstInGroup ? "TRUE" : "FALSE");
+  RLOG(5, "Body %s: firstInGroup is %s",
+       name, firstInGroup ? "TRUE" : "FALSE");
 
   char msg[RCS_MAX_NAMELEN] = "";
   RcsBody* parentBdy = root;
@@ -1239,6 +1239,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
     }
   }
 
+
   // Get the body with the given parent-id from the graph's body array. The
   // RcsGraph_insertGraphBody() method already connects it.
   RLOG(5, "Adding %s with parent %s (%s)",
@@ -1254,6 +1255,41 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   snprintf(b->bdyXmlName, RCS_MAX_NAMELEN, "%s", name);
   snprintf(b->bdySuffix, RCS_MAX_NAMELEN, "%s", suffix);
   snprintf(b->name, RCS_MAX_NAMELEN, "%s%s", name, suffix);
+
+
+  // Check if we found a first body in the group whose including group has
+  // rigid_body_joints defined. In this case, we create the rigid body joints
+  // according to the parent group's description.
+  xmlNodePtr rbjNode = NULL;
+  bool hasGroupRBJTag = false;
+  double q_rbj[12];
+  VecNd_setZero(q_rbj, 12);
+
+  if (firstInGroup)
+  {
+    RLOG(5, "First group body \"%s\" is first one in a group with parent \"%s\"",
+         name, parentBdy ? parentBdy->name : "NULL");
+
+    if (parentBdy)
+    {
+      hasGroupRBJTag = getXMLNodeProperty(parentGroupNode, "rigid_body_joints");
+
+      REXEC(5)
+      {
+        char tmp[RCS_MAX_NAMELEN] = "";
+        getXMLNodePropertyStringN(parentGroupNode, "name", tmp, RCS_MAX_NAMELEN);
+        RMSG("Body in group \"%s\": %s rigid_body_joints tag",
+             tmp, hasGroupRBJTag ? "Found" : "Did not find");
+      }
+
+      if (hasGroupRBJTag)
+      {
+        RLOG(5, "Assigning rbjNode to parentGroupNode");
+        rbjNode = parentGroupNode;
+      }
+    }
+  }
+
 
   // Relative vector from prev. body to body (in prev. body coords)
   // It is only created if the XML file transform is not the identity matrix.
@@ -1302,31 +1338,40 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   // by six joints which can be set by sensor information or physics
   int nJoints = 0;
   bool hasRBJTag = getXMLNodeProperty(bdyNode, "rigid_body_joints");
-  double q_rbj[12];
-  VecNd_setZero(q_rbj, 12);
+  if (hasRBJTag && rbjNode)
+  {
+    RFATAL("Body \"%s\" has rigid body joints defined both in the body as well"
+           " as in the including group", b->name);
+  }
 
-  if (hasRBJTag == true)
+  // If the rigid body joint comes from the parent group, we prefer this one.
+  if (!rbjNode && hasRBJTag)
+  {
+    rbjNode = bdyNode;
+  }
+
+  if (rbjNode)
   {
     b->rigid_body_joints = true;
     nJoints = 6;
-    unsigned int nStr = getXMLNodeNumStrings(bdyNode, "rigid_body_joints");
+    unsigned int nStr = getXMLNodeNumStrings(rbjNode, "rigid_body_joints");
 
     switch (nStr)
     {
       case 1:
-        getXMLNodePropertyBoolString(bdyNode, "rigid_body_joints",
+        getXMLNodePropertyBoolString(rbjNode, "rigid_body_joints",
                                      &b->rigid_body_joints);
         break;
 
       case 6:
-        getXMLNodePropertyVecN(bdyNode, "rigid_body_joints", q_rbj, 6);
+        getXMLNodePropertyVecN(rbjNode, "rigid_body_joints", q_rbj, 6);
 
         // convert Euler angles from degrees to radians
         Vec3d_constMulSelf(&q_rbj[3], M_PI / 180.0);
         break;
 
       case 12:
-        getXMLNodePropertyVecN(bdyNode, "rigid_body_joints", q_rbj, 12);
+        getXMLNodePropertyVecN(rbjNode, "rigid_body_joints", q_rbj, 12);
 
         // convert Euler angles from degrees to radians
         Vec3d_constMulSelf(&q_rbj[3], M_PI / 180.0);
@@ -1493,7 +1538,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
                                  RcsGraph* self,
                                  const char* gCol,
                                  const char* suffix,
-                                 const char* parentGroup,
+                                 xmlNodePtr parentGroupNode,
                                  HTr* A,
                                  bool firstInGroup,
                                  int level,
@@ -1546,7 +1591,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     }
 
     RcsGraph_parseBodies(node->children, self, gCol, suffix,
-                         parentGroup, A, firstInGroup, level, rootId, verbose);
+                         parentGroupNode, A, firstInGroup, level, rootId, verbose);
 
     // After we parsed the children of the graph, the graph has been
     // initialized: We reset the firstInGroup flag. This will lead to
@@ -1555,7 +1600,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     RLOG(9, "Ascending from Graph node - firstInGroup is false");
     firstInGroup = false;
     RcsGraph_parseBodies(node->next, self, gCol, suffix,
-                         parentGroup, A, firstInGroup, level, rootId, verbose);
+                         parentGroupNode, A, firstInGroup, level, rootId, verbose);
 
     // Then we look for the generic bodies and link them accordingly
     for (int i = 0; i < 10; i++)
@@ -1643,7 +1688,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     }
 
     RcsGraph_parseBodies(node->children, self, col, ndExt,
-                         pGroupSuffix, &A_group, true, level, rootId,
+                         node, &A_group, true, level, rootId,
                          verbose);
 
     RLOG(9, "[Level %d -> %d]: back from group \"%s\"", level, level - 1, tmp);
@@ -1654,7 +1699,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     strcpy(ndExt, suffix);
 
     RcsGraph_parseBodies(node->next, self, gCol, ndExt,
-                         parentGroup, A, firstInGroup, level, rootId, verbose);
+                         node, A, firstInGroup, level, rootId, verbose);
   }
 
 
@@ -1712,7 +1757,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     RFREE(q0);
 
     RcsGraph_parseBodies(node->next, self, gCol, suffix,
-                         parentGroup, A, firstInGroup, level, rootId, verbose);
+                         parentGroupNode, A, firstInGroup, level, rootId, verbose);
   }
 
 
@@ -1858,7 +1903,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     }
 
     RcsGraph_parseBodies(node->next, self, gCol, suffix,
-                         parentGroup, A, firstInGroup, level, rootId, verbose);
+                         parentGroupNode, A, firstInGroup, level, rootId, verbose);
   }
 
 
@@ -1875,7 +1920,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     RLOG(19, "Creating new body with root[%d] \"%s\"", level,
          (level > 0) ? RCSBODY_NAME_BY_ID(self, rootId[level]) : "NULL");
 
-    RcsBody* nr = RcsBody_createFromXML(self, node, gCol, suffix, parentGroup,
+    RcsBody* nr = RcsBody_createFromXML(self, node, gCol, suffix, parentGroupNode,
                                         A, firstInGroup, level, rootId[level],
                                         verbose);
 
@@ -1893,7 +1938,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     }
 #endif
     RcsGraph_parseBodies(node->next, self, gCol, suffix,
-                         parentGroup, A, firstInGroup, level, rootId, verbose);
+                         parentGroupNode, A, firstInGroup, level, rootId, verbose);
 
     RLOG(19, "Falling back - root[%d] \"%s\"",
          level, RCSBODY_NAME_BY_ID(self, rootId[level]));
@@ -2056,13 +2101,8 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
   }
 
   // Recursively assemble all bodies, joints and shapes.
-  RcsGraph_parseBodies(node, self, "DEFAULT", "", "",
+  RcsGraph_parseBodies(node, self, "DEFAULT", "", NULL,
                        &A_rel, false, 0, rootId, false);
-
-  // Create velocity vector. It is done here since self->dof has been
-  // computed during parsing.
-  /* self->q_dot = MatNd_create(self->dof, 1); */
-  /* RCHECK(self->q_dot); */
 
   // Re-order joint indices to match depth-first traversal, and connect coupled
   // joints
