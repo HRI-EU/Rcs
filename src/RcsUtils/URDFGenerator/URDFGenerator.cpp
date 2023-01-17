@@ -439,6 +439,12 @@ void Rcs::URDFGenerator::handlingRigidBodyJoint(URDFElement* robot, RcsBody* bod
 
 void URDFGenerator::handlingCollision(RcsBody* body, URDFElement* link)
 {
+    if (!body->shape)
+    {
+        RLOG(0, "body has no shape, bodyName: %s", body->name);
+        return;
+    }
+
     const std::string tag = "collision";
     RCSBODY_TRAVERSE_SHAPES(body)
     {
@@ -482,6 +488,12 @@ void URDFGenerator::handlingCollision(RcsBody* body, URDFElement* link)
 
 void URDFGenerator::handlingVisual(RcsBody* body, URDFElement* link)
 {
+    if (!body->shape)
+    {
+        RLOG(0, "body has no shape, bodyName: %s", body->name);
+        return;
+    }
+
     const std::string tag = "visual";
     RCSBODY_TRAVERSE_SHAPES(body)
     {
@@ -518,7 +530,6 @@ void URDFGenerator::handlingVisual(RcsBody* body, URDFElement* link)
                 RLOG(0, "ShapeType=%d, can not be exported.", SHAPE->type);
             }
         }
-
     }
 }
 
