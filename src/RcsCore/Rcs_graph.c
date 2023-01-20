@@ -1276,7 +1276,9 @@ RcsBody* RcsGraph_getBodyByTruncatedName(const RcsGraph* self, const char* name)
  ******************************************************************************/
 RcsBody* RcsGraph_getRootBody(const RcsGraph* self)
 {
-  return RCSBODY_BY_ID(self, self->rootId);
+  RcsBody* rootBdy = RCSBODY_BY_ID(self, self->rootId);
+  RCHECK(rootBdy);
+  return rootBdy;
 }
 
 /*******************************************************************************

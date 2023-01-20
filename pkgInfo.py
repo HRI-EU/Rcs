@@ -35,14 +35,17 @@ category = "Libraries"
 
 sqLevel = "basic"
 
-SQ_12 = [ 'build/${MAKEFILE_PLATFORM}/bin/TestMath -m -1 -numTests 10 -dl 1',
-          'build/${MAKEFILE_PLATFORM}/bin/Rcs -m 3 -iter 10 -dl 1 -valgrind',
-          'build/${MAKEFILE_PLATFORM}/bin/Rcs -m 6 -valgrind -nTests 10 -dl 1']
+SQ_12 = [ 'build/"${MAKEFILE_PLATFORM}"/bin/TestMath -m -1 -numTests 10 -dl 1',
+          'build/"${MAKEFILE_PLATFORM}"/bin/Rcs -m 3 -iter 10 -dl 1 -valgrind',
+          'build/"${MAKEFILE_PLATFORM}"/bin/Rcs -m 6 -valgrind -nTests 10 -dl 1']
 
-copyright        = { '.': 'Copyright (c) 2017, Honda Research Institute Europe GmbH',
-                     './src/RcsCore/SegFaultHandler.h': 'This code is in the public domain.' }
+copyright        = { '.': 'Copyright (c) ',
+                     './src/RcsCore/SegFaultHandler.h': 'This code is in the public domain.',
+                     './src/RcsCore/EulerAngles.h': 'This code comes from',
+                     './src/RcsCore/EulerAngles.c': 'This code comes from',
+                     './src/RcsPhysics/MujocoDebugWindow.cpp': 'Copyright 2021 DeepMind Technologies Limited' }
 
-gitOriginForCIA  = 'git@dmz-gitlab.honda-ri.de:GenRob/Rcs.git'
+gitOriginForCIA  = 'git@dmz-gitlab.honda-ri.de:Robotics/Rcs.git'
 
 gitBranchForCIA = 'develop'
 

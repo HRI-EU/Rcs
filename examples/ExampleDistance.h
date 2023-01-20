@@ -82,6 +82,12 @@ protected:
   Rcs::Viewer* viewer;
   osg::ref_ptr<HUD> hud;
   osg::ref_ptr<KeyCatcher> kc;
+
+private:
+
+  // Disallow copying and assigning to avoid double free errors.
+  ExampleDistance& operator=(const ExampleDistance&);
+  ExampleDistance(const ExampleDistance&);
 };
 
 

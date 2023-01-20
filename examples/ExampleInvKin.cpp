@@ -259,6 +259,7 @@ bool ExampleIK::initAlgo()
     Rcs::ControllerBase tmp(*controller);
     *controller = tmp;
     tmp.toXML("CopiedController.xml");
+    RCHECK(controller->getGraph());
   }
 
   if (initToQ0)
@@ -879,6 +880,7 @@ void ExampleIK::handleKeys()
   }
   else if (kc->getAndResetKey('p'))
   {
+    std::cout << help();
     controller->print();
     controller->toXML("cAction.xml");
   }

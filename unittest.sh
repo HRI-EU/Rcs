@@ -29,35 +29,37 @@
 #  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+set -euo pipefail
+
 function testMath()
 {
-    build/$MAKEFILE_PLATFORM/bin/$MAKEFILE_PLATFORM/TestMath -m -1 -numTests 10 -dl 1 &> UnitTestResults.txt
+    build/"${MAKEFILE_PLATFORM}"/bin/TestMath -m -1 -numTests 10 -dl 1 &> UnitTestResults.txt
     testMathResult=$?
 }
 
 function testGraph()
 {
-    build/$MAKEFILE_PLATFORM/bin/$MAKEFILE_PLATFORM/Rcs -m 3 -iter 10 -dl 1 -valgrind &>> UnitTestResults.txt
+    build/"${MAKEFILE_PLATFORM}"/bin/Rcs -m 3 -iter 10 -dl 1 -valgrind &>> UnitTestResults.txt
     testGraphResult=$?
 }
 
 function testController()
 {
-    build/$MAKEFILE_PLATFORM/bin/$MAKEFILE_PLATFORM/Rcs -m 6 -valgrind -nTests 10 -dl 1 &>> UnitTestResults.txt
+    build/"${MAKEFILE_PLATFORM}"/bin/Rcs -m 6 -valgrind -nTests 10 -dl 1 &>> UnitTestResults.txt
     testControllerResult=$?
 }
 
 echo -n "Testing mathematics functions ... "
 testMath
 
-if [ $testMathResult -eq 0 ]
+if [ "${testMathResult}" -eq 0 ]
 then
   echo "succeeded"
-elif [ $testMathResult -eq 255 ]
+elif [ "${testMathResult}" -eq 255 ]
 then
   echo "failed with more than 255 errors"
 else
-  echo "failed with $testMathResult errors" 
+  echo "failed with ${testMathResult} errors" 
 fi
 
 
@@ -65,14 +67,14 @@ fi
 echo -n "Testing graph functions       ... "
 testGraph
 
-if [ $testGraphResult -eq 0 ]
+if [ "${testGraphResult}" -eq 0 ]
 then
   echo "succeeded"
-elif [ $testGraphResult -eq 255 ]
+elif [ "${testGraphResult}" -eq 255 ]
 then
   echo "failed with more than 255 errors"
 else
-  echo "failed with $testGraphResult errors" 
+  echo "failed with ${testGraphResult} errors" 
 fi
 
 
@@ -80,13 +82,12 @@ fi
 echo -n "Testing controller functions  ... "
 testController
 
-if [ $testControllerResult -eq 0 ]
+if [ "${testControllerResult}" -eq 0 ]
 then
   echo "succeeded"
-elif [ $testControllerResult -eq 255 ]
+elif [ "${testControllerResult}" -eq 255 ]
 then
   echo "failed with more than 255 errors"
 else
-  echo "failed with $testControllerResult errors" 
+  echo "failed with ${testControllerResult} errors" 
 fi
-

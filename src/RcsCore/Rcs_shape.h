@@ -141,7 +141,7 @@ RcsMeshData* RcsShape_createMesh(const RcsShape* self);
  *         RcsShape_clearComputeType(shape, RCSSHAPE_COMPUTE_DISTANCE)
  *         deactivates the distance computation of the shape.
  */
-void RcsShape_setComputeType(RcsShape* shape, char computeType, bool enable);
+void RcsShape_setComputeType(RcsShape* shape, int computeType, bool enable);
 
 /*! \ingroup RcsShapeFunctions
  *  \brief Returns true if the compute type is set, false otherwise.

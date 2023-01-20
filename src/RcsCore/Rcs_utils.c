@@ -413,6 +413,7 @@ unsigned int String_countSubStrings(const char* str, const char* delim)
 /*******************************************************************************
  *
  ******************************************************************************/
+#if 0
 static char* String_expandMacros_(char* str)
 {
   const char* p = str;
@@ -481,11 +482,103 @@ static char* String_expandMacros_(char* str)
   return str;
 }
 
-char* String_expandEnvironmentVariables(const char* str)
+char* String_expandEnvironmentVariables2(const char* str)
 {
   char* copyOfString = String_clone(str);
   RCHECK(copyOfString);
   return String_expandMacros_(copyOfString);
+}
+#endif
+
+//#define ENV_DBG
+char* String_expandMacros2_(char* line)
+{
+  // Find the first occurrence of "${" in the string
+  char* varStart = strstr(line, "${");
+  if (varStart == NULL)
+  {
+    RLOG(5, "Error: No environment variable found in the string \"%s\"\n", line);
+    return NULL;
+  }
+
+  // Find the end of the environment variable by searching for the "}" character
+  char* varEnd = strstr(varStart, "}");
+  if (varEnd == NULL || varEnd < varStart+2)
+  {
+    RLOG(1, "Error: Malformed environment variable in the string \"%s\"", line);
+    return NULL;
+  }
+
+  // Extract the name of the environment variable
+  char envVar[512];
+  size_t varLength = varEnd - varStart - 2;
+  strncpy(envVar, varStart + 2, varLength);
+  envVar[varLength] = '\0';
+
+  // Get the value of the environment variable
+  const char* value = String_getEnv(envVar);
+  if (value == NULL)
+  {
+    RLOG(1, "Environment variable \"%s\" not found in environment", envVar);
+    return NULL;
+  }
+
+#ifdef ENV_DBG
+  printf("envVar='%s'\n", envVar);
+  printf("value='%s'\n", value);
+  printf("start index = %zu\n", varStart - line);
+  printf("end index = %zu\n", varEnd - line);
+#endif
+
+  char resolved[512];
+  int firstLen = varStart - line;
+  char* end = line + strlen(line);
+  char* cursor = resolved;
+  memcpy(cursor, line, firstLen);   // That's everything up to "${"
+
+#ifdef ENV_DBG
+  cursor[firstLen] = '\0';
+  printf("first = '%s'\n", cursor);
+#endif
+
+  cursor += firstLen;
+  memcpy(cursor, value, strlen(value));   // That's the environment variable
+
+#ifdef ENV_DBG
+  cursor[strlen(value)] = '\0';
+  printf("second = '%s'\n", cursor);
+#endif
+
+  cursor += strlen(value);
+  memcpy(cursor, varEnd+1, end-varEnd-2*0); // That's everything after "}" including the '\0'
+#ifdef ENV_DBG
+  cursor[end-varEnd-2*0] = '\0';
+  printf("third = '%s' len=%ld\n", cursor, end-varEnd-2*0);
+  cursor += end-varEnd-2;
+  //*cursor = '\0';
+  printf("resolved = '%s'\n", resolved);
+#endif
+
+  strcpy(line, resolved);
+
+  return line;
+}
+
+
+char* String_expandEnvironmentVariables(const char* str)
+{
+  char* copyOfString = RNALLOC(512, char);
+  RCHECK(copyOfString);
+  strcpy(copyOfString, str);
+
+  char* res = NULL;
+  do
+  {
+    res = String_expandMacros2_(copyOfString);
+  }
+  while (res);
+
+  return copyOfString;
 }
 
 /*******************************************************************************
@@ -504,6 +597,30 @@ double String_toDouble_l(const char* str)
   locale_t tmpLocale = newlocale(LC_NUMERIC_MASK, "C", NULL);
   char* end = NULL;
   double val = strtod_l(str, &end, tmpLocale);
+  RCHECK_MSG((end!=str) && (*end=='\0') && (val!=HUGE_VAL),
+             "When parsing \"%s\"", str);
+  freelocale(tmpLocale);
+#endif
+
+  return val;
+}
+
+/*******************************************************************************
+*
+ ******************************************************************************/
+long int String_toLong_l(const char* str)
+{
+#if defined (_MSC_VER)
+  _locale_t tmpLocale = _create_locale(LC_NUMERIC, "C");
+  char* end = NULL;
+  long val = _strtol_l(str, &end, 0, tmpLocale);
+  RCHECK_MSG((end!=str) && (*end=='\0') && (val!=HUGE_VAL),
+             "When parsing \"%s\"", str);
+  _free_locale(tmpLocale);
+#else
+  locale_t tmpLocale = newlocale(LC_NUMERIC_MASK, "C", NULL);
+  char* end = NULL;
+  long val = strtol_l(str, &end, 0, tmpLocale);
   RCHECK_MSG((end!=str) && (*end=='\0') && (val!=HUGE_VAL),
              "When parsing \"%s\"", str);
   freelocale(tmpLocale);
@@ -837,7 +954,7 @@ long File_getLineCount(const char* fileName)
     return 0;
   }
 
-  while ((ch = fgetc(fd)) != EOF)
+  while (((ch = fgetc(fd)) != EOF) && (ferror(fd)==0))
   {
     if (ch == '\n')
     {
@@ -845,6 +962,7 @@ long File_getLineCount(const char* fileName)
     }
   }
 
+  //RCHECK(ferror(fd)==0);
   fclose(fd);
 
   return nLines;

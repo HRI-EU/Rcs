@@ -31,6 +31,9 @@
 
 *******************************************************************************/
 
+#ifndef RCS_EXAMPLERUNNER_H
+#define RCS_EXAMPLERUNNER_H
+
 /*
 
 [Rcs/src/RcsGui/ExampleGui.cpp : ExampleGui(62)]: Before launch
@@ -256,3 +259,6 @@ int main(int argc, char** argv)
 
   return 0;
 }
+
+
+#endif   // RCS_EXAMPLERUNNER_H

@@ -49,38 +49,11 @@
 namespace Rcs
 {
 
-bool String_endsWith(const std::string& fullString,
-                     const std::string& ending)
-{
-  if (fullString.length() >= ending.length())
-  {
-    return (0 == fullString.compare(fullString.length() - ending.length(),
-                                    ending.length(), ending));
-  }
-  else
-  {
-    return false;
-  }
-}
-
-bool String_startsWith(const std::string& fullString,
-                       const std::string& beginning)
-{
-  if (fullString.length() >= beginning.length())
-  {
-    return (0 == fullString.compare(0, beginning.length(), beginning));
-  }
-  else
-  {
-    return false;
-  }
-}
-
 
 // Returns a list of files in a directory (except these that begin with a dot)
-std::vector<std::string> getFilenamesInDirectory(const std::string& dirname,
-                                               bool returnFullPath,
-                                               const std::string& extension)
+std::vector<std::string> File_getFilenamesInDirectory(const std::string& dirname,
+                                                      bool returnFullPath,
+                                                      const std::string& extension)
 {
   std::vector<std::string> files;
 
@@ -123,54 +96,6 @@ std::vector<std::string> getFilenamesInDirectory(const std::string& dirname,
 #endif
 }
 
-std::pair<std::string, std::string> Rcs_getExecutablePathAndFilename(char* argv[])
-{
-  // Get the last position of '/'
-  std::string str(argv[0]);
-
-  // get '/' or '\\' depending on Linux or Windows.
-#if defined(_MSC_VER)
-  int pos = str.rfind('\\');
-#else
-  int pos = str.rfind('/');
-#endif
-
-  // Get the path and the name
-  std::string path = str.substr(0,pos+1);
-  std::string name = str.substr(pos+1);
-
-  return std::make_pair(path, name);
-}
-
-std::string formatStdString(const char* fmt, ...)
-{
-  va_list ap;
-  va_start(ap, fmt);
-  std::string label_string = formatStdString(fmt, ap);
-  va_end(ap);
-
-  return label_string;
-}
-
-std::string formatStdString(const char* fmt, va_list ap)
-{
-  // first check how large our buffer has to be
-#if defined(_MSC_VER)
-  int size = _vscprintf(fmt, ap);
-#else
-  va_list ap_copy;
-  va_copy(ap_copy, ap);
-  int size = vsnprintf(NULL, 0, fmt, ap_copy);
-  va_end(ap_copy);
-#endif
-
-  // generate formatted string
-  std::string ret_val;
-  ret_val.resize(size);
-  vsprintf(&ret_val[0], fmt, ap);
-
-  return ret_val;
-}
 
 bool File_isEqualCpp(const char* file1, const char* file2)
 {
@@ -212,7 +137,81 @@ bool File_isEqualCpp(const char* file1, const char* file2)
   return true;
 }
 
+std::pair<std::string, std::string> File_getExecutablePathAndFilename(char* argv[])
+{
+  // Get the last position of '/'
+  std::string str(argv[0]);
 
+  // get '/' or '\\' depending on Linux or Windows.
+#if defined(_MSC_VER)
+  int pos = str.rfind('\\');
+#else
+  int pos = str.rfind('/');
+#endif
+
+  // Get the path and the name
+  std::string path = str.substr(0,pos+1);
+  std::string name = str.substr(pos+1);
+
+  return std::make_pair(path, name);
+}
+
+bool String_endsWith(const std::string& fullString,
+                     const std::string& ending)
+{
+  if (fullString.length() >= ending.length())
+  {
+    return (0 == fullString.compare(fullString.length() - ending.length(),
+                                    ending.length(), ending));
+  }
+  else
+  {
+    return false;
+  }
+}
+
+bool String_startsWith(const std::string& fullString,
+                       const std::string& beginning)
+{
+  if (fullString.length() >= beginning.length())
+  {
+    return (0 == fullString.compare(0, beginning.length(), beginning));
+  }
+  else
+  {
+    return false;
+  }
+}
+
+std::string String_formatStdString(const char* fmt, ...)
+{
+  va_list ap;
+  va_start(ap, fmt);
+  std::string label_string = String_formatStdString(fmt, ap);
+  va_end(ap);
+
+  return label_string;
+}
+
+std::string String_formatStdString(const char* fmt, va_list ap)
+{
+  // first check how large our buffer has to be
+#if defined(_MSC_VER)
+  int size = _vscprintf(fmt, ap);
+#else
+  va_list ap_copy;
+  va_copy(ap_copy, ap);
+  int size = vsnprintf(NULL, 0, fmt, ap_copy);
+  va_end(ap_copy);
+#endif
+
+  // generate formatted string
+  std::string ret_val;
+  ret_val.resize(size);
+  vsprintf(&ret_val[0], fmt, ap);
+
+  return ret_val;
+}
 
 std::vector<std::string> String_split(const std::string& toBeSplitted,
                                       const std::string& delim)
@@ -264,7 +263,7 @@ std::vector<std::string> String_split(const std::string& toBeSplitted,
 namespace Rcs
 {
 
-std::pair<int,int> getGridCell(const double xy[2], double gridSize)
+static std::pair<int,int> getGridCell(const double xy[2], double gridSize)
 {
   double sgnX = xy[0] >= 0.0 ? 1.0 : -1.0;
   double sgnY = xy[1] >= 0.0 ? 1.0 : -1.0;
@@ -277,7 +276,7 @@ std::pair<int,int> getGridCell(const double xy[2], double gridSize)
   return cell;
 }
 
-std::vector<std::pair<double,double>> getCellVertices(int x, int y, double gridSize)
+static std::vector<std::pair<double,double>> getCellVertices(int x, int y, double gridSize)
 {
   double cntr[2];
   cntr[0] = gridSize*x;

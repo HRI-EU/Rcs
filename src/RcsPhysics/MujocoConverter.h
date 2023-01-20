@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-  Copyright Honda Research Institute Europe GmbH
+  Copyright (c) Honda Research Institute Europe GmbH
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are
@@ -33,9 +33,14 @@
 
 #include <Rcs_graph.h>
 
+#ifndef RCS_MUJOCOCONVERTER_H
+#define RCS_MUJOCOCONVERTER_H
+
 namespace Rcs
 {
 
 bool RcsGraph_convertToMujoco(const char* fileName, const RcsGraph* graph);
 
 }   // namespace Rcs
+
+#endif   // RCS_MUJOCOCONVERTER_H

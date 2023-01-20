@@ -123,11 +123,11 @@ bool ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
   // Create the graph. If no tag "graph" exists, the graph still can
   // be included by an xinclude directive. Therefore it's not fatal
   // if we don't find it here.
-  std::string txt;
-  if (getXMLNodePropertySTLString(xmlNodeController, "graph", txt))
+  char txt[RCS_MAX_NAMELEN];
+  if (getXMLNodePropertyStringN(xmlNodeController, "graph", txt, RCS_MAX_NAMELEN))
   {
-    this->graph = RcsGraph_create(txt.c_str());
-    RCHECK_MSG(this->graph, "Failed to create graph \"%s\"", txt.c_str());
+    this->graph = RcsGraph_create(txt);
+    RCHECK_MSG(this->graph, "Failed to create graph \"%s\"", txt);
   }
 
   // Descend one level in XML parsing to find Task et al.
@@ -138,7 +138,7 @@ bool ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
     if (isXMLNodeName(node, "Task"))
     {
       // Create the new task, and add it to the task list
-      if (getXMLNodePropertySTLString(node, "controlVariable", txt))
+      if (getXMLNodePropertyStringN(node, "controlVariable", txt, RCS_MAX_NAMELEN))
       {
         add(TaskFactory::createTask(node, graph));
       }
@@ -210,12 +210,14 @@ ControllerBase::ControllerBase(RcsGraph* graph_):
  * construction of the copied constructor.
  ******************************************************************************/
 ControllerBase::ControllerBase(const ControllerBase& copyFromMe):
-  graph(RcsGraph_clone(copyFromMe.graph)),
-  ownsGraph(true),
-  cMdl(RcsCollisionModel_clone(copyFromMe.cMdl, this->graph)),
-  xmlFile(copyFromMe.xmlFile),
-  taskArrayIdx(copyFromMe.taskArrayIdx)
+  graph(NULL), ownsGraph(true), cMdl(NULL),
+  xmlFile(copyFromMe.xmlFile), taskArrayIdx(copyFromMe.taskArrayIdx)
 {
+  this->graph = RcsGraph_clone(copyFromMe.graph);
+  RCHECK(this->graph);
+  this->cMdl = RcsCollisionModel_clone(copyFromMe.cMdl, this->graph);
+  RCHECK(this->cMdl);
+
   for (std::vector<Task*>::const_iterator itr = copyFromMe.tasks.begin();
        itr != copyFromMe.tasks.end(); ++itr)
   {

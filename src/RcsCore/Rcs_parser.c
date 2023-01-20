@@ -739,7 +739,8 @@ bool getXMLNodePropertyHTr(xmlNodePtr node, const char* tag, HTr* A)
       break;
 
     default:
-      RFATAL("Tried to parse %d items - should be 6 or 12", nItems);
+      RFATAL("Line %ld: Tried to parse %d items - should be 6 or 12",
+             xmlGetLineNo(node), nItems);
       success = false;
       break;
   }

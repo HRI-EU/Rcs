@@ -387,6 +387,9 @@ void Rcs::HUD::init(int llx, int lly, int sizeX, int sizeY,
   hudText->setAxisAlignment(osgText::Text::SCREEN);
   hudText->setAlignment(osgText::TextBase::LEFT_BOTTOM);
 
+  // Should eliminate crashes in multi-threaded use
+  hudText->setDataVariance(osg::Object::DYNAMIC);
+
 
   double rgba[4];
   Rcs_colorFromString(textColor, rgba);
@@ -431,6 +434,7 @@ void Rcs::HUD::init(int llx, int lly, int sizeX, int sizeY,
 
   this->bgGeometry = new osg::Geometry;
   bgGeometry->setVertexArray(backgroundVertices);
+  bgGeometry->setDataVariance(osg::Object::DYNAMIC);
 
   osg::Vec3Array* normals = new osg::Vec3Array;
   normals->push_back(osg::Vec3(0.0f, 0.0f, 1.0f));

@@ -40,6 +40,7 @@
 #include <Rcs_Vec3d.h>
 #include <Rcs_VecNd.h>
 #include <Rcs_material.h>
+#include <Rcs_utils.h>
 
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
@@ -304,7 +305,9 @@ public:
       osgViewer::ViewerBase::Windows windows;
       _viewer->viewer->getWindows(windows, true);
 
-      if (!windows.empty())
+      const char* displayVar = String_getEnv("DISPLAY");
+
+      if (!windows.empty() && displayVar)
       {
         int x = 0;
         int y = 0;
@@ -319,7 +322,7 @@ public:
         std::stringstream cmd;
         cmd << "ffmpeg -y -f x11grab -r 25 -s "
             << w << "x" << h
-            << " -i " << getenv("DISPLAY") << "+"
+            << " -i " << displayVar << "+"
             << x << "," << y
             << " -crf 20 -r 25 -c:v libx264 -c:a n"
             << " /tmp/movie_" << movie_number++ << ".mp4";
@@ -333,6 +336,10 @@ public:
 
         _video_capture_process = forkProcess(cmd.str().c_str());
         captureRunning = true;
+      }
+      else
+      {
+        RLOG(1, "Could not record video");
       }
     }
 #endif

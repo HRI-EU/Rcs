@@ -357,8 +357,10 @@ bool Rcs::TaskInclination::setIdsToSuffix(const std::string& suffix)
            newName.c_str());
       success = false;
     }
-
-    newEffectorVec[i] = bdy_suffixed->id;
+    else
+    {
+      newEffectorVec[i] = bdy_suffixed->id;
+    }
   }
 
   if (success)

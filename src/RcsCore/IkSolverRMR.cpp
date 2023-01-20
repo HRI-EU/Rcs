@@ -371,7 +371,7 @@ double IkSolverRMR::solveRightInverse(MatNd* dq_ts,
 
   // Adjust task space array sizes
   const size_t nx = controller->getTaskDim();
-  const size_t nxa = controller->getActiveTaskDim(activation);
+  const size_t nxa = activation ? controller->getActiveTaskDim(activation) : controller->getTaskDim();
 
   MatNd_realloc(this->J, nxa, graph->nJ);
   MatNd_realloc(this->pinvJ, graph->nJ, nxa);

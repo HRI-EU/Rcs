@@ -72,15 +72,15 @@ void* Rcs::PeriodicCallback::threadFuncPosix(void* param)
   while (self->isRunning() == true)
   {
     // get current time
-    pthread_mutex_lock(&self->settingsMtx);
+    self->lock();
     self->now = Timer_getSystemTime();
-    pthread_mutex_unlock(&self->settingsMtx);
+    self->unlock();
 
     // call the fast callback function
     self->callback();
 
     // Lock when updating timing information
-    pthread_mutex_lock(&self->settingsMtx);
+    self->lock();
 
     // get duration of mainLoopStep (in usec)
     self->duration = (Timer_getSystemTime() - self->now) * 1000000.0;
@@ -105,7 +105,7 @@ void* Rcs::PeriodicCallback::threadFuncPosix(void* param)
     self->loopCount++;
 
     // Done computing timing statistics
-    pthread_mutex_unlock(&self->settingsMtx);
+    self->unlock();
 
 
 
@@ -125,9 +125,9 @@ void* Rcs::PeriodicCallback::threadFuncPosix(void* param)
         break;
 
       case Rcs::PeriodicCallback::Synchronize_OneShot:
-        pthread_mutex_lock(&self->settingsMtx);
+        self->lock();
         self->runLoop = false;
-        pthread_mutex_unlock(&self->settingsMtx);
+        self->unlock();
         break;
 
       case Rcs::PeriodicCallback::Synchronize_Poll:
@@ -149,9 +149,9 @@ void* Rcs::PeriodicCallback::threadFuncPosix(void* param)
 
   Timer_destroy(timerFast);
 
-  pthread_mutex_lock(&self->settingsMtx);
+  self->lock();
   self->started = false;
-  pthread_mutex_unlock(&self->settingsMtx);
+  self->unlock();
 
   // Exit thread function to allow joining pthread
   pthread_exit(NULL);
@@ -200,7 +200,6 @@ Rcs::PeriodicCallback::~PeriodicCallback()
   }
 
   pthread_mutex_destroy(&this->settingsMtx);
-
   RLOG_CPP(5, "PeriodicCallback of class \"" << className
            << "\" destructor finished");
 }
@@ -210,9 +209,9 @@ Rcs::PeriodicCallback::~PeriodicCallback()
  ******************************************************************************/
 void Rcs::PeriodicCallback::setSynchronizationMode(SynchronizeMode mode)
 {
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   this->syncMode = mode;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 }
 
 /*******************************************************************************
@@ -223,9 +222,9 @@ Rcs::PeriodicCallback::getSynchronizationMode() const
 {
   SynchronizeMode mode;
 
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   mode = this->syncMode;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 
   return mode;
 }
@@ -257,7 +256,7 @@ void Rcs::PeriodicCallback::start(double updateFreq_, int prio)
     return;
   }
 
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   this->started = true;
   this->runLoop = true;
   this->updateFreq = updateFreq_;
@@ -279,7 +278,7 @@ void Rcs::PeriodicCallback::start(double updateFreq_, int prio)
     RLOG(1, "Failed to get real-time thread attributes");
   }
 
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 
 
   int res = pthread_create(&this->callbackThread, att, &threadFuncPosix, this);
@@ -323,9 +322,9 @@ void Rcs::PeriodicCallback::stop()
     return;
   }
 
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   this->runLoop = false;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 
   while (isStarted()==true)
   {
@@ -340,13 +339,13 @@ void Rcs::PeriodicCallback::stop()
  ******************************************************************************/
 void Rcs::PeriodicCallback::print() const
 {
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   double dtUsec = 1.0e6/this->updateFreq;
   double mean = (double) this->durationSum / this->loopCount;
   double stdev = std::sqrt(((double) this->durationSumSqr / this->loopCount)-mean*mean);
   double durMin = this->durationMin;
   double durMax = this->durationMax;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 
   printf("%s callback loop statistics:\n", getClassName().c_str());
   printf("  target period = %.3f msec\n", 0.001*dtUsec);
@@ -365,9 +364,9 @@ bool Rcs::PeriodicCallback::isRunning() const
 {
   bool running;
 
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   running = this->runLoop;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 
   return running;
 }
@@ -379,9 +378,9 @@ bool Rcs::PeriodicCallback::isStarted() const
 {
   bool threadStarted;
 
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   threadStarted = this->started;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 
   return threadStarted;
 }
@@ -391,9 +390,9 @@ bool Rcs::PeriodicCallback::isStarted() const
  ******************************************************************************/
 void Rcs::PeriodicCallback::setClassName(const std::string& name)
 {
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   this->className = name;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 }
 
 /*******************************************************************************
@@ -401,9 +400,9 @@ void Rcs::PeriodicCallback::setClassName(const std::string& name)
  ******************************************************************************/
 std::string Rcs::PeriodicCallback::getClassName() const
 {
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   std::string name = this->className;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 
   return name;
 }
@@ -422,9 +421,9 @@ double Rcs::PeriodicCallback::getUpdateFrequency() const
 {
   double freq;
 
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   freq = this->updateFreq;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 
   return freq;
 }
@@ -434,9 +433,9 @@ double Rcs::PeriodicCallback::getUpdateFrequency() const
  ******************************************************************************/
 void Rcs::PeriodicCallback::setUpdateFrequency(double updateFrequency)
 {
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   this->updateFreq = updateFrequency;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 }
 
 /*******************************************************************************
@@ -444,9 +443,9 @@ void Rcs::PeriodicCallback::setUpdateFrequency(double updateFrequency)
  ******************************************************************************/
 void Rcs::PeriodicCallback::setSchedulingPolicy(int policy)
 {
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   this->schedulingPolicy = policy;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 }
 
 /*******************************************************************************
@@ -454,9 +453,9 @@ void Rcs::PeriodicCallback::setSchedulingPolicy(int policy)
  ******************************************************************************/
 bool Rcs::PeriodicCallback::setThreadPriority(int prio)
 {
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   this->threadPriority = prio;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 
   return true;
 }
@@ -468,9 +467,9 @@ int Rcs::PeriodicCallback::getThreadPriority() const
 {
   int prio;
 
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   prio = this->threadPriority;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 
   return prio;
 }
@@ -482,9 +481,9 @@ unsigned long Rcs::PeriodicCallback::getLoopCount() const
 {
   unsigned long lc;
 
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   lc = this->loopCount;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 
   return lc;
 }
@@ -496,9 +495,9 @@ unsigned long Rcs::PeriodicCallback::getOverruns() const
 {
   unsigned long orns;
 
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   orns = this->overruns;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 
   return orns;
 }
@@ -510,9 +509,9 @@ double Rcs::PeriodicCallback::getLastCallbackTime() const
 {
   double timeOfLastCallback;
 
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   timeOfLastCallback = this->now;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 
   return timeOfLastCallback;
 }
@@ -524,9 +523,25 @@ double Rcs::PeriodicCallback::getLastCallbackDuration() const
 {
   double tmp;
 
-  pthread_mutex_lock(&this->settingsMtx);
+  lock();
   tmp = this->duration;
-  pthread_mutex_unlock(&this->settingsMtx);
+  unlock();
 
   return tmp;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::PeriodicCallback::lock() const
+{
+  pthread_mutex_lock(&this->settingsMtx);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::PeriodicCallback::unlock() const
+{
+  pthread_mutex_unlock(&this->settingsMtx);
 }

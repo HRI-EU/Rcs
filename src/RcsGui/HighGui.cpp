@@ -145,7 +145,7 @@ void HighGui::showLabel(const std::string& name, unsigned int window,
   {
     va_list ap;
     va_start(ap, str);
-    std::string label_string = formatStdString(str, ap);
+    std::string label_string = String_formatStdString(str, ap);
     va_end(ap);
 
     w->setLabel(label_string);
@@ -393,7 +393,7 @@ void HighGui::showWindow(unsigned int window)
   if (!w)
   {
     // create window
-    w = HighGuiWindow::create(formatStdString("%u", window));
+    w = HighGuiWindow::create(String_formatStdString("%u", window));
     _widgets[id] = w;
   }
 
@@ -436,7 +436,7 @@ T* HighGui::getWidget(const std::string& id)
 
 std::string HighGui::computeID(unsigned int window, const std::string& name)
 {
-  return formatStdString("%u#%s", window, name.c_str());
+  return String_formatStdString("%u#%s", window, name.c_str());
 }
 
 

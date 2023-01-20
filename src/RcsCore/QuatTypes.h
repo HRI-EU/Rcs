@@ -17,14 +17,16 @@
 
 ******************************************************************************/
 
-#ifndef _H_QuatTypes
-#define _H_QuatTypes
-/*** Definitions ***/
-typedef struct
-{
-  double x, y, z, w;
-} ShoemakeQuat; /* Quaternion */
-enum QuatPart {X, Y, Z, W};
-typedef double HMatrix[4][4]; /* Right-handed, for column vectors */
-typedef ShoemakeQuat EulerAngles;    /* (x,y,z)=ang 1,2,3, w=order code  */
-#endif
+/* #ifndef RCS_QUATTYPES_H */
+/* #define RCS_QUATTYPES_H */
+
+/* /\*** Definitions ***\/ */
+/* typedef struct */
+/* { */
+/*   double x, y, z, w; */
+/* } ShoemakeQuat; /\* Quaternion *\/ */
+/* enum QuatPart {X, Y, Z, W}; */
+/* typedef double HMatrix[4][4]; /\* Right-handed, for column vectors *\/ */
+/* typedef ShoemakeQuat EulerAngles;    /\* (x,y,z)=ang 1,2,3, w=order code  *\/ */
+
+/* #endif   // RCS_QUATTYPES_H */

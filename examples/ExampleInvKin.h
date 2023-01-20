@@ -31,8 +31,8 @@
 
 *******************************************************************************/
 
-#ifndef RCS_EXAMPLEIK_H
-#define RCS_EXAMPLEIK_H
+#ifndef RCS_EXAMPLEINVKIN_H
+#define RCS_EXAMPLEINVKIN_H
 
 #include <ExampleBase.h>
 #include <IkSolverRMR.h>
@@ -149,4 +149,4 @@ public:
 
 }   // namespace
 
-#endif   // RCS_EXAMPLEIK_H
+#endif   // RCS_EXAMPLEINVKIN_H

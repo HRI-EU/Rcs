@@ -2115,7 +2115,7 @@ void RcsShape_scale(RcsShape* shape, double scale)
 /*******************************************************************************
  *
  ******************************************************************************/
-void RcsShape_setComputeType(RcsShape* shape, char computeType, bool enable)
+void RcsShape_setComputeType(RcsShape* shape, int computeType, bool enable)
 {
   if (enable)
   {

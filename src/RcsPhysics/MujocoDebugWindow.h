@@ -58,6 +58,10 @@ protected:
   static void* threadFuncPosix(void* param);
   pthread_t graphicsThread;
   MujocoWinData* winData;
+
+  // Disallow copying and assigning to avoid double free errors.
+  MujocoDebugWindow& operator=(const MujocoDebugWindow&);
+  MujocoDebugWindow(const MujocoDebugWindow&);
 };
 
 }   // namespace Rcs

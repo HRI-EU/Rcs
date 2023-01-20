@@ -17,8 +17,8 @@
 
 ******************************************************************************/
 
-#ifndef _H_EulerAngles
-#define _H_EulerAngles
+#ifndef RCS_EULERANGLES_H
+#define RCS_EULERANGLES_H
 
 typedef struct
 {
@@ -166,4 +166,4 @@ void printAllEulerAngles(double rm[3][3]);
 }
 #endif
 
-#endif
+#endif   // RCS_EULERANGLES_H

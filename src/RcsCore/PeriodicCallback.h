@@ -249,6 +249,10 @@ private:
   SynchronizeMode syncMode; ///< See enum description
   mutable pthread_mutex_t settingsMtx;
 
+  void lock() const;
+
+  void unlock() const;
+
   static void* threadFuncPosix(void* param);
 
   PeriodicCallback(const PeriodicCallback&);

@@ -31,8 +31,8 @@
 
 *******************************************************************************/
 
-#ifndef RCS_EXAMPLEFK_H
-#define RCS_EXAMPLEFK_H
+#ifndef RCS_EXAMPLE_FORWARDKINEMATICS_H
+#define RCS_EXAMPLE_FORWARDKINEMATICS_H
 
 #include <Rcs_resourcePath.h>
 #include <Rcs_cmdLine.h>
@@ -911,4 +911,4 @@ REGISTER_EXAMPLE(ExampleFK);
 
 
 }   // namespace Rcs
-#endif   // RCS_EXAMPLEFK_H
+#endif   // RCS_EXAMPLE_FORWARDKINEMATICS_H

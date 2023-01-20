@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-  Copyright Honda Research Institute Europe GmbH
+  Copyright (c) Honda Research Institute Europe GmbH
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are
@@ -419,6 +419,7 @@ bool RcsGraph_toMujocoFile(const char* fileName, const RcsGraph* graph)
   // global coordinate option. For this, we create a copy of the graph, bring
   // it into the zero-configuration, and create all Mujoco bodies from that.
   RcsGraph* gCopy = RcsGraph_clone(graph);
+  RCHECK(gCopy);
   MatNd_setZero(gCopy->q);
   MatNd_setZero(gCopy->q_dot);
   RcsGraph_setState(gCopy, gCopy->q, gCopy->q_dot);

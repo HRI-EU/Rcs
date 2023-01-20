@@ -186,13 +186,26 @@ char* String_fromDouble(char* str, double value, unsigned int maxDigits);
 /*! \ingroup RcsUtilsFunctions
  * \brief Converts a string to a double value using the C locale: It means that
  *        the decimal separator will be interpreted as a dot, and does not
- *        depend on the currently avtive locale.
+ *        depend on the currently avtive locale. If the string is not a valid
+ *        double value, the function will exit.
  *
  *  \param[in] str   Terminated string holding the character representation of
  *                   the value
  *  \return Corresponding double value
  */
 double String_toDouble_l(const char* str);
+
+/*! \ingroup RcsUtilsFunctions
+ * \brief Converts a string to an integer value using the C locale: It means
+ *        that the decimal separator will be interpreted as a dot, and does not
+ *        depend on the currently avtive locale. If the string is not a valid
+ *        integer value, the function will exit.
+ *
+ *  \param[in] str   Terminated string holding the character representation of
+ *                   the value
+ *  \return Corresponding integer value
+ */
+long int String_toLong_l(const char* str);
 
 /*! \ingroup RcsUtilsFunctions
  * \brief Converts a string to an array of doubles with n elements using the

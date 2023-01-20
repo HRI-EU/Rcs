@@ -1265,7 +1265,9 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
         RCSBODY_TRAVERSE_SHAPES(BODY)
         {
           snprintf(SHAPE->color, 16, "#%02x%02x%02xff",
-                   lround(rr), lround(gg), lround(bb));
+                   (unsigned int)lround(rr),
+                   (unsigned int)lround(gg),
+                   (unsigned int)lround(bb));
 
         }
       }

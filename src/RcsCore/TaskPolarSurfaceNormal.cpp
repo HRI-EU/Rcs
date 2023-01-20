@@ -255,8 +255,10 @@ bool TaskPolarSurfaceNormal::setIdsToSuffix(const std::string& suffix)
            newName.c_str());
       success = false;
     }
-
-    newSurfaceBodies[i] = bdy_suffixed->id;
+    else
+    {
+      newSurfaceBodies[i] = bdy_suffixed->id;
+    }
   }
 
   if (success)

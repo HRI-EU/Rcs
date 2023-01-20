@@ -323,7 +323,7 @@ bool Rcs::MouseDragger::callback(const osgGA::GUIEventAdapter& ea,
           if (bdy->rigid_body_joints)
           {
             RCHECK(g);
-            RcsJoint* rbJnt = RCSJOINT_BY_ID(g, bdy->jntId);
+            RcsJoint* rbJnt = &g->joints[bdy->jntId]; //RCSJOINT_BY_ID(g, bdy->jntId);
             double* q_rbj = MatNd_getElePtr(g->q, rbJnt->jointIndex, 0);
             Vec3d_addSelf(q_rbj, dx);
           }

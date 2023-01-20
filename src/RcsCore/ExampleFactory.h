@@ -48,6 +48,10 @@
  */
 #define REGISTER_EXAMPLE(T) static Rcs::ExampleFactoryRegistrar<T> T ## _(#T)
 
+#define RCS_EXAMPLE_CONCATENATE_TWO(x, y) x ## y
+#define RCS_EXAMPLE_UNIQUE(x, y) RCS_EXAMPLE_CONCATENATE_TWO(x, y)
+#define RCS_REGISTER_EXAMPLE(Type, Category, Example) \
+  static Rcs::ExampleFactoryRegistrar<Type> RCS_EXAMPLE_UNIQUE(Type, __LINE__) ((Category), (Example))
 
 namespace Rcs
 {

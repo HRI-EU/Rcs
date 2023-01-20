@@ -295,7 +295,7 @@ bool ExamplePhysics::initAlgo()
   {
     RcsGraph* graph2 = graph;
     graph = RcsGraph_clone(graph2);
-
+    RCHECK(graph);
     Rcs::PhysicsBase* sim2 = sim->clone(graph);
     delete sim;
     sim = sim2;
@@ -737,16 +737,19 @@ void ExamplePhysics::handleKeys()
     {
       RMSG("No BodyNode found under mouse");
     }
-    std::string name = std::string(bNd->body()->name);
-
-    RMSG("Deactivating body \"%s\" under mouse", name.c_str());
-    bool ok = sim->deactivateBody(name.c_str());
-    if (ok)
+    else
     {
-      bNd->setGhostMode(true, "WHITE");
+      std::string name = std::string(bNd->body()->name);
+
+      RMSG("Deactivating body \"%s\" under mouse", name.c_str());
+      bool ok = sim->deactivateBody(name.c_str());
+      if (ok)
+      {
+        bNd->setGhostMode(true, "WHITE");
+      }
+      RMSG("%s deactivating body \"%s\"", ok ? "SUCCEEDED" : "FAILED",
+           name.c_str());
     }
-    RMSG("%s deactivating body \"%s\"", ok ? "SUCCEEDED" : "FAILED",
-         name.c_str());
   }
   else if (kc->getAndResetKey('A'))
   {
@@ -830,6 +833,7 @@ void ExamplePhysics::handleKeys()
       delete sim;
       sim = PhysicsFactory::create(physicsEngine.c_str(), graph,
                                    physicsCfg.c_str());
+      RCHECK(sim);
       if (disableCollisions == true)
       {
         sim->disableCollisions();

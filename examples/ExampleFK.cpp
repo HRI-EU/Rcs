@@ -606,9 +606,16 @@ void ExampleFK::handleKeys()
     printf("Enter body name: ");
     std::cin >> bodyName;
     RcsBody* bdy = RcsGraph_getBodyByName(graph, bodyName.c_str());
-    bool success = RcsBody_removeJoints(bdy, graph);
-    RMSG("Removing all joints of a body %s %s", bodyName.c_str(),
-         success ? "SUCCEEDED" : "FAILED");
+    if (bdy)
+    {
+      bool success = RcsBody_removeJoints(bdy, graph);
+      RMSG("Removing all joints of a body %s %s", bodyName.c_str(),
+           success ? "SUCCEEDED" : "FAILED");
+    }
+    else
+    {
+      RMSG("Body %s not found in graph", bodyName.c_str());
+    }
   }
   else if (kc->getAndResetKey('E'))
   {
@@ -631,9 +638,11 @@ void ExampleFK::handleKeys()
   {
     RMSG("Writing graph to xml file");
     FILE* out = fopen("graph.txt", "w+");
+    RCHECK(out);
     RcsGraph_fprint(out, graph);
     fclose(out);
     out = fopen("graph.xml", "w+");
+    RCHECK(out);
     RcsGraph_fprintXML(out, graph);
     fclose(out);
   }
@@ -949,6 +958,7 @@ bool ExampleFK_Below::initAlgo()
   }
 
   const RcsBody* bb = RcsGraph_getBodyByName(graph, belowBdy.c_str());
+  RCHECK(bb);
   RCSBODY_TRAVERSE_SHAPES(bb)
   {
     RcsShape_setComputeType(SHAPE, RCSSHAPE_COMPUTE_DISTANCE, false);

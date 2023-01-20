@@ -54,44 +54,48 @@ namespace Rcs
  *         that end with a given extension. If returnFullPath is true (default)
  *         then the full path including the provided directory name is returned
  */
-std::vector<std::string> getFilenamesInDirectory(const std::string& dirname,
-                                               bool returnFullPath=true,
-                                               const std::string& extension="");
+std::vector<std::string> File_getFilenamesInDirectory(const std::string& dirname,
+                                                      bool returnFullPath=true,
+                                                      const std::string& extension="");
 
 /*! \ingroup RcsUtilsFunctions
- * \brief Returns the path and the filename of the currently executed binary
- * \param argv The argument list coming from the main()
- * \return A pair holding the path and the filename of the currently executed
- *         binary
+ *  \brief Checks if two files are equal. Thir binary content is compared.
+ *
+ *  \param file1 Filename 1
+ *  \param file2 Filename 2
+ *  \return True if files are equal
  */
-std::pair<std::string, std::string> Rcs_getExecutablePathAndFilename(char* argv[]);
+bool File_isEqualCpp(const char* file1, const char* file2);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Returns the path and the filename of the currently executed binary
+ *
+ *  \param argv The argument list coming from the main()
+ *  \return A pair holding the path and the filename of the currently executed
+ *          binary
+ */
+std::pair<std::string, std::string> File_getExecutablePathAndFilename(char* argv[]);
 
 /*! \ingroup RcsUtilsFunctions
  *  \brief Method for formatting a std::string in the fprintf style
+ *
  *  \param fmt Format string + variable arguments
  *  \return String generated from format + arguments
  *
  *  This function uses formatStdString(const char *fmt, va_list ap)
  */
-std::string formatStdString(const char* fmt, ...);
+std::string String_formatStdString(const char* fmt, ...);
 
 /*! \ingroup RcsUtilsFunctions
  *  \brief Method for formatting a std::string in the fprintf style
+ *
  *  \param fmt Format string
  *  \param ap Variable argument list already started with va_start
  *  \return String generated from format + arguments
  *
  *  Note that call va_end is the responsibility of the user.
  */
-std::string formatStdString(const char* fmt, va_list ap);
-
-/*! \ingroup RcsUtilsFunctions
- *  \brief Checks if two files are equal. Thir binary content is compared.
- *  \param file1 Filename 1
- *  \param file2 Filename 2
- *  \return True if files are equal
- */
-bool File_isEqualCpp(const char* file1, const char* file2);
+std::string String_formatStdString(const char* fmt, va_list ap);
 
 /*! \ingroup RcsUtilsFunctions
  *  \brief Splits the given string into pieces that are separated by the given
@@ -112,7 +116,7 @@ bool String_endsWith(const std::string& fullString,
                      const std::string& ending);
 
 /*! \ingroup RcsUtilsFunctions
- * \brief Checks if a given string starts with another string.
+ *  \brief Checks if a given string starts with another string.
  */
 bool String_startsWith(const std::string& fullString,
                        const std::string& beginning);

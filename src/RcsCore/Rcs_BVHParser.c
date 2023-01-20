@@ -549,8 +549,13 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
   RCHECK(STRCASEEQ(buf, "Frames:"));
 
   int numFrames = 0;
-  nItemsRead = fscanf(fd, "%d", &numFrames);
+  //nItemsRead = fscanf(fd, "%d", &numFrames);
+  nItemsRead = fscanf(fd, "%63s", buf);
   RCHECK(nItemsRead==1);
+
+  numFrames = String_toLong_l(buf);
+
+  RCHECK(numFrames>=0);
   RLOG(5, "Trajectory has %d frames", numFrames);
 
   nItemsRead = fscanf(fd, "%63s", buf);
@@ -599,6 +604,7 @@ MatNd* RcsGraph_createTrajectoryFromBVHFile(const RcsGraph* graph,
 
   RLOG(5, "Creating %d x %d array", numFrames, (int)numValues/numFrames);
   MatNd* data = MatNd_create(numFrames, (int)numValues/numFrames);
+  RCHECK(data);
 
   if (graph != NULL)
   {

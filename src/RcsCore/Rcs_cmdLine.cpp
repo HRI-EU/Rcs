@@ -499,8 +499,9 @@ void Rcs::CmdLineParser::appendDescription(const char* tag,
   }
   else if (res>=(int)sizeof(buffer))
   {
-    RLOG(4, "Description for argument \"%s\" not complete (%d of %zd bytes)",
-         tag, res, sizeof(buffer));
+    RLOG_CPP(4, "Description for argument \"" << std::string(tag)
+             << "\" not complete (" << res << " of " << sizeof(buffer)
+             << " bytes)");
   }
 
   if (parsedArguments.find(stag) == parsedArguments.end())
