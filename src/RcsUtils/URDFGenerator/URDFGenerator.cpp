@@ -174,7 +174,7 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
             }
             else
             {
-                uniqueJoint->addAttribute("name", std::string(body->name) + "_to_dummy_base_joint");
+                uniqueJoint->addAttribute("name", std::string(body->name) + "_to_" + body->parent->name + "_dummy_joint");
                 uniqueJoint->addAttribute("type","fixed");
             }
             parent->addAttribute("link", body->parent->name);
@@ -187,7 +187,7 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
             }
             else
             {
-                uniqueJoint->addAttribute("name", std::string(body->name) + "_to_dummy_base_joint");
+                uniqueJoint->addAttribute("name", std::string(body->name) + "_to_dummy_base_dummy_joint");
                 uniqueJoint->addAttribute("type","fixed");
             }
             parent->addAttribute("link", "dummy_base");
