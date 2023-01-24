@@ -226,6 +226,23 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
             uniqueJoint->addSubElement(std::move(limit));
         }
 
+        // mimic
+        if (body->jnt->coupledJointName)
+        {
+            auto mimic = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("mimic"));
+            mimic->addAttribute("joint", body->jnt->coupledJointName);
+
+            std::stringstream multiplier;
+            multiplier << body->jnt->couplingFactors->ele[0];
+            mimic->addAttribute("multiplier", multiplier.str());
+
+            std::stringstream offset;
+            RcsJoint* master = body->jnt->coupledTo;
+            offset << body->jnt->q_init - body->jnt->couplingFactors->ele[0] * master->q_init;
+            mimic->addAttribute("offset", offset.str());
+            uniqueJoint->addSubElement(std::move(mimic));
+        }
+
         robot->addSubElement(std::move(uniqueJoint));
     }
     else  // multiple joints
@@ -286,6 +303,23 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
             limit->addAttribute("lower", std::to_string(JNT->q_min));
             limit->addAttribute("upper", std::to_string(JNT->q_max));
             subJoint->addSubElement(std::move(limit));
+
+            // mimic
+            if (JNT->coupledJointName)
+            {
+                auto mimic = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("mimic"));
+                mimic->addAttribute("joint", JNT->coupledJointName);
+
+                std::stringstream multiplier;
+                multiplier << JNT->couplingFactors->ele[0];
+                mimic->addAttribute("multiplier", multiplier.str());
+
+                std::stringstream offset;
+                RcsJoint* master = JNT->coupledTo;
+                offset << JNT->q_init - JNT->couplingFactors->ele[0] * master->q_init;
+                mimic->addAttribute("offset", offset.str());
+                subJoint->addSubElement(std::move(mimic));
+            }
 
             robot->addSubElement(std::move(subJoint));
             ++num;
