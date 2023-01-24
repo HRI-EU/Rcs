@@ -215,6 +215,22 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
             origin->addAttribute("rpy", rotation.str());
             uniqueJoint->addSubElement(std::move(origin));
         }
+        else if (!body->jnt && body->A_BP)  // for fixed dummy joint
+        {
+            auto origin = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("origin"));
+
+            std::stringstream translation;
+            std::stringstream rotation;
+            translation <<  body->A_BP->org[0] << " " <<  body->A_BP->org[1] << " " << body->A_BP->org[2];
+
+            double rpy[3];
+            computeEulerAngles(rpy, body->A_BP->rot, EulOrdXYZs);
+            rotation << rpy[0] << " " << rpy[1] << " " << rpy[2];
+
+            origin->addAttribute("xyz", translation.str());
+            origin->addAttribute("rpy", rotation.str());
+            uniqueJoint->addSubElement(std::move(origin));
+        }
 
         // limit
         if (body->jnt) {
