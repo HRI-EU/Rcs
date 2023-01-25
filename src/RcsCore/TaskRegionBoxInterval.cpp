@@ -94,6 +94,22 @@ TaskRegionBoxInterval::TaskRegionBoxInterval(const Task* task,
            " dimension is %u", tmp.size(), task->getDim());
   }
 
+  tmp = getXMLNodePropertyVecSTLDouble(node, "mean");
+
+  if (tmp.size() == 1)
+  {
+    bbMean = std::vector<double>(task->getDim(), tmp[0]);
+  }
+  else if (tmp.size() == task->getDim())
+  {
+    bbMean = tmp;
+  }
+  else if (!tmp.empty())
+  {
+    RFATAL("Dimension mismatch: attribute \"bbMean\" has %zu values, but task"
+           " dimension is %u", tmp.size(), task->getDim());
+  }
+
   tmp = getXMLNodePropertyVecSTLDouble(node, "maxStep");
 
   if (tmp.size() == 1)
@@ -127,9 +143,18 @@ void TaskRegionBoxInterval::computeDX(const Task* task, double* dx,
 {
 
   for (size_t i = 0; i < bbMin.size(); ++i)
-  {
-    const double x_lb = x_des[i] + bbMin[i]; // plus, since sign comes from xml
-    const double x_ub = x_des[i] + bbMax[i];
+  { 
+    double x_lb; 
+    double x_ub;
+
+    if (bbMean.empty()){
+      x_lb = x_des[i] + bbMin[i]; // plus, since sign comes from xml
+      x_ub = x_des[i] + bbMax[i];
+    }
+    else {
+      x_lb = bbMean[i] + bbMin[i]; // plus, since sign comes from xml
+      x_ub = bbMean[i] + bbMax[i];
+    }
 
     dx[i] = dx_proj[i];
 
@@ -198,6 +223,23 @@ void TaskRegionBoxInterval::toXML(FILE* out, bool activation) const
     else
     {
       fprintf(out, "%s\" ", String_fromDouble(buf, bbMax[i], 6));
+    }
+  }
+
+  if (!bbMean.empty())
+  {
+    fprintf(out, "mean=\"");
+
+    for (size_t i = 0; i < bbMean.size(); ++i)
+    {
+      if (i < bbMean.size() - 1)
+      {
+        fprintf(out, "%s ", String_fromDouble(buf, bbMean[i], 6));
+      }
+      else
+      {
+        fprintf(out, "%s\" ", String_fromDouble(buf, bbMean[i], 6));
+      }
     }
   }
 

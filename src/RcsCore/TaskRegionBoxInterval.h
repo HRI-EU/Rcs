@@ -100,7 +100,7 @@ public:
 
 private:
 
-  std::vector<double> bbMin, bbMax, maxStep;
+  std::vector<double> bbMin, bbMax, maxStep, bbMean;
   double slowDownRatio;
 };
 
