@@ -174,7 +174,7 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
             }
             else
             {
-                uniqueJoint->addAttribute("name", std::string(body->name) + "_to_dummy_base_joint");
+                uniqueJoint->addAttribute("name", std::string(body->name) + "_to_" + body->parent->name + "_dummy_joint");
                 uniqueJoint->addAttribute("type","fixed");
             }
             parent->addAttribute("link", body->parent->name);
@@ -187,7 +187,7 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
             }
             else
             {
-                uniqueJoint->addAttribute("name", std::string(body->name) + "_to_dummy_base_joint");
+                uniqueJoint->addAttribute("name", std::string(body->name) + "_to_dummy_base_dummy_joint");
                 uniqueJoint->addAttribute("type","fixed");
             }
             parent->addAttribute("link", "dummy_base");
@@ -215,6 +215,22 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
             origin->addAttribute("rpy", rotation.str());
             uniqueJoint->addSubElement(std::move(origin));
         }
+        else if (!body->jnt && body->A_BP)  // for fixed dummy joint
+        {
+            auto origin = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("origin"));
+
+            std::stringstream translation;
+            std::stringstream rotation;
+            translation <<  body->A_BP->org[0] << " " <<  body->A_BP->org[1] << " " << body->A_BP->org[2];
+
+            double rpy[3];
+            computeEulerAngles(rpy, body->A_BP->rot, EulOrdXYZs);
+            rotation << rpy[0] << " " << rpy[1] << " " << rpy[2];
+
+            origin->addAttribute("xyz", translation.str());
+            origin->addAttribute("rpy", rotation.str());
+            uniqueJoint->addSubElement(std::move(origin));
+        }
 
         // limit
         if (body->jnt) {
@@ -224,6 +240,23 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
             limit->addAttribute("lower", std::to_string(body->jnt->q_min));
             limit->addAttribute("upper", std::to_string(body->jnt->q_max));
             uniqueJoint->addSubElement(std::move(limit));
+        }
+
+        // mimic
+        if (body->jnt->coupledJointName)
+        {
+            auto mimic = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("mimic"));
+            mimic->addAttribute("joint", body->jnt->coupledJointName);
+
+            std::stringstream multiplier;
+            multiplier << body->jnt->couplingFactors->ele[0];
+            mimic->addAttribute("multiplier", multiplier.str());
+
+            std::stringstream offset;
+            RcsJoint* master = body->jnt->coupledTo;
+            offset << body->jnt->q_init - body->jnt->couplingFactors->ele[0] * master->q_init;
+            mimic->addAttribute("offset", offset.str());
+            uniqueJoint->addSubElement(std::move(mimic));
         }
 
         robot->addSubElement(std::move(uniqueJoint));
@@ -286,6 +319,23 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
             limit->addAttribute("lower", std::to_string(JNT->q_min));
             limit->addAttribute("upper", std::to_string(JNT->q_max));
             subJoint->addSubElement(std::move(limit));
+
+            // mimic
+            if (JNT->coupledJointName)
+            {
+                auto mimic = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("mimic"));
+                mimic->addAttribute("joint", JNT->coupledJointName);
+
+                std::stringstream multiplier;
+                multiplier << JNT->couplingFactors->ele[0];
+                mimic->addAttribute("multiplier", multiplier.str());
+
+                std::stringstream offset;
+                RcsJoint* master = JNT->coupledTo;
+                offset << JNT->q_init - JNT->couplingFactors->ele[0] * master->q_init;
+                mimic->addAttribute("offset", offset.str());
+                subJoint->addSubElement(std::move(mimic));
+            }
 
             robot->addSubElement(std::move(subJoint));
             ++num;
@@ -439,6 +489,12 @@ void Rcs::URDFGenerator::handlingRigidBodyJoint(URDFElement* robot, RcsBody* bod
 
 void URDFGenerator::handlingCollision(RcsBody* body, URDFElement* link)
 {
+    if (!body->shape)
+    {
+        RLOG(0, "body has no shape, bodyName: %s", body->name);
+        return;
+    }
+
     const std::string tag = "collision";
     RCSBODY_TRAVERSE_SHAPES(body)
     {
@@ -482,6 +538,12 @@ void URDFGenerator::handlingCollision(RcsBody* body, URDFElement* link)
 
 void URDFGenerator::handlingVisual(RcsBody* body, URDFElement* link)
 {
+    if (!body->shape)
+    {
+        RLOG(0, "body has no shape, bodyName: %s", body->name);
+        return;
+    }
+
     const std::string tag = "visual";
     RCSBODY_TRAVERSE_SHAPES(body)
     {
@@ -518,7 +580,6 @@ void URDFGenerator::handlingVisual(RcsBody* body, URDFElement* link)
                 RLOG(0, "ShapeType=%d, can not be exported.", SHAPE->type);
             }
         }
-
     }
 }
 

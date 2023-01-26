@@ -3750,15 +3750,6 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, RcsBody* target)
 
     res->root = NULL;
 
-    // add dummy root.
-    RcsBody* root = RALLOC(RcsBody);
-    root->name = String_clone("dummy_root_link");
-    root->A_BP = HTr_create();
-    root->A_BI = HTr_create();
-    root->Inertia = HTr_create();
-    HTr_setZero(root->Inertia);
-
-    RcsGraph_insertBody(res, NULL, root);
     // TODO: what to do with generic bodies?
 
     // RcsSensor, copy sensor begin with this targetBody ?
