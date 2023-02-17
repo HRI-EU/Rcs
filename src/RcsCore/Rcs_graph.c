@@ -3750,16 +3750,18 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, RcsBody* target)
 
     res->root = NULL;
 
-    // TODO: what to do with generic bodies?
-
-    // RcsSensor, copy sensor begin with this targetBody ?
-
     // copy body
     RCSBODY_TRAVERSE_BODIES(target)
     {
         // Make a copy of the body
         RcsBody* b = RALLOC(RcsBody);
         RcsBody_copy(b, BODY);
+
+        if (BODY == target)  // ignore the A_BP of the first body
+        {
+            RFREE(b->A_BP);
+            b->A_BP = NULL;
+        }
 
         // to which body does the new one needs to be attached?
         RcsBody* parent = NULL;
@@ -3871,4 +3873,46 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, RcsBody* target)
     }
 
     return res;
+}
+
+void RcsGraph_addNameSuffix(RcsGraph* src, const char* suffix)
+{
+    RCSGRAPH_TRAVERSE_BODIES(src)
+    {
+        const size_t nameLen = strlen(BODY->name) + strlen(suffix) + 1;
+        char* newName = RNALLOC(nameLen, char);
+        snprintf(newName, nameLen, "%s%s", BODY->name, suffix);
+        RFREE(BODY->name);
+        BODY->name = newName;
+    }
+
+    // Add the suffix to all joints that come new into the graph
+    RCSGRAPH_TRAVERSE_JOINTS(src)
+    {
+        const size_t nameLen = strlen(JNT->name) + strlen(suffix) + 1;
+        char* newName = RNALLOC(nameLen, char);
+        snprintf(newName, nameLen, "%s%s", JNT->name, suffix);
+        RFREE(JNT->name);
+        JNT->name = newName;
+    }
+
+    // update coupledJointName TODO: is this correct to handle it at here?
+    RCSGRAPH_TRAVERSE_JOINTS(src)
+    {
+        if (JNT->coupledJointName && JNT->coupledTo)
+        {
+            RFREE(JNT->coupledJointName);
+            JNT->coupledJointName = String_clone(JNT->coupledTo->name);
+        }
+    }
+
+    // Add the suffix to all sensors that come new into the graph
+    RCSGRAPH_TRAVERSE_SENSORS(src)
+    {
+        const size_t nameLen = strlen(SENSOR->name) + strlen(suffix) + 1;
+        char* newName = RNALLOC(nameLen, char);
+        snprintf(newName, nameLen, "%s%s", SENSOR->name, suffix);
+        RFREE(SENSOR->name);
+        SENSOR->name = newName;
+    }
 }
