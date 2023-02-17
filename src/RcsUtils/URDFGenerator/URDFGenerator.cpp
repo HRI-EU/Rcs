@@ -42,12 +42,12 @@ namespace Rcs {
 
 //------------------------------------------------------------------------
 
-URDFGenerator::URDFGenerator(RcsGraph* graph) : m_graph(nullptr), m_withFloatingJoint(false)
+URDFGenerator::URDFGenerator(RcsGraph* graph) : m_graph(nullptr), m_withFloatingJoint(false), m_withDummyBase(false)
 {
     if (graph) {
         m_graph = graph;
     } else {
-        RLOG(0, "graph is invalid.");
+        RLOG(5, "graph is invalid.");
     }
 }
 
@@ -83,10 +83,20 @@ std::unique_ptr<URDFElement> URDFGenerator::graphToURDFElements(const RcsGraph* 
     robot->addAttribute("name", "RcsGeneratedRobot");
 
     // dummy root node. Every root node in the graph should be connected to this dummy root in exported urdf.
-    if (std::string(graph->root->name) != "dummy_base") {
+    int rootBdyNum = 0;
+    RCSGRAPH_TRAVERSE_BODIES(graph)
+    {
+        if (BODY->parent == NULL)
+        {
+            ++rootBdyNum;
+        }
+    }
+
+    if (std::string(graph->root->name) != "dummy_base" && rootBdyNum > 1) {
         auto link = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("link"));
         link->addAttribute("name", "dummy_base");
         robot->addSubElement(std::move(link));
+        m_withDummyBase = true;
     }
 
     // links
@@ -115,7 +125,7 @@ void URDFGenerator::addLinkAccordingToBody(URDFElement* robot, RcsBody* body)
     link->addAttribute("name", body->name);
 
     auto num = RcsBody_numJoints(body);
-    RLOG(0, "handling Rcs body, current body=%s, parent=%s, jointNumber=%d", body->name, body->parent ? body->parent->name : "NULL", num);
+    RLOG(5, "handling Rcs body, current body=%s, parent=%s, jointNumber=%d", body->name, body->parent ? body->parent->name : "NULL", num);
 
     // intertial
     handlingInertial(body, link.get());
@@ -145,7 +155,7 @@ void URDFGenerator::addLinkAccordingToBody(URDFElement* robot, RcsBody* body)
 
     if (body->jnt && body->A_BP && !HTr_isIdentity(body->A_BP))  // -->A_JP-->A_BP. In this situation, we need an additional dummy link for relative transformation A_BP
     {
-        RLOG(0, "add additional dummy link because of A_BP.");
+        RLOG(5, "add additional dummy link because of A_BP.");
 
         auto dummyLink = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("link"));
         std::string jointName = body->jnt->name;
@@ -171,7 +181,7 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
     }
 
     unsigned int jointNumber = RcsBody_numJoints(body);
-    RLOG(0, "handling joint for body=%s, numJoints=%u, A_BP=%s", body->name, jointNumber, body->A_BP ? (HTr_isIdentity(body->A_BP) ? "Identity" : "Not Identity") : "NULL");
+    RLOG(5, "handling joint for body=%s, numJoints=%u, A_BP=%s", body->name, jointNumber, body->A_BP ? (HTr_isIdentity(body->A_BP) ? "Identity" : "Not Identity") : "NULL");
 
     if (jointNumber == 0)  // for fixed joint.
     {
@@ -184,7 +194,7 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
             uniqueJoint->addAttribute("type","fixed");
             parent->addAttribute("link", body->parent->name);
         }
-        else
+        else if (!body->parent && m_withDummyBase)
         {
             uniqueJoint->addAttribute("name", std::string(body->name) + "_to_dummy_base_dummy_joint");
             uniqueJoint->addAttribute("type","fixed");
@@ -214,7 +224,8 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
             uniqueJoint->addSubElement(std::move(origin));
         }
 
-        robot->addSubElement(std::move(uniqueJoint));
+        if (m_withDummyBase || body->parent)  // if body has no parent and has no dummy base in the graph. Then this body is root body. we ignore the joints on it.
+            robot->addSubElement(std::move(uniqueJoint));
     }
     else if (jointNumber == 1)  // corner case for -->A_JP-->A_BP situation. create an additional dummy joint
     {
@@ -309,7 +320,6 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
 
             if (body->A_BP)
             {
-                RMSG(0, "condition fufilled");
                 auto dummyOrigin = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("origin"));
 
                 std::stringstream translation;
@@ -433,7 +443,6 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
 
             if (body->A_BP)
             {
-                RMSG(0, "condition fufilled");
                 auto dummyOrigin = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("origin"));
 
                 std::stringstream translation;
@@ -546,7 +555,7 @@ void URDFGenerator::handlingInertial(RcsBody* body, URDFElement* link)
 void Rcs::URDFGenerator::handlingRigidBodyJoint(URDFElement* robot, RcsBody* body)
 {
     if (body->rigid_body_joints) {
-        RLOG(0, "body=%s has rigid body joints", body->name);
+        RLOG(5, "body=%s has rigid body joints", body->name);
         auto rigidBodyJoint = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("joint"));
 
         // joint name
@@ -601,7 +610,7 @@ void URDFGenerator::handlingCollision(RcsBody* body, URDFElement* link)
 {
     if (!body->shape)
     {
-        RLOG(0, "body has no shape, bodyName: %s", body->name);
+        RLOG(5, "body has no shape, bodyName: %s", body->name);
         return;
     }
 
@@ -624,7 +633,7 @@ void URDFGenerator::handlingCollision(RcsBody* body, URDFElement* link)
                 break;
             }
             case RCSSHAPE_SSR:  // to box
-                RLOG(0, "SSR type is mapped to box.");
+                RLOG(5, "SSR type is mapped to box.");
             case RCSSHAPE_BOX: {
                 addBox(SHAPE, link, tag);
                 break;
@@ -638,7 +647,7 @@ void URDFGenerator::handlingCollision(RcsBody* body, URDFElement* link)
                 break;
             }
             default: {
-                RLOG(0, "ShapeType=%d, can not be exported.", SHAPE->type);
+                RLOG(5, "ShapeType=%d, can not be exported.", SHAPE->type);
             }
         }
 
@@ -650,7 +659,7 @@ void URDFGenerator::handlingVisual(RcsBody* body, URDFElement* link)
 {
     if (!body->shape)
     {
-        RLOG(0, "body has no shape, bodyName: %s", body->name);
+        RLOG(5, "body has no shape, bodyName: %s", body->name);
         return;
     }
 
@@ -673,7 +682,7 @@ void URDFGenerator::handlingVisual(RcsBody* body, URDFElement* link)
                 break;
             }
             case RCSSHAPE_SSR:  // to box
-                RLOG(0, "SSR type is mapped to box.");
+                RLOG(5, "SSR type is mapped to box.");
             case RCSSHAPE_BOX: {
                 addBox(SHAPE, link, tag);
                 break;
@@ -687,7 +696,7 @@ void URDFGenerator::handlingVisual(RcsBody* body, URDFElement* link)
                 break;
             }
             default: {
-                RLOG(0, "ShapeType=%d, can not be exported.", SHAPE->type);
+                RLOG(5, "ShapeType=%d, can not be exported.", SHAPE->type);
             }
         }
     }
@@ -899,7 +908,9 @@ void URDFGenerator::addMesh(RcsShape* shape, Rcs::URDFElement* link, const std::
     // geometry
     auto geometry = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("geometry"));
     auto geometryMesh = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("mesh"));
-    geometryMesh->addAttribute("filename", shape->meshFile);
+    std::string fileName = "file://";
+    fileName += shape->meshFile;
+    geometryMesh->addAttribute("filename", fileName);
     geometryMesh->addAttribute("scale", std::to_string(shape->scale) + " " + std::to_string(shape->scale) + " " + std::to_string(shape->scale));
     geometry->addSubElement(std::move(geometryMesh));
     mesh->addSubElement(std::move(geometry));
