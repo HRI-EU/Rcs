@@ -86,6 +86,8 @@ class URDFGenerator final
     std::unique_ptr<URDFElement> m_robot;
     bool m_withFloatingJoint;
     bool m_withDummyBase;
+};
+
 }
 
 #endif // URDFGENERATOR_H
