@@ -42,12 +42,12 @@ namespace Rcs {
 
 //------------------------------------------------------------------------
 
-URDFGenerator::URDFGenerator(RcsGraph* graph) : m_graph(nullptr), m_withFloatingJoint(false)
+URDFGenerator::URDFGenerator(RcsGraph* graph) : m_graph(nullptr), m_withFloatingJoint(false), m_withDummyBase(false)
 {
     if (graph) {
         m_graph = graph;
     } else {
-        RLOG(0, "graph is invalid.");
+        RLOG(5, "graph is invalid.");
     }
 }
 
@@ -83,10 +83,20 @@ std::unique_ptr<URDFElement> URDFGenerator::graphToURDFElements(const RcsGraph* 
     robot->addAttribute("name", "RcsGeneratedRobot");
 
     // dummy root node. Every root node in the graph should be connected to this dummy root in exported urdf.
-    if (std::string(graph->root->name) != "dummy_base") {
+    int rootBdyNum = 0;
+    RCSGRAPH_TRAVERSE_BODIES(graph)
+    {
+        if (BODY->parent == NULL)
+        {
+            ++rootBdyNum;
+        }
+    }
+
+    if (std::string(graph->root->name) != "dummy_base" && rootBdyNum > 1) {
         auto link = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("link"));
         link->addAttribute("name", "dummy_base");
         robot->addSubElement(std::move(link));
+        m_withDummyBase = true;
     }
 
     // links
@@ -114,7 +124,8 @@ void URDFGenerator::addLinkAccordingToBody(URDFElement* robot, RcsBody* body)
 
     link->addAttribute("name", body->name);
 
-    RLOG(0, "handling Rcs body, current body=%s, parent=%s", body->name, body->parent ? body->parent->name : "NULL");
+    auto num = RcsBody_numJoints(body);
+    RLOG(5, "handling Rcs body, current body=%s, parent=%s, jointNumber=%d", body->name, body->parent ? body->parent->name : "NULL", num);
 
     // intertial
     handlingInertial(body, link.get());
@@ -129,7 +140,7 @@ void URDFGenerator::addLinkAccordingToBody(URDFElement* robot, RcsBody* body)
 
     // if exist multiple joints, add dummy links.
     // if body->rigid_body_joints, it should be a floating joint after urdf.
-    if (body->jnt && body->jnt->next) {
+    if (num > 1) {
         int dummyNum = 0;
         RCSBODY_TRAVERSE_JOINTS(body) {
             if (dummyNum != 0) {
@@ -140,6 +151,16 @@ void URDFGenerator::addLinkAccordingToBody(URDFElement* robot, RcsBody* body)
             }
             ++dummyNum;
         }
+    }
+
+    if (body->jnt && body->A_BP && !HTr_isIdentity(body->A_BP))  // -->A_JP-->A_BP. In this situation, we need an additional dummy link for relative transformation A_BP
+    {
+        RLOG(5, "add additional dummy link because of A_BP.");
+
+        auto dummyLink = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("link"));
+        std::string jointName = body->jnt->name;
+        dummyLink->addAttribute("name", jointName + "_to_A_BP_dummy");
+        robot->addSubElement(std::move(dummyLink));
     }
 }
 
@@ -160,36 +181,23 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
     }
 
     unsigned int jointNumber = RcsBody_numJoints(body);
-    RLOG(0, "handling joint for body=%s, numJoints=%u", body->name, jointNumber);
+    RLOG(5, "handling joint for body=%s, numJoints=%u, A_BP=%s", body->name, jointNumber, body->A_BP ? (HTr_isIdentity(body->A_BP) ? "Identity" : "Not Identity") : "NULL");
 
-    if (jointNumber <= 1) {  // if the joint is the unique joint connects two body, then it is easy.
+    if (jointNumber == 0)  // for fixed joint.
+    {
         auto uniqueJoint = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("joint"));
 
         // parent link
         auto parent = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("parent"));
         if (body->parent) {
-            if (body->jnt) {
-                // joint name, type attribute and axis element
-                setJointAttribute(body->jnt, uniqueJoint.get());
-            }
-            else
-            {
-                uniqueJoint->addAttribute("name", std::string(body->name) + "_to_" + body->parent->name + "_dummy_joint");
-                uniqueJoint->addAttribute("type","fixed");
-            }
+            uniqueJoint->addAttribute("name", std::string(body->name) + "_to_" + body->parent->name +  "_dummy_joint");
+            uniqueJoint->addAttribute("type","fixed");
             parent->addAttribute("link", body->parent->name);
         }
-        else
+        else if (!body->parent && m_withDummyBase)
         {
-            if (body->jnt) {
-                // joint name, type attribute and axis element
-                setJointAttribute(body->jnt, uniqueJoint.get());
-            }
-            else
-            {
-                uniqueJoint->addAttribute("name", std::string(body->name) + "_to_dummy_base_dummy_joint");
-                uniqueJoint->addAttribute("type","fixed");
-            }
+            uniqueJoint->addAttribute("name", std::string(body->name) + "_to_dummy_base_dummy_joint");
+            uniqueJoint->addAttribute("type","fixed");
             parent->addAttribute("link", "dummy_base");
         }
         uniqueJoint->addSubElement(std::move(parent));
@@ -200,23 +208,7 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
         uniqueJoint->addSubElement(std::move(child));
 
         // origin
-        if (body->jnt && body->jnt->A_JP) {
-            auto origin = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("origin"));
-
-            std::stringstream translation;
-            std::stringstream rotation;
-            translation <<  body->jnt->A_JP->org[0] << " " <<  body->jnt->A_JP->org[1] << " " << body->jnt->A_JP->org[2];
-
-            double rpy[3];
-            computeEulerAngles(rpy, body->jnt->A_JP->rot, EulOrdXYZs);
-            rotation << rpy[0] << " " << rpy[1] << " " << rpy[2];
-
-            origin->addAttribute("xyz", translation.str());
-            origin->addAttribute("rpy", rotation.str());
-            uniqueJoint->addSubElement(std::move(origin));
-        }
-        else if (!body->jnt && body->A_BP)  // for fixed dummy joint
-        {
+        if (body->A_BP) {
             auto origin = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("origin"));
 
             std::stringstream translation;
@@ -232,15 +224,67 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
             uniqueJoint->addSubElement(std::move(origin));
         }
 
-        // limit
-        if (body->jnt) {
-            auto limit = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("limit"));
-            limit->addAttribute("effort", std::to_string(body->jnt->maxTorque > 1000 ? 1000 : body->jnt->maxTorque));
-            limit->addAttribute("velocity", std::to_string(body->jnt->speedLimit > 1000 ? 1000 : body->jnt->speedLimit));
-            limit->addAttribute("lower", std::to_string(body->jnt->q_min));
-            limit->addAttribute("upper", std::to_string(body->jnt->q_max));
-            uniqueJoint->addSubElement(std::move(limit));
+        if (m_withDummyBase || body->parent)  // if body has no parent and has no dummy base in the graph. Then this body is root body. we ignore the joints on it.
+            robot->addSubElement(std::move(uniqueJoint));
+    }
+    else if (jointNumber == 1)  // corner case for -->A_JP-->A_BP situation. create an additional dummy joint
+    {
+        auto uniqueJoint = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("joint"));
+        const std::string dummyLinkName = std::string(body->jnt->name) + "_to_A_BP_dummy";
+
+        // joint name, type attribute and axis element
+        setJointAttribute(body->jnt, uniqueJoint.get());
+
+        // parent link
+        auto parent = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("parent"));
+        if (body->parent)
+        {
+            parent->addAttribute("link", body->parent->name);
         }
+        else
+        {
+            parent->addAttribute("link", "dummy_base");
+        }
+        uniqueJoint->addSubElement(std::move(parent));
+
+        // child link
+        if (body->A_BP && !HTr_isIdentity(body->A_BP))
+        {
+            auto child = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("child"));
+            child->addAttribute("link",  dummyLinkName);  // the child body is the dummy link for the A_BP.
+            uniqueJoint->addSubElement(std::move(child));
+        }
+        else
+        {
+            auto child = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("child"));
+            child->addAttribute("link",  body->name);
+            uniqueJoint->addSubElement(std::move(child));
+        }
+
+        // origin
+        if (body->jnt->A_JP) {
+            auto origin = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("origin"));
+
+            std::stringstream translation;
+            std::stringstream rotation;
+            translation <<  body->jnt->A_JP->org[0] << " " <<  body->jnt->A_JP->org[1] << " " << body->jnt->A_JP->org[2];
+
+            double rpy[3];
+            computeEulerAngles(rpy, body->jnt->A_JP->rot, EulOrdXYZs);
+            rotation << rpy[0] << " " << rpy[1] << " " << rpy[2];
+
+            origin->addAttribute("xyz", translation.str());
+            origin->addAttribute("rpy", rotation.str());
+            uniqueJoint->addSubElement(std::move(origin));
+        }
+
+        // limit
+        auto limit = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("limit"));
+        limit->addAttribute("effort", std::to_string(body->jnt->maxTorque > 1000 ? 1000 : body->jnt->maxTorque));
+        limit->addAttribute("velocity", std::to_string(body->jnt->speedLimit > 1000 ? 1000 : body->jnt->speedLimit));
+        limit->addAttribute("lower", std::to_string(body->jnt->q_min));
+        limit->addAttribute("upper", std::to_string(body->jnt->q_max));
+        uniqueJoint->addSubElement(std::move(limit));
 
         // mimic
         if (body->jnt->coupledJointName)
@@ -260,11 +304,49 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
         }
 
         robot->addSubElement(std::move(uniqueJoint));
+
+        // handling A_BP dummy joint
+        if (body->A_BP && !HTr_isIdentity(body->A_BP))
+        {
+            auto dummyJoint = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("joint"));
+            dummyJoint->addAttribute("name", std::string("A_BP_to_") + body->name + "_dummy_joint");
+            dummyJoint->addAttribute("type","fixed");
+            auto dummyParent = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("parent"));
+            dummyParent->addAttribute("link", dummyLinkName);
+            dummyJoint->addSubElement(std::move(dummyParent));
+            auto dummyChild = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("child"));
+            dummyChild->addAttribute("link",  body->name);
+            dummyJoint->addSubElement(std::move(dummyChild));
+
+            if (body->A_BP)
+            {
+                auto dummyOrigin = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("origin"));
+
+                std::stringstream translation;
+                std::stringstream rotation;
+                translation <<  body->A_BP->org[0] << " " <<  body->A_BP->org[1] << " " << body->A_BP->org[2];
+
+                double rpy[3];
+                computeEulerAngles(rpy, body->A_BP->rot, EulOrdXYZs);
+                rotation << rpy[0] << " " << rpy[1] << " " << rpy[2];
+
+                dummyOrigin->addAttribute("xyz", translation.str());
+                dummyOrigin->addAttribute("rpy", rotation.str());
+                dummyJoint->addSubElement(std::move(dummyOrigin));
+            }
+            robot->addSubElement(std::move(dummyJoint));
+        }
     }
-    else  // multiple joints
-    {  // otherweise, we must add dummy subjoints.
-        int num = 0;
+    else if (jointNumber > 1)  // create dummy joint after last joint.
+    {
+        std::string dummyLinkName;
+        unsigned int num = 0;
         RCSBODY_TRAVERSE_JOINTS(body) {
+            if (num == jointNumber - 1)
+            {
+                dummyLinkName = std::string(body->jnt->name) + "_to_A_BP_dummy";
+            }
+
             auto subJoint = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("joint"));
 
             // joint name, type attribute and axis element
@@ -285,7 +367,13 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
             auto child = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("child"));
             if (JNT->next) {
                 child->addAttribute("link", std::string(JNT->name) + "_to_" + JNT->next->name + "_dummy");
-            } else {
+            }
+            else if (!JNT->next && body->A_BP && !HTr_isIdentity(body->A_BP))
+            {
+                child->addAttribute("link",  dummyLinkName);
+            }
+            else
+            {
                 child->addAttribute("link",  body->name);
             }
             subJoint->addSubElement(std::move(child));
@@ -339,6 +427,37 @@ void URDFGenerator::addJointAccordingToLink(URDFElement* robot, RcsBody* body)
 
             robot->addSubElement(std::move(subJoint));
             ++num;
+        }
+
+        if (body->A_BP && !HTr_isIdentity(body->A_BP))
+        {
+            auto dummyJoint = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("joint"));
+            dummyJoint->addAttribute("name", std::string("A_BP_to_") + body->name + "_dummy_joint");
+            dummyJoint->addAttribute("type","fixed");
+            auto dummyParent = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("parent"));
+            dummyParent->addAttribute("link", dummyLinkName);
+            dummyJoint->addSubElement(std::move(dummyParent));
+            auto dummyChild = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("child"));
+            dummyChild->addAttribute("link",  body->name);
+            dummyJoint->addSubElement(std::move(dummyChild));
+
+            if (body->A_BP)
+            {
+                auto dummyOrigin = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("origin"));
+
+                std::stringstream translation;
+                std::stringstream rotation;
+                translation <<  body->A_BP->org[0] << " " <<  body->A_BP->org[1] << " " << body->A_BP->org[2];
+
+                double rpy[3];
+                computeEulerAngles(rpy, body->A_BP->rot, EulOrdXYZs);
+                rotation << rpy[0] << " " << rpy[1] << " " << rpy[2];
+
+                dummyOrigin->addAttribute("xyz", translation.str());
+                dummyOrigin->addAttribute("rpy", rotation.str());
+                dummyJoint->addSubElement(std::move(dummyOrigin));
+            }
+            robot->addSubElement(std::move(dummyJoint));
         }
     }
 }
@@ -436,7 +555,7 @@ void URDFGenerator::handlingInertial(RcsBody* body, URDFElement* link)
 void Rcs::URDFGenerator::handlingRigidBodyJoint(URDFElement* robot, RcsBody* body)
 {
     if (body->rigid_body_joints) {
-        RLOG(0, "body=%s has rigid body joints", body->name);
+        RLOG(5, "body=%s has rigid body joints", body->name);
         auto rigidBodyJoint = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("joint"));
 
         // joint name
@@ -491,7 +610,7 @@ void URDFGenerator::handlingCollision(RcsBody* body, URDFElement* link)
 {
     if (!body->shape)
     {
-        RLOG(0, "body has no shape, bodyName: %s", body->name);
+        RLOG(5, "body has no shape, bodyName: %s", body->name);
         return;
     }
 
@@ -514,7 +633,7 @@ void URDFGenerator::handlingCollision(RcsBody* body, URDFElement* link)
                 break;
             }
             case RCSSHAPE_SSR:  // to box
-                RLOG(0, "SSR type is mapped to box.");
+                RLOG(5, "SSR type is mapped to box.");
             case RCSSHAPE_BOX: {
                 addBox(SHAPE, link, tag);
                 break;
@@ -528,7 +647,7 @@ void URDFGenerator::handlingCollision(RcsBody* body, URDFElement* link)
                 break;
             }
             default: {
-                RLOG(0, "ShapeType=%d, can not be exported.", SHAPE->type);
+                RLOG(5, "ShapeType=%d, can not be exported.", SHAPE->type);
             }
         }
 
@@ -540,7 +659,7 @@ void URDFGenerator::handlingVisual(RcsBody* body, URDFElement* link)
 {
     if (!body->shape)
     {
-        RLOG(0, "body has no shape, bodyName: %s", body->name);
+        RLOG(5, "body has no shape, bodyName: %s", body->name);
         return;
     }
 
@@ -563,7 +682,7 @@ void URDFGenerator::handlingVisual(RcsBody* body, URDFElement* link)
                 break;
             }
             case RCSSHAPE_SSR:  // to box
-                RLOG(0, "SSR type is mapped to box.");
+                RLOG(5, "SSR type is mapped to box.");
             case RCSSHAPE_BOX: {
                 addBox(SHAPE, link, tag);
                 break;
@@ -577,7 +696,7 @@ void URDFGenerator::handlingVisual(RcsBody* body, URDFElement* link)
                 break;
             }
             default: {
-                RLOG(0, "ShapeType=%d, can not be exported.", SHAPE->type);
+                RLOG(5, "ShapeType=%d, can not be exported.", SHAPE->type);
             }
         }
     }
@@ -789,7 +908,9 @@ void URDFGenerator::addMesh(RcsShape* shape, Rcs::URDFElement* link, const std::
     // geometry
     auto geometry = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("geometry"));
     auto geometryMesh = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("mesh"));
-    geometryMesh->addAttribute("filename", shape->meshFile);
+    std::string fileName = "file://";
+    fileName += shape->meshFile;
+    geometryMesh->addAttribute("filename", fileName);
     geometryMesh->addAttribute("scale", std::to_string(shape->scale) + " " + std::to_string(shape->scale) + " " + std::to_string(shape->scale));
     geometry->addSubElement(std::move(geometryMesh));
     mesh->addSubElement(std::move(geometry));

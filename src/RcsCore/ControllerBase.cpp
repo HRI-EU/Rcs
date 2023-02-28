@@ -225,6 +225,21 @@ Rcs::ControllerBase::ControllerBase(RcsGraph* graph):
 }
 
 /*******************************************************************************
+ * Constructor based on a graph object. Takes ownership of the graph.
+ ******************************************************************************/
+Rcs::ControllerBase::ControllerBase(RcsGraph* graph, RcsCollisionMdl* cMdl):
+      graph(graph),
+      ownsGraph(false),
+      xmlRootNode(NULL),
+      xmlDoc(NULL),
+      cMdl(cMdl),
+      name("Unknown controller"),
+      xmlFile("no-xml-file-available")
+{
+    // nothing more to do in here.
+}
+
+/*******************************************************************************
  * Copy constructor doing deep copying.
  * The xml data is not copied, since this is not present after the
  * construction of the copied constructor.

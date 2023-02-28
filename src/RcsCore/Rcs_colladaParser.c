@@ -380,7 +380,7 @@ bool Rcs_parseTechniqueCommonNode(xmlNodePtr techiniqueCommonNode, ColladaTechni
 {
     if (!techiniqueCommonNode)
     {
-        RLOG(0, "technique_common node ptr invalid.");
+        RLOG(5, "technique_common node ptr invalid.");
         return false;
     }
 
@@ -388,7 +388,7 @@ bool Rcs_parseTechniqueCommonNode(xmlNodePtr techiniqueCommonNode, ColladaTechni
     xmlNodePtr accessorNode = getXMLChildByName(techiniqueCommonNode, "accessor");
     if (!accessorNode)
     {
-        RLOG(0, "can not parse accessor");
+        RLOG(5, "can not parse accessor");
         return false;
     }
     result &= (getXMLNodePropertyStringN(accessorNode, "source", techniqueCommon->accessorSource, 128) > 0);
@@ -396,14 +396,14 @@ bool Rcs_parseTechniqueCommonNode(xmlNodePtr techiniqueCommonNode, ColladaTechni
     result &= getXMLNodePropertyInt(accessorNode, "stride", &techniqueCommon->stride);
     if (!result)
     {
-        RLOG(0, "parse accessor node faile");
+        RLOG(5, "parse accessor node faile");
         return false;
     }
 
     xmlNodePtr parameterNode = accessorNode->children;
     if (!parameterNode)
     {
-        RLOG(0, "no parameter node");
+        RLOG(5, "no parameter node");
         return result;
     }
 
@@ -424,7 +424,7 @@ bool Rcs_parseTechniqueCommonNode(xmlNodePtr techiniqueCommonNode, ColladaTechni
 
     if ((i != parameterLen) || !result)
     {
-        RLOG(0, "parse param node error.");
+        RLOG(5, "parse param node error.");
         return false;
     }
 
@@ -443,7 +443,7 @@ bool Rcs_parseXMLNodeContentToDoubleArray(xmlNodePtr node, double* array, int ar
     xmlFree(pNodeArrayStr);
     if (!tmpRes)
     {
-        RLOG(0, "convert int array failed.");
+        RLOG(5, "convert int array failed.");
         return false;
     }
 
@@ -462,7 +462,7 @@ bool Rcs_parseXMLNodeContentToIntArray(xmlNodePtr node, int* array, int arrLen)
     xmlFree(pNodeArrayStr);
     if (!tmpRes)
     {
-        RLOG(0, "convert int array failed.");
+        RLOG(5, "convert int array failed.");
         return false;
     }
 
@@ -475,7 +475,7 @@ bool Rcs_parseSourceNode(xmlNodePtr sourceNode, ColladaSource* source)
     result &= (getXMLNodePropertyStringN(sourceNode, "id", source->id, 128) > 0);
     if (!result)
     {
-        RLOG(0, "parse source node id error.");
+        RLOG(5, "parse source node id error.");
         return false;
     }
     xmlNodePtr techiniqueCommonNode = getXMLChildByName(sourceNode, "technique_common");
@@ -484,14 +484,14 @@ bool Rcs_parseSourceNode(xmlNodePtr sourceNode, ColladaSource* source)
     source->techniqueCommon = RNALLOC(1, ColladaTechniqueCommon);
     if (!source->techniqueCommon)
     {
-        RLOG(0, "allocate memory for technique_common failed.");
+        RLOG(5, "allocate memory for technique_common failed.");
         return false;
     }
 
     result &= Rcs_parseTechniqueCommonNode(techiniqueCommonNode, source->techniqueCommon);
     if (!result)
     {
-        RLOG(0, "parse techinique common node error.");
+        RLOG(5, "parse techinique common node error.");
         return result;
     }
 
@@ -499,7 +499,7 @@ bool Rcs_parseSourceNode(xmlNodePtr sourceNode, ColladaSource* source)
     floatArrNode = getXMLChildByName(sourceNode, "float_array");
     if (!floatArrNode)
     {
-        RLOG(0, "source node has no float array node.");
+        RLOG(5, "source node has no float array node.");
         return false;
     }
 
@@ -509,14 +509,14 @@ bool Rcs_parseSourceNode(xmlNodePtr sourceNode, ColladaSource* source)
     source->array = RNALLOC(source->arrLen, double);
     if (!source->array)
     {
-        RLOG(0, "allocate memory for source array failed.");
+        RLOG(5, "allocate memory for source array failed.");
         return false;
     }
 
     result &= Rcs_parseXMLNodeContentToDoubleArray(floatArrNode, source->array, source->arrLen);
     if (!result)
     {
-        RLOG(0, "parse source node float array error");
+        RLOG(5, "parse source node float array error");
         return result;
     }
 
@@ -531,7 +531,7 @@ bool Rcs_parseInputNode(xmlNodePtr inputNode, ColladaInput* input, ColladaSource
     result &= (getXMLNodePropertyStringN(inputNode, "semantic", input->semantic, 16) > 0);
     if (!result)
     {
-        RLOG(0, "parse input node error");
+        RLOG(5, "parse input node error");
         return result;
     }
 
@@ -561,7 +561,7 @@ bool Rcs_parseVerticesNode(xmlNodePtr verticesNode, ColladaVertices* vertices, C
     result &= (getXMLNodePropertyStringN(verticesNode, "id", vertices->id, 128) > 0);
     if (!result)
     {
-        RLOG(0, "vertices node has no id");
+        RLOG(5, "vertices node has no id");
         return result;
     }
 
@@ -569,7 +569,7 @@ bool Rcs_parseVerticesNode(xmlNodePtr verticesNode, ColladaVertices* vertices, C
     inputNode = getXMLChildByName(verticesNode, "input");
     if (!inputNode)
     {
-        RLOG(0, "vertices node has no input");
+        RLOG(5, "vertices node has no input");
         return false;
     }
 
@@ -577,14 +577,14 @@ bool Rcs_parseVerticesNode(xmlNodePtr verticesNode, ColladaVertices* vertices, C
     vertices->input = RNALLOC(1, ColladaInput);
     if (!vertices->input)
     {
-        RLOG(0, "allocate memory for vertices input failed.");
+        RLOG(5, "allocate memory for vertices input failed.");
         return false;
     }
 
     result &= Rcs_parseInputNode(inputNode, vertices->input, sources, sourcesLen);
     if (!result)
     {
-        RLOG(0, "parse vertices node error, input node parsing error");
+        RLOG(5, "parse vertices node error, input node parsing error");
         return result;
     }
 
@@ -598,7 +598,7 @@ bool Rcs_parseTrianglesNode(xmlNodePtr trianglesNode, ColladaTriangles* triangle
     result &= getXMLNodePropertyInt(trianglesNode, "count", &triangles->trianglesNum);
     if (!result)
     {
-        RLOG(0, "parse triangles node property failed.");
+        RLOG(5, "parse triangles node property failed.");
         return result;
     }
 
@@ -622,7 +622,7 @@ bool Rcs_parseTrianglesNode(xmlNodePtr trianglesNode, ColladaTriangles* triangle
                     }
                     else
                     {
-                        RLOG(0, "vertices input has no array");
+                        RLOG(5, "vertices input has no array");
                     }
 
                 }
@@ -634,7 +634,7 @@ bool Rcs_parseTrianglesNode(xmlNodePtr trianglesNode, ColladaTriangles* triangle
 
     if (!result)
     {
-        RLOG(0, "parse inputs error, in triangles node");
+        RLOG(5, "parse inputs error, in triangles node");
         RFREE(triangles->inputs);  // input does not hold the data, can directly be freed.
         triangles->inputs = NULL;
         return result;
@@ -647,7 +647,7 @@ bool Rcs_parseTrianglesNode(xmlNodePtr trianglesNode, ColladaTriangles* triangle
     triangles->indexArray = RNALLOC(triangles->indexArrLen, int);
     if (!triangles->indexArray)
     {
-        RLOG(0, "can not allocate memory for index array, length=%d", triangles->indexArrLen);
+        RLOG(5, "can not allocate memory for index array, length=%d", triangles->indexArrLen);
         return false;
     }
 
@@ -656,7 +656,7 @@ bool Rcs_parseTrianglesNode(xmlNodePtr trianglesNode, ColladaTriangles* triangle
     result &= Rcs_parseXMLNodeContentToIntArray(pNode, triangles->indexArray, triangles->indexArrLen);
     if (!result)
     {
-        RLOG(0, "can not read p node content");
+        RLOG(5, "can not read p node content");
         return result;
     }
 
@@ -672,7 +672,7 @@ bool Rcs_parseMeshNode(xmlNodePtr meshNode, ColladaMesh* mesh)
     mesh->sources = RNALLOC(mesh->sourcesLen, ColladaSource);
     if (!mesh->sources)
     {
-        RLOG(0, "can not allocate memory for Source");
+        RLOG(5, "can not allocate memory for Source");
         return false;
     }
 
@@ -690,7 +690,7 @@ bool Rcs_parseMeshNode(xmlNodePtr meshNode, ColladaMesh* mesh)
     }
     if (!result)
     {
-        RLOG(0, "parse souces failed.");
+        RLOG(5, "parse souces failed.");
         return result;
     }
 
@@ -700,13 +700,13 @@ bool Rcs_parseMeshNode(xmlNodePtr meshNode, ColladaMesh* mesh)
     mesh->vertices = RNALLOC(1, ColladaVertices);
     if (!mesh->vertices)
     {
-        RLOG(0, "can not allocate memory for Vertices.");
+        RLOG(5, "can not allocate memory for Vertices.");
         return false;
     }
     result &= Rcs_parseVerticesNode(verticesNode, mesh->vertices, mesh->sources, mesh->sourcesLen);
     if (!result)
     {
-        RLOG(0, "parse vertices node failed.");
+        RLOG(5, "parse vertices node failed.");
         return result;
     }
 
@@ -716,14 +716,14 @@ bool Rcs_parseMeshNode(xmlNodePtr meshNode, ColladaMesh* mesh)
     mesh->triangles = RNALLOC(1, ColladaTriangles);
     if (!mesh->triangles)
     {
-        RLOG(0, "can not allocate memory for Triangles.");
+        RLOG(5, "can not allocate memory for Triangles.");
         return false;
     }
 
     result &= Rcs_parseTrianglesNode(trianglesNode, mesh->triangles, mesh->sources, mesh->sourcesLen, mesh->vertices);
     if (!result)
     {
-        RLOG(0, "parse triangles node failed.");
+        RLOG(5, "parse triangles node failed.");
         return result;
     }
 
@@ -738,7 +738,7 @@ bool Rcs_parseGeometryNode(xmlNodePtr geometryNode, ColladaGeometry* geometry)
     result &= (getXMLNodePropertyStringN(geometryNode, "name", geometry->name, 128) > 0);
     if (!result)
     {
-        RLOG(0, "can not parse geometry node property.");
+        RLOG(5, "can not parse geometry node property.");
         return result;
     }
 
@@ -747,13 +747,13 @@ bool Rcs_parseGeometryNode(xmlNodePtr geometryNode, ColladaGeometry* geometry)
     geometry->mesh = RNALLOC(1, ColladaMesh);
     if (!geometry->mesh)
     {
-        RLOG(0, "can not allocate memory for Mesh.");
+        RLOG(5, "can not allocate memory for Mesh.");
         return false;
     }
     result &= Rcs_parseMeshNode(meshNode, geometry->mesh);
     if (!result)
     {
-        RLOG(0, "parse mesh node failed.");
+        RLOG(5, "parse mesh node failed.");
         return result;
     }
 
@@ -769,7 +769,7 @@ bool Rcs_parseLibraryGeometriesNode(xmlNodePtr libraryGeometriesNode, ColladaLib
     libraryGeometries->geometries = RNALLOC(libraryGeometries->geometriesLen, ColladaGeometry);
     if (!libraryGeometries->geometries)
     {
-        RLOG(0, "can not allocate memory for Geometry");
+        RLOG(5, "can not allocate memory for Geometry");
         return false;
     }
 
@@ -787,7 +787,7 @@ bool Rcs_parseLibraryGeometriesNode(xmlNodePtr libraryGeometriesNode, ColladaLib
 
     if (!result)
     {
-        RLOG(0, "parse geometry node failed.");
+        RLOG(5, "parse geometry node failed.");
         return result;
     }
 
@@ -801,7 +801,7 @@ bool Rcs_parseMatrixNode(xmlNodePtr matrixNode, ColladaMatrix* matrix)
     result &= (getXMLNodePropertyStringN(matrixNode, "sid", matrix->sid, 16) > 0);
     if (!result)
     {
-        RLOG(0, "can not parse matrix node property.");
+        RLOG(5, "can not parse matrix node property.");
         return result;
     }
 
@@ -809,14 +809,14 @@ bool Rcs_parseMatrixNode(xmlNodePtr matrixNode, ColladaMatrix* matrix)
     double* array = RNALLOC(arrLen, double);
     if (!array)
     {
-        RLOG(0, "allocate memory for matrix array failed.");
+        RLOG(5, "allocate memory for matrix array failed.");
         return false;
     }
 
     result &= Rcs_parseXMLNodeContentToDoubleArray(matrixNode, array, arrLen);
     if (!result)
     {
-        RLOG(0, "parse source node float array error");
+        RLOG(5, "parse source node float array error");
         RFREE(array);
         return result;
     }
@@ -862,7 +862,7 @@ bool Rcs_parseVisualNode(xmlNodePtr node, ColladaVisualNode* visualNode)
     result &= (getXMLNodePropertyStringN(node, "type", visualNode->type, 16) > 0);
     if (!result)
     {
-        RLOG(0, "can not parse visual node property.");
+        RLOG(5, "can not parse visual node property.");
         return result;
     }
 
@@ -871,13 +871,13 @@ bool Rcs_parseVisualNode(xmlNodePtr node, ColladaVisualNode* visualNode)
     visualNode->matrix = RNALLOC(1, ColladaMatrix);
     if (!visualNode->matrix)
     {
-        RLOG(0, "can not allocate memory for visual node matrix.");
+        RLOG(5, "can not allocate memory for visual node matrix.");
         return false;
     }
     result &= Rcs_parseMatrixNode(matrixNode, visualNode->matrix);
     if (!result)
     {
-        RLOG(0, "parse matrix node failed.");
+        RLOG(5, "parse matrix node failed.");
         return result;
     }
 
@@ -886,13 +886,13 @@ bool Rcs_parseVisualNode(xmlNodePtr node, ColladaVisualNode* visualNode)
     visualNode->instanceGeometry = RNALLOC(1, ColladaInstanceGeometry);
     if (!visualNode->instanceGeometry)
     {
-        RLOG(0, "can not allocate memory for instance geometry.");
+        RLOG(5, "can not allocate memory for instance geometry.");
         return false;
     }
     result &= Rcs_parseInstanceGeometryNode(instanceGeometryNode, visualNode->instanceGeometry);
     if (!result)
     {
-        RLOG(0, "parse instance geometry node failed.");
+        RLOG(5, "parse instance geometry node failed.");
         return result;
     }
 
@@ -906,7 +906,7 @@ bool Rcs_parseVisualSceneNode(xmlNodePtr visualSceneNode, ColladaVisualScene* vi
     result &= (getXMLNodePropertyStringN(visualSceneNode, "name", visualScene->name, 16) > 0);
     if (!result)
     {
-        RLOG(0, "can not parse visual scene node property.");
+        RLOG(5, "can not parse visual scene node property.");
         return result;
     }
 
@@ -914,7 +914,7 @@ bool Rcs_parseVisualSceneNode(xmlNodePtr visualSceneNode, ColladaVisualScene* vi
     visualScene->nodes = RNALLOC(visualScene->nodesLen, ColladaVisualNode);
     if (!visualScene->nodes)
     {
-        RLOG(0, "can not allocate memory for visual node");
+        RLOG(5, "can not allocate memory for visual node");
         return false;
     }
 
@@ -932,7 +932,7 @@ bool Rcs_parseVisualSceneNode(xmlNodePtr visualSceneNode, ColladaVisualScene* vi
 
     if (!result)
     {
-        RLOG(0, "parse geometry node failed.");
+        RLOG(5, "parse geometry node failed.");
         return result;
     }
 
@@ -948,7 +948,7 @@ bool Rcs_parseLibraryVisualScenesNode(xmlNodePtr libraryVisualScenesNode, Collad
     libraryVisualScenes->visualScenes = RNALLOC(libraryVisualScenes->visualScenesLen, ColladaVisualScene);
     if (!libraryVisualScenes->visualScenes)
     {
-        RLOG(0, "can not allocate memory for Visual Scenes");
+        RLOG(5, "can not allocate memory for Visual Scenes");
         return false;
     }
 
@@ -966,7 +966,7 @@ bool Rcs_parseLibraryVisualScenesNode(xmlNodePtr libraryVisualScenesNode, Collad
 
     if (!result)
     {
-        RLOG(0, "parse geometry node failed.");
+        RLOG(5, "parse geometry node failed.");
         return result;
     }
 
@@ -1024,7 +1024,7 @@ bool Rcs_applyColladaInternalTransformation(Collada* collada)
     }
     else
     {
-        RLOG(0, "failed to apply transformation");
+        RLOG(5, "failed to apply transformation");
         return false;
     }
 
@@ -1039,13 +1039,13 @@ bool Rcs_parseColladaNode(xmlNodePtr colladaNode, Collada* collada)
     collada->libraryGeometries = RNALLOC(1, ColladaLibraryGeometries);
     if (!collada->libraryGeometries)
     {
-        RLOG(0, "can not allocate memory for LibraryGeometries");
+        RLOG(5, "can not allocate memory for LibraryGeometries");
         return false;
     }
     result &= Rcs_parseLibraryGeometriesNode(libraryGeometriesNode, collada->libraryGeometries);
     if (!result)
     {
-        RLOG(0, "parse collada node failed.");
+        RLOG(5, "parse collada node failed.");
         return false;
     }
 
@@ -1054,20 +1054,20 @@ bool Rcs_parseColladaNode(xmlNodePtr colladaNode, Collada* collada)
     collada->libraryVisualScenes = RNALLOC(1, ColladaLibraryVisualScenes);
     if (!collada->libraryVisualScenes)
     {
-        RLOG(0, "can not allocate memory for LibraryVisualScenes");
+        RLOG(5, "can not allocate memory for LibraryVisualScenes");
         return false;
     }
     result &= Rcs_parseLibraryVisualScenesNode(libraryVisualScenesNode, collada->libraryVisualScenes);
     if (!result)
     {
-        RLOG(0, "parse collada node failed.");
+        RLOG(5, "parse collada node failed.");
         return false;
     }
 
     result &= Rcs_applyColladaInternalTransformation(collada);
     if (!result)
     {
-        RLOG(0, "can not applay collada internal transformation.");
+        RLOG(5, "can not applay collada internal transformation.");
         return false;
     }
 
@@ -1083,14 +1083,14 @@ bool Rcs_parseDAEFile(const char* filename, Collada** collada)
     colladaNode = parseXMLFile(filename, "COLLADA", &doc);
     if (!colladaNode)
     {
-        RLOG(0, "can not parse the collada file:%s", filename);
+        RLOG(5, "can not parse the collada file:%s", filename);
         return false;
     }
 
     *collada = RNALLOC(1, Collada);
     if (!(*collada))
     {
-        RLOG(0, "can not allocate memory for Collada object");
+        RLOG(5, "can not allocate memory for Collada object");
         xmlFreeDoc(doc);
         return false;
     }
@@ -1098,7 +1098,7 @@ bool Rcs_parseDAEFile(const char* filename, Collada** collada)
     result &= Rcs_parseColladaNode(colladaNode, *collada);
     if (!result)
     {
-        RLOG(0, "parse collada node error.");
+        RLOG(5, "parse collada node error.");
         Rcs_freeCollada(*collada);
         RFREE(*collada);
         *collada = NULL;
@@ -1165,11 +1165,11 @@ bool Rcs_parseMeshDataFromCollada(RcsMeshData* meshData, Collada* collada)
     meshData->vertices = RNALLOC(meshData->nVertices * 3, double);
     meshData->faces = RNALLOC(meshData->nFaces * 3, unsigned int);
 
-    RLOG(0, "vertices=%u, totalTriangles=%u", meshData->nVertices, meshData->nFaces);
+    RLOG(5, "vertices=%u, totalTriangles=%u", meshData->nVertices, meshData->nFaces);
 
     if (!meshData->vertices || !meshData->faces)
     {
-        RLOG(0, "can not allocate memory for RcsMeshData");
+        RLOG(5, "can not allocate memory for RcsMeshData");
         RFREE(meshData->vertices);
         RFREE(meshData->faces);
         meshData->vertices = NULL;
@@ -1206,7 +1206,7 @@ bool Rcs_parseMeshDataFromCollada(RcsMeshData* meshData, Collada* collada)
 
     if (count != meshData->nVertices * 3)
     {
-        RLOG(0, "copy vertices error");
+        RLOG(5, "copy vertices error");
         RFREE(meshData->vertices);
         RFREE(meshData->faces);
         meshData->vertices = NULL;
@@ -1248,7 +1248,7 @@ bool Rcs_parseMeshDataFromCollada(RcsMeshData* meshData, Collada* collada)
 
     if (count != meshData->nFaces * 3)
     {
-        RLOG(0, "copy faces index error");
+        RLOG(5, "copy faces index error");
         RFREE(meshData->vertices);
         RFREE(meshData->faces);
         meshData->vertices = NULL;

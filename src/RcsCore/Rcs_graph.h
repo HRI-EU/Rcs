@@ -683,6 +683,13 @@ void RcsGraph_copyResizeableShapes(RcsGraph* dst, const RcsGraph* src,
  */
 RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, RcsBody* target);
 
+/*! \ingroup RcsGraphFunctions
+ *  \brief add suffix to the name of all bodies and all joints of the graph.
+ *
+ *  \param[in] src      Valid pointer to graph.
+ *  \param[in] suffix   the suffix to be added to every component of the graph.
+ */
+void RcsGraph_addNameSuffix(RcsGraph* src, const char* suffix);
 
 /**
  * @name Joints

@@ -133,7 +133,13 @@ static RcsShape* parseShapeURDF(xmlNode* node, RcsBody* body)
 
             pathIdx++;
         }
-    } else {
+    }
+    else if (STRNEQ(meshFile, "file://", 7))  // for absolute path.
+    {
+        Rcs_getAbsoluteFileName(&meshFile[7], meshFileFull);
+    }
+    else
+    {
         Rcs_getAbsoluteFileName(meshFile, meshFileFull);
     }
 

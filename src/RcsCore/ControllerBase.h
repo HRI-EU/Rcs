@@ -87,6 +87,12 @@ public:
    */
   ControllerBase(RcsGraph* graph);
 
+  /*! \brief Constructor based on a graph and its collision model. The new class
+   *         takes ownership of the given graph. Use this if you only want to add
+   *         tasks manually using addTask.
+   */
+  ControllerBase(RcsGraph* graph, RcsCollisionMdl* cMdl);
+
   /*! \brief Copy constructor doing deep copying. The new class owns a deep
    *         copy of the graph and the collision model (if any).
    */
