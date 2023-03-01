@@ -3761,6 +3761,7 @@ RcsGraph* RcsGraph_cloneSubGraph(const RcsGraph* src, RcsBody* target)
         {
             RFREE(b->A_BP);
             b->A_BP = NULL;
+            b->rigid_body_joints = false;
         }
 
         // to which body does the new one needs to be attached?
