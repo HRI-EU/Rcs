@@ -45,6 +45,7 @@
 #include <Rcs_utils.h>
 #include <Rcs_shape.h>
 #include <MeshNode.h>
+#include <BoxNode.h>
 
 #include <osgDB/ReadFile>
 #include <osg/MatrixTransform>
@@ -130,6 +131,11 @@ BodyNode::BodyNode(const RcsBody* b, const RcsGraph* graph, double scale,
     const RcsShape* sh = &b->shapes[i];
     RLOG(5, "Creating ShapeNode for %s", RcsShape_name(sh->type));
     osg::ref_ptr<ShapeNode> sni = new ShapeNode(graph, b->id, i, resizeable);
+    sni->setPosition(osg::Vec3(sh->A_CB.org[0],
+                               sh->A_CB.org[1],
+                               sh->A_CB.org[2]));
+    sni->setAttitude(QuatFromHTr(&sh->A_CB));
+
     _shapeNodes.push_back(sni);
 
     if (RcsShape_isOfComputeType(sh, RCSSHAPE_COMPUTE_DISTANCE))
@@ -151,6 +157,34 @@ BodyNode::BodyNode(const RcsBody* b, const RcsGraph* graph, double scale,
     if (RcsShape_isOfComputeType(sh, RCSSHAPE_COMPUTE_DEPTHBUFFER))
     {
       _depthNode->addChild(sni.get());
+    }
+
+
+    // Debug: Add AABB to graphicsNode
+    bool withAABB = false;
+    if (withAABB && RcsShape_isOfComputeType(sh, RCSSHAPE_COMPUTE_DISTANCE))
+    {
+      double xyzMin[3], xyzMax[3];
+      RcsShape_computeAABB(sh, xyzMin, xyzMax);
+      double center[3], extents[3];
+      for (int i = 0; i < 3; ++i)
+      {
+        center[i] = xyzMin[i] + 0.5*(xyzMax[i] - xyzMin[i]);
+        extents[i] = xyzMax[i] - xyzMin[i];
+      }
+
+      osg::ref_ptr<osg::PositionAttitudeTransform> bbPat = new osg::PositionAttitudeTransform();
+
+      bbPat->setPosition(osg::Vec3(sh->A_CB.org[0], sh->A_CB.org[1],
+                                   sh->A_CB.org[2]));
+      bbPat->setAttitude(QuatFromHTr(&sh->A_CB));
+
+
+
+      //bbPat->setTransformation(&sh->A_CB);
+      osg::ref_ptr<BoxNode> bb = new BoxNode(center, extents[0], extents[1], extents[2]);
+      bbPat->addChild(bb.get());
+      _collisionNode->addChild(bbPat.get());
     }
 
   }

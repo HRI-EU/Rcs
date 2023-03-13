@@ -92,7 +92,7 @@ public:
   ControllerBase(const ControllerBase& copyFromMe);
 
   /*! \brief Sets the ownership of the class's graph. The graph is per default
-   *         owned by the class, and therefore destroyed in the desructor. 
+   *         owned by the class, and therefore destroyed in the desructor.
    *         Under certain circumstances, this might not be desired. This
    *         function allows to set the ownership of the graph, and therefore
    *         explicitely enabling or disabling graph destruction in the class's

@@ -60,6 +60,8 @@
        - export CXX=/usr/bin/clang++
        - export CC=/usr/bin/clang
        - recompile
+     - Debug macros: Don't use level 0. Warnings should be logged on debug
+       levels 1-4. Everything else goes higher.
      - Memory leak checking: memcheck executable \<options\> 2>&1 | tee /tmp/valgrind.txt
        (memcheck is aliased to valgrind --tool=memcheck --leak-check=full --show-reachable=yes) 
      - For memory allocation of the basic types in Rcs, we assume that it 
@@ -74,11 +76,6 @@
        (http://en.wikipedia.org/wiki/CamelCase), so that the code is 
        consistent. 
        For instance: int myVar instead of int my_var.
-     - Please try to be explicit when comparing values: For instance use
-       <br>
-       if(myPtr == NULL) ...
-       <br> instead of <br>
-       if(myPtr) ...
      - Inclusion of header files: If a header file from another project / 
        subdirectory is included, please include it as <br>
        \#include <myHeader.h> <br>

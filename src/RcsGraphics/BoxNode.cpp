@@ -34,6 +34,7 @@
 #include "BoxNode.h"
 
 #include <Rcs_Mat3d.h>
+#include <Rcs_graphicsUtils.h>
 
 #include <osg/Geode>
 #include <osg/ShapeDrawable>
@@ -46,9 +47,9 @@
 Rcs::BoxNode::BoxNode() : NodeBase()
 {
   this->box = new osg::Box();
-  osg::ShapeDrawable* shape = new osg::ShapeDrawable(box);
+  osg::ref_ptr<osg::ShapeDrawable> shape = new osg::ShapeDrawable(box);
   osg::Geode* geode = new osg::Geode();
-  geode->addDrawable(shape);
+  geode->addDrawable(shape.get());
   this->patPtr()->addChild(geode);
   setWireframe(true);
 }
@@ -91,9 +92,16 @@ void Rcs::BoxNode::init(const double center[3], double A_BI[3][3],
 {
   setName("BoxNode");
   this->box = new osg::Box();
-  box->setHalfLengths(osg::Vec3(0.5*lx, 0.5*ly, 0.5*lz));
+  // box->setHalfLengths(osg::Vec3(0.5*lx, 0.5*ly, 0.5*lz));
+  // box->setCenter(osg::Vec3(center[0], center[1], center[2]));
 
-  osg::ShapeDrawable* shape = new osg::ShapeDrawable(box.get());
+  //HTr T_BI;
+  //HTr_setIdentity(&T_BI);
+  //Mat3d_copy(T_BI.rot, A_BI);
+  //box->setRotation(QuatFromHTr(&T_BI));
+  pat->setScale(osg::Vec3(lx, ly, lz));
+
+  osg::ref_ptr<osg::ShapeDrawable> shape = new osg::ShapeDrawable(box.get());
 
   if (resizeable==true)
   {
@@ -102,7 +110,7 @@ void Rcs::BoxNode::init(const double center[3], double A_BI[3][3],
 
 
   osg::Geode* geode = new osg::Geode();
-  geode->addDrawable(shape);
+  geode->addDrawable(shape.get());
   this->patPtr()->addChild(geode);
   setPosition(center);
   setRotation(A_BI);
@@ -114,7 +122,8 @@ void Rcs::BoxNode::init(const double center[3], double A_BI[3][3],
  ******************************************************************************/
 void Rcs::BoxNode::resize(double lx, double ly, double lz)
 {
-  box->setHalfLengths(osg::Vec3(0.5*lx, 0.5*ly, 0.5*lz));
+  pat->setScale(osg::Vec3(lx, ly, lz));
+  //box->setHalfLengths(osg::Vec3(0.5*lx, 0.5*ly, 0.5*lz));
 }
 
 /*******************************************************************************

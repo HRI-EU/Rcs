@@ -419,3 +419,19 @@ void Timer_setTo(Timer* self, double t_des)
 
 
 
+/******************************************************************************
+
+\brief See header.
+
+******************************************************************************/
+
+void Timer_setDT(Timer* self, double dt)
+{
+  if (self == NULL)
+  {
+    RLOG(1, "Timer is NULL - not setting");
+    return;
+  }
+
+  self->dt = dt;
+}

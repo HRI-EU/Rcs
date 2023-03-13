@@ -157,7 +157,7 @@ int main(int argc, char** argv)
     case 1:
     {
       Rcs::ExampleGui gui(argc, argv);
-      gui.wait();
+      gui.waitUntilWidgetDeleted();
       break;
     }
 
@@ -175,12 +175,13 @@ int main(int argc, char** argv)
 
       example = Rcs::ExampleFactory::runExample(categoryName, exampleName,
                                                 argc, argv);
-      // RPAUSE_MSG("Hit enter to stop example");
+
       while (example && example->isRunning())
       {
         Timer_waitDT(0.1);
       }
 
+      Timer_waitDT(0.1);
       delete example;
       break;
     }
@@ -214,7 +215,7 @@ int main(int argc, char** argv)
     {
       RcsGraph* graph = RcsGraph_createRandom(5, 3);
       Rcs::JointGui gui(graph);
-      gui.wait();
+      gui.waitUntilWidgetDeleted();
       RcsGraph_destroy(graph);
       break;
     }

@@ -51,6 +51,7 @@ PhysicsConfig.cpp
 PhysicsFactory.cpp
 Rcs_basicMath.c
 Rcs_body.c
+Rcs_broadphase.c
 Rcs_BVHParser.c
 Rcs_cmdLine.cpp
 Rcs_collisionModel.c

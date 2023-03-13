@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -122,6 +122,7 @@ class ExampleIK_ContactGrasping : public ExampleIK
 public:
   ExampleIK_ContactGrasping(int argc, char** argv);
   virtual bool initParameters();
+  virtual bool initGraphics();
 };
 
 class ExampleIK_OSimWholeBody : public ExampleIK
@@ -145,6 +146,27 @@ public:
   virtual bool initParameters();
   virtual bool initAlgo();
   virtual std::string help();
+};
+
+class ExampleIK_Distance : public ExampleIK
+{
+public:
+  ExampleIK_Distance(int argc, char** argv);
+  virtual bool initParameters();
+};
+
+class ExampleIK_NormalAlign : public ExampleIK
+{
+public:
+  ExampleIK_NormalAlign(int argc, char** argv);
+  virtual bool initParameters();
+};
+
+class ExampleIK_Face : public ExampleIK
+{
+public:
+  ExampleIK_Face(int argc, char** argv);
+  virtual bool initParameters();
 };
 
 }   // namespace

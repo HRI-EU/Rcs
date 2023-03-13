@@ -61,7 +61,7 @@
   </model_state>
 
 
-<model_state model="StaticEffort" time_stamp="">
+<model_state model="StaticEffort" time_stamp="0">
   <joint_state joint="DofChestZ" position="0.811087" />
   <joint_state joint="lbr_joint_1_L" position="30.019255" />
   <joint_state joint="lbr_joint_2_L" position="50.012604" />

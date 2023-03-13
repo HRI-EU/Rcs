@@ -287,14 +287,13 @@ void integration_euler(DirDynFunc FCN,
                        const double* x,
                        double* x2)
 {
-  int i;
   double* xp = RNALLOC(nz, double);
 
   (*FCN)(x, param, xp, dt);
 
-  for (i = 0; i < nz; i++)
+  for (int i = 0; i < nz; i++)
   {
-    x2[i] = x[i] + xp[i] * dt;
+    x2[i] = x[i] + xp[i]*dt;
   }
 
   RFREE(xp);
@@ -878,9 +877,7 @@ double Rcs_directDynamics(const RcsGraph* graph,
 
 /******************************************************************************
  * Wrapper function of the direct dynamics to match the function
- * signature of the integrator. Argument param is assumed to point to a
- * RcsGraph structure. It's userData field is assumed to point to an
- * MatNd holding the external forces projected into the configuration space.
+ * signature of the integrator.
  ******************************************************************************/
 double Rcs_directDynamicsIntegrationStep(const double* x,
                                          void* param,

@@ -101,6 +101,20 @@ void MatNdGui::setLabels(std::vector<std::string>& labels)
   }
 }
 
+void MatNdGui::reset(const MatNd* values)
+{
+  MatNdWidget* mw = dynamic_cast<MatNdWidget*>(getWidget());
+
+  if (mw)
+  {
+    mw->reset(values);
+  }
+  else
+  {
+    RLOG(4, "Couldn't reset MatNdGui");
+  }
+}
+
 
 
 

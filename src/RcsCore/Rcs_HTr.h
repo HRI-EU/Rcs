@@ -308,7 +308,7 @@ void HTr_copyOrRecreate(HTr** dst, const HTr* src);
  *
  *  \param[out] filt   Target transform to be filtered.
  *  \param[in]  raw    Transform with "raw" values.
- *  \param[in]  tmc    Time constant: 1: raw values, smaller: stronger 
+ *  \param[in]  tmc    Time constant: 1: raw values, smaller: stronger
  *                     smoothing. It is not checked that tmc is in the
  *                     range [0 ... 1].
  */

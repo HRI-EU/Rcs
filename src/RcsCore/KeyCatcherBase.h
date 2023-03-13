@@ -31,8 +31,8 @@
 
 *******************************************************************************/
 
-#ifndef KEYCATCHERBASE_H
-#define KEYCATCHERBASE_H
+#ifndef RCS_KEYCATCHERBASE_H
+#define RCS_KEYCATCHERBASE_H
 
 #include <string>
 #include <map>
@@ -53,7 +53,9 @@ public:
 
   static bool registerKey(const std::string& key, const std::string& description, const std::string& group = "Main");
   static bool deregisterKey(const std::string& key, const std::string& group = "Main");
+  static void deregisterKeys();
   static void printRegisteredKeys();
+  static std::string printRegisteredKeysToString();
 
 private:
   static std::map< std::string, std::map<std::string, std::string> > _registered_keys;
@@ -61,4 +63,4 @@ private:
 
 }
 
-#endif // KEYCATCHERBASE_H
+#endif // RCS_KEYCATCHERBASE_H

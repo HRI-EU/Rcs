@@ -143,15 +143,17 @@ void TaskRegionBoxInterval::computeDX(const Task* task, double* dx,
 {
 
   for (size_t i = 0; i < bbMin.size(); ++i)
-  { 
-    double x_lb; 
+  {
+    double x_lb;
     double x_ub;
 
-    if (bbMean.empty()){
+    if (bbMean.empty())
+    {
       x_lb = x_des[i] + bbMin[i]; // plus, since sign comes from xml
       x_ub = x_des[i] + bbMax[i];
     }
-    else {
+    else
+    {
       x_lb = bbMean[i] + bbMin[i]; // plus, since sign comes from xml
       x_ub = bbMean[i] + bbMax[i];
     }

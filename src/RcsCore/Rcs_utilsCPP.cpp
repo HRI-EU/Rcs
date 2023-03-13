@@ -59,7 +59,27 @@ std::vector<std::string> File_getFilenamesInDirectory(const std::string& dirname
 
 #if defined(_MSC_VER)
 
-  RLOG(1, "No implementation under windows");
+  HANDLE hFind;
+  WIN32_FIND_DATA FindFileData;
+
+  std::string pattern = dirname + "/*" + extension;
+  if ((hFind = FindFirstFile(pattern.c_str(), &FindFileData)) != INVALID_HANDLE_VALUE)
+  {
+    do
+    {
+      std::string fileName;
+
+      if (returnFullPath)
+      {
+        fileName = dirname + "/";
+      }
+
+      fileName += FindFileData.cFileName;
+      files.push_back(fileName);
+    }
+    while (FindNextFile(hFind, &FindFileData));
+    FindClose(hFind);
+  }
 
   return files;
 
@@ -714,6 +734,7 @@ std::string RcsGraph_printUsageToString(std::string xmlFile)
     res = "Graph usage description: \n";
     res += (char*)usage;
     res += '\n';
+    xmlFree(usage);
   }
   else
   {

@@ -336,7 +336,7 @@ WidgetLauncher* AsyncGuiFactory::getLauncher()
   // didn't complete.
   while (!launcherRunning)
   {
-    RLOG(5, "Waiting for launcher %s ...", 
+    RLOG(5, "Waiting for launcher %s ...",
          launcher->objectName().toStdString().c_str());
     Timer_usleep(10000);
   }
@@ -410,7 +410,7 @@ bool WidgetLauncher::event(QEvent* ev)
     }
     else
     {
-      RLOG_CPP(5, "Widget " << mev->widget->w->objectName().toStdString()
+      RLOG_CPP(1, "Widget " << mev->widget->w->objectName().toStdString()
                << " already up and running");
     }
 
@@ -469,8 +469,8 @@ void WidgetLauncher::onCloseWindow(QObject* obj)
 
     if (aw->w == obj)
     {
-      RLOG_CPP(5, "Setting AsyncWidget's "
-               << obj->objectName().toStdString() << " to NULL");
+      RLOG_CPP(5, "Setting AsyncWidget's object '"
+               << obj->objectName().toStdString() << "' to NULL");
       disconnect(aw->w, SIGNAL(destroyed(QObject*)),
                  this, SLOT(onCloseWindow(QObject*)));
       aw->w = NULL;

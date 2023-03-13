@@ -44,24 +44,24 @@
     </Body>
 
     <Body name="Ball" >
-      <Joint name="DofX_Ball"   type="TransX" range="-10 0 10" />
-      <Joint name="DofY_Ball"   type="TransY" range="-10 -0.5 10" />
-      <Joint name="DofZ_Ball"   type="TransZ" range="-10 0.25 10" />
-      <Joint name="DofThX_Ball" type="RotX"   range="-600 0 600" />
-      <Joint name="DofThY_Ball" type="RotY"   range="-600 0 600" />
-      <Joint name="DofThZ_Ball" type="RotZ"   range="-600 0 600" />
+      <Joint name="DofX_Ball"   type="TransX" range="-10 0 10"    weightJL="0" />
+      <Joint name="DofY_Ball"   type="TransY" range="-10 -0.5 10" weightJL="0" />
+      <Joint name="DofZ_Ball"   type="TransZ" range="-10 0.25 10" weightJL="0" />
+      <Joint name="DofThX_Ball" type="RotX"   range="-600 0 600"  weightJL="0" />
+      <Joint name="DofThY_Ball" type="RotY"   range="-600 0 600"  weightJL="0" />
+      <Joint name="DofThZ_Ball" type="RotZ"   range="-600 0 600"  weightJL="0" />
 
       <Shape type="SPHERE" radius="0.25" graphics="true" distance="true" textureFile="textures/fMRT_bavaria.png"/>
       <Shape type="FRAME" scale="0.5" />
     </Body>
 
   <Body name="Box" mass="10" color="DARKRED_TRANS" >
-    <Joint name="DofX_Box"   type="TransX" range="-10 0 10" />
-    <Joint name="DofY_Box"   type="TransY" range="-10 0.5 10" />
-    <Joint name="DofZ_Box"   type="TransZ" range="-10 0.15 10" />
-    <Joint name="DofThX_Box" type="RotX"   range="-600 0 600" />
-    <Joint name="DofThY_Box" type="RotY"   range="-600 0 600" />
-    <Joint name="DofThZ_Box" type="RotZ"   range="-600 0 600" />
+    <Joint name="DofX_Box"   type="TransX" range="-10 0 10"    weightJL="0" />
+    <Joint name="DofY_Box"   type="TransY" range="-10 0.5 10"  weightJL="0" />
+    <Joint name="DofZ_Box"   type="TransZ" range="-10 0.15 10" weightJL="0" />
+    <Joint name="DofThX_Box" type="RotX"   range="-600 0 600"  weightJL="0" />
+    <Joint name="DofThY_Box" type="RotY"   range="-600 0 600"  weightJL="0" />
+    <Joint name="DofThZ_Box" type="RotZ"   range="-600 0 600"  weightJL="0" />
 
     <Shape type="BOX" extents="1 0.6 0.26" graphics="true" physics="false" distance="false" />
     <Shape type="SPHERE" radius="0.02" transform=" 0.5  0.3  0.13 0 0 0" graphics="true" distance="true" />

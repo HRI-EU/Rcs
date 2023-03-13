@@ -413,100 +413,22 @@ unsigned int String_countSubStrings(const char* str, const char* delim)
 /*******************************************************************************
  *
  ******************************************************************************/
-#if 0
-static char* String_expandMacros_(char* str)
-{
-  const char* p = str;
-  int count = 0;
-  bool foundOne = false;
-  int len = strlen(str);
-
-  while (count<len && (foundOne==false))
-  {
-
-    if ((*p)=='$' && (*(p+1)=='{'))
-    {
-      const char* q = p+2;
-      int macroStartIdx = count+2;
-      int macroEndIdx = macroStartIdx;
-
-      while ((*q) != '\0')
-      {
-        if ((*q)=='}')
-        {
-          int macroLen = macroEndIdx-macroStartIdx;
-          char* macro = RNALLOC(macroLen+1, char);
-          memcpy(macro, &str[macroStartIdx], macroLen);
-          macro[macroLen] = '\0';
-          char* envStr = getenv(macro);
-          RFREE(macro);
-          unsigned int macroStrLen = envStr ? strlen(envStr) : 0;
-          char* before = String_clone(str);
-          RCHECK(before);
-          before[macroStartIdx-2] = '\0';
-
-          const char* after = &str[macroEndIdx+1];
-          foundOne = true;
-
-          unsigned int newLen = strlen(before) + macroStrLen +
-                                strlen(after) + 2;
-          char* newStr = RNALLOC(newLen, char);
-          if (envStr)
-          {
-            sprintf(newStr, "%s%s%s", before, envStr, after);
-          }
-          else
-          {
-            sprintf(newStr, "%s%s", before, after);
-          }
-          RFREE(before);
-          RFREE(str);
-          str = String_expandMacros_(newStr);
-
-          break;
-        }
-        else if ((*q)=='$')
-        {
-          break;
-        }
-
-        macroEndIdx++;
-        q++;
-      }   // while ((*q) != '\0')
-    }   // if ((*p)=='$' && (*(p+1)=='{'))
-
-    count++;
-    p++;
-  }   // while ((*p) != '\0')
-
-  return str;
-}
-
-char* String_expandEnvironmentVariables2(const char* str)
-{
-  char* copyOfString = String_clone(str);
-  RCHECK(copyOfString);
-  return String_expandMacros_(copyOfString);
-}
-#endif
-
-//#define ENV_DBG
-char* String_expandMacros2_(char* line)
+bool String_expandMacros_(char* line)
 {
   // Find the first occurrence of "${" in the string
   char* varStart = strstr(line, "${");
   if (varStart == NULL)
   {
     RLOG(5, "Error: No environment variable found in the string \"%s\"\n", line);
-    return NULL;
+    return true;
   }
 
   // Find the end of the environment variable by searching for the "}" character
   char* varEnd = strstr(varStart, "}");
-  if (varEnd == NULL || varEnd < varStart+2)
+  if ((!varEnd) || (varEnd < varStart+2))
   {
     RLOG(1, "Error: Malformed environment variable in the string \"%s\"", line);
-    return NULL;
+    return true;
   }
 
   // Extract the name of the environment variable
@@ -517,51 +439,29 @@ char* String_expandMacros2_(char* line)
 
   // Get the value of the environment variable
   const char* value = String_getEnv(envVar);
-  if (value == NULL)
+  if (!value)
   {
     RLOG(1, "Environment variable \"%s\" not found in environment", envVar);
-    return NULL;
   }
 
-#ifdef ENV_DBG
-  printf("envVar='%s'\n", envVar);
-  printf("value='%s'\n", value);
-  printf("start index = %zu\n", varStart - line);
-  printf("end index = %zu\n", varEnd - line);
-#endif
+  size_t firstLen = varStart - line;
+  char* end = line + strlen(line);
 
   char resolved[512];
-  int firstLen = varStart - line;
-  char* end = line + strlen(line);
-  char* cursor = resolved;
-  memcpy(cursor, line, firstLen);   // That's everything up to "${"
+  memcpy(resolved, line, firstLen);   // That's everything up to "${"
+  char* cursor = resolved + firstLen;
 
-#ifdef ENV_DBG
-  cursor[firstLen] = '\0';
-  printf("first = '%s'\n", cursor);
-#endif
+  if (value)
+  {
+    memcpy(cursor, value, strlen(value));   // That's the environment variable
 
-  cursor += firstLen;
-  memcpy(cursor, value, strlen(value));   // That's the environment variable
+    cursor += strlen(value);
+  }
 
-#ifdef ENV_DBG
-  cursor[strlen(value)] = '\0';
-  printf("second = '%s'\n", cursor);
-#endif
+  memcpy(cursor, varEnd+1, end-varEnd); // That's everything after "}" including the '\0'
+  snprintf(line, 512, "%s", resolved);
 
-  cursor += strlen(value);
-  memcpy(cursor, varEnd+1, end-varEnd-2*0); // That's everything after "}" including the '\0'
-#ifdef ENV_DBG
-  cursor[end-varEnd-2*0] = '\0';
-  printf("third = '%s' len=%ld\n", cursor, end-varEnd-2*0);
-  cursor += end-varEnd-2;
-  //*cursor = '\0';
-  printf("resolved = '%s'\n", resolved);
-#endif
-
-  strcpy(line, resolved);
-
-  return line;
+  return false;
 }
 
 
@@ -571,12 +471,12 @@ char* String_expandEnvironmentVariables(const char* str)
   RCHECK(copyOfString);
   strcpy(copyOfString, str);
 
-  char* res = NULL;
+  bool finished = false;
   do
   {
-    res = String_expandMacros2_(copyOfString);
+    finished = String_expandMacros_(copyOfString);
   }
-  while (res);
+  while (!finished);
 
   return copyOfString;
 }

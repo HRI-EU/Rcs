@@ -55,7 +55,8 @@
 namespace Rcs
 {
 
-static ExampleFactoryRegistrar<ExampleDistance> ExampleDistance("Geometry", "Distance");
+//static ExampleFactoryRegistrar<ExampleDistance> ExampleDistance("Geometry", "Distance");
+RCS_REGISTER_EXAMPLE(ExampleDistance, "Geometry", "Distance");
 
 
 ExampleDistance::ExampleDistance(int argc, char** argv) : ExampleBase(argc, argv)
@@ -105,6 +106,7 @@ bool ExampleDistance::parseArgs(CmdLineParser* argP)
 std::string ExampleDistance::help()
 {
   std::stringstream s;
+  s << Rcs::ExampleBase::help();
   s << RcsShape_distanceFunctionsToString();
   return s.str();
 }

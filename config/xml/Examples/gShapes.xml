@@ -40,45 +40,45 @@
   <Graph>
     
     <Body name="RCSSHAPE_SSL"  >
-      <Shape type="SSL" radius="0.5" length="1" color="PEWTER" graphics="true"
-	     resizeable="true" />
+      <Shape type="SSL" radius="0.5" length="2" color="PEWTER" graphics="true"
+    	     resizeable="true" transform="0 0 0.1 10 20 30" />
       <Shape type="FRAME"  />
     </Body>
     
     <Body name="RCSSHAPE_SSR" prev="RCSSHAPE_SSL" transform="0 3 0 0 0 0" >
-      <Shape type="SSR" extents="1 2 0.5"  color="PEWTER" graphics="true"
-	     resizeable="true" />
+      <Shape type="SSR" extents="1.5 2 0.5"  color="PEWTER" graphics="true"
+    	     resizeable="true" transform="0 0 0.1 10 20 30" />
       <Shape type="FRAME"  />
     </Body>
     
     <Body name="RCSSHAPE_BOX" prev="RCSSHAPE_SSR" transform="0 3 0 0 0 0" >
-      <Shape type="BOX" extents="2 1 1"  color="PEWTER" graphics="true"
-	     resizeable="true" />
+      <Shape type="BOX" extents="2 1 2"  color="PEWTER" graphics="true"
+    	     resizeable="true" transform="0 0 0.1 10 20 30" />
       <Shape type="FRAME"  />
     </Body>
     
     <Body name="RCSSHAPE_CYLINDER" prev="RCSSHAPE_BOX" transform="0 3 0 0 0 0" >
-      <Shape type="CYLINDER" radius="0.5" length="2" color="PEWTER"
-	     graphics="true" resizeable="true" />
+      <Shape type="CYLINDER" radius="0.75" length="2.5" color="PEWTER"
+    	     graphics="true" resizeable="true" transform="0 0 0.1 10 20 30" />
       <Shape type="FRAME"  />
     </Body>
      
     <Body name="RCSSHAPE_SPHERE" prev="RCSSHAPE_CYLINDER"
-	  transform="0 3 0 0 0 0" >
-      <Shape type="SPHERE" radius="1" color="PEWTER" graphics="true"
-	     resizeable="true" />
+    	  transform="0 3 0 0 0 0" >
+      <Shape type="SPHERE" radius="0.75" color="PEWTER" graphics="true"
+    	     resizeable="true" transform="0 0 0.1 10 20 30" />
       <Shape type="FRAME"  />
     </Body>
    
     <Body name="RCSSHAPE_CONE" prev="RCSSHAPE_SPHERE" transform="0 3 0 0 0 0" >
-      <Shape type="CONE" radius="0.5" length="1" color="PEWTER" graphics="true"
-	     resizeable="true" />
+      <Shape type="CONE" radius="0.25" length="1.5" color="PEWTER" graphics="true"
+    	     resizeable="true" transform="0 0 0.1 10 20 30" />
       <Shape type="FRAME"  />
     </Body>
    
     <Body name="RCSSHAPE_TORUS" prev="RCSSHAPE_CONE" transform="0 3 0 0 0 0" >
       <Shape type="TORUS" radius="1" length="1" color="PEWTER" graphics="true"
-	     resizeable="true" />
+    	     resizeable="true" transform="0 0 0.1 10 20 30" />
       <Shape type="FRAME"  />
     </Body>
 

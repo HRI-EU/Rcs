@@ -46,6 +46,8 @@ public:
 
   ExampleBase(int argc, char** argv);
 
+  /*  \brief Virtual destructor to support Polymorphism.
+   */
   virtual ~ExampleBase();
 
   /*  \brief Calls these functions:

@@ -17,6 +17,7 @@ FIND_PACKAGE(OpenSceneGraph REQUIRED
   osgManipulator)
 
 SET(RCS_GRAPHICS_SRCS
+  AABBNode.cpp
   ArrowNode.cpp
   BodyNode.cpp
   ShapeNode.cpp

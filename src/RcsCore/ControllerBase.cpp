@@ -213,10 +213,10 @@ ControllerBase::ControllerBase(const ControllerBase& copyFromMe):
   graph(NULL), ownsGraph(true), cMdl(NULL),
   xmlFile(copyFromMe.xmlFile), taskArrayIdx(copyFromMe.taskArrayIdx)
 {
+  // Both graph and collision model can possibly be NULL, therefore we don't
+  // check if cloning has succeeded.
   this->graph = RcsGraph_clone(copyFromMe.graph);
-  RCHECK(this->graph);
   this->cMdl = RcsCollisionModel_clone(copyFromMe.cMdl, this->graph);
-  RCHECK(this->cMdl);
 
   for (std::vector<Task*>::const_iterator itr = copyFromMe.tasks.begin();
        itr != copyFromMe.tasks.end(); ++itr)
@@ -2579,6 +2579,7 @@ std::string ControllerBase::printUsageToString(const std::string& xmlFile)
     res = "Controller usage description: \n";
     res += (char*)usage;
     res += '\n';
+    xmlFree(usage);
   }
   else
   {

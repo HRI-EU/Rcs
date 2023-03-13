@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -54,7 +54,7 @@
 namespace Rcs
 {
 
-static ExampleFactoryRegistrar<ExampleIK> ExampleIK_("Inverse kinematics", "Dexbot with Task Interval");
+RCS_REGISTER_EXAMPLE(ExampleIK, "Inverse kinematics", "Dexbot with Task Interval");
 
 
 ExampleIK::ExampleIK(int argc, char** argv) : ExampleBase(argc, argv),
@@ -75,6 +75,7 @@ ExampleIK::ExampleIK(int argc, char** argv) : ExampleBase(argc, argv),
   jGui(NULL), alphaSlider(NULL), loopCount(0)
 {
   pthread_mutex_init(&graphLock, NULL);
+  mtx = &graphLock;
   Vec3d_setZero(r_com);
   hudText[0] = '\0';
   Vec3d_setZero(r_com);
@@ -216,9 +217,8 @@ std::string ExampleIK::help()
   s << "  -dir config/xml/Examples/ -f cSitToStand.xml -physicsEngine NewtonEuler -algo 1 -lamba 0 -dt 0.01\n";
   s << "  -dir config/xml/Dressing -f cRoboSleeve.xml -algo 1 -physicsEngine SoftBullet -dt 0.002\n";
   s << "  -dir config/xml/AvatarSkeleton -f cOpenSimWholeBody.xml -physicsEngine NewtonEuler -algo 1 -lambda 0 -i Euler\n\n";
+  s << Rcs::ExampleBase::help();
   s << ControllerBase::printUsageToString(xmlFileName);
-  s << Rcs::getResourcePaths();
-  s << Rcs::CmdLineParser::printToString();
   s << Rcs::RcsGraph_printUsageToString(xmlFileName);
   return s.str();
 }
@@ -559,16 +559,20 @@ void ExampleIK::step()
     // Here we construct a weighting matrix that has entries being the
     // ratio between min  and max joint torques of all joints, related
     // to the individual joint's maxTorque. In case any joint torque
-    // limit is zero, the weighting remains identity.
+    // limit is zero or the maximum value representable by a double value,
+    // the weighting remains identity.
     const double minAbsTorque = MatNd_minAbsEle(T_limit);
     const double maxAbsTorque = MatNd_maxAbsEle(T_limit);
     const double tRange = fabs(maxAbsTorque-minAbsTorque);
 
-    if (minAbsTorque!=0.0)
+    if ((minAbsTorque>0.0) && (maxAbsTorque!=DBL_MAX))
     {
       RCSGRAPH_TRAVERSE_JOINTS(controller->getGraph())
       {
-        W_ef->ele[JNT->jointIndex] = tRange/JNT->maxTorque;
+        if (JNT->maxTorque != DBL_MAX)
+        {
+          W_ef->ele[JNT->jointIndex] = tRange / (JNT->maxTorque + 0.1);
+        }
       }
     }
 
@@ -588,8 +592,9 @@ void ExampleIK::step()
 
   MatNd_constMulSelf(dH, alpha);
 
-  if (valgrind == false)
+  if (!valgrind)
   {
+    RCHECK(dragger.valid());
     dragger->addJointTorque(dH, controller->getGraph());
   }
 
@@ -919,6 +924,14 @@ bool ExampleIK_ContactGrasping::initParameters()
   return true;
 }
 
+bool ExampleIK_ContactGrasping::initGraphics()
+{
+  ExampleIK::initGraphics();
+  comNd->hide();
+
+  return true;
+}
+
 
 static ExampleFactoryRegistrar<ExampleIK_OSimWholeBody> ExampleIK_OSimWholeBody_("Inverse kinematics", "OpenSim whole-body");
 
@@ -979,6 +992,10 @@ bool ExampleIK_StaticEffort::initAlgo()
   bool success = ExampleIK::initAlgo();
   MatNd_set(F_effort, 2, 0, -1.0);   // Downwards force
   success = RcsGraph_getModelStateFromXML(controller->getGraph()->q, controller->getGraph(), "StaticEffort", 0) && success;
+  if (!success)
+  {
+    RLOG(1, "Failed to load model state \"StaticEffort\"");
+  }
   RcsGraph_setState(controller->getGraph(), NULL, NULL);
   controller->computeX(x_curr);
   MatNd_copy(x_des, x_curr);
@@ -1001,6 +1018,61 @@ std::string ExampleIK_StaticEffort::help()
   s << Rcs::CmdLineParser::printToString();
   s << Rcs::RcsGraph_printUsageToString(xmlFileName);
   return s.str();
+}
+
+
+
+static ExampleFactoryRegistrar<ExampleIK_Distance> ExampleIK_Distance_("Inverse kinematics", "Distance Task");
+
+ExampleIK_Distance::ExampleIK_Distance(int argc, char** argv) : ExampleIK(argc, argv)
+{
+}
+
+bool ExampleIK_Distance::initParameters()
+{
+  ExampleIK::initParameters();
+  xmlFileName = "cDistanceTask.xml";
+  directory = "config/xml/Examples";
+
+  return true;
+}
+
+
+
+static ExampleFactoryRegistrar<ExampleIK_NormalAlign> ExampleIK_NormalAlign_("Inverse kinematics", "Align Normals");
+
+ExampleIK_NormalAlign::ExampleIK_NormalAlign(int argc, char** argv) : ExampleIK(argc, argv)
+{
+}
+
+bool ExampleIK_NormalAlign::initParameters()
+{
+  ExampleIK::initParameters();
+  xmlFileName = "cNormalAlign.xml";
+  directory = "config/xml/Examples";
+  alpha = 0.01;
+  lambda = 0.0;
+  algo = 1;
+  scaleDragForce = 0.001;
+
+  return true;
+}
+
+
+
+static ExampleFactoryRegistrar<ExampleIK_Face> ExampleIK_Face_("Inverse kinematics", "Gazing face");
+
+ExampleIK_Face::ExampleIK_Face(int argc, char** argv) : ExampleIK(argc, argv)
+{
+}
+
+bool ExampleIK_Face::initParameters()
+{
+  ExampleIK::initParameters();
+  xmlFileName = "cFace.xml";
+  directory = "config/xml/Examples";
+
+  return true;
 }
 
 

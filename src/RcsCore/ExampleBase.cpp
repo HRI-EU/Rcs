@@ -34,6 +34,10 @@
 #include "ExampleFactory.h"
 #include "Rcs_cmdLine.h"
 #include "Rcs_macros.h"
+#include "Rcs_utilsCPP.h"
+#include "KeyCatcherBase.h"
+
+#include <sstream>
 
 
 namespace Rcs
@@ -47,6 +51,8 @@ ExampleBase::ExampleBase(int argc, char** argv) : runLoop(false)
 
 ExampleBase::~ExampleBase()
 {
+  CmdLineParser::clearDescriptions();
+  KeyCatcherBase::deregisterKeys();
 }
 
 bool ExampleBase::init(int argc, char** argv)
@@ -154,7 +160,11 @@ void ExampleBase::handleKeys()
 
 std::string ExampleBase::help()
 {
-  return "No help message implemented";
+  std::stringstream s;
+  s << Rcs::getResourcePaths();
+  s << Rcs::CmdLineParser::printToString();
+  s << Rcs::KeyCatcherBase::printRegisteredKeysToString();
+  return s.str();
 }
 
 bool ExampleBase::isRunning() const

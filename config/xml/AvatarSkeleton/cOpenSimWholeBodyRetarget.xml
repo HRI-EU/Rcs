@@ -334,6 +334,18 @@
   <!-- </Body> -->
 
 
+  <Body name="ground" >
+      <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0" 
+           color="PEWTER" graphics="true" />
+
+  <Shape type="FRAME" />
+  </Body>
+
+  <Body name="Camera" transform="0 0 1.2 -90 90 0" color="RED" >
+    <Shape type="BOX" extents="0.1 0.1 0.2" distance="false" physics="true" graphics="true" transform="0 0 -0.1 0 0 0" />
+    <Shape type="FRAME" distance="false" physics="true" graphics="true" scale="1" />
+  </Body>
+
 
 <model_state model="DefaultPose" time_stamp="">
   <joint_state joint="pelvis_tz" position="0.91" />

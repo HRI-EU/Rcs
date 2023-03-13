@@ -224,11 +224,9 @@ public:
   virtual void setMaxVel(double vmax, size_t index);
   virtual double getMaxVel(size_t index) const;
 
-protected:
 private:
   double* vmax, *r;
 
-private:
   RampFilterND();
   RampFilterND(const RampFilterND&);
   RampFilterND& operator=(const RampFilterND&);

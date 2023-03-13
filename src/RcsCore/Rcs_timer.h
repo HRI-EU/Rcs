@@ -113,6 +113,11 @@ double Timer_getSystemTime();
 void Timer_waitDT(double dt);
 
 /*! \ingroup RcsTimerFunctions
+ *  \brief Sets the timer's increment to dt [in seconds].
+ */
+void Timer_setDT(Timer* self, double dt);
+
+/*! \ingroup RcsTimerFunctions
  *  \brief Makes the timer produce console output on missed timings if
  *         verbose is true. If false, no output will be generated.
  *         Per default, the timer is silent.

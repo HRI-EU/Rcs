@@ -47,7 +47,7 @@ namespace Rcs
 {
 REGISTER_TASKREGION(TaskRegionBoundingBox, "BoundingBox");
 
-TaskRegionBoundingBox::TaskRegionBoundingBox(const Task* task, 
+TaskRegionBoundingBox::TaskRegionBoundingBox(const Task* task,
                                              const xmlNodePtr node) :
   TaskRegion(task, node)
 {

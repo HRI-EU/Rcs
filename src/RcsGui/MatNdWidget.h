@@ -60,6 +60,7 @@ public:
 
   void construct();
   void setLabels(std::vector<std::string>& labels);
+  void reset(const MatNd* values);
 
 protected:
   MatNd* mat;

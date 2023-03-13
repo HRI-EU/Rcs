@@ -150,6 +150,12 @@ bool KeyCatcherBase::deregisterKey(const std::string& key, const std::string& gr
   return success;
 }
 
+void KeyCatcherBase::deregisterKeys()
+{
+  lock();
+  _registered_keys.clear();
+  unlock();
+}
 void KeyCatcherBase::printRegisteredKeys()
 {
   lock();
@@ -179,5 +185,44 @@ void KeyCatcherBase::printRegisteredKeys()
   unlock();
 }
 
+std::string KeyCatcherBase::printRegisteredKeysToString()
+{
+  std::string res;
 
+  lock();
+
+  res = "\nRegistered keys:\n\n";
+
+  // Iterator through groups
+  std::map<std::string,std::map<std::string,std::string> >::iterator group_it;
+  for (group_it = _registered_keys.begin(); group_it != _registered_keys.end(); ++group_it)
+  {
+    res += group_it->first;
+    res += "\n";
+
+    // Iterate through keys
+    // we want to print the list in an case-insensitive sorted order
+    std::vector<std::string> keys;
+    std::map<std::string, std::string>::iterator it;
+    for (it = group_it->second.begin(); it != group_it->second.end(); ++it)
+    {
+      keys.push_back(it->first);
+    }
+    std::sort(keys.begin(), keys.end(), compareStringsCaseInsensitive);
+
+    for (unsigned int j = 0; j < keys.size(); j++)
+    {
+      char a[512];
+      snprintf(a, 512, "\t%-13s\t%s\n", keys[j].c_str(), group_it->second[keys[j]].c_str());
+      res += a;
+    }
+    res += "\n";
+  }
+
+  unlock();
+
+  return res;
 }
+
+
+}   // namespace
