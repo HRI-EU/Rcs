@@ -84,9 +84,12 @@ AsyncWidget::AsyncWidget() : launched(false), w(NULL)
 AsyncWidget::~AsyncWidget()
 {
   RLOG(5, "Calling AsyncWidget::unlaunch(): refCount = %d", refCount);
-  unlaunch();
-  refCount--;
-  RLOG(5, "AsyncWidget deleted: refCount = %d", refCount);
+
+  if (getWidget())
+  {
+    unlaunch();
+    refCount--;
+  }
 
   if (refCount == 0)
   {
@@ -164,11 +167,19 @@ void AsyncWidget::launch()
       RLOG(1, "Waiting for launch: %.2f seconds", duration);
     }
   }
+
+  RCHECK(getWidget());
 }
 
 // Emits an event that calls destroy() from the Gui thread
 void AsyncWidget::unlaunch()
 {
+  if (!getWidget())
+  {
+    RLOG(5, "Widget already deleted - returning from unlaunch()");
+    return;
+  }
+
   AsyncWidgetEvent* ae = new AsyncWidgetEvent(this, AsyncGuiFactory::destroyEvent);
 
   if (AsyncGuiFactory::isGuiThread())
@@ -179,10 +190,9 @@ void AsyncWidget::unlaunch()
   }
   else
   {
-    RLOG(5, "unlaunch(): Destroying widget \"%s\" by posting event to Gui thread", 
+    RLOG(5, "unlaunch(): Destroying widget \"%s\" by posting event to Gui thread",
          getWidget()->objectName().toStdString().c_str());
     QCoreApplication::postEvent(AsyncGuiFactory::getLauncher(), ae);
-    RLOG(5, "Destroy event posted");
   }
 
   double t_unlaunch = Timer_getSystemTime();
@@ -193,10 +203,12 @@ void AsyncWidget::unlaunch()
     double duration = Timer_getSystemTime() - t_unlaunch;
     if (duration > 3.0)
     {
-      RLOG(1, "Waiting for unlaunch (Widget \"%s\"): %.2f seconds", 
+      RLOG(1, "Waiting for unlaunch (Widget \"%s\"): %.2f seconds",
            getWidget()->objectName().toStdString().c_str(), duration);
     }
   }
+
+  RCHECK(getWidget()==NULL);
 }
 
 // That's being called through the Gui thread
@@ -209,14 +221,10 @@ void AsyncWidget::destroy()
 
   if (w)
   {
-    RLOG_CPP(5, "Deleting widget " << w->objectName().toStdString());
     delete w;
     w = NULL;
   }
-  else
-  {
-    RLOG(5, "Widget already destroyed");
-  }
+
 }
 
 void AsyncWidget::setWidget(QWidget* widget)
@@ -239,7 +247,7 @@ QWidget* AsyncWidget::getWidget()
   return w;
 }
 
-void AsyncWidget::wait()
+void AsyncWidget::waitUntilWidgetDeleted()
 {
   while (getWidget())
   {

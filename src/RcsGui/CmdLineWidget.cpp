@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -244,10 +244,13 @@ bool ParameterCollection::getArgument(const char* name, char* value,
                                       const char* description, ...)
 {
   char buffer[512] = "";
-  va_list args;
-  va_start(args, description);
-  vsnprintf(buffer, sizeof(buffer), description, args);
-  va_end(args);
+  if (description)
+  {
+    va_list args;
+    va_start(args, description);
+    vsnprintf(buffer, sizeof(buffer), description, args);
+    va_end(args);
+  }
   paramLine.push_back(new ParameterLineChar(name, buffer, value));
   return true;
 }
@@ -255,10 +258,13 @@ bool ParameterCollection::getArgument(const char* name, int* value,
                                       const char* description, ...)
 {
   char buffer[512] = "";
-  va_list args;
-  va_start(args, description);
-  vsnprintf(buffer, sizeof(buffer), description, args);
-  va_end(args);
+  if (description)
+  {
+    va_list args;
+    va_start(args, description);
+    vsnprintf(buffer, sizeof(buffer), description, args);
+    va_end(args);
+  }
   paramLine.push_back(new ParameterLineInt(name, buffer, value));
   return true;
 }
@@ -266,10 +272,13 @@ bool ParameterCollection::getArgument(const char* name, unsigned int* value,
                                       const char* description, ...)
 {
   char buffer[512] = "";
-  va_list args;
-  va_start(args, description);
-  vsnprintf(buffer, sizeof(buffer), description, args);
-  va_end(args);
+  if (description)
+  {
+    va_list args;
+    va_start(args, description);
+    vsnprintf(buffer, sizeof(buffer), description, args);
+    va_end(args);
+  }
   paramLine.push_back(new ParameterLineUnsignedInt(name, buffer, value));
   return true;
 }
@@ -277,10 +286,13 @@ bool ParameterCollection::getArgument(const char* name, unsigned long* value,
                                       const char* description, ...)
 {
   char buffer[512] = "";
-  va_list args;
-  va_start(args, description);
-  vsnprintf(buffer, sizeof(buffer), description, args);
-  va_end(args);
+  if (description)
+  {
+    va_list args;
+    va_start(args, description);
+    vsnprintf(buffer, sizeof(buffer), description, args);
+    va_end(args);
+  }
   paramLine.push_back(new ParameterLineUnsignedLong(name, buffer, value));
   return true;
 }
@@ -288,10 +300,13 @@ bool ParameterCollection::getArgument(const char* name, unsigned long long* valu
                                       const char* description, ...)
 {
   char buffer[512] = "";
-  va_list args;
-  va_start(args, description);
-  vsnprintf(buffer, sizeof(buffer), description, args);
-  va_end(args);
+  if (description)
+  {
+    va_list args;
+    va_start(args, description);
+    vsnprintf(buffer, sizeof(buffer), description, args);
+    va_end(args);
+  }
   paramLine.push_back(new ParameterLineUnsignedLongLong(name, buffer, value));
   return true;
 }
@@ -299,10 +314,13 @@ bool ParameterCollection::getArgument(const char* name, bool* value,
                                       const char* description, ...)
 {
   char buffer[512] = "";
-  va_list args;
-  va_start(args, description);
-  vsnprintf(buffer, sizeof(buffer), description, args);
-  va_end(args);
+  if (description)
+  {
+    va_list args;
+    va_start(args, description);
+    vsnprintf(buffer, sizeof(buffer), description, args);
+    va_end(args);
+  }
   paramLine.push_back(new ParameterLineBool(name, buffer, value));
   return true;
 }
@@ -310,10 +328,13 @@ bool ParameterCollection::getArgument(const char* name, std::string* value,
                                       const char* description, ...)
 {
   char buffer[512] = "";
-  va_list args;
-  va_start(args, description);
-  vsnprintf(buffer, sizeof(buffer), description, args);
-  va_end(args);
+  if (description)
+  {
+    va_list args;
+    va_start(args, description);
+    vsnprintf(buffer, sizeof(buffer), description, args);
+    va_end(args);
+  }
   paramLine.push_back(new ParameterLineString(name, buffer, value));
   return true;
 }
@@ -321,10 +342,13 @@ bool ParameterCollection::getArgument(const char* name, double* value,
                                       const char* description, ...)
 {
   char buffer[512] = "";
-  va_list args;
-  va_start(args, description);
-  vsnprintf(buffer, sizeof(buffer), description, args);
-  va_end(args);
+  if (description)
+  {
+    va_list args;
+    va_start(args, description);
+    vsnprintf(buffer, sizeof(buffer), description, args);
+    va_end(args);
+  }
   paramLine.push_back(new ParameterLineDouble(name, buffer, value));
   return true;
 }
@@ -332,10 +356,13 @@ bool ParameterCollection::getArgument(const char* name, float* value,
                                       const char* description, ...)
 {
   char buffer[512] = "";
-  va_list args;
-  va_start(args, description);
-  vsnprintf(buffer, sizeof(buffer), description, args);
-  va_end(args);
+  if (description)
+  {
+    va_list args;
+    va_start(args, description);
+    vsnprintf(buffer, sizeof(buffer), description, args);
+    va_end(args);
+  }
   paramLine.push_back(new ParameterLineFloat(name, buffer, value));
   return true;
 }
@@ -385,22 +412,30 @@ void ParameterCollection::sort()
 
 
 
-CmdLineGui::CmdLineGui(ParameterCollection* pc) : AsyncWidget(), collection(pc)
+CmdLineGui::CmdLineGui(ParameterCollection* pc, std::string title_) :
+  AsyncWidget(), collection(pc), title(title_)
 {
   launch();
 }
 
 void CmdLineGui::construct()
 {
-  setWidget(new CmdLineWidget(collection));
+  setWidget(new CmdLineWidget(collection, title));
 }
 
 
 
-CmdLineWidget::CmdLineWidget(ParameterCollection* collection, QWidget* parent) :
+CmdLineWidget::CmdLineWidget(ParameterCollection* collection, std::string title, QWidget* parent) :
   QScrollArea(parent)
 {
-  setWindowTitle("CmdLineWidget");
+  if (title.empty())
+  {
+    setWindowTitle("CmdLineWidget");
+  }
+  else
+  {
+    setWindowTitle(QString::fromStdString(title));
+  }
 
   QVBoxLayout* gridLayout = new QVBoxLayout();
   QWidget* scrollWidget = new QWidget(this);
@@ -413,6 +448,13 @@ CmdLineWidget::CmdLineWidget(ParameterCollection* collection, QWidget* parent) :
   }
 
   this->setWidgetResizable(true);
+  setObjectName("CmdLineWidget");
+}
+
+
+CmdLineWidget::~CmdLineWidget()
+{
+  RLOG(5, "Destroying CmdLineWidget()");
 }
 
 
@@ -421,6 +463,7 @@ CmdLineEntry::CmdLineEntry(ParameterCollection::Entry* line_) : line(line_)
   QHBoxLayout* hbox = new QHBoxLayout(this);
 
   QLabel* label = new QLabel(QString::fromStdString(line->getName()));
+  label->setTextInteractionFlags(Qt::TextSelectableByMouse);
   hbox->addWidget(label);
 
   this->textParam = new QLineEdit(this);
@@ -437,6 +480,7 @@ CmdLineEntry::CmdLineEntry(ParameterCollection::Entry* line_) : line(line_)
   hbox->addWidget(textParam);
 
   QLabel* descr = new QLabel(QString::fromStdString(line->getDescription()));
+  descr->setTextInteractionFlags(Qt::TextSelectableByMouse);
   hbox->addWidget(descr);
 
   hbox->addStretch();

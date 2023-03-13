@@ -43,8 +43,9 @@
 #include <QStringList>
 #include <QLineEdit>
 #include <QLabel>
+#include <QTimer>
+#include <QDebug>
 
-#include <string>
 #include <vector>
 #include <cstddef>
 
@@ -108,12 +109,14 @@ protected:
 class CmdLineGui : public Rcs::AsyncWidget
 {
 public:
-  CmdLineGui(ParameterCollection* collection);
+  CmdLineGui(ParameterCollection* collection,
+             std::string title=std::string());
 
   void construct();
 
 protected:
   ParameterCollection* collection;
+  std::string title;
 };
 
 class CmdLineWidget : public QScrollArea
@@ -121,10 +124,12 @@ class CmdLineWidget : public QScrollArea
   Q_OBJECT
 
 public:
-  static int create(ParameterCollection* collection);
-  static bool destroy(int handle);
 
-  CmdLineWidget(ParameterCollection* collection, QWidget* parent=NULL);
+  CmdLineWidget(ParameterCollection* collection,
+                std::string title=std::string(),
+                QWidget* parent=NULL);
+
+  virtual ~CmdLineWidget();
 
 };
 
@@ -143,34 +148,75 @@ protected:
   ParameterCollection::Entry* line;
 };
 
-class TextGui : public Rcs::AsyncWidget
+class TextWidget : public QScrollArea
 {
+  Q_OBJECT
 public:
-  TextGui(std::string text_) : AsyncWidget(), text(text_)
-  {
-    launch();
-  }
-
-  void construct()
+  TextWidget(std::string text, std::string title=std::string())
   {
     QFont font = QFont("Courier");
     font.setStyleHint(QFont::Monospace);
     font.setPointSize(8);
     font.setFixedPitch(true);
 
-    QLabel* label = new QLabel(QString::fromStdString(text));
+    label = new QLabel(QString::fromStdString(text), this);
     label->setFont(font);
     label->setWordWrap(true);
+    //label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+    label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+    label->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
-    QScrollArea* scrollArea = new QScrollArea;
-    scrollArea->setWidget(label);
-    scrollArea->setWidgetResizable(true);
+    setWidget(label);
+    setWidgetResizable(true);
+    setWindowTitle(QString::fromStdString(title));
+    setObjectName("Rcs::TextWidget");
+    //https://www.appsloveworld.com/cplus/100/39/setting-text-on-a-qlabel-in-a-layout-doesnt-resize?utm_content=cmp-true
+    //layout->setSizeConstraint(QLayout::SetMinimumSize);
 
-    setWidget(scrollArea);
+    QTimer::singleShot(1000, this, SLOT(onResizeToFit()));
+  }
+
+  virtual ~TextWidget()
+  {
+    printf("Destroying TextWidget\n");
+  }
+  QLabel* label;
+
+public slots:
+
+  void onResizeToFit()
+  {
+    return;
+    qDebug() << "Adjusting size";
+    resize(label->sizeHint());
+    label->adjustSize();
+    //label->updateGeometry();
+    resize(label->sizeHint());
+  }
+};
+
+class TextGui : public Rcs::AsyncWidget
+{
+public:
+  TextGui(std::string text_, std::string title_=std::string()) :
+    AsyncWidget(), text(text_), title(title_)
+  {
+    launch();
+  }
+
+  virtual ~TextGui()
+  {
+    printf("Destroying TextGui\n");
+  }
+
+  void construct()
+  {
+    setWidget(new TextWidget(text, title));
   }
 
 protected:
   std::string text;
+  std::string title;
 };
 
 }

@@ -268,7 +268,7 @@ void ShapeNode::ShapeUpdater::updateDynamicShapes()
 /*******************************************************************************
  * Recursively adds the bodies collision shapes to the node.
  *
- * ShapeNode (osg::MatrixTransform) with A_CB relative to body
+ * ShapeNode (osg::PositionAttitudeTransform) with A_CB relative to body
  *     |
  *     ---> geode (osg::Geode)
  *               |
@@ -315,11 +315,6 @@ void ShapeNode::addShape(const RcsShape* shape, bool resizeable)
   osg::StateSet* ss = geode->getOrCreateStateSet();
   ss->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
   geode->setStateSet(ss);
-
-  // Relative orientation of shape wrt. body
-  setPosition(osg::Vec3(shape->A_CB.org[0], shape->A_CB.org[1],
-                        shape->A_CB.org[2]));
-  setAttitude(QuatFromHTr(&shape->A_CB));
   addChild(geode.get());
 
   /////////////////////////////////

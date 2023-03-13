@@ -104,7 +104,7 @@ void Rcs::VertexArrayNode::init(const std::string& color)
 
   setName("VertexArrayNode");
   setColor(color);
-  setLighting(true);
+  setLighting(!true);
   setPointSize(3.0);
   setPoints(this->points, this->nPoints);
 

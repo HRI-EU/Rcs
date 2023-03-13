@@ -50,11 +50,13 @@
 namespace Rcs
 {
 
-class ExampleGui : public Rcs::AsyncWidget
+class ExampleGui : public AsyncWidget
 {
 public:
   ExampleGui(int argc, char** argv);
   void construct();
+
+private:
   int argc;
   char** argv;
 };
@@ -64,31 +66,42 @@ class ExampleItem : public QObject, public QStandardItem
   Q_OBJECT
 
 public:
-  ExampleItem(int argc, char** argv, const QString& categoryName,
+  ExampleItem(int argc, char** argv,
+              const QString& categoryName,
               const QString& exampleName);
   ~ExampleItem();
   void start();
   void stop();
   void destroy();
+  void launchHelpWindow();
+  void closeHelpWindow();
+  void launchParseWindow();
+  void closeParseWindow();
+  void setParseItem(QStandardItem* item);
+  void setHelpItem(QStandardItem* item);
+  void setClicked(bool clickState);
+  void toggleClicked();
+  bool isClicked() const;
 
+private:
+  QStandardItem* parseItem;
+  QStandardItem* helpItem;
   QString categoryName;
   ExampleBase* example;
   QThread exampleThread;
   int argc;
   char** argv;
   bool clicked;
-  bool parsingFinished;
-  QTimer* timer;
-  CmdLineGui* gui;
-  TextGui* helpWin;
+  CmdLineGui* parseWindow;
+  TextGui* helpWindow;
   ParameterCollection pc;
-  bool withArgParser;
 
 signals:
   void startWork();
 
 public slots:
-  void timerCallback();
+  void onCloseParseWindow(QObject* obj);
+  void onCloseHelpWindow(QObject* obj);
 };
 
 class ExampleWidget : public QMainWindow
@@ -96,16 +109,17 @@ class ExampleWidget : public QMainWindow
   Q_OBJECT
 
 public:
-  static int create(int argc, char** argv);
-  static bool destroy(int handle);
   ExampleWidget(int argc, char** argv, QWidget* parent=NULL);
   ~ExampleWidget();
 
 public slots:
   void itemClicked(const QModelIndex& idx);
+  void helpClicked();
+  void onResizeToFit();
 
 private:
   QStandardItemModel* model;
+  ParameterCollection::Entry* logLine;
 };
 
 }   // namespace Rcs
