@@ -1,21 +1,21 @@
 /*******************************************************************************
 
-  Copyright (c) 2017, Honda Research Institute Europe GmbH
+  Copyright (c) Honda Research Institute Europe GmbH
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -3546,35 +3546,235 @@ void RcsGraph_addRandomGeometry(RcsGraph* self)
 
 }
 
+/******************************************************************************
+ * See header.
+ *****************************************************************************/
+int RcsGraph_computeAABB(const RcsGraph* self, int computeType,
+                         double xyzMin[3], double xyzMax[3])
+{
+  return RcsGraph_computeSubTreeAABB(self, self->rootId, computeType,
+                                     xyzMin, xyzMax, NULL);
+}
+
+/******************************************************************************
+ * See header.
+ *****************************************************************************/
+bool RcsGraph_computeBodyAABB(const RcsGraph* self, int bdyId, int computeType,
+                              double aabbMin[3], double aabbMax[3],
+                              MatNd* vertices)
+{
+  if ((self == NULL) || (bdyId == -1) || (bdyId >= (int)self->nBodies))
+  {
+    RLOG(4, "Error computing AABB: graph is NULL or body id is out of range - "
+         "AABB is set to zero: graph is %s,  body-id is %d",
+         self ? "VALID" : "NULL", bdyId);
+    return false;
+  }
+
+  double xyzMin[3], xyzMax[3];
+  Vec3d_set(xyzMin, DBL_MAX, DBL_MAX, DBL_MAX);
+  Vec3d_set(xyzMax, -DBL_MAX, -DBL_MAX, -DBL_MAX);
+  bool aabbValid = false;
+  const RcsBody* bdy = &self->bodies[bdyId];
+  if (vertices)
+  {
+    MatNd_reshape(vertices, 0, 3);
+  }
+
+  RCSBODY_TRAVERSE_SHAPES(bdy)
+  {
+    if (RcsShape_isOfComputeType(SHAPE, computeType) || (computeType == -1))
+    {
+      aabbValid = true;
+      double s_min[3], s_max[3];
+      RcsShape_computeAABB(SHAPE, s_min, s_max);
+
+      // Here we consider all 8 vertices of the boundig box.
+      double bb[8][3];
+      Vec3d_set(bb[0],  s_min[0],  s_min[1], s_min[2]);
+      Vec3d_set(bb[1],  s_min[0], -s_min[1], s_min[2]);
+      Vec3d_set(bb[2], -s_min[0],  s_min[1], s_min[2]);
+      Vec3d_set(bb[3], -s_min[0], -s_min[1], s_min[2]);
+      Vec3d_set(bb[4],  s_max[0],  s_max[1], s_max[2]);
+      Vec3d_set(bb[5],  s_max[0], -s_max[1], s_max[2]);
+      Vec3d_set(bb[6], -s_max[0],  s_max[1], s_max[2]);
+      Vec3d_set(bb[7], -s_max[0], -s_max[1], s_max[2]);
+
+      // We transform them into the world frame.
+      HTr A_CI;
+      HTr_transform(&A_CI, &bdy->A_BI, &SHAPE->A_CB);
+
+      for (int i = 0; i < 8; ++i)
+      {
+        Vec3d_transformSelf(bb[i], &A_CI);
+
+        for (int j = 0; j < 3; ++j)
+        {
+          xyzMin[j] = fmin(bb[i][j], xyzMin[j]);
+          xyzMax[j] = fmax(bb[i][j], xyzMax[j]);
+        }
+      }
+
+      // Copy transformed bounds into the vertices array, one per shape
+      if (vertices)
+      {
+        MatNd_realloc(vertices, vertices->m+8, 3);
+        double* dst = MatNd_getRowPtr(vertices, vertices->m-8);
+        VecNd_copy(dst, (double*)bb, 24);
+      }
+    }
+
+  }   // RCSBODY_TRAVERSE_SHAPES(BODY)
+
+
+  // In the case that no body contributes to the bounding box, we leave
+  // the aabb parameters unchanged.
+  if (aabbValid)
+  {
+    Vec3d_copy(aabbMin, xyzMin);
+    Vec3d_copy(aabbMax, xyzMax);
+  }
+
+  return aabbValid;
+}
+
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void RcsGraph_computeAABB(const RcsGraph* self,
-                          double xyzMin[3], double xyzMax[3])
+int RcsGraph_computeSubTreeAABB(const RcsGraph* self, int startBdyId,
+                                int computeType, double aabbMin[3],
+                                double aabbMax[3], MatNd* vertices)
 {
-  if ((self == NULL) || (RcsGraph_numBodies(self)==0))
+  if ((self == NULL) || (self->nBodies == 0) || (startBdyId == -1) ||
+      (startBdyId >= (int)self->nBodies))
   {
-    RLOG(4, "Graph is NULL or has no bodies - AABB is set to zero");
+    RLOG(4, "Error computing AABB: graph is NULL, has zero bodies, or "
+         " startBdy is out of range - AABB is set to zero: graph is %s, "
+         "nBodies is %d, startBdyId is %d", self ? "VALID" : "NULL",
+         self ? self->nBodies : 0, startBdyId);
+    return 0;
+  }
+
+  double xyzMin[3], xyzMax[3];
+  Vec3d_set(xyzMin, DBL_MAX, DBL_MAX, DBL_MAX);
+  Vec3d_set(xyzMax, -DBL_MAX, -DBL_MAX, -DBL_MAX);
+  int nBodies = 0;
+
+  RCSBODY_TRAVERSE_BODIES(self, &self->bodies[startBdyId])
+  {
+    double sMin[3], sMax[3];
+    bool hasAABB = RcsGraph_computeBodyAABB(self, BODY->id, computeType,
+                                            sMin, sMax, vertices);
+
+    if (hasAABB)
+    {
+      nBodies++;
+      for (int i = 0; i < 3; ++i)
+      {
+        xyzMin[i] = fmin(sMin[i], xyzMin[i]);
+        xyzMax[i] = fmax(sMax[i], xyzMax[i]);
+      }
+    }
+
+  }
+
+  // In the case that no body contributes to the bounding box, we set its
+  // size to zero.
+  if (nBodies > 0)
+  {
+    Vec3d_copy(aabbMin, xyzMin);
+    Vec3d_copy(aabbMax, xyzMax);
+  }
+
+  return nBodies;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+int RcsGraph_computeBodyAABB_org(const RcsGraph* self, int startBdyId,
+                                 int computeType, bool recursive,
+                                 double xyzMin[3], double xyzMax[3])
+{
+  if ((self == NULL) || (self->nBodies == 0) || (startBdyId == -1) ||
+      (startBdyId >= (int)self->nBodies))
+  {
+    RLOG(4, "Error computing AABB: graph is NULL, has zero bodies, or "
+         " startBdy is out of range - AABB is set to zero: graph is %s, "
+         "nBodies is %d, startBdyId is %d", self ? "VALID" : "NULL",
+         self ? self->nBodies : 0, startBdyId);
     Vec3d_setZero(xyzMin);
     Vec3d_setZero(xyzMax);
-    return;
+    return 0;
   }
 
   Vec3d_set(xyzMin, DBL_MAX, DBL_MAX, DBL_MAX);
   Vec3d_set(xyzMax, -DBL_MAX, -DBL_MAX, -DBL_MAX);
+  int nBodies = 0;
 
-  RCSGRAPH_TRAVERSE_BODIES(self)
+  RCSBODY_TRAVERSE_BODIES(self, &self->bodies[startBdyId])
   {
-    double C_min[3], C_max[3];
-    RcsBody_computeAABB(BODY, -1, C_min, C_max);
-
-    for (int j = 0; j < 3; ++j)
+    RCSBODY_TRAVERSE_SHAPES(BODY)
     {
-      xyzMin[j] = fmin(C_min[j], xyzMin[j]);
-      xyzMax[j] = fmax(C_max[j], xyzMax[j]);
+      bool bodyContributes = false;
+      if ((computeType==-1) || RcsShape_isOfComputeType(SHAPE, computeType))
+      {
+        bodyContributes = true;
+        double s_min[3], s_max[3];
+        RcsShape_computeAABB(SHAPE, s_min, s_max);
+
+        // Here we consider all 8 vertices of the boundig box.
+        double bb[8][3];
+        Vec3d_set(bb[0],  s_min[0],  s_min[1], s_min[2]);
+        Vec3d_set(bb[1],  s_min[0], -s_min[1], s_min[2]);
+        Vec3d_set(bb[2], -s_min[0],  s_min[1], s_min[2]);
+        Vec3d_set(bb[3], -s_min[0], -s_min[1], s_min[2]);
+        Vec3d_set(bb[4],  s_max[0],  s_max[1], s_max[2]);
+        Vec3d_set(bb[5],  s_max[0], -s_max[1], s_max[2]);
+        Vec3d_set(bb[6], -s_max[0],  s_max[1], s_max[2]);
+        Vec3d_set(bb[7], -s_max[0], -s_max[1], s_max[2]);
+
+        // We transform them into the world frame.
+        HTr A_CI;
+        HTr_transform(&A_CI, &BODY->A_BI, &SHAPE->A_CB);
+
+        for (int i = 0; i < 8; ++i)
+        {
+          Vec3d_transformSelf(bb[i], &A_CI);
+
+          for (int j = 0; j < 3; ++j)
+          {
+            xyzMin[j] = fmin(bb[i][j], xyzMin[j]);
+            xyzMax[j] = fmax(bb[i][j], xyzMax[j]);
+          }
+        }
+      }
+
+      if (bodyContributes)
+      {
+        nBodies++;
+      }
+
+    }   // RCSBODY_TRAVERSE_SHAPES(BODY)
+
+    // If no subtree traversal is requested, we quit the traversal after
+    // the startBdyId body.
+    if (!recursive)
+    {
+      break;
     }
+
   }
 
+  // In the case that no body contributes to the bounding box, we set its
+  // size to zero.
+  if (nBodies==0)
+  {
+    Vec3d_setZero(xyzMin);
+    Vec3d_setZero(xyzMax);
+  }
+
+  return nBodies;
 }
 
 /*******************************************************************************

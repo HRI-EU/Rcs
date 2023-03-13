@@ -172,22 +172,7 @@ unsigned int RcsBody_numShapes(const RcsBody* self)
  ******************************************************************************/
 unsigned int RcsBody_numDistanceShapes(const RcsBody* self)
 {
-  if (self == NULL)
-  {
-    return 0;
-  }
-
-  unsigned int nShapes = 0;
-
-  for (unsigned int i=0; i<self->nShapes; ++i)
-  {
-    if (RcsShape_isOfComputeType(&self->shapes[i], RCSSHAPE_COMPUTE_DISTANCE))
-    {
-      nShapes++;
-    }
-  }
-
-  return nShapes;
+  return RcsBody_numShapesOfType(self, RCSSHAPE_COMPUTE_DISTANCE);
 }
 
 /*******************************************************************************
@@ -1993,25 +1978,39 @@ bool RcsBody_computeAABB(const RcsBody* self, int computeType,
       continue;
     }
 
-    if ((computeType==-1) || ((SHAPE->computeType & computeType) != 0))
+    if ((computeType==-1) || RcsShape_isOfComputeType(SHAPE, computeType))
     {
       shapeCount++;
-      double B_min[3], B_max[3], C_min[3], C_max[3];
+      double C_min[3], C_max[3];
       RcsShape_computeAABB(SHAPE, C_min, C_max);
-      Vec3d_transform(B_min, &SHAPE->A_CB, C_min);
-      Vec3d_transform(B_max, &SHAPE->A_CB, C_max);
 
-      for (int j = 0; j < 3; ++j)
+      // Here we consider all 8 vertices of the boundig box.
+      double bb[8][3];
+      Vec3d_set(bb[0],  C_min[0],  C_min[1], C_min[2]);
+      Vec3d_set(bb[1],  C_min[0], -C_min[1], C_min[2]);
+      Vec3d_set(bb[2], -C_min[0],  C_min[1], C_min[2]);
+      Vec3d_set(bb[3], -C_min[0], -C_min[1], C_min[2]);
+      Vec3d_set(bb[4],  C_max[0],  C_max[1], C_max[2]);
+      Vec3d_set(bb[5],  C_max[0], -C_max[1], C_max[2]);
+      Vec3d_set(bb[6], -C_max[0],  C_max[1], C_max[2]);
+      Vec3d_set(bb[7], -C_max[0], -C_max[1], C_max[2]);
+
+      for (int i = 0; i < 8; ++i)
       {
-        xyzMin[j] = fmin(B_min[j], xyzMin[j]);
-        xyzMax[j] = fmax(B_max[j], xyzMax[j]);
+        Vec3d_transformSelf(bb[i], &SHAPE->A_CB);
+        for (int j = 0; j < 3; ++j)
+        {
+          xyzMin[j] = fmin(bb[i][j], xyzMin[j]);
+          xyzMax[j] = fmax(bb[i][j], xyzMax[j]);
+        }
       }
     }
   }
 
   if (shapeCount==0)
   {
-    RLOG(4, "Body has no shapes with given computeType - AABB is zero");
+    RLOG(4, "Body \"%s\" has no shapes with given computeType - AABB is zero",
+         self->name);
     Vec3d_setZero(xyzMin);
     Vec3d_setZero(xyzMax);
     return false;

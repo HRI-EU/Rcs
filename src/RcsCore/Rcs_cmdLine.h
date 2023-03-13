@@ -174,6 +174,10 @@ public:
    */
   virtual void addDescription(const char* tag, const char* description, ...);
 
+  /*! \brief Clears all descriptions.
+   */
+  static void clearDescriptions();
+
   /*! \brief Query the arguments vector and number of arguments. If they have
    *         not been parsed, argc is 0 and argv points to NULL.
    */

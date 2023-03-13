@@ -112,9 +112,9 @@ RcsCollisionMdl* RcsCollisionModel_createFromXML(const RcsGraph* graph,
   // Load collision model
 
   // Set defaults
-  double defaultThreshold = 0.1;
-  self->sMixtureCost = 0.0;   // was 1000.0
-  self->penetrationSlope = 10.0;
+  double defaultThreshold = RCS_DISTANCE_THRESHOLD;
+  self->sMixtureCost = RCS_DISTANCE_MIXTURE_COST;
+  self->penetrationSlope = RCS_DISTANCE_PENETRATION_SLOPE;
   getXMLNodePropertyDouble(node, "DistanceThreshold", &defaultThreshold);
   getXMLNodePropertyDouble(node, "threshold", &defaultThreshold);
   getXMLNodePropertyDouble(node, "MixtureCost", &self->sMixtureCost);
@@ -327,7 +327,12 @@ void RcsCollisionModel_fprint(FILE* fd, const RcsCollisionMdl* self)
       fprintf(fd, "\t\t%s", RCSBODY_NAME_BY_ID(self->graph, pair->b2));
       fprintf(fd, "\n\tdistance = %.6f   weight=%.3f   dThreshold=%.3f",
               pair->distance, pair->weight, pair->dThreshold);
-      fprintf(fd, "   cp1 = %d   cp2 = %d   n = %d", pair->cp1, pair->cp2, pair->n1);
+      fprintf(fd, "   idx_cp1 = %d   idx_cp2 = %d   idx_n = %d", pair->cp1, pair->cp2, pair->n1);
+
+      const double* cp1 = &self->cp->ele[pair->cp1];
+      const double* cp2 = &self->cp->ele[pair->cp2];
+      fprintf(fd, " cp1=%.4f %.4f %.4f", cp1[0], cp1[1], cp1[2]);
+      fprintf(fd, "   cp2=%.4f %.4f %.4f", cp2[0], cp2[1], cp2[2]);
       fprintf(fd, "\n");
     }
   }

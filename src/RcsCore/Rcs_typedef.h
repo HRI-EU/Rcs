@@ -42,11 +42,14 @@ extern "C" {
 #include "Rcs_graph.h"
 
 
-#define RCS_GRAVITY              (9.81)
-#define RCS_MAX_NAMELEN          (64)
-#define RCS_MAX_FILENAMELEN      (256)
-#define RCS_MAX_COUPLING_COEFF   (8)
-#define RCS_NUM_GENERIC_BODIES   (10)
+#define RCS_GRAVITY                       (9.81)
+#define RCS_MAX_NAMELEN                   (64)
+#define RCS_MAX_FILENAMELEN               (256)
+#define RCS_MAX_COUPLING_COEFF            (8)
+#define RCS_NUM_GENERIC_BODIES            (10)
+#define RCS_DISTANCE_MIXTURE_COST         (0.0)
+#define RCS_DISTANCE_PENETRATION_SLOPE    (10.0)
+#define RCS_DISTANCE_THRESHOLD            (0.1)
 
 typedef enum
 {
@@ -223,8 +226,9 @@ struct _RcsPair
 {
   int b1;                ///< First body id
   int b2;                ///< Second body id
-  double weight;         ///< Weighting factor for distance
-  double dThreshold;     ///< Distance threshold
+  double weight;         ///< Weighting factor for distance (default is 1.0)
+  double dThreshold;     /**< Distance threshold (default is
+                              RCS_DISTANCE_THRESHOLD) */
   double distance;       ///< Shortest distance between b1 and b2
   int cp1;               ///< Row number of closest point on body 1
   int cp2;               ///< Row number of closest point on body 2
@@ -240,8 +244,10 @@ struct _RcsCollisionMdl
   unsigned int nPairs;     ///< Number of pairs
   MatNd* cp;               ///< Closest points in alternating order
   MatNd* n1;               ///< Unit normal on body 1 (pointing outwards)
-  double sMixtureCost;     ///< Factor that multiplies the center distances
-  double penetrationSlope; ///< Steepness of the cost at zero distance
+  double sMixtureCost;     /**< Factor that multiplies the center distances
+                                (default is RCS_DISTANCE_MIXTURE_COST)*/
+  double penetrationSlope; /**< Steepness of the cost at zero distance
+                                (default is RCS_DISTANCE_PENETRATION_SLOPE) */
 };
 
 

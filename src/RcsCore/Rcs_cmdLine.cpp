@@ -547,3 +547,11 @@ int Rcs::CmdLineParser::getArgs(char** * argv_) const
 
   return argc;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Rcs::CmdLineParser::clearDescriptions()
+{
+  parsedArguments.clear();
+}

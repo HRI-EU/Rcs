@@ -811,16 +811,71 @@ bool RcsGraph_addBodyDofs(RcsGraph* graph, RcsBody* parent, RcsBody* body,
 void RcsGraph_addRandomGeometry(RcsGraph* self);
 
 /*! \ingroup RcsGraphFunctions
- *  \brief This function computes the axis-aligned bounding box of a shape.
+ *  \brief This function computes the axis-aligned bounding box of a graph.
  *
  *  \param[in] self       Graph. If it is NULL, or contains no bodies, the
  *                        AABB is set to zero, and a debug message is issued
  *                        on debul level 4.
- *  \param[in] xyzMin     Minimum point of the box
- *  \param[in] xyzMax     Maximum point of the box
+ *  \param[in] computeType See enum RCSSHAPE_COMPUTE_TYPE. If set to -1, all
+ *                         shapes are considered.
+ *  \param[out] lb         Lower bound point of the box in world coordinates
+ *  \param[out] ub         Upper bound point of the box in world coordinates
+ *  \return Number of bodies contributing to the AABB.
  */
-void RcsGraph_computeAABB(const RcsGraph* self,
-                          double xyzMin[3], double xyzMax[3]);
+int RcsGraph_computeAABB(const RcsGraph* self, int computeType,
+                         double xyzMin[3], double xyzMax[3]);
+/*! \ingroup RcsGraphFunctions
+ *  \brief This function computes the axis-aligned bounding box of a body. The
+ *         AABB coordinates are projected into the world frame. The function
+ *         returns true if an AABB could be computed, and false otherwise. In
+ *         case of failure, the arguments lb and ub remain unchanged.
+ *         Failure is due to one or several of these conditions:
+ *         - self is NULL
+ *         - bdyId is out of range
+ *
+ *  \param[in] self        Pointer to graph containing the body.
+ *  \param[in] bdyId       Id of the body to compute the AABB from.
+ *  \param[in] computeType See enum RCSSHAPE_COMPUTE_TYPE. If set to -1, all
+ *                         shapes are considered.
+ *  \param[out] lb         Lower bound point of the box in world coordinates
+ *  \param[out] ub         Upper bound point of the box in world coordinates
+ *  \param[out] vertices   Array of vertices of the bounding box in world
+ *                         coordinates (if vertices is not NULL). The array is
+ *                         of dimension 8 x 3, and holds the 8 vertices of the
+ *                         bounding box of a body.
+ *  \return True if an AABB could be computed, false otherwise.
+ */
+bool RcsGraph_computeBodyAABB(const RcsGraph* self, int bdyId, int computeType,
+                              double lb[3], double ub[3], MatNd* vertices);
+
+/*! \ingroup RcsGraphFunctions
+ *  \brief This function computes the axis-aligned bounding box of a sub-graph
+ *         that starts from the body with startBdyId, including this body. The
+ *         AABB coordinates are projected into the world frame. The function
+ *         returns with 0 and unchanged parameters xyzMin and xyzMax under
+ *         these conditions:
+ *         - self is NULL
+ *         - startBdyId is out of range
+ *         - Graph contains no bodies
+ *
+ *  \param[in] self        Pointer to graph containing the body.
+ *  \param[in] bdyId       Id of the body to compute the AABB from.
+ *  \param[in] computeType See enum RCSSHAPE_COMPUTE_TYPE. If set to -1, all
+ *                         shapes are considered.
+ *  \param[out] lb         Lower bound point of the box in world coordinates
+ *  \param[out] ub         Upper bound point of the box in world coordinates
+ *  \param[out] vertices   Array of vertices of the bounding box in world
+ *                         coordinates (if vertices is not NULL). The array is
+ *                         of dimension 8n x 3, where n is the number of bodies
+ *                         contributing to the AABB. Each 8x3 block corresponds
+ *                         to the 8 vertices of the bounding box of a body. They
+ *                         are ordered according to the depth-first traversal of
+ *                         the sub-tree.
+ *  \return Number of bodies contributing to the AABB.
+ */
+int RcsGraph_computeSubTreeAABB(const RcsGraph* self, int startBdyId,
+                                int computeType,  double lb[3], double ub[3],
+                                MatNd* vertices);
 
 /*! \ingroup RcsGraphFunctions
  *  \brief Sets the resizeable property of all shapes of the graph. This has an

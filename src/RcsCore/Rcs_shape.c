@@ -2049,8 +2049,8 @@ void RcsShape_computeAABB(const RcsShape* shape,
     }
     case RCSSHAPE_SSR:
     {
-      Vec3d_set(xyzMin, -0.5*e[0] - 0.5*e[2], -0.5*e[0] - 0.5*e[2], -0.5*e[2]);
-      Vec3d_set(xyzMax, 0.5*e[0] + 0.5*e[2], 0.5*e[0] + 0.5*e[2], 0.5*e[2]);
+      Vec3d_set(xyzMin, -0.5*e[0] - 0.5*e[2], -0.5*e[1] - 0.5*e[2], -0.5*e[2]);
+      Vec3d_set(xyzMax, 0.5*e[0] + 0.5*e[2], 0.5*e[1] + 0.5*e[2], 0.5*e[2]);
       break;
     }
     case RCSSHAPE_MESH:
@@ -2066,8 +2066,8 @@ void RcsShape_computeAABB(const RcsShape* shape,
     }
     case RCSSHAPE_CYLINDER:
     {
-      Vec3d_set(xyzMin, -e[0], -e[0], -0.5 * e[2]);
-      Vec3d_set(xyzMax, e[0], e[0], 0.5 * e[2]);
+      Vec3d_set(xyzMin, -e[0], -e[0], -0.5*e[2]);
+      Vec3d_set(xyzMax, e[0], e[0], 0.5*e[2]);
       break;
     }
     case RCSSHAPE_SPHERE:
@@ -2085,8 +2085,8 @@ void RcsShape_computeAABB(const RcsShape* shape,
     }
     case RCSSHAPE_TORUS:
     {
-      Vec3d_set(xyzMin, -e[0], -e[0], -0.5 * e[2]);
-      Vec3d_set(xyzMax, e[0], e[0], 0.5 * e[2]);
+      Vec3d_set(xyzMin, -e[0]-0.5*e[2], -e[0]-0.5*e[2], -0.5*e[2]);
+      Vec3d_set(xyzMax, e[0]+0.5*e[2], e[0]+0.5*e[2], 0.5*e[2]);
       break;
     }
 
