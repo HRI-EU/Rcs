@@ -212,7 +212,10 @@ double Rcs::IkSolverProjectedQP::solveRightInverse(MatNd* dq_des,
 
 
   RLOG(1, "Found %d violations", nViolations);
-  if (nViolations>0) RLOG(0, "Found %d violations", nViolations);
+  if (nViolations>0)
+  {
+    RLOG(0, "Found %d violations", nViolations);
+  }
 
   if (nViolations>0)
   {

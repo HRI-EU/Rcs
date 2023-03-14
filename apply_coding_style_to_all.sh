@@ -40,7 +40,7 @@ STYLE_CMD="${RCS_DIR}/apply_coding_style.sh"
 FILES_TO_CHECK=$(find . -type f -name *.c -o -name *.h -o -name *.cpp | xargs)
 
 if [ "${FILES_TO_CHECK}" != "" ]; then
-  ${STYLE_CMD} "${FILES_TO_CHECK}"
+  ${STYLE_CMD} ${FILES_TO_CHECK}
   #echo $STYLE_CMD $FILES_TO_CHECK
   #echo "Disabled for now"
 fi

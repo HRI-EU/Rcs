@@ -76,104 +76,6 @@ static void quit(int /*sig*/)
 /******************************************************************************
  *
  *****************************************************************************/
-#if 0
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#define MAX_ENV_VAR_LENGTH 64
-#define MAX_LINE_LENGTH 512
-
-int testEnvVar(int argc, char* argv[])
-{
-  char line[MAX_LINE_LENGTH];
-  char envVar[MAX_ENV_VAR_LENGTH];
-
-  printf("Enter a string with an environment variable: ");
-  fgets(line, MAX_LINE_LENGTH, stdin);
-
-  // Find the first occurrence of "${" in the string
-  char* varStart = strstr(line, "${");
-  if (varStart == NULL)
-  {
-    printf("Error: No environment variable found in the string\n");
-    return 1;
-  }
-
-  // Find the end of the environment variable by searching for the "}" character
-  char* varEnd = strstr(varStart, "}");
-  if (varEnd == NULL || varEnd < varStart+2)
-  {
-    printf("Error: Malformed environment variable in the string\n");
-    return 1;
-  }
-
-  // Extract the name of the environment variable
-  size_t varLength = varEnd - varStart - 2;
-  strncpy(envVar, varStart + 2, varLength);
-  envVar[varLength] = '\0';
-  printf("envVar='%s'\n", envVar);
-
-  // Get the value of the environment variable
-  char* value = getenv(envVar);
-  if (value == NULL)
-  {
-    printf("Error: Environment variable %s not found\n", envVar);
-    return 1;
-  }
-
-  printf("value='%s'\n", value);
-  printf("start index = %zu\n", varStart - line);
-  printf("end index = %zu\n", varEnd - line);
-
-  char resolved[256];
-  int firstLen = varStart - line;
-  char* end = line + strlen(line);
-  char* cursor = resolved;
-  memcpy(cursor, line, firstLen);   // That's everything up to "${"
-  // cursor[firstLen] = '\0';
-  // printf("first = '%s'\n", cursor);
-  cursor += firstLen;
-  memcpy(cursor, value, strlen(value));   // That's the environment variable
-  // cursor[strlen(value)] = '\0';
-  // printf("second = '%s'\n", cursor);
-  cursor += strlen(value);
-  memcpy(cursor, varEnd+1, end-varEnd-2); // That's everything after "}" including the '\0'
-  // cursor[end-varEnd-2] = '\0';
-  // printf("third = '%s' len=%d\n", cursor, end-varEnd-2);
-  // cursor += end-varEnd-2;
-  //*cursor = '\0';
-
-
-  // strncpy(resolved, line, start - line);
-  // strncat(resolved, value, strlen(value));
-  // strncat(resolved, end+1, strlen(line)-(end-line)-2);
-  printf("resolved = '%s'\n", resolved);
-
-#if 0
-  // Replace the environment variable in the string with its value
-  int valueLength = strlen(value);
-  int lineLength = strlen(line);
-  int diff = valueLength - envVarLength - 2;
-  if (diff >= 0)
-  {
-    memmove(end + diff, end, lineLength - (end - line));
-  }
-  else
-  {
-    memmove(start + valueLength, end, lineLength - (end - line));
-  }
-  memcpy(start, value, valueLength);
-
-  printf("String with environment variable replaced: %s\n", line);
-#endif
-  return 0;
-}
-#endif
-
-/******************************************************************************
- *
- *****************************************************************************/
 static bool testFuzzyStringMatching()
 {
   Rcs::CmdLineParser argP;
@@ -378,46 +280,46 @@ static bool test_mesh()
 /******************************************************************************
  *
  *****************************************************************************/
-static bool test_envString(const char* testStr)
+static bool test_envString()
 {
-  RLOG(3, "Testing string \"%s\"", testStr);
-
+  bool success = true;
   Rcs::CmdLineParser argP;
-  std::string parsedStr;
-  argP.getArgument("-str", &parsedStr, "String to test (default is none)");
-  if (!parsedStr.empty())
+  std::string parsedStr = "${HOME}/test1/${USER}/bin";
+  bool hasArg = argP.getArgument("-str", &parsedStr, "String to test (default"
+                                 " is %s)", parsedStr.c_str());
+
+  RLOG(3, "Testing string \"%s\"", parsedStr.c_str());
+  char* expanded = String_expandEnvironmentVariables(parsedStr.c_str());
+
+  if (!hasArg)
   {
-    testStr = parsedStr.c_str();
+    std::string home, user;
+
+    const char* envPtr = String_getEnv("HOME");
+    if (envPtr)
+    {
+      home = std::string(envPtr);
+    }
+    else
+    {
+      RLOG(2, "Cannot find HOME environment variable");
+    }
+
+    envPtr = String_getEnv("USER");
+    if (envPtr)
+    {
+      user = std::string(envPtr);
+    }
+    else
+    {
+      RLOG(2, "Cannot find USER environment variable");
+    }
+
+    std::string groundTruth = home + "/test1/" + user + "/bin";
+    RLOG(3, "Expanded \n\"%s\", truth is \n\"%s\"", expanded, groundTruth.c_str());
+
+    success = (groundTruth == std::string(expanded)) && success;
   }
-
-  char* expanded = String_expandEnvironmentVariables(testStr);
-
-  std::string home, user;
-
-  const char* envPtr = String_getEnv("HOME");
-  if (envPtr)
-  {
-    home = std::string(envPtr);
-  }
-  else
-  {
-    RLOG(2, "Cannot find HOME environment variable");
-  }
-
-  envPtr = String_getEnv("USER");
-  if (envPtr)
-  {
-    user = std::string(envPtr);
-  }
-  else
-  {
-    RLOG(2, "Cannot find USER environment variable");
-  }
-
-  std::string res = home + "/test1/" + user + "/bin";
-  RLOG(3, "Expanded \"%s\", truth is \"%s\"", expanded, res.c_str());
-
-  bool success = (res == std::string(expanded));
 
   RFREE(expanded);
 
@@ -794,7 +696,7 @@ static bool testMode(int mode, int argc, char** argv)
 
     case 4:
     {
-      success = test_envString("${HOME}/test1/${USER}/bin");
+      success = test_envString();
       break;
     }
 
@@ -897,12 +799,6 @@ static bool testMode(int mode, int argc, char** argv)
       success = testFuzzyStringMatching();
       break;
     }
-
-    // case 14:
-    // {
-    //   testEnvVar(argc, argv);
-    //   break;
-    // }
 
     default:
     {

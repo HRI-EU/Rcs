@@ -15,10 +15,10 @@ IF(NOT HEADLESS_BUILD)
   ADD_EXECUTABLE(ExampleForwardKinematics ExampleForwardKinematics.cpp)
   TARGET_LINK_LIBRARIES(ExampleForwardKinematics RcsCore RcsGui RcsGraphics)
 
-  ADD_EXECUTABLE(ExampleKinetics ExampleKinetics.cpp)
-  TARGET_LINK_LIBRARIES(ExampleKinetics RcsCore RcsGui RcsGraphics RcsPhysics)
+  #ADD_EXECUTABLE(ExampleKinetics ExampleKinetics.cpp)
+  #TARGET_LINK_LIBRARIES(ExampleKinetics RcsCore RcsGui RcsGraphics RcsPhysics)
 
-  ADD_LIBRARY(RcsExamples ExampleFK.cpp ExampleInvKin.cpp ExampleMath.cpp ExamplePhysics.cpp ExampleDistance.cpp)
+  ADD_LIBRARY(RcsExamples ExampleFK.cpp ExampleInvKin.cpp ExampleMath.cpp ExamplePhysics.cpp ExampleDistance.cpp ExampleKinetics.cpp)
   TARGET_LINK_LIBRARIES(RcsExamples RcsGraphics RcsPhysics RcsGui)
 
   TARGET_INCLUDE_DIRECTORIES(RcsExamples PUBLIC
@@ -80,7 +80,7 @@ IF(NOT HEADLESS_BUILD)
     )
 
   # Install the binaries
-  INSTALL(TARGETS ExampleRunner ExampleHighGui ExamplePrioritizedIK ExampleForwardKinematics ExampleKinetics RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
+  INSTALL(TARGETS ExampleRunner ExampleHighGui ExamplePrioritizedIK ExampleForwardKinematics RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
   INSTALL(TARGETS RcsExamples EXPORT RcsExport DESTINATION lib)
 
 ENDIF(NOT HEADLESS_BUILD)

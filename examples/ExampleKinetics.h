@@ -31,19 +31,19 @@
 
 *******************************************************************************/
 
-#ifndef RCS_EXAMPLEFK_H
-#define RCS_EXAMPLEFK_H
+#ifndef RCS_EXAMPLEKINETICS_H
+#define RCS_EXAMPLEKINETICS_H
 
 #include <ExampleBase.h>
-#include <Rcs_broadphase.h>
-
 #include <RcsViewer.h>
-#include <KeyCatcher.h>
-#include <GraphNode.h>
-#include <SphereNode.h>
-#include <BoxNode.h>
 #include <HUD.h>
-#include <JointWidget.h>
+#include <BodyPointDragger.h>
+#include <KeyCatcher.h>
+#include <MatNdWidget.h>
+#include <Rcs_graph.h>
+#include <Rcs_timer.h>
+#include <PhysicsBase.h>
+#include <Rcs_filters.h>
 
 #include <pthread.h>
 
@@ -51,107 +51,83 @@
 namespace Rcs
 {
 
-class ExampleFK : public ExampleBase
+class ExampleKinetics : public ExampleBase
 {
 public:
-  ExampleFK(int argc, char** argv);
-  virtual ~ExampleFK();
+
+  pthread_mutex_t graphLock;
+  osg::ref_ptr<Rcs::BodyPointDragger> dragger;
+  osg::ref_ptr<Rcs::HUD> hud;
+  osg::ref_ptr<Rcs::KeyCatcher> kc;
+  Rcs::Viewer* viewer;
+
+  std::string xmlFileName, directory, integrator;
+  char hudText[4096];
+  double damping, E, dt, dt_opt, time, t0;
+  bool gCancel, hCancel;
+  bool valgrind, pause, simpleGraphics;
+
+  RcsGraph* graph;
+  Timer* timer;
+
+  MatNd* z;
+  MatNd* F_ext;
+  MatNd* err;
+
+  ExampleKinetics(int argc, char** argv);
+  virtual ~ExampleKinetics();
   virtual bool initParameters();
-  virtual void clear();
+  virtual bool parseArgs(CmdLineParser* parser);
+  virtual bool initAlgo();
+  virtual bool initGraphics();
+  virtual void step();
+  virtual void handleKeys();
+  virtual std::string help();
+};
+
+class ExampleJointSpaceInvDyn : public ExampleBase
+{
+public:
+
+  pthread_mutex_t graphLock;
+  std::string xmlFileName, directory, physicsEngine, physicsConfig;
+  double dt, tmc, vmax, kp, kd;
+  bool pause, valgrind, simpleGraphics, plot, noJointLimits, noCollisions;
+
+  RcsGraph* graph;
+  MatNd* q_gui;
+  MatNd* q_des;
+  MatNd* qp_des;
+  MatNd* qpp_des;
+  MatNd* T_des;
+  MatNd* M;
+  MatNd* g;
+  MatNd* h;
+  MatNd* aq;
+  MatNd* qp_ik;
+  MatNd* T_limit;
+  Rcs::PhysicsBase* sim;
+
+  Rcs::Viewer* viewer;
+  osg::ref_ptr<Rcs::HUD> hud;
+  osg::ref_ptr<Rcs::KeyCatcher> kc;
+  Rcs::MatNdGui* gui;
+
+  Rcs::RampFilterND* filt;
+
+  Timer* rtClock;
+
+  ExampleJointSpaceInvDyn(int argc, char** argv);
+  virtual ~ExampleJointSpaceInvDyn();
+  virtual bool initParameters();
   virtual bool parseArgs(CmdLineParser* parser);
   virtual bool initAlgo();
   virtual bool initGraphics();
   virtual bool initGuis();
   virtual void step();
-  virtual std::string help();
   virtual void handleKeys();
-
-protected:
-  bool valgrind;
-  bool simpleGraphics;
-  std::string xmlFileName;
-  std::string directory;
-  double dtSim, dtStep;
-  int fwdKinType;
-  char hudText[512];
-  std::string comRef;
-  std::string dotFile;
-  std::string bgColor;
-  std::string fKinBdyName;
-  std::string aabbBdyName;
-  bool testCopy;
-  bool resizeable;
-  bool editMode;
-  bool playBVH;
-  bool noHud;
-  bool updateHud;
-  bool randomGraph;
-  bool shapifyReplace;
-  bool noMutex;
-  bool helpMsg;
-  RcsGraph* graph;
-  MatNd* bvhTraj;
-  pthread_mutex_t graphLock;
-  pthread_mutex_t* mtx;
-
-  osg::ref_ptr<Rcs::KeyCatcher> kc;
-  osg::ref_ptr<Rcs::GraphNode> gn;
-  osg::ref_ptr<Rcs::SphereNode> comNd;
-  osg::ref_ptr<Rcs::BoxNode> aabbNd;
-  osg::ref_ptr<Rcs::HUD> hud;
-  Rcs::Viewer* viewer;
-  JointGui* jGui;
-
-  unsigned int loopCount;
-  double mass, Id[3][3], r_com[3];
-  unsigned int bvhIdx;
-  const RcsBody* comBase;
-};
-
-class ExampleFK_Octree : public ExampleFK
-{
-public:
-  ExampleFK_Octree(int argc, char** argv);
-  virtual bool initParameters();
-};
-
-class ExampleFK_Below : public ExampleFK
-{
-public:
-  ExampleFK_Below(int argc, char** argv);
-  virtual bool initParameters();
-  virtual bool initGraphics();
-  virtual bool initAlgo();
-  virtual void step();
-  virtual std::string help();
-
-protected:
-  std::string belowBdy;
-  osg::ref_ptr<Rcs::SphereNode> belowNd;
-  double belowPt[3];
-};
-
-class ExampleFK_Broadphase : public ExampleFK
-{
-public:
-  ExampleFK_Broadphase(int argc, char** argv);
-  ~ExampleFK_Broadphase();
-  virtual bool initParameters();
-  virtual bool initAlgo();
-  virtual bool initGraphics();
-  virtual void step();
-  virtual void handleKeys();
-  virtual bool parseArgs(CmdLineParser* parser);
-
-  RcsBroadPhase* bp;
-  RcsCollisionMdl* cMdl;
-  osg::ref_ptr<osg::Switch> bpNode;
-  double distanceThreshold;
-  double t_broadphase;
-  double t_narrowphase;
-  std::string treeBodies;
 };
 
 }   // namespace
 
-#endif   // RCS_EXAMPLEFK_H
+#endif   // RCS_EXAMPLEKINETICS_H

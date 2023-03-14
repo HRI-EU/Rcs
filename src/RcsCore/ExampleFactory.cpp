@@ -147,6 +147,7 @@ ExampleBase* ExampleFactory::runExample(std::string category,
   {
     ex->initParameters();
     ex->parseArgs(&argP);
+    std::cout << ex->help() << std::endl;
     delete ex;
     return NULL;
   }

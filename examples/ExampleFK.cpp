@@ -47,6 +47,7 @@
 #include <Rcs_timer.h>
 #include <Rcs_utilsCPP.h>
 #include <ExampleFactory.h>
+#include <Rcs_collisionModel.h>
 
 #include <RcsViewer.h>
 #include <KeyCatcher.h>
@@ -55,6 +56,8 @@
 #include <HUD.h>
 #include <PPSGui.h>
 #include <PPSSensorNode.h>
+#include <VertexArrayNode.h>
+#include <AABBNode.h>
 #include <CmdLineWidget.h>
 
 #include <sstream>
@@ -63,9 +66,10 @@
 namespace Rcs
 {
 
-static ExampleFactoryRegistrar<ExampleFK> ExampleFK_("Forward kinematics",
-                                                     "Dexbot");
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RCS_REGISTER_EXAMPLE(ExampleFK, "Forward kinematics", "Dexbot");
 
 ExampleFK::ExampleFK(int argc, char** argv) : ExampleBase(argc, argv)
 {
@@ -89,7 +93,6 @@ ExampleFK::ExampleFK(int argc, char** argv) : ExampleBase(argc, argv)
   bvhTraj = NULL;
   viewer = NULL;
   jGui = NULL;
-  guiHandle = -1;
   loopCount = 0;
   mass = 0.0;
   Mat3d_setIdentity(Id);
@@ -164,6 +167,7 @@ bool ExampleFK::parseArgs(CmdLineParser* argP)
                     "1: sub tree, 2: body only (default is %d)", fwdKinType);
   argP->getArgument("-fKinBdy", &fKinBdyName, "Forward kinematics start "
                     "body (default is none)");
+  argP->getArgument("-aabb", &aabbBdyName, "AABB root body (default is none)");
   argP->getArgument("-copy", &testCopy, "Test graph copying");
   argP->getArgument("-resizeable", &resizeable, "Adjust visualization "
                     "of shapes dynamically");
@@ -370,6 +374,19 @@ bool ExampleFK::initGraphics()
       viewer->add(new Rcs::PPSSensorNode(SENSOR, graph, debug));
     }
   }
+  if (!aabbBdyName.empty())
+  {
+    const RcsBody* aabbRoot = RcsGraph_getBodyByName(graph, aabbBdyName.c_str());
+    if (!aabbRoot)
+    {
+      RLOG(1, "AABB root body \"%s\" not found in graph", aabbBdyName.c_str());
+    }
+    else
+    {
+      aabbNd = new Rcs::BoxNode(Vec3d_zeroVec(), 1.0, 1.0, 1.0, true);
+      viewer->add(aabbNd.get());
+    }
+  }
   viewer->runInThread(mtx);
 
   return true;
@@ -455,6 +472,31 @@ void ExampleFK::step()
     mass = RcsGraph_COG(graph, r_com);
   }
 
+  double t_aabb = 0.0;
+
+  if (aabbNd.valid())
+  {
+    const RcsBody* aabbBdy = RcsGraph_getBodyByName(graph, aabbBdyName.c_str());
+    RCHECK(aabbBdy);   // Has already been checked in initGraphics()
+    double xyzMin[3], xyzMax[3];
+    t_aabb = Timer_getTime();
+    int nAABB = RcsGraph_computeSubTreeAABB(graph, aabbBdy->id,
+                                            RCSSHAPE_COMPUTE_DISTANCE,
+                                            xyzMin, xyzMax, NULL);
+    t_aabb = Timer_getTime() - t_aabb;
+    if (nAABB > 0)
+    {
+      double center[3], extents[3];
+      for (int i = 0; i < 3; ++i)
+      {
+        center[i] = xyzMin[i] + 0.5 * (xyzMax[i] - xyzMin[i]);
+        extents[i] = xyzMax[i] - xyzMin[i];
+      }
+      aabbNd->setPosition(center);
+      aabbNd->resize(extents);
+    }
+  }
+
   if (valgrind)
   {
     RLOG(1, "Finished step");
@@ -474,7 +516,7 @@ void ExampleFK::step()
   if (bvhTraj != NULL)
   {
     char a[256];
-    snprintf(a, 256, "BVH row %d (from %d)\n", bvhIdx, bvhTraj->m);
+    snprintf(a, 256, "\nBVH row %d (from %d)", bvhIdx, bvhTraj->m);
     strcat(hudText, a);
   }
 
@@ -746,12 +788,9 @@ void ExampleFK::handleKeys()
   {
     RMSG("Reloading GraphNode from %s", xmlFileName.c_str());
 
-    if (guiHandle != -1)
-    {
-      delete jGui;
-      //bool success = RcsGuiFactory_destroyGUI(guiHandle);
-      RLOG(0, "JointGui deleted");
-    }
+    delete jGui;
+    jGui = NULL;
+    RLOG(0, "JointGui deleted");
 
     bool collisionVisible = gn->collisionModelVisible();
     bool graphicsVisible = gn->graphicsModelVisible();
@@ -893,10 +932,10 @@ void ExampleFK::handleKeys()
 
 
 
-
-
-
-static ExampleFactoryRegistrar<ExampleFK_Octree> ExampleFK_Octree_("Forward kinematics", "Octree");
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RCS_REGISTER_EXAMPLE(ExampleFK_Octree, "Forward kinematics", "Octree");
 
 ExampleFK_Octree::ExampleFK_Octree(int argc, char** argv) : ExampleFK(argc, argv)
 {
@@ -913,7 +952,10 @@ bool ExampleFK_Octree::initParameters()
 
 
 
-static ExampleFactoryRegistrar<ExampleFK_Below> ExampleFK_Below_("Forward kinematics", "Below");
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RCS_REGISTER_EXAMPLE(ExampleFK_Below, "Forward kinematics", "Below");
 
 ExampleFK_Below::ExampleFK_Below(int argc, char** argv) : ExampleFK(argc, argv)
 {
@@ -1017,6 +1059,191 @@ std::string ExampleFK_Below::help()
 
 
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RCS_REGISTER_EXAMPLE(ExampleFK_Broadphase, "Forward kinematics", "Broadphase");
+
+ExampleFK_Broadphase::ExampleFK_Broadphase(int argc, char** argv) :
+  ExampleFK(argc, argv), bp(NULL), cMdl(NULL), distanceThreshold(0.0),
+  t_broadphase(0.0), t_narrowphase(0.0)
+{
+}
+
+ExampleFK_Broadphase::~ExampleFK_Broadphase()
+{
+  // We delete the base class's viewer and gui  before deleting memory, since
+  // otherwise some classes in different threads refer to invalid memory.
+  clear();
+
+  RcsBroadPhase_destroy(bp);
+  RcsCollisionModel_destroy(cMdl);
+}
+
+bool ExampleFK_Broadphase::initParameters()
+{
+  ExampleFK::initParameters();
+  xmlFileName = "gBroadphase.xml";
+  directory = "config/xml/SmileActions";
+  treeBodies = "j2s7s300_link_2_left j2s7s300_link_2_right";
+
+  return true;
+}
+
+bool ExampleFK_Broadphase::initAlgo()
+{
+  ExampleFK::initAlgo();
+
+  bp = RcsBroadPhase_create(graph, distanceThreshold);
+  std::vector<std::string> treeBdyVec = Rcs::String_split(treeBodies, " ");
+  for (size_t i = 0; i < treeBdyVec.size(); ++i)
+  {
+    RcsBroadPhase_addTreeByName(bp, treeBdyVec[i].c_str());
+  }
+  RcsBroadPhase_updateBoundingVolumes(bp);
+
+  cMdl = RcsBroadPhase_createNarrowPhase(bp);
+
+  return true;
+}
+
+void ExampleFK_Broadphase::step()
+{
+  bool updateHudPrev = updateHud;
+  updateHud = false;
+  ExampleFK::step();
+  updateHud = updateHudPrev;
+
+  double t_bp = Timer_getSystemTime();
+  RcsBroadPhase_updateBoundingVolumes(bp);
+  int nb = RcsBroadPhase_computeNarrowPhase(bp, cMdl);
+  t_bp = Timer_getSystemTime() - t_bp;
+  pthread_mutex_lock(&graphLock);
+  double t_np = Timer_getSystemTime();
+  RcsCollisionModel_compute(cMdl);
+  t_np = Timer_getSystemTime() - t_np;
+  pthread_mutex_unlock(&graphLock);
+
+  t_broadphase = (t_broadphase>0.0) ? 0.99*t_broadphase + 0.01*t_bp : t_bp;
+  t_narrowphase = (t_narrowphase>0.0) ? 0.99*t_narrowphase + 0.01*t_np : t_np;
+
+  snprintf(hudText, 256, "%d of %d possible pairs\nBroad phase took %.3f msec\n"
+           "Narrow phase took %.3f msec\nCompression is %.1f%%",
+           cMdl->nPairs, nb, 1.0e3*t_broadphase, 1.0e3*t_narrowphase,
+           100.0-100.0*cMdl->nPairs/nb);
+
+  if (hud)
+  {
+    hud->setText(hudText);
+  }
+  else
+  {
+    std::cout << hudText;
+  }
+
+  REXEC(3)
+  {
+    RcsCollisionModel_fprint(stdout, cMdl);
+  }
+
+}
+
+bool ExampleFK_Broadphase::initGraphics()
+{
+  Rcs::KeyCatcherBase::registerKey("k", "Toggle broadphase visualization");
+  if (valgrind)
+  {
+    return true;
+  }
+
+  ExampleFK::initGraphics();
+  bpNode = new osg::Switch();
+  viewer->add(bpNode.get());
+
+  gn->displayCollisionModel(true);
+  gn->displayGraphicsModel(false);
+
+#if 0
+  for (unsigned int i = 0; i < bp->nBodies; ++i)
+  {
+    osg::ref_ptr<osg::PositionAttitudeTransform> pat;
+    pat = new osg::PositionAttitudeTransform();
+    pat->setPosition(osg::Vec3(bp->bodies[i].sphereCenter[0],
+                               bp->bodies[i].sphereCenter[1],
+                               bp->bodies[i].sphereCenter[2]));
+
+    osg::ref_ptr<Rcs::SphereNode> sn;
+    sn = new Rcs::SphereNode(Vec3d_zeroVec(), bp->bodies[i].sphereRadius);
+    sn->makeDynamic(graph->bodies[bp->bodies[i].id].A_BI.org);
+    sn->toggleWireframe();
+    pat->addChild(sn.get());
+    viewer->add(pat.get());
+  }
+#else
+  for (unsigned int i = 0; i < bp->nBodies; ++i)
+  {
+    osg::ref_ptr<Rcs::AABBNode> sn = new Rcs::AABBNode();
+    sn->makeDynamic(bp->bodies[i].aabbMin, bp->bodies[i].aabbMax);
+    bpNode->addChild(sn.get());
+  }
+  for (unsigned int i = 0; i < bp->nTrees; ++i)
+  {
+    osg::ref_ptr<Rcs::AABBNode> sn = new Rcs::AABBNode();
+    sn->makeDynamic(bp->trees[i].aabbMin, bp->trees[i].aabbMax);
+    bpNode->addChild(sn.get());
+    for (unsigned int j = 0; j < bp->trees[i].nBodies; ++j)
+    {
+      osg::ref_ptr<Rcs::AABBNode> sn = new Rcs::AABBNode();
+      sn->makeDynamic(bp->trees[i].bodies[j].aabbMin,
+                      bp->trees[i].bodies[j].aabbMax);
+      bpNode->addChild(sn.get());
+    }
+
+  }
+#endif
+
+  osg::ref_ptr<Rcs::VertexArrayNode> cn;
+  cn = new Rcs::VertexArrayNode(cMdl->cp, osg::PrimitiveSet::LINES, "RED");
+  viewer->add(cn.get());
+
+
+  return true;
+}
+
+void ExampleFK_Broadphase::handleKeys()
+{
+  if (!kc)
+  {
+    return;
+  }
+
+  ExampleFK::handleKeys();
+
+  if (kc->getAndResetKey('k'))
+  {
+    bool visible = bpNode.get()->getValue(0);
+    if (visible)
+    {
+      bpNode->setAllChildrenOff();
+    }
+    else
+    {
+      bpNode->setAllChildrenOn();
+    }
+  }
+
+}
+
+bool ExampleFK_Broadphase::parseArgs(CmdLineParser* argP)
+{
+  argP->getArgument("-distanceThreshold", &distanceThreshold,
+                    "AABB distance threshold (default is 0)");
+  argP->getArgument("-treeBodies", &treeBodies, "Space-separated strings of "
+                    "tree bodies to be checked against rigid bodies (default"
+                    " is \"%s\")", treeBodies.c_str());
+
+  return ExampleFK::parseArgs(argP);
+}
 
 
 }   // namespace Rcs
