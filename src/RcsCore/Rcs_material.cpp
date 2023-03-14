@@ -360,36 +360,6 @@ static const char* materialDefs =
 // load the material and store its pointer in the map.
 static std::map<std::string, RcsMaterial> materialMap;
 
-static pthread_mutex_t materialMtx;
-static bool materialMtxInitialized = false;
-
-static void clearMaterialMtx(void)
-{
-  pthread_mutex_destroy(&materialMtx);
-  materialMtxInitialized = false;
-}
-
-static void initMaterialMtx(void)
-{
-  if (!materialMtxInitialized)
-  {
-    pthread_mutex_init(&materialMtx, NULL);
-    materialMtxInitialized = true;
-    atexit(clearMaterialMtx);
-  }
-
-}
-
-static void lockMaterialMtx(void)
-{
-  pthread_mutex_lock(&materialMtx);
-}
-
-static void unlockMaterialMtx(void)
-{
-  pthread_mutex_unlock(&materialMtx);
-}
-
 
 /*******************************************************************************
  *
@@ -612,9 +582,9 @@ const RcsMaterial* Rcs_getMaterial(const char* materialName)
   std::string matString = std::string(materialName);
   RcsMaterial* res = NULL;
 
-  initMaterialMtx();
+  static pthread_mutex_t mLock = PTHREAD_MUTEX_INITIALIZER;
 
-  lockMaterialMtx();
+  pthread_mutex_lock(&mLock);
   std::map<std::string, RcsMaterial>::iterator it = materialMap.find(matString);
 
   if (it!=materialMap.end())
@@ -622,9 +592,9 @@ const RcsMaterial* Rcs_getMaterial(const char* materialName)
     NLOG(1, "Found color %s from fast internal map", matString.c_str());
     res = &it->second;
   }
-  unlockMaterialMtx();
+  pthread_mutex_unlock(&mLock);
 
-  if (res != NULL)
+  if (res)
   {
     return res;
   }
@@ -656,28 +626,32 @@ const RcsMaterial* Rcs_getMaterial(const char* materialName)
   }
   else
   {
+    pthread_mutex_lock(&mLock);
     success = getMaterialFromBuffer(materialDefs, matString.c_str(),
                                     matData.amb,
                                     matData.diff,
                                     matData.spec,
                                     &matData.shininess);
+    pthread_mutex_unlock(&mLock);
   }
 
   if (success==false)
   {
+    pthread_mutex_lock(&mLock);
     success = getMaterialFromColorFile(matString,
                                        matData.amb,
                                        matData.diff,
                                        matData.spec,
                                        &matData.shininess);
+    pthread_mutex_unlock(&mLock);
   }
 
   if (success==true)
   {
-    lockMaterialMtx();
+    pthread_mutex_lock(&mLock);
     materialMap[matString] = matData;
     res = &materialMap[matString];
-    unlockMaterialMtx();
+    pthread_mutex_unlock(&mLock);
     return res;
   }
 
