@@ -92,12 +92,20 @@ void Vec3d_transRotate(double I_r[3], double A_KI[3][3],
 void Vec3d_transRotateSelf(double K_r[3], double A_KI[3][3]);
 
 /*! \ingroup RcsVec3dFunctions
- *  \brief Rotates vector vec around the given axis with the given angle.
+ *  \brief Rotates vector vec around the given axis with the given angle. The
+ *         axis does not need to be normalized.
  */
 void Vec3d_rotateAboutAxis(double dst[3],
                            const double src[3],
                            const double axis[3],
                            const double angle);
+
+/*! \ingroup RcsVec3dFunctions
+ *  \brief In-place verion of Vec3d_rotateAboutAxis().
+ */
+void Vec3d_rotateAboutAxisSelf(double vec[3],
+                               const double axis[3],
+                               const double angle);
 
 /*! \ingroup RcsVec3dFunctions
  *  \brief Returns the Euclidean distance of points p1 and p2.

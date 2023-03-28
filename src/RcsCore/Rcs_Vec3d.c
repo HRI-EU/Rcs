@@ -408,6 +408,18 @@ void Vec3d_rotateAboutAxis(double erg[3],
 /*******************************************************************************
  *
  ******************************************************************************/
+void Vec3d_rotateAboutAxisSelf(double vec[3],
+                               const double axis[3],
+                               const double angle)
+{
+  double tmp[3];
+  Vec3d_copy(tmp, vec);
+  Vec3d_rotateAboutAxis(vec, tmp, axis, angle);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 double Vec3d_distance(const double* p1, const double* p2)
 {
   return sqrt((p1[0] - p2[0]) * (p1[0] - p2[0]) +
