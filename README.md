@@ -50,12 +50,12 @@ Note that using Vortex Essentials on newer operating systems requires extra care
 We recommend to use the vcpkg package manager to obtain the dependencies. These packages need to be installed:
 
 ```
-me@computer: > vcpkg.exe install pthreads libxml2 osg qwt 
+me@computer: > vcpkg.exe install pthreads libxml2 osg qwt --triplet=x64-windows
 ```
 
 These are optional packages that extend the functionality of Rcs:
 ```
-me@computer: > vcpkg.exe install bullet3 eigen3 octomap
+me@computer: > vcpkg.exe install bullet3 eigen3 octomap --triplet=x64-windows
 ```
 
 
@@ -69,7 +69,7 @@ It is convenient to put these instructions into a script file:
 
 ```
 cd <build-directory>
-cmake.exe -G "Visual Studio 15 2017 Win64" -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DCMAKE_BUILD_TYPE=Release -DVCPKG_TARGET_TRIPLET=x64-windows-release -DCMAKE_TOOLCHAIN_FILE=C:\dev\vcpkg\scripts\buildsystems\vcpkg.cmake <Rcs root directory> -Wno-dev
+cmake.exe -G "Visual Studio 15 2017 Win64" -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE -DCMAKE_BUILD_TYPE=Release -DVCPKG_TARGET_TRIPLET=x64-windows -DCMAKE_TOOLCHAIN_FILE=C:\dev\vcpkg\scripts\buildsystems\vcpkg.cmake <Rcs root directory> -Wno-dev
 cd ..
 set /p=Hit ENTER to continue...
 ```
