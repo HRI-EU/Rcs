@@ -253,8 +253,6 @@ ControllerWidgetBase::ControllerWidgetBase(const ControllerBase* cntrl,
 
     if ((tsk->getName() != "Unnamed task") && (!tsk->getName().empty()))
     {
-      TaskWidget* task_widget;
-
       bool showTask = false;
 
       for (size_t tskIdx = 0; tskIdx < tsk->getDim(); ++tskIdx)
@@ -267,6 +265,7 @@ ControllerWidgetBase::ControllerWidgetBase(const ControllerBase* cntrl,
       }
       if (showTask)
       {
+        TaskWidget* task_widget;
         if (a_curr == NULL)
         {
           task_widget = new TaskWidget(tsk,
@@ -295,7 +294,7 @@ ControllerWidgetBase::ControllerWidgetBase(const ControllerBase* cntrl,
       }
 
 
-    }   // if (showTask)
+    }   // if ((tsk->getName() != "Unnamed task") && (!tsk->getName().empty()))
 
     rowIndex += _controller->getTask(id)->getDim();
   }

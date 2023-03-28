@@ -219,12 +219,8 @@ void AsyncWidget::destroy()
     RLOG(1, "WARNING: You must call this from the Gui thread using unlaunch()");
   }
 
-  if (w)
-  {
-    delete w;
-    w = NULL;
-  }
-
+  delete w;
+  w = NULL;
 }
 
 void AsyncWidget::setWidget(QWidget* widget)

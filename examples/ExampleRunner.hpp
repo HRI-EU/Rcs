@@ -130,6 +130,11 @@ int main(int argc, char** argv)
   argP.getArgument("-dl", &RcsLogLevel, "Debug level (default is 0)");
   argP.getArgument("-m", &mode, "Test mode");
 
+  if (argP.hasArgument("-c") && argP.hasArgument("-e"))
+  {
+    mode = 2;
+  }
+
   Rcs_addResourcePath("config");
 
   switch (mode)

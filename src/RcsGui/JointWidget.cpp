@@ -290,15 +290,15 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
 
       if (passive == false)
       {
-        connect(jsc_q[i]->getSlider(), SIGNAL(valueChanged(double)),
+        connect(jsl->getSlider(), SIGNAL(valueChanged(double)),
                 SLOT(setJoint()));
       }
 
       constraintsLayout->addWidget(check_constraints[i], i, 0,
                                    Qt::AlignLeft);
-      constraintsLayout->addWidget(lcd_q_cmd[i], i, 1, Qt::AlignLeft);
-      constraintsLayout->addWidget(lcd_q_act[i], i, 2, Qt::AlignLeft);
-      constraintsLayout->addWidget(jsc_q[i],     i, 3, Qt::AlignLeft);
+      constraintsLayout->addWidget(lcd_cmd, i, 1, Qt::AlignLeft);
+      constraintsLayout->addWidget(lcd_act, i, 2, Qt::AlignLeft);
+      constraintsLayout->addWidget(jsl,     i, 3, Qt::AlignLeft);
 
       i++;
     }   // for(i=0;i<_dof;i++)

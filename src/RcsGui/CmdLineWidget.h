@@ -163,7 +163,7 @@ public:
     label->setFont(font);
     label->setWordWrap(true);
     //label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
-    label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+    //label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     label->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
     setWidget(label);
@@ -173,7 +173,7 @@ public:
     //https://www.appsloveworld.com/cplus/100/39/setting-text-on-a-qlabel-in-a-layout-doesnt-resize?utm_content=cmp-true
     //layout->setSizeConstraint(QLayout::SetMinimumSize);
 
-    QTimer::singleShot(1000, this, SLOT(onResizeToFit()));
+    //QTimer::singleShot(1000, this, SLOT(onResizeToFit()));
   }
 
   virtual ~TextWidget()

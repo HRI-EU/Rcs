@@ -199,8 +199,12 @@ static bool test_frustumMesh()
   fovy = RCS_DEG2RAD(fovy);
 
   RcsMeshData* mesh = RcsMesh_createFrustum(fovx, fovy, h);
-
+  char meshFileName[256];
+  snprintf(meshFileName, 256, "frustum_%.0fx%.0f.stl",
+           RCS_RAD2DEG(fovx), RCS_RAD2DEG(fovy));
+  RcsMesh_toFile(mesh, meshFileName);
   showMesh(mesh);
+
   RcsMesh_destroy(mesh);
 
   return true;
