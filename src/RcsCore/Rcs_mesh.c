@@ -2080,7 +2080,7 @@ RcsMeshData* RcsMesh_createFrustum(double fovX, double fovY, double h)
 {
   double x = 2.0*tan(0.5*fovX);
   double y = 2.0*tan(0.5*fovY);
-  RcsMeshData* mesh = RcsMesh_createPyramid(x, y, h);
+  RcsMeshData* mesh = RcsMesh_createPyramid(h*x, h*y, h);
   double A_MI[3][3];
   Mat3d_setRotMatX(A_MI, M_PI);
   RcsMesh_rotate(mesh, A_MI);
