@@ -144,7 +144,7 @@ void Mat3d_copy(double dst[3][3], double src[3][3]);
 /*! \ingroup RcsMat3dFunctions
  *  \brief Copies the nine elements from src to dst, row-wise.
  */
-void Mat3d_fromArray(double dst[3][3], double src[9]);
+void Mat3d_fromArray(double dst[3][3], const double src[9]);
 
 /*! \ingroup RcsMat3dFunctions
  *  \brief Copies the matrix elements row-wise to a contiguous array.

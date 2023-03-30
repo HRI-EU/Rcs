@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -110,12 +110,12 @@ void Vec3d_rotateAboutAxisSelf(double vec[3],
 /*! \ingroup RcsVec3dFunctions
  *  \brief Returns the Euclidean distance of points p1 and p2.
  */
-double Vec3d_distance(const double* p1, const double* p2);
+double Vec3d_distance(const double p1[3], const double p2[3]);
 
 /*! \ingroup RcsVec3dFunctions
  *  \brief Returns the squared distance of points p1 and p2.
  */
-double Vec3d_sqrDistance(const double* p1, const double* p2);
+double Vec3d_sqrDistance(const double p1[3], const double p2[3]);
 
 /*! \ingroup RcsVec3dFunctions
  *  \brief Returns true if the vectors are element-wise equal with a
@@ -447,7 +447,7 @@ const double* Vec3d_unitVector(int dim);
  *         value. If limit is smaller or equal to zero, self is set to zero.
  *         The function returns the scaling factor.
  */
-double Vec3d_constSaturateSelf(double* self, const double limit);
+double Vec3d_constSaturateSelf(double self[3], const double limit);
 
 /*! \ingroup RcsVec3dFunctions
  *  \brief Prints two vectors and their difference next to each other.

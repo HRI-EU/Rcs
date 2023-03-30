@@ -420,7 +420,7 @@ void Vec3d_rotateAboutAxisSelf(double vec[3],
 /*******************************************************************************
  *
  ******************************************************************************/
-double Vec3d_distance(const double* p1, const double* p2)
+double Vec3d_distance(const double p1[3], const double p2[3])
 {
   return sqrt((p1[0] - p2[0]) * (p1[0] - p2[0]) +
               (p1[1] - p2[1]) * (p1[1] - p2[1]) +
@@ -430,7 +430,7 @@ double Vec3d_distance(const double* p1, const double* p2)
 /*******************************************************************************
  *
  ******************************************************************************/
-double Vec3d_sqrDistance(const double* p1, const double* p2)
+double Vec3d_sqrDistance(const double p1[3], const double p2[3])
 {
   return ((p1[0] - p2[0]) * (p1[0] - p2[0]) +
           (p1[1] - p2[1]) * (p1[1] - p2[1]) +
@@ -1041,7 +1041,7 @@ const double* Vec3d_unitVector(int dim)
 /*******************************************************************************
  *
  ******************************************************************************/
-double Vec3d_constSaturateSelf(double* self, const double limit)
+double Vec3d_constSaturateSelf(double self[3], const double limit)
 {
   if (limit <= 0.0)
   {

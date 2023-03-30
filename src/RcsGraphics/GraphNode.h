@@ -328,12 +328,14 @@ public:
    */
   void setDynamicMeshUpdate(bool enabled);
 
+  /*! \brief Adds a node after this class's switch node.
+   */
+  void addNode(osg::Node* child);
+
 protected:
 
   virtual bool callback(const osgGA::GUIEventAdapter& ea,
                         osgGA::GUIActionAdapter& aa);
-
-  void addNode(osg::Node* child);
 
   osg::ref_ptr<osg::Switch> switchNode;
   osg::ref_ptr<osgGA::GUIEventHandler> frameHandler;

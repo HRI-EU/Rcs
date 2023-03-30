@@ -250,7 +250,7 @@ void Mat3d_copy(double dst[3][3], double src[3][3])
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-void Mat3d_fromArray(double dst[3][3], double src[9])
+void Mat3d_fromArray(double dst[3][3], const double src[9])
 {
   dst[0][0] = src[0];
   dst[0][1] = src[1];
