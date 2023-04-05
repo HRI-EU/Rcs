@@ -778,6 +778,8 @@ bool MatNd_arraySizeFromFile(FILE* fd, int* rows, int* cols, int* nHeaderLines)
     for (i = 0; i < (int)(strlen(line) - 1); i++)
     {
       if ((line[i] > 47 && line[i] < 58) // digit
+          || line[i] == 9            // tab
+          || line[i] == 13           // CR
           || line[i] == 32           // white space
           || line[i] == 43           // +
           || line[i] == 45           // -
@@ -789,15 +791,15 @@ bool MatNd_arraySizeFromFile(FILE* fd, int* rows, int* cols, int* nHeaderLines)
       else
       {
         isValueLine = false;
-        RLOG(0, "Detected no-number character for line[%d]: \"%s\"",
-             i, line);
+        RLOG(1, "Detected no-number character with ASCII code %d for line[%d]: \"%s\"",
+             (int)line[i], i, line);
       }
     }
 
     if (!isValueLine)
     {
       (*nHeaderLines)++;
-      RLOG(0, "Detected header line %d at row %d: \"%s\"",
+      RLOG(5, "Detected header line %d at row %d: \"%s\"",
            *nHeaderLines, *rows, line);
     }
     else

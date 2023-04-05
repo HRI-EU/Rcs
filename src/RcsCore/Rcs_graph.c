@@ -3379,14 +3379,14 @@ int RcsGraph_getSensorIdByName(const RcsGraph* graph, const char* name)
  ******************************************************************************/
 void RcsGraph_scale(RcsGraph* graph, double scale)
 {
-  double origin[3];
-  Vec3d_setZero(origin);
+  /* double origin[3]; */
+  /* Vec3d_setZero(origin); */
 
   RCSGRAPH_TRAVERSE_BODIES(graph)
   {
-    double k_org[3];
-    Vec3d_add(k_org, origin, BODY->A_BI.org);
-    Vec3d_rotateSelf(k_org, BODY->A_BI.rot);
+    /* double k_org[3]; */
+    /* Vec3d_add(k_org, origin, BODY->A_BI.org); */
+    /* Vec3d_rotateSelf(k_org, BODY->A_BI.rot); */
     RcsBody_scale(graph, BODY, scale);
   }
 
@@ -3397,6 +3397,31 @@ void RcsGraph_scale(RcsGraph* graph, double scale)
       graph->q->ele[JNT->jointIndex] *= scale;
     }
 
+  }
+
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+void RcsGraph_scaleSubTree(RcsGraph* graph, int startBdyId, double scale)
+{
+  RCHECK(startBdyId>=0 && startBdyId<graph->nBodies);
+
+  RCSBODY_TRAVERSE_BODIES(graph, &graph->bodies[startBdyId])
+  {
+    RcsBody_scale(graph, BODY, scale);
+  }
+
+  RCSBODY_TRAVERSE_BODIES(graph, &graph->bodies[startBdyId])
+  {
+    RCSBODY_FOREACH_JOINT(graph, BODY)
+    {
+      if (RcsJoint_isTranslation(JNT) == true)
+      {
+        graph->q->ele[JNT->jointIndex] *= scale;
+      }
+    }
   }
 
 }

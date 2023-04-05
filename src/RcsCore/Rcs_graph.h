@@ -311,6 +311,13 @@ void RcsGraph_destroy(RcsGraph* self);
 void RcsGraph_scale(RcsGraph* self, double scaleFactor);
 
 /*! \ingroup RcsGraphFunctions
+ *  \brief Scales the graph with the given scale factor starting with the body
+ *         with startBdyId in a depth-first traversal. The start bodie's
+ *         "next" neighbors are not considered.
+ */
+void RcsGraph_scaleSubTree(RcsGraph* graph, int startBdyId, double scale);
+
+/*! \ingroup RcsGraphFunctions
  *  \brief For each body, joint and sensor, this function changes the oldSuffix
  *         to the newSuffix if the name ends with the oldSuffix. If not, it
  *         remains unchanged. If newSuffix is NULL, just the oldSuffix is
