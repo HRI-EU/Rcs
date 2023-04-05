@@ -139,6 +139,15 @@ GraphNode::~GraphNode()
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+void GraphNode::setEnableMeshFactory(bool enable)
+{
+  RLOG(5, "%s MeshFactory", enable ? "Enabling" : "Disabling");
+  ShapeNode::setEnableMeshFactory(enable);
+}
+
+/*******************************************************************************
  * RcsGraph root node.
  ******************************************************************************/
 bool GraphNode::init(const RcsGraph* g, bool resizeable,

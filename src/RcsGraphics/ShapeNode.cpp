@@ -67,6 +67,7 @@ namespace Rcs
 
 static std::map<std::string, osg::ref_ptr<osg::Texture2D> > _textureBuffer;
 static OpenThreads::Mutex _textureBufferMtx;
+static bool meshFactoryEnabled = true;
 
 
 
@@ -125,9 +126,12 @@ static osg::ref_ptr<osg::Node> createMeshNode(const RcsShape* shape,
     osg::ref_ptr<Rcs::MeshNode> mn;
     mn = new Rcs::MeshNode(mesh);
     mn->setMaterial(shape->color);
-    _meshBufferMtx.lock();
-    _meshBuffer[std::string(shape->meshFile)] = mn;
-    _meshBufferMtx.unlock();
+    if (meshFactoryEnabled && (!shape->resizeable))
+    {
+      _meshBufferMtx.lock();
+      _meshBuffer[std::string(shape->meshFile)] = mn;
+      _meshBufferMtx.unlock();
+    }
     return mn;
   }
 
@@ -144,7 +148,7 @@ static osg::ref_ptr<osg::Node> createMeshNode(const RcsShape* shape,
   // everthing else. That's due to an issue with the color
   // assignment for the mesh vertices. It somehow doesn't work. If
   // anyone has an idea, it's appreciated.
-  if (meshNode.valid())
+  if (meshNode.valid() && meshFactoryEnabled)
   {
     _meshBufferMtx.lock();
     _meshBuffer[std::string(shape->meshFile)] = meshNode;
@@ -289,6 +293,14 @@ ShapeNode::ShapeNode(const RcsGraph* graph_, int bdyId_, int shapeIdx_,
     addTexture(sh->textureFile);
   }
 
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void ShapeNode::setEnableMeshFactory(bool enable)
+{
+  meshFactoryEnabled = enable;
 }
 
 /*******************************************************************************

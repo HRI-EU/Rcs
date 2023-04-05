@@ -88,6 +88,8 @@ public:
    */
   virtual ~GraphNode();
 
+  static void setEnableMeshFactory(bool enable);
+
   /*! \brief Adds all shapes and starts the event callback for updating.
    *
    *  \return true for success, false for failure:

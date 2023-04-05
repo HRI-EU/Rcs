@@ -73,6 +73,7 @@ public:
   void toggleFrame();
   void updateDynamicShapes();
   const RcsShape* getShape() const;
+  static void setEnableMeshFactory(bool enable);
 
 protected:
   virtual ~ShapeNode();
