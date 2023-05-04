@@ -184,7 +184,8 @@ void AsyncWidget::unlaunch()
 
   if (AsyncGuiFactory::isGuiThread())
   {
-    RLOG(5, "unlaunch(): Calling destroy right away");
+    RLOG_CPP(5, "unlaunch(): Calling destroy for Gui "
+             << getWidget()->objectName().toStdString() << " right away");
     AsyncGuiFactory::getLauncher()->event(ae);
     delete ae;
   }

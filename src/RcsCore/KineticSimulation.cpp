@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -1261,14 +1261,12 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
         }   // RCSBODY_FOREACH_JOINT(graph, BODY)
 
 
-
         RCSBODY_TRAVERSE_SHAPES(BODY)
         {
           snprintf(SHAPE->color, 16, "#%02x%02x%02xff",
                    (unsigned int)lround(rr),
                    (unsigned int)lround(gg),
                    (unsigned int)lround(bb));
-
         }
       }
 

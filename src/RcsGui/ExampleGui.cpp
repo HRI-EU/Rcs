@@ -395,6 +395,10 @@ ExampleWidget::ExampleWidget(int argc, char** argv, QWidget* parent) :
   // This widget's layout is a vertical box which holds the title box on top,
   // and the tree view with all ExampleItems.
   QWidget* mainWidget = new QWidget(this);
+  QScrollArea* scrollArea = new QScrollArea();
+  scrollArea->setWidget(mainWidget);
+  scrollArea->setWidgetResizable(true);
+  setCentralWidget(scrollArea);
   QVBoxLayout* vBox = new QVBoxLayout();
   vBox->setMargin(0);
   vBox->setSpacing(0);
@@ -423,7 +427,7 @@ ExampleWidget::ExampleWidget(int argc, char** argv, QWidget* parent) :
   QTreeView* tree = new QTreeView(mainWidget);
   vBox->addWidget(tree);
   mainWidget->setLayout(vBox);
-  setCentralWidget(mainWidget);
+  setCentralWidget(scrollArea);
 
   std::set<std::string> categories = ExampleFactory::getCategories();
 
@@ -491,8 +495,10 @@ ExampleWidget::ExampleWidget(int argc, char** argv, QWidget* parent) :
   // Headers are resized so that all text is visible
   tree->header()->resizeSections(QHeaderView::ResizeToContents);
 
-  setMinimumWidth(400);
-  setMinimumHeight((cMap.size()+categories.size())*25 + 25);
+  mainWidget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+  setMinimumWidth(350);
+  const int wHeight = std::min(900, (int)(cMap.size()+categories.size())*25+25);
+  setMinimumHeight(wHeight);
 
   connect(tree,SIGNAL(clicked(const QModelIndex&)), this,
           SLOT(itemClicked(const QModelIndex&)));

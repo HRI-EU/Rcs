@@ -166,6 +166,7 @@ public:
     //label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
     label->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
+    label->setAlignment(Qt::AlignTop);
     setWidget(label);
     setWidgetResizable(true);
     setWindowTitle(QString::fromStdString(title));
@@ -211,7 +212,9 @@ public:
 
   void construct()
   {
-    setWidget(new TextWidget(text, title));
+    TextWidget* tw = new TextWidget(text, title);
+    setWidget(tw);
+    tw->setWindowFlags(tw->windowFlags() | Qt::WindowStaysOnTopHint);
   }
 
 protected:

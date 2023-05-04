@@ -353,6 +353,10 @@ bool Rcs::CmdLineParser::getArgument(const char* tag, bool* res,
   {
     *res = true;
   }
+  else
+  {
+    *res = false;
+  }
 
   return true;
 }
