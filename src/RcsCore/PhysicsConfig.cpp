@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -41,11 +41,13 @@
 namespace Rcs
 {
 
-PhysicsMaterial::PhysicsMaterial() : materialNode(NULL), defaultMaterialNode(NULL)
+PhysicsMaterial::PhysicsMaterial() :
+  materialNode(NULL), defaultMaterialNode(NULL)
 {
 }
 
-PhysicsMaterial::PhysicsMaterial(xmlNodePtr node, xmlNodePtr defaultMaterialNode) :
+PhysicsMaterial::PhysicsMaterial(xmlNodePtr node,
+                                 xmlNodePtr defaultMaterialNode) :
   materialNode(node), defaultMaterialNode(defaultMaterialNode)
 {
 }
@@ -268,12 +270,14 @@ static bool isMaterialName(xmlNodePtr materialNode, const char* nameToCheck)
 
 
 
-PhysicsConfig::PhysicsConfig(const char* xmlFile)
+PhysicsConfig::PhysicsConfig(const char* xmlFile_) :
+  xmlFile(NULL), doc(NULL), root(NULL), defaultMaterial(NULL)
 {
-  init(xmlFile);
+  init(xmlFile_);
 }
 
-PhysicsConfig::PhysicsConfig(const PhysicsConfig& copyFromMe)
+PhysicsConfig::PhysicsConfig(const PhysicsConfig& copyFromMe) :
+  xmlFile(NULL), doc(NULL), root(NULL), defaultMaterial(NULL)
 {
   initFromCopy(copyFromMe);
 }
@@ -373,8 +377,12 @@ PhysicsConfig::~PhysicsConfig()
 {
   // free filename
   RFREE(xmlFile);
+
   // free xml document
-  xmlFreeDoc(doc);
+  if (doc)
+  {
+    xmlFreeDoc(doc);
+  }
 }
 
 PhysicsMaterial PhysicsConfig::getFirstMaterial() const

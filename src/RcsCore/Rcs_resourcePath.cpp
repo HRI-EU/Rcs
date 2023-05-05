@@ -65,10 +65,27 @@ static void addDelim(std::string& str)
 }
 
 
+namespace Rcs
+{
 std::vector<std::string> getResourcePath()
 {
   return RCSRESOURCEPATH;
 }
+
+std::string getAbsoluteFileName(const std::string& filename)
+{
+  char configFile[512] = "";
+  bool fileExists = Rcs_getAbsoluteFileName(filename.c_str(), configFile);
+  if (!fileExists)
+  {
+    return std::string();
+  }
+
+  return std::string(configFile);
+}
+
+}
+
 extern "C" {
 
 

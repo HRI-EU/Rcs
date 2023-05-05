@@ -165,10 +165,11 @@ public:
     bool success = sim->initialize(graph, config);
     if (!success)
     {
-      return NULL;
+      delete sim;
+      sim = NULL;
     }
+
     return sim;
-    //return new T(graph, config);
   }
 };
 

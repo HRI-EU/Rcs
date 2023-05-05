@@ -59,7 +59,12 @@
 #include <vector>
 #include <string>
 
+namespace Rcs
+{
 std::vector<std::string> getResourcePath();
+std::string getAbsoluteFileName(const std::string& filename);
+}
+
 extern "C" {
 #endif
 
@@ -124,6 +129,7 @@ bool Rcs_fileInResourcePath(const char* fileName);
  *  \brief Prints out the resource paths to stderr.
  */
 void Rcs_printResourcePath(void);
+
 /*! \ingroup ResourcePathFunctions
  *  \brief Returns the number of registered resource paths.
  */
