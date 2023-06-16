@@ -108,6 +108,7 @@ ExampleKinetics::~ExampleKinetics()
   MatNd_destroy(z);
   MatNd_destroy(F_ext);
   MatNd_destroy(err);
+  Rcs_removeResourcePath(directory.c_str());
 }
 
 bool ExampleKinetics::initParameters()

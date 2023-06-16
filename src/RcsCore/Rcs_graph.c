@@ -3406,7 +3406,7 @@ void RcsGraph_scale(RcsGraph* graph, double scale)
  ******************************************************************************/
 void RcsGraph_scaleSubTree(RcsGraph* graph, int startBdyId, double scale)
 {
-  RCHECK(startBdyId>=0 && startBdyId<graph->nBodies);
+  RCHECK(startBdyId>=0 && startBdyId<(int)graph->nBodies);
 
   RCSBODY_TRAVERSE_BODIES(graph, &graph->bodies[startBdyId])
   {

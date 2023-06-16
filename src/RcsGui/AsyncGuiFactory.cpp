@@ -292,6 +292,9 @@ void* AsyncGuiFactory::threadFunc(void*)
   guiThreadId = pthread_self();
   threadRunning = true;
 
+  // Eliminates font scaling issues under windows
+  // QGuiApplication::setAttribute(Qt::AA_DisableHighDpiScaling);
+
   RLOG(5, "threadFunc took off");
   QApplication app(argc, argv);
   app.setQuitOnLastWindowClosed(false);
