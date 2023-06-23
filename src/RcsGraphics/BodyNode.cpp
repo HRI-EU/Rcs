@@ -129,7 +129,9 @@ BodyNode::BodyNode(const RcsBody* b, const RcsGraph* graph, double scale,
   for (unsigned int i=0; i<b->nShapes; ++i)
   {
     const RcsShape* sh = &b->shapes[i];
-    RLOG(5, "Creating ShapeNode for %s", RcsShape_name(sh->type));
+    NLOG(0, "[%s]: Creating ShapeNode for %s",
+         RCSBODY_NAME_BY_ID(graph, b->id),
+         RcsShape_name(sh->type));
     osg::ref_ptr<ShapeNode> sni = new ShapeNode(graph, b->id, i, resizeable);
     sni->setPosition(osg::Vec3(sh->A_CB.org[0],
                                sh->A_CB.org[1],
@@ -976,12 +978,11 @@ void BodyNode::updateCallback(osg::Node* node, osg::NodeVisitor* nv)
   double t_ds = Timer_getSystemTime();
   for (size_t i=0; i<_shapeNodes.size(); ++i)
   {
-    RLOG(6, "%s", body()->name);
+    NLOG(0, "%s", body()->name);
     _shapeNodes[i]->updateDynamicShapes();
   }
   t_ds = Timer_getSystemTime() - t_ds;
-  RLOG(6, "Dynamic shape update took %f msec", 1.0e3*t_ds);
-
+  NLOG(6, "Dynamic shape update took %f msec", 1.0e3*t_ds);
 }
 
 /*******************************************************************************
