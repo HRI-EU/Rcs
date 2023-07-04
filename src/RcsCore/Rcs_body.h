@@ -128,12 +128,6 @@ RcsShape* RcsBody_appendShape(RcsBody* self);
 bool RcsBody_removeShape(RcsBody* self, unsigned int idx);
 
 /*! \ingroup RcsBodyFunctions
- *  \brief Returns the last body in the graph according to a depth-first
- *         traversal. If the graph is empty, NULL is returned.
- */
-RcsBody* RcsBody_getLastInGraph(const RcsGraph* self);
-
-/*! \ingroup RcsBodyFunctions
  *  \brief Attaches body to a target body. It is not supported to attach a body
  *         to a target body that is a generic body. In this case, the function
  *         returns false. If the body is a generic body, the function
@@ -503,6 +497,22 @@ RcsMeshData* RcsBody_meshify(const RcsBody* self, char computeType);
  */
 void RcsBody_scale(RcsGraph* graph, RcsBody* self, double scale);
 
+
+
+/**
+ * @name Accessors
+ *
+ * Functions to access / modify the body
+ */
+
+///@{
+
+/*! \ingroup RcsBodyFunctions
+ *  \brief Returns the last body in the graph according to a depth-first
+ *         traversal. If the graph is empty, NULL is returned.
+ */
+RcsBody* RcsBody_getLastInGraph(const RcsGraph* self);
+
 /*! \ingroup RcsBodyFunctions
  *  \brief Determines the number of distance calculations carried out between
  *         the bodies when using the function \ref RcsBody_distance. The result
@@ -542,6 +552,20 @@ RcsBody* RcsBody_getFirstChild(RcsGraph* graph, RcsBody* body);
  *  \brief Returns a pointer to the body referred to by RcsBody::lastChildId.
  */
 RcsBody* RcsBody_getLastChild(RcsGraph* graph, RcsBody* body);
+
+/*! \ingroup RcsBodyFunctions
+ *  \brief Returns a pointer to the graph's q-vector at the index of the bodie's
+ *         joint, or NULL if no joint exists. The dimension of the returned
+ *         pointer can be queried with RcsBody_numJoints() if necessary.
+ *
+ *  \param[in] graph  Pointer to valid graph. Must not be NULL.
+ *  \param[in] body   Pointer to body for which result is to be returned. If it
+ *                    is NULL, the function returns NULL.
+ *  \return Pointer to graph's q-vector at the joint's index, or NULL.
+ */
+double* RcsBody_getStatePtr(RcsGraph* graph, const RcsBody* body);
+
+///@}
 
 
 #ifdef __cplusplus

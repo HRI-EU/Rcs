@@ -2498,6 +2498,26 @@ RcsBody* RcsBody_getLastChild(RcsGraph* graph, RcsBody* body)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+double* RcsBody_getStatePtr(RcsGraph* graph, const RcsBody* body)
+{
+  if (!body)
+  {
+    return NULL;
+  }
+
+  const RcsJoint* jnt = RCSJOINT_BY_ID(graph, body->jntId);
+
+  if (!jnt)
+  {
+    return NULL;
+  }
+
+  return MatNd_getElePtr(graph->q, jnt->jointIndex, 0);
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 RcsBody* RcsBody_depthFirstTraversalGetNextById(const RcsGraph* graph,
                                                 const RcsBody* body)
 {
