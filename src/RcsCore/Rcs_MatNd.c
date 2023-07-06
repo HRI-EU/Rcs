@@ -332,7 +332,14 @@ void MatNd_printCommentDigits(const char* text,
     fprintf(stderr, "%s\n", text);
   }
 
+  if (digits>0)
+  {
   snprintf(formatStr, 16, "%%+5.%df ", digits);
+  }
+  else
+  {
+    snprintf(formatStr, 16, "%%.0f ");
+  }
 
   for (i = 0; i < M->m; i++)
   {
