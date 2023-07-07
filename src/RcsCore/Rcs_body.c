@@ -779,11 +779,12 @@ double RcsBody_distanceToPoint(const RcsBody* body,
 /*******************************************************************************
  * Calls functions from the Wildmagic library
  ******************************************************************************/
-const RcsBody* RcsBody_closestInDirection(const RcsGraph* graph,
-                                          const double pt[3],
-                                          const double direction[3],
-                                          double I_cp[3],
-                                          double* distance)
+static const RcsBody* RcsBody_closestInDirection_(const RcsGraph* graph,
+                                                  const double pt[3],
+                                                  const double direction[3],
+                                                  double I_cp[3],
+                                                  double* distance,
+                                                  bool rigidBodiesOnly)
 {
   const RcsBody* closest = NULL;
   double d_min = DBL_MAX;
@@ -791,6 +792,11 @@ const RcsBody* RcsBody_closestInDirection(const RcsGraph* graph,
 
   RCSGRAPH_FOREACH_BODY(graph)
   {
+    if (rigidBodiesOnly && (!BODY->rigid_body_joints))
+    {
+      continue;
+    }
+
     RCSBODY_TRAVERSE_SHAPES(BODY)
     {
       if (!RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_DISTANCE))
@@ -827,6 +833,24 @@ const RcsBody* RcsBody_closestInDirection(const RcsGraph* graph,
   }
 
   return closest;
+}
+
+const RcsBody* RcsBody_closestInDirection(const RcsGraph* graph,
+                                          const double pt[3],
+                                          const double direction[3],
+                                          double I_cp[3],
+                                          double* distance)
+{
+  return RcsBody_closestInDirection_(graph, pt, direction, I_cp, distance, false);
+}
+
+const RcsBody* RcsBody_closestRigidBodyInDirection(const RcsGraph* graph,
+                                                   const double pt[3],
+                                                   const double direction[3],
+                                                   double I_cp[3],
+                                                   double* distance)
+{
+  return RcsBody_closestInDirection_(graph, pt, direction, I_cp, distance, true);
 }
 
 /*******************************************************************************

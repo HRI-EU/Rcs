@@ -245,6 +245,16 @@ const RcsBody* RcsBody_closestInDirection(const RcsGraph* graph,
                                           double* distance);
 
 /*! \ingroup RcsBodyFunctions
+ *  \brief Same as RcsBody_closestInDirection, but considres only bodies that
+ *         have rigid body degrees of freedom.
+ */
+const RcsBody* RcsBody_closestRigidBodyInDirection(const RcsGraph* graph,
+                                                   const double pt[3],
+                                                   const double direction[3],
+                                                   double I_cpBdy[3],
+                                                   double* distance);
+
+/*! \ingroup RcsBodyFunctions
  *  \brief Computes the distance of the center points of two objects. The
  *         used center points are the bodie's origin, with an offset given
  *         in body coordinates in vectors k_p1 and k_p2. If these vectors

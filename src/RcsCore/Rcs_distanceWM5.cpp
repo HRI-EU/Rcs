@@ -60,6 +60,13 @@
 
 typedef Wm5::Vector3d Vec3;
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs_hasWM5()
+{
+  return true;
+}
 
 /*******************************************************************************
  * Computes the distance between point pt and a line defined by two points
@@ -2963,6 +2970,13 @@ static bool distanceInitialized = setWildMagicDistanceFunctions();
 
 #else // USE_WM5
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool Rcs_hasWM5()
+{
+  return false;
+}
 
 bool Rcs_containedPoint2DConvexPolygon2D(const double pt[2],
                                          const double polygon[][2],

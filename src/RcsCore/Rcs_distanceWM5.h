@@ -117,6 +117,11 @@ bool Rcs_computePlanePlaneIntersection(const double p1[3],
                                        double origin[3],
                                        double direction[3]);
 
+/*! \ingroup DistanceFunctions
+ *  \brief Returns true if the Wildmagic 5 library has been compiled in, and
+ *         the above functions have an implementation. Returns false otherwise.
+ */
+bool Rcs_hasWM5();
 
 
 #ifdef __cplusplus

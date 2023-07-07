@@ -138,6 +138,14 @@ Rcs::MouseDragger::MouseDragger() : osg::Switch(),
   setName("MouseDragger");
   KeyCatcherBase::registerKey("Left Shift", "Enable body dragging", "MouseDragger");
   KeyCatcherBase::registerKey("Left Cntrl", "Amplify force dragging", "MouseDragger");
+  KeyCatcherBase::registerKey("Up arrow", "Move object under mouse to positive x", "MouseDragger");
+  KeyCatcherBase::registerKey("Down arrow", "Move object under mouse to negative x", "MouseDragger");
+  KeyCatcherBase::registerKey("Right arrow", "Move object under mouse to positive y", "MouseDragger");
+  KeyCatcherBase::registerKey("Left arrow", "Move object under mouse to negative y", "MouseDragger");
+  KeyCatcherBase::registerKey("+", "Move object under mouse to positive z", "MouseDragger");
+  KeyCatcherBase::registerKey("-", "Move object under mouse to negative z", "MouseDragger");
+  KeyCatcherBase::registerKey("!", "Rotate object under mouse about positive local z", "MouseDragger");
+  KeyCatcherBase::registerKey("\"", "Rotate object under mouse about negative local z", "MouseDragger");
 
   Vec3d_setZero(_I_mouseTip);
   Vec3d_setZero(_k_anchor);
@@ -290,8 +298,8 @@ bool Rcs::MouseDragger::callback(const osgGA::GUIEventAdapter& ea,
         if (bdy)
         {
           const double disp = 0.01;
-          double dx[3];
-          Vec3d_setZero(dx);
+          double dx[6];
+          VecNd_setZero(dx, 6);
 
           if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Left)
           {
@@ -317,6 +325,14 @@ bool Rcs::MouseDragger::callback(const osgGA::GUIEventAdapter& ea,
           {
             dx[2] -= disp;
           }
+          else if (ea.getKey() == '!')
+          {
+            dx[5] += disp;
+          }
+          else if (ea.getKey() == '\"')
+          {
+            dx[5] -= disp;
+          }
 
           Vec3d_rotateSelf(dx, bdy->A_BI.rot);
 
@@ -325,7 +341,7 @@ bool Rcs::MouseDragger::callback(const osgGA::GUIEventAdapter& ea,
             RCHECK(g);
             RcsJoint* rbJnt = &g->joints[bdy->jntId]; //RCSJOINT_BY_ID(g, bdy->jntId);
             double* q_rbj = MatNd_getElePtr(g->q, rbJnt->jointIndex, 0);
-            Vec3d_addSelf(q_rbj, dx);
+            VecNd_addSelf(q_rbj, dx, 6);
           }
           else
           {
