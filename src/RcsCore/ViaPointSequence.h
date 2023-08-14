@@ -219,9 +219,10 @@ public:
   /*! \brief Convenience version of the \ref computeTrajectory function. The
    *         start and end time is taken from the class instance
    *
-   *  \param[out] traj Trajectory. Must have memory for 4*round((t1-t0)/dt)
-   *                   double values. The function will reshape this array to
-   *                   4 rows and round((t1-t0)/dt) columns.
+   *  \param[out] traj Trajectory. Will be resized to fit 4*round((t1-t0)/dt)
+   *                   double values. The function will resize this array to
+   *                   4 rows and round((t1-t0)/dt) columns. If the memory is
+   *                   not sufficient, MatNd_realloc() is called.
    *  \param[in] dt    Time between two samples
    */
   void computeTrajectory(MatNd* traj, double dt=0.01) const;

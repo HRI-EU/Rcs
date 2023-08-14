@@ -1328,7 +1328,7 @@ void ViaPointSequence::computeTrajectory(MatNd* traj, double t0, double t1,
 {
   int nSteps = lround((t1-t0)/dt);
 
-  MatNd_reshape(traj, 4, nSteps+1);
+  MatNd_realloc(traj, 4, nSteps+1);
 
   for (int i=0; i<nSteps+1; i++)
   {
