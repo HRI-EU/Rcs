@@ -260,7 +260,7 @@ bool Math_checkPolygon2D(double polygon[][2], unsigned int nVertices)
 /*******************************************************************************
  *
  ******************************************************************************/
-double Math_distPointConvexPolygon2D(const double pt[2],
+double Math_distPointPolygon2D(const double pt[2],
                                      double poly[][2],
                                      unsigned int nVertices,
                                      double cpPoly[2],
@@ -270,30 +270,39 @@ double Math_distPointConvexPolygon2D(const double pt[2],
 
   if (nVertices == 1)
   {
-    if (cpPoly!=NULL)
+    if (cpPoly)
     {
       cpPoly[0] = poly[0][0];
       cpPoly[1] = poly[0][1];
     }
 
-    // From the infinity solutions for the normal, we set it to [0 1].
-    if (nPoly!=NULL)
+    double d = sqrt(VecNd_sqrDiff(pt, poly[0], 2));
+
+    if (nPoly)
+    {
+      VecNd_sub(nPoly, poly[0], pt, 2);
+      double len = VecNd_normalizeSelf(nPoly, 2);
+
+      // If the points coincide, we set the normal to [0 1].
+      if (len == 0.0)
     {
       nPoly[0] = 0.0;
       nPoly[1] = 1.0;
+      }
     }
 
-    return sqrt(VecNd_sqrDiff(pt, poly[0], 2));
+    return d;
   }
 
   // Iterate over all line segments and find closest distance.
+  // \todo: This loop was already done in Math_pointInsideOrOnPolygon2D.
+  //        Lets simplify it.
   double cpTmp[2], tmp[2];
   double* cp = cpPoly ? cpPoly : cpTmp;
-  //bool inside = Math_pointInsideOrOnConvexPolygon2D(pt, poly, nVertices);
   int res = Math_pointInsideOrOnPolygon2D(pt, poly, nVertices);
   bool inside = res%2!=0;
   double ptInsideSign = (inside==true) ? -1.0 : 1.0;
-  double distance = 1.0e8;//Math_infinity();
+  double distance = DBL_MAX;
 
   for (unsigned int i = 0; i < nVertices; i++)
   {
@@ -553,7 +562,7 @@ double Math_sqrDistPointConvexPolygon(const double I_pt[3],
   // Compute the closest point and distance for the 2D projection.
   double P_cp[3];
   P_cp[2] = 0.0;
-  double d2D = Math_distPointConvexPolygon2D(P_pt, poly, nVertices, P_cp, NULL);
+  double d2D = Math_distPointPolygon2D(P_pt, poly, nVertices, P_cp, NULL);
 
   // If the projected point is outside the polygon, we keep the closest point
   // as the one at the polygon boundary, and set the z-component to 0.
@@ -703,110 +712,6 @@ double Math_sqrDistLineLine(const double lp1[3],
   }
 
   return det;
-}
-
-/*******************************************************************************
- * See header.
- ******************************************************************************/
-double Math_sqrDistLinesegLineseg_old(const double segPt0[3],
-                                      const double segDir0[3],
-                                      const double segLength0,
-                                      const double segPt1[3],
-                                      const double segDir1[3],
-                                      const double segLength1,
-                                      double cp0_[3],
-                                      double cp1_[3])
-{
-  // 0: Line0 - line1
-  double s[2];
-  double det = Math_sqrDistLineLine(segPt0, segDir0, segPt1, segDir1, s);
-  Vec3d_constMulAndAdd(cp0_, segPt0, segDir0, Math_clip(s[0], 0.0, segLength0));
-  Vec3d_constMulAndAdd(cp1_, segPt1, segDir1, Math_clip(s[1], 0.0, segLength1));
-  double dLineLine = Vec3d_sqrDistance(cp0_, cp1_);
-
-  // Early exit if s is within length of both segments.
-  if ((s[0]>=0.0) && (s[0]<=segLength0) && (s[1]>=0.0) && (s[1]<=segLength1))
-  {
-    if (det == 0.0)
-    {
-      RLOG(1, "PARALLEL - implement special treatment: s0=%.1f s1=%.1f", s[0], s[1]);
-      double p01[3];
-      Vec3d_sub(p01, segPt1, segPt0);
-      double a = Vec3d_innerProduct(p01, segDir0);
-
-      if (a>=0.0)
-      {
-        if (a>=segLength0)   // End point seg0 - start point s1
-        {
-
-        }
-        else   // Positive overlap
-        {
-        }
-      }
-      else
-      {
-      }
-    }
-    else
-    {
-      RLOG(1, "Early exit");
-    }
-    return dLineLine;
-  }
-
-  double d[9], cp0[9][3], cp1[9][3];
-  d[0] = dLineLine;
-  Vec3d_copy(cp0[0], cp0_);
-  Vec3d_copy(cp0[1], cp1_);
-
-  double linePt0B[3], linePt1B[3];
-  Vec3d_constMulAndAdd(linePt1B, segPt1, segDir1, segLength1);
-  Vec3d_constMulAndAdd(linePt0B, segPt0, segDir0, segLength0);
-
-
-  // 1: Line0 - linePt1A
-  d[1] = Math_sqrDistPointLineseg(segPt1, segPt0, segDir0, segLength0, cp0[1]);
-  Vec3d_copy(cp1[1], segPt1);
-
-  // 2: Line0 - linePt1B
-  d[2] = Math_sqrDistPointLineseg(linePt1B, segPt0, segDir0, segLength0, cp0[2]);
-  Vec3d_copy(cp1[2], linePt1B);
-
-  // 3: LinePt0A - line1
-  d[3] = Math_sqrDistPointLineseg(segPt0, segPt1, segDir1, segLength1, cp1[3]);
-  Vec3d_copy(cp0[3], segPt0);
-
-  // 4: LinePt0A - linePt1A
-  d[4] = Vec3d_sqrDistance(segPt0, segPt1);
-  Vec3d_copy(cp0[4], segPt0);
-  Vec3d_copy(cp1[4], segPt1);
-
-  // 5: LinePt0A - linePt1B
-  d[5] = Vec3d_sqrDistance(segPt0, linePt1B);
-  Vec3d_copy(cp0[5], segPt0);
-  Vec3d_copy(cp1[5], linePt1B);
-
-  // 6: LinePt0B - line1
-  d[6] = Math_sqrDistPointLineseg(segPt0, segPt1, segDir1, segLength1, cp1[6]);
-  Vec3d_copy(cp0[6], segPt0);
-
-  // 7: LinePt0B - linePt1A
-  d[7] = Vec3d_sqrDistance(linePt0B, segPt1);
-  Vec3d_copy(cp0[7], linePt0B);
-  Vec3d_copy(cp1[7], segPt1);
-
-  // 8: LinePt0B - linePt1B
-  d[8] = Vec3d_sqrDistance(linePt0B, linePt1B);
-  Vec3d_copy(cp0[8], linePt0B);
-  Vec3d_copy(cp1[8], linePt1B);
-
-  int minIdx = VecNd_indexMin(&d[1], 8);   // Line-line already returned
-
-  Vec3d_copy(cp0_, cp0[minIdx]);
-  Vec3d_copy(cp1_, cp1[minIdx]);
-
-  return d[minIdx];
 }
 
 /******************************************************************************
@@ -1214,8 +1119,7 @@ double Math_distPointSpinningPolygon(const double I_pt[3],
   Math_Cart2Cyl(P_pt, &pt[0], &angle, &pt[1]);
 
   double P_cp2D[2];
-  double distance = Math_distPointConvexPolygon2D(pt, poly, nVertices,
-                                                  P_cp2D, NULL);
+  double distance = Math_distPointPolygon2D(pt, poly, nVertices, P_cp2D, NULL);
 
   if (I_cp != NULL)
   {

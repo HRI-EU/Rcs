@@ -725,7 +725,7 @@ static void testPolygon(int argc, char** argv)
   while (runLoop)
   {
     pthread_mutex_lock(&graphLock);
-    double d = Math_distPointConvexPolygon2D(pt, poly, nVertices, cpPoly, nPoly);
+    double d = Math_distPointPolygon2D(pt, poly, nVertices, cpPoly, nPoly);
     Math_interpolatePolygon2D(ps, poly, nVertices, s);
     // ps[0] = poly[vidx][0];
     // ps[1] = poly[vidx][1];

@@ -1716,7 +1716,7 @@ void MatNd_nullspace(MatNd* N, const MatNd* pinvJ, const MatNd* J);
 void MatNd_calcMeanAndCovariance(const MatNd* A, double* mu, MatNd* sigma);
 
 /*! \ingroup MatNdFunctions
- *  \brief Computes the line parapeters a, B to fit the points given in
+ *  \brief Computes the line parameters A, B to fit the points given in
  *         the data array according to a least-squares fit: <br>
  *         \f$ \mathbf{y} = \mathbf{ A \; x + B } \f$
  *         <br>
@@ -1728,7 +1728,7 @@ void MatNd_calcMeanAndCovariance(const MatNd* A, double* mu, MatNd* sigma);
  *         successful, the function returns true. The function can deal with
  *         ill-formed data points, such as lying all on a vertical line.
  *         Internally, the x- and y-coordinates are then swapped, the
- *         orthogonal line fir is computed, and the parameters are projected
+ *         orthogonal line fit is computed, and the parameters are projected
  *         back.
  */
 bool MatNd_lineFit2D(double* A, double* B, const MatNd* data);
