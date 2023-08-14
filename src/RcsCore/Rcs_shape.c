@@ -685,6 +685,10 @@ void RcsShape_fprint(FILE* out, const RcsShape* s)
   {
     fprintf(out, "marker ");
   }
+  if ((s->computeType & RCSSHAPE_COMPUTE_WIREFRAME) != 0)
+  {
+    fprintf(out, "wireframe ");
+  }
   fprintf(out, "\n");
 
   // Resizeable
@@ -847,6 +851,11 @@ int RcsShape_fprintXML(FILE* out, const RcsShape* self)
     if (self->computeType & RCSSHAPE_COMPUTE_MARKER)
     {
       fprintf(out, "marker=\"true\" ");
+    }
+
+    if (self->computeType & RCSSHAPE_COMPUTE_WIREFRAME)
+    {
+      fprintf(out, "wireframe=\"true\" ");
     }
   }
 

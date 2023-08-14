@@ -601,7 +601,7 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   // Compute type
   bool distance = true, graphics = true, physics = true, softPhysics = false;
   bool depth=false, contact=false, attachment = false;
-  bool weldpos=false, weldori=false, marker=false;
+  bool weldpos=false, weldori=false, marker=false, wireframe=false;
 
   // Physics computation is not carried out for non-physics objects by default.
   if (body->physicsSim == RCSBODY_PHYSICS_NONE)
@@ -640,6 +640,7 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   getXMLNodePropertyBoolString(node, "weldpos", &weldpos);
   getXMLNodePropertyBoolString(node, "weldori", &weldori);
   getXMLNodePropertyBoolString(node, "marker", &marker);
+  getXMLNodePropertyBoolString(node, "wireframe", &wireframe);
 
   // Color
   strcpy(shape->color, bodyColor ? bodyColor : "DEFAULT");
@@ -721,6 +722,11 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
     shape->computeType |= RCSSHAPE_COMPUTE_MARKER;
     RCHECK(shape->type == RCSSHAPE_REFFRAME);
     getXMLNodePropertyStringN(node, "markerName", shape->material, RCS_MAX_FILENAMELEN);
+  }
+
+  if (wireframe == true)
+  {
+    shape->computeType |= RCSSHAPE_COMPUTE_WIREFRAME;
   }
 
 

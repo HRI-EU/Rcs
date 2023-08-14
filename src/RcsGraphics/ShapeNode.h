@@ -73,12 +73,15 @@ public:
   void toggleFrame();
   void updateDynamicShapes();
   const RcsShape* getShape() const;
+  bool isWireframeEnabled() const;
   static void setEnableMeshFactory(bool enable);
 
 protected:
   virtual ~ShapeNode();
   void addShape(const RcsShape* shape, bool resizeable);
   bool addTexture(const char* textureFile);
+  void setWireframe(bool visible);
+
 
   struct ShapeUpdater : public osg::Referenced
   {
@@ -99,6 +102,7 @@ protected:
   const RcsGraph* graph;
   int bdyId;
   int shapeIdx;
+  bool wireframeEnabled;
   osg::ref_ptr<NodeBase> frame;
   osg::ref_ptr<ShapeUpdater> shapeUpdater;
 };

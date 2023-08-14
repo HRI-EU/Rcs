@@ -134,7 +134,8 @@ typedef enum
   RCSSHAPE_COMPUTE_ATTACHMENT   = 64,  ///< Spring damper connection
   RCSSHAPE_COMPUTE_WELDPOS      = 128, ///< Kinematic position constraint
   RCSSHAPE_COMPUTE_WELDORI      = 256, ///< Kinematic orientation constraint
-  RCSSHAPE_COMPUTE_MARKER       = 512  ///< Marker shapes like Vicon or Aruco
+  RCSSHAPE_COMPUTE_MARKER       = 512, ///< Marker shapes like Vicon or Aruco
+  RCSSHAPE_COMPUTE_WIREFRAME    = 1024 ///< Wireframe visualization
 
 } RCSSHAPE_COMPUTE_TYPE;
 

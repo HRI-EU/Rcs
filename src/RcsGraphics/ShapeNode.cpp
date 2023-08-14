@@ -210,6 +210,17 @@ void ShapeNode::ShapeUpdater::updateDynamicShapes()
     setNodeMaterial(color, shapeNode);
   }
 
+  if (RcsShape_isOfComputeType(shape(), RCSSHAPE_COMPUTE_WIREFRAME) &&
+      (!shapeNode->isWireframeEnabled()))
+  {
+    shapeNode->setWireframe(true);
+  }
+  else if (!RcsShape_isOfComputeType(shape(), RCSSHAPE_COMPUTE_WIREFRAME) &&
+           (shapeNode->isWireframeEnabled()))
+  {
+    shapeNode->setWireframe(false);
+  }
+
   // If the extents didn't change, step to the next geode.
   if (Vec3d_isEqual(shape()->extents, extents, eps))
   {
@@ -283,7 +294,7 @@ void ShapeNode::ShapeUpdater::updateDynamicShapes()
 *******************************************************************************/
 ShapeNode::ShapeNode(const RcsGraph* graph_, int bdyId_, int shapeIdx_,
                      bool resizeable) :
-  graph(graph_), bdyId(bdyId_), shapeIdx(shapeIdx_)
+  graph(graph_), bdyId(bdyId_), shapeIdx(shapeIdx_), wireframeEnabled(false)
 {
   const RcsShape* sh = getShape();
   addShape(sh, resizeable);
@@ -713,6 +724,32 @@ void ShapeNode::updateDynamicShapes()
 const RcsShape* ShapeNode::getShape() const
 {
   return &graph->bodies[bdyId].shapes[shapeIdx];
+}
+
+void ShapeNode::setWireframe(bool visible)
+{
+  this->wireframeEnabled = visible;
+
+  osg::ref_ptr<osg::StateSet> pStateSet = getOrCreateStateSet();
+
+  if (this->wireframeEnabled == true)
+  {
+    pStateSet->setAttribute(new osg::PolygonMode
+                            (osg::PolygonMode::FRONT_AND_BACK,
+                             osg::PolygonMode::LINE));
+  }
+  else
+  {
+    pStateSet->setAttribute(new osg::PolygonMode
+                            (osg::PolygonMode::FRONT_AND_BACK,
+                             osg::PolygonMode::FILL));
+  }
+
+}
+
+bool ShapeNode::isWireframeEnabled() const
+{
+  return wireframeEnabled;
 }
 
 }   // namespace Rcs
