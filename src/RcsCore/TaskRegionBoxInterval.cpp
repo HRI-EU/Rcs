@@ -51,11 +51,13 @@ REGISTER_TASKREGION(TaskRegionBoxInterval, "BoxInterval");
 
 TaskRegionBoxInterval::TaskRegionBoxInterval(const Task* task,
                                              const xmlNodePtr node) :
-  TaskRegion(task, node), slowDownRatio(0.0)
+  TaskRegion(task, node), slowDownRatio(0.0), dxScaling(1.0)
 {
   getXMLNodePropertyDouble(node, "slowDownRatio", &slowDownRatio);
   RCHECK_MSG((slowDownRatio >= 0) && (slowDownRatio <= 1.0),
              "slowDownRatio is %f but must be [0...1]", slowDownRatio);
+
+  getXMLNodePropertyDouble(node, "dxScaling", &dxScaling);
 
   bbMin = std::vector<double>(task->getDim(), -DBL_MAX);
   bbMax = std::vector<double>(task->getDim(), DBL_MAX);
@@ -158,7 +160,7 @@ void TaskRegionBoxInterval::computeDX(const Task* task, double* dx,
       x_ub = bbMean[i] + bbMax[i];
     }
 
-    dx[i] = dx_proj[i];
+    dx[i] = dxScaling*dx_proj[i];
 
     const double slowRange = 0.5*slowDownRatio*(bbMax[i]-bbMin[i]);
 
