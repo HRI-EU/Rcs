@@ -37,7 +37,7 @@ ENDIF()
 
 SET(WM5_DIR_HINT "$ENV{SIT}/External/GeometricTools/5.10/")
 SET(WM5_DIR_HINT2 "${PROJECT_SOURCE_DIR}/../thirdParty/WildMagic5/SDK/Library/ReleaseDynamic/")
-SET(WM5_DIR_HINT3 "${PROJECT_SOURCE_DIR}/../thirdParty/WildMagic5/SDK/Include")
+SET(WM5_DIR_HINT3 "${PROJECT_SOURCE_DIR}/WM5")
 
 FIND_PATH(WM5_INCLUDE_DIR
   Wm5Vector3.h

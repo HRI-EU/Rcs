@@ -19,8 +19,10 @@ ENDIF(Eigen3_FOUND)
 
 FIND_PACKAGE(WM5 QUIET)
 IF (WM5_FOUND)
+  MESSAGE(STATUS "Found: Wildmagic library- enabling some geometric features")
   OPTION(USE_WM5 "Use Wildmagic library" ON)
 ELSE(WM5_FOUND)
+  MESSAGE(STATUS "Not found: Wildmagic library - disabling some geometric features")
   OPTION(USE_WM5 "Use Wildmagic library" OFF)
 ENDIF(WM5_FOUND)
 
