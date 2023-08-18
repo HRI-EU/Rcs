@@ -603,12 +603,6 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   bool depth=false, contact=false, attachment = false;
   bool weldpos=false, weldori=false, marker=false, wireframe=false;
 
-  // Physics computation is not carried out for non-physics objects by default.
-  if (body->physicsSim == RCSBODY_PHYSICS_NONE)
-  {
-    physics = false;
-  }
-
   // Physics and distance computation is not carried out for meshes by default.
   if (shape->type == RCSSHAPE_MESH)
   {
@@ -641,6 +635,12 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   getXMLNodePropertyBoolString(node, "weldori", &weldori);
   getXMLNodePropertyBoolString(node, "marker", &marker);
   getXMLNodePropertyBoolString(node, "wireframe", &wireframe);
+
+  // Physics computation is not carried out for non-physics objects by default.
+  if (body->physicsSim == RCSBODY_PHYSICS_NONE)
+  {
+    physics = false;
+  }
 
   // Color
   strcpy(shape->color, bodyColor ? bodyColor : "DEFAULT");
