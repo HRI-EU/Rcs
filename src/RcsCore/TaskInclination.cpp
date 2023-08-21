@@ -163,7 +163,10 @@ void Rcs::TaskInclination::computeDX(double* dx,
                                      const double* x_curr) const
 {
   double x_des_clip = Math_clip(*x_des, 0.0, M_PI);
-  *dx = x_des_clip - (*x_curr);
+
+  // Compute the parent class method since this considers the task regions
+  TaskGenericIK::computeDX(dx, &x_des_clip, x_curr);
+  //*dx = x_des_clip - (*x_curr);
 }
 
 /*******************************************************************************
