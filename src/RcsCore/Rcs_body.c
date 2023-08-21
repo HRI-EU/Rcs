@@ -2035,8 +2035,8 @@ bool RcsBody_computeAABB(const RcsBody* self, int computeType,
   {
     RLOG(4, "Body \"%s\" has no shapes with given computeType - AABB is zero",
          self->name);
-    Vec3d_setZero(xyzMin);
-    Vec3d_setZero(xyzMax);
+    Vec3d_copy(xyzMin, self->A_BI.org);
+    Vec3d_copy(xyzMax, xyzMin);
     return false;
   }
 

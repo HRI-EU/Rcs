@@ -418,7 +418,7 @@ bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName);
  *  \param[in] xyzMin      Minimum point of the box
  *  \param[in] xyzMax      Maximum point of the box
  *  \return True for success, false otherwise. In case of no success, the
- *          bounding box will have a size of zero.
+ *          bounding box is set to the bodie's origin, or to 0 if body is NULL.
  */
 bool RcsBody_computeAABB(const RcsBody* body, int computeType,
                          double xyzMin[3], double xyzMax[3]);
