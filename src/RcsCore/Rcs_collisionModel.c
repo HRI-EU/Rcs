@@ -44,6 +44,23 @@
 
 
 /*******************************************************************************
+ * Empty collision model
+ ******************************************************************************/
+RcsCollisionMdl* RcsCollisionModel_create(const RcsGraph* graph)
+{
+  RcsCollisionMdl* self = RALLOC(RcsCollisionMdl);
+  self->graph = graph;
+  self->nPairs = 0;
+  self->pair = RNALLOC(1, RcsPair);
+  self->cp = MatNd_create(0, 3);    // closest points
+  self->n1 = MatNd_create(0, 3);    // normals
+  self->sMixtureCost = RCS_DISTANCE_MIXTURE_COST;
+  self->penetrationSlope = RCS_DISTANCE_PENETRATION_SLOPE;
+
+  return self;
+}
+
+/*******************************************************************************
  * Reads the collision model from the XML file.
  ******************************************************************************/
 RcsCollisionMdl* RcsCollisionModel_createFromXML(const RcsGraph* graph,

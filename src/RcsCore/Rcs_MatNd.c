@@ -103,7 +103,8 @@ MatNd* MatNd_create(unsigned int m, unsigned int n)
 {
   MatNd* self = RALLOC(MatNd);
   RCHECK(self);
-  self->size = m * n > 0 ? m * n : 1; // If size is 0, ele will be NULL
+  const unsigned int mn = m * n;
+  self->size = mn > 0 ? mn : 1; // If size is 0, ele will be NULL
   self->m = m;
   self->n = n;
   self->stackMem = false;

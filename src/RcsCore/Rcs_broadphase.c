@@ -37,6 +37,7 @@
 #include "Rcs_shape.h"
 #include "Rcs_collisionModel.h"
 #include "Rcs_Vec3d.h"
+#include "Rcs_parser.h"
 #include "Rcs_macros.h"
 
 #include <float.h>
@@ -105,12 +106,103 @@ RcsBroadPhase* RcsBroadPhase_create(const RcsGraph* graph,
 /*******************************************************************************
  *
  ******************************************************************************/
+RcsBroadPhase* RcsBroadPhase_createFromXML(const RcsGraph* graph,
+                                           xmlNodePtr node)
+{
+  if (!isXMLNodeName(node, "BroadPhase"))
+  {
+    RLOG(1, "XML tag in broadphase is not \"BroadPhase\" - returning NULL");
+    return NULL;
+  }
+
+  double distanceThreshold = 0.0;
+  getXMLNodePropertyDouble(node, "DistanceThreshold", &distanceThreshold);
+
+  RcsBroadPhase* bp = RcsBroadPhase_create(graph, distanceThreshold);
+
+  xmlNodePtr child = node->children;
+
+  // Count collision bodies
+  while (child)
+  {
+
+    if (isXMLNodeName(child, "Tree"))
+    {
+      char treeRoot[RCS_MAX_NAMELEN] = "";
+      if (getXMLNodePropertyStringN(child, "root", treeRoot, RCS_MAX_NAMELEN))
+      {
+        const RcsBody* rootBdy = RcsGraph_getBodyByName(graph, treeRoot);
+        if (rootBdy)
+        {
+          RcsBroadPhase_addTree(bp, rootBdy->id);
+        }
+        else
+        {
+          RLOG(1, "Broadphase root %s not found", treeRoot);
+        }
+      }
+
+    }
+    child = child->next;
+
+  } // while(lnode)
+
+  return bp;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 void RcsBroadPhase_destroy(RcsBroadPhase* bp)
 {
+  if (!bp)
+  {
+    return;
+  }
+
   RFREE(bp->bodies);
   RFREE(bp->trees->bodies);
   RFREE(bp->trees);
   RFREE(bp);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+RcsBroadPhase* RcsBroadPhase_clone(const RcsBroadPhase* src,
+                                   const RcsGraph* newGraph)
+{
+  if (src == NULL)
+  {
+    return NULL;
+  }
+
+  const unsigned int nBodies = src->graph->nBodies;
+  RcsBroadPhase* dst = RALLOC(RcsBroadPhase);
+
+  dst->graph = newGraph ? newGraph : src->graph;
+
+  // Allocate trees
+  dst->nTrees = src->nTrees;
+  dst->trees = RNALLOC(nBodies, RcsBroadPhaseTree);
+
+  for (unsigned int i=0; i<dst->nTrees; ++i)
+  {
+    const RcsBroadPhaseTree* srcTree = &src->trees[i];
+    RcsBroadPhaseTree* dstTree = &dst->trees[i];
+    memcpy(dstTree, srcTree, sizeof(RcsBroadPhaseTree));
+    // Array of bodies needs to be recreated
+    dstTree->bodies = RNALLOC(nBodies, RcsBroadPhaseBdy);
+    memcpy(dstTree->bodies, srcTree->bodies, dstTree->nBodies*sizeof(RcsBroadPhaseBdy));
+  }
+
+  dst->nBodies = src->nBodies;
+  dst->bodies = RNALLOC(nBodies, RcsBroadPhaseBdy);
+  memcpy(dst->bodies, src->bodies, dst->nBodies*sizeof(RcsBroadPhaseBdy));
+
+  dst->distanceThreshold = src->distanceThreshold;
+
+  return dst;
 }
 
 /*******************************************************************************
@@ -159,45 +251,36 @@ bool RcsBroadPhase_addTreeByName(RcsBroadPhase* bp, const char* bdyName)
 /*******************************************************************************
  *
  ******************************************************************************/
-void RcsBroadPhase_updateBoundingVolumes(RcsBroadPhase* bp)
+static bool RcsBroadPhase_isBodyInTree(RcsBroadPhase* bp, int bodyId)
 {
-  // Compute AABB's of all rigid bodies. We do this completely from scratch so
-  // that potential changes in the body parameters are reflected in each step.
-  bp->nBodies = 0;
-  for (unsigned int i = 0; i < bp->graph->nBodies; ++i)
+
+  for (unsigned int i = 0; i < bp->nTrees; ++i)
   {
-    const RcsBody* bdy_i = &bp->graph->bodies[i];
+    const RcsBroadPhaseTree* tree = &bp->trees[i];
 
-    if ((!bdy_i->rigid_body_joints) || (bdy_i->id == -1) ||
-        (RcsBody_numDistanceShapes(bdy_i) == 0))
+    for (unsigned int j = 0; j < tree->nBodies; ++j)
     {
-      continue;
+      const RcsBroadPhaseBdy* bdy = &tree->bodies[j];
+
+      if (bdy->id==bodyId)
+      {
+        return true;
+      }
     }
-
-    double sMin[3], sMax[3];
-    bool hasAABB = RcsGraph_computeBodyAABB(bp->graph, bdy_i->id,
-                                            RCSSHAPE_COMPUTE_DISTANCE,
-                                            sMin, sMax, NULL);
-
-    if (!hasAABB)
-    {
-      continue;
-    }
-
-    RcsBroadPhaseBdy* bb = &bp->bodies[bp->nBodies];
-    bb->id = bdy_i->id;
-    bb->sphereRadius = 0.5 * Vec3d_distance(bb->aabbMin, bb->aabbMax);
-    Vec3d_add(bb->sphereCenter, bb->aabbMin, bb->aabbMax);
-    Vec3d_constMulSelf(bb->sphereCenter, 0.5);
-    bb->hasAABB = hasAABB;
-    Vec3d_constAddSelf(sMin, -bp->distanceThreshold);
-    Vec3d_constAddSelf(sMax,  bp->distanceThreshold);
-    Vec3d_copy(bb->aabbMin, sMin);
-    Vec3d_copy(bb->aabbMax, sMax);
-    bp->nBodies++;
   }
 
-  // Compute all chains
+  return false;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void RcsBroadPhase_updateBoundingVolumes(RcsBroadPhase* bp)
+{
+  // Compute all chains. This is the first step, since we populate an array of
+  // ids of the chain bodies. In the collection of the bodies, these are not
+  // considered, so that we don't have an object showing up both in a chain
+  // and in the body collections.
   for (unsigned int c = 0; c < bp->nTrees; ++c)
   {
     RcsBroadPhaseTree* tree = &bp->trees[c];
@@ -244,6 +327,52 @@ void RcsBroadPhase_updateBoundingVolumes(RcsBroadPhase* bp)
     }
   }   // for (unsigned int c = 0; c < bp->nTrees; ++c)
 
+
+
+
+  // Compute AABB's of all rigid bodies. We do this completely from scratch so
+  // that potential changes in the body parameters are reflected in each step.
+  bp->nBodies = 0;
+  for (unsigned int i = 0; i < bp->graph->nBodies; ++i)
+  {
+    const RcsBody* bdy_i = &bp->graph->bodies[i];
+
+    if ((!bdy_i->rigid_body_joints) || (bdy_i->id == -1) ||
+        (RcsBody_numDistanceShapes(bdy_i) == 0))
+    {
+      continue;
+    }
+
+    double sMin[3], sMax[3];
+    bool hasAABB = RcsGraph_computeBodyAABB(bp->graph, bdy_i->id,
+                                            RCSSHAPE_COMPUTE_DISTANCE,
+                                            sMin, sMax, NULL);
+
+    if (!hasAABB)
+    {
+      continue;
+    }
+
+    if (RcsBroadPhase_isBodyInTree(bp, bdy_i->id))
+    {
+      //RLOG(2, "Excluding %s", RCSBODY_NAME_BY_ID(bp->graph, bdy_i->id));
+      continue;
+    }
+
+
+    RcsBroadPhaseBdy* bb = &bp->bodies[bp->nBodies];
+    bb->id = bdy_i->id;
+    bb->sphereRadius = 0.5 * Vec3d_distance(bb->aabbMin, bb->aabbMax);
+    Vec3d_add(bb->sphereCenter, bb->aabbMin, bb->aabbMax);
+    Vec3d_constMulSelf(bb->sphereCenter, 0.5);
+    bb->hasAABB = hasAABB;
+    Vec3d_constAddSelf(sMin, -bp->distanceThreshold);
+    Vec3d_constAddSelf(sMax,  bp->distanceThreshold);
+    Vec3d_copy(bb->aabbMin, sMin);
+    Vec3d_copy(bb->aabbMax, sMax);
+    bp->nBodies++;
+  }
+
 }
 
 /*******************************************************************************
@@ -277,7 +406,7 @@ int RcsBroadPhase_computeNarrowPhase(const RcsBroadPhase* bp,
       // pair will be added to the narrow phase.
       if (RcsBroadPhaseBdy_SAT(bp, i, tree->aabbMin, tree->aabbMax))
       {
-        RLOG(1, "Found SAT in tree: skipping %s - %s",
+        NLOG(1, "Found SAT in tree: skipping %s - %s",
              bp->graph->bodies[bp->bodies[i].id].name,
              bp->graph->bodies[tree->startBdyId].name);
         continue;
@@ -290,7 +419,7 @@ int RcsBroadPhase_computeNarrowPhase(const RcsBroadPhase* bp,
         if (RcsBroadPhaseBdy_SAT(bp, i, tree->bodies[j].aabbMin,
                                  tree->bodies[j].aabbMax))
         {
-          RLOG(1, "Found SAT in subtree: skipping %s - %s",
+          NLOG(1, "Found SAT in subtree: skipping %s - %s",
                bp->graph->bodies[bp->bodies[i].id].name,
                bp->graph->bodies[tree->bodies[j].id].name);
           continue;
@@ -313,6 +442,9 @@ int RcsBroadPhase_computeNarrowPhase(const RcsBroadPhase* bp,
         lastPair->cp2 = 2*cMdl->nPairs+1;
         lastPair->n1  = cMdl->nPairs;
         cMdl->nPairs++;
+        NLOG(4, "Adding pair %s - %s",
+             RCSJOINT_NAME_BY_ID(bp->graph, tree->bodies[j].id),
+             RCSJOINT_NAME_BY_ID(bp->graph, bp->bodies[i].id));
       }
 
     }
@@ -334,12 +466,53 @@ RcsCollisionMdl* RcsBroadPhase_createNarrowPhase(const RcsBroadPhase* bp)
   RcsCollisionMdl* cMdl = RALLOC(RcsCollisionMdl);
   cMdl->graph = bp->graph;
   cMdl->pair = RNALLOC(1, RcsPair); // So that it is not NULL
-  cMdl->cp = MatNd_create(1, 3);
-  cMdl->n1 = MatNd_create(1, 3);
+  cMdl->cp = MatNd_create(0, 3);
+  cMdl->n1 = MatNd_create(0, 3);
   cMdl->sMixtureCost = RCS_DISTANCE_MIXTURE_COST;
   cMdl->penetrationSlope = RCS_DISTANCE_PENETRATION_SLOPE;
 
   RcsBroadPhase_computeNarrowPhase(bp, cMdl);
 
   return cMdl;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void RcsBroadPhase_fprint(FILE* fd, const RcsBroadPhase* bp)
+{
+  if (!bp)
+  {
+    fprintf(fd, "Broadphase is NULL\n");
+    return;
+  }
+
+  fprintf(fd, "Broadphase with %u trees and %u bodies:\n",
+          bp->nTrees, bp->nBodies);
+  fprintf(fd, "Distance threshold: %f\n", bp->distanceThreshold);
+
+  for (unsigned int i = 0; i < bp->nBodies; ++i)
+  {
+    const RcsBroadPhaseBdy* bdy = &bp->bodies[i];
+    fprintf(fd, "Body %u: id: %d (%s)\n",
+            i, bdy->id, RCSBODY_NAME_BY_ID(bp->graph, bdy->id));
+  }
+
+  for (unsigned int i = 0; i < bp->nTrees; ++i)
+  {
+    const RcsBroadPhaseTree* tree = &bp->trees[i];
+
+    fprintf(fd, "Tree %u: root-body id: %d nBodies: %d\n",
+            i, tree->startBdyId, tree->nBodies);
+
+    for (unsigned int j = 0; j < tree->nBodies; ++j)
+    {
+      const RcsBroadPhaseBdy* bdy = &tree->bodies[j];
+      fprintf(fd, "Tree-body %u: id: %d (%s)\n",
+              j, bdy->id, RCSBODY_NAME_BY_ID(bp->graph, bdy->id));
+    }
+  }
+
+
+
 }

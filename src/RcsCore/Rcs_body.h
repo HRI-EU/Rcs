@@ -408,17 +408,18 @@ bool RcsBody_mergeWithParent(RcsGraph* graph, const char* bodyName);
 /*! \ingroup RcsBodyFunctions
  *  \brief This function computes the axis-aligned bounding box of a body.
  *         It is computed over all contained shapes with the given computeType.
- *         Shapes of type RCSSHAPE_REFFRAME are ignored.
+ *         Shapes of type RCSSHAPE_REFFRAME are ignored. The bounding box is
+ *         represented in body coordinates.
  *
  *  \param[in] body        Body data. If it is NULL, or contains no shapes, the
  *                         AABB is set to zero, and a debug message is issued
  *                         on debul level 4.
  *  \param[in] computeType See enum RCSSHAPE_COMPUTE_TYPE. If set to -1, all
  *                         shapes are considered.
- *  \param[in] xyzMin      Minimum point of the box
- *  \param[in] xyzMax      Maximum point of the box
+ *  \param[in] xyzMin      Minimum point of the box in body-frame.
+ *  \param[in] xyzMax      Maximum point of the box in body-frame.
  *  \return True for success, false otherwise. In case of no success, the
- *          bounding box is set to the bodie's origin, or to 0 if body is NULL.
+ *          bounding box is set to 0.
  */
 bool RcsBody_computeAABB(const RcsBody* body, int computeType,
                          double xyzMin[3], double xyzMax[3]);

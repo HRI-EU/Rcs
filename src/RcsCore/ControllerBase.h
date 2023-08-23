@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -43,21 +43,22 @@
 
 #include "Task.h"
 #include "Rcs_collisionModel.h"
+#include "Rcs_broadphase.h"
 
 
 
 namespace Rcs
 {
 /*! \ingroup RcsController
- * \brief Controller Base Class. This class implements a number of generic
- *        methods to compute kinematic and dynamic magnitudes, such as
- *        Jacobians, Hessians, velocities etc. The class holds a pointer to a
- *        graph, which is representing the kinematic state considered. None of
- *        the methods will change the graph, with the exception of destroying
- *        it when it is owned by the class itself (see constructor
- *        documentation). The core of this class is the task vector, which can
- *        conveniently be parsed from an xml file. Some tasks allow for another
- *        construction, see details in the respective classes.
+ *  \brief Controller Base Class. This class implements a number of generic
+ *         methods to compute kinematic and dynamic magnitudes, such as
+ *         Jacobians, Hessians, velocities etc. The class holds a pointer to a
+ *         graph, which is representing the kinematic state considered. None of
+ *         the methods will change the graph, with the exception of destroying
+ *         it when it is owned by the class itself (see constructor
+ *         documentation). The core of this class is the task vector, which can
+ *         conveniently be parsed from an xml file. Some tasks allow for
+ *         another construction, see details in the respective classes.
  *
  */
 class ControllerBase
@@ -851,7 +852,8 @@ public:
 
   ///@{
 
-  /*! \brief Return a pointer to the underlying collision model.
+  /*! \brief Return a pointer to the underlying collision model, or NULL if
+   *         there is none.
    */
   RcsCollisionMdl* getCollisionMdl() const;
 
@@ -859,6 +861,16 @@ public:
    *         be destroyed if destroyOldOne is true.
    */
   void setCollisionMdl(RcsCollisionMdl* newMdl, bool destroyOldOne=true);
+
+  /*! \brief Return a pointer to the underlying broadphase model, or NULL if
+   *         there is none.
+   */
+  RcsBroadPhase* getBroadPhase() const;
+
+  /*! \brief Replaces the broadphase model with the new one. The old one will
+   *         be destroyed if destroyOldOne is true.
+   */
+  void setBroadPhase(RcsBroadPhase* newMdl, bool destroyOldOne = true);
 
   /*! \brief Computes the collision model. This function traverses the
    *         collision pairs that are defined in the underlying collision
@@ -913,6 +925,7 @@ private:
   bool ownsGraph;                    //!< True if controller needs to destroy it
   std::vector<Task*> tasks;          //!< Tasks of the controller
   RcsCollisionMdl* cMdl;             //!< Collision model
+  RcsBroadPhase* broadphase;         //!< Broadphase collision model
   std::string xmlFile;               //!< Configuration file name (full path)
   std::vector<size_t> taskArrayIdx;  //!< List of indices in task vector
 };

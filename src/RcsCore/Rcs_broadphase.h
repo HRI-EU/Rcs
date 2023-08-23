@@ -36,6 +36,9 @@
 
 #include "Rcs_graph.h"
 
+#include <libxml/tree.h>
+
+
 /*!
 * \defgroup RcsBroadphaseFunctions Collision detection broadphase
 *
@@ -175,11 +178,28 @@ RcsBroadPhase* RcsBroadPhase_create(const RcsGraph* graph,
                                     double distanceThreshold);
 
 /*! \ingroup RcsBroadphaseFunctions
+ *  \brief Creates a broadphase model from a XML node pointer.
+ */
+RcsBroadPhase* RcsBroadPhase_createFromXML(const RcsGraph* graph,
+                                           xmlNodePtr node);
+
+/*! \ingroup RcsBroadphaseFunctions
  *  \brief Clears and deletes all memory
  *
  *  \param bp    Broadphase to be deleted.
  */
 void RcsBroadPhase_destroy(RcsBroadPhase* bp);
+
+/*! \ingroup RcsBroadphaseFunctions
+ *  \brief Makes a deep copy of the broadphase model. If self is NULL, the
+ *         function returns NULL.
+ *
+ *  \param bp         Broadphase to be cloned.
+ *  \param newGraph   Optinal graph to point to. If it is NULL, the cloned
+ *                    broadphase points to the one of bp.
+ */
+RcsBroadPhase* RcsBroadPhase_clone(const RcsBroadPhase* bp,
+                                   const RcsGraph* newGraph);
 
 /*! \ingroup RcsBroadphaseFunctions
  *  \brief Adds a RcsBroadPhaseTree to the broadphase
@@ -233,6 +253,11 @@ int RcsBroadPhase_computeNarrowPhase(const RcsBroadPhase* bp,
  *  \return Narrow phase collsion model corresponding to bp.
  */
 RcsCollisionMdl* RcsBroadPhase_createNarrowPhase(const RcsBroadPhase* bp);
+
+/*! \ingroup RcsBroadphaseFunctions
+ *  \brief Prints broadphase model to a file descriptor.
+ */
+void RcsBroadPhase_fprint(FILE* fd, const RcsBroadPhase* self);
 
 
 #ifdef __cplusplus

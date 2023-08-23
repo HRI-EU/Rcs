@@ -42,6 +42,7 @@
 #include "Rcs_kinematics.h"
 #include "Rcs_dynamics.h"
 #include "Rcs_joint.h"
+#include "Rcs_timer.h"
 
 #include <cfloat>
 
@@ -52,7 +53,8 @@ namespace Rcs
 /*******************************************************************************
  * Construction without tasks and default settings.
  ******************************************************************************/
-ControllerBase::ControllerBase() : graph(NULL), ownsGraph(true), cMdl(NULL)
+ControllerBase::ControllerBase() : graph(NULL), ownsGraph(true), cMdl(NULL),
+  broadphase(NULL)
 {
 }
 
@@ -60,7 +62,8 @@ ControllerBase::ControllerBase() : graph(NULL), ownsGraph(true), cMdl(NULL)
  * Constructor based on xml parsing.
  ******************************************************************************/
 ControllerBase::ControllerBase(const std::string& xmlDescription) :
-  graph(NULL), ownsGraph(true), cMdl(NULL), xmlFile(xmlDescription)
+  graph(NULL), ownsGraph(true), cMdl(NULL), broadphase(NULL),
+  xmlFile(xmlDescription)
 {
   char txt[RCS_MAX_FILENAMELEN];
   bool fileExists = Rcs_getAbsoluteFileName(xmlDescription.c_str(), txt);
@@ -161,6 +164,15 @@ bool ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
         RLOG(1, "Failed to create collision model from xml");
       }
     }
+    else if (isXMLNodeName(node, "BroadPhase"))
+    {
+      this->broadphase = RcsBroadPhase_createFromXML(getGraph(), node);
+
+      if (!this->broadphase)
+      {
+        RLOG(1, "Failed to create broadphase model from xml");
+      }
+    }
     else if (isXMLNodeName(node, "Graph"))
     {
       RCHECK_MSG(this->graph==NULL, "Found xml tag <Graph>, but already graph"
@@ -200,7 +212,7 @@ bool ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
  * Constructor based on a graph object. Takes ownership of the graph.
  ******************************************************************************/
 ControllerBase::ControllerBase(RcsGraph* graph_):
-  graph(graph_), ownsGraph(true), cMdl(NULL)
+  graph(graph_), ownsGraph(true), cMdl(NULL), broadphase(NULL)
 {
 }
 
@@ -210,13 +222,14 @@ ControllerBase::ControllerBase(RcsGraph* graph_):
  * construction of the copied constructor.
  ******************************************************************************/
 ControllerBase::ControllerBase(const ControllerBase& copyFromMe):
-  graph(NULL), ownsGraph(true), cMdl(NULL),
+  graph(NULL), ownsGraph(true), cMdl(NULL), broadphase(NULL),
   xmlFile(copyFromMe.xmlFile), taskArrayIdx(copyFromMe.taskArrayIdx)
 {
   // Both graph and collision model can possibly be NULL, therefore we don't
   // check if cloning has succeeded.
   this->graph = RcsGraph_clone(copyFromMe.graph);
   this->cMdl = RcsCollisionModel_clone(copyFromMe.cMdl, this->graph);
+  this->broadphase = RcsBroadPhase_clone(copyFromMe.broadphase, this->graph);
 
   for (std::vector<Task*>::const_iterator itr = copyFromMe.tasks.begin();
        itr != copyFromMe.tasks.end(); ++itr)
@@ -240,9 +253,14 @@ ControllerBase& ControllerBase::operator= (const ControllerBase& copyFromMe)
   }
 
   // Clean up memory
-  if (this->cMdl != NULL)
+  if (this->cMdl)
   {
     RcsCollisionModel_destroy(this->cMdl);
+  }
+
+  if (this->broadphase)
+  {
+    RcsBroadPhase_destroy(this->broadphase);
   }
 
   for (size_t i = 0; i < this->tasks.size(); i++)
@@ -268,6 +286,9 @@ ControllerBase& ControllerBase::operator= (const ControllerBase& copyFromMe)
   // Clone the collision model. If it is NULL, the clone function returns NULL.
   this->cMdl = RcsCollisionModel_clone(copyFromMe.cMdl, this->graph);
 
+  // Clone the broadphase model. If it is NULL, the clone function returns NULL.
+  this->broadphase = RcsBroadPhase_clone(copyFromMe.broadphase, this->graph);
+
   // return the existing object
   return *this;
 }
@@ -277,8 +298,9 @@ ControllerBase& ControllerBase::operator= (const ControllerBase& copyFromMe)
  ******************************************************************************/
 ControllerBase::~ControllerBase()
 {
-  // Delete collision model. The function accepts a NULL pointer.
+  // Delete collision models. The function accepts a NULL pointer.
   RcsCollisionModel_destroy(this->cMdl);
+  RcsBroadPhase_destroy(this->broadphase);
 
   for (size_t i = 0; i < this->tasks.size(); i++)
   {
@@ -581,6 +603,27 @@ RcsCollisionMdl* ControllerBase::getCollisionMdl() const
 
 /*******************************************************************************
  * Return the collision model.
+ ******************************************************************************/
+RcsBroadPhase* ControllerBase::getBroadPhase() const
+{
+  return this->broadphase;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void ControllerBase::setBroadPhase(RcsBroadPhase* newMdl, bool destroyOldOne)
+{
+  if (destroyOldOne)
+  {
+    RcsBroadPhase_destroy(this->broadphase);
+  }
+
+  this->broadphase = newMdl;
+}
+
+/*******************************************************************************
+ *
  ******************************************************************************/
 void ControllerBase::setCollisionMdl(RcsCollisionMdl* newMdl, bool destroyOldOne)
 {
@@ -1338,7 +1381,36 @@ void ControllerBase::computeJointlimitBorderGradient(MatNd* grad,
  ******************************************************************************/
 void ControllerBase::computeCollisionModel()
 {
+  double t_bp = Timer_getSystemTime();
+  int nb = 0;
+
+  if (broadphase)
+  {
+    RcsBroadPhase_updateBoundingVolumes(broadphase);
+    nb = RcsBroadPhase_computeNarrowPhase(broadphase, cMdl);
+  }
+
+  t_bp = Timer_getSystemTime() - t_bp;
+
+  double t_np = Timer_getSystemTime();
   RcsCollisionModel_compute(this->cMdl);
+  t_np = Timer_getSystemTime() - t_np;
+
+  REXEC(5)
+  {
+    if (broadphase)
+    {
+      RLOG(1, "%d of %d possible pairs\nBroad phase took %.3f msec\n"
+           "Narrow phase took %.3f msec\nCompression is %.1f%%",
+           cMdl->nPairs, nb, 1.0e3 * t_bp, 1.0e3 * t_np,
+           100.0 - 100.0 * cMdl->nPairs / nb);
+      REXEC(4)
+      {
+        RcsCollisionModel_fprintCollisions(stdout, cMdl, broadphase->distanceThreshold);
+      }
+    }
+  }
+
 }
 
 /*******************************************************************************

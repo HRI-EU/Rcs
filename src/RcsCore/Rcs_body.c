@@ -2029,14 +2029,13 @@ bool RcsBody_computeAABB(const RcsBody* self, int computeType,
         }
       }
     }
+
   }
 
   if (shapeCount==0)
   {
-    RLOG(4, "Body \"%s\" has no shapes with given computeType - AABB is zero",
-         self->name);
-    Vec3d_copy(xyzMin, self->A_BI.org);
-    Vec3d_copy(xyzMax, xyzMin);
+    RLOG(4, "Body \"%s\" has no shapes with given computeType - AABB is "
+         "set to zero", self->name);
     return false;
   }
 

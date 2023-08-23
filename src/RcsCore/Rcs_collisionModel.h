@@ -74,6 +74,11 @@ extern "C" {
 
 
 /*! \ingroup RcsCollisionMdlFunctions
+ *  \brief Creates an empty collision model.
+ */
+RcsCollisionMdl* RcsCollisionModel_create(const RcsGraph* graph);
+
+/*! \ingroup RcsCollisionMdlFunctions
  *  \brief Creates a collision model from a XML node pointer.
  */
 RcsCollisionMdl* RcsCollisionModel_createFromXML(const RcsGraph* graph,
