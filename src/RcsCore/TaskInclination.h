@@ -124,6 +124,7 @@ public:
 
 
 private:
+  void toXMLBody(FILE* out) const;
   const double* aRef() const;
   const double* aEf(size_t num) const;
   const RcsBody* getEffectorVec(size_t num) const;
