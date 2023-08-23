@@ -128,6 +128,10 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 #define NLOG(debugLevel, ...)
 #endif
 
+#if !defined (NLOG_CPP)
+#define NLOG_CPP(debugLevel, ...)
+#endif
+
 #if !defined (NLOGS)
 #define NLOGS(debugLevel, ...)
 #endif
@@ -165,7 +169,7 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 #define RWARNING(debugLevel, ...)                                         \
   do                                                                      \
   {                                                                       \
-    if (debugLevel <= RcsLogLevel)                                        \
+    if ((debugLevel) <= RcsLogLevel)                                      \
     {                                                                     \
       fprintf(stderr, ANSI_COLOR_CYAN "[%s: " ANSI_COLOR_GREEN "%s(%d)]:" \
               ANSI_COLOR_RED "WARNING: -   ",                             \
@@ -221,7 +225,7 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
  *  \brief Convenience macro around realloc.
  */
 #if !defined (RREALLOC)
-#define RREALLOC(ptr, nMemb, type) (type*) realloc(ptr, (nMemb)*sizeof(type));
+#define RREALLOC(ptr, nMemb, type) (type*) realloc((ptr), (nMemb)*sizeof(type));
 #endif
 
 /*! \ingroup RcsMacros
@@ -317,7 +321,7 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 #define RPAUSE_DL(debugLevel)                                \
   do                                                         \
   {                                                          \
-    if (debugLevel <= RcsLogLevel)                           \
+    if ((debugLevel) <= RcsLogLevel)                         \
     {                                                        \
       fprintf(stderr, "[%s: %s(%d)]: Hit enter to continue", \
               __FILENAME__, __FUNCTION__, __LINE__);         \
@@ -347,7 +351,7 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 #define RPAUSE_MSG_DL(debugLevel, ...)                \
   do                                                  \
   {                                                   \
-    if (debugLevel <= RcsLogLevel)                    \
+    if ((debugLevel) <= RcsLogLevel)                  \
     {                                                 \
       fprintf(stderr, "[%s: %s(%d)]: ",               \
               __FILENAME__, __FUNCTION__, __LINE__);  \
@@ -380,11 +384,11 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 #define RCHECK_EQ(var1, var2) \
   do                                                                      \
   {                                                                       \
-    if (var1 != var2)                                                     \
+    if ((var1) != (var2))                                                 \
     {                                                                     \
       fprintf(stderr, "\n[%s: %s(%d)]: Check failed: %s (%g) != %s (%g) " \
               "- Exiting\n", __FILENAME__, __FUNCTION__, __LINE__, #var1, \
-              (double) var1, #var2, (double) var2);                       \
+              (double) (var1), #var2, (double) (var2));                   \
       print_trace();                                                      \
       exit(EXIT_FAILURE); }                                               \
   } while (0)
@@ -422,9 +426,9 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
   {                                                                  \
     if (RCS_GLOBAL_RLOG_CB)                                          \
     {                                                                \
-      RCS_GLOBAL_RLOG_CB(debugLevel, __FILENAME__, __FUNCTION__,     \
+      RCS_GLOBAL_RLOG_CB((debugLevel), __FILENAME__, __FUNCTION__,   \
                          __LINE__, __VA_ARGS__); }                   \
-    if (debugLevel <= RcsLogLevel)                                   \
+    if ((debugLevel) <= RcsLogLevel)                                 \
     {                                                                \
       fprintf(stderr, "[%s : %s(%d)]: ", __FILENAME__, __FUNCTION__, \
               __LINE__);                                             \
@@ -439,10 +443,10 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
   {                                                              \
     if (RCS_GLOBAL_RLOG_CB)                                      \
     {                                                            \
-      RCS_GLOBAL_RLOG_CB(debugLevel, "", __FUNCTION__, __LINE__, \
+      RCS_GLOBAL_RLOG_CB((debugLevel), "", __FUNCTION__, __LINE__, \
                          __VA_ARGS__);                           \
     }                                                            \
-    if (debugLevel <= RcsLogLevel)                               \
+    if ((debugLevel) <= RcsLogLevel)                               \
     {                                                            \
       fprintf(stderr, "[%s(%d)]: ", __FUNCTION__, __LINE__);     \
       fprintf(stderr, __VA_ARGS__);                              \
@@ -456,7 +460,7 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 #define RLOG(debugLevel, ...)                                \
   do                                                         \
   {                                                          \
-    if (debugLevel <= RcsLogLevel)                           \
+    if ((debugLevel) <= RcsLogLevel)                         \
     {                                                        \
       fprintf(stderr, "[%s(%d)]: ", __FILENAME__, __LINE__); \
       fprintf(stderr, __VA_ARGS__);                          \
@@ -468,7 +472,7 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 #define RLOGS(debugLevel, ...)                               \
   do                                                         \
   {                                                          \
-    if (debugLevel <= RcsLogLevel)                           \
+    if ((debugLevel) <= RcsLogLevel)                         \
     {                                                        \
       fprintf(stderr, "[%s(%d)]: ", __FILENAME__, __LINE__); \
       fprintf(stderr, __VA_ARGS__);                          \
@@ -484,7 +488,7 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
 #define RLOG_CPP(debugLevel, msg) \
   do                                                                  \
   {                                                                   \
-    if (debugLevel <= RcsLogLevel)                                    \
+    if ((debugLevel) <= RcsLogLevel)                                  \
     {                                                                 \
       std::cerr << "[" << __FILENAME__ << ": " << __FUNCTION__ << "(" \
                 << __LINE__ << ")]: " << msg << std::endl; }          \
@@ -506,7 +510,7 @@ extern RCSCORE_API RCS_MALLOC_FUNC Rcs_calloc;
  *  \brief Execution macro with debug level.
  */
 #define REXEC(debugLevel) \
-  if (debugLevel<=RcsLogLevel)
+  if ((debugLevel)<=RcsLogLevel)
 
 #else   // RCS_NO_DEBUG
 
