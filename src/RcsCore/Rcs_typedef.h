@@ -273,22 +273,22 @@ struct _RcsGraph
 
 #define RCSJOINT_BY_ID(graph, id) ((id)==-1 ? NULL : &(graph)->joints[id])
 #define RCSJOINT_NAME_BY_ID(graph, id)  \
-  ((id)==-1 ? "NULL ": (graph)->joints[id].name)
+  ((id)==-1 ? "NULL": (graph)->joints[id].name)
 
 #define RCSBODY_BY_ID(graph, id)  ((id)==-1 ? NULL : &(graph)->bodies[id])
 #define RCSBODY_NAME_BY_ID(graph, id)  \
-  ((id)==-1 ? "NULL ": (graph)->bodies[id].name)
+  ((id)==-1 ? "NULL": (graph)->bodies[id].name)
 
 #undef RCSGRAPH_FOREACH_SENSOR
 #define RCSGRAPH_FOREACH_SENSOR(graph)                                         \
   for (RcsSensor *S0 = (graph)->nSensors>0 ? &(graph)->sensors[0] : NULL,      \
-       *S1 = (S0!=NULL) ? &(graph)->sensors[graph->nSensors-1] : NULL,       \
+       *S1 = (S0!=NULL) ? &(graph)->sensors[graph->nSensors-1] : NULL,         \
        *SENSOR = S0; SENSOR && SENSOR<=S1; SENSOR++)
 
 #undef RCSGRAPH_FOREACH_BODY
 #define RCSGRAPH_FOREACH_BODY(graph)                                           \
   for (RcsBody *B0 = (graph)->nBodies>0 ? &(graph)->bodies[0] : NULL,          \
-       *B1 = (B0!=NULL) ? &(graph)->bodies[(graph)->nBodies-1] : NULL,       \
+       *B1 = (B0!=NULL) ? &(graph)->bodies[(graph)->nBodies-1] : NULL,         \
        *BODY = B0; BODY && BODY<=B1; BODY++)
 
 #undef RCSJOINT_TRAVERSE_FORWARD

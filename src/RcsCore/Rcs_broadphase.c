@@ -161,7 +161,15 @@ void RcsBroadPhase_destroy(RcsBroadPhase* bp)
   }
 
   RFREE(bp->bodies);
-  RFREE(bp->trees->bodies);
+
+  for (unsigned int i=0; i<bp->nTrees; ++i)
+  {
+    RcsBroadPhaseTree* tree_i = &bp->trees[i];
+    RFREE(tree_i->bodies);
+    //RFREE(bp->trees[i]);
+  }
+
+  /* RFREE(bp->trees->bodies); */
   RFREE(bp->trees);
   RFREE(bp);
 }

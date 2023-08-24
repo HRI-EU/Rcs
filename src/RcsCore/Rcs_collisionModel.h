@@ -122,7 +122,9 @@ double RcsCollisionMdl_getMinDist(const RcsCollisionMdl* self);
 
 /*! \ingroup RcsCollisionMdlFunctions
  *  \brief Same as \ref RcsCollisionMdl_getMinDist(), but copies the pairs
- *         index into pairIdx.
+ *         index into pairIdx. In case of failute (empty collision model,
+ *         self or self->pair is NULL), the function returns the largest
+ *         possible double value (DBL_MAX), and leaves pairIdx unchanged.
  */
 double RcsCollisionMdl_getMinDistPair(const RcsCollisionMdl* self,
                                       int* pairIdx);
