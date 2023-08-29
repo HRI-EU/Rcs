@@ -43,47 +43,28 @@
 #include <float.h>
 
 
+
 /*******************************************************************************
- * returns true if no collision is possible.
+ * Separating Axes test: returns true if no collision is possible.
  ******************************************************************************/
-static bool RcsBroadPhaseBdy_SAT(const RcsBroadPhase* bp, int bpBodyId,
-                                 const double xyzMin[3], const double xyzMax[3])
+static inline bool SAT(const double xyzMin1[3], const double xyzMax1[3],
+                       const double xyzMin2[3], const double xyzMax2[3])
 {
-  RcsBroadPhaseBdy* bdy = &bp->bodies[bpBodyId];
 
-#if 0
-  const double bdyR = bdy->sphereRadius;
-  const double* bdyPos = bp->graph->bodies[bdy->id].A_BI.org;
-
-  if ((bdyPos[0] - bdyR > xyzMax[0]) || (bdyPos[0] + bdyR < xyzMin[0]))
+  if ((xyzMin1[0] > xyzMax2[0]) || (xyzMax1[0] < xyzMin2[0]))
   {
     return true;
   }
 
-  if ((bdyPos[1] - bdyR > xyzMax[1]) || (bdyPos[1] + bdyR < xyzMin[1]))
-  {
-    return true;
-  }
-  if ((bdyPos[2] - bdyR > xyzMax[2]) || (bdyPos[2] + bdyR < xyzMin[2]))
-  {
-    return true;
-  }
-#else
-
-  if ((bdy->aabbMin[0] > xyzMax[0]) || (bdy->aabbMax[0] < xyzMin[0]))
-  {
-    return true;
-  }
-  if ((bdy->aabbMin[1] > xyzMax[1]) || (bdy->aabbMax[1] < xyzMin[1]))
-  {
-    return true;
-  }
-  if ((bdy->aabbMin[2] > xyzMax[2]) || (bdy->aabbMax[2] < xyzMin[2]))
+  if ((xyzMin1[1] > xyzMax2[1]) || (xyzMax1[1] < xyzMin2[1]))
   {
     return true;
   }
 
-#endif
+  if ((xyzMin1[2] > xyzMax2[2]) || (xyzMax1[2] < xyzMin2[2]))
+  {
+    return true;
+  }
 
   return false;
 }
@@ -166,10 +147,8 @@ void RcsBroadPhase_destroy(RcsBroadPhase* bp)
   {
     RcsBroadPhaseTree* tree_i = &bp->trees[i];
     RFREE(tree_i->bodies);
-    //RFREE(bp->trees[i]);
   }
 
-  /* RFREE(bp->trees->bodies); */
   RFREE(bp->trees);
   RFREE(bp);
 }
@@ -301,11 +280,12 @@ void RcsBroadPhase_updateBoundingVolumes(RcsBroadPhase* bp)
     RCSBODY_TRAVERSE_BODIES(bp->graph, &bp->graph->bodies[tree->startBdyId])
     {
       double sMin[3], sMax[3];
-      bool hasAABB = RcsGraph_computeBodyAABB(bp->graph, BODY->id,
-                                              RCSSHAPE_COMPUTE_DISTANCE,
-                                              sMin, sMax, NULL);
+      RcsBroadPhaseBdy* treeBdy = &tree->bodies[tree->nBodies];
+      treeBdy->hasAABB = RcsGraph_computeBodyAABB(bp->graph, BODY->id,
+                                                  RCSSHAPE_COMPUTE_DISTANCE,
+                                                  sMin, sMax, NULL);
 
-      if (hasAABB)
+      if (treeBdy->hasAABB)
       {
         tree->hasAABB = true;
         Vec3d_constAddSelf(sMin, -bp->distanceThreshold);
@@ -316,7 +296,7 @@ void RcsBroadPhase_updateBoundingVolumes(RcsBroadPhase* bp)
           xyzMin[i] = fmin(sMin[i], xyzMin[i]);
           xyzMax[i] = fmax(sMax[i], xyzMax[i]);
         }
-        RcsBroadPhaseBdy* treeBdy = &tree->bodies[tree->nBodies];
+
         treeBdy->id = BODY->id;
         treeBdy->sphereRadius = 0.5 * Vec3d_distance(sMin, sMax);
         Vec3d_add(treeBdy->sphereCenter, sMin, sMax);
@@ -333,6 +313,7 @@ void RcsBroadPhase_updateBoundingVolumes(RcsBroadPhase* bp)
       Vec3d_copy(tree->aabbMin, xyzMin);
       Vec3d_copy(tree->aabbMax, xyzMax);
     }
+
   }   // for (unsigned int c = 0; c < bp->nTrees; ++c)
 
 
@@ -384,6 +365,167 @@ void RcsBroadPhase_updateBoundingVolumes(RcsBroadPhase* bp)
 }
 
 /*******************************************************************************
+ * t1 t2 t3 t4
+ *
+ * t1 t2
+ * t1 t3
+ * t1 t4
+ * t2 t3
+ * t2 t4
+ * t3 t4
+ *
+ ******************************************************************************/
+static int RcsBroadPhase_computeTreeTreeNarrowPhase(const RcsBroadPhase* bp,
+                                                    RcsCollisionMdl* cMdl,
+                                                    unsigned int pairCapacity)
+{
+  // For statistics: nNaiive is the worst case combination of all tree bodies
+  // against all rigid bodies.
+  int nNaiive = 0;
+
+  // This is the "n" of n-choose-k (k is 2)
+  int n = bp->nTrees;
+
+  if (n == 0)
+  {
+    return nNaiive;
+  }
+
+  // Dynamically allocate memory for the 2D array to store pairs
+  int* values = RNALLOC(n, int);
+  int(*pairs)[2] = (int(*)[2])values;
+  int pairCount = 0;
+
+  // Generate and store pairs in the array
+  for (int i = 1; i <= n; i++)
+  {
+    for (int j = i + 1; j <= n; j++)
+    {
+      pairs[pairCount][0] = i-1;
+      pairs[pairCount][1] = j-1;
+      pairCount++;
+    }
+  }
+
+  // Print the generated pairs
+  NLOG(1, "%d Generated pairs:", pairCount);
+  for (int i = 0; i < pairCount; ++i)
+  {
+    NLOG(1, "(%d, %d)", pairs[i][0], pairs[i][1]);
+    RCHECK(pairs[i][0] < (int)bp->nTrees);
+    RCHECK(pairs[i][1] < (int)bp->nTrees);
+    const RcsBroadPhaseTree* tree1 = &bp->trees[pairs[i][0]];
+    const RcsBroadPhaseTree* tree2 = &bp->trees[pairs[i][1]];
+
+    nNaiive += tree1->nBodies*tree2->nBodies;
+
+    // First separating axes test around overall trees. If an axis is
+    // overlapping, the tree will be further checked below for addition
+    // to the narrow phase.
+    if ((!tree1->hasAABB))
+    {
+      NLOG(1, "Tree %d has no AABB: skipping trees %d - %d", pairs[i][0], pairs[i][0], pairs[i][1]);
+      continue;
+    }
+
+    if ((!tree2->hasAABB))
+    {
+      NLOG(1, "Tree %d has no AABB: skipping trees %d - %d", pairs[i][1], pairs[i][0], pairs[i][1]);
+      continue;
+    }
+
+    if (SAT(tree1->aabbMin, tree1->aabbMax, tree2->aabbMin, tree2->aabbMax))
+    {
+      NLOG(1, "Found SAT in tree-tree: skipping trees %d - %d", pairs[i][0], pairs[i][1]);
+      continue;
+    }
+
+
+    // Add all bodies of the tree1 to the overall tree2
+    for (unsigned int j = 0; j < tree1->nBodies; ++j)
+    {
+      const RcsBroadPhaseBdy* treeBdy1 = &tree1->bodies[j];
+
+      //if (!treeBdy1->hasAABB)
+      //{
+      //  RLOG(1, "Tree-body %d (%s) of tree %d has no AABB",
+      //       j, RCSBODY_NAME_BY_ID(bp->graph, treeBdy1->id), pairs[i][0]);
+      //  continue;
+      //}
+
+      // The tree-bodie's AABB has not necessarily been computed. If not, we
+      // assume the worst case and add all combinations to the narrow phase.
+      if (treeBdy1->hasAABB && SAT(treeBdy1->aabbMin, treeBdy1->aabbMax,
+                                   tree2->aabbMin, tree2->aabbMax))
+      {
+        NLOG(1, "Found SAT in body-tree: skipping body %d - tree %d", j, pairs[i][1]);
+        continue;
+      }
+
+      // Here we have a collision of treeBdy1 with the tree2. We break down
+      // tree2 into its individual bodies.
+      for (unsigned int k = 0; k < tree2->nBodies; ++k)
+      {
+        const RcsBroadPhaseBdy* treeBdy2 = &tree2->bodies[k];
+
+        //if (!treeBdy2->hasAABB)
+        //{
+        //  RLOG(1, "Tree-body %d (%s) of tree %d has no AABB",
+        //       k, RCSBODY_NAME_BY_ID(bp->graph, treeBdy2->id), pairs[i][1]);
+        //  continue;
+        //}
+
+        // The tree-bodie's AABB has not necessarily been computed. If not, we
+        // assume the worst case and add all combinations to the narrow phase.
+        if (treeBdy2->hasAABB && SAT(treeBdy1->aabbMin, treeBdy1->aabbMax,
+                                     treeBdy2->aabbMin, treeBdy2->aabbMax))
+        {
+          NLOG(1, "Found SAT in body-body: skipping bodies %d - %d", k, j);
+          continue;
+        }
+
+        // Ending up here give us the narrow phase pair [treeBdy1,treeBdy2]
+        // that must be added to the narrow phase.
+        // We only grow and never shrink the narrow phase collision model to
+        // minimize the number of memory reallocations.
+        if (cMdl->nPairs >= pairCapacity)
+        {
+          cMdl->pair = RREALLOC(cMdl->pair, cMdl->nPairs + 1, RcsPair);
+          RCHECK_MSG(cMdl->pair, "Failed to allocate memory for %d pairs",
+                     cMdl->nPairs + 1);
+          NLOG(1, "REALLOC");
+        }
+        RcsPair* lastPair = &cMdl->pair[cMdl->nPairs];
+        memset(lastPair, 0, sizeof(RcsPair));
+        lastPair->b1 = treeBdy1->id;
+        lastPair->b2 = treeBdy2->id;
+        lastPair->weight = 1.0;
+        lastPair->cp1 = 2 * cMdl->nPairs;
+        lastPair->cp2 = 2 * cMdl->nPairs + 1;
+        lastPair->n1 = cMdl->nPairs;
+        cMdl->nPairs++;
+        NLOG(1, "Adding pair %s - %s",
+             RCSBODY_NAME_BY_ID(bp->graph, treeBdy1->id),
+             RCSBODY_NAME_BY_ID(bp->graph, treeBdy2->id));
+
+      }   // for (unsigned int k = 0; k < tree2->nBodies; ++k)
+
+    }   // for (unsigned int j = 0; j < tree1->nBodies; ++j)
+
+  }   // for (int i = 0; i < pairCount; ++i)
+
+
+  // Update arrays for closest points and normals
+  MatNd_realloc(cMdl->cp, 2 * cMdl->nPairs, 3);
+  MatNd_realloc(cMdl->n1, cMdl->nPairs, 3);
+
+  // Free allocated memory for tree pairs
+  RFREE(values);
+
+  return nNaiive;
+}
+
+/*******************************************************************************
  *
  ******************************************************************************/
 int RcsBroadPhase_computeNarrowPhase(const RcsBroadPhase* bp,
@@ -410,9 +552,11 @@ int RcsBroadPhase_computeNarrowPhase(const RcsBroadPhase* bp,
 
     for (unsigned int i = 0; i < bp->nBodies; ++i)
     {
+      const RcsBroadPhaseBdy* bdy_i = &bp->bodies[i];
+
       // Perform separating axes test. If an axis is overlapping, the
-      // pair will be added to the narrow phase.
-      if (RcsBroadPhaseBdy_SAT(bp, i, tree->aabbMin, tree->aabbMax))
+      // pair will be further checked below for addition to the narrow phase.
+      if (SAT(bdy_i->aabbMin, bdy_i->aabbMax, tree->aabbMin, tree->aabbMax))
       {
         NLOG(1, "Found SAT in tree: skipping %s - %s",
              bp->graph->bodies[bp->bodies[i].id].name,
@@ -423,9 +567,10 @@ int RcsBroadPhase_computeNarrowPhase(const RcsBroadPhase* bp,
       // Add all combinations of the tree to the model
       for (unsigned int j=0; j<tree->nBodies; ++j)
       {
+        const RcsBroadPhaseBdy* treeBdy = &tree->bodies[j];
+
         // Skip these that don't collide
-        if (RcsBroadPhaseBdy_SAT(bp, i, tree->bodies[j].aabbMin,
-                                 tree->bodies[j].aabbMax))
+        if (SAT(bdy_i->aabbMin, bdy_i->aabbMax, treeBdy->aabbMin, treeBdy->aabbMax))
         {
           NLOG(1, "Found SAT in subtree: skipping %s - %s",
                bp->graph->bodies[bp->bodies[i].id].name,
@@ -433,7 +578,7 @@ int RcsBroadPhase_computeNarrowPhase(const RcsBroadPhase* bp,
           continue;
         }
 
-        // We only grow and never shring the narrow phase collision model to
+        // We only grow and never shrink the narrow phase collision model to
         // minimize the number of memory reallocations.
         if (cMdl->nPairs>=nPairs)
         {
@@ -451,8 +596,8 @@ int RcsBroadPhase_computeNarrowPhase(const RcsBroadPhase* bp,
         lastPair->n1  = cMdl->nPairs;
         cMdl->nPairs++;
         NLOG(4, "Adding pair %s - %s",
-             RCSJOINT_NAME_BY_ID(bp->graph, tree->bodies[j].id),
-             RCSJOINT_NAME_BY_ID(bp->graph, bp->bodies[i].id));
+             RCSBODY_NAME_BY_ID(bp->graph, tree->bodies[j].id),
+             RCSBODY_NAME_BY_ID(bp->graph, bp->bodies[i].id));
       }
 
     }
@@ -462,6 +607,11 @@ int RcsBroadPhase_computeNarrowPhase(const RcsBroadPhase* bp,
   // Update arrays for closest points and normals
   MatNd_realloc(cMdl->cp, 2*cMdl->nPairs, 3);
   MatNd_realloc(cMdl->n1, cMdl->nPairs, 3);
+
+  //REXEC(0)
+  {
+    nNaiive += RcsBroadPhase_computeTreeTreeNarrowPhase(bp, cMdl, nPairs);
+  }
 
   return nNaiive;
 }
