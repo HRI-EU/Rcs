@@ -1396,7 +1396,7 @@ void ControllerBase::computeCollisionModel()
   RcsCollisionModel_compute(this->cMdl);
   t_np = Timer_getSystemTime() - t_np;
 
-  REXEC(5)
+  REXEC(6)
   {
     if (broadphase)
     {
