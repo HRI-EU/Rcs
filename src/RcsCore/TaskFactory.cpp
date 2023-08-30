@@ -107,7 +107,7 @@ Rcs::Task* Rcs::TaskFactory::createTask(xmlNode* node, const RcsGraph* graph)
 
     if (success == false)
     {
-      RLOG(1, "Task of type \"%s\" is invalid - skipping", cVar.c_str());
+      RLOG(1, "Task of type \"%s\" could not be created", cVar.c_str());
       return NULL;
     }
   }
