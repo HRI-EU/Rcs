@@ -299,6 +299,11 @@ ShapeNode::ShapeNode(const RcsGraph* graph_, int bdyId_, int shapeIdx_,
   const RcsShape* sh = getShape();
   addShape(sh, resizeable);
 
+  if (RcsShape_isOfComputeType(sh, RCSSHAPE_COMPUTE_WIREFRAME))
+  {
+    setWireframe(true);
+  }
+
   if (strlen(sh->textureFile)>0)
   {
     addTexture(sh->textureFile);
