@@ -1521,6 +1521,193 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
 
 /*******************************************************************************
 *
+ ******************************************************************************/
+static void parseOpenRaveBody(xmlNodePtr node, RcsGraph* self)
+{
+  // The node points to an OpenRave file
+
+  char tmp[RCS_MAX_FILENAMELEN];
+  strcpy(tmp, "");
+
+  // check if prev tag is provided --> first body of openrave graph will be
+  // attached to it
+  RcsBody* pB = NULL;
+  if (getXMLNodePropertyStringN(node, "prev", tmp, RCS_MAX_FILENAMELEN) > 0)
+  {
+    pB = RcsGraph_getBodyByName(self, tmp);
+    RCHECK_MSG(pB, "Body \"%s\" not found, which was specified as prev for an OpenRave node", tmp);
+  }
+
+  // Get filename
+  strcpy(tmp, "");
+  getXMLNodePropertyStringN(node, "file", tmp, RCS_MAX_FILENAMELEN);
+
+  // check if q0 is provided and read it
+  double* q0 = NULL;
+  unsigned int nq = 0;
+  if (getXMLNodeProperty(node, "q0"))
+  {
+    RLOGS(1, "Found q0 tag --> overriding initial values of OpenRave file");
+
+    // get number of provided q0 values
+    char q_str[512];
+    getXMLNodePropertyStringN(node, "q0", q_str, 512);
+    nq = String_countSubStrings(q_str, " ");
+
+    // read q0 values
+    q0 = RNALLOC(nq, double);
+    getXMLNodePropertyVecN(node, "q0", q0, nq);
+
+    // convert to radian
+    VecNd_constMulSelf(q0, M_PI / 180.0, nq);
+  }
+
+  // parse OpenRave file
+  RcsGraph_createBodiesFromOpenRAVEFile(self, pB, tmp, q0, nq);
+
+  // cleanup
+  RFREE(q0);
+
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static void parseURDFFile(xmlNodePtr node, RcsGraph* self, const char* suffix)
+{
+  // check if prev tag is provided --> first body of URDF graph will be
+  // attached to it
+  char tmp[RCS_MAX_FILENAMELEN] = "";
+  RcsBody* pB = NULL;
+  if (getXMLNodePropertyStringN(node, "prev", tmp, RCS_MAX_FILENAMELEN) > 0)
+  {
+    pB = RcsGraph_getBodyByName(self, tmp);
+    RCHECK_MSG(pB, "Body \"%s\" not found, which was specified as prev for"
+               " an URDF node", tmp);
+  }
+
+  // Get filename
+  strcpy(tmp, "");
+  getXMLNodePropertyStringN(node, "file", tmp, RCS_MAX_FILENAMELEN);
+  char filename[RCS_MAX_FILENAMELEN] = "";
+  bool urdfExists = Rcs_getAbsoluteFileName(tmp, filename);
+  RCHECK_MSG(urdfExists, "Couldn't open urdf file \"%s\"", tmp);
+  // parse URDF file
+
+  // New extension = suffix + new group name
+  char urdfSuffix[RCS_MAX_NAMELEN] = "", ndExt[RCS_MAX_NAMELEN] = "";
+  getXMLNodePropertyStringN(node, "suffix", urdfSuffix, RCS_MAX_NAMELEN);
+  strcpy(ndExt, suffix);
+  strcat(ndExt, urdfSuffix);
+
+  HTr A_local;
+  HTr_setIdentity(&A_local);
+  getXMLNodePropertyHTr(node, "transform", &A_local);
+  unsigned int dof = 0;
+  int urdfRootId = RcsGraph_rootBodyFromURDFFile(self, filename, ndExt,
+                                                 &A_local, &dof);
+  RCHECK_MSG(urdfRootId != -1, "Couldn't get URDF root from file \"%s\"", filename);
+  self->dof += dof;
+  self->q = MatNd_realloc(self->q, self->dof, 1);
+
+  RcsBody* urdfRoot = &self->bodies[urdfRootId];
+
+  // There is no direct way to determine whether the root link should be fixed or free.
+  // However, we can easily use a rgid_body_joints xml parameter to determine this.
+  bool hasRBJTag = getXMLNodeProperty(node, "rigid_body_joints");
+  double q_rbj[12];
+  VecNd_setZero(q_rbj, 12);
+  // parse rigid body joints tag
+  unsigned int nRBJTagStr = 0;
+  if (hasRBJTag == true)
+  {
+    urdfRoot->rigid_body_joints = true;
+    nRBJTagStr = getXMLNodeNumStrings(node, "rigid_body_joints");
+
+    switch (nRBJTagStr)
+    {
+      case 1:
+        getXMLNodePropertyBoolString(node, "rigid_body_joints",
+                                     &urdfRoot->rigid_body_joints);
+        break;
+
+      case 6:
+        getXMLNodePropertyVecN(node, "rigid_body_joints", q_rbj, 6);
+
+        // convert Euler angles from degrees to radians
+        Vec3d_constMulSelf(&q_rbj[3], M_PI / 180.0);
+        break;
+
+      case 12:
+        getXMLNodePropertyVecN(node, "rigid_body_joints", q_rbj, 12);
+
+        // convert Euler angles from degrees to radians
+        Vec3d_constMulSelf(&q_rbj[3], M_PI / 180.0);
+        break;
+
+      default:
+        RFATAL("Tag \"rigid_body_joints\" of body \"%s\" has %d entries"
+               " - should be 6 or 1", urdfRoot->name, nRBJTagStr);
+    }
+
+    NLOG(5, "[%s]: Found %d strings in rigid_body_joint tag \"%s\", flag is "
+         "%s", urdfRoot->name, nStr, "rigid_body_joints",
+         urdfRoot->rigid_body_joints ? "true" : "false");
+  }
+  // create rigid body joints if requested
+  if (urdfRoot->rigid_body_joints)
+  {
+    RcsJoint* rbj0 = RcsBody_createRBJ(self, urdfRoot, q_rbj);
+
+    // Determine constraint dofs for physics simulation. If a dof is
+    // constrained will be interpreted by a "0" in the joint's weightMetric
+    // property.
+    if (nRBJTagStr == 12)
+    {
+      unsigned int checkRbjNum = 0;
+      RCSJOINT_TRAVERSE_FORWARD(self, rbj0)
+      {
+        JNT->weightMetric = q_rbj[6 + checkRbjNum];
+        checkRbjNum++;
+      }
+      RCHECK(checkRbjNum == 6);
+    }
+
+    // Rigid body joints don't have any relative transformations after
+    // construction. If there is a transformation coming from a group, it
+    // needs to be applied to the first of the six rigid body joints. We can
+    // simply clone it.
+    if (HTr_isIdentity(&A_local) == false)
+    {
+      HTr_copy(&rbj0->A_JP, &A_local);
+
+      // since the group transform was already applied to the body, remove it
+      // there again
+      HTr_setIdentity(&urdfRoot->A_BP);
+    }
+  }
+  else if (urdfRoot->physicsSim != RCSBODY_PHYSICS_NONE)
+  {
+    // no rigid body joints - urdf root is fixed to it's parent. Make sure
+    // that the physics simulation treats it correctly.
+    if (pB != NULL && (pB->physicsSim == RCSBODY_PHYSICS_DYNAMIC ||
+                       pB->physicsSim == RCSBODY_PHYSICS_FIXED))
+    {
+      // or to fixed if the parent is dynamic
+      urdfRoot->physicsSim = RCSBODY_PHYSICS_FIXED;
+    }
+    else
+    {
+      // set it to kinematic if the parent is kinematic or not participating
+      // at all
+      urdfRoot->physicsSim = RCSBODY_PHYSICS_KINEMATIC;
+    }
+  }
+
+}
+
+/*******************************************************************************
+*
 * This function recursively parses from the given xml node and
 * initializes the bodies. It implements a depth-first traversal through
 * the RcsGraph tree by the following rules:
@@ -1551,8 +1738,13 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
                                  int rootId[RCSGRAPH_MAX_GROUPDEPTH],
                                  bool verbose)
 {
+  static int recursionDepth = 0;
+  recursionDepth++;
+  RLOG(5, "Recursion depth: %d", recursionDepth);
+
   if (node == NULL)
   {
+    recursionDepth--;
     return;
   }
 
@@ -1707,211 +1899,18 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     RcsGraph_parseBodies(node->next, self, gCol, ndExt,
                          node, A, firstInGroup, level, rootId, verbose);
   }
-
-
-
-
-
-
-
-
-
   else if (isXMLNodeName(node, "OpenRave"))
   {
-    // The node points to an OpenRave file
-
-    char tmp[RCS_MAX_FILENAMELEN];
-    strcpy(tmp, "");
-
-    // check if prev tag is provided --> first body of openrave graph will be
-    // attached to it
-    RcsBody* pB = NULL;
-    if (getXMLNodePropertyStringN(node, "prev", tmp, RCS_MAX_FILENAMELEN) > 0)
-    {
-      pB = RcsGraph_getBodyByName(self, tmp);
-      RCHECK_MSG(pB, "Body \"%s\" not found, which was specified as prev for an OpenRave node", tmp);
-    }
-
-    // Get filename
-    strcpy(tmp, "");
-    getXMLNodePropertyStringN(node, "file", tmp, RCS_MAX_FILENAMELEN);
-
-    // check if q0 is provided and read it
-    double* q0 = NULL;
-    unsigned int nq = 0;
-    if (getXMLNodeProperty(node, "q0"))
-    {
-      RLOGS(1, "Found q0 tag --> overriding initial values of OpenRave file");
-
-      // get number of provided q0 values
-      char q_str[512];
-      getXMLNodePropertyStringN(node, "q0", q_str, 512);
-      nq = String_countSubStrings(q_str, " ");
-
-      // read q0 values
-      q0 = RNALLOC(nq, double);
-      getXMLNodePropertyVecN(node, "q0", q0, nq);
-
-      // convert to radian
-      VecNd_constMulSelf(q0, M_PI / 180.0, nq);
-    }
-
-    // parse OpenRave file
-    RcsGraph_createBodiesFromOpenRAVEFile(self, pB, tmp, q0, nq);
-
-    // cleanup
-    RFREE(q0);
-
+    parseOpenRaveBody(node->next, self);
     RcsGraph_parseBodies(node->next, self, gCol, suffix,
                          parentGroupNode, A, firstInGroup, level, rootId, verbose);
   }
-
-
-
-
-
-
-
-
-
-
-
-
   else if (isXMLNodeName(node, "URDF"))
   {
-    // check if prev tag is provided --> first body of URDF graph will be
-    // attached to it
-    char tmp[RCS_MAX_FILENAMELEN] = "";
-    RcsBody* pB = NULL;
-    if (getXMLNodePropertyStringN(node, "prev", tmp, RCS_MAX_FILENAMELEN) > 0)
-    {
-      pB = RcsGraph_getBodyByName(self, tmp);
-      RCHECK_MSG(pB, "Body \"%s\" not found, which was specified as prev for"
-                 " an URDF node", tmp);
-    }
-
-    // Get filename
-    strcpy(tmp, "");
-    getXMLNodePropertyStringN(node, "file", tmp, RCS_MAX_FILENAMELEN);
-    char filename[RCS_MAX_FILENAMELEN] = "";
-    bool urdfExists = Rcs_getAbsoluteFileName(tmp, filename);
-    RCHECK_MSG(urdfExists, "Couldn't open urdf file \"%s\"", tmp);
-    // parse URDF file
-
-    // New extension = suffix + new group name
-    char urdfSuffix[132] = "", ndExt[132] = "";
-    getXMLNodePropertyStringN(node, "suffix", urdfSuffix, 132);
-    strcpy(ndExt, suffix);
-    strcat(ndExt, urdfSuffix);
-
-    HTr A_local;
-    HTr_setIdentity(&A_local);
-    getXMLNodePropertyHTr(node, "transform", &A_local);
-    unsigned int dof = 0;
-    int urdfRootId = RcsGraph_rootBodyFromURDFFile(self, filename, ndExt,
-                                                   &A_local, &dof);
-    RCHECK_MSG(urdfRootId!=-1, "Couldn't get URDF root from file \"%s\"", filename);
-    self->dof += dof;
-    self->q = MatNd_realloc(self->q, self->dof, 1);
-
-    RcsBody* urdfRoot = &self->bodies[urdfRootId];
-
-    // There is no direct way to determine whether the root link should be fixed or free.
-    // However, we can easily use a rgid_body_joints xml parameter to determine this.
-    bool hasRBJTag = getXMLNodeProperty(node, "rigid_body_joints");
-    double q_rbj[12];
-    VecNd_setZero(q_rbj, 12);
-    // parse rigid body joints tag
-    unsigned int nRBJTagStr = 0;
-    if (hasRBJTag == true)
-    {
-      urdfRoot->rigid_body_joints = true;
-      nRBJTagStr = getXMLNodeNumStrings(node, "rigid_body_joints");
-
-      switch (nRBJTagStr)
-      {
-        case 1:
-          getXMLNodePropertyBoolString(node, "rigid_body_joints",
-                                       &urdfRoot->rigid_body_joints);
-          break;
-
-        case 6:
-          getXMLNodePropertyVecN(node, "rigid_body_joints", q_rbj, 6);
-
-          // convert Euler angles from degrees to radians
-          Vec3d_constMulSelf(&q_rbj[3], M_PI / 180.0);
-          break;
-
-        case 12:
-          getXMLNodePropertyVecN(node, "rigid_body_joints", q_rbj, 12);
-
-          // convert Euler angles from degrees to radians
-          Vec3d_constMulSelf(&q_rbj[3], M_PI / 180.0);
-          break;
-
-        default:
-          RFATAL("Tag \"rigid_body_joints\" of body \"%s\" has %d entries"
-                 " - should be 6 or 1", urdfRoot->name, nRBJTagStr);
-      }
-
-      NLOG(5, "[%s]: Found %d strings in rigid_body_joint tag \"%s\", flag is "
-           "%s", urdfRoot->name, nStr, "rigid_body_joints",
-           urdfRoot->rigid_body_joints ? "true" : "false");
-    }
-    // create rigid body joints if requested
-    if (urdfRoot->rigid_body_joints)
-    {
-      RcsJoint* rbj0 = RcsBody_createRBJ(self, urdfRoot, q_rbj);
-
-      // Determine constraint dofs for physics simulation. If a dof is
-      // constrained will be interpreted by a "0" in the joint's weightMetric
-      // property.
-      if (nRBJTagStr == 12)
-      {
-        unsigned int checkRbjNum = 0;
-        RCSJOINT_TRAVERSE_FORWARD(self, rbj0)
-        {
-          JNT->weightMetric = q_rbj[6 + checkRbjNum];
-          checkRbjNum++;
-        }
-        RCHECK(checkRbjNum == 6);
-      }
-
-      // Rigid body joints don't have any relative transformations after
-      // construction. If there is a transformation coming from a group, it
-      // needs to be applied to the first of the six rigid body joints. We can
-      // simply clone it.
-      if (HTr_isIdentity(&A_local) == false)
-      {
-        HTr_copy(&rbj0->A_JP, &A_local);
-
-        // since the group transform was already applied to the body, remove it
-        // there again
-        HTr_setIdentity(&urdfRoot->A_BP);
-      }
-    }
-    else if (urdfRoot->physicsSim != RCSBODY_PHYSICS_NONE)
-    {
-      // no rigid body joints - urdf root is fixed to it's parent. Make sure
-      // that the physics simulation treats it correctly.
-      if (pB != NULL && (pB->physicsSim == RCSBODY_PHYSICS_DYNAMIC ||
-                         pB->physicsSim == RCSBODY_PHYSICS_FIXED))
-      {
-        // or to fixed if the parent is dynamic
-        urdfRoot->physicsSim = RCSBODY_PHYSICS_FIXED;
-      }
-      else
-      {
-        // set it to kinematic if the parent is kinematic or not participating
-        // at all
-        urdfRoot->physicsSim = RCSBODY_PHYSICS_KINEMATIC;
-      }
-    }
-
+    parseURDFFile(node->next, self, suffix);
     RcsGraph_parseBodies(node->next, self, gCol, suffix,
                          parentGroupNode, A, firstInGroup, level, rootId, verbose);
   }
-
 
 
 
@@ -1958,6 +1957,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
     RcsLogLevel = lDl;
   }
 
+  recursionDepth--;
 }
 
 /*******************************************************************************
