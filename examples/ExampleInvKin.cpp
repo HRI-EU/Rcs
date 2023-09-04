@@ -56,7 +56,6 @@ namespace Rcs
 
 RCS_REGISTER_EXAMPLE(ExampleIK, "Inverse kinematics", "Dexbot with Task Interval");
 
-
 ExampleIK::ExampleIK(int argc, char** argv) : ExampleBase(argc, argv),
   valgrind(false), simpleGraphics(false), nomutex(false), testLocale(false),
   mtx(NULL), algo(1), alpha(0.05), lambda(1.0e-8), tmc(0.1),
@@ -906,7 +905,7 @@ void ExampleIK::handleKeys()
 
 
 
-static ExampleFactoryRegistrar<ExampleIK_ContactGrasping> ExampleIK_ContactGrasping_("Inverse kinematics", "Contact Grasping");
+RCS_REGISTER_EXAMPLE(ExampleIK_ContactGrasping, "Inverse kinematics", "Contact Grasping");
 
 ExampleIK_ContactGrasping::ExampleIK_ContactGrasping(int argc, char** argv) : ExampleIK(argc, argv)
 {
@@ -933,7 +932,7 @@ bool ExampleIK_ContactGrasping::initGraphics()
 }
 
 
-static ExampleFactoryRegistrar<ExampleIK_OSimWholeBody> ExampleIK_OSimWholeBody_("Inverse kinematics", "OpenSim whole-body");
+RCS_REGISTER_EXAMPLE(ExampleIK_OSimWholeBody, "Inverse kinematics", "OpenSim whole-body");
 
 ExampleIK_OSimWholeBody::ExampleIK_OSimWholeBody(int argc, char** argv) : ExampleIK(argc, argv)
 {
@@ -953,7 +952,7 @@ bool ExampleIK_OSimWholeBody::initParameters()
 }
 
 
-static ExampleFactoryRegistrar<ExampleIK_AssistiveDressing> ExampleIK_AssistiveDressing_("Inverse kinematics", "Assistive dressing");
+RCS_REGISTER_EXAMPLE(ExampleIK_AssistiveDressing, "Inverse kinematics", "Assistive dressing");
 
 ExampleIK_AssistiveDressing::ExampleIK_AssistiveDressing(int argc, char** argv) : ExampleIK(argc, argv)
 {
@@ -972,7 +971,7 @@ bool ExampleIK_AssistiveDressing::initParameters()
 }
 
 
-static ExampleFactoryRegistrar<ExampleIK_StaticEffort> ExampleIK_StaticEffort_("Inverse kinematics", "Static effort");
+RCS_REGISTER_EXAMPLE(ExampleIK_StaticEffort, "Inverse kinematics", "Static effort");
 
 ExampleIK_StaticEffort::ExampleIK_StaticEffort(int argc, char** argv) : ExampleIK(argc, argv)
 {
@@ -1022,7 +1021,7 @@ std::string ExampleIK_StaticEffort::help()
 
 
 
-static ExampleFactoryRegistrar<ExampleIK_Distance> ExampleIK_Distance_("Inverse kinematics", "Distance Task");
+RCS_REGISTER_EXAMPLE(ExampleIK_Distance, "Inverse kinematics", "Distance Task");
 
 ExampleIK_Distance::ExampleIK_Distance(int argc, char** argv) : ExampleIK(argc, argv)
 {
@@ -1039,7 +1038,7 @@ bool ExampleIK_Distance::initParameters()
 
 
 
-static ExampleFactoryRegistrar<ExampleIK_NormalAlign> ExampleIK_NormalAlign_("Inverse kinematics", "Align Normals");
+RCS_REGISTER_EXAMPLE(ExampleIK_NormalAlign, "Inverse kinematics", "Align Normals");
 
 ExampleIK_NormalAlign::ExampleIK_NormalAlign(int argc, char** argv) : ExampleIK(argc, argv)
 {
@@ -1060,7 +1059,7 @@ bool ExampleIK_NormalAlign::initParameters()
 
 
 
-static ExampleFactoryRegistrar<ExampleIK_Face> ExampleIK_Face_("Inverse kinematics", "Gazing face");
+RCS_REGISTER_EXAMPLE(ExampleIK_Face, "Inverse kinematics", "Gazing face");
 
 ExampleIK_Face::ExampleIK_Face(int argc, char** argv) : ExampleIK(argc, argv)
 {
@@ -1075,5 +1074,29 @@ bool ExampleIK_Face::initParameters()
   return true;
 }
 
+
+
+
+class ExampleIK_CircularCurve : public ExampleIK
+{
+public:
+
+  ExampleIK_CircularCurve(int argc, char** argv) : ExampleIK(argc, argv)
+  {
+  }
+
+  bool initParameters()
+  {
+    ExampleIK::initParameters();
+    xmlFileName = "cTangentCircle.xml";
+    directory = "config/xml/Examples";
+    scaleDragForce = 0.0005;
+
+    return true;
+  }
+
+};
+
+RCS_REGISTER_EXAMPLE(ExampleIK_CircularCurve, "Inverse kinematics", "Circular curve");
 
 }   // namespace Rcs

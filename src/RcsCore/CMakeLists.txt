@@ -121,10 +121,12 @@ TaskPosition3D.cpp
 TaskPositionForce1D.cpp
 TaskPositionForce3D.cpp
 TaskPositionTarget3D.cpp
+TaskRadial.cpp
 TaskSpherical1D.cpp
 TaskSpherical3D.cpp
 TaskSphericalForce1D.cpp
 TaskStaticEffort.cpp
+TaskTangentCircle.cpp
 TaskVelocity1D.cpp
 TaskVelocity3D.cpp
 TaskVelocityJoint.cpp

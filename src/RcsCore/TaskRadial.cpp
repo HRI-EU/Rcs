@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -31,7 +31,7 @@
 
 *******************************************************************************/
 
-#include "TaskCylindrical3D.h"
+#include "TaskRadial.h"
 #include "TaskFactory.h"
 #include "Rcs_typedef.h"
 #include "Rcs_macros.h"
@@ -41,33 +41,31 @@
 
 
 
-static Rcs::TaskFactoryRegistrar<Rcs::TaskCylindrical3D> registrar("CylRPZ");
+static Rcs::TaskFactoryRegistrar<Rcs::TaskRadial> registrar("Radial");
 
 
 
 /*******************************************************************************
  * Constructor based on xml parsing
  ******************************************************************************/
-Rcs::TaskCylindrical3D::TaskCylindrical3D(const std::string& className,
-                                          xmlNode* node,
-                                          const RcsGraph* _graph,
-                                          int _dim):
+Rcs::TaskRadial::TaskRadial(const std::string& className,
+                            xmlNode* node,
+                            const RcsGraph* _graph,
+                            int _dim):
   TaskPosition3D(className, node, _graph, _dim)
 {
-  if (getClassName()=="CylRPZ")
+  if (getClassName()=="Radial")
   {
     resetParameter(Parameters(0, 2.5, 1.0, "Radius [m]"));
-    addParameter(Parameters(-2.0*M_PI, 2.0*M_PI, 180.0/M_PI, "Phi [deg]"));
-    addParameter(Parameters(-2.5, 2.5, 1.0, "Z Position [m]"));
   }
 }
 
 /*******************************************************************************
  * Clone function
  ******************************************************************************/
-Rcs::TaskCylindrical3D* Rcs::TaskCylindrical3D::clone(const RcsGraph* newGraph) const
+Rcs::TaskRadial* Rcs::TaskRadial::clone(const RcsGraph* newGraph) const
 {
-  TaskCylindrical3D* task = new Rcs::TaskCylindrical3D(*this);
+  TaskRadial* task = new Rcs::TaskRadial(*this);
   task->setGraph(newGraph);
   return task;
 }
@@ -76,18 +74,18 @@ Rcs::TaskCylindrical3D* Rcs::TaskCylindrical3D::clone(const RcsGraph* newGraph) 
  * Computes the current value of the task variable
  * Reuses TaskPosition3D::computeX and then converts to cylindrical coordinates
  ******************************************************************************/
-void Rcs::TaskCylindrical3D::computeX(double* x_res) const
+void Rcs::TaskRadial::computeX(double* x_res) const
 {
-  double pos[3];
+  double pos[3], tmp[3];
   Rcs::TaskPosition3D::computeX(pos);
-  Math_Cart2Cyl(pos, &x_res[0], &x_res[1], &x_res[2]);
+  Math_Cart2Cyl(pos, &x_res[0], &tmp[1], &tmp[2]);
 }
 
 /*******************************************************************************
  * Computes the current velocity in task space
  * Reuses TaskPosition3D::computeXp and then converts to cylindrical coordinates
  ******************************************************************************/
-void Rcs::TaskCylindrical3D::computeXp(double* xp_res) const
+void Rcs::TaskRadial::computeXp(double* xp_res) const
 {
   double XYZ[3];
   Rcs::TaskPosition3D::computeX(XYZ);
@@ -98,8 +96,8 @@ void Rcs::TaskCylindrical3D::computeXp(double* xp_res) const
   Rcs::TaskPosition3D::computeXp(XYZp);
 
   xp_res[0] = (XYZ[0]*XYZp[0] + XYZ[1]*XYZp[1])/r;
-  xp_res[1] = (-XYZ[1]*XYZp[0]+XYZ[0]*XYZp[1])/(r*r);
-  xp_res[2] = XYZp[2];
+  //xp_res[1] = (-XYZ[1]*XYZp[0]+XYZ[0]*XYZp[1])/(r*r);
+  //xp_res[2] = XYZp[2];
 }
 
 /*******************************************************************************
@@ -107,29 +105,35 @@ void Rcs::TaskCylindrical3D::computeXp(double* xp_res) const
  *
  * Reuses TaskPosition3D::computeJ and then converts to cylindrical coordinates
  ******************************************************************************/
-void Rcs::TaskCylindrical3D::computeJ(MatNd* jacobian) const
+void Rcs::TaskRadial::computeJ(MatNd* jacobian) const
 {
-  Rcs::TaskPosition3D::computeJ(jacobian);
+  MatNd* J3 = NULL;
+  MatNd_create2(J3, 3, graph->nJ);
+
+  Rcs::TaskPosition3D::computeJ(J3);
 
   double XYZ[3];
   Rcs::TaskPosition3D::computeX(XYZ);
 
   double dCyldCart[3][3];
-  MatNd trafo = MatNd_fromPtr(3, 3, &dCyldCart[0][0]);
   Math_dCyldCart(dCyldCart, XYZ);
-  MatNd_preMulSelf(jacobian, &trafo);
+  MatNd trafo = MatNd_fromPtr(1, 3, &dCyldCart[0][0]);
+  MatNd_mul(jacobian, &trafo, J3);
+
+  MatNd_destroy(J3);
 }
 
 /*******************************************************************************
  * Computes the delta in task space for the differential kinematics.
  * Ensures that always the shortest path in phi is followed
  ******************************************************************************/
-void Rcs::TaskCylindrical3D::computeDX(double* dx, const double* x_des) const
+void Rcs::TaskRadial::computeDX(double* dx_, const double* x_des) const
 {
   double x_des_modif[3];
   Vec3d_copy(x_des_modif, x_des);
   x_des_modif[0] = fabs(x_des_modif[0]);
 
+  double dx[3];
   Rcs::TaskPosition3D::computeDX(dx, x_des_modif);
   while (dx[1]>M_PI)
   {
@@ -139,6 +143,8 @@ void Rcs::TaskCylindrical3D::computeDX(double* dx, const double* x_des) const
   {
     dx[1] += 2*M_PI;
   }
+
+  dx_[0] = dx[0];
 }
 
 /*******************************************************************************
@@ -146,7 +152,7 @@ void Rcs::TaskCylindrical3D::computeDX(double* dx, const double* x_des) const
  * to the
  * J_cyl = A J_pos   =>   H_cyl = A H_pos + dA J_pos
  ******************************************************************************/
-void Rcs::TaskCylindrical3D::computeH(MatNd* hessian) const
+void Rcs::TaskRadial::computeH(MatNd* hessian) const
 {
   RFATAL("Not yet implemented");
 }
@@ -156,7 +162,7 @@ void Rcs::TaskCylindrical3D::computeH(MatNd* hessian) const
  * Reuses TaskPosition3D::computeJdot and then converts to cylindrical
  * coordinates
  ******************************************************************************/
-void Rcs::TaskCylindrical3D::computeJdot(MatNd* Jdot) const
+void Rcs::TaskRadial::computeJdot(MatNd* Jdot) const
 {
   //Jdot = A*JdotPos + Adot*Jpos
 
@@ -165,7 +171,7 @@ void Rcs::TaskCylindrical3D::computeJdot(MatNd* Jdot) const
 
   ////////////////////////////////////////////////////////////////
   // calling Rcs::TaskPosition3D::computeJdot() does not work as it invokes
-  // Rcs::TaskCylindrical3D::computeH()
+  // Rcs::TaskRadial::computeH()
   // so we have a copy here
   ////////////////////////////////////////////////////////////////
   size_t nq = this->graph->nJ;
@@ -228,9 +234,9 @@ void Rcs::TaskCylindrical3D::computeJdot(MatNd* Jdot) const
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-bool Rcs::TaskCylindrical3D::isValid(xmlNode* node, const RcsGraph* graph)
+bool Rcs::TaskRadial::isValid(xmlNode* node, const RcsGraph* graph)
 {
-  bool success = Rcs::Task::isValid(node, graph, "CylRPZ");
+  bool success = Rcs::Task::isValid(node, graph, "Radial");
 
   return success;
 }
@@ -238,7 +244,7 @@ bool Rcs::TaskCylindrical3D::isValid(xmlNode* node, const RcsGraph* graph)
 /*******************************************************************************
  * Remove this once we have an implementation for the Hessian.
  ******************************************************************************/
-bool Rcs::TaskCylindrical3D::testHessian(bool verbose) const
+bool Rcs::TaskRadial::testHessian(bool verbose) const
 {
   return true;
 }

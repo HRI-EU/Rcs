@@ -1,0 +1,265 @@
+<!-- 
+  Copyright (c) 2020, Honda Research Institute Europe GmbH
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
+     and/or other materials provided with the distribution.
+
+  3. Neither the name of the copyright holder nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER "AS IS" AND ANY EXPRESS OR
+  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY DIRECT, INDIRECT,
+  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+  OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+<Controller 
+usage="
+&#xA;  Configuration file to illustrate the Distance and PolarSurfaceNormal 
+&#xA;  tasks. The Distance task describes the scalar 1-d distance of two bodies.
+&#xA;  They need to be specified in the Task as effector and refBdy. The 
+&#xA;  Distance task allows to control their closest distance. Since it is only 
+&#xA;  of dimension one, the tangent space movement perpendicular to the closest
+&#xA;  distance normal is not constraint. This can be verified by applying a
+&#xA;  drag force with the mouse dragger to the end effector (red objects).
+&#xA;  
+&#xA;  The TaskPolarSurfaceNormal allows to control the angle of a task's end
+&#xA;  effector axis with respect to the contact normal between refBdy and
+&#xA;  effector. For instance setting it to 180 degrees will oppose the 
+&#xA;  effector's axis with the contact normal. This task is of dimension two
+&#xA;  to avoid that it is underconstrained when the axes align.
+&#xA;  
+&#xA;  Here is how to start an example:
+&#xA;  
+&#xA;  bin/Rcs -m 5 -f config/xml/Examples/cNormalAlign.xml -algo 1 -alpha 0.01 -lambda 0 -scaleDragForce 0.001 
+" >
+
+  <Graph name="Default" >
+  
+  <Body name="Ground Plane" >
+    <Shape type="BOX" extents="6.0 6.0 0.04" transform="0 0 -0.02 0 0 0" 
+           color="PEWTER" graphics="true" />
+    <Shape type="FRAME" scale="0.3" />
+  </Body>
+
+
+
+    <Body name="b1" >
+      <Joint name="j1" type="RotX" range="-360 0 360" speedLimit="90" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.3" 
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b2" prev="b1" >
+      <Joint name="j2" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b3" prev="b2" >
+      <Joint name="j3" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b4" prev="b3" >
+      <Joint name="j4" type="RotX" range="-22 0 22" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b5" prev="b4" >
+      <Joint name="j5" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b6" prev="b5" >
+      <Joint name="j6" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+       <Joint type="RotY" range="-360 0 360" speedLimit="90" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" />
+     <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b7" prev="b6" >
+      <Joint name="j7" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b8" prev="b7" >
+      <Joint name="j8" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b9" prev="b8" >
+      <Joint name="j9" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b10" prev="b9" >
+      <Joint name="j10" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b11" prev="b10" >
+      <Joint name="j11" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b12" prev="b11" >
+      <Joint name="j12" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b13" prev="b12" >
+      <Joint name="j13" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b14" prev="b13" >
+      <Joint name="j14" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Joint type="RotY" range="-360 0 360" speedLimit="90" />
+      <Joint type="RotZ" range="-360 0 360" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="b15" prev="b14" >
+      <Joint name="j15" type="RotX" range="-360 0 360" transform="0 0 0.3 0 0 0" speedLimit="90" />
+      <Joint name="j15y" type="RotY" range="-360 0 360" speedLimit="90" />
+      <Joint name="j15z" type="RotZ" range="-360 0 360" speedLimit="90" />
+      <Shape type="SSL" radius="0.05" length="0.25"  
+	     color="RANDOM" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="hand" prev="b15" transform="0 0 0.3 0 0 0" color="RED" >
+      <Shape type="SSL" radius="0.1" length="0.002" graphics="true" physics="true" distance="true" />
+      <Shape type="BOX" extents="0.05 0.2 0.4" transform="0.05 0 0.2 0 0 0" graphics="true" physics="true" distance="true" />
+      <Shape type="BOX" extents="0.05 0.2 0.4" transform="-0.05 0 0.2 0 0 0" graphics="true" physics="true" distance="true" />
+    </Body>
+
+    <Body name="ee" prev="hand" transform="0 0 0.4 0 0 0"  >
+	  <Shape type="FRAME" scale="0.5" />
+    </Body>
+
+    <Body name="ee1" prev="hand" transform="0 0.1 0.4 0 0 0"  >
+	  <Shape type="FRAME" scale="0.5" />
+    </Body>
+
+    <Body name="ee2" prev="hand" transform="0 -0.1 0.4 0 0 0"  >
+	  <Shape type="FRAME" scale="0.5" />
+    </Body>
+
+    <Body name="cylinder" rigid_body_joints="-0.5 -1 0.8 10 10 0" color="GREEN" >
+      <Shape type="CYLINDER" radius="0.5" length="0.01" graphics="true" physics="true" distance="true" wireframe="true" />
+ 	  <Shape type="FRAME" scale="0.5" />
+   </Body>
+
+	
+<model_state model="Default" time_stamp="0">
+  <joint_state joint="j1" position="-12.040389" />
+  <joint_state joint="unnamed joint 0" position="11.251191" />
+  <joint_state joint="unnamed joint 1" position="0.742355" />
+  <joint_state joint="j2" position="-14.084031" />
+  <joint_state joint="unnamed joint 2" position="8.90779" />
+  <joint_state joint="unnamed joint 3" position="4.001246" />
+  <joint_state joint="j3" position="23.713049" />
+  <joint_state joint="unnamed joint 4" position="7.677086" />
+  <joint_state joint="unnamed joint 5" position="1.671095" />
+  <joint_state joint="j4" position="0.005278" />
+  <joint_state joint="unnamed joint 6" position="5.807201" />
+  <joint_state joint="unnamed joint 7" position="1.940391" />
+  <joint_state joint="j5" position="19.17477" />
+  <joint_state joint="unnamed joint 8" position="4.646911" />
+  <joint_state joint="unnamed joint 9" position="0.432111" />
+  <joint_state joint="j6" position="17.33539" />
+  <joint_state joint="unnamed joint 10" position="3.327155" />
+  <joint_state joint="unnamed joint 11" position="-0.646236" />
+  <joint_state joint="j7" position="16.139466" />
+  <joint_state joint="unnamed joint 12" position="1.928347" />
+  <joint_state joint="unnamed joint 13" position="-1.225612" />
+  <joint_state joint="j8" position="15.673808" />
+  <joint_state joint="unnamed joint 14" position="0.534769" />
+  <joint_state joint="unnamed joint 15" position="-1.328549" />
+  <joint_state joint="j9" position="15.958811" />
+  <joint_state joint="unnamed joint 16" position="-0.785814" />
+  <joint_state joint="unnamed joint 17" position="-1.016083" />
+  <joint_state joint="j10" position="16.971682" />
+  <joint_state joint="unnamed joint 18" position="-1.980194" />
+  <joint_state joint="unnamed joint 19" position="-0.357335" />
+  <joint_state joint="j11" position="18.631491" />
+  <joint_state joint="unnamed joint 20" position="-2.988318" />
+  <joint_state joint="unnamed joint 21" position="0.602856" />
+  <joint_state joint="j12" position="20.758025" />
+  <joint_state joint="unnamed joint 22" position="-3.729693" />
+  <joint_state joint="unnamed joint 23" position="1.850824" />
+  <joint_state joint="j13" position="23.021638" />
+  <joint_state joint="unnamed joint 24" position="-4.094263" />
+  <joint_state joint="unnamed joint 25" position="3.398223" />
+  <joint_state joint="j14" position="24.918461" />
+  <joint_state joint="unnamed joint 26" position="-3.979178" />
+  <joint_state joint="unnamed joint 27" position="5.241994" />
+  <joint_state joint="j15" position="25.845426" />
+  <joint_state joint="j15y" position="-3.335882" />
+  <joint_state joint="j15z" position="7.277231" />
+</model_state>
+  
+  </Graph>
+
+
+  <Task name="Radial1" controlVariable="Radial" effector="ee1" refBdy="cylinder" active="true" />
+  <Task name="Radial2" controlVariable="Radial" effector="ee2" refBdy="cylinder" active="true" />
+  <Task name="z1" controlVariable="Z" effector="ee1" refBdy="cylinder" active="true" />
+  <Task name="z2" controlVariable="Z" effector="ee2" refBdy="cylinder" active="true" />
+  <Task name="incline" controlVariable="Inclination" effector="ee" refBdy="cylinder" active="true" />
+
+  
+
+  
+</Controller>
