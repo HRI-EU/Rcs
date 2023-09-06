@@ -594,6 +594,7 @@ int RcsBroadPhase_computeNarrowPhase(const RcsBroadPhase* bp,
         lastPair->cp1 = 2*cMdl->nPairs;
         lastPair->cp2 = 2*cMdl->nPairs+1;
         lastPair->n1  = cMdl->nPairs;
+        lastPair->dThreshold = bp->distanceThreshold;
         cMdl->nPairs++;
         NLOG(4, "Adding pair %s - %s",
              RCSBODY_NAME_BY_ID(bp->graph, tree->bodies[j].id),

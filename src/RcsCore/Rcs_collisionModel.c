@@ -275,7 +275,7 @@ void RcsCollisionModel_fprintCollisions(FILE* fd, const RcsCollisionMdl* self,
     return;
   }
 
-  if (self->nPairs == 0)
+  if ((!self->pair) || (self->nPairs == 0))
   {
     fprintf(fd, "No pairs in collision model!\n");
     return;
