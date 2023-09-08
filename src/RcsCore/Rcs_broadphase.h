@@ -152,6 +152,8 @@ struct _RcsBroadPhase
   unsigned int nTrees;
   RcsBroadPhaseBdy* bodies;
   unsigned int nBodies;
+  int* userBodyIds;
+  unsigned int nUserBodies;
   double distanceThreshold;
 };
 

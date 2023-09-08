@@ -79,8 +79,9 @@ RcsBroadPhase* RcsBroadPhase_create(const RcsGraph* graph,
   bp->graph = graph;
   bp->trees = RNALLOC(bp->graph->nBodies, RcsBroadPhaseTree);
   bp->bodies = RNALLOC(bp->graph->nBodies, RcsBroadPhaseBdy);
+  bp->userBodyIds = RNALLOC(bp->graph->nBodies, int);
   bp->distanceThreshold = distanceThreshold;
-  RcsBroadPhase_updateBoundingVolumes(bp);
+
   return bp;
 }
 
@@ -124,6 +125,24 @@ RcsBroadPhase* RcsBroadPhase_createFromXML(const RcsGraph* graph,
       }
 
     }
+    else if (isXMLNodeName(child, "Body"))
+    {
+      char bodyName[RCS_MAX_NAMELEN] = "";
+      if (getXMLNodePropertyStringN(child, "name", bodyName, RCS_MAX_NAMELEN))
+      {
+        const RcsBody* body = RcsGraph_getBodyByName(graph, bodyName);
+        if (body)
+        {
+          bp->userBodyIds[bp->nUserBodies] = body->id;
+          bp->nUserBodies++;
+        }
+        else
+        {
+          RLOG(1, "Broadphase user body \"%s\" not found", bodyName);
+        }
+      }
+    }
+
     child = child->next;
 
   } // while(lnode)
@@ -150,6 +169,7 @@ void RcsBroadPhase_destroy(RcsBroadPhase* bp)
   }
 
   RFREE(bp->trees);
+  RFREE(bp->userBodyIds);
   RFREE(bp);
 }
 
@@ -186,6 +206,10 @@ RcsBroadPhase* RcsBroadPhase_clone(const RcsBroadPhase* src,
   dst->nBodies = src->nBodies;
   dst->bodies = RNALLOC(nBodies, RcsBroadPhaseBdy);
   memcpy(dst->bodies, src->bodies, dst->nBodies*sizeof(RcsBroadPhaseBdy));
+
+  dst->nUserBodies = src->nUserBodies;
+  dst->userBodyIds = RNALLOC(src->nUserBodies, int);
+  memcpy(dst->userBodyIds, src->userBodyIds, dst->nUserBodies * sizeof(int));
 
   dst->distanceThreshold = src->distanceThreshold;
 
@@ -361,6 +385,52 @@ void RcsBroadPhase_updateBoundingVolumes(RcsBroadPhase* bp)
     Vec3d_copy(bb->aabbMax, sMax);
     bp->nBodies++;
   }
+
+
+
+
+  // Compute AABB's of all user bodies. These are the ones that are specified
+  // in the xml file with the "Body" tag.
+  for (unsigned int i = 0; i < bp->nUserBodies; ++i)
+  {
+    const int userBodyId = bp->userBodyIds[i];
+    const RcsBody* bdy_i = &bp->graph->bodies[userBodyId];
+
+    if ((bdy_i->id == -1) || (RcsBody_numDistanceShapes(bdy_i) == 0))
+    {
+      continue;
+    }
+
+    double sMin[3], sMax[3];
+    bool hasAABB = RcsGraph_computeBodyAABB(bp->graph, bdy_i->id,
+                                            RCSSHAPE_COMPUTE_DISTANCE,
+                                            sMin, sMax, NULL);
+
+    if (!hasAABB)
+    {
+      continue;
+    }
+
+    if (RcsBroadPhase_isBodyInTree(bp, bdy_i->id))
+    {
+      //RLOG(2, "Excluding %s", RCSBODY_NAME_BY_ID(bp->graph, bdy_i->id));
+      continue;
+    }
+
+
+    RcsBroadPhaseBdy* bb = &bp->bodies[bp->nBodies];
+    bb->id = bdy_i->id;
+    bb->sphereRadius = 0.5 * Vec3d_distance(bb->aabbMin, bb->aabbMax);
+    Vec3d_add(bb->sphereCenter, bb->aabbMin, bb->aabbMax);
+    Vec3d_constMulSelf(bb->sphereCenter, 0.5);
+    bb->hasAABB = hasAABB;
+    Vec3d_constAddSelf(sMin, -bp->distanceThreshold);
+    Vec3d_constAddSelf(sMax, bp->distanceThreshold);
+    Vec3d_copy(bb->aabbMin, sMin);
+    Vec3d_copy(bb->aabbMax, sMax);
+    bp->nBodies++;
+  }
+
 
 }
 
@@ -672,6 +742,12 @@ void RcsBroadPhase_fprint(FILE* fd, const RcsBroadPhase* bp)
     }
   }
 
+  fprintf(fd, "Found %u user bodies\n", bp->nUserBodies);
+  for (unsigned int i = 0; i < bp->nUserBodies; ++i)
+  {
+    fprintf(fd, "User-body %u: id: %d (%s)\n",
+            i, bp->userBodyIds[i], RCSBODY_NAME_BY_ID(bp->graph, bp->userBodyIds[i]));
 
+  }
 
 }

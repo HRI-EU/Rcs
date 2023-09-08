@@ -27,26 +27,7 @@
   EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-<Controller 
-usage="
-&#xA;  Configuration file to illustrate the Distance and PolarSurfaceNormal 
-&#xA;  tasks. The Distance task describes the scalar 1-d distance of two bodies.
-&#xA;  They need to be specified in the Task as effector and refBdy. The 
-&#xA;  Distance task allows to control their closest distance. Since it is only 
-&#xA;  of dimension one, the tangent space movement perpendicular to the closest
-&#xA;  distance normal is not constraint. This can be verified by applying a
-&#xA;  drag force with the mouse dragger to the end effector (red objects).
-&#xA;  
-&#xA;  The TaskPolarSurfaceNormal allows to control the angle of a task's end
-&#xA;  effector axis with respect to the contact normal between refBdy and
-&#xA;  effector. For instance setting it to 180 degrees will oppose the 
-&#xA;  effector's axis with the contact normal. This task is of dimension two
-&#xA;  to avoid that it is underconstrained when the axes align.
-&#xA;  
-&#xA;  Here is how to start an example:
-&#xA;  
-&#xA;  bin/Rcs -m 5 -f config/xml/Examples/cNormalAlign.xml -algo 1 -alpha 0.01 -lambda 0 -scaleDragForce 0.001 
-" >
+<Controller>
 
   <Graph name="Default" >
   
@@ -188,6 +169,10 @@ usage="
 	  <Shape type="FRAME" scale="0.5" />
     </Body>
 
+    <Body name="ee_far" prev="hand" transform="0 0 1 0 0 0"  >
+	  <Shape type="FRAME" scale="0.5" />
+    </Body>
+
     <Body name="ee1" prev="hand" transform="0 0.1 0.4 0 0 0"  >
 	  <Shape type="FRAME" scale="0.5" />
     </Body>
@@ -260,6 +245,13 @@ usage="
   <Task name="incline" controlVariable="Inclination" effector="ee" refBdy="cylinder" active="true" />
 
   
+
+
+  <Task name="yx" controlVariable="XY" effector="ee_far"  refBdy="cylinder" active="true" />
+  <Task name="z" controlVariable="Z" effector="ee"  refBdy="cylinder" active="true" />
+  <Task name="ix" controlVariable="Inclination" effector="ee"  axisDirection="X"  active="false" />
+  <Task name="iy" controlVariable="Inclination" effector="ee"  axisDirection="Y"  active="true" />
+  <Task name="iz" controlVariable="Inclination" effector="ee"  axisDirection="Z"  active="true" />
 
   
 </Controller>

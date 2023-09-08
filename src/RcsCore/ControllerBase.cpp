@@ -167,6 +167,7 @@ bool ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
     else if (isXMLNodeName(node, "BroadPhase"))
     {
       this->broadphase = RcsBroadPhase_createFromXML(getGraph(), node);
+      RcsBroadPhase_updateBoundingVolumes(broadphase);
 
       if (!this->broadphase)
       {
