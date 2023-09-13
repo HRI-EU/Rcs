@@ -2486,6 +2486,17 @@ void ControllerBase::computeTaskForce(MatNd* ft_task,
  ******************************************************************************/
 void ControllerBase::printX(const MatNd* x, const MatNd* a_des) const
 {
+  std::cout << sprintX(x, a_des);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+std::string ControllerBase::sprintX(const MatNd* x, const MatNd* a_des) const
+{
+  std::string txt;
+  size_t count = 0;
+
   for (size_t i = 0; i < getNumberOfTasks(); i++)
   {
     if ((a_des==NULL) || (MatNd_get(a_des, i, 0)>0.0))
@@ -2493,11 +2504,16 @@ void ControllerBase::printX(const MatNd* x, const MatNd* a_des) const
       const size_t row = this->taskArrayIdx[i];
       for (size_t j = 0; j < getTaskDim(i); j++)
       {
-        printf("Task \"%s\"[%d]: %f\n", getTaskName(i).c_str(), (int) j,
-               MatNd_get(x, row+j, 0));
+        char rowStr[256];
+        snprintf(rowStr, 256, "[%zu]: Task \"%s\"[%d]: %f\n", count, getTaskName(i).c_str(), (int) j,
+                 MatNd_get(x, row+j, 0));
+        txt += rowStr;
+        count++;
       }
     }
   }
+
+  return txt;
 }
 
 /*******************************************************************************

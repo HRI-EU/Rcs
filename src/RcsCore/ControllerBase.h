@@ -709,6 +709,11 @@ public:
    */
   virtual void printX(const MatNd* x, const MatNd* a_des = NULL) const;
 
+  /*! \brief Same as printX(), but returns a string with the contents instead
+   *         of printing it to stdout.
+   */
+  virtual std::string sprintX(const MatNd* x, const MatNd* a_des = NULL) const;
+
   /*! \brief See \ref RcsGraph_getModelStateFromXML();
    */
   bool getModelState(MatNd* q, const char* modelStateName, int timeStamp=0);
