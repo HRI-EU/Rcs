@@ -2505,7 +2505,8 @@ std::string ControllerBase::sprintX(const MatNd* x, const MatNd* a_des) const
       for (size_t j = 0; j < getTaskDim(i); j++)
       {
         char rowStr[256];
-        snprintf(rowStr, 256, "[%zu]: Task \"%s\"[%d]: %f\n", count, getTaskName(i).c_str(), (int) j,
+        snprintf(rowStr, 256, "[%zu]: Task %s [%d]: %f\n",
+                 count, getTaskName(i).c_str(), (int) j,
                  MatNd_get(x, row+j, 0));
         txt += rowStr;
         count++;
