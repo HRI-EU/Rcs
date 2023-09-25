@@ -590,7 +590,7 @@ bool Viewer::setWindowSize(unsigned int llx_,     // lower left x
                            unsigned int sizeX_,   // size in x-direction
                            unsigned int sizeY_)
 {
-  if (isInitialized() == true)
+  if (isInitialized())
   {
     RLOG(1, "The window size can't be changed after launching the viewer "
          "window");
@@ -1112,7 +1112,7 @@ void Viewer::setBackgroundColor(const std::string& color)
  ******************************************************************************/
 void Viewer::frame()
 {
-  if (isInitialized() == false)
+  if (!isInitialized())
   {
     init();
   }
@@ -1156,7 +1156,7 @@ void Viewer::frame()
 *******************************************************************************/
 void Viewer::init()
 {
-  if (isInitialized() == true)
+  if (isInitialized())
   {
     return;
   }
@@ -1237,7 +1237,7 @@ void Viewer::stopUpdateThread()
   }
 
   threadStopped = true;
-  this->initialized = false;
+  //this->initialized = false; \todo(MG): Check this
 }
 
 /*******************************************************************************
