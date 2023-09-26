@@ -56,6 +56,8 @@
 #include <iostream>
 #include <cstring>
 
+//#define USE_OPENTHREADS
+
 #if !defined (_MSC_VER)
 
 #include <sys/wait.h>
@@ -362,7 +364,7 @@ Viewer::Viewer() :
   updateFreq(25.0), initialized(false), wireFrame(false), shadowsEnabled(false),
   llx(0), lly(0), sizeX(640), sizeY(480), cartoonEnabled(false),
   threadStopped(true), leftMouseButtonPressed(false),
-  rightMouseButtonPressed(false), pauseFrameUpdates(false)
+  rightMouseButtonPressed(false), pauseFrameUpdates(false), frameThread2(NULL)
 {
   // Check if logged in remotely
   const char* sshClient = getenv("SSH_CLIENT");
@@ -391,7 +393,7 @@ Viewer::Viewer(bool fancy, bool startupWithShadow) :
   updateFreq(25.0), initialized(false), wireFrame(false), shadowsEnabled(false),
   llx(0), lly(0), sizeX(640), sizeY(480), cartoonEnabled(false),
   threadStopped(true), leftMouseButtonPressed(false),
-  rightMouseButtonPressed(false), pauseFrameUpdates(false)
+  rightMouseButtonPressed(false), pauseFrameUpdates(false), frameThread2(NULL)
 {
   create(fancy, startupWithShadow);
 
@@ -409,6 +411,11 @@ Viewer::~Viewer()
 #if defined (_MSC_VER)
   viewer.release();
 #endif
+
+  if (frameThread2)
+  {
+    delete frameThread2;
+  }
 }
 
 /*******************************************************************************
@@ -1045,13 +1052,86 @@ void* Viewer::ViewerThread(void* arg)
 }
 
 /*******************************************************************************
+ * Runs the viewer in its own thread.
+ ******************************************************************************/
+class FrameThread : public OpenThreads::Thread
+{
+public:
+  Rcs::Viewer* viewer;
+
+  FrameThread(Rcs::Viewer* viewer_) : viewer(viewer_)
+  {
+    viewer->lock();
+    viewer->init();
+    viewer->unlock();
+  }
+
+  virtual int cancel()
+  {
+
+    if (viewer->threadRunning == false)
+    {
+      return 0;
+    }
+
+    RLOG(5, "Joining thread");
+    viewer->threadRunning = false;
+
+    while (isRunning())
+    {
+      YieldCurrentThread();
+    }
+
+    viewer->threadStopped = true;
+    //this->initialized = false; \todo(MG): Check this
+
+    return 0;
+  }
+
+  virtual void run()
+  {
+    if (viewer->isThreadRunning() == true)
+    {
+      RLOG(1, "Viewer thread is already running");
+      return;
+    }
+
+    viewer->lock();
+    //viewer->init();
+    viewer->threadRunning = true;
+    viewer->unlock();
+
+    while (viewer->isThreadRunning() == true)
+    {
+      viewer->frame();
+      unsigned long dt = (unsigned long)(1.0e6 / viewer->updateFrequency());
+      Timer_usleep(dt);
+    }
+
+    RPAUSE();
+    RLOG(0, "Exiting frame thread");
+  }
+
+};
+
+
+/*******************************************************************************
  *
  ******************************************************************************/
 void Viewer::runInThread(pthread_mutex_t* mutex)
 {
   this->mtxFrameUpdate = mutex;
   threadStopped = false;
+
+#if !defined (USE_OPENTHREADS)
   pthread_create(&frameThread, NULL, ViewerThread, (void*) this);
+#else
+  if (!this->frameThread2)
+  {
+    this->frameThread2 = new FrameThread(this);
+  }
+  frameThread2->startThread();
+#endif
 
   // Wait until the class has been initialized
   while (!isInitialized())
@@ -1225,6 +1305,8 @@ void Viewer::stopUpdateThread()
   RLOG(5, "Joining thread");
   this->threadRunning = false;
 
+#if !defined (USE_OPENTHREADS)
+
   int res = pthread_join(frameThread, NULL);
 
   if (res!=0)
@@ -1235,6 +1317,13 @@ void Viewer::stopUpdateThread()
   {
     RLOG(5, "... done joining thread");
   }
+#else
+  RLOG(0, "frameThread2->cancel()");
+  RPAUSE();
+  this->frameThread2->cancel();
+  RLOG(0, "done frameThread2->cancel()");
+  RPAUSE();
+#endif
 
   threadStopped = true;
   //this->initialized = false; \todo(MG): Check this

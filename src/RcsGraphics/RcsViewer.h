@@ -118,6 +118,7 @@ static const int CastsShadowTraversalMask = 0x2;
 class Viewer
 {
   friend class KeyHandler;
+  friend class FrameThread;
 public:
 
   /*!
@@ -592,6 +593,9 @@ protected:
   // they can be published before the viewer is realized.
   std::vector<osg::ref_ptr<osg::Referenced>> userEventStack;
   OpenThreads::Mutex userEventMtx;
+
+  // Threaded frame updates run in thie thread
+  OpenThreads::Thread* frameThread2;
 };
 
 
