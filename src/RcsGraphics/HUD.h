@@ -79,8 +79,8 @@ class HUD: public osg::Camera
 public:
 
   HUD();
-  HUD(const char* text_color);
-  HUD(int llx, int lly, int sizeX, int sizeY, const char* text_color="WHITE");
+  HUD(const std::string& textColor);
+  HUD(int llx, int lly, int sizeX, int sizeY, const std::string& textColor="WHITE");
   virtual ~HUD();
 
   void setText(const char* text);
@@ -116,7 +116,7 @@ public:
 
 private:
 
-  void init(int llx, int lly, int sizeX, int sizeY, const char* textColor);
+  void init(int llx, int lly, int sizeX, int sizeY, const std::string& textColor);
   void resizeNoMutex(int llx, int lly, int sizeX, int sizeY);
 
   osg::ref_ptr<osg::Switch> switchNd;
@@ -133,6 +133,7 @@ private:
   int lly;
   int sizeX;
   int sizeY;
+  std::string fontFile;
 };
 
 }   // namespace Rcs

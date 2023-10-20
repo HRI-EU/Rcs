@@ -117,6 +117,7 @@ public:
       return;
     }
 
+
     if (hud->backgroundChanged==true)
     {
       if (hud->autoScale==true)
@@ -162,7 +163,7 @@ public:
  ******************************************************************************/
 Rcs::HUD::HUD() :
   osg::Camera(), textChanged(true), backgroundChanged(true), autoScale(true),
-  llx(0), lly(0), sizeX(0), sizeY(0)
+  llx(0), lly(0), sizeX(0), sizeY(0), fontFile("fonts/VeraMono.ttf")
 {
   init(llx, lly, sizeX, sizeY, "WHITE");
 }
@@ -170,9 +171,9 @@ Rcs::HUD::HUD() :
 /*******************************************************************************
  *
  ******************************************************************************/
-Rcs::HUD::HUD(const char* textColor) :
+Rcs::HUD::HUD(const std::string& textColor) :
   osg::Camera(), textChanged(true), backgroundChanged(true), autoScale(true),
-  llx(0), lly(0), sizeX(0), sizeY(0)
+  llx(0), lly(0), sizeX(0), sizeY(0), fontFile("fonts/VeraMono.ttf")
 {
   init(llx, lly, sizeX, sizeY, textColor);
 }
@@ -181,9 +182,10 @@ Rcs::HUD::HUD(const char* textColor) :
  *
  ******************************************************************************/
 Rcs::HUD::HUD(int llx_, int lly_, int sizeX_, int sizeY_,
-              const char* textColor) :
+              const std::string& textColor) :
   osg::Camera(), textChanged(true), backgroundChanged(true), autoScale(false),
-  llx(llx_), lly(lly_), sizeX(sizeX_), sizeY(sizeY_)
+  llx(llx_), lly(lly_), sizeX(sizeX_), sizeY(sizeY_),
+  fontFile("fonts/VeraMono.ttf")
 {
   init(llx, lly, sizeX, sizeY, textColor);
 }
@@ -347,7 +349,7 @@ void Rcs::HUD::resizeNoMutex(int llx_, int lly_, int sizeX_, int sizeY_)
 *
 ******************************************************************************/
 void Rcs::HUD::init(int llx, int lly, int sizeX, int sizeY,
-                    const char* textColor)
+                    const std::string& textColor)
 {
   //this->autoScale = false;
   size_t margin = 10;
@@ -369,8 +371,6 @@ void Rcs::HUD::init(int llx, int lly, int sizeX, int sizeY,
   // camera(s).
   setAllowEventFocus(false);
 
-  this->switchNd = new osg::Switch();
-
   this->geode = new osg::Geode();
 
   // turn lighting off for the text and disable depth test to ensure it's
@@ -381,8 +381,6 @@ void Rcs::HUD::init(int llx, int lly, int sizeX, int sizeY,
   this->hudText = new  osgText::Text;
   geode->addDrawable(hudText);
 
-  //std::string timesFont("fonts/arial.ttf");
-  //hudText->setFont(timesFont);
   hudText->setPosition(osg::Vec3(llx + margin, lly + margin, -1.0));
   hudText->setAxisAlignment(osgText::Text::SCREEN);
   hudText->setAlignment(osgText::TextBase::LEFT_BOTTOM);
@@ -390,24 +388,23 @@ void Rcs::HUD::init(int llx, int lly, int sizeX, int sizeY,
   // Should eliminate crashes in multi-threaded use
   hudText->setDataVariance(osg::Object::DYNAMIC);
 
-
   double rgba[4];
-  Rcs_colorFromString(textColor, rgba);
+  Rcs_colorFromString(textColor.c_str(), rgba);
   hudText->setColor(osg::Vec4(rgba[0], rgba[1], rgba[2], rgba[3]));
 
-  char fontFile[256];
-  bool fontFound = Rcs_getAbsoluteFileName("fonts/VeraMono.ttf", fontFile);
+  char fullFontFile[256];
+  bool fontFound = Rcs_getAbsoluteFileName(this->fontFile.c_str(), fullFontFile);
 
   if (fontFound == true)
   {
-    hudText->setCharacterSize(HUD_FONTSIZE);
-    hudText->setFont(fontFile);
+    hudText->setFont(fullFontFile);
   }
   else
   {
-    RLOG(4, "Couldn't find font file in resource path");
-    hudText->setCharacterSize(50);
+    hudText->setFont(osgText::Font::getDefaultFont());
   }
+
+  hudText->setCharacterSize(HUD_FONTSIZE);
 
 
   osg::BoundingBox bb;
@@ -452,6 +449,8 @@ void Rcs::HUD::init(int llx, int lly, int sizeX, int sizeY,
   ss->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
 
   geode->addDrawable(bgGeometry);
+
+  this->switchNd = new osg::Switch();
   switchNd->addChild(geode);
   addChild(switchNd);
 
