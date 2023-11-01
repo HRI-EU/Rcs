@@ -92,6 +92,12 @@ void RcsBody_copy(RcsBody* dst, const RcsBody* src);
 unsigned int RcsBody_numJoints(const RcsGraph* graph, const RcsBody* body);
 
 /*! \ingroup RcsBodyFunctions
+ *  \brief Returns the joint index of the first joint that is associated with
+ *         the body. If the body has no joint, -1 is returned.
+ */
+int RcsBody_getJointIndex(const RcsGraph* graph, const RcsBody* body);
+
+/*! \ingroup RcsBodyFunctions
  *  \brief Returns the number of shapes attached to the body. If self is NULL,
  *         the function returns 0.
  */
