@@ -93,7 +93,11 @@ unsigned int RcsBody_numJoints(const RcsGraph* graph, const RcsBody* body);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns the joint index of the first joint that is associated with
- *         the body. If the body has no joint, -1 is returned.
+ *         the body. If the body is NULL or has no joint, -1 is returned.
+ *
+ *  \param[in] graph  RcsGraph containing the body. Must not be NULL.
+ *  \param[in] body   Body whose joint index is to be returned.
+ *  \return Joint index or -1 if body is NULL or no joint belongs to the body.
  */
 int RcsBody_getJointIndex(const RcsGraph* graph, const RcsBody* body);
 

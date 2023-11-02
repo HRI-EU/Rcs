@@ -37,32 +37,34 @@
 #include "Rcs_stlParser.h"
 
 
+namespace Rcs
+{
 
 /*******************************************************************************
  * Private destructor
  ******************************************************************************/
-Rcs::TaskFactory::TaskFactory()
+TaskFactory::TaskFactory()
 {
 }
 
 /*******************************************************************************
  * Returns singleton instance pointer
  ******************************************************************************/
-Rcs::TaskFactory* Rcs::TaskFactory::instance()
+TaskFactory* TaskFactory::instance()
 {
-  static Rcs::TaskFactory factory;
+  static TaskFactory factory;
   return &factory;
 }
 
 /*******************************************************************************
  * Creates the task for className and the given graph and xml content
  ******************************************************************************/
-Rcs::Task* Rcs::TaskFactory::createTask(std::string str, const RcsGraph* graph)
+Task* TaskFactory::createTask(std::string str, const RcsGraph* graph)
 {
   const char* xmlStr = str.c_str();
   xmlDocPtr doc;
   xmlNodePtr node = parseXMLMemory(xmlStr, strlen(xmlStr), &doc);
-  Rcs::Task* task = createTask(node, graph);
+  Task* task = createTask(node, graph);
   xmlFreeDoc(doc);
 
   return task;
@@ -71,7 +73,49 @@ Rcs::Task* Rcs::TaskFactory::createTask(std::string str, const RcsGraph* graph)
 /*******************************************************************************
  * Creates the task for className and the given graph and xml content
  ******************************************************************************/
-Rcs::Task* Rcs::TaskFactory::createTask(xmlNode* node, const RcsGraph* graph)
+std::vector<Task*> TaskFactory::createTasks(const std::vector<std::string>& strs,
+                                            const RcsGraph* graph)
+{
+  std::vector<Task*> tasks;
+
+  // We go through all tasks and do not return on the first failure in order
+  // to determine not only the first failed task creation, but log out all
+  // of them at once.
+  bool valid = true;
+  for (size_t i=0; i<strs.size(); ++i)
+  {
+    Task* ti = TaskFactory::createTask(strs[i], graph);
+
+    if (!ti)
+    {
+      valid = false;
+      RLOG_CPP(1, "This task could not be created:\n\n" << strs[i]);
+    }
+    else
+    {
+      tasks.push_back(ti);
+    }
+  }
+
+  // If we found one or more NULL task, we delete all tasks and return an
+  // empty vector
+  if (!valid)
+  {
+    for (size_t i=0; i<tasks.size(); ++i)
+    {
+      delete tasks[i];   // deleting NULL is safe
+    }
+
+    tasks.clear();
+  }
+
+  return tasks;
+}
+
+/*******************************************************************************
+ * Creates the task for className and the given graph and xml content
+ ******************************************************************************/
+Task* TaskFactory::createTask(xmlNode* node, const RcsGraph* graph)
 {
   TaskFactory* tf = TaskFactory::instance();
   std::string cVar = getXMLNodePropertySTLString(node, "controlVariable");
@@ -120,8 +164,8 @@ Rcs::Task* Rcs::TaskFactory::createTask(xmlNode* node, const RcsGraph* graph)
 /*******************************************************************************
  * Creates the task for className and the given graph and xml content
  ******************************************************************************/
-Rcs::Task* Rcs::TaskFactory::createRandomTask(std::string cVar,
-                                              const RcsGraph* graph)
+Task* TaskFactory::createRandomTask(std::string cVar,
+                                    const RcsGraph* graph)
 {
   TaskFactory* tf = TaskFactory::instance();
 
@@ -149,10 +193,10 @@ Rcs::Task* Rcs::TaskFactory::createRandomTask(std::string cVar,
  * main() is entered. Therefore, logging with debug levels doesn't make sense,
  * since the debug level has at that point not yet been parsed.
  ******************************************************************************/
-void Rcs::TaskFactory::registerTaskFunctions(std::string name,
-                                             TaskBuilder createFunction,
-                                             TaskChecker checkFunction,
-                                             RandomTaskBuilder rndBuilder)
+void TaskFactory::registerTaskFunctions(std::string name,
+                                        TaskBuilder createFunction,
+                                        TaskChecker checkFunction,
+                                        RandomTaskBuilder rndBuilder)
 {
   // Register check function for task of the type given in "name"
   std::map<std::string, TaskChecker>::const_iterator it2;
@@ -193,7 +237,7 @@ void Rcs::TaskFactory::registerTaskFunctions(std::string name,
 /*******************************************************************************
  * Prints all registered tasks to the console
  ******************************************************************************/
-void Rcs::TaskFactory::printRegisteredTasks()
+void TaskFactory::printRegisteredTasks()
 {
   TaskFactory* tf = TaskFactory::instance();
 
@@ -223,7 +267,7 @@ void Rcs::TaskFactory::printRegisteredTasks()
 /*******************************************************************************
  * Factory method for checking of validity
  ******************************************************************************/
-bool Rcs::TaskFactory::isValid(xmlNode* node, const RcsGraph* graph)
+bool TaskFactory::isValid(xmlNode* node, const RcsGraph* graph)
 {
   // Check if tag is of type "Task"
   if (isXMLNodeName(node, "Task") == false)
@@ -257,3 +301,5 @@ bool Rcs::TaskFactory::isValid(xmlNode* node, const RcsGraph* graph)
 
   return it->second(node, graph);
 }
+
+}   // namespace Rcs

@@ -164,6 +164,11 @@ unsigned int RcsBody_numJoints(const RcsGraph* graph, const RcsBody* self)
  ******************************************************************************/
 int RcsBody_getJointIndex(const RcsGraph* graph, const RcsBody* body)
 {
+  if (!body)
+  {
+    return -1;
+  }
+
   const RcsJoint* jnt = RCSJOINT_BY_ID(graph, body->jntId);
   if (!jnt)
   {
