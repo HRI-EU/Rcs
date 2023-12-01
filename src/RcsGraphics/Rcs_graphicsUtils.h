@@ -230,9 +230,18 @@ bool setNodeMaterial(const std::string& matString, osg::Node* node,
                      double alpha = -1.0);
 
 /*! \ingroup RcsGraphicsUtilsFunctions
- *  \brief Sets a node's alpha value, which must be within [0 ... 1[.
+ *  \brief Sets a node's alpha value. It overrides all the children's alpha
+ *         value. The alpha value is clipped to [0 ... 1], where 0 is fully
+ *         transparent and 1 is solid.
  */
 bool setNodeAlpha(osg::Node* node, double alpha);
+
+/*! \ingroup RcsGraphicsUtilsFunctions
+ *  \brief Traverses the node and all its children, and sets each node's alpha
+ *         value in case an osg::material exists for the node. This lets the
+ *         nodes keep their colors in case they have no material attached.
+ */
+void updateNodeAlphaRecursive(osg::Node* node, double alpha);
 
 /*! \ingroup RcsGraphicsUtilsFunctions
  *  \brief Returns a node's alpha value, taken from the ambient color. If no
@@ -305,6 +314,8 @@ void getGeodes(osg::Node* node, std::vector<osg::Geode*>& geodes);
 
 osg::Node* findNamedNodeRecursive(osg::Node* root, std::string nodeName);
 
+std::vector<osg::Node*> findNamedNodesRecursive(osg::Node* root,
+                                                std::string nodeName);
 
 template <typename T>
 class ChildNodeCollector : public osg::NodeVisitor

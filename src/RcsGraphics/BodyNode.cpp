@@ -36,6 +36,7 @@
 
 #include <Rcs_resourcePath.h>
 #include <Rcs_material.h>
+#include <Rcs_basicMath.h>
 #include <Rcs_Vec3d.h>
 #include <Rcs_Mat3d.h>
 #include <Rcs_typedef.h>
@@ -389,35 +390,7 @@ BodyNode::~BodyNode()
  ******************************************************************************/
 void BodyNode::setAlpha(float alpha)
 {
-  osg::StateSet* stateset = getOrCreateStateSet();
-
-  if (stateset == NULL)
-  {
-    RLOG(8, "Could not set alpha - stateset is NULL");
-    return;
-  }
-
-  osg::Material* material =
-    dynamic_cast<osg::Material*>(stateset->getAttribute(osg::StateAttribute::MATERIAL));
-
-  if (material == NULL)
-  {
-    RLOG(8, "Could not assign material - material is NULL");
-    return;
-  }
-
-
-
-  // Add transparency
-#if 1
-  material->setAlpha(osg::Material::FRONT_AND_BACK, alpha);
-
-  //    stateset->setAttributeAndModes(material,
-  //                                 osg::StateAttribute::OVERRIDE|
-  //                                 osg::StateAttribute::ON);
-  //
-  //    setStateSet(stateset);
-#endif
+  setNodeAlpha(this, alpha);
 }
 
 /*******************************************************************************

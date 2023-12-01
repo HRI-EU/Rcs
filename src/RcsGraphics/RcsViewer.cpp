@@ -173,56 +173,65 @@ struct ViewerEventData : public osg::Referenced
     SetCartoonEnabled,
     SetTrackballCenter,
     SetFrameUpdatesEnabled,
+    SetNodeAlpha,
+    UpdateNodeAlphaRecursive,
     None
   };
 
-  ViewerEventData(EventType type) : eType(type), flag(false)
+  ViewerEventData(EventType type) : eType(type), flag(false), value(0.0)
   {
     init(type, "No arguments");
   }
 
   ViewerEventData(osg::ref_ptr<osg::Node> node_, EventType type) :
-    node(node_), eType(type), flag(false)
+    node(node_), eType(type), flag(false), value(0.0)
   {
     init(type, node->getName());
   }
 
   ViewerEventData(const HTr* transform, EventType type) :
-    eType(type), flag(false)
+    eType(type), flag(false), value(0.0)
   {
     HTr_copy(&trf, transform);
     init(type, "Transform");
   }
 
   ViewerEventData(std::string nodeName, EventType type) :
-    childName(nodeName), eType(type), flag(false)
+    childName(nodeName), eType(type), flag(false), value(0.0)
   {
     init(type, nodeName);
   }
 
   ViewerEventData(osg::ref_ptr<osg::Group> parent_,
                   osg::ref_ptr<osg::Node> node_, EventType type) :
-    parent(parent_), node(node_), eType(type), flag(false)
+    parent(parent_), node(node_), eType(type), flag(false), value(0.0)
   {
     init(type, node->getName());
   }
 
   ViewerEventData(osg::ref_ptr<osgGA::GUIEventHandler> eHandler,
                   EventType type) :
-    eventHandler(eHandler), eType(type), flag(false)
+    eventHandler(eHandler), eType(type), flag(false), value(0.0)
   {
     init(type, "osgGA::GUIEventHandler");
   }
 
   ViewerEventData(osg::Group* parent_, std::string childName_, EventType type) :
-    parent(parent_), childName(childName_), eType(type), flag(false)
+    parent(parent_), childName(childName_), eType(type), flag(false), value(0.0)
   {
     init(type, "osgGA::GUIEventHandler");
   }
 
-  ViewerEventData(EventType type, bool enable) : eType(type), flag(enable)
+  ViewerEventData(EventType type, bool enable) :
+    eType(type), flag(enable), value(0.0)
   {
     init(type, "No arguments");
+  }
+
+  ViewerEventData(osg::ref_ptr<osg::Node> node_, EventType type, double val) :
+    node(node_), eType(type), flag(false), value(val)
+  {
+    init(type, node->getName());
   }
 
   void init(EventType type, std::string comment)
@@ -246,6 +255,7 @@ struct ViewerEventData : public osg::Referenced
   EventType eType;
   HTr trf;
   bool flag;
+  double value;
   static int userEventCount;
 };
 
@@ -968,6 +978,14 @@ osg::Node* Viewer::getNode(std::string nodeName)
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+std::vector<osg::Node*> Viewer::getNodes(std::string nodeName)
+{
+  return findNamedNodesRecursive(rootnode, nodeName);
+}
+
+/*******************************************************************************
  * aspectRatio = width/height
  * OSG returns field of view in [degrees]. We convert it to SI units
  ******************************************************************************/
@@ -1617,6 +1635,28 @@ void Viewer::handleUserEvents(const osg::Referenced* userEvent)
     }
     break;
 
+    case ViewerEventData::SetNodeAlpha:
+    {
+      if (ev->node.valid())
+      {
+        RLOG(5, "Setting node's \"%s\" alpha value to %f",
+             ev->node->getName().c_str(), ev->value);
+        Rcs::setNodeAlpha(ev->node, ev->value);
+      }
+    }
+    break;
+
+    case ViewerEventData::UpdateNodeAlphaRecursive:
+    {
+      if (ev->node.valid())
+      {
+        RLOG(5, "Setting node's \"%s\" alpha value to %f",
+             ev->node->getName().c_str(), ev->value);
+        Rcs::updateNodeAlphaRecursive(ev->node, ev->value);
+      }
+    }
+    break;
+
     default:
       RLOG(1, "Unknown event type %d", (int) ev->eType);
       break;
@@ -1876,6 +1916,22 @@ std::string Viewer::getDefaultBackgroundColor() const
 void Viewer::setTitle(const std::string& title)
 {
   addUserEvent(new ViewerEventData(title, ViewerEventData::SetTitle));
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Viewer::setNodeAlpha(osg::ref_ptr<osg::Node> node, double alpha)
+{
+  addUserEvent(new ViewerEventData(node, ViewerEventData::SetNodeAlpha, alpha));
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Viewer::updateNodeAlphaRecursive(osg::ref_ptr<osg::Node> node, double alpha)
+{
+  addUserEvent(new ViewerEventData(node, ViewerEventData::UpdateNodeAlphaRecursive, alpha));
 }
 
 /*******************************************************************************

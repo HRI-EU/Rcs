@@ -380,6 +380,24 @@ public:
    */
   void setEnableFrameUpdates(bool enable);
 
+  /*! \brief Method to set a node's alpha value. This also affects all the
+   *         node's children.
+   *
+   *  \param[in] node       Nodes for which alpha is to be set.
+   *  \param[in] alpha      Alpha value, will be clipped to [0...1]. Zero means
+   *                        transparent, 1 means solid.
+   */
+  void setNodeAlpha(osg::ref_ptr<osg::Node> node, double alpha);
+
+  /*! \brief See Rcs_graphicsutils.h: updateNodeAlphaRecursive(). This is the
+   *         thread-safe version of it.
+   *
+   *  \param[in] node       Nodes for which alpha is to be set.
+   *  \param[in] alpha      Alpha value, will be clipped to [0...1]. Zero means
+   *                        transparent, 1 means solid.
+   */
+  void updateNodeAlphaRecursive(osg::ref_ptr<osg::Node> node, double alpha);
+
   ///@}
 
 
@@ -410,6 +428,10 @@ public:
    *         part of the scene graph.
    */
   osg::Node* getNode(std::string nodeName);
+
+  /*! \brief Returns all node with the given name.
+   */
+  std::vector<osg::Node*> getNodes(std::string nodeName);
 
   /*! \brief Convenience template function for any type of node: Call it with
    *         MyNode* nd = viewer->getBodyNodeUnderMouse<MyNode*>();

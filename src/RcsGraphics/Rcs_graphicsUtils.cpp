@@ -419,6 +419,7 @@ bool setNodeAlpha(osg::Node* node, double alpha)
 
   if (!material)
   {
+    RLOG_CPP(0, "**************** CREATING material for node " << node->getName());
     material = new osg::Material;
   }
 
@@ -459,6 +460,35 @@ bool setNodeAlpha(osg::Node* node, double alpha)
   }
 
   return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void updateNodeAlphaRecursive(osg::Node* node, double alpha)
+{
+  // first check if we should set the transparency of the current node
+  osg::StateSet* stateset = node->getStateSet();
+  if (stateset)
+  {
+    osg::Material* material = dynamic_cast<osg::Material*>(stateset->getAttribute(osg::StateAttribute::MATERIAL));
+    if (material)
+    {
+      // Add transparency
+      material->setAlpha(osg::Material::FRONT_AND_BACK, alpha);
+    }
+  }
+
+  // then traverse the group and call setAlpha on all children
+  osg::Group* group = node->asGroup();
+  if (group)
+  {
+    for (size_t i = 0; i < group->getNumChildren(); i++)
+    {
+      updateNodeAlphaRecursive(group->getChild(i), alpha);
+    }
+  }
+
 }
 
 /*******************************************************************************
@@ -662,6 +692,52 @@ void getGeodes(osg::Node* node, std::vector<osg::Geode*>& geodes)
   }
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+class NodesFinder : public osg::NodeVisitor
+{
+public:
+  NodesFinder(std::string nodeName) :
+    osg::NodeVisitor(osg::NodeVisitor::TRAVERSE_ALL_CHILDREN),
+    searchName(nodeName)
+  {
+  }
+
+  virtual void apply(osg::Node& tNnode)
+  {
+    RLOG(0, "Checking node %s - %s", tNnode.getName().c_str(), searchName.c_str());
+    if (searchName == tNnode.getName())
+    {
+      RLOG(0, "*** Found node %s - pushing back", searchName.c_str());
+      nodes.push_back(&tNnode);
+    }
+
+    // Keep traversing the rest of the scene graph.
+    traverse(tNnode);
+  }
+
+  std::vector<osg::Node*> getNodes()
+  {
+    return nodes;
+  }
+
+protected:
+  std::string searchName;
+  std::vector<osg::Node*> nodes;
+};
+
+std::vector<osg::Node*> findNamedNodesRecursive(osg::Node* root,
+                                                std::string nodeName)
+{
+  NodesFinder nf(nodeName);
+  root->accept(nf);
+  return nf.getNodes();
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 class NodeFinder : public osg::NodeVisitor
 {
 public:
