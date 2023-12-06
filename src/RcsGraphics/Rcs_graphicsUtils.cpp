@@ -706,10 +706,8 @@ public:
 
   virtual void apply(osg::Node& tNnode)
   {
-    RLOG(0, "Checking node %s - %s", tNnode.getName().c_str(), searchName.c_str());
     if (searchName == tNnode.getName())
     {
-      RLOG(0, "*** Found node %s - pushing back", searchName.c_str());
       nodes.push_back(&tNnode);
     }
 
