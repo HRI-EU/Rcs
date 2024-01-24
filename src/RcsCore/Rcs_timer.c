@@ -233,16 +233,20 @@ bool Timer_wait(Timer* self)
   if (self->t >= self->t_des)
   {
     // Return failure if time exceeds t_des+0.25*dt
-    if (self->t > self->t_des + 0.25 * self->dt && (self->verbose))
+    bool success = true;
+
+    if (self->t > self->t_des + 0.25 * self->dt)
     {
-      RMSG("[%ld] Timer: took %5.1f ms (dt is %5.1f ms)", self->tCount,
-           1.0e3 * (self->t - self->t_des + self->dt), 1.0e3 * self->dt);
-      self->t_des += self->dt;
-      return false;
+      success = false;
+      if (self->verbose)
+      {
+        RMSG("[%ld] Timer: took %5.1f ms (dt is %5.1f ms)", self->tCount,
+             1.0e3 * (self->t - self->t_des + self->dt), 1.0e3 * self->dt);
+      }
     }
 
     self->t_des += self->dt;
-    return true;
+    return success;
   }
 
   // Compute remaining time interval and apply usleep. On some machines,
