@@ -333,6 +333,12 @@ static const char* materialDefs =
                     <Specular R="0.2" G="0.2" B="0.2" A="0.3"/>
                     </MaterialDefinition>
 
+                    <MaterialDefinition Name="ORANGE_TRANS" Shininess="70.0">
+                    <Ambient R="0.2" G="0.1" B="0.1" A="0.3"/>
+                    <Diffuse R="1.0" G="0.5" B="0.0" A="0.3"/>
+                    <Specular R="0.2" G="0.2" B="0.2" A="0.3"/>
+                    </MaterialDefinition>
+
                     <MaterialDefinition Name="VERY_TRANS" Shininess="10.0">
                     <Ambient R="0.25" G="0.25" B="0.25" A="0.15"/>
                     <Diffuse R="0.9" G="0.9" B="0.9" A="0.15"/>
