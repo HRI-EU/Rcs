@@ -372,8 +372,8 @@ Viewer::Viewer() :
   fps(0.0), mouseX(0.0), mouseY(0.0), normalizedMouseX(0.0),
   normalizedMouseY(0.0), mtxFrameUpdate(NULL), threadRunning(false),
   updateFreq(25.0), initialized(false), wireFrame(false), shadowsEnabled(false),
-  llx(0), lly(0), sizeX(640), sizeY(480), cartoonEnabled(false),
-  threadStopped(true), leftMouseButtonPressed(false),
+  enableLogLevelWithNumKeys(true), llx(0), lly(0), sizeX(640), sizeY(480),
+  cartoonEnabled(false), threadStopped(true), leftMouseButtonPressed(false),
   rightMouseButtonPressed(false), pauseFrameUpdates(false), frameThread2(NULL)
 {
   // Check if logged in remotely
@@ -401,8 +401,8 @@ Viewer::Viewer(bool fancy, bool startupWithShadow) :
   fps(0.0), mouseX(0.0), mouseY(0.0), normalizedMouseX(0.0),
   normalizedMouseY(0.0), mtxFrameUpdate(NULL), threadRunning(false),
   updateFreq(25.0), initialized(false), wireFrame(false), shadowsEnabled(false),
-  llx(0), lly(0), sizeX(640), sizeY(480), cartoonEnabled(false),
-  threadStopped(true), leftMouseButtonPressed(false),
+  enableLogLevelWithNumKeys(true), llx(0), lly(0), sizeX(640), sizeY(480),
+  cartoonEnabled(false), threadStopped(true), leftMouseButtonPressed(false),
   rightMouseButtonPressed(false), pauseFrameUpdates(false), frameThread2(NULL)
 {
   create(fancy, startupWithShadow);
@@ -620,6 +620,14 @@ bool Viewer::setWindowSize(unsigned int llx_,     // lower left x
   this->sizeY = sizeY_;
 
   return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Viewer::setEnableLogLevelWithNumKeys(bool enable)
+{
+  enableLogLevelWithNumKeys = enable;
 }
 
 /*******************************************************************************
@@ -1770,7 +1778,7 @@ bool Viewer::handle(const osgGA::GUIEventAdapter& ea,
     case (osgGA::GUIEventAdapter::KEYDOWN):
     {
       // key '0' is ASCII code 48, then running up to 57 for '9'
-      if ((ea.getKey() >= 48) && (ea.getKey() <= 57))
+      if (enableLogLevelWithNumKeys && (ea.getKey() >= 48) && (ea.getKey() <= 57))
       {
         unsigned int dLev = ea.getKey() - 48;
         if (dLev<9)

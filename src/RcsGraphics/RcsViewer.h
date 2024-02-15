@@ -215,7 +215,6 @@ public:
    */
   void setFieldOfView(double fov);
 
-
   /*! \brief Sets the field of view to the given angles.
    *
    *  \param[in] fovWidth   Horizontal field of view in radians
@@ -239,6 +238,12 @@ public:
                      unsigned int lly,     // lower left y
                      unsigned int sizeX,   // size in x-direction
                      unsigned int sizeY);  // size in y-direction
+
+  /*! \brief Enables or disable setting Rcs log levels with the num keys
+   *
+   *  \param[in] enable   Enable with true, disable with false
+   */
+  void setEnableLogLevelWithNumKeys(bool enable);
 
   ///@}
 
@@ -593,7 +598,7 @@ protected:
   bool initialized;
   bool wireFrame;
   bool shadowsEnabled;
-
+  bool enableLogLevelWithNumKeys;
   unsigned int llx, lly, sizeX, sizeY;
   bool cartoonEnabled;
   bool threadStopped;
