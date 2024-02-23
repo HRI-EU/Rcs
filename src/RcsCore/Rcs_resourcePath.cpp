@@ -33,6 +33,7 @@
 
 #include "Rcs_resourcePath.h"
 #include "Rcs_utils.h"
+#include "Rcs_utilsCPP.h"
 #include "Rcs_macros.h"
 
 #include <vector>
@@ -103,9 +104,9 @@ extern "C" {
    ****************************************************************************/
   bool Rcs_addResourcePath(const char* path)
   {
-    if (path==NULL)
+    if ((path==NULL) || (strlen(path)==0))
     {
-      RLOG(4, "Path is NULL - skipping");
+      RLOG(4, "Path is NULL or empty - skipping");
       return false;
     }
 
@@ -124,10 +125,12 @@ extern "C" {
     }
 
     // Add resource path
-    if (strlen(path) > 0)
+    std::vector<std::string> paths = Rcs::String_split(path, ";");
+    for (size_t i=0; i<paths.size(); ++i)
     {
-      RCSRESOURCEPATH.push_back(pathStr);
-      RLOG(6, "Added path \"%s\" to resource paths", path);
+      addDelim(paths[i]);
+      RCSRESOURCEPATH.push_back(paths[i]);
+      RLOG(6, "Added path \"%s\" to resource paths", paths[i].c_str());
     }
 
     return true;

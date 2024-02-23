@@ -45,7 +45,7 @@
  *           directory. Functions to add paths to the overall resource path
  *           variable are <br>
  *
- *           - \ref Rcs_addResourcePath() to append a path
+ *           - \ref Rcs_addResourcePath() to append one or several paths
  *           - \ref Rcs_insertResourcePath() to prepend a path
  *
  *           The function \ref Rcs_getAbsoluteFileName() accepts a file name,
@@ -78,7 +78,7 @@ void Rcs_clearResourcePath(void);
 
 /*! \ingroup ResourcePathFunctions
  *  \brief Appends argument path to the last element of the resource path
- *         list.
+ *         list. Several paths can be added with a semicolon delimiter.
  *  \return True for success, false otherwise:
  *          - The path has already been added
  *          - Argument path is NULL for some reason.
