@@ -65,14 +65,77 @@
 namespace Rcs
 {
 
-static std::map<std::string, osg::ref_ptr<osg::Texture2D> > _textureBuffer;
-static OpenThreads::Mutex _textureBufferMtx;
 static bool meshFactoryEnabled = true;
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static osg::ref_ptr<osg::Texture2D> getOrCreateTexture(const char* textureFile)
+{
+  static std::map<std::string, osg::ref_ptr<osg::Texture2D> > _textureBuffer;
+  static OpenThreads::Mutex _textureBufferMtx;
 
+  // read the texture file
+  osg::ref_ptr<osg::Texture2D> texture;
 
-static osg::ref_ptr<osg::Node> createMeshNode(const RcsShape* shape,
-                                              bool& meshFromOsgReader)
+  // Little map that stores name-pointer pairs of texture files. If
+  // a texture has already been loaded, we look up its pointer from
+  // the map. Otherwise, we load the texture and store its pointer
+  // in the map.
+  std::map<std::string, osg::ref_ptr<osg::Texture2D> >::iterator it;
+
+  _textureBufferMtx.lock();
+  for (it = _textureBuffer.begin() ; it != _textureBuffer.end(); ++it)
+  {
+    if (it->first == std::string(textureFile))
+    {
+      NLOG(0, "Texture file \"%s\" already loaded", textureFile);
+      texture = it->second;
+      break;
+    }
+
+  }
+  _textureBufferMtx.unlock();
+
+  // Texture not found, let's create new one
+  if (!texture.valid())
+  {
+    // Load an image by reading a file:
+    osg::ref_ptr<osg::Image> texture_image = osgDB::readImageFile(textureFile);
+
+    if (texture_image.valid() == false)
+    {
+      RLOG(1, "couldn't load texture file  \"%s\", omitting...", textureFile);
+    }
+    else
+    {
+      texture = new osg::Texture2D;
+
+      // Protect from being optimized away as static state:
+      texture->setDataVariance(osg::Object::DYNAMIC);
+
+      texture->setFilter(osg::Texture::MIN_FILTER,
+                         osg::Texture::LINEAR_MIPMAP_LINEAR);
+      texture->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
+      texture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP);
+      texture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP);
+
+      // Assign the texture to the image we read from file
+      texture->setImage(texture_image.get());
+      _textureBufferMtx.lock();
+      _textureBuffer[std::string(textureFile)] = texture;
+      _textureBufferMtx.unlock();
+    }
+  }
+
+  return texture;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static osg::ref_ptr<osg::Node> getOrCreateMeshNode(const RcsShape* shape,
+                                                   bool& meshFromOsgReader)
 {
   static std::map<std::string, osg::ref_ptr<osg::Node> > _meshBuffer;
   static OpenThreads::Mutex _meshBufferMtx;
@@ -450,7 +513,7 @@ void ShapeNode::addShape(const RcsShape* shape, bool resizeable)
   else if (shape->type == RCSSHAPE_MESH)
   {
     bool meshFromOsgReader;
-    osg::ref_ptr<osg::Node> meshNode = createMeshNode(shape, meshFromOsgReader);
+    osg::ref_ptr<osg::Node> meshNode = getOrCreateMeshNode(shape, meshFromOsgReader);
 
     if (meshNode.valid())
     {
@@ -586,107 +649,42 @@ void ShapeNode::addShape(const RcsShape* shape, bool resizeable)
 }
 
 /*******************************************************************************
- *\todo: Make separate texture buffer method similar to mesh buffer
+ *
  ******************************************************************************/
 bool ShapeNode::addTexture(const char* textureFile)
 {
-  bool success = false;
+  osg::ref_ptr<osg::Texture2D> texture = getOrCreateTexture(textureFile);
 
-  // read the texture file
-  osg::ref_ptr<osg::Texture2D> texture;
-
-  // Little map that stores name-pointer pairs of texture files. If
-  // a texture has already been loaded, we look up its pointer from
-  // the map. Otherwise, we load the texture and store its pointer
-  // in the map.
-  std::map<std::string, osg::ref_ptr<osg::Texture2D> >::iterator it;
-
-  _textureBufferMtx.lock();
-  for (it = _textureBuffer.begin() ; it != _textureBuffer.end(); ++it)
-  {
-    if (it->first == std::string(textureFile))
-    {
-      NLOG(0, "Texture file \"%s\" already loaded", textureFile);
-      texture = it->second;
-      break;
-
-    }
-
-  }
-  _textureBufferMtx.unlock();
-
-  // texture not found, let's create new one
   if (!texture.valid())
   {
-    // load an image by reading a file:
-    osg::ref_ptr<osg::Image> texture_image = osgDB::readImageFile(textureFile);
-
-    if (texture_image.valid() == false)
-    {
-      RLOG(1, "couldn't load texture file  \"%s\" for body \"%s\", "
-           "omitting...", textureFile, getName().c_str());
-    }
-    else
-    {
-      texture = new osg::Texture2D;
-      // protect from being optimized away as static state:
-      texture->setDataVariance(osg::Object::DYNAMIC);
-
-      texture->setFilter(osg::Texture::MIN_FILTER,
-                         osg::Texture::LINEAR_MIPMAP_LINEAR);
-      texture->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
-      texture->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP);
-      texture->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP);
-      // Assign the texture to the image we read from file
-      texture->setImage(texture_image.get());
-      _textureBufferMtx.lock();
-      _textureBuffer[std::string(textureFile)] = texture;
-      _textureBufferMtx.unlock();
-    }
+    return false;
   }
 
-  if (texture.valid())
+  // this would extend previous setting, e.g. by color settings
+  for (size_t i = 0; i < getNumChildren(); i++)
   {
-
-    // this would extend previous setting, e.g. by color settings
-    for (size_t i = 0; i < getNumChildren(); i++)
-    {
-      osg::StateSet* ss = getChild(i)->getOrCreateStateSet();
-      osg::Material* material = new osg::Material;
-      material->setAmbient(osg::Material::FRONT_AND_BACK,
-                           osg::Vec4(0.6, 0.6, 0.6, 1.0));
-      material->setDiffuse(osg::Material::FRONT_AND_BACK,
-                           osg::Vec4(1.0, 1.0, 1.0, 1.0));
-      material->setSpecular(osg::Material::FRONT_AND_BACK,
-                            osg::Vec4(0.3, 0.3, 0.3, 1.0));
-      material->setShininess(osg::Material::FRONT_AND_BACK, 100.0);
-      ss->setAttributeAndModes(material,
-                               osg::StateAttribute::OVERRIDE |
-                               osg::StateAttribute::ON);
-      ss->setTextureAttributeAndModes(0, texture.get(),
-                                      osg::StateAttribute::OVERRIDE |
-                                      osg::StateAttribute::ON);
-
-      success = true;
-      ss->setMode(GL_LIGHTING,
-                  osg::StateAttribute::PROTECTED |
-                  osg::StateAttribute::OFF);
-      setNodeMask(getNodeMask() & ~CastsShadowTraversalMask);
-      setNodeMask(getNodeMask() & ~ReceivesShadowTraversalMask);
-    }
-    //      // Create a new StateSet with default settings
-    //      // this means the old color settings are overridden
-    //      osg::StateSet* stateOne = new osg::StateSet();
-    //      // Assign texture unit 0 of our new StateSet to the texture
-    //      // we just created and enable the texture
-    //      stateOne->setTextureAttributeAndModes(0, texture,
-    //                           osg::StateAttribute::OVERRIDE |
-    //                           osg::StateAttribute::ON);
-    //      // Associate this state set with the Geode
-    //      geode->setStateSet(stateOne);
+    osg::StateSet* ss = getChild(i)->getOrCreateStateSet();
+    osg::Material* material = new osg::Material;
+    material->setAmbient(osg::Material::FRONT_AND_BACK,
+                         osg::Vec4(0.6, 0.6, 0.6, 1.0));
+    material->setDiffuse(osg::Material::FRONT_AND_BACK,
+                         osg::Vec4(1.0, 1.0, 1.0, 1.0));
+    material->setSpecular(osg::Material::FRONT_AND_BACK,
+                          osg::Vec4(0.3, 0.3, 0.3, 1.0));
+    material->setShininess(osg::Material::FRONT_AND_BACK, 100.0);
+    ss->setAttributeAndModes(material,
+                             osg::StateAttribute::OVERRIDE |
+                             osg::StateAttribute::ON);
+    ss->setTextureAttributeAndModes(0, texture.get(),
+                                    osg::StateAttribute::OVERRIDE |
+                                    osg::StateAttribute::ON);
+    ss->setMode(GL_LIGHTING,
+                osg::StateAttribute::PROTECTED |
+                osg::StateAttribute::OFF);
   }
 
-  return success;
+
+  return true;
 }
 
 ShapeNode::~ShapeNode()
