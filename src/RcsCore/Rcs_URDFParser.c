@@ -314,11 +314,11 @@ static int parseBodyURDF(xmlNode* node, RcsGraph* graph, int parentId)
         getXMLNodePropertyDouble(childNode, "ixx", &body->Inertia.rot[0][0]);
         getXMLNodePropertyDouble(childNode, "ixy", &body->Inertia.rot[0][1]);
         getXMLNodePropertyDouble(childNode, "ixz", &body->Inertia.rot[0][2]);
-        body->Inertia.rot[1][0] = -body->Inertia.rot[0][1];
+        body->Inertia.rot[1][0] = body->Inertia.rot[0][1];
         getXMLNodePropertyDouble(childNode, "iyy", &body->Inertia.rot[1][1]);
         getXMLNodePropertyDouble(childNode, "iyz", &body->Inertia.rot[1][2]);
-        body->Inertia.rot[2][0] = -body->Inertia.rot[0][2];
-        body->Inertia.rot[2][1] = -body->Inertia.rot[1][2];
+        body->Inertia.rot[2][0] = body->Inertia.rot[0][2];
+        body->Inertia.rot[2][1] = body->Inertia.rot[1][2];
         getXMLNodePropertyDouble(childNode, "izz", &body->Inertia.rot[2][2]);
       }
     }  // "inertial"
