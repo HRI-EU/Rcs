@@ -393,6 +393,8 @@ private:
   double dt_opt;
   double lastDt;   // Most recent dt when calling simulate()
   double gravity[3];
+  double jointedBodyLinearDamping;
+  double jointedBodyAngularDamping;
 };
 
 }   // namespace Rcs

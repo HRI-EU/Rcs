@@ -42,6 +42,7 @@
 #include "Rcs_shape.h"
 #include "Rcs_joint.h"
 #include "Rcs_eigen.h"
+#include "Rcs_parser.h"
 
 #include <algorithm>
 #include <cmath>
@@ -58,7 +59,9 @@ static PhysicsFactoryRegistrar<KineticSimulation> physics(className);
  ******************************************************************************/
 KineticSimulation::KineticSimulation() : PhysicsBase(), draggerTorque(NULL),
   jointTorque(NULL), contactForces(NULL), contactPositions(NULL),
-  integrator("Fehlberg"), energy(0.0), dt_opt(0.0), lastDt(0.0)
+  integrator("Fehlberg"), energy(0.0), dt_opt(0.0), lastDt(0.0),
+  jointedBodyLinearDamping(0.0), jointedBodyAngularDamping(0.0)
+
 {
   Vec3d_set(this->gravity, 0.0, 0.0, -RCS_GRAVITY);
 }
@@ -69,7 +72,8 @@ KineticSimulation::KineticSimulation() : PhysicsBase(), draggerTorque(NULL),
 KineticSimulation::KineticSimulation(const RcsGraph* graph_) :
   PhysicsBase(graph_), draggerTorque(NULL), jointTorque(NULL),
   contactForces(NULL), contactPositions(NULL), integrator("Fehlberg"),
-  energy(0.0), dt_opt(0.0), lastDt(0.0)
+  energy(0.0), dt_opt(0.0), lastDt(0.0),
+  jointedBodyLinearDamping(0.0), jointedBodyAngularDamping(0.0)
 {
   initialize(graph_, NULL);
 }
@@ -82,7 +86,9 @@ KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe) :
   constraint(copyFromMe.constraint), draggerTorque(NULL), jointTorque(NULL),
   contactForces(NULL), contactPositions(NULL),
   integrator(copyFromMe.integrator), energy(copyFromMe.energy),
-  dt_opt(copyFromMe.dt_opt), lastDt(copyFromMe.lastDt)
+  dt_opt(copyFromMe.dt_opt), lastDt(copyFromMe.lastDt),
+  jointedBodyLinearDamping(copyFromMe.jointedBodyLinearDamping),
+  jointedBodyAngularDamping(copyFromMe.jointedBodyAngularDamping)
 {
   this->draggerTorque = MatNd_create(getGraph()->dof, 1);
   MatNd_reshapeCopy(this->draggerTorque, copyFromMe.draggerTorque);
@@ -101,7 +107,9 @@ KineticSimulation::KineticSimulation(const KineticSimulation& copyFromMe,
   constraint(copyFromMe.constraint), draggerTorque(NULL),jointTorque(NULL),
   contactForces(NULL), contactPositions(NULL),
   integrator(copyFromMe.integrator), energy(copyFromMe.energy),
-  dt_opt(copyFromMe.dt_opt), lastDt(copyFromMe.lastDt)
+  dt_opt(copyFromMe.dt_opt), lastDt(copyFromMe.lastDt),
+  jointedBodyLinearDamping(copyFromMe.jointedBodyLinearDamping),
+  jointedBodyAngularDamping(copyFromMe.jointedBodyAngularDamping)
 {
   this->draggerTorque = MatNd_create(getGraph()->dof, 1);
   MatNd_reshapeCopy(this->draggerTorque, copyFromMe.draggerTorque);
@@ -132,6 +140,8 @@ KineticSimulation& KineticSimulation::operator= (const KineticSimulation& other)
   this->energy = other.energy;
   this->dt_opt = other.dt_opt;
   Vec3d_copy(gravity, other.gravity);
+  this->jointedBodyLinearDamping = other.jointedBodyLinearDamping;
+  this->jointedBodyAngularDamping = other.jointedBodyAngularDamping;
   return *this;
 }
 
@@ -240,6 +250,31 @@ bool KineticSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
     }
   }
   RcsGraph_setState(getGraph(), NULL, NULL);
+
+  if (cfg->getConfigFileName())
+  {
+    RLOG(0, "Parsing parameters from %s", cfg->getConfigFileName());
+
+    xmlNodePtr physicsParams = getXMLChildByName(cfg->getXMLRootNode(),
+                                                 "newtoneuler_parameters");
+    if (physicsParams)
+    {
+      getXMLNodePropertyDouble(physicsParams, "jointed_body_linear_damping",
+                               &this->jointedBodyLinearDamping);
+      getXMLNodePropertyDouble(physicsParams, "jointed_body_angular_damping",
+                               &this->jointedBodyAngularDamping);
+      getXMLNodePropertyDouble(physicsParams, "jointed_body_damping",
+                               &this->jointedBodyLinearDamping);
+      getXMLNodePropertyDouble(physicsParams, "jointed_body_damping",
+                               &this->jointedBodyAngularDamping);
+    }
+    else
+    {
+      RLOG(1, "Physics configuration file %s did not contain a "
+           "\"newtoneuler_parameters\" node!", cfg->getConfigFileName());
+    }
+
+  }
 
   return true;
 }
@@ -1010,7 +1045,9 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   // Joint speed damping: M Kv(qp_des - qp) with qp_des = 0
   // We consider all bodies with six joints as floating and do not apply any
   // damping. \todo: Provide interface on per-joint basis
-  const double damping = 2.0;
+  RCHECK_MSG(this->jointedBodyAngularDamping==this->jointedBodyLinearDamping,
+             "Not yet supported - FIXME");
+  const double damping = this->jointedBodyAngularDamping;
   MatNd* Fi = MatNd_create(n, 1);
   MatNd* qp_ik = MatNd_clone(graph->q_dot);
 

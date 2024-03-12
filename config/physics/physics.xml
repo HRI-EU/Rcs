@@ -53,6 +53,15 @@
 />
 
 
+<!-- Supported: 
+     jointed_body_linear_damping="0"  
+     jointed_body_angular_damping="0" 
+     jointed_body_damping="0" (does both the above ones)
+-->
+<newtoneuler_parameters xjointed_body_damping="2"
+/>
+
+
 <!--
 definition of available materials (in addition to "default")
 =============================================================

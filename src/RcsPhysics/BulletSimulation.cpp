@@ -409,7 +409,7 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
   if (bulletParams == NULL)
   {
     RLOG(1, "Physics configuration file %s did not contain a "
-         "\"bullet parameters\" node!", this->physicsConfigFile.c_str());
+         "\"bullet_parameters\" node!", this->physicsConfigFile.c_str());
   }
 
   // Create discrete dynamics world etc. This function is overwritten in the
