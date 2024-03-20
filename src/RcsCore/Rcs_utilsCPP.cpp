@@ -271,6 +271,23 @@ std::vector<std::string> String_split(const std::string& toBeSplitted,
   return splittedString;
 }
 
+std::string& String_ltrim(std::string& str, const std::string& chars)
+{
+  str.erase(0, str.find_first_not_of(chars));
+  return str;
+}
+
+std::string& String_rtrim(std::string& str, const std::string& chars)
+{
+  str.erase(str.find_last_not_of(chars) + 1);
+  return str;
+}
+
+std::string& String_trim(std::string& str, const std::string& chars)
+{
+  return String_ltrim(String_rtrim(str, chars), chars);
+}
+
 
 }   // namespace Rcs
 

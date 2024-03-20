@@ -121,6 +121,21 @@ bool String_endsWith(const std::string& fullString,
 bool String_startsWith(const std::string& fullString,
                        const std::string& beginning);
 
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Trims the chars from the beginning of the string
+ */
+std::string& String_ltrim(std::string& str, const std::string& chars = "\t\n\v\f\r ");
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Trims the chars from the end of the string
+ */
+std::string& String_rtrim(std::string& str, const std::string& chars = "\t\n\v\f\r ");
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Trims the chars from the beginning and the end of the string
+ */
+std::string& String_trim(std::string& str, const std::string& chars = "\t\n\v\f\r ");
+
 std::vector<std::pair<double,double>> Math_snapToGridPolygon2D(double polygon[][2],
                                                                unsigned int nVertices,
                                                                double gridSize);
