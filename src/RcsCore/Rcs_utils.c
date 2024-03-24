@@ -247,41 +247,45 @@ static void nDecimals(char* s, double d, int n)
   sprintf(s, "%*.*f", sz, n, d);
 }
 
+// Examples:
+// morphNumericString("0.12399", 3) = "0.123"
+// morphNumericString("0.10000", 3) = "0.1"
+// morphNumericString("5.00000", 3) = "5"
 static void morphNumericString(char* s, int n)
 {
-  char* p;
-  int count;
+  char* p = strchr(s,'.');        // Find decimal point, if any.
 
-  p = strchr(s,'.');        // Find decimal point, if any.
-
-  if (p != NULL)
+  if (!p)
   {
-    count = n;              // Adjust for more or less decimals.
-
-    while (count >= 0)      // Maximum decimals allowed.
-    {
-      count--;
-
-      if (*p == '\0')       // If there's less than desired.
-      {
-        break;
-      }
-
-      p++;                  // Next character.
-    }
-
-    *p-- = '\0';            // Truncate string.
-
-    while (*p == '0')       // Remove trailing zeros.
-    {
-      *p-- = '\0';
-    }
-
-    if (*p == '.')          // If all decimals were zeros, remove ".".
-    {
-      *p = '\0';
-    }
+    return;
   }
+
+  int count = n;          // Adjust for more or less decimals.
+
+  while (count >= 0)      // Maximum decimals allowed.
+  {
+    count--;
+
+    if (*p == '\0')       // If there's less than desired.
+    {
+      break;
+    }
+
+    p++;                  // Next character.
+  }
+
+  *p-- = '\0';            // Truncate string.
+
+  while (*p == '0')       // Remove trailing zeros.
+  {
+    *p-- = '\0';
+  }
+
+  if (*p == '.')          // If all decimals were zeros, remove ".".
+  {
+    *p = '\0';
+  }
+
 }
 
 char* String_fromDouble_old(char* str, double value, unsigned int maxDigits)
@@ -300,7 +304,7 @@ char* String_fromDouble_old(char* str, double value, unsigned int maxDigits)
 char* String_fromDouble(char* str, double value, unsigned int maxDigits)
 {
 #if defined (_MSC_VER)
-  return String_fromDouble_old(str, value, maxDigits);
+  //return String_fromDouble_old(str, value, maxDigits);
 #endif
 
   // We can't use this, since the radix character (.) depends on the locale.
@@ -309,9 +313,21 @@ char* String_fromDouble(char* str, double value, unsigned int maxDigits)
   int decpt, sign;
 
 #if defined (_MSC_VER)
-  _fcvt_s(str, 64, value, maxDigits, &decpt, &sign);
+  int err = _fcvt_s(str, 64, value, maxDigits, &decpt, &sign);
+
+  if (err != 0)
+  {
+    RLOG(1, "_fcvt_s failed with error code %d (\"%s\")", err, strerror(err));
+    return str;
+  }
 #else
-  fcvt_r(value, maxDigits, &decpt, &sign, str, 64);
+  int err = fcvt_r(value, maxDigits, &decpt, &sign, str, 64);
+
+  if (err != 0)
+  {
+    RLOG(1, "fcvt_r failed with error code %d", err);
+    return str;
+  }
 #endif
 
   if (decpt <= 0)
