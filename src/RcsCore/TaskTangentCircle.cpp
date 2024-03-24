@@ -87,7 +87,7 @@ void TaskTangentCircle::computeX(double* x) const
 {
   const RcsBody* ef = getEffector();
   const RcsBody* refBody = getRefBody();
-  const RcsBody* refFrame = getRefFrame();
+  //  const RcsBody* refFrame = getRefFrame();
 
   // Transform effector into refBdy frame: A_ER from (R)ef-body to (E)ffector
   HTr A_ER;
