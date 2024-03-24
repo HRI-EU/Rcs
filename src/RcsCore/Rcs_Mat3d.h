@@ -46,6 +46,7 @@ extern "C" {
  * \defgroup RcsMat3dFunctions Mat3d: 3-dimensional matrix functions
  */
 
+#define MAT3D_CAST (double(*)[3])
 
 /*! \ingroup RcsMat3dFunctions
  *  \brief Sets the matrix to the identity matrix.
