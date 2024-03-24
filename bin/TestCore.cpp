@@ -41,9 +41,11 @@
 #include <Rcs_cmdLine.h>
 #include <Rcs_mesh.h>
 #include <Rcs_basicMath.h>
+#include <URDFGenerator.h>
 
 #include <SegFaultHandler.h>
 
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <stdio.h>
@@ -76,10 +78,134 @@ static void quit(int /*sig*/)
 /******************************************************************************
  *
  *****************************************************************************/
+static bool test_urdf_nullptr()
+{
+  RcsGraph* graph = nullptr;
+  Rcs::URDFGenerator urdf(graph);
+  if (urdf.toString() == "NULL")
+  {
+    return true;
+  }
+
+  return false;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool test_urdf_generation()
+{
+  bool success = true;
+
+  // 1 level
+  Rcs::URDFElement ele1("test");
+  std::string targetStr1 = "<test/>";
+  success &= (targetStr1 == ele1.toString());
+  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i", ele1.toString().c_str(), targetStr1.c_str(), (targetStr1 == ele1.toString()));
+
+  // 1 level with multiple Attributes
+  Rcs::URDFElement ele2("test");
+  ele2.addAttribute("attr1", "value");
+  ele2.addAttribute("attr2", "value");
+  std::string targetStr2 = "<test attr1=\"value\" attr2=\"value\"/>";
+  success &= (targetStr2 == ele2.toString());
+  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i", ele2.toString().c_str(), targetStr2.c_str(), (targetStr2 == ele2.toString()));
+
+  // 1 level with 1 Attribute
+  Rcs::URDFElement ele3("test");
+  ele3.addAttribute("tag", "value");
+  std::string targetStr3 = "<test tag=\"value\"/>";
+  success &= (targetStr3 == ele3.toString());
+  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i", ele3.toString().c_str(), targetStr3.c_str(), (targetStr3 == ele3.toString()));
+
+  // 2 level
+  auto outer = std::unique_ptr<Rcs::URDFElement>(new Rcs::URDFElement("outer"));
+  auto inner = std::unique_ptr<Rcs::URDFElement>(new Rcs::URDFElement("inner"));
+  outer->addSubElement(std::move(inner));
+  std::string targetStr4 = "<outer>\n  <inner/>\n</outer>";
+  success &= (targetStr4 == outer->toString());
+  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i", outer->toString().c_str(), targetStr4.c_str(), (targetStr4 == outer->toString()));
+
+  // 2 level with Attributes
+  auto outer1 = std::unique_ptr<Rcs::URDFElement>(new Rcs::URDFElement("outer1"));
+  outer1->addAttribute("testAttr", "value");
+  auto inner1 = std::unique_ptr<Rcs::URDFElement>(new Rcs::URDFElement("inner1"));
+  inner1->addAttribute("testAttr", "value");
+  outer1->addSubElement(std::move(inner1));
+  std::string targetStr5 = "<outer1 testAttr=\"value\">\n  <inner1 testAttr=\"value\"/>\n</outer1>";
+  success &= (targetStr5 == outer1->toString());
+  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i", outer1->toString().c_str(), targetStr5.c_str(), (targetStr5 == outer1->toString()));
+
+  // 3 level with Attributes
+  auto level_1 = std::unique_ptr<Rcs::URDFElement>(new Rcs::URDFElement("level_1"));
+  auto level_2 = std::unique_ptr<Rcs::URDFElement>(new Rcs::URDFElement("level_2"));
+  auto level_3 = std::unique_ptr<Rcs::URDFElement>(new Rcs::URDFElement("level_3"));
+  level_1->addAttribute("attr", "value");
+  level_2->addAttribute("attr", "value");
+  level_3->addAttribute("attr", "value");
+
+  level_2->addSubElement(std::move(level_3));
+  level_1->addSubElement(std::move(level_2));
+  std::string targetStr6 = "<level_1 attr=\"value\">\n  <level_2 attr=\"value\">\n    <level_3 attr=\"value\"/>\n  </level_2>\n</level_1>";
+  success &= (targetStr6 == level_1->toString());
+  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i", level_1->toString().c_str(), targetStr6.c_str(), (targetStr6 == level_1->toString()));
+
+  return success;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+static bool test_urdf_file()
+{
+  Rcs::CmdLineParser argP;
+  std::string xmlFileName = "cPlanarArm7D.xml", directory = "config/xml/Examples", outputFile = "test.urdf";
+  int withFloatingJoints = 0;
+  argP.getArgument("-f", &xmlFileName, "RcsGraph's configuration file name");
+  argP.getArgument("-dir", &directory, "Configuration file directory");
+  argP.getArgument("-out", &outputFile, "output file name of generated URDF file, without file extension");
+  argP.getArgument("-fj", &withFloatingJoints, "Rcs rigid body joints will be exported as URDF floating joints");
+
+  Rcs_addResourcePath(directory.c_str());
+
+  RcsGraph* graph = RcsGraph_create(xmlFileName.c_str());
+  if (!graph)
+  {
+    RFATAL("graph is empty.");
+    return false;
+  }
+
+  Rcs::URDFGenerator urdf(graph);
+  if (withFloatingJoints > 0)
+  {
+    urdf.setFloatingJoints(true);
+  }
+
+  if (!urdf.toString().empty())
+  {
+    std::ofstream output(outputFile);
+    if (output.is_open())
+    {
+      output << urdf.toString() << std::endl;
+      return true;
+    }
+    else
+    {
+      RLOG_CPP(1, "can not write urdf to file " << outputFile);
+      return false;
+    }
+  }
+
+  return false;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
 static bool testFuzzyStringMatching()
 {
   Rcs::CmdLineParser argP;
-  std::string w1, w2;
+  std::string w1 = "Hallo", w2 = "Holla";
   argP.getArgument("-w1", &w1, "String 1 (default is %s)", w1.c_str());
   argP.getArgument("-w2", &w2, "String 2 (default is %s)", w2.c_str());
 
@@ -426,7 +552,7 @@ static bool test_localeFreeParsing()
 
     if (!STREQ(sir, "-12345.124"))
     {
-      RLOG(3, "Failed to convert number - -12345.124 != %f", num);
+      RLOG(3, "Failed to convert number - -12345.124 != %s", sir);
       return false;
     }
   }
@@ -541,6 +667,11 @@ static bool testMeshConversion()
   argP.getArgument("-eps", &eps, "Distance below which vertices are considered"
                    " duplicate (default is %f)", eps);
   bool compress = argP.hasArgument("-compress", "Remove duplicate vertices");
+
+  if (inFile.empty())
+  {
+    return true;
+  }
 
   RcsMeshData* inMesh = RcsMesh_createFromFile(inFile.c_str());
 
@@ -673,6 +804,9 @@ static bool testMode(int mode, int argc, char** argv)
       fprintf(stderr, "\t\t11  Test resource path functions\n");
       fprintf(stderr, "\t\t12  Test mesh conversion\n");
       fprintf(stderr, "\t\t13  Test fuzzy string matching\n");
+      fprintf(stderr, "\t\t14  Test URDF reading from NULL pointer\n");
+      fprintf(stderr, "\t\t15  Test URDF generation\n");
+      fprintf(stderr, "\t\t16  Test URDF from file\n");
       fprintf(stderr, "\n\nResource path:\n");
       Rcs_printResourcePath();
       break;
@@ -800,6 +934,24 @@ static bool testMode(int mode, int argc, char** argv)
       break;
     }
 
+    case 14:
+    {
+      success = test_urdf_nullptr();
+      break;
+    }
+
+    case 15:
+    {
+      success = test_urdf_generation();
+      break;
+    }
+
+    case 16:
+    {
+      success = test_urdf_file();
+      break;
+    }
+
     default:
     {
       RMSG("there is no mode %d", mode);
@@ -828,7 +980,7 @@ int main(int argc, char** argv)
 
   if (mode == -1)
   {
-    for (int i = 1; i <= 11; ++i)
+    for (int i = 1; i <= 16; ++i)
     {
       bool success_i = testMode(i, argc, argv);
       if (!success_i)
@@ -837,7 +989,7 @@ int main(int argc, char** argv)
       }
 
       success = success_i && success;
-      RLOG(0, "%d: %s", i, success ? "SUCCESS" : "FAIL");
+      RLOG(0, "%d: %s", i, success_i ? "SUCCESS" : "FAIL");
     }
   }
   else

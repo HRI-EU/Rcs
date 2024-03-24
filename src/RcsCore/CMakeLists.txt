@@ -143,6 +143,9 @@ Rcs_octree.cpp
 ExampleBase.cpp
 ExampleFactory.cpp
 IkSolverQPOA.cpp
+URDFAttributes.cpp
+URDFElement.cpp
+URDFGenerator.cpp
 )
 
 IF(WIN32)
