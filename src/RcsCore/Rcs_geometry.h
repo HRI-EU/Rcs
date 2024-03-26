@@ -61,7 +61,7 @@ extern "C" {
 ///@{
 
 /*! \ingroup RcsBasicMathFunctions
- *  \brief Returns the distance and closest points between a point and a 
+ *  \brief Returns the distance and closest points between a point and a
  *         polygon in 2D. The polygon does not need to be convex.
  *  \param[in]  point      Query Point
  *  \param[in]  polygon    Polygon vertices in ordered counter-clockwise. The
@@ -78,10 +78,10 @@ extern "C" {
  *          if inside.
  */
 double Math_distPointPolygon2D(const double point[2],
-                                     double polygon[][2],
-                                     unsigned int nVertices,
-                                     double cpPoly[2],
-                                     double nPoly[2]);
+                               double polygon[][2],
+                               unsigned int nVertices,
+                               double cpPoly[2],
+                               double nPoly[2]);
 
 /*! \ingroup RcsBasicMathFunctions
  *  \brief Checks if a given 2D polygon is valid. The function checks if the

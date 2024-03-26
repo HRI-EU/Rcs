@@ -261,10 +261,10 @@ bool Math_checkPolygon2D(double polygon[][2], unsigned int nVertices)
  *
  ******************************************************************************/
 double Math_distPointPolygon2D(const double pt[2],
-                                     double poly[][2],
-                                     unsigned int nVertices,
-                                     double cpPoly[2],
-                                     double nPoly[2])
+                               double poly[][2],
+                               unsigned int nVertices,
+                               double cpPoly[2],
+                               double nPoly[2])
 {
   RCHECK_MSG(nVertices>0, "A polygon needs more than 0 vertices");
 
@@ -285,9 +285,9 @@ double Math_distPointPolygon2D(const double pt[2],
 
       // If the points coincide, we set the normal to [0 1].
       if (len == 0.0)
-    {
-      nPoly[0] = 0.0;
-      nPoly[1] = 1.0;
+      {
+        nPoly[0] = 0.0;
+        nPoly[1] = 1.0;
       }
     }
 

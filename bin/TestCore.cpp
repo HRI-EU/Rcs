@@ -101,7 +101,8 @@ static bool test_urdf_generation()
   Rcs::URDFElement ele1("test");
   std::string targetStr1 = "<test/>";
   success &= (targetStr1 == ele1.toString());
-  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i", ele1.toString().c_str(), targetStr1.c_str(), (targetStr1 == ele1.toString()));
+  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i",
+       ele1.toString().c_str(), targetStr1.c_str(), (targetStr1 == ele1.toString()));
 
   // 1 level with multiple Attributes
   Rcs::URDFElement ele2("test");
@@ -109,14 +110,16 @@ static bool test_urdf_generation()
   ele2.addAttribute("attr2", "value");
   std::string targetStr2 = "<test attr1=\"value\" attr2=\"value\"/>";
   success &= (targetStr2 == ele2.toString());
-  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i", ele2.toString().c_str(), targetStr2.c_str(), (targetStr2 == ele2.toString()));
+  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i",
+       ele2.toString().c_str(), targetStr2.c_str(), (targetStr2 == ele2.toString()));
 
   // 1 level with 1 Attribute
   Rcs::URDFElement ele3("test");
   ele3.addAttribute("tag", "value");
   std::string targetStr3 = "<test tag=\"value\"/>";
   success &= (targetStr3 == ele3.toString());
-  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i", ele3.toString().c_str(), targetStr3.c_str(), (targetStr3 == ele3.toString()));
+  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i",
+       ele3.toString().c_str(), targetStr3.c_str(), (targetStr3 == ele3.toString()));
 
   // 2 level
   auto outer = std::unique_ptr<Rcs::URDFElement>(new Rcs::URDFElement("outer"));
@@ -124,7 +127,8 @@ static bool test_urdf_generation()
   outer->addSubElement(std::move(inner));
   std::string targetStr4 = "<outer>\n  <inner/>\n</outer>";
   success &= (targetStr4 == outer->toString());
-  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i", outer->toString().c_str(), targetStr4.c_str(), (targetStr4 == outer->toString()));
+  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i",
+       outer->toString().c_str(), targetStr4.c_str(), (targetStr4 == outer->toString()));
 
   // 2 level with Attributes
   auto outer1 = std::unique_ptr<Rcs::URDFElement>(new Rcs::URDFElement("outer1"));
@@ -134,7 +138,8 @@ static bool test_urdf_generation()
   outer1->addSubElement(std::move(inner1));
   std::string targetStr5 = "<outer1 testAttr=\"value\">\n  <inner1 testAttr=\"value\"/>\n</outer1>";
   success &= (targetStr5 == outer1->toString());
-  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i", outer1->toString().c_str(), targetStr5.c_str(), (targetStr5 == outer1->toString()));
+  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i",
+       outer1->toString().c_str(), targetStr5.c_str(), (targetStr5 == outer1->toString()));
 
   // 3 level with Attributes
   auto level_1 = std::unique_ptr<Rcs::URDFElement>(new Rcs::URDFElement("level_1"));
@@ -148,7 +153,8 @@ static bool test_urdf_generation()
   level_1->addSubElement(std::move(level_2));
   std::string targetStr6 = "<level_1 attr=\"value\">\n  <level_2 attr=\"value\">\n    <level_3 attr=\"value\"/>\n  </level_2>\n</level_1>";
   success &= (targetStr6 == level_1->toString());
-  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i", level_1->toString().c_str(), targetStr6.c_str(), (targetStr6 == level_1->toString()));
+  RLOG(1, "\ntestStr=%s, \ntargetStr=%s, \nresult=%i",
+       level_1->toString().c_str(), targetStr6.c_str(), (targetStr6 == level_1->toString()));
 
   return success;
 }

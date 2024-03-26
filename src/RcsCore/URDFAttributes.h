@@ -30,8 +30,8 @@
 
 *******************************************************************************/
 
-#ifndef RCS_URDFATTRIBUTE_H
-#define RCS_URDFATTRIBUTE_H
+#ifndef RCS_URDFATTRIBUTES_H
+#define RCS_URDFATTRIBUTES_H
 
 #include <map>
 #include <string>
@@ -53,4 +53,4 @@ private:
 };
 }
 
-#endif // URDFATTRIBUTE_H
+#endif // URDFATTRIBUTES_H

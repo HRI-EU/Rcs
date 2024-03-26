@@ -335,7 +335,7 @@ void MatNd_printCommentDigits(const char* text,
 
   if (digits>0)
   {
-  snprintf(formatStr, 16, "%%+5.%df ", digits);
+    snprintf(formatStr, 16, "%%+5.%df ", digits);
   }
   else
   {
