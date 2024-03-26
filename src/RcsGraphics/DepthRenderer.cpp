@@ -77,9 +77,12 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
   this->rootNode = new osg::Group;
   setSceneData(rootNode.get());
 
-  // Create image for holding the depth values
+  // Create image for holding the depth and color values
   this->zImage = new osg::Image;
   zImage->allocateImage(width, height, 1, GL_DEPTH_COMPONENT, GL_FLOAT);
+
+  this->rgbImage = new osg::Image;
+  rgbImage->allocateImage(width, height, 1, GL_RGBA, GL_FLOAT);
 
   // Create graphics context with pixel settings
   osg::ref_ptr<osg::GraphicsContext::Traits> traits;
@@ -96,8 +99,8 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
   osg::ref_ptr<osg::GraphicsContext> gc;
   gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
-  // Create depth camera and add as slave to the viewer. It shares the main
-  // camera's view and propjection matrices
+  // Create depth and rgb camera and add as slave to the viewer. It shares
+  // the main camera's view and propjection matrices
   this->depthCam = new osg::Camera;
   depthCam->setGraphicsContext(gc.get());
   depthCam->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
@@ -105,6 +108,14 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
   depthCam->attach(osg::Camera::DEPTH_BUFFER, zImage.get());
   depthCam->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
   addSlave(depthCam.get());
+
+  this->rgbCam = new osg::Camera;
+  rgbCam->setGraphicsContext(gc.get());
+  rgbCam->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
+  rgbCam->setViewport(new osg::Viewport(0, 0, width, height));
+  rgbCam->attach(osg::Camera::COLOR_BUFFER, rgbImage.get());
+  rgbCam->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
+  addSlave(rgbCam.get());
 
   getCamera()->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
 
@@ -335,6 +346,32 @@ void DepthRenderer::frame(double simulationTime)
     depthImage[screen_y][screen_x] = -world_coord[2];
   }
 
+
+
+
+  colorImage.resize(height);
+  for (unsigned int i = 0; i < height; ++i)
+  {
+    colorImage[i].resize(width);
+  }
+
+  float* colorData = (float*) rgbImage->data();
+
+  for (unsigned int i=0; i<n; ++i)
+  {
+    const float data = colorData[i];
+
+    // screen to world coordinate (but we respect that the point cloud
+    // y-direction is downward while in OpenGL y points upward)
+    // also the correct point index is calculated this way
+    const unsigned int screen_x = i % width;
+    const unsigned int screen_y = height - 1 - (i / width);
+
+    colorImage[screen_y][screen_x] = data;
+  }
+
+  // osgDB::writeImageFile(*rgbImage.get(),"color.bmp");
+  // osgDB::writeImageFile(*zImage.get(),"depth.bmp");
 }
 
 /*******************************************************************************
@@ -343,6 +380,14 @@ void DepthRenderer::frame(double simulationTime)
 const std::vector<std::vector<float>>& DepthRenderer::getDepthImageRef() const
 {
   return this->depthImage;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+const std::vector<std::vector<float>>& DepthRenderer::getRGBImageRef() const
+{
+  return this->colorImage;
 }
 
 /*******************************************************************************

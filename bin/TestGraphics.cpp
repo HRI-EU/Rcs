@@ -1139,11 +1139,14 @@ void testDepthRenderer()
   zRenderer->setCameraTransform(HTr_identity());
   zRenderer->addNode(gn.get());
 
-  double* data = new double[width*height];
+  double* zData = new double[width*height];
+  double* cData = new double[width*height];
   std::vector<Rcs::PPSGui::Entry> pps;
-  pps.push_back(Rcs::PPSGui::Entry("Depth image", width, height, data, 0.1));
+  pps.push_back(Rcs::PPSGui::Entry("Depth image", width, height, zData, 0.1));
+  pps.push_back(Rcs::PPSGui::Entry("RGB image", width, height, cData, 1.0));
   Rcs::PPSGui::create(pps);
   const std::vector<std::vector<float>>& zImage = zRenderer->getDepthImageRef();
+  const std::vector<std::vector<float>>& rgbImage = zRenderer->getRGBImageRef();
 
   Rcs::MatNdWidget::create(graph->q, -10.0, 10.0, "q");
 
@@ -1183,7 +1186,14 @@ void testDepthRenderer()
     {
       for (size_t j=0; j<width; ++j)
       {
-        data[i*width+j] = zImage[i][j];
+        zData[i*width+j] = zImage[i][j];
+        cData[i*width+j] = rgbImage[i][j];
+      }
+
+      REXEC(1)
+      {
+        MatNd cimg = MatNd_fromPtr(width, height, cData);
+        MatNd_printCommentDigits("color image", &cimg, 3);
       }
     }
 

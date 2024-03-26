@@ -102,6 +102,8 @@ public:
 
   const std::vector<std::vector<float>>& getDepthImageRef() const;
 
+  const std::vector<std::vector<float>>& getRGBImageRef() const;
+
   /*! \brief Writes the depth image to a file with the given file name.
    *         Values are space-separated.
    */
@@ -122,10 +124,13 @@ private:
 
   osg::ref_ptr<osg::Group> rootNode;
   osg::ref_ptr<osg::Image> zImage;
+  osg::ref_ptr<osg::Image> rgbImage;
   osg::ref_ptr<osg::Camera> depthCam;
+  osg::ref_ptr<osg::Camera> rgbCam;
   unsigned int width;
   unsigned int height;
   std::vector<std::vector<float>> depthImage;
+  std::vector<std::vector<float>> colorImage;
 };
 
 }
