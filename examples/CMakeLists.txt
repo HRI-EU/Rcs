@@ -80,7 +80,12 @@ IF(NOT HEADLESS_BUILD)
     )
 
   # Install the binaries
-  INSTALL(TARGETS ExampleRunner ExampleHighGui ExamplePrioritizedIK ExampleForwardKinematics RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
-  INSTALL(TARGETS RcsExamples EXPORT RcsExport DESTINATION lib)
-
+  INSTALL(TARGETS ExampleRunner ExampleHighGui ExamplePrioritizedIK ExampleForwardKinematics 
+          RUNTIME DESTINATION bin 
+          LIBRARY DESTINATION lib)
+  #INSTALL(TARGETS RcsExamples EXPORT RcsExport DESTINATION lib)
+  INSTALL(TARGETS RcsExamples EXPORT RcsExport
+          RUNTIME DESTINATION bin
+          LIBRARY DESTINATION lib
+          ARCHIVE DESTINATION lib/Rcs)
 ENDIF(NOT HEADLESS_BUILD)

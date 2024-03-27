@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -74,6 +74,7 @@ bool Rcs_hasWM5()
  * on the line into it. The function returns the distance between point and
  * line.
  ******************************************************************************/
+#if 0
 static inline double Rcs_distancePointLine(const double pt[3],
                                            const double linePt1[3],
                                            const double linePt2[3],
@@ -108,7 +109,7 @@ static inline double Rcs_distancePointLine(const double pt[3],
 
   return d;
 }
-
+#endif
 /*******************************************************************************
  * Computes the distance between a point and a line segment. The line segment
  * is defined by the points p1 and p2. Vectors cp0 and cp1 hold the closest
@@ -180,9 +181,9 @@ static double Rcs_distancePointCircle(const double p[3],
   Vec3 vcp0 = dist.GetClosestPoint0();
   Vec3 vcp1 = dist.GetClosestPoint1();
 
-  if (vcp1[0] == Wm5::Math<double>::MAX_REAL ||
-      vcp1[1] == Wm5::Math<double>::MAX_REAL ||
-      vcp1[2] == Wm5::Math<double>::MAX_REAL)
+  if (vcp1[0] == Wm5::Mathd::MAX_REAL ||
+      vcp1[1] == Wm5::Mathd::MAX_REAL ||
+      vcp1[2] == Wm5::Mathd::MAX_REAL)
   {
     double pt[3] = {radius, 0.0, 0.0};
     double pt_t[3];
@@ -347,7 +348,7 @@ static double Rcs_distanceLinesegCircle(const double linePt0[3],
   poly[3] = a1sqr*twoC1 + twoA0A1*c2;
   poly[4] = a1sqr*c2;
 
-  Wm5::PolynomialRootsd polyroots(Wm5::Math<double>::ZERO_TOLERANCE);
+  Wm5::PolynomialRootsd polyroots(Wm5::Mathd::ZERO_TOLERANCE);
   polyroots.FindB(poly, 6);
   int count = polyroots.GetCount();
   const double* roots = polyroots.GetRoots();
@@ -375,9 +376,9 @@ static double Rcs_distanceLinesegCircle(const double linePt0[3],
   // closest points on the torus, vcp1 will then be set to
   // (MAX_REAL, MAX_REAL, MAX_REAL)
   // we have to handle that (we just choose a specific point on the torus)
-  if (cp1_[0] == Wm5::Math<double>::MAX_REAL ||
-      cp1_[1] == Wm5::Math<double>::MAX_REAL ||
-      cp1_[2] == Wm5::Math<double>::MAX_REAL)
+  if (cp1_[0] == Wm5::Mathd::MAX_REAL ||
+      cp1_[1] == Wm5::Mathd::MAX_REAL ||
+      cp1_[2] == Wm5::Mathd::MAX_REAL)
   {
     double pt[3] = {radius, 0.0, 0.0};
     Vec3d_transform(cp1_, A_c, pt);
@@ -1639,7 +1640,7 @@ double Rcs_distancePointSqrtParabolaSeg2D(const double p[2],
   poly[1] = sqr(coeff[1]/2.-p[1])*coeff[1] + (coeff[2]+1)*(coeff[1]-2.*p[1])*coeff[0] - coeff[2]*coeff[1]*sqr(p[0]);
   poly[0] = sqr(coeff[1]/2.-p[1])*coeff[0] - sqr(coeff[1])/4.*sqr(p[0]);
 
-  Wm5::PolynomialRootsd polyroots(Wm5::Math<double>::ZERO_TOLERANCE);
+  Wm5::PolynomialRootsd polyroots(Wm5::Mathd::ZERO_TOLERANCE);
   //  polyroots.FindB(poly, 6);
   polyroots.FindA(poly[0], poly[1], poly[2], poly[3], poly[4]);
   int count = polyroots.GetCount();
@@ -1865,7 +1866,7 @@ static double Rcs_distanceLinesegCylinder(const double p1[3],
     poly[1] = lineCoeffD[1];
     poly[0] = lineCoeffD[0] - sqr(sideCoeff);
 
-    Wm5::PolynomialRootsd polyroots(Wm5::Math<double>::ZERO_TOLERANCE);
+    Wm5::PolynomialRootsd polyroots(Wm5::Mathd::ZERO_TOLERANCE);
     polyroots.FindA(poly[0], poly[1], poly[2]);
     int count = polyroots.GetCount();
     const double* roots = polyroots.GetRoots();
@@ -1964,7 +1965,7 @@ static double Rcs_distanceLinesegCylinder(const double p1[3],
       poly[1] = lineCoeffD[1];
       poly[0] = lineCoeffD[0] - sqr(cp0_2D[0]);
 
-      Wm5::PolynomialRootsd polyroots(Wm5::Math<double>::ZERO_TOLERANCE);
+      Wm5::PolynomialRootsd polyroots(Wm5::Mathd::ZERO_TOLERANCE);
       polyroots.FindA(poly[0], poly[1], poly[2]);
       int count = polyroots.GetCount();
       const double* roots = polyroots.GetRoots();
@@ -2139,7 +2140,7 @@ static double Rcs_distanceLinesegCone(const double p1[3],
       poly[1] = lineCoeffZ[1] - 2.*sideCoeffZ[1]*sideCoeffZ[0];
       poly[0] = lineCoeffZ[0] - sqr(sideCoeffZ[0]);
 
-      Wm5::PolynomialRootsd polyroots(Wm5::Math<double>::ZERO_TOLERANCE);
+      Wm5::PolynomialRootsd polyroots(Wm5::Mathd::ZERO_TOLERANCE);
       polyroots.FindA(poly[0], poly[1], poly[2]);
       int count = polyroots.GetCount();
       const double* roots = polyroots.GetRoots();
@@ -2178,7 +2179,7 @@ static double Rcs_distanceLinesegCone(const double p1[3],
         poly[1] = lineCoeffZ[2]*lineCoeffZ[1] - lineCoeffZ[1]*sqr(sideCoeffZ[1]);
         poly[0] = sqr(lineCoeffZ[1])/4. - lineCoeffZ[0]*sqr(sideCoeffZ[1]);
 
-        Wm5::PolynomialRootsd polyroots(Wm5::Math<double>::ZERO_TOLERANCE);
+        Wm5::PolynomialRootsd polyroots(Wm5::Mathd::ZERO_TOLERANCE);
         polyroots.FindA(poly[0], poly[1], poly[2]);
         int count = polyroots.GetCount();
         const double* roots = polyroots.GetRoots();
@@ -2222,7 +2223,7 @@ static double Rcs_distanceLinesegCone(const double p1[3],
       poly[1] = lineCoeffD[1];
       poly[0] = lineCoeffD[0] - sqr(cp0_2D[0]);
 
-      Wm5::PolynomialRootsd polyroots(Wm5::Math<double>::ZERO_TOLERANCE);
+      Wm5::PolynomialRootsd polyroots(Wm5::Mathd::ZERO_TOLERANCE);
       polyroots.FindA(poly[0], poly[1], poly[2]);
       int count = polyroots.GetCount();
       const double* roots = polyroots.GetRoots();
