@@ -3867,7 +3867,7 @@ void RcsGraph_setShapesResizeable(RcsGraph* self, bool resizeable)
   {
     RCSBODY_TRAVERSE_SHAPES(BODY)
     {
-      SHAPE->resizeable = resizeable;
+      RcsShape_setComputeType(SHAPE, RCSSHAPE_COMPUTE_RESIZEABLE, resizeable);
     }
   }
 }
@@ -3890,7 +3890,7 @@ void RcsGraph_copyResizeableShapes(RcsGraph* dst, const RcsGraph* src,
     {
       RcsShape* shapeDst = &bDst->shapes[i];
 
-      if (!shapeDst->resizeable)
+      if (!RcsShape_isOfComputeType(shapeDst, RCSSHAPE_COMPUTE_RESIZEABLE))
       {
         continue;
       }
@@ -4157,15 +4157,17 @@ void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src)
       // Block-copy of src shape over dst. We make a temporary copy of the
       // mesh pointer and revert it after the memcpy. It is currently the
       // only pointer in the RcsShape structure.
+      const RcsShape* shSrc = &bSrc->shapes[i];
+      RcsShape* shDst = &bDst->shapes[i];
       RcsMeshData* dstMesh = bDst->shapes[i].mesh;
-      memcpy(&bDst->shapes[i], &bSrc->shapes[i], sizeof(RcsShape));
-      bDst->shapes[i].mesh = dstMesh;
+      memcpy(shDst, shSrc, sizeof(RcsShape));
+      shDst->mesh = dstMesh;
 
       // In case we have a resizeable shape of mesh type, we also make a deep
       // copy of all vertices and faces. This is needed for instance for soft
       // meshes during physics simulation.
-      if ((dstMesh) && (bDst->shapes[i].type==RCSSHAPE_MESH) &&
-          (bSrc->shapes[i].mesh) && (bDst->shapes[i].resizeable))
+      if ((dstMesh) && (shDst->type==RCSSHAPE_MESH) && (shSrc->mesh) &&
+          (RcsShape_isOfComputeType(shDst, RCSSHAPE_COMPUTE_RESIZEABLE)))
       {
         RcsMesh_copy(dstMesh, bSrc->shapes[i].mesh);
       }

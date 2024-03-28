@@ -552,8 +552,8 @@ void BulletSoftSimulation::convertShapesToMesh()
         snprintf(SHAPE->meshFile, RCS_MAX_FILENAMELEN, "%s",
                  RcsShape_name(SHAPE->type));
         SHAPE->type = RCSSHAPE_MESH;
-        SHAPE->computeType = RCSSHAPE_COMPUTE_SOFTPHYSICS;
-        SHAPE->resizeable = true;
+        SHAPE->computeType |= RCSSHAPE_COMPUTE_SOFTPHYSICS;
+        SHAPE->computeType |= RCSSHAPE_COMPUTE_RESIZEABLE;
       }
       else
       {

@@ -692,7 +692,8 @@ void RcsShape_fprint(FILE* out, const RcsShape* s)
   fprintf(out, "\n");
 
   // Resizeable
-  fprintf(out, "\tResizeable: %s\n", s->resizeable ? "true" : "false");
+  bool resizeable = RcsShape_isOfComputeType(s, RCSSHAPE_COMPUTE_RESIZEABLE);
+  fprintf(out, "\tResizeable: %s\n", resizeable ? "true" : "false");
 
   // File names
   fprintf(out, "\tmeshFile   : \"%s\"\n", s->meshFile);
@@ -860,7 +861,7 @@ int RcsShape_fprintXML(FILE* out, const RcsShape* self)
   }
 
   // Resizeable
-  if (self->resizeable)
+  if (RcsShape_isOfComputeType(self, RCSSHAPE_COMPUTE_RESIZEABLE))
   {
     fprintf(out, "resizeable=\"true\" ");
   }
@@ -1006,7 +1007,6 @@ bool RcsShape_initRandom(RcsShape* shape, int shapeType)
 
   // Allocate memory and set defaults
   shape->type = shapeType;
-  shape->resizeable = true;
   Vec3d_setRandom(shape->extents, 0.1, 0.3);
   Vec3d_setRandom(shape->A_CB.org, -0.1, 0.1);
   Mat3d_setRandomRotation(shape->A_CB.rot);
@@ -1019,6 +1019,7 @@ bool RcsShape_initRandom(RcsShape* shape, int shapeType)
   shape->computeType |= RCSSHAPE_COMPUTE_DISTANCE;
   shape->computeType |= RCSSHAPE_COMPUTE_PHYSICS;
   shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
+  shape->computeType |= RCSSHAPE_COMPUTE_RESIZEABLE;
 
   if (shapeType==RCSSHAPE_MESH)
   {
@@ -1054,7 +1055,7 @@ RcsShape* RcsShape_createFrameShape(double scale)
   Vec3d_setElementsTo(shape->scale3d, scale);
   shape->type = RCSSHAPE_REFFRAME;
   shape->computeType |= RCSSHAPE_COMPUTE_GRAPHICS;
-  shape->resizeable = false;
+  RcsShape_setComputeType(shape, RCSSHAPE_COMPUTE_RESIZEABLE, false);
   shape->extents[0] = 0.9;
   shape->extents[1] = 0.9;
   shape->extents[2] = 0.9;

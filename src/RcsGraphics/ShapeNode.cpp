@@ -160,7 +160,8 @@ static osg::ref_ptr<osg::Node> getOrCreateMeshNode(const RcsShape* shape,
   bool isScaled = (shape->scale3d[0]!=1.0) ||
                   (shape->scale3d[1]!=1.0) ||
                   (shape->scale3d[2]!=1.0);
-  isScaled |= shape->resizeable;
+  bool shResizeable = RcsShape_isOfComputeType(shape, RCSSHAPE_COMPUTE_RESIZEABLE);
+  isScaled |= shResizeable;
 
   if ((it!=_meshBuffer.end()) && (!isScaled))
   {
@@ -189,7 +190,7 @@ static osg::ref_ptr<osg::Node> getOrCreateMeshNode(const RcsShape* shape,
     osg::ref_ptr<Rcs::MeshNode> mn;
     mn = new Rcs::MeshNode(mesh);
     mn->setMaterial(shape->color);
-    if (meshFactoryEnabled && (!shape->resizeable))
+    if (meshFactoryEnabled && (!shResizeable))
     {
       _meshBufferMtx.lock();
       _meshBuffer[std::string(shape->meshFile)] = mn;
@@ -391,7 +392,8 @@ void ShapeNode::addShape(const RcsShape* shape, bool resizeable)
   osg::ref_ptr<osg::Geode> geode = new osg::Geode();
   const double* ext = shape->extents;
 
-  if (resizeable || shape->resizeable)
+  if (resizeable ||
+      RcsShape_isOfComputeType(shape,RCSSHAPE_COMPUTE_RESIZEABLE))
   {
     resizeable = true;
     hints->setDetailRatio(0.5);
@@ -415,7 +417,8 @@ void ShapeNode::addShape(const RcsShape* shape, bool resizeable)
   {
     double r = ext[0], length = ext[2];
     int nSeg = shapeUpdater.valid() ? 16 : 32;
-    osg::ref_ptr<osg::Group> cap = new CapsuleGeometry(r, length, resizeable, nSeg);
+    osg::ref_ptr<osg::Group> cap =
+      new CapsuleGeometry(r, length, resizeable, nSeg);
     setNodeMaterial(shape->color, cap.get());
     addChild(cap.get());
 

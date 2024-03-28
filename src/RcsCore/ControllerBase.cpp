@@ -167,12 +167,16 @@ bool ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
     else if (isXMLNodeName(node, "BroadPhase"))
     {
       this->broadphase = RcsBroadPhase_createFromXML(getGraph(), node);
-      RcsBroadPhase_updateBoundingVolumes(broadphase);
 
       if (!this->broadphase)
       {
         RLOG(1, "Failed to create broadphase model from xml");
       }
+      else
+      {
+        RcsBroadPhase_updateBoundingVolumes(broadphase);
+      }
+
     }
     else if (isXMLNodeName(node, "Graph"))
     {
@@ -253,16 +257,9 @@ ControllerBase& ControllerBase::operator= (const ControllerBase& copyFromMe)
     return *this;
   }
 
-  // Clean up memory
-  if (this->cMdl)
-  {
-    RcsCollisionModel_destroy(this->cMdl);
-  }
-
-  if (this->broadphase)
-  {
-    RcsBroadPhase_destroy(this->broadphase);
-  }
+  // Clean up memory. Destroy functions can deal with NULL pointers.
+  RcsCollisionModel_destroy(this->cMdl);
+  RcsBroadPhase_destroy(this->broadphase);
 
   for (size_t i = 0; i < this->tasks.size(); i++)
   {

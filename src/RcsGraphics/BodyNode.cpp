@@ -844,7 +844,8 @@ void BodyNode::updateDynamicMeshes()
 {
   RCSBODY_TRAVERSE_SHAPES(body())
   {
-    if ((!SHAPE->resizeable) || (!SHAPE->mesh))
+    if ((!RcsShape_isOfComputeType(SHAPE, RCSSHAPE_COMPUTE_RESIZEABLE)) ||
+        (!SHAPE->mesh))
     {
       continue;
     }

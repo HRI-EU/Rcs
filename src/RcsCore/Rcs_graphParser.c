@@ -650,8 +650,10 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   strcpy(shape->material, "default");
   getXMLNodePropertyStringN(node, "material", shape->material, RCS_MAX_NAMELEN);
 
-  shape->resizeable = false;
-  getXMLNodePropertyBoolString(node, "resizeable", &shape->resizeable);
+  bool resizeable = false;
+  getXMLNodePropertyBoolString(node, "resizeable", &resizeable);
+  RcsShape_setComputeType(shape, RCSSHAPE_COMPUTE_RESIZEABLE, resizeable);
+
   if (distance == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_DISTANCE;
@@ -670,7 +672,7 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   if (softPhysics == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_SOFTPHYSICS;
-    shape->resizeable = true;
+    shape->computeType |= RCSSHAPE_COMPUTE_RESIZEABLE;
   }
 
   if (depth == true)

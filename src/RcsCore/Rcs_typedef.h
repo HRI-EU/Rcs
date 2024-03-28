@@ -125,17 +125,18 @@ typedef enum
 
 typedef enum
 {
-  RCSSHAPE_COMPUTE_DISTANCE     = 1,   ///< Distance computation
-  RCSSHAPE_COMPUTE_PHYSICS      = 2,   ///< Physics simulation
-  RCSSHAPE_COMPUTE_GRAPHICS     = 4,   ///< Graphics visualization
-  RCSSHAPE_COMPUTE_CONTACT      = 8,   ///< Contact simulation
-  RCSSHAPE_COMPUTE_SOFTPHYSICS  = 16,  ///< Soft physics simulation
-  RCSSHAPE_COMPUTE_DEPTHBUFFER  = 32,  ///< Depth buffer simulation
-  RCSSHAPE_COMPUTE_ATTACHMENT   = 64,  ///< Spring damper connection
-  RCSSHAPE_COMPUTE_WELDPOS      = 128, ///< Kinematic position constraint
-  RCSSHAPE_COMPUTE_WELDORI      = 256, ///< Kinematic orientation constraint
-  RCSSHAPE_COMPUTE_MARKER       = 512, ///< Marker shapes like Vicon or Aruco
-  RCSSHAPE_COMPUTE_WIREFRAME    = 1024 ///< Wireframe visualization
+  RCSSHAPE_COMPUTE_DISTANCE     = 1,    ///< Distance computation
+  RCSSHAPE_COMPUTE_PHYSICS      = 2,    ///< Physics simulation
+  RCSSHAPE_COMPUTE_GRAPHICS     = 4,    ///< Graphics visualization
+  RCSSHAPE_COMPUTE_CONTACT      = 8,    ///< Contact simulation
+  RCSSHAPE_COMPUTE_SOFTPHYSICS  = 16,   ///< Soft physics simulation
+  RCSSHAPE_COMPUTE_DEPTHBUFFER  = 32,   ///< Depth buffer simulation
+  RCSSHAPE_COMPUTE_ATTACHMENT   = 64,   ///< Spring damper connection
+  RCSSHAPE_COMPUTE_WELDPOS      = 128,  ///< Kinematic position constraint
+  RCSSHAPE_COMPUTE_WELDORI      = 256,  ///< Kinematic orientation constraint
+  RCSSHAPE_COMPUTE_MARKER       = 512,  ///< Marker shapes like Vicon or Aruco
+  RCSSHAPE_COMPUTE_WIREFRAME    = 1024, ///< Wireframe visualization
+  RCSSHAPE_COMPUTE_RESIZEABLE   = 2048  ///< For visualization and copying
 
 } RCSSHAPE_COMPUTE_TYPE;
 
@@ -145,7 +146,6 @@ struct _RcsShape
   HTr A_CB;             ///< Relative transformation from body
   double extents[3];    ///< Geometrical parameters
   double scale3d[3];    ///< Scale factor for meshes (applied after parsing)
-  bool resizeable;      ///< For visualization and copying
   int computeType;      ///< Bitmask, see RCSSHAPE_COMPUTE_TYPE
 
   char meshFile[RCS_MAX_FILENAMELEN];    ///< Name of a mesh file (if any)
