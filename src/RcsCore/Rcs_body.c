@@ -420,6 +420,8 @@ void RcsBody_fprint(FILE* out, const RcsBody* b, const RcsGraph* graph)
   // Body name
   fprintf(out, "[RcsGraph_fprintBody():%d] \n\tBody \"%s\"\n",
           __LINE__, b->name);
+  fprintf(out, "\tbdyXmlName \"%s\"\n", b->bdyXmlName);
+  fprintf(out, "\tbdySuffix \"%s\"\n", b->bdySuffix);
 
   // Parent body name
   const RcsBody* parentBdy = RCSBODY_BY_ID(graph, b->parentId);
