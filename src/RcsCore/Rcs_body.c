@@ -1520,7 +1520,6 @@ RcsJoint* RcsBody_lastJointBeforeBody(const RcsGraph* graph,
   // If we found a joint, we traverse its successors up to the last one
   while (jnt->nextId!=-1)
   {
-    RCHECK_MSG(jnt->nextId<(int)graph->dof, "%d %d", jnt->nextId, graph->dof);
     jnt = &graph->joints[jnt->nextId];
   }
 

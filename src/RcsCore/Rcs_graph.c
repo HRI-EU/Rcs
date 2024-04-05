@@ -2334,6 +2334,31 @@ bool RcsGraph_check(const RcsGraph* self, int* nErrors_, int* nWarnings_)
       }
     }
 
+    if ((JNT->id<-1) ||(JNT->id>=(int) self->dof))
+    {
+      nErrors++;
+      RLOG(1, "Joint \"%s\" has id out of range: %d not in [-1 : %d]",
+           JNT->name, JNT->id, self->dof-1);
+    }
+    if ((JNT->prevId < -1) || (JNT->prevId >= (int)self->dof))
+    {
+      nErrors++;
+      RLOG(1, "Joint \"%s\" has prevId out of range: %d not in [-1 : %d]",
+           JNT->name, JNT->prevId, self->dof - 1);
+    }
+    if ((JNT->nextId < -1) || (JNT->nextId >= (int)self->dof))
+    {
+      nErrors++;
+      RLOG(1, "Joint \"%s\" has nextId out of range: %d not in [-1 : %d]",
+           JNT->name, JNT->nextId, self->dof - 1);
+    }
+    if ((JNT->coupledToId < -1) || (JNT->coupledToId >= (int)self->dof))
+    {
+      nErrors++;
+      RLOG(1, "Joint \"%s\" has coupledToId out of range: %d not in [-1 : %d]",
+           JNT->name, JNT->coupledToId, self->dof - 1);
+    }
+
   }
 
   if (numJoints != self->dof)

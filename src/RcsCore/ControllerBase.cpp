@@ -1394,7 +1394,7 @@ void ControllerBase::computeCollisionModel()
   RcsCollisionModel_compute(this->cMdl);
   t_np = Timer_getSystemTime() - t_np;
 
-  REXEC(6)
+  REXEC(8)
   {
     if (broadphase)
     {
@@ -1402,7 +1402,7 @@ void ControllerBase::computeCollisionModel()
            "Narrow phase took %.3f msec\nCompression is %.1f%%",
            cMdl->nPairs, nb, 1.0e3 * t_bp, 1.0e3 * t_np,
            100.0 - 100.0 * cMdl->nPairs / nb);
-      REXEC(4)
+      REXEC(9)
       {
         RcsCollisionModel_fprintCollisions(stdout, cMdl, broadphase->distanceThreshold);
       }

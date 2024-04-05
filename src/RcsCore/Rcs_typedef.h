@@ -271,13 +271,17 @@ struct _RcsGraph
 
 
 
-#define RCSJOINT_BY_ID(graph, id) ((id)==-1 ? NULL : &(graph)->joints[id])
-#define RCSJOINT_NAME_BY_ID(graph, id)  \
-  ((id)==-1 ? "NULL": (graph)->joints[id].name)
+#define RCSJOINT_BY_ID(graph, id) \
+  (((id)<=-1 || (id)>=(int)(graph)->dof) ? NULL : &(graph)->joints[id])
 
-#define RCSBODY_BY_ID(graph, id)  ((id)==-1 ? NULL : &(graph)->bodies[id])
+#define RCSJOINT_NAME_BY_ID(graph, id)  \
+  (((id)<=-1 || (id)>=(int)(graph)->dof) ? "NULL": (graph)->joints[id].name)
+
+#define RCSBODY_BY_ID(graph, id) \
+  (((id)<=-1 || (id)>=(int)(graph)->nBodies) ? NULL : &(graph)->bodies[id])
+
 #define RCSBODY_NAME_BY_ID(graph, id)  \
-  ((id)==-1 ? "NULL": (graph)->bodies[id].name)
+  (((id)<=-1 || (id)>=(int)(graph)->nBodies) ? "NULL": (graph)->bodies[id].name)
 
 #undef RCSGRAPH_FOREACH_SENSOR
 #define RCSGRAPH_FOREACH_SENSOR(graph)                                         \
