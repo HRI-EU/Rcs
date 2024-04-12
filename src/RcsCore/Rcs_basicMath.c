@@ -619,12 +619,12 @@ static int Math_findCubicRoots(double* roots,
   if (fabs(discriminant) < almostZero)
     //if (discriminant == 0.0)
   {
-    RLOGS(0, "Discriminant = 0: %g < %g, b=%g",
+    RLOGS(5, "Discriminant = 0: %g < %g, b=%g",
           fabs(discriminant), almostZero, b);
 
     if (p==0.0)   // triple root for z=0, only possible if p = q = 0
     {
-      RLOG(0, "Case A: p=%g", p);
+      RLOG(5, "Case A: p=%g", p);
       roots[0] = -a/3.0;
       roots[1] = roots[0];
       roots[2] = roots[0];
@@ -632,7 +632,7 @@ static int Math_findCubicRoots(double* roots,
     }
     else
     {
-      RLOG(0, "Case B: p=%g (should not be 0)", p);
+      RLOG(5, "Case B: p=%g (should not be 0)", p);
       roots[0] = 3.0*q/p - B/(3.0*A);
       roots[1] = -3.0*q/(2.0*p) - B/(3.0*A);
       roots[2] = roots[1];
@@ -642,7 +642,7 @@ static int Math_findCubicRoots(double* roots,
   // Discriminant < 0: Three real roots
   else if (discriminant < 0.0)
   {
-    RLOG(0, "Case C: discriminant=%g (<0)", discriminant);
+    RLOG(5, "Case C: discriminant=%g (<0)", discriminant);
     double term1 = 2.0*sqrt(-p/3.0);
     double term2 = Math_acos(-1.5*(q/p)*sqrt(-3.0/p))/3.0;
     double term3 = a/3.0;
@@ -654,7 +654,7 @@ static int Math_findCubicRoots(double* roots,
   // Discriminant > 0: Exactly one real root
   else
   {
-    RLOG(0, "Case D: discriminant=%g (>0)", discriminant);
+    RLOG(5, "Case D: discriminant=%g (>0)", discriminant);
     double sqrtDis = sqrt(discriminant);
     double u = cbrt(-0.5*q + sqrtDis);
     double v = cbrt(-0.5*q - sqrtDis);
