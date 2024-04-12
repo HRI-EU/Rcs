@@ -270,7 +270,7 @@ public:
    */
   double computeTrajectoryJerk(double t) const;
 
-  /*! \brief Not yet implemented.
+  /*! \brief Only implemented for two boundary conditions with 6 constraints.
    */
   double getMaxVelocity(double& t_vmax) const;
 

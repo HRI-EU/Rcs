@@ -1791,47 +1791,47 @@ double ViaPointSequence::duration() const
  ******************************************************************************/
 double ViaPointSequence::getMaxVelocity(double& t_vmax) const
 {
-  RFATAL("NIY");
-  return 0.0;
-  // RCHECK(this->viaDescr->m==2);
+  RCHECK_MSG(this->viaDescr->m == 2, "Currently only for 2 boundary constraints");
+  RCHECK_MSG(MatNd_get(viaDescr, 0, 4) == 7.0, "Currently only full constraints");
+  RCHECK_MSG(MatNd_get(viaDescr, 1, 4) == 7.0, "Currently only full constraints");
 
-  // // Acceleration polynomial: The roots of this polynomials correspond to the
-  // // extramals of the velocity.
-  // const unsigned int degree = 3;
-  // double coeff[degree+1], roots[degree+2];// 2 more elements for t0 and t1
-  // coeff[3] = 20.0*MatNd_get(p, 0, 0);
-  // coeff[2] = 12.0*MatNd_get(p, 1, 0);
-  // coeff[1] =  6.0*MatNd_get(p, 2, 0);
-  // coeff[0] =  2.0*MatNd_get(p, 3, 0);
+  // Acceleration polynomial: The roots of this polynomials correspond to the
+  // extramals of the velocity.
+  const unsigned int degree = 3;
+  double coeff[degree+1], roots[degree+2];// 2 more elements for t0 and t1
+  coeff[3] = 20.0*MatNd_get(p, 0, 0);
+  coeff[2] = 12.0*MatNd_get(p, 1, 0);
+  coeff[1] =  6.0*MatNd_get(p, 2, 0);
+  coeff[0] =  2.0*MatNd_get(p, 3, 0);
 
-  // // Find roots
-  // int nRoots = Math_findPolyRoots(roots, coeff, degree);
+  // Find roots
+  int nRoots = Math_findPolynomialRoots(roots, coeff, degree);
 
-  // // Add initial and final time in case polynomial is strictly monotonous
-  // // within [t0 ... t1]
-  // roots[nRoots] = t0();
-  // roots[nRoots+1] = t1();
+  // Add initial and final time in case polynomial is strictly monotonous
+  // within [t0 ... t1]
+  roots[nRoots] = t0();
+  roots[nRoots+1] = t1();
 
-  // double vmax = 0.0;
-  // t_vmax = t0();   // Otherwise uninitialized if velocity is constantly 0
+  double vmax = 0.0;
+  t_vmax = t0();   // Otherwise uninitialized if velocity is constantly 0
 
-  // // Go through all roots and the initial and final time point, and find the
-  // // maximum absolute value of the velocity.
-  // for (int i=0; i<nRoots+2; i++)
-  // {
-  //   // Only consider roots in the time interval of the polynomial
-  //   if ((roots[i]>=t0()) && (roots[i]<=t1()))
-  //   {
-  //     double v = computeTrajectoryVel(roots[i]);
-  //     if (fabs(v) > vmax)
-  //     {
-  //       vmax = fabs(v);
-  //       t_vmax = roots[i];
-  //     }
-  //   }
-  // }
+  // Go through all roots and the initial and final time point, and find the
+  // maximum absolute value of the velocity.
+  for (int i=0; i<nRoots+2; i++)
+  {
+    // Only consider roots in the time interval of the polynomial
+    if ((roots[i]>=t0()) && (roots[i]<=t1()))
+    {
+      double v = computeTrajectoryVel(roots[i]);
+      if (fabs(v) > vmax)
+      {
+        vmax = fabs(v);
+        t_vmax = roots[i];
+      }
+    }
+  }
 
-  // return vmax;
+  return vmax;
 }
 
 /*******************************************************************************
