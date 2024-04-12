@@ -1284,6 +1284,14 @@ RcsBody* RcsGraph_getRootBody(const RcsGraph* self)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+const char* RcsGraph_getConfigFile(const RcsGraph* self)
+{
+  return self->cfgFile;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 double RcsGraph_getJointValue(const RcsGraph* self, const char* name)
 {
   RcsJoint* jnt = RcsGraph_getJointByName(self, name);
