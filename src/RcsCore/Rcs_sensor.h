@@ -186,6 +186,10 @@ const char* RcsSensor_name(int shapeType);
  */
 bool RcsSensor_isEqual(const RcsSensor* s1, const RcsSensor* s2);
 
+/*! \ingroup RcsSensorFunctions
+ *  \brief Returns the size of the memory in bytes. If sensor is NULL, the function returns 0.
+ */
+unsigned int RcsSensor_sizeInBytes(const RcsSensor* sensor);
 
 
 #ifdef __cplusplus

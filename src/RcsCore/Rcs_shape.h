@@ -154,6 +154,11 @@ bool RcsShape_isOfComputeType(const RcsShape* shape, int computeType);
  */
 bool RcsShape_isEqual(const RcsShape* s1, const RcsShape* s2);
 
+/*! \ingroup RcsShapeFunctions
+ *  \brief Returns the size of the memory in bytes. If shape is NULL, the function returns 0.
+ */
+unsigned int RcsShape_sizeInBytes(const RcsShape* shape);
+
 ///@}
 
 

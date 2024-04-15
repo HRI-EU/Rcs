@@ -92,6 +92,11 @@ void RcsBody_copy(RcsBody* dst, const RcsBody* src);
 unsigned int RcsBody_numJoints(const RcsGraph* graph, const RcsBody* body);
 
 /*! \ingroup RcsBodyFunctions
+ *  \brief Returns the size of the memory in bytes. If body is NULL, the function returns 0.
+ */
+unsigned int RcsBody_sizeInBytes(const RcsBody* body);
+
+/*! \ingroup RcsBodyFunctions
  *  \brief Returns the joint index of the first joint that is associated with
  *         the body. If the body is NULL or has no joint, -1 is returned.
  *

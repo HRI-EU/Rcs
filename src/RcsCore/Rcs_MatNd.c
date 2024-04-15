@@ -5642,3 +5642,22 @@ void MatNd_binarizeSelf(MatNd* self, double zeroThreshold)
     }
   }
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+unsigned int MatNd_sizeInBytes(const MatNd* self)
+{
+  unsigned int nBytes = 0;
+
+  if (!self)
+  {
+    return 0;
+  }
+
+  nBytes += self->size*sizeof(double);
+  nBytes += 3*sizeof(unsigned int);
+  nBytes += sizeof(bool);
+
+  return nBytes;
+}

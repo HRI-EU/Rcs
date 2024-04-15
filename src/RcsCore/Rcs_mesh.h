@@ -485,6 +485,12 @@ double* RcsMesh_createNormalArray(const RcsMeshData* mesh);
  */
 bool RcsMesh_isEqual(const RcsMeshData* m1, const RcsMeshData* m2);
 
+/*! \ingroup RcsMeshFunctions
+ *  \brief Returns the size of the memory in bytes. If mesh is NULL, the function returns 0.
+ */
+unsigned int RcsMesh_sizeInBytes(const RcsMeshData* mesh);
+
+
 #ifdef __cplusplus
 }
 #endif

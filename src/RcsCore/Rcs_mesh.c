@@ -2227,3 +2227,23 @@ bool RcsMesh_isEqual(const RcsMeshData* m1, const RcsMeshData* m2)
 
   return true;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+unsigned int RcsMesh_sizeInBytes(const RcsMeshData* mesh)
+{
+  unsigned int nBytes = 0;
+
+  if (!mesh)
+  {
+    return 0;
+  }
+
+  nBytes += sizeof(unsigned int);
+  nBytes += mesh->nVertices*sizeof(double);
+  nBytes += sizeof(unsigned int);
+  nBytes += mesh->nFaces*sizeof(unsigned int);
+
+  return nBytes;
+}

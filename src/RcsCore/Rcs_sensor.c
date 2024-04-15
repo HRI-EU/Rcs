@@ -759,3 +759,31 @@ bool RcsSensor_isEqual(const RcsSensor* s1, const RcsSensor* s2)
 
   return true;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+unsigned int RcsSensor_sizeInBytes(const RcsSensor* sensor)
+{
+  unsigned int nBytes = 0;
+
+  if (!sensor)
+  {
+    return 0;
+  }
+
+  nBytes += sizeof(RCSSENSOR_TYPE);
+  nBytes += sizeof(int);
+  nBytes += RCS_MAX_NAMELEN*sizeof(char);
+  nBytes += sizeof(HTr);
+  nBytes += sizeof(unsigned int);
+
+  for (unsigned int i=0; i<sensor->nTexels; ++i)
+  {
+    nBytes += sizeof(RcsTexel);
+  }
+
+  nBytes += MatNd_sizeInBytes(sensor->rawData);
+
+  return nBytes;
+}

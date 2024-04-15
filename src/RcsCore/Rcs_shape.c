@@ -2163,3 +2163,27 @@ bool RcsShape_isEqual(const RcsShape* s1, const RcsShape* s2)
 
   return RcsMesh_isEqual(s1->mesh, s2->mesh);   // Can deal with NULL pointers
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+unsigned int RcsShape_sizeInBytes(const RcsShape* shape)
+{
+  unsigned int nBytes = 0;
+
+  if (!shape)
+  {
+    return 0;
+  }
+
+  nBytes += sizeof(int);
+  nBytes += sizeof(HTr);
+  nBytes += 3*sizeof(double);
+  nBytes += 3*sizeof(double);
+  nBytes += sizeof(int);
+  nBytes += 2*RCS_MAX_FILENAMELEN*sizeof(char);
+  nBytes += 2*RCS_MAX_NAMELEN*sizeof(char);
+  nBytes += RcsMesh_sizeInBytes(shape->mesh);
+
+  return nBytes;
+}

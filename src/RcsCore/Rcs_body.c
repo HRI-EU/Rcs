@@ -162,6 +162,35 @@ unsigned int RcsBody_numJoints(const RcsGraph* graph, const RcsBody* self)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+unsigned int RcsBody_sizeInBytes(const RcsBody* body)
+{
+  unsigned int nBytes = 0;
+
+  if (!body)
+  {
+    return 0;
+  }
+
+  nBytes += 7*sizeof(int);
+  nBytes += 3*sizeof(HTr);
+  nBytes += sizeof(double);
+  nBytes += sizeof(bool);
+  nBytes += sizeof(int);
+  nBytes += 7*sizeof(double);
+  nBytes += 3*RCS_MAX_NAMELEN*sizeof(char);
+  nBytes += sizeof(unsigned int);
+
+  for (unsigned int i=0; i<body->nShapes; ++i)
+  {
+    nBytes += RcsShape_sizeInBytes(&body->shapes[i]);
+  }
+
+  return nBytes;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 int RcsBody_getJointIndex(const RcsGraph* graph, const RcsBody* body)
 {
   if (!body)

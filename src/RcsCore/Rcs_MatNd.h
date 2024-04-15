@@ -2002,7 +2002,8 @@ double MatNd_computeManipulabilityIndexGradient(MatNd* grad,
                                                 const MatNd* W,
                                                 const MatNd* J);
 
-/*! Compute the column-wise softmax
+/*! \ingroup MatNdFunctions
+ *  \brief Compute the column-wise softmax
  *  \f$ \sigma(x)_{i,j} = \frac{e^{x_{i,j}}}{\sum_{k=1}^{K} e^{x_{k,j}}} \f$.
  *  The entries of the resulting matrix sum to one
  *
@@ -2011,6 +2012,11 @@ double MatNd_computeManipulabilityIndexGradient(MatNd* grad,
  * \param[out] dst output matrix
  */
 void MatNd_softMax(MatNd* dst, const MatNd* src, double beta);
+
+/*! \ingroup MatNdFunctions
+ *  \brief Returns the size of the memory in bytes. If self is NULL, the function returns 0.
+ */
+unsigned int MatNd_sizeInBytes(const MatNd* self);
 
 
 ///@}

@@ -179,6 +179,7 @@ struct _RcsBody
   int jntId;                        ///< Joint to which body is attached
   HTr A_BP;                         ///< Relative transformation
   HTr A_BI;                         ///< Absolute transformation
+  HTr Inertia;                      ///< Inertia tensor and local COG vector
   double m;                         ///< Body mass
   bool rigid_body_joints;           ///< Has 6 rigid body dof
   int physicsSim;                   ///< see RCSBODY_PHYSICS_SIMULATION_TYPE
@@ -188,7 +189,6 @@ struct _RcsBody
   char name[RCS_MAX_NAMELEN];       ///< Fully qualified name including suffix
   char bdyXmlName[RCS_MAX_NAMELEN]; ///< Name of the body from xml file
   char bdySuffix[RCS_MAX_NAMELEN];  ///< Group suffix of the body
-  HTr Inertia;                      ///< Inertia tensor and local COG vector
   unsigned int nShapes;             ///< Number of shapes in shapes arrray
   RcsShape* shapes;                 ///< Geometric shapes of the body
 };

@@ -4360,6 +4360,37 @@ bool RcsGraph_isEqual(const RcsGraph* g1, const RcsGraph* g2)
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+unsigned int RcsGraph_sizeInBytes(const RcsGraph* graph)
+{
+  unsigned int numBytes = 0;
+
+  numBytes += sizeof(int);
+  numBytes += graph->dof*sizeof(RcsJoint);
+  numBytes += sizeof(unsigned int);
+
+  for (unsigned int i=0; i<graph->nBodies; ++i)
+  {
+    numBytes += RcsBody_sizeInBytes(&graph->bodies[i]);
+  }
+
+  for (unsigned int i=0; i<graph->nSensors; ++i)
+  {
+    numBytes += RcsSensor_sizeInBytes(&graph->sensors[i]);
+  }
+
+  numBytes += sizeof(unsigned int);
+
+  numBytes += MatNd_sizeInBytes(graph->q);
+  numBytes += MatNd_sizeInBytes(graph->q_dot);
+  numBytes += RCS_MAX_FILENAMELEN*sizeof(char);
+  numBytes += RCS_NUM_GENERIC_BODIES*sizeof(int);
+
+  return numBytes;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 bool RcsGraph_appendCopyOfGraph(RcsGraph* self,
                                 RcsBody* root,
                                 const RcsGraph* other_,

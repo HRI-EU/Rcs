@@ -921,6 +921,11 @@ void RcsGraph_copy(RcsGraph* dst, const RcsGraph* src);
  */
 bool RcsGraph_isEqual(const RcsGraph* gb1, const RcsGraph* g2);
 
+/*! \ingroup RcsGraphFunctions
+ *  \brief Returns the size of the memory in bytes. If graph is NULL, the function returns 0.
+ */
+unsigned int RcsGraph_sizeInBytes(const RcsGraph* graph);
+
 /**
  * @name Joints
  *
