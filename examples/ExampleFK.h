@@ -106,6 +106,10 @@ protected:
   double mass, Id[3][3], r_com[3];
   unsigned int bvhIdx;
   const RcsBody* comBase;
+
+private:
+  ExampleFK& operator=(const ExampleFK&);
+  ExampleFK(const ExampleFK&);
 };
 
 class ExampleFK_Octree : public ExampleFK

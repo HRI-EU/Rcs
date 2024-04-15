@@ -1000,7 +1000,7 @@ bool RcsGraph_copyRigidBodyDofs(MatNd* q, const RcsGraph* self,
       continue;
     }
 
-    const RcsJoint* bdyJnt = RCSJOINT_BY_ID(self, BODY->jntId);
+    const RcsJoint* bdyJnt = &self->joints[BODY->jntId];//RCSJOINT_BY_ID(self, BODY->jntId);
     double* q_dst = &q->ele[bdyJnt->jointIndex];
     double* q_src = &src->ele[bdyJnt->jointIndex];
 
@@ -4072,7 +4072,7 @@ RcsJoint* RcsGraph_insertGraphJoint(RcsGraph* graph, int bodyId)
   // current last joint and the body.
   else   // if(body->jnt==NULL)
   {
-    RcsJoint* bdyJoint = RCSJOINT_BY_ID(graph, body->jntId);
+    RcsJoint* bdyJoint = &graph->joints[body->jntId];//RCSJOINT_BY_ID(graph, body->jntId);
 
     if (bdyJoint->nextId == -1)
     {

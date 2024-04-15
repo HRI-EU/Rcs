@@ -425,6 +425,7 @@ Viewer::~Viewer()
   if (frameThread2)
   {
     delete frameThread2;
+    frameThread2 = NULL;
   }
 }
 

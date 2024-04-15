@@ -734,7 +734,7 @@ btTypedConstraint* Rcs::BulletRigidBody::createJoint(const RcsGraph* graph)
                                  axisInA, axisInB, useReferenceFrameA);
   }
   // Create slider joint
-  else
+  else if (RcsJoint_isTranslation(bodyJnt))
   {
     bool useReferenceFrameA = false;
     btTransform frameInA = calcSliderTrans(bodyJnt);

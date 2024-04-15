@@ -83,6 +83,10 @@ public:
   virtual void step();
   virtual void handleKeys();
   virtual std::string help();
+
+private:
+  ExampleKinetics& operator=(const ExampleKinetics&);
+  ExampleKinetics(const ExampleKinetics&);
 };
 
 class ExampleJointSpaceInvDyn : public ExampleBase
@@ -126,6 +130,10 @@ public:
   virtual bool initGuis();
   virtual void step();
   virtual void handleKeys();
+
+private:
+  ExampleJointSpaceInvDyn& operator=(const ExampleJointSpaceInvDyn&);
+  ExampleJointSpaceInvDyn(const ExampleJointSpaceInvDyn&);
 };
 
 }   // namespace

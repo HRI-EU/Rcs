@@ -623,6 +623,11 @@ protected:
 
   // Threaded frame updates run in thie thread
   OpenThreads::Thread* frameThread2;
+
+  // Don't copy or assign this class
+private:
+  Viewer& operator=(const Viewer&);
+  Viewer(const Viewer&);
 };
 
 

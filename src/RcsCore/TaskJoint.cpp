@@ -201,9 +201,10 @@ void Rcs::TaskJoint::computeX(double* x_res) const
 {
   x_res[0] = MatNd_get(this->graph->q, getJointIndex(), 0);
 
-  if (this->refJointId != -1)
+  const RcsJoint* rj = getRefJoint();
+  if (rj)
   {
-    x_res[0] += refGain*MatNd_get(this->graph->q, getRefJoint()->jointIndex, 0);
+    x_res[0] += refGain*MatNd_get(this->graph->q, rj->jointIndex, 0);
   }
 }
 
@@ -231,9 +232,10 @@ void Rcs::TaskJoint::computeJ(MatNd* jacobian) const
   MatNd_reshapeAndSetZero(jacobian, 1, this->graph->nJ);
   MatNd_set(jacobian, 0, getJoint()->jacobiIndex,  1.0);
 
-  if (this->refJointId != -1)
+  const RcsJoint* rj = getRefJoint();
+  if (rj)
   {
-    MatNd_set(jacobian, 0, getRefJoint()->jacobiIndex, refGain);
+    MatNd_set(jacobian, 0, rj->jacobiIndex, refGain);
   }
 }
 

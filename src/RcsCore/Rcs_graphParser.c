@@ -900,11 +900,16 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
 
   NLOG(0, "Inserted Joint into Graph: name=%s id=%d prevId=%d nextId=%d",
        jnt->name, jnt->id, jnt->prevId, jnt->nextId);
-  if (jnt->prevId!=-1)
+
+  REXEC(5)
   {
-    RcsJoint* pjnt = RCSJOINT_BY_ID(self, jnt->prevId);
-    RLOG(5, "   prev Joint: name=%s id=%d prevId=%d nextId=%d",
-         pjnt->name, pjnt->id, pjnt->prevId, pjnt->nextId);
+    if (jnt->prevId!=-1)
+    {
+      RcsJoint* pjnt = RCSJOINT_BY_ID(self, jnt->prevId);
+      RCHECK(pjnt);
+      RLOG(5, "   prev Joint: name=%s id=%d prevId=%d nextId=%d",
+           pjnt->name, pjnt->id, pjnt->prevId, pjnt->nextId);
+    }
   }
 
   // Relative transformation from prev. body to joint (in prev. body coords)

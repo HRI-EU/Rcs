@@ -2733,7 +2733,7 @@ bool RcsBody_attachToBodyId(RcsGraph* graph, int bodyId, int targetId)
     RcsBody* t = RcsGraph_getRootBody(graph);
     while (t->nextId!=-1)
     {
-      t = RCSBODY_BY_ID(graph, t->nextId);
+      t = &graph->bodies[t->nextId];//RCSBODY_BY_ID(graph, t->nextId);
     }
     t->nextId = body->id;
     body->prevId = t->id;

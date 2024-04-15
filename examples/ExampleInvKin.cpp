@@ -312,6 +312,7 @@ bool ExampleIK::initAlgo()
   {
     simController = new Rcs::ControllerBase(*controller);
     simGraph = simController->getGraph();
+    RCHECK(simGraph);
 
     if (posCntrl)
     {

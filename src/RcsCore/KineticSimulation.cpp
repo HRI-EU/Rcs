@@ -1055,7 +1055,7 @@ double KineticSimulation::dirdyn(const RcsGraph* graph,
   {
     if (RcsBody_numJoints(graph, BODY)==6)
     {
-      const RcsJoint* ji = RCSJOINT_BY_ID(graph, BODY->jntId);
+      const RcsJoint* ji = &graph->joints[BODY->jntId];//RCSJOINT_BY_ID(graph, BODY->jntId);
       VecNd_setZero(&qp_ik->ele[ji->jointIndex], 6);
     }
   }
