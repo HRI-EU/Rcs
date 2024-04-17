@@ -535,6 +535,14 @@ void ShapeNode::addShape(const RcsShape* shape, bool resizeable)
 
       setNodeMaterial(shape->color, this);
     }
+    else
+    {
+      RLOG(1, "Failed to read mesh file '%s' (Body '%s')",
+           shape->meshFile, RCSBODY_NAME_BY_ID(graph, bdyId));
+    }
+
+
+
 
   }
 

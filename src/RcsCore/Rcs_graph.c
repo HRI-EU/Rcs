@@ -4362,6 +4362,11 @@ bool RcsGraph_isEqual(const RcsGraph* g1, const RcsGraph* g2)
  ******************************************************************************/
 unsigned int RcsGraph_sizeInBytes(const RcsGraph* graph)
 {
+  if (!graph)
+  {
+    return 0;
+  }
+
   unsigned int numBytes = 0;
 
   numBytes += sizeof(int);
@@ -4379,7 +4384,6 @@ unsigned int RcsGraph_sizeInBytes(const RcsGraph* graph)
   }
 
   numBytes += sizeof(unsigned int);
-
   numBytes += MatNd_sizeInBytes(graph->q);
   numBytes += MatNd_sizeInBytes(graph->q_dot);
   numBytes += RCS_MAX_FILENAMELEN*sizeof(char);
