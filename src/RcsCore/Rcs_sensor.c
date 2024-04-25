@@ -254,7 +254,7 @@ void RcsSensor_init(RcsSensor* self,
 {
   self->type = (RCSSENSOR_TYPE) type;
 
-  if (parentBody && parentBody->bdySuffix)
+  if (parentBody)
   {
     snprintf(self->name, RCS_MAX_NAMELEN, "%s%s", name, parentBody->bdySuffix);
   }

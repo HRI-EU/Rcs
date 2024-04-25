@@ -46,6 +46,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cfloat>
 
 
 namespace Rcs

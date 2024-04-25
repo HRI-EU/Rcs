@@ -1004,10 +1004,7 @@ void URDFGenerator::addMesh(const RcsShape* shape, Rcs::URDFElement* link, const
 void URDFGenerator::handlingMaterial(const RcsShape* shape, Rcs::URDFElement* visual)
 {
   auto material = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("material"));
-  if (shape->material)
-  {
-    material->addAttribute("name", shape->material);
-  }
+  material->addAttribute("name", shape->material);
 
   // todo: how to map string to rgba? shape->color is a string
   const RcsMaterial* matData = Rcs_getMaterial(shape->color);
@@ -1029,12 +1026,9 @@ void URDFGenerator::handlingMaterial(const RcsShape* shape, Rcs::URDFElement* vi
   material->addSubElement(std::move(color));
 
   //texture
-  if (shape->textureFile)
-  {
-    auto texture = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("texture"));
-    texture->addAttribute("filename", shape->textureFile);
-    material->addSubElement(std::move(texture));
-  }
+  auto texture = std::unique_ptr<Rcs::URDFElement>(new (std::nothrow) Rcs::URDFElement("texture"));
+  texture->addAttribute("filename", shape->textureFile);
+  material->addSubElement(std::move(texture));
   visual->addSubElement(std::move(material));
 }
 
