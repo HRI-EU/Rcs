@@ -78,6 +78,62 @@ static void quit(int /*sig*/)
 /******************************************************************************
  *
  *****************************************************************************/
+// Helper function to print tuples
+void printTuple(const std::vector<int>& tuple)
+{
+  std::cout << "(";
+  for (size_t i = 0; i < tuple.size(); ++i)
+  {
+    std::cout << tuple[i];
+    if (i != tuple.size() - 1)
+    {
+      std::cout << ", ";
+    }
+  }
+  std::cout << ")";
+}
+
+// Function to generate and collect all tuples
+void getTuples(size_t index, const std::vector<int>& totals,
+               std::vector<int>& current,
+               std::vector<std::vector<int>>& result)
+{
+  if (index == totals.size())
+  {
+    result.push_back(current);
+    return;
+  }
+
+  for (int i = 0; i < totals[index]; ++i)
+  {
+    current.push_back(i);
+    getTuples(index + 1, totals, current, result);
+    current.pop_back();
+  }
+}
+
+static bool test_tuples()
+{
+  std::vector<int> totals = {2, 2, 3};  // Example totals for each dimension
+  //std::vector<int> totals = {1, 1, 2};  // Example totals for each dimension
+  std::vector<int> current;
+  std::vector<std::vector<int>> result;
+
+  getTuples(0, totals, current, result);
+
+  // Print all generated tuples
+  for (const auto& tuple : result)
+  {
+    printTuple(tuple);
+    std::cout << std::endl;
+  }
+
+  return true;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
 static bool test_urdf_nullptr()
 {
   RcsGraph* graph = nullptr;
@@ -813,6 +869,7 @@ static bool testMode(int mode, int argc, char** argv)
       fprintf(stderr, "\t\t14  Test URDF reading from NULL pointer\n");
       fprintf(stderr, "\t\t15  Test URDF generation\n");
       fprintf(stderr, "\t\t16  Test URDF from file\n");
+      fprintf(stderr, "\t\t17  Test creating tuples from sets of indices\n");
       fprintf(stderr, "\n\nResource path:\n");
       Rcs_printResourcePath();
       break;
@@ -955,6 +1012,12 @@ static bool testMode(int mode, int argc, char** argv)
     case 16:
     {
       success = test_urdf_file();
+      break;
+    }
+
+    case 17:
+    {
+      success = test_tuples();
       break;
     }
 

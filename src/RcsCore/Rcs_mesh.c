@@ -1483,7 +1483,7 @@ RcsMeshData* RcsMesh_clone(const RcsMeshData* src)
 {
   if (src==NULL)
   {
-    RLOG(4, "Can't clone NULL mesh - skipping");
+    RLOG(5, "Can't clone NULL mesh - skipping");
     return NULL;
   }
 
