@@ -52,7 +52,7 @@
 
 TODO:
 
-- Mutex arounf debug window updates (was however not issue yet)
+- Mutex around debug window updates (was however not issue yet)
 
 Some findings:
 
@@ -646,7 +646,11 @@ const HTr* MujocoSimulation::getPhysicsTransformPtr(const RcsBody* body) const
 void MujocoSimulation::disableCollision(const RcsBody* b0, const RcsBody* b1)
 {
   // Only predefined pairs
+#if mjVERSION_HEADER <= 220
   sim->opt.collision = mjCOL_PAIR;
+#else
+  RLOG(0, "MujocoSimulation::disableCollision needs update");
+#endif
 }
 
 /*******************************************************************************
