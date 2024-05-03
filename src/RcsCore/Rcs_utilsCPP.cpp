@@ -40,9 +40,12 @@
 
 #if !defined(_MSC_VER)
 #include <dirent.h>
+#include <unistd.h>
 #else
 #include <Windows.h>
 #include <cstdio>
+#include <direct.h>
+#define getcwd _getcwd
 #endif
 
 
@@ -174,6 +177,20 @@ std::pair<std::string, std::string> File_getExecutablePathAndFilename(char* argv
   std::string name = str.substr(pos+1);
 
   return std::make_pair(path, name);
+}
+
+std::string File_getCurrentWorkingDir()
+{
+  char buff[FILENAME_MAX];
+  char* res = getcwd(buff, FILENAME_MAX);
+
+  if (!res)
+  {
+    return std::string();
+  }
+
+  std::string directoryName(buff);
+  return directoryName;
 }
 
 bool String_endsWith(const std::string& fullString,

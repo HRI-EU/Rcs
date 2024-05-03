@@ -77,6 +77,11 @@ bool File_isEqualCpp(const char* file1, const char* file2);
 std::pair<std::string, std::string> File_getExecutablePathAndFilename(char* argv[]);
 
 /*! \ingroup RcsUtilsFunctions
+ *  \brief Returns the current working directory.
+ */
+std::string File_getCurrentWorkingDir();
+
+/*! \ingroup RcsUtilsFunctions
  *  \brief Method for formatting a std::string in the fprintf style
  *
  *  \param fmt Format string + variable arguments
