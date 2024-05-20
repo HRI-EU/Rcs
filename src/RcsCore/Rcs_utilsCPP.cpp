@@ -305,6 +305,23 @@ std::string& String_trim(std::string& str, const std::string& chars)
   return String_ltrim(String_rtrim(str, chars), chars);
 }
 
+std::string String_concatenate(std::vector<std::string>& words, std::string sep)
+{
+  std::string res;
+
+  for (int i = 0; i < words.size(); ++i)
+  {
+    res += words[i];
+
+    if (i < words.size() - 1)
+    {
+      res += sep;
+    }
+  }
+
+  return res;
+}
+
 
 }   // namespace Rcs
 
