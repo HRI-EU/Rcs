@@ -346,6 +346,11 @@ bool RcsBody_isChild(const RcsGraph* graph,
                      const RcsBody* possibleChild,
                      const RcsBody* possibleParent)
 {
+  if ((!possibleChild) || (!possibleParent))
+  {
+    return false;
+  }
+
   const RcsBody* b = RCSBODY_BY_ID(graph, possibleChild->parentId);
 
   while (b)
@@ -365,7 +370,7 @@ bool RcsBody_isChild(const RcsGraph* graph,
  ******************************************************************************/
 bool RcsBody_isLeaf(const RcsBody* bdy)
 {
-  if (bdy->firstChildId==-1)
+  if (bdy && bdy->firstChildId==-1)
   {
     return true;
   }

@@ -159,13 +159,16 @@ bool RcsBody_attachToBodyId(RcsGraph* graph, int bodyId, int targetId);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Returns true if child is a child of parent, false otherwise.
+ *         If one or both of possibleChild and possibleParent are NULL,
+ *         the function returns NULL.
  */
 bool RcsBody_isChild(const RcsGraph* graph,
                      const RcsBody* possibleChild,
                      const RcsBody* possibleParent);
 
 /*! \ingroup RcsBodyFunctions
-*  \brief Returns true if bdy is a leaf node, false otherwise.
+*  \brief Returns true if bdy is a leaf node, false otherwise. If bdy is
+*         NULL, the function returns false.
 */
 bool RcsBody_isLeaf(const RcsBody* bdy);
 
