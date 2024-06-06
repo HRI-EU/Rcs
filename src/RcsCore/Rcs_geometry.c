@@ -1682,3 +1682,19 @@ bool Math_planeFit3d(const double points_[][3], unsigned int nPoints,
 
   return true;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Math_computeVerticesAABB(double bb[8][3],
+                              const double aabbMin[3], const double aabbMax[3])
+{
+  Vec3d_set(bb[0],  aabbMin[0], aabbMin[1], aabbMin[2]);
+  Vec3d_set(bb[1],  aabbMin[0], aabbMin[1], aabbMax[2]);
+  Vec3d_set(bb[2],  aabbMin[0], aabbMax[1], aabbMin[2]);
+  Vec3d_set(bb[3],  aabbMin[0], aabbMax[1], aabbMax[2]);
+  Vec3d_set(bb[4],  aabbMax[0], aabbMin[1], aabbMin[2]);
+  Vec3d_set(bb[5],  aabbMax[0], aabbMin[1], aabbMax[2]);
+  Vec3d_set(bb[6],  aabbMax[0], aabbMax[1], aabbMin[2]);
+  Vec3d_set(bb[7],  aabbMax[0], aabbMax[1], aabbMax[2]);
+}

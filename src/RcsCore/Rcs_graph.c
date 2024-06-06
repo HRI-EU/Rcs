@@ -44,6 +44,7 @@
 #include "Rcs_sensor.h"
 #include "Rcs_resourcePath.h"
 #include "Rcs_math.h"
+#include "Rcs_geometry.h"
 
 #include <float.h>
 
@@ -3639,24 +3640,16 @@ bool RcsGraph_computeBodyAABB(const RcsGraph* self, int bdyId, int computeType,
     MatNd_reshape(vertices, 0, 3);
   }
 
+  RLOG(0, "Updating %s", RCSBODY_NAME_BY_ID(self, bdyId));
+
   RCSBODY_TRAVERSE_SHAPES(bdy)
   {
     if (RcsShape_isOfComputeType(SHAPE, computeType) || (computeType == -1))
     {
       aabbValid = true;
-      double s_min[3], s_max[3];
+      double s_min[3], s_max[3], bb[8][3];  // bb is all 8 vertices of the AABB
       RcsShape_computeAABB(SHAPE, s_min, s_max);
-
-      // Here we consider all 8 vertices of the boundig box.
-      double bb[8][3];
-      Vec3d_set(bb[0],  s_min[0],  s_min[1], s_min[2]);
-      Vec3d_set(bb[1],  s_min[0], -s_min[1], s_min[2]);
-      Vec3d_set(bb[2], -s_min[0],  s_min[1], s_min[2]);
-      Vec3d_set(bb[3], -s_min[0], -s_min[1], s_min[2]);
-      Vec3d_set(bb[4],  s_max[0],  s_max[1], s_max[2]);
-      Vec3d_set(bb[5],  s_max[0], -s_max[1], s_max[2]);
-      Vec3d_set(bb[6], -s_max[0],  s_max[1], s_max[2]);
-      Vec3d_set(bb[7], -s_max[0], -s_max[1], s_max[2]);
+      Math_computeVerticesAABB(bb, s_min, s_max);
 
       // We transform them into the world frame.
       HTr A_CI;
@@ -3742,94 +3735,6 @@ int RcsGraph_computeSubTreeAABB(const RcsGraph* self, int startBdyId,
   {
     Vec3d_copy(aabbMin, xyzMin);
     Vec3d_copy(aabbMax, xyzMax);
-  }
-
-  return nBodies;
-}
-
-/*******************************************************************************
- * See header.
- ******************************************************************************/
-int RcsGraph_computeBodyAABB_org(const RcsGraph* self, int startBdyId,
-                                 int computeType, bool recursive,
-                                 double xyzMin[3], double xyzMax[3])
-{
-  if ((self == NULL) || (self->nBodies == 0) || (startBdyId == -1) ||
-      (startBdyId >= (int)self->nBodies))
-  {
-    RLOG(4, "Error computing AABB: graph is NULL, has zero bodies, or "
-         " startBdy is out of range - AABB is set to zero: graph is %s, "
-         "nBodies is %d, startBdyId is %d", self ? "VALID" : "NULL",
-         self ? self->nBodies : 0, startBdyId);
-    Vec3d_setZero(xyzMin);
-    Vec3d_setZero(xyzMax);
-    return 0;
-  }
-
-  Vec3d_set(xyzMin, DBL_MAX, DBL_MAX, DBL_MAX);
-  Vec3d_set(xyzMax, -DBL_MAX, -DBL_MAX, -DBL_MAX);
-  int nBodies = 0;
-
-  RCSBODY_TRAVERSE_BODIES(self, &self->bodies[startBdyId])
-  {
-    RCSBODY_TRAVERSE_SHAPES(BODY)
-    {
-      bool bodyContributes = false;
-      if ((computeType==-1) || RcsShape_isOfComputeType(SHAPE, computeType))
-      {
-        bodyContributes = true;
-        double s_min[3], s_max[3];
-        RcsShape_computeAABB(SHAPE, s_min, s_max);
-
-        // Here we consider all 8 vertices of the boundig box.
-        double bb[8][3];
-        Vec3d_set(bb[0],  s_min[0],  s_min[1], s_min[2]);
-        Vec3d_set(bb[1],  s_min[0], -s_min[1], s_min[2]);
-        Vec3d_set(bb[2], -s_min[0],  s_min[1], s_min[2]);
-        Vec3d_set(bb[3], -s_min[0], -s_min[1], s_min[2]);
-        Vec3d_set(bb[4],  s_max[0],  s_max[1], s_max[2]);
-        Vec3d_set(bb[5],  s_max[0], -s_max[1], s_max[2]);
-        Vec3d_set(bb[6], -s_max[0],  s_max[1], s_max[2]);
-        Vec3d_set(bb[7], -s_max[0], -s_max[1], s_max[2]);
-
-        // We transform them into the world frame.
-        HTr A_CI;
-        HTr_transform(&A_CI, &BODY->A_BI, &SHAPE->A_CB);
-
-        for (int i = 0; i < 8; ++i)
-        {
-          Vec3d_transformSelf(bb[i], &A_CI);
-
-          for (int j = 0; j < 3; ++j)
-          {
-            xyzMin[j] = fmin(bb[i][j], xyzMin[j]);
-            xyzMax[j] = fmax(bb[i][j], xyzMax[j]);
-          }
-        }
-      }
-
-      if (bodyContributes)
-      {
-        nBodies++;
-      }
-
-    }   // RCSBODY_TRAVERSE_SHAPES(BODY)
-
-    // If no subtree traversal is requested, we quit the traversal after
-    // the startBdyId body.
-    if (!recursive)
-    {
-      break;
-    }
-
-  }
-
-  // In the case that no body contributes to the bounding box, we set its
-  // size to zero.
-  if (nBodies==0)
-  {
-    Vec3d_setZero(xyzMin);
-    Vec3d_setZero(xyzMax);
   }
 
   return nBodies;

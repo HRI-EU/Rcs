@@ -545,6 +545,16 @@ double Math_distPointBox(const double point[3],
 bool Math_planeFit3d(const double points[][3], unsigned int nPoints,
                      double centroid[3], double normal[3]);
 
+/*! \ingroup RcsBasicMathFunctions
+ *  \brief Computes the eight bounding box vertices from two AABB edges.
+ *
+ *  \param[out] vertices Eight vertices
+ *  \param[in]  aabbMin  Smallest AABB corner
+ *  \param[in]  aabbMax  Largest AABB corner
+ */
+void Math_computeVerticesAABB(double vertices[8][3],
+                              const double aabbMin[3], const double aabbMax[3]);
+
 ///@}
 
 

@@ -41,6 +41,7 @@
 #include "Rcs_macros.h"
 #include "Rcs_math.h"
 #include "Rcs_intersectionWM5.h"
+#include "Rcs_geometry.h"
 
 #include <float.h>
 
@@ -2059,19 +2060,9 @@ bool RcsBody_computeAABB(const RcsBody* self, int computeType,
     if ((computeType==-1) || RcsShape_isOfComputeType(SHAPE, computeType))
     {
       shapeCount++;
-      double C_min[3], C_max[3];
+      double C_min[3], C_max[3], bb[8][3];
       RcsShape_computeAABB(SHAPE, C_min, C_max);
-
-      // Here we consider all 8 vertices of the boundig box.
-      double bb[8][3];
-      Vec3d_set(bb[0],  C_min[0],  C_min[1], C_min[2]);
-      Vec3d_set(bb[1],  C_min[0], -C_min[1], C_min[2]);
-      Vec3d_set(bb[2], -C_min[0],  C_min[1], C_min[2]);
-      Vec3d_set(bb[3], -C_min[0], -C_min[1], C_min[2]);
-      Vec3d_set(bb[4],  C_max[0],  C_max[1], C_max[2]);
-      Vec3d_set(bb[5],  C_max[0], -C_max[1], C_max[2]);
-      Vec3d_set(bb[6], -C_max[0],  C_max[1], C_max[2]);
-      Vec3d_set(bb[7], -C_max[0], -C_max[1], C_max[2]);
+      Math_computeVerticesAABB(bb, C_min, C_max);
 
       for (int i = 0; i < 8; ++i)
       {
@@ -2225,20 +2216,12 @@ bool RcsBody_boxify(RcsBody* self, int computeType, bool replaceShapes)
       double xyzMin[3], xyzMax[3];
       RcsShape_computeAABB(SHAPE, xyzMin, xyzMax);
       double* row = MatNd_getRowPtr(vertices, 8*shapeIdx);
-
-      Vec3d_set(row,   xyzMin[0], xyzMin[1], xyzMin[2]);
-      Vec3d_set(row+3, xyzMax[0], xyzMin[1], xyzMin[2]);
-      Vec3d_set(row+6, xyzMax[0], xyzMax[1], xyzMin[2]);
-      Vec3d_set(row+9, xyzMin[0], xyzMax[1], xyzMin[2]);
-
-      Vec3d_set(row+12, xyzMin[0], xyzMin[1], xyzMax[2]);
-      Vec3d_set(row+15, xyzMax[0], xyzMin[1], xyzMax[2]);
-      Vec3d_set(row+18, xyzMax[0], xyzMax[1], xyzMax[2]);
-      Vec3d_set(row+21, xyzMin[0], xyzMax[1], xyzMax[2]);
+      double(*bb)[3] = (double(*)[3]) row;
+      Math_computeVerticesAABB(bb, xyzMin, xyzMax);
 
       for (int i=0; i<8; ++i)
       {
-        Vec3d_transformSelf(&row[i*3], &SHAPE->A_CB);
+        Vec3d_transformSelf(bb[i], &SHAPE->A_CB);
       }
 
       shapeIdx++;
@@ -2316,20 +2299,12 @@ bool RcsBody_capsulify_aabb(RcsBody* self, int computeType)
       double xyzMin[3], xyzMax[3];
       RcsShape_computeAABB(SHAPE, xyzMin, xyzMax);
       double* row = MatNd_getRowPtr(vertices, 8 * shapeIdx);
-
-      Vec3d_set(row + 0, xyzMin[0], xyzMin[1], xyzMin[2]);
-      Vec3d_set(row + 3, xyzMax[0], xyzMin[1], xyzMin[2]);
-      Vec3d_set(row + 6, xyzMax[0], xyzMax[1], xyzMin[2]);
-      Vec3d_set(row + 9, xyzMin[0], xyzMax[1], xyzMin[2]);
-
-      Vec3d_set(row + 12, xyzMin[0], xyzMin[1], xyzMax[2]);
-      Vec3d_set(row + 15, xyzMax[0], xyzMin[1], xyzMax[2]);
-      Vec3d_set(row + 18, xyzMax[0], xyzMax[1], xyzMax[2]);
-      Vec3d_set(row + 21, xyzMin[0], xyzMax[1], xyzMax[2]);
+      double(*bb)[3] = (double(*)[3]) row;
+      Math_computeVerticesAABB(bb, xyzMin, xyzMax);
 
       for (int i = 0; i < 8; ++i)
       {
-        Vec3d_transformSelf(&row[i*3], &SHAPE->A_CB);
+        Vec3d_transformSelf(bb[i], &SHAPE->A_CB);
       }
 
       shapeIdx++;

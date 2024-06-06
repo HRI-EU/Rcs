@@ -1170,7 +1170,7 @@ bool ExampleFK_Broadphase::initGraphics()
     pat = new osg::PositionAttitudeTransform();
     pat->setPosition(osg::Vec3(bp->bodies[i].sphereCenter[0],
                                bp->bodies[i].sphereCenter[1],
-                               bp->bodies[i].sphereCenter[2]));
+                               bp->bodies[i].sphereCentger[2]));
 
     osg::ref_ptr<Rcs::SphereNode> sn;
     sn = new Rcs::SphereNode(Vec3d_zeroVec(), bp->bodies[i].sphereRadius);
@@ -1224,10 +1224,12 @@ void ExampleFK_Broadphase::handleKeys()
     bool visible = bpNode.get()->getValue(0);
     if (visible)
     {
+      RLOG(0, "Switching broadphase off");
       bpNode->setAllChildrenOff();
     }
     else
     {
+      RLOG(0, "Switching broadphase on");
       bpNode->setAllChildrenOn();
     }
   }
