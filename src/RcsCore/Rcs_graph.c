@@ -3640,8 +3640,6 @@ bool RcsGraph_computeBodyAABB(const RcsGraph* self, int bdyId, int computeType,
     MatNd_reshape(vertices, 0, 3);
   }
 
-  RLOG(0, "Updating %s", RCSBODY_NAME_BY_ID(self, bdyId));
-
   RCSBODY_TRAVERSE_SHAPES(bdy)
   {
     if (RcsShape_isOfComputeType(SHAPE, computeType) || (computeType == -1))
