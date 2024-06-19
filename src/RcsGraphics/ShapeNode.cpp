@@ -45,6 +45,7 @@
 #include <Rcs_graphicsUtils.h>
 #include <Rcs_shape.h>
 #include <Rcs_math.h>
+#include <Rcs_utils.h>
 
 #ifdef USE_OCTOMAP
 #include "OctomapNode.h"
@@ -106,6 +107,7 @@ static osg::ref_ptr<osg::Texture2D> getOrCreateTexture(const char* textureFile)
     if (texture_image.valid() == false)
     {
       RLOG(1, "couldn't load texture file  \"%s\", omitting...", textureFile);
+      RLOG(1, "File %s", File_exists(textureFile) ? " exists" : " does not exist");
     }
     else
     {

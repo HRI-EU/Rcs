@@ -193,6 +193,19 @@ void RcsJoint_scale(RcsJoint* joint, double scale);
 int RcsJoint_getNonCoupledParentId(const RcsGraph* graph,
                                    const RcsJoint* joint);
 
+/*! \ingroup RcsJointFunctions
+ *  \brief Finds the body that is connected directly to the joint. The body is
+ *         the first one that is moved by the joint. Its parent is proximal to
+ *         the joint. This function searches through the whole graph and is
+ *         therefore not very efficient.
+ *
+ *  \param[in] graph    Graph containing the joint
+ *  \param[in] joint    Joint whose connected body is to be found
+ *  \return Connected body id, or -1 of for some reason none could be found..
+ */
+int RcsJoint_getConnectedBodyId(const RcsGraph* graph,
+                                const RcsJoint* joint);
+
 
 
 #ifdef __cplusplus

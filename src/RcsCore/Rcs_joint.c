@@ -765,3 +765,23 @@ int RcsJoint_getNonCoupledParentId(const RcsGraph* graph,
 
   return jPtr->id;
 }
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+int RcsJoint_getConnectedBodyId(const RcsGraph* graph,
+                                const RcsJoint* joint)
+{
+  RCSGRAPH_FOREACH_BODY(graph)
+  {
+    RCSBODY_FOREACH_JOINT(graph, BODY)
+    {
+      if (JNT->id == joint->id)
+      {
+        return BODY->id;
+      }
+    }
+  }
+
+  return -1;
+}
