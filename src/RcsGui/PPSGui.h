@@ -53,12 +53,13 @@ public:
   // A negative scaling value means auto-scaling.
   struct Entry
   {
-    Entry(const std::string& _name, const size_t _width, const size_t _height, const double* _data, double _scaling=1.0, double _offset=0.0, bool _palm=false):
-      name(_name), width(_width), height(_height), data(_data), scaling(_scaling), offset(_offset), palm(_palm) {}
+    Entry(const std::string& _name, const size_t _width, const size_t _height, const double* _data, int channels, double _scaling=1.0, double _offset=0.0, bool _palm=false):
+      name(_name), width(_width), height(_height), data(_data), channels(channels), scaling(_scaling), offset(_offset), palm(_palm) {}
     std::string name;
     size_t width;
     size_t height;
     const double* data;
+    int channels;
     double scaling;
     double offset;
     bool palm;

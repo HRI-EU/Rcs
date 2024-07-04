@@ -353,22 +353,69 @@ void DepthRenderer::frame(double simulationTime)
   for (unsigned int i = 0; i < height; ++i)
   {
     colorImage[i].resize(width);
+
+    for (unsigned int j = 0; j < width; ++j)
+    {
+      colorImage[i][j].resize(3);
+    }
   }
 
-  float* colorData = (float*) rgbImage->data();
 
-  for (unsigned int i=0; i<n; ++i)
   {
-    const float data = colorData[i];
+    //int width = rgbImage->s();
+    //int height = rgbImage->t();
+    int numPixels = width * height;
+    float* data = reinterpret_cast<float*>(rgbImage->data());
 
-    // screen to world coordinate (but we respect that the point cloud
-    // y-direction is downward while in OpenGL y points upward)
-    // also the correct point index is calculated this way
-    const unsigned int screen_x = i % width;
-    const unsigned int screen_y = height - 1 - (i / width);
+    for (int i = 0; i < numPixels; ++i)
+    {
+      float r = data[i * 4 + 0];
+      float g = data[i * 4 + 1];
+      float b = data[i * 4 + 2];
+      // float a = data[i * 4 + 3]; // Alpha channel if needed
 
-    colorImage[screen_y][screen_x] = data;
+      // Process or store the R, G, B values as needed
+      // std::cout << "Pixel " << i << ": R=" << r << ", G=" << g << ", B=" << b << std::endl;
+
+      // screen to world coordinate (but we respect that the point cloud
+      // y-direction is downward while in OpenGL y points upward)
+      // also the correct point index is calculated this way
+      const unsigned int screen_x = i % width;
+      const unsigned int screen_y = height - 1 - (i / width);
+
+      colorImage[screen_y][screen_x][0] = r;
+      colorImage[screen_y][screen_x][1] = g;
+      colorImage[screen_y][screen_x][2] = b;
+    }
+
   }
+
+
+
+
+
+
+
+
+
+
+
+  //float* colorData = (float*) rgbImage->data();
+
+  //for (unsigned int i=0; i<n; ++i)
+  //{
+  //  //const float data = colorData[i*4];
+
+  //  // screen to world coordinate (but we respect that the point cloud
+  //  // y-direction is downward while in OpenGL y points upward)
+  //  // also the correct point index is calculated this way
+  //  const unsigned int screen_x = i % width;
+  //  const unsigned int screen_y = height - 1 - (i / width);
+
+  //  colorImage[screen_y][screen_x][0] = colorData[i*n+0];
+  //  colorImage[screen_y][screen_x][1] = colorData[i*n+1];
+  //  colorImage[screen_y][screen_x][2] = colorData[i*n+2];
+  //}
 
   // osgDB::writeImageFile(*rgbImage.get(),"color.bmp");
   // osgDB::writeImageFile(*zImage.get(),"depth.bmp");
@@ -385,7 +432,7 @@ const std::vector<std::vector<float>>& DepthRenderer::getDepthImageRef() const
 /*******************************************************************************
  *
  ******************************************************************************/
-const std::vector<std::vector<float>>& DepthRenderer::getRGBImageRef() const
+const std::vector<std::vector<std::vector<float>>>& DepthRenderer::getRGBImageRef() const
 {
   return this->colorImage;
 }

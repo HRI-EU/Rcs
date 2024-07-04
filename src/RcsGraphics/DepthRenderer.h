@@ -102,7 +102,7 @@ public:
 
   const std::vector<std::vector<float>>& getDepthImageRef() const;
 
-  const std::vector<std::vector<float>>& getRGBImageRef() const;
+  const std::vector<std::vector<std::vector<float>>>& getRGBImageRef() const;
 
   /*! \brief Writes the depth image to a file with the given file name.
    *         Values are space-separated.
@@ -130,7 +130,7 @@ private:
   unsigned int width;
   unsigned int height;
   std::vector<std::vector<float>> depthImage;
-  std::vector<std::vector<float>> colorImage;
+  std::vector<std::vector<std::vector<float>>> colorImage;   // height x width x 3 (RGB)
 };
 
 }

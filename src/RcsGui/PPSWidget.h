@@ -52,7 +52,7 @@ class PPSWidget: public QWidget
   Q_OBJECT
 public:
   static PPSWidget* create(const size_t width, const size_t height, const double* data, const char* name);
-  PPSWidget(const std::string& name, const size_t width, const size_t height, const double* data, double scaling=1.0, double offset=0.0, bool palm=false, pthread_mutex_t* mtx=NULL);
+  PPSWidget(const std::string& name, const size_t width, const size_t height, const double* data, int channels, double scaling=1.0, double offset=0.0, bool palm=false, pthread_mutex_t* mtx=NULL);
   virtual ~PPSWidget();
 
 protected:
@@ -64,6 +64,7 @@ protected:
   size_t width;
   size_t height;
   const double* data;
+  int channels;
   double scaling;
   double offset;
   bool palm;

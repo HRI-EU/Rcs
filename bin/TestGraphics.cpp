@@ -1093,7 +1093,7 @@ bool testFindChildrenOfType()
 const char* depthExampleGraph =
   MULTI_LINE_STRING(
 <Graph >
-<Body name="Box" rigid_body_joints="3 0 0 0 0 0" >
+<Body name="Box" rigid_body_joints="3 0 0 0 0 0" color="GREEN" >
    <Shape type="BOX" extents="1 1 1" transform="0.5 0 0 0 0 0"
 graphics="true" />
 </Body>
@@ -1137,16 +1137,17 @@ void testDepthRenderer()
   osg::ref_ptr<Rcs::DepthRenderer> zRenderer;
   zRenderer = new Rcs::DepthRenderer(width, height);
   zRenderer->setCameraTransform(HTr_identity());
-  zRenderer->addNode(gn.get());
+  //zRenderer->addNode(gn.get());
+  zRenderer->addNode(viewer->getNode("rootnode"));
 
   double* zData = new double[width*height];
-  double* cData = new double[width*height];
+  double* cData = new double[width*height*3];
   std::vector<Rcs::PPSGui::Entry> pps;
-  pps.push_back(Rcs::PPSGui::Entry("Depth image", width, height, zData, 0.1));
-  pps.push_back(Rcs::PPSGui::Entry("RGB image", width, height, cData, 1.0));
+  pps.push_back(Rcs::PPSGui::Entry("Depth image", width, height, zData, 1, 0.1));
+  pps.push_back(Rcs::PPSGui::Entry("RGB image", width, height, cData, 3, 1.0));
   Rcs::PPSGui::create(pps);
   const std::vector<std::vector<float>>& zImage = zRenderer->getDepthImageRef();
-  const std::vector<std::vector<float>>& rgbImage = zRenderer->getRGBImageRef();
+  const std::vector<std::vector<std::vector<float>>>& rgbImage = zRenderer->getRGBImageRef();
 
   Rcs::MatNdWidget::create(graph->q, -10.0, 10.0, "q");
 
@@ -1182,12 +1183,17 @@ void testDepthRenderer()
     RLOG(0, "Rendering took %.1f msec", 1000.0*t_render);
 
     // Update the pixel widget
+    double* cDataPtr = cData;
     for (size_t i=0; i<height; ++i)
     {
       for (size_t j=0; j<width; ++j)
       {
         zData[i*width+j] = zImage[i][j];
-        cData[i*width+j] = rgbImage[i][j];
+
+        cDataPtr[0] = rgbImage[i][j][0];
+        cDataPtr[1] = rgbImage[i][j][1];
+        cDataPtr[2] = rgbImage[i][j][2];
+        cDataPtr += 3;
       }
 
       REXEC(1)

@@ -88,7 +88,7 @@ PPSGui::PPSGui(std::vector<Entry>* entries, pthread_mutex_t* mutex): QScrollArea
   for (std::vector<Entry>::iterator it = entries->begin(); it != entries->end(); ++it)
   {
     RLOG(5, "Adding entry %s", it->name.c_str());
-    PPSWidget* widget = new PPSWidget(it->name, it->width, it->height, it->data, it->scaling, it->offset, it->palm, mutex);
+    PPSWidget* widget = new PPSWidget(it->name, it->width, it->height, it->data, it->channels, it->scaling, it->offset, it->palm, mutex);
     mainLayout->addWidget(widget);
   }
 

@@ -58,7 +58,7 @@ static void* ppsThreadFunc(void* arg)
   const double* data = (double*) p->ptr[2];
   const char* name   = (const char*) p->ptr[3];
 
-  PPSWidget* w = new PPSWidget(name, *width, *height, data);
+  PPSWidget* w = new PPSWidget(name, *width, *height, data, 1);
   w->show();
 
   return w;
@@ -77,12 +77,13 @@ PPSWidget* PPSWidget::create(const size_t width, const size_t height, const doub
   return (PPSWidget*) RcsGuiFactory_getPointer(handle);
 }
 
-PPSWidget::PPSWidget(const std::string& name, const size_t width, const size_t height, const double* data, double scaling, double offset, bool palm, pthread_mutex_t* mtx_):
+PPSWidget::PPSWidget(const std::string& name, const size_t width, const size_t height, const double* data, int channels, double scaling, double offset, bool palm, pthread_mutex_t* mtx_):
   QWidget(),
   name(name),
   width(width),
   height(height),
   data(data),
+  channels(channels),
   scaling(scaling),
   offset(offset),
   palm(palm),
@@ -159,39 +160,54 @@ void PPSWidget::updateDisplay()
   {
     for (size_t i = 0; i < this->width; i++)
     {
-      //the palm does not have sensors in the 4 corners
-      if ((this->palm) && (j==0 || j==this->height-1) && (i==0 || i==this->width-1))
+      int r=0, g=0, b=0;
+
+      if (channels == 1)
       {
-        continue;
+        //the palm does not have sensors in the 4 corners
+        if ((this->palm) && (j == 0 || j == this->height - 1) && (i == 0 || i == this->width - 1))
+        {
+          continue;
+        }
+
+        // the user is to specify offset and scaling such that the range is [0..1]
+        // 3*255 is the number of levels supported by this color map
+        r = (int)((this->data[counter++] + this->offset) * 3.0 * 255.0 * scaleFactor);
+        g = 0;
+        b = 0;
+
+        if (r < 0)
+        {
+          r = 0;
+        }
+
+        if (r > 255)
+        {
+          g = r - 255;
+          r = 255;
+        }
+
+        if (g > 255)
+        {
+          b = g - 255;
+          g = 255;
+        }
+
+        if (b > 255)
+        {
+          b = 255;
+        }
+      }
+      else if (channels == 3)
+      {
+        r = (int)((this->data[counter] + this->offset) * 255.0 * scaleFactor);
+        counter++;
+        g = (int)((this->data[counter] + this->offset) * 255.0 * scaleFactor);
+        counter++;
+        b = (int)((this->data[counter] + this->offset) * 255.0 * scaleFactor);
+        counter++;
       }
 
-      // the user is to specify offset and scaling such that the range is [0..1]
-      // 3*255 is the number of levels supported by this color map
-      int r = (int)((this->data[counter++] + this->offset) * 3.0 * 255.0 * scaleFactor);
-      int g = 0;
-      int b = 0;
-
-      if (r < 0)
-      {
-        r = 0;
-      }
-
-      if (r > 255)
-      {
-        g = r - 255;
-        r = 255;
-      }
-
-      if (g > 255)
-      {
-        b = g - 255;
-        g = 255;
-      }
-
-      if (b > 255)
-      {
-        b = 255;
-      }
 
       //RLOG(0, "[%d,%d]: r=%d g=%d b=%d", i, j, r, g, b);
 
