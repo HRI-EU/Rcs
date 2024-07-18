@@ -144,7 +144,7 @@ std::string& String_trim(std::string& str, const std::string& chars = "\t\n\v\f\
 /*! \ingroup RcsUtilsFunctions
  *  \brief Concatenates the elements of the vector words, separated by argument sep.
  */
-std::string String_concatenate(std::vector<std::string>& words, std::string sep);
+std::string String_concatenate(const std::vector<std::string>& words, std::string sep);
 
 std::vector<std::pair<double,double>> Math_snapToGridPolygon2D(double polygon[][2],
                                                                unsigned int nVertices,

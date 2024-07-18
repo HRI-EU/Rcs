@@ -305,7 +305,7 @@ std::string& String_trim(std::string& str, const std::string& chars)
   return String_ltrim(String_rtrim(str, chars), chars);
 }
 
-std::string String_concatenate(std::vector<std::string>& words, std::string sep)
+std::string String_concatenate(const std::vector<std::string>& words, std::string sep)
 {
   std::string res;
 
@@ -862,11 +862,7 @@ std::string RcsShape_distanceFunctionsToString()
         continue;
       }
 
-      RcsDistanceFunction fnc = RcsShape_getDistanceFunction(i, j);
-      RcsDistanceFunction noDist = RcsShape_getDistanceFunction(RCSSHAPE_SHAPE_MAX, RCSSHAPE_SHAPE_MAX);
-
-      snprintf(tmp, 32, "%s", fnc == noDist ? " - " : " o ");
-      msg += tmp;
+      msg += (RcsShape_hasDistanceFunction(i, j) ? " - " : " o ");
     }
     msg += '\n';
   }
