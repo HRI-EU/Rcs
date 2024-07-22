@@ -43,6 +43,7 @@
 #include <list>
 #include <utility>
 #include <cstdarg>
+#include <map>
 
 
 
@@ -153,6 +154,36 @@ std::vector<std::pair<double,double>> Math_snapToGridPolygon2D(double polygon[][
 std::vector<std::pair<double,double>> Math_quadsFromPolygon2D(double polygon[][2],
                                                               unsigned int nVertices,
                                                               double gridSize);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Reads the graph's model_state from the associated xml file / string.
+ *         The result is in the form:
+ *
+ *         result["pose_1"] = {[2, 0.0], [4, -M_PI_2], ...}
+ *         result["pose_2"] = {[1, 0.0], [3, M_PI_2], ...}
+ *                ...
+ *
+ *         The integer index is the joint id (and not the jointIndex since this
+ *         might change when bodies get deleted), followed by the corresponding
+ *         joint position value.
+ */
+std::map<std::string, std::vector<std::pair<int, double>>>
+RcsGraph_getModelStates(const RcsGraph* graph);
+
+/*! \ingroup RcsUtilsFunctions
+ *  \brief Reads the graph's model_state with the name modelStateNamefrom the
+ *         associated xml file / string. The result is in the form:
+ *
+ *         {[2, 0.0], [4, -M_PI_2], ...}
+ *         {[1, 0.0], [3,  M_PI_2], ...}
+ *                ...
+ *
+ *         The integer index is the joint id (and not the jointIndex since this
+ *         might change when bodies get deleted), followed by the corresponding
+ *         joint position value.
+ */
+std::vector<std::pair<int, double>> RcsGraph_getModelState(const RcsGraph* graph,
+                                                           std::string modelStateName);
 
 /*! \ingroup RcsUtilsFunctions
  *  \brief Reads the model_state of the given xml node in the form of

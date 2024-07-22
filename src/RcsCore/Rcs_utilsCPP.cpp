@@ -548,8 +548,151 @@ std::vector<std::pair<double,double>> Math_quadsFromPolygon2D(double polygon[][2
 #include "Rcs_typedef.h"
 #include "Rcs_joint.h"
 
+
 namespace Rcs
 {
+
+/*******************************************************************************
+ * This is the return result: The integer index is the joint id (and not the
+ * jointIndex since this might change when bodies get deleted), followed by
+ * the corresponding joint position value, e.g.:
+ * result["default"] = {[2, 0.0], [4, -M_PI_2], ...}
+ ******************************************************************************/
+static std::map<std::string, std::vector<std::pair<int, double>>>
+RcsGraph_getModelStates_(const RcsGraph* graph, std::string modelStateName)
+{
+  std::map<std::string, std::vector<std::pair<int, double>>> result;
+
+  if (!graph)
+  {
+    return result;
+  }
+
+  // Read XML file
+  xmlDocPtr doc;
+  xmlNodePtr node = parseXMLFile(graph->cfgFile, "Graph", &doc);
+
+  if ((node == NULL) || (node->children == NULL))
+  {
+    xmlFreeDoc(doc);
+    return result;
+  }
+
+  node = node->children;
+
+
+  while (node)
+  {
+    if (!isXMLNodeNameNoCase(node, "model_state"))
+    {
+      node = node->next;
+      continue;
+    }
+
+    std::string stateName = Rcs::getXMLNodePropertySTLString(node, "model");
+
+    if (stateName.empty())
+    {
+      RLOG(1, "Tag \"mode_state\" lacks \"model\" attribute - skipping");
+      node = node->next;
+      continue;
+    }
+
+    // Only get the one with modelStateName if that has been passed
+    if (!modelStateName.empty() && modelStateName!=stateName)
+    {
+      node = node->next;
+      continue;
+    }
+
+    std::vector<std::pair<int, double>> jointStateItem;
+
+    xmlNodePtr jsNode = node->children;
+
+    while (jsNode)
+    {
+      if (!isXMLNodeNameNoCase(jsNode, "joint_state"))
+      {
+        jsNode = jsNode->next;
+        continue;
+      }
+
+      std::string jntName = Rcs::getXMLNodePropertySTLString(jsNode, "joint");
+      const RcsJoint* jnt = RcsGraph_getJointByName(graph, jntName.c_str());
+      if (!jnt)
+      {
+        RLOG(4, "Joint \"%s\" not found", jntName.c_str());
+        jsNode = jsNode->next;
+        continue;
+      }
+
+      double q;
+      bool hasPos = getXMLNodePropertyDouble(jsNode, "position", &q);
+
+      if (hasPos)
+      {
+        if (jnt->coupledToId != -1)
+        {
+          RLOG(4, "You are setting the state of a kinematically coupled"
+               " joint (\"%s\") - this has no effect", jnt->name);
+        }
+
+        // We don't overwrite the q_init value here, since it has
+        // influence on the coupled joints.
+        q *= RcsJoint_isRotation(jnt) ? (M_PI / 180.0) : 1.0;
+        std::pair<int, double> si(jnt->id, q);
+        jointStateItem.push_back(si);
+
+      }   // if (hasPos==true)
+
+      double qd;
+      bool hasVel = getXMLNodePropertyDouble(jsNode, "velocity", &qd);
+
+      if (hasVel)
+      {
+        RLOG(1, "Parsing velocities in model_state not yet supported");
+      }
+
+
+      jsNode = jsNode->next;
+    }
+
+    result[stateName] = jointStateItem;
+
+    node = node->next;
+  }
+
+  xmlFreeDoc(doc);
+
+  return result;
+}
+
+/*******************************************************************************
+ * This is the return result: The integer index is the joint id (and not the
+ * jointIndex since this might change when bodies get deleted), followed by
+ * the corresponding joint position value, e.g.:
+ * result["default"] = {[2, 0.0], [4, -M_PI_2], ...}
+ ******************************************************************************/
+std::map<std::string, std::vector<std::pair<int, double>>>
+RcsGraph_getModelStates(const RcsGraph* graph)
+{
+  return RcsGraph_getModelStates_(graph, std::string());
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+std::vector<std::pair<int, double>> RcsGraph_getModelState(const RcsGraph* graph,
+                                                           std::string modelStateName)
+{
+  std::map<std::string, std::vector<std::pair<int, double>>> result;
+  result = RcsGraph_getModelStates_(graph, modelStateName);
+  return result[modelStateName];
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
 std::vector<std::pair<int,double>> RcsGraph_readModelState(xmlNodePtr node,
                                                            const RcsGraph* self,
                                                            const std::string& mdlName)
@@ -679,6 +822,9 @@ std::vector<std::string> RcsGraph_getModelStateNames(const RcsGraph* graph)
   return result;
 }
 
+/*******************************************************************************
+ *
+ ******************************************************************************/
 std::vector<int> RcsGraph_getModelStateTimeStamps(const RcsGraph* graph,
                                                   const std::string& mdlName)
 {
