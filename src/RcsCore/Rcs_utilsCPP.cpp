@@ -559,31 +559,31 @@ namespace Rcs
  * result["default"] = {[2, 0.0], [4, -M_PI_2], ...}
  ******************************************************************************/
 static std::map<std::string, std::vector<std::pair<int, double>>>
-RcsGraph_getModelStates_(const RcsGraph* graph, std::string modelStateName)
+RcsGraph_getModelStatesFromNode(const RcsGraph* graph,
+                                xmlNodePtr node,
+                                std::string modelStateName)
 {
   std::map<std::string, std::vector<std::pair<int, double>>> result;
 
-  if (!graph)
-  {
-    return result;
-  }
-
-  // Read XML file
-  xmlDocPtr doc;
-  xmlNodePtr node = parseXMLFile(graph->cfgFile, "Graph", &doc);
-
-  if ((node == NULL) || (node->children == NULL))
-  {
-    xmlFreeDoc(doc);
-    return result;
-  }
-
-  node = node->children;
-
-
   while (node)
   {
-    if (!isXMLNodeNameNoCase(node, "model_state"))
+
+    if (isXMLNodeName(node, "Group") || isXMLNodeName(node, "Graph"))
+    {
+      auto grpRes = RcsGraph_getModelStatesFromNode(graph, node->children,
+                                                    modelStateName);
+      // Insert does not overwrite previous entries.
+      // result.insert(grpRes.begin(), grpRes.end());
+
+      // This overwrites previous entries
+      for (const auto& grpEle : grpRes)
+      {
+        result[grpEle.first] = grpEle.second;
+      }
+    }
+
+    if ((node->type != XML_ELEMENT_NODE) ||
+        (!isXMLNodeNameNoCase(node, "model_state")))
     {
       node = node->next;
       continue;
@@ -662,6 +662,37 @@ RcsGraph_getModelStates_(const RcsGraph* graph, std::string modelStateName)
     node = node->next;
   }
 
+  return result;
+}
+/*******************************************************************************
+ * This is the return result: The integer index is the joint id (and not the
+ * jointIndex since this might change when bodies get deleted), followed by
+ * the corresponding joint position value, e.g.:
+ * result["default"] = {[2, 0.0], [4, -M_PI_2], ...}
+ ******************************************************************************/
+static std::map<std::string, std::vector<std::pair<int, double>>>
+RcsGraph_getModelStatesFromFile(const RcsGraph* graph, std::string modelStateName)
+{
+  std::map<std::string, std::vector<std::pair<int, double>>> result;
+
+  if (!graph)
+  {
+    return result;
+  }
+
+  // Read XML file
+  xmlDocPtr doc;
+  xmlNodePtr node = parseXMLFile(graph->cfgFile, "Graph", &doc);
+
+  if ((node == NULL) || (node->children == NULL))
+  {
+    xmlFreeDoc(doc);
+    return result;
+  }
+
+  result = RcsGraph_getModelStatesFromNode(graph, node->children, modelStateName);
+
+
   xmlFreeDoc(doc);
 
   return result;
@@ -676,7 +707,7 @@ RcsGraph_getModelStates_(const RcsGraph* graph, std::string modelStateName)
 std::map<std::string, std::vector<std::pair<int, double>>>
 RcsGraph_getModelStates(const RcsGraph* graph)
 {
-  return RcsGraph_getModelStates_(graph, std::string());
+  return RcsGraph_getModelStatesFromFile(graph, std::string());
 }
 
 /*******************************************************************************
@@ -686,7 +717,7 @@ std::vector<std::pair<int, double>> RcsGraph_getModelState(const RcsGraph* graph
                                                            std::string modelStateName)
 {
   std::map<std::string, std::vector<std::pair<int, double>>> result;
-  result = RcsGraph_getModelStates_(graph, modelStateName);
+  result = RcsGraph_getModelStatesFromFile(graph, modelStateName);
   return result[modelStateName];
 }
 
