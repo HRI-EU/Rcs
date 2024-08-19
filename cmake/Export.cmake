@@ -42,10 +42,10 @@ CONFIGURE_PACKAGE_CONFIG_FILE(
   PATH_VARS CONFIG_INSTALL_DIR
 )
 # Also copy over Externals and FindQwt file to provide dependencies
-CONFIGURE_FILE(cmake/Externals.cmake
-  "${CMAKE_CURRENT_BINARY_DIR}/Externals.cmake"
-  COPYONLY
-)
+# CONFIGURE_FILE(cmake/Externals.cmake
+#   "${CMAKE_CURRENT_BINARY_DIR}/Externals.cmake"
+#   COPYONLY
+# )
 CONFIGURE_FILE(cmake/FindQwt.cmake
   "${CMAKE_CURRENT_BINARY_DIR}/FindQwt.cmake"
   COPYONLY
@@ -92,7 +92,6 @@ CONFIGURE_PACKAGE_CONFIG_FILE(
 INSTALL(
   FILES "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}ConfigVersion.cmake"
         "${CMAKE_CURRENT_BINARY_DIR}/install_files/${PACKAGE_NAME}Config.cmake"
-        cmake/Externals.cmake
         cmake/FindQwt.cmake
   DESTINATION ${EXPORT_INSTALL_DEST}
 )

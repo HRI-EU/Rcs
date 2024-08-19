@@ -33,12 +33,14 @@
 
 #include "RcsViewer.h"
 #include "Rcs_graphicsUtils.h"
+#include "VideoRecorder.h"
 
 #include <Rcs_macros.h>
 #include <Rcs_timer.h>
 #include <KeyCatcherBase.h>
 #include <Rcs_Vec3d.h>
 #include <Rcs_VecNd.h>
+#include <Rcs_basicMath.h>
 #include <Rcs_material.h>
 #include <Rcs_utils.h>
 
@@ -76,6 +78,9 @@ static pid_t forkProcess(const char* command)
 
   return pid;
 }
+#else
+#include <windows.h>
+#include <osgViewer/api/Win32/GraphicsWindowWin32>
 #endif
 
 static const std::string defaultBgColor = "LIGHT_GRAYISH_GREEN";
@@ -268,27 +273,31 @@ class KeyHandler : public osgGA::GUIEventHandler
 {
 public:
 
-  KeyHandler(Rcs::Viewer* viewer) : _viewer(viewer), _video_capture_process(-1)
+  KeyHandler(Viewer* viewer) : _viewer(viewer), videoCaptureInProgress(false)
   {
     RCHECK(_viewer);
+
+    if (FrameCaptureCallback::hasRecorder())
+    {
+      frameCaptureCb = new FrameCaptureCallback();
+    }
 
     KeyCatcherBase::registerKey("0-9", "Set Rcs debug level", "Viewer");
     KeyCatcherBase::registerKey("w", "Toggle wireframe mode", "Viewer");
     KeyCatcherBase::registerKey("s", "Cycle between shadow modes", "Viewer");
     KeyCatcherBase::registerKey("R", "Toggle cartoon mode", "Viewer");
-#if !defined(_MSC_VER)
     KeyCatcherBase::registerKey("M", "Toggle video capture", "Viewer");
-#endif
     KeyCatcherBase::registerKey("F11", "Print camera transform", "Viewer");
-    KeyCatcherBase::registerKey("j", "Print 3d coordinates under mouse", "Viewer");
+    KeyCatcherBase::registerKey("j", "Reset window size to 640 x 480", "Viewer");
   }
 
-  ~KeyHandler()
+  virtual ~KeyHandler()
   {
-    if (_video_capture_process >= 0)
+    if (videoCaptureInProgress)
     {
       toggleVideoCapture();
     }
+
   }
 
   virtual bool handle(const osgGA::GUIEventAdapter& ea,
@@ -299,9 +308,51 @@ public:
 
   bool toggleVideoCapture()
   {
+    if (!frameCaptureCb.valid())
+    {
+      videoCaptureInProgress = toggleVideoCaptureScreenCast();
+    }
+    else
+    {
+      videoCaptureInProgress = toggleVideoCaptureFFMPEG();
+    }
+
+    return videoCaptureInProgress;
+  }
+
+  bool toggleVideoCaptureFFMPEG()
+  {
+    bool captureRunning = false;
+
+    if (!frameCaptureCb.valid())
+    {
+      RLOG(0, "FFMPEG screen recording not compiled into RcsGraphics");
+      return false;
+    }
+
+    if (!frameCaptureCb->isRecording())
+    {
+      std::pair<int, int> windowSize = _viewer->getWindowSize();
+      frameCaptureCb->createRecorder(windowSize.first, windowSize.second, _viewer->updateFreq);
+      _viewer->getOsgViewer()->getCamera()->setFinalDrawCallback(frameCaptureCb);
+      captureRunning = true;
+    }
+    else
+    {
+      _viewer->getOsgViewer()->getCamera()->removeFinalDrawCallback(frameCaptureCb);
+      frameCaptureCb->deleteRecorder();
+    }
+
+    return captureRunning;
+  }
+
+  bool toggleVideoCaptureScreenCast()
+  {
     bool captureRunning = false;
 
 #if !defined(_MSC_VER)
+    static pid_t _video_capture_process = -1;
+
     if (_video_capture_process >= 0)
     {
       // Stop video taking
@@ -354,6 +405,8 @@ public:
         RLOG(1, "Could not record video");
       }
     }
+#else   // _MSC_VER
+    RLOG(1, "Screencast not available on Windows");
 #endif
 
     return captureRunning;
@@ -362,7 +415,8 @@ public:
 private:
 
   Rcs::Viewer* _viewer;
-  pid_t _video_capture_process;
+  osg::ref_ptr<FrameCaptureCallback> frameCaptureCb;
+  bool videoCaptureInProgress;
 };
 
 /*******************************************************************************
@@ -372,7 +426,7 @@ Viewer::Viewer() :
   fps(0.0), mouseX(0.0), mouseY(0.0), normalizedMouseX(0.0),
   normalizedMouseY(0.0), mtxFrameUpdate(NULL), threadRunning(false),
   updateFreq(25.0), initialized(false), wireFrame(false), shadowsEnabled(false),
-  enableLogLevelWithNumKeys(true), llx(0), lly(0), sizeX(640), sizeY(480),
+  enableLogLevelWithNumKeys(true), llx(0), lly(0), sizeX(640+175), sizeY(480),
   cartoonEnabled(false), threadStopped(true), leftMouseButtonPressed(false),
   rightMouseButtonPressed(false), pauseFrameUpdates(false), frameThread2(NULL)
 {
@@ -401,7 +455,7 @@ Viewer::Viewer(bool fancy, bool startupWithShadow) :
   fps(0.0), mouseX(0.0), mouseY(0.0), normalizedMouseX(0.0),
   normalizedMouseY(0.0), mtxFrameUpdate(NULL), threadRunning(false),
   updateFreq(25.0), initialized(false), wireFrame(false), shadowsEnabled(false),
-  enableLogLevelWithNumKeys(true), llx(0), lly(0), sizeX(640), sizeY(480),
+  enableLogLevelWithNumKeys(true), llx(0), lly(0), sizeX(640+175), sizeY(480),
   cartoonEnabled(false), threadStopped(true), leftMouseButtonPressed(false),
   rightMouseButtonPressed(false), pauseFrameUpdates(false), frameThread2(NULL)
 {
@@ -418,15 +472,13 @@ Viewer::Viewer(bool fancy, bool startupWithShadow) :
 Viewer::~Viewer()
 {
   stopUpdateThread();
-#if defined (_MSC_VER)
-  viewer.release();
-#endif
 
   if (frameThread2)
   {
     delete frameThread2;
     frameThread2 = NULL;
   }
+
 }
 
 /*******************************************************************************
@@ -1066,11 +1118,16 @@ void* Viewer::ViewerThread(void* arg)
   viewer->threadRunning = true;
   viewer->unlock();
 
+  // Desired frame time in seconds
+  const double dt_des = 1.0 / viewer->updateFrequency();
+
   while (viewer->isThreadRunning() == true)
   {
+    double dt_frame = Timer_getSystemTime();
     viewer->frame();
-    unsigned long dt = (unsigned long)(1.0e6/viewer->updateFrequency());
-    Timer_usleep(dt);
+    dt_frame = Timer_getSystemTime() - dt_frame;
+    const double t_wait = Math_clip(dt_des - dt_frame, 0.001, dt_des);
+    Timer_waitDT(t_wait);
   }
 
   RLOG(5, "Exiting frame thread");
@@ -1847,10 +1904,7 @@ bool Viewer::handle(const osgGA::GUIEventAdapter& ea,
       //
       else if (ea.getKey() == 'j')
       {
-        double pt[3];
-        osg::Node* nd = getNodeUnderMouse(pt);
-        if (nd) RMSG("%s [%.5f   %.5f   %.5f]", nd->getName().c_str(),
-                       pt[0], pt[1], pt[2]);
+        resizeWindow(0, 0, 1280, 960);
         return false;
       }
 
@@ -1953,6 +2007,88 @@ void Viewer::addUserEvent(osg::Referenced* userEvent)
   userEventMtx.lock();
   userEventStack.push_back(ev);
   userEventMtx.unlock();
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Viewer::resizeWindow(int x, int y, int width, int height)
+{
+  RLOG(0, "Resizing window to %d %d %d %d", x, y, width, height);
+  osg::ref_ptr<osg::Camera> camera = viewer->getCamera();
+  osg::GraphicsContext* gc = camera->getGraphicsContext();
+
+  if (!gc)
+  {
+    RLOG(0, "Graphics context could not be retrieved");
+    return;
+  }
+
+#if defined (_MSC_VER)
+
+  // Cast the GraphicsContext to osgViewer::GraphicsWindowWin32
+  osgViewer::GraphicsWindowWin32* gw = dynamic_cast<osgViewer::GraphicsWindowWin32*>(gc);
+
+  if (!gw)
+  {
+    RLOG(0, "Graphics window could not be retrieved");
+    return;
+  }
+
+  // Get the HWND (Windows handle) from the GraphicsWindowWin32
+  HWND hwnd = gw->getHWND();
+
+  if (!hwnd)
+  {
+    RLOG(0, "Nativ window handle could not be retrieved");
+    return;
+  }
+
+  // Adjust the window rectangle to account for window borders and title bar
+  RECT windowRect = { 0, 0, width, height };
+  AdjustWindowRect(&windowRect, GetWindowLong(hwnd, GWL_STYLE), FALSE);
+
+  // Resize and reposition the window
+  SetWindowPos(hwnd, HWND_TOP, x, y,
+               windowRect.right - windowRect.left,
+               windowRect.bottom - windowRect.top,
+               SWP_NOZORDER | SWP_NOACTIVATE);
+
+  // Update the camera's viewport to match the new window size
+  camera->setViewport(new osg::Viewport(0, 0, width, height));
+
+#else
+  RLOG(0, "Not implemented for Linux");
+#endif
+
+
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+std::pair<int, int> Viewer::getWindowSize() const
+{
+  osg::ref_ptr<osg::Camera> camera = viewer->getCamera();
+  osg::GraphicsContext* gc = camera->getGraphicsContext();
+
+  if (gc)
+  {
+    // Cast the GraphicsContext to osgViewer::GraphicsWindow
+    osgViewer::GraphicsWindow* gw = dynamic_cast<osgViewer::GraphicsWindow*>(gc);
+
+    if (gw)
+    {
+      // Retrieve the width and height of the window
+      int width = gw->getTraits()->width;
+      int height = gw->getTraits()->height;
+
+      return std::make_pair(width, height);
+    }
+  }
+
+  // Return -1, -1 if the window size could not be determined
+  return std::make_pair(-1, -1);
 }
 
 }   // namespace Rcs

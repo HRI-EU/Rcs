@@ -16,6 +16,10 @@ FIND_PACKAGE(OpenSceneGraph REQUIRED
   osgFX 
   osgManipulator)
 
+OPTION(USE_FFMPEG "Use FFMPEG library for extended viewer functionality" OFF)
+FIND_PACKAGE(FFmpeg QUIET COMPONENTS AVCODEC AVFORMAT AVUTIL SWSCALE)
+
+
 SET(RCS_GRAPHICS_SRCS
   AABBNode.cpp
   ArrowNode.cpp
@@ -46,6 +50,7 @@ SET(RCS_GRAPHICS_SRCS
   TransformTrace.cpp
   VectorFieldNode.cpp
   VertexArrayNode.cpp
+  VideoRecorder.cpp
   ExtrudedPolygonNode.cpp
   OctomapNode.cpp
   )
@@ -74,7 +79,17 @@ IF(USE_OCTOMAP)
   ENDIF(octomap_FOUND) 
 ENDIF(USE_OCTOMAP)
 
-TARGET_LINK_LIBRARIES(RcsGraphics RcsCore ${OPENSCENEGRAPH_LIBRARIES})
+IF(USE_FFMPEG)
+  IF (FFMPEG_FOUND)
+    MESSAGE(STATUS "Compiling RcsGraphics with FFMPEG support")
+    TARGET_COMPILE_DEFINITIONS(RcsGraphics PRIVATE ${FFMPEG_DEFINITIONS} USE_FFMPEG)
+    TARGET_INCLUDE_DIRECTORIES(RcsGraphics SYSTEM PRIVATE ${FFMPEG_INCLUDE_DIRS})
+  ELSE()
+    MESSAGE(STATUS "Compiling RcsGraphics without FFMPEG support")
+  ENDIF() 
+ENDIF(USE_FFMPEG)
+
+TARGET_LINK_LIBRARIES(RcsGraphics RcsCore ${OPENSCENEGRAPH_LIBRARIES} ${FFMPEG_LIBRARIES})
 
 # copy all .dll files to the same folder as the executable
 IF (WIN32)

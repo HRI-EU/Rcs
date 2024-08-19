@@ -403,6 +403,8 @@ public:
    */
   void updateNodeAlphaRecursive(osg::ref_ptr<osg::Node> node, double alpha);
 
+  void resizeWindow(int x, int y, int width, int height);
+
   ///@}
 
 
@@ -496,6 +498,8 @@ public:
    *  \return Default background color.
    */
   std::string getDefaultBackgroundColor() const;
+
+  std::pair<int, int> getWindowSize() const;
 
   ///@}
 

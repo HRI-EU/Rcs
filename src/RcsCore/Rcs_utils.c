@@ -1573,7 +1573,8 @@ char* File_createUniqueName(char* fileName,
   unlink(fileName);
 #else
   char* tmp = String_createUnique();
-  strcpy(fileName, tmp);
+  strcpy(fileName, pattern);
+  strcat(fileName, tmp);
   if (suffix != NULL)
   {
     strcat(fileName, ".");

@@ -1,3 +1,8 @@
+###############################################################################
+#
+# CMakeLists file for the Rcs library
+#
+###############################################################################
 CMAKE_MINIMUM_REQUIRED(VERSION 3.4)
 SET(BST_INSTALL_CATEGORY Libraries) 
 
@@ -19,19 +24,13 @@ IF(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 ENDIF()
 
 IF (NOT CMAKE_BUILD_TYPE)
-  IF (WIN32)
-    SET(CMAKE_BUILD_TYPE "Release" CACHE STRING
-       "Choose the type of build, options are: Debug Release." FORCE)
-  ELSE()
-    SET(CMAKE_BUILD_TYPE "Release" CACHE STRING 
-       "Choose the type of build, options are: Debug Release." FORCE)
-  ENDIF()
+  SET(CMAKE_BUILD_TYPE "Release" CACHE STRING
+     "Choose the type of build, options are: Debug Release." FORCE)
 ENDIF (NOT CMAKE_BUILD_TYPE)
 
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
-SITE_NAME(HOSTNAME)
 
 MESSAGE(STATUS "Using cmake ${CMAKE_VERSION}")
 MESSAGE(STATUS "Compiler is: ${CMAKE_CXX_COMPILER_ID}")
@@ -88,69 +87,55 @@ ENDIF(RCS_COPY_OR_LINK_CONFIG_DIRS)
 ################################################################################
 #
 # Compile settings
+# Create shared libraries for Linux and Windows:
+#   see http://www.kitware.com/blog/home/post/939
 #
 ################################################################################
 SET(BUILD_SHARED_LIBS ON)
 
-IF(UNIX)
+IF(WIN32)
+  
+  ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE)
+  ADD_DEFINITIONS(-D_USE_MATH_DEFINES)   # M_PI etc. for windows
+  SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  
+ELSEIF(UNIX)
+
   OPTION(ENABLE_C++11 "Compile with C++11 support enabled" OFF)
 
   IF(ENABLE_C++11)
     SET(CMAKE_CXX_STANDARD 11)
     SET(CMAKE_CXX_STANDARD_REQUIRED ON)
   ELSE()
-    SET(CMAKE_CXX_FLAGS "-std=c++0x")
+    STRING(APPEND CMAKE_CXX_FLAGS " -std=c++0x")
   ENDIF()
 
-ENDIF()
+  # Flag -ggdb to enable valgrind debugging
+  STRING(APPEND CMAKE_C_FLAGS   " -Wall -pedantic -fPIC -Wno-long-long -Wno-variadic-macros -std=c99 -ggdb")
+  STRING(APPEND CMAKE_CXX_FLAGS " -Wall -pedantic -fPIC -Wno-format -Wno-long-long -Wno-variadic-macros -ggdb")
 
-# Create shared libraries for Linux and Windows: see http://www.kitware.com/blog/home/post/939
-IF(WIN32)
-  ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE)
-  SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-  #SET(CREATE_WIN_DLL TRUE)
-  #ADD_DEFINITIONS(-DWIN_DLL)
-ELSEIF(UNIX)
-  SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -Wall -pedantic -fPIC -Wno-long-long -Wno-variadic-macros -std=c99")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -fPIC -Wno-format -Wno-long-long -Wno-variadic-macros")
-  ADD_DEFINITIONS(-D__linux__)
-
-  # Flag -rdynamic needed for backtrace()
+  # GNU flag -rdynamic needed for backtrace()
   IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -rdynamic")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic")
+    STRING(APPEND CMAKE_C_FLAGS   " -rdynamic")
+    STRING(APPEND CMAKE_CXX_FLAGS " -rdynamic")
   ENDIF()
   
   IF(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    # setting march to core2 to enable valgrind debugging (also good for Xeon)
-    # Low level optimization for debug mode, flag for checking stack corruption, flag for debug output
-    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -march=core2 -O0 -fstack-protector-all -ggdb")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=core2 -O0 -fstack-protector-all -ggdb")
+    # Setting march to core2 to enable valgrind debugging (also good for Xeon)
+    # Low level optimization for debug mode, flag for checking stack corruption
+    STRING(APPEND CMAKE_C_FLAGS   " -march=core2 -O0 -fstack-protector-all")
+    STRING(APPEND CMAKE_CXX_FLAGS " -march=core2 -O0 -fstack-protector-all")
   ELSE()
-    # setting march to native for optimal performance on local machine
-    # Strong optimization for release mode
-    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -march=native -ggdb")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -ggdb")
+    # We assume Release mode for CMAKE_BUILD_TYPE anything else than Debug
+    # Setting march to native for optimal performance on local machine
+    STRING(APPEND CMAKE_C_FLAGS   " -march=native")
+    STRING(APPEND CMAKE_CXX_FLAGS " -march=native")
+    IF(NOT ENABLE_DEBUG_MACROS)
+      ADD_DEFINITIONS(-DRCS_NO_DEBUG)
+      MESSAGE(STATUS "Compiling in RELEASE mode, debug macros DISABLED")
+    ENDIF()
   ENDIF()
   
-ENDIF()
-
-################################################################################
-#
-# Dependency settings and compile settings. These must go after Externals.cmake
-#
-################################################################################
-#INCLUDE(Externals)
-
-IF (WIN32)
-  ADD_DEFINITIONS(-D_USE_MATH_DEFINES)   # M_PI etc. for windows
-ENDIF(WIN32)
-
-SET(ARCH ${CMAKE_SYSTEM_NAME})
-
-IF(${CMAKE_BUILD_TYPE} STREQUAL "Release" AND NOT ENABLE_DEBUG_MACROS)
-  ADD_DEFINITIONS(-DRCS_NO_DEBUG)
-  MESSAGE(STATUS "Compiling in RELEASE mode, debug macros DISABLED")
 ENDIF()
 
 ################################################################################
@@ -180,29 +165,16 @@ ENDIF("${isSystemDir}" STREQUAL "-1")
 
 ################################################################################
 #
-# Setup exported target collection
+# Setup exported target collection:
+#   - Setup RCS_EXPORT_LIBRARIES so the component CMakeLists.txt can modify it
+#   - Create a macro for adding an export library
 #
 ################################################################################
-# Setup RCS_EXPORT_LIBRARIES so the component CMakeLists.txt can modify it
 SET(RCS_EXPORT_LIBRARIES "" CACHE INTERNAL "")
-# Create a macro for adding an export library
+
 FUNCTION(RCS_ADD_EXPORT_LIBRARY library)
   SET(RCS_EXPORT_LIBRARIES ${RCS_EXPORT_LIBRARIES} ${library} CACHE INTERNAL "")
 ENDFUNCTION()
-
-################################################################################
-#
-# If a user-file is in the cmake directory, it will be included.
-#
-################################################################################
-SET(USER_LIST "${PROJECT_SOURCE_DIR}/cmake/CMakeLists-$ENV{USER}.txt")
-
-IF(EXISTS ${USER_LIST})
-  MESSAGE(STATUS "Including " ${USER_LIST})
-  INCLUDE(${USER_LIST})
-ELSE()
-  MESSAGE(STATUS "Not found: " ${USER_LIST})
-ENDIF()
 
 ################################################################################
 #

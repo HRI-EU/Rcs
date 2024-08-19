@@ -194,6 +194,7 @@ void AsyncWidget::unlaunch()
     RLOG(5, "unlaunch(): Destroying widget \"%s\" by posting event to Gui thread",
          getWidget()->objectName().toStdString().c_str());
     QCoreApplication::postEvent(AsyncGuiFactory::getLauncher(), ae);
+    RLOG(5, "unlaunch(): Done posting event");
   }
 
   double t_unlaunch = Timer_getSystemTime();
@@ -202,10 +203,18 @@ void AsyncWidget::unlaunch()
     Timer_usleep(100000);
 
     double duration = Timer_getSystemTime() - t_unlaunch;
-    if (duration > 3.0)
+    if (duration > 1.0)
     {
       RLOG(1, "Waiting for unlaunch (Widget \"%s\"): %.2f seconds",
            getWidget()->objectName().toStdString().c_str(), duration);
+    }
+
+    if (duration > 2.0)
+    {
+      RLOG(1, "Deleting by hand");
+      QCoreApplication::postEvent(AsyncGuiFactory::getLauncher(), ae);
+      QCoreApplication::processEvents();
+      RLOG(1, "Done deleting by hand");
     }
   }
 
@@ -220,6 +229,8 @@ void AsyncWidget::destroy()
     RLOG(1, "WARNING: You must call this from the Gui thread using unlaunch()");
   }
 
+  RCHECK(w);
+  RLOG_CPP(0, "destroy(): Deleting Gui " << w->objectName().toStdString());
   delete w;
   w = NULL;
 }

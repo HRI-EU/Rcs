@@ -111,10 +111,13 @@ TextEditWidget::TextEditWidget(const QString& windowTitle) : QScrollArea()
 
 TextEditWidget::~TextEditWidget()
 {
+  RLOG(1, "Deleting TextEditWidget with %zu callbacks", callback.size());
   for (size_t i = 0; i < callback.size(); ++i)
   {
+    RLOG(1, "Deleting callback %zu", i);
     delete callback[i];
   }
+  RLOG(1, "Done deleting TextEditWidget with %zu callbacks", callback.size());
 }
 
 std::string TextEditWidget::getAndResetText()

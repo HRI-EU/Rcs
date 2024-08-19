@@ -434,9 +434,8 @@ bool WidgetLauncher::event(QEvent* ev)
 
       if (aw == mev->widget)
       {
-        RLOG_CPP(5, "Removing AsyncWidget holding "
-                 << aw->w->objectName().toStdString()
-                 << " from queue");
+        std::string widgetName = aw->w ? aw->w->objectName().toStdString() : "NULL";
+        RLOG_CPP(5, "Removing AsyncWidget holding " << widgetName << " from queue");
         it = asyncWidgets.erase(it);
       }
       else
