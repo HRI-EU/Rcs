@@ -35,11 +35,13 @@
 #define RCS_VIDEORECORDER_H
 
 #include <osg/Camera>
+#include <osg/Texture2D>
 
 namespace Rcs
 {
 
 class VideoRecorder;
+class VideoToTextureConverter;
 
 class FrameCaptureCallback : public osg::Camera::DrawCallback
 {
@@ -48,17 +50,26 @@ public:
   virtual ~FrameCaptureCallback();
 
   static bool hasRecorder();
-
   void createRecorder(int width, int height, int fps);
-
   void deleteRecorder();
-
   bool isRecording() const;
-
   virtual void operator()(osg::RenderInfo& renderInfo) const;
 
 private:
   VideoRecorder* recorder;
+};
+
+class VideoTextureCallback : public osg::NodeCallback
+{
+public:
+  VideoTextureCallback(const std::string& videoFile);
+  ~VideoTextureCallback();
+  void setTexture(osg::Texture2D* tex);
+  virtual void operator()(osg::Node* node, osg::NodeVisitor* nv);
+  static bool hasConverter();
+
+private:
+  VideoToTextureConverter* textureConverter;
 };
 
 }   // namespace
