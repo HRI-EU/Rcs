@@ -38,6 +38,7 @@
 #include <string>
 #include <cstdio>
 #include <cstdarg>
+#include <vector>
 
 
 namespace Rcs
@@ -182,6 +183,16 @@ public:
    *         not been parsed, argc is 0 and argv points to NULL.
    */
   virtual int getArgs(char** * argv) const;
+
+  /*! \brief Copies all argv elements into a vector of strings.
+   */
+  std::vector<std::string> copyArgvToVector(int argc, char* argv[]) const;
+
+  /*! \brief Copies all internally stored argv elements into a vector of
+   *         strings. If the internal references don't exist, an empty
+   *         vector will be returned.
+   */
+  std::vector<std::string> copyArgvToVector() const;
 
 
 protected:

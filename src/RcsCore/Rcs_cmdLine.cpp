@@ -39,6 +39,7 @@
 #include <cstring>
 #include <climits>
 #include <cfloat>
+#include <vector>
 
 
 
@@ -558,4 +559,27 @@ int Rcs::CmdLineParser::getArgs(char** * argv_) const
 void Rcs::CmdLineParser::clearDescriptions()
 {
   parsedArguments.clear();
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+std::vector<std::string> Rcs::CmdLineParser::copyArgvToVector(int argc_, char* argv_[]) const
+{
+  std::vector<std::string> argsVector;
+
+  for (int i = 0; i < argc_; ++i)
+  {
+    argsVector.push_back(argv_[i]);
+  }
+
+  return argsVector;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+std::vector<std::string> Rcs::CmdLineParser::copyArgvToVector() const
+{
+  return copyArgvToVector(argc, argv);
 }
