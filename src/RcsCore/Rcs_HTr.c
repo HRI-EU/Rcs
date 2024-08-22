@@ -342,7 +342,7 @@ void HTr_toString(char* str, const HTr* A)
   RCHECK(str);
   RCHECK(A);
 
-  char buf[12][16];
+  char buf[12][32];
   const unsigned int maxDigits = 8;
 
   snprintf(str, HTR_TOSTRING_MAXSIZE,
@@ -359,28 +359,6 @@ void HTr_toString(char* str, const HTr* A)
            String_fromDouble(buf[9],  A->rot[2][0], maxDigits),
            String_fromDouble(buf[10], A->rot[2][1], maxDigits),
            String_fromDouble(buf[11], A->rot[2][2], maxDigits));
-
-
-
-  /* const unsigned int maxDigits = 12; */
-  /* char buf[64]; */
-
-  /* strncpy(str, String_fromDouble(buf, A->org[0], maxDigits), 16); */
-  /* strcat(str, " "); */
-  /* strncat(str, String_fromDouble(buf, A->org[1], maxDigits), 16); */
-  /* strcat(str, " "); */
-  /* strncat(str, String_fromDouble(buf, A->org[2], maxDigits), 16); */
-  /* strcat(str, " "); */
-
-  /* for (int i=0; i<3; ++i) */
-  /* { */
-  /*   for (int j=0; j<3; ++j) */
-  /*   { */
-  /*     strncat(str, String_fromDouble(buf, A->rot[i][j], maxDigits), 16); */
-  /*     strcat(str, " "); */
-  /*   } */
-  /* } */
-
 }
 
 /*******************************************************************************
