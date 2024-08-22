@@ -53,6 +53,8 @@
 #include <osg/PolygonMode>
 #include <osg/Version>
 
+#include <set>
+
 
 namespace Rcs
 {
@@ -101,14 +103,13 @@ protected:
  *                             |
  *                             ---> capsule, box, etc (osg::Capsule ...)
 *******************************************************************************/
-BodyNode::BodyNode(const RcsBody* b, const RcsGraph* graph, double scale,
-                   bool resizeable) :
+BodyNode::BodyNode(const RcsBody* b, const RcsGraph* graph, double scale) :
   graphPtr(graph),
   A_BI_(NULL),
   bdyId(b ? b->id : -1),
   parentId(-1),
   ghostMode(false),
-  dynamicMeshUpdate(false),
+  dynamicMeshUpdate(true),
   refNode(false),
   initializeDebugInfo(false)
 {
@@ -133,7 +134,7 @@ BodyNode::BodyNode(const RcsBody* b, const RcsGraph* graph, double scale,
     NLOG(0, "[%s]: Creating ShapeNode for %s",
          RCSBODY_NAME_BY_ID(graph, b->id),
          RcsShape_name(sh->type));
-    osg::ref_ptr<ShapeNode> sni = new ShapeNode(graph, b->id, i, resizeable);
+    osg::ref_ptr<ShapeNode> sni = new ShapeNode(graph, b->id, i);
     sni->setPosition(osg::Vec3(sh->A_CB.org[0],
                                sh->A_CB.org[1],
                                sh->A_CB.org[2]));
@@ -184,7 +185,6 @@ BodyNode::BodyNode(const RcsBody* b, const RcsGraph* graph, double scale,
 
 
 
-      //bbPat->setTransformation(&sh->A_CB);
       osg::ref_ptr<BoxNode> bb = new BoxNode(center, extents[0], extents[1], extents[2]);
       bbPat->addChild(bb.get());
       _collisionNode->addChild(bbPat.get());
@@ -216,7 +216,7 @@ BodyNode::BodyNode(const RcsBody* b, const RcsGraph* graph, double scale,
   }
   else
   {
-    RLOG(4, "Invalid transform in \"%s\"", getName().c_str());
+    RLOG(1, "Invalid transform in \"%s\"", getName().c_str());
     REXEC(4)
     {
       HTr_fprint(stderr, A_BI);
@@ -838,7 +838,11 @@ void BodyNode::setGhostMode(bool enabled, const std::string& matname)
 }
 
 /*******************************************************************************
- * For soft physics etc.
+ * For soft physics etc. We do it here, since on the level of the ShapeNode we
+ * cannot decide if a mesh is shared between different MeshNodes, or if a
+ * BodyNode is visible or not. This leads to copying overheads that we avoid
+ * here. We keep this here, so that the rendering is updated dynamically if we
+ * change the shape's compute type.
  ******************************************************************************/
 void BodyNode::updateDynamicMeshes()
 {
@@ -876,9 +880,16 @@ void BodyNode::updateDynamicMeshes()
       m.insert(m.end(), tmp.begin(), tmp.end());
     }
 
+    // There might be duplicate mesh nodes in the vector. We remove them by
+    // converting into a set and back.
+    NLOG_CPP(0, "Body " << body()->name << " shape contains " << m.size() << " meshes");
+    std::set<MeshNode*> uniqueElements(m.begin(), m.end());
+    m = std::vector<MeshNode*>(uniqueElements.begin(), uniqueElements.end());
+    NLOG_CPP(0, "Reduced to " << uniqueElements.size() << " meshes");
+
     RcsMeshData* meshDat = SHAPE->mesh;
 
-    for (size_t i=0; i<m.size(); ++i)
+    for (size_t i=0; i< m.size(); ++i)
     {
       RLOG_CPP(6, "Updating mesh " << i+1 << " from " << m.size() << " with "
                << meshDat->nVertices << " vertices and " << meshDat->nFaces

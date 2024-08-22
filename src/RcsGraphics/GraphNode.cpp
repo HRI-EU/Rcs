@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -117,7 +117,7 @@ GraphNode::GraphNode() :
 /*******************************************************************************
  * RcsGraph root node.
  ******************************************************************************/
-GraphNode::GraphNode(const RcsGraph* g, bool resizeable, bool addSetters) :
+GraphNode::GraphNode(const RcsGraph* g, bool addSetters) :
   osg::PositionAttitudeTransform(),
   graph(g),
   wireframe(false),
@@ -127,7 +127,7 @@ GraphNode::GraphNode(const RcsGraph* g, bool resizeable, bool addSetters) :
   this->switchNode = new osg::Switch;
   addChild(switchNode.get());
 
-  init(graph, resizeable, addSetters);
+  init(graph, addSetters);
 }
 
 /*******************************************************************************
@@ -150,8 +150,7 @@ void GraphNode::setEnableMeshFactory(bool enable)
 /*******************************************************************************
  * RcsGraph root node.
  ******************************************************************************/
-bool GraphNode::init(const RcsGraph* g, bool resizeable,
-                     bool automatically_add_target_setters)
+bool GraphNode::init(const RcsGraph* g, bool automatically_add_target_setters)
 {
   if (g==NULL)
   {
@@ -192,7 +191,7 @@ bool GraphNode::init(const RcsGraph* g, bool resizeable,
     }
 
     RLOG(5, "Creating BodyNode for %s", BODY->name);
-    osg::ref_ptr<Rcs::BodyNode> tn = new Rcs::BodyNode(BODY, g, 1.0, resizeable);
+    osg::ref_ptr<Rcs::BodyNode> tn = new Rcs::BodyNode(BODY, g, 1.0);
     tn->setParent(RCSBODY_BY_ID(g, BODY->parentId));
 
     switchNode->addChild(tn.get());
@@ -206,7 +205,7 @@ bool GraphNode::init(const RcsGraph* g, bool resizeable,
       RLOG(5, "Scanning body \"%s\" for rigid body joints", BODY->name);
 
       /// \todo: Implement for rigid bodies with parent body
-      if (BODY->rigid_body_joints==true)
+      if (BODY->rigid_body_joints)
       {
         RLOG(5, "Adding TargetSetter for body %s", BODY->name);
 
@@ -688,19 +687,18 @@ const RcsGraph* GraphNode::getGraphPtr() const
 * Adds a body node.
 ******************************************************************************/
 BodyNode* GraphNode::addBodyNode(const RcsBody* body, double scale,
-                                 bool resizeable, pthread_mutex_t* mtx)
+                                 pthread_mutex_t* mtx)
 {
-  osg::ref_ptr<BodyNode> bNd = new BodyNode(body, getGraphPtr(),
-                                            scale, resizeable);
+  osg::ref_ptr<BodyNode> bNd = new BodyNode(body, getGraphPtr(), scale);
 
-  if (mtx != NULL)
+  if (mtx)
   {
     pthread_mutex_lock(mtx);
   }
 
   switchNode->addChild(bNd.get());
 
-  if (mtx != NULL)
+  if (mtx)
   {
     pthread_mutex_unlock(mtx);
   }

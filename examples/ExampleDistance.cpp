@@ -152,8 +152,8 @@ bool ExampleDistance::initGraphics()
   viewer->add(kc.get());
 
   // BodyNodes
-  Rcs::BodyNode* bNd1 = new Rcs::BodyNode(b1, graph, 1.0, false);
-  Rcs::BodyNode* bNd2 = new Rcs::BodyNode(b2, graph, 1.0, false);
+  Rcs::BodyNode* bNd1 = new Rcs::BodyNode(b1, graph);
+  Rcs::BodyNode* bNd2 = new Rcs::BodyNode(b2, graph);
   bNd1->setGhostMode(true, "RED");
   bNd2->setGhostMode(true, "GREEN");
   viewer->add(bNd1);

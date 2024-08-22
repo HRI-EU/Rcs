@@ -80,7 +80,6 @@ ExampleFK::ExampleFK(int argc, char** argv) : ExampleBase(argc, argv)
   fwdKinType = 0;
   hudText[0] = '\0';
   testCopy = false;
-  resizeable = false;
   editMode = false;
   playBVH = false;
   noHud = false;
@@ -169,8 +168,6 @@ bool ExampleFK::parseArgs(CmdLineParser* argP)
                     "body (default is none)");
   argP->getArgument("-aabb", &aabbBdyName, "AABB root body (default is none)");
   argP->getArgument("-copy", &testCopy, "Test graph copying");
-  argP->getArgument("-resizeable", &resizeable, "Adjust visualization "
-                    "of shapes dynamically");
   argP->getArgument("-edit", &editMode, "Start in xml edit mode (no Qt Gui)");
   argP->getArgument("-bvh", &playBVH, "Play bvh file");
   argP->getArgument("-noHud", &noHud, "Don't show HUD");
@@ -335,7 +332,7 @@ bool ExampleFK::initGraphics()
 
   viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
   viewer->setBackgroundColor(bgColor);
-  gn = new Rcs::GraphNode(graph, resizeable);
+  gn = new Rcs::GraphNode(graph);
   gn->toggleReferenceFrames();
   viewer->add(gn);
 
@@ -354,7 +351,7 @@ bool ExampleFK::initGraphics()
   {
     RcsGraph* graph2 = RcsGraph_create(xmlFile2);
     RCHECK(graph2);
-    viewer->add(new Rcs::GraphNode(graph2, resizeable));
+    viewer->add(new Rcs::GraphNode(graph2));
   }
 
   if (!noHud)

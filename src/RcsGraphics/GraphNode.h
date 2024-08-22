@@ -73,16 +73,11 @@ public:
   /*! \brief Constructs a GraphNode from a given RcsGraph data structure.
    *
    *  \param[in] graph            RcsGraph the node will be built from
-   *  \param[in] resizeable       If true, the nodes will reflect the changed
-   *                              of the RcsShapes dynamically. This will lead
-   *                              to a bit less efficiency, therefore the flag
-   *                              is set to false by default.
    *  \param[in] addTargetSetters If true, all RcsBodies with rigid body degrees
    *                              of freedom will get a dragger node. It can be
    *                              visualized by pressing the TAB key.
    */
-  GraphNode(const RcsGraph* graph, bool resizeable=false,
-            bool addTargetSetters=true);
+  GraphNode(const RcsGraph* graph, bool addTargetSetters=true);
 
   /*! \brief Removes event handlers
    */
@@ -96,7 +91,7 @@ public:
    *          - graph is NULL
    *          - Class already initialized
    */
-  bool init(const RcsGraph* graph, bool resizeable, bool addTargetSetters);
+  bool init(const RcsGraph* graph, bool addTargetSetters);
 
   /*! \brief Toggles the visibility of the graphics model of all BodyNodes
    */
@@ -204,14 +199,12 @@ public:
   *
   *  \param[in] body       Pointer to the body to be added.
   *  \param[in] scale      Scaling factor for meshes.
-  *  \param[in] resizeable True for run-time rescalability. Comes with some
-  *                        performance overhead.
   *  \param[in] mtx        Mutex around the viewer's frame() call. This must be
   *                        given in order to avoid crashes when the viewer's
   *                        frame() function is called from a different thread.
   */
   BodyNode* addBodyNode(const RcsBody* body, double scale=1.0,
-                        bool resizeable=false, pthread_mutex_t* mtx=NULL);
+                        pthread_mutex_t* mtx=NULL);
 
   /*! \brief Removes a BodyNode by pointer from the GraphNode.
    *

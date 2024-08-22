@@ -80,7 +80,6 @@ protected:
   std::string fKinBdyName;
   std::string aabbBdyName;
   bool testCopy;
-  bool resizeable;
   bool editMode;
   bool playBVH;
   bool noHud;

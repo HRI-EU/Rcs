@@ -78,7 +78,7 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   // simulation result, since there is no joint separation etc. visible. For
   // this, the below instantiated physicsNd is responsible.
   // \todo: Maybe only use one node, and make it toggleable?
-  this->modelNd = new GraphNode(sim_->getGraph(), resizeable, false);
+  this->modelNd = new GraphNode(sim_->getGraph(), false);
   modelNd->displayGraphicsModel(false);
   modelNd->displayPhysicsModel(true);
   modelNd->setGhostMode(true, "RED");
@@ -93,7 +93,7 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   // from the phyics engine. Since these in some cases don't use minimal
   // coordinates, one might see separation of objects in case of large
   // forces or other effects. This node also updates soft body meshes if any.
-  this->physicsNd = new GraphNode(sim_->getGraph(), resizeable, false);
+  this->physicsNd = new GraphNode(sim_->getGraph(), false);
   physicsNd->displayGraphicsModel(false);
   physicsNd->displayPhysicsModel(true);
   if (std::string(sim->getClassName())=="SoftBullet")
@@ -567,8 +567,8 @@ bool Rcs::PhysicsNode::removeBodyNode(const char* body)
  ******************************************************************************/
 void Rcs::PhysicsNode::addBodyNode(const RcsBody* body)
 {
-  modelNd->addBodyNode(body, 1.0, false);
-  BodyNode* node = physicsNd->addBodyNode(body, 1.0, false);
+  modelNd->addBodyNode(body);
+  BodyNode* node = physicsNd->addBodyNode(body);
 
   const RcsBody* simBdy = RcsGraph_getBodyByName(sim->getGraph(), body->name);
   const HTr* physicsTrf = sim->getPhysicsTransformPtr(simBdy);

@@ -39,6 +39,7 @@
 #include "SSRNode.h"
 #include "CapsuleNode.h"
 #include "RcsViewer.h"
+#include "VideoRecorder.h"
 
 #include <Rcs_typedef.h>
 #include <Rcs_macros.h>
@@ -46,6 +47,7 @@
 #include <Rcs_shape.h>
 #include <Rcs_math.h>
 #include <Rcs_utils.h>
+#include <Rcs_utilsCPP.h>
 
 #ifdef USE_OCTOMAP
 #include "OctomapNode.h"
@@ -358,12 +360,11 @@ void ShapeNode::ShapeUpdater::updateDynamicShapes()
  *                      ---> capsule, box, etc (osg::Capsule ...)
 
 *******************************************************************************/
-ShapeNode::ShapeNode(const RcsGraph* graph_, int bdyId_, int shapeIdx_,
-                     bool resizeable) :
+ShapeNode::ShapeNode(const RcsGraph* graph_, int bdyId_, int shapeIdx_) :
   graph(graph_), bdyId(bdyId_), shapeIdx(shapeIdx_), wireframeEnabled(false)
 {
   const RcsShape* sh = getShape();
-  addShape(sh, resizeable);
+  addShape(sh);
 
   if (RcsShape_isOfComputeType(sh, RCSSHAPE_COMPUTE_WIREFRAME))
   {
@@ -388,16 +389,15 @@ void ShapeNode::setEnableMeshFactory(bool enable)
 /*******************************************************************************
  *
  ******************************************************************************/
-void ShapeNode::addShape(const RcsShape* shape, bool resizeable)
+void ShapeNode::addShape(const RcsShape* shape)
 {
   osg::ref_ptr<osg::TessellationHints> hints = new osg::TessellationHints;
   osg::ref_ptr<osg::Geode> geode = new osg::Geode();
   const double* ext = shape->extents;
+  bool resizeable = RcsShape_isOfComputeType(shape, RCSSHAPE_COMPUTE_RESIZEABLE);
 
-  if (resizeable ||
-      RcsShape_isOfComputeType(shape,RCSSHAPE_COMPUTE_RESIZEABLE))
+  if (resizeable)
   {
-    resizeable = true;
     hints->setDetailRatio(0.5);
     shapeUpdater = new ShapeUpdater(this, shape);
   }
@@ -666,7 +666,23 @@ void ShapeNode::addShape(const RcsShape* shape, bool resizeable)
  ******************************************************************************/
 bool ShapeNode::addTexture(const char* textureFile)
 {
-  osg::ref_ptr<osg::Texture2D> texture = getOrCreateTexture(textureFile);
+  osg::ref_ptr<osg::Texture2D> texture;
+
+  if (String_endsWith(textureFile, ".mp4"))
+  {
+    RLOG(5, "Found video texture: %s", textureFile);
+    texture = new osg::Texture2D();
+    texture->setResizeNonPowerOfTwoHint(false);
+    texture->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR);
+    texture->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
+    osg::ref_ptr<VideoTextureCallback> videoCallback = new VideoTextureCallback(textureFile);
+    videoCallback->setTexture(texture);
+    setUpdateCallback(videoCallback);
+  }
+  else
+  {
+    texture = getOrCreateTexture(textureFile);
+  }
 
   if (!texture.valid())
   {

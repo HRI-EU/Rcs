@@ -73,8 +73,7 @@ class BodyNode: public osg::PositionAttitudeTransform
 
 public:
 
-  BodyNode(const RcsBody* bdy, const RcsGraph* graph, double scale=1.0,
-           bool resizeable=true);
+  BodyNode(const RcsBody* bdy, const RcsGraph* graph, double scale=1.0);
   virtual const char* className() const;
   void setTransformation(const HTr* A_BI);
   void displayCollisionNode(bool visibility = true);
