@@ -762,6 +762,10 @@ bool VideoTextureCallback::hasConverter()
   return false;
 }
 
+void VideoTextureCallback::setTexture(osg::Texture2D* tex)
+{
+}
+
 }   // namespace Rcs
 
 #endif   // USE_FFMPEG
