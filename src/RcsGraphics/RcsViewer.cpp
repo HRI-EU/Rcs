@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -43,6 +43,7 @@
 #include <Rcs_basicMath.h>
 #include <Rcs_material.h>
 #include <Rcs_utils.h>
+#include <Rcs_resourcePath.h>
 
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
@@ -1849,6 +1850,11 @@ bool Viewer::handle(const osgGA::GUIEventAdapter& ea,
         }
         RMSG("Setting debug level to %u", dLev);
         return false;
+      }
+
+      else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_F12)
+      {
+        Rcs_printResourcePath();
       }
 
       else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_F11)
