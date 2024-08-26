@@ -535,17 +535,13 @@ void ShapeNode::addShape(const RcsShape* shape)
         ss->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
       }
 
-      setNodeMaterial(shape->color, this);
+      setNodeMaterial(shape->color, geode.get());
     }
     else
     {
       RLOG(1, "Failed to read mesh file '%s' (Body '%s')",
            shape->meshFile, RCSBODY_NAME_BY_ID(graph, bdyId));
     }
-
-
-
-
   }
 
   ////////////////////////////////////////////////
