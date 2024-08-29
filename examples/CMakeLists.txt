@@ -18,7 +18,7 @@ IF(NOT HEADLESS_BUILD)
   #ADD_EXECUTABLE(ExampleKinetics ExampleKinetics.cpp)
   #TARGET_LINK_LIBRARIES(ExampleKinetics RcsCore RcsGui RcsGraphics RcsPhysics)
 
-  ADD_LIBRARY(RcsExamples ExampleFK.cpp ExampleInvKin.cpp ExampleMath.cpp ExamplePhysics.cpp ExampleDistance.cpp ExampleKinetics.cpp)
+  ADD_LIBRARY(RcsExamples ExampleFK.cpp ExampleInvKin.cpp ExampleMath.cpp ExamplePhysics.cpp ExampleDistance.cpp ExampleKinetics.cpp ExampleGraphics.cpp)
   TARGET_LINK_LIBRARIES(RcsExamples RcsGraphics RcsPhysics RcsGui)
 
   TARGET_INCLUDE_DIRECTORIES(RcsExamples PUBLIC

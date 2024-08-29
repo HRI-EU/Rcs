@@ -34,6 +34,8 @@
 #ifndef PPSGUI_H
 #define PPSGUI_H
 
+#include "AsyncWidget.h"
+
 #include <QScrollArea>
 
 #include <vector>
@@ -72,6 +74,20 @@ public:
   virtual ~PPSGui();
 
 };
+
+class PixelGui : public Rcs::AsyncWidget
+{
+public:
+  PixelGui(std::vector<Rcs::PPSGui::Entry> ppsEntries,
+           pthread_mutex_t* mutex=NULL);
+
+  void construct();
+
+protected:
+  std::vector<Rcs::PPSGui::Entry> pixelEntries;
+  pthread_mutex_t* mtx;
+};
+
 
 }
 

@@ -50,6 +50,19 @@ typedef struct
 namespace Rcs
 {
 
+PixelGui::PixelGui(std::vector<Rcs::PPSGui::Entry> ppsEntries,
+                   pthread_mutex_t* mutex) :
+  AsyncWidget(), pixelEntries(ppsEntries), mtx(mutex)
+{
+  launch();
+}
+
+void PixelGui::construct()
+{
+  setWidget(new PPSGui(&pixelEntries, mtx));
+}
+
+
 static void* ppsGui(void* arg)
 {
   VoidPointerList* p = (VoidPointerList*) arg;
