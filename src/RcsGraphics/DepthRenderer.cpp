@@ -73,7 +73,6 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
   }
 
   // Initialize viewer
-  setCameraManipulator(new osgGA::TrackballManipulator());
   this->rootNode = new osg::Group;
   setSceneData(rootNode.get());
 
@@ -126,6 +125,18 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
   // These are the settings from the Kinect v2
   setFrustumProjection(-0.146243, 0.145787, -0.109739, 0.109283, zNear, zFar);
 
+  // Allocate arrays
+  colorImage.resize(height);
+  for (unsigned int i = 0; i < height; ++i)
+  {
+    colorImage[i].resize(width);
+
+    for (unsigned int j = 0; j < width; ++j)
+    {
+      colorImage[i][j].resize(3);
+    }
+  }
+
   return true;
 }
 
@@ -143,41 +154,6 @@ void DepthRenderer::addNode(osg::Node* node)
 {
   rootNode->addChild(node);
 }
-
-/*******************************************************************************
- * Removes a node from the scene graph.
- ******************************************************************************/
-// size_t DepthRenderer::removeNodeInternal(std::string nodeName)
-// {
-//   int nnd = 0;
-//   osg::Node* ndi;
-
-//   do
-//   {
-//     ndi = findNamedNodeRecursive(rootNode, nodeName);
-//     if (ndi)
-//     {
-//       //nnd += removeNodeInternal(ndi);
-
-//       osg::Node::ParentList parents = ndi->getParents();
-
-//       for (size_t i=0; i<parents.size(); ++i)
-//       {
-//         nnd++;
-//         parents[i]->removeChild(ndi);
-//       }
-
-
-//     }
-
-//   }
-//   while (ndi);
-
-//   RLOG(5, "Removed %d nodes with name %s from the DepthRenderer",
-//        nnd, nodeName.c_str());
-
-//   return nnd;
-// }
 
 /*******************************************************************************
  * Removes a node from the scene graph.
@@ -230,8 +206,7 @@ int DepthRenderer::removeNode(const std::string& nodeName)
  ******************************************************************************/
 void DepthRenderer::setCameraTransform(const HTr* A_CI)
 {
-  osg::Matrix vm = Rcs::viewMatrixFromHTr(A_CI);
-  getCameraManipulator()->setByInverseMatrix(vm);
+  getCamera()->setViewMatrix(Rcs::viewMatrixFromHTr(A_CI));
 }
 
 /*******************************************************************************
@@ -347,20 +322,6 @@ void DepthRenderer::frame(double simulationTime)
   }
 
 
-
-
-  colorImage.resize(height);
-  for (unsigned int i = 0; i < height; ++i)
-  {
-    colorImage[i].resize(width);
-
-    for (unsigned int j = 0; j < width; ++j)
-    {
-      colorImage[i][j].resize(3);
-    }
-  }
-
-
   {
     //int width = rgbImage->s();
     //int height = rgbImage->t();
@@ -389,33 +350,6 @@ void DepthRenderer::frame(double simulationTime)
     }
 
   }
-
-
-
-
-
-
-
-
-
-
-
-  //float* colorData = (float*) rgbImage->data();
-
-  //for (unsigned int i=0; i<n; ++i)
-  //{
-  //  //const float data = colorData[i*4];
-
-  //  // screen to world coordinate (but we respect that the point cloud
-  //  // y-direction is downward while in OpenGL y points upward)
-  //  // also the correct point index is calculated this way
-  //  const unsigned int screen_x = i % width;
-  //  const unsigned int screen_y = height - 1 - (i / width);
-
-  //  colorImage[screen_y][screen_x][0] = colorData[i*n+0];
-  //  colorImage[screen_y][screen_x][1] = colorData[i*n+1];
-  //  colorImage[screen_y][screen_x][2] = colorData[i*n+2];
-  //}
 
   // osgDB::writeImageFile(*rgbImage.get(),"color.bmp");
   // osgDB::writeImageFile(*zImage.get(),"depth.bmp");
