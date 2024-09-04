@@ -92,6 +92,7 @@ PPSGui::PPSGui(std::vector<Entry>* entries, pthread_mutex_t* mutex): QScrollArea
 {
   QString window_title("RCS PPS Viewer GUI");
   setWindowTitle(window_title);
+  setObjectName("Rcs::PPSGui");
 
   // The layout for the overall widget
   QHBoxLayout* mainLayout = new QHBoxLayout();
