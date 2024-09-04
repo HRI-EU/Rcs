@@ -782,7 +782,7 @@ int String_LevenshteinDistance(const char* s1_, const char* s2_)
  ******************************************************************************/
 bool File_exists(const char* filename)
 {
-  FILE* file;
+  struct stat file_info;
 
   if (filename == NULL)
   {
@@ -794,14 +794,20 @@ bool File_exists(const char* filename)
     return false;
   }
 
-  file = fopen(filename, "r");
-
-  if (file != NULL)
+  // Check if the file exists and get information about it
+  if (stat(filename, &file_info) != 0)
   {
-    fclose(file);
+    // File does not exist or cannot be accessed
+    return false;
+  }
+
+  // Check if it's a regular file
+  if (S_ISREG(file_info.st_mode))
+  {
     return true;
   }
 
+  // If it's not a regular file (e.g., directory), return false
   return false;
 }
 

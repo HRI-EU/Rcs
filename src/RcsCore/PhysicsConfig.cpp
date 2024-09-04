@@ -331,7 +331,7 @@ void PhysicsConfig::init(const char* configFile)
   {
     // load xml tree
     this->root = parseXMLFile(filename, "content", &this->doc);
-    RCHECK(this->root);
+    RCHECK_MSG(this->root, "Failed to parse physics config file \"%s\"", filename);
 
     // find default material
     findDefaultMaterial();
