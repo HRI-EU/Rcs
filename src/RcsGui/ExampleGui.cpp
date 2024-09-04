@@ -331,11 +331,11 @@ void ExampleItem::stop()
     RLOG(5, "Example is already stopped");
     return;
   }
-  RLOG(5, "Stopping example");
+
   example->stop();
   exampleThread.quit();
   exampleThread.wait();
-  RLOG(5, "... stopped");
+
   if (parseWindow)
   {
     parseWindow->unlaunch();
@@ -351,10 +351,9 @@ void ExampleItem::stop()
 void ExampleItem::destroy()
 {
   stop();
-  RLOG(5, "Deleting example");
   delete example;
-  pc.clear();
   example = NULL;
+  pc.clear();
 }
 
 void ExampleItem::setParseItem(QStandardItem* item)

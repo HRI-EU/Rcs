@@ -54,6 +54,7 @@ public:
   ~WidgetLauncher();
   bool event(QEvent* ev);
   size_t numWidgets() const;
+  void print() const;
 
 public slots:
   void onCloseWindow(QObject* obj);
@@ -72,6 +73,7 @@ public:
   static bool isGuiThread();
   static bool isThreadRunning();
   static WidgetLauncher* getLauncher();
+  static void print();
   static QEvent::Type constructEvent;
   static QEvent::Type destroyEvent;
   static QEvent::Type resetEvent;

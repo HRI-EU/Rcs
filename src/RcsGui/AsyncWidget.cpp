@@ -230,7 +230,7 @@ void AsyncWidget::destroy()
   }
 
   RCHECK(w);
-  RLOG_CPP(0, "destroy(): Deleting Gui " << w->objectName().toStdString());
+  RLOG_CPP(5, "destroy(): Deleting Gui '" << w->objectName().toStdString() << "'");
   delete w;
   w = NULL;
 }

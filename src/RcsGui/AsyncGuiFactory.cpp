@@ -144,6 +144,7 @@ addr2line: DWARF error: section .debug_info is larger than its filesize! (0x93ef
 #include <cstdlib>
 
 
+
 uint qGlobalPostedEventsCount();
 
 void myMessageOutput(QtMsgType type,
@@ -347,6 +348,13 @@ WidgetLauncher* AsyncGuiFactory::getLauncher()
   return launcher;
 }
 
+void AsyncGuiFactory::print()
+{
+  RMSG("AsyncGuiFactory::print(): thread is %s", isThreadRunning() ? "running" : "not running");
+
+  launcher->print();
+}
+
 
 
 
@@ -385,7 +393,6 @@ bool WidgetLauncher::event(QEvent* ev)
 {
   RLOG_CPP(5, "Received event - event count: " << qGlobalPostedEventsCount());
 
-
   AsyncWidgetEvent* mev = dynamic_cast<AsyncWidgetEvent*>(ev);
 
   if (!mev)
@@ -422,7 +429,6 @@ bool WidgetLauncher::event(QEvent* ev)
   else if (ev->type() == AsyncGuiFactory::destroyEvent)
   {
     RLOG(5, "Received AsyncGuiFactory::destroyEvent");
-
     mev->widget->destroy();
     mev->widget->setLaunched(false);
 
@@ -489,6 +495,20 @@ void WidgetLauncher::onCloseWindow(QObject* obj)
 size_t WidgetLauncher::numWidgets() const
 {
   return asyncWidgets.size();
+}
+
+void WidgetLauncher::print() const
+{
+  RMSG("WidgetLauncher::print()");
+  std::cout << "Number of open widgets: " << numWidgets() << std::endl;
+
+  for (size_t i=0; i<asyncWidgets.size(); ++i)
+  {
+    const AsyncWidget* aw = asyncWidgets[i];
+    std::string widgetName = aw->w ? aw->w->objectName().toStdString() : "NULL";
+    std::cout << "AsyncWidget " << i << ": " << widgetName << std::endl;
+  }
+
 }
 
 } // namespace Rcs
