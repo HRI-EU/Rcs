@@ -780,16 +780,33 @@ int String_LevenshteinDistance(const char* s1_, const char* s2_)
 /*******************************************************************************
  * See header
  ******************************************************************************/
+#if defined (_MSC_VER)
 bool File_exists(const char* filename)
 {
-  struct stat file_info;
+  struct _stat file_info;
 
-  if (filename == NULL)
+  if ((!filename) || (strlen(filename) > FILENAME_MAX))
   {
     return false;
   }
 
-  if (strlen(filename) > FILENAME_MAX)
+  if (_stat(filename, &file_info) == 0)
+  {
+    // Check if it's a regular file
+    if ((file_info.st_mode & _S_IFREG) != 0)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+#else
+bool File_exists(const char* filename)
+{
+  struct stat file_info;
+
+  if ((!filename) || (strlen(filename)>FILENAME_MAX))
   {
     return false;
   }
@@ -810,6 +827,7 @@ bool File_exists(const char* filename)
   // If it's not a regular file (e.g., directory), return false
   return false;
 }
+#endif
 
 /*******************************************************************************
  * See header
