@@ -62,6 +62,8 @@ public:
   bool setDebugDrawer(bool enable);
   void updateTransformPointers();
   void setSimulation(PhysicsBase* sim);
+  GraphNode* getPhysicsGraphNode();
+  GraphNode* getModelGraphNode();
 
   /*! \brief Adds a wireframe box to show the considered bounding box for the
    *         simulation. This is specific for Bullet and will do nothing if

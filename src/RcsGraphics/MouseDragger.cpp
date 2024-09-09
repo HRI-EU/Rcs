@@ -133,7 +133,8 @@ Rcs::MouseDragger::MouseDragger() : osg::Switch(),
   _leftControlPressed(false),
   _LMBPressed(false),
   _RMBPressed(false),
-  _enableArrowKeyTranslation(true)
+  _enableArrowKeyTranslation(true),
+  _enableDragLine(true)
 {
   setName("MouseDragger");
   KeyCatcherBase::registerKey("Left Shift", "Enable body dragging", "MouseDragger");
@@ -203,7 +204,7 @@ Rcs::MouseDragger::MouseDragger() : osg::Switch(),
 bool Rcs::MouseDragger::callback(const osgGA::GUIEventAdapter& ea,
                                  osgGA::GUIActionAdapter& aa)
 {
-  _mtx.lock();
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mtx);
 
   switch (ea.getEventType())
   {
@@ -288,12 +289,8 @@ bool Rcs::MouseDragger::callback(const osgGA::GUIEventAdapter& ea,
 
       if (_enableArrowKeyTranslation)
       {
-        //RcsBody* bdy = Rcs::MouseDragger::getBodyUnderMouse(ea, aa);
         RcsGraph* g = NULL;
         RcsBody* bdy = getBodyUnderMouse(ea, aa, NULL, NULL, &g);
-
-        // Rcs::BodyNode* nd = Rcs::getNodeUnderMouse<Rcs::BodyNode*>(ea, aa);
-        // RcsBody* bdy = nd ? nd->body() : NULL;
 
         if (bdy)
         {
@@ -400,8 +397,16 @@ bool Rcs::MouseDragger::callback(const osgGA::GUIEventAdapter& ea,
 
         if (_LMBPressed)
         {
-          (*_vertices)[0].set(_I_anchor[0], _I_anchor[1], _I_anchor[2]);
-          (*_vertices)[1].set(_I_mouseTip[0], _I_mouseTip[1], _I_mouseTip[2]);
+          if (_enableDragLine)
+          {
+            (*_vertices)[0].set(_I_anchor[0], _I_anchor[1], _I_anchor[2]);
+            (*_vertices)[1].set(_I_mouseTip[0], _I_mouseTip[1], _I_mouseTip[2]);
+          }
+          else
+          {
+            (*_vertices)[0].set(0.0, 0.0, 0.0);
+            (*_vertices)[1].set(0.0, 0.0, 0.0);
+          }
           _linesGeom->setVertexArray(_vertices.get());
         }
       }
@@ -414,8 +419,6 @@ bool Rcs::MouseDragger::callback(const osgGA::GUIEventAdapter& ea,
 
   }   // switch(...)
 
-  _mtx.unlock();
-
   return false;
 }
 
@@ -424,6 +427,14 @@ bool Rcs::MouseDragger::callback(const osgGA::GUIEventAdapter& ea,
  *****************************************************************************/
 void Rcs::MouseDragger::update()
 {
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+void Rcs::MouseDragger::setEnableDragLine(bool enable)
+{
+  _enableDragLine = enable;
 }
 
 /******************************************************************************
@@ -463,13 +474,8 @@ void Rcs::MouseDragger::resetDragger()
  *****************************************************************************/
 bool Rcs::MouseDragger::leftMouseButtonPressed() const
 {
-  bool result;
-
-  _mtx.lock();
-  result = _LMBPressed;
-  _mtx.unlock();
-
-  return result;
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mtx);
+  return _LMBPressed;
 }
 
 /******************************************************************************
@@ -477,13 +483,8 @@ bool Rcs::MouseDragger::leftMouseButtonPressed() const
  *****************************************************************************/
 bool Rcs::MouseDragger::rightMouseButtonPressed() const
 {
-  bool result;
-
-  _mtx.lock();
-  result = _RMBPressed;
-  _mtx.unlock();
-
-  return result;
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mtx);
+  return _RMBPressed;
 }
 
 /******************************************************************************
@@ -491,13 +492,8 @@ bool Rcs::MouseDragger::rightMouseButtonPressed() const
  *****************************************************************************/
 bool Rcs::MouseDragger::leftShiftKeyPressed() const
 {
-  bool result;
-
-  _mtx.lock();
-  result = _leftShiftPressed;
-  _mtx.unlock();
-
-  return result;
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mtx);
+  return _leftShiftPressed;
 }
 
 /******************************************************************************
@@ -505,13 +501,8 @@ bool Rcs::MouseDragger::leftShiftKeyPressed() const
  *****************************************************************************/
 bool Rcs::MouseDragger::leftCtrlKeyPressed() const
 {
-  bool result;
-
-  _mtx.lock();
-  result = _leftControlPressed;
-  _mtx.unlock();
-
-  return result;
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mtx);
+  return _leftControlPressed;
 }
 
 /******************************************************************************
@@ -521,7 +512,7 @@ bool Rcs::MouseDragger::getBodyMove(HTr* A_BI)
 {
   bool success = false;
 
-  _mtx.lock();
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mtx);
   if ((_RMBPressed) && (_leftShiftPressed) && (_draggedBody))
   {
     double I_r_offset[3];
@@ -531,7 +522,6 @@ bool Rcs::MouseDragger::getBodyMove(HTr* A_BI)
     Mat3d_copy(A_BI->rot, _A_BI0);
     success = true;
   }
-  _mtx.unlock();
 
   return success;
 }
@@ -543,13 +533,12 @@ bool Rcs::MouseDragger::getBodyAnchor(double I_r[3]) const
 {
   bool success = false;
 
-  _mtx.lock();
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mtx);
   if (_draggedBody != NULL)
   {
     Vec3d_copy(I_r, _I_anchor);
     success = true;
   }
-  _mtx.unlock();
 
   return success;
 }
@@ -561,13 +550,12 @@ bool Rcs::MouseDragger::getLocalBodyAnchor(double k_r[3]) const
 {
   bool success = false;
 
-  _mtx.lock();
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mtx);
   if (_draggedBody != NULL)
   {
     Vec3d_copy(k_r, _k_anchor);
     success = true;
   }
-  _mtx.unlock();
 
   return success;
 }
@@ -579,15 +567,23 @@ bool Rcs::MouseDragger::getMouseTip(double I_tip[3]) const
 {
   bool success = false;
 
-  _mtx.lock();
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mtx);
   if (_draggedBody != NULL)
   {
     Vec3d_copy(I_tip, _I_mouseTip);
     success = true;
   }
-  _mtx.unlock();
 
   return success;
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+const RcsBody* Rcs::MouseDragger::draggedBody() const
+{
+  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mtx);
+  return _draggedBody;
 }
 
 /******************************************************************************
@@ -653,20 +649,6 @@ const RcsBody* Rcs::MouseDragger::getDragData(double I_mouseTip[3],
   {
     _mtx.unlock();
   }
-
-  return dragged;
-}
-
-/******************************************************************************
- *
- *****************************************************************************/
-const RcsBody* Rcs::MouseDragger::draggedBody() const
-{
-  const RcsBody* dragged;
-
-  _mtx.lock();
-  dragged = _draggedBody;
-  _mtx.unlock();
 
   return dragged;
 }

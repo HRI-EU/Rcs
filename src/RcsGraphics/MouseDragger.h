@@ -192,6 +192,8 @@ public:
                                      double k_pt[3]=NULL,
                                      RcsGraph** graph=NULL);
 
+  virtual void setEnableDragLine(bool enable);
+
 protected:
 
   /*! \brief This function is empty and can be overwritten by derieved
@@ -221,7 +223,7 @@ protected:
   bool _LMBPressed;            ///< True if left mouse button is pressed
   bool _RMBPressed;            ///< True if right mouse button is pressed
   bool _enableArrowKeyTranslation;///< Enables translating bodies with the arrow keys
-
+  bool _enableDragLine;        // Show line between anchor and mouse tip
 private:
 
   void resetDragger();
