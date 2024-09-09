@@ -161,6 +161,11 @@ public:
   static PhysicsBase* create(const char* className, const RcsGraph* graph,
                              const PhysicsConfig* config)
   {
+    if (!graph)
+    {
+      return NULL;
+    }
+
     PhysicsBase* sim = new T();
     bool success = sim->initialize(graph, config);
     if (!success)
