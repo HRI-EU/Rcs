@@ -139,7 +139,8 @@ public:
                                      bool* leftMouseButtonPressed,
                                      bool* rightMouseButtonPressed,
                                      bool* leftShiftPressed,
-                                     bool* leftCtrlPressed) const;
+                                     bool* leftCtrlPressed,
+                                     bool lockMtx=true) const;
 
   /*! \brief Returns the transformation that has been determined for the
    *         kinematic mouse drag. On Shift - RMB, the transformation of

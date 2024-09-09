@@ -599,11 +599,16 @@ const RcsBody* Rcs::MouseDragger::getDragData(double I_mouseTip[3],
                                               bool* leftMouseButtonPressed,
                                               bool* rightMouseButtonPressed,
                                               bool* leftShiftPressed,
-                                              bool* leftCtrlPressed) const
+                                              bool* leftCtrlPressed,
+                                              bool lockMtx) const
 {
   const RcsBody* dragged = NULL;
 
-  _mtx.lock();
+  if (lockMtx)
+  {
+    _mtx.lock();
+  }
+
   if (_draggedBody != NULL)
   {
     dragged = _draggedBody;
@@ -644,7 +649,10 @@ const RcsBody* Rcs::MouseDragger::getDragData(double I_mouseTip[3],
     *leftCtrlPressed = _leftControlPressed;
   }
 
-  _mtx.unlock();
+  if (lockMtx)
+  {
+    _mtx.unlock();
+  }
 
   return dragged;
 }

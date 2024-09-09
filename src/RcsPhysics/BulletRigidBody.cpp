@@ -511,6 +511,9 @@ Rcs::BulletRigidBody* Rcs::BulletRigidBody::create(const RcsGraph* graph,
     RCHECK(rbj);
     angFac[2] = (btScalar)rbj->weightMetric;
 
+    RLOG(5, "linFac = %f %f %f", linFac[0], linFac[1], linFac[2]);
+    RLOG(5, "angFac = %f %f %f", angFac[0], angFac[1], angFac[2]);
+
     btBody->setLinearFactor(linFac);
     btBody->setAngularFactor(angFac);
   }

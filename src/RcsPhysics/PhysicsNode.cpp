@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -59,9 +59,26 @@
 /*******************************************************************************
  * We instantiate a GraphNode without resizing and without TargetSetters.
  ******************************************************************************/
+Rcs::PhysicsNode::PhysicsNode():
+  NodeBase(), modelNd(NULL), physicsNd(NULL), sim(NULL), displayMode(0),
+  resizeable(false)
+{
+}
+
+/*******************************************************************************
+ * We instantiate a GraphNode without resizing and without TargetSetters.
+ ******************************************************************************/
 Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   NodeBase(), modelNd(NULL), physicsNd(NULL), sim(sim_), displayMode(0),
   resizeable(resizeable_)
+{
+  init(true);
+}
+
+/*******************************************************************************
+ * We instantiate a GraphNode without resizing and without TargetSetters.
+ ******************************************************************************/
+bool Rcs::PhysicsNode::init(bool withForceDragger)
 {
   RCHECK(sim);
   setName("PhysicsNode");
@@ -78,7 +95,7 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   // simulation result, since there is no joint separation etc. visible. For
   // this, the below instantiated physicsNd is responsible.
   // \todo: Maybe only use one node, and make it toggleable?
-  this->modelNd = new GraphNode(sim_->getGraph(), false);
+  this->modelNd = new GraphNode(sim->getGraph(), false);
   modelNd->displayGraphicsModel(false);
   modelNd->displayPhysicsModel(true);
   modelNd->setGhostMode(true, "RED");
@@ -93,7 +110,7 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   // from the phyics engine. Since these in some cases don't use minimal
   // coordinates, one might see separation of objects in case of large
   // forces or other effects. This node also updates soft body meshes if any.
-  this->physicsNd = new GraphNode(sim_->getGraph(), false);
+  this->physicsNd = new GraphNode(sim->getGraph(), false);
   physicsNd->displayGraphicsModel(false);
   physicsNd->displayPhysicsModel(true);
   if (std::string(sim->getClassName())=="SoftBullet")
@@ -106,20 +123,23 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   updateTransformPointers();
 
 
-  for (unsigned int i=0; i<sim_->getGraph()->nSensors; ++i)
+  for (unsigned int i=0; i<sim->getGraph()->nSensors; ++i)
   {
-    RcsSensor* si = &sim_->getGraph()->sensors[i];
+    RcsSensor* si = &sim->getGraph()->sensors[i];
 
     if (si->type == RCSSENSOR_LOAD_CELL)
     {
-      osg::ref_ptr<FTSensorNode> ftn = new FTSensorNode(si, sim_->getGraph());
+      osg::ref_ptr<FTSensorNode> ftn = new FTSensorNode(si, sim->getGraph());
       ftn->setTransformPtr(sim->getPhysicsTransformPtr(ftn->getMountBody()));
       pat->addChild(ftn.get());
     }
   }
 
-  osg::ref_ptr<ForceDragger> draggerNd = new ForceDragger(sim_);
-  pat->addChild(draggerNd.get());
+  if (withForceDragger)
+  {
+    osg::ref_ptr<ForceDragger> draggerNd = new ForceDragger(sim);
+    pat->addChild(draggerNd.get());
+  }
 
 #if defined (USE_BULLET)
   Rcs::BulletSimulation* bSim = dynamic_cast<Rcs::BulletSimulation*>(sim);
@@ -149,6 +169,8 @@ Rcs::PhysicsNode::PhysicsNode(PhysicsBase* sim_, bool resizeable_):
   setDisplayMode(2);
 
   makeDynamic();
+
+  return true;
 }
 
 /*******************************************************************************
@@ -160,6 +182,14 @@ Rcs::PhysicsNode::~PhysicsNode()
 
 /*******************************************************************************
  * Track physics transformation
+ ******************************************************************************/
+void Rcs::PhysicsNode::setSimulation(PhysicsBase* sim_)
+{
+  this->sim = sim_;
+}
+
+/*******************************************************************************
+ * Set physics simulation reference
  ******************************************************************************/
 void Rcs::PhysicsNode::setModelTransform(bool enable)
 {
@@ -187,37 +217,6 @@ void Rcs::PhysicsNode::setPhysicsTransform(bool enable)
     physicsNd->hide();
   }
 
-  // RCSGRAPH_TRAVERSE_BODIES(getGraphPtr())
-  // {
-  //   if (enable==true)
-  //   {
-  //     setBodyTransformPtr(BODY, sim->getPhysicsTransformPtr(BODY));
-  //   }
-  //   else
-  //   {
-  //     setBodyTransformPtr(BODY, BODY->A_BI);
-  //   }
-  // }
-
-  // for (unsigned int i=0; i<getNumChildren(); ++i)
-  // {
-  //   osg::Node* nd_i = getChild(i);
-  //   FTSensorNode* ftNd = dynamic_cast<FTSensorNode*>(nd_i);
-  //   if (ftNd != NULL)
-  //   {
-  //     if (enable==true)
-  //     {
-  //       ftNd->setTransformPtr(sim->getPhysicsTransformPtr(ftNd->getMountBody()));
-  //     }
-  //     else
-  //     {
-  //       ftNd->setTransformPtr(ftNd->getMountBody()->A_BI);
-  //     }
-  //   }
-
-  // }
-
-  // showPhysicsTransforms = enable;
 }
 
 /*******************************************************************************

@@ -47,8 +47,10 @@ class PhysicsNode : public NodeBase
 
 public:
 
+  PhysicsNode();
   PhysicsNode(PhysicsBase* sim, bool resizeable=false);
   virtual ~PhysicsNode();
+  virtual bool init(bool withForceDragger);
   void setPhysicsTransform(bool enable);
   void setModelTransform(bool enable);
   bool setGhostMode(const std::string& bodyName, const std::string& matname="");
@@ -59,6 +61,7 @@ public:
   bool removeBodyNode(const char* body);
   bool setDebugDrawer(bool enable);
   void updateTransformPointers();
+  void setSimulation(PhysicsBase* sim);
 
   /*! \brief Adds a wireframe box to show the considered bounding box for the
    *         simulation. This is specific for Bullet and will do nothing if
@@ -73,6 +76,7 @@ public:
   void showBodyCOMs();
 
 protected:
+
 
   virtual bool eventCallback(const osgGA::GUIEventAdapter& ea,
                              osgGA::GUIActionAdapter& aa);
