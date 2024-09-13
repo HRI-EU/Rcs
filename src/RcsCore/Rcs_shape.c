@@ -708,9 +708,8 @@ void RcsShape_fprint(FILE* out, const RcsShape* s)
   }
   else
   {
-    fprintf(out, "Mesh has %d (mod: %d) vertices and %d faces (mod: %d)\n",
-            s->mesh->nVertices, s->mesh->nVertices%3,
-            s->mesh->nFaces, s->mesh->nFaces%3);
+    fprintf(out, "\tMesh has %d vertices and %d faces\n",
+            s->mesh->nVertices, s->mesh->nFaces);
   }
 }
 
