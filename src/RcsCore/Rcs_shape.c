@@ -591,8 +591,29 @@ void RcsShape_copy(RcsShape* dst, const RcsShape* src)
 
     case RCSSHAPE_MESH:
     {
-      RcsMesh_destroy(dst->mesh);   // Does nothing if dstMesh is NULL
-      dst->mesh = RcsMesh_clone(src->mesh);
+
+      if (dst->mesh)   // Mesh in target shape
+      {
+        if (!src->mesh)
+        {
+          RcsMesh_destroy(dst->mesh);
+          dst->mesh = NULL;
+        }
+        else
+        {
+          RcsMesh_copy(dst->mesh, src->mesh);
+        }
+      }
+      else   // No mesh in target shape
+      {
+        if (src->mesh)
+        {
+          dst->mesh = RcsMesh_clone(src->mesh);
+        }
+      }
+
+      /* RcsMesh_destroy(dst->mesh);   // Does nothing if dstMesh is NULL */
+      /* dst->mesh = RcsMesh_clone(src->mesh); */
     }
     break;
 

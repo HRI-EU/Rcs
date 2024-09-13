@@ -518,8 +518,12 @@ void ShapeNode::addShape(const RcsShape* shape)
 
     if (meshNode.valid())
     {
-      meshNode->setStateSet(ss);
-      addChild(meshNode.get());
+      // We can't use the geode here, since it's expected to be a leaf node.
+      // Otherwise, we see sporadic crashes.
+      osg::ref_ptr<osg::Group> group = new osg::Group;
+      group->setStateSet(ss);
+      group->addChild(meshNode.get());
+      addChild(group.get());
 
       // The mesh is only scaled if it has been read from the
       // osgDB::readNodeFile class. Otherwise, the scaling has already
@@ -532,7 +536,7 @@ void ShapeNode::addShape(const RcsShape* shape)
         ss->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
       }
 
-      setNodeMaterial(shape->color, meshNode.get());
+      setNodeMaterial(shape->color, geode.get());
     }
     else
     {
