@@ -315,6 +315,12 @@ void setOSGCoordinateFrameToRoboticsConvention()
 bool setNodeMaterial(const std::string& matString, osg::Node* node,
                      double alpha)
 {
+  if (matString.empty())
+  {
+    RLOG(4, "matString is empty - doing nothing");
+    return false;
+  }
+
   if (node == NULL)
   {
     RLOG(4, "osg::Node is NULL - doing nothing");

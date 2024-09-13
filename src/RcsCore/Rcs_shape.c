@@ -700,6 +700,18 @@ void RcsShape_fprint(FILE* out, const RcsShape* s)
   fprintf(out, "\ttextureFile: \"%s\"\n", s->textureFile);
   fprintf(out, "\tcolor      : \"%s\"\n", s->color);
   fprintf(out, "\tmaterial   : \"%s\"\n", s->material);
+
+  // Mesh
+  if (!s->mesh)
+  {
+    fprintf(out, "\tMesh is NULL\n");
+  }
+  else
+  {
+    fprintf(out, "Mesh has %d (mod: %d) vertices and %d faces (mod: %d)\n",
+            s->mesh->nVertices, s->mesh->nVertices%3,
+            s->mesh->nFaces, s->mesh->nFaces%3);
+  }
 }
 
 /*******************************************************************************

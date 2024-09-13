@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -744,14 +744,21 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
     getXMLNodePropertyStringN(node, "meshFile", fileName, RCS_MAX_FILENAMELEN);
     Rcs_getAbsoluteFileName(fileName, fullName);
 
-    if (File_exists(fullName) == true)
+    if (File_exists(fullName))
     {
       snprintf(shape->meshFile, RCS_MAX_FILENAMELEN, "%s", fullName);
 
-      if (shape->type == RCSSHAPE_MESH)
+      // If the mesh is one out of these types, we create it. Otherwise, only a visual
+      // representation will be creted by the RcsGraphics library.
+      const int computeTypesToCreate = RCSSHAPE_COMPUTE_PHYSICS+
+                                       RCSSHAPE_COMPUTE_SOFTPHYSICS+
+                                       RCSSHAPE_COMPUTE_DISTANCE;
+
+      if ((shape->type==RCSSHAPE_MESH) &&
+          RcsShape_isOfComputeType(shape, computeTypesToCreate))
       {
         RcsMeshData* mesh = RcsMesh_createFromFile(shape->meshFile);
-        if (mesh == NULL)
+        if (!mesh)
         {
           RLOG(4, "Failed to add mesh \"%s\" to shape", shape->meshFile);
         }

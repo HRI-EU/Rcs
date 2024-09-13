@@ -171,16 +171,10 @@ static osg::ref_ptr<osg::Node> getOrCreateMeshNode(const RcsShape* shape,
   {
     NLOG(0, "Creating MeshNode %s from _meshBuffer", shape->meshFile);
     meshNode = it->second;
-    Rcs::MeshNode* mn = dynamic_cast<Rcs::MeshNode*>(meshNode.get());
-    if (mn)
-    {
-      mn->setMaterial(std::string(shape->color));
-    }
     _meshBufferMtx.unlock();
     return meshNode;
   }
   _meshBufferMtx.unlock();
-
 
   // If no mesh was found in the _meshBuffer, we create it here.
   NLOG(0, "No mesh file \"%s\" loaded", shape->meshFile);
@@ -191,22 +185,19 @@ static osg::ref_ptr<osg::Node> getOrCreateMeshNode(const RcsShape* shape,
   if (mesh && mesh->nFaces>0)
   {
     NLOG(0, "Creating MeshNode from shape (%s)", shape->meshFile);
-    osg::ref_ptr<Rcs::MeshNode> mn;
-    mn = new Rcs::MeshNode(mesh);
-    mn->setMaterial(shape->color);
+    meshNode = new Rcs::MeshNode(mesh);
     if (meshFactoryEnabled && (!shResizeable))
     {
-      _meshBufferMtx.lock();
-      _meshBuffer[std::string(shape->meshFile)] = mn;
-      _meshBufferMtx.unlock();
+      OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_meshBufferMtx);
+      _meshBuffer[std::string(shape->meshFile)] = meshNode;
     }
-    return mn;
+    return meshNode;
   }
 
 
   // Otherwise, we use the OpenSceneGraph classes
   // fixes loading of obj without normals (doesn't work for OSG 2.8)
-  NLOG(0, "Creating MeshNode from osg::NodeFileReader (%s)", shape->meshFile);
+  RLOG(5, "Creating MeshNode from osg::NodeFileReader (%s)", shape->meshFile);
   osg::ref_ptr<osgDB::Options> options;
   options = new osgDB::Options("generateFacetNormals=true noRotation=true");
   meshNode = osgDB::readNodeFile(shape->meshFile, options.get());
@@ -218,9 +209,8 @@ static osg::ref_ptr<osg::Node> getOrCreateMeshNode(const RcsShape* shape,
   // anyone has an idea, it's appreciated.
   if (meshNode.valid() && meshFactoryEnabled)
   {
-    _meshBufferMtx.lock();
+    OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_meshBufferMtx);
     _meshBuffer[std::string(shape->meshFile)] = meshNode;
-    _meshBufferMtx.unlock();
   }
 
 
@@ -407,10 +397,11 @@ void ShapeNode::addShape(const RcsShape* shape)
   // Thus, it'd be better to enable depth sorting selectively
 
   // Set render bin to depthsorted in order to handle transparency correctly
+  // We add the geode in the individual shape cases, since in some of them,
+  // we don't need it.
   osg::StateSet* ss = geode->getOrCreateStateSet();
   ss->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
   geode->setStateSet(ss);
-  addChild(geode.get());
 
   /////////////////////////////////
   // Add a capsule to the shapeNode
@@ -439,6 +430,7 @@ void ShapeNode::addShape(const RcsShape* shape)
     osg::ref_ptr<SSRGeometry> g = new SSRGeometry(ext, nSeg);
     geode->addDrawable(g.get());
     setNodeMaterial(shape->color, geode.get());
+    addChild(geode.get());
     if (shapeUpdater.valid())
     {
       shapeUpdater->addDrawable(g.get());
@@ -460,6 +452,7 @@ void ShapeNode::addShape(const RcsShape* shape)
     ss->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
     geode->addDrawable(sd);
     setNodeMaterial(shape->color, geode.get());
+    addChild(geode.get());
   }
 
   /////////////////////////////////
@@ -475,6 +468,7 @@ void ShapeNode::addShape(const RcsShape* shape)
     setScale(osg::Vec3(ext[0], ext[0], ext[0]));
     ss->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
     ss->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
+    addChild(geode.get());
   }
 
   /////////////////////////////
@@ -490,6 +484,7 @@ void ShapeNode::addShape(const RcsShape* shape)
     setScale(osg::Vec3(ext[0], ext[0], ext[2]));
     ss->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
     ss->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
+    addChild(geode.get());
   }
 
   /////////////////////////////
@@ -510,6 +505,7 @@ void ShapeNode::addShape(const RcsShape* shape)
     setScale(osg::Vec3(ext[0], ext[0], ext[2]));
     ss->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
     ss->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
+    addChild(geode.get());
   }
 
   /////////////////////////////
@@ -522,6 +518,7 @@ void ShapeNode::addShape(const RcsShape* shape)
 
     if (meshNode.valid())
     {
+      meshNode->setStateSet(ss);
       addChild(meshNode.get());
 
       // The mesh is only scaled if it has been read from the
@@ -535,7 +532,7 @@ void ShapeNode::addShape(const RcsShape* shape)
         ss->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
       }
 
-      setNodeMaterial(shape->color, geode.get());
+      setNodeMaterial(shape->color, meshNode.get());
     }
     else
     {
@@ -594,6 +591,7 @@ void ShapeNode::addShape(const RcsShape* shape)
       osg::ref_ptr<osg::Geometry> octoGeom =
         Rcs::OctomapNode::createOctomapGeometry(tree, tree->getTreeDepth());
       geode->addDrawable(octoGeom.get());
+      addChild(geode.get());
 
       // Overlay the solid geometry with a wireframe. Since a Geode is a leaf
       // (there might be crashes if children are added to Geodes), we add
@@ -644,6 +642,7 @@ void ShapeNode::addShape(const RcsShape* shape)
     osg::Drawable* sd = new osg::ShapeDrawable(sphere, hints.get());
     geode->addDrawable(sd);
     setNodeMaterial(shape->color, geode.get());
+    addChild(geode.get());
   }
 
   ////////////////////////

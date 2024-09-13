@@ -69,7 +69,7 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
   // ssh connections
   if (getenv("SSH_CLIENT") || getenv("SSH_TTY"))
   {
-    RFATAL("DepthRenderer does not work via SSH");
+    RLOG(1, "DepthRenderer might not work via SSH");
   }
 
   // Initialize viewer
