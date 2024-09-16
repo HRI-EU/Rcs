@@ -644,7 +644,11 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   }
 
   // Color
-  strcpy(shape->color, bodyColor ? bodyColor : "DEFAULT");
+  if (bodyColor)
+  {
+    strcpy(shape->color, bodyColor);
+  }
+
   getXMLNodePropertyStringN(node, "color", shape->color, RCS_MAX_NAMELEN);
 
   // Material
@@ -2123,7 +2127,7 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
   }
 
   // Recursively assemble all bodies, joints and shapes.
-  RcsGraph_parseBodies(node, self, "DEFAULT", "", NULL,
+  RcsGraph_parseBodies(node, self, "", "", NULL,
                        &A_rel, false, 0, rootId, false);
 
   // Re-order joint indices to match depth-first traversal, and connect coupled
