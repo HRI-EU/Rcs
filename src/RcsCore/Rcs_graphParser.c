@@ -629,7 +629,7 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   getXMLNodePropertyBoolString(node, "graphics", &graphics);
   getXMLNodePropertyBoolString(node, "softPhysics", &softPhysics);
   getXMLNodePropertyBoolString(node, "render_depth", &depth);
-  getXMLNodePropertyBoolString(node, "render_rgb", &rgb);
+  getXMLNodePropertyBoolString(node, "render_material", &rgb);
   getXMLNodePropertyBoolString(node, "contact", &contact);
   getXMLNodePropertyBoolString(node, "attachment", &attachment);
   getXMLNodePropertyBoolString(node, "weldpos", &weldpos);
