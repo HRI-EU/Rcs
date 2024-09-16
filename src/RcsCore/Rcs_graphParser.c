@@ -600,7 +600,7 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
 
   // Compute type
   bool distance = true, graphics = true, physics = true, softPhysics = false;
-  bool depth=false, contact=false, attachment = false;
+  bool depth=false, rgb=false, contact=false, attachment = false;
   bool weldpos=false, weldori=false, marker=false, wireframe=false;
 
   // Physics and distance computation is not carried out for meshes by default.
@@ -628,7 +628,8 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   getXMLNodePropertyBoolString(node, "physics", &physics);
   getXMLNodePropertyBoolString(node, "graphics", &graphics);
   getXMLNodePropertyBoolString(node, "softPhysics", &softPhysics);
-  getXMLNodePropertyBoolString(node, "depth", &depth);
+  getXMLNodePropertyBoolString(node, "render_depth", &depth);
+  getXMLNodePropertyBoolString(node, "render_rgb", &rgb);
   getXMLNodePropertyBoolString(node, "contact", &contact);
   getXMLNodePropertyBoolString(node, "attachment", &attachment);
   getXMLNodePropertyBoolString(node, "weldpos", &weldpos);
@@ -678,6 +679,11 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   if (depth == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_DEPTHBUFFER;
+  }
+
+  if (rgb == true)
+  {
+    shape->computeType |= RCSSHAPE_COMPUTE_RGBBUFFER;
   }
 
   if (contact == true)
@@ -748,14 +754,10 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
     {
       snprintf(shape->meshFile, RCS_MAX_FILENAMELEN, "%s", fullName);
 
-      // If the mesh is one out of these types, we create it. Otherwise, only a visual
-      // representation will be creted by the RcsGraphics library.
-      const int computeTypesToCreate = RCSSHAPE_COMPUTE_PHYSICS+
-                                       RCSSHAPE_COMPUTE_SOFTPHYSICS+
-                                       RCSSHAPE_COMPUTE_DISTANCE;
-
+      // If the mesh is to be rendered in RGB, we leave the visual mesh
+      // to be creted by the RcsGraphics library.
       if ((shape->type==RCSSHAPE_MESH) &&
-          RcsShape_isOfComputeType(shape, computeTypesToCreate))
+          (!RcsShape_isOfComputeType(shape, RCSSHAPE_COMPUTE_RGBBUFFER)))
       {
         RcsMeshData* mesh = RcsMesh_createFromFile(shape->meshFile);
         if (!mesh)

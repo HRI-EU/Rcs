@@ -136,7 +136,8 @@ typedef enum
   RCSSHAPE_COMPUTE_WELDORI      = 256,  ///< Kinematic orientation constraint
   RCSSHAPE_COMPUTE_MARKER       = 512,  ///< Marker shapes like Vicon or Aruco
   RCSSHAPE_COMPUTE_WIREFRAME    = 1024, ///< Wireframe visualization
-  RCSSHAPE_COMPUTE_RESIZEABLE   = 2048  ///< For visualization and copying
+  RCSSHAPE_COMPUTE_RESIZEABLE   = 2048, ///< For visualization and copying
+  RCSSHAPE_COMPUTE_RGBBUFFER    = 4096  ///< RGB buffer simulation
 
 } RCSSHAPE_COMPUTE_TYPE;
 
