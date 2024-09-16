@@ -1360,10 +1360,10 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   // by six joints which can be set by sensor information or physics
   int nJoints = 0;
   bool hasRBJTag = getXMLNodeProperty(bdyNode, "rigid_body_joints");
-  if (hasRBJTag && rbjNode)
+  if (hasRBJTag && rbjNode && (!parentBdy))
   {
-    RFATAL("Body \"%s\" has rigid body joints defined both in the body as well"
-           " as in the including group", b->name);
+    RFATAL("Body \"%s\" without parent has rigid body joints defined both in"
+           " the body as well as in the including group", b->name);
   }
 
   // If the rigid body joint comes from the parent group, we prefer this one.
