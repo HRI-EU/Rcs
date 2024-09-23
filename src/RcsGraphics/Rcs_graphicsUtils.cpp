@@ -317,7 +317,7 @@ bool setNodeMaterial(const std::string& matString, osg::Node* node,
 {
   if (matString.empty())
   {
-    RLOG(4, "matString is empty - doing nothing");
+    RLOG(5, "matString is empty - doing nothing");
     return false;
   }
 

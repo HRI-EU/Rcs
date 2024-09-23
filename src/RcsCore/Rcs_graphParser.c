@@ -779,6 +779,10 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
     {
       RLOG(4, "[%s]: Mesh file \"%s\" (\"%s\") not found!",
            body->name, fileName, fullName);
+      REXEC(4)
+      {
+        Rcs_printResourcePath();
+      }
     }
 
     if (shape->type == RCSSHAPE_OCTREE)
