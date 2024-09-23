@@ -385,6 +385,7 @@ bool ExampleIK::initGraphics()
   comNd = new Rcs::SphereNode(r_com, 0.05);
   comNd->makeDynamic(r_com);
   comNd->setMaterial("RED");
+  comNd->toggle();
   v->add(comNd);
 
   dragger = new Rcs::BodyPointDragger();
@@ -801,11 +802,17 @@ void ExampleIK::handleKeys()
     RMSG("Toggling GraphNode");
     gn->toggle();
   }
-  else if (kc->getAndResetKey('C') && cn)
+  else if (kc->getAndResetKey('C'))
   {
-    RMSG("Toggle closest points visualization");
-    cn->toggle();
-    comNd->toggle();
+    RMSG("Toggle closest points and COM visualization");
+    if (cn)
+    {
+      cn->toggle();
+    }
+    if (comNd)
+    {
+      comNd->toggle();
+    }
   }
   else if (kc->getAndResetKey('o'))
   {
