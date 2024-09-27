@@ -56,6 +56,7 @@ public:
   virtual void setDt(double dt);
   virtual double iterate();
   virtual double getPosition() const;
+  virtual double getTarget() const;
   virtual double getDt() const;
 
 protected:
@@ -188,6 +189,7 @@ public:
   virtual void setDim(size_t dim);
   virtual void setDamping(double damping);
   virtual void setTimeConstant(double tmc, size_t index);
+  virtual void setDt(double dt);
   virtual void setTarget(const double* target);
   virtual void print() const;
   virtual void fprint(FILE* out) const;

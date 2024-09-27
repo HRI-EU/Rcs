@@ -83,6 +83,11 @@ double Rcs::Ramp1D::getDt() const
   return this->dt;
 }
 
+double Rcs::Ramp1D::getTarget() const
+{
+  return this->target;
+}
+
 double Rcs::Ramp1D::iterate()
 {
   double dx_max = vmax*dt;
@@ -536,6 +541,14 @@ void Rcs::SecondOrderLPFND::setTimeConstant(double tmc, size_t index)
 {
   RCHECK_MSG(index<dim, "index=%zu   dim=%zu", index, dim);
   filt[index]->setTimeConstant(tmc);
+}
+
+void Rcs::SecondOrderLPFND::setDt(double dt)
+{
+  for (size_t i = 0; i < dim; i++)
+  {
+    filt[i]->setDt(dt);
+  }
 }
 
 void Rcs::SecondOrderLPFND::setTarget(const double* target)
