@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-  Copyright (c) 2017, Honda Research Institute Europe GmbH
+  Copyright (c) Honda Research Institute Europe GmbH
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are
@@ -41,28 +41,27 @@
 #include <algorithm>
 
 
-typedef std::vector<std::string> StringList;
-typedef StringList::iterator StringListIt;
-
-static StringList RCSRESOURCEPATH;
+static std::vector<std::string> RCSRESOURCEPATH;
 
 // If str is not ended by the delimiter, it is added. Otherwise, nothing
 // is done. We distinguish between Windows and Linux delimiters.
-static void addDelim(std::string& str)
+static void makeValidPath(std::string& str)
 {
-  const char* cStr = str.c_str();
+  // Remove white spaces etc. at beginning and end of the string
+  str = Rcs::String_trim(str);
 
-#if defined(_MSC_VER)
-  if (cStr[strlen(cStr)-1] != '\\')
+  // Replace all '\\' with '/'
+  for (size_t i = 0; i < str.length(); ++i)
   {
-    str += '\\';
+    if (str[i] == '\\')
+    {
+      str[i] = '/';
+    }
   }
-#else
-  if (cStr[strlen(cStr)-1] != '/')
-  {
-    str += '/';
-  }
-#endif
+
+  // Make sure that the string ends with a slash
+  Rcs::String_rtrim(str, "/");
+  str += '/';
 }
 
 
@@ -102,7 +101,7 @@ extern "C" {
   /*****************************************************************************
    *
    ****************************************************************************/
-  bool Rcs_addResourcePath(const char* path)
+  static bool Rcs_appendOrPrependResourcePath(const char* path, bool append)
   {
     if ((path==NULL) || (strlen(path)==0))
     {
@@ -110,27 +109,25 @@ extern "C" {
       return false;
     }
 
-    // Check if the path is already contained in the vector
-    StringListIt it;
-    std::string pathStr = std::string(path);
-    addDelim(pathStr);
-
-    for (it = RCSRESOURCEPATH.begin(); it != RCSRESOURCEPATH.end(); ++it)
-    {
-      if (*it == pathStr)
-      {
-        RLOG(6, "Path \"%s\" already in resource path - skipping", path);
-        return false;
-      }
-    }
-
-    // Add resource path
     std::vector<std::string> paths = Rcs::String_split(path, ";");
-    for (size_t i=0; i<paths.size(); ++i)
+
+    for (size_t i = 0; i < paths.size(); ++i)
     {
-      addDelim(paths[i]);
-      RCSRESOURCEPATH.push_back(paths[i]);
-      RLOG(6, "Added path \"%s\" to resource paths", paths[i].c_str());
+      makeValidPath(paths[i]);
+
+      if (std::find(RCSRESOURCEPATH.begin(), RCSRESOURCEPATH.end(), paths[i]) == RCSRESOURCEPATH.end())
+      {
+        if (append)
+        {
+          RCSRESOURCEPATH.push_back(paths[i]);
+          RLOG(5, "Added path \"%s\" to resource paths", paths[i].c_str());
+        }
+        else
+        {
+          RCSRESOURCEPATH.insert(RCSRESOURCEPATH.begin(), paths[i]);
+          RLOG(5, "Inserted path \"%s\" to resource paths", paths[i].c_str());
+        }
+      }
     }
 
     return true;
@@ -139,32 +136,17 @@ extern "C" {
   /*****************************************************************************
    *
    ****************************************************************************/
+  bool Rcs_addResourcePath(const char* path)
+  {
+    return Rcs_appendOrPrependResourcePath(path, true);
+  }
+
+  /*****************************************************************************
+   *
+   ****************************************************************************/
   bool Rcs_insertResourcePath(const char* path)
   {
-    if (path==NULL)
-    {
-      RLOG(4, "Path is NULL - skipping");
-      return false;
-    }
-
-    // Check if the path is already contained in the vector
-    StringListIt it;
-    std::string pathStr = std::string(path);
-    addDelim(pathStr);
-    for (it = RCSRESOURCEPATH.begin(); it != RCSRESOURCEPATH.end(); ++it)
-    {
-      if (*it == pathStr)
-      {
-        RLOG(6, "Path \"%s\" already in resource path - skipping", path);
-        return false;
-      }
-    }
-
-    // Add resource path
-    RCSRESOURCEPATH.insert(RCSRESOURCEPATH.begin(), pathStr);
-    RLOG(6, "Added path \"%s\" to resource path list", path);
-
-    return true;
+    return Rcs_appendOrPrependResourcePath(path, false);
   }
 
   /*****************************************************************************
@@ -186,10 +168,9 @@ extern "C" {
   bool Rcs_removeResourcePath(const char* pathStr)
   {
     std::string path = std::string(pathStr);
-    addDelim(path);
-    StringListIt it = std::find(RCSRESOURCEPATH.begin(),
-                                RCSRESOURCEPATH.end(),
-                                path);
+    makeValidPath(path);
+    std::vector<std::string>::iterator it;
+    it = std::find(RCSRESOURCEPATH.begin(), RCSRESOURCEPATH.end(), path);
 
     if (it != RCSRESOURCEPATH.end())
     {
@@ -210,16 +191,13 @@ extern "C" {
       return false;
     }
 
-    StringListIt it;
-
-    // First check all resource paths.
-    for (it = RCSRESOURCEPATH.begin(); it != RCSRESOURCEPATH.end(); ++it)
+    for (size_t i = 0; i < RCSRESOURCEPATH.size(); ++i)
     {
-      std::string fullName = *it + std::string(fileName);
+      std::string fullName = RCSRESOURCEPATH[i] + std::string(fileName);
 
       if (File_exists(fullName.c_str()))
       {
-        if (absFileName != NULL)
+        if (absFileName)
         {
           strcpy(absFileName, fullName.c_str());
         }
@@ -230,7 +208,7 @@ extern "C" {
     // Then check current directory.
     if (File_exists(fileName))
     {
-      if (absFileName != NULL)
+      if (absFileName)
       {
         strcpy(absFileName, fileName);
       }
@@ -253,17 +231,12 @@ extern "C" {
    ****************************************************************************/
   void Rcs_printResourcePath(void)
   {
-    StringListIt it;
-    int k = 0;
-
     fprintf(stderr, "[%s]:\n", __FUNCTION__);
-
-    for (it = RCSRESOURCEPATH.begin(); it != RCSRESOURCEPATH.end(); ++it)
+    for (size_t i = 0; i < RCSRESOURCEPATH.size(); ++i)
     {
-      std::string str = *it;
-      fprintf(stderr, "Path[%d] = \"%s\"\n", k, str.c_str());
-      k++;
+      fprintf(stderr, "Path[%zu] = \"%s\"\n", i, RCSRESOURCEPATH[i].c_str());
     }
+
   }
 
   /*****************************************************************************
