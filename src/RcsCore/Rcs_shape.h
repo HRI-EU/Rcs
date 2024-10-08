@@ -251,6 +251,44 @@ void RcsShape_fprint(FILE* out, const RcsShape* s);
  */
 int RcsShape_fprintXML(FILE* out, const RcsShape* self);
 
+/*! \ingroup RcsShapeFunctions
+ *  \brief Converts an RcsShape structure to an XML string representation.
+ *
+ *  This function takes an `RcsShape` structure and generates an XML-formatted
+ *  string that describes the shape. Various attributes of the shape such as
+ *  its type, extents, transformation, and material properties are included
+ *  in the XML string. The function dynamically allocates the memory for the
+ *  string and returns it. The caller is responsible for freeing the memory.
+ *
+ *  If the input shape is invalid or if memory allocation fails, the function
+ *  returns NULL and optionally increments the error counter `nErr`.
+ *
+ *  \param[in]  self    Pointer to the RcsShape structure to convert to XML.
+ *                      If NULL, the function returns NULL and increments `nErr`.
+ *  \param[out] nErr    Pointer to an error counter. If an error occurs, the
+ *                      counter is incremented. Can be NULL if error tracking
+ *                      is not needed.
+ *
+ *  \return A dynamically allocated string containing the XML representation
+ *          of the shape. If an error occurs (e.g., memory allocation fails
+ *          or `self` is NULL), the function returns NULL.
+ *
+ *  \note The caller is responsible for freeing the returned string to avoid
+ *        memory leaks.
+ *
+ *  \example
+ *      RcsShape shape;
+ *      int errorCount = 0;
+ *      char* xmlString = RcsShape_toXML(&shape, &errorCount);
+ *      if (xmlString != NULL) {
+ *          printf("%s\n", xmlString);
+ *          free(xmlString);
+ *      } else {
+ *          printf("Failed to generate XML. Errors: %d\n", errorCount);
+ *      }
+ */
+char* RcsShape_toXML(const RcsShape* self, int* nErr);
+
 ///@}
 
 

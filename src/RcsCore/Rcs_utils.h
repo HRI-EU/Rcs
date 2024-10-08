@@ -184,6 +184,58 @@ char* String_expandEnvironmentVariables(const char* str);
 char* String_fromDouble(char* str, double value, unsigned int maxDigits);
 
 /*! \ingroup RcsUtilsFunctions
+ *  \brief Converts an array of double values into a single string, with each
+ *         double converted to a string representation. Each value is separated
+ *         by a custom delimiter, and the number of digits after the decimal
+ *         point is limited by the maxDigits argument. If the buffer size is
+ *         exceeded, the function writes as much data as possible and ensures
+ *         the result is null-terminated.
+ *
+ *  \param[out] str         Char pointer holding the final string with all
+ *                          double values. The buffer must be large enough to
+ *                          hold the resulting string. If the buffer is too
+ *                          small, the function writes as much as fits and
+ *                          null-terminates the result.
+ *  \param[in]  strSize     Total size of the str buffer, including the null
+ *                          terminator.
+ *  \param[in]  arr         Pointer to the array of double values to be
+ *                          converted.
+ *  \param[in]  dim         The number of elements in the double array.
+ *  \param[in]  delimiter   String to be inserted between each converted
+ *                          double value.
+ *  \param[in]  maxDigits   Maximum number of digits after the decimal point
+ *                          for each double.
+ *
+ *  \return Pointer to str if successful.
+ *
+ *  \note If the contents exceed the provided buffer size, the resulting string
+ *        will be truncated and null-terminated. The user can detect if the
+ *        memory was insufficient by checking if the last element or the
+ *        delimiter is missing from the final string.
+ *
+ *  \example
+ *      char result[50];
+ *      double array[] = {123.456789, 678.9, 0.00012345, 999999.123};
+ *      unsigned int dim = sizeof(array) / sizeof(array[0]);
+ *
+ *      // Attempting to write the array to the string with a small buffer
+ *      String_fromDoubleArray(result, sizeof(result), array, dim, ", ", 4);
+ *      printf("Result: %s\n", result);
+ *      // Output: "Result: 123.5, 678.9, 0.0001"
+ *      // The string is truncated due to insufficient buffer size.
+ *
+ *      // Using a larger buffer
+ *      char largeResult[1024];
+ *      String_fromDoubleArray(largeResult, sizeof(largeResult), array, dim,
+ *                             ", ", 4);
+ *      printf("Full Result: %s\n", largeResult);
+ *      // Output: "Full Result: 123.5, 678.9, 0.0001235, 1e+06"
+ */
+char* String_fromDoubleArray(char* str, size_t strSize,
+                             const double* arr, unsigned int dim,
+                             const char* delimiter, int maxDigits);
+
+/*! \ingroup RcsUtilsFunctions
  * \brief Converts a string to a double value using the C locale: It means that
  *        the decimal separator will be interpreted as a dot, and does not
  *        depend on the currently avtive locale. If the string is not a valid

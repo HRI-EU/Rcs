@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -356,6 +356,55 @@ char* String_fromDouble(char* str, double value, unsigned int maxDigits)
   if (STREQ(str, "-0"))
   {
     strcpy(str, "0");
+  }
+
+  return str;
+}
+
+/*******************************************************************************
+ * Function to convert an array of doubles into a string with a custom delimiter
+ ******************************************************************************/
+char* String_fromDoubleArray(char* str, size_t strSize,
+                             const double* arr, unsigned int dim,
+                             const char* delimiter, int maxDigits)
+{
+  char temp[256];  // Temporary buffer for each double and delimiter
+  size_t remainingSize = strSize;  // Track the remaining buffer size
+  char* currentPos = str;  // Pointer to the current position in the buffer
+  size_t len = 0;  // Length of the most recent write
+
+  str[0] = '\0';  // Initialize the output string to be empty
+
+  for (unsigned int i = 0; i < dim; i++)
+  {
+    // Convert the double to string with the specified maxDigits precision
+    String_fromDouble(temp, arr[i], maxDigits);
+
+    // Append the delimiter safely if it's not the last element
+    if (i < dim - 1)
+    {
+      strncat(temp, delimiter, sizeof(temp) - strlen(temp) - 1);
+    }
+
+    // Calculate the length of the temp string and ensure it fits in the
+    // remaining space
+    len = strlen(temp);
+    if (len >= remainingSize)
+    {
+      // If the buffer can't fit the entire temp string, write as much as
+      // possible
+      len = remainingSize - 1;  // Reserve 1 byte for null terminator
+      strncpy(currentPos, temp, len);  // Copy only the part that fits
+      currentPos[len] = '\0';  // Null-terminate the string
+      break;  // Stop writing when buffer is full
+    }
+
+    // Safely append the temp string to the main string
+    snprintf(currentPos, remainingSize, "%s", temp);
+
+    // Move the pointer forward and reduce the remaining size
+    currentPos += len;
+    remainingSize -= len;
   }
 
   return str;

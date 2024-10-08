@@ -739,6 +739,13 @@ void RcsShape_fprint(FILE* out, const RcsShape* s)
  ******************************************************************************/
 int RcsShape_fprintXML(FILE* out, const RcsShape* self)
 {
+#if 1
+  int nErr = 0;
+  char* xmlDesc = RcsShape_toXML(self, &nErr);
+  fprintf(out, "%s", xmlDesc);
+  RFREE(xmlDesc);
+  return nErr;
+#else
   int nErr = 0;
   char buf[256];
 
@@ -961,6 +968,7 @@ int RcsShape_fprintXML(FILE* out, const RcsShape* self)
   fprintf(out, "/>\n");
 
   return nErr;
+#endif
 }
 
 /*******************************************************************************
@@ -2218,4 +2226,245 @@ unsigned int RcsShape_sizeInBytes(const RcsShape* shape)
   nBytes += RcsMesh_sizeInBytes(shape->mesh);
 
   return nBytes;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
+
+// Helper function to append a formatted string to a dynamic buffer
+static void appendToString(char** str, size_t* size, size_t* used,
+                           const char* format, ...)
+{
+  va_list args;
+  va_start(args, format);
+
+  // Get the required size for the formatted string
+  int needed = vsnprintf(NULL, 0, format, args) + 1;
+  va_end(args);
+
+
+
+  // Reallocate if needed
+  if (*used + needed > *size)
+  {
+    *size = (*used + needed) * 2; // Double the buffer size
+    *str = RREALLOC(*str, *size, char);
+    if (*str == NULL)
+    {
+      perror("Realloc failed");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  // Append the formatted string to the buffer
+  va_start(args, format);
+  vsnprintf(*str + *used, needed, format, args);
+  va_end(args);
+
+  *used += needed - 1; // Update the used size
+}
+
+char* RcsShape_toXML(const RcsShape* self, int* nErr)
+{
+  if (nErr)
+  {
+    *nErr = 0;
+  }
+
+  if (!self)
+  {
+    if (nErr)
+    {
+      (*nErr)++;
+    }
+    return NULL;
+  }
+
+  size_t bufferSize = 512;   // Initial buffer size
+  size_t used = 0;
+  char* buffer = RNALLOC(bufferSize, char);
+  if (buffer == NULL)
+  {
+    RLOG(0, "Malloc failed: %s", strerror(errno));
+    if (nErr)
+    {
+      (*nErr)++;
+    }
+    return NULL;
+  }
+
+  appendToString(&buffer, &bufferSize, &used, "    <Shape ");
+
+  // Type
+  switch (self->type)
+  {
+    case RCSSHAPE_SSL:
+      appendToString(&buffer, &bufferSize, &used, "type=\"SSL\" ");
+      break;
+    case RCSSHAPE_SSR:
+      appendToString(&buffer, &bufferSize, &used, "type=\"SSR\" ");
+      break;
+    case RCSSHAPE_BOX:
+      appendToString(&buffer, &bufferSize, &used, "type=\"BOX\" ");
+      break;
+    case RCSSHAPE_CYLINDER:
+      appendToString(&buffer, &bufferSize, &used, "type=\"CYLINDER\" ");
+      break;
+    case RCSSHAPE_MESH:
+      appendToString(&buffer, &bufferSize, &used, "type=\"MESH\" ");
+      break;
+    case RCSSHAPE_REFFRAME:
+      appendToString(&buffer, &bufferSize, &used, "type=\"FRAME\" ");
+      break;
+    case RCSSHAPE_SPHERE:
+      appendToString(&buffer, &bufferSize, &used, "type=\"SPHERE\" ");
+      break;
+    case RCSSHAPE_CONE:
+      appendToString(&buffer, &bufferSize, &used, "type=\"CONE\" ");
+      break;
+    case RCSSHAPE_TORUS:
+      appendToString(&buffer, &bufferSize, &used, "type=\"TORUS\" ");
+      break;
+    case RCSSHAPE_OCTREE:
+      appendToString(&buffer, &bufferSize, &used, "type=\"OCTREE\" ");
+      break;
+    case RCSSHAPE_POINT:
+      appendToString(&buffer, &bufferSize, &used, "type=\"POINT\" ");
+      break;
+    default:
+      RLOG(1, "Unknown shape type: %d", self->type);
+      if (nErr)
+      {
+        (*nErr)++;
+      }
+  }
+
+  // Extents
+  char temp[256];
+
+  switch (self->type)
+  {
+    case RCSSHAPE_SSL:
+    case RCSSHAPE_CYLINDER:
+    case RCSSHAPE_TORUS:
+    case RCSSHAPE_CONE:
+      appendToString(&buffer, &bufferSize, &used, "length=\"%s\" ",
+                     String_fromDouble(temp, self->extents[2], 6));
+      appendToString(&buffer, &bufferSize, &used, "radius=\"%s\" ",
+                     String_fromDouble(temp, self->extents[0], 6));
+      break;
+    case RCSSHAPE_SPHERE:
+      appendToString(&buffer, &bufferSize, &used, "radius=\"%s\" ",
+                     String_fromDouble(temp, self->extents[0], 6));
+      break;
+    case RCSSHAPE_SSR:
+    case RCSSHAPE_BOX:
+      appendToString(&buffer, &bufferSize, &used, "extents=\"%s\" ",
+                     String_fromDoubleArray(temp, 256, self->extents, 3, " ", 6));
+      break;
+  }
+
+  // Compute type and other attributes
+  if (self->type != RCSSHAPE_REFFRAME)
+  {
+    appendToString(&buffer, &bufferSize, &used, "distance=\"%s\" ",
+                   (self->computeType & RCSSHAPE_COMPUTE_DISTANCE) ? "true" : "false");
+    appendToString(&buffer, &bufferSize, &used, "physics=\"%s\" ",
+                   (self->computeType & RCSSHAPE_COMPUTE_PHYSICS) ? "true" : "false");
+    appendToString(&buffer, &bufferSize, &used, "graphics=\"%s\" ",
+                   (self->computeType & RCSSHAPE_COMPUTE_GRAPHICS) ? "true" : "false");
+
+    if (RcsShape_isOfComputeType(self, RCSSHAPE_COMPUTE_SOFTPHYSICS))
+    {
+      appendToString(&buffer, &bufferSize, &used, "softPhysics=\"true\" ");
+    }
+
+    if (RcsShape_isOfComputeType(self, RCSSHAPE_COMPUTE_CONTACT))
+    {
+      appendToString(&buffer, &bufferSize, &used, "contact=\"true\" ");
+    }
+
+    if (RcsShape_isOfComputeType(self, RCSSHAPE_COMPUTE_DEPTHBUFFER))
+    {
+      appendToString(&buffer, &bufferSize, &used, "depth=\"true\" ");
+    }
+
+    if (RcsShape_isOfComputeType(self, RCSSHAPE_COMPUTE_ATTACHMENT))
+    {
+      appendToString(&buffer, &bufferSize, &used, "attachment=\"true\" ");
+    }
+
+    if (RcsShape_isOfComputeType(self, RCSSHAPE_COMPUTE_WELDPOS))
+    {
+      appendToString(&buffer, &bufferSize, &used, "weldpos=\"true\" ");
+    }
+
+    if (RcsShape_isOfComputeType(self, RCSSHAPE_COMPUTE_WELDORI))
+    {
+      appendToString(&buffer, &bufferSize, &used, "weldori=\"true\" ");
+    }
+
+    if (RcsShape_isOfComputeType(self, RCSSHAPE_COMPUTE_MARKER))
+    {
+      appendToString(&buffer, &bufferSize, &used, "marker=\"true\" ");
+    }
+
+    if (RcsShape_isOfComputeType(self, RCSSHAPE_COMPUTE_WIREFRAME))
+    {
+      appendToString(&buffer, &bufferSize, &used, "wireframe=\"true\" ");
+    }
+  }
+
+  if (RcsShape_isOfComputeType(self, RCSSHAPE_COMPUTE_RESIZEABLE))
+  {
+    appendToString(&buffer, &bufferSize, &used, "resizeable=\"true\" ");
+  }
+
+  if ((self->scale3d[0]!=1.0) || (self->scale3d[1]!=1.0) || (self->scale3d[2]!=1.0))
+  {
+    appendToString(&buffer, &bufferSize, &used, "scale=\"%s\" ",
+                   String_fromDoubleArray(temp, 256, self->scale3d, 3, " ", 6));
+  }
+
+  // Relative transformation
+  {
+    double trf[6];
+    HTr_to6DVector(trf, &self->A_CB);
+    Vec3d_constMulSelf(&trf[3], 180.0 / M_PI);
+
+    if (VecNd_maxAbsEle(trf, 6) > 1.0e-8)
+    {
+      appendToString(&buffer, &bufferSize, &used, "transform=\"%s\" ",
+                     String_fromDoubleArray(temp, 256, trf, 6, " ", 6));
+    }
+  }
+
+  // Mesh file
+  if (strlen(self->meshFile) > 0)
+  {
+    appendToString(&buffer, &bufferSize, &used, "meshFile=\"%s\" ", self->meshFile);
+  }
+
+  // Texture file
+  if (strlen(self->textureFile) > 0)
+  {
+    appendToString(&buffer, &bufferSize, &used, "textureFile=\"%s\" ", self->textureFile);
+  }
+
+  // Color
+  if ((self->type != RCSSHAPE_REFFRAME) && (strlen(self->color) > 0) && (!STREQ(self->color, "DEFAULT")))
+  {
+    appendToString(&buffer, &bufferSize, &used, "color=\"%s\" ", self->color);
+  }
+
+  // Material
+  if ((strlen(self->material) > 0) && (!STREQ(self->material, "default")))
+  {
+    appendToString(&buffer, &bufferSize, &used, "material=\"%s\" ", self->material);
+  }
+
+  appendToString(&buffer, &bufferSize, &used, "/>\n");
+
+  return buffer;
 }
