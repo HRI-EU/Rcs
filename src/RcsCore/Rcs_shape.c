@@ -41,6 +41,8 @@
 #include "Rcs_geometry.h"
 #include "Rcs_octree.h"
 
+#include <errno.h>
+
 
 
 /*******************************************************************************
