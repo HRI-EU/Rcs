@@ -492,6 +492,14 @@ void Rcs::SecondOrderLPFND::iterate()
 
 }
 
+void Rcs::SecondOrderLPFND::getTarget(double* x) const
+{
+  for (size_t i=0; i<dim; i++)
+  {
+    x[i] = filt[i]->getTarget();
+  }
+}
+
 void Rcs::SecondOrderLPFND::getPosition(double* x) const
 {
   for (size_t i=0; i<dim; i++)

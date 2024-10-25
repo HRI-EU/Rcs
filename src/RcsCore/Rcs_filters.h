@@ -180,6 +180,7 @@ public:
   virtual void iterate(double* x_ddot, const double* goal);
   virtual void iterate(double* x_ddot);
   virtual void iterate();
+  virtual void getTarget(double* x) const;
   virtual void getPosition(double* x) const;
   virtual double getPosition(size_t index) const;
   virtual void getVelocity(double* x_dot) const;
