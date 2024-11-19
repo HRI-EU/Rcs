@@ -1081,9 +1081,9 @@ ExampleFK_Broadphase::~ExampleFK_Broadphase()
 bool ExampleFK_Broadphase::initParameters()
 {
   ExampleFK::initParameters();
-  xmlFileName = "gBroadphase.xml";
-  directory = "config/xml/SmileActions";
-  treeBodies = "j2s7s300_link_2_left j2s7s300_link_2_right";
+  xmlFileName = "gScenario.xml";
+  directory = "config/xml/WAM";
+  treeBodies = "Base";
 
   return true;
 }
