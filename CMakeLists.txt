@@ -60,29 +60,10 @@ OPTION(RCS_COPY_OR_LINK_CONFIG_DIRS "Copy or link configuration file directories
 #
 ################################################################################
 IF (RCS_COPY_OR_LINK_CONFIG_DIRS)
-  SET(CFG_FROM ${CMAKE_CURRENT_SOURCE_DIR}/config)
-  SET(CFG_TO ${PROJECT_BINARY_DIR}/config)
-
-  IF (WIN32 AND (NOT IS_DIRECTORY "${CFG_TO}") AND (EXISTS "${CFG_TO}"))
-    MESSAGE(STATUS "Removing non-directory ${CFG_TO}")
-    FILE(REMOVE ${CFG_TO})
-  ENDIF()
-
-  IF(NOT EXISTS "${CFG_TO}")
-    IF(UNIX)
-      SET(CONFIGDIR_COPY_COMMAND create_symlink)
-      MESSAGE(STATUS "Linking config directory from ${CFG_FROM} to ${CFG_TO}")
-    ELSE()
-      SET(CONFIGDIR_COPY_COMMAND copy_directory)
-      MESSAGE(STATUS "Copying config directory from ${CFG_FROM} to ${CFG_TO}")
-    ENDIF()
-
-    EXECUTE_PROCESS (COMMAND
-     ${CMAKE_COMMAND} -E ${CONFIGDIR_COPY_COMMAND} ${CFG_FROM} ${CFG_TO})
-  ELSE()
-    MESSAGE(STATUS "Config directory ${CFG_TO} already exists - skipping")
-  ENDIF()
+  INCLUDE(CopyOrLinkConfig)
+  RCS_COPY_OR_LINK_CONFIG(${CMAKE_CURRENT_SOURCE_DIR}/config ${PROJECT_BINARY_DIR}/config)
 ENDIF(RCS_COPY_OR_LINK_CONFIG_DIRS)
+
 
 ################################################################################
 #
