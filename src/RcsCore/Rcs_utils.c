@@ -36,7 +36,14 @@
 #include "Rcs_timer.h"
 #include "Rcs_basicMath.h"
 
+#ifdef __APPLE__
+#include <xlocale.h>
+#else
 #include <locale.h>
+#endif
+
+#include <stdlib.h>
+#include <stdio.h>
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -320,6 +327,9 @@ char* String_fromDouble(char* str, double value, unsigned int maxDigits)
     RLOG(1, "_fcvt_s failed with error code %d (\"%s\")", err, strerror(err));
     return str;
   }
+#elif defined (__APPLE__)
+    snprintf(str, 64, "%.*f", maxDigits, value);
+    return str;
 #else
   int err = fcvt_r(value, maxDigits, &decpt, &sign, str, 64);
 
@@ -738,7 +748,7 @@ const char* String_stripPath(const char* fullName)
  ******************************************************************************/
 const char* String_getEnv(const char* name)
 {
-#if defined (_MSC_VER)
+#if defined (_MSC_VER)|| defined(__APPLE__)
   return getenv(name);
 #else
   return secure_getenv(name);
@@ -994,13 +1004,13 @@ bool File_isEqual(const char* file1, const char* file2)
   // Compare the overall number of bytes
   fseek(fd1, 0, SEEK_END);
   fseek(fd2, 0, SEEK_END);
-  int byteCount1 = ftell(fd1);
-  int byteCount2 = ftell(fd2);
+  long int byteCount1 = ftell(fd1);
+  long int byteCount2 = ftell(fd2);
 
   // check for the total number of bytes
   if (byteCount1 != byteCount2)
   {
-    RLOG(5, "Files differ: %d vs. %d bytes", byteCount1, byteCount2);
+    RLOG(5, "Files differ: %ld vs. %ld bytes", byteCount1, byteCount2);
     fclose(fd1);
     fclose(fd2);
     return false;
@@ -1413,7 +1423,9 @@ void Rcs_printComputerStats(FILE* out)
  ******************************************************************************/
 void Rcs_printThreadInfo(FILE* out, const char* prefix)
 {
-#if !defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__APPLE__)
+    RLOG(1, "Not available on Windows");
+#else
   pthread_t thisThread = pthread_self();
   pthread_attr_t thisThreadAttr;
   int s = pthread_getattr_np(thisThread, &thisThreadAttr);
@@ -1425,8 +1437,7 @@ void Rcs_printThreadInfo(FILE* out, const char* prefix)
   {
     Rcs_printThreadAttributes(out, &thisThreadAttr, prefix);
   }
-#else
-  RLOG(1, "Not available on Windows");
+
 #endif
 }
 

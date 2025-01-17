@@ -46,7 +46,25 @@ IF(WIN32)
 ENDIF()
 
 FIND_PACKAGE(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
-FIND_PACKAGE(Qwt REQUIRED)
+
+IF (APPLE)
+  set(CMAKE_FIND_FRAMEWORK ONLY)
+  find_library(QWT
+    NAMES qwt
+    HINTS /opt/homebrew/opt/qwt-qt5/lib/
+    REQUIRED)
+  if (QWT)
+    message("QWT found: ${QWT}")
+    include_directories(${QWT}/Headers)
+    link_libraries(${QWT})
+    SET (QWT_LIBRARIES ${QWT}/qwt)
+    SET (QWT_INCLUDE_DIRS ${QWT}/Headers)
+    message("QWT_INCLUDE_DIRS: ${QWT_INCLUDE_DIRS}")
+    message("QWT_LIBRARIES: ${QWT_LIBRARIES}")
+  endif()
+ELSE()
+  FIND_PACKAGE(Qwt REQUIRED)
+ENDIF()
 
 ADD_LIBRARY(RcsGui ${RCS_GUI_SRCS} )
 TARGET_LINK_LIBRARIES(RcsGui RcsCore Qt5::Core Qt5::Gui Qt5::Widgets ${QWT_LIBRARIES})

@@ -117,6 +117,17 @@ ELSEIF(UNIX)
     ENDIF()
   ENDIF()
   
+  IF(APPLE)
+    # Suppress the "implicit conversion loses integer precision" warning
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-conversion")
+    #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-conversion")
+    add_compile_options(-Wno-conversion)
+    add_compile_options(-Wno-unused-function)
+    add_compile_options(-Wno-overloaded-virtual)
+    add_compile_options(-Wno-unused-but-set-variable)
+    #add_compile_options(-Wno-inconsistent-missing-override)
+  ENDIF(APPLE)
+
 ENDIF()
 
 ################################################################################

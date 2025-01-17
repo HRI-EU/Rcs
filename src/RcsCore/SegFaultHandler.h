@@ -25,7 +25,7 @@
 #ifndef SEGFAULTHANDLER_H
 #define SEGFAULTHANDLER_H
 
-#if !defined (_MSC_VER)
+#if !defined (_MSC_VER) && !defined (__APPLE__)
 
 /* Bug in gcc prevents from using CPP_DEMANGLE in pure "C" */
 #if !defined(__cplusplus) && !defined(NO_CPP_DEMANGLE)

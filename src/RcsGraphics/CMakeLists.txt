@@ -91,6 +91,10 @@ ENDIF(USE_FFMPEG)
 
 TARGET_LINK_LIBRARIES(RcsGraphics RcsCore ${OPENSCENEGRAPH_LIBRARIES} ${FFMPEG_LIBRARIES})
 
+IF (APPLE)
+  target_compile_definitions(RcsGraphics PUBLIC GL_SILENCE_DEPRECATION)
+ENDIF()
+
 # copy all .dll files to the same folder as the executable
 IF (WIN32)
   FILE(GLOB OSG_DLLS "${OPENSCENEGRAPH_INCLUDE_DIRS}/../bin/*.dll")

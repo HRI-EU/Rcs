@@ -166,6 +166,8 @@ public:
    */
   void runInThread(pthread_mutex_t* mutex = NULL);
 
+  void run(pthread_mutex_t* mutex = NULL);
+
   /*! \brief Does all rendering. If the viewer's thread has been started
    *         (see runInThread() method), the frame() call is called
    *         periodically from there.
@@ -244,6 +246,12 @@ public:
    *  \param[in] enable   Enable with true, disable with false
    */
   void setEnableLogLevelWithNumKeys(bool enable);
+
+  /*! \brief Sets the pointer to the frame update mutex. This will be set
+   *         and unset in the lock() and unlock() calls that protect the
+   *         frame() call.
+   */
+  void setFrameMutex(pthread_mutex_t* mtx);
 
   ///@}
 

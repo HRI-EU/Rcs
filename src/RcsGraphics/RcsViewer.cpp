@@ -136,6 +136,34 @@ public:
         break;
       }
 
+#if defined (__APPLE__)
+      case osgGA::GUIEventAdapter::SCROLL:
+      {
+        switch (ea.getScrollingMotion())
+        {
+          case osgGA::GUIEventAdapter::SCROLL_2D:
+          {
+            const float ratio = 0.9;
+            const float deltaY = ea.getScrollingDeltaY();
+
+            // Decide thresholds or direction:
+            if (deltaY > 0.0f)
+            {
+              zoom(1.0f/ratio);    // Zoom in
+            }
+            else if (deltaY < 0.0f)
+            {
+              zoom(ratio);   // Zoom out
+            }
+            break;
+          }
+
+          default:
+            break;
+        }
+      }
+#endif
+
       default:
       {
       }
@@ -149,7 +177,22 @@ public:
     return osgGA::TrackballManipulator::handle(ea, aa);
   }
 
+#if defined (__APPLE__)
+  void zoom(float ratio)
+  {
+    // If ratio < 1 => zoom in, if ratio > 1 => zoom out
+    double distance = getDistance();
+    distance *= ratio;
 
+    // Avoid extremely small or negative distances:
+    distance = std::max(distance, 0.0001);
+
+    // If you want to clamp to a maximum as well:
+    // distance = std::min(distance, _maximumDistance);
+
+    setDistance(distance);
+  }
+#endif
 
   bool leftShiftPressed;
 };
@@ -1233,6 +1276,15 @@ void Viewer::runInThread(pthread_mutex_t* mutex)
 }
 
 /*******************************************************************************
+ *
+ ******************************************************************************/
+void Viewer::run(pthread_mutex_t* mutex)
+{
+  this->mtxFrameUpdate = mutex;
+  ViewerThread(this);
+}
+
+/*******************************************************************************
  * For true, displays all nodes in wireframe, otherwise in solid
  ******************************************************************************/
 void Viewer::displayWireframe(bool wf)
@@ -1309,7 +1361,6 @@ void Viewer::frame()
     viewer->updateTraversal();
     unlock();
   }
-
   dtFrame = Timer_getSystemTime() - dtFrame;
   this->fps = 0.9*this->fps + 0.1*(1.0/dtFrame);
 }
@@ -2095,6 +2146,14 @@ std::pair<int, int> Viewer::getWindowSize() const
 
   // Return -1, -1 if the window size could not be determined
   return std::make_pair(-1, -1);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void Viewer::setFrameMutex(pthread_mutex_t* mtx)
+{
+  this->mtxFrameUpdate = mtx;
 }
 
 }   // namespace Rcs
