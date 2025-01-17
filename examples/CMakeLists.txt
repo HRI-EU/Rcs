@@ -55,7 +55,7 @@ IF(NOT HEADLESS_BUILD)
   
   ADD_EXECUTABLE(ExampleRunner ExampleRunner.cpp)
 
-  IF (UNIX)
+  IF (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     TARGET_LINK_LIBRARIES(ExampleRunner -Wl,--no-as-needed RcsExamples -Wl,--as-needed)
   ELSE()
     TARGET_LINK_LIBRARIES(ExampleRunner RcsExamples)
