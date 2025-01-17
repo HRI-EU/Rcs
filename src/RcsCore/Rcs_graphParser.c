@@ -602,6 +602,7 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   bool distance = true, graphics = true, physics = true, softPhysics = false;
   bool depth=false, rgb=false, contact=false, attachment = false;
   bool weldpos=false, weldori=false, marker=false, wireframe=false;
+  bool boundingbox = true;
 
   // Physics and distance computation is not carried out for meshes by default.
   if (shape->type == RCSSHAPE_MESH)
@@ -624,6 +625,9 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
     physics = false;
   }
 
+  // Bounding box default is the same as distance flag
+  boundingbox = distance;
+
   getXMLNodePropertyBoolString(node, "distance", &distance);
   getXMLNodePropertyBoolString(node, "physics", &physics);
   getXMLNodePropertyBoolString(node, "graphics", &graphics);
@@ -636,6 +640,7 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   getXMLNodePropertyBoolString(node, "weldori", &weldori);
   getXMLNodePropertyBoolString(node, "marker", &marker);
   getXMLNodePropertyBoolString(node, "wireframe", &wireframe);
+  getXMLNodePropertyBoolString(node, "boundingbox", &boundingbox);
 
   // Physics computation is not carried out for non-physics objects by default.
   if (body->physicsSim == RCSBODY_PHYSICS_NONE)
@@ -739,6 +744,11 @@ static void RcsBody_initShape(RcsShape* shape, xmlNodePtr node,
   if (wireframe == true)
   {
     shape->computeType |= RCSSHAPE_COMPUTE_WIREFRAME;
+  }
+
+  if (boundingbox == true)
+  {
+    shape->computeType |= RCSSHAPE_COMPUTE_BOUNDINGBOX;
   }
 
 
