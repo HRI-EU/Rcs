@@ -40,9 +40,7 @@
 
 #include <string>
 #include <vector>
-#include <list>
 #include <utility>
-#include <cstdarg>
 #include <map>
 
 
@@ -86,22 +84,9 @@ std::string File_getCurrentWorkingDir();
  *  \brief Method for formatting a std::string in the fprintf style
  *
  *  \param fmt Format string + variable arguments
- *  \return String generated from format + arguments
- *
- *  This function uses formatStdString(const char *fmt, va_list ap)
+ *  \return String generated from format + arguments, empty string in case of failure.
  */
 std::string String_formatStdString(const char* fmt, ...);
-
-/*! \ingroup RcsUtilsFunctions
- *  \brief Method for formatting a std::string in the fprintf style
- *
- *  \param fmt Format string
- *  \param ap Variable argument list already started with va_start
- *  \return String generated from format + arguments
- *
- *  Note that call va_end is the responsibility of the user.
- */
-std::string String_formatStdString(const char* fmt, va_list ap);
 
 /*! \ingroup RcsUtilsFunctions
  *  \brief Splits the given string into pieces that are separated by the given

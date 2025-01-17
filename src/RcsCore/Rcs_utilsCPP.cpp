@@ -37,6 +37,7 @@
 
 #include <fstream>
 #include <algorithm>
+#include <cstdarg>
 
 #if !defined(_MSC_VER)
 #include <dirent.h>
@@ -220,6 +221,50 @@ bool String_startsWith(const std::string& fullString,
   }
 }
 
+static std::string String_formatStdString(const char* fmt, va_list ap)
+{
+  // Copy 'ap' so we can safely compute needed size
+  va_list ap_copy;
+  va_copy(ap_copy, ap);
+
+#if defined(_MSC_VER)
+  // _vscprintf: returns the number of characters needed, *excluding* the null terminator
+  int size = _vscprintf(fmt, ap_copy);
+#else
+  // vsnprintf with NULL buffer and 0 size: returns the number of characters needed, *excluding* the null terminator
+  int size = vsnprintf(nullptr, 0, fmt, ap_copy);
+#endif
+
+  // Done with the copy
+  va_end(ap_copy);
+
+  // If an error occurs, size may be negative
+  if (size < 0)
+  {
+    return std::string{};
+  }
+
+  // Allocate enough space for the formatted string plus the null terminator
+  std::string result(static_cast<size_t>(size) + 1, '\0');
+
+  // Perform the actual formatting with 'ap'
+  int written = vsnprintf(&result[0], result.size(), fmt, ap);
+
+  // Check for vsnprintf errors at runtime
+  if (written < 0)
+  {
+    return std::string{};
+  }
+
+  // 'written' is the number of characters written (excluding the null terminator).
+  // Resize so the string's length matches the number of characters we actually wrote.
+  // This also discards the trailing '\0' from the .size() perspective
+  // (though the memory is still there if you call result.data()).
+  result.resize(static_cast<size_t>(written));
+
+  return result;
+}
+
 std::string String_formatStdString(const char* fmt, ...)
 {
   va_list ap;
@@ -228,26 +273,6 @@ std::string String_formatStdString(const char* fmt, ...)
   va_end(ap);
 
   return label_string;
-}
-
-std::string String_formatStdString(const char* fmt, va_list ap)
-{
-  // first check how large our buffer has to be
-#if defined(_MSC_VER)
-  int size = _vscprintf(fmt, ap);
-#else
-  va_list ap_copy;
-  va_copy(ap_copy, ap);
-  int size = vsnprintf(NULL, 0, fmt, ap_copy);
-  va_end(ap_copy);
-#endif
-
-  // generate formatted string
-  std::string ret_val;
-  ret_val.resize(size);
-  vsprintf(&ret_val[0], fmt, ap);
-
-  return ret_val;
 }
 
 std::vector<std::string> String_split(const std::string& toBeSplitted,
