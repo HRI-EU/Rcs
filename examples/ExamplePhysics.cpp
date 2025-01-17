@@ -83,7 +83,6 @@ ExamplePhysics::ExamplePhysics(int argc, char** argv) : ExampleBase(argc, argv)
   damping = 2.0;
   shootMass = 1.0;
   Vec3d_setZero(gVec);
-  hudText[0] = '\0';
   pause = false;
   posCntrl = false;
   skipGui = false;
@@ -95,7 +94,6 @@ ExamplePhysics::ExamplePhysics(int argc, char** argv) : ExampleBase(argc, argv)
   gravComp = false;
   resizeable = false;
   syncHard = false;
-  seqSim = false;
   valgrind = false;
   simpleGraphics = false;
   bodyAdded = false;
@@ -186,6 +184,8 @@ bool ExamplePhysics::initParameters()
 
 bool ExamplePhysics::parseArgs(CmdLineParser* argP)
 {
+  ExampleBase::parseArgs(argP);   // syncMode
+
   argP->getArgument("-nomutex", &nomutex, "Graphics without mutex");
 
   argP->getArgument("-pause", &pause, "Hit key for each iteration");
@@ -205,8 +205,6 @@ bool ExamplePhysics::parseArgs(CmdLineParser* argP)
                     "of shapes dynamically");
   argP->getArgument("-syncHard", &syncHard, "Try to sync with wall "
                     "clock time as hard as possible");
-  argP->getArgument("-sequentialPhysics", &seqSim, "Physics simulation "
-                    "step alternating with viewer's frame()");
   argP->getArgument("-valgrind", &valgrind, "Start without Guis and graphics");
   argP->getArgument("-simpleGraphics", &simpleGraphics, "OpenGL without fancy"
                     " stuff (shadows, anti-aliasing)");
@@ -355,6 +353,7 @@ bool ExamplePhysics::initGraphics()
 
   viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
   viewer->setBackgroundColor(bgColor);
+  viewer->setFrameMutex(mtx);
   simNode = new Rcs::PhysicsNode(sim, resizeable);
   viewer->add(simNode);
   hud = new Rcs::HUD();
@@ -362,11 +361,11 @@ bool ExamplePhysics::initGraphics()
   kc = new Rcs::KeyCatcher();
   viewer->add(kc);
 
-  if (seqSim == false)
+  if (syncMode == "Threaded")
   {
     viewer->runInThread(mtx);
   }
-  else
+  else if (syncMode == "Sequential")
   {
     simNode->setDebugDrawer(true);
   }
@@ -399,14 +398,20 @@ bool ExamplePhysics::initGraphics()
 
 bool ExamplePhysics::initGuis()
 {
-  if (skipGui == false)
+  if (skipGui)
+  {
+    return true;
+  }
+
+  if (syncMode == "Threaded" || syncMode == "Sequential")
   {
     jGui = new JointGui(graph, mtx, q_des, q_curr);
-
-    //int guiHandle = Rcs::JointWidget::create(graph, mtx, q_des, q_curr);
-    //void* ptr = RcsGuiFactory_getPointer(guiHandle);
-    //jw = static_cast<Rcs::JointWidget*>(ptr);
   }
+  else if (syncMode == "External")
+  {
+    new JointWidget(graph, graph, mtx, q_des, q_curr);
+  }
+
 
   return true;
 }
@@ -488,22 +493,21 @@ void ExamplePhysics::step()
 
   pthread_mutex_unlock(&graphLock);
 
-  if (seqSim == true)
+  if (syncMode == "Sequential")
   {
-    viewer->frame();
+    updateUI();
   }
 
-  snprintf(hudText, 2056,
-           "%s\n"
-           "[%s]: Sim-step: %.1f ms\nSim time: %.1f (%.1f) sec\n"
-           "Bodies: %d   Joints: %d\n"
-           "Gravity compensation: %s\nDisplaying %s",
-           sim->getGraph()->cfgFile,
-           sim->getClassName(), dtSim * 1000.0, sim->time(),
-           Timer_get(timer),
-           sim->getGraph()->nBodies, sim->getGraph()->dof,
-           gravComp ? "ON" : "OFF",
-           simNode ? simNode->getDisplayModeStr() : "nothing");
+  hudText = String_formatStdString("%s\n"
+                                   "[%s]: Sim-step: %.1f ms\nSim time: %.1f (%.1f) sec\n"
+                                   "Bodies: %d   Joints: %d\n"
+                                   "Gravity compensation: %s\nDisplaying %s",
+                                   sim->getGraph()->cfgFile,
+                                   sim->getClassName(), dtSim * 1000.0, sim->time(),
+                                   Timer_get(timer),
+                                   sim->getGraph()->nBodies, sim->getGraph()->dof,
+                                   gravComp ? "ON" : "OFF",
+                                   simNode ? simNode->getDisplayModeStr() : "nothing");
   Rcs::KineticSimulation* kSim = dynamic_cast<Rcs::KineticSimulation*>(sim);
   if (kSim)
   {
@@ -518,10 +522,10 @@ void ExamplePhysics::step()
       snprintf(neText, 128, "\nIntegrator: Fehlberg   Energy: %.4f   step: %f",
                kSim->getEnergy(), kSim->getAdaptedDt());
     }
-    strcat(hudText, neText);
+    hudText += neText;
   }
 
-  if (hud != NULL)
+  if (hud)
   {
     hud->setText(hudText);
   }
@@ -569,7 +573,7 @@ void ExamplePhysics::handleKeys()
     RMSGS("Writing dot file");
     RcsGraph_writeDotFile(graph, "graph.dot");
     char osCmd[256];
-    sprintf(osCmd, "dotty graph.dot&");
+    snprintf(osCmd, 256, "dotty graph.dot&");
     int err = system(osCmd);
 
     if (err == -1)
@@ -632,7 +636,7 @@ void ExamplePhysics::handleKeys()
       simNode->updateTransformPointers();
     }
 
-    RMSG("%s adding body \"%s\"",
+    RLOG(1, "%s adding body \"%s\"",
          ok ? "SUCCEEDED" : "FAILED", bdy->name);
 
     bodyAdded = true;
@@ -890,6 +894,11 @@ void ExamplePhysics::handleKeys()
 
 }
 
+void ExamplePhysics::updateUI()
+{
+  viewer->frame();
+  // handleKeys();
+}
 
 
 
@@ -977,7 +986,7 @@ bool ExamplePhysics_HumanoidPendulum::initParameters()
   ExamplePhysics::initParameters();
   xmlFileName = "gHumanoidPendulum.xml";
   directory = "config/xml/Examples";
-  physicsEngine = "Mujoco";
+  physicsEngine = "NewtonEuler";
   skipGui = true;
 
   return true;
@@ -1000,7 +1009,7 @@ bool ExamplePhysics_PPStest::initParameters()
   ExamplePhysics::initParameters();
   xmlFileName = "gScenario.xml";
   directory = "config/xml/PPStest";
-  physicsEngine = "Mujoco";
+  physicsEngine = "Bullet";
   skipGui = true;
 
   return true;
@@ -1011,7 +1020,8 @@ bool ExamplePhysics_PPStest::initParameters()
 
 
 // Rcs -m 4 -f config/xml/Examples -f cWeldConstraint.xml -physicsEngine NewtonEuler -skipGui
-static ExampleFactoryRegistrar<ExamplePhysics_WeldNewtonEuler> ExamplePhysics_WeldNewtonEuler("Physics", "Chain with weld constraints");
+RCS_REGISTER_EXAMPLE(ExamplePhysics_WeldNewtonEuler, "Physics", "Chain with weld constraints");
+//static ExampleFactoryRegistrar<ExamplePhysics_WeldNewtonEuler> ExamplePhysics_WeldNewtonEuler("Physics", "Chain with weld constraints");
 
 ExamplePhysics_WeldNewtonEuler::ExamplePhysics_WeldNewtonEuler(int argc, char** argv) : ExamplePhysics(argc, argv)
 {

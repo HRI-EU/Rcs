@@ -98,9 +98,17 @@ public:
   virtual void handleKeys();
   virtual std::string help();
   virtual bool isRunning() const;
+  virtual void updateUI();
+  virtual void setSyncMode(std::string syncMode);
+  virtual std::string getSyncMode() const;
 
 protected:
   bool runLoop;
+
+  // Threaded: Graphics and Guis updated in their own thread
+  // Sequential: Graphics and Guis updated in step function
+  // External: Graphics and Guis not updated, do it yourself
+  std::string syncMode;
 };
 
 }

@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -45,7 +45,7 @@
 #include <HUD.h>
 #include <JointWidget.h>
 
-#include <pthread.h>
+#include <QPointer>
 
 
 namespace Rcs
@@ -65,6 +65,7 @@ public:
   virtual void step();
   virtual std::string help();
   virtual void handleKeys();
+  virtual void updateUI();
 
 protected:
   bool valgrind;
@@ -73,7 +74,8 @@ protected:
   std::string directory;
   double dtSim, dtStep;
   int fwdKinType;
-  char hudText[512];
+  //char hudText[512];
+  std::string hudText;
   std::string comRef;
   std::string dotFile;
   std::string bgColor;
@@ -100,6 +102,8 @@ protected:
   osg::ref_ptr<Rcs::HUD> hud;
   Rcs::Viewer* viewer;
   JointGui* jGui;
+  QPointer<Rcs::JointWidget> jWidget;
+  //Rcs::JointWidget* jWidget;
 
   unsigned int loopCount;
   double mass, Id[3][3], r_com[3];

@@ -34,11 +34,9 @@
 #include "ExampleGui.h"
 
 #include "ExampleFactory.h"
-#include "Rcs_guiFactory.h"
 
 #include <Rcs_macros.h>
 #include <Rcs_utilsCPP.h>
-#include <Rcs_timer.h>
 
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -50,6 +48,7 @@
 #include <QPushButton>
 #include <QHeaderView>
 #include <QTimer>
+#include <QApplication>
 
 #include <sstream>
 
@@ -112,7 +111,7 @@ ExampleGui::ExampleGui(int argc_, char** argv_) :
 void ExampleGui::construct()
 {
   RLOG(5, "Constructing test");
-  QWidget* test = new ExampleWidget(argc, argv);
+  QWidget* test = new ExampleWidget(argc, argv, "Threaded");
   RLOG(5, "Setting widget");
   setWidget(test);
   RLOG(5, "Done");
@@ -151,11 +150,14 @@ public:
  ******************************************************************************/
 ExampleItem::ExampleItem(int argc_, char** argv_,
                          const QString& categoryName_,
-                         const QString& exampleName) :
+                         const QString& exampleName,
+                         const QString& syncMode_) :
   QStandardItem(exampleName),
   parseItem(NULL),
   helpItem(NULL),
   categoryName(categoryName_),
+  syncMode(syncMode_),
+  timer(NULL),
   example(NULL),
   argc(argc_),
   argv(argv_),
@@ -191,6 +193,7 @@ void ExampleItem::start()
     example = ExampleFactory::create(categoryName.toStdString(),
                                      text().toStdString(), argc, argv);
     RCHECK(example);
+    example->setSyncMode(syncMode.toStdString());
   }
 
   if (parseItem->checkState()==Qt::Checked)
@@ -210,6 +213,17 @@ void ExampleItem::start()
   connect(this, &ExampleItem::startWork, worker, &ExampleWorker::doWork);
   exampleThread.start();
   emit startWork();
+
+  if (example->getSyncMode()=="External")
+  {
+    this->timer = new QTimer(this);  // or any parent
+    connect(timer, &QTimer::timeout, [&]()
+    {
+      example->updateUI();
+    });
+    timer->start(16);  // ~60fps
+  }
+
 }
 
 void ExampleItem::launchHelpWindow()
@@ -350,6 +364,15 @@ void ExampleItem::stop()
 
 void ExampleItem::destroy()
 {
+  if (timer)
+  {
+    if (timer->isActive())
+    {
+      timer->stop();
+    }
+    disconnect(timer, nullptr, nullptr, nullptr);  // Disconnect all signals
+  }
+
   stop();
   delete example;
   example = NULL;
@@ -386,7 +409,7 @@ bool ExampleItem::isClicked() const
 /*******************************************************************************
  *
  ******************************************************************************/
-ExampleWidget::ExampleWidget(int argc, char** argv, QWidget* parent) :
+ExampleWidget::ExampleWidget(int argc, char** argv, std::string syncMode, QWidget* parent) :
   QMainWindow(parent)
 {
   setObjectName("Rcs::ExampleGui");
@@ -453,7 +476,7 @@ ExampleWidget::ExampleWidget(int argc, char** argv, QWidget* parent) :
         QString categoryName = QString::fromStdString(it->first.first);
         QString exampleName = QString::fromStdString(it->first.second);
         ExampleItem* exItem = new ExampleItem(argc, argv, categoryName,
-                                              exampleName);
+                                              exampleName, QString::fromStdString(syncMode));
         exItem->setEditable(false);
         //exItem->setSelectable(false);
         item->setChild(i, 0, exItem);
@@ -509,6 +532,13 @@ ExampleWidget::~ExampleWidget()
   RLOG(5, "Deleting ExampleWidget");
   delete this->model;
   delete this->logLine;
+}
+
+void ExampleWidget::closeEvent(QCloseEvent* event)
+{
+  RLOG(0, "CLOSE");
+  QApplication::quit();  // Ensure the application exits
+  QMainWindow::closeEvent(event);  // Call the base implementation if needed
 }
 
 void ExampleWidget::itemClicked(const QModelIndex& idx)

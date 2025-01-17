@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -78,7 +78,7 @@ ExampleFK::ExampleFK(int argc, char** argv) : ExampleBase(argc, argv)
   dtSim = 0.0;
   dtStep = 0.04;
   fwdKinType = 0;
-  hudText[0] = '\0';
+  //hudText[0] = '\0';
   testCopy = false;
   editMode = false;
   playBVH = false;
@@ -92,6 +92,7 @@ ExampleFK::ExampleFK(int argc, char** argv) : ExampleBase(argc, argv)
   bvhTraj = NULL;
   viewer = NULL;
   jGui = NULL;
+  //jWidget = NULL;
   loopCount = 0;
   mass = 0.0;
   Mat3d_setIdentity(Id);
@@ -121,6 +122,7 @@ void ExampleFK::clear()
     RLOG(1, "Deleting JointWidget");
     delete jGui;
     jGui = NULL;
+    delete jWidget;   // QPointer makes it NULL
     RLOG(1, "Done deleting JointWidget");
   }
 
@@ -146,6 +148,8 @@ bool ExampleFK::initParameters()
 
 bool ExampleFK::parseArgs(CmdLineParser* argP)
 {
+  ExampleBase::parseArgs(argP);   // syncMode
+
   argP->getArgument("-nomutex", &noMutex, "Graphics without mutex");
   argP->getArgument("-valgrind", &valgrind, "Start without Guis and graphics");
   argP->getArgument("-simpleGraphics", &simpleGraphics, "OpenGL without fancy"
@@ -190,9 +194,9 @@ std::string ExampleFK::help()
   s << "\t-dir config/xml/DarwinOP -f robotis_op.urdf\n";
   s << "\t-dir config/xml/Husky -f dual_arm_husky_original.urdf\n";
   s << "\t-dir config/xml/Valkyrie -f valkyrie_sim.urdf\n\n";
-  s << Rcs::getResourcePaths();
-  s << Rcs::CmdLineParser::printToString();
-  s << Rcs::RcsGraph_printUsageToString(xmlFileName);
+  s << getResourcePaths();
+  s << CmdLineParser::printToString();
+  s << RcsGraph_printUsageToString(xmlFileName);
   return s.str();
 }
 
@@ -228,7 +232,7 @@ bool ExampleFK::initAlgo()
 
   char bvhFile[256];
   strcpy(bvhFile, graph->cfgFile);
-  Rcs::CmdLineParser argP;
+  CmdLineParser argP;
   argP.getArgument("-bvhFile", bvhFile, "BVH file "
                    "(default is \"%s\")", bvhFile);
 
@@ -304,39 +308,40 @@ bool ExampleFK::initAlgo()
 
 bool ExampleFK::initGraphics()
 {
-  Rcs::KeyCatcherBase::registerKey("a", "Change body attachement");
-  Rcs::KeyCatcherBase::registerKey("C", "Toggle COM display");
-  Rcs::KeyCatcherBase::registerKey("d", "Print dot file");
-  Rcs::KeyCatcherBase::registerKey("f", "Write graph to file");
-  Rcs::KeyCatcherBase::registerKey("j", "Create JointWidget");
-  Rcs::KeyCatcherBase::registerKey("l", "Reload graph file");
-  Rcs::KeyCatcherBase::registerKey("m", "Set q to model state");
-  Rcs::KeyCatcherBase::registerKey("p", "Print information to console");
-  Rcs::KeyCatcherBase::registerKey("q", "Quit");
-  Rcs::KeyCatcherBase::registerKey("W", "Merge bodies");
-  Rcs::KeyCatcherBase::registerKey("x", "Rewind bvh file");
-  Rcs::KeyCatcherBase::registerKey("e", "Remove body under mouse");
-  Rcs::KeyCatcherBase::registerKey("J", "Remove joints of body by name");
-  Rcs::KeyCatcherBase::registerKey("E", "Remove all joints of graph");
-  Rcs::KeyCatcherBase::registerKey("T", "Load trajectory file");
-  Rcs::KeyCatcherBase::registerKey("X", "Make monolithic");
-  Rcs::KeyCatcherBase::registerKey("S", "Scale graph");
-  Rcs::KeyCatcherBase::registerKey("b", "Boxify graph");
-  Rcs::KeyCatcherBase::registerKey("B", "Capsulify graph");
-  Rcs::KeyCatcherBase::registerKey("H", "Toggle HUD");
+  KeyCatcherBase::registerKey("a", "Change body attachement");
+  KeyCatcherBase::registerKey("C", "Toggle COM display");
+  KeyCatcherBase::registerKey("d", "Print dot file");
+  KeyCatcherBase::registerKey("f", "Write graph to file");
+  KeyCatcherBase::registerKey("j", "Create JointWidget");
+  KeyCatcherBase::registerKey("l", "Reload graph file");
+  KeyCatcherBase::registerKey("m", "Set q to model state");
+  KeyCatcherBase::registerKey("p", "Print information to console");
+  KeyCatcherBase::registerKey("q", "Quit");
+  KeyCatcherBase::registerKey("W", "Merge bodies");
+  KeyCatcherBase::registerKey("x", "Rewind bvh file");
+  KeyCatcherBase::registerKey("e", "Remove body under mouse");
+  KeyCatcherBase::registerKey("J", "Remove joints of body by name");
+  KeyCatcherBase::registerKey("E", "Remove all joints of graph");
+  KeyCatcherBase::registerKey("T", "Load trajectory file");
+  KeyCatcherBase::registerKey("X", "Make monolithic");
+  KeyCatcherBase::registerKey("S", "Scale graph");
+  KeyCatcherBase::registerKey("b", "Boxify graph");
+  KeyCatcherBase::registerKey("B", "Capsulify graph");
+  KeyCatcherBase::registerKey("H", "Toggle HUD");
 
   if (valgrind)
   {
     return true;
   }
 
-  viewer = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
+  viewer = new Viewer(!simpleGraphics, !simpleGraphics);
   viewer->setBackgroundColor(bgColor);
-  gn = new Rcs::GraphNode(graph);
+  viewer->setFrameMutex(mtx);
+  gn = new GraphNode(graph);
   gn->toggleReferenceFrames();
   viewer->add(gn);
 
-  comNd = new Rcs::SphereNode(r_com, 0.05);
+  comNd = new SphereNode(r_com, 0.05);
   comNd->makeDynamic(r_com);
   comNd->setMaterial("RED");
   comNd->toggleWireframe();
@@ -344,23 +349,23 @@ bool ExampleFK::initGraphics()
   viewer->add(comNd);
 
   char xmlFile2[64] = "";
-  Rcs::CmdLineParser argP;
+  CmdLineParser argP;
   argP.getArgument("-f2", xmlFile2, "Optional second graph file (default"
                    "is empty)");
   if (strlen(xmlFile2) > 0)
   {
     RcsGraph* graph2 = RcsGraph_create(xmlFile2);
     RCHECK(graph2);
-    viewer->add(new Rcs::GraphNode(graph2));
+    viewer->add(new GraphNode(graph2));
   }
 
   if (!noHud)
   {
-    hud = new Rcs::HUD();
+    hud = new HUD();
     viewer->add(hud);
   }
 
-  kc = new Rcs::KeyCatcher();
+  kc = new KeyCatcher();
   viewer->add(kc);
 
   RCSGRAPH_FOREACH_SENSOR(graph)
@@ -368,7 +373,7 @@ bool ExampleFK::initGraphics()
     if (SENSOR->type == RCSSENSOR_PPS)
     {
       bool debug = RcsLogLevel > 0 ? true : false;
-      viewer->add(new Rcs::PPSSensorNode(SENSOR, graph, debug));
+      viewer->add(new PPSSensorNode(SENSOR, graph, debug));
     }
   }
   if (!aabbBdyName.empty())
@@ -380,11 +385,15 @@ bool ExampleFK::initGraphics()
     }
     else
     {
-      aabbNd = new Rcs::BoxNode(Vec3d_zeroVec(), 1.0, 1.0, 1.0, true);
+      aabbNd = new BoxNode(Vec3d_zeroVec(), 1.0, 1.0, 1.0, true);
       viewer->add(aabbNd.get());
     }
   }
-  viewer->runInThread(mtx);
+
+  if (syncMode == "Threaded")
+  {
+    viewer->runInThread(mtx);
+  }
 
   return true;
 }
@@ -406,7 +415,16 @@ bool ExampleFK::initGuis()
       JNT->constrained = true;
     }
 
-    jGui = new JointGui(graph, mtx);
+    if (syncMode == "Threaded" || syncMode == "Sequential")
+    {
+      jGui = new JointGui(graph, mtx);
+    }
+    else if (syncMode == "External")
+    {
+      jWidget = new JointWidget(graph, graph, mtx);
+      jWidget->show();
+    }
+
   }
 
   return true;
@@ -506,15 +524,24 @@ void ExampleFK::step()
 
   pthread_mutex_unlock(&graphLock);
 
-  sprintf(hudText, "Graph \"%s\"\nDof: %d nJ: %d\n"
-          "Forward kinematics step: %.1f ms",
-          graph->cfgFile, graph->dof, graph->nJ, dtSim*1000.0);
+  if (syncMode == "Sequential")
+  {
+    updateUI();
+  }
+
+  //snprintf(hudText, 512, "Graph \"%s\"\nDof: %d nJ: %d\n"
+  //         "Forward kinematics step: %.3f ms",
+  //         graph->cfgFile, graph->dof, graph->nJ, dtSim*1000.0);
+  hudText = String_formatStdString("Graph \"%s\"\nDof: %d nJ: %d\n"
+                                   "Forward kinematics step: %.3f ms",
+                                   graph->cfgFile, graph->dof, graph->nJ, dtSim * 1000.0);
 
   if (bvhTraj != NULL)
   {
     char a[256];
     snprintf(a, 256, "\nBVH row %d (from %d)", bvhIdx, bvhTraj->m);
-    strcat(hudText, a);
+    //strcat(hudText, a);
+    hudText += a;
   }
 
   if (updateHud)
@@ -573,7 +600,7 @@ void ExampleFK::handleKeys()
 
     pthread_mutex_lock(&graphLock);
     RcsGraph_scale(graph, scaleFactor);
-    gn = new Rcs::GraphNode(graph);
+    gn = new GraphNode(graph);
     gn->toggleReferenceFrames();
     gn->displayGraphicsModel(graphicsVisible);
     gn->displayPhysicsModel(physicsVisible);
@@ -620,7 +647,7 @@ void ExampleFK::handleKeys()
   }
   else if (kc->getAndResetKey('e'))
   {
-    Rcs::BodyNode* bNd = viewer->getBodyNodeUnderMouse<Rcs::BodyNode*>();
+    BodyNode* bNd = viewer->getBodyNodeUnderMouse<BodyNode*>();
     if (bNd == NULL)
     {
       RMSG("No BodyNode found under mouse");
@@ -690,7 +717,7 @@ void ExampleFK::handleKeys()
     RMSGS("Writing dot file");
     RcsGraph_writeDotFile(graph, dotFile.c_str());
     char osCmd[256];
-    sprintf(osCmd, "dotty %s&", dotFile.c_str());
+    snprintf(osCmd, 256, "dotty %s&", dotFile.c_str());
     int err = system(osCmd);
 
     if (err == -1)
@@ -725,7 +752,7 @@ void ExampleFK::handleKeys()
     REXEC(1)
     {
       char osCmd[256];
-      sprintf(osCmd, "dotty %s&", dotFile.c_str());
+      snprintf(osCmd, 256, "dotty %s&", dotFile.c_str());
       int err = system(osCmd);
 
       if (err == -1)
@@ -760,7 +787,7 @@ void ExampleFK::handleKeys()
       RLOG(1, "%s boxifying body %s", success ? "SUCCESS" : "FAILURE",
            BODY->name);
     }
-    gn = new Rcs::GraphNode(graph);
+    gn = new GraphNode(graph);
     viewer->addInternal(gn);
     pthread_mutex_unlock(&graphLock);
     RMSG("... done boxifying graph");
@@ -777,7 +804,7 @@ void ExampleFK::handleKeys()
       RLOG(1, "%s capsulifying body %s", success ? "SUCCESS" : "FAILURE",
            BODY->name);
     }
-    gn = new Rcs::GraphNode(graph);
+    gn = new GraphNode(graph);
     viewer->addInternal(gn);
     pthread_mutex_unlock(&graphLock);
     RMSG("... done boxifying graph");
@@ -807,7 +834,7 @@ void ExampleFK::handleKeys()
 
     if (graph != NULL)
     {
-      gn = new Rcs::GraphNode(graph);
+      gn = new GraphNode(graph);
       gn->toggleReferenceFrames();
       gn->displayGraphicsModel(graphicsVisible);
       gn->displayPhysicsModel(physicsVisible);
@@ -858,7 +885,7 @@ void ExampleFK::handleKeys()
         fclose(fd);
       }
       viewer->removeInternal(gn);
-      gn = new Rcs::GraphNode(graph);
+      gn = new GraphNode(graph);
       gn->toggleReferenceFrames();
       pthread_mutex_unlock(&graphLock);
       viewer->add(gn);
@@ -920,12 +947,18 @@ void ExampleFK::handleKeys()
     }
 
     viewer->removeInternal(gn);
-    gn = new Rcs::GraphNode(graph);
+    gn = new GraphNode(graph);
     gn->toggleReferenceFrames();
     pthread_mutex_unlock(&graphLock);
 
     viewer->add(gn);
   }
+}
+
+void ExampleFK::updateUI()
+{
+  viewer->frame();
+  //handleKeys();
 }
 
 
@@ -966,7 +999,7 @@ bool ExampleFK_Below::initGraphics()
 
   gn->displayReferenceFrames(false);
 
-  belowNd = new Rcs::SphereNode(belowPt, 0.05);
+  belowNd = new SphereNode(belowPt, 0.05);
   belowNd->makeDynamic(belowPt);
   belowNd->setMaterial("RED");
   viewer->add(belowNd);
@@ -1026,9 +1059,14 @@ void ExampleFK_Below::step()
   const RcsBody* closest = RcsBody_closestInDirection(graph, bb->A_BI.org, direction, belowPt, &distance);
   pthread_mutex_unlock(&graphLock);
 
-  snprintf(hudText, 256, "Body below %s is %s \nd=%f   pt=[%f %f %f]\n",
-           bb->name, closest ? closest->name : "NULL", distance,
-           belowPt[0], belowPt[1], belowPt[2]);
+  /* snprintf(hudText, 256, "Body below %s is %s \nd=%f   pt=[%f %f %f]\n",
+            bb->name, closest ? closest->name : "NULL", distance,
+            belowPt[0], belowPt[1], belowPt[2]);*/
+
+  hudText = String_formatStdString("Drag green sphere to see example\nBody below %s is %s \nd=%f   pt=[%f %f %f]\n",
+                                   bb->name, closest ? closest->name : "NULL", distance,
+                                   belowPt[0], belowPt[1], belowPt[2]);
+
   if (hud)
   {
     hud->setText(hudText);
@@ -1049,9 +1087,9 @@ std::string ExampleFK_Below::help()
   s << "\tintersection from the sphere's frame origin, casted vertically\n";
   s << "\tdownwards. In this example, all shapes regardless of their compute \n";
   s << "\ttype are considered.\n\n";
-  s << Rcs::getResourcePaths();
-  s << Rcs::CmdLineParser::printToString();
-  s << Rcs::RcsGraph_printUsageToString(xmlFileName);
+  s << getResourcePaths();
+  s << CmdLineParser::printToString();
+  s << RcsGraph_printUsageToString(xmlFileName);
   return s.str();
 }
 
@@ -1093,7 +1131,7 @@ bool ExampleFK_Broadphase::initAlgo()
   ExampleFK::initAlgo();
 
   bp = RcsBroadPhase_create(graph, distanceThreshold);
-  std::vector<std::string> treeBdyVec = Rcs::String_split(treeBodies, " ");
+  std::vector<std::string> treeBdyVec = String_split(treeBodies, " ");
   for (size_t i = 0; i < treeBdyVec.size(); ++i)
   {
     RcsBroadPhase_addTreeByName(bp, treeBdyVec[i].c_str());
@@ -1125,10 +1163,15 @@ void ExampleFK_Broadphase::step()
   t_broadphase = (t_broadphase>0.0) ? 0.99*t_broadphase + 0.01*t_bp : t_bp;
   t_narrowphase = (t_narrowphase>0.0) ? 0.99*t_narrowphase + 0.01*t_np : t_np;
 
-  snprintf(hudText, 256, "%d of %d possible pairs\nBroad phase took %.3f msec\n"
-           "Narrow phase took %.3f msec\nCompression is %.1f%%",
-           cMdl->nPairs, nb, 1.0e3*t_broadphase, 1.0e3*t_narrowphase,
-           100.0-100.0*cMdl->nPairs/nb);
+  /* snprintf(hudText, 256, "%d of %d possible pairs\nBroad phase took %.3f msec\n"
+            "Narrow phase took %.3f msec\nCompression is %.1f%%",
+            cMdl->nPairs, nb, 1.0e3*t_broadphase, 1.0e3*t_narrowphase,
+            100.0-100.0*cMdl->nPairs/nb);*/
+
+  hudText = String_formatStdString("%d of %d possible pairs\nBroad phase took %.3f msec\n"
+                                   "Narrow phase took %.3f msec\nCompression is %.1f%%",
+                                   cMdl->nPairs, nb, 1.0e3 * t_broadphase, 1.0e3 * t_narrowphase,
+                                   100.0 - 100.0 * cMdl->nPairs / nb);
 
   if (hud)
   {
@@ -1148,7 +1191,7 @@ void ExampleFK_Broadphase::step()
 
 bool ExampleFK_Broadphase::initGraphics()
 {
-  Rcs::KeyCatcherBase::registerKey("k", "Toggle broadphase visualization");
+  KeyCatcherBase::registerKey("k", "Toggle broadphase visualization");
   if (valgrind)
   {
     return true;
@@ -1170,8 +1213,8 @@ bool ExampleFK_Broadphase::initGraphics()
                                bp->bodies[i].sphereCenter[1],
                                bp->bodies[i].sphereCentger[2]));
 
-    osg::ref_ptr<Rcs::SphereNode> sn;
-    sn = new Rcs::SphereNode(Vec3d_zeroVec(), bp->bodies[i].sphereRadius);
+    osg::ref_ptr<SphereNode> sn;
+    sn = new SphereNode(Vec3d_zeroVec(), bp->bodies[i].sphereRadius);
     sn->makeDynamic(graph->bodies[bp->bodies[i].id].A_BI.org);
     sn->toggleWireframe();
     pat->addChild(sn.get());
@@ -1180,18 +1223,18 @@ bool ExampleFK_Broadphase::initGraphics()
 #else
   for (unsigned int i = 0; i < bp->nBodies; ++i)
   {
-    osg::ref_ptr<Rcs::AABBNode> sn = new Rcs::AABBNode();
+    osg::ref_ptr<AABBNode> sn = new AABBNode();
     sn->makeDynamic(bp->bodies[i].aabbMin, bp->bodies[i].aabbMax);
     bpNode->addChild(sn.get());
   }
   for (unsigned int i = 0; i < bp->nTrees; ++i)
   {
-    osg::ref_ptr<Rcs::AABBNode> sn = new Rcs::AABBNode();
+    osg::ref_ptr<AABBNode> sn = new AABBNode();
     sn->makeDynamic(bp->trees[i].aabbMin, bp->trees[i].aabbMax);
     bpNode->addChild(sn.get());
     for (unsigned int j = 0; j < bp->trees[i].nBodies; ++j)
     {
-      osg::ref_ptr<Rcs::AABBNode> sn = new Rcs::AABBNode();
+      osg::ref_ptr<AABBNode> sn = new AABBNode();
       sn->makeDynamic(bp->trees[i].bodies[j].aabbMin,
                       bp->trees[i].bodies[j].aabbMax);
       bpNode->addChild(sn.get());
@@ -1200,8 +1243,8 @@ bool ExampleFK_Broadphase::initGraphics()
   }
 #endif
 
-  osg::ref_ptr<Rcs::VertexArrayNode> cn;
-  cn = new Rcs::VertexArrayNode(cMdl->cp, osg::PrimitiveSet::LINES, "RED");
+  osg::ref_ptr<VertexArrayNode> cn;
+  cn = new VertexArrayNode(cMdl->cp, osg::PrimitiveSet::LINES, "RED");
   viewer->add(cn.get());
 
 

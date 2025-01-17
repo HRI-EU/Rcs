@@ -208,6 +208,7 @@ JointWidget::JointWidget(RcsGraph* graph, const RcsGraph* constGraph,
 
   setWindowTitle("RCS Joint Control");
   setObjectName("Rcs::JointWidget");
+  setAttribute(Qt::WA_DeleteOnClose);
 
   QWidget* scrollWidget = new QWidget(this);
 

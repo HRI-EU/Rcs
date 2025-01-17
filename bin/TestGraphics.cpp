@@ -58,6 +58,7 @@
 #include <Rcs_mesh.h>
 #include <Rcs_parser.h>
 #include <Rcs_typedef.h>
+#include <Rcs_shape.h>
 
 #include <osgGA/TrackballManipulator>
 #include <osgDB/Registry>
@@ -472,7 +473,9 @@ static void testOsgViewer()
   osgDB::Registry::instance()->setOptions(options);
 
   osgViewer::Viewer* viewer = new osgViewer::Viewer();
-  viewer->setCameraManipulator(new osgGA::TrackballManipulator());
+  osg::ref_ptr<osgGA::TrackballManipulator> tbm = new osgGA::TrackballManipulator();
+  tbm->setAutoComputeHomePosition(true);
+  viewer->setCameraManipulator(tbm.get());
 
   osg::ref_ptr<osg::Group> rootnode;
 
@@ -568,7 +571,7 @@ static void testOsgViewer()
     // Light source that moves with the camera
     osg::ref_ptr<osg::LightSource> cameraLight = new osg::LightSource;
     cameraLight->getLight()->setLightNum(1);
-    //cameraLight->getLight()->setPosition(osg::Vec4(0.0, 0.0, 10.0, 1.0));
+    cameraLight->getLight()->setPosition(osg::Vec4(5.0, 0.0, 10.0, 1.0));
     cameraLight->getLight()->setSpecular(osg::Vec4(1.0, 1.0, 1.0, 1.0));
     rootnode->addChild(cameraLight.get());
     rootnode->getOrCreateStateSet()->setMode(GL_LIGHT1, osg::StateAttribute::ON);
@@ -618,8 +621,8 @@ static void testOsgViewer()
 
   if (argP.hasArgument("-graph", "Add GraphNode"))
   {
-    char xmlFileName[256] = "LBR.xml";
-    char directory[256] = "config/xml/DexBot";
+    char xmlFileName[256] = "cFace.xml";
+    char directory[256] = "config/xml/Examples";
     argP.getArgument("-f", xmlFileName, "Configuration file name");
     argP.getArgument("-dir", directory, "Configuration file directory");
     Rcs_addResourcePath(directory);
@@ -632,13 +635,22 @@ static void testOsgViewer()
 
   if (argP.hasArgument("-body", "Add BodyNode"))
   {
-    RcsGraph* graph = RcsGraph_create("config/xml/DexBot/LBR.xml");
+    RcsGraph* graph = RcsGraph_create("config/xml/Examples/cFace.xml");
     RCHECK(graph);
     RcsBody* rootBdy = RcsGraph_getRootBody(graph);
-    osg::ref_ptr<Rcs::BodyNode> gn = new Rcs::BodyNode(rootBdy, graph);
-    rootnode->addChild(gn.get());
+    osg::ref_ptr<Rcs::BodyNode> bn = new Rcs::BodyNode(rootBdy, graph);
+    rootnode->addChild(bn.get());
   }
 
+  if (argP.hasArgument("-shape", "Add ShapeNode"))
+  {
+    RcsGraph* graph = RcsGraph_create("config/xml/Examples/cFace.xml");
+    RCHECK(graph);
+    RcsBody* rootBdy = RcsGraph_getRootBody(graph);
+    osg::ref_ptr<Rcs::ShapeNode> sn = new Rcs::ShapeNode(graph, rootBdy->id, 0);
+    RcsShape_fprint(stderr, &rootBdy->shapes[0]);
+    rootnode->addChild(sn.get());
+  }
 
   if (argP.hasArgument("-h"))
   {
@@ -646,9 +658,9 @@ static void testOsgViewer()
     return;
   }
 
-
   viewer->setUpViewInWindow(12, 38, 640, 480);
   viewer->realize();
+  tbm->home(0.0);
   viewer->run();
 
   delete viewer;
@@ -691,9 +703,6 @@ static void testVertexArrayNode()
     return;
   }
 
-  pthread_mutex_t mtx;
-  pthread_mutex_init(&mtx, NULL);
-
   MatNd* rndMat = MatNd_create(1000, 3);
   MatNd_setRandom(rndMat, -0.5, 0.5);
 
@@ -708,29 +717,23 @@ static void testVertexArrayNode()
     vn = new Rcs::VertexArrayNode(osg::PrimitiveSet::LINES);
   }
 
-  RCHECK(vn.valid());
-
   vn->setPoints(rndMat);
   vn->setPointSize(5.0);
 
-  Rcs::Viewer* viewer = new Rcs::Viewer();
-  viewer->add(new Rcs::COSNode());
-  viewer->add(vn.get());
-  viewer->runInThread(&mtx);
+  Rcs::Viewer viewer;
+  viewer.add(new Rcs::COSNode());
+  viewer.add(vn.get());
 
   RMSG("Hit any key to quit");
 
-  while (!Rcs_kbhit())
+  while (runLoop)
   {
-    pthread_mutex_lock(&mtx);
     MatNd_setRandom(rndMat, -0.5, 0.5);
-    pthread_mutex_unlock(&mtx);
+    viewer.frame();
     Timer_waitDT(0.01);
   }
 
-  delete viewer;
   MatNd_destroy(rndMat);
-  pthread_mutex_destroy(&mtx);
 }
 
 /*******************************************************************************
@@ -866,9 +869,6 @@ static void testCameraTransform()
     return;
   }
 
-  pthread_mutex_t mtx;
-  pthread_mutex_init(&mtx, NULL);
-
   Rcs_addResourcePath(directory);
 
   RcsGraph* graph = RcsGraph_create(xmlFileName);
@@ -879,14 +879,12 @@ static void testCameraTransform()
   viewer->add(new Rcs::GraphNode(graph));
   viewer->add(cn.get());
   viewer->add(kc.get());
-  viewer->runInThread(&mtx);
 
   HTr A_CI;   // World to camera transform
 
   while (runLoop)
   {
-
-    pthread_mutex_lock(&mtx);
+    viewer->frame();
 
     if (kc->getAndResetKey('q'))
     {
@@ -972,14 +970,11 @@ static void testCameraTransform()
       RMSGS("Field of view after setting: %f deg", RCS_RAD2DEG(fov));
     }
 
-    pthread_mutex_unlock(&mtx);
-
     Timer_waitDT(0.01);
   }
 
   delete viewer;
   RcsGraph_destroy(graph);
-  pthread_mutex_destroy(&mtx);
 }
 
 /*******************************************************************************
@@ -991,7 +986,6 @@ static void testArrowNode()
   Vec3d_setZero(org);
   Vec3d_setUnitVector(dir, 2);
 
-
   Rcs::CmdLineParser argP;
   argP.getArgument("-x", &org[0], "X-position of arrow origin");
   argP.getArgument("-y", &org[1], "Y-position of arrow origin");
@@ -999,22 +993,22 @@ static void testArrowNode()
   argP.getArgument("-r", &radius, "Radius of arrow");
   argP.getArgument("-l", &length, "Length of arrow");
 
-  Rcs::ArrowNode* an1 = new Rcs::ArrowNode();
+  osg::ref_ptr<Rcs::ArrowNode> an1 = new Rcs::ArrowNode();
   an1->setPosition(org);
   an1->setDirection(dir);
   an1->setRadius(radius);
   an1->setArrowLength(length);
 
+  Rcs::Viewer viewer;
+  //viewer.add(new Rcs::COSNode());
+  viewer.add(an1.get());
 
+  while (runLoop)
+  {
+    viewer.frame();
+    Timer_waitDT(0.01);
+  }
 
-  Rcs::Viewer* viewer = new Rcs::Viewer();
-  viewer->add(an1);
-  viewer->add(new Rcs::COSNode());
-  viewer->runInThread();
-
-  RPAUSE();
-
-  delete viewer;
 }
 
 /*******************************************************************************
@@ -1247,18 +1241,18 @@ void test_dynamicShapeResizing()
 {
   double x = 0.2;
   Rcs::CmdLineParser argP;
-  std::string xmlFileName = "gShapes.xml";
-  std::string directory = "config/xml/Examples";
-  argP.getArgument("-f", &xmlFileName, "Configuration file name "
-                   "(default is %s)", xmlFileName.c_str());
-  argP.getArgument("-dir", &directory, "Configuration file directory "
+  char xmlFileName[256] = "gShapes.xml";
+  char directory[256] = "config/xml/Examples";
+  argP.getArgument("-f", xmlFileName, "Configuration file name "
+                   "(default is %s)", xmlFileName);
+  argP.getArgument("-dir", directory, "Configuration file directory "
                    "(default is %s)", directory);
   bool native = argP.hasArgument("-native", "osg::Capsule test only");
   bool pause = argP.hasArgument("-pause", "Pause before each frame");
   bool valgrind = argP.hasArgument("-valgrind", "Stop after 10 frames");
-  Rcs_addResourcePath(directory.c_str());
+  Rcs_addResourcePath(directory);
 
-  RcsGraph* graph = RcsGraph_create(xmlFileName.c_str());
+  RcsGraph* graph = RcsGraph_create(xmlFileName);
   RCHECK(graph);
 
   Rcs::Viewer viewer;

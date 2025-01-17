@@ -374,6 +374,7 @@ bool ExampleIK::initGraphics()
   }
 
   v = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
+  v->setFrameMutex(mtx);
   kc = new Rcs::KeyCatcher();
   gn = new Rcs::GraphNode(controller->getGraph());
 
@@ -430,9 +431,10 @@ bool ExampleIK::initGuis()
     {
       if ((algo == 0) && (lambda > 0.0))
       {
-        cGui = new ControllerGui(controller, a_des,
-                                 ikSolver->getCurrentActivation(),
-                                 x_des, x_curr, mtx);
+        cGui = new Rcs::ControllerWidgetBase(controller, a_des,
+                                             ikSolver->getCurrentActivation(),
+                                             x_des, x_curr, mtx, false);
+        cGui->show();
       }
       else
       {
@@ -440,13 +442,15 @@ bool ExampleIK::initGuis()
         {
           // If mode 5 runs with a simulator, the GUI displays the
           // current values from physics.
-          cGui = new ControllerGui(controller, a_des,
-                                   x_des, x_physics, mtx);
+          cGui = new Rcs::ControllerWidgetBase(controller, a_des,
+                                               NULL, x_des, x_physics, mtx, false);
+          cGui->show();
         }
         else
         {
-          cGui = new ControllerGui(controller, a_des,
-                                   x_des, x_curr, mtx);
+          cGui = new Rcs::ControllerWidgetBase(controller, a_des,
+                                               NULL, x_des, x_curr, mtx, false);
+          cGui->show();
         }
       }
     }
@@ -911,6 +915,11 @@ void ExampleIK::handleKeys()
   }
 }
 
+void ExampleIK::updateUI()
+{
+  v->frame();
+  //handleKeys();
+}
 
 
 RCS_REGISTER_EXAMPLE(ExampleIK_ContactGrasping, "Inverse kinematics", "Contact Grasping");

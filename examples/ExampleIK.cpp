@@ -217,7 +217,7 @@ int main(int argc, char** argv)
     }
 
     // This outputs some information text in the HUD.
-    sprintf(hudText, "dof: %d nJ: %d nx: %zu lambda:%g alpha: %g\n"
+    snprintf(hudText, 512, "dof: %d nJ: %d nx: %zu lambda:%g alpha: %g\n"
             "Control is %s",
             controller.getGraph()->dof, controller.getGraph()->nJ,
             controller.getActiveTaskDim(a_des), lambda, alpha,

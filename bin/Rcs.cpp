@@ -102,7 +102,10 @@
 #include <MatNdWidget.h>
 #include <Rcs_mujocoParser.h>
 #include <ExampleFactory.h>
+#include <ExampleGui.h>
 #include <SegFaultHandler.h>
+
+#include <QApplication>
 
 #include <iostream>
 
@@ -269,6 +272,7 @@ int main(int argc, char** argv)
       printf("\t\t9   Depth first traversal test\n");
       printf("\t\t10  Task from string creation\n");
       printf("\t\t11  Jacobian re-projection test\n");
+      printf("\t\t12  Example class in blocking QT main thread test\n");
 
       REXEC(1)
       {
@@ -1364,294 +1368,22 @@ int main(int argc, char** argv)
 
 
     // ==============================================================
-    // Null space task re-projections test
+    // Example class in blocking main thread test
     // ==============================================================
     case 12:
     {
-      Rcs::KeyCatcherBase::registerKey("q", "Quit");
-      Rcs::KeyCatcherBase::registerKey("t", "Run controller test");
-      Rcs::KeyCatcherBase::registerKey("Space", "Toggle pause");
-      Rcs::KeyCatcherBase::registerKey("n", "Reset");
+      QApplication app(argc, argv);
 
-      int nTests = -1;
-      unsigned int loopCount = 0, nIter = 10000;
-      double alpha = 0.05, lambda = 0.0, det = 0.0;
-      double jlCost = 0.0, dJlCost = 0.0, eps=0*1.0e-5;
-      strcpy(xmlFileName, "cAction.xml");
-      strcpy(directory, "config/xml/DexBot");
+      Rcs::ExampleWidget* mainWindow = new Rcs::ExampleWidget(argc, argv, "External");
+      mainWindow->show();
 
-      argP.getArgument("-iter", &nIter, "Number of iterations before next pose"
-                       "(default is %u)", nIter);
-      argP.getArgument("-nTests", &nTests, "Number of test iterations (default"
-                       " is %d)", nTests);
-      argP.getArgument("-alpha", &alpha,
-                       "Null space scaling factor (default is %f)", alpha);
-      argP.getArgument("-lambda", &lambda, "Regularization (default is %f)",
-                       lambda);
-      argP.getArgument("-f", xmlFileName);
-      argP.getArgument("-dir", directory);
-      argP.getArgument("-eps", &eps, "Small numerical treshold that is "
-                       "acceptable as increase of the null space cost "
-                       "(default is %f)", eps);
-      bool pause = argP.hasArgument("-pause", "Pause after each iteration");
-      bool projJ = argP.hasArgument("-projJ", "Projection: J dH^T");
-
-      Rcs_addResourcePath(directory);
-
-      if (argP.hasArgument("-h"))
-      {
-        break;
-      }
-
-      Rcs::ControllerBase controller(xmlFileName);
-      Rcs::IkSolverRMR ikSolver(&controller);
-
-      MatNd* dq_des  = MatNd_create(controller.getGraph()->dof, 1);
-      MatNd* dq_ts   = MatNd_create(controller.getGraph()->dof, 1);
-      MatNd* dq_ns   = MatNd_create(controller.getGraph()->dof, 1);
-      MatNd* a_des   = MatNd_create(controller.getNumberOfTasks(), 1);
-      MatNd* x_curr  = MatNd_create(controller.getTaskDim(), 1);
-      MatNd* x_des   = MatNd_create(controller.getTaskDim(), 1);
-      MatNd* dx_des  = MatNd_create(controller.getTaskDim(), 1);
-      MatNd* dH      = MatNd_create(1, controller.getGraph()->nJ);
-
-      controller.readActivationsFromXML(a_des);
-      controller.computeX(x_curr);
-      MatNd_copy(x_des, x_curr);
-
-      // Create visualization
-      Rcs::Viewer* v           = NULL;
-      Rcs::KeyCatcher* kc      = NULL;
-      Rcs::GraphNode* gn       = NULL;
-      Rcs::HUD* hud            = NULL;
-      Rcs::BodyPointDragger* dragger = NULL;
-      char hudText[2056];
-
-      if (valgrind==false)
-      {
-        v       = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
-        kc      = new Rcs::KeyCatcher();
-        gn      = new Rcs::GraphNode(controller.getGraph());
-        hud     = new Rcs::HUD();
-        dragger = new Rcs::BodyPointDragger();
-        v->add(gn);
-        v->add(hud);
-        v->add(kc);
-        v->add(dragger);
-        v->runInThread(mtx);
-
-        // Launch the activation widget
-        std::vector<std::string> labels;
-        Rcs::MatNdWidget* mw = Rcs::MatNdWidget::create(a_des, a_des,
-                                                        0.0, 1.0, "activation",
-                                                        &graphLock);
-        for (size_t id=0; id<controller.getNumberOfTasks(); id++)
-        {
-          labels.push_back(controller.getTaskName(id));
-        }
-        mw->setLabels(labels);
-      }
-
-
-
-      // Endless loop
-      while (runLoop == true)
-      {
-        pthread_mutex_lock(&graphLock);
-        double dt = Timer_getTime();
-
-        // Set state to random and compute null space cost and gradient
-        if (loopCount>0 && loopCount%nIter==0)
-        {
-          RCSGRAPH_TRAVERSE_JOINTS(controller.getGraph())
-          {
-            controller.getGraph()->q->ele[JNT->jointIndex] =
-              //Math_getRandomNumber(JNT->q_min, JNT->q_max);
-              Math_getRandomNumber(JNT->q0-0.5*fabs(JNT->q0-JNT->q_min),
-                                   JNT->q0+0.5*fabs(JNT->q_max-JNT->q0));
-          }
-
-        }
-
-        RcsGraph_setState(controller.getGraph(), NULL, NULL);
-        jlCost = controller.computeJointlimitCost();
-        controller.computeJointlimitGradient(dH);
-        MatNd_constMulSelf(dH, alpha);
-
-        MatNd_setZero(dx_des);
-
-        // Add task-space re-projection: dH^T J#
-        if (!projJ)
-        {
-          double scaling = 1.0;// MatNd_getNorm(dq_ns);
-          MatNd* invWq = MatNd_create(controller.getGraph()->dof, 1);
-          RcsGraph_getInvWq(controller.getGraph(), invWq, RcsStateIK);
-          MatNd_transposeSelf(invWq);
-          MatNd_eleMulSelf(dH, invWq);
-
-          MatNd* pinvJ = MatNd_create(controller.getGraph()->nJ,
-                                      controller.getTaskDim());
-          bool successPinv = ikSolver.computeRightInverse(pinvJ, a_des, lambda);
-          RCHECK(successPinv);
-
-          MatNd* dxProj = MatNd_create(1, controller.getTaskDim());
-          MatNd_reshape(dxProj, 1, controller.getActiveTaskDim(a_des));
-          MatNd_mul(dxProj, dH, pinvJ);
-          MatNd_constMulSelf(dxProj, -scaling);
-          MatNd_transposeSelf(dxProj);
-          controller.decompressFromActiveSelf(dxProj, a_des);
-          MatNd_addSelf(dx_des, dxProj);
-
-          MatNd_destroy(dxProj);
-          MatNd_destroy(pinvJ);
-          MatNd_destroy(invWq);
-        }   // End add task-space re-projection: dH J#
-        else
-        {
-          // Add task-space re-projection: J dH^T
-          double scaling = 1.0;// MatNd_getNorm(dq_ns);
-          MatNd* J = MatNd_create(controller.getTaskDim(),
-                                  controller.getGraph()->nJ);
-          controller.computeJ(J, a_des);
-
-          MatNd* dxProj = MatNd_create(1, controller.getTaskDim());
-          MatNd_reshape(dxProj, controller.getActiveTaskDim(a_des), 1);
-          MatNd_transposeSelf(dH);
-          MatNd_mul(dxProj, J, dH);
-          MatNd_constMulSelf(dxProj, -scaling);
-          controller.decompressFromActiveSelf(dxProj, a_des);
-          MatNd_addSelf(dx_des, dxProj);
-          MatNd_transposeSelf(dH);
-
-          MatNd_destroy(dxProj);
-          MatNd_destroy(J);
-        }
-        // End add task-space re-projection: dH^T J#
-
-        if (loopCount < 100)
-        {
-          MatNd_setZero(dx_des);
-          MatNd_set(dx_des, 2, 0, 0.005);
-        }
-
-        double dtIK = Timer_getTime();
-        det = ikSolver.solveRightInverse(dq_ts, dq_ns, dx_des, dH, a_des, lambda);
-        MatNd_copy(dq_des, dq_ts);
-        MatNd_addSelf(dq_des, dq_ns);
-
-        dtIK = Timer_getTime() - dtIK;
-
-        MatNd_addSelf(controller.getGraph()->q, dq_des);
-        RcsGraph_setState(controller.getGraph(), NULL, NULL);
-        controller.computeX(x_curr);
-        dt = Timer_getTime() - dt;
-
-        dJlCost = -jlCost;
-        jlCost = controller.computeJointlimitCost();
-        dJlCost += jlCost;
-
-        REXEC(1)
-        {
-          VecNd_printComment("dx", dx_des->ele, 3);
-          RLOG(1, "dJLCost: %f", dJlCost);
-        }
-
-        pthread_mutex_unlock(&graphLock);
-
-        if (kc && kc->getAndResetKey('q'))
-        {
-          runLoop = false;
-        }
-        else if (kc && kc->getAndResetKey('t'))
-        {
-          RLOGS(0, "Running controller test");
-          controller.test(true);
-        }
-        else if (kc && kc->getAndResetKey(' '))
-        {
-          pause = !pause;
-          RMSG("Pause modus is %s", pause ? "ON" : "OFF");
-        }
-        else if (kc && kc->getAndResetKey('n'))
-        {
-          RMSG("Resetting");
-          RcsGraph_setDefaultState(controller.getGraph());
-        }
-
-        sprintf(hudText, "%.1f %%: IK calculation: %.2f ms\ndof: %d nJ: %d "
-                "nqr: %d nx: %zu\nJL-cost: %.6f dJL-cost: %.6f %s %s\n"
-                "dt=%.2f uslambda:%g alpha: %g\nloopCount=%d",
-                fmod(100.0*((double)loopCount/nIter), 100.0),
-                1.0e3*dt, controller.getGraph()->dof,
-                controller.getGraph()->nJ, ikSolver.getInternalDof(),
-                controller.getActiveTaskDim(a_des),
-                jlCost, dJlCost, det==0.0?"SINGULAR":"",
-                ((dJlCost > eps) && (MatNd_getNorm(dx_des) == 0.0)) ?
-                "COST INCREASE" : "",
-                dtIK*1.0e6, lambda, alpha, loopCount);
-
-        if (hud != NULL)
-        {
-          hud->setText(hudText);
-        }
-        else
-        {
-          REXEC(3)
-          {
-            std::cout << hudText;
-          }
-        }
-
-        if ((valgrind==true) && (loopCount>2*nIter))
-        {
-          runLoop = false;
-        }
-
-        if (pause==true)
-        {
-          RPAUSE();
-        }
-
-
-        if ((dJlCost > eps) && (MatNd_getNorm(dx_des) == 0.0))
-        {
-          RLOG(2, "COST INCREASE: %g", dJlCost);
-          RPAUSE_DL(3);
-          result++;
-        }
-
-        loopCount++;
-
-        if (!valgrind)
-        {
-          Timer_usleep(1);
-        }
-
-      }
-
-
-
-      // Clean up
-      if (valgrind==false)
-      {
-        delete v;
-        RcsGuiFactory_shutdown();
-      }
-
-      MatNd_destroy(dq_des);
-      MatNd_destroy(dq_ts);
-      MatNd_destroy(dq_ns);
-      MatNd_destroy(a_des);
-      MatNd_destroy(x_curr);
-      MatNd_destroy(x_des);
-      MatNd_destroy(dx_des);
-      MatNd_destroy(dH);
-
-      RLOGS(1, "%s testing null space projections",
-            (result==0) ? "SUCCESS" : "FAILURE");
+      // Now run the Qt event loop on the main thread
+      app.exec();
 
       break;
     }
+
+
 
 
     // ==============================================================
@@ -2073,6 +1805,297 @@ int main(int argc, char** argv)
 
       break;
     }
+
+    // ==============================================================
+    // Null space task re-projections test
+    // ==============================================================
+    case 17:
+    {
+      Rcs::KeyCatcherBase::registerKey("q", "Quit");
+      Rcs::KeyCatcherBase::registerKey("t", "Run controller test");
+      Rcs::KeyCatcherBase::registerKey("Space", "Toggle pause");
+      Rcs::KeyCatcherBase::registerKey("n", "Reset");
+
+      int nTests = -1;
+      unsigned int loopCount = 0, nIter = 10000;
+      double alpha = 0.05, lambda = 0.0, det = 0.0;
+      double jlCost = 0.0, dJlCost = 0.0, eps=0*1.0e-5;
+      strcpy(xmlFileName, "cAction.xml");
+      strcpy(directory, "config/xml/DexBot");
+
+      argP.getArgument("-iter", &nIter, "Number of iterations before next pose"
+                       "(default is %u)", nIter);
+      argP.getArgument("-nTests", &nTests, "Number of test iterations (default"
+                       " is %d)", nTests);
+      argP.getArgument("-alpha", &alpha,
+                       "Null space scaling factor (default is %f)", alpha);
+      argP.getArgument("-lambda", &lambda, "Regularization (default is %f)",
+                       lambda);
+      argP.getArgument("-f", xmlFileName);
+      argP.getArgument("-dir", directory);
+      argP.getArgument("-eps", &eps, "Small numerical treshold that is "
+                       "acceptable as increase of the null space cost "
+                       "(default is %f)", eps);
+      bool pause = argP.hasArgument("-pause", "Pause after each iteration");
+      bool projJ = argP.hasArgument("-projJ", "Projection: J dH^T");
+
+      Rcs_addResourcePath(directory);
+
+      if (argP.hasArgument("-h"))
+      {
+        break;
+      }
+
+      Rcs::ControllerBase controller(xmlFileName);
+      Rcs::IkSolverRMR ikSolver(&controller);
+
+      MatNd* dq_des  = MatNd_create(controller.getGraph()->dof, 1);
+      MatNd* dq_ts   = MatNd_create(controller.getGraph()->dof, 1);
+      MatNd* dq_ns   = MatNd_create(controller.getGraph()->dof, 1);
+      MatNd* a_des   = MatNd_create(controller.getNumberOfTasks(), 1);
+      MatNd* x_curr  = MatNd_create(controller.getTaskDim(), 1);
+      MatNd* x_des   = MatNd_create(controller.getTaskDim(), 1);
+      MatNd* dx_des  = MatNd_create(controller.getTaskDim(), 1);
+      MatNd* dH      = MatNd_create(1, controller.getGraph()->nJ);
+
+      controller.readActivationsFromXML(a_des);
+      controller.computeX(x_curr);
+      MatNd_copy(x_des, x_curr);
+
+      // Create visualization
+      Rcs::Viewer* v           = NULL;
+      Rcs::KeyCatcher* kc      = NULL;
+      Rcs::GraphNode* gn       = NULL;
+      Rcs::HUD* hud            = NULL;
+      Rcs::BodyPointDragger* dragger = NULL;
+      char hudText[2056];
+
+      if (valgrind==false)
+      {
+        v       = new Rcs::Viewer(!simpleGraphics, !simpleGraphics);
+        kc      = new Rcs::KeyCatcher();
+        gn      = new Rcs::GraphNode(controller.getGraph());
+        hud     = new Rcs::HUD();
+        dragger = new Rcs::BodyPointDragger();
+        v->add(gn);
+        v->add(hud);
+        v->add(kc);
+        v->add(dragger);
+        v->runInThread(mtx);
+
+        // Launch the activation widget
+        std::vector<std::string> labels;
+        Rcs::MatNdWidget* mw = Rcs::MatNdWidget::create(a_des, a_des,
+                                                        0.0, 1.0, "activation",
+                                                        &graphLock);
+        for (size_t id=0; id<controller.getNumberOfTasks(); id++)
+        {
+          labels.push_back(controller.getTaskName(id));
+        }
+        mw->setLabels(labels);
+      }
+
+
+
+      // Endless loop
+      while (runLoop == true)
+      {
+        pthread_mutex_lock(&graphLock);
+        double dt = Timer_getTime();
+
+        // Set state to random and compute null space cost and gradient
+        if (loopCount>0 && loopCount%nIter==0)
+        {
+          RCSGRAPH_TRAVERSE_JOINTS(controller.getGraph())
+          {
+            controller.getGraph()->q->ele[JNT->jointIndex] =
+              //Math_getRandomNumber(JNT->q_min, JNT->q_max);
+              Math_getRandomNumber(JNT->q0-0.5*fabs(JNT->q0-JNT->q_min),
+                                   JNT->q0+0.5*fabs(JNT->q_max-JNT->q0));
+          }
+
+        }
+
+        RcsGraph_setState(controller.getGraph(), NULL, NULL);
+        jlCost = controller.computeJointlimitCost();
+        controller.computeJointlimitGradient(dH);
+        MatNd_constMulSelf(dH, alpha);
+
+        MatNd_setZero(dx_des);
+
+        // Add task-space re-projection: dH^T J#
+        if (!projJ)
+        {
+          double scaling = 1.0;// MatNd_getNorm(dq_ns);
+          MatNd* invWq = MatNd_create(controller.getGraph()->dof, 1);
+          RcsGraph_getInvWq(controller.getGraph(), invWq, RcsStateIK);
+          MatNd_transposeSelf(invWq);
+          MatNd_eleMulSelf(dH, invWq);
+
+          MatNd* pinvJ = MatNd_create(controller.getGraph()->nJ,
+                                      controller.getTaskDim());
+          bool successPinv = ikSolver.computeRightInverse(pinvJ, a_des, lambda);
+          RCHECK(successPinv);
+
+          MatNd* dxProj = MatNd_create(1, controller.getTaskDim());
+          MatNd_reshape(dxProj, 1, controller.getActiveTaskDim(a_des));
+          MatNd_mul(dxProj, dH, pinvJ);
+          MatNd_constMulSelf(dxProj, -scaling);
+          MatNd_transposeSelf(dxProj);
+          controller.decompressFromActiveSelf(dxProj, a_des);
+          MatNd_addSelf(dx_des, dxProj);
+
+          MatNd_destroy(dxProj);
+          MatNd_destroy(pinvJ);
+          MatNd_destroy(invWq);
+        }   // End add task-space re-projection: dH J#
+        else
+        {
+          // Add task-space re-projection: J dH^T
+          double scaling = 1.0;// MatNd_getNorm(dq_ns);
+          MatNd* J = MatNd_create(controller.getTaskDim(),
+                                  controller.getGraph()->nJ);
+          controller.computeJ(J, a_des);
+
+          MatNd* dxProj = MatNd_create(1, controller.getTaskDim());
+          MatNd_reshape(dxProj, controller.getActiveTaskDim(a_des), 1);
+          MatNd_transposeSelf(dH);
+          MatNd_mul(dxProj, J, dH);
+          MatNd_constMulSelf(dxProj, -scaling);
+          controller.decompressFromActiveSelf(dxProj, a_des);
+          MatNd_addSelf(dx_des, dxProj);
+          MatNd_transposeSelf(dH);
+
+          MatNd_destroy(dxProj);
+          MatNd_destroy(J);
+        }
+        // End add task-space re-projection: dH^T J#
+
+        if (loopCount < 100)
+        {
+          MatNd_setZero(dx_des);
+          MatNd_set(dx_des, 2, 0, 0.005);
+        }
+
+        double dtIK = Timer_getTime();
+        det = ikSolver.solveRightInverse(dq_ts, dq_ns, dx_des, dH, a_des, lambda);
+        MatNd_copy(dq_des, dq_ts);
+        MatNd_addSelf(dq_des, dq_ns);
+
+        dtIK = Timer_getTime() - dtIK;
+
+        MatNd_addSelf(controller.getGraph()->q, dq_des);
+        RcsGraph_setState(controller.getGraph(), NULL, NULL);
+        controller.computeX(x_curr);
+        dt = Timer_getTime() - dt;
+
+        dJlCost = -jlCost;
+        jlCost = controller.computeJointlimitCost();
+        dJlCost += jlCost;
+
+        REXEC(1)
+        {
+          VecNd_printComment("dx", dx_des->ele, 3);
+          RLOG(1, "dJLCost: %f", dJlCost);
+        }
+
+        pthread_mutex_unlock(&graphLock);
+
+        if (kc && kc->getAndResetKey('q'))
+        {
+          runLoop = false;
+        }
+        else if (kc && kc->getAndResetKey('t'))
+        {
+          RLOGS(0, "Running controller test");
+          controller.test(true);
+        }
+        else if (kc && kc->getAndResetKey(' '))
+        {
+          pause = !pause;
+          RMSG("Pause modus is %s", pause ? "ON" : "OFF");
+        }
+        else if (kc && kc->getAndResetKey('n'))
+        {
+          RMSG("Resetting");
+          RcsGraph_setDefaultState(controller.getGraph());
+        }
+
+        sprintf(hudText, "%.1f %%: IK calculation: %.2f ms\ndof: %d nJ: %d "
+                "nqr: %d nx: %zu\nJL-cost: %.6f dJL-cost: %.6f %s %s\n"
+                "dt=%.2f uslambda:%g alpha: %g\nloopCount=%d",
+                fmod(100.0*((double)loopCount/nIter), 100.0),
+                1.0e3*dt, controller.getGraph()->dof,
+                controller.getGraph()->nJ, ikSolver.getInternalDof(),
+                controller.getActiveTaskDim(a_des),
+                jlCost, dJlCost, det==0.0?"SINGULAR":"",
+                ((dJlCost > eps) && (MatNd_getNorm(dx_des) == 0.0)) ?
+                "COST INCREASE" : "",
+                dtIK*1.0e6, lambda, alpha, loopCount);
+
+        if (hud != NULL)
+        {
+          hud->setText(hudText);
+        }
+        else
+        {
+          REXEC(3)
+          {
+            std::cout << hudText;
+          }
+        }
+
+        if ((valgrind==true) && (loopCount>2*nIter))
+        {
+          runLoop = false;
+        }
+
+        if (pause==true)
+        {
+          RPAUSE();
+        }
+
+
+        if ((dJlCost > eps) && (MatNd_getNorm(dx_des) == 0.0))
+        {
+          RLOG(2, "COST INCREASE: %g", dJlCost);
+          RPAUSE_DL(3);
+          result++;
+        }
+
+        loopCount++;
+
+        if (!valgrind)
+        {
+          Timer_usleep(1);
+        }
+
+      }
+
+
+
+      // Clean up
+      if (valgrind==false)
+      {
+        delete v;
+        RcsGuiFactory_shutdown();
+      }
+
+      MatNd_destroy(dq_des);
+      MatNd_destroy(dq_ts);
+      MatNd_destroy(dq_ns);
+      MatNd_destroy(a_des);
+      MatNd_destroy(x_curr);
+      MatNd_destroy(x_des);
+      MatNd_destroy(dx_des);
+      MatNd_destroy(dH);
+
+      RLOGS(1, "%s testing null space projections",
+            (result==0) ? "SUCCESS" : "FAILURE");
+
+      break;
+    }
+
     // ==============================================================
     // That's it.
     // ==============================================================

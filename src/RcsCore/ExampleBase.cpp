@@ -47,6 +47,7 @@ namespace Rcs
 
 ExampleBase::ExampleBase(int argc, char** argv) : runLoop(false)
 {
+  this->syncMode = "Threaded";
 }
 
 ExampleBase::~ExampleBase()
@@ -127,6 +128,12 @@ void ExampleBase::clear()
 
 bool ExampleBase::parseArgs(CmdLineParser* parser)
 {
+  parser->getArgument("-syncMode", &syncMode,
+                      "Threaded: Graphics and Guis updated in their own thread, "
+                      "Sequential: Graphics and Guis updated in step function, "
+                      "External: Graphics and Guis not updated, do it yourself "
+                      "(default is '%s')", syncMode.c_str());
+
   return true;
 }
 
@@ -170,6 +177,20 @@ std::string ExampleBase::help()
 bool ExampleBase::isRunning() const
 {
   return runLoop;
+}
+
+void ExampleBase::updateUI()
+{
+}
+
+std::string ExampleBase::getSyncMode() const
+{
+  return syncMode;
+}
+
+void ExampleBase::setSyncMode(std::string newSyncMode)
+{
+  this->syncMode = newSyncMode;
 }
 
 }   // namespace Rcs

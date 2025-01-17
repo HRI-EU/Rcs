@@ -71,6 +71,7 @@ public:
   virtual void handleKeys();
   virtual std::string help();
   virtual void clear();
+  virtual void updateUI();
 
 protected:
   bool valgrind, simpleGraphics, nomutex, testLocale;
@@ -107,7 +108,7 @@ protected:
   osg::ref_ptr<VertexArrayNode> cn;
   osg::ref_ptr<SphereNode> comNd;
   char hudText[2056];
-  ControllerGui* cGui;
+  Rcs::ControllerWidgetBase* cGui;
   MatNdGui* effortGui;
   MatNdGui* dxGui;
   MatNdGui* activationGui;

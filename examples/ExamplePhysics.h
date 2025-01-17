@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -46,8 +46,6 @@
 #include <JointWidget.h>
 #include <PhysicsNode.h>
 
-#include <pthread.h>
-
 
 
 extern "C" {
@@ -60,6 +58,7 @@ namespace Rcs
 class ExamplePhysics : public ExampleBase
 {
 public:
+
   ExamplePhysics(int argc, char** argv);
   virtual ~ExamplePhysics();
   virtual bool initParameters();
@@ -71,13 +70,15 @@ public:
   virtual void handleKeys();
   virtual std::string help();
   virtual void clear();
+  virtual void updateUI();
 
 protected:
+
   pthread_mutex_t graphLock;
   pthread_mutex_t* mtx;
   double dt, tmc, damping, shootMass;
   double gVec[3];
-  char hudText[2056];
+  std::string hudText;
   std::string physicsEngine;
   std::string integrator;
   std::string physicsCfg;
@@ -86,7 +87,7 @@ protected:
   std::string bgColor;
   bool pause, posCntrl, skipGui, skipControl, disableCollisions,
        disableJointLimits, testCopy, withPPS, gravComp, resizeable,
-       syncHard, seqSim, valgrind, simpleGraphics, bodyAdded, nomutex;
+       syncHard, valgrind, simpleGraphics, bodyAdded, nomutex;
   size_t loopCount;
   RcsGraph* graph;
   PhysicsBase* sim;

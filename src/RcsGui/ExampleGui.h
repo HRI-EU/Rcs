@@ -68,7 +68,8 @@ class ExampleItem : public QObject, public QStandardItem
 public:
   ExampleItem(int argc, char** argv,
               const QString& categoryName,
-              const QString& exampleName);
+              const QString& exampleName,
+              const QString& syncMode);
   ~ExampleItem();
   void start();
   void stop();
@@ -87,6 +88,8 @@ private:
   QStandardItem* parseItem;
   QStandardItem* helpItem;
   QString categoryName;
+  QString syncMode;
+  QTimer* timer;
   ExampleBase* example;
   QThread exampleThread;
   int argc;
@@ -109,13 +112,16 @@ class ExampleWidget : public QMainWindow
   Q_OBJECT
 
 public:
-  ExampleWidget(int argc, char** argv, QWidget* parent=NULL);
+  ExampleWidget(int argc, char** argv, std::string syncMode, QWidget* parent=NULL);
   ~ExampleWidget();
 
 public slots:
   void itemClicked(const QModelIndex& idx);
   void helpClicked();
   void onResizeToFit();
+
+protected:
+  void closeEvent(QCloseEvent* event);
 
 private:
   QStandardItemModel* model;
