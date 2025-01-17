@@ -208,13 +208,13 @@ void ExampleDistance::step()
   dt = Timer_getTime() - dt;
   pthread_mutex_unlock(&graphLock);
 
-  sprintf(buf, "Distance: D = % 3.2f mm took %3.2f usec\n",
+  snprintf(buf, 512, "Distance: D = % 3.2f mm took %3.2f usec\n",
           dist * 1000.0, dt * 1.0e6);
   strcpy(textLine, buf);
-  sprintf(buf, "cp1: %.5f %.5f %.5f   cp2: %.5f %.5f %.5f\n",
+  snprintf(buf, 512, "cp1: %.5f %.5f %.5f   cp2: %.5f %.5f %.5f\n",
           cp0[0], cp0[1], cp0[2], cp1[0], cp1[1], cp1[2]);
   strcat(textLine, buf);
-  sprintf(buf, "normal: %.5f %.5f %.5f (len: %.5f)\n",
+  snprintf(buf, 512, "normal: %.5f %.5f %.5f (len: %.5f)\n",
           n01[0], n01[1], n01[2], Vec3d_getLength(n01));
   strcat(textLine, buf);
   if (hud.valid())

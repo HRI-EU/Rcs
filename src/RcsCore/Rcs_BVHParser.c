@@ -290,7 +290,7 @@ static bool parseRecursive(char* buf, RcsGraph* self, int parentId, FILE* fd,
   }
 
 
-  RLOG(5, "Reched end of recursion with next keyword %s", buf);
+  RLOG(5, "Reched end of recursion with next keyword %s, depth: %d", buf, recursionDepth);
 
   if (STREQ(buf, "}"))
   {

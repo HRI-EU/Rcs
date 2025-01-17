@@ -2934,32 +2934,30 @@ bool testFiltersND(int argc, char** argv)
 
   char gpCmd[4096];
   char tmp[256];
-  unsigned int idxCount = 0;
 
   strcpy(gpCmd, "set grid\nplot ");
 
   for (unsigned int i=0; i<dim; i++)
   {
-    sprintf(tmp, "\"out.dat\" u %u w l title \"2nd order filter[%u]\", ",
+    snprintf(tmp, 256, "\"out.dat\" u %u w l title \"2nd order filter[%u]\", ",
             i+1, i);
     strcat(gpCmd, tmp);
-    sprintf(tmp, "\"out.dat\" u %u w l title \"ramp[%u]\", ",
+    snprintf(tmp, 256, "\"out.dat\" u %u w l title \"ramp[%u]\", ",
             dim+i+1, i);
     strcat(gpCmd, tmp);
 
     if (i != dim-1)
     {
-      sprintf(tmp, "\"out.dat\" u %u w l title \"ramp filter[%u]\", ",
+      snprintf(tmp, 256, "\"out.dat\" u %u w l title \"ramp filter[%u]\", ",
               2*dim+i+1, i);
     }
     else
     {
-      sprintf(tmp, "\"out.dat\" u %u w l title \"ramp filter[%u]\"",
+      snprintf(tmp, 256, "\"out.dat\" u %u w l title \"ramp filter[%u]\"",
               2*dim+i+1, i);
     }
 
     strcat(gpCmd, tmp);
-    idxCount++;
   }
 
   FILE* outDat = fopen("postpro.gnu", "w+");
@@ -3114,7 +3112,7 @@ bool testDTW(int argc, char** argv)
 
   for (int i=0; i<16; i++)
   {
-    sprintf(datFile[i].name, "%sseg%d.txt", dataDir, i+1);
+    snprintf(datFile[i].name, 256, "%sseg%d.txt", dataDir, i+1);
     RLOG(3, "Opening file \"%s\"", datFile[i].name);
     datFile[i].lineCount = File_getLineCount(datFile[i].name);
     datFile[i].fd = fopen(datFile[i].name, "r");
@@ -3167,7 +3165,7 @@ bool testDTW(int argc, char** argv)
       }
     }
 
-    sprintf(a, "seg%d.arr", i);
+    snprintf(a, 256, "seg%d.arr", i);
     MatNd_toFile(seg[i], a);
   }
 
@@ -3182,7 +3180,7 @@ bool testDTW(int argc, char** argv)
     RLOG(3, "Warping array %d", i);
     warped[i-1] = MatNd_create(seg[0]->m, seg[0]->n);
     MatNd_DTW(warped[i-1], seg[0], seg[i], weight);
-    sprintf(a, "warped%d.arr", i-1);
+    snprintf(a, 256, "warped%d.arr", i-1);
     MatNd_toFile(warped[i-1], a);
   }
 
@@ -3200,7 +3198,7 @@ bool testDTW(int argc, char** argv)
   MatNd_destroy(weight);
 
   char gpCmd[256];
-  sprintf(gpCmd, "gnuplot -persist %sdtw.gnu", dataDir);
+  snprintf(gpCmd, 256, "gnuplot -persist %sdtw.gnu", dataDir);
 
   int err = system(gpCmd);
 

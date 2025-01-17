@@ -356,6 +356,8 @@ namespace Rcs
 
 OctomapNode::OctomapNode(const char*, const char*) : NodeBase()
 {
+  _points = NULL;
+  _quads_node = NULL;
   RLOG(1, "No Octomap support in OctomapNode");
 }
 

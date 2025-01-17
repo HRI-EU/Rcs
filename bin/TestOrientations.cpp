@@ -251,7 +251,7 @@ static void testOmega(int argc, char** argv)
     Vec3d_constMulSelf(axErr, angle);
 
 
-    sprintf(txt, "Keys:\nt   toggle world / body reference\n"
+    snprintf(txt, 2048, "Keys:\nt   toggle world / body reference\n"
             "r   reset rotation matrix\n"
             "p   toggle pause\n"
             "omega (*10):       %+.2f   %+.2f   %+.2f\n"
@@ -418,7 +418,7 @@ static void testAxisAngleLocalFrame(int argc, char** argv)
       stepSize = Math_clip(stepSize-0.1, 0.0, 1.0);
     }
 
-    sprintf(textLine, "diff angle: %.2f\n"
+    snprintf(textLine, 1024, "diff angle: %.2f\n"
             "step size: %.1f", R2D*angle, stepSize);
 
     hud->setText(textLine);
@@ -546,7 +546,7 @@ static void testAxisAngleWorldFrame(int argc, char** argv)
       stepSize = Math_clip(stepSize-0.1, 0.0, 1.0);
     }
 
-    sprintf(textLine, "diff angle: %.2f\n"
+    snprintf(textLine, 1024, "diff angle: %.2f\n"
             "step size: %.1f", R2D*angle, stepSize);
 
     hud->setText(textLine);
@@ -670,7 +670,7 @@ static void testRotationAverage(int argc, char** argv, bool useRotationAxes = fa
 
     for (unsigned int i=0; i<N_COS; i++)
     {
-      sprintf(textLine, "err[%u]: %.2f   (%.2f   %.2f   %.2f)\n", i,
+      snprintf(textLine, 1024, "err[%u]: %.2f   (%.2f   %.2f   %.2f)\n", i,
               R2D*Mat3d_diffAngle(A_1I, A_2I[i]),
               R2D*Vec3d_diffAngle(A_1I[0], A_2I[i][0]),
               R2D*Vec3d_diffAngle(A_1I[1], A_2I[i][1]),
@@ -678,12 +678,12 @@ static void testRotationAverage(int argc, char** argv, bool useRotationAxes = fa
       strcat(hudText, textLine);
       sumDiffAng += Mat3d_diffAngle(A_1I, A_2I[i]);
     }
-    sprintf(textLine, "sum diff: %f\n", sumDiffAng);
+    snprintf(textLine, 1024, "sum diff: %f\n", sumDiffAng);
     strcat(hudText, textLine);
 
     if (isAvgSafe == false)
     {
-      sprintf(textLine, "Averaging is UNSSAFE\n");
+      snprintf(textLine, 1024, "Averaging is UNSSAFE\n");
       strcat(hudText, textLine);
     }
 

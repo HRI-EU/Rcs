@@ -455,7 +455,7 @@ int main(int argc, char** argv)
       double qmax = jlJoint->q_max*180.0/M_PI;
       double lowRange = q0 - qmin;
       double upRange = qmax - q0;
-      sprintf(postpro,
+      snprintf(postpro, 2056,
               "set grid;\n"
               "set xrange [%f : %f]\n"
               "set yrange [0 : 0.6]\n"

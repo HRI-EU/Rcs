@@ -712,6 +712,7 @@ namespace Rcs
  ******************************************************************************/
 FrameCaptureCallback::FrameCaptureCallback()
 {
+  recorder = NULL;
 }
 
 FrameCaptureCallback::~FrameCaptureCallback()
@@ -745,8 +746,9 @@ bool FrameCaptureCallback::hasRecorder()
 /*******************************************************************************
  *
  ******************************************************************************/
-VideoTextureCallback::VideoTextureCallback(const std::string& videoFile) : textureConverter(nullptr)
+VideoTextureCallback::VideoTextureCallback(const std::string& videoFile) 
 {
+  textureConverter = NULL;
 }
 
 VideoTextureCallback::~VideoTextureCallback()

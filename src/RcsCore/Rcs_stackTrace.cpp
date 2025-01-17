@@ -107,15 +107,15 @@ extern "C" {
       char filename[1024];
 
       // check for .syms file
-      sprintf(symsfilename, "%s.syms", info.dli_fname);
+      snprintf(symsfilename, 1024, "%s.syms", info.dli_fname);
       struct stat sts;
       if (stat(symsfilename, &sts) != -1)
       {
-        sprintf(filename, "%s", symsfilename);
+        snprintf(filename, 1024, "%s", symsfilename);
       }
       else
       {
-        sprintf(filename, "%s", info.dli_fname);
+        snprintf(filename, 1024, "%s", info.dli_fname);
       }
 
       // find file and line number for the given address
@@ -131,11 +131,11 @@ extern "C" {
         char syscom[512];
         if (address < (void*)0x8200000 && address > (void*)0x8000000)   // TODO check memory ranges, these are only guesses
         {
-          sprintf(syscom, "addr2line %p -C -e %s", address, filename);
+          snprintf(syscom, 512, "addr2line %p -C -e %s", address, filename);
         }
         else
         {
-          sprintf(syscom, "addr2line %p -C -e %s", (void*)((unsigned long) address - (unsigned long) info.dli_fbase), filename);
+          snprintf(syscom, 512, "addr2line %p -C -e %s", (void*)((unsigned long) address - (unsigned long) info.dli_fbase), filename);
         }
 
         // print filename and line number
@@ -159,7 +159,7 @@ extern "C" {
 
         if (s != NULL)
         {
-          sprintf(line_number, "%s", s);
+          snprintf(line_number, 32, "%s", s);
           *s = '\0';
         }
 

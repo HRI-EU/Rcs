@@ -382,7 +382,7 @@ int main(int argc, char** argv)
           RMSG("Pause modus is %s", pause ? "ON" : "OFF");
         }
 
-        sprintf(hudText, "IK calculation: %.2f ms\ndof: %d nJ: %d\n"
+        snprintf(hudText, 2056, "IK calculation: %.2f ms\ndof: %d nJ: %d\n"
                 "nx1: %d nx2: %d\n"
                 "IK-algorithm: %s\nJL-cost: %.12f",
                 1.0e3*dt, controller.getGraph()->dof,
@@ -653,7 +653,7 @@ int main(int argc, char** argv)
         jlCost_prev = jlCost;
 
         // Print out information to the head-up display
-        sprintf(hudText, "IK calculation: %.2f ms\ndof: %d nJ: %d nx1: %d nx2: %d\n"
+        snprintf(hudText, 2056, "IK calculation: %.2f ms\ndof: %d nJ: %d nx1: %d nx2: %d\n"
                 "JL-cost: %.6f\nQ2X projection is %s",
                 1.0e3*dt, controller.getGraph()->dof,
                 controller.getGraph()->nJ, ikSolver.nx1, ikSolver.nx2,

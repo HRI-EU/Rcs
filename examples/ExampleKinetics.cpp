@@ -347,7 +347,7 @@ void ExampleKinetics::step()
   dtCompute = Timer_getTime() - dtCompute;
   time += dt;
 
-  sprintf(hudText, "Direct dynamics simulation\nTime: %.3f (%.3f)   "
+  snprintf(hudText, 4096, "Direct dynamics simulation\nTime: %.3f (%.3f)   "
           "dof: %d\ndt: %.3f dt_opt: %.3f\n%d steps took %.1f msec"
           "\n[%s]   Energy: %.3f Damping: %.1f\nG-comp: %d h-comp: %d\n",
           time, Timer_getTime() - t0, n, dt, dt_opt, nSteps,

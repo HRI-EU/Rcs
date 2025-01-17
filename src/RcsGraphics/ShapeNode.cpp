@@ -444,13 +444,13 @@ void ShapeNode::addShape(const RcsShape* shape)
   /////////////////////////////////
   else if (shape->type == RCSSHAPE_BOX)
   {
-    osg::Box* box = new osg::Box(osg::Vec3(), 1.0);
-    osg::ShapeDrawable* sd = new osg::ShapeDrawable(box, hints.get());
+    osg::ref_ptr<osg::Box> box = new osg::Box(osg::Vec3(), 1.0);
+    osg::ref_ptr<osg::ShapeDrawable> sd = new osg::ShapeDrawable(box.get(), hints.get());
     sd->setUseDisplayList(!resizeable);
     setScale(osg::Vec3(ext[0], ext[1], ext[2]));
     ss->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
     ss->setMode(GL_RESCALE_NORMAL, osg::StateAttribute::ON);
-    geode->addDrawable(sd);
+    geode->addDrawable(sd.get());
     setNodeMaterial(shape->color, geode.get());
     addChild(geode.get());
   }

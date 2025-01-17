@@ -365,7 +365,7 @@ void MatNdWidget::init(MatNd* mat_, const MatNd* dispMat_,
   this->dispMat = dispMat_ ? dispMat_ : this->mat;
 
   char windowTitle[256];
-  sprintf(windowTitle, "%d x %d matrix", this->mat->m, this->mat->n);
+  snprintf(windowTitle, 256, "%d x %d matrix", this->mat->m, this->mat->n);
   setWindowTitle(title ? title : windowTitle);
   setObjectName("Rcs::MatNdWidget");
 
@@ -378,7 +378,7 @@ void MatNdWidget::init(MatNd* mat_, const MatNd* dispMat_,
     for (unsigned int j = 0; j < this->mat->n; j++)
     {
       char indexStr[32];
-      sprintf(indexStr, "%u", i);
+      snprintf(indexStr, 32, "%u", i);
       LcdSlider* sl =
         new LcdSlider(lower, this->mat->ele[i*this->mat->n+j], upper,
                       1.0, 0.0001, indexStr);

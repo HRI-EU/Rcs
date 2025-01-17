@@ -434,7 +434,7 @@ static void testDistance(int argc, char** argv)
     pthread_mutex_unlock(&graphLock);
 
     std::stringstream hudText;
-    sprintf(textLine, "Distance: D = % 3.1f mm took %3.2f usec\n",
+    snprintf(textLine, 2056, "Distance: D = % 3.1f mm took %3.2f usec\n",
             dist*1000.0, dt*1.0e6);
     hudText << textLine;
     if (hud.valid())
@@ -730,7 +730,7 @@ static void testPolygon(int argc, char** argv)
     // ps[0] = poly[vidx][0];
     // ps[1] = poly[vidx][1];
     int res = Math_pointInsideOrOnPolygon2D(pt, poly, nVertices);
-    sprintf(hudText, "d = %f   s = %f   ps=%f %f\n%s",
+    snprintf(hudText, 512, "d = %f   s = %f   ps=%f %f\n%s",
             d, s, ps[0], ps[1],
             res%2==0?"Outside" : "Inside");
     hud->setText(hudText);
@@ -872,12 +872,12 @@ static void testRayLinesegIntersection2D(int argc, char** argv)
 
     pthread_mutex_unlock(&graphLock);
 
-    sprintf(hudText, "res = %s (%d)\n", IntersectReturnStr(res), res);
+    snprintf(hudText, 512, "res = %s (%d)\n", IntersectReturnStr(res), res);
 
     if (res>0)
     {
       char tmp[256];
-      sprintf(tmp, "intersect = %.3f %.3f\n",
+      snprintf(tmp, 256, "intersect = %.3f %.3f\n",
               intersectPt[0], intersectPt[1]);
       strcat(hudText, tmp);
     }

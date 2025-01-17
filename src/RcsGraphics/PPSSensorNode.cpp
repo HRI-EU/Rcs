@@ -104,7 +104,7 @@ Rcs::PPSSensorNode::PPSSensorNode(const RcsSensor* pps, const RcsGraph* graph,
         osg::ref_ptr<osgText::Text> texelNumber = new osgText::Text();
         texelNumber->setCharacterSize(0.5*edgeLength);
         char a[64];
-        sprintf(a, "%d", id);
+        snprintf(a, 64, "%d", id);
         texelNumber->setText(std::string(a));
         texelNumber->setAlignment(osgText::Text::CENTER_CENTER);
         texelNumber->setFont(fontFile);

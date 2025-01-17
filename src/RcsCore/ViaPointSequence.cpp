@@ -1216,12 +1216,12 @@ void ViaPointSequence::gnuplot(double t0, double t1, double dt, int flag) const
 
 
   char gpCmdPos[256];
-  sprintf(gpCmdPos,
+  snprintf(gpCmdPos, 256,
           "set grid\nplot \"%s\" u 1:2 w l title \"x\", \"%s\" "
           "u 1:2 w p pointsize 3 title \"x_{via}\"\n", fTraj, fdataPos);
 
   char gpCmdVel[256];
-  sprintf(gpCmdVel,
+  snprintf(gpCmdVel, 256,
           "set grid\nplot \"%s\" u 1:3 w l title \"x_{dot}\", "
           "\"%s\" u 1:2  title \"x_{dot_via}\" w p pointsize 3\n",
           fTraj, fdataVel);
@@ -1229,13 +1229,13 @@ void ViaPointSequence::gnuplot(double t0, double t1, double dt, int flag) const
   RLOG(0, "%s", gpCmdVel);
 
   char gpCmdAcc[256];
-  sprintf(gpCmdAcc,
+  snprintf(gpCmdAcc, 256,
           "set grid\nplot \"%s\" u 1:4 w l title \"x_{ddot}\", "
           "\"%s\" u 1:2  title \"x_{ddot_via}\" w p pointsize 3\n",
           fTraj, fdataAcc);
 
   char gpCmd[512];
-  sprintf(gpCmd,
+  snprintf(gpCmd, 512,
           "set grid\nplot \"%s\" u 1:2 w l title \"x\", \"%s\" u 1:3 w l"
           " title \"x_{dot}\", \"%s\" u 1:4 w l title \"x_{ddot}\", \"%s\" "
           "u 1:2 w p pointsize 3 title \"x_{via}\", \"%s\" u 1:2 w p pointsize"
