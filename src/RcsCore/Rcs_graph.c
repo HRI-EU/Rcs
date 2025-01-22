@@ -3662,15 +3662,9 @@ bool RcsGraph_computeBodyAABB(const RcsGraph* self, int bdyId, int computeType,
           xyzMin[j] = fmin(bb[i][j], xyzMin[j]);
           xyzMax[j] = fmax(bb[i][j], xyzMax[j]);
         }
+
       }
 
-      // Copy transformed bounds into the vertices array, one per shape
-      if (vertices)
-      {
-        MatNd_realloc(vertices, vertices->m+8, 3);
-        double* dst = MatNd_getRowPtr(vertices, vertices->m-8);
-        VecNd_copy(dst, (double*)bb, 24);
-      }
     }
 
   }   // RCSBODY_TRAVERSE_SHAPES(BODY)
@@ -3682,6 +3676,11 @@ bool RcsGraph_computeBodyAABB(const RcsGraph* self, int bdyId, int computeType,
   {
     Vec3d_copy(aabbMin, xyzMin);
     Vec3d_copy(aabbMax, xyzMax);
+
+    if (vertices)
+    {
+      Math_computeVerticesAABB((double (*)[3])vertices->ele, aabbMin, aabbMax);
+    }
   }
 
   return aabbValid;

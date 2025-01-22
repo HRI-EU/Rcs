@@ -712,11 +712,19 @@ void RcsShape_fprint(FILE* out, const RcsShape* s)
   {
     fprintf(out, "wireframe ");
   }
+  if ((s->computeType & RCSSHAPE_COMPUTE_RESIZEABLE) != 0)
+  {
+    fprintf(out, "resizeable ");
+  }
+  if ((s->computeType & RCSSHAPE_COMPUTE_RGBBUFFER) != 0)
+  {
+    fprintf(out, "rgbbuffer ");
+  }
+  if ((s->computeType & RCSSHAPE_COMPUTE_BOUNDINGBOX) != 0)
+  {
+    fprintf(out, "boundingbox ");
+  }
   fprintf(out, "\n");
-
-  // Resizeable
-  bool resizeable = RcsShape_isOfComputeType(s, RCSSHAPE_COMPUTE_RESIZEABLE);
-  fprintf(out, "\tResizeable: %s\n", resizeable ? "true" : "false");
 
   // File names
   fprintf(out, "\tmeshFile   : \"%s\"\n", s->meshFile);
@@ -2416,6 +2424,17 @@ char* RcsShape_toXML(const RcsShape* self, int* nErr)
     {
       appendToString(&buffer, &bufferSize, &used, "wireframe=\"true\" ");
     }
+
+    if (RcsShape_isOfComputeType(self, RCSSHAPE_COMPUTE_RGBBUFFER))
+    {
+      appendToString(&buffer, &bufferSize, &used, "render_material=\"true\" ");
+    }
+
+    if (RcsShape_isOfComputeType(self, RCSSHAPE_COMPUTE_BOUNDINGBOX))
+    {
+      appendToString(&buffer, &bufferSize, &used, "boundingbox=\"true\" ");
+    }
+
   }
 
   if (RcsShape_isOfComputeType(self, RCSSHAPE_COMPUTE_RESIZEABLE))
