@@ -59,9 +59,28 @@ TaskEuler3D::TaskEuler3D(const std::string& className_,
 {
   if (getClassName()=="ABC")
   {
-    resetParameter(Task::Parameters(-M_PI, M_PI, (180.0/M_PI), "A [deg]"));
-    addParameter(Task::Parameters(-M_PI, M_PI, (180.0/M_PI), "B [deg]"));
-    addParameter(Task::Parameters(-M_PI, M_PI, (180.0/M_PI), "C [deg]"));
+    double guiMax[3], guiMin[3];
+    const double uiScale = 180.0/M_PI;
+    Vec3d_setElementsTo(guiMax, M_PI);
+    Vec3d_setElementsTo(guiMin, -M_PI);
+    // This can be a subtask of a CompositeTask with more than 3 parameters.
+    const size_t nParams = getXMLNodeNumStrings(node, "guiMax");
+    if (getParameters().size()== nParams)
+    {
+      getXMLNodePropertyVec3(node, "guiMax", guiMax);
+      getXMLNodePropertyVec3(node, "guiMin", guiMin);
+    }
+    bool hide = false;
+    getXMLNodePropertyBoolString(node, "hide", &hide);
+    if (hide)
+    {
+      Vec3d_setZero(guiMin);
+      Vec3d_setZero(guiMax);
+    }
+
+    resetParameter(Task::Parameters(guiMin[0], guiMax[0], uiScale, "A [deg]"));
+    addParameter(Task::Parameters(guiMin[1], guiMax[1], uiScale, "B [deg]"));
+    addParameter(Task::Parameters(guiMin[2], guiMax[2], uiScale, "C [deg]"));
   }
 }
 
