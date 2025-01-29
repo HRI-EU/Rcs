@@ -781,7 +781,7 @@ int main(int argc, char** argv)
           RcsGraph_setDefaultState(controller.getGraph());
         }
 
-        sprintf(hudText, "%.1f %%: IK calculation: %.2f ms\ndof: %d nJ: %d "
+        snprintf(hudText, 2056, "%.1f %%: IK calculation: %.2f ms\ndof: %d nJ: %d "
                 "nqr: %d nx: %zu\nJL-cost: %.6f dJL-cost: %.6f %s %s\n"
                 "dt=%.2f us\nalgo: %d lambda:%g alpha: %g",
                 fmod(100.0*((double)loopCount/nIter), 100.0),
@@ -1105,7 +1105,7 @@ int main(int argc, char** argv)
           solver.test(a_des);
         }
 
-        sprintf(hudText, "RAC calculation: %.2f ms\n"
+        snprintf(hudText, 2056, "RAC calculation: %.2f ms\n"
                 "nx: %d\nJL-cost: %.6f dJL-cost: %.6f"
                 "\nlambda:%g alpha: %g tmc: %g",
                 1.0e3*dt_compute, (int) controller.getActiveTaskDim(a_des),
@@ -1234,7 +1234,7 @@ int main(int argc, char** argv)
         if (valgrind==false)
         {
           char osCmd[256];
-          sprintf(osCmd, "dotty %s&", dotFile);
+          snprintf(osCmd, 256, "dotty %s&", dotFile);
           int err = system(osCmd);
 
           if (err == -1)
@@ -1242,7 +1242,7 @@ int main(int argc, char** argv)
             RMSG("Couldn't start dot file viewer with command \"%s\"", osCmd);
           }
 
-          sprintf(osCmd, "dotty %s&", dotFileDfs);
+          snprintf(osCmd, 256, "dotty %s&", dotFileDfs);
 
           err = system(osCmd);
 
@@ -2021,7 +2021,7 @@ int main(int argc, char** argv)
           RcsGraph_setDefaultState(controller.getGraph());
         }
 
-        sprintf(hudText, "%.1f %%: IK calculation: %.2f ms\ndof: %d nJ: %d "
+        snprintf(hudText, 2056, "%.1f %%: IK calculation: %.2f ms\ndof: %d nJ: %d "
                 "nqr: %d nx: %zu\nJL-cost: %.6f dJL-cost: %.6f %s %s\n"
                 "dt=%.2f uslambda:%g alpha: %g\nloopCount=%d",
                 fmod(100.0*((double)loopCount/nIter), 100.0),
