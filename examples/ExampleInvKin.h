@@ -108,7 +108,7 @@ protected:
   osg::ref_ptr<VertexArrayNode> cn;
   osg::ref_ptr<SphereNode> comNd;
   std::string hudText;
-  Rcs::ControllerWidgetBase* cGui;
+  QPointer<Rcs::ControllerWidgetBase> cGui;
   MatNdGui* effortGui;
   MatNdGui* dxGui;
   MatNdGui* activationGui;
