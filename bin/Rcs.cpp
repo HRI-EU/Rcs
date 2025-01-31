@@ -1372,7 +1372,7 @@ int main(int argc, char** argv)
     case 12:
     {
       QApplication app(argc, argv);
-
+      std::setlocale(LC_ALL, "C");
       Rcs::ExampleWidget* mainWindow = new Rcs::ExampleWidget(argc, argv, "External");
       mainWindow->show();
 

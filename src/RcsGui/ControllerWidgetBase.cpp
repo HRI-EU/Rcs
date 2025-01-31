@@ -396,15 +396,18 @@ QGroupBox* ControllerWidgetBase::boxControllerButtons()
  ******************************************************************************/
 void ControllerWidgetBase::displayAct()
 {
-  char a[256];
-
+  unsigned int nJ, dof;
+  size_t dimTask;
+  
   lock();
-  snprintf(a, 256, "Dofs: %d/%d  Tasks: %zu",
-           _controller->getGraph()->nJ,
-           _controller->getGraph()->dof,
-           _controller->getTaskDim());
+  nJ = _controller->getGraph()->nJ;
+  dof = _controller->getGraph()->dof;
+  dimTask = _controller->getTaskDim();
   unlock();
 
+  char a[64];
+  snprintf(a, 64, "Dofs: %d/%d  Tasks: %zu", nJ, dof, dimTask);
+  
   this->label_stats->setText(a);
 }
 

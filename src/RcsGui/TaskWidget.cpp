@@ -415,7 +415,7 @@ void TaskWidget::setLabelWidth(int width)
 ******************************************************************************/
 void TaskWidget::setTarget()
 {
-  if (this->show_only)
+  if (this->show_only || (this->dimTask==0))
   {
     return;
   }
@@ -425,11 +425,6 @@ void TaskWidget::setTarget()
   unlock();
 
   if (activation<=0.0)
-  {
-    return;
-  }
-
-  if (this->dimTask==0)
   {
     return;
   }
@@ -445,7 +440,6 @@ void TaskWidget::setTarget()
   lock();
   VecNd_copy(this->x_des, target, this->dimTask);
   unlock();
-
   for (size_t i=0; i<callback.size(); ++i)
   {
     callback[i]->callback();

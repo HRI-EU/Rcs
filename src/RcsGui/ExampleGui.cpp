@@ -221,7 +221,7 @@ void ExampleItem::start()
     {
       example->updateUI();
     });
-    timer->start(16);  // ~60fps
+    timer->start(25);  // ~40fps
   }
 
 }
@@ -536,7 +536,7 @@ ExampleWidget::~ExampleWidget()
 
 void ExampleWidget::closeEvent(QCloseEvent* event)
 {
-  RLOG(0, "CLOSE");
+  RLOG(5, "closeEvent");
   QApplication::quit();  // Ensure the application exits
   QMainWindow::closeEvent(event);  // Call the base implementation if needed
 }
