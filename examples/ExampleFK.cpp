@@ -78,7 +78,6 @@ ExampleFK::ExampleFK(int argc, char** argv) : ExampleBase(argc, argv)
   dtSim = 0.0;
   dtStep = 0.04;
   fwdKinType = 0;
-  //hudText[0] = '\0';
   testCopy = false;
   editMode = false;
   playBVH = false;
@@ -92,7 +91,6 @@ ExampleFK::ExampleFK(int argc, char** argv) : ExampleBase(argc, argv)
   bvhTraj = NULL;
   viewer = NULL;
   jGui = NULL;
-  //jWidget = NULL;
   loopCount = 0;
   mass = 0.0;
   Mat3d_setIdentity(Id);
@@ -529,19 +527,13 @@ void ExampleFK::step()
     updateUI();
   }
 
-  //snprintf(hudText, 512, "Graph \"%s\"\nDof: %d nJ: %d\n"
-  //         "Forward kinematics step: %.3f ms",
-  //         graph->cfgFile, graph->dof, graph->nJ, dtSim*1000.0);
   hudText = String_formatStdString("Graph \"%s\"\nDof: %d nJ: %d\n"
                                    "Forward kinematics step: %.3f ms",
                                    graph->cfgFile, graph->dof, graph->nJ, dtSim * 1000.0);
 
   if (bvhTraj != NULL)
   {
-    char a[256];
-    snprintf(a, 256, "\nBVH row %d (from %d)", bvhIdx, bvhTraj->m);
-    //strcat(hudText, a);
-    hudText += a;
+    hudText += String_formatStdString("\nBVH row %d (from %d)", bvhIdx, bvhTraj->m);
   }
 
   if (updateHud)
@@ -716,10 +708,8 @@ void ExampleFK::handleKeys()
   {
     RMSGS("Writing dot file");
     RcsGraph_writeDotFile(graph, dotFile.c_str());
-    char osCmd[256];
-    snprintf(osCmd, 256, "dotty %s&", dotFile.c_str());
-    int err = system(osCmd);
 
+    int err = system(String_formatStdString("dotty %s&", dotFile.c_str()).c_str());
     if (err == -1)
     {
       RMSG("Couldn't start dot file viewer!");
@@ -751,10 +741,7 @@ void ExampleFK::handleKeys()
 
     REXEC(1)
     {
-      char osCmd[256];
-      snprintf(osCmd, 256, "dotty %s&", dotFile.c_str());
-      int err = system(osCmd);
-
+      int err = system(String_formatStdString("dotty %s&", dotFile.c_str()).c_str());
       if (err == -1)
       {
         RMSG("Couldn't start dot file viewer!");
@@ -1059,10 +1046,6 @@ void ExampleFK_Below::step()
   const RcsBody* closest = RcsBody_closestInDirection(graph, bb->A_BI.org, direction, belowPt, &distance);
   pthread_mutex_unlock(&graphLock);
 
-  /* snprintf(hudText, 256, "Body below %s is %s \nd=%f   pt=[%f %f %f]\n",
-            bb->name, closest ? closest->name : "NULL", distance,
-            belowPt[0], belowPt[1], belowPt[2]);*/
-
   hudText = String_formatStdString("Drag green sphere to see example\nBody below %s is %s \nd=%f   pt=[%f %f %f]\n",
                                    bb->name, closest ? closest->name : "NULL", distance,
                                    belowPt[0], belowPt[1], belowPt[2]);
@@ -1162,11 +1145,6 @@ void ExampleFK_Broadphase::step()
 
   t_broadphase = (t_broadphase>0.0) ? 0.99*t_broadphase + 0.01*t_bp : t_bp;
   t_narrowphase = (t_narrowphase>0.0) ? 0.99*t_narrowphase + 0.01*t_np : t_np;
-
-  /* snprintf(hudText, 256, "%d of %d possible pairs\nBroad phase took %.3f msec\n"
-            "Narrow phase took %.3f msec\nCompression is %.1f%%",
-            cMdl->nPairs, nb, 1.0e3*t_broadphase, 1.0e3*t_narrowphase,
-            100.0-100.0*cMdl->nPairs/nb);*/
 
   hudText = String_formatStdString("%d of %d possible pairs\nBroad phase took %.3f msec\n"
                                    "Narrow phase took %.3f msec\nCompression is %.1f%%",

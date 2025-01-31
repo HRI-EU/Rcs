@@ -70,13 +70,12 @@ ExampleIK::ExampleIK(int argc, char** argv) : ExampleBase(argc, argv),
   x_des(NULL), x_des_f(NULL), dx_des(NULL), dH(NULL),
   effortBdy(NULL), F_effort(NULL),
   sim(NULL), simController(NULL), simGraph(NULL), physicsFeedback(false),
-  v(NULL), cGui(NULL), effortGui(NULL), dxGui(NULL), activationGui(NULL),
+  v(NULL), effortGui(NULL), dxGui(NULL), activationGui(NULL),
   jGui(NULL), alphaSlider(NULL), loopCount(0)
 {
   pthread_mutex_init(&graphLock, NULL);
   mtx = &graphLock;
   Vec3d_setZero(r_com);
-  hudText[0] = '\0';
   Vec3d_setZero(r_com);
 }
 
@@ -149,6 +148,8 @@ bool ExampleIK::initParameters()
 
 bool ExampleIK::parseArgs(CmdLineParser* argP)
 {
+  ExampleBase::parseArgs(argP);   // syncMode
+
   argP->getArgument("-valgrind", &valgrind, "Start without Guis and graphics");
   argP->getArgument("-simpleGraphics", &simpleGraphics, "OpenGL without fancy "
                     "stuff (shadows, anti-aliasing)");
@@ -411,7 +412,10 @@ bool ExampleIK::initGraphics()
     v->add(cn.get());
   }
 
-  v->runInThread(mtx);
+  if (syncMode == "Threaded")
+  {
+    v->runInThread(mtx);
+  }
 
   return true;
 }
@@ -664,6 +668,10 @@ void ExampleIK::step()
                                            NULL, NULL);
   pthread_mutex_unlock(&graphLock);
 
+  if (syncMode == "Sequential")
+  {
+    updateUI();
+  }
 
   char timeStr[64] = "";
   if (dt_calc > 10.0)   // show seconds
@@ -679,30 +687,21 @@ void ExampleIK::step()
     snprintf(timeStr, 64, "%.1f us", 1.0e6*dt_calc);
   }
 
-  snprintf(hudText, 2056,
-           "IK calculation: %s\ndof: %d nJ: %d "
-           "nqr: %d nx: %d\nJL-cost: %.6f dJL-cost: %.6f %s %s"
-           "\nalgo: %d lambda:%g alpha: %g tmc: %.3f\n"
-           "Manipulability index: %.6f\n"
-           "Static effort: %.6f\n"
-           "Robot pose %s",
-           timeStr, controller->getGraph()->dof,
-           controller->getGraph()->nJ, ikSolver->getInternalDof(),
-           (int)controller->getActiveTaskDim(a_des),
-           jlCost, dJlCost,
-           det == 0.0 ? "SINGULAR" : "",
-           ((dJlCost > 1.0e-8) && (MatNd_getNorm(dx_des) == 0.0)) ?
-           "COST INCREASE" : "",
-           algo, lambda, alpha, tmc, manipIdx, staticEff,
-           poseOK ? "VALID" : "VIOLATES LIMITS");
-
-  // snprintf(hudText, 2056,
-  //          "IK calculation: %s\ndof: %d nJ: %d "
-  //          "nqr: %d nx: %d\nJL-cost: %.6f",
-  //          timeStr, controller.getGraph()->dof,
-  //          controller.getGraph()->nJ, ikSolver->getInternalDof(),
-  //          (int) controller.getActiveTaskDim(a_des),
-  //          jlCost);
+  hudText = String_formatStdString("IK calculation: %s\ndof: %d nJ: %d "
+                                   "nqr: %d nx: %d\nJL-cost: %.6f dJL-cost: %.6f %s %s"
+                                   "\nalgo: %d lambda:%g alpha: %g tmc: %.3f\n"
+                                   "Manipulability index: %.6f\n"
+                                   "Static effort: %.6f\n"
+                                   "Robot pose %s",
+                                   timeStr, controller->getGraph()->dof,
+                                   controller->getGraph()->nJ, ikSolver->getInternalDof(),
+                                   (int)controller->getActiveTaskDim(a_des),
+                                   jlCost, dJlCost,
+                                   det == 0.0 ? "SINGULAR" : "",
+                                   ((dJlCost > 1.0e-8) && (MatNd_getNorm(dx_des) == 0.0)) ?
+                                   "COST INCREASE" : "",
+                                   algo, lambda, alpha, tmc, manipIdx, staticEff,
+                                   poseOK ? "VALID" : "VIOLATES LIMITS");
 
   if (hud.valid())
   {

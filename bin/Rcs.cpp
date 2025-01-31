@@ -782,17 +782,17 @@ int main(int argc, char** argv)
         }
 
         snprintf(hudText, 2056, "%.1f %%: IK calculation: %.2f ms\ndof: %d nJ: %d "
-                "nqr: %d nx: %zu\nJL-cost: %.6f dJL-cost: %.6f %s %s\n"
-                "dt=%.2f us\nalgo: %d lambda:%g alpha: %g",
-                fmod(100.0*((double)loopCount/nIter), 100.0),
-                1.0e3*dt, controller.getGraph()->dof,
-                controller.getGraph()->nJ, ikSolver.getInternalDof(),
-                controller.getActiveTaskDim(a_des),
-                jlCost, dJlCost,
-                det==0.0?"SINGULAR":"",
-                ((dJlCost > eps) && (MatNd_getNorm(dx_des) == 0.0)) ?
-                "COST INCREASE" : "",
-                dtIK*1.0e6, algo, lambda, alpha);
+                 "nqr: %d nx: %zu\nJL-cost: %.6f dJL-cost: %.6f %s %s\n"
+                 "dt=%.2f us\nalgo: %d lambda:%g alpha: %g",
+                 fmod(100.0*((double)loopCount/nIter), 100.0),
+                 1.0e3*dt, controller.getGraph()->dof,
+                 controller.getGraph()->nJ, ikSolver.getInternalDof(),
+                 controller.getActiveTaskDim(a_des),
+                 jlCost, dJlCost,
+                 det==0.0?"SINGULAR":"",
+                 ((dJlCost > eps) && (MatNd_getNorm(dx_des) == 0.0)) ?
+                 "COST INCREASE" : "",
+                 dtIK*1.0e6, algo, lambda, alpha);
 
         if (hud != NULL)
         {
@@ -1106,10 +1106,10 @@ int main(int argc, char** argv)
         }
 
         snprintf(hudText, 2056, "RAC calculation: %.2f ms\n"
-                "nx: %d\nJL-cost: %.6f dJL-cost: %.6f"
-                "\nlambda:%g alpha: %g tmc: %g",
-                1.0e3*dt_compute, (int) controller.getActiveTaskDim(a_des),
-                jlCost, dJlCost, lambda, kp_nullspace, tmc);
+                 "nx: %d\nJL-cost: %.6f dJL-cost: %.6f"
+                 "\nlambda:%g alpha: %g tmc: %g",
+                 1.0e3*dt_compute, (int) controller.getActiveTaskDim(a_des),
+                 jlCost, dJlCost, lambda, kp_nullspace, tmc);
 
         if (hud != NULL)
         {
@@ -1337,7 +1337,6 @@ int main(int argc, char** argv)
 
       while (runLoop)
       {
-
         MatNd_rwPinv(pinvJ, J, invW, lambda);
         MatNd_transposeSelf(pinvJ);
         MatNd_mul(F, pinvJ, T);
@@ -2022,16 +2021,16 @@ int main(int argc, char** argv)
         }
 
         snprintf(hudText, 2056, "%.1f %%: IK calculation: %.2f ms\ndof: %d nJ: %d "
-                "nqr: %d nx: %zu\nJL-cost: %.6f dJL-cost: %.6f %s %s\n"
-                "dt=%.2f uslambda:%g alpha: %g\nloopCount=%d",
-                fmod(100.0*((double)loopCount/nIter), 100.0),
-                1.0e3*dt, controller.getGraph()->dof,
-                controller.getGraph()->nJ, ikSolver.getInternalDof(),
-                controller.getActiveTaskDim(a_des),
-                jlCost, dJlCost, det==0.0?"SINGULAR":"",
-                ((dJlCost > eps) && (MatNd_getNorm(dx_des) == 0.0)) ?
-                "COST INCREASE" : "",
-                dtIK*1.0e6, lambda, alpha, loopCount);
+                 "nqr: %d nx: %zu\nJL-cost: %.6f dJL-cost: %.6f %s %s\n"
+                 "dt=%.2f uslambda:%g alpha: %g\nloopCount=%d",
+                 fmod(100.0*((double)loopCount/nIter), 100.0),
+                 1.0e3*dt, controller.getGraph()->dof,
+                 controller.getGraph()->nJ, ikSolver.getInternalDof(),
+                 controller.getActiveTaskDim(a_des),
+                 jlCost, dJlCost, det==0.0?"SINGULAR":"",
+                 ((dJlCost > eps) && (MatNd_getNorm(dx_des) == 0.0)) ?
+                 "COST INCREASE" : "",
+                 dtIK*1.0e6, lambda, alpha, loopCount);
 
         if (hud != NULL)
         {

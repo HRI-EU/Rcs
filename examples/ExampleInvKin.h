@@ -107,7 +107,7 @@ protected:
   osg::ref_ptr<BodyPointDragger> dragger;
   osg::ref_ptr<VertexArrayNode> cn;
   osg::ref_ptr<SphereNode> comNd;
-  char hudText[2056];
+  std::string hudText;
   Rcs::ControllerWidgetBase* cGui;
   MatNdGui* effortGui;
   MatNdGui* dxGui;

@@ -74,7 +74,6 @@ protected:
   std::string directory;
   double dtSim, dtStep;
   int fwdKinType;
-  //char hudText[512];
   std::string hudText;
   std::string comRef;
   std::string dotFile;
@@ -103,7 +102,6 @@ protected:
   Rcs::Viewer* viewer;
   JointGui* jGui;
   QPointer<Rcs::JointWidget> jWidget;
-  //Rcs::JointWidget* jWidget;
 
   unsigned int loopCount;
   double mass, Id[3][3], r_com[3];
