@@ -51,7 +51,7 @@
 #include <JointWidget.h>
 #include <Slider1Dof.h>
 
-#include <pthread.h>
+#include <QPointer>
 
 
 namespace Rcs
