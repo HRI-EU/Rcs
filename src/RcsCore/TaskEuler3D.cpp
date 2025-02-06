@@ -69,6 +69,8 @@ TaskEuler3D::TaskEuler3D(const std::string& className_,
     {
       getXMLNodePropertyVec3(node, "guiMax", guiMax);
       getXMLNodePropertyVec3(node, "guiMin", guiMin);
+      Vec3d_constMulSelf(guiMin, M_PI / 180.0);
+      Vec3d_constMulSelf(guiMax, M_PI / 180.0);
     }
     bool hide = false;
     getXMLNodePropertyBoolString(node, "hide", &hide);
