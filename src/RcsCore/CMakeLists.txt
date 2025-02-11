@@ -245,11 +245,11 @@ ENDIF(USE_qpOASES)
 
 # copy the .dll file to the same folder as the executable
 IF (WIN32)
-ADD_CUSTOM_COMMAND(
-    TARGET RcsCore POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-    ${LIBRARY_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsCore.dll
-    ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsCore.dll)
+#ADD_CUSTOM_COMMAND(
+#    TARGET RcsCore POST_BUILD
+#    COMMAND ${CMAKE_COMMAND} -E copy
+#    ${LIBRARY_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsCore.dll
+#    ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsCore.dll)
 ENDIF()
 
 # Mark for export

@@ -646,4 +646,45 @@ void ExampleWidget::onResizeToFit()
   // adjustSize();
 }
 
+int runExample_blocking(std::string category,
+                        std::string example,
+                        int argc,
+                        char** argv)
+{
+  ExampleBase* ex = ExampleFactory::create(category, example, argc, argv);
+  if (!ex)
+  {
+    RLOG_CPP(0, "Could not create example '" << example
+             << "' for category '" << category);
+    return -1;
+  }
+
+  ex->setSyncMode("External");
+  QApplication app(argc, argv);
+  std::setlocale(LC_ALL, "C");
+  QApplication::setQuitOnLastWindowClosed(false);
+
+  if (!ex->init(argc, argv))
+  {
+    RLOG(0, "Failed in initialize example");
+    return -1;
+  }
+
+  std::thread t(&ExampleBase::start, ex);
+
+  QTimer* timer = new QTimer(&app);  // or any parent
+  QObject::connect(timer, &QTimer::timeout, [&]()
+  {
+    ex->updateUI();
+  });
+  timer->start(25);  // 40 fps
+
+  int res = app.exec();
+
+  ex->stop();
+  t.join();
+
+  return res;
+}
+
 }   // namespace Rcs

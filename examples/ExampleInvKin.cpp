@@ -49,6 +49,7 @@
 #include <IkSolverConstraintRMR.h>
 #include <PhysicsFactory.h>
 
+#include <QApplication>
 
 
 namespace Rcs
@@ -736,6 +737,10 @@ void ExampleIK::handleKeys()
   if (kc->getAndResetKey('q'))
   {
     runLoop = false;
+    QMetaObject::invokeMethod(qApp, []()
+    {
+      QCoreApplication::quit();
+    }, Qt::QueuedConnection);
   }
   else if (kc->getAndResetKey('H'))
   {

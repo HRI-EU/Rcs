@@ -50,6 +50,10 @@
 namespace Rcs
 {
 
+int runExample_blocking(std::string category,
+                        std::string example,
+                        int argc, char** argv);
+
 class ExampleGui : public AsyncWidget
 {
 public:

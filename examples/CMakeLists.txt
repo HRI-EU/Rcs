@@ -41,11 +41,11 @@ IF(NOT HEADLESS_BUILD)
 
   # copy the .dll file to the same folder as the executable
  IF (WIN32)
-  ADD_CUSTOM_COMMAND(
-    TARGET RcsExamples POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-    ${LIBRARY_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsExamples.dll
-    ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsExamples.dll)
+#  ADD_CUSTOM_COMMAND(
+#    TARGET RcsExamples POST_BUILD
+#    COMMAND ${CMAKE_COMMAND} -E copy
+#    ${LIBRARY_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsExamples.dll
+#    ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsExamples.dll)
 
     ADD_EXECUTABLE(ExampleRunnerWin WIN32 ExampleRunner.cpp)
     TARGET_LINK_LIBRARIES(ExampleRunnerWin RcsExamples)

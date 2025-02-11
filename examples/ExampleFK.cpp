@@ -60,6 +60,8 @@
 #include <AABBNode.h>
 #include <CmdLineWidget.h>
 
+#include <QApplication>
+
 #include <sstream>
 
 
@@ -567,6 +569,10 @@ void ExampleFK::handleKeys()
   if (kc->getAndResetKey('q'))
   {
     runLoop = false;
+    QMetaObject::invokeMethod(qApp, []()
+    {
+      QCoreApplication::quit();
+    }, Qt::QueuedConnection);
   }
   else if (kc->getAndResetKey('H'))
   {

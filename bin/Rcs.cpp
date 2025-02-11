@@ -371,8 +371,7 @@ int main(int argc, char** argv)
     // ==============================================================
     case 2:
     {
-      Rcs::ExampleFactory::runExample("Forward kinematics", "Dexbot",
-                                      argc, argv, false);
+      Rcs::runExample_blocking("Forward kinematics", "Dexbot", argc, argv);
       break;
     }
 
@@ -471,10 +470,7 @@ int main(int argc, char** argv)
     // ==============================================================
     case 5:
     {
-      Rcs::ExampleFactory::runExample("Inverse kinematics",
-                                      "Dexbot with Task Interval",
-                                      argc, argv, false);
-
+      Rcs::runExample_blocking("Inverse kinematics", "Dexbot with Task Interval", argc, argv);
       break;
     }
 
