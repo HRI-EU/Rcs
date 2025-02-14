@@ -55,6 +55,7 @@
  */
 
 
+#include "Rcs_HTr.h"
 #include "Rcs_math.h"
 #include "Rcs_macros.h"
 #include "Rcs_utils.h"
@@ -220,7 +221,7 @@ bool HTr_isEqual(const HTr* A, const HTr* B, double eps)
     return false;
   }
 
-  return Mat3d_isEqual((double (*)[3])A->org, (double (*)[3])B->org, eps);
+  return Mat3d_isEqual((double (*)[3])A->rot, (double (*)[3])B->rot, eps);
 }
 
 /*******************************************************************************
@@ -394,33 +395,34 @@ bool HTr_fromString(HTr* A, const char* str)
  ******************************************************************************/
 void HTr_from2Points(HTr* A_KI, const double p1[3], const double p2[3])
 {
-  double tmp[3], length;
   double* ex = A_KI->rot[0], *ey = A_KI->rot[1], *ez = A_KI->rot[2];
-  Vec3d_set(A_KI->org, p1[0], p1[1], p1[2]);
+  Vec3d_copy(A_KI->org, p1);
 
   // Create the unit z-axis from p1 to p2
   Vec3d_sub(ez, p2, p1);
-  length = Vec3d_normalizeSelf(ez);
+  double length = Vec3d_normalizeSelf(ez);
 
   // If points coincide, we choose the identity matrix
   if (length==0.0)
   {
-    Mat3d_setIdentity(A_KI->rot);
+    //Mat3d_setIdentity(A_KI->rot);   // weird compiler warning on gcc 11.4
+    HTr_setIdentity(A_KI);
+    Vec3d_copy(A_KI->org, p1);
     return;
   }
 
   // Determine the y-axis  to be orthogonal to ez and tmp.
-  Vec3d_set(tmp, 0.0, 0.0, 1.0);
+  const double* orthDir = Vec3d_ez();
 
   // In the (unlikely) case that ez and tmp almost coincide we switch to
   // a different rotation axis: the x-axis
-  if ((fabs(Vec3d_diffAngle(ez,tmp))<1.0e-5) ||
-      (fabs(Vec3d_diffAngle(ez,tmp)-M_PI)<1.0e-5))
+  if ((fabs(Vec3d_diffAngle(ez,orthDir))<1.0e-5) ||
+      (fabs(Vec3d_diffAngle(ez,orthDir)-M_PI)<1.0e-5))
   {
-    Vec3d_set(tmp, 1.0, 0.0, 0.0);
+    orthDir = Vec3d_ex();
   }
 
-  Vec3d_crossProduct(ey, ez, tmp);
+  Vec3d_crossProduct(ey, ez, orthDir);
   Vec3d_normalizeSelf(ey);
   Vec3d_crossProduct(ex, ey, ez);
   Vec3d_normalizeSelf(ex);
