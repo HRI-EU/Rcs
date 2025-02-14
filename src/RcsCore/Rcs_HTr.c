@@ -391,43 +391,13 @@ bool HTr_fromString(HTr* A, const char* str)
  * Constructs a HTr from 2 points, so that p1-p2 will become the unit z-axis
  * of the rotation matrix. The x- and y-axis are computed just somehow to be
  * orthogonal. The HTrs' origin will be set to p1.
- * \todo: Use Mat3d_fromVec()
  ******************************************************************************/
 void HTr_from2Points(HTr* A_KI, const double p1[3], const double p2[3])
 {
-  double* ex = A_KI->rot[0], *ey = A_KI->rot[1], *ez = A_KI->rot[2];
+  double p12[3];
+  Vec3d_sub(p12, p2, p1);
+  Mat3d_fromVec(A_KI->rot, p12, 2);
   Vec3d_copy(A_KI->org, p1);
-
-  // Create the unit z-axis from p1 to p2
-  Vec3d_sub(ez, p2, p1);
-  double length = Vec3d_normalizeSelf(ez);
-
-  // If points coincide, we choose the identity matrix
-  if (length==0.0)
-  {
-    //Mat3d_setIdentity(A_KI->rot);   // weird compiler warning on gcc 11.4
-    HTr_setIdentity(A_KI);
-    Vec3d_copy(A_KI->org, p1);
-    return;
-  }
-
-  // Determine the y-axis  to be orthogonal to ez and tmp.
-  const double* orthDir = Vec3d_ez();
-
-  // In the (unlikely) case that ez and tmp almost coincide we switch to
-  // a different rotation axis: the x-axis
-  if ((fabs(Vec3d_diffAngle(ez,orthDir))<1.0e-5) ||
-      (fabs(Vec3d_diffAngle(ez,orthDir)-M_PI)<1.0e-5))
-  {
-    orthDir = Vec3d_ex();
-  }
-
-  Vec3d_crossProduct(ey, ez, orthDir);
-  Vec3d_normalizeSelf(ey);
-  Vec3d_crossProduct(ex, ey, ez);
-  Vec3d_normalizeSelf(ex);
-
-  return;
 }
 
 /*******************************************************************************
