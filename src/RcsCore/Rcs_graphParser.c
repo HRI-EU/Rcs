@@ -1256,7 +1256,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
     if (parentBdy && firstInGroup)
     {
       RLOG(1, "WARNING: \"prev\"-tag supplied in body \"%s\", but also in "
-           "group; body information will be overridden", name);
+           "group; body information will be overridden (level: %d)", name, level);
     }
 
     // If the body is the first in a group, we search its parent without the
@@ -1774,7 +1774,7 @@ static void RcsGraph_parseBodies(xmlNodePtr node,
 {
   static int recursionDepth = 0;
   recursionDepth++;
-  RLOG(5, "Recursion depth: %d", recursionDepth);
+  RLOG(5, "Recursion depth: %d   level: %d", recursionDepth, level);
 
   if (node == NULL)
   {

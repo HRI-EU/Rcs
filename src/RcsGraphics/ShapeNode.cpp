@@ -138,14 +138,12 @@ static osg::ref_ptr<osg::Texture2D> getOrCreateTexture(const char* textureFile)
 /*******************************************************************************
  *
  ******************************************************************************/
-static osg::ref_ptr<osg::Node> getOrCreateMeshNode(const RcsShape* shape,
-                                                   bool& meshFromOsgReader)
+static osg::ref_ptr<osg::Node> getOrCreateMeshNode(const RcsShape* shape)
 {
   static std::map<std::string, osg::ref_ptr<osg::Node> > _meshBuffer;
   static OpenThreads::Mutex _meshBufferMtx;
 
   osg::ref_ptr<osg::Node> meshNode;
-  meshFromOsgReader = false;
 
   // Little map that stores name-pointer pairs of mesh files. If
   // a mesh has already been loaded, we look up its pointer from
@@ -194,14 +192,12 @@ static osg::ref_ptr<osg::Node> getOrCreateMeshNode(const RcsShape* shape,
     return meshNode;
   }
 
-
   // Otherwise, we use the OpenSceneGraph classes
   // fixes loading of obj without normals (doesn't work for OSG 2.8)
   RLOG(5, "Creating MeshNode from osg::NodeFileReader (%s)", shape->meshFile);
   osg::ref_ptr<osgDB::Options> options;
   options = new osgDB::Options("generateFacetNormals=true noRotation=true");
   meshNode = osgDB::readNodeFile(shape->meshFile, options.get());
-  meshFromOsgReader = true;
 
   // We only add the non-MeshNodes to the buffer, and recreate
   // everthing else. That's due to an issue with the color
@@ -210,6 +206,7 @@ static osg::ref_ptr<osg::Node> getOrCreateMeshNode(const RcsShape* shape,
   if (meshNode.valid() && meshFactoryEnabled)
   {
     OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_meshBufferMtx);
+    meshNode->setName("osgDB::readNodeFile()");
     _meshBuffer[std::string(shape->meshFile)] = meshNode;
   }
 
@@ -513,8 +510,7 @@ void ShapeNode::addShape(const RcsShape* shape)
   /////////////////////////////
   else if (shape->type == RCSSHAPE_MESH)
   {
-    bool meshFromOsgReader;
-    osg::ref_ptr<osg::Node> meshNode = getOrCreateMeshNode(shape, meshFromOsgReader);
+    osg::ref_ptr<osg::Node> meshNode = getOrCreateMeshNode(shape);
 
     if (meshNode.valid())
     {
@@ -529,7 +525,7 @@ void ShapeNode::addShape(const RcsShape* shape)
       // osgDB::readNodeFile class. Otherwise, the scaling has already
       // been done during parsing the graph (meshes need to be consistent
       // with the physics simulator).
-      if (meshFromOsgReader == true)
+      if (meshNode->getName() == "osgDB::readNodeFile()")
       {
         setScale(osg::Vec3(shape->scale3d[0], shape->scale3d[1], shape->scale3d[2]));
         ss->setMode(GL_NORMALIZE, osg::StateAttribute::ON);
