@@ -7,15 +7,15 @@
   met:
 
   1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
+     this list of conditions and the following disclaimer.
 
   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
 
   3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
 
   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -51,6 +51,7 @@
 #include <Rcs_utils.h>
 #include <Rcs_parser.h>
 #include <Rcs_kinematics.h>
+#include <Rcs_collisionModel.h>
 
 #include <BulletDynamics/MLCPSolvers/btDantzigSolver.h>
 #include <BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h>
@@ -131,7 +132,7 @@ void Rcs::BulletSimulation::MyNearCallbackEnabled(btBroadphasePair& collisionPai
     return;
   }
 
-  RLOG(1, "Broadphase collision: %s and %s", rb0->getBodyName(), rb1->getBodyName());
+  NLOG(1, "Broadphase collision: %s and %s", rb0->getBodyName(), rb1->getBodyName());
 
   MyCollisionDispatcher& myCD = dynamic_cast<MyCollisionDispatcher&>(dispatcher);
   const RcsBody* b0 = rb0->getBodyPtr();
@@ -189,6 +190,8 @@ Rcs::BulletSimulation::BulletSimulation() :
   jointedBodyAngularDamping(0.0)
 {
   pthread_mutex_init(&this->mtx, NULL);
+  Vec3d_setZero(dragForce);
+  Vec3d_setZero(dragAnchor);
 }
 
 /*******************************************************************************
@@ -212,6 +215,8 @@ Rcs::BulletSimulation::BulletSimulation(const RcsGraph* graph_,
   jointedBodyAngularDamping(0.0)
 {
   pthread_mutex_init(&this->mtx, NULL);
+  Vec3d_setZero(dragForce);
+  Vec3d_setZero(dragAnchor);
 
   PhysicsConfig config(cfgFile);
   initPhysics(&config);
@@ -238,6 +243,9 @@ Rcs::BulletSimulation::BulletSimulation(const RcsGraph* graph_,
   jointedBodyAngularDamping(0.0)
 {
   pthread_mutex_init(&this->mtx, NULL);
+  Vec3d_setZero(dragForce);
+  Vec3d_setZero(dragAnchor);
+
   initPhysics(config);
 }
 
@@ -262,6 +270,9 @@ Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe):
   jointedBodyAngularDamping(copyFromMe.jointedBodyAngularDamping)
 {
   pthread_mutex_init(&this->mtx, NULL);
+  Vec3d_copy(dragForce, copyFromMe.dragForce);
+  Vec3d_copy(dragAnchor, copyFromMe.dragAnchor);
+
   PhysicsConfig config(copyFromMe.physicsConfigFile.c_str());
   initPhysics(&config);
 }
@@ -288,6 +299,9 @@ Rcs::BulletSimulation::BulletSimulation(const BulletSimulation& copyFromMe,
   jointedBodyAngularDamping(copyFromMe.jointedBodyAngularDamping)
 {
   pthread_mutex_init(&this->mtx, NULL);
+  Vec3d_copy(dragForce, copyFromMe.dragForce);
+  Vec3d_copy(dragAnchor, copyFromMe.dragAnchor);
+
   PhysicsConfig config(copyFromMe.physicsConfigFile.c_str());
   initPhysics(&config);
 }
@@ -523,6 +537,22 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
   {
     Rcs::BulletRigidBody* btBdy = it->second;
     btBdy->updateBodyTransformFromPhysics();
+  }
+
+
+  // Initialize collision filter
+  xmlNodePtr collision_node = getXMLChildByName(config->getXMLRootNode(),
+                                                "CollisionModel");
+  RcsCollisionMdl* cMdl = RcsCollisionModel_createFromXML(getGraph(), collision_node);
+  if (cMdl)
+  {
+
+    for (unsigned int i = 0; i < cMdl->nPairs; ++i)
+    {
+      const RcsPair* pair = &cMdl->pair[i];
+      collisionFilter.emplace_back(pair->b1, pair->b2);
+    }
+
   }
 
   RCHECK(check());
@@ -1550,6 +1580,22 @@ void Rcs::BulletSimulation::print() const
   printf("m_linearSlop %f\n", info.m_linearSlop);
   printf("m_globalCfm %f\n", info.m_globalCfm);
   printf("m_maxErrorReduction %f\n", info.m_maxErrorReduction);
+
+  if (collisionFilter.empty())
+  {
+    printf("no collision filter\n");
+  }
+  else
+  {
+    printf("collision filter:\n");
+    for (const auto& p : collisionFilter)
+    {
+      printf("   %d - %d (%s - %s)\n",
+             p.first, p.second,
+             RCSBODY_NAME_BY_ID(getGraph(), p.first),
+             RCSBODY_NAME_BY_ID(getGraph(), p.second));
+    }
+  }
 }
 
 /*******************************************************************************

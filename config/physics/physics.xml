@@ -200,6 +200,15 @@ here is what you can set:
 	  restitution="0.9"
 />
 
+	<CollisionModel>
+		<CollisionPair body1="thumb_tip_right"         body2="table" />
+		<CollisionPair body1="thumb_right"             body2="table" />
+		<CollisionPair body1="second_finger_tip_right" body2="table" />
+		<CollisionPair body1="second_finger_right"     body2="table" />
+		<CollisionPair body1="third_finger_tip_right"  body2="table" />
+		<CollisionPair body1="third_finger_right"      body2="table" />
+		<CollisionPair body1="hand_base_right"         body2="table" />
+	</CollisionModel>
 
 
 </content>
