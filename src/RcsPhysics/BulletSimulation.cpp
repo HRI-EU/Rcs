@@ -58,6 +58,7 @@
 
 #include <iostream>
 #include <climits>
+#include <algorithm>
 
 
 
@@ -72,12 +73,14 @@ typedef std::map<int, Rcs::BulletRigidBody*>::const_iterator body_cit;
 
 struct MyCollisionDispatcher : public btCollisionDispatcher
 {
-  MyCollisionDispatcher(btDefaultCollisionConfiguration* cc, RcsGraph* graph) :
-    btCollisionDispatcher(cc), graphPtr(graph)
+  MyCollisionDispatcher(btDefaultCollisionConfiguration* cc, RcsGraph* graph,
+                        const std::vector<std::pair<int,int>>& collisionFilter) :
+    btCollisionDispatcher(cc), graphPtr(graph), collisionFilterRef(collisionFilter)
   {
   }
 
   RcsGraph* graphPtr;
+  const std::vector<std::pair<int,int>>& collisionFilterRef;
 };
 
 /*******************************************************************************
@@ -107,54 +110,59 @@ void Rcs::BulletSimulation::MyNearCallbackEnabled(btBroadphasePair& collisionPai
                                                   btCollisionDispatcher& dispatcher,
                                                   const btDispatcherInfo& dispatchInfo)
 {
-  // Do your collision logic here
   btBroadphaseProxy* p0 = collisionPair.m_pProxy0;
   btBroadphaseProxy* p1 = collisionPair.m_pProxy1;
 
-  if (p0->isSoftBody(SOFTBODY_SHAPE_PROXYTYPE) ||
-      p1->isSoftBody(SOFTBODY_SHAPE_PROXYTYPE))
+  btCollisionObject* co0 = static_cast<btCollisionObject*>(p0->m_clientObject);
+  btCollisionObject* co1 = static_cast<btCollisionObject*>(p1->m_clientObject);
+
+  if (dynamic_cast<btSoftBody*>(co0) || dynamic_cast<btSoftBody*>(co1))
   {
     dispatcher.defaultNearCallback(collisionPair, dispatcher, dispatchInfo);
     return;
   }
 
-  btCollisionObject* co0 = static_cast<btCollisionObject*>(p0->m_clientObject);
-  btCollisionObject* co1 = static_cast<btCollisionObject*>(p1->m_clientObject);
-
   Rcs::BulletRigidBody* rb0 = dynamic_cast<Rcs::BulletRigidBody*>(co0);
   Rcs::BulletRigidBody* rb1 = dynamic_cast<Rcs::BulletRigidBody*>(co1);
 
-  if ((rb0!=NULL) && (rb1!=NULL))
+  if ((!rb0) || (!rb1))
   {
-    NLOG(0, "Broadphase collision between %s and %s",
-         rb0->getBodyName(), rb1->getBodyName());
+    dispatcher.defaultNearCallback(collisionPair, dispatcher, dispatchInfo);
+    return;
+  }
 
-    MyCollisionDispatcher& myCD = dynamic_cast<MyCollisionDispatcher&>(dispatcher);
+  RLOG(1, "Broadphase collision: %s and %s", rb0->getBodyName(), rb1->getBodyName());
 
-    const RcsBody* parent0 = RcsBody_getParent(myCD.graphPtr, (RcsBody*)rb0->getBodyPtr());
-    const RcsBody* parent1 = RcsBody_getParent(myCD.graphPtr, (RcsBody*)rb1->getBodyPtr());
+  MyCollisionDispatcher& myCD = dynamic_cast<MyCollisionDispatcher&>(dispatcher);
+  const RcsBody* b0 = rb0->getBodyPtr();
+  const RcsBody* b1 = rb1->getBodyPtr();
 
-    if ((rb0->getBodyPtr()->rigid_body_joints==false && parent0) ||
-        (rb1->getBodyPtr()->rigid_body_joints==false && parent1))
+  // Disable collisions related to collision filter
+  const std::pair<int, int> target = {rb0->getBodyPtr()->id, rb1->getBodyPtr()->id};
+  const auto cf_it = std::find(myCD.collisionFilterRef.begin(), myCD.collisionFilterRef.end(), target);
+  if (cf_it != myCD.collisionFilterRef.end())
+  {
+    NLOG(1, "Found pair %d - %d", rb0->getBodyPtr()->id, rb1->getBodyPtr()->id);
+    return;
+  }
+
+  // Disable parent-child collisions
+  const RcsBody* parent0 = RcsBody_getParent(myCD.graphPtr, (RcsBody*)b0);
+  const RcsBody* parent1 = RcsBody_getParent(myCD.graphPtr, (RcsBody*)b1);
+
+  if ((b0->rigid_body_joints==false && parent0) ||
+      (b1->rigid_body_joints==false && parent1))
+  {
+
+    if ((RcsBody_isChild(myCD.graphPtr, b0, b1)) ||
+        (RcsBody_isChild(myCD.graphPtr, b1, b0)))
     {
-
-      if ((RcsBody_isChild(myCD.graphPtr, rb0->getBodyPtr(), rb1->getBodyPtr())) ||
-          (RcsBody_isChild(myCD.graphPtr, rb1->getBodyPtr(), rb0->getBodyPtr())))
-      {
-        NLOG(1, "Skipping %s - %s", rb0->getBodyName(), rb1->getBodyName());
-        return;
-      }
-
+      NLOG(1, "Skipping %s - %s", rb0->getBodyName(), rb1->getBodyName());
+      return;
     }
 
-    // if (STREQ(rb0->getBodyPtr()->suffix, rb0->getBodyPtr()->suffix) &&
-    //     (strlen(rb0->getBodyPtr()->suffix)==0))
-    // {
-    //   return;
-    // }
-
-    //RLOG(0, "Checking %s - %s", rb0->getBodyName(), rb1->getBodyName());
   }
+
 
   // Only dispatch the Bullet collision information if you want the physics to
   // continue
@@ -1197,7 +1205,11 @@ void Rcs::BulletSimulation::disableCollisions()
 void Rcs::BulletSimulation::disableCollision(const RcsBody* b0,
                                              const RcsBody* b1)
 {
-  RFATAL("Implement me");
+  if (b0 && b1)
+  {
+    collisionFilter.emplace_back(b0->id, b1->id);
+    RLOG(0, "Disabling %s - %s", b0->name, b1->name);
+  }
 }
 
 /*******************************************************************************
@@ -2202,7 +2214,7 @@ void Rcs::BulletSimulation::createWorld(xmlNodePtr bulletParams)
 
   this->collisionConfiguration = new btDefaultCollisionConfiguration();
   //this->dispatcher = new btCollisionDispatcher(collisionConfiguration);
-  this->dispatcher = new MyCollisionDispatcher(collisionConfiguration, getGraph());
+  this->dispatcher = new MyCollisionDispatcher(collisionConfiguration, getGraph(), collisionFilter);
   dispatcher->setNearCallback(MyNearCallbackEnabled);
   broadPhase = new btDbvtBroadphase();
 
