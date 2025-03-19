@@ -75,13 +75,13 @@ typedef std::map<int, Rcs::BulletRigidBody*>::const_iterator body_cit;
 struct MyCollisionDispatcher : public btCollisionDispatcher
 {
   MyCollisionDispatcher(btDefaultCollisionConfiguration* cc, RcsGraph* graph,
-                        const std::vector<std::pair<int,int>>& collisionFilter) :
+                        const std::vector<std::vector<int>>& collisionFilter) :
     btCollisionDispatcher(cc), graphPtr(graph), collisionFilterRef(collisionFilter)
   {
   }
 
   RcsGraph* graphPtr;
-  const std::vector<std::pair<int,int>>& collisionFilterRef;
+  const std::vector<std::vector<int>>& collisionFilterRef;
 };
 
 /*******************************************************************************
@@ -139,11 +139,13 @@ void Rcs::BulletSimulation::MyNearCallbackEnabled(btBroadphasePair& collisionPai
   const RcsBody* b1 = rb1->getBodyPtr();
 
   // Disable collisions related to collision filter
-  const std::pair<int, int> target = {rb0->getBodyPtr()->id, rb1->getBodyPtr()->id};
-  const auto cf_it = std::find(myCD.collisionFilterRef.begin(), myCD.collisionFilterRef.end(), target);
-  if (cf_it != myCD.collisionFilterRef.end())
+  const unsigned int id0 = rb0->getBodyPtr()->id;
+  const unsigned int id1 = rb1->getBodyPtr()->id;
+  const unsigned int nb = myCD.graphPtr->nBodies;
+  const bool idsValid = (id0>=0) && (id1>=0) && (id0<nb) && (id1<nb);
+  if (idsValid && myCD.collisionFilterRef[id0][id1]!=0)
   {
-    NLOG(1, "Found pair %d - %d", rb0->getBodyPtr()->id, rb1->getBodyPtr()->id);
+    NLOG(1, "Found pair %d - %d", id0, id1);
     return;
   }
 
@@ -540,7 +542,9 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
   }
 
 
-  // Initialize collision filter
+  // Initialize collision filter matrix
+  const int nb = getGraph()->nBodies;
+  this->collisionFilter = std::vector<std::vector<int>>(nb, std::vector<int>(nb, 0));
   xmlNodePtr collision_node = getXMLChildByName(config->getXMLRootNode(),
                                                 "CollisionModel");
   RcsCollisionMdl* cMdl = RcsCollisionModel_createFromXML(getGraph(), collision_node);
@@ -550,7 +554,16 @@ void Rcs::BulletSimulation::initPhysics(const PhysicsConfig* config)
     for (unsigned int i = 0; i < cMdl->nPairs; ++i)
     {
       const RcsPair* pair = &cMdl->pair[i];
-      collisionFilter.emplace_back(pair->b1, pair->b2);
+
+      if ((pair->b1>=0) && (pair->b1<nb) && (pair->b2>=0) && (pair->b2<nb))
+      {
+        collisionFilter[pair->b1][pair->b2] = 1;
+        collisionFilter[pair->b2][pair->b1] = 1;
+      }
+      else
+      {
+        RLOG(1, "Found invalid collision filter pair");
+      }
     }
 
   }
@@ -1235,10 +1248,16 @@ void Rcs::BulletSimulation::disableCollisions()
 void Rcs::BulletSimulation::disableCollision(const RcsBody* b0,
                                              const RcsBody* b1)
 {
-  if (b0 && b1)
+  const int nb = getGraph()->nBodies;
+  if (b0 && b1 && (b0->id>=0) && (b0->id<nb) && (b1->id>=0) && (b1->id<nb))
   {
     collisionFilter.emplace_back(b0->id, b1->id);
     RLOG(0, "Disabling %s - %s", b0->name, b1->name);
+  }
+  else
+  {
+    RLOG(1, "Failed to disable collisions between %s and %s",
+         b0 ? b0->name : "NULL", b1 ? b1->name : "NULL");
   }
 }
 
@@ -1588,14 +1607,16 @@ void Rcs::BulletSimulation::print() const
   else
   {
     printf("collision filter:\n");
-    for (const auto& p : collisionFilter)
+    for (size_t i=0; i<collisionFilter.size(); ++i)
     {
-      printf("   %d - %d (%s - %s)\n",
-             p.first, p.second,
-             RCSBODY_NAME_BY_ID(getGraph(), p.first),
-             RCSBODY_NAME_BY_ID(getGraph(), p.second));
+      for (size_t j=0; j<collisionFilter[i].size(); ++j)
+      {
+        printf("%d",collisionFilter[i][j]);
+        printf("\n");
+      }
     }
   }
+
 }
 
 /*******************************************************************************

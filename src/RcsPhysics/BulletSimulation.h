@@ -231,7 +231,7 @@ protected:
   double jointedBodyLinearDamping;
   double jointedBodyAngularDamping;
 
-  std::vector<std::pair<int,int>> collisionFilter;
+  std::vector<std::vector<int>> collisionFilter;
 
 private:
 
