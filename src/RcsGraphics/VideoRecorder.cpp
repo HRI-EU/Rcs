@@ -96,7 +96,7 @@ public:
     : width(imgAlign(width_)), height(imgAlign(height_)), fps(fps_), stopRecording(false),
       verbose(false)
   {
-    bool success = init(filename);
+    init(filename);
   }
 
   virtual ~VideoRecorder()
@@ -419,7 +419,7 @@ private:
   std::mutex mutex;
   std::condition_variable condition;
   bool stopRecording = false;
-  bool verbose = false;;
+  bool verbose = false;
 };
 
 /*******************************************************************************
@@ -746,7 +746,7 @@ bool FrameCaptureCallback::hasRecorder()
 /*******************************************************************************
  *
  ******************************************************************************/
-VideoTextureCallback::VideoTextureCallback(const std::string& videoFile) 
+VideoTextureCallback::VideoTextureCallback(const std::string& videoFile)
 {
   textureConverter = NULL;
 }
