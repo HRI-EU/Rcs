@@ -85,7 +85,11 @@ double Quat_dot(const double q1[4], const double q2[4])
  ******************************************************************************/
 double Quat_diffAngle(const double q1[4], const double q2[4])
 {
-  return Math_acos(Quat_dot(q1, q2));
+  double dot = Quat_dot(q1, q2);
+
+  dot = fabs(dot);  // Ensure shortest path
+
+  return 2.0*Math_acos(dot);
 }
 
 /*******************************************************************************
