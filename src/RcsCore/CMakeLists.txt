@@ -63,7 +63,7 @@ Rcs_filters.cpp
 Rcs_geometry.c
 Rcs_gradientTests.c
 Rcs_graph.c
-Rcs_graphParser.c
+Rcs_graphParser_new.c
 Rcs_HTr.c
 Rcs_intersectionWM5.cpp 
 Rcs_joint.c

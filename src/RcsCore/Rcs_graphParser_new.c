@@ -47,9 +47,231 @@
 
 #include <float.h>
 
-//#define TRANSFORM_ROOT_NEXT
 
 
+typedef struct
+{
+  RcsGraph*  graph;        ///< pointer to the target graph
+  xmlNodePtr parentGroup;  ///< libxml node of the current <Group>
+
+  // These contents are duplicated when assigning RcsXmlParseCtx child = *parent
+  // Modifying the copy does not affect the parent.
+  HTr        groupTf;                              ///< Accumulated group transform (value).
+  char       suffix[RCS_MAX_NAMELEN];              ///< Current name suffix.
+  char       defaultColor[RCS_MAX_NAMELEN];        ///< Inherited default colour.
+  char       suffixAtGroup[RCSGRAPH_MAX_GROUPDEPTH][RCS_MAX_NAMELEN];
+  int        level;                                ///< Current depth in <Group> hierarchy.
+  bool       verbose;                              ///< Verbose-logging switch.
+
+} RcsXmlParseCtx;
+
+
+static void RcsGraph_parseRecursive(xmlNodePtr node, RcsXmlParseCtx* ctx);
+
+
+const char* getXMLNodePropertyStringPtr(xmlNodePtr node, const char* name)
+{
+  if (!node || !name)
+  {
+    return NULL;
+  }
+
+  for (xmlAttr* a = node->properties; a; a = a->next)
+  {
+    if (a->name && xmlStrEqual(a->name, (const xmlChar*)name))
+    {
+      if (a->children && a->children->type == XML_TEXT_NODE)
+      {
+        return (const char*) a->children->content;
+      }
+    }
+  }
+
+  return NULL;
+}
+
+/*******************************************************************************
+ * The node points to an OpenRave file
+ ******************************************************************************/
+static void parseOpenRaveBody(xmlNodePtr node, RcsGraph* self)
+{
+  char tmp[RCS_MAX_FILENAMELEN] = "";
+
+  // check if prev tag is provided --> first body of openrave graph will be
+  // attached to it
+  RcsBody* pB = NULL;
+  if (getXMLNodePropertyStringN(node, "prev", tmp, RCS_MAX_FILENAMELEN) > 0)
+  {
+    pB = RcsGraph_getBodyByName(self, tmp);
+    RCHECK_MSG(pB, "Body \"%s\" not found, which was specified as prev for an OpenRave node", tmp);
+  }
+
+  // Get filename
+  strcpy(tmp, "");
+  getXMLNodePropertyStringN(node, "file", tmp, RCS_MAX_FILENAMELEN);
+
+  // check if q0 is provided and read it
+  double* q0 = NULL;
+  unsigned int nq = 0;
+  if (getXMLNodeProperty(node, "q0"))
+  {
+    RLOG(1, "Found q0 tag --> overriding initial values of OpenRave file");
+
+    // get number of provided q0 values
+    char q_str[512];
+    getXMLNodePropertyStringN(node, "q0", q_str, 512);
+    nq = String_countSubStrings(q_str, " ");
+
+    // read q0 values
+    q0 = RNALLOC(nq, double);
+    getXMLNodePropertyVecN(node, "q0", q0, nq);
+
+    // convert to radian
+    VecNd_constMulSelf(q0, M_PI/180.0, nq);
+  }
+
+  // parse OpenRave file
+  RcsGraph_createBodiesFromOpenRAVEFile(self, pB, tmp, q0, nq);
+
+  // cleanup
+  RFREE(q0);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static void parseURDFFile(xmlNodePtr node, RcsGraph* self, const char* suffix)
+{
+  // check if prev tag is provided --> first body of URDF graph will be
+  // attached to it
+  char tmp[RCS_MAX_FILENAMELEN] = "";
+  RcsBody* pB = NULL;
+  if (getXMLNodePropertyStringN(node, "prev", tmp, RCS_MAX_FILENAMELEN) > 0)
+  {
+    pB = RcsGraph_getBodyByName(self, tmp);
+    RCHECK_MSG(pB, "Body \"%s\" not found, which was specified as prev for"
+               " an URDF node", tmp);
+  }
+
+  // Get filename
+  strcpy(tmp, "");
+  getXMLNodePropertyStringN(node, "file", tmp, RCS_MAX_FILENAMELEN);
+  char filename[RCS_MAX_FILENAMELEN] = "";
+  bool urdfExists = Rcs_getAbsoluteFileName(tmp, filename);
+  RCHECK_MSG(urdfExists, "Couldn't open urdf file \"%s\"", tmp);
+  // parse URDF file
+
+  // New extension = suffix + new group name
+  char urdfSuffix[RCS_MAX_NAMELEN] = "", ndExt[RCS_MAX_NAMELEN] = "";
+  getXMLNodePropertyStringN(node, "suffix", urdfSuffix, RCS_MAX_NAMELEN);
+  strcpy(ndExt, suffix);
+  strcat(ndExt, urdfSuffix);
+
+  HTr A_local;
+  HTr_setIdentity(&A_local);
+  getXMLNodePropertyHTr(node, "transform", &A_local);
+  unsigned int dof = 0;
+  int urdfRootId = RcsGraph_rootBodyFromURDFFile(self, filename, ndExt,
+                                                 &A_local, &dof);
+  RCHECK_MSG(urdfRootId != -1, "Couldn't get URDF root from file \"%s\"", filename);
+  self->dof += dof;
+  self->q = MatNd_realloc(self->q, self->dof, 1);
+
+  RcsBody* urdfRoot = &self->bodies[urdfRootId];
+
+  // There is no direct way to determine whether the root link should be fixed or free.
+  // However, we can easily use a rgid_body_joints xml parameter to determine this.
+  bool hasRBJTag = getXMLNodeProperty(node, "rigid_body_joints");
+  double q_rbj[12];
+  VecNd_setZero(q_rbj, 12);
+  // parse rigid body joints tag
+  unsigned int nRBJTagStr = 0;
+  if (hasRBJTag == true)
+  {
+    urdfRoot->rigid_body_joints = true;
+    nRBJTagStr = getXMLNodeNumStrings(node, "rigid_body_joints");
+
+    switch (nRBJTagStr)
+    {
+      case 1:
+        getXMLNodePropertyBoolString(node, "rigid_body_joints",
+                                     &urdfRoot->rigid_body_joints);
+        break;
+
+      case 6:
+        getXMLNodePropertyVecN(node, "rigid_body_joints", q_rbj, 6);
+
+        // convert Euler angles from degrees to radians
+        Vec3d_constMulSelf(&q_rbj[3], M_PI / 180.0);
+        break;
+
+      case 12:
+        getXMLNodePropertyVecN(node, "rigid_body_joints", q_rbj, 12);
+
+        // convert Euler angles from degrees to radians
+        Vec3d_constMulSelf(&q_rbj[3], M_PI / 180.0);
+        break;
+
+      default:
+        RFATAL("Tag \"rigid_body_joints\" of body \"%s\" has %d entries"
+               " - should be 6 or 1", urdfRoot->name, nRBJTagStr);
+    }
+
+    NLOG(5, "[%s]: Found %d strings in rigid_body_joint tag \"%s\", flag is "
+         "%s", urdfRoot->name, nStr, "rigid_body_joints",
+         urdfRoot->rigid_body_joints ? "true" : "false");
+  }
+  // create rigid body joints if requested
+  if (urdfRoot->rigid_body_joints)
+  {
+    RcsJoint* rbj0 = RcsBody_createRBJ(self, urdfRoot, q_rbj);
+
+    // Determine constraint dofs for physics simulation. If a dof is
+    // constrained will be interpreted by a "0" in the joint's weightMetric
+    // property.
+    if (nRBJTagStr == 12)
+    {
+      unsigned int checkRbjNum = 0;
+      RCSJOINT_TRAVERSE_FORWARD(self, rbj0)
+      {
+        JNT->weightMetric = q_rbj[6 + checkRbjNum];
+        checkRbjNum++;
+      }
+      RCHECK(checkRbjNum == 6);
+    }
+
+    // Rigid body joints don't have any relative transformations after
+    // construction. If there is a transformation coming from a group, it
+    // needs to be applied to the first of the six rigid body joints. We can
+    // simply clone it.
+    if (HTr_isIdentity(&A_local) == false)
+    {
+      HTr_copy(&rbj0->A_JP, &A_local);
+
+      // since the group transform was already applied to the body, remove it
+      // there again
+      HTr_setIdentity(&urdfRoot->A_BP);
+    }
+  }
+  else if (urdfRoot->physicsSim != RCSBODY_PHYSICS_NONE)
+  {
+    // no rigid body joints - urdf root is fixed to it's parent. Make sure
+    // that the physics simulation treats it correctly.
+    if (pB != NULL && (pB->physicsSim == RCSBODY_PHYSICS_DYNAMIC ||
+                       pB->physicsSim == RCSBODY_PHYSICS_FIXED))
+    {
+      // or to fixed if the parent is dynamic
+      urdfRoot->physicsSim = RCSBODY_PHYSICS_FIXED;
+    }
+    else
+    {
+      // set it to kinematic if the parent is kinematic or not participating
+      // at all
+      urdfRoot->physicsSim = RCSBODY_PHYSICS_KINEMATIC;
+    }
+  }
+
+}
 
 /*******************************************************************************
  *
@@ -1153,35 +1375,144 @@ static RcsJoint* RcsBody_initJoint(RcsGraph* self,
 }
 
 /*******************************************************************************
-* Allocates memory and initializes a RcsBody data structure from an XML node.
-******************************************************************************/
-static RcsBody* RcsBody_createFromXML(RcsGraph* self,
-                                      xmlNode* bdyNode,
-                                      const char* defaultColor,
-                                      const char* suffix,
-                                      xmlNodePtr parentGroupNode,
-                                      HTr* A_group,
-                                      bool firstInGroup,
-                                      int level,
-                                      int rootId,
-                                      bool verbose)
+ *
+ ******************************************************************************/
+bool RcsGraph_setModelStateFromXML(RcsGraph* self, const char* modelStateName,
+                                   int timeStamp)
 {
-  // Return if node is not a body node
-  if (!isXMLNodeName(bdyNode, "Body"))
+  if ((!self) || (!modelStateName))
+  {
+    RLOG(4, "Graph or model state name are NULL");
+    return false;
+  }
+
+  // Read XML file
+  xmlDocPtr doc = NULL;
+  xmlNodePtr node = parseXMLFile(self->cfgFile, "Graph", &doc);
+
+  if (!node)
+  {
+    RLOG(4, "Failed to read xml file \"%s\"", self->cfgFile);
+    xmlFreeDoc(doc);
+    return false;
+  }
+
+  bool success = RcsGraph_parseModelState(node, self, modelStateName);
+  if (!success)
+  {
+    RLOG(1, "Failed to parse model_state \"%s\"", modelStateName);
+  }
+
+  xmlFreeDoc(doc);
+
+  return success;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool RcsGraph_getModelStateFromXML(MatNd* q, const RcsGraph* self,
+                                   const char* modelStateName, int timeStamp)
+{
+  if ((!self) || (!modelStateName))
+  {
+    return false;
+  }
+
+  // Read XML file
+  xmlDocPtr doc;
+  xmlNodePtr node = parseXMLFile(self->cfgFile, "Graph", &doc);
+
+  if (!node)
+  {
+    xmlFreeDoc(doc);
+    return false;
+  }
+
+  MatNd* q_dot = MatNd_createLike(self->q);
+  MatNd* changedQ = MatNd_createLike(self->q);
+  MatNd* changedQ_dot = MatNd_createLike(self->q);
+  bool success = RcsGraph_parseModelStateDetail(node, self, modelStateName,
+                                                timeStamp, q, changedQ, q_dot,
+                                                changedQ_dot);
+  MatNd_destroyN(3, q_dot, changedQ, changedQ_dot);
+
+  xmlFreeDoc(doc);
+
+  return success;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*******************************************************************************
+ * Allocates memory and initializes a RcsBody data structure from an XML node.
+ ******************************************************************************/
+// That's a pretty inefficient way of doing it and it should be improved.
+static const RcsBody* findBodyWithSuffix(const char* name, const RcsXmlParseCtx* ctx)
+{
+  if (!name)
   {
     return NULL;
   }
 
-  RCHECK(self);
-  RCHECK(suffix);
-  RCHECK(A_group);
-  RcsBody* root = RCSBODY_BY_ID(self, rootId);
+  const RcsBody* bdy = RcsGraph_getBodyByName(ctx->graph, name);
 
-  // Body name
+  if (bdy)
+  {
+    return bdy;
+  }
+
+  char suffixedBdy[RCS_MAX_NAMELEN];
+  strcpy(suffixedBdy, name);
+
+  for (int i=0; i<ctx->level; ++i)
+  {
+    if (!bdy)
+    {
+      strcat(suffixedBdy, ctx->suffixAtGroup[i]);
+      bdy = RcsGraph_getBodyByName(ctx->graph, suffixedBdy);
+    }
+  }
+
+  return bdy;
+}
+
+static RcsBody* RcsBody_fromXML(xmlNode* bdyNode, const RcsXmlParseCtx* ctx)
+{
+  RCHECK(bdyNode);
+
+  // Body name, unique default or as specified in the xml file
   char name[RCS_MAX_NAMELEN];
-  snprintf(name, RCS_MAX_NAMELEN, "body %d", self->nBodies);
-
-  // The name as indicated in the xml file
+  snprintf(name, RCS_MAX_NAMELEN, "body %d", ctx->graph->nBodies);
   getXMLNodePropertyStringN(bdyNode, "name", name, RCS_MAX_NAMELEN);
   if (strlen(name)>10)
   {
@@ -1189,45 +1520,42 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
                "The name \"GenericBody\" is reserved for internal use");
   }
 
-  RLOG(5, "Body %s: firstInGroup is %s",
-       name, firstInGroup ? "TRUE" : "FALSE");
+  bool groupRoot = false;
+  const char* prevBdyName = getXMLNodePropertyStringPtr(bdyNode, "prev");
+  const RcsBody* parentBdy = NULL;
 
-  char msg[RCS_MAX_NAMELEN] = "";
-  RcsBody* parentBdy = root;
-  if (getXMLNodePropertyStringN(bdyNode, "prev", msg, RCS_MAX_NAMELEN) > 0)
+  // Here we are within a group on the root level
+  if (!prevBdyName)
   {
-    if (parentBdy && firstInGroup)
+    if (ctx->parentGroup)
     {
-      RLOG(1, "WARNING: \"prev\"-tag \"%s\" supplied in body \"%s\", but also in "
-           "group; body information will be overridden (level: %d)", msg, name, level);
+      RLOG(1, "!!!!!!!!!!!!!!!!!!!! GROUP ROOT BODY FOUND : %s", name);
+      groupRoot = true;
+      prevBdyName = getXMLNodePropertyStringPtr(ctx->parentGroup, "prev");
     }
-
-    // If the body is the first in a group, we search its parent without the
-    // group suffix. Otherwise, the suffix is appended to the name to be
-    // searched. This way, we don't need to specify the suffix within a
-    // group, so that the group can be used generically.
-    if (!firstInGroup)
+    else
     {
-      // first try to find the body with suffix
-      char bodyNameWithSuffix[RCS_MAX_NAMELEN];
-      snprintf(bodyNameWithSuffix, RCS_MAX_NAMELEN, "%s%s", msg, suffix);
-      parentBdy = RcsGraph_getBodyByName(self, bodyNameWithSuffix);
-    }
-
-    if (!parentBdy)
-    {
-      // if we did not find the a body with the group suffix, let's see if
-      // there is one without
-      parentBdy = RcsGraph_getBodyByName(self, msg);
+      RLOG(1, "!!!!!!!!!!!!!!!!!!!! TOP LEVEL ROOT BODY FOUND : %s", name);
     }
   }
+  // Here we are within a group and search through all suffix concatenations.
+  else // if (prevBdyName)
+  {
+    RLOG(1, "!!!!!!!!!!!!!!!!!!!! INTERMEDIATE BODY FOUND : %s", name);
+  }
 
+  parentBdy = findBodyWithSuffix(prevBdyName, ctx);
+
+
+  if (parentBdy)
+  {
+    RLOG(1, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx Found parentBdy: '%s' - suffix: '%s'",
+         parentBdy->name, ctx->suffix);
+  }
 
   // Get the body with the given parent-id from the graph's body array. The
   // RcsGraph_insertGraphBody() method already connects it.
-  RLOG(5, "Adding %s with parent %s (%s)",
-       name, parentBdy ? parentBdy->name : "NULL", msg);
-  RcsBody* b = RcsGraph_insertGraphBody(self, parentBdy ? parentBdy->id : -1);
+  RcsBody* b = RcsGraph_insertGraphBody(ctx->graph, parentBdy ? parentBdy->id : -1);
 
   RLOG(5, "Inserted Body into Graph: name=%s id=%d parent=%d "
        "prev=%d next=%d first=%d last=%d",
@@ -1236,9 +1564,8 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
 
   // Assign body names
   snprintf(b->bdyXmlName, RCS_MAX_NAMELEN, "%s", name);
-  snprintf(b->bdySuffix, RCS_MAX_NAMELEN, "%s", suffix);
-  snprintf(b->name, RCS_MAX_NAMELEN, "%s%s", name, suffix);
-
+  snprintf(b->bdySuffix, RCS_MAX_NAMELEN, "%s", ctx->suffix);
+  snprintf(b->name, RCS_MAX_NAMELEN, "%s%s", name, ctx->suffix);
 
   // Check if we found a first body in the group whose including group has
   // rigid_body_joints defined. In this case, we create the rigid body joints
@@ -1248,19 +1575,19 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   double q_rbj[12];
   VecNd_setZero(q_rbj, 12);
 
-  if (firstInGroup)
+  if (groupRoot)
   {
     RLOG(5, "First group body \"%s\" is first one in a group with parent \"%s\"",
          name, parentBdy ? parentBdy->name : "NULL");
 
     if (parentBdy)
     {
-      hasGroupRBJTag = getXMLNodeProperty(parentGroupNode, "rigid_body_joints");
+      hasGroupRBJTag = getXMLNodeProperty(ctx->parentGroup, "rigid_body_joints");
 
       REXEC(5)
       {
         char tmp[RCS_MAX_NAMELEN] = "";
-        getXMLNodePropertyStringN(parentGroupNode, "name", tmp, RCS_MAX_NAMELEN);
+        getXMLNodePropertyStringN(ctx->parentGroup, "name", tmp, RCS_MAX_NAMELEN);
         RMSG("Body in group \"%s\": %s rigid_body_joints tag",
              tmp, hasGroupRBJTag ? "Found" : "Did not find");
       }
@@ -1268,7 +1595,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
       if (hasGroupRBJTag)
       {
         RLOG(5, "Assigning rbjNode to parentGroupNode");
-        rbjNode = parentGroupNode;
+        rbjNode = ctx->parentGroup;
       }
     }
   }
@@ -1293,7 +1620,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   }
 
   // Physics simulation
-  strcpy(msg, "none");
+  char msg[RCS_MAX_NAMELEN] = "none";
   getXMLNodePropertyStringN(bdyNode, "physics", msg, RCS_MAX_NAMELEN);
 
   if (STREQ(msg, "none"))
@@ -1369,7 +1696,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
          "%s", b->name, nStr, "rigid_body_joints",
          b->rigid_body_joints ? "true" : "false");
 
-    RcsJoint* rbj0 = RcsBody_createRBJ(self, b, q_rbj);
+    RcsJoint* rbj0 = RcsBody_createRBJ(ctx->graph, b, q_rbj);
 
     // Determine constraint dofs for physics simulation. If a dof is
     // constrained will be interpreted by a "0" in the joint's weightMetric
@@ -1377,7 +1704,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
     if (nStr == 12)
     {
       unsigned int checkRbjNum = 0;
-      RCSJOINT_TRAVERSE_FORWARD(self, rbj0)
+      RCSJOINT_TRAVERSE_FORWARD(ctx->graph, rbj0)
       {
         JNT->weightMetric = q_rbj[6 + checkRbjNum];
         checkRbjNum++;
@@ -1390,7 +1717,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
     // construction. If there is a transformation coming from a group, it needs
     // to be applied to the first of the six rigid body joints. We can simply
     // clone it.
-    HTr_copy(&rbj0->A_JP, A_group);
+    HTr_copy(&rbj0->A_JP, &ctx->groupTf);
   }
 
 
@@ -1398,7 +1725,7 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   // Body color. The default color is the one specified in the bodie's xml
   // description
   char bColor[RCS_MAX_NAMELEN];
-  strcpy(bColor, defaultColor);
+  strcpy(bColor, ctx->defaultColor);
   getXMLNodePropertyStringN(bdyNode, "color", bColor, RCS_MAX_NAMELEN);
 
   // Create all shapes. This must be done before computing the inertia tensor,
@@ -1456,8 +1783,8 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
 
       // If a non-identity group transform is given, it needs to be applied to
       // the first joint only.
-      RcsBody_initJoint(self, b, jntNode, suffix,
-                        xmlJntCount == 0 ? A_group : HTr_identity());
+      RcsBody_initJoint(ctx->graph, b, jntNode, ctx->suffix,
+                        xmlJntCount == 0 ? &ctx->groupTf : HTr_identity());
       nJoints++;
       xmlJntCount++;
     }
@@ -1467,18 +1794,11 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   // If the body is not attached to any joint and the group transform is not
   // the identity matrix, the group transform is applied to the bodies relative
   // transformation. If it doesn't exist, it will be created.
-  if ((nJoints == 0) && (HTr_isIdentity(A_group) == false))
+  if ((nJoints == 0) && (HTr_isIdentity(&ctx->groupTf) == false))
   {
-    HTr_transformSelf(&b->A_BP, A_group);
+    HTr_transformSelf(&b->A_BP, &ctx->groupTf);
     RLOG(5, "Transformed body \"%s\"", b->name);
   }
-
-  // Reset the groups transform, it only must be applied to the first body.
-  // \todo: This must go. All bodies without parent (the ones on root level
-  //        next to the level's root) must be transformed.
-#ifndef TRANSFORM_ROOT_NEXT
-  HTr_setIdentity(A_group);
-#endif
 
   // Search for sensors attached to the body
   xmlNodePtr sensorNode = bdyNode->children;
@@ -1486,523 +1806,177 @@ static RcsBody* RcsBody_createFromXML(RcsGraph* self,
   {
     if (isXMLNodeName(sensorNode, "Sensor"))
     {
-      RcsBody* mountBdy = &self->bodies[self->nBodies-1];
-      RcsSensor_initFromXML(sensorNode, mountBdy, self);
+      RcsSensor_initFromXML(sensorNode, b, ctx->graph);
     }
     sensorNode = sensorNode->next;
   }
 
-
-  return &self->bodies[self->nBodies-1];
-}
-
-/*******************************************************************************
-*
- ******************************************************************************/
-static void parseOpenRaveBody(xmlNodePtr node, RcsGraph* self)
-{
-  // The node points to an OpenRave file
-
-  char tmp[RCS_MAX_FILENAMELEN];
-  strcpy(tmp, "");
-
-  // check if prev tag is provided --> first body of openrave graph will be
-  // attached to it
-  RcsBody* pB = NULL;
-  if (getXMLNodePropertyStringN(node, "prev", tmp, RCS_MAX_FILENAMELEN) > 0)
-  {
-    pB = RcsGraph_getBodyByName(self, tmp);
-    RCHECK_MSG(pB, "Body \"%s\" not found, which was specified as prev for an OpenRave node", tmp);
-  }
-
-  // Get filename
-  strcpy(tmp, "");
-  getXMLNodePropertyStringN(node, "file", tmp, RCS_MAX_FILENAMELEN);
-
-  // check if q0 is provided and read it
-  double* q0 = NULL;
-  unsigned int nq = 0;
-  if (getXMLNodeProperty(node, "q0"))
-  {
-    RLOGS(1, "Found q0 tag --> overriding initial values of OpenRave file");
-
-    // get number of provided q0 values
-    char q_str[512];
-    getXMLNodePropertyStringN(node, "q0", q_str, 512);
-    nq = String_countSubStrings(q_str, " ");
-
-    // read q0 values
-    q0 = RNALLOC(nq, double);
-    getXMLNodePropertyVecN(node, "q0", q0, nq);
-
-    // convert to radian
-    VecNd_constMulSelf(q0, M_PI / 180.0, nq);
-  }
-
-  // parse OpenRave file
-  RcsGraph_createBodiesFromOpenRAVEFile(self, pB, tmp, q0, nq);
-
-  // cleanup
-  RFREE(q0);
-
+  return b;
 }
 
 /*******************************************************************************
  *
  ******************************************************************************/
-static void parseURDFFile(xmlNodePtr node, RcsGraph* self, const char* suffix)
+static void parseGraphTag(xmlNodePtr node, const RcsXmlParseCtx* calling_ctx)
 {
-  // check if prev tag is provided --> first body of URDF graph will be
-  // attached to it
-  char tmp[RCS_MAX_FILENAMELEN] = "";
-  RcsBody* pB = NULL;
-  if (getXMLNodePropertyStringN(node, "prev", tmp, RCS_MAX_FILENAMELEN) > 0)
+
+  if (getXMLNodeProperty(node, "resourcePath"))
   {
-    pB = RcsGraph_getBodyByName(self, tmp);
-    RCHECK_MSG(pB, "Body \"%s\" not found, which was specified as prev for"
-               " an URDF node", tmp);
-  }
+    char* resourceDir = RNALLOC(1024, char);
+    getXMLNodePropertyStringN(node, "resourcePath", resourceDir, 1024);
 
-  // Get filename
-  strcpy(tmp, "");
-  getXMLNodePropertyStringN(node, "file", tmp, RCS_MAX_FILENAMELEN);
-  char filename[RCS_MAX_FILENAMELEN] = "";
-  bool urdfExists = Rcs_getAbsoluteFileName(tmp, filename);
-  RCHECK_MSG(urdfExists, "Couldn't open urdf file \"%s\"", tmp);
-  // parse URDF file
+    char* saveptr = NULL;
+    char* token = String_safeStrtok(resourceDir, " ", &saveptr);
 
-  // New extension = suffix + new group name
-  char urdfSuffix[RCS_MAX_NAMELEN] = "", ndExt[RCS_MAX_NAMELEN] = "";
-  getXMLNodePropertyStringN(node, "suffix", urdfSuffix, RCS_MAX_NAMELEN);
-  strcpy(ndExt, suffix);
-  strcat(ndExt, urdfSuffix);
-
-  HTr A_local;
-  HTr_setIdentity(&A_local);
-  getXMLNodePropertyHTr(node, "transform", &A_local);
-  unsigned int dof = 0;
-  int urdfRootId = RcsGraph_rootBodyFromURDFFile(self, filename, ndExt,
-                                                 &A_local, &dof);
-  RCHECK_MSG(urdfRootId != -1, "Couldn't get URDF root from file \"%s\"", filename);
-  self->dof += dof;
-  self->q = MatNd_realloc(self->q, self->dof, 1);
-
-  RcsBody* urdfRoot = &self->bodies[urdfRootId];
-
-  // There is no direct way to determine whether the root link should be fixed or free.
-  // However, we can easily use a rgid_body_joints xml parameter to determine this.
-  bool hasRBJTag = getXMLNodeProperty(node, "rigid_body_joints");
-  double q_rbj[12];
-  VecNd_setZero(q_rbj, 12);
-  // parse rigid body joints tag
-  unsigned int nRBJTagStr = 0;
-  if (hasRBJTag == true)
-  {
-    urdfRoot->rigid_body_joints = true;
-    nRBJTagStr = getXMLNodeNumStrings(node, "rigid_body_joints");
-
-    switch (nRBJTagStr)
+    while (token)
     {
-      case 1:
-        getXMLNodePropertyBoolString(node, "rigid_body_joints",
-                                     &urdfRoot->rigid_body_joints);
-        break;
-
-      case 6:
-        getXMLNodePropertyVecN(node, "rigid_body_joints", q_rbj, 6);
-
-        // convert Euler angles from degrees to radians
-        Vec3d_constMulSelf(&q_rbj[3], M_PI / 180.0);
-        break;
-
-      case 12:
-        getXMLNodePropertyVecN(node, "rigid_body_joints", q_rbj, 12);
-
-        // convert Euler angles from degrees to radians
-        Vec3d_constMulSelf(&q_rbj[3], M_PI / 180.0);
-        break;
-
-      default:
-        RFATAL("Tag \"rigid_body_joints\" of body \"%s\" has %d entries"
-               " - should be 6 or 1", urdfRoot->name, nRBJTagStr);
-    }
-
-    NLOG(5, "[%s]: Found %d strings in rigid_body_joint tag \"%s\", flag is "
-         "%s", urdfRoot->name, nStr, "rigid_body_joints",
-         urdfRoot->rigid_body_joints ? "true" : "false");
-  }
-  // create rigid body joints if requested
-  if (urdfRoot->rigid_body_joints)
-  {
-    RcsJoint* rbj0 = RcsBody_createRBJ(self, urdfRoot, q_rbj);
-
-    // Determine constraint dofs for physics simulation. If a dof is
-    // constrained will be interpreted by a "0" in the joint's weightMetric
-    // property.
-    if (nRBJTagStr == 12)
-    {
-      unsigned int checkRbjNum = 0;
-      RCSJOINT_TRAVERSE_FORWARD(self, rbj0)
+      // Directly use token instead of copying via sscanf
+      char* expanded = String_expandEnvironmentVariables(token);
+      if (expanded)
       {
-        JNT->weightMetric = q_rbj[6 + checkRbjNum];
-        checkRbjNum++;
-      }
-      RCHECK(checkRbjNum == 6);
-    }
-
-    // Rigid body joints don't have any relative transformations after
-    // construction. If there is a transformation coming from a group, it
-    // needs to be applied to the first of the six rigid body joints. We can
-    // simply clone it.
-    if (HTr_isIdentity(&A_local) == false)
-    {
-      HTr_copy(&rbj0->A_JP, &A_local);
-
-      // since the group transform was already applied to the body, remove it
-      // there again
-      HTr_setIdentity(&urdfRoot->A_BP);
-    }
-  }
-  else if (urdfRoot->physicsSim != RCSBODY_PHYSICS_NONE)
-  {
-    // no rigid body joints - urdf root is fixed to it's parent. Make sure
-    // that the physics simulation treats it correctly.
-    if (pB != NULL && (pB->physicsSim == RCSBODY_PHYSICS_DYNAMIC ||
-                       pB->physicsSim == RCSBODY_PHYSICS_FIXED))
-    {
-      // or to fixed if the parent is dynamic
-      urdfRoot->physicsSim = RCSBODY_PHYSICS_FIXED;
-    }
-    else
-    {
-      // set it to kinematic if the parent is kinematic or not participating
-      // at all
-      urdfRoot->physicsSim = RCSBODY_PHYSICS_KINEMATIC;
-    }
-  }
-
-}
-
-/*******************************************************************************
-*
-* This function recursively parses from the given xml node and
-* initializes the bodies. It implements a depth-first traversal through
-* the RcsGraph tree by the following rules:
-*
-* 1. If a "Graph" or "Group" node has been found, first its children,
-* and then its "next" nodes on the same level are called recursively.
-* Then the function returns (to the upper level).
-*
-* 2. If another node ("Body" or some junk memory) are found, the
-* corresponding body will be created and the "next" node on the same
-* level is called recursively.
-*
-* The transformation A is the relative transformation of a group. It
-* will be resetted to identity when a body
-* has successfully created (in RcsBody_createFromXML(...)). That's
-* the case since it only has to be applied to the first body of the
-* group.
-*
-******************************************************************************/
-static void RcsGraph_parseBodies(xmlNodePtr node,
-                                 RcsGraph* self,
-                                 const char* gCol,
-                                 const char* suffix,
-                                 xmlNodePtr parentGroupNode,
-                                 HTr* A,
-                                 bool firstInGroup,
-                                 int level,
-                                 int rootId[RCSGRAPH_MAX_GROUPDEPTH],
-                                 bool verbose)
-{
-  static int recursionDepth = 0;
-  recursionDepth++;
-  RLOG(5, "Recursion depth: %d   level: %d", recursionDepth, level);
-
-  if (node == NULL)
-  {
-    recursionDepth--;
-    return;
-  }
-
-  RCHECK_MSG(level < RCSGRAPH_MAX_GROUPDEPTH - 2, "Group level exceeds maximum "
-             "level: %d >= %d", level, RCSGRAPH_MAX_GROUPDEPTH);
-
-  // Set debug level to 9 when verbose
-  long lDl = RcsLogLevel;
-  if (verbose == true)
-  {
-    RcsLogLevel = 9;
-  }
-
-  if (isXMLNodeName(node, "Graph"))
-  {
-    RLOG(9, "Found Graph node - descending - firstInGroup is %d",
-         firstInGroup);
-
-    if (getXMLNodeProperty(node, "resourcePath"))
-    {
-      char* resourceDir = RNALLOC(1024, char);
-      getXMLNodePropertyStringN(node, "resourcePath", resourceDir, 1024);
-
-      char* saveptr;
-      char* pch = String_safeStrtok(resourceDir, " ", &saveptr);
-      char* path = RNALLOC(256, char);
-      int nPaths = 0;
-
-      // Determine paths by space-separated tags
-      while (pch != NULL)
-      {
-        sscanf(pch, "%255s", path);
-        char* ePath = String_expandEnvironmentVariables(path);
-        Rcs_addResourcePath(ePath);
-        RFREE(ePath);
-        RLOG(9, "Adding path %d to ressource path: \"%s\"", nPaths++, path);
-        pch = String_safeStrtok(NULL, " ", &saveptr);
+        Rcs_addResourcePath(expanded);
+        NLOG(0, "Adding to resource path: \"%s\"", expanded);
+        RFREE(expanded);
       }
 
-      RFREE(resourceDir);
-      RFREE(path);
+      token = String_safeStrtok(NULL, " ", &saveptr);
     }
 
-    RcsGraph_parseBodies(node->children, self, gCol, suffix,
-                         parentGroupNode, A, firstInGroup, level, rootId, verbose);
+    RFREE(resourceDir);
+  }
 
-    // After we parsed the children of the graph, the graph has been
-    // initialized: We reset the firstInGroup flag. This will lead to
-    // problems if there's no body created inside a <Graph> tag. TODO: verify
-    // and warn
-    RLOG(9, "Ascending from Graph node - firstInGroup is false");
-    firstInGroup = false;
-    RcsGraph_parseBodies(node->next, self, gCol, suffix,
-                         parentGroupNode, A, firstInGroup, level, rootId, verbose);
+  RcsXmlParseCtx ctx = *calling_ctx;
 
-    // Then we look for the generic bodies and link them accordingly
-    for (int i = 0; i < 10; i++)
+  if (node->children)
+  {
+    RcsGraph_parseRecursive(node->children, &ctx);
+  }
+
+  /* ctx = *calling_ctx; */
+  /* RcsGraph_parseRecursive(node->next, &ctx); */
+
+  // Then we look for the generic bodies and link them accordingly
+  for (int i = 0; i < 10; i++)
+  {
+    char a[16], gBody[32];
+    sprintf(a, "GenericBody%d", i);
+
+    if (getXMLNodePropertyStringN(node, a, gBody, 32))
     {
-      char a[16], gBody[32];
-      sprintf(a, "GenericBody%d", i);
+      RLOG(5, "Linking \"%s\" to \"%s\"", a, gBody);
+      RcsBody* b = RcsGraph_getBodyByName(ctx.graph, gBody);
 
-      if (getXMLNodePropertyStringN(node, a, gBody, 32))
+      if (b == NULL)
       {
-        RLOG(5, "Linking \"%s\" to \"%s\"", a, gBody);
-        RcsBody* b = RcsGraph_getBodyByName(self, gBody);
+        RLOG(1, "%s points to \"%s\", which does not exist!",
+             a, gBody);
+      }
+      else
+      {
+        RcsBody* l = RcsGraph_linkGenericBody(ctx.graph, i, b->name);
 
-        if (b == NULL)
+        if (l == NULL)
         {
-          RLOG(1, "%s points to \"%s\", which does not exist!",
-               a, gBody);
+          RLOG(1, "Body \"%s\" not found - %s points to NULL", gBody, a);
         }
         else
         {
-          RcsBody* l = RcsGraph_linkGenericBody(self, i, b->name);
-
-          if (l == NULL)
-          {
-            RLOG(1, "Body \"%s\" not found - %s points to NULL", gBody, a);
-          }
-          else
-          {
-            RLOG(5, "%s now points to \"%s\"", a, l->name);
-          }
+          RLOG(5, "%s now points to \"%s\"", a, l->name);
         }
       }
+    }
 
-    }   // for(int i=0;i<10;i++)
+  }   // for(int i=0;i<10;i++)
 
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static void parseGroupTag(xmlNodePtr node, const RcsXmlParseCtx* calling_ctx)
+{
+  RcsXmlParseCtx ctx = *calling_ctx;
+
+  // Propagation of group transformation to next level
+  HTr_setIdentity(&ctx.groupTf);
+  getXMLNodePropertyHTr(node, "transform", &ctx.groupTf);
+
+  // New extension = suffix + new group name
+  const char* groupSuffix = getXMLNodePropertyStringPtr(node, "name");
+  if (groupSuffix)
+  {
+    snprintf(ctx.suffix, RCS_MAX_NAMELEN, "%s%s", calling_ctx->suffix, groupSuffix);
+    snprintf(ctx.suffixAtGroup[ctx.level], RCS_MAX_NAMELEN, "%s", groupSuffix);
+  }
+
+  // Groups default color, inherited from current levels' color
+  getXMLNodePropertyStringN(node, "color", ctx.defaultColor, RCS_MAX_NAMELEN);
+
+  // Copy current root node and descend one level
+  ctx.level++;
+  ctx.parentGroup = node;
+
+  // Parse children
+  const char* prevName = getXMLNodePropertyStringPtr(node, "prev");
+  RLOG(1, "Start parsing group '%s' with prev '%s'",
+       groupSuffix ? groupSuffix : "", prevName ? prevName : "");
+
+  if (node->children)
+  {
+    RcsGraph_parseRecursive(node->children, &ctx);
+  }
+
+  RLOG(1, "End parsing group '%s' with prev '%s'",
+       groupSuffix ? groupSuffix : "", prevName ? prevName : "");
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+static void RcsGraph_parseRecursive(xmlNodePtr node, RcsXmlParseCtx* calling_ctx)
+{
+
+  if (STREQ((char*) node->name, "Graph") ||
+      STREQ((char*) node->name, "Group") ||
+      STREQ((char*) node->name, "Body"))
+  {
+    RLOG(1, "***** NEW RECURSION: '%s' *****\n", (char*) node->name);
+  }
+  RCHECK_MSG(calling_ctx->level < RCSGRAPH_MAX_GROUPDEPTH - 2, "Group level exceeds maximum "
+             "level: %d >= %d", calling_ctx->level, RCSGRAPH_MAX_GROUPDEPTH);
+
+  if (isXMLNodeName(node, "Graph"))
+  {
+    parseGraphTag(node, calling_ctx);
+    HTr_setIdentity(&calling_ctx->groupTf);
   }
   else if (isXMLNodeName(node, "Group"))
   {
-    char ndExt[32], tmp[32] = "", pGroupSuffix[32];
-
-    // Propagation of group transformation to next level
-    HTr A_local, A_group;
-    HTr_copy(&A_group, A);
-    HTr_setIdentity(&A_local);
-    getXMLNodePropertyHTr(node, "transform", &A_local);
-    HTr_transformSelf(&A_group, &A_local);
-
-    // New extension = suffix + new group name
-    getXMLNodePropertyStringN(node, "name", tmp, 32);
-    snprintf(pGroupSuffix, 32, "%s", suffix);
-    snprintf(ndExt, 32, "%s%s", suffix, tmp);
-
-    // Groups default color, inherited from current levels' color
-    char col[RCS_MAX_NAMELEN];
-    snprintf(col, RCS_MAX_NAMELEN, "%s", gCol);
-    getXMLNodePropertyStringN(node, "color", col, RCS_MAX_NAMELEN);
-
-    REXEC(9)
-    {
-      const RcsBody* levelRoot = RCSBODY_BY_ID(self, rootId[level]);
-      RMSG("[Level %d -> %d]: \n\tNew group \"%s\" with root \"%s\" "
-           "and color \"%s\"", level, level + 1, tmp,
-           levelRoot ? levelRoot->name : "NULL", col);
-
-      fprintf(stderr, "\tA_prev             %5.3f   %5.3f   %5.3f\n",
-              A->org[0], A->org[1], A->org[2]);
-      fprintf(stderr, "\tA_local            %5.3f   %5.3f   %5.3f\n",
-              A_local.org[0], A_local.org[1], A_local.org[2]);
-      fprintf(stderr, "\tApplying transform %5.3f   %5.3f   %5.3f\n",
-              A_group.org[0], A_group.org[1], A_group.org[2]);
-    }
-
-    // Copy current root node and descend one level
-    rootId[level + 1] = rootId[level];
-    level++;
-
-    if (getXMLNodePropertyStringN(node, "prev", tmp, 32) > 0)
-    {
-      RcsBody* parent = RcsGraph_getBodyByName(self, tmp);
-      if (parent)
-      {
-        RCHECK(level > 0);
-        rootId[level] = parent->id;
-        RLOG(9, "Setting root[%d] to \"%s\"", level, parent ? parent->name : "NULL");
-      }
-    }
-
-    RcsGraph_parseBodies(node->children, self, col, ndExt,
-                         node, &A_group, true, level, rootId,
-                         verbose);
-
-    RLOG(9, "[Level %d -> %d]: back from group \"%s\"", level, level - 1, tmp);
-
-    // After we parsed the children of the group, the group has been
-    // initialized: The level is decremented, and the suffix is resetted.
-    level--;
-    strcpy(ndExt, suffix);
-
-    RcsGraph_parseBodies(node->next, self, gCol, ndExt,
-                         node, A, firstInGroup, level, rootId, verbose);
+    parseGroupTag(node, calling_ctx);
+    HTr_setIdentity(&calling_ctx->groupTf);
   }
   else if (isXMLNodeName(node, "OpenRave"))
   {
-    parseOpenRaveBody(node->next, self);
-    RcsGraph_parseBodies(node->next, self, gCol, suffix,
-                         parentGroupNode, A, firstInGroup, level, rootId, verbose);
+    parseOpenRaveBody(node->next, calling_ctx->graph);
   }
   else if (isXMLNodeName(node, "URDF"))
   {
-    parseURDFFile(node->next, self, suffix);
-    RcsGraph_parseBodies(node->next, self, gCol, suffix,
-                         parentGroupNode, A, firstInGroup, level, rootId, verbose);
+    parseURDFFile(node->next, calling_ctx->graph, calling_ctx->suffix);
   }
-
-
-
-
-
-
-
-
-
   else // can be a body or some junk
   {
-    RLOG(19, "Creating new body with root[%d] \"%s\"", level,
-         (level > 0) ? RCSBODY_NAME_BY_ID(self, rootId[level]) : "NULL");
-
-    RcsBody* nr = RcsBody_createFromXML(self, node, gCol, suffix, parentGroupNode,
-                                        A, firstInGroup, level, rootId[level],
-                                        verbose);
-
-#ifndef TRANSFORM_ROOT_NEXT
-    if (nr)
+    if (isXMLNodeName(node, "Body"))
     {
-      firstInGroup = false;
+      RcsBody_fromXML(node, calling_ctx);
+      HTr_setIdentity(&calling_ctx->groupTf);
     }
 
-#else
-    if (firstInGroup && !node->next)
-    {
-      firstInGroup = false;
-      HTr_setIdentity(A);
-    }
-#endif
-    RcsGraph_parseBodies(node->next, self, gCol, suffix,
-                         parentGroupNode, A, firstInGroup, level, rootId, verbose);
-
-    RLOG(19, "Falling back - root[%d] \"%s\"",
-         level, RCSBODY_NAME_BY_ID(self, rootId[level]));
   }
 
-
-
-  // Reset debug level
-  if (verbose)
+  if (node->next)
   {
-    RcsLogLevel = lDl;
+    RcsGraph_parseRecursive(node->next, calling_ctx);
   }
-
-  recursionDepth--;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-bool RcsGraph_setModelStateFromXML(RcsGraph* self, const char* modelStateName,
-                                   int timeStamp)
-{
-  if ((!self) || (!modelStateName))
-  {
-    RLOG(4, "Graph or model state name are NULL");
-    return false;
-  }
-
-  // Read XML file
-  xmlDocPtr doc = NULL;
-  xmlNodePtr node = parseXMLFile(self->cfgFile, "Graph", &doc);
-
-  if (!node)
-  {
-    RLOG(4, "Failed to read xml file \"%s\"", self->cfgFile);
-    xmlFreeDoc(doc);
-    return false;
-  }
-
-  bool success = RcsGraph_parseModelState(node, self, modelStateName);
-  if (!success)
-  {
-    RLOG(1, "Failed to parse model_state \"%s\"", modelStateName);
-  }
-
-  xmlFreeDoc(doc);
-
-  return success;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-bool RcsGraph_getModelStateFromXML(MatNd* q, const RcsGraph* self,
-                                   const char* modelStateName, int timeStamp)
-{
-  if ((!self) || (!modelStateName))
-  {
-    return false;
-  }
-
-  // Read XML file
-  xmlDocPtr doc;
-  xmlNodePtr node = parseXMLFile(self->cfgFile, "Graph", &doc);
-
-  if (!node)
-  {
-    xmlFreeDoc(doc);
-    return false;
-  }
-
-  MatNd* q_dot = MatNd_createLike(self->q);
-  MatNd* changedQ = MatNd_createLike(self->q);
-  MatNd* changedQ_dot = MatNd_createLike(self->q);
-  bool success = RcsGraph_parseModelStateDetail(node, self, modelStateName,
-                                                timeStamp, q, changedQ, q_dot,
-                                                changedQ_dot);
-  MatNd_destroyN(3, q_dot, changedQ, changedQ_dot);
-
-  xmlFreeDoc(doc);
-
-  return success;
 }
 
 /*******************************************************************************
@@ -2027,15 +2001,6 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
   self->q = MatNd_create(0, 1);
   self->q_dot = MatNd_create(0, 1);
 
-  // Recurse through bodies
-  HTr A_rel;
-  HTr_setIdentity(&A_rel);
-  int rootId[RCSGRAPH_MAX_GROUPDEPTH];
-  for (unsigned int i=0; i<RCSGRAPH_MAX_GROUPDEPTH; ++i)
-  {
-    rootId[i] = -1;// 0;
-  }
-
   // Initialize generic bodies to refer to no graph body.
   for (int i = 0; i < RCS_NUM_GENERIC_BODIES; ++i)
   {
@@ -2043,18 +2008,17 @@ RcsGraph* RcsGraph_createFromXmlNode(const xmlNodePtr node)
   }
 
   // Recursively assemble all bodies, joints and shapes.
-  RcsGraph_parseBodies(node, self, "", "", NULL,
-                       &A_rel, false, 0, rootId, false);
+  RcsXmlParseCtx ctx = { 0 };   // everything 0 / false
+  ctx.graph = self;
+  HTr_setIdentity(&ctx.groupTf);
+  RcsGraph_parseRecursive(node, &ctx);
 
-  // Re-order joint indices to match depth-first traversal, and connect coupled
-  // joints
+  // Order joint indices for depth-first traversal, and connect coupled joints
   RcsGraph_makeJointsConsistent(self);
 
   // Apply model state
-  char mdlName[RCS_MAX_NAMELEN] = "";
-  int nBytes = getXMLNodePropertyStringN(node, "name", mdlName,
-                                         RCS_MAX_NAMELEN);
-  if (nBytes > 0)
+  const char* mdlName = getXMLNodePropertyStringPtr(node, "name");
+  if (mdlName)
   {
     RcsGraph_parseModelState(node, self, mdlName);
   }
