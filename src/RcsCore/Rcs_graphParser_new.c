@@ -47,7 +47,7 @@
 
 #include <float.h>
 
-
+#define SUFFIX_BACKWARDS
 
 typedef struct
 {
@@ -57,7 +57,6 @@ typedef struct
   // These contents are duplicated when assigning RcsXmlParseCtx child = *parent
   // Modifying the copy does not affect the parent.
   HTr        groupTf;                              ///< Accumulated group transform (value).
-  char       suffix[RCS_MAX_NAMELEN];              ///< Current name suffix.
   char       defaultColor[RCS_MAX_NAMELEN];        ///< Inherited default colour.
   char       suffixAtGroup[RCSGRAPH_MAX_GROUPDEPTH][RCS_MAX_NAMELEN];
   int        level;                                ///< Current depth in <Group> hierarchy.
@@ -1477,7 +1476,7 @@ bool RcsGraph_getModelStateFromXML(MatNd* q, const RcsGraph* self,
  * Allocates memory and initializes a RcsBody data structure from an XML node.
  ******************************************************************************/
 // That's a pretty inefficient way of doing it and it should be improved.
-static const RcsBody* findBodyWithSuffix(const char* name, const RcsXmlParseCtx* ctx)
+static const RcsBody* findBodyWithSuffix_(const char* name, const RcsXmlParseCtx* ctx, bool forward)
 {
   if (!name)
   {
@@ -1485,30 +1484,92 @@ static const RcsBody* findBodyWithSuffix(const char* name, const RcsXmlParseCtx*
   }
 
   const RcsBody* bdy = RcsGraph_getBodyByName(ctx->graph, name);
-
+  RLOG(1, "--- Checking body name '%s'", name);
   if (bdy)
   {
     return bdy;
   }
 
+  RCHECK(ctx->level<RCSGRAPH_MAX_GROUPDEPTH);
+
   char suffixedBdy[RCS_MAX_NAMELEN];
   strcpy(suffixedBdy, name);
 
-  for (int i=0; i<ctx->level; ++i)
+  if (forward)
   {
-    if (!bdy)
+    for (int i=0; i<ctx->level; ++i)
     {
-      strcat(suffixedBdy, ctx->suffixAtGroup[i]);
-      bdy = RcsGraph_getBodyByName(ctx->graph, suffixedBdy);
+      if (!bdy)
+      {
+        strcat(suffixedBdy, ctx->suffixAtGroup[i]);
+        bdy = RcsGraph_getBodyByName(ctx->graph, suffixedBdy);
+      }
+    }
+  }
+  else // backward
+  {
+    if (ctx->level==0)
+    {
+      return NULL;
+    }
+
+    for (int i=ctx->level-1; i>=0; --i)
+    {
+      if (!bdy)
+      {
+        strcat(suffixedBdy, ctx->suffixAtGroup[i]);
+        RLOG(1, "--- Checking body name '%s'", suffixedBdy);
+        bdy = RcsGraph_getBodyByName(ctx->graph, suffixedBdy);
+      }
     }
   }
 
   return bdy;
 }
 
+static const RcsBody* findBodyWithSuffix(const char* name, const RcsXmlParseCtx* ctx)
+{
+  const RcsBody* bdy = findBodyWithSuffix_(name, ctx, true);
+
+  if (!bdy)
+  {
+    bdy = findBodyWithSuffix_(name, ctx, false);
+  }
+
+  return bdy;
+}
+
+static void composeSuffix(const RcsXmlParseCtx* ctx, char* suffix)
+{
+  RCHECK(ctx->level<RCSGRAPH_MAX_GROUPDEPTH);
+
+  suffix[0] = '\0';
+
+  if (ctx->level==0)
+  {
+    return;
+  }
+
+#if defined SUFFIX_BACKWARDS
+  for (int i=ctx->level-1; i>=0; --i)
+  {
+    strcat(suffix, ctx->suffixAtGroup[i]);
+  }
+#else
+  for (int i=0; i<ctx->level; ++i)
+  {
+    strcat(suffix, ctx->suffixAtGroup[i]);
+  }
+#endif
+}
+
 static RcsBody* RcsBody_fromXML(xmlNode* bdyNode, const RcsXmlParseCtx* ctx)
 {
   RCHECK(bdyNode);
+
+  char suffix[RCS_MAX_NAMELEN] = "";
+  composeSuffix(ctx, suffix);
+
 
   // Body name, unique default or as specified in the xml file
   char name[RCS_MAX_NAMELEN];
@@ -1520,6 +1581,8 @@ static RcsBody* RcsBody_fromXML(xmlNode* bdyNode, const RcsXmlParseCtx* ctx)
                "The name \"GenericBody\" is reserved for internal use");
   }
 
+  RLOG(1, "******************** BODY : %s", name);
+
   bool groupRoot = false;
   const char* prevBdyName = getXMLNodePropertyStringPtr(bdyNode, "prev");
   const RcsBody* parentBdy = NULL;
@@ -1529,9 +1592,9 @@ static RcsBody* RcsBody_fromXML(xmlNode* bdyNode, const RcsXmlParseCtx* ctx)
   {
     if (ctx->parentGroup)
     {
-      RLOG(1, "!!!!!!!!!!!!!!!!!!!! GROUP ROOT BODY FOUND : %s", name);
       groupRoot = true;
       prevBdyName = getXMLNodePropertyStringPtr(ctx->parentGroup, "prev");
+      RLOG(1, "!!!!!!!!!!!!!!!!!!!! GROUP ROOT BODY FOUND : %s (prev is '%s')", name, prevBdyName);
     }
     else
     {
@@ -1547,10 +1610,16 @@ static RcsBody* RcsBody_fromXML(xmlNode* bdyNode, const RcsXmlParseCtx* ctx)
   parentBdy = findBodyWithSuffix(prevBdyName, ctx);
 
 
+
   if (parentBdy)
   {
     RLOG(1, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx Found parentBdy: '%s' - suffix: '%s'",
-         parentBdy->name, ctx->suffix);
+         parentBdy->name, suffix);
+  }
+  else
+  {
+    RLOG(1, "§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§ NOT Found parentBdy: '%s' - suffix: '%s'",
+         name, suffix);
   }
 
   // Get the body with the given parent-id from the graph's body array. The
@@ -1564,8 +1633,8 @@ static RcsBody* RcsBody_fromXML(xmlNode* bdyNode, const RcsXmlParseCtx* ctx)
 
   // Assign body names
   snprintf(b->bdyXmlName, RCS_MAX_NAMELEN, "%s", name);
-  snprintf(b->bdySuffix, RCS_MAX_NAMELEN, "%s", ctx->suffix);
-  snprintf(b->name, RCS_MAX_NAMELEN, "%s%s", name, ctx->suffix);
+  snprintf(b->bdySuffix, RCS_MAX_NAMELEN, "%s", suffix);
+  snprintf(b->name, RCS_MAX_NAMELEN, "%s%s", name, suffix);
 
   // Check if we found a first body in the group whose including group has
   // rigid_body_joints defined. In this case, we create the rigid body joints
@@ -1783,7 +1852,7 @@ static RcsBody* RcsBody_fromXML(xmlNode* bdyNode, const RcsXmlParseCtx* ctx)
 
       // If a non-identity group transform is given, it needs to be applied to
       // the first joint only.
-      RcsBody_initJoint(ctx->graph, b, jntNode, ctx->suffix,
+      RcsBody_initJoint(ctx->graph, b, jntNode, suffix,
                         xmlJntCount == 0 ? &ctx->groupTf : HTr_identity());
       nJoints++;
       xmlJntCount++;
@@ -1905,7 +1974,6 @@ static void parseGroupTag(xmlNodePtr node, const RcsXmlParseCtx* calling_ctx)
   const char* groupSuffix = getXMLNodePropertyStringPtr(node, "name");
   if (groupSuffix)
   {
-    snprintf(ctx.suffix, RCS_MAX_NAMELEN, "%s%s", calling_ctx->suffix, groupSuffix);
     snprintf(ctx.suffixAtGroup[ctx.level], RCS_MAX_NAMELEN, "%s", groupSuffix);
   }
 
@@ -1961,7 +2029,9 @@ static void RcsGraph_parseRecursive(xmlNodePtr node, RcsXmlParseCtx* calling_ctx
   }
   else if (isXMLNodeName(node, "URDF"))
   {
-    parseURDFFile(node->next, calling_ctx->graph, calling_ctx->suffix);
+    char suffix[RCS_MAX_NAMELEN] = "";
+    composeSuffix(calling_ctx, suffix);
+    parseURDFFile(node->next, calling_ctx->graph, suffix);
   }
   else // can be a body or some junk
   {
