@@ -500,12 +500,42 @@ void Rcs::SecondOrderLPFND::getTarget(double* x) const
   }
 }
 
+std::vector<double> Rcs::SecondOrderLPFND::getTarget() const
+{
+  std::vector<double> res(dim);
+
+  for (size_t i=0; i<dim; i++)
+  {
+    res[i] = filt[i]->getTarget();
+  }
+
+  return res;
+}
+
+double Rcs::SecondOrderLPFND::getTarget(size_t index) const
+{
+  RCHECK_MSG(index<dim, "index=%zu   dim=%zu", index, dim);
+  return filt[index]->getTarget();
+}
+
 void Rcs::SecondOrderLPFND::getPosition(double* x) const
 {
   for (size_t i=0; i<dim; i++)
   {
     x[i] = filt[i]->getPosition();
   }
+}
+
+std::vector<double> Rcs::SecondOrderLPFND::getPosition() const
+{
+  std::vector<double> res(dim);
+
+  for (size_t i=0; i<dim; i++)
+  {
+    res[i] = filt[i]->getPosition();
+  }
+
+  return res;
 }
 
 double Rcs::SecondOrderLPFND::getPosition(size_t index) const
@@ -520,6 +550,18 @@ void Rcs::SecondOrderLPFND::getVelocity(double* x_dot) const
   {
     x_dot[i] = filt[i]->getVelocity();
   }
+}
+
+std::vector<double> Rcs::SecondOrderLPFND::getVelocity() const
+{
+  std::vector<double> res(dim);
+
+  for (size_t i=0; i<dim; i++)
+  {
+    res[i] = filt[i]->getVelocity();
+  }
+
+  return res;
 }
 
 double Rcs::SecondOrderLPFND::getVelocity(size_t index) const

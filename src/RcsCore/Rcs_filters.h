@@ -34,6 +34,7 @@
 #ifndef RCS_FILTERS_H
 #define RCS_FILTERS_H
 
+#include <vector>
 #include <cstdio>
 
 
@@ -181,9 +182,13 @@ public:
   virtual void iterate(double* x_ddot);
   virtual void iterate();
   virtual void getTarget(double* x) const;
+  virtual double getTarget(size_t index) const;
+  virtual std::vector<double> getTarget() const;
   virtual void getPosition(double* x) const;
+  virtual std::vector<double> getPosition() const;
   virtual double getPosition(size_t index) const;
   virtual void getVelocity(double* x_dot) const;
+  virtual std::vector<double> getVelocity() const;
   virtual double getVelocity(size_t index) const;
   virtual void computeAcceleration(double* x_ddot, const double* goal) const;
   virtual size_t getDim() const;
