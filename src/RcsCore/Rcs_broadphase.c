@@ -37,6 +37,7 @@
 #include "Rcs_shape.h"
 #include "Rcs_collisionModel.h"
 #include "Rcs_Vec3d.h"
+#include "Rcs_basicMath.h"
 #include "Rcs_parser.h"
 #include "Rcs_macros.h"
 
@@ -454,38 +455,57 @@ static int RcsBroadPhase_computeTreeTreeNarrowPhase(const RcsBroadPhase* bp,
   int nNaiive = 0;
 
   // This is the "n" of n-choose-k (k is 2)
-  int n = bp->nTrees;
+  const int nTrees = bp->nTrees;
 
-  if (n == 0)
+  if (nTrees == 0)
   {
     return nNaiive;
   }
 
+  // n choose 2 pairs, each consisting of two ints
+  unsigned int nPairsTotal     = nTrees * (nTrees - 1) / 2;
+  unsigned int nIntsToAllocate = nPairsTotal * 2;
+
+  int* values = RNALLOC(nIntsToAllocate, int);
+  RCHECK_MSG(values, "Failed to allocate memory for %u tree pairs", nPairsTotal);
+
   // Dynamically allocate memory for the 2D array to store pairs
-  int* values = RNALLOC(n, int);
+  //int* values = RNALLOC(nck, int);
   int(*pairs)[2] = (int(*)[2])values;
   int pairCount = 0;
 
   // Generate and store pairs in the array
-  for (int i = 1; i <= n; i++)
+  for (int i = 0; i < nTrees-1; ++i)
   {
-    for (int j = i + 1; j <= n; j++)
+    for (int j = i + 1; j < nTrees; ++j)
     {
-      pairs[pairCount][0] = i-1;
-      pairs[pairCount][1] = j-1;
+      pairs[pairCount][0] = i;
+      pairs[pairCount][1] = j;
       pairCount++;
     }
   }
 
+  /* Sanity check should never fail. */
+  RCHECK_MSG(pairCount == nPairsTotal,
+             "Internal error: pairCount=%u, expected=%u",
+             pairCount, nPairsTotal);
+
   // Print the generated pairs
   NLOG(1, "%d Generated pairs:", pairCount);
-  for (int i = 0; i < pairCount; ++i)
+  for (int p = 0; p < pairCount; ++p)
   {
-    NLOG(1, "(%d, %d)", pairs[i][0], pairs[i][1]);
-    RCHECK(pairs[i][0] < (int)bp->nTrees);
-    RCHECK(pairs[i][1] < (int)bp->nTrees);
-    const RcsBroadPhaseTree* tree1 = &bp->trees[pairs[i][0]];
-    const RcsBroadPhaseTree* tree2 = &bp->trees[pairs[i][1]];
+
+    const unsigned int idx1 = (unsigned int)pairs[p][0];
+    const unsigned int idx2 = (unsigned int)pairs[p][1];
+
+    RCHECK_MSG(idx1 < nTrees && idx2 < nTrees,
+               "Tree index out of range: (%u,%u) of %u",
+               idx1, idx2, nTrees);
+
+
+
+    const RcsBroadPhaseTree* tree1 = &bp->trees[idx1];
+    const RcsBroadPhaseTree* tree2 = &bp->trees[idx2];
 
     nNaiive += tree1->nBodies*tree2->nBodies;
 

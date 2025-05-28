@@ -1463,16 +1463,17 @@ void RcsGraph_computeJointRecursionMask(const RcsGraph* self,
   }
 
   // Here the recursion starts
-  while (jnt->prevId!=-1)
+  do
   {
     if (jnt->jacobiIndex != -1)
     {
       mask->ele[jnt->jacobiIndex] = 1.0;
     }
 
-    jnt = &self->joints[jnt->prevId];
-  }
+    jnt = (jnt->prevId != -1) ? &self->joints[jnt->prevId] : NULL;
 
+  }
+  while (jnt);
 }
 
 /*******************************************************************************
