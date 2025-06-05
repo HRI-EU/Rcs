@@ -72,6 +72,27 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
     RLOG(1, "DepthRenderer might not work via SSH");
   }
 
+  // Create graphics context with pixel settings
+  osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
+  traits->x = 0;
+  traits->y = 0;
+  traits->width = width;
+  traits->height = height;
+  traits->windowDecoration = false;
+  traits->doubleBuffer = false;
+  traits->sharedContext = 0;
+  traits->pbuffer = true;
+
+  //traits->displayNum = 1;
+  osg::GraphicsContext::ScreenIdentifier si;
+  si.readDISPLAY();                      // parses $DISPLAY
+  traits->hostName   = si.hostName;
+  traits->displayNum = si.displayNum;    // 1 if $DISPLAY is ":1"
+  traits->screenNum  = si.screenNum;     // usually 0
+
+  osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
+  RCHECK(gc.valid());
+
   // Initialize viewer
   this->rootNode = new osg::Group;
   setSceneData(rootNode.get());
@@ -82,21 +103,6 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
 
   this->rgbImage = new osg::Image;
   rgbImage->allocateImage(width, height, 1, GL_RGBA, GL_FLOAT);
-
-  // Create graphics context with pixel settings
-  osg::ref_ptr<osg::GraphicsContext::Traits> traits;
-  traits = new osg::GraphicsContext::Traits;
-  traits->x = 0;
-  traits->y = 0;
-  traits->width = width;
-  traits->height = height;
-  traits->windowDecoration = false;
-  traits->doubleBuffer = false;
-  traits->sharedContext = 0;
-  traits->pbuffer = true;
-
-  osg::ref_ptr<osg::GraphicsContext> gc;
-  gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
   // Create depth and rgb camera and add as slave to the viewer. It shares
   // the main camera's view and propjection matrices
@@ -120,7 +126,7 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
 
   setDataVariance(osg::Object::DYNAMIC);
   setThreadingModel(osgViewer::Viewer::SingleThreaded);
-  realize();
+  //realize();
 
   // These are the settings from the Kinect v2
   setFrustumProjection(-0.146243, 0.145787, -0.109739, 0.109283, zNear, zFar);
