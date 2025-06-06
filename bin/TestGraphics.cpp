@@ -1140,9 +1140,10 @@ void testDepthRenderer()
   pps.push_back(Rcs::PPSGui::Entry("Depth image", width, height, zData, 1, 0.1));
   pps.push_back(Rcs::PPSGui::Entry("RGB image", width, height, cData, 3, 1.0));
   Rcs::PPSGui::create(pps);
-  const std::vector<std::vector<float>>& zImage = zRenderer->getDepthImageRef();
-  const std::vector<std::vector<std::vector<float>>>& rgbImage = zRenderer->getRGBImageRef();
-
+  //const std::vector<std::vector<float>>& zImage = zRenderer->getDepthImageRef();
+  //const float* zImage = zRenderer->getDepthImagePtr();
+  //const std::vector<std::vector<std::vector<float>>>& rgbImage = zRenderer->getRGBImageRef();
+  //const uint8_t* rgbImage = zRenderer->getColorImagePtr();
   Rcs::MatNdWidget::create(graph->q, -10.0, 10.0, "q");
 
   // These come from a Kinect v2 calbration
@@ -1176,26 +1177,8 @@ void testDepthRenderer()
     t_render = Timer_getSystemTime() - t_render;
     RLOG(0, "Rendering took %.1f msec", 1000.0*t_render);
 
-    // Update the pixel widget
-    double* cDataPtr = cData;
-    for (size_t i=0; i<height; ++i)
-    {
-      for (size_t j=0; j<width; ++j)
-      {
-        zData[i*width+j] = zImage[i][j];
-
-        cDataPtr[0] = rgbImage[i][j][0];
-        cDataPtr[1] = rgbImage[i][j][1];
-        cDataPtr[2] = rgbImage[i][j][2];
-        cDataPtr += 3;
-      }
-
-      REXEC(1)
-      {
-        MatNd cimg = MatNd_fromPtr(width, height, cData);
-        MatNd_printCommentDigits("color image", &cimg, 3);
-      }
-    }
+    zRenderer->getColorImage(cData, width*height*3);
+    zRenderer->getDepthImage(zData, width*height);
 
     Timer_waitDT(0.1);
   }

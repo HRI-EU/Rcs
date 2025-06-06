@@ -39,6 +39,7 @@
 #include <osgViewer/Viewer>
 
 #include <vector>
+#include <mutex>
 
 
 
@@ -100,37 +101,32 @@ public:
    */
   virtual void frame(double simulationTime=USE_REFERENCE_TIME);
 
-  const std::vector<std::vector<float>>& getDepthImageRef() const;
+  bool getColorImage(uint8_t* data, size_t size) const;
+  bool getColorImage(double* data, size_t size) const;
+  //const uint8_t* getColorImagePtr() const;
 
-  const std::vector<std::vector<std::vector<float>>>& getRGBImageRef() const;
+  bool getDepthImage(float* data, size_t size) const;
+  bool getDepthImage(double* data, size_t size) const;
+  //const float* getDepthImagePtr() const;
 
-  /*! \brief Writes the depth image to a file with the given file name.
-   *         Values are space-separated.
-   */
-  bool print(const std::string& fileName) const;
-
-  /*! \brief Writes the depth image to the given file descriptor.
-   *         Values are space-separated.
-   */
-  bool print(FILE* fd) const;
+  size_t getWidth() const;
+  size_t getHeight() const;
 
   void getMinMaxDepth(double& minDepth, double& maxDepth) const;
 
 private:
 
-  bool init(unsigned int width, unsigned int height,
-            double zNear, double zFar);
-
+  template<typename T>
+  bool getDepthImage(T* data, size_t size) const;
 
   osg::ref_ptr<osg::Group> rootNode;
   osg::ref_ptr<osg::Image> zImage;
   osg::ref_ptr<osg::Image> rgbImage;
   osg::ref_ptr<osg::Camera> depthCam;
   osg::ref_ptr<osg::Camera> rgbCam;
+  mutable std::mutex captureMtx;
   unsigned int width;
   unsigned int height;
-  std::vector<std::vector<float>> depthImage;
-  std::vector<std::vector<std::vector<float>>> colorImage;   // height x width x 3 (RGB)
 };
 
 }

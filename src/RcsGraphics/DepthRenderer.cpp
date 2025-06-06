@@ -53,17 +53,8 @@ namespace Rcs
  *
  ******************************************************************************/
 DepthRenderer::DepthRenderer(unsigned int width_, unsigned int height_,
-                             double near, double far)
+                             double zNear, double zFar)
   : osgViewer::Viewer(), width(width_), height(height_)
-{
-  init(width, height, near, far);
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-bool DepthRenderer::init(unsigned int width, unsigned int height,
-                         double zNear, double zFar)
 {
   // check if executed remotely, rendering to pixel buffer not working for
   // ssh connections
@@ -102,7 +93,7 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
   zImage->allocateImage(width, height, 1, GL_DEPTH_COMPONENT, GL_FLOAT);
 
   this->rgbImage = new osg::Image;
-  rgbImage->allocateImage(width, height, 1, GL_RGBA, GL_FLOAT);
+  rgbImage->allocateImage(width, height, 1, GL_RGB, GL_UNSIGNED_BYTE);
 
   // Create depth and rgb camera and add as slave to the viewer. It shares
   // the main camera's view and propjection matrices
@@ -126,24 +117,9 @@ bool DepthRenderer::init(unsigned int width, unsigned int height,
 
   setDataVariance(osg::Object::DYNAMIC);
   setThreadingModel(osgViewer::Viewer::SingleThreaded);
-  //realize();
 
   // These are the settings from the Kinect v2
   setFrustumProjection(-0.146243, 0.145787, -0.109739, 0.109283, zNear, zFar);
-
-  // Allocate arrays
-  colorImage.resize(height);
-  for (unsigned int i = 0; i < height; ++i)
-  {
-    colorImage[i].resize(width);
-
-    for (unsigned int j = 0; j < width; ++j)
-    {
-      colorImage[i][j].resize(3);
-    }
-  }
-
-  return true;
 }
 
 /*******************************************************************************
@@ -281,12 +257,75 @@ void DepthRenderer::setProjectionFromFocalParams(double fx, double fy,
 }
 
 /*******************************************************************************
- *
+ * Perform the actual rendering
  ******************************************************************************/
 void DepthRenderer::frame(double simulationTime)
 {
-  // Perform the actual rendering
+  std::lock_guard<std::mutex> lock(captureMtx);
   osgViewer::Viewer::frame(simulationTime);
+  rgbImage->flipVertical();
+  zImage->flipVertical();
+  // osgDB::writeImageFile(*rgbImage.get(),"color.bmp");
+  // osgDB::writeImageFile(*zImage.get(),"depth.bmp");
+}
+
+bool DepthRenderer::getColorImage(uint8_t* dst, size_t size) const
+{
+  const size_t numBytes = width * height * 3;
+  if (size != numBytes)
+  {
+    RLOG_CPP(1, "Wrong size in color image: " << size << " should be " << numBytes);
+    return false;
+  }
+
+  std::lock_guard<std::mutex> lock(captureMtx);
+  std::memcpy(dst, rgbImage->data(), numBytes);
+
+  return true;
+}
+
+bool DepthRenderer::getColorImage(double* dst, size_t size) const
+{
+  const size_t numBytes = width * height * 3;
+  if (size != numBytes)
+  {
+    RLOG_CPP(1, "Wrong size in color image: " << size << " should be " << numBytes);
+    return false;
+  }
+
+  std::lock_guard<std::mutex> lock(captureMtx);
+  const uint8_t* rgbImgPtr = rgbImage->data();
+  for (size_t i = 0; i < numBytes; ++i)
+  {
+    dst[i] = *rgbImgPtr++;
+    dst[i] /= 255.0;
+  }
+
+  return true;
+}
+
+size_t DepthRenderer::getWidth() const
+{
+  return this->width;
+}
+
+size_t DepthRenderer::getHeight() const
+{
+  return this->height;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+template<typename T>
+bool DepthRenderer::getDepthImage(T* depthImage, size_t size) const
+{
+  const size_t numBytes = width * height;
+  if (size != numBytes)
+  {
+    RLOG_CPP(1, "Wrong size in depth image: " << size << " should be " << numBytes);
+    return false;
+  }
 
   // Get transformation matrix from world to screen and invert it
   osg::Matrixd pw = depthCam->getProjectionMatrix() *
@@ -295,19 +334,13 @@ void DepthRenderer::frame(double simulationTime)
   osg::Matrixd inverse_pw;
   inverse_pw.invert(pw);
 
-  depthImage.resize(height);
-  for (unsigned int i = 0; i < height; ++i)
-  {
-    depthImage[i].resize(width);
-  }
-
-  const unsigned int n = width * height;
-  const float* zData = ((float*) zImage->data());
+  std::lock_guard<std::mutex> lock(captureMtx);
+  const float* zData = ((float*)zImage->data());
 
   double zNear, zFar;
   getNearFar(zNear, zFar);
 
-  for (unsigned int i=0; i<n; ++i)
+  for (unsigned int i = 0; i < numBytes; ++i)
   {
     const float data = zData[i];
 
@@ -318,106 +351,26 @@ void DepthRenderer::frame(double simulationTime)
     const unsigned int screen_y = height - 1 - (i / width);
 
     osg::Vec3d screen_coord(screen_x, screen_y, data);
-    osg::Vec3d world_coord = screen_coord*inverse_pw;
-    if (data>=1.0)
+    osg::Vec3d world_coord = screen_coord * inverse_pw;
+    if (data >= 1.0)
     {
       world_coord[2] = -zFar;
     }
 
-    depthImage[screen_y][screen_x] = -world_coord[2];
-  }
-
-
-  {
-    //int width = rgbImage->s();
-    //int height = rgbImage->t();
-    int numPixels = width * height;
-    float* data = reinterpret_cast<float*>(rgbImage->data());
-
-    for (int i = 0; i < numPixels; ++i)
-    {
-      float r = data[i * 4 + 0];
-      float g = data[i * 4 + 1];
-      float b = data[i * 4 + 2];
-      // float a = data[i * 4 + 3]; // Alpha channel if needed
-
-      // Process or store the R, G, B values as needed
-      // std::cout << "Pixel " << i << ": R=" << r << ", G=" << g << ", B=" << b << std::endl;
-
-      // screen to world coordinate (but we respect that the point cloud
-      // y-direction is downward while in OpenGL y points upward)
-      // also the correct point index is calculated this way
-      const unsigned int screen_x = i % width;
-      const unsigned int screen_y = height - 1 - (i / width);
-
-      colorImage[screen_y][screen_x][0] = r;
-      colorImage[screen_y][screen_x][1] = g;
-      colorImage[screen_y][screen_x][2] = b;
-    }
-
-  }
-
-  // osgDB::writeImageFile(*rgbImage.get(),"color.bmp");
-  // osgDB::writeImageFile(*zImage.get(),"depth.bmp");
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-const std::vector<std::vector<float>>& DepthRenderer::getDepthImageRef() const
-{
-  return this->depthImage;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-const std::vector<std::vector<std::vector<float>>>& DepthRenderer::getRGBImageRef() const
-{
-  return this->colorImage;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-bool DepthRenderer::print(const std::string& fileName) const
-{
-  FILE* fd = fopen(fileName.c_str(), "w+");
-
-  if (!fd)
-  {
-    RLOG_CPP(1, "Failed to open file " << fileName << " for writing");
-    return false;
-  }
-
-  bool success = print(fd);
-  fclose(fd);
-
-  return success;
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-bool DepthRenderer::print(FILE* fd) const
-{
-  if (depthImage.empty() || depthImage[0].empty())
-  {
-    RLOG(1, "Did not write empty depth image");
-    return false;
-  }
-
-  for (size_t i=0; i<depthImage.size(); ++i)
-  {
-    for (size_t j=0; j<depthImage[i].size(); ++j)
-    {
-      fprintf(fd, "%f ", depthImage[i][j]);
-    }
-
-    fprintf(fd, "\n");
+    depthImage[i] = -world_coord[2];
   }
 
   return true;
+}
+
+bool DepthRenderer::getDepthImage(float* data, size_t size) const
+{
+  return getDepthImage<float>(data, size);
+}
+
+bool DepthRenderer::getDepthImage(double* data, size_t size) const
+{
+  return getDepthImage<double>(data, size);
 }
 
 /*******************************************************************************
@@ -425,29 +378,23 @@ bool DepthRenderer::print(FILE* fd) const
  ******************************************************************************/
 void DepthRenderer::getMinMaxDepth(double& minDepth_, double& maxDepth_) const
 {
-  if (depthImage.empty() || depthImage[0].empty())
+  MatNd* depthImg = MatNd_create(height, width);
+
+  bool success = getDepthImage(depthImg->ele, depthImg->size);
+
+  if (!success)
   {
     RLOG_CPP(1, "Empty depth image, setting min and max depth to 0");
     minDepth_ = 0.0;
     maxDepth_ = 0.0;
-    return;
   }
-
-  float minDepth = depthImage[0][0];
-  float maxDepth = minDepth;
-
-  for (size_t i=0; i<depthImage.size(); ++i)
+  else
   {
-    for (size_t j=0; j<depthImage[i].size(); ++j)
-    {
-      minDepth = std::min(minDepth, depthImage[i][j]);
-      maxDepth = std::max(minDepth, depthImage[i][j]);
-    }
+    minDepth_ = MatNd_minEle(depthImg);
+    maxDepth_ = MatNd_maxEle(depthImg);
   }
 
-  minDepth_ = minDepth;
-  maxDepth_ = maxDepth;
+  MatNd_destroy(depthImg);
 }
-
 
 }
