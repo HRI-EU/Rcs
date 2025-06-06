@@ -2807,7 +2807,7 @@ bool RcsBody_attachToBodyId(RcsGraph* graph, int bodyId, int targetId)
  ******************************************************************************/
 RcsMeshData* RcsBody_meshify(const RcsBody* self, char computeType)
 {
-  if (self == NULL)
+  if (!self)
   {
     RLOG(4, "Can't meshify NULL body");
     return NULL;
@@ -2817,21 +2817,21 @@ RcsMeshData* RcsBody_meshify(const RcsBody* self, char computeType)
 
   RCSBODY_TRAVERSE_SHAPES(self)
   {
-    if ((SHAPE->computeType&computeType) == 0)
+    if (!RcsShape_isOfComputeType(SHAPE, computeType))
     {
       continue;
     }
 
     RcsMeshData* mesh = RcsShape_createMesh(SHAPE);
 
-    if (mesh == NULL)
+    if (!mesh)
     {
       continue;
     }
 
     RcsMesh_transform(mesh, SHAPE->A_CB.org, SHAPE->A_CB.rot);
 
-    if (allMesh == NULL)
+    if (!allMesh)
     {
       allMesh = RcsMesh_clone(mesh);
     }

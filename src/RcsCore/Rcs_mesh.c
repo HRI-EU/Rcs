@@ -1666,8 +1666,6 @@ void RcsMesh_rotate(RcsMeshData* mesh, double A_MI[3][3])
  ******************************************************************************/
 void RcsMesh_add(RcsMeshData* mesh, const RcsMeshData* other)
 {
-  const unsigned int largestIdx = getLargestFaceIdx(mesh);
-
   size_t vMem = 3*(mesh->nVertices+other->nVertices)*sizeof(double);
   mesh->vertices = (double*) realloc(mesh->vertices, vMem);
   RCHECK(mesh->vertices);
@@ -1679,9 +1677,10 @@ void RcsMesh_add(RcsMeshData* mesh, const RcsMeshData* other)
   memcpy(&mesh->vertices[3*mesh->nVertices], other->vertices,
          3*other->nVertices*sizeof(double));
 
+  unsigned int vertexOffset = mesh->nVertices;
   for (unsigned int i = 0; i < 3*other->nFaces; ++i)
   {
-    mesh->faces[3*mesh->nFaces+i] = other->faces[i] + largestIdx + 1;
+    mesh->faces[3 * mesh->nFaces + i] = other->faces[i] + mesh->nVertices;
   }
 
   mesh->nVertices += other->nVertices;
