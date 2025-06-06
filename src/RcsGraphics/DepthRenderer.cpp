@@ -43,7 +43,7 @@
 #include <osgDB/WriteFile>
 
 #include <algorithm>
-
+#include <cstring>
 
 
 namespace Rcs
