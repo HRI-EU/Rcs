@@ -1,0 +1,16 @@
+<Graph xmlns:xi="http://www.w3.org/2003/XInclude" >
+
+  <Body color="GREEN" name="b2" rigid_body_joints="true" mass="1" >
+    <Shape type="BOX" extents="0.1 0.1 0.1" graphics="true" />
+    <Shape scale="0.15" type="FRAME"/>
+  </Body>
+
+  <Group name="_2" prev="b2" transform="0 0 0.2 0 0 0" >
+    <xi:include href="g3.xml"/>
+  </Group>
+
+  <Group name="_3" prev="b3_1_2" transform="0.2 0 0 0 0 0" >
+    <xi:include href="g4.xml"/>
+  </Group>
+
+</Graph>

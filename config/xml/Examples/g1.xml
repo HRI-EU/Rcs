@@ -1,0 +1,17 @@
+<Graph xmlns:xi="http://www.w3.org/2003/XInclude" >
+
+  <Body color="RED" name="b1" rigid_body_joints="true" mass="1" >
+    <Shape type="BOX" extents="0.1 0.1 0.1" graphics="true" />
+    <Shape scale="0.15" type="FRAME"/>
+  </Body>
+
+  <Body color="RED" name="b11" prev="b1" rigid_body_joints="0 0 1 0 0 0" mass="1" >
+    <Shape type="BOX" extents="0.1 0.1 0.1" graphics="true" />
+    <Shape scale="0.15" type="FRAME"/>
+  </Body>
+
+  <Group name="_1" prev="b1" transform="0 0.2 0 -30 0 0" >
+    <xi:include href="g2.xml"/>
+  </Group>
+
+</Graph>
