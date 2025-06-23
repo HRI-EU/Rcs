@@ -172,6 +172,52 @@ void Rcs::MeshNode::setMesh2(const double* vertices, unsigned int numVertices,
 
 #else
 
+class MeshUpdateCB : public osg::NodeCallback
+{
+public:
+  
+  MeshUpdateCB(Rcs::MeshNode* mnd) : meshNodePtr(mnd), mesh(NULL)
+  {
+  }
+  
+  void setMesh(const RcsMeshData* newMesh)
+  {
+    OpenThreads::ScopedLock<OpenThreads::Mutex> lock(meshMtx);
+    if (!mesh)
+    {
+      this->mesh = RcsMesh_clone(newMesh);
+    }
+    else
+    {
+      RcsMesh_copy(this->mesh, newMesh);
+    }
+  }
+  
+  void operator()(osg::Node* node, osg::NodeVisitor* nv)
+  {
+
+    {
+      OpenThreads::ScopedLock<OpenThreads::Mutex> lock(meshMtx);
+      if (this->mesh)
+      {
+        
+        meshNodePtr->updateGraphics(mesh);
+      }
+    }
+
+      traverse(node, nv);
+    }
+  
+  Rcs::MeshNode* meshNodePtr;
+  RcsMeshData* mesh;
+  OpenThreads::Mutex meshMtx;
+};
+
+
+
+
+
+
 namespace Rcs
 {
 
@@ -190,6 +236,12 @@ MeshNode::MeshNode(const RcsMeshData* mesh)
 MeshNode::~MeshNode()
 {
 }
+
+void MeshNode::makeDynamic()
+{
+  setUpdateCallback(new MeshUpdateCB(this));
+}
+
 MeshNode::MeshNode(const double* vertices, unsigned int numVertices,
                    const unsigned int* faces, unsigned int numFaces)
 {
@@ -235,6 +287,22 @@ void MeshNode::clearMesh()
 }
 
 void MeshNode::update(const RcsMeshData* mesh)
+{
+  osg::Callback* cb_ = asNode()->getUpdateCallback();
+  MeshUpdateCB* cb = dynamic_cast<MeshUpdateCB*>(cb_);
+  
+  if (!cb)
+  {
+    updateGraphics(mesh);
+  }
+  else
+  {
+    cb->setMesh(mesh);
+  }
+    
+}
+
+void MeshNode::updateGraphics(const RcsMeshData* mesh)
 {
   //osg::Vec3Array* v = static_cast<osg::Vec3Array*>(meshGeo->getVertexArray());
   osg::ref_ptr<osg::Vec3Array> v = new osg::Vec3Array(mesh->nVertices);
