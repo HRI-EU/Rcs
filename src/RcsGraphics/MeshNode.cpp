@@ -43,143 +43,23 @@
 
 #include <fstream>
 
-#if 0
 
 /*******************************************************************************
  *
  ******************************************************************************/
-Rcs::MeshNode::MeshNode() : NodeBase()
-{
-  init();
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-Rcs::MeshNode::MeshNode(const char* meshFile) : NodeBase()
-{
-  init();
-
-  RcsMeshData* data = RcsMesh_createFromFile(meshFile);
-
-  if (data != NULL)
-  {
-    setMesh(data->vertices, data->nVertices, data->faces, data->nFaces);
-    RLOG(5, "Success to create MeshNode from file \"%s\"",
-         meshFile ? meshFile : "NULL");
-    RcsMesh_destroy(data);
-  }
-  else
-  {
-    RLOG(1, "Failed to create MeshNode from file \"%s\"",
-         meshFile ? meshFile : "NULL");
-  }
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-Rcs::MeshNode::MeshNode(const RcsMeshData* mesh) :
-  NodeBase()
-{
-  init();
-  setMesh2(mesh->vertices, mesh->nVertices, mesh->faces, mesh->nFaces);
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-Rcs::MeshNode::MeshNode(const double* vertices, unsigned int numVertices,
-                        const unsigned int* faces, unsigned int numFaces) :
-  NodeBase()
-{
-  init();
-  setMesh2(vertices, numVertices, faces, numFaces);
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-void Rcs::MeshNode::init()
-{
-  setName("MeshNode");
-  this->geode = new osg::Geode();
-  this->patPtr()->addChild(this->geode.get());
-  setMaterial("PEWTER");
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-void Rcs::MeshNode::setMesh(const double* vertices, unsigned int numVertices,
-                            const unsigned int* faces, unsigned int numFaces)
-{
-  clear();
-
-  osg::ref_ptr<osg::TriangleMesh> mesh = new osg::TriangleMesh;
-  mesh->setDataVariance(osg::Object::DYNAMIC);
-
-  // Assign vertices
-  osg::ref_ptr<osg::Vec3Array> v = new osg::Vec3Array;
-  for (unsigned int i = 0; i < numVertices; i++)
-  {
-    const double* vi = &vertices[3*i];
-    v->push_back(osg::Vec3(vi[0], vi[1], vi[2]));
-  }
-
-  // Assign index array
-  osg::ref_ptr<osg::UIntArray> f = new osg::UIntArray;
-  for (unsigned int i = 0; i < 3 * numFaces; i++)
-  {
-    f->push_back(faces[i]);
-  }
-
-  mesh->setVertices(v.get());
-  mesh->setIndices(f.get());
-
-  osg::ref_ptr<osg::ShapeDrawable> shape = new osg::ShapeDrawable(mesh.get());
-
-  this->geode->addDrawable(shape.get());
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-void Rcs::MeshNode::clear()
-{
-  geode->removeDrawables(0, geode->getNumDrawables());
-}
-
-/*******************************************************************************
- *
- ******************************************************************************/
-void Rcs::MeshNode::setMesh2(const double* vertices, unsigned int numVertices,
-                             const unsigned int* faces, unsigned int numFaces)
-{
-  RcsMeshData mesh;
-  mesh.vertices = (double*) vertices;
-  mesh.faces = (unsigned int*) faces;
-  mesh.nVertices = numVertices;
-  mesh.nFaces = numFaces;
-
-  osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
-  geometry->setUseDisplayList(false);
-  geometry->setUseVertexBufferObjects(true);
-
-  createGeometryFromMesh2(geometry, &mesh);
-  this->geode->addDrawable(geometry.get());
-}
-
-#else
-
 class MeshUpdateCB : public osg::NodeCallback
 {
 public:
-  
+
   MeshUpdateCB(Rcs::MeshNode* mnd) : meshNodePtr(mnd), mesh(NULL)
   {
   }
-  
+
+  ~MeshUpdateCB()
+  {
+    RcsMesh_destroy(mesh);
+  }
+
   void setMesh(const RcsMeshData* newMesh)
   {
     OpenThreads::ScopedLock<OpenThreads::Mutex> lock(meshMtx);
@@ -192,7 +72,7 @@ public:
       RcsMesh_copy(this->mesh, newMesh);
     }
   }
-  
+
   void operator()(osg::Node* node, osg::NodeVisitor* nv)
   {
 
@@ -200,14 +80,13 @@ public:
       OpenThreads::ScopedLock<OpenThreads::Mutex> lock(meshMtx);
       if (this->mesh)
       {
-        
         meshNodePtr->updateGraphics(mesh);
       }
     }
 
-      traverse(node, nv);
-    }
-  
+    traverse(node, nv);
+  }
+
   Rcs::MeshNode* meshNodePtr;
   RcsMeshData* mesh;
   OpenThreads::Mutex meshMtx;
@@ -215,9 +94,9 @@ public:
 
 
 
-
-
-
+/*******************************************************************************
+ *
+ ******************************************************************************/
 namespace Rcs
 {
 
@@ -288,9 +167,8 @@ void MeshNode::clearMesh()
 
 void MeshNode::update(const RcsMeshData* mesh)
 {
-  osg::Callback* cb_ = asNode()->getUpdateCallback();
-  MeshUpdateCB* cb = dynamic_cast<MeshUpdateCB*>(cb_);
-  
+  MeshUpdateCB* cb = dynamic_cast<MeshUpdateCB*>(getUpdateCallback());
+
   if (!cb)
   {
     updateGraphics(mesh);
@@ -299,12 +177,11 @@ void MeshNode::update(const RcsMeshData* mesh)
   {
     cb->setMesh(mesh);
   }
-    
+
 }
 
 void MeshNode::updateGraphics(const RcsMeshData* mesh)
 {
-  //osg::Vec3Array* v = static_cast<osg::Vec3Array*>(meshGeo->getVertexArray());
   osg::ref_ptr<osg::Vec3Array> v = new osg::Vec3Array(mesh->nVertices);
 
   bool numVerticesChanged = (v->size() == mesh->nVertices) ? false : true;
@@ -325,7 +202,8 @@ void MeshNode::updateGraphics(const RcsMeshData* mesh)
 
   //if (numVerticesChanged)
   {
-    osg::ref_ptr<osg::DrawElementsUInt> indices = new osg::DrawElementsUInt(GL_TRIANGLES, 3 * mesh->nFaces);
+    osg::ref_ptr<osg::DrawElementsUInt> indices =
+      new osg::DrawElementsUInt(GL_TRIANGLES, 3 * mesh->nFaces);
 
     for (unsigned int i = 0; i < 3 * mesh->nFaces; i++)
     {
@@ -338,11 +216,4 @@ void MeshNode::updateGraphics(const RcsMeshData* mesh)
   meshGeo->dirtyBound();
 }
 
-void MeshNode::setMaterial(const std::string& material, double alpha)
-{
-  setNodeMaterial(material, this, alpha);
-}
-
 }   // namespace Rcs
-
-#endif

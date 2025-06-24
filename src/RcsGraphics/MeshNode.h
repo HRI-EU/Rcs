@@ -30,6 +30,7 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *******************************************************************************/
+
 #ifndef MESHNODE_H
 #define MESHNODE_H
 
@@ -40,44 +41,24 @@
 #include <osg/Geode>
 #include <osg/ShapeDrawable>
 
+
 namespace Rcs
 {
 
 /*!
  * \ingroup RcsGraphics
- * \brief    OpenSceneGraph node to display triangle meshes. The data is
- *           assumed as vertex and face lists in arrays vertex and faces.
- *           Value numVertices is the number of the (xyz) vertex vectors,
- *           value numFaces is the number of triangles. The array vertices
- *           must point to memory with equal to or more than 3*numVertices
- *           double values. The array faces must point to memory with equal
- *           to or more than 3*numVertices integer values. The function
- *           setMesh replaces the current mesh with the new one.
+ * \brief OpenSceneGraph node to display triangle meshes. The data is
+ *        assumed as vertex and face lists in arrays vertex and faces.
+ *        Value numVertices is the number of the (xyz) vertex vectors,
+ *        value numFaces is the number of triangles. The array vertices
+ *        must point to memory with equal to or more than 3*numVertices
+ *        double values. The array faces must point to memory with equal
+ *        to or more than 3*numVertices integer values. The function
+ *        setMesh replaces the current mesh with the new one.
+ *
+ *        The function makeDynamic() defers mesh rendering to the osg
+ *        update callback.
  */
-#if 0
-class MeshNode : public NodeBase
-{
-public:
-
-  MeshNode();
-  MeshNode(const char* meshFile);
-  MeshNode(const RcsMeshData* mesh);
-  MeshNode(const double* vertices, unsigned int numVertices,
-           const unsigned int* faces, unsigned int numFaces);
-  void setMesh(const double* vertices, unsigned int numVertices,
-               const unsigned int* faces, unsigned int numFaces);
-  void setMesh2(const double* vertices, unsigned int numVertices,
-                const unsigned int* faces, unsigned int numFaces);
-  void clear();
-
-protected:
-
-  osg::ref_ptr<osg::Geode> geode;
-  void init();
-};
-
-
-#else
 
 class MeshNode : public osg::Geode
 {
@@ -88,22 +69,23 @@ public:
   MeshNode(const double* vertices, unsigned int numVertices,
            const unsigned int* faces, unsigned int numFaces);
   virtual ~MeshNode();
-  virtual void init(const RcsMeshData* mesh);
+
   virtual void update(const RcsMeshData* mesh);
+  virtual void makeDynamic();
+
+  // Operates on the scene graph, should only be called within the
+  // osg callbacks, or out of the viewer's frame() operation.
   virtual void updateGraphics(const RcsMeshData* mesh);
   virtual void clearMesh();
   virtual void setMesh(const double* vertices, unsigned int numVertices,
                        const unsigned int* faces, unsigned int numFaces);
-  virtual void setMaterial(const std::string& material, double alpha=1.0);
-  virtual void makeDynamic();
 
 private:
 
+  virtual void init(const RcsMeshData* mesh);
+
   osg::ref_ptr<osg::Geometry> meshGeo;
 };
-
-#endif
-
 
 }   // namespace Rcs
 
