@@ -1484,7 +1484,7 @@ static const RcsBody* findBodyWithSuffix_(const char* name, const RcsXmlParseCtx
   }
 
   const RcsBody* bdy = RcsGraph_getBodyByName(ctx->graph, name);
-  RLOG(1, "--- Checking body name '%s'", name);
+  RLOG(9, "--- Checking body name '%s'", name);
   if (bdy)
   {
     return bdy;
@@ -1581,7 +1581,7 @@ static RcsBody* RcsBody_fromXML(xmlNode* bdyNode, const RcsXmlParseCtx* ctx)
                "The name \"GenericBody\" is reserved for internal use");
   }
 
-  RLOG(1, "******************** BODY : %s", name);
+  RLOG(9, "BODY : %s", name);
 
   bool groupRoot = false;
   const char* prevBdyName = getXMLNodePropertyStringPtr(bdyNode, "prev");
@@ -1594,17 +1594,17 @@ static RcsBody* RcsBody_fromXML(xmlNode* bdyNode, const RcsXmlParseCtx* ctx)
     {
       groupRoot = true;
       prevBdyName = getXMLNodePropertyStringPtr(ctx->parentGroup, "prev");
-      RLOG(1, "!!!!!!!!!!!!!!!!!!!! GROUP ROOT BODY FOUND : %s (prev is '%s')", name, prevBdyName);
+      RLOG(9, "GROUP ROOT BODY FOUND : %s (prev is '%s')", name, prevBdyName);
     }
     else
     {
-      RLOG(1, "!!!!!!!!!!!!!!!!!!!! TOP LEVEL ROOT BODY FOUND : %s", name);
+      RLOG(9, "TOP LEVEL ROOT BODY FOUND : % s", name);
     }
   }
   // Here we are within a group and search through all suffix concatenations.
   else // if (prevBdyName)
   {
-    RLOG(1, "!!!!!!!!!!!!!!!!!!!! INTERMEDIATE BODY FOUND : %s", name);
+    RLOG(9, "INTERMEDIATE BODY FOUND : %s", name);
   }
 
   parentBdy = findBodyWithSuffix(prevBdyName, ctx);
@@ -1613,12 +1613,12 @@ static RcsBody* RcsBody_fromXML(xmlNode* bdyNode, const RcsXmlParseCtx* ctx)
 
   if (parentBdy)
   {
-    RLOG(1, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx Found parentBdy: '%s' - suffix: '%s'",
+    RLOG(9, "Found parentBdy: '%s' - suffix: '%s'",
          parentBdy->name, suffix);
   }
   else
   {
-    RLOG(1, "§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§§ NOT Found parentBdy: '%s' - suffix: '%s'",
+    RLOG(9, "NOT Found parentBdy: '%s' - suffix: '%s'",
          name, suffix);
   }
 
@@ -1986,7 +1986,7 @@ static void parseGroupTag(xmlNodePtr node, const RcsXmlParseCtx* calling_ctx)
 
   // Parse children
   const char* prevName = getXMLNodePropertyStringPtr(node, "prev");
-  RLOG(1, "Start parsing group '%s' with prev '%s'",
+  RLOG(9, "Start parsing group '%s' with prev '%s'",
        groupSuffix ? groupSuffix : "", prevName ? prevName : "");
 
   if (node->children)
@@ -1994,7 +1994,7 @@ static void parseGroupTag(xmlNodePtr node, const RcsXmlParseCtx* calling_ctx)
     RcsGraph_parseRecursive(node->children, &ctx);
   }
 
-  RLOG(1, "End parsing group '%s' with prev '%s'",
+  RLOG(9, "End parsing group '%s' with prev '%s'",
        groupSuffix ? groupSuffix : "", prevName ? prevName : "");
 }
 
@@ -2008,7 +2008,7 @@ static void RcsGraph_parseRecursive(xmlNodePtr node, RcsXmlParseCtx* calling_ctx
       STREQ((char*) node->name, "Group") ||
       STREQ((char*) node->name, "Body"))
   {
-    RLOG(1, "***** NEW RECURSION: '%s' *****\n", (char*) node->name);
+    RLOG(9, "NEW RECURSION: '%s'\n", (char*) node->name);
   }
   RCHECK_MSG(calling_ctx->level < RCSGRAPH_MAX_GROUPDEPTH - 2, "Group level exceeds maximum "
              "level: %d >= %d", calling_ctx->level, RCSGRAPH_MAX_GROUPDEPTH);
