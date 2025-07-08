@@ -1598,7 +1598,7 @@ static RcsBody* RcsBody_fromXML(xmlNode* bdyNode, const RcsXmlParseCtx* ctx)
     }
     else
     {
-      RLOG(9, "TOP LEVEL ROOT BODY FOUND : % s", name);
+      RLOG(9, "TOP LEVEL ROOT BODY FOUND : %s", name);
     }
   }
   // Here we are within a group and search through all suffix concatenations.

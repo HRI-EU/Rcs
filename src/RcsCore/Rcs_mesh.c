@@ -1677,7 +1677,6 @@ void RcsMesh_add(RcsMeshData* mesh, const RcsMeshData* other)
   memcpy(&mesh->vertices[3*mesh->nVertices], other->vertices,
          3*other->nVertices*sizeof(double));
 
-  unsigned int vertexOffset = mesh->nVertices;
   for (unsigned int i = 0; i < 3*other->nFaces; ++i)
   {
     mesh->faces[3 * mesh->nFaces + i] = other->faces[i] + mesh->nVertices;
