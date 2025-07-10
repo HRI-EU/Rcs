@@ -194,9 +194,10 @@ public:
   virtual size_t getDim() const;
   virtual void setDim(size_t dim);
   virtual void setDamping(double damping);
-  virtual void setTimeConstant(double tmc, size_t index);
+  virtual bool setTimeConstant(double tmc, size_t index);
   virtual void setDt(double dt);
   virtual void setTarget(const double* target);
+  virtual bool setTarget(double target, size_t index);
   virtual void print() const;
   virtual void fprint(FILE* out) const;
 
@@ -229,7 +230,7 @@ public:
   virtual void iterate(double* x_ddot);
   virtual void iterate();
   virtual double getRamp(size_t index) const;
-  virtual void setMaxVel(double vmax, size_t index);
+  virtual bool setMaxVel(double vmax, size_t index);
   virtual double getMaxVel(size_t index) const;
 
 private:

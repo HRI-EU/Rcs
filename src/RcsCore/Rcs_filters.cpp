@@ -587,10 +587,16 @@ void Rcs::SecondOrderLPFND::setDamping(double damping)
   }
 }
 
-void Rcs::SecondOrderLPFND::setTimeConstant(double tmc, size_t index)
+bool Rcs::SecondOrderLPFND::setTimeConstant(double tmc, size_t index)
 {
-  RCHECK_MSG(index<dim, "index=%zu   dim=%zu", index, dim);
+  if (index > dim)
+  {
+    return false;
+  }
+
   filt[index]->setTimeConstant(tmc);
+
+  return true;
 }
 
 void Rcs::SecondOrderLPFND::setDt(double dt)
@@ -607,6 +613,18 @@ void Rcs::SecondOrderLPFND::setTarget(const double* target)
   {
     filt[i]->setTarget(target[i]);
   }
+}
+
+bool Rcs::SecondOrderLPFND::setTarget(double target, size_t index)
+{
+  if (index > dim)
+  {
+    return false;
+  }
+
+  filt[index]->setTarget(target);
+
+  return true;
 }
 
 void Rcs::SecondOrderLPFND::print() const
@@ -667,10 +685,16 @@ void Rcs::RampFilterND::getRamp(double* ramp) const
   VecNd_copy(ramp, r, dim);
 }
 
-void Rcs::RampFilterND::setMaxVel(double vmax_, size_t index)
+bool Rcs::RampFilterND::setMaxVel(double vmax_, size_t index)
 {
-  RCHECK_MSG(index<dim, "index=%zu   dim=%zu", index, dim);
+  if (index > dim)
+  {
+    return false;
+  }
+
   vmax[index] = vmax_;
+
+  return true;
 }
 
 double Rcs::RampFilterND::getMaxVel(size_t index) const
