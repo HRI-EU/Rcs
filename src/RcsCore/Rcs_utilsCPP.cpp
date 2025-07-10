@@ -1073,4 +1073,43 @@ std::string RcsShape_distanceFunctionsToString()
   return msg;
 }
 
+
+/*******************************************************************************
+ * Fast joint lookup based on indices map
+ ******************************************************************************/
+JointNameIndexPair::JointNameIndexPair() : jointId(-1)
+{
+}
+
+JointNameIndexPair::JointNameIndexPair(const std::string& name, int id) : jointName(name), jointId(id)
+{
+}
+
+RcsJoint* JointNameIndexPair::getJoint(const RcsGraph* graph)
+{
+  RcsJoint* jnt = NULL;
+
+  if ((jointId == -1) || (!STREQ(graph->joints[jointId].name, jointName.c_str())))
+  {
+    jnt = RcsGraph_getJointByName(graph, jointName.c_str());
+    if (!jnt)
+    {
+      return NULL;
+    }
+    else
+    {
+      jointId = jnt->jointIndex;
+    }
+
+  }
+  else
+  {
+    jnt = &graph->joints[jointId];
+  }
+
+  return jnt;
+}
+
+
+
 } // namespace Rcs

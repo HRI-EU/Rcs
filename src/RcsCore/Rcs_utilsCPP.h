@@ -215,6 +215,21 @@ std::string RcsGraph_printUsageToString(std::string xmlFile);
  */
 std::string RcsShape_distanceFunctionsToString();
 
+
+class JointNameIndexPair
+{
+public:
+
+  JointNameIndexPair();
+  JointNameIndexPair(const std::string& name, int id = -1);
+  RcsJoint* getJoint(const RcsGraph* graph);
+
+  std::string jointName;
+  int jointId;
+};
+
+
+
 } // namespace Rcs
 
 #endif   // RCS_UTILSCPP_H
