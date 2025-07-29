@@ -613,12 +613,13 @@ double RcsCollisionMdl_cost(const RcsCollisionMdl* self)
     }
     else
     {
-      cost += w*(s / (dLimit*dLimit))*(d-dLimit)*(d-dLimit);
+      cost += w* (s / (dLimit * dLimit))* (d - dLimit)* (d - dLimit);
     }
 
     // Inverse exponential center distance
     if (self->sMixtureCost > 0.0)
     {
+      RFATAL("OH NO!!!");
       const RcsBody* b1 = RCSBODY_BY_ID(self->graph, PAIR->b1);
       const RcsBody* b2 = RCSBODY_BY_ID(self->graph, PAIR->b2);
       const double* center1 = b1 ? b1->A_BI.org : Vec3d_zeroVec();
@@ -686,13 +687,6 @@ void RcsCollisionMdl_gradient(const RcsCollisionMdl* self, MatNd* grad)
     double* cp2 = MatNd_getRowPtr(self->cp, PAIR->cp2);
     double* n1 = MatNd_getRowPtr(self->cp, PAIR->n1);
     RcsBody_distanceGradient(self->graph, b1, b2, repelling, cp1, cp2, n1, dDpdq);
-
-    /* REXEC(1) */
-    /* { */
-    /*   MatNd_transposeSelf(dDpdq); */
-    /*   MatNd_printCommentDigits("dpDdq", dDpdq, 8); */
-    /*   MatNd_transposeSelf(dDpdq); */
-    /* } */
 
     if (d < 0.0)
     {
@@ -807,4 +801,31 @@ bool RcsCollisionMdl_isEqual(const RcsCollisionMdl* self,
   }
 
   return isEqual;
+}
+
+double RcsCollisionMdl_testGrad(const RcsCollisionMdl* cMdl, double eps)
+{
+  RcsGraph* graph = RcsGraph_clone(cMdl->graph);
+  RcsCollisionMdl* self = RcsCollisionModel_clone(cMdl, graph);
+
+  // Initial value
+  RcsCollisionModel_compute(self);
+  const double cost0 = RcsCollisionMdl_cost(self);
+
+  MatNd* grad = MatNd_createLike(graph->q);
+  RcsCollisionMdl_gradient(self, grad);
+  MatNd limit = MatNd_fromPtr(1, 1, &eps);
+  MatNd_scaleSelf(grad, &limit);
+  MatNd_transposeSelf(grad);
+  RcsGraph_stateVectorFromIKSelf(graph, grad);
+  MatNd_addSelf(graph->q, grad);
+  RcsGraph_setState(graph, graph->q, NULL);
+  RcsCollisionModel_compute(self);
+  const double cost1 = RcsCollisionMdl_cost(self);
+
+  RcsCollisionModel_destroy(self);
+  RcsGraph_destroy(graph);
+  MatNd_destroy(grad);
+
+  return cost1 - cost0;
 }

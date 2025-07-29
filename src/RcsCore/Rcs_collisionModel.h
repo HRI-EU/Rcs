@@ -173,6 +173,19 @@ void RcsCollisionModel_fprintCollisions(FILE* fd, const RcsCollisionMdl* self,
  */
 int RcsCollisionModel_fprintXML(FILE* out, const RcsCollisionMdl* self);
 
+/*! \ingroup RcsCollisionMdlFunctions
+ *  \brief Performs a finite difference test on cost and gradient. Argument
+ *         self is not changed. The current state of the graph is used to
+ *         evaluate the step. The gradient will be scaled so that the largest
+ *         gradient element (absolute value) will be smaller or equal eps.
+ *
+ *  \param[in] self    Collision model to test.
+ *
+ *  \return Delta cost after performing a gradient test.
+ */
+double RcsCollisionMdl_testGrad(const RcsCollisionMdl* self, double eps);
+
+
 #ifdef __cplusplus
 }
 #endif

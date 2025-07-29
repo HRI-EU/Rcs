@@ -1044,7 +1044,7 @@ void RcsBody_distanceGradient(const RcsGraph* self,
   // Apply individual weighting factors per joint
   RCSGRAPH_TRAVERSE_JOINTS(self)
   {
-    if (JNT->jacobiIndex > 0)
+    if (JNT->jacobiIndex >= 0)
     {
       dDdq->ele[JNT->jacobiIndex] *= JNT->weightCA;
     }
