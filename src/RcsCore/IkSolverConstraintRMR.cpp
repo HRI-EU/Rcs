@@ -51,11 +51,13 @@ Rcs::IkSolverConstraintRMR::IkSolverConstraintRMR(Rcs::ControllerBase* ctrl) :
   this->activeSet = controller->getTasks();
 
   // Append active set constraints for collisions
-  if (controller->getCollisionMdl())
+  RcsCollisionMdl* narrowPhase = controller->getNarrowPhase();
+
+  if (narrowPhase)
   {
-    for (unsigned int i=0; i<controller->getCollisionMdl()->nPairs; ++i)
+    for (unsigned int i=0; i<narrowPhase->nPairs; ++i)
     {
-      const RcsPair* PAIR = &controller->getCollisionMdl()->pair[i];
+      const RcsPair* PAIR = &narrowPhase->pair[i];
       const RcsBody* b1 = RCSBODY_BY_ID(controller->getGraph(), PAIR->b1);
       const RcsBody* b2 = RCSBODY_BY_ID(controller->getGraph(), PAIR->b2);
       RCHECK(b1 && b2);

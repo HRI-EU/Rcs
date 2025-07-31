@@ -53,8 +53,8 @@ namespace Rcs
 /*******************************************************************************
  * Construction without tasks and default settings.
  ******************************************************************************/
-ControllerBase::ControllerBase() : graph(NULL), ownsGraph(true), cMdl(NULL),
-  broadphase(NULL)
+ControllerBase::ControllerBase() : graph(NULL), ownsGraph(true),
+  broadphase(NULL), narrowPhase(NULL)
 {
 }
 
@@ -62,7 +62,7 @@ ControllerBase::ControllerBase() : graph(NULL), ownsGraph(true), cMdl(NULL),
  * Constructor based on xml parsing.
  ******************************************************************************/
 ControllerBase::ControllerBase(const std::string& xmlDescription) :
-  graph(NULL), ownsGraph(true), cMdl(NULL), broadphase(NULL),
+  graph(NULL), ownsGraph(true), broadphase(NULL), narrowPhase(NULL),
   xmlFile(xmlDescription)
 {
   char txt[RCS_MAX_FILENAMELEN];
@@ -153,11 +153,11 @@ bool ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
     }
     else if (isXMLNodeName(node, "CollisionModel"))
     {
-      this->cMdl = RcsCollisionModel_createFromXML(getGraph(), node);
+      this->narrowPhase = RcsCollisionModel_createFromXML(getGraph(), node);
 
-      if (this->cMdl != NULL)
+      if (!this->narrowPhase)
       {
-        RcsCollisionModel_compute(this->cMdl);
+        RcsCollisionModel_compute(this->narrowPhase);
       }
       else
       {
@@ -217,7 +217,7 @@ bool ControllerBase::initFromXmlNode(xmlNodePtr xmlNodeController)
  * Constructor based on a graph object. Takes ownership of the graph.
  ******************************************************************************/
 ControllerBase::ControllerBase(RcsGraph* graph_):
-  graph(graph_), ownsGraph(true), cMdl(NULL), broadphase(NULL)
+  graph(graph_), ownsGraph(true), broadphase(NULL), narrowPhase(NULL)
 {
 }
 
@@ -227,13 +227,13 @@ ControllerBase::ControllerBase(RcsGraph* graph_):
  * construction of the copied constructor.
  ******************************************************************************/
 ControllerBase::ControllerBase(const ControllerBase& copyFromMe):
-  graph(NULL), ownsGraph(true), cMdl(NULL), broadphase(NULL),
+  graph(NULL), ownsGraph(true), broadphase(NULL), narrowPhase(NULL),
   xmlFile(copyFromMe.xmlFile), taskArrayIdx(copyFromMe.taskArrayIdx)
 {
   // Both graph and collision model can possibly be NULL, therefore we don't
   // check if cloning has succeeded.
   this->graph = RcsGraph_clone(copyFromMe.graph);
-  this->cMdl = RcsCollisionModel_clone(copyFromMe.cMdl, this->graph);
+  this->narrowPhase = RcsCollisionModel_clone(copyFromMe.narrowPhase, this->graph);
   this->broadphase = RcsBroadPhase_clone(copyFromMe.broadphase, this->graph);
 
   for (std::vector<Task*>::const_iterator itr = copyFromMe.tasks.begin();
@@ -258,7 +258,7 @@ ControllerBase& ControllerBase::operator= (const ControllerBase& copyFromMe)
   }
 
   // Clean up memory. Destroy functions can deal with NULL pointers.
-  RcsCollisionModel_destroy(this->cMdl);
+  RcsCollisionModel_destroy(this->narrowPhase);
   RcsBroadPhase_destroy(this->broadphase);
 
   for (size_t i = 0; i < this->tasks.size(); i++)
@@ -282,7 +282,7 @@ ControllerBase& ControllerBase::operator= (const ControllerBase& copyFromMe)
   }
 
   // Clone the collision model. If it is NULL, the clone function returns NULL.
-  this->cMdl = RcsCollisionModel_clone(copyFromMe.cMdl, this->graph);
+  this->narrowPhase = RcsCollisionModel_clone(copyFromMe.narrowPhase, this->graph);
 
   // Clone the broadphase model. If it is NULL, the clone function returns NULL.
   this->broadphase = RcsBroadPhase_clone(copyFromMe.broadphase, this->graph);
@@ -297,7 +297,7 @@ ControllerBase& ControllerBase::operator= (const ControllerBase& copyFromMe)
 ControllerBase::~ControllerBase()
 {
   // Delete collision models. The function accepts a NULL pointer.
-  RcsCollisionModel_destroy(this->cMdl);
+  RcsCollisionModel_destroy(this->narrowPhase);
   RcsBroadPhase_destroy(this->broadphase);
 
   for (size_t i = 0; i < this->tasks.size(); i++)
@@ -594,9 +594,9 @@ std::string ControllerBase::getGraphFileName() const
 /*******************************************************************************
  * Return the collision model.
  ******************************************************************************/
-RcsCollisionMdl* ControllerBase::getCollisionMdl() const
+RcsCollisionMdl* ControllerBase::getNarrowPhase() const
 {
-  return this->cMdl;
+  return this->narrowPhase;
 }
 
 /*******************************************************************************
@@ -623,14 +623,14 @@ void ControllerBase::setBroadPhase(RcsBroadPhase* newMdl, bool destroyOldOne)
 /*******************************************************************************
  *
  ******************************************************************************/
-void ControllerBase::setCollisionMdl(RcsCollisionMdl* newMdl, bool destroyOldOne)
+void ControllerBase::setNarrowPhase(RcsCollisionMdl* newMdl, bool destroyOldOne)
 {
   if (destroyOldOne)
   {
-    RcsCollisionModel_destroy(this->cMdl);
+    RcsCollisionModel_destroy(this->narrowPhase);
   }
 
-  this->cMdl = newMdl;
+  this->narrowPhase = newMdl;
 }
 
 /*******************************************************************************
@@ -1385,13 +1385,13 @@ void ControllerBase::computeCollisionModel()
   if (broadphase)
   {
     RcsBroadPhase_updateBoundingVolumes(broadphase);
-    nb = RcsBroadPhase_computeNarrowPhase(broadphase, cMdl);
+    nb = RcsBroadPhase_computeNarrowPhase(broadphase, narrowPhase);
   }
 
   t_bp = Timer_getSystemTime() - t_bp;
 
   double t_np = Timer_getSystemTime();
-  RcsCollisionModel_compute(this->cMdl);
+  RcsCollisionModel_compute(this->narrowPhase);
   t_np = Timer_getSystemTime() - t_np;
 
   REXEC(8)
@@ -1400,11 +1400,12 @@ void ControllerBase::computeCollisionModel()
     {
       RLOG(1, "%d of %d possible pairs\nBroad phase took %.3f msec\n"
            "Narrow phase took %.3f msec\nCompression is %.1f%%",
-           cMdl->nPairs, nb, 1.0e3 * t_bp, 1.0e3 * t_np,
-           100.0 - 100.0 * cMdl->nPairs / nb);
+           narrowPhase->nPairs, nb, 1.0e3 * t_bp, 1.0e3 * t_np,
+           100.0 - 100.0 * narrowPhase->nPairs / nb);
       REXEC(9)
       {
-        RcsCollisionModel_fprintCollisions(stdout, cMdl, broadphase->distanceThreshold);
+        RcsCollisionModel_fprintCollisions(stdout, narrowPhase,
+                                           broadphase->distanceThreshold);
       }
     }
   }
@@ -1417,7 +1418,7 @@ void ControllerBase::computeCollisionModel()
 double ControllerBase::computeCollisionCost()
 {
   computeCollisionModel();
-  return RcsCollisionMdl_cost(this->cMdl);
+  return RcsCollisionMdl_cost(this->narrowPhase);
 }
 
 /*******************************************************************************
@@ -1425,7 +1426,7 @@ double ControllerBase::computeCollisionCost()
  ******************************************************************************/
 double ControllerBase::getCollisionCost() const
 {
-  return RcsCollisionMdl_cost(this->cMdl);
+  return RcsCollisionMdl_cost(this->narrowPhase);
 }
 
 /*******************************************************************************
@@ -1433,14 +1434,14 @@ double ControllerBase::getCollisionCost() const
  ******************************************************************************/
 void ControllerBase::computeCollisionGradient(MatNd* grad)
 {
-  if (this->cMdl == NULL)
+  if (this->narrowPhase == NULL)
   {
     MatNd_reshapeAndSetZero(grad, 1, this->graph->nJ);
     return;
   }
 
   computeCollisionModel();
-  RcsCollisionMdl_gradient(this->cMdl, grad);
+  RcsCollisionMdl_gradient(this->narrowPhase, grad);
 }
 
 /*******************************************************************************
@@ -1448,13 +1449,13 @@ void ControllerBase::computeCollisionGradient(MatNd* grad)
  ******************************************************************************/
 void ControllerBase::getCollisionGradient(MatNd* grad) const
 {
-  if (this->cMdl == NULL)
+  if (this->narrowPhase == NULL)
   {
     MatNd_reshapeAndSetZero(grad, 1, this->graph->nJ);
     return;
   }
 
-  RcsCollisionMdl_gradient(this->cMdl, grad);
+  RcsCollisionMdl_gradient(this->narrowPhase, grad);
 }
 
 /*******************************************************************************
@@ -2029,19 +2030,19 @@ bool ControllerBase::add(const ControllerBase* other,
   }
 
   // Append the collision model
-  if (other->getCollisionMdl())
+  if (other->getNarrowPhase())
   {
     // In case there is no collision model, we create an empty one and set the
     // parameters to the one we append.
-    if (!this->cMdl)
+    if (!this->narrowPhase)
     {
-      this->cMdl = RALLOC(RcsCollisionMdl);
-      cMdl->graph = graph;
-      cMdl->sMixtureCost = other->getCollisionMdl()->sMixtureCost;
-      cMdl->penetrationSlope = other->getCollisionMdl()->penetrationSlope;
+      this->narrowPhase = RALLOC(RcsCollisionMdl);
+      narrowPhase->graph = graph;
+      narrowPhase->sMixtureCost = other->getNarrowPhase()->sMixtureCost;
+      narrowPhase->penetrationSlope = other->getNarrowPhase()->penetrationSlope;
     }
 
-    success = RcsCollisionModel_append(this->cMdl, other->getCollisionMdl(),
+    success = RcsCollisionModel_append(this->narrowPhase, other->getNarrowPhase(),
                                        suffixPtr);
     RCHECK_MSG(success, "Failed to append collision model for suffix \"%s\"",
                suffixPtr ? suffixPtr : "NULL");
@@ -2560,10 +2561,10 @@ bool ControllerBase::checkLimits(bool checkJointLimits,
   // Collision check. It is assumed that the collision model was computed before
   // calling this function. We shouldn't call it here since the function is
   // declared to be const.
-  if (checkCollisions && getCollisionMdl())
+  if (checkCollisions && getNarrowPhase())
   {
     const double distLimit = collMargin;
-    double minDist = RcsCollisionMdl_getMinDist(getCollisionMdl());
+    double minDist = RcsCollisionMdl_getMinDist(getNarrowPhase());
     if (minDist < distLimit)
     {
       success = false;
@@ -2571,7 +2572,7 @@ bool ControllerBase::checkLimits(bool checkJointLimits,
            minDist, distLimit);
       REXEC(5)
       {
-        RcsCollisionModel_fprintCollisions(stdout, getCollisionMdl(),
+        RcsCollisionModel_fprintCollisions(stdout, getNarrowPhase(),
                                            distLimit);
       }
     }
@@ -2688,7 +2689,7 @@ void ControllerBase::print() const
     tasks[i]->print();
   }
 
-  RcsCollisionModel_fprint(stderr, this->cMdl);
+  RcsCollisionModel_fprint(stderr, this->narrowPhase);
 
   printUsage(this->xmlFile);
 }
@@ -2733,7 +2734,7 @@ bool ControllerBase::toXML(const std::string& fileName,
 
   // Print the collision model (if any)
   fprintf(out, "\n");
-  RcsCollisionModel_fprintXML(out, getCollisionMdl());
+  RcsCollisionModel_fprintXML(out, getNarrowPhase());
   fprintf(out, "\n</Controller>\n");
 
   fclose(out);

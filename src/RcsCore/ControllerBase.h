@@ -857,15 +857,15 @@ public:
 
   ///@{
 
-  /*! \brief Return a pointer to the underlying collision model, or NULL if
-   *         there is none.
+  /*! \brief Return a pointer to the underlying narrow phase collision model,
+   *         or NULL if there is none.
    */
-  RcsCollisionMdl* getCollisionMdl() const;
+  RcsCollisionMdl* getNarrowPhase() const;
 
-  /*! \brief Replaces the collision model with the new one. The old one will
-   *         be destroyed if destroyOldOne is true.
+  /*! \brief Replaces the narrow phase collision model with the new one. The
+   *         old one will be destroyed if destroyOldOne is true.
    */
-  void setCollisionMdl(RcsCollisionMdl* newMdl, bool destroyOldOne=true);
+  void setNarrowPhase(RcsCollisionMdl* newMdl, bool destroyOldOne=true);
 
   /*! \brief Return a pointer to the underlying broadphase model, or NULL if
    *         there is none.
@@ -929,8 +929,8 @@ private:
   RcsGraph* graph;                   //!< Underlying graph
   bool ownsGraph;                    //!< True if controller needs to destroy it
   std::vector<Task*> tasks;          //!< Tasks of the controller
-  RcsCollisionMdl* cMdl;             //!< Collision model
   RcsBroadPhase* broadphase;         //!< Broadphase collision model
+  RcsCollisionMdl* narrowPhase;      //!< Narrow phase collision model
   std::string xmlFile;               //!< Configuration file name (full path)
   std::vector<size_t> taskArrayIdx;  //!< List of indices in task vector
 };

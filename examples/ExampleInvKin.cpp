@@ -405,9 +405,9 @@ bool ExampleIK::initGraphics()
     v->add(simNode.get());
   }
 
-  if (controller->getCollisionMdl() != NULL)
+  if (controller->getNarrowPhase())
   {
-    cn = new Rcs::VertexArrayNode(controller->getCollisionMdl()->cp,
+    cn = new Rcs::VertexArrayNode(controller->getNarrowPhase()->cp,
                                   osg::PrimitiveSet::LINES, "RED");
     cn->toggle();
     v->add(cn.get());
