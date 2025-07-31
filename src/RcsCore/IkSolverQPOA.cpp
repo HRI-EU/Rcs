@@ -277,23 +277,23 @@ IkSolverQPOA::~IkSolverQPOA()
 
 void IkSolverQPOA::getCollisionConstraints(MatNd* J, MatNd* x)
 {
-  if (controller->getCollisionMdl() == NULL)
+  if (controller->getNarrowPhase() == NULL)
   {
     J->m = 0;
     x->m = 0;
     return;
   }
 
-  unsigned int nPairs = controller->getCollisionMdl()->cp->m;
+  unsigned int nPairs = controller->getNarrowPhase()->cp->m;
 
   MatNd_realloc(J, nPairs, J->n);
   MatNd_realloc(x, nPairs, x->n);
 
   unsigned int idx = 0;
 
-  for (unsigned int i = 0; i < controller->getCollisionMdl()->nPairs; ++i)
+  for (unsigned int i = 0; i < controller->getNarrowPhase()->nPairs; ++i)
   {
-    RcsPair* PAIR = &controller->getCollisionMdl()->pair[i];
+    RcsPair* PAIR = &controller->getNarrowPhase()->pair[i];
     const RcsBody* b1 = RCSBODY_BY_ID(controller->getGraph(), PAIR->b1);
     const RcsBody* b2 = RCSBODY_BY_ID(controller->getGraph(), PAIR->b2);
     MatNd Ji = MatNd_getRowView(J, idx);
