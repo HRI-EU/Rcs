@@ -96,6 +96,7 @@ public:
                             double top, double zNear, double zFar);
   void setProjectionFromFocalParams(double fx, double fy, double cx, double cy,
                                     double zmin, double zmax);
+  void getFocalParams(double& fx, double& fy, double& cx, double& cy) const;
 
   /*! \brief Renders the scene into a depth image on each frame call.
    */

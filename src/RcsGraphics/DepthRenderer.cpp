@@ -254,6 +254,28 @@ void DepthRenderer::setProjectionFromFocalParams(double fx, double fy,
                     0.0, 0.0,-2.0*zmax*zmin/(zmax-zmin), 0.0);
 
   getCamera()->setProjectionMatrix(pMat);
+
+  //double fx_, fy_, cx_, cy_;
+  //getFocalParams(fx_, fy_, cx_, cy_);
+
+  //RLOG(0, "Focal params error:\n%f   %f\n%f   %f\n%f   %f\n%f   %f",
+  //     fx, fx_, fy, fy_, cx, cx_, cy, cy_);
+}
+
+/*******************************************************************************
+ * Retrieve camera intrinsics from projection matrix
+ ******************************************************************************/
+void DepthRenderer::getFocalParams(double& fx, double& fy, double& cx, double& cy) const
+{
+  double w = width;
+  double h = height;
+
+  const osg::Matrixf& pMat = getCamera()->getProjectionMatrix();
+
+  fx = pMat(0, 0) * (w / 2.0);
+  fy = pMat(1, 1) * (h / 2.0);
+  cx = (pMat(2, 0) + 1.0) * (w / 2.0);
+  cy = (pMat(2, 1) + 1.0) * (h / 2.0);
 }
 
 /*******************************************************************************
