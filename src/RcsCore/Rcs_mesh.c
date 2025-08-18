@@ -1202,8 +1202,8 @@ bool RcsMesh_readObjFile(const char* fileName, RcsMeshData* mesh)
 
   while (fgets(lineStr, sizeof(lineStr), fd))
   {
-    RLOG(5, "vCount=%d fCount=%d", vCount, fCount);
-    RLOG(5, "lineStr=%s", lineStr);
+    NLOG(5, "vCount=%d fCount=%d", vCount, fCount);
+    NLOG(5, "lineStr=%s", lineStr);
 
     if (STRNEQ(lineStr, "v ", 2))
     {
@@ -1259,7 +1259,7 @@ bool RcsMesh_readObjFile(const char* fileName, RcsMeshData* mesh)
         mesh->faces[fCount + 1] = atoi(tmp) - 1;
         String_chopOff(tmp, buf[3], "//");
         mesh->faces[fCount + 2] = atoi(tmp) - 1;
-        RLOG(5, "face=%d %d %d",
+        NLOG(5, "face=%d %d %d",
              mesh->faces[fCount],
              mesh->faces[fCount + 1],
              mesh->faces[fCount + 2]);
