@@ -60,9 +60,10 @@ void Rcs::TextNode3D::init(std::string text)
   addChild(textGeode.get());
 
   this->text3D = new osgText::Text;
-  text3D->setCharacterSize(0.05);
+  text3D->setCharacterSize(0.04);
+  text3D->setColor(osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f));   // Black
   text3D->setText(text);
-  text3D->setAlignment(osgText::Text::LEFT_CENTER);
+  text3D->setAlignment(osgText::Text::CENTER_BOTTOM);   // was LEFT_CENTER
   text3D->setAxisAlignment(osgText::Text::SCREEN);
   char fontFile[256] = "";
   bool fontFound = Rcs_getAbsoluteFileName("fonts/VeraMono.ttf", fontFile);

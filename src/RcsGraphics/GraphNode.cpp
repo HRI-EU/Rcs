@@ -34,6 +34,7 @@
 #include "GraphNode.h"
 #include "Rcs_graphicsUtils.h"
 #include "TargetSetter.h"
+#include "TextNode3D.h"
 
 #include <KeyCatcherBase.h>
 #include <Rcs_typedef.h>
@@ -982,6 +983,24 @@ void GraphNode::setDynamicMeshUpdate(bool enabled)
 void Rcs::GraphNode::addNode(osg::Node* nd)
 {
   switchNode->addChild(nd);
+}
+
+/******************************************************************************
+ *
+ *****************************************************************************/
+bool Rcs::GraphNode::addTextLabel(const std::string& bdyName, const std::string& text)
+{
+  BodyNode* bnd = getBodyNode(bdyName.c_str());
+
+  if (!bnd)
+  {
+    RLOG_CPP(1, "Body node " << bdyName << " not found in GraphNode");
+    return false;
+  }
+
+  bnd->addChild(new Rcs::TextNode3D(text));
+
+  return true;
 }
 
 /******************************************************************************

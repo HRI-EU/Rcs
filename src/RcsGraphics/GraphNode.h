@@ -327,6 +327,11 @@ public:
    */
   void addNode(osg::Node* child);
 
+  /*! \brief Adds a text lablel to the BodyNode with the given name.
+   */
+  bool addTextLabel(const std::string& bdyName, const std::string& text);
+
+
 protected:
 
   virtual bool callback(const osgGA::GUIEventAdapter& ea,
