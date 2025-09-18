@@ -2940,21 +2940,21 @@ bool testFiltersND(int argc, char** argv)
   for (unsigned int i=0; i<dim; i++)
   {
     snprintf(tmp, 256, "\"out.dat\" u %u w l title \"2nd order filter[%u]\", ",
-            i+1, i);
+             i+1, i);
     strcat(gpCmd, tmp);
     snprintf(tmp, 256, "\"out.dat\" u %u w l title \"ramp[%u]\", ",
-            dim+i+1, i);
+             dim+i+1, i);
     strcat(gpCmd, tmp);
 
     if (i != dim-1)
     {
       snprintf(tmp, 256, "\"out.dat\" u %u w l title \"ramp filter[%u]\", ",
-              2*dim+i+1, i);
+               2*dim+i+1, i);
     }
     else
     {
       snprintf(tmp, 256, "\"out.dat\" u %u w l title \"ramp filter[%u]\"",
-              2*dim+i+1, i);
+               2*dim+i+1, i);
     }
 
     strcat(gpCmd, tmp);
@@ -4347,5 +4347,27 @@ bool testBitMask(int argc, char** argv)
     RMSG("Bit %d is %s", i, Math_isBitSet(mask, i) ? "SET" : "CLEAR");
   }
 
+  return true;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool testConvexHull(int argc, char** argv)
+{
+  MatNd* pts = MatNd_create(50, 2);
+  MatNd* hull = MatNd_create(0, 2);
+
+  MatNd_setRandom(pts, -10.0, 10.0);
+  MatNd_convexHull2D(pts, hull);
+
+  RLOG(0, "Convex Hull (CCW order, %d points out of %d):", hull->m, pts->m);
+  for (unsigned int i = 0; i < hull->m; i++)
+  {
+    printf("(%.2f, %.2f)\n", MatNd_get(hull,i,0), MatNd_get(hull,i,1));
+  }
+
+  MatNd_destroy(pts);
+  MatNd_destroy(hull);
   return true;
 }

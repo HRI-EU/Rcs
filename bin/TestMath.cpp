@@ -114,6 +114,7 @@ static bool testMode(int mode, int argc, char** argv)
         fprintf(stderr, "\t\t36  Tests interpolation algorithms\n");
         fprintf(stderr, "\t\t37  Tests plane fitting of 3d points\n");
         fprintf(stderr, "\t\t38  Tests bit mask functions\n");
+        fprintf(stderr, "\t\t39  Tests convex hull functions\n");
         break;
       }
 
@@ -230,6 +231,9 @@ static bool testMode(int mode, int argc, char** argv)
         break;
       case 38:
         success = testBitMask(argc, argv) && success;
+        break;
+      case 39:
+        success = testConvexHull(argc, argv) && success;
         break;
       default:
         RMSGS("there is no mode %d", mode);

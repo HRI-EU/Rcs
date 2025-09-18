@@ -5661,3 +5661,108 @@ unsigned int MatNd_sizeInBytes(const MatNd* self)
 
   return nBytes;
 }
+
+/*******************************************************************************
+ * Convex hull computation using Andrew's monotone chain algorithm.
+ *
+ * This version returns the convex hull as a MatNd, with 2 columns (x, y)
+ * and one row per hull vertex in counter-clockwise order.
+ * Collinear points on edges are excluded.
+ ******************************************************************************/
+
+//Comparison function for sorting points lexicographically.
+static inline int cmp_points(const void* a, const void* b)
+{
+  const double* p1 = (const double*)a;
+  const double* p2 = (const double*)b;
+  if (p1[0] < p2[0])
+  {
+    return -1;
+  }
+  if (p1[0] > p2[0])
+  {
+    return 1;
+  }
+  if (p1[1] < p2[1])
+  {
+    return -1;
+  }
+  if (p1[1] > p2[1])
+  {
+    return 1;
+  }
+  return 0;
+}
+
+// Cross product (orientation test).
+static inline double cross(const double* O, const double* A, const double* B)
+{
+  return (A[0] - O[0]) * (B[1] - O[1]) - (A[1] - O[1]) * (B[0] - O[0]);
+}
+
+void MatNd_convexHull2D(const MatNd* pts, MatNd* hull)
+{
+  const int n = pts->m;
+  if (n <= 1)
+  {
+    MatNd_realloc(hull, n, 2);
+    if (n == 1)
+    {
+      hull->ele[0] = pts->ele[0];
+      hull->ele[1] = pts->ele[1];
+    }
+    return;
+  }
+
+  // Copy points into temporary array for sorting
+  double* tmp = (double*)malloc(n * 2 * sizeof(double));
+  for (int i = 0; i < n * 2; i++)
+  {
+    tmp[i] = pts->ele[i];
+  }
+
+  qsort(tmp, n, 2 * sizeof(double), cmp_points);
+
+  // Temporary array for hull (at most n points)
+  double* H = (double*)malloc(n * 2 * sizeof(double));
+  int k = 0;
+
+  // Build lower hull
+  for (int i = 0; i < n; i++)
+  {
+    while (k >= 2 && cross(&H[(k-2)*2], &H[(k-1)*2], &tmp[i*2]) <= 0)
+    {
+      k--;
+    }
+    H[k*2]   = tmp[i*2];
+    H[k*2+1] = tmp[i*2+1];
+    k++;
+  }
+
+  // Build upper hull
+  int t = k + 1;
+  for (int i = n-2; i >= 0; i--)
+  {
+    while (k >= t && cross(&H[(k-2)*2], &H[(k-1)*2], &tmp[i*2]) <= 0)
+    {
+      k--;
+    }
+    H[k*2]   = tmp[i*2];
+    H[k*2+1] = tmp[i*2+1];
+    k++;
+  }
+
+  free(tmp);
+
+  // Remove duplicate last point (same as first)
+  k--;
+
+  // Allocate result matrix
+  MatNd_realloc(hull, k, 2);
+  for (int i = 0; i < k*2; i++)
+  {
+    hull->ele[i] = H[i];
+  }
+
+  free(H);
+}

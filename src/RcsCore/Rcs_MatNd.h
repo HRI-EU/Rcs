@@ -2018,6 +2018,17 @@ void MatNd_softMax(MatNd* dst, const MatNd* src, double beta);
  */
 unsigned int MatNd_sizeInBytes(const MatNd* self);
 
+/*! \ingroup MatNdFunctions
+ * \brief Computes the convex hull of a set of 2D points.
+ *
+ * Uses Andrew's monotone chain algorithm. The hull is resized to
+ * rows = hull vertices, columns = 2 (x,y).
+ *
+ * \param pts  Input points as MatNd with n==2, m==number of points.
+ * \param hull MatNd containing hull points (automatically resized).
+ */
+void MatNd_convexHull2D(const MatNd* pts, MatNd* hull);
+
 
 ///@}
 
