@@ -69,10 +69,12 @@ MESSAGE(STATUS "Compiler is: ${CMAKE_CXX_COMPILER_ID}")
 # Default options
 #
 ################################################################################
-OPTION(HEADLESS_BUILD "Build without graphics and Guis" OFF)
-OPTION(ENABLE_DEBUG_MACROS "Enable debug macros also in release mode" ON)
-OPTION(BUILD_RCS_LIBRARIES_ONLY "Build only libs, but not examples and tests" OFF)
+OPTION(RCS_HEADLESS_BUILD "Build without graphics and Guis" OFF)
+OPTION(RCS_ENABLE_DEBUG_MACROS "Enable debug macros also in release mode" ON)
+OPTION(RCS_BUILD_LIBRARIES_ONLY "Build only libs, but not examples and tests" OFF)
 OPTION(RCS_COPY_OR_LINK_CONFIG_DIRS "Copy or link configuration file directories" ON)
+#SET(RCS_COPY_OR_LINK_CONFIG_DIRS "ABSOLUTE_PATH" CACHE STRING "RCS_COPY_OR_LINK_CONFIG_DIRS mode: OFF, RELATIVE_PATH, ABSOLUTE_PATH")
+#SET_PROPERTY(CACHE USE_ABC PROPERTY STRINGS OFF RELATIVE_PATH ABSOLUTE_PATH)
 
 ################################################################################
 #
@@ -140,7 +142,7 @@ ELSEIF(UNIX)
     # Setting march to native for optimal performance on local machine
     STRING(APPEND CMAKE_C_FLAGS   " -march=native")
     STRING(APPEND CMAKE_CXX_FLAGS " -march=native")
-    IF(NOT ENABLE_DEBUG_MACROS)
+    IF(NOT RCS_ENABLE_DEBUG_MACROS)
       ADD_DEFINITIONS(-DRCS_NO_DEBUG)
       MESSAGE(STATUS "Compiling in RELEASE mode, debug macros DISABLED")
     ENDIF()
@@ -205,7 +207,7 @@ ENDFUNCTION()
 ADD_SUBDIRECTORY (src)
 ADD_SUBDIRECTORY (examples)
 
-IF (NOT BUILD_RCS_LIBRARIES_ONLY)
+IF (NOT RCS_BUILD_LIBRARIES_ONLY)
   ADD_SUBDIRECTORY (bin)
 ENDIF()
 
