@@ -229,6 +229,19 @@ public:
 };
 
 
+class BodyNameIndexPair
+{
+public:
+
+  BodyNameIndexPair();
+  BodyNameIndexPair(const std::string& name, int id = -1);
+  RcsBody* getBody(const RcsGraph* graph);
+
+  std::string bodyName;
+  int bodyId;
+};
+
+
 
 } // namespace Rcs
 

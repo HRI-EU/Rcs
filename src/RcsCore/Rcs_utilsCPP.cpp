@@ -1111,5 +1111,42 @@ RcsJoint* JointNameIndexPair::getJoint(const RcsGraph* graph)
 }
 
 
+/*******************************************************************************
+ * Fast joint lookup based on indices map
+ ******************************************************************************/
+BodyNameIndexPair::BodyNameIndexPair() : bodyId(-1)
+{
+}
+
+BodyNameIndexPair::BodyNameIndexPair(const std::string& name, int id) : bodyName(name), bodyId(id)
+{
+}
+
+RcsBody* BodyNameIndexPair::getBody(const RcsGraph* graph)
+{
+  RcsBody* body = NULL;
+
+  if ((bodyId == -1) || (!STREQ(graph->bodies[bodyId].name, bodyName.c_str())))
+  {
+    body = RcsGraph_getBodyByName(graph, bodyName.c_str());
+    if (!body)
+    {
+      return NULL;
+    }
+    else
+    {
+      bodyId = body->id;
+    }
+
+  }
+  else
+  {
+    body = &graph->bodies[bodyId];
+  }
+
+  return body;
+}
+
+
 
 } // namespace Rcs
