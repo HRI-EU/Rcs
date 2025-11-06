@@ -666,6 +666,7 @@ Rcs::RampFilterND::RampFilterND(double* x, double tmc, double vmax_, double dt,
 Rcs::RampFilterND::~RampFilterND()
 {
   RFREE(r);
+  RFREE(vmax);
 }
 
 void Rcs::RampFilterND::init(const double* x, double tmc_, double dt_)
