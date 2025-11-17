@@ -455,7 +455,7 @@ static int RcsBroadPhase_computeTreeTreeNarrowPhase(const RcsBroadPhase* bp,
   int nNaiive = 0;
 
   // This is the "n" of n-choose-k (k is 2)
-  const int nTrees = bp->nTrees;
+  const unsigned int nTrees = bp->nTrees;
 
   if (nTrees == 0)
   {
@@ -470,14 +470,13 @@ static int RcsBroadPhase_computeTreeTreeNarrowPhase(const RcsBroadPhase* bp,
   RCHECK_MSG(values, "Failed to allocate memory for %u tree pairs", nPairsTotal);
 
   // Dynamically allocate memory for the 2D array to store pairs
-  //int* values = RNALLOC(nck, int);
   int(*pairs)[2] = (int(*)[2])values;
   int pairCount = 0;
 
   // Generate and store pairs in the array
-  for (int i = 0; i < nTrees-1; ++i)
+  for (unsigned int i = 0; i < nTrees-1; ++i)
   {
-    for (int j = i + 1; j < nTrees; ++j)
+    for (unsigned int j = i + 1; j < nTrees; ++j)
     {
       pairs[pairCount][0] = i;
       pairs[pairCount][1] = j;
@@ -485,7 +484,7 @@ static int RcsBroadPhase_computeTreeTreeNarrowPhase(const RcsBroadPhase* bp,
     }
   }
 
-  /* Sanity check should never fail. */
+  // Sanity check should never fail
   RCHECK_MSG(pairCount == nPairsTotal,
              "Internal error: pairCount=%u, expected=%u",
              pairCount, nPairsTotal);
@@ -502,8 +501,6 @@ static int RcsBroadPhase_computeTreeTreeNarrowPhase(const RcsBroadPhase* bp,
                "Tree index out of range: (%u,%u) of %u",
                idx1, idx2, nTrees);
 
-
-
     const RcsBroadPhaseTree* tree1 = &bp->trees[idx1];
     const RcsBroadPhaseTree* tree2 = &bp->trees[idx2];
 
@@ -512,21 +509,24 @@ static int RcsBroadPhase_computeTreeTreeNarrowPhase(const RcsBroadPhase* bp,
     // First separating axes test around overall trees. If an axis is
     // overlapping, the tree will be further checked below for addition
     // to the narrow phase.
-    if ((!tree1->hasAABB))
+    if (!tree1->hasAABB)
     {
-      NLOG(1, "Tree %d has no AABB: skipping trees %d - %d", pairs[i][0], pairs[i][0], pairs[i][1]);
+      NLOG(1, "Tree %d has no AABB: skipping trees %d - %d",
+           pairs[i][0], pairs[i][0], pairs[i][1]);
       continue;
     }
 
-    if ((!tree2->hasAABB))
+    if (!tree2->hasAABB)
     {
-      NLOG(1, "Tree %d has no AABB: skipping trees %d - %d", pairs[i][1], pairs[i][0], pairs[i][1]);
+      NLOG(1, "Tree %d has no AABB: skipping trees %d - %d",
+           pairs[i][1], pairs[i][0], pairs[i][1]);
       continue;
     }
 
     if (SAT(tree1->aabbMin, tree1->aabbMax, tree2->aabbMin, tree2->aabbMax))
     {
-      NLOG(1, "Found SAT in tree-tree: skipping trees %d - %d", pairs[i][0], pairs[i][1]);
+      NLOG(1, "Found SAT in tree-tree: skipping trees %d - %d",
+           pairs[i][0], pairs[i][1]);
       continue;
     }
 
