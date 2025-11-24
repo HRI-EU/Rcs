@@ -33,8 +33,7 @@
 
 #include "ExampleGui.h"
 
-#include "ExampleFactory.h"
-
+#include <ExampleFactory.h>
 #include <Rcs_macros.h>
 #include <Rcs_utilsCPP.h>
 
@@ -51,6 +50,7 @@
 #include <QApplication>
 
 #include <sstream>
+#include <thread>
 
 
 
