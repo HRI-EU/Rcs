@@ -39,6 +39,7 @@
 #include <dlfcn.h>
 #include <unistd.h>
 #include <ucontext.h>
+#include <execinfo.h>
 
 // VARIABLE_IS_NOT_USED macro for avoiding warnings by GCC, because we use the
 // signal_segv function only with the RCS_INSTALL_SEGFAULTHANDLER macro
@@ -90,11 +91,6 @@ static void VARIABLE_IS_NOT_USED signal_segv(int signum, siginfo_t* info,
 {
   static const char* si_codes[3] = {"SI_NOINFO", "SEGV_MAPERR", "SEGV_ACCERR"};
 
-  int f = 0;
-  ucontext_t* ucontext = (ucontext_t*)ptr;
-  void** bp = 0;
-  void* ip = 0;
-
   const char* userName = getenv("USER");
   fprintf(stderr, "\nSegmentation Fault! Hey %s, go FIX your code!!!\n",
           userName ? userName : "");
@@ -105,12 +101,14 @@ static void VARIABLE_IS_NOT_USED signal_segv(int signum, siginfo_t* info,
 
 #ifndef SIGSEGV_NOSTACK
 #if defined(SIGSEGV_STACK_IA64) || defined(SIGSEGV_STACK_X86)
+ucontext_t* ucontext = (ucontext_t*)ptr;
+int f = 0;
 #if defined(SIGSEGV_STACK_IA64)
-  ip = (void*)ucontext->uc_mcontext.gregs[REG_RIP];
-  bp = (void**)ucontext->uc_mcontext.gregs[REG_RBP];
+  void* ip = (void*)ucontext->uc_mcontext.gregs[REG_RIP];
+  void** bp = (void**)ucontext->uc_mcontext.gregs[REG_RBP];
 #elif defined(SIGSEGV_STACK_X86)
-  ip = (void*)ucontext->uc_mcontext.gregs[REG_EIP];
-  bp = (void**)ucontext->uc_mcontext.gregs[REG_EBP];
+  void* ip = (void*)ucontext->uc_mcontext.gregs[REG_EIP];
+  void** bp = (void**)ucontext->uc_mcontext.gregs[REG_EBP];
 #endif
 
   fprintf(stderr, "\n########## Stacktrace ##########\n");
@@ -126,12 +124,14 @@ static void VARIABLE_IS_NOT_USED signal_segv(int signum, siginfo_t* info,
   }
 #else
   fprintf(stderr, "Stack trace (non-dedicated):\n");
-  sz = backtrace(bt, 20);
-  strings = backtrace_symbols(bt, sz);
+  void* bt[20];
+  int sz = backtrace(bt, 20);
+  char** strings = backtrace_symbols(bt, sz);
   int i;
   for (i = 0; i < sz; ++i)
   {
-    sigsegv_outp("%s", strings[i]);
+    fprintf(stderr, "%s\n", strings[i]);
+    //sigsegv_outp("%s", strings[i]);
   }
 #endif
   fprintf(stderr, "################################\n\n");
