@@ -31,7 +31,7 @@
 #  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 ################################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 3.4)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
 SET(BST_INSTALL_CATEGORY Libraries) 
 
 STRING (REPLACE "\\" "/" HGR "$ENV{SIT}")
