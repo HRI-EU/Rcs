@@ -63,6 +63,7 @@ namespace Rcs
 {
 std::vector<std::string> getResourcePath();
 std::string getAbsoluteFileName(const std::string& filename);
+std::string getAbsoluteFileName(const std::vector<std::string>& filenames);
 }
 
 extern "C" {

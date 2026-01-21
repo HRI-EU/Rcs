@@ -84,6 +84,23 @@ std::string getAbsoluteFileName(const std::string& filename)
   return std::string(configFile);
 }
 
+std::string getAbsoluteFileName(const std::vector<std::string>& filenames)
+{
+  for (size_t i=0; i<filenames.size(); ++i)
+  {
+    std::string absFileName = getAbsoluteFileName(filenames[i]);
+    RMSG_CPP("Searching through " << filenames[i]);
+    if (!absFileName.empty())
+    {
+      RMSG_CPP("Found: " << absFileName);
+      return absFileName;
+    }
+  }
+
+  return std::string();
+}
+
+
 }
 
 extern "C" {
