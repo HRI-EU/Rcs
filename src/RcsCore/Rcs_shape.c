@@ -2192,6 +2192,7 @@ void RcsShape_setComputeType(RcsShape* shape, int computeType, bool enable)
  ******************************************************************************/
 bool RcsShape_isOfComputeType(const RcsShape* shape, int computeType)
 {
+  RCHECK(shape);
   if ((shape->computeType & computeType) == 0)
   {
     return false;
@@ -2212,6 +2213,30 @@ bool RcsShape_isEqual(const RcsShape* s1, const RcsShape* s2)
   }
 
   return RcsMesh_isEqual(s1->mesh, s2->mesh);   // Can deal with NULL pointers
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool RcsShape_check(const RcsShape* shape)
+{
+  if (!shape)
+  {
+    return false;
+  }
+
+  if ((shape->type<=RCSSHAPE_NONE) || (shape->type>=RCSSHAPE_SHAPE_MAX))
+  {
+    return false;
+  }
+
+  if ((shape->type==RCSSHAPE_MESH) && (shape->mesh==NULL))
+  {
+    return false;
+  }
+
+
+  return true;
 }
 
 /*******************************************************************************

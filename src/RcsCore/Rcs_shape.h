@@ -159,6 +159,11 @@ bool RcsShape_isEqual(const RcsShape* s1, const RcsShape* s2);
  */
 unsigned int RcsShape_sizeInBytes(const RcsShape* shape);
 
+/*! \ingroup RcsShapeFunctions
+ *  \brief Returns true if the shape is valid, false otherwise.
+ */
+bool RcsShape_check(const RcsShape* shape);
+
 ///@}
 
 
