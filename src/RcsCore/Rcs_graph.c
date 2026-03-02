@@ -148,11 +148,9 @@ static void RcsGraph_bodyKinematics(RcsGraph* graph,
 
 
   // Velocities
-  if (q_dot != NULL)
+  if (q_dot)
   {
-    double q_dot_i, oxr[3], om_i[3];
-
-    // Linear velocity according to parent angular velocity
+    // Reset velocities for root bodies
     if (bdy->parentId == -1)
     {
       Vec3d_setZero(bdy->x_dot);
@@ -160,14 +158,13 @@ static void RcsGraph_bodyKinematics(RcsGraph* graph,
     }
     else
     {
-      RcsBody* parent = &graph->bodies[bdy->parentId];
-
-      // Reset velocities for root bodies
+      // Propagate parent velocities
+      const RcsBody* parent = &graph->bodies[bdy->parentId];
       Vec3d_copy(bdy->x_dot, parent->x_dot);
       Vec3d_copy(bdy->omega, parent->omega);
 
       // Linear velocity term due to the parent's angular velocity
-      double tmp[3];
+      double oxr[3], tmp[3];
       Vec3d_sub(tmp, bdy->A_BI.org, parent->A_BI.org);
       Vec3d_crossProduct(oxr, parent->omega, tmp);
       Vec3d_addSelf(bdy->x_dot, oxr);
@@ -176,11 +173,11 @@ static void RcsGraph_bodyKinematics(RcsGraph* graph,
     // Velocity terms
     j = RCSJOINT_BY_ID(graph, bdy->jntId);
 
-    while (j != NULL)
+    while (j)
     {
       // Joint velocity: Here we assume that the joint angles already
       // reflect the kinematic joint coupling (if applicable)
-      q_dot_i = MatNd_get2(q_dot, j->jointIndex, 0);
+      const double q_dot_i = MatNd_get2(q_dot, j->jointIndex, 0);
 
       switch (j->type)
       {
@@ -196,22 +193,24 @@ static void RcsGraph_bodyKinematics(RcsGraph* graph,
         case RCSJOINT_ROT_Z:
         {
           // Propagate angular velocity
+          double om_i[3];
           Vec3d_constMul(om_i, j->A_JI.rot[j->dirIdx], q_dot_i);
           Vec3d_addSelf(bdy->omega, om_i);
 
           // Propagate linear velocity due to Euler term
-          double tmp[3];
+          double oxr[3], tmp[3];
           Vec3d_sub(tmp, bdy->A_BI.org, j->A_JI.org);
           Vec3d_crossProduct(oxr, om_i, tmp);
           Vec3d_addSelf(bdy->x_dot, oxr);
           break;
         }
       }
+
       j = (j->nextId==-1) ? NULL : &graph->joints[j->nextId];
 
-    }   // while(jnt)
+    }   // while(j)
 
-  } // if(q_dot != NULL)
+  } // if(q_dot)
 
 }
 
@@ -729,9 +728,9 @@ void RcsGraph_getInitState(const RcsGraph* self, MatNd* q_init)
 {
   MatNd_reshape(q_init, self->dof, 1);
 
-  RCSGRAPH_TRAVERSE_JOINTS(self)
+  for (unsigned int i=0; i<self->dof; ++i)
   {
-    MatNd_set2(q_init, JNT->jointIndex, 0, JNT->q_init);
+    MatNd_set2(q_init, self->joints[i].jointIndex, 0, self->joints[i].q_init);
   }
 }
 
@@ -746,8 +745,10 @@ void RcsGraph_getJointLimits(const RcsGraph* self, MatNd* q_lower,
   MatNd_reshape(q_lower, dim, 1);
   MatNd_reshape(q_upper, dim, 1);
 
-  RCSGRAPH_TRAVERSE_JOINTS(self)
+  for (unsigned int i=0; i<self->dof; ++i)
   {
+    const RcsJoint* JNT = &self->joints[i];
+
     if (type == RcsStateFull)
     {
       MatNd_set(q_lower, JNT->jointIndex, 0, JNT->q_min);
@@ -769,8 +770,10 @@ void RcsGraph_getSpeedLimits(const RcsGraph* self, MatNd* q_dot_limit,
 {
   MatNd_reshape(q_dot_limit, (type==RcsStateFull) ? self->dof : self->nJ, 1);
 
-  RCSGRAPH_TRAVERSE_JOINTS(self)
+  for (unsigned int i=0; i<self->dof; ++i)
   {
+    const RcsJoint* JNT = &self->joints[i];
+
     if (type == RcsStateFull)
     {
       MatNd_set(q_dot_limit, JNT->jointIndex, 0, JNT->speedLimit);
@@ -790,8 +793,10 @@ void RcsGraph_getTorqueLimits(const RcsGraph* self, MatNd* T_limit,
 {
   MatNd_reshape(T_limit, (type==RcsStateFull) ? self->dof : self->nJ, 1);
 
-  RCSGRAPH_TRAVERSE_JOINTS(self)
+  for (unsigned int i=0; i<self->dof; ++i)
   {
+    const RcsJoint* JNT = &self->joints[i];
+
     if (type == RcsStateFull)
     {
       MatNd_set(T_limit, JNT->jointIndex, 0, JNT->maxTorque);
@@ -1858,6 +1863,56 @@ double RcsGraph_limitJointSpeeds(const RcsGraph* self, MatNd* dq, double dt,
 /*******************************************************************************
  * See header.
  ******************************************************************************/
+double RcsGraph_getJointSpeedScaling(const RcsGraph* self, const MatNd* dq,
+                                     double dt, RcsStateType type)
+{
+  int dimension = (type == RcsStateFull) ? self->dof : self->nJ;
+
+  RCHECK_MSG((dq->m==dimension && dq->n==1) || (dq->m==1 &&  dq->n==dimension),
+             "dq is of size %d x %d - should be %d x 1 or 1 x %d",
+             dq->m, dq->n, dimension, dimension);
+
+  double sc = DBL_MAX;
+  RcsJoint* badJnt = NULL;
+
+  RCSGRAPH_TRAVERSE_JOINTS(self)
+  {
+    if ((JNT->jacobiIndex == -1) && (type == RcsStateIK))
+    {
+      continue;
+    }
+
+    // Get speed limits in units/sec
+    const int index = (type == RcsStateIK) ? JNT->jacobiIndex : JNT->jointIndex;
+    const double q_dot = fabs(dq->ele[index] / dt);
+    const double sc_i = JNT->speedLimit/q_dot;
+
+    if (sc_i < sc)
+    {
+      sc = sc_i;
+      badJnt = JNT;
+    }
+  }
+
+  REXEC(6)
+  {
+    if (badJnt)
+    {
+      double sLim = badJnt->speedLimit;
+      double toDeg = RcsJoint_isRotation(badJnt) ? 180.0/M_PI : 1.0;
+      int i = (type == RcsStateIK) ? badJnt->jacobiIndex : badJnt->jointIndex;
+      RMSG("Scaling speeds with %5.5f (due to joint \"%s\": speed=%5.6f %s  "
+           "limit=%5.6f)", sc, badJnt->name, toDeg*fabs(dq->ele[i] / dt),
+           RcsJoint_isRotation(badJnt) ? "deg" : "m", toDeg*sLim);
+    }
+  }
+
+  return sc;
+}
+
+/*******************************************************************************
+ * See header.
+ ******************************************************************************/
 double RcsGraph_checkJointSpeeds(const RcsGraph* self, const MatNd* dq,
                                  double dt, RcsStateType type)
 {
@@ -1877,9 +1932,8 @@ double RcsGraph_checkJointSpeeds(const RcsGraph* self, const MatNd* dq,
       continue;
     }
 
-    int index = (type == RcsStateIK) ? JNT->jacobiIndex : JNT->jointIndex;
-
     // Get speed limits in units/sec
+    const int index = (type == RcsStateIK) ? JNT->jacobiIndex : JNT->jointIndex;
     const double q_dot = fabs(dq->ele[index] / dt);
     const double sc_i = (q_dot > JNT->speedLimit) ? JNT->speedLimit/q_dot : 1.0;
 
