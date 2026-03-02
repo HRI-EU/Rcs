@@ -328,6 +328,7 @@ bool ExampleFK::initGraphics()
   KeyCatcherBase::registerKey("b", "Boxify graph");
   KeyCatcherBase::registerKey("B", "Capsulify graph");
   KeyCatcherBase::registerKey("H", "Toggle HUD");
+  KeyCatcherBase::registerKey("v", "Write current q to model_state");
 
   if (valgrind)
   {
@@ -709,6 +710,10 @@ void ExampleFK::handleKeys()
     RCHECK(out);
     RcsGraph_fprintXML(out, graph);
     fclose(out);
+  }
+  else if (kc->getAndResetKey('v'))
+  {
+    RcsGraph_fprintModelState(stdout, graph, graph->q, NULL, 0);
   }
   else if (kc->getAndResetKey('d'))
   {
