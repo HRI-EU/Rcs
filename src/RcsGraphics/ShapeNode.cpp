@@ -559,6 +559,7 @@ void ShapeNode::addShape(const RcsShape* shape)
   {
     osg::ref_ptr<osg::Geometry> g = TorusNode::createGeometry(ext[0], ext[2]);
     geode->addDrawable(g.get());
+    addChild(geode.get());
 
     if (shapeUpdater.valid())
     {
