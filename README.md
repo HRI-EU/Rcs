@@ -45,6 +45,24 @@ Compilation has successfully been tested on Ubuntu 14.04, Ubuntu 16.04 with GCC 
 
 Note that using Vortex Essentials on newer operating systems requires extra care. The official distribution is compiled with GCC 4.8, and will not work with newer compiler versions. To work around this limitation, Rcs compiles the Vortex integration module separately. If GCC 4.8 is available (by installing the `g++-4.8` package), the integration module is built automatically. If it isn't, you need to provide a pre-built version of libRcsVortex.so.
 
+### MacOS 
+
+We use the homebrew package manager with these packages: 
+Mandatory: cmake graphviz open-scene-graph pkgconf qt@5 qwt-qt5 zeromq 
+Optional: xdot bullet asio doxygen eigen
+
+Compile from terminal console:
+
+```
+cmake ../src/Smile/ -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_PREFIX_PATH=/opt/homebrew/Cellar/qt@5/5.15.18/lib/cmake
+```
+
+Compile with Xcode:
+
+```
+cmake -G Xcode ../src/Smile/ -DCMAKE_INSTALL_PREFIX=../install -DCMAKE_PREFIX_PATH=/opt/homebrew/Cellar/qt@5/5.15.18/lib/cmake
+```
+
 ### Windows native with Visual Studio
 
 We recommend to use the vcpkg package manager to obtain the dependencies. These packages need to be installed:

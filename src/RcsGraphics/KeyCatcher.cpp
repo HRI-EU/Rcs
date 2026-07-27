@@ -35,8 +35,6 @@
 
 #include <Rcs_macros.h>
 
-#include <iostream>
-
 
 using namespace Rcs;
 
@@ -50,11 +48,6 @@ using namespace Rcs;
 
 KeyCatcher::KeyCatcher()
 {
-  for (int i = 0; i < 256; i++)
-  {
-    _charPressed[i] = false;
-  }
-
   KeyCatcherBase::registerKey("F12", "Print all available keys to console",
                               "KeyCatcher");
   setName("KeyCatcher");
@@ -95,9 +88,7 @@ bool KeyCatcher::handle(const osgGA::GUIEventAdapter& ea,
       if ((ea.getKey() >= 65) && (ea.getKey() <= 90))
       {
         unsigned int asciiCode =  ea.getKey();
-        mutex.lock();
-        _charPressed[asciiCode] = !_charPressed[asciiCode];
-        mutex.unlock();
+        toggleKey((char) asciiCode);
         RLOG(5, "Toggled %c (%u)", asciiCode, asciiCode);
         return false;
       }
@@ -106,9 +97,7 @@ bool KeyCatcher::handle(const osgGA::GUIEventAdapter& ea,
       else if ((ea.getKey() >= 97) && (ea.getKey() <= 122))
       {
         unsigned int asciiCode =  ea.getKey();
-        mutex.lock();
-        _charPressed[asciiCode] = !_charPressed[asciiCode];
-        mutex.unlock();
+        toggleKey((char) asciiCode);
         RLOG(5, "Toggled %c (%u)", asciiCode, asciiCode);
         return false;
       }
@@ -124,9 +113,7 @@ bool KeyCatcher::handle(const osgGA::GUIEventAdapter& ea,
       else if (ea.getKey() == 13)
       {
         unsigned int asciiCode =  ea.getKey();
-        mutex.lock();
-        _charPressed[asciiCode] = !_charPressed[asciiCode];
-        mutex.unlock();
+        toggleKey((char) asciiCode);
         RLOG(5, "Toggled Enter (%u)", asciiCode);
         return false;
       }
@@ -143,9 +130,7 @@ bool KeyCatcher::handle(const osgGA::GUIEventAdapter& ea,
         unsigned int asciiCode =  ea.getKey();
         if (asciiCode < 256)
         {
-          mutex.lock();
-          _charPressed[asciiCode] = !_charPressed[asciiCode];
-          mutex.unlock();
+          toggleKey((char) asciiCode);
           RLOG(5, "Toggled %c (%u)", asciiCode, asciiCode);
         }
         else
@@ -165,88 +150,4 @@ bool KeyCatcher::handle(const osgGA::GUIEventAdapter& ea,
 
 
   return false;
-}
-
-
-
-/*******************************************************************************
-
-  \brief Returns true if the key is pressed, false otherwise.
-
-*******************************************************************************/
-
-bool KeyCatcher::getKey(const char key)
-{
-  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(mutex);
-  bool isPressed = _charPressed[(unsigned int) key];
-  return isPressed;
-}
-
-
-
-/*******************************************************************************
-
-  \brief Returns the state of the key and resets it to unpressed.
-
-*******************************************************************************/
-
-bool KeyCatcher::getAndResetKey(char c)
-{
-  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(mutex);
-  bool isPressed = _charPressed[(unsigned int) c];
-  _charPressed[(unsigned int) c] = false;
-  return isPressed;
-}
-
-/*******************************************************************************
-
-  \brief Returns the state of the key and resets it to unpressed.
-
-*******************************************************************************/
-
-bool KeyCatcher::getAndResetKey(int i)
-{
-  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(mutex);
-  bool isPressed = _charPressed[(unsigned int) i];
-  _charPressed[(unsigned int) i] = false;
-  return isPressed;
-}
-
-
-
-/*******************************************************************************
-
-  \brief Sets the state of the key to pressed.
-
-*******************************************************************************/
-
-void KeyCatcher::setKey(const char key)
-{
-  if ((unsigned int) key >= 256)
-  {
-    RLOG(0, "Key %c (ASCII %u) out of ASCII range - ignoring", key, key);
-  }
-
-  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(mutex);
-  _charPressed[(unsigned int) key] = true;
-}
-
-
-
-/*******************************************************************************
-
-  \brief Resets the state of the key to unpressed.
-
-*******************************************************************************/
-
-void KeyCatcher::resetKey(const char key)
-{
-  if ((unsigned int) key >= 256)
-  {
-    RLOG(0, "Key %c (ASCII %u) out of ASCII range - ignoring", key, key);
-    return;
-  }
-
-  OpenThreads::ScopedLock<OpenThreads::Mutex> lock(mutex);
-  _charPressed[(unsigned int) key] = false;
 }

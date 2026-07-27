@@ -107,8 +107,78 @@ bool compareStringsCaseInsensitive(const std::string& str1,const std::string& st
 std::map< std::string, std::map<std::string, std::string> > KeyCatcherBase::_registered_keys;
 
 
+KeyCatcherBase::KeyCatcherBase()
+{
+  for (int i = 0; i < 256; i++)
+  {
+    _charPressed[i] = false;
+  }
+
+  pthread_mutex_init(&_mutex, NULL);
+}
+
+
 KeyCatcherBase::~KeyCatcherBase()
 {
+  pthread_mutex_destroy(&_mutex);
+}
+
+
+bool KeyCatcherBase::getAndResetKey(char c)
+{
+  pthread_mutex_lock(&_mutex);
+  bool isPressed = _charPressed[(unsigned char) c];
+  _charPressed[(unsigned char) c] = false;
+  pthread_mutex_unlock(&_mutex);
+  return isPressed;
+}
+
+
+bool KeyCatcherBase::getAndResetKey(int i)
+{
+  if (i < 0 || i >= 256)
+  {
+    return false;
+  }
+
+  pthread_mutex_lock(&_mutex);
+  bool isPressed = _charPressed[i];
+  _charPressed[i] = false;
+  pthread_mutex_unlock(&_mutex);
+  return isPressed;
+}
+
+
+bool KeyCatcherBase::getKey(char c)
+{
+  pthread_mutex_lock(&_mutex);
+  bool isPressed = _charPressed[(unsigned char) c];
+  pthread_mutex_unlock(&_mutex);
+  return isPressed;
+}
+
+
+void KeyCatcherBase::setKey(char c)
+{
+  pthread_mutex_lock(&_mutex);
+  _charPressed[(unsigned char) c] = true;
+  pthread_mutex_unlock(&_mutex);
+}
+
+
+void KeyCatcherBase::resetKey(char c)
+{
+  pthread_mutex_lock(&_mutex);
+  _charPressed[(unsigned char) c] = false;
+  pthread_mutex_unlock(&_mutex);
+}
+
+
+void KeyCatcherBase::toggleKey(char c)
+{
+  pthread_mutex_lock(&_mutex);
+  _charPressed[(unsigned char) c] = !_charPressed[(unsigned char) c];
+  pthread_mutex_unlock(&_mutex);
 }
 
 
@@ -143,7 +213,7 @@ bool KeyCatcherBase::deregisterKey(const std::string& key, const std::string& gr
   }
   else
   {
-    _registered_keys.erase(key);
+    _registered_keys[group].erase(key);
   }
   unlock();
 

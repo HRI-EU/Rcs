@@ -49,18 +49,11 @@ class KeyCatcher : public osgGA::GUIEventHandler, public KeyCatcherBase
 public:
 
   KeyCatcher();
-  virtual bool getAndResetKey(char c);
-  virtual bool getAndResetKey(int i);
-  bool getKey(const char key);
-  void setKey(const char key);
-  void resetKey(const char key);
   virtual bool handle(const osgGA::GUIEventAdapter& ea,
                       osgGA::GUIActionAdapter& aa);
 
 private:
 
-  bool _charPressed[256];
-  mutable OpenThreads::Mutex mutex;
   KeyCatcher& operator=(const KeyCatcher&);
   KeyCatcher(const KeyCatcher&);
   virtual ~KeyCatcher();

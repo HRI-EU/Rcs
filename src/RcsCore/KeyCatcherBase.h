@@ -38,18 +38,38 @@
 #include <map>
 #include <vector>
 
+#include <pthread.h>
+
 /*!
  * \brief Global Rcs namespace encapsulating all Rcs classes
  */
 namespace Rcs
 {
 
+/*! \brief Keyboard-shortcut registry and thread-safe key-state store.
+ *
+ *         The class serves two purposes: a global (static) registry of
+ *         keyboard shortcuts with descriptions and grouping, and a per-instance
+ *         256-entry key-state array that application code polls via
+ *         getAndResetKey. Both the OSG-backed Rcs::KeyCatcher (which feeds key
+ *         events from the OSG event loop) and headless viewers (e.g. the
+ *         browser bridge in RcsWebViewer, which feeds them from a network thread) use
+ *         this class directly. Every per-instance accessor takes the internal
+ *         pthread mutex, so producers and the polling application thread may run
+ *         concurrently.
+ */
 class KeyCatcherBase
 {
 public:
-  virtual ~KeyCatcherBase();
-  virtual bool getAndResetKey(char c) = 0;
-  virtual bool getAndResetKey(int i) = 0;
+  KeyCatcherBase();
+  virtual ~KeyCatcherBase(); 
+
+  virtual bool getAndResetKey(char c);
+  virtual bool getAndResetKey(int i);
+  bool getKey(char c);
+  void setKey(char c);
+  void resetKey(char c);
+  void toggleKey(char c);
 
   static bool registerKey(const std::string& key, const std::string& description, const std::string& group = "Main");
   static bool deregisterKey(const std::string& key, const std::string& group = "Main");
@@ -58,6 +78,11 @@ public:
   static std::string printRegisteredKeysToString();
 
 private:
+  KeyCatcherBase(const KeyCatcherBase&);
+  KeyCatcherBase& operator=(const KeyCatcherBase&);
+
+  bool _charPressed[256];
+  pthread_mutex_t _mutex;
   static std::map< std::string, std::map<std::string, std::string> > _registered_keys;
 };
 
