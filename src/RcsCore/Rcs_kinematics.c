@@ -160,7 +160,7 @@ static void RcsGraph_addWorldPointJacobian(const RcsGraph* self,
                          (body ? body->A_BI.org : Vec3d_zeroVec());
 
   // Find "driving" joint of the body
-  RcsJoint* jnt = RcsBody_lastJointBeforeBody(self, body);
+  const RcsJoint* jnt = RcsBody_lastJointBeforeBody(self, body); 
 
   // Traverse backwards through the joints
   while (jnt != NULL)
@@ -210,7 +210,6 @@ void RcsGraph_bodyPointJacobian(const RcsGraph* self,
   else
   {
     double I_bdyPt[3];
-    Vec3d_copy(I_bdyPt, body->A_BI.org);
     Vec3d_transMulAndAdd(I_bdyPt, body->A_BI.org, (double(*)[3])body->A_BI.rot,
                          k_bdyPt);
     RcsGraph_worldPointJacobian(self, body, I_bdyPt, A_BI, J);
@@ -613,17 +612,17 @@ void RcsGraph_3dPosJacobian(const RcsGraph* self, const RcsBody* effector,
     Vec3d_sub(r12, effector ? effector->A_BI.org : Vec3d_zeroVec(),
               refBdy->A_BI.org);
 
-    // I_r12 x I_JR1
+    // I_r12 x I_JR3   (JR of the refFrame, body 3)
     RcsGraph_rotationJacobian(self, refFrame, NULL, bufJ);
     MatNd_columnCrossProductSelf(bufJ, r12);  // J_rel = (I_r2-I_r1) x J_rel
     MatNd_addSelf(J, bufJ);
 
-    // A_3I (I_JT2 - I_JT1 - I_r12 x I_JR2)
+    // A_3I (I_JT2 - I_JT1 + I_r12 x I_JR3)
     if ((refFrame!=NULL) && (refFrame!=refBdy))
     {
       MatNd_rotateSelf(J, (double (*)[3])refFrame->A_BI.rot);
     }
-    // A_2I (I_JT2 - I_JT1 - I_r12 x I_JR2)
+    // A_1I (I_JT2 - I_JT1 + I_r12 x I_JR1)   (refFrame == refBdy, body 1)
     else
     {
       MatNd_rotateSelf(J, (double (*)[3])refBdy->A_BI.rot);
@@ -714,8 +713,8 @@ void RcsGraph_3dPosHessian(const RcsGraph* self, const RcsBody* effector,
     MatNd_mul(H, dA3, bufJ1);
 
     // Term 2: A_3I (dq(r_12 x) J_R3) = A_3I (((J2-J1) x) J_R3)
-    double col[3];
-    MatNd dqr12 = MatNd_fromPtr(3, 1, col);
+    double dqr12Buf[3];
+    MatNd dqr12 = MatNd_fromPtr(3, 1, dqr12Buf);
 
     for (int i = 0; i < n; i++)
     {
@@ -754,7 +753,7 @@ void RcsGraph_3dPosHessian(const RcsGraph* self, const RcsBody* effector,
         col[1] = HR3->ele[    nn + jnpk];
         col[2] = HR3->ele[2 * nn + jnpk];
         Vec3d_crossProduct(dst, r12, col);
-        Vec3d_rotateSelf(dst, (double (*)[3])b3->A_BI.rot);
+        Vec3d_rotateSelf(dst, MAT3D_CAST b3->A_BI.rot);
         H->ele[         jnpk] += dst[0];
         H->ele[    nn + jnpk] += dst[1];
         H->ele[2 * nn + jnpk] += dst[2];
