@@ -31,22 +31,31 @@
 
 set -euo pipefail
 
+# Default to the flat build/bin layout when MAKEFILE_PLATFORM is not exported.
+# Keeps "build/${MAKEFILE_PLATFORM}/bin" working (build/./bin) and avoids the
+# "unbound variable" abort from 'set -u'.
+MAKEFILE_PLATFORM="${MAKEFILE_PLATFORM:-.}"
+
+# Note on the '|| result=$?' pattern below: under 'set -e' a non-zero exit
+# aborts the script, so we must not let the test binary's failure propagate -
+# each binary returns its error count as the exit code, which we capture here
+# and report further down.
 function testMath()
 {
-    build/"${MAKEFILE_PLATFORM}"/bin/TestMath -m -1 -numTests 10 -dl 1 &> UnitTestResults.txt
-    testMathResult=$?
+    testMathResult=0
+    build/"${MAKEFILE_PLATFORM}"/bin/TestMath -m -1 -numTests 10 -dl 1 > UnitTestResults.txt 2>&1 || testMathResult=$?
 }
 
 function testGraph()
 {
-    build/"${MAKEFILE_PLATFORM}"/bin/Rcs -m 3 -iter 10 -dl 1 -valgrind &>> UnitTestResults.txt
-    testGraphResult=$?
+    testGraphResult=0
+    build/"${MAKEFILE_PLATFORM}"/bin/Rcs -m 3 -iter 10 -dl 1 -valgrind >> UnitTestResults.txt 2>&1 || testGraphResult=$?
 }
 
 function testController()
 {
-    build/"${MAKEFILE_PLATFORM}"/bin/Rcs -m 6 -valgrind -nTests 10 -dl 1 &>> UnitTestResults.txt
-    testControllerResult=$?
+    testControllerResult=0
+    build/"${MAKEFILE_PLATFORM}"/bin/Rcs -m 6 -valgrind -nTests 10 -dl 1 >> UnitTestResults.txt 2>&1 || testControllerResult=$?
 }
 
 echo -n "Testing mathematics functions ... "
