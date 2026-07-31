@@ -96,7 +96,7 @@ void RcsShape_init(RcsShape* self);
  *         version. For instance, the function will not return a RCSSHAPE_OCTREE
  *         type if the OctoMap support has not been compiled.
  */
-int RcsShape_randomShapeType();
+int RcsShape_randomShapeType(void);
 
 /*! \ingroup RcsShapeFunctions
  *  \brief Returns true if the shape type is supported by the compiled

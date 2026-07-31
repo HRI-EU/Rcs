@@ -355,7 +355,7 @@ bool Math_gnuplot(const char* gnuplotCommand);
 /*! \ingroup RcsBasicMathFunctions
  *  \brief Returnd infinity (portable version)
  */
-double Math_infinity();
+double Math_infinity(void);
 
 /*! \ingroup RcsBasicMathFunctions
  *  \brief Returns true if the value is finite, false otherwise.
@@ -447,7 +447,7 @@ int Math_getRandomInteger(int bound1, int bound2);
 /*! \ingroup RcsBasicMathFunctions
  *  \brief Returns a random true or false.
  */
-bool Math_getRandomBool();
+bool Math_getRandomBool(void);
 
 /*! \ingroup RcsBasicMathFunctions
  *  \brief Calls \ref Math_srand48 using a double, which is assumed to be

@@ -87,7 +87,7 @@ extern RCSGUI_API bool      RCSGUIFACTORY_THREAD_VALID;
 /*  \brief An attempt to improve the shutting down of the Gui thread.
  *         Still, the QApplication must probably be finished cleanly.
 */
-void RcsGuiFactory_shutdown();
+void RcsGuiFactory_shutdown(void);
 
 /*  \brief C wrapper function signature for the GUI's constructor. In
 *          this function, the GUI has to be constructed.

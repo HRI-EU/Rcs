@@ -42,7 +42,7 @@
 /*******************************************************************************
  *
  ******************************************************************************/
-static inline const double* getDefaultGravity()
+static inline const double* getDefaultGravity(void)
 {
   static double g[3] = { 0.0, 0.0, -RCS_GRAVITY };
   return g;

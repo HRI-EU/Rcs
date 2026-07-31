@@ -324,7 +324,7 @@ int Math_getRandomInteger(int lower, int upper)
 /*******************************************************************************
  * See header
  ******************************************************************************/
-bool Math_getRandomBool()
+bool Math_getRandomBool(void)
 {
   return Math_getRandomInteger(0, 1) == 0 ? true : false;
 }
@@ -416,7 +416,7 @@ double Math_interpolateLinear(double x, const double* data, unsigned int n)
 /*******************************************************************************
  * See header
  ******************************************************************************/
-double Math_infinity()
+double Math_infinity(void)
 {
 #if defined(_MSC_VER)
   return std::numeric_limits<double>::infinity();

@@ -51,7 +51,7 @@ extern "C" {
  *  \brief Creates and initializes a new RcsBody structure. All connection
  *         indices are set to -1, the rest of the structure is set to 0.
  */
-RcsBody* RcsBody_create();
+RcsBody* RcsBody_create(void);
 
 /*! \ingroup RcsBodyFunctions
  *  \brief Initializes the RcsBody structure with default values.

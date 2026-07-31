@@ -105,7 +105,7 @@ void Quat_relativeRotation(double q[4], const double q1[4], const double q2[4])
 /*******************************************************************************
  *
  ******************************************************************************/
-const double* Quat_identity()
+const double* Quat_identity(void)
 {
   static double q_identity[4] = {1.0, 0.0, 0.0, 0.0};
 

@@ -662,7 +662,7 @@ bool String_toDoubleArray_l(const char* str, double* x_, unsigned int n)
 /*******************************************************************************
 * 6 digits seconds, 6 digits usec
 ******************************************************************************/
-char* String_createUnique()
+char* String_createUnique(void)
 {
   double t = Timer_getSystemTime() / 1.0e6;
   t -= floor(t);

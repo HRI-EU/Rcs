@@ -82,12 +82,12 @@ static inline unsigned int nfCapsule(unsigned int segments)
   return nfCylHull(2*segments, 1) + 2*nfSphereSeg(segments, segments);
 }
 
-static inline unsigned int nvRectangle()
+static inline unsigned int nvRectangle(void)
 {
   return 4;
 }
 
-static inline unsigned int nfRectangle()
+static inline unsigned int nfRectangle(void)
 {
   return 2;
 }

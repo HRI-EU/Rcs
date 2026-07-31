@@ -410,28 +410,28 @@ void Vec3d_setUnitVector(double vec[3], int dir);
  *         a static variable. Please don't change this vector, since this
  *         affects every caller to this function.
  */
-const double* Vec3d_zeroVec();
+const double* Vec3d_zeroVec(void);
 
 /*! \ingroup RcsVec3dFunctions
  *  \brief Returns a pointer to a vector [1 0 0]. This returns a vector to
  *         a static variable. Please don't change this vector, since this
  *         affects every caller to this function.
  */
-const double* Vec3d_ex();
+const double* Vec3d_ex(void);
 
 /*! \ingroup RcsVec3dFunctions
  *  \brief Returns a pointer to a vector [0 1 0]. This returns a vector to
  *         a static variable. Please don't change this vector, since this
  *         affects every caller to this function.
  */
-const double* Vec3d_ey();
+const double* Vec3d_ey(void);
 
 /*! \ingroup RcsVec3dFunctions
  *  \brief Returns a pointer to a vector [0 0 1]. This returns a vector to
  *         a static variable. Please don't change this vector, since this
  *         affects every caller to this function.
  */
-const double* Vec3d_ez();
+const double* Vec3d_ez(void);
 
 /*! \ingroup RcsVec3dFunctions
  *  \brief Returns a pointer to the unit vector according to the value dim.

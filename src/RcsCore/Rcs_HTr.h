@@ -192,7 +192,7 @@ void HTr_invTransformSelf(HTr* A_21 /* in as A_2I */, const HTr* A_1I);
  *         static variable. Please NEVER change the contents of this pointer,
  *         since this affects every caller to this function.
  */
-const HTr* HTr_identity();
+const HTr* HTr_identity(void);
 
 /*! \ingroup RcsHTrFunctions
  *  \brief Writes the contents of a given HTr into a given string(char*) as

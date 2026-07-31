@@ -1010,7 +1010,7 @@ bool RcsShape_isSupported(int shapeType)
  * Return random shape type. We put it here to not expose the details about
  * available shape types such as Octomap shapes to the outside.
  ******************************************************************************/
-int RcsShape_randomShapeType()
+int RcsShape_randomShapeType(void)
 {
   int shapeType = Math_getRandomInteger(1, RCSSHAPE_SHAPE_MAX - 1);
 

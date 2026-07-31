@@ -289,7 +289,7 @@ bool String_toDoubleArray_l(const char* str, double* x, unsigned int n);
  *  \return Created string with 12 characters. The caller is responsible to
  *          free the returned string.
  */
-char* String_createUnique();
+char* String_createUnique(void);
 
 /*! \ingroup RcsUtilsFunctions
  * \brief Creates a random string with size characters. The string is composed

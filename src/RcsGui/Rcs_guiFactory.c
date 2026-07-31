@@ -63,8 +63,8 @@ extern "C" {
 
 // This is in GuiFactory.cpp and only is needed here and nowhere else. It is
 // cast as "extern C" so that we can call it from here.
-void RcsGuiFactory_create();
-void RcsGuiFactory_stopApplication();
+void RcsGuiFactory_create(void);
+void RcsGuiFactory_stopApplication(void);
 bool RcsGuiFactory_deleteGUI(int handle);
 
 
@@ -72,7 +72,7 @@ bool RcsGuiFactory_deleteGUI(int handle);
 /******************************************************************************
   \brief See header.
 ******************************************************************************/
-void RcsGuiFactory_shutdown()
+void RcsGuiFactory_shutdown(void)
 {
   if (RCSGUIFACTORY_THREAD_VALID == true)
   {
@@ -168,7 +168,7 @@ void* RcsGuiFactory_defaultCallbback(void* arg)
 
 ******************************************************************************/
 
-static void RcsGuiFactory_init()
+static void RcsGuiFactory_init(void)
 {
   pthread_mutex_lock(&RCSGUIFACTORY_MUTEX);
   if (RCSGUIFACTORY_INIT == false)
@@ -246,7 +246,7 @@ int RcsGuiFactory_requestGUI(RcsGuiCallbackFct func, void* arg)
 
 ******************************************************************************/
 
-void RcsGuiFactory_enable()
+void RcsGuiFactory_enable(void)
 {
   // Initialize factory if not yet done
   if (!RCSGUIFACTORY_INIT)
@@ -270,7 +270,7 @@ void RcsGuiFactory_enable()
 
 ******************************************************************************/
 
-void RcsGuiFactory_disable()
+void RcsGuiFactory_disable(void)
 {
   // Initialize factory if not yet done
   if (!RCSGUIFACTORY_INIT) // RcsGuiFactory_init();
@@ -299,7 +299,7 @@ void RcsGuiFactory_disable()
 
 ******************************************************************************/
 
-void RcsGuiFactory_update()
+void RcsGuiFactory_update(void)
 {
   // Initialize factory if not yet done
   if (!RCSGUIFACTORY_INIT)

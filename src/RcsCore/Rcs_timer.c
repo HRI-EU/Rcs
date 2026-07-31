@@ -154,7 +154,7 @@ double Timer_get(Timer* self)
 
 ******************************************************************************/
 
-double Timer_getTime()
+double Timer_getTime(void)
 {
   return Timer_getSystemTime() - RCS_TIMER_T0;
 }
@@ -167,7 +167,7 @@ double Timer_getTime()
 
 ******************************************************************************/
 
-double Timer_getSystemTime()
+double Timer_getSystemTime(void)
 {
   double seconds = -1.0;
 
@@ -396,7 +396,7 @@ void Timer_usleep(unsigned long usec)
 
 ******************************************************************************/
 
-void Timer_setZero()
+void Timer_setZero(void)
 {
   RCS_TIMER_T0 = Timer_getSystemTime();
 }

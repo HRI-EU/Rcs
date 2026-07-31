@@ -107,7 +107,7 @@ void Quat_relativeRotation(double q[4], const double q1[4], const double q2[4]);
  *
  *  \return Identity quaternion
  */
-const double* Quat_identity();
+const double* Quat_identity(void);
 
 /*! \ingroup RcsQuaternionFunctions
  *  \brief Normalizes a quaternion in-place. This fails if its length is 0. In

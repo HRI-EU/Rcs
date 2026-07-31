@@ -99,12 +99,12 @@ void Timer_destroy(Timer* self);
  *  \brief Returns the computer time in secs. This considers an offset, so
  *         that the timer can be resetted (with Timer_setZero()).
  */
-double Timer_getTime();
+double Timer_getTime(void);
 
 /*! \ingroup RcsTimerFunctions
  *  \brief Returns the computer time in secs.
  */
-double Timer_getSystemTime();
+double Timer_getSystemTime(void);
 
 /*! \ingroup RcsTimerFunctions
  *  \brief Waits for a period of dt seconds. The minimum resolution is
@@ -138,7 +138,7 @@ void Timer_usleep(unsigned long usec);
 /*! \ingroup RcsTimerFunctions
  *  \brief Resets the time for the Timer_getTime() calls.
  */
-void Timer_setZero();
+void Timer_setZero(void);
 
 /*! \ingroup RcsTimerFunctions
 *  \brief Sets the timer to the given tim.

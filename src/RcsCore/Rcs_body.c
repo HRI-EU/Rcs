@@ -82,7 +82,7 @@
 /*******************************************************************************
  * See header.
  ******************************************************************************/
-RcsBody* RcsBody_create()
+RcsBody* RcsBody_create(void)
 {
   RcsBody* b = RALLOC(RcsBody);
   RcsBody_init(b);
