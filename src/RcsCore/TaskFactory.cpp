@@ -74,7 +74,7 @@ Task* TaskFactory::createTask(std::string str, const RcsGraph* graph)
  * Creates the task for className and the given graph and xml content
  ******************************************************************************/
 std::vector<Task*> TaskFactory::createTasks(const std::vector<std::string>& strs,
-                                            const RcsGraph* graph)
+                                            const RcsGraph* graph, bool strict)
 {
   std::vector<Task*> tasks;
 
@@ -99,7 +99,7 @@ std::vector<Task*> TaskFactory::createTasks(const std::vector<std::string>& strs
 
   // If we found one or more NULL task, we delete all tasks and return an
   // empty vector
-  if (!valid)
+  if (!valid && strict)
   {
     for (size_t i=0; i<tasks.size(); ++i)
     {

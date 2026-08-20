@@ -103,11 +103,14 @@ public:
    *
    *  \param xmlStrs Strings with a valid task xml description
    *  \param graph The underlying graph for the kinematics
+   *  \param strict True, all tasks must exist, otherwise an empty vector is 
+   *                returned. False: All existing tasks are accumulated, 
+   *                others are skipped.
    *  \return Vector of tasks, or empty vector in case any of the tasks can't
    *          be constructed.
    */
   static std::vector<Task*> createTasks(const std::vector<std::string>& xmlStrs,
-                                        const RcsGraph* graph);
+                                        const RcsGraph* graph, bool strict=true);
 
   /*! \brief Convenience method to create a random task from a string.
    *
