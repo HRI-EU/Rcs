@@ -14,7 +14,7 @@ ELSE()
   OPTION(USE_MUJOCO "Use the Mujoco physics library" OFF)
 ENDIF()
 
-FIND_PACKAGE(Vortex QUIET)
+FIND_PACKAGE(VORTEX QUIET)
 IF (VORTEX_FOUND)
   OPTION(USE_VORTEX "Use the Vortex physics library" ON)
 ELSE()
