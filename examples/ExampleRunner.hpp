@@ -178,16 +178,52 @@ int main(int argc, char** argv)
       argP.getArgument("-e", &exampleName, "Example name (default: %s)",
                        exampleName.c_str());
 
-      example = Rcs::ExampleFactory::runExample(categoryName, exampleName,
-                                                argc, argv);
+      // Under macOS, all windowing must happen on the main thread: the osg
+      // viewer aborts with an NSInternalInconsistencyException if its graphics
+      // context is created anywhere else. We therefore run the example on the
+      // main thread there, so that the viewer's frame() call, which the
+      // example issues from its step() method in the sequential sync mode,
+      // ends up on the thread that Cocoa expects. The matching sync mode is
+      // the default of ExampleBase. Pass "-mainThread false" to get the
+      // threaded behaviour back.
+      //
+      // With -valgrind the example runs without graphics and without Guis.
+      // There is then nothing that must live on the main thread, so we leave
+      // the example in its own thread, as on any other platform.
+#if defined (__APPLE__)
+      bool mainThread = !argP.hasArgument("-valgrind");
+#else
+      bool mainThread = false;
+#endif
+      argP.getArgument("-mainThread", &mainThread, "Run the example on the "
+                       "main thread rather than in its own thread (default: "
+                       "%s)", mainThread ? "true" : "false");
 
-      while (example && example->isRunning())
+      if (mainThread)
       {
-        Timer_waitDT(0.1);
+        // Running on the main thread only has the desired effect if the
+        // graphics are updated from there as well. That is what the sequential
+        // sync mode does, which ExampleBase defaults to under macOS.
+        //
+        // This blocks until the example has finished. Note that runExample()
+        // deletes the instance in the non-threaded case, therefore the global
+        // example pointer is left alone here.
+        Rcs::ExampleFactory::runExample(categoryName, exampleName,
+                                        argc, argv, false);
       }
+      else
+      {
+        example = Rcs::ExampleFactory::runExample(categoryName, exampleName,
+                                                  argc, argv);
 
-      Timer_waitDT(0.1);
-      delete example;
+        while (example && example->isRunning())
+        {
+          Timer_waitDT(0.1);
+        }
+
+        Timer_waitDT(0.1);
+        delete example;
+      }
       break;
     }
 

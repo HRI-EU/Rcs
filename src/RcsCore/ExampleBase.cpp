@@ -47,7 +47,18 @@ namespace Rcs
 
 ExampleBase::ExampleBase(int argc, char** argv) : runLoop(false)
 {
+  // Under macOS, all windowing must happen on the main thread. The osg viewer
+  // aborts with an NSInternalInconsistencyException if its graphics context is
+  // created anywhere else, which is what the threaded mode does. We therefore
+  // default to updating graphics and Guis from the example's step() method
+  // there. A "-syncMode" on the command line still overrides this, see
+  // parseArgs(). Note that the caller has to run the example on the main
+  // thread for this to have the desired effect.
+#if defined (__APPLE__)
+  this->syncMode = "Sequential";
+#else
   this->syncMode = "Threaded";
+#endif
 }
 
 ExampleBase::~ExampleBase()
