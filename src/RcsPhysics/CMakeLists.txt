@@ -3,16 +3,63 @@
 # CMakeLists file for the RcsPhysics library
 #
 ###############################################################################
-LIST(APPEND CMAKE_PREFIX_PATH $ENV{SIT}/External/MuJoCo/1.0/${MKPLT}/lib/cmake/mujoco)
 IF (UNIX)
   SET(OpenGL_GL_PREFERENCE GLVND) # Removes warning OpenGL_GL_PREFERENCE has not been set to "GLVND" or "LEGACY"
 ENDIF(UNIX)
+
+###############################################################################
+# MuJoCo. The discovery lives in cmake/Findmujoco.cmake, which also covers the
+# macOS release that ships no cmake package configuration file. It provides
+# the imported target mujoco::mujoco.
+###############################################################################
 FIND_PACKAGE(mujoco QUIET)
+
 IF (mujoco_FOUND)
   OPTION(USE_MUJOCO "Use the Mujoco physics library" ON)
 ELSE()
   OPTION(USE_MUJOCO "Use the Mujoco physics library" OFF)
 ENDIF()
+
+# USE_MUJOCO can be ON in the cache while no MuJoCo installation is available,
+# for instance after enabling it by hand, or after moving a build tree to
+# another machine. We fail here with an actionable message, rather than later
+# in the generate step with an unresolved mujoco::mujoco target.
+IF (USE_MUJOCO AND NOT mujoco_FOUND)
+  MESSAGE(FATAL_ERROR "USE_MUJOCO is enabled, but no MuJoCo installation was "
+          "found. Either point cmake to one with -DMUJOCO_DIR=<prefix>, where "
+          "<prefix> is the root directory of a MuJoCo installation, or disable "
+          "the Mujoco simulation with -DUSE_MUJOCO=OFF.")
+ENDIF()
+
+###############################################################################
+# The Mujoco debug window is an optional add-on to the Mujoco simulation. It
+# is the only part that needs glfw, therefore the simulation itself can be
+# built without it, for instance on a machine that has no OpenGL at all. All
+# common glfw distributions ship a cmake package configuration file defining
+# the imported target glfw.
+#
+# This option only says whether the debug window is compiled in, which solely
+# depends on glfw being available. Whether it can actually be opened is a
+# runtime question, see MujocoDebugWindow::isSupported() - under macOS it
+# cannot, since glfw refuses to be initialized from the thread that the window
+# runs in. Everything else about the Mujoco simulation is unaffected.
+###############################################################################
+IF (USE_MUJOCO)
+  FIND_PACKAGE(glfw3 CONFIG QUIET)
+
+  IF (glfw3_FOUND)
+    OPTION(RCS_USE_MUJOCO_DEBUGWINDOW "Build the Mujoco debug window (needs glfw)" ON)
+  ELSE()
+    OPTION(RCS_USE_MUJOCO_DEBUGWINDOW "Build the Mujoco debug window (needs glfw)" OFF)
+  ENDIF()
+
+  IF (RCS_USE_MUJOCO_DEBUGWINDOW AND NOT glfw3_FOUND)
+    MESSAGE(FATAL_ERROR "RCS_USE_MUJOCO_DEBUGWINDOW is enabled, but glfw was not "
+            "found. Install it (brew install glfw, apt install libglfw3-dev, "
+            "vcpkg install glfw3, ...) or disable the debug window with "
+            "-DRCS_USE_MUJOCO_DEBUGWINDOW=OFF.")
+  ENDIF()
+ENDIF(USE_MUJOCO)
 
 FIND_PACKAGE(VORTEX QUIET)
 IF (VORTEX_FOUND)
@@ -125,9 +172,13 @@ SET(RCS_PHYSICS_SRCS PhysicsHeadless.cpp)
 
 # Add Mujoco source files. We directly link it into the RcsPhysics library later.
 IF(USE_MUJOCO)
-  MESSAGE(STATUS "Enabling Mujoco simulation")
-  LIST(APPEND RCS_PHYSICS_SRCS MujocoSimulation.cpp MujocoDebugWindow.cpp)
-  SET (MUJOCO_LIBRARIES mujoco::mujoco)
+  MESSAGE(STATUS "Enabling Mujoco simulation: ${mujoco_ORIGIN}")
+  LIST(APPEND RCS_PHYSICS_SRCS MujocoSimulation.cpp)
+
+  IF(RCS_USE_MUJOCO_DEBUGWINDOW)
+    MESSAGE(STATUS "Enabling Mujoco debug window")
+    LIST(APPEND RCS_PHYSICS_SRCS MujocoDebugWindow.cpp)
+  ENDIF(RCS_USE_MUJOCO_DEBUGWINDOW)
 ENDIF(USE_MUJOCO)
 
 IF(NOT RCS_HEADLESS_BUILD)
@@ -171,14 +222,18 @@ IF(USE_BULLET)
   
 ENDIF(USE_BULLET)
 
-# Link MujocoSimulation into the RcsPhysics library.
+# Link MujocoSimulation into the RcsPhysics library. Both mujoco::mujoco and
+# the glfw target carry their own include directories, therefore no explicit
+# include path is needed here. glfw is only linked if the debug window is
+# built, it is of no use to the simulation itself.
 IF(USE_MUJOCO)
-  IF (WIN32)
-    FIND_PACKAGE(glfw3 CONFIG REQUIRED)
-  ENDIF(WIN32)
-  
-  TARGET_LINK_LIBRARIES(RcsPhysics mujoco::mujoco glfw)
+  TARGET_LINK_LIBRARIES(RcsPhysics mujoco::mujoco)
   TARGET_COMPILE_DEFINITIONS(RcsPhysics PRIVATE -DUSE_MUJOCO)
+
+  IF(RCS_USE_MUJOCO_DEBUGWINDOW)
+    TARGET_LINK_LIBRARIES(RcsPhysics glfw)
+    TARGET_COMPILE_DEFINITIONS(RcsPhysics PRIVATE -DRCS_USE_MUJOCO_DEBUGWINDOW)
+  ENDIF(RCS_USE_MUJOCO_DEBUGWINDOW)
 ENDIF(USE_MUJOCO)
 
 IF(USE_VORTEX AND VORTEX_FOUND)
@@ -207,12 +262,14 @@ IF (WIN32)
 #      ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/RcsBullet.dll)
 #  ENDIF(USE_BULLET)
 
+  # Copy the MuJoCo dll next to the executables. The location is taken from
+  # the imported target, so that it is correct for any MuJoCo installation.
   IF(USE_MUJOCO)
     ADD_CUSTOM_COMMAND(
       TARGET RcsPhysics POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy
-      $ENV{SIT}/External/MuJoCo/1.0/${MKPLT}/bin/mujoco.dll
-      ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}/mujoco.dll)
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      $<TARGET_FILE:mujoco::mujoco>
+      ${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE})
   ENDIF(USE_MUJOCO)
 
 ENDIF(WIN32)

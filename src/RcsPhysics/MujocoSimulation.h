@@ -34,7 +34,6 @@
 #ifndef RCS_MUJOCOSIMULATION_H
 #define RCS_MUJOCOSIMULATION_H
 
-#include "MujocoDebugWindow.h"
 #include <PhysicsBase.h>
 
 #include <mujoco/mujoco.h>
@@ -45,6 +44,14 @@
 
 namespace Rcs
 {
+
+/*! \brief Forward declaration only. The debug window is an optional part of
+ *         the Mujoco support (see RCS_USE_MUJOCO_DEBUGWINDOW), therefore this
+ *         header must not depend on it. The member and the methods below
+ *         exist either way, so that the layout of this class does not depend
+ *         on how the library was configured.
+ */
+class MujocoDebugWindow;
 
 /*! \ingroup RcsPhysics
  *  \brief Mujoco Simulation
@@ -243,10 +250,16 @@ public:
   virtual void setJointAngles(MatNd* q);
   virtual HTr getMujocoTransform(int mj_id) const;
 
+  /*! @{
+   *  \brief Debug window handling. If the library has been built without the
+   *         Mujoco debug window, these do nothing except emitting a warning,
+   *         and the getter returns NULL.
+   */
   MujocoDebugWindow* createDebugWindow();
   MujocoDebugWindow* getDebugWindow();
   void destroyDebugWindow();
   void toggleDebugWindow();
+  /*! @} */
 
   static void controlCallback(const mjModel* m, mjData* d);
 
@@ -254,10 +267,25 @@ public:
 
 private:
 
+  /*! \brief Refreshes the A_BI transforms from the current Mujoco state. The
+   *         forward kinematics (mj_forward() or mj_step()) must have been
+   *         computed before calling this.
+   */
+  void updateTransforms();
+
+  /*! \brief Writes the current mouse drag force into the Mujoco state. Called
+   *         once per integration cycle from simulate().
+   */
+  void applyDragForce();
+
   mjModel* sim;
   mjData* simData;
   std::vector<HTr> A_BI;   // Rcs frame in world coordinates
   MujocoDebugWindow* debugWindow;
+  double timeRemainder;    // Requested but not yet integrated time in [sec]
+  int dragBodyId;          // Mujoco id of the dragged body, -1 for none
+  double dragForce[3];     // Mouse drag force in world coordinates
+  double dragAnchor[3];    // Mouse drag anchor point in body coordinates
 };
 
 }   // namespace Rcs

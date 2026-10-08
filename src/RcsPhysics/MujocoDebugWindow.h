@@ -48,6 +48,14 @@ struct MujocoWinData;
 class MujocoDebugWindow
 {
 public:
+  /*! \brief Returns true if the debug window can be opened on this platform.
+   *         The window runs its own thread, and glfw does not permit being
+   *         initialized from any thread but the main one under macOS. There
+   *         it does not even fail gracefully, but traps, which is why callers
+   *         must check this before creating a window.
+   */
+  static bool isSupported();
+
   MujocoDebugWindow(mjModel* sim, mjData* simData);
   virtual ~MujocoDebugWindow();
   void start();

@@ -313,7 +313,11 @@ void BulletSoftSimulation::createWorld(xmlNodePtr bulletParams)
   }
 
   this->collisionConfiguration = new btSoftBodyRigidBodyCollisionConfiguration();
-  this->dispatcher = new btCollisionDispatcher(collisionConfiguration);
+  // MyNearCallbackEnabled() requires the dispatcher that
+  // createCollisionDispatcher() provides. Creating a plain btCollisionDispatcher
+  // here made the near callback throw std::bad_cast on the first collision
+  // pair of two rigid bodies.
+  this->dispatcher = createCollisionDispatcher(collisionConfiguration);
   dispatcher->setNearCallback(MyNearCallbackEnabled);
   broadPhase = new btDbvtBroadphase();
 

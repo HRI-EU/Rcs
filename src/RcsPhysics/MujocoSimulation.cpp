@@ -34,6 +34,10 @@
 #include "MujocoSimulation.h"
 #include "PhysicsFactory.h"
 
+#if defined (RCS_USE_MUJOCO_DEBUGWINDOW)
+#include "MujocoDebugWindow.h"
+#endif
+
 #include <Rcs_typedef.h>
 #include <Rcs_macros.h>
 #include <Rcs_dynamics.h>
@@ -70,7 +74,8 @@ static PhysicsFactoryRegistrar<MujocoSimulation> physics(className);
  * Constructor.
  ******************************************************************************/
 MujocoSimulation::MujocoSimulation() :
-  PhysicsBase(), sim(NULL), simData(NULL), debugWindow(NULL)
+  PhysicsBase(), sim(NULL), simData(NULL), debugWindow(NULL), timeRemainder(0.0),
+  dragBodyId(-1)
 {
 }
 
@@ -78,7 +83,8 @@ MujocoSimulation::MujocoSimulation() :
  * Constructor.
  ******************************************************************************/
 MujocoSimulation::MujocoSimulation(const RcsGraph* graph_) :
-  PhysicsBase(graph_), sim(NULL), simData(NULL), debugWindow(NULL)
+  PhysicsBase(graph_), sim(NULL), simData(NULL), debugWindow(NULL), timeRemainder(0.0),
+  dragBodyId(-1)
 {
   bool success = initialize(graph_, NULL);
   RCHECK(success);
@@ -88,7 +94,8 @@ MujocoSimulation::MujocoSimulation(const RcsGraph* graph_) :
  * Copy constructor.
  ******************************************************************************/
 MujocoSimulation::MujocoSimulation(const MujocoSimulation& copyFromMe) :
-  PhysicsBase(copyFromMe), sim(NULL), simData(NULL), debugWindow(NULL)
+  PhysicsBase(copyFromMe), sim(NULL), simData(NULL), debugWindow(NULL), timeRemainder(0.0),
+  dragBodyId(-1)
 {
 }
 
@@ -97,7 +104,8 @@ MujocoSimulation::MujocoSimulation(const MujocoSimulation& copyFromMe) :
  ******************************************************************************/
 MujocoSimulation::MujocoSimulation(const MujocoSimulation& copyFromMe,
                                    const RcsGraph* newGraph) :
-  PhysicsBase(copyFromMe, newGraph), sim(NULL), simData(NULL), debugWindow(NULL)
+  PhysicsBase(copyFromMe, newGraph), sim(NULL), simData(NULL), debugWindow(NULL), timeRemainder(0.0),
+  dragBodyId(-1)
 {
 }
 
@@ -124,7 +132,9 @@ MujocoSimulation::~MujocoSimulation()
 {
   mj_deleteModel(sim);
   mj_deleteData(simData);
+#if defined (RCS_USE_MUJOCO_DEBUGWINDOW)
   delete debugWindow;
+#endif
 }
 
 /*******************************************************************************
@@ -187,11 +197,15 @@ bool MujocoSimulation::initialize(const RcsGraph* g, const PhysicsConfig* cfg)
   // install control callback
   mjcb_control = controlCallback;
 
+  // Initialize the body transforms from the forward kinematics computed
+  // above. Leaving them identity here made getPhysicsTransform() report the
+  // origin until the first simulate() call, which is inconsistent with the
+  // other physics engines.
   A_BI.resize(sim->nbody);
-  for (int i = 0; i < sim->nbody; ++i)
-  {
-    HTr_setIdentity(&A_BI[i]);
-  }
+  updateTransforms();
+
+  Vec3d_setZero(dragForce);
+  Vec3d_setZero(dragAnchor);
 
   REXEC(1)
   {
@@ -252,7 +266,30 @@ void MujocoSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
 
   incrementTime(dt);
 
-  mj_step(sim, simData);
+  // Mujoco integrates with the fixed step sim->opt.timestep, which is in
+  // general not the dt that is requested here. A single mj_step() call
+  // therefore advances the simulation by the model's timestep, and not by dt.
+  // With the default timestep of 0.002 and a typical dt of 0.005, this made
+  // the simulation run at 0.002 / 0.005 = 0.4 times real time.
+  //
+  // We therefore accumulate the requested time, and perform as many steps as
+  // fit into it. The remainder is carried over to the next call, so that the
+  // simulation advances by dt on average, while Mujoco keeps integrating with
+  // its fixed step. The latter is what Mujoco is designed for, which is why
+  // we don't simply assign dt to sim->opt.timestep.
+  const double h = sim->opt.timestep;
+  RCHECK_MSG(h > 0.0, "Mujoco timestep is %f but must be > 0", h);
+
+  applyDragForce();
+
+  this->timeRemainder += dt;
+
+  while (this->timeRemainder >= h)
+  {
+    mj_step(sim, simData);
+    this->timeRemainder -= h;
+  }
+
   getJointAngles(getGraph()->q);
   getJointVelocities(getGraph()->q_dot);
 
@@ -273,11 +310,7 @@ void MujocoSimulation::simulate(double dt, MatNd* q, MatNd* q_dot,
 
   RcsGraph_setState(getGraph(), getGraph()->q, getGraph()->q_dot);
 
-  for (size_t i = 0; i < A_BI.size(); ++i)
-  {
-    HTr A_MI = getMujocoTransform(i);
-    HTr_copy(&A_BI[i], &A_MI);
-  }
+  updateTransforms();
 }
 
 /*******************************************************************************
@@ -288,6 +321,15 @@ void MujocoSimulation::reset()
   RcsGraph_setDefaultState(getGraph());
   mj_resetData(sim, simData);
   setJointAngles(getGraph()->q);
+
+  // Bring the transforms in line with the state we just reset to, otherwise
+  // they would report the pose from before the reset.
+  mj_forward(sim, simData);
+  updateTransforms();
+
+  // mj_resetData() sets the Mujoco simulation time back to zero, therefore
+  // the accumulated time must be dropped as well.
+  this->timeRemainder = 0.0;
 }
 
 /*******************************************************************************
@@ -331,9 +373,85 @@ void MujocoSimulation::applyImpulse(const RcsBody* body, const double F[3],
  *
  ******************************************************************************/
 void MujocoSimulation::applyForce(const RcsBody* body, const double f[3],
-                                  const double r[3])
+                                  const double B_r[3])
 {
-  RLOG(1, "FIXME");
+  // This only memorizes the drag force. It is applied in each integration
+  // cycle from within simulate(), since the force must be recomputed from the
+  // body's current transform. This mirrors how the Bullet simulation does it.
+  const int newId = body ? mj_name2id(sim, mjOBJ_BODY, body->name) : -1;
+
+  // Mujoco keeps xfrc_applied until it is overwritten. If the dragging ended,
+  // or moved on to another body, the force of the previous body is cleared.
+  if ((dragBodyId != -1) && (dragBodyId != newId))
+  {
+    VecNd_setZero(&simData->xfrc_applied[6*dragBodyId], 6);
+  }
+
+  dragBodyId = newId;
+
+  if (dragBodyId == -1)
+  {
+    Vec3d_setZero(dragForce);
+    Vec3d_setZero(dragAnchor);
+    RLOG(5, "Dragging stopped");
+    return;
+  }
+
+  // The anchor point is given in the coordinates of the dragged body, see
+  // ForceDragger::update(). The force is scaled with the same factor as in
+  // the Bullet simulation, so that dragging feels alike in both engines.
+  Vec3d_copy(dragAnchor, B_r);
+  Vec3d_constMul(dragForce, f, 10.0);
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void MujocoSimulation::applyDragForce()
+{
+  if (dragBodyId == -1)
+  {
+    return;
+  }
+
+  // Anchor point in world coordinates, based on the body's current transform
+  const HTr A_BdyI = getMujocoTransform(dragBodyId);
+  double I_anchor[3];
+  Vec3d_transform(I_anchor, &A_BdyI, dragAnchor);
+
+  // The xfrc_applied force acts on the body's center of mass (xipos).
+  // Applying the force at the anchor point is therefore equivalent to the
+  // same force acting on the com, plus the moment it exerts about it.
+  double com_r_anchor[3], force[3], torque[3];
+  Vec3d_sub(com_r_anchor, I_anchor, &simData->xipos[3*dragBodyId]);
+  Vec3d_crossProduct(torque, com_r_anchor, dragForce);
+  Vec3d_copy(force, dragForce);
+
+  // The Bullet simulation strongly damps a body while it is being dragged, so
+  // that it follows the mouse instead of being accelerated away. Mujoco has
+  // no per-body damping, therefore we add a viscous term that opposes the
+  // body's motion. Scaling it with the body's mass and inertia makes the
+  // velocity decay with the time constant below, independent of how heavy the
+  // dragged body is.
+  const double dragDecayTime = 0.3;   // velocity decay time constant in [sec]
+  double vel[6];                      // rot:lin, in world orientation
+  mj_objectVelocity(sim, simData, mjOBJ_BODY, dragBodyId, vel, 0);
+
+  const double m = simData ? sim->body_mass[dragBodyId] : 0.0;
+  const double* inertia = &sim->body_inertia[3*dragBodyId];
+
+  // A scalar stand-in for the inertia tensor is good enough for a damping
+  // term, and avoids rotating the diagonal inertia into the world frame.
+  const double iMean = (inertia[0] + inertia[1] + inertia[2]) / 3.0;
+
+  for (int i = 0; i < 3; ++i)
+  {
+    force[i]  -= (m / dragDecayTime) * vel[i+3];
+    torque[i] -= (iMean / dragDecayTime) * vel[i];
+  }
+
+  Vec3d_copy(&simData->xfrc_applied[6*dragBodyId + 0], force);
+  Vec3d_copy(&simData->xfrc_applied[6*dragBodyId + 3], torque);
 }
 
 /*******************************************************************************
@@ -477,7 +595,7 @@ void MujocoSimulation::setJointAngles(MatNd* q)
       case mjJNT_BALL:    // 4 dof quaternion
       {
         double* quat = &simData->qpos[i_mcj];
-        Quat_fromEulerAngles(quat, &q->ele[i_rcs+3]);
+        Quat_fromEulerAngles(quat, &q->ele[i_rcs]);
         i_rcs += 3;
         i_mcj += 4;
         break;
@@ -591,6 +709,18 @@ void MujocoSimulation::getJointAccelerations(MatNd* q_ddot,
 void MujocoSimulation::setMassAndInertiaFromPhysics(RcsGraph* graph)
 {
   // Nothing to do here
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+void MujocoSimulation::updateTransforms()
+{
+  for (size_t i = 0; i < A_BI.size(); ++i)
+  {
+    HTr A_MI = getMujocoTransform((int) i);
+    HTr_copy(&A_BI[i], &A_MI);
+  }
 }
 
 /*******************************************************************************
@@ -760,16 +890,30 @@ void MujocoSimulation::setControlInput(const MatNd* q_des_,
  ******************************************************************************/
 MujocoDebugWindow* MujocoSimulation::createDebugWindow()
 {
+#if defined (RCS_USE_MUJOCO_DEBUGWINDOW)
   if (debugWindow)
   {
     RLOG(4, "Debug window already running");
     return debugWindow;
   }
 
+  if (!MujocoDebugWindow::isSupported())
+  {
+    RLOG(1, "The Mujoco debug window is not supported on this platform - "
+         "see MujocoDebugWindow::isSupported(). You can inspect the converted "
+         "model with Mujoco's own viewer instead: simulate mujoco.xml");
+    return NULL;
+  }
+
   debugWindow = new MujocoDebugWindow(sim, simData);
   debugWindow->start();
 
   return debugWindow;
+#else
+  RLOG(1, "This library has been built without the Mujoco debug window - "
+       "reconfigure with -DRCS_USE_MUJOCO_DEBUGWINDOW=ON to enable it");
+  return NULL;
+#endif
 }
 
 /*******************************************************************************
@@ -785,6 +929,7 @@ MujocoDebugWindow* MujocoSimulation::getDebugWindow()
  ******************************************************************************/
 void MujocoSimulation::destroyDebugWindow()
 {
+#if defined (RCS_USE_MUJOCO_DEBUGWINDOW)
   if (!debugWindow)
   {
     RLOG(4, "Debug window already destroyed");
@@ -793,6 +938,9 @@ void MujocoSimulation::destroyDebugWindow()
 
   delete debugWindow;
   debugWindow = NULL;
+#else
+  RLOG(4, "This library has been built without the Mujoco debug window");
+#endif
 }
 
 /*******************************************************************************
@@ -800,6 +948,7 @@ void MujocoSimulation::destroyDebugWindow()
  ******************************************************************************/
 void MujocoSimulation::toggleDebugWindow()
 {
+#if defined (RCS_USE_MUJOCO_DEBUGWINDOW)
   if (!debugWindow)
   {
     createDebugWindow();
@@ -808,7 +957,10 @@ void MujocoSimulation::toggleDebugWindow()
   {
     destroyDebugWindow();
   }
-
+#else
+  RLOG(1, "This library has been built without the Mujoco debug window - "
+       "reconfigure with -DRCS_USE_MUJOCO_DEBUGWINDOW=ON to enable it");
+#endif
 }
 
 /*******************************************************************************

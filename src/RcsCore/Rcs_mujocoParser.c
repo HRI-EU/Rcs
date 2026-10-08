@@ -90,10 +90,14 @@ static void parseJoint(FILE* fd,
     fprintf(fd, "type=\"slide\" ");
   }
 
-  HTr A_21;
-  HTr_copy(&A_21, &jnt->A_JI);
-  writePos(fd, A_21.org, 6);
-  writeArray(fd, "axis", A_21.rot[jnt->dirIdx], 3, 6);
+  // Mujoco expects the joint anchor and axis in the frame of the body that
+  // the joint belongs to. We therefore express the joint frame with respect
+  // to the body frame. The rows of a Rcs rotation matrix are the axes of the
+  // frame, therefore row dirIdx is the joint's axis of motion.
+  HTr A_JB;
+  HTr_invTransform(&A_JB, &bdy->A_BI, &jnt->A_JI);
+  writePos(fd, A_JB.org, 6);
+  writeArray(fd, "axis", A_JB.rot[jnt->dirIdx], 3, 6);
 
   fprintf(fd, "/>\n");
 }
@@ -106,21 +110,80 @@ static void parseShape(FILE* fd,
                        const RcsShape* shape,
                        const char* indentStr)
 {
-  if ((shape->type == RCSSHAPE_REFFRAME) ||
-      (shape->type == RCSSHAPE_TORUS) ||
-      (shape->type == RCSSHAPE_POINT) ||
-      (shape->type == RCSSHAPE_CONE))
+  // Only the shapes that have a Mujoco counterpart are written out. Emitting
+  // an unsupported shape with an invalid geom type makes the whole model fail
+  // to load, therefore anything else is skipped here.
+  switch (shape->type)
   {
-    if (shape->type != RCSSHAPE_REFFRAME)
-    {
-      RLOG(0, "Shape %s not yet supported", RcsShape_name(shape->type));
-    }
-    return;
+    case RCSSHAPE_CYLINDER:
+    case RCSSHAPE_SPHERE:
+    case RCSSHAPE_SSL:
+    case RCSSHAPE_SSR:
+    case RCSSHAPE_BOX:
+      break;
+
+    case RCSSHAPE_MESH:
+      // A mesh shape without a file cannot be referenced from the asset
+      // section, and Mujoco rejects an asset with an empty name.
+      if (!shape->meshFile || (shape->meshFile[0] == '\0'))
+      {
+        RLOG(4, "Skipping mesh shape of body %s: no mesh file", bdy->name);
+        return;
+      }
+      break;
+
+    default:
+      RLOG(4, "Shape %s of body %s has no Mujoco counterpart - skipping",
+           RcsShape_name(shape->type), bdy->name);
+      return;
   }
 
-  // Shape's transform in world coordinates
-  HTr A_CI;
-  HTr_transform(&A_CI, &bdy->A_BI, &shape->A_CB);
+  // Mujoco requires all geom sizes to be strictly positive. Rcs does permit
+  // degenerate shapes, which we skip rather than letting the model fail. The
+  // comparison is against the resolution of the written numbers and not
+  // against zero: a smaller extent is written out as "0.000000", which Mujoco
+  // rejects just the same.
+  {
+    const double minExtent = 1.0e-6;
+    bool degenerate = false;
+
+    switch (shape->type)
+    {
+      case RCSSHAPE_SPHERE:
+      case RCSSHAPE_SSL:
+        degenerate = (shape->extents[0] < minExtent);
+        break;
+
+      case RCSSHAPE_CYLINDER:
+        degenerate = (shape->extents[0] < minExtent) ||
+                     (shape->extents[2] < minExtent);
+        break;
+
+      case RCSSHAPE_SSR:
+      case RCSSHAPE_BOX:
+        degenerate = (shape->extents[0] < minExtent) ||
+                     (shape->extents[1] < minExtent) ||
+                     (shape->extents[2] < minExtent);
+        break;
+
+      default:
+        break;
+    }
+
+    if (degenerate)
+    {
+      RLOG(4, "Skipping degenerate %s shape of body %s: extents %f %f %f",
+           RcsShape_name(shape->type), bdy->name, shape->extents[0],
+           shape->extents[1], shape->extents[2]);
+      return;
+    }
+  }
+
+  // Shape's transform with respect to the body frame. Mujoco interprets a
+  // geom's transform relative to the body it is a child of, which is exactly
+  // how Rcs stores it, so no composition is needed here.
+  HTr A_CB;
+  HTr_copy(&A_CB, &shape->A_CB);
 
   // All shapes of the body:
   // [plane, hfield, sphere, capsule, ellipsoid, cylinder, box, mesh]
@@ -145,8 +208,8 @@ static void parseShape(FILE* fd,
     case RCSSHAPE_SSL:
     {
       double fromTo[6];
-      Vec3d_copy(fromTo, A_CI.org);
-      Vec3d_constMulAndAdd(fromTo + 3, A_CI.org, A_CI.rot[2], shape->extents[2]);
+      Vec3d_copy(fromTo, A_CB.org);
+      Vec3d_constMulAndAdd(fromTo + 3, A_CB.org, A_CB.rot[2], shape->extents[2]);
       fprintf(fd, "type=\"capsule\" ");
       writeArray(fd, "size", shape->extents, 1, 6);
       writeArray(fd, "fromto", fromTo, 6, 6);
@@ -174,16 +237,18 @@ static void parseShape(FILE* fd,
     }
 
     default:
-      fprintf(fd, "type=\"unsupported (%s)\"", RcsShape_name(shape->type));
+      // Cannot happen: the shape types are filtered above.
+      RFATAL("Unhandled shape type %d (%s)", shape->type,
+             RcsShape_name(shape->type));
   }
 
   double ea_deg[3];
-  Mat3d_toEulerAngles(ea_deg, A_CI.rot);
+  Mat3d_toEulerAngles(ea_deg, A_CB.rot);
   Vec3d_constMulSelf(ea_deg, 180.0/M_PI);
 
   if (shape->type != RCSSHAPE_SSL)
   {
-    writePos(fd, A_CI.org, 6);
+    writePos(fd, A_CB.org, 6);
     writeArray(fd, "euler", ea_deg, 3, 6);
   }
 
@@ -201,47 +266,58 @@ static void parseShape(FILE* fd,
 static void printBdy(FILE* fd,
                      const RcsGraph* graph,
                      const RcsBody* bdy,
+                     const HTr* A_BA,
                      const char* indentStr)
 {
-  // Inertia tensor frame: Compute the transformation from body (Index B) to
-  // COM (Index P) frame to body frame. The principal axes of inertia
-  // correspond to the Eigenvectors. They are sorted in decreasing order.
+  // Inertia tensor frame: Compute the transformation from the body (Index B)
+  // to the COM (Index P) frame. The principal axes of inertia correspond to
+  // the Eigenvectors. They are sorted in decreasing order.
   double diagInertia[3], ea_deg[3];
-  HTr A_PB, A_PI;
+  HTr A_PB, A_rel;
 
   // Body to inertia frame
   Mat3d_getEigenVectors(A_PB.rot, diagInertia, (double(*)[3])bdy->Inertia.rot);
   Mat3d_transposeSelf(A_PB.rot);
   Vec3d_copy(A_PB.org, bdy->Inertia.org);
 
-  // World to inertia frame
-  HTr_transform(&A_PI, &bdy->A_BI, &A_PB);
-
-  // Body transform in world coordinates
-  Mat3d_toEulerAngles(ea_deg, (double(*)[3]) &bdy->A_BI.rot);
+  // Body transform with respect to the enclosing Mujoco body (Index A)
+  HTr_copy(&A_rel, A_BA);
+  Mat3d_toEulerAngles(ea_deg, A_rel.rot);
   Vec3d_constMulSelf(ea_deg, 180.0/M_PI);
 
   fprintf(fd, "%s<body name=\"%s\" ", indentStr, bdy->name);
-  writePos(fd, bdy->A_BI.org, 6);
+  writePos(fd, A_rel.org, 6);
   writeArray(fd, "euler", ea_deg, 3, 6);
   fprintf(fd, ">\n");
 
-  // Mass and inertia properties
-  fprintf(fd, "%s  <inertial ", indentStr);
-  writeArray(fd, "mass", &bdy->m, 1, 6);
-  writeArray(fd, "diaginertia", diagInertia, 3, 6);
+  // Mass and inertia properties. Both the COM and the principal axes are
+  // already expressed with respect to the body frame, which is what Mujoco
+  // expects for a child element of a body.
+  //
+  // Mujoco insists on a positive mass and inertia for any body that can move.
+  // Rcs does allow massless bodies, so for these we omit the inertial element
+  // and let the Mujoco compiler derive the inertial properties from the
+  // body's geoms (its inertiafromgeom default is "auto", which does exactly
+  // that if no inertial element is given).
+  if (bdy->m > 0.0)
+  {
+    fprintf(fd, "%s  <inertial ", indentStr);
+    writeArray(fd, "mass", &bdy->m, 1, 6);
+    writeArray(fd, "diaginertia", diagInertia, 3, 6);
+    writePos(fd, A_PB.org, 6);
 
-  // Compute COM in world coordinates
-  double com[3];
-  Vec3d_add(com, bdy->A_BI.org, bdy->Inertia.org);
-  writePos(fd, com, 6);
+    Mat3d_toEulerAngles(ea_deg, A_PB.rot);
+    Vec3d_constMulSelf(ea_deg, 180.0 / M_PI);
+    writeArray(fd, "euler", ea_deg, 3, 6);
 
-  // Compute rotation from world frame into diagonal inertia tensor
-  Mat3d_toEulerAngles(ea_deg, A_PI.rot);
-  Vec3d_constMulSelf(ea_deg, 180.0 / M_PI);
-  writeArray(fd, "euler", ea_deg, 3, 6);
-
-  fprintf(fd, "/>\n");
+    fprintf(fd, "/>\n");
+  }
+  else if (bdy->jntId != -1)
+  {
+    // No mass and no geoms to derive one from: Mujoco will refuse the model.
+    RLOG(1, "Body \"%s\" has joints but no mass - if it has no physics "
+         "shapes either, Mujoco will reject the model", bdy->name);
+  }
 
 
   // Here we construct 3 translations and a Mujoco ball joint consecutively. The
@@ -252,17 +328,28 @@ static void printBdy(FILE* fd,
   {
     RcsJoint* jnt = RCSJOINT_BY_ID(graph, bdy->jntId);
     RCHECK(jnt);
+
+    // The three slide joints translate along the world axes. Since Mujoco
+    // interprets joint axes in the body frame, the world axes have to be
+    // rotated into it.
+    HTr A_JB;
+    double axis[3];
+    HTr_invTransform(&A_JB, &bdy->A_BI, &jnt->A_JI);
+
     fprintf(fd, "%s  <joint name=\"%s_x\" type=\"slide\" ", indentStr, bdy->name);
-    writePos(fd, jnt->A_JI.org, 6);
-    writeArray(fd, "axis", Vec3d_ex(), 3, 6);
+    writePos(fd, A_JB.org, 6);
+    Vec3d_rotate(axis, (double(*)[3])bdy->A_BI.rot, Vec3d_ex());
+    writeArray(fd, "axis", axis, 3, 6);
     fprintf(fd, " />\n");
 
     fprintf(fd, "%s  <joint name=\"%s_y\" type=\"slide\" ", indentStr, bdy->name);
-    writeArray(fd, "axis", Vec3d_ey(), 3, 6);
+    Vec3d_rotate(axis, (double(*)[3])bdy->A_BI.rot, Vec3d_ey());
+    writeArray(fd, "axis", axis, 3, 6);
     fprintf(fd, " />\n");
 
     fprintf(fd, "%s  <joint name=\"%s_z\" type=\"slide\" ", indentStr, bdy->name);
-    writeArray(fd, "axis", Vec3d_ez(), 3, 6);
+    Vec3d_rotate(axis, (double(*)[3])bdy->A_BI.rot, Vec3d_ez());
+    writeArray(fd, "axis", axis, 3, 6);
     fprintf(fd, " />\n");
 
     fprintf(fd, "%s  <joint name=\"%s_quat\" type=\"ball\" />\n", indentStr, bdy->name);
@@ -290,35 +377,46 @@ static void printBdy(FILE* fd,
 /*******************************************************************************
  *
  ******************************************************************************/
+/*! \brief Writes bdy and its subtree. A_AI is the world transform of the
+ *         closest enclosing body that has been written out, or the identity
+ *         if that is the worldbody. Bodies that are not part of the physics
+ *         simulation are skipped, but their children are still written. Since
+ *         all transforms are relative to the enclosing Mujoco body, and not
+ *         to the Rcs parent, the transform of a skipped body is automatically
+ *         folded into the ones of its children.
+ */
 static void recurse(FILE* fd,
                     const RcsGraph* graph,
                     const RcsBody* bdy,
+                    const HTr* A_AI,
                     unsigned int indent)
 {
   char indentStr[64];
   snprintf(indentStr, 64, "%*s", indent, " ");
 
-  if (bdy->physicsSim != RCSBODY_PHYSICS_NONE)
-  {
-    //fprintf(fd, "%s<body name=\"%s\" >\n ", indentStr, bdy->name);
-    printBdy(fd, graph, bdy, indentStr);
-  }
+  const bool emit = (bdy->physicsSim != RCSBODY_PHYSICS_NONE);
 
+  if (emit)
+  {
+    HTr A_BA;
+    HTr_invTransform(&A_BA, A_AI, &bdy->A_BI);
+    printBdy(fd, graph, bdy, &A_BA, indentStr);
+  }
 
   if (bdy->firstChildId != -1)
   {
-    recurse(fd, graph, &graph->bodies[bdy->firstChildId], indent + 2);
+    recurse(fd, graph, &graph->bodies[bdy->firstChildId],
+            emit ? &bdy->A_BI : A_AI, emit ? indent+2 : indent);
   }
 
-  if (bdy->physicsSim != RCSBODY_PHYSICS_NONE)
+  if (emit)
   {
-    //fprintf(fd, "%s</body (%s)>\n", indentStr, bdy->name);
     fprintf(fd, "%s</body>\n", indentStr);
   }
 
   if (bdy->nextId != -1)
   {
-    recurse(fd, graph, &graph->bodies[bdy->nextId], indent);
+    recurse(fd, graph, &graph->bodies[bdy->nextId], A_AI, indent);
   }
 
 }
@@ -366,7 +464,9 @@ bool RcsGraph_toMujocoFile(const char* fileName, const RcsGraph* graph)
     {
       RCSBODY_TRAVERSE_SHAPES(BODY)
       {
-        if (SHAPE->type==RCSSHAPE_MESH)
+        // Skipped in parseShape as well, see there.
+        if ((SHAPE->type==RCSSHAPE_MESH) && SHAPE->meshFile &&
+            (SHAPE->meshFile[0] != '\0'))
         {
           RLOG(5, "Checking %s", SHAPE->meshFile);
           bool alreadyAdded = false;
@@ -381,8 +481,14 @@ bool RcsGraph_toMujocoFile(const char* fileName, const RcsGraph* graph)
 
           if (!alreadyAdded)
           {
+            // The asset is given the same name that parseShape refers to,
+            // rather than relying on Mujoco deriving it from the file name.
+            char* meshName = String_clone(SHAPE->meshFile);
+            String_removeSuffix(meshName, SHAPE->meshFile, '.');
             meshFileArray[nMeshEntries] = SHAPE->meshFile;
-            fprintf(fd, "  <mesh file=\"%s\"/>\n", SHAPE->meshFile);
+            fprintf(fd, "  <mesh name=\"%s\" file=\"%s\"/>\n",
+                    String_stripPath(meshName), SHAPE->meshFile);
+            RFREE(meshName);
             nMeshEntries++;
             RCHECK_MSG(nMeshEntries<nMeshShapes, "%d %d", nMeshEntries, nMeshShapes);
           }
@@ -404,8 +510,11 @@ bool RcsGraph_toMujocoFile(const char* fileName, const RcsGraph* graph)
   fprintf(fd, ">\n");
   fprintf(fd, "</option>\n\n");
 
-  // Option for considering transforms in world frame
-  fprintf(fd, "<compiler coordinate=\"global\" ");
+  // All transforms are written relative to the enclosing body. The global
+  // coordinate option that was used here before has been removed from Mujoco
+  // in version 2.3.4. Angles and the Euler sequence are stated explicitly,
+  // so that the file does not depend on the Mujoco defaults.
+  fprintf(fd, "<compiler angle=\"degree\" eulerseq=\"xyz\" ");
   /* fprintf(fd, "inertiafromgeom=\"true\""); */
   fprintf(fd, " >\n");
   fprintf(fd, "</compiler>\n\n");
@@ -415,15 +524,17 @@ bool RcsGraph_toMujocoFile(const char* fileName, const RcsGraph* graph)
   // Create light shining down from the top and casting shadows
   fprintf(fd, "<light directional=\"true\" pos=\"0 0 10\" dir=\"0 0 -1\" />\n");
 
-  // The most convenient way to convert the model is making use of the Mujoco
-  // global coordinate option. For this, we create a copy of the graph, bring
-  // it into the zero-configuration, and create all Mujoco bodies from that.
+  // Mujoco body transforms refer to the joint-zero pose. We therefore create
+  // a copy of the graph, bring it into the zero-configuration, and create all
+  // Mujoco bodies from that. The forward kinematics of the copy give us the
+  // world transform of every body, from which the relative transforms that
+  // Mujoco expects are computed in recurse().
   RcsGraph* gCopy = RcsGraph_clone(graph);
   RCHECK(gCopy);
   MatNd_setZero(gCopy->q);
   MatNd_setZero(gCopy->q_dot);
   RcsGraph_setState(gCopy, gCopy->q, gCopy->q_dot);
-  recurse(fd, gCopy, RcsGraph_getRootBody(gCopy), 2);
+  recurse(fd, gCopy, RcsGraph_getRootBody(gCopy), HTr_identity(), 2);
 
 
 
@@ -441,7 +552,13 @@ bool RcsGraph_toMujocoFile(const char* fileName, const RcsGraph* graph)
         continue;
       }
 
-      if (BODY->rigid_body_joints)
+      // A floating base is written out as three slide joints and a ball
+      // joint with generated names (see printBdy), so the Rcs joint names
+      // of such a body do not exist in the Mujoco model. Note that this
+      // must use the same predicate as printBdy, otherwise we end up with
+      // actuators referring to non-existing joints, and the model does not
+      // load at all.
+      if (RcsBody_isFloatingBase(gCopy, BODY))
       {
         continue;
       }

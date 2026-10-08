@@ -85,6 +85,15 @@ struct MyCollisionDispatcher : public btCollisionDispatcher
 };
 
 /*******************************************************************************
+ * The dispatcher type is local to this file, therefore derived classes create
+ * it through this method.
+ ******************************************************************************/
+btCollisionDispatcher* Rcs::BulletSimulation::createCollisionDispatcher(btDefaultCollisionConfiguration* cc)
+{
+  return new MyCollisionDispatcher(cc, getGraph(), collisionFilter);
+}
+
+/*******************************************************************************
  * Callback for collision filtering. Do your collision logic here
  ******************************************************************************/
 void Rcs::BulletSimulation::NearCallbackAllToAll(btBroadphasePair& collisionPair,
@@ -134,31 +143,42 @@ void Rcs::BulletSimulation::MyNearCallbackEnabled(btBroadphasePair& collisionPai
 
   NLOG(1, "Broadphase collision: %s and %s", rb0->getBodyName(), rb1->getBodyName());
 
-  MyCollisionDispatcher& myCD = dynamic_cast<MyCollisionDispatcher&>(dispatcher);
+  // Casting to a pointer and not to a reference: a derived simulation might
+  // have created its dispatcher without createCollisionDispatcher(), and a
+  // reference cast would throw std::bad_cast for every single collision pair.
+  MyCollisionDispatcher* myCD = dynamic_cast<MyCollisionDispatcher*>(&dispatcher);
+
+  if (!myCD)
+  {
+    RLOG(5, "Dispatcher carries no collision filter - not filtering");
+    dispatcher.defaultNearCallback(collisionPair, dispatcher, dispatchInfo);
+    return;
+  }
+
   const RcsBody* b0 = rb0->getBodyPtr();
   const RcsBody* b1 = rb1->getBodyPtr();
 
   // Disable collisions related to collision filter
   const unsigned int id0 = rb0->getBodyPtr()->id;
   const unsigned int id1 = rb1->getBodyPtr()->id;
-  const unsigned int nb = myCD.graphPtr->nBodies;
+  const unsigned int nb = myCD->graphPtr->nBodies;
   const bool idsValid = (id0>=0) && (id1>=0) && (id0<nb) && (id1<nb);
-  if (idsValid && myCD.collisionFilterRef[id0][id1]!=0)
+  if (idsValid && myCD->collisionFilterRef[id0][id1]!=0)
   {
     NLOG(1, "Found pair %d - %d", id0, id1);
     return;
   }
 
   // Disable parent-child collisions
-  const RcsBody* parent0 = RcsBody_getParent(myCD.graphPtr, (RcsBody*)b0);
-  const RcsBody* parent1 = RcsBody_getParent(myCD.graphPtr, (RcsBody*)b1);
+  const RcsBody* parent0 = RcsBody_getParent(myCD->graphPtr, (RcsBody*)b0);
+  const RcsBody* parent1 = RcsBody_getParent(myCD->graphPtr, (RcsBody*)b1);
 
   if ((b0->rigid_body_joints==false && parent0) ||
       (b1->rigid_body_joints==false && parent1))
   {
 
-    if ((RcsBody_isChild(myCD.graphPtr, b0, b1)) ||
-        (RcsBody_isChild(myCD.graphPtr, b1, b0)))
+    if ((RcsBody_isChild(myCD->graphPtr, b0, b1)) ||
+        (RcsBody_isChild(myCD->graphPtr, b1, b0)))
     {
       NLOG(1, "Skipping %s - %s", rb0->getBodyName(), rb1->getBodyName());
       return;
@@ -2281,7 +2301,7 @@ void Rcs::BulletSimulation::createWorld(xmlNodePtr bulletParams)
 
   this->collisionConfiguration = new btDefaultCollisionConfiguration();
   //this->dispatcher = new btCollisionDispatcher(collisionConfiguration);
-  this->dispatcher = new MyCollisionDispatcher(collisionConfiguration, getGraph(), collisionFilter);
+  this->dispatcher = createCollisionDispatcher(collisionConfiguration);
   dispatcher->setNearCallback(MyNearCallbackEnabled);
   broadPhase = new btDbvtBroadphase();
 

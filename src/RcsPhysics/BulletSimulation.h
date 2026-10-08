@@ -194,6 +194,14 @@ protected:
                                      btCollisionDispatcher& dispatcher,
                                      const btDispatcherInfo& dispatchInfo);
 
+  /*! \brief Creates the collision dispatcher that MyNearCallbackEnabled()
+   *         expects. The near callback needs access to the graph and to the
+   *         collision filter, which the dispatcher carries. Derived classes
+   *         must create their dispatcher through this method, otherwise the
+   *         near callback has no filter to apply.
+   */
+  btCollisionDispatcher* createCollisionDispatcher(btDefaultCollisionConfiguration* cc);
+
 
   virtual void initPhysics(const PhysicsConfig* config);
   void applyControl(double dt);

@@ -261,10 +261,13 @@ bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
     case (osgGA::GUIEventAdapter::KEYDOWN):
     {
       /////////////////////////////////////////////////////////////
-      // Toggle Bullet physics debug node
+      // Toggle the physics engine's debug display
       /////////////////////////////////////////////////////////////
       if (ea.getKey() == 'd')
       {
+        // Bullet and Mujoco are not mutually exclusive, both can be compiled
+        // into the library. The branches below are therefore independent of
+        // each other, and each one tests for its own simulation type.
 #if defined (USE_BULLET)
 
         if (dynamic_cast<Rcs::BulletSimulation*>(sim))
@@ -297,15 +300,17 @@ bool Rcs::PhysicsNode::eventCallback(const osgGA::GUIEventAdapter& ea,
           }
         }
 
-#elif defined (USE_MUJOCO)
+#endif   // USE_BULLET
 
-        else if (dynamic_cast<Rcs::MujocoSimulation*>(sim))
+#if defined (USE_MUJOCO)
+
+        if (dynamic_cast<Rcs::MujocoSimulation*>(sim))
         {
           Rcs::MujocoSimulation* s = dynamic_cast<Rcs::MujocoSimulation*>(sim);
           s->toggleDebugWindow();
         }
 
-#endif
+#endif   // USE_MUJOCO
       }
       /////////////////////////////////////////////////////////////
       // Toggle ContactsNode

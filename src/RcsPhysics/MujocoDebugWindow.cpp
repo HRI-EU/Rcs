@@ -150,7 +150,7 @@ static void mouse_move(GLFWwindow* window, double xpos, double ypos)
   }
 
   // move camera
-  mjv_moveCamera(winData->m, action, dx/height, dy/height, &winData->scn, &winData->cam);
+  mjv_moveCamera(winData->m, action, dx/height, dy/height, &winData->cam);
 }
 
 
@@ -159,7 +159,7 @@ static void scroll(GLFWwindow* window, double xoffset, double yoffset)
 {
   // emulate vertical mouse motion = 5% of window height
   MujocoWinData* winData = getWinData(window);
-  mjv_moveCamera(winData->m, mjMOUSE_ZOOM, 0, -0.05*yoffset, &winData->scn, &winData->cam);
+  mjv_moveCamera(winData->m, mjMOUSE_ZOOM, 0, -0.05*yoffset, &winData->cam);
 }
 
 
@@ -240,6 +240,20 @@ void* MujocoDebugWindow::threadFuncPosix(void* param)
   RLOG(5, "Exiting thread function");
 
   return NULL;
+}
+
+bool MujocoDebugWindow::isSupported()
+{
+#if defined (__APPLE__)
+  // glfwInit() aborts the process with SIGTRAP when called from any thread
+  // but the main one, and this class initializes glfw from the thread it
+  // starts. Driving glfw from the main thread instead would mean giving this
+  // class an init()/frame()/shutdown() interface, and having the caller run
+  // it in its own rendering cycle.
+  return false;
+#else
+  return true;
+#endif
 }
 
 MujocoDebugWindow::MujocoDebugWindow(mjModel* sim, mjData* simData) : winData(NULL)
