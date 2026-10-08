@@ -955,7 +955,10 @@ void ExampleFK::handleKeys()
 
 void ExampleFK::updateUI()
 {
-  viewer->frame();
+  if (viewer)
+  {
+    viewer->frame();
+  }
   //handleKeys();
 }
 

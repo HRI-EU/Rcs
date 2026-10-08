@@ -921,7 +921,10 @@ void ExampleIK::handleKeys()
 
 void ExampleIK::updateUI()
 {
-  v->frame();
+  if (v)
+  {
+    v->frame();
+  }
   //handleKeys();
 }
 

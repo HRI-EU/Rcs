@@ -896,7 +896,10 @@ void ExamplePhysics::handleKeys()
 
 void ExamplePhysics::updateUI()
 {
-  viewer->frame();
+  if (viewer)
+  {
+    viewer->frame();
+  }
   // handleKeys();
 }
 
