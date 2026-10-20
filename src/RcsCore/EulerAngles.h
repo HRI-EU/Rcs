@@ -20,6 +20,10 @@
 #ifndef RCS_EULERANGLES_H
 #define RCS_EULERANGLES_H
 
+#include <stdbool.h>
+
+
+
 typedef struct
 {
   double x, y, z, w;
@@ -160,7 +164,7 @@ void computeEulerAngles(double ea[3], double A_BI[3][3], int eulerOrder);
 /*! \brief Prints the Euler angles of the rotation matrix in all orders
  *         to the console.
  */
-void printAllEulerAngles(double rm[3][3]);
+void printAllEulerAngles(double rm[3][3], bool in_degrees);
 
 #ifdef __cplusplus
 }

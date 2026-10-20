@@ -18,6 +18,7 @@
 ******************************************************************************/
 
 #include "EulerAngles.h"
+#include "Rcs_Vec3d.h"
 
 #include <math.h>
 #include <float.h>
@@ -329,57 +330,177 @@ void computeEulerAngles(double ea[3],
  * Prints all Euler angle combinations of a given rotation matrix to the
  * console.
  ******************************************************************************/
-void printAllEulerAngles(double rm[3][3])
+void printAllEulerAngles(double rm[3][3], bool in_degrees)
 {
   double tmp[3];
 
   computeEulerAngles(tmp, rm, EulOrdXYZs);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdXYZs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdXYXs);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdXYXs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdXZYs);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdXZYs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdXZXs);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdXZXs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdYZXs);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdYZXs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdYZYs);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdYZYs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdYXZs);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdYXZs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdYXYs);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdYXYs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdZXYs);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdZXYs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdZXZs);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdZXZs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdZYXs);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdZYXs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdZYZs);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdZYZs: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
 
+
+
   computeEulerAngles(tmp, rm, EulOrdZYXr);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdZYXr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdXYXr);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdXYXr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdYZXr);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdYZXr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdXZXr);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdXZXr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdXZYr);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdXZYr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdYZYr);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdYZYr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdZXYr);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdZXYr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdYXYr);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdYXYr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdYXZr);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdYXZr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdZXZr);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdZXZr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdXYZr);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdXYZr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
+
   computeEulerAngles(tmp, rm, EulOrdZYZr);
+  if (in_degrees)
+  {
+    Vec3d_constMulSelf(tmp, 180.0/M_PI);
+  }
   printf("EulOrdZYZr: %f   %f   %f\n", tmp[0], tmp[1], tmp[2]);
 }

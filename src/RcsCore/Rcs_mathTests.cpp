@@ -42,6 +42,7 @@
 #include "Rcs_utils.h"
 #include "Rcs_timer.h"
 #include "StackVec.h"
+#include "EulerAngles.h"
 
 #include <iostream>
 #include <limits>
@@ -3220,6 +3221,47 @@ bool testDTW(int argc, char** argv)
 bool testMat3dFunctions(int argc, char** argv)
 {
   bool success = true;
+
+  Rcs::CmdLineParser argP(argc, argv);
+
+  // double rm[3][3] =   {{-0.030187683359108954, -0.5483679836310363, 0.8356920834265704},
+  //   {0.9995276526215174, -0.011743413429688335, 0.028400068414329287},
+  //   {-0.005759810615753416, 0.8361546787344138, 0.548463469897695}};   // camera_0
+
+
+
+  double rm[3][3] =   {{0.04581980584971217, 0.5465027975865433, -0.8362028686999202},
+    {-0.9989471490059062, 0.023167329395014164, -0.039596317274142326},
+    {-0.002266910864216142, 0.8371367672482103, 0.5469889341077652}
+  };  // camera_1
+
+
+
+  //Mat3d_setIdentity(rm);
+  argP.getArgument("-rm00", &rm[0][0]);
+  argP.getArgument("-rm01", &rm[0][1]);
+  argP.getArgument("-rm02", &rm[0][2]);
+  argP.getArgument("-rm10", &rm[1][0]);
+  argP.getArgument("-rm11", &rm[1][1]);
+  argP.getArgument("-rm12", &rm[1][2]);
+  argP.getArgument("-rm20", &rm[2][0]);
+  argP.getArgument("-rm21", &rm[2][1]);
+  argP.getArgument("-rm22", &rm[2][2]);
+  bool transpose_me = argP.hasArgument("-transpose");
+
+  if (transpose_me)
+  {
+    Mat3d_transposeSelf(rm);
+  }
+
+  Mat3d_print(rm);
+
+
+  if (!Mat3d_isIdentity(rm))
+  {
+    RLOGS(2, "Rotation matrix is %s", Mat3d_isValid(rm) ? "valid" : "invalid");
+    printAllEulerAngles(rm, true);
+  }
 
 
   // Create a square symmetric positiv definite matrix A with
