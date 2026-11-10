@@ -435,26 +435,47 @@ static bool test_meshify()
   char xmlFileName[128] = "gScenario.xml";
   char directory[128] = "config/xml/DexBot";
   double scale = 1.0;
+  double inflate = 0.0;
   int computeType = RCSSHAPE_COMPUTE_GRAPHICS;
   Rcs::CmdLineParser argP;
   argP.getArgument("-f", xmlFileName, "Configuration file name");
   argP.getArgument("-dir", directory, "Configuration file directory");
   argP.getArgument("-scale", &scale, "Scaling factor, default is %f", scale);
+  argP.getArgument("-inflate", &inflate, "Inflate skin, default is %f", inflate);
   argP.getArgument("-computeType", &computeType, "Compute type: 1 distance, "
                    "2 physics, 4 graphics, default is %d", computeType);
 
   Rcs_addResourcePath(directory);
   RcsGraph* graph = RcsGraph_create(xmlFileName);
+  RLOG(1, "Meshifying ...");
   RcsMeshData* allMesh = RcsGraph_meshify(graph, scale, computeType);
   bool success = allMesh ? true : false;
 
   if (success)
   {
+    RLOG(1, "Compressing vertices ...");
+    int nDuplicates = RcsMesh_compressVertices(allMesh, 1.0e-5);
+    if (nDuplicates>0)
+    {
+      RLOG(1, "Found %d duplicate vertices - fixed", nDuplicates);
+    }
+  }
+
+  if (success && (inflate!=0.0))
+  {
+    RLOG(1, "Inflating skin by %f meters ...", inflate);
+    success = RcsMesh_inflate(allMesh, inflate);
+  }
+
+  if (success)
+  {
+    RLOG(1, "Writing file AllMesh.stl ...");
     RcsMesh_toFile(allMesh, "AllMesh.stl");
     RcsMesh_destroy(allMesh);
   }
 
   RcsGraph_destroy(graph);
+  RLOG(1, "Done test_meshify");
 
   return success;
 }

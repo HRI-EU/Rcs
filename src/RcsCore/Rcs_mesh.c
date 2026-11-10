@@ -546,82 +546,6 @@ void RcsMesh_copySSR(RcsMeshData* mesh,
 
 /*******************************************************************************
  *
- ******************************************************************************/
-int RcsMesh_compressVertices(RcsMeshData* mesh, double eps)
-{
-  unsigned int vertexCount = 0, indexCount = 0;
-  unsigned int* faces = RNALLOC(mesh->nFaces*3, unsigned int);
-
-  if (faces==NULL)
-  {
-    RLOG(4, "Failed to allocate memory for %d faces", mesh->nFaces);
-    return -1;
-  }
-
-  double* vertices = RNALLOC(mesh->nVertices*3, double);
-
-  if (faces==NULL)
-  {
-    RLOG(4, "Failed to allocate memory for %d vertices", mesh->nVertices);
-    RFREE(faces);
-    return -1;
-  }
-
-  for (unsigned int i=0; i<3*mesh->nFaces; ++i)
-  {
-    if (mesh->faces[i]>=mesh->nVertices)
-    {
-      RLOG(1, "Index error: faces[%d] = %d is equal or larger than nVertices"
-           " = %d - skipping compression",  i, mesh->faces[i], mesh->nVertices);
-      RFREE(faces);
-      RFREE(vertices);
-      return -1;
-    }
-    const double* v_i = &mesh->vertices[3*mesh->faces[i]];
-    bool foundDuplicate = false;
-
-    for (unsigned int j=0; j<vertexCount; ++j)
-    {
-      const double* v_j = &vertices[3*j];
-
-      // If we found a duplicate vertex, we don't add it to the new vertex
-      // array, but just update the corresponding face index to point to its
-      // original memory.
-      if (Vec3d_distance(v_i, v_j) < eps)   // Vertex already exists
-      {
-        faces[indexCount] = j;
-        foundDuplicate = true;
-        break;
-      }
-
-    }   // for (unsigned int j=0;j<vertexCount;++j)
-
-    // If there is no duplicate for this vertex, we add it and set the face
-    // index to point to its location
-    if (foundDuplicate==false)
-    {
-      Vec3d_copy(&vertices[3*vertexCount], v_i);
-      faces[indexCount] = vertexCount;
-      vertexCount++;
-    }
-
-    indexCount++;
-
-  }   // for (unsigned int i=0;i<mesh->nVertices;++i)
-
-  int nDuplicates = mesh->nVertices - vertexCount;
-  RFREE(mesh->vertices);
-  RFREE(mesh->faces);
-  mesh->nVertices = vertexCount;
-  mesh->nFaces = indexCount/3;
-  mesh->vertices = vertices;
-  mesh->faces = faces;
-
-  return nDuplicates;
-}
-
-/*******************************************************************************
- *
  * From https://en.wikipedia.org/wiki/STL_(file_format) :
  *
  * solid name
@@ -2244,4 +2168,520 @@ unsigned int RcsMesh_sizeInBytes(const RcsMeshData* mesh)
   nBytes += mesh->nFaces*sizeof(unsigned int);
 
   return nBytes;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+bool RcsMesh_inflate(RcsMeshData* mesh, double distance)
+{
+  if (!mesh || !mesh->vertices || !mesh->faces)
+  {
+    return false;
+  }
+
+  const unsigned int n = mesh->nVertices;
+
+  // Accumulated vertex normals, initialized to zero.
+  double* normals = (double*) calloc(3 * (size_t)n, sizeof(double));
+
+  if (!normals)
+  {
+    return false;
+  }
+
+  // Step 1: Accumulate face normals at vertices.
+  for (unsigned int f = 0; f < mesh->nFaces; ++f)
+  {
+    unsigned int i0 = mesh->faces[3*f + 0];
+    unsigned int i1 = mesh->faces[3*f + 1];
+    unsigned int i2 = mesh->faces[3*f + 2];
+
+    if (i0 >= n || i1 >= n || i2 >= n)
+    {
+      free(normals);
+      return false;
+    }
+
+    const double* p0 = &mesh->vertices[3*i0];
+    const double* p1 = &mesh->vertices[3*i1];
+    const double* p2 = &mesh->vertices[3*i2];
+
+    // Triangle edges
+    double ax = p1[0] - p0[0];
+    double ay = p1[1] - p0[1];
+    double az = p1[2] - p0[2];
+
+    double bx = p2[0] - p0[0];
+    double by = p2[1] - p0[1];
+    double bz = p2[2] - p0[2];
+
+    // Face normal = cross(a, b)
+    double nx = ay*bz - az*by;
+    double ny = az*bx - ax*bz;
+    double nz = ax*by - ay*bx;
+
+    // Accumulate at all three vertices.
+    // This gives area-weighted vertex normals.
+    unsigned int indices[3] = {i0, i1, i2};
+
+    for (int k = 0; k < 3; ++k)
+    {
+      unsigned int i = indices[k];
+
+      normals[3*i + 0] += nx;
+      normals[3*i + 1] += ny;
+      normals[3*i + 2] += nz;
+    }
+  }
+
+  // Step 2: Normalize vertex normals and displace vertices.
+  for (unsigned int i = 0; i < n; ++i)
+  {
+    double* v = &mesh->vertices[3*i];
+    double* normal = &normals[3*i];
+
+    double length = sqrt(
+                      normal[0]*normal[0] +
+                      normal[1]*normal[1] +
+                      normal[2]*normal[2]
+                    );
+
+    if (length > 1.0e-12)
+    {
+      double scale = distance / length;
+
+      v[0] += scale * normal[0];
+      v[1] += scale * normal[1];
+      v[2] += scale * normal[2];
+    }
+  }
+
+  free(normals);
+  return true;
+}
+
+/*******************************************************************************
+ * Old version with not so efficient for loops, breaks down for large meshes.
+ ******************************************************************************/
+int RcsMesh_compressVertices_looping(RcsMeshData* mesh, double eps)
+{
+  if (mesh==NULL || !isfinite(eps) || eps<0.0)
+  {
+    return -1;
+  }
+
+  if ((mesh->nVertices>0 && mesh->vertices==NULL) ||
+      (mesh->nFaces>0 && mesh->faces==NULL))
+  {
+    return -1;
+  }
+
+  // Prevent integer overflow in array sizes and indices.
+  if (mesh->nFaces>UINT_MAX/3 || mesh->nVertices>UINT_MAX/3)
+  {
+    RLOG(1, "Mesh size exceeds supported limits");
+    return -1;
+  }
+
+  if (mesh->nVertices>(unsigned int)INT_MAX)
+  {
+    RLOG(1, "Vertex count exceeds supported return range");
+    return -1;
+  }
+
+  unsigned int vertexCount = 0;
+  unsigned int indexCount = 0;
+
+  const unsigned int nIndices = mesh->nFaces*3;
+
+  // Nothing to compress.
+  if (nIndices==0)
+  {
+    unsigned int nRemoved = mesh->nVertices;
+
+    RFREE(mesh->vertices);
+    mesh->vertices = NULL;
+    mesh->nVertices = 0;
+
+    return (int)nRemoved;
+  }
+
+  unsigned int* faces = RNALLOC(nIndices, unsigned int);
+
+  if (faces==NULL)
+  {
+    RLOG(4, "Failed to allocate memory for %u faces", mesh->nFaces);
+    return -1;
+  }
+
+  double* vertices = RNALLOC(mesh->nVertices*3, double);
+
+  if (vertices==NULL)
+  {
+    RLOG(4, "Failed to allocate memory for %u vertices", mesh->nVertices);
+    RFREE(faces);
+    return -1;
+  }
+
+  for (unsigned int i=0; i<nIndices; ++i)
+  {
+    unsigned int oldIndex = mesh->faces[i];
+
+    if (oldIndex>=mesh->nVertices)
+    {
+      RLOG(1, "Index error: faces[%u] = %u >= nVertices = %u",
+           i, oldIndex, mesh->nVertices);
+
+      RFREE(faces);
+      RFREE(vertices);
+      return -1;
+    }
+
+    const double* v_i = &mesh->vertices[3*oldIndex];
+
+    // Reject invalid vertex coordinates.
+    if (!isfinite(v_i[0]) || !isfinite(v_i[1]) || !isfinite(v_i[2]))
+    {
+      RLOG(1, "Invalid vertex coordinates at index %u", oldIndex);
+
+      RFREE(faces);
+      RFREE(vertices);
+      return -1;
+    }
+
+    bool foundDuplicate = false;
+
+    for (unsigned int j=0; j<vertexCount; ++j)
+    {
+      const double* v_j = &vertices[3*j];
+
+      if (Vec3d_distance(v_i, v_j)<=eps)
+      {
+        faces[indexCount] = j;
+        foundDuplicate = true;
+        break;
+      }
+    }
+
+    if (!foundDuplicate)
+    {
+      Vec3d_copy(&vertices[3*vertexCount], v_i);
+
+      faces[indexCount] = vertexCount;
+      vertexCount++;
+    }
+
+    indexCount++;
+  }
+
+  // Number of removed vertices, including unused vertices.
+  unsigned int nRemoved = mesh->nVertices - vertexCount;
+
+  RFREE(mesh->vertices);
+  RFREE(mesh->faces);
+
+  mesh->nVertices = vertexCount;
+  mesh->nFaces = indexCount/3;
+  mesh->vertices = vertices;
+  mesh->faces = faces;
+
+  return (int)nRemoved;
+}
+
+/*******************************************************************************
+ *
+ ******************************************************************************/
+typedef struct
+{
+  int64_t x, y, z;        // Spatial grid coordinates
+  unsigned int vertex;   // Index in compressed vertex array
+  size_t next;           // Next entry in hash bucket
+} RcsVertexHashEntry;
+
+
+// Mix a 64-bit integer.
+static uint64_t meshHashMix(uint64_t x)
+{
+  x ^= x >> 30;
+  x *= UINT64_C(0xbf58476d1ce4e5b9);
+  x ^= x >> 27;
+  x *= UINT64_C(0x94d049bb133111eb);
+  x ^= x >> 31;
+
+  return x;
+}
+
+
+// Hash a 3D integer grid coordinate.
+static uint64_t meshHashCell(int64_t x, int64_t y, int64_t z)
+{
+  uint64_t h = meshHashMix((uint64_t)x);
+
+  h ^= meshHashMix((uint64_t)y + UINT64_C(0x9e3779b97f4a7c15));
+  h ^= meshHashMix((uint64_t)z + UINT64_C(0x517cc1b727220a95));
+
+  return meshHashMix(h);
+}
+
+
+// Convert a coordinate into a spatial grid coordinate.
+// The range check prevents undefined float-to-integer conversion.
+static bool meshGridCoord(double value, double eps, int64_t* result)
+{
+  if (!isfinite(value))
+  {
+    return false;
+  }
+
+  long double c = floorl((long double)value / (long double)eps);
+
+  // Conservative range also leaves space for +/-1 neighbor cells.
+  if (!isfinite(c) || c < -9.0e18L || c > 9.0e18L)
+  {
+    return false;
+  }
+
+  *result = (int64_t)c;
+  return true;
+}
+
+
+/*******************************************************************************
+ * Compress duplicate vertices of a triangular mesh.
+ *
+ * Vertices within distance <= eps are merged.
+ * Face indices are updated accordingly.
+ *
+ * Complexity: O(nVertices + nFaces) expected for well-distributed
+ *             vertices with bounded spatial cell occupancy.
+ *
+ * @param mesh Mesh to compress (modified in place).
+ * @param eps  Positive distance tolerance.
+ *
+ * @return Number of removed vertices (including unused vertices),
+ *         or -1 on error.
+ ******************************************************************************/
+int RcsMesh_compressVertices(RcsMeshData* mesh, double eps)
+{
+  if (mesh == NULL || !isfinite(eps) || eps <= 0.0)
+  {
+    return -1;
+  }
+
+  const size_t nVertices = mesh->nVertices;
+  const size_t nFaces = mesh->nFaces;
+
+  if ((nVertices > 0 && mesh->vertices == NULL) ||
+      (nFaces > 0 && mesh->faces == NULL) ||
+      nVertices > INT_MAX ||
+      nFaces > SIZE_MAX/3 ||
+      nVertices > SIZE_MAX/3 ||
+      nVertices > (SIZE_MAX-1)/2)
+  {
+    return -1;
+  }
+
+  const size_t nIndices = 3*nFaces;
+  const size_t nBuckets = 2*nVertices + 1;
+
+  unsigned int* faces = NULL;
+  double* vertices = NULL;
+  unsigned int* oldToNew = NULL;
+  size_t* buckets = NULL;
+  RcsVertexHashEntry* entries = NULL;
+
+  unsigned int vertexCount = 0;
+  int result = -1;
+
+  // Handle empty meshes without zero-length allocations.
+  if (nIndices == 0)
+  {
+    result = (int)nVertices;
+
+    RFREE(mesh->vertices);
+    RFREE(mesh->faces);
+
+    mesh->vertices = NULL;
+    mesh->faces = NULL;
+    mesh->nVertices = 0;
+    mesh->nFaces = 0;
+
+    return result;
+  }
+
+  if (nVertices == 0 ||
+      nIndices > SIZE_MAX/sizeof(unsigned int) ||
+      nVertices > SIZE_MAX/(3*sizeof(double)) ||
+      nVertices > SIZE_MAX/sizeof(unsigned int) ||
+      nBuckets > SIZE_MAX/sizeof(size_t) ||
+      nVertices > SIZE_MAX/sizeof(RcsVertexHashEntry))
+  {
+    return -1;
+  }
+
+  faces = RNALLOC(nIndices, unsigned int);
+  vertices = RNALLOC(3*nVertices, double);
+  oldToNew = RNALLOC(nVertices, unsigned int);
+  buckets = RNALLOC(nBuckets, size_t);
+  entries = RNALLOC(nVertices, RcsVertexHashEntry);
+
+  if (!faces || !vertices || !oldToNew || !buckets || !entries)
+  {
+    RLOG(1, "RcsMesh_compressVertices: Allocation failed");
+    goto cleanup;
+  }
+
+  // UINT_MAX means: original vertex not yet processed.
+  for (size_t i=0; i<nVertices; ++i)
+  {
+    oldToNew[i] = UINT_MAX;
+  }
+
+  // SIZE_MAX means: empty hash bucket.
+  for (size_t i=0; i<nBuckets; ++i)
+  {
+    buckets[i] = SIZE_MAX;
+  }
+
+  // Number of entries equals the number of unique vertices.
+  size_t entryCount = 0;
+  const long double eps2 = (long double)eps * eps;
+
+  for (size_t i=0; i<nIndices; ++i)
+  {
+    unsigned int oldIndex = mesh->faces[i];
+
+    if (oldIndex >= nVertices)
+    {
+      RLOG(1, "Invalid face index %u at position %zu",
+           oldIndex, i);
+      goto cleanup;
+    }
+
+    // Already processed this original vertex?
+    if (oldToNew[oldIndex] != UINT_MAX)
+    {
+      faces[i] = oldToNew[oldIndex];
+      continue;
+    }
+
+    const double* v = &mesh->vertices[3*(size_t)oldIndex];
+
+    // Compute spatial grid coordinates.
+    int64_t cx, cy, cz;
+
+    if (!meshGridCoord(v[0], eps, &cx) ||
+        !meshGridCoord(v[1], eps, &cy) ||
+        !meshGridCoord(v[2], eps, &cz))
+    {
+      RLOG(1, "Invalid or out-of-range vertex coordinates");
+      goto cleanup;
+    }
+
+    unsigned int newIndex = UINT_MAX;
+
+    // Search current cell and its 26 neighbors.
+    for (int dx=-1; dx<=1; ++dx)
+    {
+      for (int dy=-1; dy<=1; ++dy)
+      {
+        for (int dz=-1; dz<=1; ++dz)
+        {
+          int64_t nx = cx + dx;
+          int64_t ny = cy + dy;
+          int64_t nz = cz + dz;
+
+          size_t bucket =
+            (size_t)(meshHashCell(nx, ny, nz) % nBuckets);
+
+          for (size_t e=buckets[bucket];
+               e!=SIZE_MAX;
+               e=entries[e].next)
+          {
+            const RcsVertexHashEntry* entry = &entries[e];
+
+            // Verify exact cell to handle hash collisions.
+            if (entry->x != nx ||
+                entry->y != ny ||
+                entry->z != nz)
+            {
+              continue;
+            }
+
+            unsigned int candidate = entry->vertex;
+            const double* u = &vertices[3*(size_t)candidate];
+
+            // Use long double to avoid overflow in squared distance.
+            long double vx = (long double)v[0] - u[0];
+            long double vy = (long double)v[1] - u[1];
+            long double vz = (long double)v[2] - u[2];
+
+            long double dist2 = vx*vx + vy*vy + vz*vz;
+
+            if (dist2 <= eps2)
+            {
+              // Prefer earliest representative, matching the
+              // behavior of the original linear search.
+              if (newIndex == UINT_MAX || candidate < newIndex)
+              {
+                newIndex = candidate;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // No duplicate found: add a new representative.
+    if (newIndex == UINT_MAX)
+    {
+      newIndex = vertexCount;
+
+      vertices[3*(size_t)vertexCount + 0] = v[0];
+      vertices[3*(size_t)vertexCount + 1] = v[1];
+      vertices[3*(size_t)vertexCount + 2] = v[2];
+
+      size_t bucket =
+        (size_t)(meshHashCell(cx, cy, cz) % nBuckets);
+
+      entries[entryCount].x = cx;
+      entries[entryCount].y = cy;
+      entries[entryCount].z = cz;
+      entries[entryCount].vertex = newIndex;
+      entries[entryCount].next = buckets[bucket];
+
+      buckets[bucket] = entryCount;
+
+      entryCount++;
+      vertexCount++;
+    }
+
+    oldToNew[oldIndex] = newIndex;
+    faces[i] = newIndex;
+  }
+
+  result = (int)(nVertices - vertexCount);
+
+  // Commit only after successfully processing the entire mesh.
+  RFREE(mesh->vertices);
+  RFREE(mesh->faces);
+
+  mesh->vertices = vertices;
+  mesh->faces = faces;
+  mesh->nVertices = vertexCount;
+  mesh->nFaces = (unsigned int)nFaces;
+
+  vertices = NULL;
+  faces = NULL;
+
+cleanup:
+
+  RFREE(faces);
+  RFREE(vertices);
+  RFREE(oldToNew);
+  RFREE(buckets);
+  RFREE(entries);
+
+  return result;
 }

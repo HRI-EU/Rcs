@@ -223,6 +223,15 @@ void RcsMesh_scale(RcsMeshData* mesh, double scale);
 void RcsMesh_scale3D(RcsMeshData* mesh, const double scale[3]);
 
 /*! \ingroup RcsMeshFunctions
+ * Inflate a triangular mesh along its vertex normals.
+ *
+ * \param[in] mesh      Mesh modified in place.
+ * \param[in] distance  Inflation distance (negative = deflation).
+ * \return true on success, false on error.
+ */
+bool RcsMesh_inflate(RcsMeshData* mesh, double distance);
+
+/*! \ingroup RcsMeshFunctions
  *  \brief Adds a mesh to another one.
  *
  *  \param[in] mesh       Mesh data to be extended by other.
