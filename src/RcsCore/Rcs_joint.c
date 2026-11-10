@@ -772,6 +772,11 @@ int RcsJoint_getNonCoupledParentId(const RcsGraph* graph,
 int RcsJoint_getConnectedBodyId(const RcsGraph* graph,
                                 const RcsJoint* joint)
 {
+  if (!joint)
+  {
+    return -1;
+  }
+
   RCSGRAPH_FOREACH_BODY(graph)
   {
     RCSBODY_FOREACH_JOINT(graph, BODY)
