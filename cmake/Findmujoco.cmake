@@ -52,10 +52,26 @@ LIST(REVERSE MUJOCO_RELEASE_HINTS)
 # MKPLT is set by the top-level CMakeLists file. It is empty if this module is
 # used from outside the Rcs build, which is fine - the entry then simply does
 # not match anything.
+#SET(MUJOCO_SEARCH_PREFIXES
+#    "${MUJOCO_DIR}"
+#    "$ENV{SIT}/External/MuJoCo/1.0/${MKPLT}"
+#    ${MUJOCO_RELEASE_HINTS})
+	
+	
+# Normalize Windows paths to CMake-compatible forward slashes
+FILE(TO_CMAKE_PATH "$ENV{SIT}" SIT_CMAKE_PATH)
+
 SET(MUJOCO_SEARCH_PREFIXES
-    ${MUJOCO_DIR}
-    $ENV{SIT}/External/MuJoCo/1.0/${MKPLT}
+    "${MUJOCO_DIR}"
+    "${SIT_CMAKE_PATH}/External/MuJoCo/1.0/${MKPLT}"
     ${MUJOCO_RELEASE_HINTS})
+
+# Remove empty entries and duplicates
+LIST(FILTER MUJOCO_SEARCH_PREFIXES EXCLUDE REGEX "^$")
+LIST(REMOVE_DUPLICATES MUJOCO_SEARCH_PREFIXES)
+
+
+
 
 SET(mujoco_ORIGIN "")
 
