@@ -1077,11 +1077,17 @@ std::string RcsShape_distanceFunctionsToString()
 /*******************************************************************************
  * Fast joint lookup based on indices map
  ******************************************************************************/
-JointNameIndexPair::JointNameIndexPair() : jointId(-1)
+JointNameIndexPair::JointNameIndexPair() : jointId(-1), jointIndex(-1)
 {
 }
 
-JointNameIndexPair::JointNameIndexPair(const std::string& name, int id) : jointName(name), jointId(id)
+JointNameIndexPair::JointNameIndexPair(const std::string& name) :
+  jointName(name), jointId(-1), jointIndex(-1)
+{
+}
+
+JointNameIndexPair::JointNameIndexPair(const std::string& name, int jointId, int jointIndex) :
+  jointName(name), jointId(jointId), jointIndex(jointIndex)
 {
 }
 
@@ -1089,27 +1095,50 @@ RcsJoint* JointNameIndexPair::getJoint(const RcsGraph* graph)
 {
   RcsJoint* jnt = NULL;
 
-  if ((jointId == -1) || (!STREQ(graph->joints[jointId].name, jointName.c_str())))
+  if ((jointId<0) ||(jointId>=(int)graph->dof)
+      || (!STREQ(graph->joints[jointId].name, jointName.c_str())))
   {
     jnt = RcsGraph_getJointByName(graph, jointName.c_str());
-    if (!jnt)
-    {
-      return NULL;
-    }
-    else
-    {
-      jointId = jnt->jointIndex;
-    }
-
+    this->jointId = jnt ? jnt->id : -1;
+    this->jointIndex = jnt ? jnt->jointIndex : -1;
   }
   else
   {
     jnt = &graph->joints[jointId];
+    this->jointIndex = jnt->jointIndex;
   }
 
   return jnt;
 }
 
+int JointNameIndexPair::getJointIndex(const RcsGraph* graph)
+{
+  const RcsJoint* jnt = getJoint(graph);
+
+  return jnt ? jnt->jointIndex : -1;
+}
+
+int JointNameIndexPair::getJointIndex() const
+{
+  return this->jointIndex;
+}
+
+int JointNameIndexPair::getJointId(const RcsGraph* graph)
+{
+  const RcsJoint* jnt = getJoint(graph);
+
+  return jnt ? jnt->id : -1;
+}
+
+int JointNameIndexPair::getJointId() const
+{
+  return this->jointId;
+}
+
+std::string JointNameIndexPair::getJointName() const
+{
+  return this->jointName;
+}
 
 /*******************************************************************************
  * Fast joint lookup based on indices map

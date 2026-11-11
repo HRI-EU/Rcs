@@ -221,11 +221,19 @@ class JointNameIndexPair
 public:
 
   JointNameIndexPair();
-  JointNameIndexPair(const std::string& name, int id = -1);
+  JointNameIndexPair(const std::string& name);
+  JointNameIndexPair(const std::string& name, int jointId, int jointIndex);
   RcsJoint* getJoint(const RcsGraph* graph);
+  int getJointIndex(const RcsGraph* graph);
+  int getJointIndex() const;
+  int getJointId(const RcsGraph* graph);
+  int getJointId() const;
+  std::string getJointName() const;
 
+private:
   std::string jointName;
   int jointId;
+  int jointIndex;
 };
 
 
